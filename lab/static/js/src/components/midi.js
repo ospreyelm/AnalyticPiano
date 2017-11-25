@@ -21,13 +21,13 @@ define([
 	 * @type {number}
 	 * @const
 	 */
-	var DEFAULT_NOTE_VELOCITY = 87;
+	var DEFAULT_NOTE_VELOCITY = 64;
 	/**
 	 * Defines the note velocity used to reduce the volume of NOTE ON messages.
 	 * @type {number}
 	 * @const
 	 */
-	var SOFT_NOTE_VELOCITY = 47;
+	var SOFT_NOTE_VELOCITY = 32;
 	/**
 	 * Maps MIDI message commands to their numerical codes
 	 */
@@ -67,6 +67,7 @@ define([
 	var MIDI_ERROR_CONTENT = Config.get("errorText.midiPluginError.description");
 
 	var SUSTAINING = false;
+	var SOSTENUTO_ON = false;
 	/**
 	 * MidiComponent
 	 *
@@ -92,7 +93,7 @@ define([
 		 * @type {number}
 		 * @protected
 		 */
-		this.midiChannel = 0;
+		this.midiChannel = 1;
 		/**
 		 * The MIDI access object used to send/receive MIDI messages.
 		 * @type {object}
@@ -261,21 +262,44 @@ define([
 			// The Yamaha Silent Piano sustain pedal sends value 0 when 
 			// the pedal is released and other values when it is depressed.
 		
-			if(controlVal >= 50 && !SUSTAINING) {
-				if(pedal_name == 'sustain'){
+			if(pedal_name == 'sustain') {
+				if(controlVal >= 50 && !SUSTAINING) {
 					SUSTAINING = true;
-				}
-				else {};
-				pedal_state = 'on';
-			} else if(controlVal == 0 && SUSTAINING) {
-				if(pedal_name == 'sustain'){
+					pedal_state = 'on';
+				} else if(controlVal == 0 && SUSTAINING) {
 					SUSTAINING = false;
-				}
-				else {};
-				pedal_state = 'off';
-			} else { pedal_state = 'null' };
+					pedal_state = 'off';
+				} else {
+					pedal_state = 'null'
+				};
+			}
+			else if(pedal_name == 'soft') {
+				if(controlVal >= 50) {
+					pedal_state = 'on';
+				} else if(controlVal == 0) {
+					pedal_state = 'off';
+				} else {
+					pedal_state = 'null'
+				};
+			}
+			else if(pedal_name == 'sostenuto') {
+				if(controlVal >= 50 && !SOSTENUTO_ON) {
+					SOSTENUTO_ON = true;
+					// pedal_state = 'on';
+					// TO DO: CONNECT TO goToNextExercise
+				} else if(controlVal == 0 && SOSTENUTO_ON) {
+					SOSTENUTO_ON = false;
+					// pedal_state = 'off';
+				} else {
+					pedal_state = 'null'
+				};
+				pedal_state = 'null'; // using to advance exercise
+			}
+			else { pedal_state = 'null' };
 
-			this.broadcast(EVENTS.BROADCAST.PEDAL, pedal_name, pedal_state);
+			if(pedal_state != 'null') {
+				this.broadcast(EVENTS.BROADCAST.PEDAL, pedal_name, pedal_state);
+			};
 		},
 		/**
 		 * Broadcasts a note "on" event to the application.
@@ -404,11 +428,12 @@ define([
 					if(state==='on') {
 						chord.sustainNotes();
 						this.chords.bank();
-					} else {
+						this.sendMIDIPedalMessage(pedal, state);
+					} else if (state === 'off') {
 						chord.releaseSustain();
 						chord.syncSustainedNotes();
-					}
-					this.sendMIDIPedalMessage(pedal, state);
+						this.sendMIDIPedalMessage(pedal, state);
+					} else {}
 					break;
 				default:
 					break;
@@ -471,7 +496,8 @@ define([
 			var command = MIDI_MSG_MAP.CONTROL_CHANGE;
 			var controlNumber = MIDI_CONTROL_MAP.pedal[pedal];
 			var controlValue = (state === 'off' ? 0 : 127);
-			this.sendMIDIMessage(command, controlNumber, controlValue, this.midiChannel);
+			this.sendMIDIMessage(command, 64, 127, 1);
+			// this.sendMIDIMessage(command, controlNumber, controlValue, this.midiChannel);
 		}
 	});
 

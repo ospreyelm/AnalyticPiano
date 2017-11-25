@@ -229,6 +229,7 @@ define([
 		 */
 		depressSustain: function(state) {
 			this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'on');
+			SUSTAINING = true;
 		},
 		/**
 		 * Releases the sustain pedal.
@@ -237,9 +238,10 @@ define([
 		 */
 		releaseSustain: function(state) {
 			this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off');
+			SUSTAINING = false;
 		},
 		/**
-		 * Retakes the sustain pedal.
+		 * Retakes the sustain pedal. BROKEN
 		 *
 		 * @return undefined
 		 */
@@ -248,18 +250,19 @@ define([
 				return;
 			}
 			
-			var onTimeoutDepressSustain = _.bind(function() {
-				this._depressSustain();
-				this.retakeTimeoutID = null;
-			},this);
+			alert('The sostentuo retake function is broken. Sorry!');
+			// var onTimeoutDepressSustain = _.bind(function() {
+			// 	this._depressSustain();
+			// 	this.retakeTimeoutID = null;
+			// },this);
 			
-			this.retakeTimeoutID = this.retakeTimeoutID || null;
-			if(this.retakeTimeoutID !== null) {
-				window.clearTimeout(this.retakeTimeoutID);
-			}
+			// this.retakeTimeoutID = this.retakeTimeoutID || null;
+			// if(this.retakeTimeoutID !== null) {
+			// 	window.clearTimeout(this.retakeTimeoutID);
+			// }
 
-			this._releaseSustain();
-			this.retakeTimeoutID = window.setTimeout(onTimeoutDepressSustain, 100);
+			// this._releaseSustain();
+			// this.retakeTimeoutID = window.setTimeout(onTimeoutDepressSustain, 100);
 		},
 		/**
 		 * Clears all the notes.
