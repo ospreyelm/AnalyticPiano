@@ -8,10 +8,9 @@ An Open-Source application for the study of music theory and keyboard skills tha
 - To install Pip, see [their instructions](http://www.pip-installer.org/en/latest/installing.html).
 
 ```sh
-$ git clone git@github.com:Harvard-ATG/HarmonyLab.git harmony
+$ git clone git@github.com:ospreyelm/HarmonyLab.git harmony
 $ cd harmony
 $ pip install -r requirements.txt
-$ ./manage.py migrate
 $ ./manage.py runserver
 ```
 You should now be able to run the application on your localhost at ```http://127.0.0.1:8000```. 
