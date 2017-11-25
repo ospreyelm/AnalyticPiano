@@ -18,4 +18,4 @@ You should now be able to run the application on your localhost at ```http://127
 
 # Supported Web Browsers
 
-1. Chrome
+Chrome is currently the only browser supported, being the single browser that implements the WebMIDI specification.
