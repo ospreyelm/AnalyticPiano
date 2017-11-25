@@ -1,19 +1,6 @@
-[![Build Status](https://travis-ci.org/Harvard-ATG/HarmonyLab.png?branch=master)](https://travis-ci.org/Harvard-ATG/HarmonyLab)
-
 # Overview
 
-HarmonyLab is an Open-Source application for students of music theory and 
-keyboard skills at college or in K-12. It works with input from a MIDI 
-keyboard in a web browser to provide simple practice aids and exercises for 
-learning tonal harmony. By bringing together tactile, visual, and aural 
-elements, this software helps students to build a robust and ready knowledge 
-of the fundamentals of melodic and harmonic grammar.
-
-Working with the input from a MIDI keyboard (subject to key and key 
-signature selections), the application notates pitch elements and provides 
-various analytical notations for melody and harmony.
-
-Demo: http://harmony-lab.appspot.com/
+An Open-Source application for the study of music theory and keyboard skills that takes input from a MIDI keyboard and outputs staff notation. Various analytical vocabularies of melody and harmony are represented. As a practice aid and exercise platform that operates across aural, visual, and tactile domains, this tool accelerates the acquisition of fluency in certain fundamentals of tonal music.
 
 # Quickstart
 
