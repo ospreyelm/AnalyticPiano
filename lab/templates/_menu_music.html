@@ -1,0 +1,39 @@
+{% extends "_menu.html" %}
+{% block menu_content %}
+<div id="display-settings">
+    <!--Instrument-->
+    <div class="mainmenu-section">
+        <div class="js-instrument settings-inline"></div>
+        <div class="js-keyboardsize settings-inline"></div>
+        <div class="js-keyboardshortcuts settings-inline"></div>
+    </div>
+
+    <!--Notation-->
+    <div class="mainmenu-section">
+        <div class="js-analyze-widget"></div>
+    </div>
+
+    <!--MIDI Source-->
+    <div class="mainmenu-section">
+        <div class="label settings-inline">MIDI in: </div>
+        <select class="js-select-midi-input settings-inline" name="select_midi_input"></select>
+        <div class="label settings-inline">&emsp;MIDI out: </div>
+        <select class="js-select-midi-output settings-inline" name="select_midi_output"></select>&emsp;
+        <button class="js-refresh-midi-devices settings-inline">Refresh MIDI options</button>
+    </div>
+
+    {% if group_list %}
+    <div class="mainmenu-section">
+        <div id="mainmenu-exercise-area">
+            <b>EXERCISES (scroll for more)</b>
+            <ul class="menu-group-list">
+                {% for group in group_list %}
+                    <li><a href="{{group.url}}">{{group.name}} ({{group.size}})</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

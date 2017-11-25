@@ -1,0 +1,725 @@
+@charset "UTF-8";
+@import "pure.min.css";
+@import url(https://fonts.googleapis.com/css?family=Alegreya+Sans:400,700&subset=latin,latin-ext);
+/*@import url(https://fonts.googleapis.com/css?family=Alegreya:400&subset=latin,latin-ext);*/
+/*@import url(https://fonts.googleapis.com/css?family=Martel&subset=latin,latin-ext);*/
+@font-face {
+    font-family: 'Alegreya';
+    src: url('../fonts/Alegreya-Regular-modified.otf');
+}
+@font-face {
+    font-family: 'Sebastian';
+    src: url('../fonts/Sebastian-FigBass-Harvard.otf');
+}
+/*@font-face {
+    font-family: 'FiguredBassMHGPL';
+    src: url('../fonts/FiguredBassMHGPL.otf');
+}*/
+/*@font-face {
+    font-family: 'LinLibertine';
+    src: url('../fonts/LinLibertine.ttf');
+} 
+@font-face {
+    font-family: 'LinLibertineBold';
+    src: url('../fonts/LinLibertine_RBah.ttf');
+}
+@font-face {
+    font-family: 'LinLibertineItalic';
+    src: url('../fonts/LinLibertine_RIah.ttf');
+}*/
+
+html {
+    font-size: 100%;
+    font-family: 'Alegreya Sans', sans-serif;
+}
+
+html, body, h1, h2, h3, h4, div, p  {
+    margin: 0; 
+    padding: 0; 
+    border-width: 0;
+}
+
+p {padding: .4em 0; }
+/*b {font-family: LinLibertineBold;}
+i {font-family: LinLibertineItalic;}*/
+button, input, optgroup, select, textarea { color: #000; }
+a,a:visited, .btn { color: inherit; text-decoration: none; }
+a:hover, .btn:hover { cursor: pointer; color: inherit; }
+body {
+    text-align: center;
+}
+body, #mainmenu, #helpmenu {
+    background-color: #445F69;
+}
+#mainmenu, #helpmenu {
+    background-color: rgba(80,80,80,1);
+}
+
+/*--------------------------------------------------*/
+/* Structural/Layout */
+#container {
+    width: 960px;
+    margin: 0 auto;
+    margin-bottom: 30px;
+    text-align: center;
+}
+#footer {
+    min-height: 1em;
+}
+#staff-area {
+    width: 100%;
+    margin: 0 auto;
+    position:relative;
+    z-index:0;
+    padding:0;
+    overflow:hidden;
+}
+#staff-toolbar {
+    position: absolute;
+    height: 35px;
+    width: 100%;
+    padding: 0px;
+    z-index: 1;
+}
+#staffwrapper {
+    height: 320px;
+    overflow: hidden;
+    overflow-y: hidden;
+}
+#staff {
+    width: 50em;
+    height: 500px;
+    position: static;
+    z-index: 1;
+    margin: 0;
+    border: 0px solid black;
+    padding: 0;
+}
+#staff-status {
+    width: 640px;
+    margin: 0em auto;
+    margin-bottom: 1em;
+    min-height: 100px;
+    /*height: 100%;
+    overflow: hidden;
+    overflow-y:auto;*/
+}
+.content-area, button, input, optgroup, select, textarea {
+    background-color: rgb(238, 238, 221);
+    color: #000;
+}
+.content-area, #mainmenu, #helpmenu {
+    -webkit-box-shadow: 0px 0px 6px 4px rgba(0,0,0,0.51);
+    -moz-box-shadow: 0px 0px 6px 4px rgba(0,0,0,0.51);
+    box-shadow: 0px 0px 6px 4px rgba(0,0,0,0.51);
+}
+#mainmenu, #helpmenu {
+    border: 1px solid black;
+    border-radius: 6px;
+}
+#display-settings {
+    color: #fff;
+    font-size: 0.9em;
+}
+.mainmenu-section {
+    margin-bottom: 1em;
+}
+#mainmenu, #helpmenu {
+    display: none;
+    position: absolute;
+    right: 1em;
+    z-index: 100;
+    margin: 1em auto;
+    max-width: 50%;
+    text-align: center;
+    /*height: 100%;*/
+    /*min-height: 700px;*/
+    padding: 1em;
+    line-height: 1.2em;
+}
+/*.content-area-section {
+    padding: 0 0 10px 0;
+    margin: 0 0 10px 0;
+}
+.content-area-row {
+    line-height: 1.5em;
+}
+ul.content-area-vertical-nav {
+    list-style-type: none;
+    margin: 0 0 .5em 0;
+    padding: 0;
+}
+.content-area-vertical-nav li {
+    line-height: 1.5em;
+    margin-bottom: .25em;
+    display: block;
+}
+.content-area-vertical-nav a {
+    display: block;
+    width: 100%;
+}*/
+.mainmenu-links {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    color: #fff;
+}
+
+/*--------------------------------------------------*/
+/* Header Styles */
+.header {
+    width: 640px;
+    margin: 0 auto;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    font-size: 1em;
+    background: transparent;
+    position: relative;
+    color: #fff;
+    text-align: left;
+}
+.header ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+.header ul li {
+    display: inline;
+}
+.header .js-btn-menu {
+    padding-right: 1em;
+}
+.header .js-btn-help {
+    padding-left: 1em;
+    padding-right: 1em;
+}
+.header .js-keysignature-widget {
+    padding-left: 1em;
+    padding-right: 1em;
+}
+.header ul li.right {
+    /*float: right;*/
+}
+
+/*--------------------------------------------------*/
+/* Settings Styles */
+.settings {   
+}
+.settings h3 {
+    padding: 0;
+    margin: 0;
+}
+.settings-help {
+    color: #666;
+    font-size: .9em;
+}
+fieldset.settings-notation {
+    border: 1px solid #fff;
+    border-radius: 6px;
+    width: auto;
+    display: inline-block;
+    padding: 0.5em;
+}
+.settings-notation div {
+    display: block;
+    padding: 4px 8px;
+}
+.settings-notation ol {
+    margin: 0;
+    padding: 0;
+}
+.settings-notation > ul {
+    margin: 0;
+    padding-left: 12px;
+    list-style-type: none;
+}
+.settings-notation span, .settings-notation label {
+    margin-right: 0.5em;
+    display: inline-block;
+}
+.settings-notation legend {
+    padding: 2px 2px 2px 8px;
+}
+.settings-notation li>span {
+    display: inline-block;
+}
+.settings-notation li:not(:last-child) {
+    /*border-bottom: 1px solid #c0c0c0;*/
+}
+.settings-inline {
+    display: inline-block;
+}
+.settings-spacer {
+    width: 1em;
+}
+
+/*--------------------------------------------------*/
+/* Notifications Styles */
+.notificationAlerts {
+    color: yellow;
+    background-color: none;
+    padding: 3px 6px;
+    border-radius: 6px;
+    float: right;
+    min-width: 14px;
+    min-height: 19px;
+    cursor: pointer;
+}
+#notifications {
+    width: 640px;
+    margin: 0 auto;
+    text-align: left;
+}
+.notification {
+    position: relative;
+    margin-bottom: 1em;
+    border: 0px solid #fff;
+    border-radius: 6px;
+    background-color: #ddd;
+    padding: 1em;
+    color: #000;
+}
+.notification .title b {
+    font-family: inherit;
+}
+.notification.error .title {
+    color: red;
+}
+.notification.success .title {
+    color: green;
+}
+.notification.info .title {
+    color: blue;
+}
+.notification a {
+    color: #3366BB;
+}
+.notification .btn {
+    border: 1px solid #000;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+.notification .moredetails, .delete {
+    float: right;
+    margin-left: 0.5em;
+}
+.notification .details {
+    display: none;
+    margin-top: 0.5em;
+}
+
+/*--------------------------------------------------*/
+/* Exercise Status Styles */
+.exercise-status-area {
+    margin: 0;
+    padding: 0.5em 0.75em;
+    color: #333;
+    border: 1px solid black;
+    border-radius: 6px;
+    text-align: left;
+}
+.exercise-status-col,
+.exercise-status-col {
+    display: inline-block;
+    vertical-align: top;
+    margin: 0;
+}
+.exercise-status-col1 {
+    width: 11em;
+}
+.exercise-status-col1 p {
+    line-height: 1.6em;
+    margin: 0;
+    padding: 0;
+}
+.exercise-status-col2 {
+    width: 24em;
+    margin-left: 1em;
+}
+.exercise-status-state {
+    padding: 4px 6px 2px 6px;
+    margin: 0;
+    text-transform: uppercase;
+    color: #fff;
+    border-radius: 6px;
+    background-color: black;
+}
+/*ul.exercise-status-exercise-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+ul.exercise-status-exercise-list li {
+    float: left;
+    margin-right: 5px;
+}
+ul.exercise-status-exercise-list li a {
+    font-size: 1em;
+}
+ul.exercise-status-exercise-list li:not(.exercise-item) {
+    float: none;
+    clear: both;
+}
+ul.exercise-status-exercise-list li:exercise-item {
+    display: none;
+}
+ul.exercise-status-exercise-list li.exercise-item.active  {
+    color: #333;
+}
+ul.exercise-status-exercise-list li.exercise-item.inactive  {
+    color: #bdbdbd;
+}
+ul.exercise-status-exercise-list li.exercise-item a:hover {
+    color: #aa0000;
+}*/
+.exercise-status-next-btn {
+    text-transform: uppercase;
+    font-weight: bold;
+}
+/*--------------------------------------------------*/
+/* Exercise form */
+.exerciseform label {
+    display: block;
+}
+.exerciseform div {
+    margin: 5px 0;
+}
+.exerciseform .help {
+    font-size: .95em;
+    color: #333;
+    background-color: rgba(153, 153, 153, 0.38);
+    margin: .5em 0;
+    padding: .5em;
+}
+.exercise-collapse-all {
+    border-bottom: 1px solid #666;
+    padding: .5em 0;
+}
+ul.exercise-groups, ul.exercise-groups ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+ul.exercise-groups {
+}
+ul.exercise-groups .btn {
+    padding: .5em;
+}
+ul.exercise-groups > li {
+    display: block;
+}
+ul.exercise-groups > li li {
+    padding-left: 2em;
+}
+ul.exercise-groups .group {
+    display: block;
+    border-bottom: 1px solid #666;
+    font-size: 125%;
+}
+ul.exercise-groups .btn.btn-group,
+ul.exercise-groups .btn.btn-exercise,
+ul.exercise-groups .actions{
+    display: inline-block;
+}
+ul.exercise-groups .actions {
+    
+}
+ul.exercise-groups li.even {
+    background-color: inherit;
+}
+ul.exercise-groups li.odd {
+    background-color: rgba(0,0,0,.1);
+}
+ul.menu-group-list {
+    list-style: none;
+    padding: 0.5em;
+    border-radius: 6px;
+    margin: .5em 0;
+    max-height: 100px;
+    overflow: auto;
+    line-height: 1em;
+    background-color: rgb(10,80,80);
+}
+#mainmenu-exercise-area {
+    /*max-width: 30em;*/
+    text-align: left;
+    padding-top: 1em;
+    /*border-radius: 6px;
+    border: 1px solid white;*/
+}
+ul.menu-group-list a {
+}
+ul.menu-group-list li {
+    display: inline-block;
+    margin: 0.2em;
+    padding: 0.2em 0.4em;
+    background-color: rgba(0,0,0,0.5);
+    border-radius: 3px;
+}
+
+/*--------------------------------------------------*/
+/* Custom Icons for this project by Jeff Martini */
+.icon-btn {
+    background: url(../img/icon-btn-sprite.png) no-repeat;
+    height: 25px;
+    margin: 4px 0 0 8px;
+}
+.icon-btn-left { float: left; }
+.icon-btn-right { float: right; }
+/*.icon-btn-open { background-position: -10px -50px; width: 50px; }
+.icon-btn-open:hover { background-position: -10px -150px; width: 50px; }
+.icon-btn-close { background-position: -110px -50px; width: 50px; }
+.icon-btn-close:hover { background-position: -110px -150px; width: 50px; }
+.icon-btn-info { background-position: -210px -50px; width: 25px; }
+.icon-btn-info:hover { background-position: -210px -150px; width: 25px; }
+.icon-btn-help { background-position: -310px -50px; width: 25px; }
+.icon-btn-help:hover { background-position: -310px -150px; width: 25px; }*/
+.icon-btn-camera { background-position: -410px -50px; width: 50px; }
+.icon-btn-camera:hover { background-position: -410px -150px; width: 50px; }
+.sig-lock-block {
+    line-height: 3em;
+    margin-left: 50px;
+}
+.sig-lock-inline {
+    margin: 0 15px;
+}
+
+/*--------------------------------------------------*/
+/* Classes to be used in conjunction with ionicons
+ * http://ionicons.com/ */
+
+.ioncustom-siglocked {
+    color: #ffffff;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+.ioncustom-sigunlocked {
+    color: #ffffff;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+/*.ioncustom-nextexercise {
+    margin: 0 5px;
+}*/
+
+/*--------------------------------------------------*/
+/* On-screen keyboard */
+
+.keyboard-wrapper {
+    width: 888px;
+    margin: 20px auto;
+    margin-bottom: 0px;
+    border: 0px solid #ffffff;
+    padding: 6px;/*compare keyboard-pedals pedal margin-top*/
+    border-radius: 6px;
+    position: relative;
+    background-color: rgba(255,255,255,0.3);
+}
+.keyboard-controls {
+    height: 30px;
+    margin: 0px;
+    padding: 5px 0;
+    border: 0px;
+}
+.transpose-control {
+    width: 150px;
+    margin: 2px auto;
+    color: white;
+}
+.transpose-icon {
+    background-color: red;
+    width: 28px;
+    height: 20px;
+}
+.metronome-control {
+    float: right;
+    color: #fff;
+    margin-right: 12px;
+}
+.metronome-control-input {
+    font-size: 0.7em;
+    text-align: center;
+    width: 2em;
+    height: 18px;
+    margin: 0px 10px 0px 10px;
+    border: none;
+}
+.metronome-icon {
+    background: transparent url(../img/metronome_sprite.png) no-repeat;
+    background-position: -50px -10px;
+    width: 19px;
+    height: 20px;
+}
+.metronome-icon:hover {
+    background-position: -50px -109px;
+}
+.metronome-icon:active, .metronome-icon-active {
+    background-position: -50px -199px;
+}
+.metronome-led {
+    background: transparent url(../img/metronome-led.png) no-repeat;
+    background-position: 0 0;
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+}
+.metronome-led-on {
+    background-position: -100px 0px;
+}
+#metronome-audio {
+    display: hidden;
+}
+.keyboard-area {
+    margin:0 10px;
+    padding-bottom: 6px;
+}
+.keyboard-pedals {
+    margin: 0px auto;
+    width: 105px;
+}
+.keyboard-pedals .pedal {
+    float: left;
+    display: block;
+    background-color: #b5a642;
+    border: 0px solid #fff;
+    width: 20px; 
+    margin-top: 6px;/*compare keyboard-wrapper padding*/
+    margin-right: 15px;
+    height: 30px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    cursor: pointer;
+}
+.keyboard-pedals .pedal-active {
+    background-color: #665e25;
+}
+
+/*--------------------------------------------------*/
+/* Modals */
+
+.modal {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0,0,0,0.8);
+    -webkit-transition: opacity 500ms ease-in;
+    -moz-transition: opacity 500ms ease-in;
+    transition: opacity 500ms ease-in;
+    z-index: 10000;
+}
+.modal.close {
+    opacity:0;
+    pointer-events: none;
+}
+.modal.open {
+    opacity:1;
+    pointer-events: auto;
+}
+.modal > div {
+    min-width: 400px;
+    max-width: 820px;
+    position: relative;
+    margin: 50px auto;
+    padding: 5px 20px 13px 20px;
+    border-radius: 10px;
+    background: -moz-linear-gradient(#fff, #999);
+    background: -webkit-linear-gradient(#fff, #999);
+    background: -o-linear-gradient(#fff, #999);
+    text-align: left;
+}
+.modal-title {
+    border-bottom: 1px solid #999;
+    padding: 4px 0;
+    margin: 0 0 4px 0;
+}
+.modal-body {
+    line-height: 1.4em;
+    max-height: 615px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.modal-close-btn {
+    background: #606061;
+    color: #FFFFFF;
+    line-height: 25px;
+    position: absolute;
+    right: -12px;
+    text-align: center;
+    top: -10px;
+    width: 24px;
+    text-decoration: none;
+    font-weight: bold;
+    -webkit-border-radius: 12px;
+    -moz-border-radius: 12px;
+    border-radius: 12px;
+    -moz-box-shadow: 1px 1px 3px #000;
+    -webkit-box-shadow: 1px 1px 3px #000;
+    box-shadow: 1px 1px 3px #000;
+}
+.modal-close-btn:hover { background: #00d9ff; }
+
+
+/*--------------------------------------------------*/
+/* Utilities */
+
+.hide { display: none; }
+/*.ajax-loader {
+    background: transparent url(../img/ajax-loader.gif) no-repeat;
+    width: 126px;
+    height: 22px;
+}
+.ajax-loader-centered {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    margin-top: -22px;
+    margin-left: -63px;
+    z-index: 100;
+}*/
+.fade {
+    transition: opacity .25s ease-in-out;
+    -moz-transition: opacity .25s ease-in-out;
+    -webkit-transition: opacity .25s ease-in-out;
+}
+.fade-in { opacity: 1; }
+.fade-out { opacity: 0; }
+
+.qwerty-keyboard-legend {
+    background: url(../img/keyboard-shortcut-legend.png) no-repeat;
+    width: 881px;
+    height: 404px;
+}
+.widget-keysignature {
+    display: inline;
+}
+.widget-keysignature optgroup {
+    margin: 0;
+    padding-top: 0.5em;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+    border: 1px solid #555;
+    border-bottom-width: 0px;
+}
+.widget-keysignature optgroup:last-of-type {
+    border-bottom-width: 1px;
+}
+.widget-keysignature optgroup option {
+    text-align: left;
+    margin: 0;
+    padding-left: 0.5em;
+    padding-right: 0.25em;
+}
+.widget-keysignature-header {
+    background-color: rgba(255,255,255,0.3);
+    padding: 8px 6px;
+    border-radius: 3px;
+}
+.figuredbass {
+    font-family: Sebastian;
+    font-size: 32px;
+    margin-left: -12px;
+    margin-right: 6px;
+    line-height: 18px;
+}

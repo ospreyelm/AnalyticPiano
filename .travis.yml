@@ -1,0 +1,18 @@
+language: python
+python:
+  - "2.7"
+
+# set environment variables
+env:
+    - DJANGO_SETTINGS_MODULE="harmony.settings.travis"
+
+# command to install dependencies
+install: "pip install -r requirements.txt"
+
+before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -y phantomjs
+
+# command to run tests
+script: 
+    - cd .travis && ./run_all_tests.py

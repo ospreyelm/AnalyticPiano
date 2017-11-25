@@ -1,0 +1,31 @@
+{% extends "__base.html" %}
+
+{% block js_extra %}
+<script>require(['app/main']);</script>
+{% endblock %}
+
+{% block content %}
+<div id="container" class="js-fade-in fade" style="opacity: 0;">
+    {% include "_header_music.html" %}
+	{% include "_menu_music.html" %}
+	{% include "_notifications.html" %}
+	<div class="harmony-ui">
+		<div id="staff-area" class="content-area">
+			<div id="staff-toolbar">
+				<a class="icon-btn icon-btn-right icon-btn-camera js-btn-screenshot" href="#" target="_blank" alt="Screenshot"> </a>
+			</div>
+			<div id="staffwrapper">
+				<canvas id="staff"></canvas>
+			</div>
+			<div>
+				<div id="staff-status"></div>
+			</div>
+		</div>
+		<div id="piano"></div>
+	</div>
+    {% include "_footer.html" %}
+</div>
+<div class="js-fade-out" style="position:absolute;top:0;left:0;opacity:1;padding:1em;margin:0;color:#fff;background-color:rgba(0,0,0,0.5);font-family:sans-serif;font-size:2em">Loading exercise ...</div>
+<div style="font-family: Sebastian">&nbsp;<!-- make sure font is loaded  --></div>
+<div style="font-family: Alegreya">&nbsp;<!-- make sure font is loaded  --></div>
+{% endblock %}
