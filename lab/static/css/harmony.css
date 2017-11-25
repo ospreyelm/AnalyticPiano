@@ -2,31 +2,45 @@
 @import "pure.min.css";
 @import url(https://fonts.googleapis.com/css?family=Alegreya+Sans:400,700&subset=latin,latin-ext);
 /*@import url(https://fonts.googleapis.com/css?family=Alegreya:400&subset=latin,latin-ext);*/
-/*@import url(https://fonts.googleapis.com/css?family=Martel&subset=latin,latin-ext);*/
 @font-face {
     font-family: 'Alegreya';
     src: url('../fonts/Alegreya-Regular-modified.otf');
 }
 @font-face {
     font-family: 'Sebastian';
-    src: url('../fonts/Sebastian-FigBass-Harvard.otf');
+    src: url('../fonts/Sebastian-FigBass-Harvard.woff') format('woff');
 }
 /*@font-face {
     font-family: 'FiguredBassMHGPL';
     src: url('../fonts/FiguredBassMHGPL.otf');
 }*/
-/*@font-face {
-    font-family: 'LinLibertine';
-    src: url('../fonts/LinLibertine.ttf');
-} 
 @font-face {
-    font-family: 'LinLibertineBold';
-    src: url('../fonts/LinLibertine_RBah.ttf');
+    font-family: 'Linux Libertine'; /* normal */
+    src: url('../fonts/LinLibertine_R.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
 }
+
 @font-face {
-    font-family: 'LinLibertineItalic';
-    src: url('../fonts/LinLibertine_RIah.ttf');
-}*/
+    font-family: 'Linux Libertine'; /* italic */
+    src: url('../fonts/LinLibertine_RI.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Linux Libertine'; /* bold */
+    src: url('../fonts/LinLibertine_RB.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Linux Libertine'; /* bold italic */
+    src: url('../fonts/LinLibertine_RBI.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+}
 
 html {
     font-size: 100%;
@@ -40,8 +54,6 @@ html, body, h1, h2, h3, h4, div, p  {
 }
 
 p {padding: .4em 0; }
-/*b {font-family: LinLibertineBold;}
-i {font-family: LinLibertineItalic;}*/
 button, input, optgroup, select, textarea { color: #000; }
 a,a:visited, .btn { color: inherit; text-decoration: none; }
 a:hover, .btn:hover { cursor: pointer; color: inherit; }

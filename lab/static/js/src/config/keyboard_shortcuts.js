@@ -50,7 +50,7 @@ define({
 		"DOWN":   {msg:"bankChord"},
 		"[":      {msg:"toggleHighlights"}, // not created yet
 		"]":      {msg:"toggleAnalysis"}, // not created yet
-		"RIGHT":  {msg:"openNextExercise"} // not created yet 
+		"RIGHT":  {msg:"goToNextExercise"} // not connected yet 
 	},
 
 	// Defines javascript key code -> key name mappings.
