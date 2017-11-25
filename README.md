@@ -19,7 +19,6 @@ Demo: http://harmony-lab.appspot.com/
 
 - Requires [Python 2.7.x](http://python.org/download/releases/) and [Pip](http://www.pip-installer.org/) to install. 
 - To install Pip, see [their instructions](http://www.pip-installer.org/en/latest/installing.html).
-- Requires [Jazz Browser Plugin](http://jazz-soft.net/) to run.
 
 ```sh
 $ git clone git@github.com:Harvard-ATG/HarmonyLab.git harmony
