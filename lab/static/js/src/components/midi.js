@@ -21,13 +21,13 @@ define([
 	 * @type {number}
 	 * @const
 	 */
-	var DEFAULT_NOTE_VELOCITY = 127;
+	var DEFAULT_NOTE_VELOCITY = 87;
 	/**
 	 * Defines the note velocity used to reduce the volume of NOTE ON messages.
 	 * @type {number}
 	 * @const
 	 */
-	var SOFT_NOTE_VELOCITY = 84;
+	var SOFT_NOTE_VELOCITY = 47;
 	/**
 	 * Maps MIDI message commands to their numerical codes
 	 */
@@ -66,7 +66,7 @@ define([
 	 */
 	var MIDI_ERROR_CONTENT = Config.get("errorText.midiPluginError.description");
 
-
+	var SUSTAINING = false;
 	/**
 	 * MidiComponent
 	 *
@@ -239,18 +239,41 @@ define([
 		 */
 		triggerPedalChange: function(controlNum, controlVal) {
 			var pedal_name = MIDI_CONTROL_MAP.pedal[controlNum];
-			var pedal_state = 'off';
+			// var pedal_state = 'off';
 
-			// NOTE: the Yamaha FC5 sustain pedal sends value 0 when 
+			// The Yamaha FC5 sustain pedal sends value 0 when 
 			// the pedal is depressed and 127 when it is released.
-			// This is the pedal students are using in class, so we're 
-			// going to treat control values 0-63=ON and 64-127=OFF.
 		
-			if(controlVal >= 0 && controlVal <= 63) {
+			// if(controlVal == 0 && !SUSTAINING) {
+			// 	if(pedal_name == 'sustain'){
+			// 		SUSTAINING = true;
+			// 	}
+			// 	else {};
+			// 	pedal_state = 'on';
+			// } else if(controlVal == 127 && SUSTAINING) {
+			// 	if(pedal_name == 'sustain'){
+			// 		SUSTAINING = false;
+			// 	}
+			// 	else {};
+			// 	pedal_state = 'off';
+			// } else { pedal_state = 'null' };
+
+			// The Yamaha Silent Piano sustain pedal sends value 0 when 
+			// the pedal is released and other values when it is depressed.
+		
+			if(controlVal >= 50 && !SUSTAINING) {
+				if(pedal_name == 'sustain'){
+					SUSTAINING = true;
+				}
+				else {};
 				pedal_state = 'on';
-			} else if(controlVal > 63) {
+			} else if(controlVal == 0 && SUSTAINING) {
+				if(pedal_name == 'sustain'){
+					SUSTAINING = false;
+				}
+				else {};
 				pedal_state = 'off';
-			} 
+			} else { pedal_state = 'null' };
 
 			this.broadcast(EVENTS.BROADCAST.PEDAL, pedal_name, pedal_state);
 		},
