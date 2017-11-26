@@ -319,7 +319,7 @@ define({
 			scale_degrees: true, // mutually exclusive with solfege
 			solfege: false, 
 			roman_numerals: true,
-			intervals: true
+			intervals: false
 		}
 	},
 

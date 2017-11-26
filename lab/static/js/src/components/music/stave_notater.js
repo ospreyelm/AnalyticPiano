@@ -182,7 +182,7 @@ define([
 			if(!size) {
 				size = this.defaultFontSize; 
 			}
-			return size + " 'Alegreya',serif";
+			return size + " 'MainSerifs'";
 		},
 		/**
 		 * Returns the font for rendering icons.
@@ -358,7 +358,7 @@ define([
 		drawScaleDegree: function(x, y) {
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
-			var width = 0, caret_offset = 0, caret_x = x;
+			var width = 0, caret_offset = 0, caret_x = x, text_x = x;
 			var numeral = this.getAnalyzer().getScaleDegree(notes);
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
@@ -370,9 +370,10 @@ define([
 				width = ctx.measureText(numeral).width;
 				//x = x + 8 + Math.floor(width/2);
 				caret_offset = ctx.measureText(numeral.slice(0,-1)).width;
-				caret_x = x - 1 + (numeral.length > 1 ? caret_offset : 0);
+				text_x = x - (numeral.length > 1 ? caret_offset : 0);
+				caret_x = x - 1;
 
-				ctx.fillText(numeral.replace(/b/g,'♭').replace(/#/g,'♯'), x + StaveNotater.prototype.annotateOffsetX, y); // replace: true flat and sharp signs
+				ctx.fillText(numeral.replace(/b/g,'♭').replace(/#/g,'♯'), text_x + StaveNotater.prototype.annotateOffsetX, y); // replace: true flat and sharp signs
 				ctx.fillText("^", caret_x + StaveNotater.prototype.annotateOffsetX, y - 15);
 			}
 		},
@@ -386,13 +387,17 @@ define([
 		drawRoman: function(x, y) {
 			var notes = this.chord.getNoteNumbers();
 			var chord_entry = this.getAnalyzer().findChord(notes);
+			var width = 0, offset = 0;
+			var ctx = this.getContext();
 
 			if(chord_entry) {
 				this.parseAndDraw(chord_entry.label, x, y, function(text, x, y) {
 					text = this.convertSymbols(text).replace(/⌀/g,'⌀'); // replace: could improve appearance of half-diminished sign with standard fonts here, but using currently using custom font instead
+					offset = 0 - ((text.slice(0,1) == '\u266D') ? ctx.measureText(text.slice(0,1)).width : 0) - (text.slice(0,1) == '\u266F' ? ctx.measureText(text.slice(0,1)).width : 0);
+
 					var lines = this.wrapText(text);
-					this.drawTextLines(lines, x + StaveNotater.prototype.annotateOffsetX, y);
-					return this.getContext().measureText(lines[0]).width; // return the width of the first line
+					this.drawTextLines(lines, x + offset + StaveNotater.prototype.annotateOffsetX, y);
+					return this.getContext().measureText(lines[0]).width + offset; // return the width of the first line for figured bass
 				});
 			}
 		},
@@ -453,7 +458,7 @@ define([
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 			if(key !== '') {
-				ctx.fillText(this.convertSymbols(key) + ' :', x - 8, y);
+				ctx.fillText(this.convertSymbols(key) + '', x - 8, y);
 			}
 		},
 		/**

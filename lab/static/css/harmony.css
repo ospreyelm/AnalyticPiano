@@ -1,50 +1,20 @@
 @charset "UTF-8";
-@import "pure.min.css";
-@import url(https://fonts.googleapis.com/css?family=Alegreya+Sans:400,700&subset=latin,latin-ext);
-/*@import url(https://fonts.googleapis.com/css?family=Alegreya:400&subset=latin,latin-ext);*/
+@import "pure.css";
+@import url('https://fonts.googleapis.com/css?family=Alegreya+Sans:400,700&subset=latin,latin-ext');
+
 @font-face {
-    font-family: 'Alegreya';
-    src: url('../fonts/Alegreya-Regular-modified.otf');
+    font-family: 'MainSerifs';
+    src: url('../fonts/Alegreya-Regular-Modified.woff') format('woff');
 }
+
 @font-face {
     font-family: 'Sebastian';
-    src: url('../fonts/Sebastian-FigBass-Harvard.woff') format('woff');
-}
-/*@font-face {
-    font-family: 'FiguredBassMHGPL';
-    src: url('../fonts/FiguredBassMHGPL.otf');
-}*/
-@font-face {
-    font-family: 'Linux Libertine'; /* normal */
-    src: url('../fonts/LinLibertine_R.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Linux Libertine'; /* italic */
-    src: url('../fonts/LinLibertine_RI.woff') format('woff');
-    font-weight: normal;
-    font-style: italic;
-}
-
-@font-face {
-    font-family: 'Linux Libertine'; /* bold */
-    src: url('../fonts/LinLibertine_RB.woff') format('woff');
-    font-weight: bold;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Linux Libertine'; /* bold italic */
-    src: url('../fonts/LinLibertine_RBI.woff') format('woff');
-    font-weight: bold;
-    font-style: italic;
+    src: url('../fonts/Sebastian-FigBass-Modified.woff') format('woff');
 }
 
 html {
     font-size: 100%;
-    font-family: 'Alegreya Sans', sans-serif;
+    font-family: 'Alegreya Sans',sans-serif;
 }
 
 html, body, h1, h2, h3, h4, div, p  {
