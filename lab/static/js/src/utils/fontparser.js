@@ -6,8 +6,8 @@ define(function() {
          * different font.
          *
          * This assumes there are two choices for font:
-         * 		1. the standard text font (i.e. Helvetica, etc).
-         *		2. some special font for the parsed sub-strings.
+         * 		1. the standard text font
+         *		2. some special font for the parsed sub-strings
          * 
          * Text that uses font #2 should be wrapped in brackets: "{TEXT}".
          *

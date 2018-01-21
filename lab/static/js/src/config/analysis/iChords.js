@@ -49,7 +49,7 @@ define({
 
    // i+6
 
-   "0/379": {"root": "0", "label": "i{dz}"},
+   "0/379": {"root": "0", "label": "i{d z}"},
 
    // bII (a.k.a. N)
 
@@ -86,15 +86,15 @@ define({
 
    // II (a.k.a. V/V)
 
-   "2/69":  {"root": "2", "label": "II"},
-   "6/29":  {"root": "2", "label": "II{z}"},
-   "9/26":  {"root": "2", "label": "II{z4}"},
+   "2/69":  {"root": "2", "label": "V/V"},
+   "6/29":  {"root": "2", "label": "V{z}/V"},
+   "9/26":  {"root": "2", "label": "V{z4}/V"},
 
-   "2/069": {"root": "2", "label": "II{u}"},
-   "2/06":  {"root": "2", "label": "II{u3}"},
-   "6/029": {"root": "2", "label": "II{z5}"},
-   "9/026": {"root": "2", "label": "II{r3}"},
-   "0/269": {"root": "2", "label": "II{r2}"},
+   "2/069": {"root": "2", "label": "V{u}/V"},
+   "2/06":  {"root": "2", "label": "V{u3}/V"},
+   "6/029": {"root": "2", "label": "V{z5}/V"},
+   "9/026": {"root": "2", "label": "V{r3}/V"},
+   "0/269": {"root": "2", "label": "V{r2}/V"},
 
    // III
 
@@ -146,16 +146,16 @@ define({
    "0/359": {"root": "5", "label": "IV{r3}"},
    "3/059": {"root": "5", "label": "IV{r2}"},
 
-   // #ivo (a.k.a. viio/V)
+   // ♯iv° (a.k.a. vii°/V)
 
-   "6/09":  {"root": "6", "label": "♯iv°"},
-   "9/06":  {"root": "6", "label": "♯iv°{z}"},
-   "0/69":  {"root": "6", "label": "♯iv°{z4}"},
+   "6/09":  {"root": "6", "label": "vii°/V"},
+   "9/06":  {"root": "6", "label": "vii°{z}/V"},
+   "0/69":  {"root": "6", "label": "vii°{z4}/V"},
 
-   "6/039": {"root": "6", "label": "♯iv°{u}"},
-   "9/036": {"root": "6", "label": "♯iv°{z5}"},
-   "0/369": {"root": "6", "label": "♯iv°{r3}"},
-   "3/069": {"root": "6", "label": "♯iv°{r2}"},
+   "6/039": {"root": "6", "label": "vii°{u}/V"},
+   "9/036": {"root": "6", "label": "vii°{z5}/V"},
+   "0/369": {"root": "6", "label": "vii°{r3}/V"},
+   "3/069": {"root": "6", "label": "vii°{r2}/V"},
 
    // V
    
@@ -199,7 +199,7 @@ define({
    "5/28y": {"root": "y", "label": "VII{r3}"},
    "8/25y": {"root": "y", "label": "VII{r2}"},
 
-   // viio
+   // vii°
 
    "z/25":  {"root": "z", "label": "vii°"},
    "2/5z":  {"root": "z", "label": "vii°{z}"},

@@ -1,4 +1,4 @@
-// First character of input should be mod-12 element (123456789yz) where 0 = pc of keynote.
+// First character of input should be mod-12 element (0123456789yz) where 0 = pc of keynote.
 // Second character of input should be mod-7 element (klmnopq) where k = note-name class of keynote.
 
 /* global define: false */
@@ -13,7 +13,7 @@ define({
 	"6o": {"numeral": "b5", "solfege": "Me"},
 	"7o": {"numeral": "5", "solfege": "Mi"},
 	"8p": {"numeral": "6", "solfege": "Fa"},
-	"9p": {"numeral": "+6", "solfege": "Fi"},
+	"9p": {"numeral": "#6", "solfege": "Fi"},
 	"yq": {"numeral": "7", "solfege": "So"},
-	"zq": {"numeral": "+7", "solfege": "Si"}
+	"zq": {"numeral": "#7", "solfege": "Si"}
 });

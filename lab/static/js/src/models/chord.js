@@ -257,7 +257,7 @@ define([
 			}
 		},
 		/**
-		 * Returns true if notes are being sustianed, false otherwise.
+		 * Returns true if notes are being sustained, false otherwise.
 		 *
 		 * @return {boolean} 
 		 */

@@ -38,42 +38,42 @@ define({
 		"iAb": {
 			spelling: ["C","Db","D","Eb","Fb","F","Gb","G","Ab","Bbb","Bb","Cb"],
 			pitchClass: 8,
-			name: "A♭ minor",
+			name: "A-flat minor",
 			shortName: "a♭",
 			signature: "bbbbbbb",
 		},
 		"jCb": {
 			spelling: ["C","Db","D","Eb","Fb","F","Gb","G","Ab","Bbb","Bb","Cb"], 
 			pitchClass: 11,
-			name: "C♭ major",
+			name: "C-flat major",
 			shortName: "C♭",
 			signature: "bbbbbbb",
 		},
 		"iEb": {
 			spelling: ["C","Db","D","Eb","Fb","F","Gb","G","Ab","A","Bb","Cb"],
 			pitchClass: 3,
-			name: "E♭ minor",
+			name: "E-flat minor",
 			shortName: "e♭",
 			signature: "bbbbbb",
 		},
 		"jGb": {
 			spelling: ["C","Db","D","Eb","Fb","F","Gb","G","Ab","A","Bb","Cb"],
 			pitchClass: 6,
-			name: "G♭ major",
+			name: "G-flat major",
 			shortName: "G♭",
 			signature: "bbbbbb",
 		},
 		"iBb": {
 			spelling: ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","Cb"],
 			pitchClass: 10,
-			name: "B♭ minor",
+			name: "B-flat minor",
 			shortName: "b♭",
 			signature: "bbbbb",
 		},
 		"jDb": {
 			spelling: ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","Cb"],
 			pitchClass: 1,
-			name: "D♭ major",
+			name: "D-flat major",
 			shortName: "D♭",
 			signature: "bbbbb", 
 		},
@@ -87,7 +87,7 @@ define({
 		"jAb": {
 			spelling: ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"],
 			pitchClass: 8,
-			name: "A♭ major",
+			name: "A-flat major",
 			shortName: "A♭",
 			signature: "bbbb",
 		},
@@ -101,7 +101,7 @@ define({
 		"jEb": {
 			spelling: ["C","Db","D","Eb","E","F","F#","G","Ab","A","Bb","B"],
 			pitchClass: 3,
-			name: "E♭ major",
+			name: "E-flat major",
 			shortName: "E♭",
 			signature: "bbb",
 		},
@@ -115,7 +115,7 @@ define({
 		"jBb": {
 			spelling: ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"],
 			pitchClass: 10,
-			name: "B♭ major",
+			name: "B-flat major",
 			shortName: "B♭",
 			signature: "bb",
 		},
@@ -178,7 +178,7 @@ define({
 		"iF#": {
 			spelling: ["B#","C#","D","D#","E","E#","F#","G","G#","A","A#","B"],
 			pitchClass: 6,
-			name: "F♯ minor",
+			name: "F-sharp minor",
 			shortName: "f♯",
 			signature: "###",
 		},
@@ -192,7 +192,7 @@ define({
 		"iC#": {
 			spelling: ["B#","C#","D","D#","E","E#","F#","F##","G#","A","A#","B"],
 			pitchClass: 1,
-			name: "C♯ minor",
+			name: "C-sharp minor",
 			shortName: "c♯",
 			signature: "####",
 		},
@@ -206,7 +206,7 @@ define({
 		"iG#": {
 			spelling: ["B#","C#","C##","D#","E","E#","F#","F##","G#","A","A#","B"],
 			pitchClass: 8,
-			name: "G♯ minor",
+			name: "G-sharp minor",
 			shortName: "g♯",
 			signature: "#####",
 		},
@@ -220,28 +220,28 @@ define({
 		"iD#": {
 			spelling: ["B#","C#","C##","D#","E","E#","F#","F##","G#","G##","A#","B"],
 			pitchClass: 3,
-			name: "D♯ minor",
+			name: "D-sharp minor",
 			shortName: "d♯",
 			signature: "######",
 		},
 		"jF#": {
 			spelling: ["B#","C#","C##","D#","E","E#","F#","F##","G#","G##","A#","B"],
 			pitchClass: 6,
-			name: "F♯ major",
+			name: "F-sharp major",
 			shortName: "F♯",
 			signature: "######",
 		},
 		"iA#": {
 			spelling: ["B#","C#","C##","D#","D##","E#","F#","F##","G#","G##","A#","B"],
 			pitchClass: 10,
-			name: "A♯ minor",
+			name: "A-sharp minor",
 			shortName: "a♯",
 			signature: "#######",
 		},
 		"jC#": {
 			spelling: ["B#","C#","C##","D#","D##","E#","F#","F##","G#","G##","A#","A##"],
 			pitchClass: 1,
-			name: "C♯ major",
+			name: "C-sharp major",
 			shortName: "C♯",
 			signature: "#######",
 		}
@@ -297,7 +297,7 @@ define({
 
 	// Default key and signature to use for notation. This should be
 	// automatically selected on the UI.
-	defaultKeyAndSignature: "h", // no key
+	defaultKeyAndSignature: "iA_", // no key
 
 	// Defines settings for the chord bank.
 	chordBank: {
@@ -314,9 +314,9 @@ define({
 		enabled: true,
 		// Enables or disables specific analysis modes
 		mode: {
-			note_names: false, // mutually exclusive with scientific_pitch
+			note_names: false, // either this or scientific_pitch or neither
 			scientific_pitch: false, 
-			scale_degrees: true, // mutually exclusive with solfege
+			scale_degrees: true, // either this or solfege or neither
 			solfege: false, 
 			roman_numerals: true,
 			intervals: false
@@ -326,7 +326,7 @@ define({
 	// Defines the default highlight settings
 	highlightSettings: {
 		// Enables or disables highlighting
-		enabled: true,
+		enabled: false,
 		// Enables or disables specific highlight modes
 		mode: {
 			roothighlight: true,

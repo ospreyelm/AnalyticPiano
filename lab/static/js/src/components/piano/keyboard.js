@@ -39,7 +39,7 @@ define([
 	KeyboardComponent.prototype = new Component();
 
 	_.extend(KeyboardComponent.prototype, {
-		defaultWidth: 870,
+		// defaultWidth: 870,
 		defaultHeight: 120,
 		defaultSmallHeight: 80,
 		defaultKeyWidth: 30,
@@ -102,16 +102,29 @@ define([
 		getLayout: function() {
 			var layoutConfig = {};
 			var numWhiteKeys = this.getNumWhiteKeys();
-
-			if(this.defaultWidth >= numWhiteKeys * this.defaultKeyWidth) {
-				layoutConfig.width = (numWhiteKeys * this.defaultKeyWidth);
-				layoutConfig.keyWidth = this.defaultKeyWidth;
-			} else {
-				layoutConfig.width = this.defaultWidth;
-				layoutConfig.keyWidth = (this.defaultWidth / numWhiteKeys);
+			var adjustment = 0;
+			if (this.numberOfKeys == 49) {
+				adjustment = 5
+			}
+			else if (this.numberOfKeys == 25) {
+				adjustment = 5
+			}
+			else if (this.numberOfKeys == 37) { // This ought to be -2 with the keyboard right-aligned
+				adjustment = 0
 			}
 
-			layoutConfig.height = (window.screen.height <= 768 ? this.defaultSmallHeight: this.defaultHeight); 
+			if(window.screen.width >= (2 + numWhiteKeys) * this.defaultKeyWidth) {
+				layoutConfig.width = ((numWhiteKeys + adjustment) * this.defaultKeyWidth);
+				layoutConfig.keyWidth = this.defaultKeyWidth;
+				layoutConfig.height = this.defaultHeight; 
+			} else {
+				layoutConfig.keyWidth = (window.screen.width / (2 + numWhiteKeys));
+				layoutConfig.width = (numWhiteKeys * layoutConfig.keyWidth);
+				layoutConfig.height = (this.defaultHeight * layoutConfig.keyWidth / this.defaultKeyWidth);
+				// layoutConfig.keyWidth = this.defaultKeyWidth;
+			}
+
+			// layoutConfig.height = (window.screen.height <= 768 ? this.defaultSmallHeight: this.defaultHeight); 
 
 			return layoutConfig;
 		},

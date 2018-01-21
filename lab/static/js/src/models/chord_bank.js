@@ -62,7 +62,7 @@ define([
 			 * @type {number}
 			 * @protected
 			 */
-			this._limit = 10; // limit number of chords in the bank
+			this._limit = 20; // limit number of chords in the bank
 			if(typeof this.settings.limit === 'number' && this.settings.limit >= 0) {
 				this._limit = this.settings.limit;
 			}
@@ -111,6 +111,7 @@ define([
 			var chord = new Chord();
 			var current = this.current();
 
+			// comment out following lines to prevent double-vision of just-banked chord
 			// copy the current chord
 			chord.copy(current);
 			chord.syncSustainedNotes();

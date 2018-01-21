@@ -68,6 +68,7 @@ define([
 
 	var SUSTAINING = false;
 	var SOSTENUTO_ON = false;
+	var UNA_CORDA_ON = false;
 	/**
 	 * MidiComponent
 	 *
@@ -270,30 +271,34 @@ define([
 					SUSTAINING = false;
 					pedal_state = 'off';
 				} else {
-					pedal_state = 'null'
+					pedal_state = 'null';
 				};
 			}
 			else if(pedal_name == 'soft') {
-				if(controlVal >= 50) {
+				if(controlVal >= 50 && !UNA_CORDA_ON) {
+					UNA_CORDA_ON = true;
 					pedal_state = 'on';
-				} else if(controlVal == 0) {
+				} else if(controlVal == 0 && UNA_CORDA_ON) {
+					UNA_CORDA_ON = false;
 					pedal_state = 'off';
 				} else {
-					pedal_state = 'null'
+					pedal_state = 'null';
 				};
 			}
 			else if(pedal_name == 'sostenuto') {
 				if(controlVal >= 50 && !SOSTENUTO_ON) {
 					SOSTENUTO_ON = true;
-					// pedal_state = 'on';
+					pedal_state = 'on';
+					// this.broadcast(EVENTS.BROADCAST.CLEAR_NOTES); // only works on chords banked by space bar not sustain
+					window.location.reload();
 					// TO DO: CONNECT TO goToNextExercise
 				} else if(controlVal == 0 && SOSTENUTO_ON) {
 					SOSTENUTO_ON = false;
-					// pedal_state = 'off';
+					pedal_state = 'off';
 				} else {
-					pedal_state = 'null'
+					pedal_state = 'null';
 				};
-				pedal_state = 'null'; // using to advance exercise
+				// pedal_state = 'null'; // using to advance exercise
 			}
 			else { pedal_state = 'null' };
 

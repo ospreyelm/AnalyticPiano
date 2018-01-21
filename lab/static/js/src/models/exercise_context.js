@@ -248,7 +248,7 @@ define([
 		/**
 		 * Checks if the next exercise can be loaded.
 		 *
-		 * Returns true if any two "B" and "C" notes are played together on the
+		 * Returns true if the trigger notes are played together on the
 		 * keyboard.
 		 *
 		 * @param {object} chord a Chord object
@@ -256,13 +256,17 @@ define([
 		 */
 		canGoToNextExercise: function(chord) {
 			var is_exercise_done = (this.done === true);
-			var trigger_notes = [83,84]; // the "B" and "C" above middle "C"
+			var trigger_notes = [84]; // the "C" two octaves above middle "C"
 			var wanted_notes = {};
 			var count_notes = 0;
 			var can_trigger_next = false;
 			var note_nums, i, len, note;
 
-			if(is_exercise_done) {
+			// if (is_exercise_done) {
+				// can_trigger_next = true;
+			// }
+			// else if (is_exercise_done) {
+			if (is_exercise_done) {
 				note_nums = chord.getSortedNotes();
 				for(i = 0, len = note_nums.length; i < len; i++) {
 					note_num = note_nums[i];

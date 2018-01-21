@@ -51,13 +51,13 @@ define([
 	 * @type {string}
 	 * @const
 	 */
-	var COLOR_KEYDN = 'hsl(0,0,60)';
+	var COLOR_KEYDN = 'hsl(0,0,55)';
 	/**
 	 * Key sustain state.
 	 * @type {string}
 	 * @const
 	 */
-	var COLOR_KEYSUSTAIN = '#665e25';/*compare .pedal-active in harmony.css*/
+	var COLOR_KEYSUSTAIN = 'hsl(0,0,70)';/*compare .pedal-active in harmony.css*/
 
 	/**
 	 * Piano Key Mixin.

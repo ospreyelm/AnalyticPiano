@@ -1,4 +1,4 @@
-// First character of input should be mod-12 element (123456789yz) where 0 = pc of keynote.
+// First character of input should be mod-12 element (0123456789yz) where 0 = pc of keynote.
 // Second character of input should be mod-7 element (klmnopq) where k = note-name class of keynote.
 
 /* global define: false */

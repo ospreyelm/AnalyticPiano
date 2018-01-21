@@ -74,7 +74,6 @@ define({
     
     // or not making that assumption:
     
-
     // "369": {"label": "&dim;7", "description": "fully diminished seventh", spellbass": "___", "stepwise": "___", ""root": "_", "rootstepwise": "_"},
 
   // major tetrad

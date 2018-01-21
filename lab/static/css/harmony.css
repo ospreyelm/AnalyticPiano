@@ -31,7 +31,8 @@ body {
     text-align: center;
 }
 body, #mainmenu, #helpmenu {
-    background-color: #445F69;
+    /*background-color: #445F69;*/
+    background-color: black;
 }
 #mainmenu, #helpmenu {
     background-color: rgba(80,80,80,1);
@@ -40,8 +41,9 @@ body, #mainmenu, #helpmenu {
 /*--------------------------------------------------*/
 /* Structural/Layout */
 #container {
-    width: 960px;
-    margin: 0 auto;
+    width: 100%;
+    /*width: 960px;*/
+    margin: 50px auto;
     margin-bottom: 30px;
     text-align: center;
 }
@@ -49,7 +51,8 @@ body, #mainmenu, #helpmenu {
     min-height: 1em;
 }
 #staff-area {
-    width: 100%;
+    width: 888px;
+    /*width: 100%;*/
     margin: 0 auto;
     position:relative;
     z-index:0;
@@ -492,13 +495,14 @@ ul.menu-group-list li {
     margin: 20px auto;
     margin-bottom: 0px;
     border: 0px solid #ffffff;
-    padding: 6px;/*compare keyboard-pedals pedal margin-top*/
-    border-radius: 6px;
+    padding: 0px 6px;/*compare keyboard-pedals pedal margin-top*/
+    border-radius: 0px;
+    /*border-radius: 6px;*/
     position: relative;
-    background-color: rgba(255,255,255,0.3);
+    background-color: rgba(255,255,255,0);
 }
 .keyboard-controls {
-    height: 30px;
+    height: 40px;
     margin: 0px;
     padding: 5px 0;
     border: 0px;
@@ -514,39 +518,38 @@ ul.menu-group-list li {
     height: 20px;
 }
 .metronome-control {
-    float: right;
+    /*float: right;*/
     color: #fff;
-    margin-right: 12px;
+    margin: auto;
+    width: 150px;
 }
 .metronome-control-input {
     font-size: 0.7em;
     text-align: center;
     width: 2em;
-    height: 18px;
+    height: 20px;
     margin: 0px 10px 0px 10px;
     border: none;
 }
 .metronome-icon {
-    background: transparent url(../img/metronome_sprite.png) no-repeat;
-    background-position: -50px -10px;
-    width: 19px;
+    background-color: #5c5c5c;
     height: 20px;
+    padding: 3px 6px 1px 6px;
 }
 .metronome-icon:hover {
-    background-position: -50px -109px;
+    background-color: #b6a9a4;
 }
 .metronome-icon:active, .metronome-icon-active {
-    background-position: -50px -199px;
+    background-color: #8b0000;
 }
 .metronome-led {
-    background: transparent url(../img/metronome-led.png) no-repeat;
-    background-position: 0 0;
+    background-color: transparent;
     width: 8px;
     height: 8px;
     margin-top: 6px;
 }
 .metronome-led-on {
-    background-position: -100px 0px;
+    background-color: red;
 }
 #metronome-audio {
     display: hidden;
@@ -557,7 +560,7 @@ ul.menu-group-list li {
 }
 .keyboard-pedals {
     margin: 0px auto;
-    width: 105px;
+    width: 90px;
 }
 .keyboard-pedals .pedal {
     float: left;
@@ -571,6 +574,9 @@ ul.menu-group-list li {
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;
     cursor: pointer;
+}
+.keyboard-pedals .pedal:last-of-type {
+    margin-right: 0px;
 }
 .keyboard-pedals .pedal-active {
     background-color: #665e25;

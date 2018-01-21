@@ -80,9 +80,9 @@ define([
 		 */
 		tpl: _.template([
 			'<div class="metronome-control">',
-				'<div style="float:right" class="metronome-icon js-metronome-btn"></div>',
-				'<input style="float:right" name="bpm" type="text" class="metronome-control-input js-metronome-input" value="" maxlength="3" />',
 				'<div style="float:right" class="metronome-led js-metronome-led"></div>',
+				'<input style="float:right" name="bpm" type="text" class="metronome-control-input js-metronome-input" value="" maxlength="3" />',
+				'<div style="float:right" class="metronome-icon js-metronome-btn">Metronome</div>',
 			'</div>'
 		].join('')),
 		/**

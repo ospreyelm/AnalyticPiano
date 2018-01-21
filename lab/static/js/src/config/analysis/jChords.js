@@ -64,15 +64,15 @@ define({
    
    // II (a.k.a. V/V)
 
-   "2/69":  {"root": "2", "label": "II", "priority": "80"},
-   "6/29":  {"root": "2", "label": "II{z}", "priority": "80"},
-   "9/26":  {"root": "2", "label": "II{z4}", "priority": "80"},
+   "2/69":  {"root": "2", "label": "V/V", "priority": "80"},
+   "6/29":  {"root": "2", "label": "V{z}/V", "priority": "80"},
+   "9/26":  {"root": "2", "label": "V{z4}/V", "priority": "80"},
       
-   "2/069": {"root": "2", "label": "II{u}", "priority": "80"},
-   "2/06":  {"root": "2", "label": "II{u3};", "priority": "80"},
-   "6/029": {"root": "2", "label": "II{z5}", "priority": "80"},
-   "9/026": {"root": "2", "label": "II{r3}", "priority": "80"},
-   "0/269": {"root": "2", "label": "II{r2}", "priority": "80"},
+   "2/069": {"root": "2", "label": "V{u}/V", "priority": "80"},
+   "2/06":  {"root": "2", "label": "V{u3}/V", "priority": "80"},
+   "6/029": {"root": "2", "label": "V{z5}/V", "priority": "80"},
+   "9/026": {"root": "2", "label": "V{r3}/V", "priority": "80"},
+   "0/269": {"root": "2", "label": "V{r2}/V", "priority": "80"},
    
    // iii
    
@@ -108,16 +108,16 @@ define({
    "0/459": {"root": "5", "label": "IV{r3}", "priority": "90"},
    "4/059": {"root": "5", "label": "IV{r2}", "priority": "90"},
    
-   // #ivo (a.k.a. viio/V)
+   // ♯iv° (a.k.a. vii°/V)
    
-   "6/09":  {"root": "6", "label": "♯iv°", "priority": "80"},
-   "9/06":  {"root": "6", "label": "♯iv°{z}", "priority": "80"},
-   "0/69":  {"root": "6", "label": "♯iv°{z4}", "priority": "80"},
+   "6/09":  {"root": "6", "label": "vii°/V", "priority": "80"},
+   "9/06":  {"root": "6", "label": "vii°{z}/V", "priority": "80"},
+   "0/69":  {"root": "6", "label": "vii°{z4}/V", "priority": "80"},
    
-   "6/049": {"root": "6", "label": "♯iv⌀{u}", "priority": "80"},
-   "9/046": {"root": "6", "label": "♯iv⌀{z5}", "priority": "80"},
-   "0/469": {"root": "6", "label": "♯iv⌀{r3}", "priority": "80"},
-   "4/069": {"root": "6", "label": "♯iv⌀{r2}", "priority": "80"},
+   "6/049": {"root": "6", "label": "vii⌀{u}/V", "priority": "80"},
+   "9/046": {"root": "6", "label": "vii⌀{z5}/V", "priority": "80"},
+   "0/469": {"root": "6", "label": "vii⌀{r3}/V", "priority": "80"},
+   "4/069": {"root": "6", "label": "vii⌀{r2}/V", "priority": "80"},
    
    // V
    
