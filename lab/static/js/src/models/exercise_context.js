@@ -254,19 +254,15 @@ define([
 		 * @param {object} chord a Chord object
 		 * @return {boolean} true if "B" and "C" are played together, false otherwise.
 		 */
-		canGoToNextExercise: function(chord) {
+		canGoToNextExercise: async function(chord) {
 			var is_exercise_done = (this.done === true);
-			var trigger_notes = [84]; // the "C" two octaves above middle "C"
+			var trigger_notes = [36]; // the "C" and "E" two octaves below middle "C"
 			var wanted_notes = {};
 			var count_notes = 0;
 			var can_trigger_next = false;
 			var note_nums, i, len, note;
 
-			// if (is_exercise_done) {
-				// can_trigger_next = true;
-			// }
-			// else if (is_exercise_done) {
-			if (is_exercise_done) {
+			if(is_exercise_done) {
 				note_nums = chord.getSortedNotes();
 				for(i = 0, len = note_nums.length; i < len; i++) {
 					note_num = note_nums[i];
@@ -284,6 +280,12 @@ define([
 			return can_trigger_next;
 		},
 		/**
+		 * Wait function.
+		 */
+		sleep: function(ms) {
+			return new Promise(resolve => setTimeout(resolve, ms));
+		},
+		/**
 		 * This will trigger the application to automatically advance
 		 * to the next exercise in the sequence if the user
 		 * has played a special combination of keys on the piano.
@@ -293,10 +295,14 @@ define([
 		 *
 		 * @return undefined
 		 */
-		triggerNextExercise: function() {
-			if(this.canGoToNextExercise(this.inputChords.current())) {
+		triggerNextExercise: async function() {
+			if(this.done === true) {
+				await this.sleep(2000);
 				this.goToNextExercise();
 			}
+			// if(this.canGoToNextExercise(this.inputChords.current())) {
+			// 	this.goToNextExercise();
+			// }
 		},
 		/**
 		 * Creates a new set of display chords.

@@ -277,7 +277,7 @@ define([
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 
-			if(note_name !== '') {
+			if(note_name !== '' && notes.length >= 1) {
 				ctx.fillText(note_name, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
 		},
@@ -298,7 +298,7 @@ define([
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 
-			if(helmholtz !== '') {
+			if(helmholtz !== '' && notes.length === 1) {
 				ctx.fillText(helmholtz, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
 		},
@@ -319,7 +319,7 @@ define([
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 
-			if(scientific_pitch !== '') {
+			if(scientific_pitch !== '' && notes.length === 1) {
 				ctx.fillText(scientific_pitch, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
 		},
@@ -622,7 +622,8 @@ define([
 			var first_row = y, second_row = y + 25;
 			var mode = this.analyzeConfig.mode;
 
-			if(notes.length === 1) {
+			if(notes.length >= 1) {
+			// if(notes.length === 1) {
 				// first row of mutually exclusive options
 				if(mode.scale_degrees && !mode.solfege) {
 					this.drawScaleDegree(x, first_row);
@@ -633,7 +634,7 @@ define([
 				// second row of mutually exclusive options
 				if(mode.note_names && !mode.helmholtz) {
 					this.drawNoteName(x, second_row);
-				} else if(mode.scientific_pitch && !mode.note_names) {
+				} else if(notes.length === 1 && mode.scientific_pitch && !mode.note_names) {
 					this.drawScientificPitch(x, second_row);
 				}
 			}

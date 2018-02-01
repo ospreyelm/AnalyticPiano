@@ -77,6 +77,7 @@ define([
 				'rotateKeySharpward',
 				'setKeyToNone',
 				'setKeyToC',
+				'advanceExercise',
 				'toggleMetronome',
 				'toggleMode',
 				'clearNotes',
@@ -223,6 +224,13 @@ define([
 			this.keySignature.changeKey('jC_', true);	
 		},
 		/**
+		 * Go the next exercise.
+		 */
+		advanceExercise: function(state) {
+			// ExerciseContext.goToNextExercise();
+			alert('Advance to next exercise not yet working');
+		},
+		/**
 		 * Depresses the sustain pedal.
 		 *
 		 * @return undefined
@@ -241,28 +249,20 @@ define([
 			SUSTAINING = false;
 		},
 		/**
-		 * Retakes the sustain pedal. BROKEN
+		 * Wait function.
+		 */
+		sleep: function(ms) {
+			return new Promise(resolve => setTimeout(resolve, ms));
+		},
+		/**
+		 * Retakes the sustain pedal.
 		 *
 		 * @return undefined
 		 */
-		retakeSustain: function(state) {		
-			if(!state) {
-				return;
-			}
-			
-			alert('The sostentuo retake function is broken. Sorry!');
-			// var onTimeoutDepressSustain = _.bind(function() {
-			// 	this._depressSustain();
-			// 	this.retakeTimeoutID = null;
-			// },this);
-			
-			// this.retakeTimeoutID = this.retakeTimeoutID || null;
-			// if(this.retakeTimeoutID !== null) {
-			// 	window.clearTimeout(this.retakeTimeoutID);
-			// }
-
-			// this._releaseSustain();
-			// this.retakeTimeoutID = window.setTimeout(onTimeoutDepressSustain, 100);
+		retakeSustain: async function(state) {		
+			this._releaseSustain();
+			await this.sleep(100);
+			this._depressSustain();
 		},
 		/**
 		 * Clears all the notes.

@@ -111,8 +111,10 @@ define([
 			var chord = new Chord();
 			var current = this.current();
 
-			// comment out following lines to prevent double-vision of just-banked chord
 			// copy the current chord
+			/**
+			 * Comment out following lines to prevent double-vision
+			 * of just-banked chord. */
 			chord.copy(current);
 			chord.syncSustainedNotes();
 

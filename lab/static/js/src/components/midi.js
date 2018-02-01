@@ -291,7 +291,8 @@ define([
 					pedal_state = 'on';
 					// this.broadcast(EVENTS.BROADCAST.CLEAR_NOTES); // only works on chords banked by space bar not sustain
 					window.location.reload();
-					// TO DO: CONNECT TO goToNextExercise
+					// TO DO: CONNECT THIS
+					// ExerciseContext.goToNextExercise();
 				} else if(controlVal == 0 && SOSTENUTO_ON) {
 					SOSTENUTO_ON = false;
 					pedal_state = 'off';

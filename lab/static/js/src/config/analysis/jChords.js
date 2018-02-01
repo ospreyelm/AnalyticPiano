@@ -184,10 +184,10 @@ define({
 
    // augmented-sixth chords
    
-   "8/06":  {"root": "2", "label": "It.{z}", "priority": "85"},
-   "8/026": {"root": "2", "label": "Fr.{z}", "priority": "85"},
-   "8/036": {"root": "2", "label": "Ger.{z}", "priority": "85"},
-   "6/038": {"root": "2", "label": "Ger.{u}", "priority": "85"},
+   "8/06":  {"root": "2", "label": "It{z}", "priority": "85"},
+   "8/026": {"root": "2", "label": "Fr{r3}", "priority": "85"},
+   "8/036": {"root": "2", "label": "Ger{z5}", "priority": "85"},
+   "6/038": {"root": "2", "label": "Ger{u}", "priority": "85"},
    
    // bII (a.k.a. N)
    

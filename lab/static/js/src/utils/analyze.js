@@ -546,12 +546,19 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 		var distance, scale_degrees, scale_degree, solfege = "";
 		var is_minor = (this.Piano.key.indexOf("i") !== -1);
 
-		if(notes.length == 1 && this.Piano.key !== 'h') {
+		if(notes.length >= 1 && this.Piano.key !== 'h') {
 			distance = this.distance([this.Piano.keynotePC,notes[0] % 12]);
 			scale_degrees = (is_minor ? this.iDegrees : this.jDegrees);
 			scale_degree = scale_degrees[distance];
 			if(!scale_degree) {
 				return "";
+			}
+			if(notes.length > 1) {
+				for (let i = 1; i < notes.length; i++) {
+					if(this.distance([this.Piano.keynotePC, notes[i] % 12]) != distance) {
+						return '';
+					}
+				}
 			}
 			solfege = scale_degree["solfege"];
 		}
@@ -565,20 +572,33 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 		var distance, scale_degrees, scale_degree, numeral = '';
 		var is_minor = (this.Piano.key.indexOf("i") !== -1);
 
-		if(notes.length == 1 && this.Piano.key !== 'h') {
+		if(notes.length >= 1 && this.Piano.key !== 'h') {
 			distance = this.distance([this.Piano.keynotePC, notes[0] % 12]);
 			scale_degrees = (is_minor ? this.iDegrees : this.jDegrees);
 			scale_degree = scale_degrees[distance];
 			if(!scale_degree) {
 				return '';
 			}
-
+			if(notes.length > 1) {
+				for (let i = 1; i < notes.length; i++) {
+					if(this.distance([this.Piano.keynotePC, notes[i] % 12]) != distance) {
+						return '';
+					}
+				}
+			}
 			numeral = scale_degree["numeral"];
 		}
-
 		return numeral;
 	},
 	getNameOfNote: function(notes) {
+		if(notes.length > 1) {
+			lowestPC = notes[0] % 12;
+			for (let i = 1; i < notes.length; i++) {
+				if(notes[i] % 12 != lowestPC) {
+					return '';
+				}
+			}
+		}
 		if(this.Piano.key!=='h') {
 			return this.spelling[this.Piano.key][notes[0] % 12];
 		}

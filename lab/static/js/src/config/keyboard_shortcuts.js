@@ -36,7 +36,7 @@ define({
 		"j":      {msg:"toggleNote", data:27}, // DE
 		"m":      {msg:"toggleNote", data:28}, // E
 		"'":      {msg:"depressSustain"},
-		";":      {msg:"retakeSustain"}, // not working?
+		";":      {msg:"retakeSustain"},
 		"\\":     {msg:"retakeSustain"},
 		".":      {msg:"releaseSustain"},
 		"k":      {msg:"rotateKeyFlatward"},
@@ -50,7 +50,7 @@ define({
 		"DOWN":   {msg:"bankChord"},
 		"[":      {msg:"toggleHighlights"}, // not created yet
 		"]":      {msg:"toggleAnalysis"}, // not created yet
-		"RIGHT":  {msg:"goToNextExercise"} // not connected yet 
+		"RIGHT":  {msg:"advanceExercise"} // not connected yet 
 	},
 
 	// Defines javascript key code -> key name mappings.

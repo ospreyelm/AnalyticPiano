@@ -214,10 +214,10 @@ define({
 
    // augmented-sixth chords
 
-   "8/06":  {"root": "2", "label": "It.{z}"},
-   "8/026": {"root": "2", "label": "Fr.{z}"},
-   "8/036": {"root": "2", "label": "Ger.{z}"},
-   "6/038": {"root": "2", "label": "Ger.{u}"},
+   "8/06":  {"root": "2", "label": "It{z}"},
+   "8/026": {"root": "2", "label": "Fr{r3}"},
+   "8/036": {"root": "2", "label": "Ger{z5}"},
+   "6/038": {"root": "2", "label": "Ger{u}"},
 
    // Tristan chord
    
