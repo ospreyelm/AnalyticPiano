@@ -56,7 +56,8 @@ define([
 		READY: "ready",
 		WAITING: "waiting",
 		INCORRECT: "incorrect",
-		CORRECT: "correct" 
+		CORRECT: "correct",
+		FINISHED: "finished"
 	};
 
 	_.extend(ExerciseContext.prototype, {
@@ -90,14 +91,24 @@ define([
 
 			switch(graded.result) {
 				case this.grader.STATE.CORRECT:
-					state = ExerciseContext.STATE.CORRECT;
 					this.done = true;
 					this.endTimer();
-					this.triggerNextExercise();
+					if(this.flawless === true) {
+						state = ExerciseContext.STATE.CORRECT;
+						this.triggerNextExercise();
+					}
+					else if(this.flawless === false) {
+						state = ExerciseContext.STATE.FINISHED;
+						this.triggerRepeatExercise();
+					}
+					else {
+						state = ExerciseContext.STATE.CORRECT;
+					}
 					break;
 				case this.grader.STATE.INCORRECT:
 					state = ExerciseContext.STATE.INCORRECT;
 					this.done = false;
+					this.flawless = false;
 					break;
 				case this.grader.STATE.PARTIAL:
 				default:
@@ -121,6 +132,10 @@ define([
 		onFirstNoteBeginTimer: function() {
 			if(this.timer == null) {
 				this.beginTimer();
+				/**
+				 * Remembers errors
+				 */
+				this.flawless = true;
 			}
 		},
 		/**
@@ -299,6 +314,20 @@ define([
 			if(this.done === true) {
 				await this.sleep(2000);
 				this.goToNextExercise();
+			}
+			// if(this.canGoToNextExercise(this.inputChords.current())) {
+			// 	this.goToNextExercise();
+			// }
+		},
+		/**
+		 * This will trigger the application to refresh the current exercise.
+		 *
+		 * @return undefined
+		 */
+		triggerRepeatExercise: async function() {
+			if(this.done === true) {
+				await this.sleep(5000);
+				window.location.reload();
 			}
 			// if(this.canGoToNextExercise(this.inputChords.current())) {
 			// 	this.goToNextExercise();

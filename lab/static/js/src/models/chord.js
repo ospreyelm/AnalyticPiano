@@ -33,6 +33,7 @@ define([
 		 * @return undefined
 		 */
 		init: function() {
+			this._rhythmValue = false;
 			/**
 			 * Container for the notes that are active.
 			 * @type {object}
@@ -498,14 +499,23 @@ define([
 		 * @return {boolean}
 		 */
 		noteNumBelongsToClef: function(noteNumber, clef) {
+			this.keyboardStyle = true;
 			switch(clef) {
-				case 'treble':
-					if(noteNumber >= 60) {
+				case 'bass':
+					if(this.keyboardStyle == true && this.getSortedNotes().length >= 2 && noteNumber == this.getSortedNotes()[0]) {
+						return true;
+					}else if(this.keyboardStyle == true && this.getSortedNotes().length < 2 && noteNumber < 60) {
+						return true;
+					}else if(this.keyboardStyle != true && noteNumber < 60) {
 						return true;
 					}
 					break;
-				case 'bass':
-					if(noteNumber < 60) {
+				case 'treble':
+					if(this.keyboardStyle == true && this.getSortedNotes().length >= 2 && this.getSortedNotes().slice(1).includes(noteNumber)) {
+						return true;
+					}else if(this.keyboardStyle == true && this.getSortedNotes().length < 2 && noteNumber >= 60) {
+						return true;
+					}else if(this.keyboardStyle != true && noteNumber >= 60) {
 						return true;
 					}
 					break;

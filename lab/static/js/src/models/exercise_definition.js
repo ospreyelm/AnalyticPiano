@@ -59,7 +59,7 @@ define(['lodash'], function(_) {
 			return this.exercise.introText;
 		},
 		/**
-		 * Returns the key for the exercise (i.e. C Major, A minor, etc).
+		 * Returns the key for the exercise (i.e. C major, A minor, etc).
 		 * The format of the key string should be consistent with the
 		 * KeySignature model.
 		 *
@@ -180,7 +180,7 @@ define(['lodash'], function(_) {
 			// normalize the internal representation of each chord in the
 			// set of problems to have VISIBLE/HIDDEN parts
 			problems = _.map(problems, function(chord, index) {
-				var normalized = {"visible":[], "hidden":[],"notes":[]};
+				var normalized = {"visible":[], "hidden":[],"notes":[],"rhythm":false};
 
 				if(_.isArray(chord)) {
 					normalized.visible = chord;
@@ -201,6 +201,10 @@ define(['lodash'], function(_) {
 				normalized.visible = ExerciseDefinition.sortNotes(normalized.visible);
 				normalized.hidden = ExerciseDefinition.sortNotes(normalized.hidden);
 				normalized.notes = ExerciseDefinition.sortNotes(normalized.notes);
+
+				if(chord.hasOwnProperty("rhythm")) {
+					normalized.rhythm = chord.rhythm;
+				}
 
 				return normalized;
 			});

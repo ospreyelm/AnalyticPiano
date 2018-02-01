@@ -92,7 +92,7 @@ define([
 		 * Change right margin to reveal or hide right barline.
 		 * @type {number}
 		 */
-		margin: {left: 15, right: 1},
+		margin: {left: 1, right: 1},
 		/**
 		 * Initializes the Stave.
 		 *
@@ -186,17 +186,17 @@ define([
 			return this.doConnected('render');
 		},
 		/**
-		 * Renders the stave connector, the bar/brace that joins the treble and
-		 * bass staff together.
+		 * Renders the system line and brace.
 		 *
 		 * @return this
 		 */
 		renderStaveConnector: function() {
 			if(this.isFirstBar()) {
 				this.drawBeginStaveConnector();
-			} else if(this.isLastBar()) {
-				this.drawEndStaveConnector();
 			}
+			// else if(this.isLastBar()) {
+			// 	this.drawEndStaveConnector();
+			// }
 			return this;
 		},
 		/**
@@ -210,7 +210,7 @@ define([
 			var staff1 = this.getStaveBar();
 			var staff2 = this.connectedStave.getStaveBar();
 			this.drawStaveConnector(staff1, staff2, SINGLE); 
-			this.drawStaveConnector(staff1, staff2, BRACE); 
+			// this.drawStaveConnector(staff1, staff2, BRACE); 
 		},
 		/**
 		 * Draws a connector at the end of the stave.
@@ -228,7 +228,7 @@ define([
 			staff1.setContext(ctx);
 			staff2.setContext(ctx);
 
-			// this.drawStaveConnector(staff1, staff2, SINGLE);
+			this.drawStaveConnector(staff1, staff2, SINGLE);
 		},
 		/**
 		 * Draws a stave connector between two staves.
@@ -244,7 +244,7 @@ define([
 			connector.setContext(ctx).setType(connectorType).draw();
 		},
 		/**
-		 * Creates the Vex.Flow.Stave.
+		 * Creates the Vex.Flow.Stave including barlines.
 		 *
 		 * @return undefined
 		 */
@@ -255,12 +255,20 @@ define([
 			var staveBar = new Vex.Flow.Stave(x, y, width);
 			staveBar.clef = this.clef;
 
+			/**
+			 * To show barlines, call Vex.Flow.Barline.type.SINGLE
+			 * unless isFirstBar (this is used for clef and staff signature
+			 * display).
+			 */
 			if(this.isFirstBar()) {
-				staveBar.setBegBarType(Vex.Flow.Barline.type.SINGLE);
+				staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
+				staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			} else if(this.isPenultimateBar()) {
+				staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
 				staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
 			} else if(this.isLastBar()) {
 				staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
-				staveBar.setEndBarType(Vex.Flow.Barline.type.SINGLE);
+				staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
 			} else {
 				staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
 				staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
@@ -284,6 +292,9 @@ define([
 		createStaveVoice: function() {
 			var voice, formatter, time;
 
+			/**
+			 * Meter defined here
+			 */
 			if(this.hasStaveNotes()) {
 				time = Vex.Flow.TIME4_4;
 				voice = new Vex.Flow.Voice(time);
@@ -584,7 +595,8 @@ define([
 
 				if(this.isLastBar()) {
 					// stretch to fill remaining area
-					this.width = this.maxWidth - this.start_x - this.margin.right;
+					// this.width = this.maxWidth - this.start_x - this.margin.right;
+					this.width = width;
 				} else {
 					this.width = width;
 				}
@@ -612,6 +624,15 @@ define([
 		 */
 		isFirstBar: function() {
 			return this.position.index === 0;
+		},
+		/**
+		 * Returns true if this stave is the last bar in the sequence, false
+		 * otherwise.
+		 *
+		 * @return {boolean}
+		 */
+		isPenultimateBar: function() {
+			return this.position.index === this.position.count - 1;
 		},
 		/**
 		 * Returns true if this stave is the last bar in the sequence, false

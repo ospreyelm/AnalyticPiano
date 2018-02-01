@@ -162,6 +162,7 @@ define([
 
             status_map[exc.STATE.INCORRECT] = {text:"incorrect",color:"#990000",iconCls:"ion-close"};
             status_map[exc.STATE.CORRECT] = {text:"complete",color:"#4C9900",iconCls:"ion-checkmark"};
+            status_map[exc.STATE.FINISHED] = {text:"finished with errors",color:"#999900",iconCls:""};
             status_map[exc.STATE.WAITING] = {text:"in progress",color:"#999900",iconCls:""};
             status_map[exc.STATE.READY] = {text:"ready",color:"#000000",iconCls:""};
 

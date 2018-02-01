@@ -48,18 +48,36 @@ define([
 		 * @return
 		 */
 		init: function() {
-			this.defaultNoteColor = this.settings.defaultNoteColor || 'rgb(75,75,75)'; // dark gray
+			this.defaultNoteColor = this.settings.defaultNoteColor || 'rgb(150,150,150)'; // gray
 			this.highlightMap = {};
 		},
 		/**
-		 * Creates one more Vex.Flow.StaveNote's.
+		 * VexFlow rhythm code (enclosed in double quotation marks):
+		 * "w" = whole note
+		 * "h" = half note
+		 * "q" = quarter note
+		 */
+		getRhythmValue: function() {
+			if (!this.chord._rhythmValue) {
+				return "w";
+			}else {
+				return this.chord._rhythmValue;
+			}
+		},
+		/**
+		 * Creates one more Vex.Flow.StaveNote's. Must equal one measure.
 		 *
 		 * @public
 		 * @return {array}
 		 */
 		createStaveNotes: function() {
-			var stave_note = this._makeStaveNote(this.getNoteKeys(), this.getNoteModifiers());
-			return [stave_note];
+			var stave_note_1 = this._makeStaveNote(this.getNoteKeys(), this.getNoteModifiers(), this.getRhythmValue());
+			return [stave_note_1];
+			/**
+			 * For testing.
+			 */
+			// var stave_note_2 = this._makeStaveNote(this.getNoteKeys(), this.getNoteModifiers(), this.getRhythmValue());
+			// return [stave_note_1, stave_note_2];
 		},
 		/**
 		 * Returns true if there are any stave notes to create, false otherwise.
@@ -144,7 +162,7 @@ define([
 				natural_found_idx = noteKeys.indexOf(natural_note);
 				is_doubled = natural_found_idx !== -1 && i !== natural_found_idx;
 
-				// check to see if this note is doubled - that is, the natrual version of
+				// check to see if this note is doubled - that is, the natural version of
 				// the note is also active at the same time, in which case it needs to be
 				// distinguished with a natural accidental
 				if(is_doubled) {
@@ -332,22 +350,22 @@ define([
 		 * @param {array} modifiers
 		 * @return {Vex.Flow.StaveNote}
 		 */
-		_makeStaveNote: function(keys, modifiers) {
+		_makeStaveNote: function(keys, modifiers, rhythm_value) {
 			modifiers = modifiers || [];
-
-			var QUARTER_NOTE = "q"; // shorthand for '4' as VexFlow duration
-			var HALF_NOTE = "h"; // shorthand for '2' as VexFlow duration
-			var WHOLE_NOTE = "w"; // shorthand for '1' as VexFlow duration
 
 			var stave_note = new Vex.Flow.StaveNote({
 				keys: keys,
 				/**
 				 * Duration must equal a full bar as defined
-				 * in Vex.Flow.TIME4_4 (called in stave.js and
-				 * defined in vexflow.js)
+				 * in stave.js and vexflow.js (e.g. by TIME4_4)
 				 */
-				duration: WHOLE_NOTE,
-				clef: this.clef
+				duration: rhythm_value,
+				clef: this.clef,
+				/**
+				 * Autostem can be enabled once horizontal spacing is
+				 * fixed for chords including seconds and their analysis.
+				 */
+				// auto_stem: true
 			});
 
 			for(var i = 0, len = modifiers.length; i < len; i++) {
