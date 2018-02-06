@@ -1,16 +1,16 @@
 {% extends "_menu.html" %}
 {% block menu_content %}
 <div id="display-settings">
+    <!--Notation-->
+    <div class="mainmenu-section">
+        <div class="js-analyze-widget"></div>
+    </div>
+
     <!--Instrument-->
     <div class="mainmenu-section">
         <!-- <div class="js-instrument settings-inline"></div> -->
         <div class="js-keyboardsize settings-inline"></div>
         <!-- <div class="js-keyboardshortcuts settings-inline"></div> -->
-    </div>
-
-    <!--Notation-->
-    <div class="mainmenu-section">
-        <div class="js-analyze-widget"></div>
     </div>
 
     <!--MIDI Source-->
@@ -25,7 +25,7 @@
     {% if group_list %}
     <div class="mainmenu-section">
         <div id="mainmenu-exercise-area">
-            <b>EXERCISES (scroll for more)</b>
+            <p>EXERCISES (scrollable)</p>
             <ul class="menu-group-list">
                 {% for group in group_list %}
                     <li><a href="{{group.url}}">{{group.name}} ({{group.size}})</a></li>

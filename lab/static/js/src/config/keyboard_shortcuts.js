@@ -6,57 +6,66 @@ define({
 	//
 	// To find the MIDI note number that will be output when a key is pressed,
 	// add the relative offset from the note mapping section to this note anchor.
-	"noteAnchor": 48,
+	"noteAnchor": 0,
 	
 	// Uused letters to avoid mishaps: 3, 6, and g.
 	"keyMap": {
-		"1":      {msg:"toggleNote", data:-4}, // GA
-		"q":      {msg:"toggleNote", data:-3}, // A
-		"2":      {msg:"toggleNote", data:-2}, // AB
-		"w":      {msg:"toggleNote", data:-1}, // B
-		"e":      {msg:"toggleNote", data:0}, // C
-		"4":      {msg:"toggleNote", data:1}, // CD
-		"r":      {msg:"toggleNote", data:2}, // D
-		"5":      {msg:"toggleNote", data:3}, // DE
-		"t":      {msg:"toggleNote", data:4}, // E
-		"y":      {msg:"toggleNote", data:5}, // F
-		"7":      {msg:"toggleNote", data:6}, // FG
-		"u":      {msg:"toggleNote", data:7}, // G
-		"a":      {msg:"toggleNote", data:16}, // E
-		"z":      {msg:"toggleNote", data:17}, // F
-		"s":      {msg:"toggleNote", data:18}, // FG
-		"x":      {msg:"toggleNote", data:19}, // G
-		"d":      {msg:"toggleNote", data:20}, // GA
-		"c":      {msg:"toggleNote", data:21}, // A
-		"f":      {msg:"toggleNote", data:22}, // AB
-		"v":      {msg:"toggleNote", data:23}, // B
-		"b":      {msg:"toggleNote", data:24}, // C
-		"h":      {msg:"toggleNote", data:25}, // CD
-		"n":      {msg:"toggleNote", data:26}, // D
-		"j":      {msg:"toggleNote", data:27}, // DE
-		"m":      {msg:"toggleNote", data:28}, // E
+		"GRAVE":  {msg:"toggleNote", data:43}, // G
+		"1":      {msg:"toggleNote", data:44}, // GA
+		"q":      {msg:"toggleNote", data:45}, // A
+		"2":      {msg:"toggleNote", data:46}, // AB
+		"w":      {msg:"toggleNote", data:47}, // B
+		"e":      {msg:"toggleNote", data:48}, // C3
+		"4":      {msg:"toggleNote", data:49}, // CD
+		"r":      {msg:"toggleNote", data:50}, // D
+		"5":      {msg:"toggleNote", data:51}, // DE
+		"t":      {msg:"toggleNote", data:52}, // E
+		"y":      {msg:"toggleNote", data:53}, // F
+		"7":      {msg:"toggleNote", data:54}, // FG
+		"u":      {msg:"toggleNote", data:55}, // G
+		"8":      {msg:"toggleNote", data:56}, // GA
+		"i":      {msg:"toggleNote", data:57}, // A
+		"9":      {msg:"toggleNote", data:58}, // AB
+		"o":      {msg:"toggleNote", data:59}, // B
+		"p":      {msg:"toggleNote", data:60}, // C4
+		"-":      {msg:"toggleNote", data:61}, // CD
+		"[":      {msg:"toggleNote", data:62}, // D
+		"=":      {msg:"toggleNote", data:63}, // DE
+		"]":      {msg:"toggleNote", data:64}, // E
+		"z":      {msg:"toggleNote", data:65}, // F
+		"s":      {msg:"toggleNote", data:66}, // FG
+		"x":      {msg:"toggleNote", data:67}, // G
+		"d":      {msg:"toggleNote", data:68}, // GA
+		"c":      {msg:"toggleNote", data:69}, // A
+		"f":      {msg:"toggleNote", data:70}, // AB
+		"v":      {msg:"toggleNote", data:71}, // B
+		"b":      {msg:"toggleNote", data:72}, // C5
+		"h":      {msg:"toggleNote", data:73}, // CD
+		"n":      {msg:"toggleNote", data:74}, // D
+		"j":      {msg:"toggleNote", data:75}, // DE
+		"m":      {msg:"toggleNote", data:76}, // E
+		",":      {msg:"toggleNote", data:77}, // F
 		"'":      {msg:"depressSustain"},
 		";":      {msg:"retakeSustain"},
-		"\\":     {msg:"retakeSustain"},
-		".":      {msg:"releaseSustain"},
-		"k":      {msg:"rotateKeyFlatward"},
-		"l":      {msg:"rotateKeySharpward"},
-		",":      {msg:"setKeyToC"},
-		"o":      {msg:"setKeyToNone"},  
-		"/":      {msg:"toggleMetronome"},
+		"l":      {msg:"releaseSustain"},
+		"DOWN":   {msg:"rotateKeyFlatward"},
+		"UP":     {msg:"rotateKeySharpward"},
+		"RIGHT":  {msg:"setKeyToC"},
+		"LEFT":   {msg:"setKeyToNone"},  
+		"BACKSL": {msg:"toggleMetronome"},
 		"ESC":    {msg:"toggleMode"},
-		"ENTER":  {msg:"clearNotes"},
+		"BACKSP": {msg:"clearNotes"},
 		"SPACE":  {msg:"bankChord"},
-		"DOWN":   {msg:"bankChord"},
-		"[":      {msg:"toggleHighlights"}, // not created yet
-		"]":      {msg:"toggleAnalysis"}, // not created yet
-		"RIGHT":  {msg:"advanceExercise"} // not connected yet 
+		"ENTER":  {msg:"bankChord"},
+		// "/":      {msg:"toggleAnalysis"}, // not created yet
+		// "":       {msg:"advanceExercise"} // not connected yet 
 	},
 
 	// Defines javascript key code -> key name mappings.
 	// This is not intended to be comprehensive. These key names
 	// should be used in the note and control shortcut mappings.
 	"keyCode": {
+		"8": "BACKSP",
 		"13": "ENTER",
 		"27": "ESC",
 		"32": "SPACE",
@@ -101,12 +110,14 @@ define({
 		"89": "y",
 		"90": "z",
 		"186": ";",
+		"187": "=",
 		"188": ",",
+		"189": "-",
 		"190": ".",
 		"191": "/",
 		"192": "GRAVE",
 		"219": "[",
-		"220": "\\",
+		"220": "BACKSL",
 		"221": "]",
 		"222": "'"
 	}

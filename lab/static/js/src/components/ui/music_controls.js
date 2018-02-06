@@ -215,7 +215,7 @@ define([
 			analyze_widget.render();
 			highlight_widget.render();
 
-			el.append(highlight_widget.el, analyze_widget.el);
+			el.append(analyze_widget.el, highlight_widget.el);
 		},
 		/**
 		 * Renders the instrument selector.

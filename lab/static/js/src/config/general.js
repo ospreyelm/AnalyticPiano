@@ -326,10 +326,10 @@ define({
 	// Defines the default highlight settings
 	highlightSettings: {
 		// Enables or disables highlighting
-		enabled: false,
+		enabled: true,
 		// Enables or disables specific highlight modes
 		mode: {
-			roothighlight: true,
+			roothighlight: false,
 			tritonehighlight: false
 			//doublinghighlight: false,
 			//octaveshighlight: false
