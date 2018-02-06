@@ -71,7 +71,7 @@ define([
 	MainMenuComponent.prototype.toggleMenu = function(state) {
 		var that = this;
 		this.$menuEl.animate({
-			// width: (state?"show":"hide")
+			fontSize: (state?"show":"hide")
 		}, {
 			duration: 1,
 			complete: function() {
