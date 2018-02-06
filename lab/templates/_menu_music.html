@@ -22,16 +22,18 @@
         <button class="js-refresh-midi-devices settings-inline">Refresh MIDI options</button>
     </div> -->
 
+    {% if group_list %}
     <div class="mainmenu-section">
         <div id="mainmenu-exercise-area">
             <b>EXERCISES (scroll for more)</b>
             <ul class="menu-group-list">
-                <!-- {% for group in group_list %}
+                {% for group in group_list %}
                     <li><a href="{{group.url}}">{{group.name}} ({{group.size}})</a></li>
-                {% endfor %} -->
+                {% endfor %}
             </ul>
         </div>
     </div>
+    {% endif %}
 
 </div>
 {% endblock %}
