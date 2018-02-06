@@ -500,22 +500,23 @@ define([
 		 */
 		noteNumBelongsToClef: function(noteNumber, clef) {
 			this.keyboardStyle = true;
+			this.voiceCountForKeyboardStyle = [2, 4]
 			switch(clef) {
 				case 'bass':
-					if(this.keyboardStyle == true && this.getSortedNotes().length >= 2 && noteNumber == this.getSortedNotes()[0]) {
+					if(this.keyboardStyle === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {
 						return true;
-					}else if(this.keyboardStyle == true && this.getSortedNotes().length < 2 && noteNumber < 60) {
+					}else if(this.keyboardStyle === true && !this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber < 60) {
 						return true;
-					}else if(this.keyboardStyle != true && noteNumber < 60) {
+					}else if(this.keyboardStyle !== true && noteNumber < 60) {
 						return true;
 					}
 					break;
 				case 'treble':
-					if(this.keyboardStyle == true && this.getSortedNotes().length >= 2 && this.getSortedNotes().slice(1).includes(noteNumber)) {
+					if(this.keyboardStyle === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
 						return true;
-					}else if(this.keyboardStyle == true && this.getSortedNotes().length < 2 && noteNumber >= 60) {
+					}else if(this.keyboardStyle === true && !this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber >= 60) {
 						return true;
-					}else if(this.keyboardStyle != true && noteNumber >= 60) {
+					}else if(this.keyboardStyle !== true && noteNumber >= 60) {
 						return true;
 					}
 					break;

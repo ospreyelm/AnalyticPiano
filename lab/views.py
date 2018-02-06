@@ -84,6 +84,8 @@ class PlayView(RequirejsTemplateView):
         er = ExerciseRepository.create(course_id=course_id)
 
         context['group_list'] = er.getGroupList()
+        # for testing on Windows, use following line
+        # context['group_list'] = []
         context['has_manage_perm'] = has_instructor_role(self.request) and has_course_authorization(self.request, course_id)
         if context['has_manage_perm']:
             if course_id is None:
