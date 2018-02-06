@@ -177,7 +177,7 @@ ul.content-area-vertical-nav {
     padding-right: 2em;
     font-size: 0.9em;
 }
-.header .js-btn-help {
+.header .js-btn-help, .tip {
     padding-left: 0em;
     padding-right: 0em;
     font-size: 0.9em;
