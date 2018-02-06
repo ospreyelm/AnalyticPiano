@@ -173,15 +173,18 @@ ul.content-area-vertical-nav {
     display: inline;
 }
 .header .js-btn-menu {
-    padding-right: 1em;
+    padding-left: 0em;
+    padding-right: 2em;
+    font-size: 0.9em;
 }
 .header .js-btn-help {
-    padding-left: 1em;
-    padding-right: 1em;
+    padding-left: 0em;
+    padding-right: 0em;
+    font-size: 0.9em;
 }
 .header .js-keysignature-widget {
-    padding-left: 1em;
-    padding-right: 1em;
+    padding-left: 0em;
+    padding-right: 5em;
 }
 .header ul li.right {
     /*float: right;*/
