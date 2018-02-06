@@ -19,7 +19,7 @@ MANAGERS = ADMINS
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
 # In a Windows environment this must be set to your system time zone.
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'America/New_York'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -40,8 +40,7 @@ USE_TZ = True
 
 ### SET PATH INFORMATION ###############################################
 # Example: "/home/ubuntu/harmony"
-# ROOT_DIR = path.dirname(path.dirname(path.dirname(path.realpath(__file__))))
-ROOT_DIR = reduce(lambda l,r: path.dirname(l), range(3), path.realpath(__file__))
+ROOT_DIR = path.dirname(path.dirname(path.dirname(path.realpath(__file__))))
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
