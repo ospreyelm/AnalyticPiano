@@ -440,7 +440,7 @@ define([
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 
 			if(tempo) {
-				ctx.fillText('M.M. = ' + tempo, x - 25/* + img.width*/, y + 25);
+				ctx.fillText('M.M. = ' + tempo, x, y + 25);
 			}
 		},
 		/**
