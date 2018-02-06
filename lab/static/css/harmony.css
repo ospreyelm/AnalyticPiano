@@ -148,12 +148,13 @@ ul.content-area-vertical-nav {
     padding: 0;
     margin: 0;
     color: #fff;
+    font-size: 0.9em;
 }
 
 /*--------------------------------------------------*/
 /* Header Styles */
 .header {
-    width: 640px;
+    width: 888px;
     margin: 0 auto;
     margin-top: 1em;
     margin-bottom: 1em;
@@ -196,7 +197,7 @@ ul.content-area-vertical-nav {
 }
 .settings-help {
     color: #666;
-    font-size: .9em;
+    font-size: 0.9em;
 }
 fieldset.settings-notation {
     border: 1px solid #fff;
@@ -208,6 +209,7 @@ fieldset.settings-notation {
 .settings-notation div {
     display: block;
     padding: 16px 8px;
+    margin-top: 16px;
 }
 .settings-notation ol {
     margin: 0;
