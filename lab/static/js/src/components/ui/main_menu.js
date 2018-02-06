@@ -73,7 +73,7 @@ define([
 		this.$menuEl.animate({
 			width: (state?"show":"hide")
 		}, {
-			duration: 0,
+			duration: 1,
 			complete: function() {
 				$(window)[state?'on':'off']('click', that.onClickOutsideMenu);
 			}
