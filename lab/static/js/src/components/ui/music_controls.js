@@ -259,7 +259,7 @@ define([
 				that.broadcast(EVENTS.BROADCAST.KEYBOARD_SIZE, size);
 			});
 
-			el.append(selectEl).wrapInner("<label>&emsp;Number of keys: </label>");
+			el.append(selectEl).wrapInner("<label>Keyboard size:&emsp;</label>");
 		},
 		/**
 		 * Renders the keyboard shorcuts.
