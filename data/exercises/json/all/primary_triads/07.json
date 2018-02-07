@@ -1,0 +1,32 @@
+{
+  "type": "matching",
+  "introText": "Exactly as before: Complete the progression indicated by the Roman numerals, in four parts. Use only stepwise or common-tone voice leading in the upper parts, and match the visible bassline.",
+  "keySignature": "##",
+  "key": "jD_",
+  "chord": [
+    {"visible":[50,62,66,69],"hidden":[]},
+    {"visible":[43],"hidden":[71,67,62]},
+    {"visible":[50],"hidden":[69,66,62]},
+    {"visible":[45],"hidden":[69,64,61]},
+    {"visible":[50],"hidden":[69,66,62]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": false,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

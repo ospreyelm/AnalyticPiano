@@ -1,0 +1,33 @@
+{
+  "type": "matching",
+  "introText": "Say-and-play \"scale degree five\" and go!",
+  "keySignature": "bb",
+  "key": "jBb",
+  "chord": [
+    {"visible":[53,65],"hidden":[],"rhythm":"h"},
+    {"visible":[50,62,65,70],"hidden":[]},
+    {"visible":[51,60,67,70],"hidden":[]},
+    {"visible":[53,62,65,70],"hidden":[]},
+    {"visible":[53,63,65,69],"hidden":[]},
+    {"visible":[46,62,65,70],"hidden":[]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}
