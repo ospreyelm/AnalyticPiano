@@ -11,6 +11,8 @@ define([
 
 	var KEYBOARD_STYLE_ENABLED = Config.get('general.keyboardStyle');
 
+	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
+
 	/**
 	 * Creates an instance of a chord.
 	 *
@@ -503,33 +505,32 @@ define([
 		 * @return {boolean}
 		 */
 		noteNumBelongsToClef: function(noteNumber, clef) {
-			this.voiceCountForKeyboardStyle = [2, 4]
 			switch(clef) {
 				case 'bass':
-					if(KEYBOARD_STYLE_ENABLED === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {
+					if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {
 						if(noteNumber <= 65) {
 							return true;
 						}
-					}else if(KEYBOARD_STYLE_ENABLED === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber == !this.getSortedNotes()[0]) {
+					}else if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == !this.getSortedNotes()[0]) {
 						if(noteNumber < 55) {
 							return true;
 						}
-					}else if(KEYBOARD_STYLE_ENABLED === true && !this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber < 60) {
+					}else if(KEYBOARD_STYLE_ENABLED === true && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber < 60) {
 						return true;
 					}else if(KEYBOARD_STYLE_ENABLED !== true && noteNumber < 60) {
 						return true;
 					}
 					break;
 				case 'treble':
-					if(KEYBOARD_STYLE_ENABLED === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
+					if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
 						if(noteNumber >= 55) {
 							return true;
 						}
-					}else if(KEYBOARD_STYLE_ENABLED === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && !this.getSortedNotes().slice(1).includes(noteNumber)) {
+					}else if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && !this.getSortedNotes().slice(1).includes(noteNumber)) {
 						if(noteNumber > 65) {
 							return true;
 						}
-					}else if(KEYBOARD_STYLE_ENABLED === true && !this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber >= 60) {
+					}else if(KEYBOARD_STYLE_ENABLED === true && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber >= 60) {
 						return true;
 					}else if(KEYBOARD_STYLE_ENABLED !== true && noteNumber >= 60) {
 						return true;

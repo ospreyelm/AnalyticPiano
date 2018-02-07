@@ -9,6 +9,8 @@ define({
 
 	keyboardStyle: true,
 
+	voiceCountForKeyboardStyle: [2, 3, 4],
+
 	autoExerciseAdvance: true,
 
 	nextExerciseWait: 1500,
