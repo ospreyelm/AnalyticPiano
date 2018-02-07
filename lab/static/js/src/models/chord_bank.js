@@ -3,16 +3,20 @@
  */
 define([
 	'lodash', 
+	'app/config',
 	'microevent',
 	'app/util',
 	'./chord',
 ], function(
 	_, 
+	Config,
 	MicroEvent, 
 	util,
 	Chord
 ) {
 	"use strict";
+
+	var NO_DOUBLE_VISION = Config.get('general.noDoubleVision');
 
 	/**
 	 * Creates an instance of a chord bank.
@@ -115,8 +119,11 @@ define([
 			/**
 			 * Comment out following lines to prevent double-vision
 			 * of just-banked chord. */
-			chord.copy(current);
-			chord.syncSustainedNotes();
+			if (NO_DOUBLE_VISION === true) {
+			}else {
+				chord.copy(current);
+				chord.syncSustainedNotes();
+			}
 
 			// re-wires listeners to the current chord
 			this._removeListeners(current);

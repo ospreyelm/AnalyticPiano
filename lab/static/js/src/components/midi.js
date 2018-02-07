@@ -2,12 +2,14 @@ define([
 	'lodash', 
 	'app/config',
 	'app/components/events',
-	'app/components/component'
+	'app/components/component',
+	'app/models/exercise_context'
 ], function(
 	_,
 	Config,
 	EVENTS,
-	Component
+	Component,
+	ExerciseContext
 ) {
 
 	/**
@@ -289,10 +291,8 @@ define([
 				if(controlVal >= 50 && !SOSTENUTO_ON) {
 					SOSTENUTO_ON = true;
 					pedal_state = 'on';
-					// this.broadcast(EVENTS.BROADCAST.CLEAR_NOTES); // only works on chords banked by space bar not sustain
-					window.location.reload();
-					// TO DO: CONNECT THIS
 					// ExerciseContext.goToNextExercise();
+					window.location.reload();
 				} else if(controlVal == 0 && SOSTENUTO_ON) {
 					SOSTENUTO_ON = false;
 					pedal_state = 'off';
@@ -433,7 +433,7 @@ define([
 				case 'sustain':
 					if(state==='on') {
 						chord.sustainNotes();
-						this.chords.bank();
+						this.chords.bank();// why is this not clearable?
 						this.sendMIDIPedalMessage(pedal, state);
 					} else if (state === 'off') {
 						chord.releaseSustain();

@@ -1,0 +1,27 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[dev-packages]
+
+
+
+[packages]
+
+Django = "==1.6"
+django-cached_authentication_middleware = ">=0.2.0"
+django-auth-lti = {git = "https://github.com/Harvard-ATG/django-auth-lti", ref = "master"}
+django-braces = ">=1.3"
+mock = ">=1.0.1"
+nose = "==1.3.0"
+gunicorn = "==19.7.1"
+whitenoise = "==2.0.6"
+ordereddict = ">=1.1"
+
+
+[requires]
+
+python_version = "3.6"

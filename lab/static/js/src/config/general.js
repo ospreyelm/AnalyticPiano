@@ -5,6 +5,75 @@
 /* global define: false */
 define({
 
+	noDoubleVision: false,
+
+	keyboardStyle: true,
+
+	autoExerciseAdvance: true,
+
+	nextExerciseWait: 1500,
+	
+	repeatExerciseWait: 5000,
+
+	// Default key and signature to use for notation. This should be
+	// automatically selected on the UI.
+	defaultKeyAndSignature: "iA_", // no key
+
+	// Defines settings for the chord bank.
+	chordBank: {
+		// This defines the number of chords that can be displayed
+		// on the sheet music at one time. It should be a positive
+		// integer in the range of 1-10. Chords are displayed
+		// in fixed-width areas spread across the sheet music.
+		displaySize: 9
+	},
+
+	// Defines the default analysis settings 
+	analysisSettings: {
+		// Enables or disables analysis
+		enabled: true,
+		// Enables or disables specific analysis modes
+		mode: {
+			note_names: false, // either this or scientific_pitch or neither
+			scientific_pitch: false, 
+			scale_degrees: true, // either this or solfege or neither
+			solfege: false, 
+			roman_numerals: true,
+			intervals: false
+		}
+	},
+
+	// Defines the default highlight settings
+	highlightSettings: {
+		// Enables or disables highlighting
+		enabled: true,
+		// Enables or disables specific highlight modes
+		mode: {
+			roothighlight: false,
+			tritonehighlight: false
+			//doublinghighlight: false,
+			//octaveshighlight: false
+		}
+	},
+
+	// Defines default metronome settings.
+	metronomeSettings: {
+		defaultTempo: 40,
+		maxTempo: 360
+	},
+
+	// This defines whether keyboard shortcuts are enabled/disabled by default.
+	// When true, keyboard shortcuts are enabled by default, otherwise when set
+	// to false, they are disabled by default. 
+	keyboardShortcutsEnabled: true,
+
+	// Defines when a bank happens in relation to a metronome "tick."
+	// Expressed as a fraction of the current metronome tempo.
+	bankAfterMetronomeTick: 0.25,
+
+	// Defines the default keyboard size to use on the interface.
+	defaultKeyboardSize: 49,
+
 	// Defines the default spelling of the twelve pitches based on D-minor.
 	noteNames: ['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B'],
 
@@ -289,69 +358,15 @@ define({
 
 	// Wheel for rotating keys sharpward or flatward
 	// Default order is sharpward.
-	keyWheel: [
-		"jC_", "iE_","jG_","iB_","jD_","iF#","jA_","iC#",
-		"jE_", "iG#","jB_","iEb","jGb","iBb","jDb","iF_",
-		"jAb", "iC_","jEb","iG_","jBb","iD_","jF_","iA_"
-	],
-
-	// Default key and signature to use for notation. This should be
-	// automatically selected on the UI.
-	defaultKeyAndSignature: "iA_", // no key
-
-	// Defines settings for the chord bank.
-	chordBank: {
-		// This defines the number of chords that can be displayed
-		// on the sheet music at one time. It should be a positive
-		// integer in the range of 1-10. Chords are displayed
-		// in fixed-width areas spread across the sheet music.
-		displaySize: 9
-	},
-
-	// Defines the default analysis settings 
-	analysisSettings: {
-		// Enables or disables analysis
-		enabled: true,
-		// Enables or disables specific analysis modes
-		mode: {
-			note_names: false, // either this or scientific_pitch or neither
-			scientific_pitch: false, 
-			scale_degrees: true, // either this or solfege or neither
-			solfege: false, 
-			roman_numerals: true,
-			intervals: false
-		}
-	},
-
-	// Defines the default highlight settings
-	highlightSettings: {
-		// Enables or disables highlighting
-		enabled: true,
-		// Enables or disables specific highlight modes
-		mode: {
-			roothighlight: false,
-			tritonehighlight: false
-			//doublinghighlight: false,
-			//octaveshighlight: false
-		}
-	},
-
-	// Defines default metronome settings.
-	metronomeSettings: {
-		defaultTempo: 40,
-		maxTempo: 360
-	},
-
-	// This defines whether keyboard shortcuts are enabled/disabled by default.
-	// When true, keyboard shortcuts are enabled by default, otherwise when set
-	// to false, they are disabled by default. 
-	keyboardShortcutsEnabled: true,
-
-	// Defines when a bank happens in relation to a metronome "tick."
-	// Expressed as a fraction of the current metronome tempo.
-	bankAfterMetronomeTick: 0.25,
-
-	// Defines the default keyboard size to use on the interface.
-	defaultKeyboardSize: 49
+	// keyWheel: [
+	// 	"jC_","iE_","jG_","iB_","jD_","iF#","jA_","iC#",
+	// 	"jE_","iG#","jB_","iEb","jGb","iBb","jDb","iF_",
+	// 	"jAb","iC_","jEb","iG_","jBb","iD_","jF_","iA_"
+	// ],
+	keyWheel: [// Chopin Preludes
+		"jC_","iA_","jG_","iE_","jD_","iB_","jA_","iF#",
+		"jE_","iC#","jB_","iG#","jGb","iEb","jDb","iBb",
+		"jAb","iF_","jEb","iC_","jBb","iG_","jF_","iD_"
+	]
 });
 

@@ -190,6 +190,11 @@ define([
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                     }
                     break;
+                case exc.STATE.FINISHED:
+                    if(exc.hasTimer()) {
+                        tpl_data.time_to_complete = exc.getExerciseDuration();
+                    }
+                    break;
                 case exc.STATE.READY:
                 default:
                     if(exc.definition.hasIntro()) {

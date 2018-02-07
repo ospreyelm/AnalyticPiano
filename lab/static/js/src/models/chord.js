@@ -1,11 +1,15 @@
 define([
 	'lodash', 
-	'microevent'
+	'microevent',
+	'app/config',
 ], function(
 	_, 
-	MicroEvent
+	MicroEvent,
+	Config
 ) {
 	"use strict";
+
+	var KEYBOARD_STYLE_ENABLED = Config.get('general.keyboardStyle');
 
 	/**
 	 * Creates an instance of a chord.
@@ -499,24 +503,35 @@ define([
 		 * @return {boolean}
 		 */
 		noteNumBelongsToClef: function(noteNumber, clef) {
-			this.keyboardStyle = true;
 			this.voiceCountForKeyboardStyle = [2, 4]
 			switch(clef) {
 				case 'bass':
-					if(this.keyboardStyle === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {
+					if(KEYBOARD_STYLE_ENABLED === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {
+						if(noteNumber <= 65) {
+							return true;
+						}
+					}else if(KEYBOARD_STYLE_ENABLED === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber == !this.getSortedNotes()[0]) {
+						if(noteNumber < 55) {
+							return true;
+						}
+					}else if(KEYBOARD_STYLE_ENABLED === true && !this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber < 60) {
 						return true;
-					}else if(this.keyboardStyle === true && !this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber < 60) {
-						return true;
-					}else if(this.keyboardStyle !== true && noteNumber < 60) {
+					}else if(KEYBOARD_STYLE_ENABLED !== true && noteNumber < 60) {
 						return true;
 					}
 					break;
 				case 'treble':
-					if(this.keyboardStyle === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
+					if(KEYBOARD_STYLE_ENABLED === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
+						if(noteNumber >= 55) {
+							return true;
+						}
+					}else if(KEYBOARD_STYLE_ENABLED === true && this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && !this.getSortedNotes().slice(1).includes(noteNumber)) {
+						if(noteNumber > 65) {
+							return true;
+						}
+					}else if(KEYBOARD_STYLE_ENABLED === true && !this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber >= 60) {
 						return true;
-					}else if(this.keyboardStyle === true && !this.voiceCountForKeyboardStyle.includes(this.getSortedNotes().length) && noteNumber >= 60) {
-						return true;
-					}else if(this.keyboardStyle !== true && noteNumber >= 60) {
+					}else if(KEYBOARD_STYLE_ENABLED !== true && noteNumber >= 60) {
 						return true;
 					}
 					break;

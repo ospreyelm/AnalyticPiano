@@ -3,14 +3,22 @@ define([
 	'jquery',
 	'microevent',
 	'./exercise_chord',
-	'./exercise_chord_bank'
+	'./exercise_chord_bank',
+    'app/config'
 ], function(
 	_,
 	$,
 	MicroEvent,
 	ExerciseChord,
-	ExerciseChordBank
+	ExerciseChordBank,
+	Config
 ) {
+
+	var AUTO_ADVANCE_ENABLED = Config.get('general.autoExerciseAdvance');
+
+	var NEXT_EXERCISE_WAIT = Config.get('general.nextExerciseWait');
+
+	var REPEAT_EXERCISE_WAIT = Config.get('general.repeatExerciseWait');
 
 	/**
 	 * ExerciseContext object coordinates the display and grading of
@@ -311,8 +319,8 @@ define([
 		 * @return undefined
 		 */
 		triggerNextExercise: async function() {
-			if(this.done === true) {
-				await this.sleep(2000);
+			if(this.done === true && AUTO_ADVANCE_ENABLED === true) {
+				await this.sleep(NEXT_EXERCISE_WAIT);
 				this.goToNextExercise();
 			}
 			// if(this.canGoToNextExercise(this.inputChords.current())) {
@@ -325,8 +333,8 @@ define([
 		 * @return undefined
 		 */
 		triggerRepeatExercise: async function() {
-			if(this.done === true) {
-				await this.sleep(5000);
+			if(this.done === true && AUTO_ADVANCE_ENABLED === true) {
+				await this.sleep(REPEAT_EXERCISE_WAIT);
 				window.location.reload();
 			}
 			// if(this.canGoToNextExercise(this.inputChords.current())) {
