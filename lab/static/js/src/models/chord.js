@@ -511,7 +511,7 @@ define([
 						if(noteNumber <= 65) {
 							return true;
 						}
-					}else if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == !this.getSortedNotes()[0]) {
+					}else if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber != this.getSortedNotes()[0]) {
 						if(noteNumber < 55) {
 							return true;
 						}
