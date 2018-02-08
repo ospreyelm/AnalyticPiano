@@ -5,7 +5,7 @@
 /* global define: false */
 define({
 
-	noDoubleVision: false,
+	noDoubleVision: true,
 
 	keyboardStyle: true,
 
@@ -13,9 +13,9 @@ define({
 
 	autoExerciseAdvance: true,
 
-	nextExerciseWait: 1500,
+	nextExerciseWait: 1000,
 	
-	repeatExerciseWait: 5000,
+	repeatExerciseWait: 4000,
 
 	// Default key and signature to use for notation. This should be
 	// automatically selected on the UI.

@@ -1,6 +1,5 @@
 @charset "UTF-8";
 @import "pure.css";
-/*@import url('https://fonts.googleapis.com/css?family=Alegreya+Sans:400,700&subset=latin,latin-ext');*/
 
 @font-face {
     font-family: 'Alegreya Sans';
@@ -404,9 +403,6 @@ ul.menu-group-list li {
     margin-left: 10px;
     margin-right: 10px;
 }
-/*.ioncustom-nextexercise {
-    margin: 0 5px;
-}*/
 
 /*--------------------------------------------------*/
 /* On-screen keyboard */
