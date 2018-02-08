@@ -20,6 +20,8 @@ define([
 
 	var REPEAT_EXERCISE_WAIT = Config.get('general.repeatExerciseWait');
 
+	var REPEAT_EXERCISE_ENABLED = Config.get('general.repeatExercise');
+
 	/**
 	 * ExerciseContext object coordinates the display and grading of
 	 * an exercise.
@@ -47,6 +49,7 @@ define([
 		this.state = ExerciseContext.STATE.READY;
 		this.graded = false;
 		this.timer = null;
+		this.seriesTimer = null;
 		this.displayChords = this.createDisplayChords();
 		this.exerciseChords = this.createExerciseChords();
 
@@ -61,11 +64,11 @@ define([
 	 * @const
 	 */
 	ExerciseContext.STATE = {
-		READY: "ready",
-		WAITING: "waiting",
-		INCORRECT: "incorrect",
-		CORRECT: "correct",
-		FINISHED: "finished"
+		READY: "ready",// not started
+		WAITING: "waiting",// so far so good
+		INCORRECT: "incorrect",// errors
+		CORRECT: "correct",// complete without errors
+		FINISHED: "finished"// complete with errors
 	};
 
 	_.extend(ExerciseContext.prototype, {
@@ -94,6 +97,7 @@ define([
 		 */
 		grade: function() {
 			var state, graded;
+			var nextUrl = this.definition.getNextExercise();
 
 			graded = this.grader.grade(this.definition, this.inputChords);
 
@@ -101,13 +105,20 @@ define([
 				case this.grader.STATE.CORRECT:
 					this.done = true;
 					this.endTimer();
+					if(!nextUrl) {
+						this.endSeriesTimer();
+					}
 					if(this.flawless === true) {
 						state = ExerciseContext.STATE.CORRECT;
 						this.triggerNextExercise();
 					}
 					else if(this.flawless === false) {
 						state = ExerciseContext.STATE.FINISHED;
-						this.triggerRepeatExercise();
+						if(REPEAT_EXERCISE_ENABLED === true) {
+							this.triggerRepeatExercise();
+						}else {
+							this.triggerNextExercise();
+						}
 					}
 					else {
 						state = ExerciseContext.STATE.CORRECT;
@@ -117,6 +128,7 @@ define([
 					state = ExerciseContext.STATE.INCORRECT;
 					this.done = false;
 					this.flawless = false;
+					this.seriesFlawless = false;
 					break;
 				case this.grader.STATE.PARTIAL:
 				default:
@@ -145,6 +157,15 @@ define([
 				 */
 				this.flawless = true;
 			}
+			if(this.seriesTimer == null) {
+				this.beginSeriesTimer();
+				/**
+				 * Remembers errors
+				 */
+				if(this.seriesFlawless == null) {
+					this.seriesFlawless = true;
+				}
+			}
 		},
 		/**
 		 * Resets the timer.
@@ -159,6 +180,14 @@ define([
 			this.timer.durationString = "";
 			return this;
 		},
+		resetSeriesTimer: function() {
+			this.seriesTimer = {};
+			this.seriesTimer.start = null;
+			this.seriesTimer.end = null;
+			this.seriesTimer.duration = null;
+			this.seriesTimer.durationString = "";
+			return this;
+		},
 		/**
 		 * Returns true if the timer is non-null.
 		 *
@@ -167,6 +196,9 @@ define([
 		hasTimer: function() {
 			return this.timer !== null;
 		},
+		hasSeriesTimer: function() {
+			return this.seriesTimer !== null;
+		},
 		/**
 		 * Returns the duration of the exercise as a string.
 		 *
@@ -174,6 +206,13 @@ define([
 		 */
 		getExerciseDuration: function() {
 			return this.timer.durationString;
+		},
+		/**
+		 * Not yet functional. Requires seriesTimer to be remembered from
+		 * one exercise to the next.
+		 */
+		getExerciseSeriesDuration: function() {
+			return this.seriesTimer.durationString;
 		},
 		/**
 		 * Begins the timer.
@@ -187,8 +226,15 @@ define([
 			this.timer.start = (new Date().getTime() / 1000);
 			return this;
 		},
+		beginSeriesTimer: function() {
+			if(this.seriesTimer === null) {
+				this.resetSeriesTimer();
+			}
+			this.seriesTimer.start = (new Date().getTime() / 1000);
+			return this;
+		},
 		/**
-		 * Begins the timer.
+		 * Ends the timer.
 		 *
 		 * @return this
 		 */
@@ -203,6 +249,21 @@ define([
 					this.timer.durationString = seconds + "&Prime;";
 				} else {
 					this.timer.durationString = mins + "&prime; " + seconds + "&Prime;";
+				}
+			}
+			return this;
+		},
+		endSeriesTimer: function() {
+			var mins, seconds;
+			if(this.seriesTimer && this.seriesTimer.start && !this.seriesTimer.end) {
+				this.seriesTimer.end = (new Date().getTime() / 1000);
+				this.seriesTimer.duration = (this.seriesTimer.end - this.seriesTimer.start);
+				mins = Math.floor(this.seriesTimer.duration / 60);
+				seconds = (this.seriesTimer.duration - (mins * 60)).toFixed(1);
+				if(mins == 0) {
+					this.seriesTimer.durationString = seconds + "&Prime;";
+				} else {
+					this.seriesTimer.durationString = mins + "&prime; " + seconds + "&Prime;";
 				}
 			}
 			return this;

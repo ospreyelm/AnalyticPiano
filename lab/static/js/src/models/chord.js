@@ -9,7 +9,7 @@ define([
 ) {
 	"use strict";
 
-	var KEYBOARD_STYLE_ENABLED = Config.get('general.keyboardStyle');
+	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
 
 	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
 
@@ -507,32 +507,48 @@ define([
 		noteNumBelongsToClef: function(noteNumber, clef) {
 			switch(clef) {
 				case 'bass':
-					if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {
+					if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {
 						if(noteNumber <= 65) {
 							return true;
 						}
-					}else if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber != this.getSortedNotes()[0]) {
+					}else if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber != this.getSortedNotes()[0]) {
 						if(noteNumber < 55) {
 							return true;
 						}
-					}else if(KEYBOARD_STYLE_ENABLED === true && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber < 60) {
+					}else if(STAFF_DISTRIBUTION === 'keyboard' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber < 60) {
 						return true;
-					}else if(KEYBOARD_STYLE_ENABLED !== true && noteNumber < 60) {
+					}else if(STAFF_DISTRIBUTION === 'LH') {
+						return true;
+					}else if(STAFF_DISTRIBUTION === 'RH') {
+						return false;
+					}else if(STAFF_DISTRIBUTION === 'chorale' && this.getSortedNotes().length === 4 && this.getSortedNotes().slice(0,2).includes(noteNumber)) {
+						return true;
+					}else if(STAFF_DISTRIBUTION === 'chorale' && this.getSortedNotes().length === 4 && this.getSortedNotes().slice(2).includes(noteNumber)) {
+						return false;
+					}else if(noteNumber < 60) {
 						return true;
 					}
 					break;
 				case 'treble':
-					if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
+					if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
 						if(noteNumber >= 55) {
 							return true;
 						}
-					}else if(KEYBOARD_STYLE_ENABLED === true && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && !this.getSortedNotes().slice(1).includes(noteNumber)) {
+					}else if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && !this.getSortedNotes().slice(1).includes(noteNumber)) {
 						if(noteNumber > 65) {
 							return true;
 						}
-					}else if(KEYBOARD_STYLE_ENABLED === true && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber >= 60) {
+					}else if(STAFF_DISTRIBUTION === 'keyboard' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber >= 60) {
 						return true;
-					}else if(KEYBOARD_STYLE_ENABLED !== true && noteNumber >= 60) {
+					}else if(STAFF_DISTRIBUTION === 'LH') {
+						return false;
+					}else if(STAFF_DISTRIBUTION === 'RH') {
+						return true;
+					}else if(STAFF_DISTRIBUTION === 'chorale' && this.getSortedNotes().length === 4 && this.getSortedNotes().slice(0,2).includes(noteNumber)) {
+						return false;
+					}else if(STAFF_DISTRIBUTION === 'chorale' && this.getSortedNotes().length === 4 && this.getSortedNotes().slice(2).includes(noteNumber)) {
+						return true;
+					}else if(noteNumber >= 60) {
 						return true;
 					}
 					break;

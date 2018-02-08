@@ -1,0 +1,29 @@
+{
+  "type": "matching",
+  "introText": "Play the notes on the bass staff.",
+  "keySignature": "",
+  "key": "jC_",
+  "chord": [
+    {"visible":[52],"hidden":[]},
+    {"visible":[55],"hidden":[]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": false,
+      "solfege": true,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

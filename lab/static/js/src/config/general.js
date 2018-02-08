@@ -6,15 +6,12 @@
 define({
 
 	noDoubleVision: true,
-
-	keyboardStyle: true,
-
+	staffDistribution: "keyboard",// keyboard, chorale, LH, RH
 	voiceCountForKeyboardStyle: [2, 3, 4],
-
+	voiceCountForChoraleStyle: [4],
 	autoExerciseAdvance: true,
-
+	repeatExercise: true,
 	nextExerciseWait: 1000,
-	
 	repeatExerciseWait: 4000,
 
 	// Default key and signature to use for notation. This should be

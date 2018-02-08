@@ -142,7 +142,7 @@ define([
                         '<% } %>',
                         '<p><span class="exercise-status-state" style="background-color:<%= status_color %>"><%= status_text %> <%= status_icon %></span>',
                         '<% if (typeof(time_to_complete) !== "undefined" && time_to_complete != "") { %>',
-                            '&nbsp;in&nbsp;<%= time_to_complete %></p>',
+                            '&nbsp;in&nbsp;<%= time_to_complete %></p>',// &nbsp;(<%= time_to_complete_series %>)
                         '<% } %>',
                         '<% if (typeof(next_exercise) !== "undefined" && next_exercise != "") { %>',
                             '<p><a class="exercise-status-next-btn" href="<%= next_exercise %>">Click for next</a></p>',
@@ -189,10 +189,16 @@ define([
                     if(exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                     }
+                    if(exc.hasSeriesTimer()) {
+                        tpl_data.time_to_complete_series = exc.getExerciseSeriesDuration();
+                    }
                     break;
                 case exc.STATE.FINISHED:
                     if(exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
+                    }
+                    if(exc.hasSeriesTimer()) {
+                        tpl_data.time_to_complete_series = exc.getExerciseSeriesDuration();
                     }
                     break;
                 case exc.STATE.READY:
