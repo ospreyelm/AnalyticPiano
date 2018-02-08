@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "With LH only, using fingers 5, 2, and 1, play tonic and dominant in alternation as shown in the analysis.",
+  "keySignature": "b",
+  "key": "jF_",
+  "chord": [
+    {"visible":[41,53],"hidden":[]},
+    {"visible":[],"hidden":[48]},
+    {"visible":[],"hidden":[41,53]},
+    {"visible":[],"hidden":[48]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

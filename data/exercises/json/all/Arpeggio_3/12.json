@@ -1,0 +1,32 @@
+{
+  "type": "matching",
+  "introText": "Play the arpeggio with fingers 1, 2, and 5 only of both hands.",
+  "keySignature": "##",
+  "key": "jD_",
+  "chord": [
+    {"visible":[50,62],"hidden":[]},
+    {"visible":[62],"hidden":[]},
+    {"visible":[66],"hidden":[]},
+    {"visible":[57,69],"hidden":[]},
+    {"visible":[50,74],"hidden":[]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

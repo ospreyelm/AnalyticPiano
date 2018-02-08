@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Using fingers 2-3-4-5, complete the scale fragment.",
+  "keySignature": "bbb",
+  "key": "jEb",
+  "chord": [
+    {"visible":[58],"hidden":[]},
+    {"visible":[60],"hidden":[]},
+    {"visible":[62],"hidden":[]},
+    {"visible":[63],"hidden":[]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}
