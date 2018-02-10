@@ -364,7 +364,7 @@ define({
 	// ],
 	keyWheel: [// Chopin Preludes
 		"jC_","iA_","jG_","iE_","jD_","iB_","jA_","iF#",
-		"jE_","iC#","jB_","iG#","jGb","iEb","jDb","iBb",
+		"jE_","iC#","jB_","iG#","jF#","iEb","jDb","iBb",
 		"jAb","iF_","jEb","iC_","jBb","iG_","jF_","iD_"
 	]
 });
