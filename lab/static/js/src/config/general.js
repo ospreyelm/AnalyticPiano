@@ -14,7 +14,7 @@ define({
 	nextExerciseWait: 500,
 	repeatExerciseWait: 4000,
 
-	defaultNoteColor: "rgb(150,150,150)", // gray
+	defaultNoteColor: "rgb(180,180,180)", // gray
 	
 	// Default key and signature to use for notation. This should be
 	// automatically selected on the UI.
