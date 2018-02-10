@@ -1,0 +1,30 @@
+{
+  "type": "matching",
+  "introText": "Using RH fingers 2-1-1, complete the scale fragment.",
+  "keySignature": "b",
+  "key": "jF_",
+  "chord": [
+    {"visible":[72],"hidden":[]},
+    {"visible":[],"hidden":[70]},
+    {"visible":[],"hidden":[69]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

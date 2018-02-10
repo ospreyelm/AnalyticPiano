@@ -1,0 +1,32 @@
+{
+  "type": "matching",
+  "introText": "Say-and-play \"scale degree five\" and go! (Extend RH finger 5 for flattened scale degree two.)",
+  "keySignature": "##",
+  "key": "iB_",
+  "chord": [
+    {"visible":[66],"hidden":[]},
+    {"visible":[67],"hidden":[]},
+    {"visible":[52,64,67,72],"hidden":[]},
+    {"visible":[54,64,66,70],"hidden":[]},
+    {"visible":[47,62,66,71],"hidden":[]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": true
+    }
+  }
+}

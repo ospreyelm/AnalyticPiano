@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Say-and-play \"scale degree five\" and go! (Move RH finger 2 for raised scale degree four.)",
+  "keySignature": "bbb",
+  "key": "iC_",
+  "chord": [
+    {"visible":[55,67],"hidden":[]},
+    {"visible":[56,60,66,72],"hidden":[]},
+    {"visible":[55,62,67,71],"hidden":[]},
+    {"visible":[48,63,67,72],"hidden":[]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}
