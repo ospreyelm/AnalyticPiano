@@ -1,7 +1,7 @@
 define([
 	'lodash', 
 	'microevent',
-	'app/config',
+	'app/config'
 ], function(
 	_, 
 	MicroEvent,

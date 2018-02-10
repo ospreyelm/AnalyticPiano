@@ -1,11 +1,10 @@
 {
   "type": "matching",
-  "introText": "Say-and-play \"scale degree five\" and go! (Extend RH finger 5 for flattened scale degree two.)",
+  "introText": "Extend RH finger 5 for lowered scale degree two.",
   "keySignature": "#",
   "key": "iE_",
   "chord": [
-    {"visible":[71],"hidden":[]},
-    {"visible":[72],"hidden":[]},
+    {"visible":[59,71],"hidden":[]},
     {"visible":[57,69,72,77],"hidden":[]},
     {"visible":[59,69,71,75],"hidden":[]},
     {"visible":[52,67,71,76],"hidden":[]}
@@ -26,7 +25,7 @@
     "enabled": true,
     "mode": {
       "roothighlight": false,
-      "tritonehighlight": true
+      "tritonehighlight": false
     }
   }
 }

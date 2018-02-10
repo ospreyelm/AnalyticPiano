@@ -11,7 +11,7 @@ define({
 	voiceCountForChoraleStyle: [4],
 	autoExerciseAdvance: true,
 	repeatExercise: true,
-	nextExerciseWait: 1000,
+	nextExerciseWait: 500,
 	repeatExerciseWait: 4000,
 
 	// Default key and signature to use for notation. This should be
