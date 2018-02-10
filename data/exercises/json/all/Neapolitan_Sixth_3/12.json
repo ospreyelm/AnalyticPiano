@@ -25,7 +25,8 @@
     "enabled": true,
     "mode": {
       "roothighlight": false,
-      "tritonehighlight": false
+      "tritonehighlight": false,
+      "loweredhighlight": true
     }
   }
 }

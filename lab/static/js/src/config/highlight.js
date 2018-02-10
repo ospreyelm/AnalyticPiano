@@ -19,6 +19,6 @@ define({
 		"double": [39, 100, 50], // orange
 		"root": [0, 100, 50], // red
 		"modalmixture": [120, 100, 25], // green
-		"respelled": [120, 100, 25], // green
+		"lowered": [120, 100, 25], // green
 	}
 });

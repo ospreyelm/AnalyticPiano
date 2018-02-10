@@ -5,7 +5,7 @@
 /* global define: false */
 define({
 
-	noDoubleVision: true,
+	noDoubleVision: false,
 	staffDistribution: "keyboard",// keyboard, chorale, LH, RH
 	voiceCountForKeyboardStyle: [2, 3, 4],
 	voiceCountForChoraleStyle: [4],
@@ -51,7 +51,7 @@ define({
 			roothighlight: false,
 			tritonehighlight: false,
 			doublinghighlight: true,
-			respelledhighlight: true,
+			loweredhighlight: true,
 			modalmixturehighlight: false,
 			octaveshighlight: false // not recommended, hidden from UI
 		}

@@ -49,8 +49,8 @@ define([
 				'</li>',
 				'<li>',
 					'<label>',
-						'<input type="checkbox" name="highlight_respelled" value="respelledhighlight" accesskey="l"> Lowered Pitches',
-						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.respelled)+'"></div>',
+						'<input type="checkbox" name="highlight_lowered" value="loweredhighlight" accesskey="l"> Lowered Pitches',
+						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.lowered)+'"></div>',
 					'</label>',						
 				'</li>',
 				'</ul>',
@@ -91,7 +91,7 @@ define([
 				this.state.mode[opt] = e.target.checked;
 				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);				
 			},
-			highlight_respelled: function(e) {
+			highlight_lowered: function(e) {
 				var opt = e.target.value;
 				this.state.mode[opt] = e.target.checked;
 				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);				

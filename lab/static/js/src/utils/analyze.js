@@ -153,9 +153,13 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 		}
 		return noteName;
 	},
-	isRespelled: function (note, notes) {
+	isLowered: function (note, notes) {
 		var noteName = this.spelling[this.Piano.key][note % 12].toLowerCase();
+		var noteValue = (12 + note - this.Piano.keynotePC) % 12;
 		if(this.jEnharmonicAlterations(note, noteName, notes) != noteName) {
+			return true;
+		}else if(this.Piano.key.indexOf('i') == 0 && noteValue == 1) {
+			// lowered second scale degree in minor
 			return true;
 		}else {
 			return false;
@@ -270,8 +274,8 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 				color = "red"; // root
 			}
 		}
-		if (this.Piano.highlightMode["respelledhighlight"]) {
-			if (this.isRespelled(note, notes) === true) {
+		if (this.Piano.highlightMode["loweredhighlight"]) {
+			if (this.isLowered(note, notes) === true) {
 				color = "green";
 			}
 		}
