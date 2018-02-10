@@ -183,9 +183,11 @@ define([
 			var el = $('.js-analyze-widget', containerEl);
 			var analysisSettings = {};
 			var highlightSettings = {};
+			var staffDistribution = {};
 			if(this.exerciseContext) {
 				analysisSettings = this.exerciseContext.getDefinition().getAnalysisSettings();
 				highlightSettings = this.exerciseContext.getDefinition().getHighlightSettings();
+				staffDistribution = this.exerciseContext.getDefinition().getStaffDistribution();
 			}
 			var analyze_widget = new AnalyzeWidget(analysisSettings);
 			var highlight_widget = new HighlightWidget(highlightSettings);

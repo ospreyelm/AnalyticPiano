@@ -26,6 +26,8 @@ define([
 	 */
 	var HIGHLIGHT_SETTINGS = Config.get('general.highlightSettings');
 
+	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
+
 	/**
 	 * Creates an instance of MusicComponent.
 	 *
@@ -56,6 +58,12 @@ define([
 		 * @type {object}
 		 */
 		this.analyzeConfig = _.extend({tempo:false}, ANALYSIS_SETTINGS, this.settings.analysisSettings);
+		/**
+		 * Configuration settings for staff distribution on the sheet music.
+		 * @type {object}
+		 */
+		this.staffDistributionConfig = _.extend({}, STAFF_DISTRIBUTION, this.settings);
+		
 
 		if(!("sheet" in this.settings)) {
 			throw new Error("missing settings.sheet parameter");
@@ -66,6 +74,7 @@ define([
 		_.bindAll(this, [
 			'onAnalyzeChange',
 			'onHighlightChange',
+			'onStaffDistributionChange',
 			'onMetronomeChange'
 		]);
 	};
@@ -89,6 +98,7 @@ define([
 		initListeners: function() {
 			this.subscribe(EVENTS.BROADCAST.HIGHLIGHT_NOTES, this.onHighlightChange);
 			this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onAnalyzeChange);
+			this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onStaffDistributionChange);
 			this.subscribe(EVENTS.BROADCAST.METRONOME, this.onMetronomeChange);
 		},
 		/**
@@ -145,6 +155,16 @@ define([
 		 */
 		onAnalyzeChange: function(settings) {
 			this.updateSettings('analyzeConfig', settings);
+			this.trigger('change');
+		},
+		/**
+		 * Handles a change to the staff distribution setting.
+		 *
+		 * @param {object} settings
+		 * @return undefined
+		 */
+		onStaffDistributionChange: function(settings) {
+			this.updateSettings('staffDistributionConfig', settings);
 			this.trigger('change');
 		},
 		/**

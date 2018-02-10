@@ -152,6 +152,7 @@ define([
 						keySignature: this.models.keySignature
 					}),
 					analysisSettings: definition.getAnalysisSettings(),
+					staffDistribution: definition.getStaffDistribution(),
 					highlightSettings: definition.getHighlightSettings()
 				});
 				c.init(this);

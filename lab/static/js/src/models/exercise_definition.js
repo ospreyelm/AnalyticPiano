@@ -120,6 +120,14 @@ define(['lodash'], function(_) {
 			return this.exercise.highlight;
 		},
 		/**
+		 * Returns the staff distribution settings.
+		 *
+		 * @return {object}
+		 */
+		getStaffDistribution: function() {
+			return this.exercise.staffDistribution;
+		},
+		/**
 		 * Returns all the problems.
 		 *
 		 * @return {array}
@@ -265,6 +273,12 @@ define(['lodash'], function(_) {
 			exercise.highlight = {};
 			if(definition.hasOwnProperty("highlight") && definition.highlight) {
 				exercise.highlight = definition.highlight;
+			}
+
+			// get staff distribution option (see config.general.staffDistribution)
+			exercise.staffDistribution = {};
+			if(definition.hasOwnProperty("staffDistribution") && definition.staffDistribution) {
+				exercise.staffDistribution = definition.staffDistribution;
 			}
 
 			return exercise;
