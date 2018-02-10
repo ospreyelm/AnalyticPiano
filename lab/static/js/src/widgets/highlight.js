@@ -26,13 +26,31 @@ define([
 				'<li>',
 					'<label>',
 						'<input type="checkbox" name="highlight_roots" value="roothighlight" accesskey="r"> Chord roots',
-						'<span style="margin-left: 5px; color: '+util.toHSLString(HIGHLIGHT_COLORS.root)+'">&#9834;</span>',
+						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.root)+'"></div>',
 					'</label>',						
 				'</li>',
 				'<li>',
 					'<label>',
 						'<input type="checkbox" name="highlight_tritones" value="tritonehighlight" accesskey="t"> Tritones',
-						'<span style="margin-left: 5px; color: '+util.toHSLString(HIGHLIGHT_COLORS.tritone)+'">&#9834;</span>',
+						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.tritone)+'"></div>',
+					'</label>',						
+				'</li>',
+				'<li>',
+					'<label>',
+						'<input type="checkbox" name="highlight_doublings" value="doublinghighlight" accesskey="w"> Doubling Warnings',
+						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.double)+'"></div>',
+					'</label>',						
+				'</li>',
+				'<li>',
+					'<label>',
+						'<input type="checkbox" name="highlight_modalmixture" value="modalmixturehighlight" accesskey="x"> Modal MiXture',
+						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.modalmixture)+'"></div>',
+					'</label>',						
+				'</li>',
+				'<li>',
+					'<label>',
+						'<input type="checkbox" name="highlight_respelled" value="respelledhighlight" accesskey="l"> Lowered Pitches',
+						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.respelled)+'"></div>',
 					'</label>',						
 				'</li>',
 				'</ul>',
@@ -64,6 +82,21 @@ define([
 				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);
 			},
 			highlight_tritones: function(e) {
+				var opt = e.target.value;
+				this.state.mode[opt] = e.target.checked;
+				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);				
+			},
+			highlight_modalmixture: function(e) {
+				var opt = e.target.value;
+				this.state.mode[opt] = e.target.checked;
+				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);				
+			},
+			highlight_respelled: function(e) {
+				var opt = e.target.value;
+				this.state.mode[opt] = e.target.checked;
+				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);				
+			},
+			highlight_doublings: function(e) {
 				var opt = e.target.value;
 				this.state.mode[opt] = e.target.checked;
 				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);				

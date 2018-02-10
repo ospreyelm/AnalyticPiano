@@ -110,47 +110,66 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 // ("pushSharpward" is currently inactive.)
 
 	jEnharmonicAlterations: function (note, noteName, chord) {
-		var noteValue = (12 + note - this.Piano.keynotePC) % 12;
-		var oldNote = noteName;
-		var pitches = [];
+		if (this.Piano.key.indexOf('i') == -1) {
+			// not for minor keys
 
-		for (var pitch in chord) {
-			var newNote = chord[pitch] % 12;
-			newNote = (12 + newNote - this.Piano.keynotePC) % 12;
-			pitches.push(newNote);
-		}
+			var noteValue = (12 + note - this.Piano.keynotePC) % 12;
+			var oldNote = noteName;
+			var pitches = [];
+			var include_tonic = true;
+			var include_predominants = true;
 
-		if (_.contains(pitches,1) && _.contains(pitches,8)) {
-			if (noteValue == 1 || noteValue == 8) {
-				noteName = this.pushFlatward(note,noteName);
+			for (var pitch in chord) {
+				var newNote = chord[pitch] % 12;
+				newNote = (12 + newNote - this.Piano.keynotePC) % 12;
+				pitches.push(newNote);
 			}
-		}
-		if (_.contains(pitches,0) && _.contains(pitches,6) && _.contains(pitches,8) && noteValue == 8) {
-			noteName = this.pushFlatward(note,noteName);
-		}
-		if (_.contains(pitches,3) && _.contains(pitches,8)) {
-			if (noteValue == 3 || (noteValue == 8 && !_.contains(pitches,6) && !_.contains(pitches,1))) {
- 				noteName = this.pushFlatward(note,noteName);
-			}
-		}
 
-		// parallel minor tonic
-		if (_.contains(pitches,0) && _.contains(pitches,3) && _.contains(pitches,7)) {
+			if (noteValue == 8) {
+				// various predominant chords including augmented sixths
+				if (_.contains(pitches,1)
+				|| (_.contains(pitches,0) && _.contains(pitches,6))
+				|| (_.contains(pitches,3) && !_.contains(pitches,1) && !_.contains(pitches,6))
+				|| include_predominants === true && _.contains(pitches,0) && _.contains(pitches,5) && !_.contains(pitches,11)
+				|| include_predominants === true && _.contains(pitches,2) && _.contains(pitches,5) && !_.contains(pitches,11)
+				) {
+					noteName = this.pushFlatward(note,noteName);
+				}
+			}
+			if (noteValue == 1) {
+				// Neapolitan chords
+				if (_.contains(pitches,8)) {
+					noteName = this.pushFlatward(note,noteName);
+				}
+			}
 			if (noteValue == 3) {
-				noteName = this.pushFlatward(note,noteName);
+				// parallel minor triads
+				if (_.contains(pitches,8)
+				|| include_tonic === true && _.contains(pitches,0) && _.contains(pitches,7)
+				) {
+					noteName = this.pushFlatward(note,noteName);
+				}
 			}
 		}
-
-		// diatonic predominants in parallel minor
-		if (_.contains(pitches,5) && _.contains(pitches,8) && !_.contains(pitches,11)) {
-			if (_.contains(pitches,0) && noteValue == 8) {
-				noteName = this.pushFlatward(note,noteName);
-			}else if (_.contains(pitches,2) && noteValue == 8) {
-				noteName = this.pushFlatward(note,noteName);
-			}
-		}
-
 		return noteName;
+	},
+	isRespelled: function (note, notes) {
+		var noteName = this.spelling[this.Piano.key][note % 12].toLowerCase();
+		if(this.jEnharmonicAlterations(note, noteName, notes) != noteName) {
+			return true;
+		}else {
+			return false;
+		}
+	},
+	isModalMixture: function (note, notes) {
+		// modal mixture: scale degrees borrowed from the parallel minor
+		var noteName = this.spelling[this.Piano.key][note % 12].toLowerCase();
+		var noteValue = (12 + note - this.Piano.keynotePC) % 12;
+		if(this.jEnharmonicAlterations(note, noteName, notes) != noteName && noteValue != 1) {
+			return true;
+		}else {
+			return false;
+		}
 	},
 	pushFlatward: function (note, noteName) {
 		var AtoGIndex = this.AtoGindices[noteName.toLowerCase()].root_index;
@@ -229,16 +248,18 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 		}
 		if (this.Piano.highlightMode["doublinghighlight"]) {
 			if (this.Piano.key.indexOf('i') != -1) {
-				if (_.contains([4,6,9,11],fromRoot)) {
+				if (_.contains([4,6,11],fromRoot)) {
+					// previously [4,6,9,11]
 					for (var index in notes) {
-						if (index != i && (note % 12 == notes[index] % 12)) color = "orange"; // sharp notes in minor
+						if (index != i && (note % 12 == notes[index] % 12)) color = "orange"; // tendency tones in minor
 					}
 				}
 			}
 			else {
-				if (_.contains([1,3,6,8,11],fromRoot)) {
+				if (_.contains([1,6,8,11],fromRoot)) {
+					// previously [1,3,6,8,11]
 					for (var index in notes) {
-						if (index != i && (note % 12 == notes[index] % 12)) color = "orange"; // sharp notes in major
+						if (index != i && (note % 12 == notes[index] % 12)) color = "orange"; // tendency tones in major
 					}
 				}
 			}
@@ -247,6 +268,16 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 			var roots = this.findRoots(notes);
 			if(_.contains(roots, note)) {
 				color = "red"; // root
+			}
+		}
+		if (this.Piano.highlightMode["respelledhighlight"]) {
+			if (this.isRespelled(note, notes) === true) {
+				color = "green";
+			}
+		}
+		if (this.Piano.highlightMode["modalmixturehighlight"]) {
+			if (this.isModalMixture(note, notes) === true) {
+				color = "green";
 			}
 		}
 		return color;
@@ -462,10 +493,7 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 	getNoteName: function (note, chord, called) {
 		if (this.Piano.key != "h") {
 			var name = this.spelling[this.Piano.key][note % 12].toLowerCase();
-
-			if (this.Piano.key.indexOf('i') == -1) {
-				name = this.jEnharmonicAlterations(note, name, chord); // major only modifications; index changed from m to i -Rowland
-			}
+			name = this.jEnharmonicAlterations(note, name, chord);
 		}
 		else {
 			var bassValue = chord[0];

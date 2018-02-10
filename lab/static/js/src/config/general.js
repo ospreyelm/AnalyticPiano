@@ -49,9 +49,11 @@ define({
 		// Enables or disables specific highlight modes
 		mode: {
 			roothighlight: false,
-			tritonehighlight: false
-			//doublinghighlight: false,
-			//octaveshighlight: false
+			tritonehighlight: false,
+			doublinghighlight: true,
+			respelledhighlight: true,
+			modalmixturehighlight: false,
+			octaveshighlight: false // not recommended, hidden from UI
 		}
 	},
 
