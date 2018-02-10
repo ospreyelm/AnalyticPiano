@@ -115,12 +115,9 @@ define([
 			var chord = new Chord();
 			var current = this.current();
 
-			// copy the current chord
-			/**
-			 * Comment out following lines to prevent double-vision
-			 * of just-banked chord. */
 			if (NO_DOUBLE_VISION === true) {
 			}else {
+				// copy the current chord
 				chord.copy(current);
 				chord.syncSustainedNotes();
 			}

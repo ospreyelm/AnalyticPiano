@@ -52,6 +52,7 @@ define([
 			 * @type {string}
 			 */
 			this.bankedColor = 'rgb(0,0,0)'; 
+			this.unchangedColor = 'rgba(0,0,0,0)'; 
 
 			_.bindAll(this, ['createModifiers']);
 
@@ -114,6 +115,10 @@ define([
 						this.staveNoteFactory.highlightNote(i, keyStyle, 2);
 					}
 				}
+				// if the set of active notes matches the most recent bank
+				if(!this.isBanked && 1 == 2) {
+					this.staveNoteFactory.highlightNote(i, this.getUnchangedColorStyle(), 1);
+				}
 
 				keyStyle = this.staveNoteFactory.getHighlightOf(i);
 				modifiers.push(this.staveNoteFactory.makeHighlightModifier(i, keyStyle));
@@ -129,6 +134,9 @@ define([
 		 */
 		getBankedColorStyle: function() {
 			return {fillStyle:this.bankedColor, strokeStyle:this.bankedColor};
+		},
+		getUnchangedColorStyle: function() {
+			return {fillStyle:this.unchangedColor, strokeStyle:this.unchangedColor};
 		}
 	});
 
