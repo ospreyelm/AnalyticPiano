@@ -134,6 +134,22 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 			}
 		}
 
+		// parallel minor tonic
+		if (_.contains(pitches,0) && _.contains(pitches,3) && _.contains(pitches,7)) {
+			if (noteValue == 3) {
+				noteName = this.pushFlatward(note,noteName);
+			}
+		}
+
+		// diatonic predominants in parallel minor
+		if (_.contains(pitches,5) && _.contains(pitches,8) && !_.contains(pitches,11)) {
+			if (_.contains(pitches,0) && noteValue == 8) {
+				noteName = this.pushFlatward(note,noteName);
+			}else if (_.contains(pitches,2) && noteValue == 8) {
+				noteName = this.pushFlatward(note,noteName);
+			}
+		}
+
 		return noteName;
 	},
 	pushFlatward: function (note, noteName) {

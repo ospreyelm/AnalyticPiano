@@ -197,6 +197,38 @@ define({
    // bVI
 
    "8/03":  {"root": "8", "label": "♭VI", "priority": "85"},
-   "0/38":  {"root": "8", "label": "♭VI{z}", "priority": "85"}
+   "0/38":  {"root": "8", "label": "♭VI{z}", "priority": "85"},
+
+   // NOTE: the following examples of modal mixture invoke enharmonic ambiguities. Activation will depend on learning needs.
+
+   // i
    
+   "0/37":  {"root": "0", "label": "i", "priority": "85"},
+   "0/3":   {"root": "0", "label": "i{e}", "priority": "85"},
+   "3/07":  {"root": "0", "label": "i{z}", "priority": "85"},
+   "7/03":  {"root": "7", "label": "i{z4}", "priority": "85"},
+
+   // iio
+
+   "2/58":  {"root": "2", "label": "ii°"},
+   "5/28":  {"root": "2", "label": "ii°{z}"},
+   "8/25":  {"root": "2", "label": "ii{z4}"},
+
+   "2/058": {"root": "2", "label": "ii⌀{u}"},
+   "5/028": {"root": "2", "label": "ii⌀{z5}", "altLabel": "iv{dz}"},
+   "5/02":  {"root": "2", "label": "ii⌀{z5}"},
+   "8/025": {"root": "2", "label": "ii⌀{r3}"},
+   "0/258": {"root": "2", "label": "ii⌀{r2}"},
+
+   // iv
+
+   "5/08":  {"root": "5", "label": "iv"},
+   "8/05":  {"root": "5", "label": "iv{z}"},
+   "0/58":  {"root": "5", "label": "iv{z4}"},
+
+   "5/038": {"root": "5", "label": "iv{u}"},
+   "8/035": {"root": "5", "label": "iv{z5}"},
+   "0/358": {"root": "5", "label": "iv{r3}"},
+   "3/058": {"root": "5", "label": "iv{r2}"}
+
 });
