@@ -28,7 +28,7 @@ define([
 	var PlayNoteFactory = function(settings) {
 		this.settings = settings || {};
 
-		_.each(['chord','keySignature','clef','highlightConfig','isBanked'], function(prop) {
+		_.each(['chord','keySignature','clef','highlightConfig','isBanked', 'isNovel'], function(prop) {
 			if(prop in this.settings) {
 				this[prop] = this.settings[prop];
 			} else {
@@ -115,9 +115,14 @@ define([
 						this.staveNoteFactory.highlightNote(i, keyStyle, 2);
 					}
 				}
+				// NOT WORKING YET: adding isNovel property
 				// if the set of active notes matches the most recent bank
-				if(!this.isBanked && 1 == 2) {
-					this.staveNoteFactory.highlightNote(i, this.getUnchangedColorStyle(), 1);
+				if(!this.isBanked) {
+					if(2 == 2) {
+						if(this.isNovel === false) {
+							this.staveNoteFactory.highlightNote(i, this.getUnchangedColorStyle(), 1);
+						}
+					}
 				}
 
 				keyStyle = this.staveNoteFactory.getHighlightOf(i);

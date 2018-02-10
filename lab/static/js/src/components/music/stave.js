@@ -68,6 +68,11 @@ define([
 		 * @type {boolean}
 		 */
 		this._isBanked = false;
+		/**
+		 * Tracked for whether active chord is novel.
+		 * @type {boolean}
+		 */
+		this._isNovel = true;
 
 		_.bindAll(this, ['onNotated']);
 
@@ -89,7 +94,6 @@ define([
 		defaultWidth: 120,
 		/**
 		 * The margins for the stave.
-		 * Change right margin to reveal or hide right barline.
 		 * @type {number}
 		 */
 		margin: {left: 1, right: 1},
@@ -659,6 +663,23 @@ define([
 		 */
 		isBanked: function() {
 			return this._isBanked;
+		},
+		/**
+		 * Sets the status of this stave as novel or not.
+		 *
+		 * @param {boolean} state
+		 * @return undefined
+		 */
+		setNovel: function(state) {
+			this._isNovel = (state ? true : false);
+		},
+		/**
+		 * Returns true if the stave is novel or not.
+		 *
+		 * @return {boolean}
+		 */
+		isNovel: function() {
+			return this._isNovel;
 		},
 		/**
 		 * Handles a "notated" event.

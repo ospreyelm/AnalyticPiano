@@ -128,6 +128,8 @@ define([
 			this._add(chord);
 
 			this.trigger('bank');
+
+			// add novelty to false setting for better isNovel performance
 		},
 		/**
 		 * Returns a list of chords in the chord bank.
@@ -142,14 +144,17 @@ define([
 			config = config || {};
 			var _items = this._items; 
 			var current = this.current();
+			var prior_notes = this.getPriorNotes();
+			var active_notes = this.getActiveNotes();
+
 			var items = [];
 
 			if(config.limit) {
 				_items = this._items.slice(0, config.limit);
-			} 
+			}
 
 			items = _.map(_items, function(chord, index) {
-				return {chord:chord, isBanked:(chord!==current)};
+				return {chord:chord, isBanked:(chord!==current), isNovel:!(_items.length >= 2 && chord===current && active_notes===prior_notes)};
 			});
 
 			if(config.reverse) {
@@ -183,6 +188,23 @@ define([
 		 */
 		current: function() {
 			return this._items[0];
+		},
+		/*
+		 * Functions for isNovel calculation. HELP!!!
+		 */
+		getPriorNotes: function() {
+			if(this._items.length >= 2) {
+				return this._items.slice(1,2)[0];
+			}else {
+				return "this";
+			}
+		},
+		getActiveNotes: function() {
+			if(this._items.length >= 1) {
+				return this._items.slice(0,1)[0];
+			}else {
+				return "that";
+			}
 		},
 		/**
 		 * Returns *all* distinct notes in the chord bank.

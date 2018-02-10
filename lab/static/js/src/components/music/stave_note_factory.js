@@ -1,13 +1,17 @@
 define([
 	'lodash', 
 	'vexflow',
-	'app/utils/analyze'
+	'app/utils/analyze',
+	'app/config'
 ], function(
 	_, 
 	Vex, 
-	Analyze
+	Analyze,
+	Config
 ) {
 	"use strict";
+
+	var DEFAULT_NOTE_COLOR = Config.get('general.defaultNoteColor');
 
 	/**
 	 * StaveNoteFactory.
@@ -48,7 +52,7 @@ define([
 		 * @return
 		 */
 		init: function() {
-			this.defaultNoteColor = this.settings.defaultNoteColor || 'rgb(125,125,125)'; // gray
+			this.defaultNoteColor = this.settings.defaultNoteColor || DEFAULT_NOTE_COLOR;
 			this.highlightMap = {};
 		},
 		/**
