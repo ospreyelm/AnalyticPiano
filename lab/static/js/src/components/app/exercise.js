@@ -60,10 +60,13 @@ define([
 	 */
 	AppExerciseComponent.prototype.getModels = function() {
 		var models = {};
-		models.inputChords = new ExerciseChordBank();
+		var definition = this.getExerciseDefinition()
 		models.midiDevice = new MidiDevice();
 		models.exerciseDefinition = new ExerciseDefinition({
-			definition: this.getExerciseDefinition()
+			definition: definition
+		});
+		models.inputChords = new ExerciseChordBank({
+			definition: definition
 		});
 		models.exerciseGrader = new ExerciseGrader();
 		models.exerciseContext = new ExerciseContext({
