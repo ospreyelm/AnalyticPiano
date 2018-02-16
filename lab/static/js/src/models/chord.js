@@ -13,12 +13,6 @@ define([
 	
 	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
 
-	// HELP!!!
-	// if(this.exerciseContext) {
-		// var STAFF_DISTRIBUTION = this.exerciseContext.getDefinition().getStaffDistribution();
-	// }else {
-	// }
-
 	/**
 	 * Creates an instance of a chord.
 	 *
@@ -35,6 +29,9 @@ define([
 	 */
 	var Chord = function(settings) {
 		this.settings = settings || {};
+		if(this.settings.definition) {
+			STAFF_DISTRIBUTION = this.settings.definition.staffDistribution;
+		}
 		this.init();
 	};
 

@@ -231,7 +231,7 @@ define([
 		 * @return {Chord}
 		 */
 		makeChord: function() {
-			return new Chord();
+			return new Chord(this.settings);
 		},
 		/**
 		 * Returns true if any chords in the bank are sustained.

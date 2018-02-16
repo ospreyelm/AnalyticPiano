@@ -13,3 +13,4 @@
 /docs/jsdoc/out/*
 /harmony/static/js/build/*
 /static/*
+env/
