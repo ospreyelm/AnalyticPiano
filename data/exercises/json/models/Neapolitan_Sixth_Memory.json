@@ -10,6 +10,7 @@
     {"hidden":[45,60,64,69],"visible":[]}
   ],
   "reviewText": "",
+  "staffDistribution": "keyboard",
   "analysis": {
     "enabled": true,
     "mode": {

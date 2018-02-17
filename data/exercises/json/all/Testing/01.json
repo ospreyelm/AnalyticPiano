@@ -1,23 +1,22 @@
 {
   "type": "matching",
-  "introText": "Say-and-play \"scale degree five\" and go!",
+  "introText": "Play the notes on the bass staff.",
   "keySignature": "",
   "key": "jC_",
   "chord": [
-    {"visible":[55,67],"hidden":[]},
-    {"visible":[],"hidden":[55,65,67,71]},
-    {"visible":[],"hidden":[48,64,67,72]}
+    {"visible":[53],"hidden":[]},
+    {"visible":[55],"hidden":[]}
   ],
   "reviewText": "",
-  "staffDistribution": "keyboard",
+  "staffDistribution": "RH",
   "analysis": {
     "enabled": true,
     "mode": {
       "note_names": false,
       "scientific_pitch": false,
-      "scale_degrees": true,
-      "solfege": false,
-      "roman_numerals": true,
+      "scale_degrees": false,
+      "solfege": true,
+      "roman_numerals": false,
       "intervals": false
     }
   },

@@ -650,7 +650,7 @@ AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
 		if(this.Piano.key!=='h') {
 			return this.spelling[this.Piano.key][notes[0] % 12];
 		}
-		return this.nameNotes(notes.length > 1 ? notes : notes[0]);
+		return this.nameNotes(notes.length > 1 ? notes[0] : notes);
 	},
 
 

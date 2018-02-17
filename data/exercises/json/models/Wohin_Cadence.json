@@ -12,6 +12,7 @@
     {"visible":[48,64,67,72],"hidden":[]}
   ],
   "reviewText": "",
+  "staffDistribution": "keyboard",
   "analysis": {
     "enabled": true,
     "mode": {

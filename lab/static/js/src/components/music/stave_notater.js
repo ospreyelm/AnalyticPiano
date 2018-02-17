@@ -624,14 +624,12 @@ define([
 
 			if(notes.length >= 1) {
 			// if(notes.length === 1) {
-				// first row of mutually exclusive options
 				if(mode.scale_degrees && !mode.solfege) {
 					this.drawScaleDegree(x, first_row);
 				} else if(mode.solfege && !mode.scale_degrees) {
 					this.drawSolfege(x, first_row); 
 				}
 
-				// second row of mutually exclusive options
 				if(mode.note_names && !mode.helmholtz) {
 					this.drawNoteName(x, second_row);
 				} else if(notes.length === 1 && mode.scientific_pitch && !mode.note_names) {

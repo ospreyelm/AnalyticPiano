@@ -1,22 +1,27 @@
 {
   "type": "matching",
-  "introText": "Extend RH finger 5 for lowered scale degree two.",
+  "introText": "Play the notes on the bass staff.",
   "keySignature": "",
-  "key": "iA_",
+  "key": "h",
   "chord": [
     {"visible":[52,64],"hidden":[]},
-    {"visible":[50,62,65,70],"hidden":[]},
     {"visible":[52,62,64,68],"hidden":[]},
-    {"visible":[45,60,64,69],"hidden":[]}
+    {"visible":[45,61,64,69],"hidden":[]},
+    {"visible":[57,69],"hidden":[]},
+    {"visible":[57,67,69,73],"hidden":[]},
+    {"visible":[50,66,69,74],"hidden":[]},
+    {"visible":[50,62],"hidden":[]},
+    {"visible":[50,60,62,66],"hidden":[]},
+    {"visible":[43,59,62,67],"hidden":[]}
   ],
   "reviewText": "",
   "staffDistribution": "keyboard",
   "analysis": {
     "enabled": true,
     "mode": {
-      "note_names": false,
+      "note_names": true,
       "scientific_pitch": false,
-      "scale_degrees": true,
+      "scale_degrees": false,
       "solfege": false,
       "roman_numerals": true,
       "intervals": false
@@ -26,8 +31,7 @@
     "enabled": true,
     "mode": {
       "roothighlight": false,
-      "tritonehighlight": false,
-      "loweredhighlight": true
+      "tritonehighlight": true
     }
   }
 }
