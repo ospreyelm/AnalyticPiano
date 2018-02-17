@@ -56,10 +56,11 @@ define([
 			this.highlightMap = {};
 		},
 		/**
-		 * VexFlow rhythm code (enclosed in double quotation marks):
-		 * "w" = whole note
-		 * "h" = half note
-		 * "q" = quarter note
+		 * VexFlow rhythm code:
+		 * w = whole note
+		 * h = half note
+		 * q = quarter note
+		 * Unsupported in stave.js: createStaveVoice(): "r" = suffix for rest
 		 */
 		getRhythmValue: function() {
 			if (!this.chord._rhythmValue) {
@@ -77,11 +78,6 @@ define([
 		createStaveNotes: function() {
 			var stave_note_1 = this._makeStaveNote(this.getNoteKeys(), this.getNoteModifiers(), this.getRhythmValue());
 			return [stave_note_1];
-			/**
-			 * For testing.
-			 */
-			// var stave_note_2 = this._makeStaveNote(this.getNoteKeys(), this.getNoteModifiers(), this.getRhythmValue());
-			// return [stave_note_1, stave_note_2];
 		},
 		/**
 		 * Returns true if there are any stave notes to create, false otherwise.
@@ -361,7 +357,7 @@ define([
 				keys: keys,
 				/**
 				 * Duration must equal a full bar as defined
-				 * in stave.js and vexflow.js (e.g. by TIME4_4)
+				 * in stave.js and vexflow.js (Vex.Flow.METER)
 				 */
 				duration: rhythm_value,
 				clef: this.clef,

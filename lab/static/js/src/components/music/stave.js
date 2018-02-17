@@ -297,10 +297,18 @@ define([
 			var voice, formatter, time;
 
 			/**
-			 * Meter defined here
+			 * Meter defined here on basis of rhythm value.
 			 */
 			if(this.hasStaveNotes()) {
-				time = Vex.Flow.TIME4_4;
+				if(this.noteFactory.getRhythmValue() === "w") {
+					time = {num_beats:4, beat_value:4, resolution:Vex.Flow.RESOLUTION};
+				}else if(this.noteFactory.getRhythmValue() === "h") {
+					time = {num_beats:2, beat_value:4, resolution:Vex.Flow.RESOLUTION};
+				}else if(this.noteFactory.getRhythmValue() === "q") {
+					time = {num_beats:1, beat_value:4, resolution:Vex.Flow.RESOLUTION};
+				}else {
+					time = {num_beats:4, beat_value:4, resolution:Vex.Flow.RESOLUTION};
+				}
 				voice = new Vex.Flow.Voice(time);
 				voice.addTickables(this.createStaveNotes());
 			}

@@ -4,8 +4,8 @@
   "keySignature": "",
   "key": "jC_",
   "chord": [
-    {"visible":[53],"hidden":[]},
-    {"visible":[55],"hidden":[]}
+    {"visible":[53],"hidden":[],"rhythmValue":"h"},
+    {"visible":[55],"hidden":[],"rhythmValue":"h"}
   ],
   "reviewText": "",
   "staffDistribution": "RH",

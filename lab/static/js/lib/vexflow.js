@@ -532,9 +532,7 @@ position:"B/4"}}}, "8":{common:{head_width:10.5, stem:true, stem_offset:0, flag:
 code_flag_downstem:"v8f", dot_shiftY:0, line_above:0, line_below:0}, type:{n:{code_head:"vb"}, h:{code_head:"v22"}, m:{code_head:"v3e"}, r:{code_head:"v3c", head_width:13, stem:false, flag:false, rest:true, position:"B/4", dot_shiftY:-0.5, line_above:1, line_below:2}, s:{head_width:15, position:"B/4"}}}, "32":{common:{beam_count:3, head_width:10.5, stem:true, stem_offset:0, flag:true, code_flag_upstem:"v47", code_flag_downstem:"v2a", dot_shiftY:0, line_above:0, line_below:0}, type:{n:{code_head:"vb"}, 
 h:{code_head:"v22"}, m:{code_head:"v3e"}, r:{code_head:"v55", head_width:16, stem:false, flag:false, rest:true, position:"B/4", dot_shiftY:-1.5, line_above:2, line_below:2}, s:{head_width:15, position:"B/4"}}}, "64":{common:{beam_count:3, head_width:10.5, stem:true, stem_offset:0, flag:true, code_flag_upstem:"va9", code_flag_downstem:"v58", dot_shiftY:0, line_above:0, line_below:0}, type:{n:{code_head:"vb"}, h:{code_head:"v22"}, m:{code_head:"v3e"}, r:{code_head:"v38", head_width:18, stem:false, 
 flag:false, rest:true, position:"B/4", dot_shiftY:-1.5, line_above:2, line_below:3}, s:{head_width:15, position:"B/4"}}}};
-Vex.Flow.TIME4_4 = {num_beats:4, beat_value:4, resolution:Vex.Flow.RESOLUTION};
-Vex.Flow.TIME3_4 = {num_beats:3, beat_value:4, resolution:Vex.Flow.RESOLUTION};
-Vex.Flow.TIME2_4 = {num_beats:2, beat_value:4, resolution:Vex.Flow.RESOLUTION};
+Vex.Flow.METER = {num_beats:4, beat_value:4, resolution:Vex.Flow.RESOLUTION};
 Vex.Flow.Font = {glyphs:{v0:{x_min:0, x_max:514.5, ha:525, o:"m 236 648 b 246 648 238 648 242 648 b 288 646 261 648 283 648 b 472 513 364 634 428 587 b 514 347 502 464 514 413 b 462 163 514 272 499 217 b 257 44 409 83 333 44 b 50 163 181 44 103 83 b 0 347 14 217 0 272 b 40 513 0 413 12 464 b 236 648 87 591 155 638 m 277 614 b 253 616 273 616 261 616 b 242 616 247 616 243 616 b 170 499 193 609 181 589 b 159 348 163 446 159 398 b 166 222 159 308 161 266 b 201 91 174 138 183 106 b 257 76 215 81 235 76 b 311 91 277 76 299 81 b 347 222 330 106 338 138 b 353 348 352 266 353 308 b 344 499 353 398 351 446 b 277 614 333 587 322 606 m 257 -1 l 258 -1 l 255 -1 l 257 -1 m 257 673 l 258 673 l 255 673 l 257 673 "}, 
 v1:{x_min:-1.359375, x_max:344.359375, ha:351, o:"m 126 637 l 129 638 l 198 638 l 266 638 l 269 635 b 274 631 272 634 273 632 l 277 627 l 277 395 b 279 156 277 230 277 161 b 329 88 281 123 295 106 b 344 69 341 81 344 79 b 337 55 344 62 343 59 l 333 54 l 197 54 l 61 54 l 58 55 b 50 69 53 59 50 62 b 65 88 50 79 53 81 b 80 97 72 91 74 93 b 117 156 103 113 112 129 b 117 345 117 161 117 222 l 117 528 l 100 503 l 38 406 b 14 383 24 384 23 383 b -1 398 5 383 -1 390 b 4 415 -1 403 1 409 b 16 437 5 416 10 426 l 72 539 l 100 596 b 121 632 119 631 119 631 b 126 637 122 634 125 635 m 171 -1 l 172 -1 l 170 -1 l 171 -1 m 171 673 l 172 673 l 170 673 l 171 673 "}, 
 v2:{x_min:-1.359375, x_max:458.6875, ha:468, o:"m 197 648 b 216 648 201 648 208 648 b 258 646 232 648 253 648 b 419 546 333 637 393 599 b 432 489 428 528 432 509 b 356 342 432 440 405 384 b 235 278 322 313 288 295 b 69 170 166 256 107 217 b 69 169 69 170 69 169 b 69 169 69 169 69 169 b 74 173 69 169 72 170 b 209 222 112 204 163 222 b 310 195 247 222 274 215 b 371 179 332 184 352 179 b 396 181 379 179 387 179 b 428 202 409 184 423 194 b 442 212 431 209 436 212 b 458 197 450 212 458 206 b 441 148 458 190 449 165 b 299 44 409 84 353 44 b 288 45 295 44 292 44 b 250 61 274 45 268 49 b 122 99 212 86 164 99 b 73 91 104 99 88 97 b 28 63 53 84 34 72 b 14 54 25 56 20 54 b 1 62 9 54 4 56 l -1 65 l -1 79 b 0 99 -1 91 0 95 b 2 113 1 102 2 108 b 164 309 20 197 81 272 b 285 470 232 341 277 398 b 287 487 287 476 287 481 b 171 595 287 551 239 595 b 155 595 166 595 160 595 b 142 592 145 594 142 594 b 145 589 142 592 142 591 b 179 527 168 576 179 551 b 132 455 179 496 163 467 b 104 451 122 452 112 451 b 27 530 62 451 27 487 b 29 555 27 538 27 546 b 197 648 44 601 115 639 m 228 -1 l 230 -1 l 227 -1 l 228 -1 m 228 673 l 230 673 l 227 673 l 228 673 "}, 
@@ -3297,52 +3295,55 @@ Vex.Flow.Dot.prototype.draw = function() {
   this.mContexts = null;
   this.render_options = {perTickableWidth:15, maxExtraWidthPerTickable:40}
 };
-Vex.Flow.Formatter.FormatAndDraw = function(ctx, stave, notes, params) {
-  var voice = (new Vex.Flow.Voice(Vex.Flow.TIME4_4)).setMode(Vex.Flow.Voice.Mode.SOFT);
-  voice.addTickables(notes);
-  var opts = {auto_beam:false, align_rests:false};
-  if(typeof params == "object") {
-    Vex.Merge(opts, params)
-  }else {
-    if(typeof params == "boolean") {
-      opts.auto_beam = params
-    }
-  }var beams = null;
-  if(opts.auto_beam == true) {
-    beams = Vex.Flow.Beam.applyAndGetBeams(voice)
-  }var formatter = (new Vex.Flow.Formatter).joinVoices([voice], {align_rests:opts.align_rests}).formatToStave([voice], stave, {align_rests:opts.align_rests});
-  voice.setStave(stave);
-  voice.draw(ctx, stave);
-  if(beams != null) {
-    for(var i = 0;i < beams.length;++i) {
-      beams[i].setContext(ctx).draw()
-    }
-  }return voice.getBoundingBox()
-};
-Vex.Flow.Formatter.FormatAndDrawTab = function(ctx, tabstave, stave, tabnotes, notes, autobeam) {
-  var notevoice = (new Vex.Flow.Voice(Vex.Flow.TIME4_4)).setMode(Vex.Flow.Voice.Mode.SOFT);
-  notevoice.addTickables(notes);
-  var tabvoice = (new Vex.Flow.Voice(Vex.Flow.TIME4_4)).setMode(Vex.Flow.Voice.Mode.SOFT);
-  tabvoice.addTickables(tabnotes);
-  var opts = {auto_beam:false, align_rests:false};
-  if(typeof params == "object") {
-    Vex.Merge(opts, params)
-  }else {
-    if(typeof params == "boolean") {
-      opts.auto_beam = params
-    }
-  }var beams = null;
-  if(opts.auto_beam == true) {
-    beams = Vex.Flow.Beam.applyAndGetBeams(voice)
-  }var formatter = (new Vex.Flow.Formatter).joinVoices([notevoice], {align_rests:opts.align_rests}).joinVoices([tabvoice]).formatToStave([notevoice, tabvoice], stave, {align_rests:opts.align_rests});
-  notevoice.draw(ctx, stave);
-  tabvoice.draw(ctx, tabstave);
-  if(beams != null) {
-    for(var i = 0;i < beams.length;++i) {
-      beams[i].setContext(ctx).draw()
-    }
-  }(new Vex.Flow.StaveConnector(stave, tabstave)).setContext(ctx).draw()
-};
+/*
+ * Following functions taken out of commission because of using METER definition from this file.
+ */
+// Vex.Flow.Formatter.FormatAndDraw = function(ctx, stave, notes, params) {
+//   var voice = (new Vex.Flow.Voice(Vex.Flow.METER)).setMode(Vex.Flow.Voice.Mode.SOFT);
+//   voice.addTickables(notes);
+//   var opts = {auto_beam:false, align_rests:false};
+//   if(typeof params == "object") {
+//     Vex.Merge(opts, params)
+//   }else {
+//     if(typeof params == "boolean") {
+//       opts.auto_beam = params
+//     }
+//   }var beams = null;
+//   if(opts.auto_beam == true) {
+//     beams = Vex.Flow.Beam.applyAndGetBeams(voice)
+//   }var formatter = (new Vex.Flow.Formatter).joinVoices([voice], {align_rests:opts.align_rests}).formatToStave([voice], stave, {align_rests:opts.align_rests});
+//   voice.setStave(stave);
+//   voice.draw(ctx, stave);
+//   if(beams != null) {
+//     for(var i = 0;i < beams.length;++i) {
+//       beams[i].setContext(ctx).draw()
+//     }
+//   }return voice.getBoundingBox()
+// };
+// Vex.Flow.Formatter.FormatAndDrawTab = function(ctx, tabstave, stave, tabnotes, notes, autobeam) {
+//   var notevoice = (new Vex.Flow.Voice(Vex.Flow.METER)).setMode(Vex.Flow.Voice.Mode.SOFT);
+//   notevoice.addTickables(notes);
+//   var tabvoice = (new Vex.Flow.Voice(Vex.Flow.METER)).setMode(Vex.Flow.Voice.Mode.SOFT);
+//   tabvoice.addTickables(tabnotes);
+//   var opts = {auto_beam:false, align_rests:false};
+//   if(typeof params == "object") {
+//     Vex.Merge(opts, params)
+//   }else {
+//     if(typeof params == "boolean") {
+//       opts.auto_beam = params
+//     }
+//   }var beams = null;
+//   if(opts.auto_beam == true) {
+//     beams = Vex.Flow.Beam.applyAndGetBeams(voice)
+//   }var formatter = (new Vex.Flow.Formatter).joinVoices([notevoice], {align_rests:opts.align_rests}).joinVoices([tabvoice]).formatToStave([notevoice, tabvoice], stave, {align_rests:opts.align_rests});
+//   notevoice.draw(ctx, stave);
+//   tabvoice.draw(ctx, tabstave);
+//   if(beams != null) {
+//     for(var i = 0;i < beams.length;++i) {
+//       beams[i].setContext(ctx).draw()
+//     }
+//   }(new Vex.Flow.StaveConnector(stave, tabstave)).setContext(ctx).draw()
+// };
 Vex.Flow.Formatter.LookAhead = function(notes, rest_line, i, compare) {
   var next_rest_line = rest_line;
   i++;

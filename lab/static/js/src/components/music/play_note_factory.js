@@ -83,6 +83,13 @@ define([
 			return this.staveNoteFactory.hasStaveNotes();
 		},
 		/**
+		 * Returns rhythm value.
+		 *
+		 */
+		getRhythmValue: function() {
+			return this.staveNoteFactory.getRhythmValue();
+		},
+		/**
 		 * Returns an array of modifer functions to modify a Vex.Flow.StaveNote.
 		 *
 		 * @return {array}
