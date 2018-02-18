@@ -520,15 +520,28 @@ define([
 		noteNumBelongsToClef: function(noteNumber, clef) {
 			switch(clef) {
 				case 'bass':
-					if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {
+					if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {// lowest note
 						if(noteNumber <= 65) {
 							return true;
 						}
-					}else if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber != this.getSortedNotes()[0]) {
+					}else if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber != this.getSortedNotes()[0]) {// not lowest note
 						if(noteNumber < 55) {
 							return true;
 						}
 					}else if(STAFF_DISTRIBUTION === 'keyboard' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber < 60) {
+						return true;
+					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {// lowest note
+						if(noteNumber <= 65) {
+							return true;
+						}
+					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber != this.getSortedNotes()[0]) {// not lowest note
+						if(noteNumber < 55) {
+							return true;
+						}
+					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber < 60) {
+						if(this.getSortedNotes().length === 1 && noteNumber >= 55) {
+							return false;
+						}
 						return true;
 					}else if(STAFF_DISTRIBUTION === 'LH') {
 						return true;
@@ -552,6 +565,18 @@ define([
 							return true;
 						}
 					}else if(STAFF_DISTRIBUTION === 'keyboard' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber >= 60) {
+						return true;
+					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
+						if(noteNumber >= 55) {
+							return true;
+						}
+					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && !this.getSortedNotes().slice(1).includes(noteNumber)) {
+						if(noteNumber > 65) {
+							return true;
+						}
+					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber >= 60) {
+						return true;
+					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && this.getSortedNotes().length === 1 && noteNumber >= 55) {
 						return true;
 					}else if(STAFF_DISTRIBUTION === 'LH') {
 						return false;

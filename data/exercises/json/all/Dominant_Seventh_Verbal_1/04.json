@@ -4,15 +4,15 @@
   "keySignature": "bbb",
   "key": "jEb",
   "chord": [
-    {"visible":[58,70],"hidden":[],"rhythmValue":"w"},
+    {"visible":[58,70],"hidden":[],"rhythmValue":"h"},
     {"visible":[68],"hidden":[],"rhythmValue":"h"},
     {"visible":[74],"hidden":[],"rhythmValue":"h"},
     {"visible":[58,70],"hidden":[],"rhythmValue":"w"},
     {"visible":[58,68,70,74],"hidden":[],"rhythmValue":"h"},
-    {"visible":[51,67,70,75],"hidden":[],"rhythmValue":"h"}
+    {"visible":[51,67,70,75],"hidden":[],"rhythmValue":"w"}
   ],
   "reviewText": "",
-  "staffDistribution": "keyboard",
+  "staffDistribution": "keyboardPlusRHBias",
   "analysis": {
     "enabled": true,
     "mode": {

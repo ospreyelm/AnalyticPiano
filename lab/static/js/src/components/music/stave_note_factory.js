@@ -362,10 +362,13 @@ define([
 				duration: rhythm_value,
 				clef: this.clef,
 				/**
-				 * Autostem can be enabled once horizontal spacing is
-				 * fixed for chords including seconds and their analysis.
+				 * Currently, downstemmed chords including seconds are
+				 * incorrectly displaced to the right: the primary noteheads
+				 * are misaligned with the analysis and the metric grid.
+				 * Disable this option to have all up stems (ok-ish for whole
+				 * notes).
 				 */
-				// auto_stem: true
+				auto_stem: true
 			});
 
 			for(var i = 0, len = modifiers.length; i < len; i++) {

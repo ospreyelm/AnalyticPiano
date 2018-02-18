@@ -4,15 +4,15 @@
   "keySignature": "###",
   "key": "jA_",
   "chord": [
-    {"visible":[52,64],"hidden":[],"rhythmValue":"w"},
+    {"visible":[52,64],"hidden":[],"rhythmValue":"h"},
     {"visible":[62],"hidden":[],"rhythmValue":"h"},
     {"visible":[68],"hidden":[],"rhythmValue":"h"},
     {"visible":[52,64],"hidden":[],"rhythmValue":"w"},
     {"visible":[52,62,64,68],"hidden":[],"rhythmValue":"h"},
-    {"visible":[45,61,64,69],"hidden":[],"rhythmValue":"h"}
+    {"visible":[45,61,64,69],"hidden":[],"rhythmValue":"w"}
   ],
   "reviewText": "",
-  "staffDistribution": "keyboard",
+  "staffDistribution": "keyboardPlusRHBias",
   "analysis": {
     "enabled": true,
     "mode": {
