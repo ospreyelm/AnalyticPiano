@@ -29,8 +29,8 @@ define([
 	 */
 	var Chord = function(settings) {
 		this.settings = settings || {};
-		if(this.settings.definition) {
-			STAFF_DISTRIBUTION = this.settings.definition.staffDistribution;
+		if(this.settings.staffDistribution) {
+			STAFF_DISTRIBUTION = this.settings.staffDistribution;
 		}
 		this.init();
 	};
@@ -42,7 +42,12 @@ define([
 		 * @return undefined
 		 */
 		init: function() {
-			this._rhythmValue = false;
+			/**
+			 * Rhythm value for specific note. Value can be "w", "h", or "q"
+			 * @type {string}
+			 * @protected
+			 */
+			this._rhythmValue = null;
 			/**
 			 * Container for the notes that are active.
 			 * @type {object}
@@ -74,6 +79,11 @@ define([
 			 * @protected
 			 */
 			this._noteProps = {};
+
+			// initialize rhythm value
+			if("rhythm" in this.settings) {
+				this._rhythmValue = this.settings.rhythm;
+			}
 
 			// initialize notes that should be on
 			if("notes" in this.settings) {

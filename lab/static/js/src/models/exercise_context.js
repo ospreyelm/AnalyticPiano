@@ -422,10 +422,11 @@ define([
 			var exercise_chords = [];
 			var problems = this.definition.getProblems();
 			var CORRECT = this.grader.STATE.CORRECT;
-			var g_problem, chord, chords; 
+			var g_problem, chord, chords, rhythm;
 
 			for(var i = 0, len = problems.length; i < len; i++) {
 				notes = problems[i].visible;
+				rhythm = problems[i].rhythm;
 				g_problem = false;
 				if(this.graded !== false && this.graded.problems[i]) {
 					g_problem = this.graded.problems[i];
@@ -436,7 +437,7 @@ define([
 					notes = _.uniq(notes);
 				}
 
-				chord = new ExerciseChord({ notes: notes });
+				chord = new ExerciseChord({ notes: notes, rhythm: rhythm });
 
 				if(g_problem) {
 					_.each(g_problem.count, function(notes, correctness) {
@@ -464,10 +465,13 @@ define([
 			var notes = [];
 			var exercise_chords = []; 
 			var chords;
+			var rhythm;
 
 			for(var i = 0, len = problems.length; i < len; i++) {
 				notes = problems[i].notes;
-				chord = new ExerciseChord({ notes: notes });
+				rhythm = problems[i].rhythm;
+				// we can push any notewise features through this entry point!
+				chord = new ExerciseChord({ notes: notes, rhythm: rhythm });
 				exercise_chords.push(chord);
 			}
 
