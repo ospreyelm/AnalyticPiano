@@ -289,10 +289,28 @@ define([
 
             // now add the staves for showing the notes
             for(var i = 0, len = display_items.length; i < len; i++) {
+                var elapsed_quarters = 0;
+                for(var j = 0; j < i; j++) {
+                    var duration = 4;
+                    var rhythm_code = null;
+                    if(display_items[j].chord.settings.rhythm) {
+                        rhythm_code = display_items[j].chord.settings.rhythm;
+                    }
+                    if(rhythm_code === "w") {
+                        duration = 4;
+                    }else if(rhythm_code === "h") {
+                        duration = 2;
+                    }else if(rhythm_code === "q") {
+                        duration = 1;
+                    }
+                    elapsed_quarters += duration;
+                }
+                window.console.dir(elapsed_quarters);
+
                 display_chord = display_items[i].chord;
                 exercise_chord = exercise_items[i].chord;
-                treble = this.createNoteStave('treble', _.clone(position), display_chord, exercise_chord);
-                bass = this.createNoteStave('bass', _.clone(position), display_chord, exercise_chord);
+                treble = this.createNoteStave('treble', _.clone(position), display_chord, exercise_chord, elapsed_quarters);
+                bass = this.createNoteStave('bass', _.clone(position), display_chord, exercise_chord, elapsed_quarters);
                 position.index += 1;
                 treble.connect(bass);
                 staves.push(treble);
@@ -334,8 +352,20 @@ define([
          * @param {Chord} chord
          * @return {Stave}
          */
-        createNoteStave: function(clef, position, displayChord, exerciseChord) {
+        createNoteStave: function(clef, position, displayChord, exerciseChord, elapsed_quarters) {
             var stave = new Stave(clef, position);
+            var rhythmDivisor = null;
+            if(exerciseChord.settings.rhythm) {
+                var rhythmValue = exerciseChord.settings.rhythm;
+                if(rhythmValue === "h") {
+                    rhythmDivisor = 2;
+                }else if(rhythmValue === "q") {
+                    rhythmDivisor = 4;
+                }else if(rhythmValue === "w") {
+                    rhythmDivisor = 1;
+                }
+            }
+            var elapsedQuarters = elapsed_quarters;
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
@@ -352,7 +382,7 @@ define([
                 analyzeConfig: this.getAnalyzeConfig()
             }));
             stave.setMaxWidth(this.getWidth());
-            stave.updatePosition();
+            stave.updatePositionWithRhythm(rhythmDivisor, elapsedQuarters);
 
             return stave;
         },

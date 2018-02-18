@@ -38,38 +38,38 @@ define([
 	 */
 	var Stave = function(clef, position) {
 		/**
-		 * The clef this stave is associated with (treble or bass).
+		 * The clef this measure is associated with (treble or bass).
 		 * @type {string}
 		 * @return
 		 */
 		this.clef = '';
 		/**
-		 * The starting X position of the stave.
+		 * The starting X position of the measure.
 		 * @type {number}
 		 */
 		this.start_x = 0;
 		/**
-		 * The starting Y position of the stave.
+		 * The starting Y position of the measure.
 		 * @type {number}
 		 */
 		this.start_y = 0;
 		/**
-		 * The maximum width of the stave.
+		 * The maximum width of the measure.
 		 * @type {number}
 		 */
 		this.maxWidth = null;
 		/**
-		 * The position of the stave in a sequence of staves.
+		 * The position of the measure in a series of measures.
 		 * @type {object}
 		 */
 		this.position = {index: 0, count: 0};
 		/**
-		 * True if the stave is considered "banked" or false if not.
+		 * True if the measure is considered "banked" or false if not.
 		 * @type {boolean}
 		 */
 		this._isBanked = false;
 		/**
-		 * Tracked for whether active chord is novel.
+		 * Tracker for whether active chord is novel.
 		 * @type {boolean}
 		 */
 		this._isNovel = true;
@@ -617,6 +617,44 @@ define([
 			this.start_y = this.getYForClef(this.clef);
 		},
 		/**
+		 * Updates the position of the stave. 
+		 *
+		 * This will have the side effect of modifying  the starting X and Y
+		 * positions as well as the width of the stave.
+		 *
+		 * @return undefined
+		 */
+		updatePositionWithRhythm: function(rhythmDivisor, elapsedQuarters) {
+			var start_x, basic_width, width;
+
+			if(this.isFirstBar()) {
+				this.start_x = this.margin.left;
+				this.width = this.firstBarWidth;
+			} else {
+				start_x = (this.margin.left + this.firstBarWidth);
+				basic_width = Math.floor((this.maxWidth - start_x) / this.position.maxCount);
+				width = basic_width;
+				if(rhythmDivisor != null && Number.isInteger(rhythmDivisor) && Number.isInteger(elapsedQuarters)) {
+					if(rhythmDivisor <= 4) {
+						width = Math.floor(basic_width / rhythmDivisor);
+					}
+				}
+
+				// start_x += ((this.position.index - 1) * basic_width);
+				start_x += (basic_width * elapsedQuarters / 4);
+
+				this.start_x = start_x;
+
+				if(this.isLastBar()) {
+					// stretch to fill remaining area
+					this.width = this.maxWidth - this.start_x - this.margin.right;
+				} else {
+					this.width = width;
+				}
+			}
+
+			this.start_y = this.getYForClef(this.clef);
+		},		/**
 		 * Returns the vertical Y position associated with the given clef.
 		 *
 		 * @param {string} clef treble|bass
