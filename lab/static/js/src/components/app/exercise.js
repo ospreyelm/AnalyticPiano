@@ -65,8 +65,9 @@ define([
 		models.exerciseDefinition = new ExerciseDefinition({
 			definition: definition
 		});
+		// push exercise-wide features through here
 		models.inputChords = new ExerciseChordBank({
-			definition: definition
+			staffDistribution: definition.staffDistribution
 		});
 		models.exerciseGrader = new ExerciseGrader();
 		models.exerciseContext = new ExerciseContext({

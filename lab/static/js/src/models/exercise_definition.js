@@ -188,8 +188,8 @@ define(['lodash'], function(_) {
 			// normalize the internal representation of each chord in the
 			// set of problems to have VISIBLE/HIDDEN parts
 			problems = _.map(problems, function(chord, index) {
-				var normalized = {"visible":[], "hidden":[],"notes":[]};
-				// var normalized = {"visible":[], "hidden":[],"notes":[],"rhythm":false};
+				// var normalized = {"visible":[], "hidden":[],"notes":[]};
+				var normalized = {"visible":[], "hidden":[],"notes":[],"rhythm":null};
 
 				if(_.isArray(chord)) {
 					normalized.visible = chord;
@@ -211,9 +211,9 @@ define(['lodash'], function(_) {
 				normalized.hidden = ExerciseDefinition.sortNotes(normalized.hidden);
 				normalized.notes = ExerciseDefinition.sortNotes(normalized.notes);
 
-				// if(chord.hasOwnProperty("rhythm")) {
-				// 	normalized.rhythm = chord.rhythm;
-				// }
+				if(chord.hasOwnProperty("rhythmValue")) {
+					normalized.rhythm = chord.rhythmValue;
+				}
 
 				return normalized;
 			});
