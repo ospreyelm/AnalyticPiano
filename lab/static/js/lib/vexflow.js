@@ -1619,6 +1619,7 @@ Vex.Flow.StaveNote.prototype.init = function(note_struct) {
         this.min_line = this.keyProps[i].line
       };
     };
+    /* Stem calculation improved for HarmonyLab (per Gould, Behind Bars) */
     if((this.min_line + this.max_line) < 6) {
       auto_stem_direction = 1
     }else {
@@ -1903,7 +1904,7 @@ Vex.Flow.StaveNote.prototype.getVoiceShiftWidth = function() {
   return this.glyph.head_width * (this.displaced ? 2 : 1)
 };
 Vex.Flow.StaveNote.prototype.calcExtraPx = function() {
-  this.setExtraLeftPx(this.displaced && this.stem_direction == -1 ? this.glyph.head_width : 0);
+  this.setExtraLeftPx(this.displaced && this.stem_direction == -1 ? this.glyph.head_width * 0 /* for HarmonyLab */ : 0);
   this.setExtraRightPx(this.displaced && this.stem_direction == 1 ? this.glyph.head_width : 0)
 };
 Vex.Flow.StaveNote.prototype.preFormat = function() {
