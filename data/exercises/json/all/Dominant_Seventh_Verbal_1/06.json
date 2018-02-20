@@ -7,7 +7,7 @@
     {"visible":[48,60],"hidden":[],"rhythmValue":"h"},
     {"visible":[58],"hidden":[],"rhythmValue":"h"},
     {"visible":[64],"hidden":[],"rhythmValue":"h"},
-    {"visible":[48,60],"hidden":[],"rhythmValue":"w"},
+    {"visible":[60],"hidden":[],"rhythmValue":"w"},
     {"visible":[48,58,60,64],"hidden":[],"rhythmValue":"h"},
     {"visible":[41,57,60,65],"hidden":[],"rhythmValue":"w"}
   ],

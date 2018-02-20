@@ -284,6 +284,28 @@ schemata.append([# high
         [ 3, "iC_", "bbb"],
     ]
 ])
+schemata.append([# schema 17
+    '5', [
+        [-3, "jA_", "###"],
+        [ 2, "jD_", "##"],
+        [-5, "jG_", "#"],
+        [ 0, "jC_", ""],
+        [-7, "jF_", "b"],
+        [-2, "jBb", "bb"],
+        [ 3, "jEb", "bbb"]
+    ]
+])
+schemata.append([# schema 18
+    '5', [
+        [-3, "iF#", "###"],
+        [ 2, "iB_", "##"],
+        [ 7, "iE_", "#"],
+        [ 0, "iA_", ""],
+        [ 5, "iD_", "b"],
+        [-2, "iG_", "bb"],
+        [ 3, "iC_", "bbb"]
+    ]
+])
 
 if sys.argv[2].isdigit():
     requested_schema = int(sys.argv[2])

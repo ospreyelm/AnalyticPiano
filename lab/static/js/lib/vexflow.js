@@ -1904,7 +1904,7 @@ Vex.Flow.StaveNote.prototype.getVoiceShiftWidth = function() {
   return this.glyph.head_width * (this.displaced ? 2 : 1)
 };
 Vex.Flow.StaveNote.prototype.calcExtraPx = function() {
-  this.setExtraLeftPx(this.displaced && this.stem_direction == -1 ? this.glyph.head_width * 0 /* for HarmonyLab */ : 0);
+  this.setExtraLeftPx(this.displaced && this.stem_direction == -1 ? this.glyph.head_width /* * 0 for HarmonyLab once accidental collisions resolved */ : 0);
   this.setExtraRightPx(this.displaced && this.stem_direction == 1 ? this.glyph.head_width : 0)
 };
 Vex.Flow.StaveNote.prototype.preFormat = function() {
