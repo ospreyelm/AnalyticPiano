@@ -192,8 +192,8 @@ fieldset.settings-notation {
 /*--------------------------------------------------*/
 /* Notifications Styles */
 .notificationAlerts {
-    color: yellow;
-    background-color: none;
+    color: white;
+    background-color: black;
     padding: 3px 6px;
     border-radius: 6px;
     float: right;
@@ -211,7 +211,7 @@ fieldset.settings-notation {
     margin-bottom: 1em;
     border: 0px solid #fff;
     border-radius: 6px;
-    background-color: #ddd;
+    background-color: white;
     padding: 1em;
     color: #000;
 }
@@ -240,7 +240,7 @@ fieldset.settings-notation {
     margin-left: 0.5em;
 }
 .notification .details {
-    display: none;
+    display: block;
     margin-top: 0.5em;
 }
 

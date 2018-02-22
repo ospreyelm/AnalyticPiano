@@ -141,8 +141,14 @@ define([
                             '<p>Exercise <%= exercise_num %> of <%= exercise_list.length %></p>',
                         '<% } %>',
                         '<p><span class="exercise-status-state" style="background-color:<%= status_color %>"><%= status_text %> <%= status_icon %></span>',
-                        '<% if (typeof(time_to_complete) !== "undefined" && time_to_complete != "") { %>',
-                            '&nbsp;in&nbsp;<%= time_to_complete %></p>',// &nbsp;(<%= time_to_complete_series %>)
+                        '<% if (typeof(time_to_complete) !== "undefined" && time_to_complete != "" && status_text !== "finished with errors") { %>',
+                            '&nbsp;in&nbsp;<%= time_to_complete %></p>',
+                        '<% } %>',
+                        '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "") { %>',
+                            '<p>All&nbsp;done&nbsp;in&nbsp;<%= time_to_complete_series %>',
+                        '<% } %>',
+                        '<% if (typeof(ex_restarts) !== "undefined" && ex_restarts > 0) { %>',
+                            '&nbsp;with&nbsp;<%= ex_restarts %>&nbsp;restart(s)',
                         '<% } %>',
                         '<% if (typeof(next_exercise) !== "undefined" && next_exercise != "") { %>',
                             '<p><a class="exercise-status-next-btn" href="<%= next_exercise %>">Click for next</a></p>',
@@ -191,6 +197,7 @@ define([
                     }
                     if(exc.hasSeriesTimer()) {
                         tpl_data.time_to_complete_series = exc.getExerciseSeriesDuration();
+                        tpl_data.ex_restarts = exc.getExerciseGroupRestarts();
                     }
                     break;
                 case exc.STATE.FINISHED:
@@ -305,7 +312,7 @@ define([
                     }
                     elapsed_quarters += duration;
                 }
-                window.console.dir(elapsed_quarters);
+                // window.console.dir(elapsed_quarters);
 
                 display_chord = display_items[i].chord;
                 exercise_chord = exercise_items[i].chord;
