@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "DOMINANT TRIAD DRILL IN MINOR. Narration (of scale degrees, then voice leading): \"degrees 5, 2, 7; alto stays, others move.\"",
+  "keySignature": "###",
+  "key": "iF#",
+  "chord": [
+    {"visible":[49,61],"hidden":[],"rhythmValue":"h"},
+    {"visible":[],"hidden":[56],"rhythmValue":"h"},
+    {"visible":[],"hidden":[65],"rhythmValue":"h"},
+    {"visible":[],"hidden":[61],"rhythmValue":"w"},
+    {"visible":[],"hidden":[49,56,61,65],"rhythmValue":"h"},
+    {"visible":[],"hidden":[42,57,61,66],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboardPlusRHBias",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

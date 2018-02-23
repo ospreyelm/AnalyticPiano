@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "DOMINANT TRIAD DRILL. Narration (of scale degrees, then voice leading): \"degrees 5, 2, 7; alto stays, others move.\"",
+  "keySignature": "b",
+  "key": "jF_",
+  "chord": [
+    {"visible":[48,60],"hidden":[],"rhythmValue":"h"},
+    {"visible":[55],"hidden":[],"rhythmValue":"h"},
+    {"visible":[64],"hidden":[],"rhythmValue":"h"},
+    {"visible":[60],"hidden":[],"rhythmValue":"w"},
+    {"visible":[48,55,60,64],"hidden":[],"rhythmValue":"h"},
+    {"visible":[41,57,60,65],"hidden":[],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboardPlusRHBias",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

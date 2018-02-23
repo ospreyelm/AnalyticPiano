@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "DOMINANT SEVENTH DRILL IN MINOR. Narration (of scale degrees, then voice leading): \"degrees 5, 4, 7; alto stays, others move.\"",
+  "keySignature": "##",
+  "key": "iB_",
+  "chord": [
+    {"visible":[54,66],"hidden":[],"rhythmValue":"h"},
+    {"visible":[64],"hidden":[],"rhythmValue":"h"},
+    {"visible":[70],"hidden":[],"rhythmValue":"h"},
+    {"visible":[66],"hidden":[],"rhythmValue":"w"},
+    {"visible":[54,64,66,70],"hidden":[],"rhythmValue":"h"},
+    {"visible":[47,62,66,71],"hidden":[],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboardPlusRHBias",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}
