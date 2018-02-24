@@ -56,7 +56,7 @@ define([
 			return (selected < 0 && current.selected) ? index + 1 : selected;
 		}, -1);
 		if(ex_num_current == 1) {
-			window.console.dir('first ex');
+			// window.console.dir('first ex');
 			sessionStorage.removeItem('HarmonyLabExGroupStartTime');
 			sessionStorage.removeItem('HarmonyLabExGroupTracker');
 			sessionStorage.removeItem('HarmonyLabExGroupRestarts');
@@ -66,17 +66,17 @@ define([
 			var sessionSeriesTimer = sessionStorage.getItem('HarmonyLabExGroupStartTime');
 			this.resetSeriesTimer();
 			this.seriesTimer.start = sessionSeriesTimer;
-			if(sessionStorage.HarmonyLabExGroupRestarts) {// should be true
-				window.console.dir(sessionStorage.getItem('HarmonyLabExGroupRestarts'));
+			if(sessionStorage.HarmonyLabExGroupRestarts) {// should be met
 				this.restarts = sessionStorage.getItem('HarmonyLabExGroupRestarts');
-				window.console.dir(this.restarts);
-			}else {// should be false
+			}else {// should be redundant
 				this.restarts = 0;
 			}
 		}else {
 			this.seriesTimer = null;
 			this.restarts = null;
 		}
+
+		this.timepoints = [];
 
 		_.bindAll(this, ['grade', 'onFirstNoteBeginTimer']);
 
@@ -114,6 +114,18 @@ define([
 			this.inputChords.bind("change", this.grade);
 		},
 		/**
+		 * For tempo assessment
+		 */
+		makeTimestamp: function() {
+			var timestamp = (new Date().getTime() / 1000);
+			if(this.graded.activeIndex != undefined && !this.timepoints[this.graded.activeIndex]) {
+				this.timepoints.push([this.graded.activeIndex, timestamp]);
+			}else if(this.graded.activeIndex == undefined && !this.timepoints[this.graded.activeIndex]) {
+				// Here, the first input received fulfills the first chord.
+				this.timepoints.push([0, timestamp]);
+			}
+		},
+		/**
 		 * Runs the grading process for the given exercise definition
 		 * and input chords.
 		 *
@@ -128,10 +140,11 @@ define([
 
 			switch(graded.result) {
 				case this.grader.STATE.CORRECT:
+					this.makeTimestamp();
 					this.done = true;
 					this.endTimer();
 
-					window.console.dir(sessionStorage.HarmonyLabExGroupTracker);
+					// window.console.dir(sessionStorage.HarmonyLabExGroupTracker);
 					var ex_num_current = this.definition.getExerciseList().reduce(function(selected, current, index) {
 						return (selected < 0 && current.selected) ? index + 1 : selected;
 					}, -1);
@@ -139,12 +152,13 @@ define([
 					if(ex_num_current == ex_num_prior + 1) {
 						sessionStorage.setItem('HarmonyLabExGroupTracker', ex_num_current);
 					}else if(ex_num_current == ex_num_prior) {
-						sessionStorage.setItem('HarmonyLabExGroupRestarts', 1);
+						var restart_count = parseInt(sessionStorage.getItem('HarmonyLabExGroupRestarts')) + 1;
+						sessionStorage.setItem('HarmonyLabExGroupRestarts', restart_count);
 						sessionStorage.setItem('HarmonyLabExGroupTracker', ex_num_current);
 					}else {
 						sessionStorage.setItem('HarmonyLabExGroupTracker', -1);
 					}
-					window.console.dir(sessionStorage.HarmonyLabExGroupTracker);
+					// window.console.dir(sessionStorage.HarmonyLabExGroupTracker);
 
 					if(!nextUrl) {
 						this.endSeriesTimer();
@@ -166,6 +180,7 @@ define([
 					}
 					break;
 				case this.grader.STATE.INCORRECT:
+					this.makeTimestamp();
 					state = ExerciseContext.STATE.INCORRECT;
 					this.done = false;
 					this.flawless = false;
@@ -173,6 +188,7 @@ define([
 					// this.seriesFlawless = false;
 					break;
 				case this.grader.STATE.PARTIAL:
+					this.makeTimestamp();
 				default:
 					state = ExerciseContext.STATE.WAITING;
 					this.done = false;
@@ -288,6 +304,44 @@ define([
 					this.timer.durationString = mins + "&prime; " + seconds + "&Prime;";
 				}
 			}
+			// window.console.dir(sessionStorage);
+			window.console.dir(this.timepoints);
+			var beatsPerMinute = [];
+			for(i = 1; i < this.timepoints.length; i++) {
+				var thisBPM = Math.round(60 / (this.timepoints[i][1] - this.timepoints[i-1][1]));
+				beatsPerMinute.push(thisBPM);
+			}
+			window.console.dir(beatsPerMinute);
+			var minimCount = [];
+			for(i = 0; i < this.inputChords._items.length - 1; i++) {
+				var thisMinimCount = this.inputChords._items[i]._rhythmValue;
+				/**
+				 * Prepares tempo calculation per half note (minim).
+				 * Rhythm values of "w", "h", "q" supported.
+				 * Compare Stave.createStaveVoice
+				 */
+				if(thisMinimCount == null) {
+					// compare StaveNoteFactory.getRhythmValue()
+					thisMinimCount = "2";
+				}else if(thisMinimCount == "w") {
+					thisMinimCount = "2";
+				}else if(thisMinimCount == "h") {
+					thisMinimCount = "1";
+				}else if(thisMinimCount == "q") {
+					thisMinimCount = "0.5";
+				}
+				minimCount.push(thisMinimCount);
+			}
+			window.console.dir(minimCount);
+			var calibratedBeatsPerMinute = [];
+			if(beatsPerMinute.length == minimCount.length) {
+				for(i = 0; i < beatsPerMinute.length; i++) {
+					var thisCalibratedBPM = beatsPerMinute[i] * minimCount[i];
+					calibratedBeatsPerMinute.push(thisCalibratedBPM);
+				}
+			}
+			window.console.dir(calibratedBeatsPerMinute);
+			// FINISH! AND THEN REPORT TEMPO
 			return this;
 		},
 		/**
@@ -300,11 +354,11 @@ define([
 				this.resetSeriesTimer();
 			}
 			sessionStorage.setItem('HarmonyLabExGroupTracker', 0);
-			window.console.dir('start series timer');
+			// window.console.dir('start series timer');
 			this.seriesTimer.start = (new Date().getTime() / 1000);
 			sessionStorage.setItem('HarmonyLabExGroupStartTime', this.seriesTimer.start);
 			sessionStorage.setItem('HarmonyLabExGroupRestarts', 0);
-			window.console.dir(sessionStorage);
+			// window.console.dir(sessionStorage);
 			return this;
 		},
 		/**
@@ -326,7 +380,7 @@ define([
 					this.seriesTimer.durationString = mins + "&prime; " + seconds + "&Prime;";
 				}
 			}
-			window.console.dir(sessionStorage);
+			// window.console.dir(sessionStorage);
 			return this;
 		},
 		/**

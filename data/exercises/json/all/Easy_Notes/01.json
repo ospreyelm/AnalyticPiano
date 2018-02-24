@@ -5,6 +5,7 @@
   "key": "jC_",
   "chord": [
     {"visible":[53],"hidden":[]},
+    {"visible":[53,57],"hidden":[],"rhythmValue":"h"},
     {"visible":[55],"hidden":[]}
   ],
   "reviewText": "",

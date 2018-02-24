@@ -9,7 +9,7 @@ define({
 	staffDistribution: "keyboard",// keyboard, chorale, LH, RH, keyboardPlusRHBias
 	voiceCountForKeyboardStyle: [2, 3, 4],
 	voiceCountForChoraleStyle: [4],
-	autoExerciseAdvance: true,
+	autoExerciseAdvance: false,
 	repeatExercise: true,
 	nextExerciseWait: 1000,
 	repeatExerciseWait: 4000,
