@@ -12,6 +12,8 @@ define([
 	"use strict";
 
 	var DEFAULT_NOTE_COLOR = Config.get('general.defaultNoteColor');
+	
+	var DEFAULT_RHYTHM_VALUE = Config.get('general.defaultRhythmValue');
 
 	/**
 	 * StaveNoteFactory.
@@ -64,7 +66,7 @@ define([
 		 */
 		getRhythmValue: function() {
 			if (!this.chord._rhythmValue) {
-				return "w";
+				return DEFAULT_RHYTHM_VALUE;
 			}else {
 				return this.chord._rhythmValue;
 			}

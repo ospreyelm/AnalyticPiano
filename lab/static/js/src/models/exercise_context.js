@@ -22,6 +22,8 @@ define([
 
 	var REPEAT_EXERCISE_ENABLED = Config.get('general.repeatExercise');
 
+	var DEFAULT_RHYTHM_VALUE = Config.get('general.defaultRhythmValue');
+
 	/**
 	 * ExerciseContext object coordinates the display and grading of
 	 * an exercise.
@@ -56,7 +58,6 @@ define([
 			return (selected < 0 && current.selected) ? index + 1 : selected;
 		}, -1);
 		if(ex_num_current == 1) {
-			// window.console.dir('first ex');
 			sessionStorage.removeItem('HarmonyLabExGroupStartTime');
 			sessionStorage.removeItem('HarmonyLabExGroupTracker');
 			sessionStorage.removeItem('HarmonyLabExGroupRestarts');
@@ -144,7 +145,6 @@ define([
 					this.done = true;
 					this.endTimer();
 
-					// window.console.dir(sessionStorage.HarmonyLabExGroupTracker);
 					var ex_num_current = this.definition.getExerciseList().reduce(function(selected, current, index) {
 						return (selected < 0 && current.selected) ? index + 1 : selected;
 					}, -1);
@@ -158,7 +158,6 @@ define([
 					}else {
 						sessionStorage.setItem('HarmonyLabExGroupTracker', -1);
 					}
-					// window.console.dir(sessionStorage.HarmonyLabExGroupTracker);
 
 					if(!nextUrl) {
 						this.endSeriesTimer();
@@ -230,6 +229,8 @@ define([
 			this.timer.end = null;
 			this.timer.duration = null;
 			this.timer.durationString = "";
+			this.timer.minTempo = null;
+			this.timer.maxTempo = null;
 			return this;
 		},
 		resetSeriesTimer: function() {
@@ -258,6 +259,12 @@ define([
 		 */
 		getExerciseDuration: function() {
 			return this.timer.durationString;
+		},
+		getMinTempo: function() {
+			return this.timer.minTempo;
+		},
+		getMaxTempo: function() {
+			return this.timer.maxTempo;
 		},
 		getExerciseSeriesDuration: function() {
 			if(sessionStorage.getItem('HarmonyLabExGroupTracker') == -1) {
@@ -304,44 +311,43 @@ define([
 					this.timer.durationString = mins + "&prime; " + seconds + "&Prime;";
 				}
 			}
-			// window.console.dir(sessionStorage);
-			window.console.dir(this.timepoints);
 			var beatsPerMinute = [];
 			for(i = 1; i < this.timepoints.length; i++) {
 				var thisBPM = Math.round(60 / (this.timepoints[i][1] - this.timepoints[i-1][1]));
 				beatsPerMinute.push(thisBPM);
 			}
-			window.console.dir(beatsPerMinute);
-			var minimCount = [];
+			var semibreveCount = [];
 			for(i = 0; i < this.inputChords._items.length - 1; i++) {
-				var thisMinimCount = this.inputChords._items[i]._rhythmValue;
+				var rhythm_value = this.exerciseChords.settings.chords[i].settings.rhythm;
+				if(rhythm_value == null) {
+					rhythm_value = DEFAULT_RHYTHM_VALUE;
+				}
 				/**
 				 * Prepares tempo calculation per half note (minim).
 				 * Rhythm values of "w", "h", "q" supported.
-				 * Compare Stave.createStaveVoice
+				 * Compare Stave.createStaveVoice()
+				 * and Stave.updatePositionWithRhythm
 				 */
-				if(thisMinimCount == null) {
-					// compare StaveNoteFactory.getRhythmValue()
-					thisMinimCount = "2";
-				}else if(thisMinimCount == "w") {
-					thisMinimCount = "2";
-				}else if(thisMinimCount == "h") {
-					thisMinimCount = "1";
-				}else if(thisMinimCount == "q") {
-					thisMinimCount = "0.5";
+				if(rhythm_value == "w") {
+					thisSemibreveCount = "1";
+				}else if(rhythm_value == "h") {
+					thisSemibreveCount = "0.5";
+				}else if(rhythm_value == "q") {
+					thisSemibreveCount = "0.25";
+				}else {// should be redundant
+					thisSemibreveCount = "1";
 				}
-				minimCount.push(thisMinimCount);
+				semibreveCount.push(thisSemibreveCount);
 			}
-			window.console.dir(minimCount);
 			var calibratedBeatsPerMinute = [];
-			if(beatsPerMinute.length == minimCount.length) {
+			if(beatsPerMinute.length == semibreveCount.length && beatsPerMinute.length >= 1) {// should be true
 				for(i = 0; i < beatsPerMinute.length; i++) {
-					var thisCalibratedBPM = beatsPerMinute[i] * minimCount[i];
+					var thisCalibratedBPM = beatsPerMinute[i] * semibreveCount[i];
 					calibratedBeatsPerMinute.push(thisCalibratedBPM);
 				}
+				this.timer.minTempo = Math.min(... calibratedBeatsPerMinute);
+				this.timer.maxTempo = Math.max(... calibratedBeatsPerMinute);
 			}
-			window.console.dir(calibratedBeatsPerMinute);
-			// FINISH! AND THEN REPORT TEMPO
 			return this;
 		},
 		/**
@@ -358,7 +364,6 @@ define([
 			this.seriesTimer.start = (new Date().getTime() / 1000);
 			sessionStorage.setItem('HarmonyLabExGroupStartTime', this.seriesTimer.start);
 			sessionStorage.setItem('HarmonyLabExGroupRestarts', 0);
-			// window.console.dir(sessionStorage);
 			return this;
 		},
 		/**
@@ -367,7 +372,7 @@ define([
 		 * @return this
 		 */
 		endSeriesTimer: function() {
-			window.console.dir('end series timer');
+			// window.console.dir('end series timer');
 			var mins, seconds;
 			if(this.seriesTimer && this.seriesTimer.start && !this.seriesTimer.end) {
 				this.seriesTimer.end = (new Date().getTime() / 1000);
@@ -380,7 +385,6 @@ define([
 					this.seriesTimer.durationString = mins + "&prime; " + seconds + "&Prime;";
 				}
 			}
-			// window.console.dir(sessionStorage);
 			return this;
 		},
 		/**

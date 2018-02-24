@@ -9,12 +9,13 @@ define({
 	staffDistribution: "keyboard",// keyboard, chorale, LH, RH, keyboardPlusRHBias
 	voiceCountForKeyboardStyle: [2, 3, 4],
 	voiceCountForChoraleStyle: [4],
-	autoExerciseAdvance: false,
+	autoExerciseAdvance: true,
 	repeatExercise: true,
 	nextExerciseWait: 1000,
 	repeatExerciseWait: 4000,
 
 	defaultNoteColor: "rgb(180,180,180)", // gray
+	defaultRhythmValue: "w",// whole note (semibreve)
 	
 	// Default key and signature to use for notation. This should be
 	// automatically selected on the UI.

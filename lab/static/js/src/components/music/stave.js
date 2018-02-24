@@ -295,18 +295,22 @@ define([
 		 */
 		createStaveVoice: function() {
 			var voice, formatter, time;
-
 			/**
 			 * Meter defined here on basis of rhythm value.
+			 * Follows exercise definition.
 			 */
 			if(this.hasStaveNotes()) {
-				if(this.noteFactory.getRhythmValue() === "w") {
+				var rhythm_value = this.noteFactory.getRhythmValue();
+				if(rhythm_value == null) {
+					rhythm_value = DEFAULT_RHYTHM_VALUE;
+				}
+				if(rhythm_value === "w") {
 					time = {num_beats:4, beat_value:4, resolution:Vex.Flow.RESOLUTION};
-				}else if(this.noteFactory.getRhythmValue() === "h") {
+				}else if(rhythm_value === "h") {
 					time = {num_beats:2, beat_value:4, resolution:Vex.Flow.RESOLUTION};
-				}else if(this.noteFactory.getRhythmValue() === "q") {
+				}else if(rhythm_value === "q") {
 					time = {num_beats:1, beat_value:4, resolution:Vex.Flow.RESOLUTION};
-				}else {
+				}else {// should be redundant
 					time = {num_beats:4, beat_value:4, resolution:Vex.Flow.RESOLUTION};
 				}
 				voice = new Vex.Flow.Voice(time);
