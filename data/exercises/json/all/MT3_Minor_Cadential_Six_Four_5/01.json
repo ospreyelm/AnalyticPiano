@@ -5,8 +5,8 @@
   "key": "iF#",
   "chord": [
     {"visible":[49,61],"hidden":[],"rhythmValue":"h"},
-    {"visible":[56],"hidden":[],"rhythmValue":"h"},
-    {"visible":[65],"hidden":[],"rhythmValue":"h"},
+    {"visible":[57],"hidden":[],"rhythmValue":"h"},
+    {"visible":[66],"hidden":[],"rhythmValue":"h"},
     {"visible":[49,57,61,66],"hidden":[],"rhythmValue":"w"},
     {"visible":[49,56,61,65],"hidden":[],"rhythmValue":"h"},
     {"visible":[42,57,61,66],"hidden":[],"rhythmValue":"w"}

@@ -5,8 +5,8 @@
   "key": "iE_",
   "chord": [
     {"visible":[59,71],"hidden":[],"rhythmValue":"h"},
-    {"visible":[66],"hidden":[],"rhythmValue":"h"},
-    {"visible":[75],"hidden":[],"rhythmValue":"h"},
+    {"visible":[67],"hidden":[],"rhythmValue":"h"},
+    {"visible":[76],"hidden":[],"rhythmValue":"h"},
     {"visible":[59,67,71,76],"hidden":[],"rhythmValue":"w"},
     {"visible":[59,66,71,75],"hidden":[],"rhythmValue":"h"},
     {"visible":[52,67,71,76],"hidden":[],"rhythmValue":"w"}

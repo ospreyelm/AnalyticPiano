@@ -5,8 +5,8 @@
   "key": "iA_",
   "chord": [
     {"visible":[52,64],"hidden":[],"rhythmValue":"h"},
-    {"visible":[],"hidden":[59],"rhythmValue":"h"},
-    {"visible":[],"hidden":[68],"rhythmValue":"h"},
+    {"visible":[],"hidden":[60],"rhythmValue":"h"},
+    {"visible":[],"hidden":[69],"rhythmValue":"h"},
     {"visible":[],"hidden":[52,60,64,69],"rhythmValue":"w"},
     {"visible":[],"hidden":[52,59,64,68],"rhythmValue":"h"},
     {"visible":[],"hidden":[45,60,64,69],"rhythmValue":"w"}
