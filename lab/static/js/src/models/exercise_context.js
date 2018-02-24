@@ -70,6 +70,7 @@ define([
 			if(sessionStorage.HarmonyLabExGroupRestarts) {// should be met
 				this.restarts = sessionStorage.getItem('HarmonyLabExGroupRestarts');
 			}else {// should be redundant
+				window.console.dir('unexpected condition');
 				this.restarts = 0;
 			}
 		}else {
@@ -143,7 +144,6 @@ define([
 				case this.grader.STATE.CORRECT:
 					this.makeTimestamp();
 					this.done = true;
-					this.endTimer();
 
 					var ex_num_current = this.definition.getExerciseList().reduce(function(selected, current, index) {
 						return (selected < 0 && current.selected) ? index + 1 : selected;
@@ -152,12 +152,15 @@ define([
 					if(ex_num_current == ex_num_prior + 1) {
 						sessionStorage.setItem('HarmonyLabExGroupTracker', ex_num_current);
 					}else if(ex_num_current == ex_num_prior) {
+						window.console.dir('detected repeat');
 						var restart_count = parseInt(sessionStorage.getItem('HarmonyLabExGroupRestarts')) + 1;
 						sessionStorage.setItem('HarmonyLabExGroupRestarts', restart_count);
 						sessionStorage.setItem('HarmonyLabExGroupTracker', ex_num_current);
 					}else {
 						sessionStorage.setItem('HarmonyLabExGroupTracker', -1);
 					}
+
+					this.endTimer();
 
 					if(!nextUrl) {
 						this.endSeriesTimer();

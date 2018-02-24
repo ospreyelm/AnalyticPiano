@@ -204,6 +204,8 @@ define([
                     }
                     if(exc.hasSeriesTimer()) {
                         tpl_data.time_to_complete_series = exc.getExerciseSeriesDuration();
+                        // Bug: the following function is called too soon
+                        // to count the latest restart of the last exercise
                         tpl_data.ex_restarts = exc.getExerciseGroupRestarts();
                     }
                     break;
