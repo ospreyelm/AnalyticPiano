@@ -51,7 +51,6 @@ define([
 		this.state = ExerciseContext.STATE.READY;
 		this.graded = false;
 		this.timer = null;
-		this.sealed = false;// once true, used to ignore input after completion
 		this.displayChords = this.createDisplayChords();
 		this.exerciseChords = this.createExerciseChords();
 
@@ -81,6 +80,7 @@ define([
 			this.restarts = null;
 		}
 
+		this.sealed = false;// once true, used to ignore input after completion
 		this.timepoints = [];
 
 		_.bindAll(this, ['grade', 'onFirstNoteBeginTimer']);
@@ -175,6 +175,7 @@ define([
 						this.endSeriesTimer();
 					}
 					if(this.flawless === true) {
+						this.recordTempoInformation();
 						state = ExerciseContext.STATE.CORRECT;
 						this.triggerNextExercise();
 					}
@@ -342,6 +343,8 @@ define([
 					this.timer.durationString = mins + "&prime; " + seconds + "&Prime;";
 				}
 			}
+
+			/* Tempo calculation for exercises (chordal texture) */
 			var beatsPerMinute = [];
 			for(i = 1; i < this.timepoints.length; i++) {
 				var thisBPM = Math.round(60 / (this.timepoints[i][1] - this.timepoints[i-1][1]));
@@ -379,7 +382,11 @@ define([
 				this.timer.minTempo = Math.min(... calibratedBeatsPerMinute);
 				this.timer.maxTempo = Math.max(... calibratedBeatsPerMinute);
 			}
-
+			return this;
+		},
+		/* Assess tempo aspect of exercise completion */
+		recordTempoInformation: function() {
+			/* Prepares tempo information */
 			var former_min_tempo = null;
 			var former_max_tempo = null;
 			if(sessionStorage.getItem('HarmonyLabExGroupMinTempo') && sessionStorage.getItem('HarmonyLabExGroupMinTempo') != "null") {
@@ -402,8 +409,6 @@ define([
 				var new_max_tempo = Math.max(this.timer.maxTempo, former_max_tempo);
 				sessionStorage.setItem('HarmonyLabExGroupMaxTempo', new_max_tempo);
 			}
-
-			return this;
 		},
 		/**
 		 * Begins the timer for whole exercise group.
