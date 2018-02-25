@@ -61,6 +61,8 @@ define([
 			sessionStorage.removeItem('HarmonyLabExGroupStartTime');
 			sessionStorage.removeItem('HarmonyLabExGroupTracker');
 			sessionStorage.removeItem('HarmonyLabExGroupRestarts');
+			sessionStorage.removeItem('HarmonyLabExGroupMinTempo');
+			sessionStorage.removeItem('HarmonyLabExGroupMaxTempo');
 			this.seriesTimer = null;
 			this.restarts = null;
 		}else if(sessionStorage.HarmonyLabExGroupStartTime) {
@@ -152,8 +154,9 @@ define([
 					if(ex_num_current == ex_num_prior + 1) {
 						sessionStorage.setItem('HarmonyLabExGroupTracker', ex_num_current);
 					}else if(ex_num_current == ex_num_prior) {
-						window.console.dir('detected repeat');
+						// window.console.dir('detected restart');
 						var restart_count = parseInt(sessionStorage.getItem('HarmonyLabExGroupRestarts')) + 1;
+						this.restarts = restart_count;
 						sessionStorage.setItem('HarmonyLabExGroupRestarts', restart_count);
 						sessionStorage.setItem('HarmonyLabExGroupTracker', ex_num_current);
 					}else {
@@ -264,10 +267,28 @@ define([
 			return this.timer.durationString;
 		},
 		getMinTempo: function() {
+			if(parseInt(this.timer.minTempo) == NaN) {
+				return "";
+			}
 			return this.timer.minTempo;
 		},
 		getMaxTempo: function() {
+			if(parseInt(this.timer.maxTempo) == NaN) {
+				return "";
+			}
 			return this.timer.maxTempo;
+		},
+		getGroupMinTempo: function() {
+			if(parseInt(sessionStorage.getItem('HarmonyLabExGroupMinTempo')) == NaN) {
+				return "";
+			}
+			return sessionStorage.getItem('HarmonyLabExGroupMinTempo');
+		},
+		getGroupMaxTempo: function() {
+			if(parseInt(sessionStorage.getItem('HarmonyLabExGroupMaxTempo')) == NaN) {
+				return "";
+			}
+			return sessionStorage.getItem('HarmonyLabExGroupMaxTempo');
 		},
 		getExerciseSeriesDuration: function() {
 			if(sessionStorage.getItem('HarmonyLabExGroupTracker') == -1) {
@@ -282,7 +303,7 @@ define([
 			if(this.getExerciseSeriesDuration() == "") {
 				return "";
 			}
-			return this.restarts;
+			return parseInt(this.restarts);
 		},
 		/**
 		 * Begins the timer.
@@ -345,12 +366,36 @@ define([
 			var calibratedBeatsPerMinute = [];
 			if(beatsPerMinute.length == semibreveCount.length && beatsPerMinute.length >= 1) {// should be true
 				for(i = 0; i < beatsPerMinute.length; i++) {
-					var thisCalibratedBPM = beatsPerMinute[i] * semibreveCount[i];
+					var thisCalibratedBPM = Math.round(beatsPerMinute[i] * semibreveCount[i]);
 					calibratedBeatsPerMinute.push(thisCalibratedBPM);
 				}
 				this.timer.minTempo = Math.min(... calibratedBeatsPerMinute);
 				this.timer.maxTempo = Math.max(... calibratedBeatsPerMinute);
 			}
+
+			var former_min_tempo = null;
+			var former_max_tempo = null;
+			if(sessionStorage.getItem('HarmonyLabExGroupMinTempo') && sessionStorage.getItem('HarmonyLabExGroupMinTempo') != "null") {
+				former_min_tempo = parseInt(sessionStorage.getItem('HarmonyLabExGroupMinTempo'));
+			}
+			if(sessionStorage.getItem('HarmonyLabExGroupMaxTempo') && sessionStorage.getItem('HarmonyLabExGroupMaxTempo') != "null") {
+				former_max_tempo = parseInt(sessionStorage.getItem('HarmonyLabExGroupMaxTempo'));
+			}
+
+			/* Updates tempo information in sessionStorage */
+			if(former_min_tempo == null) {
+				sessionStorage.setItem('HarmonyLabExGroupMinTempo', this.timer.minTempo);
+			}else {
+				var new_min_tempo = Math.min(this.timer.minTempo, former_min_tempo);
+				sessionStorage.setItem('HarmonyLabExGroupMinTempo', new_min_tempo);
+			}
+			if(former_max_tempo == null) {
+				sessionStorage.setItem('HarmonyLabExGroupMaxTempo', this.timer.maxTempo);
+			}else {
+				var new_max_tempo = Math.max(this.timer.maxTempo, former_max_tempo);
+				sessionStorage.setItem('HarmonyLabExGroupMaxTempo', new_max_tempo);
+			}
+
 			return this;
 		},
 		/**
@@ -367,6 +412,8 @@ define([
 			this.seriesTimer.start = (new Date().getTime() / 1000);
 			sessionStorage.setItem('HarmonyLabExGroupStartTime', this.seriesTimer.start);
 			sessionStorage.setItem('HarmonyLabExGroupRestarts', 0);
+			sessionStorage.setItem('HarmonyLabExGroupMinTempo', null);
+			sessionStorage.setItem('HarmonyLabExGroupMaxTempo', null);
 			return this;
 		},
 		/**

@@ -33,6 +33,8 @@ define([
 
     var DEFAULT_RHYTHM_VALUE = Config.get('general.defaultRhythmValue');
 
+    var AUTO_ADVANCE_ENABLED = Config.get('general.autoExerciseAdvance');
+
     /**
      * ExerciseSheetComponent
      *
@@ -150,12 +152,15 @@ define([
                             '<p>Tempo&nbsp;<%= min_tempo %>&ndash;<%= max_tempo %></p>',
                         '<% } %>',
                         '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "") { %>',
-                            '<p>All&nbsp;done&nbsp;in&nbsp;<%= time_to_complete_series %>',
+                            '<p>All&nbsp;done&nbsp;in&nbsp;<%= time_to_complete_series %></p>',
                         '<% } %>',
                         '<% if (typeof(ex_restarts) !== "undefined" && ex_restarts > 0) { %>',
-                            ' with&nbsp;<%= ex_restarts %>&nbsp;restart(s)</p>',
+                            '<p>Made&nbsp;<%= ex_restarts %>&nbsp;restart(s)</p>',
                         '<% } %>',
-                        '<% if (typeof(next_exercise) !== "undefined" && next_exercise != "") { %>',
+                        '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(group_min_tempo) !== "undefined" && group_min_tempo != "" && typeof(group_max_tempo) !== "undefined" && group_max_tempo != "") { %>',
+                            '<p>Overall tempo&nbsp;<%= group_min_tempo %>&ndash;<%= group_max_tempo %></p>',
+                        '<% } %>',
+                        '<% if (typeof(next_exercise) !== "undefined" && next_exercise != "" && auto_advance === false) { %>',
                             '<p><a class="exercise-status-next-btn" href="<%= next_exercise %>">Click for next</a></p>',
                         '<% } %>',
                     '</div>',
@@ -191,6 +196,7 @@ define([
                 tpl_data.next_exercise = exc.definition.getNextExercise();
             }
             tpl_data.prompt_text = "";
+            tpl_data.auto_advance = AUTO_ADVANCE_ENABLED;
 
             switch(exc.state) {
                 case exc.STATE.CORRECT:
@@ -204,17 +210,20 @@ define([
                     }
                     if(exc.hasSeriesTimer()) {
                         tpl_data.time_to_complete_series = exc.getExerciseSeriesDuration();
-                        // Bug: the following function is called too soon
-                        // to count the latest restart of the last exercise
                         tpl_data.ex_restarts = exc.getExerciseGroupRestarts();
+                        tpl_data.group_min_tempo = exc.getGroupMinTempo();
+                        tpl_data.group_max_tempo = exc.getGroupMaxTempo();
                     }
                     break;
                 case exc.STATE.FINISHED:
                     if(exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
+                        tpl_data.min_tempo = exc.getMinTempo();
+                        tpl_data.max_tempo = exc.getMaxTempo();
                     }
                     if(exc.hasSeriesTimer()) {
-                        tpl_data.time_to_complete_series = exc.getExerciseSeriesDuration();
+                        tpl_data.group_min_tempo = exc.getGroupMinTempo();
+                        tpl_data.group_max_tempo = exc.getGroupMaxTempo();
                     }
                     break;
                 case exc.STATE.READY:

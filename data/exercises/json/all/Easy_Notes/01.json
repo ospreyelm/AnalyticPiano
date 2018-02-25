@@ -4,12 +4,11 @@
   "keySignature": "",
   "key": "jC_",
   "chord": [
-    {"visible":[53],"hidden":[]},
-    {"visible":[53,57],"hidden":[],"rhythmValue":"h"},
-    {"visible":[55],"hidden":[]}
+    {"visible":[45],"hidden":[]},
+    {"visible":[47],"hidden":[],"rhythmValue":"h"},
+    {"visible":[48],"hidden":[],"rhythmValue":"h"}
   ],
   "reviewText": "",
-  "staffDistribution": "RH",
   "analysis": {
     "enabled": true,
     "mode": {
