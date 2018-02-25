@@ -51,6 +51,7 @@ define([
 		this.state = ExerciseContext.STATE.READY;
 		this.graded = false;
 		this.timer = null;
+		this.sealed = false;// once true, used to ignore input after completion
 		this.displayChords = this.createDisplayChords();
 		this.exerciseChords = this.createExerciseChords();
 
@@ -154,15 +155,20 @@ define([
 					if(ex_num_current == ex_num_prior + 1) {
 						sessionStorage.setItem('HarmonyLabExGroupTracker', ex_num_current);
 					}else if(ex_num_current == ex_num_prior) {
-						// window.console.dir('detected restart');
-						var restart_count = parseInt(sessionStorage.getItem('HarmonyLabExGroupRestarts')) + 1;
-						this.restarts = restart_count;
-						sessionStorage.setItem('HarmonyLabExGroupRestarts', restart_count);
-						sessionStorage.setItem('HarmonyLabExGroupTracker', ex_num_current);
+						if(this.sealed == true) {
+							// ignore
+						}else {
+							// window.console.dir('detected restart');
+							var restart_count = parseInt(sessionStorage.getItem('HarmonyLabExGroupRestarts')) + 1;
+							this.restarts = restart_count;
+							sessionStorage.setItem('HarmonyLabExGroupRestarts', restart_count);
+							sessionStorage.setItem('HarmonyLabExGroupTracker', ex_num_current);
+						}
 					}else {
 						sessionStorage.setItem('HarmonyLabExGroupTracker', -1);
 					}
 
+					this.sealed = true;
 					this.endTimer();
 
 					if(!nextUrl) {
@@ -189,6 +195,7 @@ define([
 					state = ExerciseContext.STATE.INCORRECT;
 					this.done = false;
 					this.flawless = false;
+					this.sealed = true;
 					/* The seriesFlawless value may be useful in addition to restarts. */
 					// this.seriesFlawless = false;
 					break;
