@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "Say-and-play \"scale degree five\" and go!",
+  "keySignature": "b",
+  "key": "jF_",
+  "chord": [
+    {"visible":[48,60],"hidden":[]},
+    {"visible":[45,57,60,65],"hidden":[]},
+    {"visible":[46,55,62,65],"hidden":[]},
+    {"visible":[48,57,60,65],"hidden":[],"rhythmValue":"h"},
+    {"visible":[48,58,60,64],"hidden":[],"rhythmValue":"h"},
+    {"visible":[41,57,60,65],"hidden":[]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}
