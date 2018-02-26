@@ -7,11 +7,12 @@
     {"visible":[53,65],"hidden":[]},
     {"visible":[],"hidden":[50,62,65,70]},
     {"visible":[],"hidden":[51,60,67,70]},
-    {"visible":[],"hidden":[53,62,65,70]},
-    {"visible":[],"hidden":[53,63,65,69]},
+    {"visible":[],"hidden":[53,62,65,70],"rhythmValue":"h"},
+    {"visible":[],"hidden":[53,63,65,69],"rhythmValue":"h"},
     {"visible":[],"hidden":[46,62,65,70]}
   ],
   "reviewText": "",
+  "staffDistribution": "keyboard",
   "analysis": {
     "enabled": true,
     "mode": {

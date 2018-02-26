@@ -145,7 +145,11 @@ define([
 
 			switch(graded.result) {
 				case this.grader.STATE.CORRECT:
-					this.makeTimestamp();
+					if(this.sealed == true) {
+						// ignore
+					}else {
+						this.makeTimestamp();
+					}
 					this.done = true;
 
 					var ex_num_current = this.definition.getExerciseList().reduce(function(selected, current, index) {
