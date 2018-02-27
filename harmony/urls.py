@@ -5,7 +5,7 @@ from django.views.generic.base import RedirectView
 from django.contrib import admin
 admin.autodiscover()
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', RedirectView.as_view(url='/lab'), name='index'),
     url(r'^lab/', include('lab.urls', namespace="lab")),
     url(r'^lti/', include('lti.urls', namespace="lti")),
@@ -16,4 +16,4 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
-)
+]

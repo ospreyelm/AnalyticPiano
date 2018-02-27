@@ -4,8 +4,7 @@ from views import PlayView, ExerciseView, ManageView
 from views import APIView, APIExerciseView, APIGroupView
 from lti.views import LTIToolConfigView, LTILaunchView
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$', PlayView.as_view(), name='index'),
 
     # Course Exercises
@@ -31,4 +30,4 @@ urlpatterns = patterns(
     # Mainting these URLs for backwards compatibility. Remove when possible.
     url(r'^lti-launch$', LTILaunchView.as_view(), name='lti-launch'),
     url(r'^lti-config$', LTIToolConfigView.as_view(), name='lti-config'),
-)
+]

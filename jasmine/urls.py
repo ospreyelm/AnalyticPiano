@@ -1,6 +1,7 @@
 
 from django.conf.urls import patterns, include, url
+import views
 
-urlpatterns = patterns('jasmine',
-    url(r'^$', 'views.run_tests', name='run_tests')
-);
+urlpatterns = [
+    url(r'^$', views.run_tests, name='run_tests'),
+]

@@ -19,6 +19,15 @@ from lti.models import LTIConsumer, LTICourse
 import json
 import copy
 
+# from django.core.mail import send_mail
+
+# send_mail(
+# 	'Subject here',
+# 	'Here is the message',
+# 	'from@university.edu',
+# 	['to@university.edu'],
+# 	fail_silently=False,
+# )
 
 class RequirejsContext(object):
     def __init__(self, config, debug=True):
