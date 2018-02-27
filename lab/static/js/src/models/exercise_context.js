@@ -172,28 +172,36 @@ define([
 						sessionStorage.setItem('HarmonyLabExGroupTracker', -1);
 					}
 
-					this.sealed = true;
 					this.endTimer();
 
 					if(!nextUrl) {
-						this.endSeriesTimer();
+						if(this.sealed != true) {// For one-time function calls
+							this.endSeriesTimer();
+							this.compileReport();
+						}
 					}
 					if(this.flawless === true) {
-						this.recordTempoInformation();
 						state = ExerciseContext.STATE.CORRECT;
-						this.triggerNextExercise();
+						if(this.sealed != true) {// For one-time function calls
+							this.recordTempoInformation();
+							this.triggerNextExercise();
+						}
 					}
 					else if(this.flawless === false) {
 						state = ExerciseContext.STATE.FINISHED;
-						if(REPEAT_EXERCISE_ENABLED === true) {
-							this.triggerRepeatExercise();
-						}else {
-							this.triggerNextExercise();
+						if(this.sealed != true) {// For one-time function calls
+							if(REPEAT_EXERCISE_ENABLED === true) {
+								this.triggerRepeatExercise();
+							}else {
+								this.triggerNextExercise();
+							}
 						}
 					}
 					else {
 						state = ExerciseContext.STATE.CORRECT;
 					}
+					
+					this.sealed = true;
 					break;
 				case this.grader.STATE.INCORRECT:
 					this.makeTimestamp();
@@ -247,6 +255,7 @@ define([
 			this.timer.end = null;
 			this.timer.duration = null;
 			this.timer.durationString = "";
+			this.timer.alternativeDurationString = "";
 			this.timer.minTempo = null;
 			this.timer.maxTempo = null;
 			return this;
@@ -257,6 +266,7 @@ define([
 			this.seriesTimer.end = null;
 			this.seriesTimer.duration = null;
 			this.seriesTimer.durationString = "";
+			this.seriesTimer.alternativeDurationString = "";
 			return this;
 		},
 		/**
@@ -343,8 +353,10 @@ define([
 				seconds = (this.timer.duration - (mins * 60)).toFixed(1);
 				if(mins == 0) {
 					this.timer.durationString = seconds + "&Prime;";
+					this.timer.alternativeDurationString = seconds + "s";
 				} else {
 					this.timer.durationString = mins + "&prime; " + seconds + "&Prime;";
+					this.timer.alternativeDurationString = mins + "m" + seconds + "s";
 				}
 			}
 
@@ -447,11 +459,40 @@ define([
 				seconds = (this.seriesTimer.duration - (mins * 60)).toFixed(0);
 				if(mins == 0) {
 					this.seriesTimer.durationString = seconds + "&Prime;";
+					this.seriesTimer.alternativeDurationString = seconds + "s";
 				} else {
-					this.seriesTimer.durationString = mins + "&prime; " + seconds + "&Prime;";
+					this.seriesTimer.durationString = mins + "&prime;" + seconds + "&Prime;";
+					this.seriesTimer.alternativeDurationString = mins + "m" + seconds + "s";
 				}
 			}
 			return this;
+		},
+		compileReport: function() {
+			var report = Object.create(null, {});
+			var parameters = [];
+			parameters.push(['1 performer',
+				sessionStorage.getItem('HarmonyLabPerformer')]);
+			parameters.push(['2 submission date',
+				new Date().toDateString()]);
+			parameters.push(['3 series duration',
+				this.seriesTimer.alternativeDurationString]);
+			parameters.push(['4 overall tempo',
+				sessionStorage.getItem('HarmonyLabExGroupMinTempo')
+				+ '–' + sessionStorage.getItem('HarmonyLabExGroupMaxTempo')]);
+			parameters.push(['5 restarts',
+				this.restarts]);
+			parameters.push(['6 final drill duration',
+				this.timer.alternativeDurationString]);
+			parameters.push(['7 final drill tempo',
+				this.timer.minTempo + '–' + this.timer.maxTempo]);
+			parameters.push(['8 series completion time',
+				this.seriesTimer.end]);
+			for(i = 0; i < parameters.length; i++) {
+				if(parameters[i].length == 2 && parameters[i][1] != undefined) {
+					report[parameters[i][0]] = parameters[i][1];
+				}
+			}
+			window.console.dir(report);
 		},
 		/**
 		 * Returns chords for display on screen.
