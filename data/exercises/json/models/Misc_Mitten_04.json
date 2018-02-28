@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "Use the \"mitten\" layout to complete this progression.",
+  "keySignature": "",
+  "key": "iA_",
+  "chord": [
+    {"visible":[52,64],"hidden":[],"rhythmValue":"w"},
+    {"visible":[51,60,66,69],"hidden":[],"rhythmValue":"w"},
+    {"visible":[50,59,65,68],"hidden":[],"rhythmValue":"w"},
+    {"visible":[48,60,64,69],"hidden":[],"rhythmValue":"w"},
+    {"visible":[45,60,64,66],"hidden":[],"rhythmValue":"w"},
+    {"visible":[52,59,64,68],"hidden":[],"rhythmValue":"w"}
+  ],
+  "reviewText": "Well done.",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

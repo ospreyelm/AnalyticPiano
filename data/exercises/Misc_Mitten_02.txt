@@ -1,0 +1,13 @@
+Use the \\\"mitten\\\" layout to complete this progression.
+a
+=
+<e e'>1 \
+<a, c' e' a'>1 <b, d' e' gs'>2 <a, c' e' a'>2 <d b f' a'>2 <e b e' gs'>2 <a, c' e' a'>1
+Well done.
+m
+Misc_Mitten_02
+3
+1
+1
+3
+1

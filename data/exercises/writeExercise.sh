@@ -26,7 +26,7 @@ read keySignatureInput
 echo ""
 
 if [[ ${keySignatureInput} == "=" ]]; then
-	keySignature=$(echo ${keyInput} | sed -E 's/^afm$/bbbbbbb/;s/^efm$/bbbbbb/;s/^bfm$/bbbbb/;s/^fm$/bbbb/;s/^cm$/bbb/;s/^gm$/bb/;s/^am$//;s/^em$/#/;s/^bm$/##/;s/^fsm$/###/;s/^csm$/####/;s/^gsm$/#####/;s/^dsm$/######/;s/^asm$/#######/;s/^cf$/bbbbbbb/;s/^gf$/bbbbbb/;s/^df$/bbbbb/;s/^af$/bbbb/;s/^ef$/bbb/;s/^bf$/bb/;s/^c$//;s/^g$/#/;s/^d$/##/;s/^a$/###/;s/^e$/####/;s/^b$/#####/;s/^fs$/######/;s/^csm$/#######/;s/^dm$/b/;s/^f$/b/;s/^h$//;')
+	keySignature=$(echo ${keyInput} | sed -E 's/^b$/##/;s/^ab$/bbbbbbb/;s/^eb$/bbbbbb/;s/^bb$/bbbbb/;s/^f$/bbbb/;s/^c$/bbb/;s/^g$/bb/;s/^d$/b/;s/^a$//;s/^e$/#/;s/^f#$/###/;s/^c#$/####/;s/^g#$/#####/;s/^d#$/######/;s/^a#$/#######/;s/^Cb$/bbbbbbb/;s/^Gb$/bbbbbb/;s/^Db$/bbbbb/;s/^Ab$/bbbb/;s/^Eb$/bbb/;s/^Bb$/bb/;s/^F$/b/;s/^C$//;s/^G$/#/;s/^D$/##/;s/^A$/###/;s/^E$/####/;s/^B$/#####/;s/^F#$/######/;s/^C#$/#######/;s/^h$//;')
 else
 	keySignature=$(echo ${keySignatureInput})
 fi
