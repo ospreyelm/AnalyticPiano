@@ -4,6 +4,7 @@ define([
 	'jquery',
 	'app/components/component',
 	'app/components/app',
+	'app/components/events',
 	'app/components/piano',
 	'app/components/music',
 	'app/components/music/exercise_sheet',
@@ -24,6 +25,7 @@ define([
 	$,
 	Component,
 	AppComponent,
+	EVENTS,
 	PianoComponent,
 	MusicComponent,
 	ExerciseSheetComponent,
@@ -177,6 +179,17 @@ define([
 		app = new AppExerciseComponent();
 		app.init();
 		app.log("App ready");
+		/**
+		 * The following on-off instruction is meant to stimulate a new call
+		 * of StaveNotater.prototype.drawRoman so that contextual
+		 * analysis modifications within that function become active.
+		 * In ExerciseContext, this note is given special treatment not
+		 * to generate exercise errors.
+		 */
+		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'on', 86, 0);
+		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'off', 86, 0);
+		window.console.dir('sent dummy note');
+		// Ineffective. Try something else
 	};
 
 	return AppExerciseComponent;

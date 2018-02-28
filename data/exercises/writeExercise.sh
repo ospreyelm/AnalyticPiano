@@ -10,15 +10,15 @@ read introText
 echo ""
 
 echo "Specify the KEY. Enter as illustrated or hit return for no key:"
-echo "\"bf\" for B-flat major"
-echo "\"gm\" for G minor"
-echo "\"a\" for A major"
-echo "\"fsm\" for F-sharp minor"
+echo "\"Bb\" for B-flat major"
+echo "\"g\" for G minor"
+echo "\"A\" for A major"
+echo "\"f#\" for F-sharp minor"
 echo ""
 read keyInput
 echo ""
 
-key=$(echo ${keyInput} | sed -E 's/^afm$/iAb/;s/^efm$/iEb/;s/^bfm$/iBb/;s/^fm$/iF_/;s/^cm$/iC_/;s/^gm$/iG_/;s/^dm$/iD_/;s/^am$/iA_/;s/^em$/iE_/;s/^bm$/iB_/;s/^fsm$/iF#/;s/^csm$/iC#/;s/^gsm$/iG#/;s/^dsm$/iD#/;s/^asm$/iA#/;s/^cf$/jCb/;s/^gf$/jGb/;s/^df$/jDb/;s/^af$/jAb/;s/^ef$/jEb/;s/^bf$/jBb/;s/^f$/jF_/;s/^c$/jC_/;s/^g$/jG_/;s/^d$/jD_/;s/^a$/jA_/;s/^e$/jE_/;s/^b$/jB_/;s/^fs$/jF#/;s/^csm$/jC#/;s/^$/h/;')
+key=$(echo ${keyInput} | sed -E 's/^ab$/iAb/;s/^eb$/iEb/;s/^bb$/iBb/;s/^f$/iF_/;s/^c$/iC_/;s/^g$/iG_/;s/^d$/iD_/;s/^a$/iA_/;s/^e$/iE_/;s/^b$/iB_/;s/^f#$/iF#/;s/^c#$/iC#/;s/^g#$/iG#/;s/^d#$/iD#/;s/^a#$/iA#/;s/^Cb$/jCb/;s/^Gb$/jGb/;s/^Db$/jDb/;s/^Ab$/jAb/;s/^Eb$/jEb/;s/^Bb$/jBb/;s/^F$/jF_/;s/^C$/jC_/;s/^G$/jG_/;s/^D$/jD_/;s/^A$/jA_/;s/^E$/jE_/;s/^B$/jB_/;s/^F#$/jF#/;s/^C#$/jC#/;s/^$/h/;')
 
 echo "Specify the KEY SIGNATURE. (Enter \"=\" to match the key named above or, for a non-matching key signature, enter the desired number of \"#\" or \"b\".)"
 echo ""
@@ -33,9 +33,11 @@ fi
 
 echo "Enter CHORDS. Use the format illustrated, with \"x\" prefixed to notes"
 echo "that the student will be expected to match without seeing them notated."
-echo "(This encoding of pitch and register follows Lilypond English-language format.)"
+echo "(The non-numeric encoding follows Lilypond English-language format.)"
+echo "Escape newlines!"
 echo ""
 echo "\"<>\" to enclose each sonority (including single melodic notes)"
+echo "Either MIDI numbers for notes or ..."
 echo "\"c'\" for C4 (middle C), \"c''\" for C5, etc."
 echo "\"c\" for C3, \"c,\" for C2, \"c,,\" for C1 etc."
 echo "\"f\" for flat, \"s\" for sharp, \"ff\" for double-flat, \"ss\" for double-sharp"
@@ -55,6 +57,7 @@ read reviewText
 echo ""
 
 echo "Specify the DIRECTORY (exercise group)."
+echo "To write output to models directory, enter \"m\"."
 echo "To write output to current directory, enter \"x\"."
 echo ""
 read directory
@@ -68,6 +71,9 @@ echo ""
 if [[ "$directory" = "x" ]]; then
 	txtPath="./${filename}_archive.txt"
 	jsonPath="./${filename}.json"
+elif [[ "$directory" = "m" ]]; then
+	txtPath="./${filename}_archive.txt"
+	jsonPath="./json/models/${filename}.json"
 else
 	mkdir -p ./txt/${directory}
 	mkdir -p ./json/all/${directory}
@@ -163,6 +169,29 @@ else
 	echo "Failed to set highlight options."
 fi
 
+echo "Choose how to distribute notes between staves:"
+echo "  [1] keyboard"
+echo "  [2] chorale"
+echo "  [3] LH"
+echo "  [4] RH"
+echo "  [5] keyboardPlusRHBias"
+read opt5
+echo ""
+
+if [[ "$opt5" = "1" ]]; then
+	staff_distribution="keyboard"
+elif [[ "$opt5" = "2" ]]; then
+	staff_distribution="chorale"
+elif [[ "$opt5" = "3" ]]; then
+	staff_distribution="LH"
+elif [[ "$opt5" = "4" ]]; then
+	staff_distribution="RH"
+elif [[ "$opt5" = "5" ]]; then
+	staff_distribution="keyboardPlusRHBias"
+else
+	echo "Failed to set note-name analysis options."
+fi
+
 cat >${txtPath} <<- _EOF_
 	${introText}
 	${keyInput}
@@ -175,6 +204,7 @@ cat >${txtPath} <<- _EOF_
 	${opt2}
 	${opt3}
 	${opt4}
+	${opt5}
 	_EOF_
 
 cat >${jsonPath} <<- _EOF_
@@ -187,6 +217,7 @@ cat >${jsonPath} <<- _EOF_
 	$chord
 	  ],
 	  "reviewText": "$reviewText",
+	  "staffDistribution": "$staff_distribution",
 	  "analysis": {
 	    "enabled": true,
 	    "mode": {
@@ -215,48 +246,48 @@ echo ""
 cat ${jsonPath}
 
 
-# CREATES LILYPOND FILE FOR PROOFING AND PRINTING EXERCISES
+# ## CREATES LILYPOND FILE FOR PROOFING AND PRINTING EXERCISES
 
-lyKeySignature=$(echo ${keySignature} | sed -E 's/^bbbbbbb$/cf \\major/;s/^bbbbbb$/gf \\major/;s/^bbbbb$/des \\major/;s/^bbbb$/af \\major/;s/^bbb$/ef \\major/;s/^bb$/bf \\major/;s/^b$/f \\major/;s/^$/c \\major/;s/^#$/g \\major/;s/^##$/d \\major/;s/^###$/a \\major/;s/^####$/e \\major/;s/^#####$/b \\major/;s/^######$/fs \\major/;s/^#######$/cs \\major/;')
+# lyKeySignature=$(echo ${keySignature} | sed -E 's/^bbbbbbb$/cf \\major/;s/^bbbbbb$/gf \\major/;s/^bbbbb$/des \\major/;s/^bbbb$/af \\major/;s/^bbb$/ef \\major/;s/^bb$/bf \\major/;s/^b$/f \\major/;s/^$/c \\major/;s/^#$/g \\major/;s/^##$/d \\major/;s/^###$/a \\major/;s/^####$/e \\major/;s/^#####$/b \\major/;s/^######$/fs \\major/;s/^#######$/cs \\major/;')
 
-# expands x prefix to \xNote for unwritten-but-to-be-played notes
-# specifies duration of whole note when unspecified in input
-lyChord=$(echo ${chordInput} | sed -E 's/x/\\xNote /g;s/> *</>1 </g;s/>$/>1/g')
+# ## expands x prefix to \xNote for unwritten-but-to-be-played notes
+# ## specifies duration of whole note when unspecified in input
+# lyChord=$(echo ${chordInput} | sed -E 's/x/\\xNote /g;s/> *</>1 </g;s/>$/>1/g')
 
-if [[ "$directory" = "x" ]]; then
-	lyPath="./${filename}.ly"
-else
-	mkdir -p ./ly/${directory}
-	lyPath="./ly/${directory}/${filename}.ly"
-fi
+# if [[ "$directory" = "x" ]]; then
+# 	lyPath="./${filename}.ly"
+# else
+# 	mkdir -p ./ly/${directory}
+# 	lyPath="./ly/${directory}/${filename}.ly"
+# fi
 
-cat >${lyPath} <<- _EOF_
-	\version "2.18.2" \language "english" #(set-global-staff-size 18)
+# cat >${lyPath} <<- _EOF_
+# 	\version "2.18.2" \language "english" #(set-global-staff-size 18)
 
-	\paper { paper-height = 4.25\in paper-width = 5.5\in indent = 0 system-count = 1 page-count = 1 oddFooterMarkup = \markup \tiny { Exercise preview in Lilypond for HarmonyLab json file. } }
+# 	\paper { paper-height = 4.25\in paper-width = 5.5\in indent = 0 system-count = 1 page-count = 1 oddFooterMarkup = \markup \tiny { Exercise preview in Lilypond for HarmonyLab json file. } }
 
-	\markup \small \left-column { \line { ${directory} } \line { ${filename} } }
+# 	\markup \small \left-column { \line { ${directory} } \line { ${filename} } }
 
-	\markup \pad-around #3 \box \pad-markup #1 \wordwrap {
-	  ${introText}\strut
-	}
+# 	\markup \pad-around #3 \box \pad-markup #1 \wordwrap {
+# 	  ${introText}\strut
+# 	}
 
-	theKey = { \key
-	  ${lyKeySignature}
-	}
+# 	theKey = { \key
+# 	  ${lyKeySignature}
+# 	}
 
-	lyCommands = { \clef "alto" \override Staff.StaffSymbol.line-count = #11 \override Staff.StaffSymbol.line-positions = #'(10 8 6 4 2 -2 -2 -4 -6 -8 -10) \override Staff.TimeSignature #'stencil = ##f \override Staff.BarLine #'stencil = ##f }
+# 	lyCommands = { \clef "alto" \override Staff.StaffSymbol.line-count = #11 \override Staff.StaffSymbol.line-positions = #'(10 8 6 4 2 -2 -2 -4 -6 -8 -10) \override Staff.TimeSignature #'stencil = ##f \override Staff.BarLine #'stencil = ##f }
 
-	\absolute { \theKey \lyCommands
+# 	\absolute { \theKey \lyCommands
 
-	  ${lyChord}
+# 	  ${lyChord}
 
-	}
+# 	}
 
-	\markup \italic \pad-around #3 \box \pad-markup #1 \wordwrap {
-	  ${reviewText}\strut
-	}
+# 	\markup \italic \pad-around #3 \box \pad-markup #1 \wordwrap {
+# 	  ${reviewText}\strut
+# 	}
 
-	\markup \small \left-column { \line \tiny { analysis options per writeExercise.sh } \line { ${key} : ${opt1}.${opt2}.${opt3}.${opt4} } }
+# 	\markup \small \left-column { \line \tiny { analysis options per writeExercise.sh } \line { ${key} : ${opt1}.${opt2}.${opt3}.${opt4} } }
 
-	_EOF_
+# 	_EOF_

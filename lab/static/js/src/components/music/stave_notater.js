@@ -80,6 +80,10 @@ define([
 		 * Defines a horizontal offset for use with all analytical annotations.
 		 */
 		annotateOffsetX: 8,
+		/*
+		 * Remembers prior Roman numerals
+		 */
+		romanNumeralsHistory: [],
 		/**
 		 * Initializes the notater.
 		 *
@@ -391,7 +395,54 @@ define([
 			var ctx = this.getContext();
 
 			if(chord_entry) {
-				this.parseAndDraw(chord_entry.label, x, y, function(text, x, y) {
+				/**
+				 * Initial attempt at contextual analysis
+				 * Alter label based on preceding one
+				 */
+				this.romanNumeralsHistory[this.stave.position.index] = chord_entry.label;
+				var RnHistory = this.romanNumeralsHistory;
+
+				var final_label = chord_entry.label;
+				var current_position = this.stave.position.index;
+
+				var substitutions = [
+					[["i{z4}", "V"], ["V{z4}", ":{t3}"]],
+					[["I{z4}", "V"], ["V{z4}", ":{t3}"]],
+					[["i{z4}", "V{u3}"], ["V{z4}", ":{u3}"]],
+					[["I{z4}", "V{u3}"], ["V{z4}", ":{u3}"]],
+					[["vii°{u}/V", "V"], ["vii°{u} →", "V"]],//
+					[["vii⌀{u}/V", "V"], ["vii⌀{u} →", "V"]],//
+					[["vii°{u}", "VI{z}"], ["c.t.°{u}", "VI{z}"]],
+				];
+
+				if(RnHistory[current_position - 1]) {
+					for(var i = 0; i < substitutions.length; i++) {
+						if(RnHistory[current_position - 1] == substitutions[i][0][0] && RnHistory[current_position] == substitutions[i][0][1]) {
+							/* Overwrite label based on incoming progression */
+							final_label = substitutions[i][1][1];
+							break;
+						}else if(RnHistory[current_position - 1] == RnHistory[current_position]) {
+							/* Eliminate repeated labels */
+							final_label = "";
+							break;
+						}
+					}
+				}
+				if(RnHistory[current_position + 1]) {
+					for(var i = 0; i < substitutions.length; i++) {
+						if(RnHistory[current_position] == substitutions[i][0][0] && RnHistory[current_position + 1]  == substitutions[i][0][1]) {
+							/* Overwrite label based on outgoing progression */
+							final_label = substitutions[i][1][0];
+							break;
+						}
+						// add regex test for applied chords
+						// if ^([^/]+)/([^/]+)$ and ^\2(\{[a-z0-9]+}\})?
+						// replace with \1
+					}
+				}
+
+				this.parseAndDraw(final_label, x, y, function(text, x, y) {
+
 					text = this.convertSymbols(text).replace(/⌀/g,'⌀'); // replace: could improve appearance of half-diminished sign with standard fonts here, but using currently using custom font instead
 					offset = 0 - ((text.slice(0,1) == '\u266D') ? ctx.measureText(text.slice(0,1)).width : 0) - (text.slice(0,1) == '\u266F' ? ctx.measureText(text.slice(0,1)).width : 0);
 

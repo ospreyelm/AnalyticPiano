@@ -141,8 +141,11 @@ define([
             var tpl = _.template([
                 '<div class="exercise-status-area">',
                     '<div class="exercise-status-col exercise-status-col1">',
-                        '<% if (typeof(exercise_list) !== "undefined" && exercise_list.length > 0) { %>',
+                        '<% if (typeof(exercise_list) !== "undefined" && exercise_list.length > 0 && typeof(time_to_complete_series) === "undefined") { %>',
                             '<p>Exercise <%= exercise_num %> of <%= exercise_list.length %></p>',
+                        '<% } %>',
+                        '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(last_exercise_id) !== "undefined") { %>',
+                            '<p><%= last_exercise_id %></p>',
                         '<% } %>',
                         '<p><span class="exercise-status-state" style="background-color:<%= status_color %>"><%= status_text %> <%= status_icon %></span>',
                         '<% if (typeof(time_to_complete) !== "undefined" && time_to_complete != "" && status_text !== "finished with errors") { %>',
@@ -213,6 +216,7 @@ define([
                         tpl_data.ex_restarts = exc.getExerciseGroupRestarts();
                         tpl_data.group_min_tempo = exc.getGroupMinTempo();
                         tpl_data.group_max_tempo = exc.getGroupMaxTempo();
+                        tpl_data.last_exercise_id = exc.definition.getExerciseList()[exc.definition.getExerciseList().length - 1].id;
                     }
                     break;
                 case exc.STATE.FINISHED:

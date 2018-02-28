@@ -23,11 +23,11 @@
 		    var sParameterName = sURLVariables[i].split('=');
 		    if(sParameterName[0] == 'performer') {
 		    	sessionStorage.setItem('HarmonyLabPerformer', sParameterName[1]);
-		        return 'performer: ' + sParameterName[1] + '';
+		        return 'Hello, ' + sParameterName[1] + '';
 		    }
 		}
 		if(sessionStorage.getItem('HarmonyLabPerformer')) {
-			return 'performer: ' + sessionStorage.getItem('HarmonyLabPerformer') + '';
+			return 'Hello, ' + sessionStorage.getItem('HarmonyLabPerformer') + '';
 		}
 		return "";
 	};

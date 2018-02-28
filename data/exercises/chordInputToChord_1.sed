@@ -119,13 +119,24 @@ s/([< x])bf([> ])/\158\2/g
  s/([< x])b([> ])/\159\2/g
 
 # discard any duration information
-s/(<[ x0-9]*>)[0-9]+/\1/g
+# s/(<[ x0-9]*>)[0-9]+/\1/g
 
 # introduce line breaks between chords
-s/> *</>,\
+s/>([whqrd0-9]*) *</>\1,\
 </g
 
-# prepare visible and hidden categories
+# prepare visible and hidden categories and rhythm property
+# with Lilypond duration information of 1, 2, or 4
+s/ *<([ x0-9]*)>1/    \{"visible":[\1],"hidden":[],"rhythmValue":"w"}/g
+s/ *<([ x0-9]*)>2/    \{"visible":[\1],"hidden":[],"rhythmValue":"h"}/g
+s/ *<([ x0-9]*)>4/    \{"visible":[\1],"hidden":[],"rhythmValue":"q"}/g
+# with Vexflow duration information of w, h, or q
+s/ *<([ x0-9]*)>w/    \{"visible":[\1],"hidden":[],"rhythmValue":"w"}/g
+s/ *<([ x0-9]*)>h/    \{"visible":[\1],"hidden":[],"rhythmValue":"h"}/g
+s/ *<([ x0-9]*)>q/    \{"visible":[\1],"hidden":[],"rhythmValue":"q"}/g
+# discard unspported duration information
+s/ *<([ x0-9]*)>([whqrd0-9]+)/    \{"visible":[\1],"hidden":[]}/g
+# without duration information
 s/ *<([ x0-9]*)>/    \{"visible":[\1],"hidden":[]}/g
 
 # use commas, not spaces, to separate notes in array

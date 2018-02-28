@@ -162,7 +162,6 @@ define([
 						if(this.sealed == true) {
 							// ignore
 						}else {
-							// window.console.dir('detected restart');
 							var restart_count = parseInt(sessionStorage.getItem('HarmonyLabExGroupRestarts')) + 1;
 							this.restarts = restart_count;
 							sessionStorage.setItem('HarmonyLabExGroupRestarts', restart_count);
@@ -178,6 +177,7 @@ define([
 						if(this.sealed != true) {// For one-time function calls
 							this.endSeriesTimer();
 							this.compileReport();
+							this.submitReport();
 						}
 					}
 					if(this.flawless === true) {
@@ -186,8 +186,7 @@ define([
 							this.recordTempoInformation();
 							this.triggerNextExercise();
 						}
-					}
-					else if(this.flawless === false) {
+					}else if(this.flawless === false) {
 						state = ExerciseContext.STATE.FINISHED;
 						if(this.sealed != true) {// For one-time function calls
 							if(REPEAT_EXERCISE_ENABLED === true) {
@@ -204,11 +203,15 @@ define([
 					this.sealed = true;
 					break;
 				case this.grader.STATE.INCORRECT:
+					if(this.inputChords._items[0]._notes[86]) {
+						window.console.dir('caught dummy note');
+						state = ExerciseContext.STATE.CORRECT;
+						break;
+					}
 					this.makeTimestamp();
 					state = ExerciseContext.STATE.INCORRECT;
 					this.done = false;
 					this.flawless = false;
-					this.sealed = true;
 					/* The seriesFlawless value may be useful in addition to restarts. */
 					// this.seriesFlawless = false;
 					break;
@@ -290,24 +293,28 @@ define([
 		},
 		getMinTempo: function() {
 			if(parseInt(this.timer.minTempo) == NaN) {
+				window.console.dir('tempo not integer');
 				return "";
 			}
 			return this.timer.minTempo;
 		},
 		getMaxTempo: function() {
 			if(parseInt(this.timer.maxTempo) == NaN) {
+				window.console.dir('tempo not integer');
 				return "";
 			}
 			return this.timer.maxTempo;
 		},
 		getGroupMinTempo: function() {
 			if(parseInt(sessionStorage.getItem('HarmonyLabExGroupMinTempo')) == NaN) {
+				window.console.dir('tempo not integer');
 				return "";
 			}
 			return sessionStorage.getItem('HarmonyLabExGroupMinTempo');
 		},
 		getGroupMaxTempo: function() {
 			if(parseInt(sessionStorage.getItem('HarmonyLabExGroupMaxTempo')) == NaN) {
+				window.console.dir('tempo not integer');
 				return "";
 			}
 			return sessionStorage.getItem('HarmonyLabExGroupMaxTempo');
@@ -472,20 +479,22 @@ define([
 			var parameters = [];
 			parameters.push(['1 performer',
 				sessionStorage.getItem('HarmonyLabPerformer')]);
-			parameters.push(['2 submission date',
+			parameters.push(['2 exercise',
+				this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id]);
+			parameters.push(['3 submission date',
 				new Date().toDateString()]);
-			parameters.push(['3 series duration',
+			parameters.push(['4 series duration',
 				this.seriesTimer.alternativeDurationString]);
-			parameters.push(['4 overall tempo',
+			parameters.push(['5 overall tempo',
 				sessionStorage.getItem('HarmonyLabExGroupMinTempo')
 				+ '–' + sessionStorage.getItem('HarmonyLabExGroupMaxTempo')]);
-			parameters.push(['5 restarts',
+			parameters.push(['6 restarts',
 				this.restarts]);
-			parameters.push(['6 final drill duration',
+			parameters.push(['7 final drill duration',
 				this.timer.alternativeDurationString]);
-			parameters.push(['7 final drill tempo',
+			parameters.push(['8 final drill tempo',
 				this.timer.minTempo + '–' + this.timer.maxTempo]);
-			parameters.push(['8 series completion time',
+			parameters.push(['9 series completion time',
 				this.seriesTimer.end]);
 			for(i = 0; i < parameters.length; i++) {
 				if(parameters[i].length == 2 && parameters[i][1] != undefined) {
@@ -493,6 +502,9 @@ define([
 				}
 			}
 			window.console.dir(report);
+		},
+		submitReport: function() {
+			// Do something
 		},
 		/**
 		 * Returns chords for display on screen.

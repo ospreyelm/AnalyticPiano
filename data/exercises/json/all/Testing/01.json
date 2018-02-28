@@ -2,10 +2,14 @@
   "type": "matching",
   "introText": "Play the notes on the bass staff.",
   "keySignature": "",
-  "key": "jC_",
+  "key": "iA_",
   "chord": [
-    {"visible":[53],"hidden":[],"rhythmValue":"h"},
-    {"visible":[55],"hidden":[],"rhythmValue":"h"}
+    {"visible":[64,69,72],"hidden":[],"rhythmValue":"w"},
+    {"visible":[63,66,69,72],"hidden":[],"rhythmValue":"w"},
+    {"visible":[64,68,71],"hidden":[],"rhythmValue":"h"},
+    {"visible":[64,68,71],"hidden":[],"rhythmValue":"h"},
+    {"visible":[64,69,72],"hidden":[],"rhythmValue":"w"},
+    {"visible":[64,68,71],"hidden":[],"rhythmValue":"w"}
   ],
   "reviewText": "",
   "staffDistribution": "RH",
@@ -16,7 +20,7 @@
       "scientific_pitch": false,
       "scale_degrees": false,
       "solfege": true,
-      "roman_numerals": false,
+      "roman_numerals": true,
       "intervals": false
     }
   },
