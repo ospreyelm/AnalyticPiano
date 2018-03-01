@@ -4,14 +4,16 @@ define([
 	'microevent',
 	'./exercise_chord',
 	'./exercise_chord_bank',
-    'app/config'
+    'app/config',
+    'simple-statistics.min'
 ], function(
 	_,
 	$,
 	MicroEvent,
 	ExerciseChord,
 	ExerciseChordBank,
-	Config
+	Config,
+	SimpleStatistics
 ) {
 
 	var AUTO_ADVANCE_ENABLED = Config.get('general.autoExerciseAdvance');
@@ -63,6 +65,7 @@ define([
 			sessionStorage.removeItem('HarmonyLabExGroupRestarts');
 			sessionStorage.removeItem('HarmonyLabExGroupMinTempo');
 			sessionStorage.removeItem('HarmonyLabExGroupMaxTempo');
+			sessionStorage.removeItem('HarmonyLabExGroupTempoRating');
 			this.seriesTimer = null;
 			this.restarts = null;
 		}else if(sessionStorage.HarmonyLabExGroupStartTime) {
@@ -261,6 +264,8 @@ define([
 			this.timer.alternativeDurationString = "";
 			this.timer.minTempo = null;
 			this.timer.maxTempo = null;
+			this.timer.tempoSD = null;
+			this.timer.tempoRating = null;
 			return this;
 		},
 		resetSeriesTimer: function() {
@@ -305,6 +310,12 @@ define([
 			}
 			return this.timer.maxTempo;
 		},
+		getTempoRating: function() {
+			if(!this.timer.tempoRating) {
+				return "";
+			}
+			return this.timer.tempoRating;
+		},
 		getGroupMinTempo: function() {
 			if(parseInt(sessionStorage.getItem('HarmonyLabExGroupMinTempo')) == NaN) {
 				window.console.dir('tempo not integer');
@@ -318,6 +329,12 @@ define([
 				return "";
 			}
 			return sessionStorage.getItem('HarmonyLabExGroupMaxTempo');
+		},
+		getGroupTempoRating: function() {
+			if(!sessionStorage.getItem('HarmonyLabExGroupTempoRating')) {
+				return "";
+			}
+			return sessionStorage.getItem('HarmonyLabExGroupTempoRating');
 		},
 		getExerciseSeriesDuration: function() {
 			if(sessionStorage.getItem('HarmonyLabExGroupTracker') == -1) {
@@ -404,6 +421,24 @@ define([
 				}
 				this.timer.minTempo = Math.min(... calibratedBeatsPerMinute);
 				this.timer.maxTempo = Math.max(... calibratedBeatsPerMinute);
+
+				this.timer.tempoSD = SimpleStatistics.standardDeviation(calibratedBeatsPerMinute);
+				window.console.dir(SimpleStatistics.standardDeviation(calibratedBeatsPerMinute));
+				if(!isNaN(this.timer.tempoSD) && !isNaN(this.timer.minTempo)) {
+					var tempo_stability_factor = this.timer.minTempo / (2 * this.timer.tempoSD);
+					if(tempo_stability_factor > 16) {
+						this.timer.tempoRating = "*****";
+					}else if(tempo_stability_factor > 8) {
+						this.timer.tempoRating = "****";
+					}else if(tempo_stability_factor > 4) {
+						this.timer.tempoRating = "***";
+					}else if(tempo_stability_factor > 2) {
+						this.timer.tempoRating = "**";
+					}else {
+						this.timer.tempoRating = "*";
+					}
+					window.console.dir(this.timer.tempoRating);
+				}
 			}
 			return this;
 		},
@@ -412,11 +447,15 @@ define([
 			/* Prepares tempo information */
 			var former_min_tempo = null;
 			var former_max_tempo = null;
+			var former_tempo_rating = null;
 			if(sessionStorage.getItem('HarmonyLabExGroupMinTempo') && sessionStorage.getItem('HarmonyLabExGroupMinTempo') != "null") {
 				former_min_tempo = parseInt(sessionStorage.getItem('HarmonyLabExGroupMinTempo'));
 			}
 			if(sessionStorage.getItem('HarmonyLabExGroupMaxTempo') && sessionStorage.getItem('HarmonyLabExGroupMaxTempo') != "null") {
 				former_max_tempo = parseInt(sessionStorage.getItem('HarmonyLabExGroupMaxTempo'));
+			}
+			if(sessionStorage.getItem('HarmonyLabExGroupTempoRating') && sessionStorage.getItem('HarmonyLabExGroupTempoRating') != "null") {
+				former_tempo_rating = sessionStorage.getItem('HarmonyLabExGroupTempoRating');
 			}
 
 			/* Updates tempo information in sessionStorage */
@@ -431,6 +470,14 @@ define([
 			}else {
 				var new_max_tempo = Math.max(this.timer.maxTempo, former_max_tempo);
 				sessionStorage.setItem('HarmonyLabExGroupMaxTempo', new_max_tempo);
+			}
+			if(former_tempo_rating == null) {
+				sessionStorage.setItem('HarmonyLabExGroupTempoRating', this.timer.tempoRating);
+			}else {
+				var new_tempo_rating = this.timer.tempoRating;
+				if(new_tempo_rating.length < former_tempo_rating.length) {
+					sessionStorage.setItem('HarmonyLabExGroupTempoRating', new_tempo_rating);
+				}
 			}
 		},
 		/**
@@ -449,6 +496,7 @@ define([
 			sessionStorage.setItem('HarmonyLabExGroupRestarts', 0);
 			sessionStorage.setItem('HarmonyLabExGroupMinTempo', null);
 			sessionStorage.setItem('HarmonyLabExGroupMaxTempo', null);
+			sessionStorage.setItem('HarmonyLabExGroupTempoRating', null);
 			return this;
 		},
 		/**
@@ -487,7 +535,9 @@ define([
 				this.seriesTimer.alternativeDurationString]);
 			parameters.push(['5 overall tempo',
 				sessionStorage.getItem('HarmonyLabExGroupMinTempo')
-				+ '–' + sessionStorage.getItem('HarmonyLabExGroupMaxTempo')]);
+				+ '–' + sessionStorage.getItem('HarmonyLabExGroupMaxTempo')
+				+ ' (' + sessionStorage.getItem('HarmonyLabExGroupTempoRating')
+				+ ')']);
 			parameters.push(['6 restarts',
 				this.restarts]);
 			parameters.push(['7 final drill duration',
