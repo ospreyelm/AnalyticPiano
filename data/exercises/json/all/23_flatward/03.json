@@ -1,0 +1,32 @@
+{
+  "type": "matching",
+  "introText": "Cadential Six-Four (Memory) &middot; #23<br><br>Prepare “degree five” and go!",
+  "keySignature": "#",
+  "key": "jG_",
+  "chord": [
+    {"visible":[50,62],"hidden":[],"rhythmValue":"w"},
+    {"visible":[],"hidden":[50,59,62,67],"rhythmValue":"w"},
+    {"visible":[],"hidden":[50,60,62,66],"rhythmValue":"w"},
+    {"visible":[],"hidden":[43,59,62,67],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

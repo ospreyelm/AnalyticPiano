@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "“Wohin” Cadence in Minor (Memory) &middot; #38<br><br>Prepare “degree five” and go!",
+  "keySignature": "##",
+  "key": "iB_",
+  "chord": [
+    {"visible":[54,66],"hidden":[]},
+    {"visible":[],"hidden":[50,62,66,71]},
+    {"visible":[],"hidden":[52,61,67,71]},
+    {"visible":[],"hidden":[54,62,66,71],"rhythmValue":"h"},
+    {"visible":[],"hidden":[54,64,66,70],"rhythmValue":"h"},
+    {"visible":[],"hidden":[47,62,66,71]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

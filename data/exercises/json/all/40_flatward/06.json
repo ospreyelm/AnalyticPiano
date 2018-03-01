@@ -1,0 +1,32 @@
+{
+  "type": "matching",
+  "introText": "Neapolitan Sixth (Memory) &middot; #40<br><br>Extend RH finger 5 for lowered scale degree two.",
+  "keySignature": "bb",
+  "key": "iG_",
+  "chord": [
+    {"visible":[50,62],"hidden":[]},
+    {"visible":[],"hidden":[48,60,63,68]},
+    {"visible":[],"hidden":[50,60,62,66]},
+    {"visible":[],"hidden":[43,58,62,67]}
+  ],
+  "reviewText": "",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false,
+      "loweredhighlight": true
+    }
+  }
+}

@@ -406,10 +406,10 @@ define([
 				var current_position = this.stave.position.index;
 
 				var substitutions = [
-					[["i{z4}", "V"], ["V{z4}", "{t3}"]],
-					[["I{z4}", "V"], ["V{z4}", "{t3}"]],
-					[["i{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
-					[["I{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
+					[["i{z4}", "V"], ["V{z4}", " {t3}"]],
+					[["I{z4}", "V"], ["V{z4}", " {t3}"]],
+					[["i{z4}", "V{u3}"], ["V{z4}", " {u3}"]],
+					[["I{z4}", "V{u3}"], ["V{z4}", " {u3}"]],
 					[["vii°{u}/V", "V"], ["vii°{u} →", "V"]],//
 					[["vii⌀{u}/V", "V"], ["vii⌀{u} →", "V"]],//
 					[["vii°{u}", "VI{z}"], ["c.t.°{u}", "VI{z}"]],
@@ -466,7 +466,7 @@ define([
 			var name = '', lines = [];
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
-			var newSize = '24px';
+			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 			
 			if(interval && interval.name !== '') {

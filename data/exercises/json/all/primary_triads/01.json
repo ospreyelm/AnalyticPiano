@@ -1,6 +1,6 @@
 {
   "type": "matching",
-  "introText": "Complete the progression indicated by the Roman numerals, in four parts. Use only stepwise or common-tone voice leading in the upper parts, and match the visible bassline.",
+  "introText": "Complete the progression indicated by the Roman numerals, in four parts. Use only stepwise or common-tone voice leading in the upper parts, and match the visible bassline.<br><br>The following exercises ask you to complete I–IV–I–V–I in other keys, both major and minor, with key signatures of up to two sharps or flats.",
   "keySignature": "",
   "key": "jC_",
   "chord": [
@@ -10,7 +10,7 @@
     {"visible":[55],"hidden":[67,62,71]},
     {"visible":[48],"hidden":[67,64,72]}
   ],
-  "reviewText": "The following exercises ask you to complete I–IV–I–V–I in other keys, both major and minor, with key signatures of up to two sharps or flats.",
+  "reviewText": "",
   "analysis": {
     "enabled": true,
     "mode": {

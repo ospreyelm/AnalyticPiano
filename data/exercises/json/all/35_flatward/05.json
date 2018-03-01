@@ -1,0 +1,32 @@
+{
+  "type": "matching",
+  "introText": "French Sixth &middot; #35<br><br>Prepare “degree five” and go!",
+  "keySignature": "b",
+  "key": "iD_",
+  "chord": [
+    {"visible":[57,69],"hidden":[],"rhythmValue":"w"},
+    {"visible":[57,64,69,73],"hidden":[],"rhythmValue":"w"},
+    {"visible":[58,64,68,74],"hidden":[],"rhythmValue":"w"},
+    {"visible":[57,64,69,73],"hidden":[],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

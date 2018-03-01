@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Mitten Thumb in Minor &middot; #5<br><br>RH fingers 2-1-1",
+  "keySignature": "bb",
+  "key": "iG_",
+  "chord": [
+    {"visible":[62],"hidden":[]},
+    {"visible":[60],"hidden":[]},
+    {"visible":[58],"hidden":[]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "RH",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

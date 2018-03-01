@@ -1,0 +1,35 @@
+{
+  "type": "matching",
+  "introText": "Mitten Fingers for Minor &middot; #7<br><br>RH fingers 2-3-4-5. Follow the analysis.",
+  "keySignature": "#",
+  "key": "iE_",
+  "chord": [
+    {"visible":[71],"hidden":[]},
+    {"visible":[73],"hidden":[]},
+    {"visible":[75],"hidden":[]},
+    {"visible":[76],"hidden":[]},
+    {"visible":[74],"hidden":[]},
+    {"visible":[72],"hidden":[]},
+    {"visible":[71],"hidden":[]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "RH",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

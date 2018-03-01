@@ -1,0 +1,35 @@
+{
+  "type": "matching",
+  "introText": "Mitten Fingers for Minor (Memory) &middot; #8<br><br>RH fingers 2-3-4-5. Follow the analysis. The minor key is named at bottom left.",
+  "keySignature": "bb",
+  "key": "iG_",
+  "chord": [
+    {"visible":[62],"hidden":[]},
+    {"visible":[],"hidden":[64]},
+    {"visible":[],"hidden":[66]},
+    {"visible":[],"hidden":[67]},
+    {"visible":[],"hidden":[65]},
+    {"visible":[],"hidden":[63]},
+    {"visible":[],"hidden":[62]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "RH",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

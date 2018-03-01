@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Dominant Triad &middot; #15<br><br>Prepare “degree five” and go!",
+  "keySignature": "###",
+  "key": "jA_",
+  "chord": [
+    {"visible":[52,64],"hidden":[]},
+    {"visible":[52,59,64,68],"hidden":[]},
+    {"visible":[45,61,64,69],"hidden":[]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

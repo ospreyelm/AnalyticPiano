@@ -10,9 +10,12 @@ define({
 	voiceCountForKeyboardStyle: [2, 3, 4],
 	voiceCountForChoraleStyle: [4],
 	autoExerciseAdvance: true,
+	hideNextWhenAutoAdvance: true,
 	repeatExercise: true,
-	nextExerciseWait: 1500,
+	nextExerciseWait: 1000,
 	repeatExerciseWait: 4000,
+
+	numberedExerciseCount: 40,
 
 	defaultNoteColor: "rgb(180,180,180)", // gray
 	defaultRhythmValue: "w",// whole note (semibreve)

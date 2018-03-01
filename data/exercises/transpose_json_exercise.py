@@ -285,7 +285,7 @@ schemata.append([# high
     ]
 ])
 schemata.append([# schema 17
-    '5', [
+    'flatward', [
         [-3, "jA_", "###"],
         [ 2, "jD_", "##"],
         [-5, "jG_", "#"],
@@ -296,7 +296,7 @@ schemata.append([# schema 17
     ]
 ])
 schemata.append([# schema 18
-    '5', [
+    'flatward', [
         [-3, "iF#", "###"],
         [ 2, "iB_", "##"],
         [ 7, "iE_", "#"],
@@ -304,6 +304,26 @@ schemata.append([# schema 18
         [ 5, "iD_", "b"],
         [-2, "iG_", "bb"],
         [ 3, "iC_", "bbb"]
+    ]
+])
+schemata.append([# schema 19
+    'flats', [
+        [ 0, "jC_", ""],
+        [-7, "jF_", "b"],
+        [-2, "jBb", "bb"],
+        [ 3, "jEb", "bbb"],
+        [-2, "jBb", "bb"],
+        [-7, "jF_", "b"]
+    ]
+])
+schemata.append([# schema 20
+    'flats', [
+        [ 0, "iA_", ""],
+        [ 5, "iD_", "b"],
+        [-2, "iG_", "bb"],
+        [ 3, "iC_", "bbb"],
+        [-2, "iG_", "bb"],
+        [ 5, "iD_", "b"]
     ]
 ])
 

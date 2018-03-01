@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "Cadential Six-Four in Minor, Verbalized &middot; #26<br><br>Prepare “degrees five, three, one” and narrate the voice leading—“alto stays, others move.”",
+  "keySignature": "#",
+  "key": "iE_",
+  "chord": [
+    {"visible":[59,71],"hidden":[],"rhythmValue":"h"},
+    {"visible":[67],"hidden":[],"rhythmValue":"h"},
+    {"visible":[76],"hidden":[],"rhythmValue":"h"},
+    {"visible":[59,67,71,76],"hidden":[],"rhythmValue":"w"},
+    {"visible":[59,69,71,75],"hidden":[],"rhythmValue":"h"},
+    {"visible":[52,67,71,76],"hidden":[],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboardPlusRHBias",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

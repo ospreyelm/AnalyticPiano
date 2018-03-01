@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Italian Sixth &middot; #33<br><br>Three voices only. Notice the parallel motion between the soprano and bass. As before, use index fingers for the alto and bass.",
+  "keySignature": "bbb",
+  "key": "iC_",
+  "chord": [
+    {"visible":[55,67,71],"hidden":[],"rhythmValue":"w"},
+    {"visible":[56,66,72],"hidden":[],"rhythmValue":"w"},
+    {"visible":[55,67,71],"hidden":[],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

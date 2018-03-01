@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Mitten Thumb in Minor (Memory) &middot; #6<br><br>RH fingers 2-1-1. The minor key is named at bottom left.",
+  "keySignature": "##",
+  "key": "iB_",
+  "chord": [
+    {"visible":[66],"hidden":[]},
+    {"visible":[],"hidden":[64]},
+    {"visible":[],"hidden":[62]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "RH",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

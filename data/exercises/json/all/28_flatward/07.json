@@ -1,0 +1,32 @@
+{
+  "type": "matching",
+  "introText": "Cadential Six-Four in Minor (Memory) &middot; #28<br><br>Prepare “degree five” and go!",
+  "keySignature": "bbb",
+  "key": "iC_",
+  "chord": [
+    {"visible":[55,67],"hidden":[],"rhythmValue":"w"},
+    {"visible":[],"hidden":[55,63,67,72],"rhythmValue":"w"},
+    {"visible":[],"hidden":[55,65,67,71],"rhythmValue":"w"},
+    {"visible":[],"hidden":[48,63,67,72],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboardPlusRHBias",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

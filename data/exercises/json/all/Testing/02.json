@@ -1,6 +1,6 @@
 {
   "type": "matching",
-  "introText": "Play the notes on the bass staff.",
+  "introText": "<audio controls></audio>",
   "keySignature": "",
   "key": "h",
   "chord": [

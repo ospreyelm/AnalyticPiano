@@ -1,0 +1,32 @@
+{
+  "type": "matching",
+  "introText": "Mitten Fingers &middot; #1<br><br>RH fingers 2-3-4-5",
+  "keySignature": "###",
+  "key": "jA_",
+  "chord": [
+    {"visible":[64],"hidden":[]},
+    {"visible":[66],"hidden":[]},
+    {"visible":[68],"hidden":[]},
+    {"visible":[69],"hidden":[]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "RH",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

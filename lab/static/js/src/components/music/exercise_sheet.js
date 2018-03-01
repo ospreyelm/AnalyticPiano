@@ -35,6 +35,10 @@ define([
 
     var AUTO_ADVANCE_ENABLED = Config.get('general.autoExerciseAdvance');
 
+    var SETTING_HIDE_NEXT = Config.get('general.hideNextWhenAutoAdvance');
+
+    var NUMBERED_EXERCISE_COUNT = Config.get('general.numberedExerciseCount');
+
     /**
      * ExerciseSheetComponent
      *
@@ -141,10 +145,10 @@ define([
             var tpl = _.template([
                 '<div class="exercise-status-area">',
                     '<div class="exercise-status-col exercise-status-col1">',
-                        '<% if (typeof(exercise_list) !== "undefined" && exercise_list.length > 0 && typeof(time_to_complete_series) === "undefined") { %>',
+                        '<% if (typeof(exercise_list) !== "undefined" && exercise_list.length > 0) { %>',
                             '<p>Exercise <%= exercise_num %> of <%= exercise_list.length %></p>',
                         '<% } %>',
-                        '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(last_exercise_id) !== "undefined") { %>',
+                        '<% if (1 == 2 && typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(last_exercise_id) !== "undefined") { %>',
                             '<p><%= last_exercise_id %></p>',
                         '<% } %>',
                         '<p><span class="exercise-status-state" style="background-color:<%= status_color %>"><%= status_text %> <%= status_icon %></span>',
@@ -163,13 +167,22 @@ define([
                         '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(group_min_tempo) !== "undefined" && group_min_tempo != "" && typeof(group_max_tempo) !== "undefined" && group_max_tempo != "") { %>',
                             '<p>Overall tempo&nbsp;<%= group_min_tempo %>&ndash;<%= group_max_tempo %></p>',
                         '<% } %>',
-                        '<% if (typeof(next_exercise) !== "undefined" && next_exercise != "" && auto_advance === false) { %>',
+                        '<% if (typeof(next_exercise) !== "undefined" && next_exercise != "" && hide_next === false) { %>',
                             '<p><a class="exercise-status-next-btn" href="<%= next_exercise %>">Click for next</a></p>',
                         '<% } %>',
                     '</div>',
                     '<div class="exercise-status-col exercise-status-col2">',
                         '<% if (prompt_text !== "") { %>',
                             '<p><%= prompt_text %></p>',
+                        '<% } %>',
+                        '<% if (typeof(next_set_skip) !== "undefined" && next_set_skip != "") { %>',
+                            '<a class="exercise-status-next-btn" href="<%= next_set_skip %>">SKIP TO NEXT SET</a>',
+                        '<% } %>',
+                        '<% if (typeof(next_set) !== "undefined" && next_set != "") { %>',
+                            '<a class="exercise-status-next-btn" href="<%= next_set %>">PROCEED TO NEXT SET</a> || ',
+                        '<% } %>',
+                        '<% if (typeof(current_set) !== "undefined" && current_set != "" && exercise_num != 1) { %>',
+                            '<a class="exercise-status-next-btn" href="<%= current_set %>">REDO CURRENT SET</a>',
                         '<% } %>',
                     '</div>',
                 '</div>'
@@ -198,13 +211,18 @@ define([
             if(exc.definition.getNextExercise()) {
                 tpl_data.next_exercise = exc.definition.getNextExercise();
             }
-            tpl_data.prompt_text = "";
-            tpl_data.auto_advance = AUTO_ADVANCE_ENABLED;
+            tpl_data.hide_next = false;
+            if(AUTO_ADVANCE_ENABLED && SETTING_HIDE_NEXT) {
+                tpl_data.hide_next = true;
+            }
 
+            tpl_data.prompt_text = "";
             switch(exc.state) {
                 case exc.STATE.CORRECT:
                     if(exc.definition.hasReview()) {
                         tpl_data.prompt_text = exc.definition.getReview();
+                    }else if(exc.definition.hasIntro()) {
+                        tpl_data.prompt_text = exc.definition.getIntro();
                     }
                     if(exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
@@ -217,6 +235,20 @@ define([
                         tpl_data.group_min_tempo = exc.getGroupMinTempo();
                         tpl_data.group_max_tempo = exc.getGroupMaxTempo();
                         tpl_data.last_exercise_id = exc.definition.getExerciseList()[exc.definition.getExerciseList().length - 1].id;
+                    }
+                    if(tpl_data.last_exercise_id.split("/")[0] && tpl_data.exercise_num == tpl_data.exercise_list.length) {
+                        tpl_data.current_set = "../" + tpl_data.last_exercise_id.split("/")[0];
+                    }
+                    if(tpl_data.time_to_complete_series && tpl_data.time_to_complete_series != "") {
+                        if(tpl_data.last_exercise_id.split("/")[0].split("_")[1]) {
+                            var group_id = tpl_data.last_exercise_id.split("/")[0];
+                            var group_number = tpl_data.last_exercise_id.split("/")[0].split("_")[0];
+                            var key_schema_number = tpl_data.last_exercise_id.split("/")[0].split("_")[1];
+                            if(parseInt(group_number) != NaN && parseInt(group_number) < NUMBERED_EXERCISE_COUNT) {
+                                /* Crude solution */
+                                tpl_data.next_set = "../" + (parseInt(group_number) + 1) + "_" + key_schema_number + "/01";
+                            }
+                        }
                     }
                     break;
                 case exc.STATE.FINISHED:
@@ -234,6 +266,20 @@ define([
                 default:
                     if(exc.definition.hasIntro()) {
                         tpl_data.prompt_text = exc.definition.getIntro();
+                    }
+
+                    tpl_data.last_exercise_id = exc.definition.getExerciseList()[exc.definition.getExerciseList().length - 1].id;
+
+                    if(tpl_data.exercise_num == 1) {
+                        if(tpl_data.last_exercise_id.split("/")[0].split("_")[1]) {
+                            var group_id = tpl_data.last_exercise_id.split("/")[0];
+                            var group_number = tpl_data.last_exercise_id.split("/")[0].split("_")[0];
+                            var key_schema_number = tpl_data.last_exercise_id.split("/")[0].split("_")[1];
+                            if(parseInt(group_number) != NaN && parseInt(group_number) < NUMBERED_EXERCISE_COUNT) {
+                                /* Crude solution */
+                                tpl_data.next_set_skip = "../" + (parseInt(group_number) + 1) + "_" + key_schema_number + "/01";
+                            }
+                        }
                     }
                     break;
             }

@@ -1,13 +1,12 @@
 {
   "type": "matching",
-  "introText": "French_Sixth. Prepare “degree five” and go!",
+  "introText": "Italian Sixth &middot; #33<br><br>Three voices only. Notice the parallel motion between the soprano and bass. As before, use index fingers for the alto and bass.",
   "keySignature": "",
   "key": "iA_",
   "chord": [
-    {"visible":[52,64],"hidden":[],"rhythmValue":"w"},
-    {"visible":[52,60,64,69],"hidden":[],"rhythmValue":"w"},
-    {"visible":[53,59,63,69],"hidden":[],"rhythmValue":"w"},
-    {"visible":[52,59,64,68],"hidden":[],"rhythmValue":"w"}
+    {"visible":[52,64,68],"hidden":[],"rhythmValue":"w"},
+    {"visible":[53,63,69],"hidden":[],"rhythmValue":"w"},
+    {"visible":[52,64,68],"hidden":[],"rhythmValue":"w"}
   ],
   "reviewText": "",
   "staffDistribution": "keyboard",
