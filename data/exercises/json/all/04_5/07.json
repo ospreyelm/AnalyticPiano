@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Mitten_Thumb_Memory. Use fingers 2-1-1 to complete the scale fragment. The major key is named at bottom left.",
+  "keySignature": "bbb",
+  "key": "jEb",
+  "chord": [
+    {"visible":[70],"hidden":[]},
+    {"visible":[],"hidden":[68]},
+    {"visible":[],"hidden":[67]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "RH",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "Wohin_Cadence_Memory. Prepare “degree five” and go!",
+  "keySignature": "bb",
+  "key": "jBb",
+  "chord": [
+    {"visible":[53,65],"hidden":[]},
+    {"visible":[],"hidden":[50,62,65,70]},
+    {"visible":[],"hidden":[51,60,67,70]},
+    {"visible":[],"hidden":[53,62,65,70],"rhythmValue":"h"},
+    {"visible":[],"hidden":[53,63,65,69],"rhythmValue":"h"},
+    {"visible":[],"hidden":[46,62,65,70]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

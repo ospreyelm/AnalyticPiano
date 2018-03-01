@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Mitten_Thumb_Minor_Memory. Use fingers 2-1-1 to complete the scale fragment. The minor key is named at bottom left.",
+  "keySignature": "bbb",
+  "key": "iC_",
+  "chord": [
+    {"visible":[67],"hidden":[]},
+    {"visible":[],"hidden":[65]},
+    {"visible":[],"hidden":[63]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "RH",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

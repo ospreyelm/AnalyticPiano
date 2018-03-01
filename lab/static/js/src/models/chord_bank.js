@@ -18,6 +18,8 @@ define([
 
 	var NO_DOUBLE_VISION = Config.get('general.noDoubleVision');
 
+    var CHORD_BANK_SIZE = Config.get('general.chordBank.displaySize');
+
 	/**
 	 * Creates an instance of a chord bank.
 	 *
@@ -66,7 +68,7 @@ define([
 			 * @type {number}
 			 * @protected
 			 */
-			this._limit = 20; // limit number of chords in the bank
+			this._limit = CHORD_BANK_SIZE * 4; // limit number of chords in the bank
 			if(typeof this.settings.limit === 'number' && this.settings.limit >= 0) {
 				this._limit = this.settings.limit;
 			}

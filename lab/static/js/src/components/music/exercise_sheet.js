@@ -294,7 +294,7 @@ define([
          */
         updateStaves: function() {
             var chord, treble, bass;
-            var limit = CHORD_BANK_SIZE;
+            var limit = CHORD_BANK_SIZE * 4;// Adjusted now that rhythms varied
             var display_items = this.getDisplayChords().items({limit: limit, reverse: false});
             var exercise_items = this.getExerciseChords().items({limit: limit, reverse: false});
             var staves = [];
@@ -303,7 +303,7 @@ define([
             var position = {
                 index:index,
                 count:count,
-                maxCount:limit
+                maxCount:CHORD_BANK_SIZE
             };
             var display_chord;
             var exercise_chord;

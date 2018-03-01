@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Dominant_Seventh. Prepare “degree five” and go!",
+  "keySignature": "bbb",
+  "key": "jEb",
+  "chord": [
+    {"visible":[58,70],"hidden":[]},
+    {"visible":[58,68,70,74],"hidden":[]},
+    {"visible":[51,67,70,75],"hidden":[]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

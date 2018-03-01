@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "German_Sixth_Memory. Prepare “degree five” and go!",
+  "keySignature": "",
+  "key": "iA_",
+  "chord": [
+    {"visible":[52,64],"hidden":[],"rhythmValue":"w"},
+    {"visible":[],"hidden":[52,60,64,69],"rhythmValue":"w"},
+    {"visible":[],"hidden":[53,60,63,69],"rhythmValue":"w"},
+    {"visible":[],"hidden":[52,60,64,69],"rhythmValue":"h"},
+    {"visible":[],"hidden":[52,62,64,68],"rhythmValue":"h"},
+    {"visible":[],"hidden":[45,60,64,69],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

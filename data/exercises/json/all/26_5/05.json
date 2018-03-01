@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "Cadential_Six-Four_Minor_Verbal. Prepare “degrees five, three, one [or eight]” and narrate the voice leading—“alto stays, others move.”",
+  "keySignature": "b",
+  "key": "iD_",
+  "chord": [
+    {"visible":[57,69],"hidden":[],"rhythmValue":"h"},
+    {"visible":[65],"hidden":[],"rhythmValue":"h"},
+    {"visible":[74],"hidden":[],"rhythmValue":"h"},
+    {"visible":[57,65,69,74],"hidden":[],"rhythmValue":"w"},
+    {"visible":[57,67,69,73],"hidden":[],"rhythmValue":"h"},
+    {"visible":[50,65,69,74],"hidden":[],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboardPlusRHBias",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

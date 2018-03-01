@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Augmented_Sixth. Use only the index fingers of both hands!",
+  "keySignature": "bb",
+  "key": "iG_",
+  "chord": [
+    {"visible":[50,62],"hidden":[]},
+    {"visible":[51,61],"hidden":[]},
+    {"visible":[50,62],"hidden":[]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": true
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

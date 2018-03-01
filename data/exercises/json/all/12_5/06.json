@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Mitten_Thumb_Up. Use fingers 2-1-1 to complete the scale fragment.",
+  "keySignature": "bb",
+  "key": "jBb",
+  "chord": [
+    {"visible":[65],"hidden":[]},
+    {"visible":[60],"hidden":[]},
+    {"visible":[62],"hidden":[]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "RH",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

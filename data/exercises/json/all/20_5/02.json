@@ -1,0 +1,34 @@
+{
+  "type": "matching",
+  "introText": "Phrase_Model_Ex2_Memory. Prepare “degree five” and go! Use the “mitten” placement of the right hand and use fingers 1-2-3-2-5 in the left hand.",
+  "keySignature": "##",
+  "key": "jD_",
+  "chord": [
+    {"visible":[57,69],"hidden":[]},
+    {"visible":[],"hidden":[62,66,69,74]},
+    {"visible":[],"hidden":[59,66,71,74]},
+    {"visible":[],"hidden":[55,64,71,74],"rhythmValue":"h"},
+    {"visible":[],"hidden":[57,64,69,73],"rhythmValue":"h"},
+    {"visible":[],"hidden":[50,66,69,74]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

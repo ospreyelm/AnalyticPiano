@@ -1,0 +1,31 @@
+{
+  "type": "matching",
+  "introText": "Mitten_Thumb_Minor. Use fingers 2-1-1 to complete the scale fragment.",
+  "keySignature": "b",
+  "key": "iD_",
+  "chord": [
+    {"visible":[69],"hidden":[]},
+    {"visible":[67],"hidden":[]},
+    {"visible":[65],"hidden":[]}
+  ],
+  "reviewText": "",
+  "staffDistribution": "RH",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": false,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}

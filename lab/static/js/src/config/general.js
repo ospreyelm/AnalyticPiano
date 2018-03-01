@@ -11,7 +11,7 @@ define({
 	voiceCountForChoraleStyle: [4],
 	autoExerciseAdvance: true,
 	repeatExercise: true,
-	nextExerciseWait: 1000,
+	nextExerciseWait: 1500,
 	repeatExerciseWait: 4000,
 
 	defaultNoteColor: "rgb(180,180,180)", // gray

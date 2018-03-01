@@ -1,0 +1,32 @@
+{
+  "type": "matching",
+  "introText": "Cadential_Six-Four. Prepare “degree five” and go!",
+  "keySignature": "",
+  "key": "jC_",
+  "chord": [
+    {"visible":[55,67],"hidden":[],"rhythmValue":"w"},
+    {"visible":[55,64,67,72],"hidden":[],"rhythmValue":"h"},
+    {"visible":[55,65,67,71],"hidden":[],"rhythmValue":"h"},
+    {"visible":[48,64,67,72],"hidden":[],"rhythmValue":"w"}
+  ],
+  "reviewText": "",
+  "staffDistribution": "keyboard",
+  "analysis": {
+    "enabled": true,
+    "mode": {
+      "note_names": false,
+      "scientific_pitch": false,
+      "scale_degrees": true,
+      "solfege": false,
+      "roman_numerals": true,
+      "intervals": false
+    }
+  },
+  "highlight": {
+    "enabled": true,
+    "mode": {
+      "roothighlight": false,
+      "tritonehighlight": false
+    }
+  }
+}
