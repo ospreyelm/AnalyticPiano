@@ -12,6 +12,9 @@ class LTICourse(models.Model):
             result['name'] = c.course_name
             result['name_short'] = c.course_name_short
         return result
+    
+    def __str__(self):
+        return self.course_name_short
 
     class Meta:
         verbose_name = 'LTI Course'
@@ -24,7 +27,7 @@ class LTIConsumer(models.Model):
     resource_link_id = models.CharField(max_length=255, blank=False)
     context_id = models.CharField(max_length=255, blank=True, null=True)
     canvas_course_id = models.CharField(max_length=255, blank=True, null=True)
-    course = models.ForeignKey(LTICourse)
+    course = models.ForeignKey(LTICourse, on_delete=models.CASCADE)
     
     @classmethod
     def hasCourse(cls, consumer_key, resource_link_id):
@@ -48,6 +51,9 @@ class LTIConsumer(models.Model):
  
         return cls.objects.create(course=course, **launch)
     
+    def __str__(self):
+        return '{}:{}'.format(self.consumer_key, self.resource_link_id)
+
     class Meta:
         verbose_name = 'LTI Consumer'
         ordering = ['consumer_key','resource_link_id','context_id']

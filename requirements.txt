@@ -7,3 +7,4 @@ whitenoise==5.1.0       # Python WSGI static files
 # Additional requirements
 # Required for LTI authentication
 git+https://github.com/Harvard-University-iCommons/django-auth-lti.git@v2.0.2#egg=django-auth-lti
+lti>=0.9.4

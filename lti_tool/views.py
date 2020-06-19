@@ -1,9 +1,9 @@
 from django.http import HttpResponse
 from django.shortcuts import redirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth import logout
 from django.views.generic import View
-from ims_lti_py.tool_config import ToolConfig
+from lti import ToolConfig
 from braces.views import CsrfExemptMixin, LoginRequiredMixin
 
 from .models import LTIConsumer, LTICourse
@@ -54,6 +54,7 @@ class LTILaunchView(CsrfExemptMixin, LoginRequiredMixin, View):
 
 class LTIToolConfigView(View):
     TOOL_TITLE = 'Harmony Lab'
+    TOOL_DESCRIPTION = 'Harmony Lab is an application for music theory students and instructors.'
     LAUNCH_URL = 'lti:launch'
     """
     Outputs LTI configuration XML for Canvas as specified in the IMS Global Common Cartridge Profile.
@@ -69,39 +70,33 @@ class LTIToolConfigView(View):
         host = 'https://' + request.get_host()
         return host + reverse(self.LAUNCH_URL);
 
-    def set_extra_params(self, lti_tool_config):
-        '''
-        Sets extra parameters on the ToolConfig() instance using
-        the following method or by directly mutating attributes 
-        on the config:
-        
-        lti_tool_config.set_ext_param(ext_key, ext_params)
-        lti_tool_config.description = "my description..."
-        '''
-        lti_tool_config.set_ext_param('canvas.instructure.com', 'privacy_level', 'public')
-        lti_tool_config.set_ext_param('canvas.instructure.com', 'course_navigation', {
-            'enabled': 'true', 
-            'default': 'disabled',
-            'text': self.TOOL_TITLE, 
-        })
-        lti_tool_config.description = 'Harmony Lab is an application for music theory students and instructors.'
-
     def get_tool_config(self, request):
         '''
         Returns an instance of ToolConfig().
         '''
         launch_url = self.get_launch_url(request)
+        extensions = {
+            'canvas.instructure.com': {
+                'privacy_level': 'public',
+                'course_navigation': {
+                    'enabled': 'true', 
+                    'default': 'disabled',
+                    'text': self.TOOL_TITLE, 
+                }
+            }
+        }
         return ToolConfig(
             title=self.TOOL_TITLE,
+            description=self.TOOL_DESCRIPTION,
             launch_url=launch_url,
             secure_launch_url=launch_url,
+            extensions=extensions,
         )
 
     def get(self, request, *args, **kwargs):
         '''
         Returns the LTI tool configuration as XML.
         '''
-        lti_tool_config = self.get_tool_config(request)
-        self.set_extra_params(lti_tool_config)
-        return HttpResponse(lti_tool_config.to_xml(), content_type='text/xml', status=200)
+        tool_config = self.get_tool_config(request)
+        return HttpResponse(tool_config.to_xml(), content_type='text/xml', status=200)
 

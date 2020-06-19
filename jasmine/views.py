@@ -3,8 +3,7 @@ import os
 import json
 
 from django.conf import settings
-from django.shortcuts import  render_to_response
-from django.template import RequestContext
+from django.shortcuts import  render
 
 logger = logging.getLogger('jasmine')
 
@@ -26,6 +25,4 @@ def run_tests(request):
 
     data = { 'all_specs': all_specs }
 
-    return render_to_response('jasmine/index.html', 
-            data,
-            context_instance=RequestContext(request))
+    return render(request, 'jasmine/index.html', context=data)

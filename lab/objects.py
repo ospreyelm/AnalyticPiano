@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 import os
 import os.path
 import string
@@ -164,7 +164,7 @@ class ExerciseFileRepository(ExerciseRepository):
         path_to_exercises = ExerciseFileRepository.getBasePath(self.course_id)
 
         for root, dirs, files in os.walk(path_to_exercises):
-            group_name = string.replace(root, path_to_exercises, '')
+            group_name = str.replace(root, path_to_exercises, '')
             exercise_group = ExerciseGroup(group_name, course_id=self.course_id)
             exercise_files = []  
 
@@ -334,7 +334,7 @@ class ExerciseLilyPond:
         midi_chord = {"visible": [], "hidden": []}
         
         # parse each pitch entry in the chord and translate to MIDI
-        pitch_entries = re.split('\s+', chordstring)
+        pitch_entries = re.split(r'\s+', chordstring)
         for idx, pitch_entry in enumerate(pitch_entries):
             octave = start_octave
             tokens = list(pitch_entry) # convert entry to sequence of characters
@@ -356,7 +356,7 @@ class ExerciseLilyPond:
             tokens = tokens[1:]
             
             # check that all subsequent characters are either octave changing marks, or accidentals
-            check_rest = re.sub('|'.join([up,down,sharp,flat,'\d']), '', ''.join(tokens))
+            check_rest = re.sub(r'|'.join([up,down,sharp,flat,r'\d']), '', ''.join(tokens))
             if len(check_rest) > 0:
                 self.is_valid = False
                 self.errors.append("Pitch entry [%s] in chord [%s] contains unrecognized symbols: %s" % (pitch_entry, chordstring, check_rest))
@@ -364,7 +364,7 @@ class ExerciseLilyPond:
 
             # look for octave changing marks
             octave_change = 0
-            octaves = re.findall('('+up+'|'+down+'|\d)', ''.join(tokens))
+            octaves = re.findall(r'('+up+'|'+down+r'|\d)', ''.join(tokens))
             if octaves is not None:
                 for o in octaves:
                     if o == up:

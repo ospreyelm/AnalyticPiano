@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
@@ -14,7 +14,7 @@ from django_auth_lti import const
 from .objects import ExerciseRepository
 from .decorators import role_required, course_authorization_required
 from .verification import has_instructor_role, has_course_authorization
-from lti.models import LTIConsumer, LTICourse
+from lti_tool.models import LTIConsumer, LTICourse
 
 import json
 import copy
