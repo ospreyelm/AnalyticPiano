@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
-import views
-from views import PlayView, ExerciseView, ManageView
-from views import APIView, APIExerciseView, APIGroupView
+from . import views
+from .views import PlayView, ExerciseView, ManageView
+from .views import APIView, APIExerciseView, APIGroupView
 from lti.views import LTIToolConfigView, LTILaunchView
 
 urlpatterns = [
