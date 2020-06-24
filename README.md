@@ -11,6 +11,7 @@ An Open-Source application for the study of music theory and keyboard skills tha
 $ git clone git@github.com:ospreyelm/HarmonyLab.git harmony
 $ cd harmony
 $ pipenv install
+$ ./manage.py migrate
 $ ./manage.py runserver
 ```
 You should now be able to run the application on your localhost at ```http://127.0.0.1:8000```. 
