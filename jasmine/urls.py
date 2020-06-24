@@ -1,7 +1,10 @@
 
-from django.conf.urls import patterns, include, url
-import views
+from django.urls import path
+from . import views
+
+
+app_name = 'jasmine'
 
 urlpatterns = [
-    url(r'^$', views.run_tests, name='run_tests'),
+    path('', views.run_tests, name='run_tests'),
 ]

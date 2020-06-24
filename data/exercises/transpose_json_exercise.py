@@ -343,7 +343,7 @@ elif sys.argv[2] == "all":
 else:
     sys.exit('Unexpected input.')
 
-print 'Applying schemas ' + str(schemaIDs)
+print('Applying schemas ' + str(schemaIDs))
 
 for i in schemaIDs:
     suffix = schemata[i][0]
