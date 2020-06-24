@@ -34,6 +34,7 @@ The required  **Config Variables** that should be added on the app settings page
 ```
 SECRET_KEY = YOUR_RANDOM_LONG_PASSWORD
 DJANGO_SETTINGS_MODULE = harmony.settings.heroku
+ALLOWED_HOSTS = ["yoururl.com"]
 LTI_OAUTH_CREDENTIALS = {"harmonykey":"harmonysecret"}
 ```
 
