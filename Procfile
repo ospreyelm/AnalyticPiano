@@ -1,1 +1,1 @@
-web: gunicorn harmony.wsgi-heroku:application --log-file -
+web: gunicorn harmony.wsgi:application --log-file -
