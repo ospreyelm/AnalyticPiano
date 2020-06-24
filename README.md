@@ -10,7 +10,7 @@ An Open-Source application for the study of music theory and keyboard skills tha
 ```sh
 $ git clone git@github.com:ospreyelm/HarmonyLab.git harmony
 $ cd harmony
-$ pip install -r requirements.txt
+$ pip env install
 $ ./manage.py runserver
 ```
 You should now be able to run the application on your localhost at ```http://127.0.0.1:8000```. 
