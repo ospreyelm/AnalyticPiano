@@ -4,7 +4,7 @@ An Open-Source application for the study of music theory and keyboard skills tha
 
 # Quickstart
 
-- Requires [Python 2.7.x](http://python.org/download/releases/) and [Pip](http://www.pip-installer.org/) to install. 
+- Requires [Python 3.6.x](http://python.org/download/releases/) and [Pip](http://www.pip-installer.org/) to install. 
 - To install Pip, see [their instructions](http://www.pip-installer.org/en/latest/installing.html).
 
 ```sh
