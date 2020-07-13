@@ -1,9 +1,13 @@
 define([
 	'lodash',
-	'microevent'
+	'microevent',
+	'Tone', // Tone.js
+	'teoria'
 ], function(
 	_,
-	MicroEvent
+	MicroEvent,
+	Tone,
+	teoria
 ) {
 
 	/**
@@ -24,7 +28,10 @@ define([
 		this._outputidx = false;
 		_.bindAll(this, ['handleMIDIMessage','update']);
 	};
-
+	var vol = new Tone.Volume(-12).toMaster();
+	var polySynth = new Tone.PolySynth(10, Tone.FMSynth);
+	polySynth.connect(vol);
+	var lastTiming = 0;
 	/**
 	 * Sets a callback that will be called when the update() method
 	 * is called. 
@@ -194,9 +201,23 @@ define([
 	 * @return undefined
 	 */
 	MidiDevice.prototype.sendMIDIMessage = function(msg) {
-		if(this._output) {
-			this._output.send(msg);
-		}
+        var note = teoria.note.fromMIDI(msg[1]);
+        var accidental = note.accidental();
+		// if(this._output) {
+		// 	this._output.send(msg);
+		// }
+        // July 7 2020 - Maybe I should start by adding this? Then instead of sending it to the port, maybe I can convert it and send to tone?
+	if (msg[0] == 144) {
+		console.log("midi message is", msg);
+	    console.log("note is", note.name() + accidental);
+        polySynth.triggerAttack(note.name() + accidental + note.octave());    
+	}
+
+	if (msg[0] == 128) {
+		console.log("midi message is", msg) 
+
+		polySynth.triggerRelease(note.name() + accidental + note.octave());
+	}
 	};
 
 	/**
