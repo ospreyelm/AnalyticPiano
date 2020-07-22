@@ -8,7 +8,7 @@ An Open-Source application for the study of music theory and keyboard skills tha
 - To install Pip, see [their instructions](http://www.pip-installer.org/en/latest/installing.html).
 
 ```sh
-$ git clone git@github.com:ospreyelm/HarmonyLab.git harmony
+$ git clone https://github.com/ospreyelm/HarmonyLab.git harmony
 $ cd harmony
 $ pipenv install
 $ ./manage.py migrate
