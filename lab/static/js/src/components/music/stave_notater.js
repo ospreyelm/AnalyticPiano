@@ -275,7 +275,7 @@ define([
 		drawNoteName: function(x, y) {
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
-			var note_name = this.getAnalyzer().getNameOfNote(notes).replace(/b/g,'♭').replace(/#/g,'♯'); // replace: true flat and sharp signs (substitution okay since letter names are uppercase here)
+			var note_name = this.getAnalyzer().get_note_name(notes);
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
@@ -296,7 +296,7 @@ define([
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
 			var note_name = this.getAnalyzer().getNoteName(notes[0],notes);
-			var helmholtz = this.getAnalyzer().toHelmholtzNotation(note_name);
+			var helmholtz = this.getAnalyzer().to_helmholtz(note_name);
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
@@ -317,7 +317,7 @@ define([
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
 			var note_name = this.getAnalyzer().getNoteName(notes[0],notes);
-			var scientific_pitch = this.getAnalyzer().toScientificPitchNotation(note_name).replace(/b/g,'♭').replace(/#/g,'♯'); // replace: true flat and sharp signs (substitution okay since letter names are uppercase here)
+			var scientific_pitch = this.getAnalyzer().to_scientific_pitch(note_name).replace(/b/g,'♭').replace(/#/g,'♯'); // replace: true flat and sharp signs (substitution okay since letter names are uppercase here)
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
@@ -337,7 +337,7 @@ define([
 		drawSolfege: function(x, y) {
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
-			var solfege = this.getAnalyzer().getSolfege(notes);
+			var solfege = this.getAnalyzer().to_solfege(notes);
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
@@ -363,7 +363,7 @@ define([
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
 			var width = 0, caret_offset = 0, caret_x = x, text_x = x;
-			var numeral = this.getAnalyzer().getScaleDegree(notes);
+			var numeral = this.getAnalyzer().to_scale_degree(notes);
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
@@ -380,6 +380,33 @@ define([
 				ctx.fillText(numeral.replace(/b/g,'♭').replace(/#/g,'♯'), text_x + StaveNotater.prototype.annotateOffsetX, y); // replace: true flat and sharp signs
 				ctx.fillText("^", caret_x + StaveNotater.prototype.annotateOffsetX, y - 15);
 			}
+		},
+		/**
+		 * Draws the thoroughbass figures.
+		 *
+		 * @param {number} x
+		 * @param {number} y
+		 * @return undefined
+		 */
+		drawThoroughbass: function(x, y) {
+			var ctx = this.getContext();
+			var width = 0, offset = 0;
+
+			var midi_nums = this.chord.getNoteNumbers();
+			var figure = this.getAnalyzer().thoroughbass_figure(midi_nums);
+
+			/* lots still to do here */
+			/* currently rewrites a horizontal list separated by "/" */
+
+			this.parseAndDraw(figure, x, y, function(text, x, y) {
+
+				text = this.convertSymbols(text).replace(/⌀/g,'⌀'); /* replace: one could improve appearance of half-diminished sign with standard fonts here, but currently using custom font instead */
+				offset = 0 - ((text.slice(0,1) == '\u266D') ? ctx.measureText(text.slice(0,1)).width : 0) - (text.slice(0,1) == '\u266F' ? ctx.measureText(text.slice(0,1)).width : 0);
+
+				var lines = this.wrapText(text);
+				this.drawTextLines(lines, x + offset + StaveNotater.prototype.annotateOffsetX, y);
+				return this.getContext().measureText(lines[0]).width + offset; // return the width of the first line for figured bass
+			});
 		},
 		/**
 		 * Draws the roman numeral analysis.
@@ -443,7 +470,7 @@ define([
 
 				this.parseAndDraw(final_label, x, y, function(text, x, y) {
 
-					text = this.convertSymbols(text).replace(/⌀/g,'⌀'); // replace: could improve appearance of half-diminished sign with standard fonts here, but using currently using custom font instead
+					text = this.convertSymbols(text).replace(/⌀/g,'⌀'); /* replace: one could improve appearance of half-diminished sign with standard fonts here, but currently using custom font instead */
 					offset = 0 - ((text.slice(0,1) == '\u266D') ? ctx.measureText(text.slice(0,1)).width : 0) - (text.slice(0,1) == '\u266F' ? ctx.measureText(text.slice(0,1)).width : 0);
 
 					var lines = this.wrapText(text);
@@ -751,14 +778,12 @@ define([
 			var num_notes = notes.length;
 			var mode = this.analyzeConfig.mode;
 
-			if(num_notes == 2) {
-				if(mode.intervals) {
-					this.drawInterval(x, y);
-				}
-			} else if(num_notes > 2) {
-				if(mode.roman_numerals) {
-					this.drawRoman(x, y);
-				}
+			if(num_notes >= 2 && (mode.thoroughbass)) {
+				this.drawThoroughbass(x, y);
+			} else if(num_notes == 2 && mode.intervals) {
+				this.drawInterval(x, y);
+			} else if(num_notes > 2 && mode.roman_numerals) {
+				this.drawRoman(x, y);
 			}
 		},
 		/**

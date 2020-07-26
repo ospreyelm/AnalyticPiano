@@ -191,7 +191,7 @@ define([
 		getAnalysisHighlightOf: function(noteNumber, chordNoteNumbers) {
 			var keyStyleOpts = {};
 			var analyzer = this._makeAnalyzer({highlightMode: this.highlightConfig.mode});
-			var color = analyzer.ColorSpectacular(noteNumber, chordNoteNumbers);
+			var color = analyzer.get_color(noteNumber, chordNoteNumbers);
 			if(!color) {
 				return false;
 			}

@@ -39,6 +39,9 @@ define([
 				'<li>',
 					'<label><input type="checkbox" name="analysis_scientific_pitch" value="scientific_pitch" accesskey="s"> Scientific pitch</label>',
 				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass"> Figured bass</label>',
+				'</li>',
 				'</ul>',
 			'</fieldset>'
 		].join(''),
@@ -135,6 +138,12 @@ define([
 				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
 			},
 			analysis_harmony: function(e) {
+				var opt = e.target.value;
+				this.state.mode[opt] = e.target.checked;
+				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
+				document.getElementById('staff').focus();
+			},
+			analysis_thoroughbass: function(e) {
 				var opt = e.target.value;
 				this.state.mode[opt] = e.target.checked;
 				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);

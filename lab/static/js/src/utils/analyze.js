@@ -1,16 +1,16 @@
-// Analysis functions
-//
-// Ported from the old harmony prototype with minimal changes.
+/* Analysis functions
+ *
+ * Ported from the old harmony prototype with minimal changes. */
 
 /* global define: false */
 define([
-	'lodash',
-	'vexflow',
-	'app/config'
+    'lodash',
+    'vexflow',
+    'app/config'
 ], function(
-	_, 
-	Vex, 
-	Config
+    _, 
+    Vex, 
+    Config
 ) {
 
 
@@ -19,992 +19,848 @@ var PITCH_CLASSES = Config.get('general.pitchClasses');
 var NOTE_NAMES = Config.get('general.noteNames');
 var KEY_MAP = Config.get('general.keyMap');
 var SPELLING_TABLE = _.reduce(KEY_MAP, function(result, value, key) {
-	result[key] = value.spelling;
-	return result;
+    result[key] = value.spelling;
+    return result;
 }, {});
 
 
 
 var analyzing = {
-	keynotePC: {
-		"h":   0,
-		"jC_": 0,
-		"iC_": 0,
-		"jC#": 1,
-		"iC#": 1,
-		"jDb": 1,
-		"jD_": 2,
-		"iD_": 2,
-		"iD#": 3,
-		"jEb": 3,
-		"iEb": 3,
-		"jE_": 4,
-		"iE_": 4,
-		"jF_": 5,
-		"iF_": 5,
-		"jF#": 6,
-		"iF#": 6,
-		"jGb": 6,
-		"jG_": 7,
-		"iG_": 7,
-		"iG#": 8,
-		"jAb": 8,
-		"iAb": 8,
-		"jA_": 9,
-		"iA_": 9,
-		"iA#": 10,
-		"jBb": 10,
-		"iBb": 10,
-		"jB_": 11,
-		"iB_": 11,
-		"jCb": 11 
-},
-AtoGindices: {
-		  'a':   { root_index: 0, int_val: 9 },
-		  'an':  { root_index: 0, int_val: 9 },
-		  'a#':  { root_index: 0, int_val: 10 },
-		  'a##': { root_index: 0, int_val: 11 },
-		  'ab':  { root_index: 0, int_val: 8 },
-		  'abb': { root_index: 0, int_val: 7 },
-		  'b':   { root_index: 1, int_val: 11 },
-		  'bn':  { root_index: 1, int_val: 11 },
-		  'b#':  { root_index: 1, int_val: 0 },
-		  'b##': { root_index: 1, int_val: 1 },
-		  'bb':  { root_index: 1, int_val: 10 },
-		  'bbb': { root_index: 1, int_val: 9 },
-		  'c':   { root_index: 2, int_val: 0 },
-		  'cn':  { root_index: 2, int_val: 0 },
-		  'c#':  { root_index: 2, int_val: 1 },
-		  'c##': { root_index: 2, int_val: 2 },
-		  'cb':  { root_index: 2, int_val: 11 },
-		  'cbb': { root_index: 2, int_val: 10 },
-		  'd':   { root_index: 3, int_val: 2 },
-		  'dn':  { root_index: 3, int_val: 2 },
-		  'd#':  { root_index: 3, int_val: 3 },
-		  'd##': { root_index: 3, int_val: 4 },
-		  'db':  { root_index: 3, int_val: 1 },
-		  'dbb': { root_index: 3, int_val: 0 },
-		  'e':   { root_index: 4, int_val: 4 },
-		  'en':  { root_index: 4, int_val: 4 },
-		  'e#':  { root_index: 4, int_val: 5 },
-		  'e##': { root_index: 4, int_val: 6 },
-		  'eb':  { root_index: 4, int_val: 3 },
-		  'ebb': { root_index: 4, int_val: 2 },
-		  'f':   { root_index: 5, int_val: 5 },
-		  'fn':  { root_index: 5, int_val: 5 },
-		  'f#':  { root_index: 5, int_val: 6 },
-		  'f##': { root_index: 5, int_val: 7 },
-		  'fb':  { root_index: 5, int_val: 4 },
-		  'fbb': { root_index: 5, int_val: 3 },
-		  'g':   { root_index: 6, int_val: 7 },
-		  'gn':  { root_index: 6, int_val: 7 },
-		  'g#':  { root_index: 6, int_val: 8 },
-		  'g##': { root_index: 6, int_val: 9 },
-		  'gb':  { root_index: 6, int_val: 6 },
-		  'gbb': { root_index: 6, int_val: 5 }
-	},
-AtoGnames: ["a","b","c","d","e","f","g"],
-AtoGsemitoneIndices: [9, 11, 0, 2, 4, 5, 7],
-// "jEnharmonicAlterations" changes the spelling of some chords in major keys and uses "pushFlatward" to do this.
-// As written here, it returns the proper spelling for augmented sixths, Neapolitan chords, and bVI.
-// ("pushSharpward" is currently inactive.)
+    keynotePC: {
+        "h":   0,
+        "jC_": 0,
+        "iC_": 0,
+        "jC#": 1,
+        "iC#": 1,
+        "jDb": 1,
+        "jD_": 2,
+        "iD_": 2,
+        "iD#": 3,
+        "jEb": 3,
+        "iEb": 3,
+        "jE_": 4,
+        "iE_": 4,
+        "jF_": 5,
+        "iF_": 5,
+        "jF#": 6,
+        "iF#": 6,
+        "jGb": 6,
+        "jG_": 7,
+        "iG_": 7,
+        "iG#": 8,
+        "jAb": 8,
+        "iAb": 8,
+        "jA_": 9,
+        "iA_": 9,
+        "iA#": 10,
+        "jBb": 10,
+        "iBb": 10,
+        "jB_": 11,
+        "iB_": 11,
+        "jCb": 11 
+    },
+    AtoGindices: {
+        /* the names of these dictionary keys follow VexFlow */
+        /* A */
+        'a':   { root_index: 0, int_val: 9 },
+        'an':  { root_index: 0, int_val: 9 },
+        'a#':  { root_index: 0, int_val: 10 },
+        'a##': { root_index: 0, int_val: 11 },
+        'ab':  { root_index: 0, int_val: 8 },
+        'abb': { root_index: 0, int_val: 7 },
+        /* B */
+        'b':   { root_index: 1, int_val: 11 },
+        'bn':  { root_index: 1, int_val: 11 },
+        'b#':  { root_index: 1, int_val: 0 },
+        'b##': { root_index: 1, int_val: 1 },
+        'bb':  { root_index: 1, int_val: 10 },
+        'bbb': { root_index: 1, int_val: 9 },
+        /* C */
+        'c':   { root_index: 2, int_val: 0 },
+        'cn':  { root_index: 2, int_val: 0 },
+        'c#':  { root_index: 2, int_val: 1 },
+        'c##': { root_index: 2, int_val: 2 },
+        'cb':  { root_index: 2, int_val: 11 },
+        'cbb': { root_index: 2, int_val: 10 },
+        /* D */
+        'd':   { root_index: 3, int_val: 2 },
+        'dn':  { root_index: 3, int_val: 2 },
+        'd#':  { root_index: 3, int_val: 3 },
+        'd##': { root_index: 3, int_val: 4 },
+        'db':  { root_index: 3, int_val: 1 },
+        'dbb': { root_index: 3, int_val: 0 },
+        /* E */
+        'e':   { root_index: 4, int_val: 4 },
+        'en':  { root_index: 4, int_val: 4 },
+        'e#':  { root_index: 4, int_val: 5 },
+        'e##': { root_index: 4, int_val: 6 },
+        'eb':  { root_index: 4, int_val: 3 },
+        'ebb': { root_index: 4, int_val: 2 },
+        /* F */
+        'f':   { root_index: 5, int_val: 5 },
+        'fn':  { root_index: 5, int_val: 5 },
+        'f#':  { root_index: 5, int_val: 6 },
+        'f##': { root_index: 5, int_val: 7 },
+        'fb':  { root_index: 5, int_val: 4 },
+        'fbb': { root_index: 5, int_val: 3 },
+        /* G */
+        'g':   { root_index: 6, int_val: 7 },
+        'gn':  { root_index: 6, int_val: 7 },
+        'g#':  { root_index: 6, int_val: 8 },
+        'g##': { root_index: 6, int_val: 9 },
+        'gb':  { root_index: 6, int_val: 6 },
+        'gbb': { root_index: 6, int_val: 5 }
+    },
+    mod_7: function (note_name) {
+        /* slice because accidental is irrelevant */
+        return this.AtoGindices[note_name.slice(0,1).toLowerCase()].root_index;
+        /* A is 0 ... G is 6 */
+    },
+    mod_12: function (note_name) {
+        return this.AtoGindices[note_name.toLowerCase()].int_val;
+        /* C is 0 */
+    },
+    key_is_minor: function () {
+        if (this.Piano.key.indexOf('i') !== -1) return true;
+        else return false;
+    },
+    key_is_major: function () {
+        if (this.Piano.key.indexOf('j') !== -1) return true;
+        else return false;
+    },
+    key_is_none: function () {
+        if (this.Piano.key.indexOf('h') !== -1) return true;
+        else return false;
+    },
+    jEnharmonicAlterations: function (midi, name, chord) {
+        /* Changes the spelling of some chords in major keys */
 
-	jEnharmonicAlterations: function (note, noteName, chord) {
-		if (this.Piano.key.indexOf('i') == -1) {
-			// not for minor keys
+        /* param {chord} is a list of midi numbers */
+        /* param {name} is a string e.g. "c#" */
 
-			var noteValue = (12 + note - this.Piano.keynotePC) % 12;
-			var oldNote = noteName;
-			var pitches = [];
-			var include_tonic = true;
-			var include_predominants = true;
+        if ( this.key_is_minor() || this.key_is_none() ) return name;
 
-			for (var pitch in chord) {
-				var newNote = chord[pitch] % 12;
-				newNote = (12 + newNote - this.Piano.keynotePC) % 12;
-				pitches.push(newNote);
-			}
+        /* options used for the conditionals below */
+        var include_tonic = true;
+        var include_predominants = true;
 
-			if (noteValue == 8) {
-				// various predominant chords including augmented sixths
-				if (_.contains(pitches,1)
-				|| (_.contains(pitches,0) && _.contains(pitches,6))
-				|| (_.contains(pitches,3) && !_.contains(pitches,1) && !_.contains(pitches,6))
-				|| include_predominants === true && _.contains(pitches,0) && _.contains(pitches,5) && !_.contains(pitches,11)
-				|| include_predominants === true && _.contains(pitches,2) && _.contains(pitches,5) && !_.contains(pitches,11)
-				) {
-					noteName = this.pushFlatward(note,noteName);
-				}
-			}
-			if (noteValue == 1) {
-				// Neapolitan chords
-				if (_.contains(pitches,8)) {
-					noteName = this.pushFlatward(note,noteName);
-				}
-			}
-			if (noteValue == 3) {
-				// parallel minor triads
-				if (_.contains(pitches,8)
-				|| include_tonic === true && _.contains(pitches,0) && _.contains(pitches,7)
-				) {
-					noteName = this.pushFlatward(note,noteName);
-				}
-			}
-		}
-		return noteName;
-	},
-	isLowered: function (note, notes) {
-		var noteName = this.spelling[this.Piano.key][note % 12].toLowerCase();
-		var noteValue = (12 + note - this.Piano.keynotePC) % 12;
-		if(this.jEnharmonicAlterations(note, noteName, notes) != noteName) {
-			return true;
-		}else if(this.Piano.key.indexOf('i') == 0 && noteValue == 1) {
-			// lowered second scale degree in minor
-			return true;
-		}else {
-			return false;
-		}
-	},
-	isModalMixture: function (note, notes) {
-		// modal mixture: scale degrees borrowed from the parallel minor
-		var noteName = this.spelling[this.Piano.key][note % 12].toLowerCase();
-		var noteValue = (12 + note - this.Piano.keynotePC) % 12;
-		if(this.jEnharmonicAlterations(note, noteName, notes) != noteName && noteValue != 1) {
-			return true;
-		}else {
-			return false;
-		}
-	},
-	pushFlatward: function (note, noteName) {
-		var AtoGIndex = this.AtoGindices[noteName.toLowerCase()].root_index;
-		AtoGIndex = (AtoGIndex + 1) % 7;
-		noteName = this.getRelativeNoteName(AtoGIndex, note % 12);
-		return noteName;
-	},
-	pushSharpward: function (note, noteName) {
-		var AtoGIndex = this.AtoGindices[noteName.toLowerCase()].root_index;
-		AtoGIndex = (7 + AtoGIndex - 1) % 7;
-		noteName = this.getRelativeNoteName(AtoGIndex, note % 12);
-		return noteName;
-	},
+        /* relativize pitch class integers to keynote */
+        var rpcs = [];
+        for (var i in chord) {
+            rpcs.push(this.rel_pc(chord[i], this.Piano.keynotePC));
+        }
+        var rel_pc = this.rel_pc(midi, this.Piano.keynotePC);
 
-	getRelativeNoteName: function (AtoGindex, semitones) {
-		var interval = semitones - this.AtoGsemitoneIndices[AtoGindex];
-		var relativeNoteName = this.AtoGnames[AtoGindex];
+        /** call enharmonic changes **/
+        if (rel_pc == 1 && _.contains(rpcs,8)) {
+            return this.push_flat(midi,name);
+            /* Neapolitan chords */
+        }
+        if (rel_pc == 3
+        && (_.contains(rpcs,8)
+            || (include_tonic === true
+                && _.contains(rpcs,0) && _.contains(rpcs,7))
+        )) {
+            return this.push_flat(midi,name);
+            /* tonic triads of the parallel minor */
+        }
+        if (rel_pc == 8
+        && (_.contains(rpcs,1)
+            || (_.contains(rpcs,0) && _.contains(rpcs,6))
+            || (_.contains(rpcs,3) && !_.contains(rpcs,1) && !_.contains(rpcs,6))
+            || (include_predominants === true && _.contains(rpcs,0) && _.contains(rpcs,5) && !_.contains(rpcs,11))
+            || (include_predominants === true && _.contains(rpcs,2) && _.contains(rpcs,5) && !_.contains(rpcs,11))
+        )) {
+            return this.push_flat(midi,name);
+            /* augmented sixths and other pre-dominant chords */
+        }
 
-		  if (Math.abs(interval) > 9 ) {
-			    var multiplier = 1;
-			    if (interval > 0 ) multiplier = -1;
+        return name;
+    },
+    is_lowered: function (note, notes) {
+        var name = this.spelling[this.Piano.key][note % 12].toLowerCase();
+        if (name == this.push_flat(note, name)) {
+            return true;
+        }
+        if (this.Piano.key.indexOf('i') == 0 && this.rel_pc(note, this.Piano.keynotePC) == 1) {
+            return true;
+            /* lowered second scale degree in minor */
+        }
+        return false;
+    },
+    has_modal_mixture: function (note, notes) {
+        if (this.rel_pc(note, this.Piano.keynotePC) !== 1 && this.is_lowered(note, notes)) {
+            return true;
+        }
+        return false;
+    },
+    push_flat: function (note, name) {
+        let eval_mod_7 = (1 + this.mod_7(name)) % 7;
+        return this.note_name(eval_mod_7, note % 12);
+    },
+    push_sharp: function (note, name) {
+        let eval_mod_7 = (-1 + this.mod_7(name)) % 7;
+        return this.note_name(eval_mod_7, note % 12);
+    },
+    getRelativeNoteName: function (mod_7, mod_12) {
+        /* This function name is the same as in VexFlow */
+        // possibly obsolete
+        return this.note_name(parseInt(mod_7), parseInt(mod_12));
+    },
+    note_name: function (mod_7, mod_12) {
+        var letter = "abcdefg"[mod_7];
 
-			    // Possibly wrap around. (Add +1 for modulo operator)
-			    var reverse_interval = (((semitones + 1) + (this.AtoGsemitoneIndices[AtoGindex] + 1)) %
-			      12) * multiplier;
+        /* change this calculation at your peril! */
+        var displ = (5 + mod_12 - this.mod_12(letter)) % 12 - 5;
 
-			      interval = reverse_interval;
-			  }
+        if (displ > 0) return letter + "#".repeat(displ);
+        if (displ < 0) return letter + "b".repeat(-1*displ);
+        return letter;
+    },
+    note_above_name: function (bass_pc, bass_name, semitones, steps) {
+        let eval_mod_7 = (this.mod_7(bass_name) + steps) % 7;
+        let eval_mod_12 = (bass_pc + semitones) % 12;
+        return this.note_name(eval_mod_7, eval_mod_12);
+    },
+    rel_pc: function (note, ref) {
+        while (note < ref) { note += 12; }
+        return (note - ref) % 12; /* % gives remainder not modulo */
+    },
+    get_color: function (note, notes) {
+        /* Color in pitches on the sheet music to highlight musical phenomena. */
 
-		if (interval > 0) {
-			for (var i = 1; i <= interval; ++i)
-				relativeNoteName += "#";
-		} else if (interval < 0) {
-			for (var i = -1; i >= interval; --i)
-				relativeNoteName += "b";
-		}
+        if (this.Piano.highlightMode["roothighlight"]) {
+            if ( _.contains(this.instances_of_root(notes), note) ) return "red";
+        }
+        if (this.Piano.highlightMode["tritonehighlight"]) {
+            for (var i = 0; i < notes.length; i++) {
+                other = notes[i];
+                if (this.rel_pc(other, note) == 6) return "#d29";
+            }
+        }
+        if (this.Piano.highlightMode["doublinghighlight"]) {
+            var key_pc = this.Piano.keynotePC;
+            if ( (this.key_is_minor() && _.contains( [4,6,11], this.rel_pc(note, key_pc) )) /* tendency tones in minor */
+            || (this.key_is_major() && _.contains( [1,6,8,11],this.rel_pc(note, key_pc) )) /* tendency tones in major */
+            ) {
+                for (var i = 0; i < notes.length; i++) {
+                    other = notes[i];
+                    if (other != note && this.rel_pc(other, note) === 0) return "orange";
+                }
+            }
+        }
+        if (this.Piano.highlightMode["loweredhighlight"]) {
+            if (this.is_lowered(note, notes) === true) return "green";
+        }
+        if (this.Piano.highlightMode["modalmixturehighlight"]) {
+            if (this.has_modal_mixture(note, notes) === true) return "green";
+        }
+        if (this.Piano.highlightMode["octaveshighlight"]) {
+            var color = ""
+            for (var i = 1; i < notes.length; i++) {
+                itvl = (-1 + note - notes[i]) % 12 + 1; /* remainder operator: NOT inversionally equivalent */
+                if (itvl == 7) color = "green"; /* higher note of P5 interval */
+                if (itvl == 12) {
+                    if (color == "green") return "#099"; /* higher note of both P5 and P8 intervals */
+                    else color = "blue"; /* higher note of P8 interval */
+                }
+            }
+            if (color !== "") return color;
+        } 
+        return "";
+    },
+    to_helmholtz: function (note) {
+        var noteParts = note.split('/');
+        var octave = parseInt(noteParts[1], 10);
+        var noteName = noteParts[0];
+        noteName = noteName[0].toUpperCase() + noteName.slice(1);
+        if (octave < 2)
+            return noteName + ' ' + ','.repeat(2 - octave);
+        if (octave == 2) return noteName;
+        if (octave == 3) return noteName.toLowerCase();
+        if (octave > 3)
+            return noteName.toLowerCase() + ' ' + "'".repeat(octave - 2);
+        return ''; /* should never be reached */
+    },
+    to_scientific_pitch: function (note) {
+        var noteParts = note.split('/');
+        if (noteParts.length == 2) {
+            var noteName = noteParts[0];
+            var octave = parseInt(noteParts[1], 10);
+            return noteName[0].toUpperCase() + noteName.slice(1) + octave;
+        }
+        return ''; /* should never be reached */
+    },
+    pcs_order_of_lowest_appearance: function (notes) {
+        var dict = {}, stripped = [];
+        for(i = 0, len = notes.length; i < len; i++) {
+            var pc = notes[i] % 12;
+            if ( !dict.hasOwnProperty(pc) ) {
+                dict[pc] = true;
+                stripped.push( notes[i] );
+            }
+        }
+        return stripped; /* lowest instance of each pitch class */
+    },
+    instances_of_root: function(notes) {
+        var roots = [], root, is_valid_root; 
+        var entry, chords, note, i, len;
 
-		return relativeNoteName;
+        var is_valid_root = function(root) {
+            return ( !isNaN(root) && typeof root !== 'undefined' && root !== null && root !== '_' );
+        };
 
-	},
-	/**
-	 * Color in pitches on the sheet music to highlight musical phenomena.
-	 */
-	ColorSpectacular: function (note, notes) {
-		var color = "";
-		var interval = 0;
-		var fromRoot = this.knowSemitonalDistance(this.Piano.keynotePC, note) % 12;
-		var i = notes.indexOf(note);
-		if (this.Piano.highlightMode["octaveshighlight"]) {
-		for (var j = 1; j < notes.length; j++) {
-			interval_up = this.knowSemitonalDistance(notes[i],notes[i + j]) % 12;
-			if (interval_up == 7) color = "green"; // P5
-			if (interval_up == 0 && i != (i+j)) {
-				if (color == "green") color = "#099" // P5 and P8
-				else color = "blue"; // P8
-			}
-		}
-		for (var j = i; j > 0; j--) {
-			interval_down = this.knowSemitonalDistance(notes[i],notes[i - j]) % 12;
-			if (interval_down == 5) {
-				if (color == "blue") color = "#099"; // P8 and P5
-				else color = "green"; // P5
-			}
-			if (interval_down == 0 && i != (i-j)) color = "blue"; // P8
-			}
-		}
-		if (this.Piano.highlightMode["tritonehighlight"]) {
-		for (var j = 1, len = notes.length - i; j < len; j++) {
-			interval_up = this.knowSemitonalDistance(notes[i],notes[i + j]) % 12;
-			if (interval_up == 6) color = "#d29"; // tritone
-		}
-		for (var j = i; j > 0; j--) {
-			interval_down = this.knowSemitonalDistance(notes[i],notes[i - j]) % 12;
-			if (interval_down == 6) color = "#d29"; // tritone
-			}
-		}
-		if (this.Piano.highlightMode["doublinghighlight"]) {
-			if (this.Piano.key.indexOf('i') != -1) {
-				if (_.contains([4,6,11],fromRoot)) {
-					// previously [4,6,9,11]
-					for (var index in notes) {
-						if (index != i && (note % 12 == notes[index] % 12)) color = "orange"; // tendency tones in minor
-					}
-				}
-			}
-			else {
-				if (_.contains([1,6,8,11],fromRoot)) {
-					// previously [1,3,6,8,11]
-					for (var index in notes) {
-						if (index != i && (note % 12 == notes[index] % 12)) color = "orange"; // tendency tones in major
-					}
-				}
-			}
-		}
-		if (this.Piano.highlightMode["roothighlight"]) {
-			var roots = this.findRoots(notes);
-			if(_.contains(roots, note)) {
-				color = "red"; // root
-			}
-		}
-		if (this.Piano.highlightMode["loweredhighlight"]) {
-			if (this.isLowered(note, notes) === true) {
-				color = "green";
-			}
-		}
-		if (this.Piano.highlightMode["modalmixturehighlight"]) {
-			if (this.isModalMixture(note, notes) === true) {
-				color = "green";
-			}
-		}
-		return color;
-	},
-	knowStepwiseDistance: function (chord, noteName1, noteName2) {
-		var AtoGindex1 = this.AtoGindices[noteName1[0].toLowerCase()].root_index;
-		var AtoGindex2 = this.AtoGindices[noteName2[0].toLowerCase()].root_index;
-		var semitones = chord[1] - chord[0];
-		var steps = (7 + AtoGindex2 - AtoGindex1) % 7;
-		steps += Math.round(semitones/12) * 7;
-		return steps;
-	},
-	knowSemitonalDistance: function (note1, note2) {
-		var distance = note2 - note1;
-		while (distance < 0) {
-			distance += 12;
-		}
-		return distance;
-	},
-	noteFromSemitonalAndStepwiseDistance: function (bassValue, bassName, semitones, steps) {
-		semitones = parseInt(semitones);
-		steps = parseInt(steps);
-//		console.log(bassValue, bassName, semitones, steps);
-		var AtoGindex1 = this.AtoGindices[bassName.toLowerCase()].root_index;
-		var note = (bassValue + semitones) % 12;
-		var AtoGindex2 = (AtoGindex1 + steps) % 7;
-		var newNote = this.getRelativeNoteName(AtoGindex2, note)
+        notes.sort(function(a,b){return a-b});
 
-		return newNote;
-		
-	},
+        if ( this.key_is_none() ) {
+            var profile = this.getIntervalsAboveBass(notes);
+            if ( this.hChords[profile] ) {
+                root = parseInt(this.hChords[profile]["root"], 10);
+                /* grabs a relative pc of root above bass */
+            }
+            if ( !is_valid_root(root) ) return [];
+            var roots = []
+            for (i = 0; i < notes.length; i++) {
+                if ( this.rel_pc(notes[i], notes[0]) == root ) roots.push(notes[i]);
+            }
+            return roots;
+        }
 
-// The following eleven scripts do important thinking about pitches, accidentals, roots.
+        if ( this.key_is_major() || this.key_is_none() )  chords = this.jChords;
+        if ( this.key_is_minor() )  chords = this.iChords;
 
-	toHelmholtzNotation: function (note) {
-		var noteName = note.split('/')[0]
-		var octave = parseInt(note.split('/')[1], 10);
-		noteName = noteName[0].toUpperCase() + noteName.slice(1)
-		switch (octave) {
-			case 0: 
-				noteName = noteName+' ,,';
-				break;
-			case 1: 
-				noteName = noteName+' ,';
-				break;
-			case 2:
-				break;
-			case 3:
-				noteName = noteName.toLowerCase();
-				break;
-			default:
-				noteName = noteName.toLowerCase() + ' '+ Array(octave-2).join("'");
-				break;
-		}
-		return noteName;
-	},
-	toScientificPitchNotation: function (note) {
-		var noteParts = note.split('/');
-		var scientific_pitch = "";
-		var noteName, octave;
-		if(noteParts.length == 2) {
-			noteName = noteParts[0];
-			octave = parseInt(noteParts[1], 10);
-			scientific_pitch = noteName[0].toUpperCase() + noteName.slice(1) + octave;
-		}
-		return scientific_pitch;
-	},
-	stripRepeatedPitchClasses: function (notes) {
-		var dict = {}, stripped = [];
-		var i, len, note, pitch;
+        entry = this.get_chord_code(notes);
+        if ( chords[entry] )  root = chords[entry]["root"];
 
-		// iterates through the notes and strips out notes that repeat a pitch
-		// class, so only the first note identified for a given pitch class will
-		// be returned
-		for(i = 0, len = notes.length; i < len; i++) {
-			note = notes[i];
-			pitch = note % 12;
-			if(!dict.hasOwnProperty(pitch)) {
-				dict[pitch] = true;
-				stripped.push(note);
-			}
-		}
-		
-		return stripped;
-	},
-	findRoots: function(notes) {
-		var roots = [], root, is_valid_root; 
-		var entry, chords, note, i, len;
-		var validate_root_type = function(root) {
-			// returns true if the root looks valid, false otherwise
-			return !isNaN(root) && typeof root !== 'undefined' && root !== null && root !== '_';
-		};
+        if ( is_valid_root(root) && this.pitchClasses.indexOf(root) != -1 ) {
+            root = (this.pitchClasses.indexOf(root) + this.Piano.keynotePC) % 12;
+            for(i = 0, len = notes.length; i < len; i++) {
+                note = notes[i];
+                if(root == (note % 12)) {
+                    roots.push(note);
+                }
+            }
+        }
+        return roots;
+    },
+    get_chord_code: function (notes) {
+        var chord = this.pcs_order_of_lowest_appearance(notes)
+            .map(note => this.rel_pc(note, this.Piano.keynotePC)); /* n.b. relative to keynote */
+        
+        if (this.Piano.key == "h") var bass = "";
+        else var bass = "0123456789yz"[chord[0]] + "/";
+        /* same pc designations used elsewhere */
+        
+        chord = chord.slice(1); /* exclude bass */
+        chord.sort(function(a,b){return a-b}); /* order of upper parts is irrelevant */
 
-		// notes should be in sorted order
-		notes.sort(this.sortNoteNumbers);
+        return bass + chord.map(n => "0123456789yz"[n]).join('');
+        /* e.g. "y/047" for C7/Bb */
+    },
+    getIntervalsAboveBass: function (notes) {
+        var chord = this.pcs_order_of_lowest_appearance(notes);
+        var intervals = [];
+        var bass, i, len, entry;
+        
+        bass = chord[0] % 12;
+        chord = chord.slice(1);
 
-		if(this.Piano.key === "h") {
-			entry = this.getIntervalsAboveBass(notes);
-			if (this.hChords[entry]) {
-				root = parseInt(this.hChords[entry]["root"], 10);
-			}
-			if(validate_root_type(root)) {
-				for(i = 0, len = notes.length; i < len; i++) {
-					note = notes[i];
-					if(root == ((12 + note - notes[0]) % 12)) {
-						roots.push(note);
-					}
-				}
-			}
-		} else {
-			entry = this.getOrderedPitchClasses(notes);
-			chords = this.jChords;
-			if(this.Piano.key.indexOf('i') !== -1) {
-				chords = this.iChords; // minor
-			}
-			if(chords[entry]) {
-				root = chords[entry]["root"];
-			}
-			if(validate_root_type(root) && this.pitchClasses.indexOf(root) !== -1) {
-				root = this.pitchClasses.indexOf(root);
-				root = (root + this.Piano.keynotePC) % 12;
-				for(i = 0, len = notes.length; i < len; i++) {
-					note = notes[i];
-					if(root == (note % 12)) {
-						roots.push(note);
-					}
-				}
-			}
-		}
+        for (i = 0, len = chord.length; i < len; i++) {
+            intervals.push(this.rel_pc(chord[i], bass));
+        }
+        
+        intervals.sort(function(a,b){return a-b});
+        
+        for(i = 0, len = intervals.length; i < len; i++) {
+            intervals[i] = this.pitchClasses[intervals[i]];
+        }
+        
+        entry = intervals.join('');
+        return entry;
+    },
+    accidental: function(vexnote) {
+        var regex = /^([cdefgab])(b|bb|n|#|##)?\/.*$/;
+        var match = regex.exec(vexnote.toLowerCase());
+        if ( match[2] == undefined ) return "";
+        return match[2];
+    },
+    semitones_steps_str: function (note, ref) {
+        // convoluted
+        var note_name = this.getNoteName(note, [ref, note]).split('/')[0].toLowerCase();
+        var ref_name = this.getNoteName(ref, [ref, note]).split('/')[0].toLowerCase();
 
-		return roots;
-	},
-	findRoot: function(notes, minormax) {
-		var root = null, roots = this.findRoots(notes);
-		minormax = minormax || 'min';
+        var steps = (7 + this.mod_7(note_name) - this.mod_7(ref_name)) % 7;
+        var semitones = note - ref;
+        steps += Math.floor(semitones / 12) * 7; /* this factors octaves back in */
+        while (semitones < 0) {
+            /* address negative values */
+            semitones += 12;
+            if (steps != 6) steps += 7; // ?
+        }
 
-		if(roots.length > 0) {
-			if(minormax === 'min' || minormax === 'max') {
-				root = Math[minormax].apply(null, roots);
-			}
-		}
+        return semitones.toString() + '/' + steps.toString();
+    },
+    bare_octave_or_unison: function(notes) {
+        if (notes.length == 1) return true;
+        if (notes.length > 1) {
+            for (let i = 1; i < notes.length; i++) {
+                if(notes[i] % 12 != notes[0] % 12) {
+                    return false;
+                }
+            }
+        }
+        return null;
+    },
+    get_note_name: function(notes) {
+        if ( !this.bare_octave_or_unison(notes) ) return "";
 
-		return root;
-	},
-	nameNotes: function (notes) {
-		var noteString = "";
-		if (typeof notes == 'number') {
-			noteString = this.noteNames[notes % 12];
-		}
-		else {
-			for (var note in notes) {
-				noteString += this.noteNames[notes[note] % 12];
-				noteString += " ";
-			}
-		}
-	
-		return noteString;
-	},
-	getOrderedPitchClasses: function (notes) {
-		var uniquePitches = this.stripRepeatedPitchClasses(notes);
-		var intervals = [];
-		var keynotePC = this.Piano.keynotePC;
-		var bass, i, len, entry = "";
-		
-		uniquePitches = _.map(uniquePitches, function (x) { return (12 + x - keynotePC) % 12;});
-		bass = this.pitchClasses[uniquePitches[0]];
-		uniquePitches = uniquePitches.slice(1);
-		uniquePitches.sort(this.sortNoteNumbers);
+        if (typeof notes == 'number') var midi = notes;
+        else var midi = notes[0]; // array
+        if ( this.key_is_none() ) var scale = this.noteNames; /* per D minor */
+        else var scale = this.spelling[this.Piano.key];
 
-		// remember pitch classes 10 = y, 11 = z 
-		for (i = 0, len = uniquePitches.length; i < len; i++) {
-			intervals.push(this.pitchClasses[uniquePitches[i]]);
-		}
-		
-		if (this.Piano.key != "h") {
-			entry = bass + "/" + intervals.join('');
-		} else {
-			entry = intervals.join('');
-		}
+        return scale[midi % 12].replace(/b/g,'♭').replace(/#/g,'♯');
+    },
+    to_solfege: function(notes) {
+        return this.get_label(notes, "solfege");
+    },
+    to_scale_degree: function(notes) {
+        return this.get_label(notes, "numeral");
+    },
+    get_label: function(notes, label_type) {
+        if ( this.key_is_none() ) return "";
+        if (notes.length < 1) return "";
+        if (notes.length > 1 && !this.bare_octave_or_unison(notes)) return "";
 
-		return entry;
-	},
-	getIntervalsAboveBass: function (notes) {
-		var uniquePitches = this.stripRepeatedPitchClasses(notes);
-		var intervals = [];
-		var bass, i, len, entry;
-		
-		bass = uniquePitches[0] % 12;
-		uniquePitches = uniquePitches.slice(1);
+        if ( this.key_is_minor() ) var labels = this.iDegrees;
+        else var labels = this.jDegrees;
 
-		for (i = 0, len = uniquePitches.length; i < len; i++) {
-			intervals.push((12 + uniquePitches[i] - bass) % 12);
-		}
-		
-		intervals.sort(this.sortNoteNumbers);
-		
-		for(i = 0, len = intervals.length; i < len; i++) {
-			intervals[i] = this.pitchClasses[intervals[i]];
-		}
-		
-		entry = intervals.join('');
+        var dist = this.semitones_steps_str(notes[0] % 12, this.Piano.keynotePC);
+        if ( !labels[dist] ) return "";
+        return labels[dist][label_type];
+    },
 
-		return entry;
-	},
-	getLabel: function (notes) {
-			var entry = this.getIntervalsAboveBass(notes);
-			
-			if (this.hChords[entry]) quality = this.hChords[entry]["label"];
-			else quality = "";
-			return quality;
-			
-	},
-	getNoteName: function (note, chord, called) {
-		if (this.Piano.key != "h") {
-			var name = this.spelling[this.Piano.key][note % 12].toLowerCase();
-			name = this.jEnharmonicAlterations(note, name, chord);
-		}
-		else {
-			var bassValue = chord[0];
-			if (chord.length == 1) {
-				var name = this.noteNames[note % 12];
-			}
-			if (chord.length == 2) {
-				var interval = chord[1]-chord[0];
-				if (this.hIntervals[interval]) {
-					if (this.hIntervals[interval]["spellbass"] != "___")
-						var bassName = this.spelling[this.hIntervals[interval]["spellbass"]][chord[0] % 12];
-					else var bassName = this.noteNames[chord[0] % 12];
-					bassName = bassName.toLowerCase();
-					if (note == chord[1])
-						var step = this.hIntervals[interval]["stepwise"];
-					else var step = 0;
-					var name = this.noteFromSemitonalAndStepwiseDistance(chord[0], bassName, note - chord[0], step);
-				}
-				else var name = this.noteNames[note % 12];
-			}
-			if (chord.length > 2) {
-				var entry = this.getIntervalsAboveBass(chord);
-				var chordEntry = this.hChords[entry];
-				var steps = "";
-				if (chordEntry != undefined) {
-					steps = chordEntry["stepwise"];
-					if (chordEntry["spellbass"] != "___") {
-						var bassName = this.spelling[chordEntry["spellbass"]][chord[0] % 12];
-						bassName = bassName.toLowerCase();
-						var semitonesFromBass = (12 + note - chord[0]) % 12;
-						var index = entry.indexOf(this.pitchClasses[semitonesFromBass]);
-						stepsFromBass = this.pitchClasses.indexOf(steps[index]);
-						if (index == -1) stepsFromBass = 0;
-						var name = this.noteFromSemitonalAndStepwiseDistance(chord[0], bassName, semitonesFromBass, stepsFromBass);
-					}
-					else var name = this.noteNames[note % 12];
-				}
-				else var name = this.noteNames[note % 12];
+    /* See the customizable listings of `jDegrees` `iDegrees` `iChords` and `jChords` */
+    ijNameDegree: function (notes) {
+        if (notes.length == 2) {
+            var dist = this.semitones_steps_str(notes[1], notes[0]);
+            if (this.ijIntervals[dist])
+                return {"name": this.ijIntervals[dist]["label"], "numeral": null };
+        }
+        return {"name": "", "numeral": null};
+    },
+    findChord: function(notes) {
+        if (this.Piano.key === 'h') return this.hFindChord(notes);
+        return this.ijFindChord(notes);
+    },
+    ijFindChord: function (notes) {
+        if (notes.length == 1) {
+            return this.to_helmholtz(this.getNoteName(notes[0],notes));
+            // when is this activated?
+        } else if (notes.length == 2) {
+            var dist = this.semitones_steps_str(notes[1], notes[0]);
+            if (this.ijIntervals[dist]) {
+                return this.ijIntervals[dist]["label"];
+            }
+        } else {
+            if ( this.key_is_minor() ) {
+                var labels = this.iChords;
+            } else {
+                var labels = this.jChords;
+            }
+            chord_code = this.get_chord_code(notes);
+            if ( !labels[chord_code] ) return "";
+            return labels[chord_code];
+        }
+        return;
+    },
+    hFindChord: function (notes) {
+        var i, name, entry, chordEntry;
+        var bassName = "", rootName = "";
+        if (notes.length == 1) {
+            name = this.to_helmholtz(this.getNoteName(notes[0],notes));
+        } else if (notes.length == 2) {
+            i = notes[1] - notes[0];
+            if (this.hIntervals[i]) {
+                name = {"label": this.hIntervals[i]};
+            }
+        } else {
+            entry = this.getIntervalsAboveBass(notes);
+            chordEntry = _.cloneDeep(this.hChords[entry]);
+            if (chordEntry) {
+                name = chordEntry["label"];
+                if (chordEntry["spellbass"] === "___") {
+                    return chordEntry;
+                } else {        // fully diminished seventh
+                    bassName = this.spelling[chordEntry["spellbass"]][notes[0] % 12];
+                }
 
-			}
-//			if (_.contains([1,3,6,8,10], rootValue % 12)) {
-//			if (this.Piano.spellSharp && rootName.indexOf("#") == -1) rootName = this.pushSharpward(rootValue,rootName);
-//			else if (this.Piano.spellFlat && rootName.lastIndexOf("b") < 1) rootName = this.pushFlatward(rootValue,rootName);
-//			}
+                if (chordEntry["root"] != "_") {
+                    let bass_pc = parseInt(notes[0])
+                    let bass_name = bassName
+                    let semitones = parseInt(chordEntry["root"])
+                    let steps = parseInt(chordEntry["rootstepwise"])
+                    rootName = this.note_above_name(bass_pc, bass_name, semitones, steps);  
+                }
 
+                if (rootName !== '') {
+                    if (name.indexOf("&R") != -1) name = name.replace(/\&R/,rootName[0].toUpperCase() + rootName.slice(1));
+                    if (name.indexOf("&r") != -1) name = name.replace(/\&r/,rootName.toLowerCase());
+                }
+                if (bassName !== '') {
+                    if (name.indexOf("&X") != -1) name = name.replace(/\&X/,bassName[0].toUpperCase() + bassName.slice(1));
+                    if (name.indexOf("&x") != -1) name = name.replace(/\&x/,bassName.toLowerCase());
+                }
+                chordEntry["label"] = name;
+                name = chordEntry;
+            }
+        }
+        return name;
+    },
+    note_names_of_scale: function(key) {
+        var vfmus = new Vex.Flow.Music()
+        var vfrts = Vex.Flow.Music.roots
 
-			if (name == null || name == undefined || name == "") var name = this.noteNames[note % 12];
-		}
+        var keynote = ( key == "h" ? "c" : key.slice(1).replace('_','').toLowerCase() );
+        try { var key_pc = vfmus.getNoteValue(keynote) } catch(e) {
+            keynote = "c"; var key_pc = vfmus.getNoteValue(keynote);
+        }
+        
+        if (key.indexOf('i') != -1) var intervals = [2, 1, 2, 2, 1, 2, 2]; /* minor */
+        else var intervals = [2, 2, 1, 2, 2, 2, 1]; /* major */
+        
+        var key_mod7 = vfrts.indexOf(keynote[0]);
+        var scale_pcs = vfmus.getScaleTones(key_pc, intervals)
 
-		name = name.toLowerCase();
-		var octave = Math.floor(note/12) - 1;
-		// octave is calculated wrong if note is Cb/Cbb/B#/B##
-		if (name == "cb" || name == "cbb") octave++;
-		if (name == "b#" || name == "b##") octave--;
-		return name + "/" + octave;
-	},
-	getAccidentalOfNote: function(vexnote) {
-		vexnote = vexnote.toLowerCase();
-		var regex = /^([cdefgab])(b|bb|n|#|##)?\/.*$/;
-		var match = regex.exec(vexnote);
-		if (match[2] != undefined) return match[2];
-		else return "";
-	},
-	permute: function(v, m){	// v is the array; if m is 0, return values, else return indices
-		for(var p = -1, j, k, f, r, l = v.length, q = 1, i = l + 1; --i; q *= i);
-		for(x = [new Array(l), new Array(l), new Array(l), new Array(l)], j = q, k = l + 1, i = -1;
-			++i < l; x[2][i] = i, x[1][i] = x[0][i] = j /= --k);
-		for(r = new Array(q); ++p < q;)
-			for(r[p] = new Array(l), i = -1; ++i < l; !--x[1][i] && (x[1][i] = x[0][i],
-				x[2][i] = (x[2][i] + 1) % l), r[p][i] = m ? x[3][i] : v[x[3][i]])
-				for(x[3][i] = x[2][i], f = 0; !f; f = !f)
-					for(j = i; j; x[3][--j] == x[2][i] && (x[3][i] = x[2][i] = (x[2][i] + 1) % l, f = 1));
-		return r;
-	},
+        var note_names = []
+        for (var i = 0; i < 7; i++) {
+            letter = vfrts[(i + key_mod7) % 7];
+            pc = scale_pcs[i];
+            note_names.push(vfmus.getRelativeNoteName(letter, pc));
+        }
+        return note_names;
+        /* e.g. [ "eb", "f", "g", "ab", "bb", "c", "d" ] */
+    },
+    getNoteName: function (note, chord, called) {
+        var name = this.spelling[this.Piano.key][note % 12].toLowerCase();
 
-// "distance" is used by "ijNameDegree," "ijFindChord," and "\notate.drawBassNoteSolfege."
+        if (this.key_is_major) {
+            name = this.jEnharmonicAlterations(note, name, chord).toLowerCase();
+        }
+        if (this.key_is_none) {
+            name = this.hEnharmonicAlterations(note, name, chord).toLowerCase();
+        }
 
-	distance: function (notes) {
-			var semitones = notes[1] - notes[0];
-			var AtoGindex1 = this.AtoGindices[this.getNoteName(notes[0],notes).split('/')[0].toLowerCase()].root_index;
-			var AtoGIndex2 = this.AtoGindices[this.getNoteName(notes[1],notes).split('/')[0].toLowerCase()].root_index;
-			var steps = (7 + AtoGIndex2 - AtoGindex1) % 7;
-			steps += Math.floor(semitones/12) * 7;
-			while (semitones < 0) {
-				semitones += 12;
-				if (steps != 6) steps += 7;
-			}
-			return semitones.toString() + '/' + steps.toString();
-	},
-	// Returns the solfege notation for a note.
-	//
-	// Note: pulled out from the ijNameDegree function
-	getSolfege: function(notes) {
-		var distance, scale_degrees, scale_degree, solfege = "";
-		var is_minor = (this.Piano.key.indexOf("i") !== -1);
+        var octave = Math.floor(note/12) - 1;
 
-		if(notes.length >= 1 && this.Piano.key !== 'h') {
-			distance = this.distance([this.Piano.keynotePC,notes[0] % 12]);
-			scale_degrees = (is_minor ? this.iDegrees : this.jDegrees);
-			scale_degree = scale_degrees[distance];
-			if(!scale_degree) {
-				return "";
-			}
-			if(notes.length > 1) {
-				for (let i = 1; i < notes.length; i++) {
-					if(this.distance([this.Piano.keynotePC, notes[i] % 12]) != distance) {
-						return '';
-					}
-				}
-			}
-			solfege = scale_degree["solfege"];
-		}
-		return solfege;
-	},
+        if (name == "cb" || name == "cbb") octave += 1;
+        if (name == "b#" || name == "b##") octave -= 1;
 
-	// Returns the scale degree for a note.
-	//
-	// Note: pulled out from the ijNameDegree function
-	getScaleDegree: function(notes) {
-		var distance, scale_degrees, scale_degree, numeral = '';
-		var is_minor = (this.Piano.key.indexOf("i") !== -1);
+        return name + "/" + octave;
+    },
+    is_diatonic: function (note_name) {
+        return this.Piano.diatonicNotes.indexOf(note_name) !== -1;
+    },
+    inflect: function (note_name, num) {
+        /* name of note altered chromatically per {num} */
+        return this.note_name(this.mod_7(note_name), (this.mod_12(note_name) + parseInt(num)) % 12);
+    },
+    get_offset: function (note_name) {
+        /* returns displacement from the diatonic scale in semitones */
+        offset = null;
+        [0, 1, -1, 2, -2, 3, -3].some(n => {
+            var probe_name = this.inflect(note_name, n);
+            return (this.is_diatonic(probe_name) ? offset = -1*n : false);
+        });
+        return (offset === -0 ? 0 : offset);
+    },
+    thoroughbass_figure: function(midi_nums) {
+        var bass_midi = midi_nums[0];
+        var bass_name = this.getNoteName(bass_midi, midi_nums);
 
-		if(notes.length >= 1 && this.Piano.key !== 'h') {
-			distance = this.distance([this.Piano.keynotePC, notes[0] % 12]);
-			scale_degrees = (is_minor ? this.iDegrees : this.jDegrees);
-			scale_degree = scale_degrees[distance];
-			if(!scale_degree) {
-				return '';
-			}
-			if(notes.length > 1) {
-				for (let i = 1; i < notes.length; i++) {
-					if(this.distance([this.Piano.keynotePC, notes[i] % 12]) != distance) {
-						return '';
-					}
-				}
-			}
-			numeral = scale_degree["numeral"];
-		}
-		return numeral;
-	},
-	getNameOfNote: function(notes) {
-		if(notes.length > 1) {
-			lowestPC = notes[0] % 12;
-			for (let i = 1; i < notes.length; i++) {
-				if(notes[i] % 12 != lowestPC) {
-					return '';
-				}
-			}
-		}
-		if(this.Piano.key!=='h') {
-			return this.spelling[this.Piano.key][notes[0] % 12];
-		}
-		return this.nameNotes(notes.length > 1 ? notes[0] : notes);
-	},
+        Array.prototype.unique = function() {
+            return this.filter(function (value, index, self) { 
+                return self.indexOf(value) === index;
+            });
+        }
 
+        intervals = [];
+        for (var i = 1; i < midi_nums.length; i++) {
+            var midi = midi_nums[i];
+            var name = this.getNoteName(midi, midi_nums);
 
-// The scripts "ijNameDegree," "ijFindChord," and "hFindChord" return the analysis of scale degrees and chords.
-// They draw on the customizable listings of "jDegrees," "iDegrees," "iChords," and "jChords."
-// They also draw on many scripts here and in "\this.Piano."
+            /* three lines copied from semitones_steps_str */
+            var steps = (7 + this.mod_7(name) - this.mod_7(bass_name)) % 7;
+            var semitones = midi - bass_midi;
+            steps += Math.floor(semitones / 12) * 7; /* factor octaves back in */
+            
+            var number = steps % 7 === 0 ? 8 : 1 + (steps % 7);
+            if (number == 2 && String(intervals).match(/3/)) number = 9;
+            
+            var offset = this.get_offset(name.split("/")[0]);
+            if (number == 8) {
+                if (name.split("/")[0] == bass_name.split("/")[0]) prefix = "";
+                else prefix = this.accidental(name).replace(/^$/, "n");
+            } else if (number == 7 && this.rel_pc(midi, bass_midi) == 9) {
+                prefix = "\xb0" /* diminished seventh */
+            } else {
+                prefix = (offset === 0 ? "" : this.accidental(name))
+            }
+            
+            var interval = [prefix + String(number), offset];
+            if (!intervals.includes(interval)) intervals.push(interval);
+        }
 
-	ijNameDegree: function (notes) {
-		var distance;
-		if (notes.length == 2) {
-			distance = this.distance(notes);
-			if (this.ijIntervals[distance]) {
-				return {"name": this.ijIntervals[distance]["label"], "numeral": null };
-			}
-		}
-		return {"name": "", "numeral": null};
-	},
-	findChord: function(notes) {
-		if(this.Piano.key !== 'h') {
-			return this.ijFindChord(notes);
-		}
-		return this.hFindChord(notes);
-	},
-	ijFindChord: function (notes) {
-		var distance, entry, chords;
+        // .sort(function(a,b){return a-b})
+        var stack = this.abbreviate_thoroughbass(intervals.reverse());
 
-		if (notes.length == 1) {
-			return this.toHelmholtzNotation(this.getNoteName(notes[0],notes));
-		} else if (notes.length == 2) {
-			distance = this.distance(notes);
-			if (this.ijIntervals[distance]) {
-				return this.ijIntervals[distance]["label"];
-			}
-		} else {
-			entry = this.getOrderedPitchClasses(notes);
-			chords = (this.Piano.key.indexOf('i') !== -1 ? this.iChords : this.jChords);
-			if(chords[entry]) {
-				return chords[entry];
-			}
-		}
-		return;
-	},
-	hFindChord: function (notes) {
-		var i, name, entry, chordEntry;
-		var bassName = "", rootName = "";
-		if (notes.length == 1) {
-			name = this.toHelmholtzNotation(this.getNoteName(notes[0],notes));
-		} else if (notes.length == 2) {
-			i = notes[1] - notes[0];
-			if (this.hIntervals[i]) {
-				name = {"label": this.hIntervals[i]};
-			}
-		} else {
-			entry = this.getIntervalsAboveBass(notes);
-			chordEntry = _.cloneDeep(this.hChords[entry]);
-			if (chordEntry) {
-				name = chordEntry["label"];
-				if (chordEntry["spellbass"] === "___") {
-					return chordEntry;
-				} else {		// fully diminished seventh
-					bassName = this.spelling[chordEntry["spellbass"]][notes[0] % 12];
-				}
+        return stack.join('/');
+    },
+    currently_first_inversion_dominant_tetrad: function() {
+        var midi_nums = []; /* GET CURRENT MIDI NUMBERS: NOT WIRED IN YET */
+        return [0,3,6,8] == this.pcs_order_of_lowest_appearance(midi_nums)
+            .map(midi => this.rel_pc(midi, midi_nums[i])) /* n.b. relative to bass */
+            .sort(function(a,b){return a-b});
+    },
+    abbreviate_thoroughbass: function (intervals) {
 
-				if (chordEntry["root"] != "_") {
-					rootName = this.noteFromSemitonalAndStepwiseDistance(notes[0],bassName,chordEntry["root"],chordEntry["rootstepwise"]);	
-				}
+        var french_thoroughbass = false;
 
-				if (rootName !== '') {
-					if (name.indexOf("&R") != -1) name = name.replace(/\&R/,rootName[0].toUpperCase() + rootName.slice(1));
-					if (name.indexOf("&r") != -1) name = name.replace(/\&r/,rootName.toLowerCase());
-				}
-				if (bassName !== '') {
-					if (name.indexOf("&X") != -1) name = name.replace(/\&X/,bassName[0].toUpperCase() + bassName.slice(1));
-					if (name.indexOf("&x") != -1) name = name.replace(/\&x/,bassName.toLowerCase());
-				}
-				chordEntry["label"] = name;
-				name = chordEntry;
-			}
-		}
-		return name;
-	},
+        class Stack {
+            constructor(stack) {
+                if (typeof stack == 'string') stack = Array(stack);
+                this.stack = stack;
+            }
+            extract_nums(arr) {
+                return arr.map( item => item.replace(/[^0-9]+/g, "") );
+            }
+            matches(ref_stack, match_type=null) {
+                if (typeof ref_stack == 'string') ref_stack = Array(ref_stack);
 
-// The scripts "figureIsAltered," "abbreviateFigures," and "matchAltered" do the thinking for figured bass notation.
-// They are all used by "\notate.annotate."
-// The small scripts "upHalfStep" and "downHalfStep" serve "figureIsAltered" exclusively.
-// "figureIsAltered" also depends on several scrips here and in "\this.Piano."
-// "abbreviateFigures" depends on "matchAltered" and (for French throughbass) on "isDominantSeventh."
+                if (match_type == "nums") {
+                    var arr1 = this.extract_nums(this.stack);
+                    var arr2 = this.extract_nums(ref_stack);
+                } else {
+                    var arr1 = this.stack;
+                    var arr2 = ref_stack;
+                }
 
-	upHalfStep: function (note, noteName) {
-		var AtoGIndex = this.AtoGindices[noteName.toLowerCase()].root_index;
-		noteName = this.getRelativeNoteName(AtoGIndex, (note+1) % 12);
-		return noteName;
-	},
-	downHalfStep: function (note, noteName) {
-		var AtoGIndex = this.AtoGindices[noteName.toLowerCase()].root_index;
-		noteName = this.getRelativeNoteName(AtoGIndex, (note-1) % 12);
-		return noteName;
-	},
-	figureIsAltered: function (note, name, bassName, interval) { // (chord,noteName1, noteName2) {
-		var altered = false;
-		if (this.Piano.key == "h") {
-			this.Piano.getKeySignature("jC_");
-		}
-			noteName = name.split('/')[0];
-			var noteIndex = this.Piano.diatonicNotes.indexOf(noteName);
-			var sharp = this.downHalfStep(note, noteName);
-			var sharpIndex = this.Piano.diatonicNotes.indexOf(sharp.split('/')[0]);
-			var flat = this.upHalfStep(note, noteName);
-			var flatIndex = this.Piano.diatonicNotes.indexOf(flat.split('/')[0]);
-			var direction = 0;
-			if (noteIndex != -1) altered = '';
-			else if (sharpIndex != -1) {
-				if (noteName.indexOf("##") != -1) altered = '##';
-				else if (noteName.indexOf("#") != -1) altered = '#';
-				else if (noteName.indexOf("#") == -1) altered = 'n';
-				direction = '+';	// sharp
-			}
-			else if (flatIndex != -1) {
-				if (noteName != 'bb' && noteName.indexOf("bb") != -1) altered = 'bb';
-				else if (noteName.indexOf("b") != -1) altered = 'b';
-				if (noteName.indexOf("b") == -1) altered = 'n';
-				direction = '-'; // flat
-			}
-			if (interval == '8') {
-				if (this.getAccidentalOfNote(bassName) == this.getAccidentalOfNote(name)) {
-					altered = '';
-					direction = '0';
-				}
-				else {
-					var acc = this.getAccidentalOfNote(name);
-					if (acc == '') acc = 'n';
-					altered = acc;
-					if (acc == "#" || acc == "##") direction = '+';
-					if (acc == "b" || acc == "bb") direction = '-';
-				}
-			}
-//			console.log(noteName,noteIndex,flatted,sharped);
-//		console.log(altered);
-		return { "altered": altered, "direction": direction};
-	},
-	matchAltered: function (steps, query) {
-		var result = false;
-		if (typeof query == "number" || typeof query == "string") {
-			if (steps.indexOf(query) != -1) result = true;
-			else if (steps.indexOf(query+"+") != -1) result = true;
-			else if (steps.indexOf("b"+query) != -1) result = true;
-			else if (steps.indexOf("#"+query) != -1) result = true;
-		}
-		else {
-			for (var i in query) {
-				if (_.contains(steps,query[i]) || _.contains(steps,query[i]+"+") || _.contains(steps,"#"+query[i]) || _.contains(steps,"n"+query[i]) || _.contains(steps,"b"+query[i])) {
-					result++;
-				}
-			}
-			if (result == query.length && steps.length == query.length) result = true;
-			else result = false;
-		}
-		
-		return result;
-	},
-	abbreviateFigures: function (steps, intervals, notes) {
-		for (var i in steps) {
-			if (intervals[steps[i]] != undefined) {
-				if ((intervals[steps[i]]['direction'] == '+') && steps[i].indexOf('4') != -1) steps[i] = "4+";
-				else if ((intervals[steps[i]]['direction'] == '+') && steps[i].indexOf('5') != -1) steps[i] = "5+";
-				else if ((intervals[steps[i]]['direction'] == '+') && steps[i].indexOf('6') != -1) steps[i] = "6+";
-			}
-			if (steps[i] == "8") steps.splice(i,1);
-		}
-		if (this.matchAltered(steps,["7","5","3"])) {
-			if (steps.indexOf("3") != -1 && steps.indexOf("5") != -1) {	// 3 and 5 have no accidentals
-				steps[steps.indexOf("3")] = "[3]";
-			}
-			
-			if (steps.indexOf("5") != -1) {	// 5 has no accidental
-				steps[steps.indexOf("5")] = "[5]";
-			}
-		}
-		else if (this.matchAltered(steps,["6","5","3"])) {
-			if (steps.indexOf("3") != -1) {	// 3 has no accidental
-				steps[steps.indexOf("3")] = "[3]";
-			}
-		}
-		
-		else if (this.matchAltered(steps,["6","4","3"])) {
-			if (steps.indexOf("6") != -1) {	// 6 has no accidental
-				steps[steps.indexOf("6")] = "[6]";
-			}
-		}
-		
-		else if (this.matchAltered(steps,["6","4","2"])) {
-			if (steps.indexOf("6") != -1) {	// 6 has no accidental
-				steps[steps.indexOf("6")] = "[6]";
-			}
-		
-		}
-		else if (this.matchAltered(steps,["6","3"])) {
-			if (steps.indexOf("3") != -1) {	// 3 has no accidental
-				steps[steps.indexOf("3")] = "[3]";
-			}			
-		}
-		else if (this.matchAltered(steps,["5","3"])) {
-			if (steps.indexOf("5") != -1 && steps.indexOf("3") != -1) {	// 3 and 5 have no accidental
-				steps[steps.indexOf("5")] = "[5]";
-				steps[steps.indexOf("3")] = "[3]";
-			}
-			else if (steps.indexOf("5") != -1) {
-							steps[steps.indexOf("5")] = "[5]";
-			}
-		}
-		else if (this.matchAltered(steps,["5","4"])) {
-			if (steps.indexOf("5") != -1 && steps.indexOf("4") != -1) {	// 4 and 5 have no accidental
-				steps[steps.indexOf("5")] = "[5]";
-			}
-		}
-		else if (this.matchAltered(steps,["9","5","3"])) {
-			if (steps.indexOf("5") != -1) {	// 5 has no accidental
-				steps[steps.indexOf("5")] = "[5]";
-			}
-			if (steps.indexOf("3") != -1 && steps.indexOf("[5]") != -1) {	// 3 or 5 have no accidental
-				steps[steps.indexOf("3")] = "[3]";
-			}
-		}
-		else if (this.matchAltered(steps,["7","3"])) {
-			if (steps.indexOf("3") != -1) {	// 3 has no accidental
-				steps[steps.indexOf("3")] = "[3]";
-			}
-		}
-		for (var i in steps) {	
-			if (steps[i] == "#3" && steps.length > 1) steps[i] = "#";
-			if (steps[i] == "n3" && steps.length > 1) steps[i] = "n";
-			if (steps[i] == "b3" && steps.length > 1) steps[i] = "b";
-//			if (steps[i] == "7" && intervals[steps[i]]['semitones'] == 9) steps[i] = "\xb07";
-		}
-				
-		if (_.contains(steps,"9") && _.contains(steps,"2")) {
-			steps = steps.filter(function (a) { return a != "9"; });
-		}
-		if (this.Piano.frenchThoroughbass) {
-			if (arraysAreEqual(steps,['[6]','4+','2'])) {
-				steps[steps.indexOf('2')] = '[2]';
-			}
-			if (arraysAreEqual(steps,['[6]','4','2'])) {
-				steps[steps.indexOf('4')] = '[4]';
-			}
-			if (arraysAreEqual(steps,['6','5','[3]']) || arraysAreEqual(steps,['6','5','n']) || arraysAreEqual(steps,['6','5','b']) || arraysAreEqual(steps,['6','5','#'])) {
-				if (this.isDominantTetrad(notes)) steps = ['/5'];
-			}
-		}
+                if (arr1.length != arr2.length) return false;
+                for (var i = 0; i < arr1.length; i++) {
+                    if ( arr1[i] != arr2[i] ) return false;
+                }
+                return true;
+            }
+            parenth(find, also_present=false) {
+                if (also_present) {
+                    var idx1 = this.stack.indexOf(find);
+                    var idx2 = this.stack.indexOf(also_present);
+                    if (idx1 !== -1 && idx2 !== -1) this.stack[idx1] = "[" + find + "]";
+                } else {
+                    var idx = this.stack.indexOf(find);
+                    if (idx !== -1) this.stack[idx] = "[" + find + "]";
+                }
+            }
+            third_as_accidental() {
+                for (var i = 0; i < this.stack.length; i++) {
+                    this.stack[i] = this.stack[i].replace(/^([#|n|b]+)3$/, /\1/);
+                }
+            }
+            relativize(num, offset, prefix=null, suffix=null) {
+                for (var i = 0; i < this.stack.length; i++) {
+                    /* takes intervals from outside scope */
+                    if (this.stack[i].replace(/[^0-9]+/g, "") !== String(num)) continue;
+                    if (intervals[i][1] !== offset) continue;
+                    if (!prefix) prefix = "";
+                    if (!suffix) suffix = (offset >= 0 ? "+".repeat(offset) : "-".repeat(-1*offset));
+                    this.stack[i] = prefix + String(num) + suffix;
+                }
+            }
+            rewrite(arr) {
+                this.stack = arr;
+            }
+            expunge_parenthesized() {
+                for (var i = this.stack.length - 1; i >= 0; i--) {
+                    if (this.stack[i].match(/^\[.+\]$/)) {
+                        this.stack.splice(i,1);
+                    }
+                }
+            }
+        }
 
-		return steps;
-	},
+        /*---------*/
+        var stack = new Stack(intervals.map(item => item[0]));
+        /*---------*/
 
-// "isDominantTetrad" is used for French thoroughbass by "abbreviateFigures"
+        stack.relativize(4, 1);
+        stack.relativize(5, 1);
+        stack.relativize(6, 1);
 
-	isDominantTetrad: function (notes) {
-		// REDO
-	},
+        if (stack.matches(["7","5","3"], "nums")) {
+            stack.parenth("5");
+            stack.parenth("3","[5]");
+        }
+        else if (stack.matches(["6","5","3"], "nums")) {
+            stack.parenth("3");
+        }
+        else if (stack.matches(["6","4","3"], "nums")) {
+            stack.parenth("6");
+        }
+        else if (stack.matches(["6","4","2"], "nums")) {
+            stack.parenth("6");
+        }
+        else if (stack.matches(["6","3"], "nums")) {
+            stack.parenth("3");
+        }
+        else if (stack.matches(["5","3"], "nums")) {
+            stack.parenth("5");
+            stack.parenth("3","[5]");
+        }
+        else if (stack.matches(["5","4"], "nums")) {
+            stack.parenth("5","4");
+        }
+        else if (stack.matches(["9","5","3"], "nums")) {
+            stack.parenth("5");
+            stack.parenth("3","[5]");
+        }
+        else if (stack.matches(["7","3"], "nums")) {
+            stack.parenth("3");
+        }
 
-// "isDiminishedTetrad" is used for thoroughbass by "\notate.annotate"
+        if (stack.length > 1) {
+            stack.third_as_accidental();
+        }
 
-	isDiminishedTetrad: function (notes, steps) {
-		//REDO
-	},
+        if (french_thoroughbass) {
+            if (stack.matches(['[6]','4+','2'])) {
+                stack.parenth("2");
+            }
+            if (stack.matches(['[6]','4','2'])) {
+                stack.parenth("4");
+            }
+            if (false && this.currently_first_inversion_dominant_tetrad() // disabled
+            && (stack.matches(['6','5','[3]'])
+            || stack.matches(['6','5','n'])
+            || stack.matches(['6','5','b'])
+            || stack.matches(['6','5','#'])
+            )) {
+                stack.rewrite(["/5"]);
+            }
+        }
 
-	generateDiatonicNotes: function(key) {
-		var roots = Vex.Flow.Music.roots;
-		var mus = new Vex.Flow.Music();
-		var diatonicNotes = Array(7);
-		var i, keyName, keyValue, scaleTones, intervals, startingNote;
+        stack.expunge_parenthesized()
 
-		if (key == "h") { 
-			key = 'jC_';
-		}
-		keyName = key.slice(1).replace('_','').toLowerCase();
+        /*---------*/
 
-		try {
-			keyValue = mus.getNoteValue(keyName);
-		} catch(e) {
-			keyName = "c";
-			keyValue = mus.getNoteValue("c");
-		}
+        return stack["stack"];
+    },
 
-		if (key.indexOf('j') != -1) {
-			intervals = [2, 2, 1, 2, 2, 2, 1];	// major diatonic
-		}
-		if (key.indexOf('i') != -1) {
-			intervals = [2, 1, 2, 2, 1, 2, 2];	// minor diatonic
-		}
-		
-		scaleTones = mus.getScaleTones(keyValue, intervals)
-		startingNote = roots.indexOf(keyName[0]);
+    hEnharmonicAlterations: function (midi, name, chord) {
+        /* Aggressively re-spells chords when key is none */
 
-		for(i = 0; i < 7; i++) {
-			diatonicNotes[i] = roots[(i + startingNote) % 7];
-		}
-		
-		for(i in scaleTones) {
-			diatonicNotes[i] = mus.getRelativeNoteName(diatonicNotes[i],scaleTones[i]);
-		}
+        /* param {chord} is a list of midi numbers */
+        /* param {name} is a string e.g. "c#" */
 
-		return diatonicNotes;
-	},
+        if ( this.key_is_major() || this.key_is_minor() ) return name;
 
-	// Function to sort two note numbers in ascending order.
-	// Expected to be passed to Array.prototype.sort().
-	sortNoteNumbers: function(a, b) {
-		return a - b;
-	}
+        chord = chord.sort(function(a,b){return a-b});
+
+        var bass_pc = (12 + chord[0]) % 12;
+        
+        if (chord.length == 2) {
+            var semitones = this.rel_pc(midi, bass_pc); /* register is irrelevant */
+            if (!this.hIntervals[semitones]) {
+                return this.noteNames[midi % 12]; /** return default spelling **/
+            }
+
+            /* how the bass is spelled according to the type of interval */
+            /* expressed as a minor key */
+            var scale = this.hIntervals[semitones]["spellbass"];
+
+            if (scale === "___") {
+                return this.noteNames[midi % 12]; /** return default spelling **/
+            }
+
+            var bass_name = this.spelling[scale][bass_pc].toLowerCase();
+            var steps = this.hIntervals[semitones]["stepwise"];
+            if (midi % 12 == bass_pc) {
+                /*??? as called, this function never meets the condition ???*/
+                /* make M3 below Eb and above G3 to see the difference */
+                return bass_name;
+            } else {
+                return this.note_above_name(parseInt(bass_pc), bass_name, parseInt(semitones), parseInt(steps));
+            }
+        }
+        if (chord.length >= 3) {
+            var profile = this.getIntervalsAboveBass(chord);
+            if (!this.hChords[profile]) {
+                return this.noteNames[midi % 12]; /** return default spelling **/
+            }
+
+            /* how the bass is spelled according to the type of interval */
+            /* expressed as a minor key */
+            var scale = this.hChords[profile]["spellbass"];
+
+            if (scale === "___") {
+                return this.noteNames[midi % 12]; /** return default spelling **/
+            }
+
+            var all_steps = this.hChords[profile]["stepwise"];
+            var bass_name = this.spelling[scale][bass_pc].toLowerCase();
+            var semitones = this.rel_pc(midi, bass_pc);
+            var idx = profile.indexOf("0123456789yz"[semitones]);
+            var steps = (idx === -1 ? 0 : parseInt(all_steps[idx])); /* parseInt is critical */
+            return this.note_above_name(chord[0], bass_name, semitones, steps);
+        }
+
+        return this.noteNames[midi % 12]; /** return default spelling **/
+    },
 };
+
 
 // Constructor for an object that wrap all the analysis methods and
 // configuration data.
 var Analyze = function(keySignature, options) {
-	options = options || {};
-	if(!keySignature) {
-		throw new Erorr("missing key signature");
-	}
+    options = options || {};
+    if(!keySignature) {
+        throw new Erorr("missing key signature");
+    }
 
-	var keynotePC = keySignature.getKeyPitchClass();
-	var key = keySignature.getKey();
+    var keynotePC = keySignature.getKeyPitchClass();
+    var key = keySignature.getKey();
 
-	// There used to be a global variable "Piano" in the old harmony prototype
-	// that contained various properties and global settings. In order to keep
-	// the analysis methods relatively intact when porting from the old
-	// prototype app to the new one, a decision was made to provide a local object to 
-	// stand in for the old one. Eventually, this should be completely
-	// refactored.
+    // There used to be a global variable "Piano" in the old harmony prototype
+    // that contained various properties and global settings. In order to keep
+    // the analysis methods relatively intact when porting from the old
+    // prototype app to the new one, a decision was made to provide a local object to 
+    // stand in for the old one. Eventually, this should be completely
+    // refactored.
 
-	var Piano = {
-		key: key,
-		keynotePC: keynotePC,
-		diatonicNotes: this.generateDiatonicNotes(key),
-		highlightMode: {
-			"octaveshighlight": false,
-			"doublinghighlight": false,
-			"tritonehighlight": false,
-			"fifthshighlight": false
-		}
-	};
+    var Piano = {
+        key: key,
+        keynotePC: keynotePC,
+        diatonicNotes: this.note_names_of_scale(key),
+        highlightMode: {
+            "octaveshighlight": false,
+            "doublinghighlight": false,
+            "tritonehighlight": false,
+            "fifthshighlight": false
+        }
+    };
 
-	if(options.highlightMode) {
-		_.extend(Piano.highlightMode, options.highlightMode);
-	}
+    if(options.highlightMode) {
+        _.extend(Piano.highlightMode, options.highlightMode);
+    }
 
-	this.Piano = Piano;
+    this.Piano = Piano;
 };
 
 
 // Augment prototype with methods and configuration data shared by all instances
 _.extend(Analyze.prototype, {
-	noteNames: NOTE_NAMES,
-	pitchClasses: PITCH_CLASSES,
-	spelling: SPELLING_TABLE
+    noteNames: NOTE_NAMES,
+    pitchClasses: PITCH_CLASSES,
+    spelling: SPELLING_TABLE
 });
 _.extend(Analyze.prototype, ANALYSIS_CONFIG);
 _.extend(Analyze.prototype, analyzing);

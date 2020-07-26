@@ -22,7 +22,7 @@ define({
 	
 	// Default key and signature to use for notation. This should be
 	// automatically selected on the UI.
-	defaultKeyAndSignature: "iA_", // no key
+	defaultKeyAndSignature: "h",
 
 	// Defines settings for the chord bank.
 	chordBank: {
@@ -40,11 +40,12 @@ define({
 		// Enables or disables specific analysis modes
 		mode: {
 			note_names: false, // either this or scientific_pitch or neither
-			scientific_pitch: false, 
+			scientific_pitch: true, 
 			scale_degrees: true, // either this or solfege or neither
 			solfege: false, 
+			thoroughbass: false, // takes priority over intervals and roman_numerals
 			roman_numerals: true,
-			intervals: false
+			intervals: true
 		}
 	},
 
@@ -54,8 +55,8 @@ define({
 		enabled: true,
 		// Enables or disables specific highlight modes
 		mode: {
-			roothighlight: false,
-			tritonehighlight: false,
+			roothighlight: true,
+			tritonehighlight: true,
 			doublinghighlight: true,
 			loweredhighlight: true,
 			modalmixturehighlight: false,
