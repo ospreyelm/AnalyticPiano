@@ -24,101 +24,16 @@ var SPELLING_TABLE = _.reduce(KEY_MAP, function(result, value, key) {
 }, {});
 
 
-
 var analyzing = {
-    keynotePC: {
-        "h":   0,
-        "jC_": 0,
-        "iC_": 0,
-        "jC#": 1,
-        "iC#": 1,
-        "jDb": 1,
-        "jD_": 2,
-        "iD_": 2,
-        "iD#": 3,
-        "jEb": 3,
-        "iEb": 3,
-        "jE_": 4,
-        "iE_": 4,
-        "jF_": 5,
-        "iF_": 5,
-        "jF#": 6,
-        "iF#": 6,
-        "jGb": 6,
-        "jG_": 7,
-        "iG_": 7,
-        "iG#": 8,
-        "jAb": 8,
-        "iAb": 8,
-        "jA_": 9,
-        "iA_": 9,
-        "iA#": 10,
-        "jBb": 10,
-        "iBb": 10,
-        "jB_": 11,
-        "iB_": 11,
-        "jCb": 11 
-    },
-    AtoGindices: {
-        /* the names of these dictionary keys follow VexFlow */
-        /* A */
-        'a':   { root_index: 0, int_val: 9 },
-        'an':  { root_index: 0, int_val: 9 },
-        'a#':  { root_index: 0, int_val: 10 },
-        'a##': { root_index: 0, int_val: 11 },
-        'ab':  { root_index: 0, int_val: 8 },
-        'abb': { root_index: 0, int_val: 7 },
-        /* B */
-        'b':   { root_index: 1, int_val: 11 },
-        'bn':  { root_index: 1, int_val: 11 },
-        'b#':  { root_index: 1, int_val: 0 },
-        'b##': { root_index: 1, int_val: 1 },
-        'bb':  { root_index: 1, int_val: 10 },
-        'bbb': { root_index: 1, int_val: 9 },
-        /* C */
-        'c':   { root_index: 2, int_val: 0 },
-        'cn':  { root_index: 2, int_val: 0 },
-        'c#':  { root_index: 2, int_val: 1 },
-        'c##': { root_index: 2, int_val: 2 },
-        'cb':  { root_index: 2, int_val: 11 },
-        'cbb': { root_index: 2, int_val: 10 },
-        /* D */
-        'd':   { root_index: 3, int_val: 2 },
-        'dn':  { root_index: 3, int_val: 2 },
-        'd#':  { root_index: 3, int_val: 3 },
-        'd##': { root_index: 3, int_val: 4 },
-        'db':  { root_index: 3, int_val: 1 },
-        'dbb': { root_index: 3, int_val: 0 },
-        /* E */
-        'e':   { root_index: 4, int_val: 4 },
-        'en':  { root_index: 4, int_val: 4 },
-        'e#':  { root_index: 4, int_val: 5 },
-        'e##': { root_index: 4, int_val: 6 },
-        'eb':  { root_index: 4, int_val: 3 },
-        'ebb': { root_index: 4, int_val: 2 },
-        /* F */
-        'f':   { root_index: 5, int_val: 5 },
-        'fn':  { root_index: 5, int_val: 5 },
-        'f#':  { root_index: 5, int_val: 6 },
-        'f##': { root_index: 5, int_val: 7 },
-        'fb':  { root_index: 5, int_val: 4 },
-        'fbb': { root_index: 5, int_val: 3 },
-        /* G */
-        'g':   { root_index: 6, int_val: 7 },
-        'gn':  { root_index: 6, int_val: 7 },
-        'g#':  { root_index: 6, int_val: 8 },
-        'g##': { root_index: 6, int_val: 9 },
-        'gb':  { root_index: 6, int_val: 6 },
-        'gbb': { root_index: 6, int_val: 5 }
-    },
     mod_7: function (note_name) {
-        /* slice because accidental is irrelevant */
-        return this.AtoGindices[note_name.slice(0,1).toLowerCase()].root_index;
-        /* A is 0 ... G is 6 */
+        return "abcdefg".indexOf(note_name.slice(0,1).toLowerCase());
     },
     mod_12: function (note_name) {
-        return this.AtoGindices[note_name.toLowerCase()].int_val;
-        /* C is 0 */
+        var dict1 = {"a":9, "b":11, "c":0, "d":2, "e":4, "f":5, "g":7};
+        var anchor = dict1[note_name.slice(0,1).toLowerCase()];
+        var dict2 = {"":0, "n":0, "bb":-2, "b":-1, "##":2, "#":1};
+        var offset = dict2[note_name.slice(1)];
+        return (12 + anchor + offset) % 12;
     },
     key_is_minor: function () {
         if (this.Piano.key.indexOf('i') !== -1) return true;
@@ -195,11 +110,11 @@ var analyzing = {
         return false;
     },
     push_flat: function (note, name) {
-        let eval_mod_7 = (1 + this.mod_7(name)) % 7;
+        var eval_mod_7 = (1 + this.mod_7(name)) % 7;
         return this.note_name(eval_mod_7, note % 12);
     },
     push_sharp: function (note, name) {
-        let eval_mod_7 = (-1 + this.mod_7(name)) % 7;
+        var eval_mod_7 = (-1 + this.mod_7(name)) % 7;
         return this.note_name(eval_mod_7, note % 12);
     },
     getRelativeNoteName: function (mod_7, mod_12) {
@@ -218,8 +133,8 @@ var analyzing = {
         return letter;
     },
     note_above_name: function (bass_pc, bass_name, semitones, steps) {
-        let eval_mod_7 = (this.mod_7(bass_name) + steps) % 7;
-        let eval_mod_12 = (bass_pc + semitones) % 12;
+        var eval_mod_7 = (this.mod_7(bass_name) + steps) % 7;
+        var eval_mod_12 = (bass_pc + semitones) % 12;
         return this.note_name(eval_mod_7, eval_mod_12);
     },
     rel_pc: function (note, ref) {
@@ -348,13 +263,13 @@ var analyzing = {
             .map(note => this.rel_pc(note, this.Piano.keynotePC)); /* n.b. relative to keynote */
         
         if (this.Piano.key == "h") var bass = "";
-        else var bass = "0123456789yz"[chord[0]] + "/";
+        else var bass = this.pitchClasses[chord[0]] + "/";
         /* same pc designations used elsewhere */
         
         chord = chord.slice(1); /* exclude bass */
         chord.sort(function(a,b){return a-b}); /* order of upper parts is irrelevant */
 
-        return bass + chord.map(n => "0123456789yz"[n]).join('');
+        return bass + chord.map(n => this.pitchClasses[n]).join('');
         /* e.g. "y/047" for C7/Bb */
     },
     getIntervalsAboveBass: function (notes) {
@@ -381,7 +296,7 @@ var analyzing = {
     accidental: function(vexnote) {
         var regex = /^([cdefgab])(b|bb|n|#|##)?\/.*$/;
         var match = regex.exec(vexnote.toLowerCase());
-        if ( match[2] == undefined ) return "";
+        if ( match[2] == undefined ) return "n";
         return match[2];
     },
     semitones_steps_str: function (note, ref) {
@@ -403,7 +318,7 @@ var analyzing = {
     bare_octave_or_unison: function(notes) {
         if (notes.length == 1) return true;
         if (notes.length > 1) {
-            for (let i = 1; i < notes.length; i++) {
+            for (var i = 1; i < notes.length; i++) {
                 if(notes[i] % 12 != notes[0] % 12) {
                     return false;
                 }
@@ -496,10 +411,10 @@ var analyzing = {
                 }
 
                 if (chordEntry["root"] != "_") {
-                    let bass_pc = parseInt(notes[0])
-                    let bass_name = bassName
-                    let semitones = parseInt(chordEntry["root"])
-                    let steps = parseInt(chordEntry["rootstepwise"])
+                    var bass_pc = parseInt(notes[0])
+                    var bass_name = bassName
+                    var semitones = parseInt(chordEntry["root"])
+                    var steps = parseInt(chordEntry["rootstepwise"])
                     rootName = this.note_above_name(bass_pc, bass_name, semitones, steps);  
                 }
 
@@ -574,15 +489,17 @@ var analyzing = {
         });
         return (offset === -0 ? 0 : offset);
     },
-    thoroughbass_figure: function(midi_nums) {
+    full_thoroughbass_figure: function(midi_nums) {
+        return this.thoroughbass_stack(midi_nums).map(item => item[0])
+                   .join('/');
+    },
+    abbrev_thoroughbass_figure: function(midi_nums) {
+        return this.abbreviate_thoroughbass(this.thoroughbass_stack(midi_nums))
+                   .join('/');
+    },
+    thoroughbass_stack: function(midi_nums) {
         var bass_midi = midi_nums[0];
         var bass_name = this.getNoteName(bass_midi, midi_nums);
-
-        Array.prototype.unique = function() {
-            return this.filter(function (value, index, self) { 
-                return self.indexOf(value) === index;
-            });
-        }
 
         intervals = [];
         for (var i = 1; i < midi_nums.length; i++) {
@@ -600,24 +517,28 @@ var analyzing = {
             var offset = this.get_offset(name.split("/")[0]);
             if (number == 8) {
                 if (name.split("/")[0] == bass_name.split("/")[0]) prefix = "";
-                else prefix = this.accidental(name).replace(/^$/, "n");
+                else prefix = this.accidental(name);
             } else if (number == 7 && this.rel_pc(midi, bass_midi) == 9) {
                 prefix = "\xb0" /* diminished seventh */
             } else {
                 prefix = (offset === 0 ? "" : this.accidental(name))
             }
             
-            var interval = [prefix + String(number), offset];
-            if (!intervals.includes(interval)) intervals.push(interval);
+            var itv = [prefix + String(number), offset];
+            if ( !intervals.some(x => itv[0] == x[0] && itv[1] == x[1]) ) {
+                intervals.push(itv);
+            }
         }
 
-        // .sort(function(a,b){return a-b})
-        var stack = this.abbreviate_thoroughbass(intervals.reverse());
+        var stack = intervals.sort(function(a,b){
+            return a[0].replace(/[^0-9]+/g, '') - b[0].replace(/[^0-9]+/g, '')
+        }).reverse();
 
-        return stack.join('/');
+        return stack;
     },
     currently_first_inversion_dominant_tetrad: function() {
         var midi_nums = []; /* GET CURRENT MIDI NUMBERS: NOT WIRED IN YET */
+        /* see app/models/chord */
         return [0,3,6,8] == this.pcs_order_of_lowest_appearance(midi_nums)
             .map(midi => this.rel_pc(midi, midi_nums[i])) /* n.b. relative to bass */
             .sort(function(a,b){return a-b});
@@ -808,7 +729,7 @@ var analyzing = {
             var all_steps = this.hChords[profile]["stepwise"];
             var bass_name = this.spelling[scale][bass_pc].toLowerCase();
             var semitones = this.rel_pc(midi, bass_pc);
-            var idx = profile.indexOf("0123456789yz"[semitones]);
+            var idx = profile.indexOf(this.pitchClasses[semitones]);
             var steps = (idx === -1 ? 0 : parseInt(all_steps[idx])); /* parseInt is critical */
             return this.note_above_name(chord[0], bass_name, semitones, steps);
         }
@@ -818,34 +739,29 @@ var analyzing = {
 };
 
 
-// Constructor for an object that wrap all the analysis methods and
+// Constructor for an object that wraps all the analysis methods and
 // configuration data.
 var Analyze = function(keySignature, options) {
     options = options || {};
     if(!keySignature) {
-        throw new Erorr("missing key signature");
+        throw new Error("Missing key signature!");
     }
 
     var keynotePC = keySignature.getKeyPitchClass();
     var key = keySignature.getKey();
 
-    // There used to be a global variable "Piano" in the old harmony prototype
+    // There used to be a global variable "Piano" in the old prototype
     // that contained various properties and global settings. In order to keep
     // the analysis methods relatively intact when porting from the old
-    // prototype app to the new one, a decision was made to provide a local object to 
-    // stand in for the old one. Eventually, this should be completely
-    // refactored.
+    // prototype app to the new one, a decision was made to provide a local
+    // object to stand in for the old one. Eventually, this should be
+    // completely refactored.
 
     var Piano = {
         key: key,
         keynotePC: keynotePC,
         diatonicNotes: this.note_names_of_scale(key),
-        highlightMode: {
-            "octaveshighlight": false,
-            "doublinghighlight": false,
-            "tritonehighlight": false,
-            "fifthshighlight": false
-        }
+        highlightMode: {}
     };
 
     if(options.highlightMode) {

@@ -389,23 +389,47 @@ define([
 		 * @return undefined
 		 */
 		drawThoroughbass: function(x, y) {
-			var ctx = this.getContext();
-			var width = 0, offset = 0;
-
 			var midi_nums = this.chord.getNoteNumbers();
-			var figure = this.getAnalyzer().thoroughbass_figure(midi_nums);
+			var figure = (this.analyzeConfig.abbreviate_thoroughbass ?
+				this.getAnalyzer().abbrev_thoroughbass_figure(midi_nums) :
+				this.getAnalyzer().full_thoroughbass_figure(midi_nums)
+			);
 
-			/* lots still to do here */
-			/* currently rewrites a horizontal list separated by "/" */
+			var ctx = this.getContext();
 
 			this.parseAndDraw(figure, x, y, function(text, x, y) {
+				x += StaveNotater.prototype.annotateOffsetX
+				var lines = text.split("/").map(function(line) {
+					if (line === "6+") return "&";
+					if (line === "5+") return "%";
+					if (line === "4+") return "$";
+					if (line === "2+") return "\"";
+					if (line.slice(0,2) === "##") return "x " + line.slice(2);
+					else if (line.slice(0,1) === "#") return "# " + line.slice(1);
+					if (line.slice(0,2) === "bb") return "a " + line.slice(2);
+					else if (line.slice(0,1) === "b") return "b " + line.slice(1);
+					if (line.slice(0,1) === "n") return "n " + line.slice(1);
+					return line;
+				});
+				// var lines = text.replace(/b/g,'♭').replace(/#/g,'♯').split("/");
+				/* also available: this.convertSymbols(text) */
 
-				text = this.convertSymbols(text).replace(/⌀/g,'⌀'); /* replace: one could improve appearance of half-diminished sign with standard fonts here, but currently using custom font instead */
-				offset = 0 - ((text.slice(0,1) == '\u266D') ? ctx.measureText(text.slice(0,1)).width : 0) - (text.slice(0,1) == '\u266F' ? ctx.measureText(text.slice(0,1)).width : 0);
+				ctx.font = this.getFiguredBassFont();
+				// ctx.font = '16px ' + ctx.font.split(' ')[-1];
+				x += ctx.measureText("6").width + 6;
+				const skip = this.textLineHeight*0.8;
 
-				var lines = this.wrapText(text);
-				this.drawTextLines(lines, x + offset + StaveNotater.prototype.annotateOffsetX, y);
-				return this.getContext().measureText(lines[0]).width + offset; // return the width of the first line for figured bass
+				for(var i = 0; i < lines.length; i++) {
+					ctx.textAlign = "end";
+					// let hshift = ((lines[i].slice(0,1) == '\u266D') ?
+					// 			  ctx.measureText(text.slice(0,1)).width : 0)
+					// 		    + (lines[i].slice(0,1) == '\u266F' ?
+					// 		   	  ctx.measureText(text.slice(0,1)).width : 0);
+					ctx.fillText(lines[i], x, i*skip+y-18);
+				}
+
+				return ctx.measureText(lines[0]).width; /* return width of the first line */
+				// is the loss of offset information significant?
 			});
 		},
 		/**
@@ -416,6 +440,7 @@ define([
 		 * @return undefined
 		 */
 		drawRoman: function(x, y) {
+			var key = this.keySignature.getKeyShortName();
 			var notes = this.chord.getNoteNumbers();
 			var chord_entry = this.getAnalyzer().findChord(notes);
 			var width = 0, offset = 0;
@@ -428,44 +453,56 @@ define([
 				 */
 				this.romanNumeralsHistory[this.stave.position.index] = chord_entry.label;
 				var RnHistory = this.romanNumeralsHistory;
+				/* this is problematic: ignores the interposition of single pitches or intervals */
 
+				const idx = this.stave.position.index;
 				var final_label = chord_entry.label;
-				var current_position = this.stave.position.index;
 
 				var substitutions = [
 					[["i{z4}", "V"], ["V{z4}", " {t3}"]],
 					[["I{z4}", "V"], ["V{z4}", " {t3}"]],
 					[["i{z4}", "V{u3}"], ["V{z4}", " {u3}"]],
 					[["I{z4}", "V{u3}"], ["V{z4}", " {u3}"]],
-					[["vii°{u}/V", "V"], ["vii°{u} →", "V"]],//
-					[["vii⌀{u}/V", "V"], ["vii⌀{u} →", "V"]],//
 					[["vii°{u}", "VI{z}"], ["c.t.°{u}", "VI{z}"]],
 				];
 
-				if(RnHistory[current_position - 1]) {
-					for(var i = 0; i < substitutions.length; i++) {
-						if(RnHistory[current_position - 1] == substitutions[i][0][0] && RnHistory[current_position] == substitutions[i][0][1]) {
-							/* Overwrite label based on incoming progression */
-							final_label = substitutions[i][1][1];
-							break;
-						}else if(RnHistory[current_position - 1] == RnHistory[current_position]) {
-							/* Eliminate repeated labels */
-							final_label = "";
-							break;
+				if ( RnHistory[idx-1] ) { /* has precursor */
+					let precursor = RnHistory[idx-1];
+					let current = RnHistory[idx]
+					if (precursor == current) final_label = "";
+					else {
+						let progression = [precursor, current];
+						let probe = substitutions.map(sub_arr => sub_arr[0].join(">")).indexOf(progression.join(">"));
+						if (probe !== -1) {
+							final_label = substitutions[probe][1][1];
+
+							/* change precursor label after the fact:
+							 * the postcursor logic is flawed because chords can change before banking */
+							// to do
 						}
 					}
 				}
-				if(RnHistory[current_position + 1]) {
-					for(var i = 0; i < substitutions.length; i++) {
-						if(RnHistory[current_position] == substitutions[i][0][0] && RnHistory[current_position + 1]  == substitutions[i][0][1]) {
-							/* Overwrite label based on outgoing progression */
-							final_label = substitutions[i][1][0];
-							break;
+				if ( RnHistory[idx+1] ) { /* has postcursor */
+					let postcursor = RnHistory[idx+1];
+					let current = RnHistory[idx]
+					let progression = [current, postcursor];
+					let probe = substitutions.map(sub_arr => sub_arr[0].join(">")).indexOf(progression.join(">"));
+					if (probe !== -1) final_label = substitutions[probe][1][0];
+					else if (RnHistory[idx].split("/").length == 2) {
+						let parts = RnHistory[idx].split("/")
+						if (parts[1] == postcursor) {
+							final_label = parts[0] + " →";
 						}
-						// add regex test for applied chords
-						// if ^([^/]+)/([^/]+)$ and ^\2(\{[a-z0-9]+}\})?
-						// replace with \1
+					} else {
+						// final_label = chord_entry.label /* reset */
 					}
+				}
+
+				/* TO DO: add horizontal lines */
+
+				if (key === "") {
+					/* there should be no double-sharp or double-flat roots */
+					final_label = final_label.replace(/b/g,'♭').replace(/#/g,'♯');
 				}
 
 				this.parseAndDraw(final_label, x, y, function(text, x, y) {
@@ -488,16 +525,10 @@ define([
 		 */
 		drawInterval: function(x, y) {
 			var notes = this.chord.getNoteNumbers();
-			var ctx = this.getContext();
 			var interval = this.getAnalyzer().ijNameDegree(notes);
-			var name = '', lines = [];
-			var cFont = ctx.font;
-			var fontArgs = ctx.font.split(' ');
-			var newSize = '20px';
-			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 			
 			if(interval && interval.name !== '') {
-				lines = this.wrapText(interval.name);
+				var lines = this.wrapText(interval.name);
 				this.drawTextLines(lines, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
 		},
@@ -511,8 +542,6 @@ define([
 		drawMetronomeMark: function(x, y) {
 			var ctx = this.getContext();
 			var tempo = this.getTempo();
-			/*var img = METRONOME_IMG;*/
-			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '16px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -536,7 +565,7 @@ define([
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 			if(key !== '') {
-				ctx.fillText(this.convertSymbols(key) + '', x - 8, y);
+				ctx.fillText(this.convertSymbols(key) + ':', x - 8, y);
 			}
 		},
 		/**
@@ -550,10 +579,9 @@ define([
 		drawTextLines: function(lines, x, y) {
 			var ctx = this.getContext(); 
 			var line_height = this.textLineHeight;
-			var line_y, i, len;
 
-			for(i = 0, len = lines.length; i < len; i++) {
-				line_y = y + (i * line_height);
+			for(var i = 0; i < lines.length; i++) {
+				var line_y = y + (i * line_height);
 				ctx.fillText(lines[i], x, line_y);
 			}
 		},
@@ -577,40 +605,25 @@ define([
 			var key = this.keySignature.getKey();
 			
 			FontParser.parse(str, function(text, is_font_token) {
-				//console.log("parse font", text, is_font_token);
 				if (is_font_token) {
 					ctx.save();
 					ctx.font = figuredBassFont;
-					x += callback.call(that, text, x, y + 3); // tweak figured bass vertical position
+					x += callback.call(that, text, x, y + 3); /* tweak figured bass vertical position */
 					x += padding / 3;
 					ctx.restore();
 				} else {
 					var cFont = ctx.font;
 					var fontArgs = ctx.font.split(' ');
-					if ( key == 'h' ) {
-						if ( str.length <= 6 ) {
-							var newSize = '20px';
-						} else {
-							var newSize = '20px';
-						}
-					} else {
-						var newSize = '24px';
-					}
+					var newSize = ( key == 'h' ? '20px' : '24px'); /* size for chord symbols and Roman numerals */
 					ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
-					if ( key == 'h' ) {
-						if ( str.length <= 6 ) {
-							var newSize = '20px'; // chord symbol fontsize
-							x += callback.call(that, text.replace(/b/g,'♭').replace(/#/g,'♯'), x, y); // replace: true flat and sharp signs (substitution okay since letter names are uppercase here)
-						} else {
-							var newSize = '20px'; // long chord symbol fontsize
-							x += callback.call(that, text.replace(/b/g,'♭').replace(/#/g,'♯').replace(/\//g,'\n/'), x, y); // replace: as above plus line break at /
-						}
+					if ( key === "h" && str.length > 6 ) {
+						/* add line break to long applied-chord labels */
+						x += callback.call(that, text.replace(/\//g,'\n/'), x, y);
 					} else {
-						var newSize = '24px'; // Roman numeral fontsize
 						x += callback.call(that, text, x, y);
 					}
-					x += padding / 2;					
-				}				
+					x += padding / 2;
+				}
 			});
 		},
 		/**
@@ -701,7 +714,6 @@ define([
 			var mode = this.analyzeConfig.mode;
 
 			if(notes.length >= 1) {
-			// if(notes.length === 1) {
 				if(mode.scale_degrees && !mode.solfege) {
 					this.drawScaleDegree(x, first_row);
 				} else if(mode.solfege && !mode.scale_degrees) {

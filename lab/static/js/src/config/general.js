@@ -22,7 +22,7 @@ define({
 	
 	// Default key and signature to use for notation. This should be
 	// automatically selected on the UI.
-	defaultKeyAndSignature: "h",
+	defaultKeyAndSignature: "jC_",
 
 	// Defines settings for the chord bank.
 	chordBank: {
@@ -43,16 +43,17 @@ define({
 			scientific_pitch: true, 
 			scale_degrees: true, // either this or solfege or neither
 			solfege: false, 
-			thoroughbass: false, // takes priority over intervals and roman_numerals
+			thoroughbass: true, // takes priority over intervals and roman_numerals
 			roman_numerals: true,
 			intervals: true
-		}
+		},
+		abbreviate_thoroughbass: false
 	},
 
 	// Defines the default highlight settings
 	highlightSettings: {
 		// Enables or disables highlighting
-		enabled: true,
+		enabled: false,
 		// Enables or disables specific highlight modes
 		mode: {
 			roothighlight: true,
@@ -83,7 +84,7 @@ define({
 	defaultKeyboardSize: 49,
 
 	// Defines the default spelling of the twelve pitches based on D-minor.
-	noteNames: ['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B'],
+	noteNames: ["C","C#","D","Eb","E","F","F#","G","G#","A","Bb","B"],
 
 	// Maps the twleve pitch classes [0-11] onto [0-9,y,z]. We are substituting
 	// y and z for 10 and 11 so that we can represent each pitch class with a

@@ -86,7 +86,7 @@ define([
 		 * displaying the clef symbol and key signature, but no notes.
 		 * @type {number}
 		 */
-		firstBarWidth: 90,
+		firstBarWidth: 90, /* should vary with key signature */
 		/**
 		 * The default width of a stave.
 		 * @type {number}
@@ -96,7 +96,7 @@ define([
 		 * The margins for the stave.
 		 * @type {number}
 		 */
-		margin: {left: 1, right: 1},
+		margin: {left: 20, right: 1},
 		/**
 		 * Initializes the Stave.
 		 *
@@ -195,12 +195,8 @@ define([
 		 * @return this
 		 */
 		renderStaveConnector: function() {
-			if(this.isFirstBar()) {
-				this.drawBeginStaveConnector();
-			}
-			// else if(this.isLastBar()) {
-			// 	this.drawEndStaveConnector();
-			// }
+			if ( this.isFirstBar() ) this.drawBeginStaveConnector();
+			// else if ( this.isLastBar() ) this.drawEndStaveConnector();
 			return this;
 		},
 		/**
@@ -214,7 +210,7 @@ define([
 			var staff1 = this.getStaveBar();
 			var staff2 = this.connectedStave.getStaveBar();
 			this.drawStaveConnector(staff1, staff2, SINGLE); 
-			// this.drawStaveConnector(staff1, staff2, BRACE); 
+			this.drawStaveConnector(staff1, staff2, BRACE); 
 		},
 		/**
 		 * Draws a connector at the end of the stave.
@@ -257,33 +253,34 @@ define([
 			var y = this.start_y;
 			var width = this.width;
 			var staveBar = new Vex.Flow.Stave(x, y, width);
-			staveBar.clef = this.clef;
 
 			/**
 			 * To show barlines, call Vex.Flow.Barline.type.SINGLE
 			 * unless isFirstBar (this is used for clef and staff signature
 			 * display).
 			 */
-			if(this.isFirstBar()) {
-				staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
-				staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
-			} else if(this.isPenultimateBar()) {
-				staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
-				staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
-			} else if(this.isLastBar()) {
-				staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
-				staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
-			} else {
-				staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
-				staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
-			}
+			// if(this.isFirstBar()) {
+			// 	staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
+			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			// } else if(this.isPenultimateBar()) {
+			// 	staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
+			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			// } else if(this.isLastBar()) {
+			// 	staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
+			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			// } else {
+			// 	staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
+			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			// }
+			staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
+			staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
 
+			staveBar.clef = this.clef;
 			staveBar.setContext(this.getContext());
-
-			if(this.isFirstBar()) {
+			if (this.isFirstBar()) {
 				staveBar.addClef(this.clef);
 				staveBar.addKeySignature(this.keySignature.getVexKey());
-			} 
+			}
 
 			this.staveBar = staveBar;
 		},

@@ -166,29 +166,28 @@ define([
 		 * @return this
 		 */
 		updateStaves: function() {
-			var chord, treble, bass;
 			var limit = CHORD_BANK_SIZE;
 			var items = this.chords.items({limit: limit, reverse: true});
+			var position = {
+				index: 0,
+				count: items.length,
+				maxCount: CHORD_BANK_SIZE
+			};
 			var staves = [];
-			var index = 0;
-			var count = items.length;
-			var position = {index:index,count:count,maxCount:limit};
-			var isBanked;
-			var isNovel;
 
 			// the first stave bar is a special case: it's reserved to show the
 			// clef and key signature and nothing else
-			treble = this.createDisplayStave('treble', _.clone(position));
-			bass = this.createDisplayStave('bass', _.clone(position));
+			var treble = this.createDisplayStave('treble', _.clone(position));
+			var bass = this.createDisplayStave('bass', _.clone(position));
 			position.index += 1;
 			treble.connect(bass);
 			staves.push(treble);
 
 			// now add the staves for showing the notes
-			for(var i = 0, len = items.length; i < len; i++) {
-				chord = items[i].chord;
-				isBanked = items[i].isBanked;
-				isNovel = items[i].isNovel;
+			for(var i = 0; i < items.length; i++) {
+				let chord = items[i].chord;
+				let isBanked = items[i].isBanked;
+				let isNovel = items[i].isNovel;
 				treble = this.createNoteStave('treble', _.clone(position), chord, isBanked, isNovel);
 				bass = this.createNoteStave('bass', _.clone(position), chord, isBanked, isNovel);
 				position.index += 1;
