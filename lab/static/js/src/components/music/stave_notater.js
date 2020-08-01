@@ -400,6 +400,7 @@ define([
 			this.parseAndDraw(figure, x, y, function(text, x, y) {
 				x += StaveNotater.prototype.annotateOffsetX
 				var lines = text.split("/").map(function(line) {
+					if (line === "\xb07") return "/"; /* diminished seventh */
 					if (line === "6+") return "&";
 					if (line === "5+") return "%";
 					if (line === "4+") return "$";
@@ -558,13 +559,14 @@ define([
 		 * @return undefined
 		 */
 		drawKeyName: function(x, y) {
-			var ctx = this.getContext();
 			var key = this.keySignature.getKeyShortName();
+			var thoroughbass = this.analyzeConfig.mode.thoroughbass;
+			var ctx = this.getContext();
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
-			if(key !== '') {
+			if(key !== '' && !thoroughbass) {
 				ctx.fillText(this.convertSymbols(key) + ':', x - 8, y);
 			}
 		},

@@ -53,14 +53,14 @@ define({
 	// Defines the default highlight settings
 	highlightSettings: {
 		// Enables or disables highlighting
-		enabled: false,
+		enabled: true,
 		// Enables or disables specific highlight modes
 		mode: {
-			roothighlight: true,
-			tritonehighlight: true,
+			roothighlight: false,
+			tritonehighlight: false,
 			doublinghighlight: true,
-			loweredhighlight: true,
-			modalmixturehighlight: false,
+			modalmixturehighlight: true, // minor mixture in a major key
+			loweredhighlight: false, // shifted flatwise enharmonically
 			octaveshighlight: false // not recommended, hidden from UI
 		}
 	},

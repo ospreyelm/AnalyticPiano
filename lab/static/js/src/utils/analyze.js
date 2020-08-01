@@ -177,7 +177,7 @@ var spellingAndAnalysisFunctions = {
         var eval_mod_7 = (-1 + this.mod_7(name)) % 7;
         return this.note_name(eval_mod_7, note % 12);
     },
-    getNoteName: function (note, chord, called) {
+    getNoteName: function (note, chord) {
         var name = this.spelling[this.Piano.key][note % 12].toLowerCase();
 
         if ( this.key_is_major() ) {
@@ -468,23 +468,28 @@ var spellingAndAnalysisFunctions = {
         return roots;
     },
     is_lowered: function (note, notes) {
-        var name = this.spelling[this.Piano.key][note % 12].toLowerCase();
-        if (name == this.push_flat(note, name)) {
-            return true;
-        }
         if ( this.key_is_minor()
              && this.rel_pc(note, this.Piano.keynotePC) == 1
-        ) {
+        ) { /* lowered second scale degree in minor */
             return true;
-            /* lowered second scale degree in minor */
         }
-        return false;
+        var auto = this.spelling[this.Piano.key][note % 12].toLowerCase();
+        var name = this.getNoteName(note, notes).split("/")[0];
+        return name == this.push_flat(note, auto);
     },
-    has_modal_mixture: function (note, notes) {
-        if (this.rel_pc(note, this.Piano.keynotePC) !== 1 && this.is_lowered(note, notes)) {
-            return true;
-        }
-        return false;
+    is_minor_mixture: function (note, notes) {
+        if ( !this.key_is_major() ) return false;
+        var name = this.getNoteName(note, notes).split("/")[0];
+
+        var maj_scale = this.note_names_of_scale(this.Piano.key);
+        if ( maj_scale.indexOf(name) !== -1 ) return false; /* diatonic to major */
+        
+        var min_key = "i"+this.Piano.key.slice(1);
+        var min_scale = this.note_names_of_scale(min_key);
+        if ( min_scale.indexOf(name) === -1 ) return false; /* not diatonic to minor */
+        
+        var auto_min = this.spelling[min_key][note % 12].toLowerCase();
+        return name == auto_min;
     },
     get_color: function (note, notes) {
         /* Color in pitches on the sheet music to highlight musical phenomena. */
@@ -511,10 +516,10 @@ var spellingAndAnalysisFunctions = {
             }
         }
         if (this.Piano.highlightMode["loweredhighlight"]) {
-            if (this.is_lowered(note, notes) === true) return "green";
+            if (this.is_lowered(note, notes)) return "green";
         }
         if (this.Piano.highlightMode["modalmixturehighlight"]) {
-            if (this.has_modal_mixture(note, notes) === true) return "green";
+            if (this.is_minor_mixture(note, notes)) return "green";
         }
         if (this.Piano.highlightMode["octaveshighlight"]) {
             var color = "";

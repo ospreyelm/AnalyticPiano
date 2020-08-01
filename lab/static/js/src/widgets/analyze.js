@@ -40,7 +40,7 @@ define([
 					'<label><input type="checkbox" name="analysis_scientific_pitch" value="scientific_pitch" accesskey="s"> Scientific pitch</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="f"> Figured bass</label>',
+					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G)</label>',
 				'</li>',
 				'</ul>',
 			'</fieldset>'
