@@ -137,7 +137,7 @@ var spellingAndAnalysisFunctions = {
                 }
             }
         }
-        return null;
+        return true;
     },
     get_chord_code: function (notes) {
         var chord = this.pcs_order_of_lowest_appearance(notes)
