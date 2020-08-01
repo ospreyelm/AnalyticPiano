@@ -71,7 +71,7 @@ define([
 				];
 
 				_.each(note_tests, function(notes) {
-					var entry = analyze.getIntervalsAboveBass(notes);
+					var entry = analyze.intervals_above_bass(notes);
 					expect(entry).toBe(expected_interval_entry);
 				});
 			});

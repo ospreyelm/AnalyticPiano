@@ -275,7 +275,7 @@ define([
 		drawNoteName: function(x, y) {
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
-			var note_name = this.getAnalyzer().get_note_name(notes);
+			var note_name = this.getAnalyzer().to_note_name(notes);
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
@@ -442,7 +442,7 @@ define([
 		drawRoman: function(x, y) {
 			var key = this.keySignature.getKeyShortName();
 			var notes = this.chord.getNoteNumbers();
-			var chord_entry = this.getAnalyzer().findChord(notes);
+			var chord_entry = this.getAnalyzer().to_chord(notes);
 			var width = 0, offset = 0;
 			var ctx = this.getContext();
 
@@ -525,7 +525,7 @@ define([
 		 */
 		drawInterval: function(x, y) {
 			var notes = this.chord.getNoteNumbers();
-			var interval = this.getAnalyzer().ijNameDegree(notes);
+			var interval = this.getAnalyzer().to_interval(notes);
 			
 			if(interval && interval.name !== '') {
 				var lines = this.wrapText(interval.name);
