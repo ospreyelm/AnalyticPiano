@@ -27,7 +27,7 @@ define([
 		return this.mapNotes(clef, function(noteNum) {
 			var result = {
 				noteNum: noteNum,
-				correctness: this._noteProps[noteNum].correctntess,
+				correctness: this._noteProps[noteNum].correctness,
 				pitchClass: (noteNum % 12),
 				octave: (Math.floor(noteNum / 12) - 1)
 			};

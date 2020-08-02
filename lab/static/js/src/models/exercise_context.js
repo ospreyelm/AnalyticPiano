@@ -423,7 +423,7 @@ define([
 				this.timer.maxTempo = Math.max(... calibratedBeatsPerMinute);
 
 				this.timer.tempoSD = SimpleStatistics.standardDeviation(calibratedBeatsPerMinute);
-				window.console.dir(SimpleStatistics.standardDeviation(calibratedBeatsPerMinute));
+				// window.console.dir(SimpleStatistics.standardDeviation(calibratedBeatsPerMinute));
 				if(!isNaN(this.timer.tempoSD) && !isNaN(this.timer.minTempo)) {
 					var tempo_stability_factor = this.timer.minTempo / (2 * this.timer.tempoSD);
 					if(tempo_stability_factor > 16) {
@@ -437,7 +437,7 @@ define([
 					}else {
 						this.timer.tempoRating = "*";
 					}
-					window.console.dir(this.timer.tempoRating);
+					// window.console.dir(this.timer.tempoRating);
 				}
 			}
 			return this;
