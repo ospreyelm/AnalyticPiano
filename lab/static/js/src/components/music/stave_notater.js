@@ -405,32 +405,33 @@ define([
 					if (line === "5+") return "%";
 					if (line === "4+") return "$";
 					if (line === "2+") return "\"";
-					if (line.slice(0,2) === "##") return "x " + line.slice(2);
-					else if (line.slice(0,1) === "#") return "# " + line.slice(1);
-					if (line.slice(0,2) === "bb") return "a " + line.slice(2);
-					else if (line.slice(0,1) === "b") return "b " + line.slice(1);
-					if (line.slice(0,1) === "n") return "n " + line.slice(1);
+					if (line.slice(0,2) === "##") {
+						return ("x " + line.slice(2)).trim();
+					} else if (line.slice(0,1) === "#") {
+						return ("# " + line.slice(1)).trim();
+					}
+					if (line.slice(0,2) === "bb") {
+						return ("a " + line.slice(2)).trim();
+					} else if (line.slice(0,1) === "b") {
+						return ("b " + line.slice(1)).trim();
+					}
+					if (line.slice(0,1) === "n") {
+						return ("n " + line.slice(1)).trim();
+					}
 					return line;
 				});
-				// var lines = text.replace(/b/g,'♭').replace(/#/g,'♯').split("/");
-				/* also available: this.convertSymbols(text) */
 
 				ctx.font = this.getFiguredBassFont();
-				// ctx.font = '16px ' + ctx.font.split(' ')[-1];
 				x += ctx.measureText("6").width + 6;
 				const skip = this.textLineHeight*0.8;
 
 				for(var i = 0; i < lines.length; i++) {
 					ctx.textAlign = "end";
-					// let hshift = ((lines[i].slice(0,1) == '\u266D') ?
-					// 			  ctx.measureText(text.slice(0,1)).width : 0)
-					// 		    + (lines[i].slice(0,1) == '\u266F' ?
-					// 		   	  ctx.measureText(text.slice(0,1)).width : 0);
 					ctx.fillText(lines[i], x, i*skip+y-18);
 				}
 
-				return ctx.measureText(lines[0]).width; /* return width of the first line */
-				// is the loss of offset information significant?
+				return ctx.measureText(lines[0]).width;
+				/* return width of the first line */
 			});
 		},
 		/**

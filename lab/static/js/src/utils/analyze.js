@@ -649,6 +649,9 @@ var spellingAndAnalysisFunctions = {
                 if (typeof stack == 'string') stack = Array(stack);
                 this.stack = stack;
             }
+            length() {
+                return this.stack.length;
+            }
             extract_nums(arr) {
                 return arr.map( item => item.replace(/[^0-9]+/g, "") );
             }
@@ -683,7 +686,7 @@ var spellingAndAnalysisFunctions = {
             third_as_accidental() {
                 var i, len;
                 for (i = 0, len = this.stack.length; i < len; i++) {
-                    this.stack[i] = this.stack[i].replace(/^([#|n|b]+)3$/, /\1/);
+                    this.stack[i] = this.stack[i].replace(/^([#|n|b]+)3$/, "$1");
                 }
             }
             relativize(num, offset, prefix=null, suffix=null) {
@@ -749,7 +752,7 @@ var spellingAndAnalysisFunctions = {
             stack.parenth("3");
         }
 
-        if (stack.length > 1) {
+        if (stack.length() > 1) {
             stack.third_as_accidental();
         }
 
