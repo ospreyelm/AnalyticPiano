@@ -390,7 +390,7 @@ define([
 		 */
 		drawThoroughbass: function(x, y) {
 			var midi_nums = this.chord.getNoteNumbers();
-			var figure = (this.analyzeConfig.abbreviate_thoroughbass ?
+			var figure = (this.analyzeConfig.mode.abbreviate_thoroughbass ?
 				this.getAnalyzer().abbrev_thoroughbass_figure(midi_nums) :
 				this.getAnalyzer().full_thoroughbass_figure(midi_nums)
 			);

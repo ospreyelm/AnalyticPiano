@@ -262,7 +262,7 @@ define([
 				that.broadcast(EVENTS.BROADCAST.KEYBOARD_SIZE, size);
 			});
 
-			el.append(selectEl).wrapInner("<label>Keyboard size:&emsp;</label>");
+			el.append(selectEl).wrapInner("<label>Piano keys&ensp;</label>");
 		},
 		/**
 		 * Renders the keyboard shorcuts.
@@ -274,7 +274,7 @@ define([
 			var containerEl = this.containerEl;
 			var el = $('.js-keyboardshortcuts', containerEl);
 			var inputEl = $('<input type="checkbox" name="keyboard_shortcuts" value="on" />');
-			el.append("&emsp;Enable QWERTY shortcuts? ").append(inputEl).wrap("<label/>");
+			el.append("Computer keyboard as piano&ensp;").append(inputEl).wrap("<label/>");
 
 			// toggle shortcuts on/off via gui control
 			inputEl.attr('checked', KEYBOARD_SHORTCUTS_ENABLED);

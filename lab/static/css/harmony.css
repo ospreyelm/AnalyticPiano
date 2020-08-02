@@ -36,7 +36,7 @@ body {
     text-align: center;
 }
 body, #mainmenu, #helpmenu {
-    background-color: black;
+    background-color: #335271;
 }
 #mainmenu, #helpmenu {
     background-color: rgba(80,80,80,1);
@@ -364,7 +364,7 @@ ul.menu-group-list li {
 }
 
 .save-icon {
-    background: url(../img/icon-save.png);
+    background: url(../img/icon-save.png); /* Wikimedia commons */
     background-repeat: no-repeat;
     background-size: 25px 25px;
     height: 25px;
@@ -377,6 +377,13 @@ ul.menu-group-list li {
     background-repeat: no-repeat;
     background-size: 25px 25px;
 }
+.sig-lock-block {
+    line-height: 3em;
+    margin-left: 50px;
+}
+.sig-lock-inline {
+    margin: 0 15px;
+}
 /*--------------------------------------------------*/
 /* Custom Icons for this project by Jeff Martini */
 .icon-btn {
@@ -386,23 +393,8 @@ ul.menu-group-list li {
 }
 .icon-btn-left { float: left; }
 .icon-btn-right { float: right; }
-/*.icon-btn-open { background-position: -10px -50px; width: 50px; }
-.icon-btn-open:hover { background-position: -10px -150px; width: 50px; }
-.icon-btn-close { background-position: -110px -50px; width: 50px; }
-.icon-btn-close:hover { background-position: -110px -150px; width: 50px; }
-.icon-btn-info { background-position: -210px -50px; width: 25px; }
-.icon-btn-info:hover { background-position: -210px -150px; width: 25px; }
-.icon-btn-help { background-position: -310px -50px; width: 25px; }
-.icon-btn-help:hover { background-position: -310px -150px; width: 25px; }*/
 .icon-btn-camera { background-position: -410px -50px; width: 50px; }
 .icon-btn-camera:hover { background-position: -410px -150px; width: 50px; }
-.sig-lock-block {
-    line-height: 3em;
-    margin-left: 50px;
-}
-.sig-lock-inline {
-    margin: 0 15px;
-}
 
 /*--------------------------------------------------*/
 /* Classes to be used in conjunction with ionicons
@@ -525,13 +517,9 @@ ul.menu-group-list li {
 }
 .fade-in { opacity: 1; }
 .fade-out { opacity: 0; }
+*/
 
-.qwerty-keyboard-legend {
-    background: url(../img/keyboard-shortcut-legend.png) no-repeat;
-    width: 881px;
-    height: 404px;
-}
-*/.widget-keysignature {
+.widget-keysignature {
     display: inline;
 }
 .widget-keysignature optgroup {

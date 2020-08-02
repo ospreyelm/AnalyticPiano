@@ -27,8 +27,9 @@ define({
 
 	analysisSettings: {
 		enabled: true,
-		abbreviate_thoroughbass: false,
 		mode: {
+			abbreviate_thoroughbass: true,
+			
 			/* max one of the following may be true */
 			note_names: false,
 			scientific_pitch: true,

@@ -10,7 +10,7 @@ define([
 	/**
 	 * Creates an instance of a main menu component.
 	 *
-	 * Intended to be used a sidebar / slideout menu.
+	 * Intended to be used as a dropdown menu.
 	 *
 	 * @constructor
 	 * @param {object} settings

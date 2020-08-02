@@ -42,6 +42,9 @@ define([
 				'<li>',
 					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G)</label>',
 				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_abbreviate_thoroughbass" value="abbreviate_thoroughbass" accesskey="v"> Abbreviate figured bass (V)</label>',
+				'</li>',
 				'</ul>',
 			'</fieldset>'
 		].join(''),
@@ -63,6 +66,12 @@ define([
 				this.state.enabled = e.target.checked;
 				this.trigger('changeCategory', 'analyze', this.state.enabled);
 				this.el.find('input').not('input[name=analysis_enabled]').attr('disabled', !this.state.enabled);
+			},
+			analysis_abbreviate_thoroughbass: function(e) {
+				var opt = e.target.value;
+				this.state.mode[opt] = e.target.checked;
+				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
+				document.getElementById('staff').focus();
 			},
 			analysis_scientific_pitch: function(e) {
 				var opt = e.target.value;
