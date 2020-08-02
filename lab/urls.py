@@ -1,7 +1,7 @@
 from django.urls import include, re_path
 
 from .views import check_course_authorization
-from .views import PlayView, ExerciseView, ManageView
+from .views import PlayView, ExerciseView, ManageView, CourseView
 from .views import APIView, APIExerciseView, APIGroupView
 from lti_tool.views import LTIToolConfigView, LTILaunchView
 
@@ -18,7 +18,8 @@ urlpatterns = [
     re_path(r'^courses/(?P<course_id>\d+)/exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)$', ExerciseView.as_view(), name="course-exercise-groups"),
     re_path(r'^courses/(?P<course_id>\d+)/exercises$', ExerciseView.as_view()),
     re_path(r'^courses/(?P<course_id>\d+)$', PlayView.as_view(), name="course-index"),
-
+    re_path(r'^courses/(?P<course_id>\d+)/course$', CourseView.as_view(), name="course-list"),
+    
     # Non-Course Exercises
     re_path(r'^manage$', ManageView.as_view(), name="manage"),
     re_path(r'^exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)/(?P<exercise_name>\d+)$', ExerciseView.as_view(), name="exercises"),

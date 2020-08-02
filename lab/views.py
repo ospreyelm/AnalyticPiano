@@ -266,3 +266,31 @@ def check_course_authorization(request, course_id, raise_exception=False):
     if not authorized:
         status = 403 # forbidden
     return HttpResponse(json.dumps(result), content_type='application/json', status=status)
+
+
+class CourseView(RequirejsView, LoginRequiredMixin):
+    def get(self, request, course_id=None):
+        er = ExerciseRepository.create(course_id=course_id)
+        context = {"course_label": "", "has_manage_perm": True}
+        manage_params = {"group_list": er.getGroupList()}
+
+        if course_id is None:
+            context['manage_url'] = reverse('lab:manage')
+            context['home_url'] = reverse('lab:index')
+            manage_params['exercise_api_url'] = reverse('lab:api-exercises')
+        else:
+            course_names = LTICourse.getCourseNames(course_id)
+            context['course_label'] = "%s (ID: %s)" % (course_names.get('name'), course_id)
+            context['manage_url'] = reverse('lab:course-manage', kwargs={"course_id":course_id})
+            context['home_url'] = reverse("lab:course-index", kwargs={"course_id":course_id})
+            manage_params['exercise_api_url'] = "%s?%s" % (reverse('lab:api-exercises'), urlencode({"course_id":course_id}))
+
+        self.requirejs_context.set_app_module('app/components/app/manage')
+        self.requirejs_context.set_module_params('app/components/app/manage', manage_params)
+        self.requirejs_context.add_to_view(context)
+        
+        return render(request, "course.html", context)
+
+
+def course_list_view(request):
+    return render(request, "course_list.html", {"list": "courses"})
