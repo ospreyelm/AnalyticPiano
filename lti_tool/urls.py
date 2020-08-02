@@ -4,6 +4,7 @@ from .views import LTILaunchView
 from .views import LTIToolConfigView
 from .views import logout_view
 from .views import logged_out_view
+from .views import course_list_view
 
 
 app_name = 'lti'
