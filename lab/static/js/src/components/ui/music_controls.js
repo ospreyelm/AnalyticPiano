@@ -90,6 +90,7 @@ define([
 
 			$('.js-btn-help', this.headerEl).on('click', this.onClickInfo);
 			$('.js-btn-screenshot').on('mousedown', this.onClickScreenshot);
+			$('.js-btn-download-json').on('mousedown', this.onClickDownloadJSON);
 
 			this.initControlsLayout();
 			this.initKeySignatureTab();
@@ -300,6 +301,18 @@ define([
 			var data_url = $canvas[0].toDataURL();
 			$target[0].href = data_url;
 			$target[0].target = '_blank';
+			return true;
+		},
+		/**
+		 * Handler to download JSON data for the current notation.
+		 *
+		 * @param {object} evt
+		 * @return {boolean} true
+		 */
+		onClickDownloadJSON: function(evt) {
+			var save_me = { "greeting" : "hello", "recipient" : "world" };
+			var blob = new Blob([JSON.stringify(save_me, null, 2)], {type: "application/json;charset=utf-8"});
+			saveAs(blob, "hello world.json");
 			return true;
 		},
 		/**
