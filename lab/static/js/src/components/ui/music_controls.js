@@ -314,9 +314,17 @@ define([
 		 */
 		onClickUploadJSON: function(evt) {
 			var save_me = {
+				"comment": "The data for keySignature, key, and chord are hard coded! This is a test. Also, there should be a mechanism for entering introText and reviewText, for which html is valid input."
+				"keySignature": "b",
+				"key": "jF_",
+				"chord": [
+					{"visible":[60],"hidden":[]},
+					{"visible":[],"hidden":[58]},
+					{"visible":[],"hidden":[57]}
+				],
 				"type": "matching",
-				"introText": "", // capture something (html)
-				"reviewText": "", // capture something (html)
+				"introText": "",
+				"reviewText": "",
 				"staffDistribution": Config.__config.general.staffDistribution,
 				"analysis": Config.__config.general.analysisSettings,
 				"highlight": Config.__config.general.highlightSettings
@@ -337,8 +345,8 @@ define([
 			// console.log(ChordBank);
 			var save_me = {
 				"type": "matching",
-				"introText": "", // capture something (html)
-				"reviewText": "", // capture something (html)
+				"introText": "",
+				"reviewText": "",
 				"staffDistribution": Config.__config.general.staffDistribution,
 				"analysis": Config.__config.general.analysisSettings,
 				"highlight": Config.__config.general.highlightSettings
