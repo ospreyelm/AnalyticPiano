@@ -421,13 +421,15 @@ define([
 					return line;
 				});
 
+				/* ctx.fillStyle = "red"; // test to see if thoroughbass superimposes on staff: it does */
 				ctx.font = this.getFiguredBassFont();
 				x += ctx.measureText("6").width + 6;
 				const skip = this.textLineHeight*0.8;
+				const on_treble = (false ? -180 : 0); /* make conditional on highlight.solobass */
 
 				for(var i = 0; i < lines.length; i++) {
 					ctx.textAlign = "end";
-					ctx.fillText(lines[i], x, i*skip+y-18);
+					ctx.fillText(lines[i], x, i*skip+y-18+on_treble);
 				}
 
 				return ctx.measureText(lines[0]).width;
