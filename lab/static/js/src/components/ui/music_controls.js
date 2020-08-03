@@ -8,6 +8,7 @@ define([
 	'app/utils/instruments',
 	'app/widgets/key_signature',
 	'app/widgets/analyze',
+	'../../models/chord_bank',
 	'app/widgets/highlight'
 ], function(
 	$, 
@@ -19,9 +20,10 @@ define([
 	Instruments,
 	KeySignatureWidget,
 	AnalyzeWidget,
+	ChordBank,
 	HighlightWidget
 ) {
-
+	
 	/**
 	 * Defines the title of the app info modal.
 	 * @type {string}
@@ -91,6 +93,7 @@ define([
 			$('.js-btn-help', this.headerEl).on('click', this.onClickInfo);
 			$('.js-btn-screenshot').on('mousedown', this.onClickScreenshot);
 			$('.js-btn-download-json').on('mousedown', this.onClickDownloadJSON);
+			$('.js-btn-upload-json').on('mousedown', this.onClickUploadJSON);
 
 			this.initControlsLayout();
 			this.initKeySignatureTab();
@@ -304,16 +307,47 @@ define([
 			return true;
 		},
 		/**
+		 * Handler to upload JSON data for the current notation.
+		 *
+		 * @param {object} evt
+		 * @return {boolean} true
+		 */
+		onClickUploadJSON: function(evt) {
+			var save_me = {
+				"type": "matching",
+				"introText": "", // capture something (html)
+				"reviewText": "", // capture something (html)
+				"staffDistribution": Config.__config.general.staffDistribution,
+				"analysis": Config.__config.general.analysisSettings,
+				"highlight": Config.__config.general.highlightSettings
+			}
+			var blob = new Blob([JSON.stringify(save_me, null, 2)], {type: "application/json;charset=utf-8"});
+			console.log(blob);
+			return true;
+
+			// later, we want all these items from Config.__config.general ["analysisSettings","autoExerciseAdvance","bankAfterMetronomeTick","chordBank","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","staffDistribution","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
+		},
+		/**
 		 * Handler to download JSON data for the current notation.
 		 *
 		 * @param {object} evt
 		 * @return {boolean} true
 		 */
 		onClickDownloadJSON: function(evt) {
-			var save_me = { "greeting" : "hello", "recipient" : "world" };
+			// console.log(ChordBank);
+			var save_me = {
+				"type": "matching",
+				"introText": "", // capture something (html)
+				"reviewText": "", // capture something (html)
+				"staffDistribution": Config.__config.general.staffDistribution,
+				"analysis": Config.__config.general.analysisSettings,
+				"highlight": Config.__config.general.highlightSettings
+			}
 			var blob = new Blob([JSON.stringify(save_me, null, 2)], {type: "application/json;charset=utf-8"});
-			saveAs(blob, "hello world.json");
+			saveAs(blob, "exercise_download.json");
 			return true;
+
+			// later, we want all these items from Config.__config.general ["analysisSettings","autoExerciseAdvance","bankAfterMetronomeTick","chordBank","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","staffDistribution","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
 		},
 		/**
 		 * Handler to shows the info modal.
