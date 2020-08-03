@@ -20,5 +20,6 @@ define({
 		"root": [0, 100, 50], // red
 		"modalmixture": [120, 100, 25], // green
 		"lowered": [120, 100, 25], // green
+		"solobass":[100,100,100],// white /* this is the color for the upper parts */
 	}
 });

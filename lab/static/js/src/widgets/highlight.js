@@ -49,8 +49,14 @@ define([
 				'</li>',
 				'<li>',
 					'<label>',
-						'<input type="checkbox" name="highlight_lowered" value="loweredhighlight" accesskey="b"> Lowered pitches (B)',
+						'<input type="checkbox" name="highlight_lowered" value="loweredhighlight" accesskey="p"> Lowered pitches (P)',
 						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.lowered)+'"></div>',
+					'</label>',						
+				'</li>',
+				'<li>',
+					'<label>',
+						'<input type="checkbox" name="highlight_solobass" value="solobass" accesskey="b"> Bass solo (B) / upper parts',
+						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.solobass)+'"></div>',
 					'</label>',						
 				'</li>',
 				'</ul>',
@@ -97,6 +103,11 @@ define([
 				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);				
 			},
 			highlight_doublings: function(e) {
+				var opt = e.target.value;
+				this.state.mode[opt] = e.target.checked;
+				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);				
+			},
+			highlight_solobass: function(e) {
 				var opt = e.target.value;
 				this.state.mode[opt] = e.target.checked;
 				this.trigger('changeOption', 'highlight', opt, this.state.mode[opt]);				

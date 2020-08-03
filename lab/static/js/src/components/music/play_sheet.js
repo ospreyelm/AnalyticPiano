@@ -175,17 +175,17 @@ define([
 				count: items.length,
 				maxCount: CHORD_BANK_SIZE
 			};
-			var staves = [];
+			var staves = []; /* the successive items of this array will correspond to measures */
 
-			// the first stave bar is a special case: it's reserved to show the
-			// clef and key signature and nothing else
+			/* the first vexflow measure is a special case: it is reserved to
+			 * show the clef and key signature and nothing else */
 			var treble = this.createDisplayStave('treble', _.clone(position));
 			var bass = this.createDisplayStave('bass', _.clone(position));
 			position.index += 1;
 			treble.connect(bass);
 			staves.push(treble);
 
-			// now add the staves for showing the notes
+			/* add the subsequent measures */
 			for(var i = 0; i < items.length; i++) {
 				let chord = items[i].chord;
 				let isBanked = items[i].isBanked;

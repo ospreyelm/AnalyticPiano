@@ -52,6 +52,7 @@ define({
 			doublinghighlight: true,
 			modalmixturehighlight: true, /* minor mixture in a major key */
 			loweredhighlight: false, /* shifted flatwise enharmonically */
+			solobass: false,
 			octaveshighlight: false /* not recommended, hidden from UI */
 		}
 	},
