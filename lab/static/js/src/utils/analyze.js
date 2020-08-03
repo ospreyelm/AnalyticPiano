@@ -721,6 +721,8 @@ var spellingAndAnalysisFunctions = {
         stack.relativize(5, 1);
         stack.relativize(6, 1);
 
+        stack.parenth("8");
+
         if (stack.matches(["7","5","3"], "nums")) {
             stack.parenth("5");
             stack.parenth("3","[5]");
