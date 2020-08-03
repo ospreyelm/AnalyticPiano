@@ -314,7 +314,7 @@ define([
 		 */
 		onClickUploadJSON: function(evt) {
 			var save_me = {
-				"comment": "The data for keySignature, key, and chord are hard coded! This is a test. Also, there should be a mechanism for entering introText and reviewText, for which html is valid input."
+				"comment": "The data for keySignature, key, and chord are hard coded! This is a test. Also, there should be a mechanism for entering introText and reviewText, for which html is valid input.",
 				"keySignature": "b",
 				"key": "jF_",
 				"chord": [
