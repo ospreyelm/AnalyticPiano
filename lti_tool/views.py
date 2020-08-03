@@ -15,6 +15,9 @@ def logout_view(request):
 def logged_out_view(request):
     return HttpResponse('Logged out successfully.')
 
+def course_list_view(request):
+    render(request, "course_list.html", '')
+
 class LTILaunchView(CsrfExemptMixin, LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         '''Shows an error message because LTI launch requests must be POSTed.'''

@@ -1,0 +1,40 @@
+<!-- Work in progress. In-browser exercise management not yet a feature. -->
+
+{% extends "__base.html" %}
+
+{% block js_extra %}
+<script>
+require(['app/main']);
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="navbar" style="color:rgb(172, 165, 165)">
+	<a href="/" >Lab</a>
+	<a href="/courses">Course List</a>
+	{% if user.is_authenticated %}
+	<a href="/accounts/logout">Logout</a>
+	{% else %}
+	<a href="/accounts/login">Login</a>
+	<a href="/register/">Register</a>
+	{% endif %}
+</div>
+<div id="container">
+	{% include "_header.html" %}
+	{% include "_menu.html" %}
+	{% include "_notifications.html" %}
+	<div class="content-area" style="padding: 1em 1em 2em 1em">
+		<h1>Navigate current course</h1>
+		{% if course_label|length %}<div style="color: #666">{{course_label}}</div>{% endif %}
+		<div id="managetabs">
+			<ul>
+				<li><a href="#tab-exercise-list">List of Exercises</a></li>
+			</ul>
+			</div>
+			<div id="tab-exercise-list">
+			</div>
+		</div>
+	</div>
+	{% include "_footer.html" %}
+</div>
+{% endblock %}

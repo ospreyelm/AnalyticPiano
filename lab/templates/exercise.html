@@ -5,6 +5,22 @@
 {% endblock %}
 
 {% block content %}
+<div class="navbar" style="color:rgb(172, 165, 165)">
+	<a href="/" >Lab</a>
+	<a href="/courses">Course List</a>
+	{% if user.is_authenticated %}
+	<a href="/accounts/logout">Logout</a>
+	{% else %}
+	<a href="/accounts/login">Login</a>
+	<a href="/register/">Register</a>
+	{% endif %}
+</div>
+{% if user.is_authenticated %}
+<p style="color:white;">Welcome, {{ user.username }}. Thanks for logging in.</p>
+{% else %}
+<p style="color:white;">Welcome, new user. Please log in.</p>
+{% endif %}
+
 <div id="container" class="js-fade-in fade" style="opacity: 0;">
     {% include "_header_music.html" %}
 	{% include "_menu_music.html" %}

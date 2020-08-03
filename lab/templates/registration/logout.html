@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>this is a test login page</h1>
+<p>Please log in</p>
+
+</body>
+
+{% block content %}
+  <p>Logged out!</p>  
+  <a href="{% url 'login'%}">Click here to login again.</a>
+{% endblock %}
+
+</html>
