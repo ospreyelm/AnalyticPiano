@@ -1,6 +1,8 @@
 # Base requirements
 Django==2.2.13
 django-braces==1.13.0   # Django view mixins
+django-nested-admin==3.3.2
+django-prettyjson==0.4.1
 gunicorn==20.0.4        # Python WSGI server
 whitenoise==5.1.0       # Python WSGI static files
 

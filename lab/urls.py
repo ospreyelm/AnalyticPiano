@@ -1,10 +1,16 @@
 from django.urls import include, re_path
 
-from .views import check_course_authorization
-from .views import PlayView, ExerciseView, ManageView
-from .views import APIView, APIExerciseView, APIGroupView
+from .views import (
+    check_course_authorization,
+    CourseExerciseView,
+    PlayView,
+    ExerciseView,
+    ManageView,
+    APIView,
+    APIExerciseView,
+    APIGroupView
+)
 from lti_tool.views import LTIToolConfigView, LTILaunchView
-
 
 app_name = 'lab'
 
@@ -18,6 +24,9 @@ urlpatterns = [
     re_path(r'^courses/(?P<course_id>\d+)/exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)$', ExerciseView.as_view(), name="course-exercise-groups"),
     re_path(r'^courses/(?P<course_id>\d+)/exercises$', ExerciseView.as_view()),
     re_path(r'^courses/(?P<course_id>\d+)$', PlayView.as_view(), name="course-index"),
+
+    # FIXME should be added to a course: ^courses/(?P<course_id>\d+)/exercises/add/$?
+    re_path(r'^exercises/add$', CourseExerciseView.as_view(), name='add-exercise'),
 
     # Non-Course Exercises
     re_path(r'^manage$', ManageView.as_view(), name="manage"),
