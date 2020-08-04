@@ -11,6 +11,7 @@ gunicorn = "==20.0.4"
 whitenoise = "==5.1.0"
 django-auth-lti = {git = "https://github.com/Harvard-University-iCommons/django-auth-lti.git", ref = "v2.0.2"}
 Django = "==2.2.13"
+django-nested-admin = "==3.3.2"
 lti = "==0.9.4"
 
 [requires]
