@@ -724,11 +724,12 @@ var spellingAndAnalysisFunctions = {
         var stack = new Stack(intervals.map(item => item[0]));
         /*---------*/
 
+        stack.parenth("8");
+        stack.expunge_parenthesized()
+        
         stack.relativize(4, 1);
         stack.relativize(5, 1);
         stack.relativize(6, 1);
-
-        stack.parenth("8");
 
         if (stack.matches(["7","5","3"], "nums")) {
             stack.parenth("5");
