@@ -153,6 +153,8 @@ INSTALLED_APPS = (
     'lab',
     'lti_tool',
     'jasmine',
+    'nested_admin',
+    'prettyjson',
 )
 
 DATABASES = {
