@@ -50,6 +50,14 @@
             "index": "pypi",
             "version": "==1.13.0"
         },
+        "django-nested-admin": {
+            "hashes": [
+                "sha256:2e6706050057f5dc5664bc90d034d4ed9e3ae032ead6b063da9982c9e45ab7f3",
+                "sha256:7ec58af67107e6d7b2d0fd4fe03629eff8f7957c4aef5033c4700da1bd2d7870"
+            ],
+            "index": "pypi",
+            "version": "==3.3.2"
+        },
         "gunicorn": {
             "hashes": [
                 "sha256:1904bb2b8a43658807108d59c3f3d56c2b6121a701161de0ddf9ad140073c626",
