@@ -41,6 +41,7 @@ To create an admin account for creating course and exercise data, use the Heroku
 
 ```bash
 $ heroku login # one-time setup
-$ heroku run python manage.py migrate --app HEROKU_APP_NAME # heroku apps to see app names for your login
+$ heroku apps # view app names for your login
+$ heroku run python manage.py migrate --app HEROKU_APP_NAME
 $ heroku run python manage.py createsuperuser --app HEROKU_APP_NAME
 ```
