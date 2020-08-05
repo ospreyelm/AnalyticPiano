@@ -26,8 +26,7 @@ This application can be deployed to any platform that supports python and django
 [heroku](https://heroku.com/), a cloud platform as a service provider, which makes it easy to deploy changes
 directly from the git repository. 
 
-Read the [Getting Started on Heroku with Python](https://devcenter.heroku.com/articles/getting-started-with-python#introduction)
-instructions to get an idea of how it works. You will need to setup an account login and then create an "app".
+Create a Heroku app with the Python buildpack and the Herok Postgres add-on. Deploy from the desired branch of this Github repository; automatic deploys are good for testing the basic playing interface, but these should be disabled when creating course and exercise data.
 
 The required  **Config Variables** that should be added on the app settings page are as follows:
 
@@ -35,18 +34,13 @@ The required  **Config Variables** that should be added on the app settings page
 SECRET_KEY = YOUR_RANDOM_LONG_PASSWORD
 DJANGO_SETTINGS_MODULE = harmony.settings.heroku
 ALLOWED_HOSTS = ["yoururl.com"]
-LTI_OAUTH_CREDENTIALS = {"harmonykey":"harmonysecret"}
+LTI_OAUTH_CREDENTIALS = {"your_lti_key":"your_lti_secret"}
 ```
 
-In the root directory of the git repo, use the heroku CLI to login and then deploy the code to heroku:
+To create an admin account for creating course and exercise data, use the Heroku CLI as follows:
 
 ```bash
-$ heroku login
-$ git push heroku master
-```
-
-If the build succeeded, you should be able to visit the webpage of the app. Heroku provides a handy shortcut:
-
-```bash
-$ heroku open
+$ heroku login # one-time setup
+$ heroku run python manage.py migrate --app HEROKU_APP_NAME # heroku apps to see app names for your login
+$ heroku run python manage.py createsuperuser --app HEROKU_APP_NAME
 ```
