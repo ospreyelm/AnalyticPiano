@@ -151,7 +151,8 @@ define([
 					} else {
 						$(device.selector).on('change', function() {
 							var index = parseInt($(this).val(), 10);
-							midiDevice[type=='input'?'selectInput':'selectOutput'](index);
+							var inputs = this.length; /* this is the number of available devices */
+							midiDevice[type=='input'?'selectInput':'selectOutput'](index, inputs);
 						});
 					}
 				});
@@ -189,6 +190,7 @@ define([
 			var highlightSettings = {};
 			var staffDistribution = {};
 			if(this.exerciseContext) {
+				/* TO DO: grab additional settings */
 				analysisSettings = this.exerciseContext.getDefinition().getAnalysisSettings();
 				highlightSettings = this.exerciseContext.getDefinition().getHighlightSettings();
 				staffDistribution = this.exerciseContext.getDefinition().getStaffDistribution();

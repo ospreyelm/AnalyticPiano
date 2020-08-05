@@ -4,7 +4,8 @@
 /* global define: false */
 define({
 	defaultKeyboardSize: 49, /* key count */
-	staffDistribution: ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias"][0],
+	maskTrebleStaff: false, /* copy this boolean as conditional on following line */
+	staffDistribution: (false ? "LH" : ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias"][0]),
 	voiceCountForKeyboardStyle: [2, 3, 4],
 	voiceCountForChoraleStyle: [4],
 	defaultNoteColor: "rgb(180,180,180)", /* gray */

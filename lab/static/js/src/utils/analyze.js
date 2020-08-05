@@ -725,7 +725,7 @@ var spellingAndAnalysisFunctions = {
         /*---------*/
 
         stack.parenth("8");
-        stack.expunge_parenthesized()
+        stack.expunge_parenthesized();
         
         stack.relativize(4, 1);
         stack.relativize(5, 1);

@@ -3,6 +3,7 @@ define([
 	'lodash', 
 	'vexflow',
 	'microevent',
+    'app/config', /* added for general.maskTrebleStaff property only */
 	'app/util',
 	'app/utils/analyze',
 	'app/utils/fontparser'
@@ -10,11 +11,16 @@ define([
 	_, 
 	Vex, 
 	MicroEvent,
+	Config,
 	util, 
 	Analyze,
 	FontParser
 ) {
 	"use strict";
+
+	/* hack for bass staff only added 2020 */
+	var MASK_TREBLE = false; // Config.get('general.maskTrebleStaff');
+	// also masks thoroughbass figures
 
 	/**
 	 * Defines an image of a metronome that may be rendered to a canvas element.
@@ -424,12 +430,12 @@ define([
 				/* ctx.fillStyle = "red"; // test to see if thoroughbass superimposes on staff: it does */
 				ctx.font = this.getFiguredBassFont();
 				x += ctx.measureText("6").width + 6;
-				const skip = this.textLineHeight*0.8;
-				const on_treble = (false ? -180 : 0); /* make conditional on highlight.solobass */
+				const skip = this.textLineHeight*0.8*(MASK_TREBLE ? -1 : 1);
+				const vshift = (MASK_TREBLE ? -158 : -18);
 
 				for(var i = 0; i < lines.length; i++) {
 					ctx.textAlign = "end";
-					ctx.fillText(lines[i], x, i*skip+y-18+on_treble);
+					ctx.fillText(lines[i], x, i*skip+y+vshift);
 				}
 
 				return ctx.measureText(lines[0]).width;
@@ -742,6 +748,20 @@ define([
 		notateStave: function() {
 			var x = this.getX();
 			var y = this.getY();
+
+			if (MASK_TREBLE) {
+				var ctx = this.getContext();
+				Config.get('general.staffDistribution');
+
+				ctx.fillStyle = 'rgb(238, 238, 221)';
+				ctx.beginPath();
+				ctx.rect(0, 95, 800, 41);
+				ctx.rect(0, 95, 21, 123);
+				ctx.rect(22, 80, 30, 71);
+				ctx.fill();
+				
+				ctx.fillStyle = 'black';
+			}
 
 			if(this.stave.isFirstBar()) {
 				this.drawMetronomeMark(x, y);
