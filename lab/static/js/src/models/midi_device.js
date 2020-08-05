@@ -16,7 +16,7 @@ define([
 	 *
 	 * @mixes MicroEvent
 	 * @fires updated when the list of devices is updated or changed
-	 * @fires cleared when the lsit of devices is cleared
+	 * @fires cleared when the list of devices is cleared
 	 * @constructor
 	 */
 	var MidiDevice = function() {
@@ -28,6 +28,9 @@ define([
 		this._outputidx = false;
 		_.bindAll(this, ['handleMIDIMessage','update']);
 	};
+	/**
+	 * Initialize parameters for Tone.js
+	 */
 	var vol = new Tone.Volume(-12).toMaster();
 	var polySynth = new Tone.PolySynth(10, Tone.FMSynth);
 	polySynth.connect(vol);
@@ -63,6 +66,7 @@ define([
 	 * @param {array} outputs
 	 * @return undefined
 	 */
+
 	MidiDevice.prototype.setSources = function(inputs, outputs) {
 		this.inputs = inputs || [];
 		this.outputs = outputs || [];
@@ -92,16 +96,18 @@ define([
 	 * @param {number} index
 	 * @return array
 	 */
-	MidiDevice.prototype.selectInput = function(index) {
-		if(this.isValidSelection(this.inputs, index)) {
-			this._inputidx = index;
-			this._input = this.inputs[index];
-			this.clearInputListeners();
-			this.addInputListener();
-			return true;
+	MidiDevice.prototype.selectInput = function(index, inputs) {
+		for (i = 0, len = inputs.length; i < len; i++) {
+			if(this.isValidSelection(this.inputs, i)) {
+				this._inputidx = i;
+				this._input = this.inputs[i];
+				// this.clearInputListeners(); 
+				/* previously selected index as input device and cleared other listeners, now selects all inputs */
+				this.addInputListener();
+			}
 		}
-		return false;
-	};
+		return true;
+};
 
 	/**
 	 * Selects an output device to be used.
@@ -122,10 +128,11 @@ define([
 	 * Selects the default input/output devices.
 	 *
 	 * @return undefined
-	 */
-	MidiDevice.prototype.selectDefaults = function() {
-		this.selectInput(0);
-		this.selectOutput(0);
+	 *
+	 */ 
+	MidiDevice.prototype.selectDefaults = function(input) {
+		this.selectInput(0, input); /* previously selectInput(0), now sending all inputs*/
+		this.selectOutput(0, input); 
 	};
 
 	/**
@@ -201,21 +208,30 @@ define([
 	 * @return undefined
 	 */
 	MidiDevice.prototype.sendMIDIMessage = function(msg) {
-        var note = teoria.note.fromMIDI(msg[1]);
-        var accidental = note.accidental();
+	
+	// Uncomment following 3 lines to use real midi output devices
+
 		// if(this._output) {
 		// 	this._output.send(msg);
 		// }
-        // July 7 2020 - Maybe I should start by adding this? Then instead of sending it to the port, maybe I can convert it and send to tone?
+
+		// Tone js synth ouput instead
+
+		// Convert MIDI number to a pitch name
+		var note = teoria.note.fromMIDI(msg[1]);
+		// Get the accidental
+		var accidental = note.accidental();
+		
+		// NoteOn
 	if (msg[0] == 144) {
-		console.log("midi message is", msg);
-	    console.log("note is", note.name() + accidental);
+		// console.log("midi message is", msg);
+	    // console.log("note is", note.name() + accidental);
         polySynth.triggerAttack(note.name() + accidental + note.octave());    
 	}
 
+		// NoteOff
 	if (msg[0] == 128) {
-		console.log("midi message is", msg) 
-
+		// console.log("midi message is", msg) 
 		polySynth.triggerRelease(note.name() + accidental + note.octave());
 	}
 	};
