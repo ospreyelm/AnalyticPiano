@@ -8,8 +8,6 @@ define([
 	'app/utils/instruments',
 	'app/widgets/key_signature',
 	'app/widgets/analyze',
-	'app/models/chord_bank',
-	'app/utils/analyze',
 	'app/widgets/highlight'
 ], function(
 	$, 
@@ -21,8 +19,6 @@ define([
 	Instruments,
 	KeySignatureWidget,
 	AnalyzeWidget,
-	ChordBank,
-	Analyze,
 	HighlightWidget
 ) {
 	
@@ -317,35 +313,19 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickUploadJSON: function(evt) {
-			var save_me = {
-				"comment": "The data for keySignature, key, and chord are hard coded! This is a test. Also, there should be a mechanism for entering introText and reviewText, for which html is valid input.",
-				"keySignature": "b",
-				"key": "jF_",
-				"chord": [
-					{"visible":[60],"hidden":[]},
-					{"visible":[],"hidden":[58]},
-					{"visible":[],"hidden":[57]}
-				],
-				"type": "matching",
-				"introText": "",
-				"reviewText": "",
-				"staffDistribution": Config.__config.general.staffDistribution,
-				"analysis": {},
-				"highlight": {}
-			}
-			var blob = new Blob([JSON.stringify(save_me, null, 2)], {type: "application/json;charset=utf-8"});
-			console.log(blob);
-
+			const json_data = sessionStorage.getItem('current_state')
+				|| false;
+			console.log("upload", json_data);
+			if (!json_data /* || json_data["chords"].length < 1 */) return false;
+			
 			$.ajax({
-                type: "POST",
-                url: 'exercises/add',
-                data: {'data': JSON.stringify(save_me)},
-                dataType: 'json',
-            });
-
+				type: "POST",
+				url: 'exercises/add',
+				data: {'data': json_data},
+				dataType: 'json',
+			});
+			
 			return true;
-
-			// later, we want all these items from Config.__config.general (or UI) too ["autoExerciseAdvance","bankAfterMetronomeTick","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
 		},
 		/**
 		 * Handler to download JSON data for the current notation.
@@ -354,27 +334,15 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickDownloadJSON: function(evt) {
-			var save_me = {
-				"comment": "The data for keySignature, key, and chord are hard coded! This is a test. Also, there should be a mechanism for entering introText and reviewText, for which html is valid input.",
-				"keySignature": "b",
-				"key": "jF_",
-				"chord": [
-					{"visible":[60],"hidden":[]},
-					{"visible":[],"hidden":[58]},
-					{"visible":[],"hidden":[57]}
-				],
-				"type": "matching",
-				"introText": "",
-				"reviewText": "",
-				"staffDistribution": Config.__config.general.staffDistribution,
-				"analysis": {},
-				"highlight": {}
-			}
-			var blob = new Blob([JSON.stringify(save_me, null, 2)], {type: "application/json;charset=utf-8"});
-			saveAs(blob, "exercise_download.json");
-			return true;
+			const json_data = sessionStorage.getItem('current_state')
+				|| false;
+			console.log("download", json_data);
+			if (!json_data /* || json_data["chords"].length < 1 */) return false;
 
-			// later, we want all these items from Config.__config.general (or UI) too ["autoExerciseAdvance","bankAfterMetronomeTick","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
+			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
+			saveAs(blob, "exercise_download.json");
+			
+			return true;
 		},
 		/**
 		 * Handler to shows the info modal.
