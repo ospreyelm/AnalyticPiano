@@ -339,9 +339,9 @@ define([
 				"analysis": this.parentComponent.analyzeConfig,
 				"highlight": this.parentComponent.highlightConfig
 			}, null, 2);
-			// console.log(save_me);
+			console.log(save_me);
 
-			var blob = new Blob([save_me], {type: "application/json;charset=utf-8"});
+			// var blob = new Blob([save_me], {type: "application/json;charset=utf-8"});
 			return true;
 		},
 	});
