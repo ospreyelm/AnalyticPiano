@@ -335,14 +335,6 @@ define([
 			}
 			var blob = new Blob([JSON.stringify(save_me, null, 2)], {type: "application/json;charset=utf-8"});
 			console.log(blob);
-
-			$.ajax({
-                type: "POST",
-                url: 'exercises/add',
-                data: {'data': JSON.stringify(save_me)},
-                dataType: 'json',
-            });
-
 			return true;
 
 			// later, we want all these items from Config.__config.general (or UI) too ["autoExerciseAdvance","bankAfterMetronomeTick","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
