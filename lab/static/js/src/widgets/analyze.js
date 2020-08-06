@@ -4,7 +4,12 @@ define([
 	'jquery', 
 	'microevent',
 	'app/config'
-], function(_, $, MicroEvent, Config) {
+], function(
+	_,
+	$,
+	MicroEvent,
+	Config
+) {
 	"use strict";
 
 	var ANALYSIS_SETTINGS = Config.get('general.analysisSettings');

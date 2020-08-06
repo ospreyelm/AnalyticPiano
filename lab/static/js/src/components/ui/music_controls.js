@@ -8,7 +8,8 @@ define([
 	'app/utils/instruments',
 	'app/widgets/key_signature',
 	'app/widgets/analyze',
-	'../../models/chord_bank',
+	'app/models/chord_bank',
+	'app/utils/analyze',
 	'app/widgets/highlight'
 ], function(
 	$, 
@@ -21,6 +22,7 @@ define([
 	KeySignatureWidget,
 	AnalyzeWidget,
 	ChordBank,
+	Analyze,
 	HighlightWidget
 ) {
 	
@@ -328,14 +330,14 @@ define([
 				"introText": "",
 				"reviewText": "",
 				"staffDistribution": Config.__config.general.staffDistribution,
-				"analysis": Config.__config.general.analysisSettings,
-				"highlight": Config.__config.general.highlightSettings
+				"analysis": {},
+				"highlight": {}
 			}
 			var blob = new Blob([JSON.stringify(save_me, null, 2)], {type: "application/json;charset=utf-8"});
 			console.log(blob);
 			return true;
 
-			// later, we want all these items from Config.__config.general ["analysisSettings","autoExerciseAdvance","bankAfterMetronomeTick","chordBank","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","staffDistribution","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
+			// later, we want all these items from Config.__config.general (or UI) too ["autoExerciseAdvance","bankAfterMetronomeTick","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
 		},
 		/**
 		 * Handler to download JSON data for the current notation.
@@ -344,20 +346,27 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickDownloadJSON: function(evt) {
-			// console.log(ChordBank);
 			var save_me = {
+				"comment": "The data for keySignature, key, and chord are hard coded! This is a test. Also, there should be a mechanism for entering introText and reviewText, for which html is valid input.",
+				"keySignature": "b",
+				"key": "jF_",
+				"chord": [
+					{"visible":[60],"hidden":[]},
+					{"visible":[],"hidden":[58]},
+					{"visible":[],"hidden":[57]}
+				],
 				"type": "matching",
 				"introText": "",
 				"reviewText": "",
 				"staffDistribution": Config.__config.general.staffDistribution,
-				"analysis": Config.__config.general.analysisSettings,
-				"highlight": Config.__config.general.highlightSettings
+				"analysis": {},
+				"highlight": {}
 			}
 			var blob = new Blob([JSON.stringify(save_me, null, 2)], {type: "application/json;charset=utf-8"});
 			saveAs(blob, "exercise_download.json");
 			return true;
 
-			// later, we want all these items from Config.__config.general ["analysisSettings","autoExerciseAdvance","bankAfterMetronomeTick","chordBank","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","staffDistribution","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
+			// later, we want all these items from Config.__config.general (or UI) too ["autoExerciseAdvance","bankAfterMetronomeTick","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
 		},
 		/**
 		 * Handler to shows the info modal.

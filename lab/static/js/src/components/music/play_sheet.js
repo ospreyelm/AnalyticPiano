@@ -307,9 +307,43 @@ define([
 		 * @return undefined
 		 */
 		onChordsUpdate: function() {
+			this.dataForSave(); /* for development */
 			this.updateStaves();
 			this.render();
-		}
+		},
+		
+		/* For development only: these are the properties to save with MusicControlsComponent.onClickDownloadJSON and .onClickUploadJSON */
+		dataForSave: function() {
+			const objs = this.chords._items.map(items => items._notes);
+			let chords = [];
+			let i, len;
+			for (i = 0, len = objs.length-1; i < len; i++) {
+				let obj = objs[i]
+				let keys = Object.keys(obj);
+				let visible = keys.filter(function(key) {
+				    return obj[key]
+				}).map(key => parseInt(key));
+				let hidden = [];
+				chords.unshift({"visible":visible,"hidden":hidden});
+			}
+
+			const save_me = JSON.stringify({
+				"tempo": this.parentComponent.analyzeConfig.tempo,
+				"keySignature": this.keySignature.signatureSpec,
+				"key": this.keySignature.key,
+				"chord": chords,
+				"type": "matching",
+				"introText": "",
+				"reviewText": "",
+				// "staffDistribution": Config.__config.general.staffDistribution,
+				"analysis": this.parentComponent.analyzeConfig,
+				"highlight": this.parentComponent.highlightConfig
+			}, null, 2);
+			// console.log(save_me);
+
+			var blob = new Blob([save_me], {type: "application/json;charset=utf-8"});
+			return true;
+		},
 	});
 
 	return PlaySheetComponent;

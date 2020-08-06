@@ -3,7 +3,7 @@ define([
 	'lodash', 
 	'vexflow',
 	'microevent',
-    'app/config', /* added for general.maskTrebleStaff property only */
+	'app/config', /* only for declaring MASK_TREBLE */
 	'app/util',
 	'app/utils/analyze',
 	'app/utils/fontparser'
@@ -11,7 +11,7 @@ define([
 	_, 
 	Vex, 
 	MicroEvent,
-	Config,
+	Config, /* only for declaring MASK_TREBLE */
 	util, 
 	Analyze,
 	FontParser
@@ -19,8 +19,8 @@ define([
 	"use strict";
 
 	/* hack for bass staff only added 2020 */
-	var MASK_TREBLE = false; // Config.get('general.maskTrebleStaff');
-	// also masks thoroughbass figures
+	/* not ready: also masks thoroughbass figures */
+	var MASK_TREBLE = Config.get('general.maskTrebleStaff');
 
 	/**
 	 * Defines an image of a metronome that may be rendered to a canvas element.
@@ -751,7 +751,6 @@ define([
 
 			if (MASK_TREBLE) {
 				var ctx = this.getContext();
-				Config.get('general.staffDistribution');
 
 				ctx.fillStyle = 'rgb(238, 238, 221)';
 				ctx.beginPath();
@@ -759,7 +758,7 @@ define([
 				ctx.rect(0, 95, 21, 123);
 				ctx.rect(22, 80, 30, 71);
 				ctx.fill();
-				
+
 				ctx.fillStyle = 'black';
 			}
 
