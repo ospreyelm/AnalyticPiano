@@ -1,7 +1,12 @@
 # Base requirements
 Django==2.2.13
+dj-database-url==0.5.0
 django-braces==1.13.0   # Django view mixins
+django-nested-admin==3.3.2
+django-prettyjson==0.4.1
 gunicorn==20.0.4        # Python WSGI server
+psycopg2==2.8.5
+psycopg2-binary==2.8.5
 whitenoise==5.1.0       # Python WSGI static files
 
 # Additional requirements
