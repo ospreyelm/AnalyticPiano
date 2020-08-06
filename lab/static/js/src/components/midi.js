@@ -34,11 +34,11 @@ define([
 	 * Maps MIDI message commands to their numerical codes
 	 */
 	var MIDI_MSG_MAP = {
-		NOTE_OFF : 0x80, //128
-		NOTE_ON : 0x90, //144
-		POLY_PRESSURE : 0xA0, //160
-		CONTROL_CHANGE : 0xB0, //176
-		PROGRAM_CHANGE : 0xC0, //192
+		NOTE_OFF : [0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8A,0x8B,0x8C,0x8D,0x8E,0x8F], // 128-143
+		NOTE_ON : [0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9A,0x9B,0x9C,0x9D,0x9E,0x9F], // 144-159
+		POLY_PRESSURE : 0xA0, // 160
+		CONTROL_CHANGE : 0xB0, // 176
+		PROGRAM_CHANGE : 0xC0, // 192
 	};
 	/**
 	 * Maps MIDI control numbers to names and vice versa for lookup
@@ -173,7 +173,7 @@ define([
 				var outputs = Array.from(MIDIAccess.outputs.values());
 				this.clear();
 				this.setSources(inputs, outputs);
-				this.selectDefaults();
+				this.selectDefaults(inputs);
 			});
 			this.updateDevices();
 			this.initListeners();
@@ -358,26 +358,24 @@ define([
 		 */
 		onMidiMessage: function(msg) {
 			var command = msg.data[0];
-
 			// SPECIAL CASE: "note on" with 0 velocity implies "note off"
-			if(command === MIDI_MSG_MAP.NOTE_ON && !msg.data[2]) {
-				command = MIDI_MSG_MAP.NOTE_OFF;
+			if(MIDI_MSG_MAP.NOTE_ON.indexOf(command) !== -1 && !msg.data[2]) {
+				command = MIDI_MSG_MAP.NOTE_OFF[MIDI_MSG_MAP.NOTE_ON.indexOf(command)];
 			}
 
-			switch(command) {
-				case MIDI_MSG_MAP.NOTE_ON:
-					this.triggerNoteOn(msg.data[1], msg.data[2]);
-					break;
-				case MIDI_MSG_MAP.NOTE_OFF:
-					this.triggerNoteOff(msg.data[1], msg.data[2]);
-					break;
-				case MIDI_MSG_MAP.CONTROL_CHANGE:
-					if(this.isPedalControlChange(msg.data[1])) {
-						this.triggerPedalChange(msg.data[1], msg.data[2]);
-					}
-					break;
-				default:
-					console.log("midi message not handled: ", msg);
+			if (MIDI_MSG_MAP.NOTE_ON.indexOf(command) !== -1) {
+				this.triggerNoteOn(msg.data[1], msg.data[2]);
+			}
+			else if (MIDI_MSG_MAP.NOTE_OFF.indexOf(command) !== -1) {
+				this.triggerNoteOff(msg.data[1], msg.data[2]);
+			}
+			else if (MIDI_MSG_MAP.CONTROL_CHANGE === command) {
+				if(this.isPedalControlChange(msg.data[1])) {
+					this.triggerPedalChange(msg.data[1], msg.data[2]);
+				}
+			}
+			else {
+				console.log("midi message not handled: ", msg);
 			}
 		},
 		/**
@@ -390,7 +388,8 @@ define([
 		 * @return undefined
 		 */
 		onNoteChange: function(noteState, noteNumber, extra) {
-			var command = (noteState === 'on' ? MIDI_MSG_MAP.NOTE_ON : MIDI_MSG_MAP.NOTE_OFF);
+			var channel_idx = this.midiChannel - 1;
+			var command = (noteState === 'on' ? MIDI_MSG_MAP.NOTE_ON[channel_idx] : MIDI_MSG_MAP.NOTE_OFF[channel_idx]);
 			this.toggleNote(noteState, noteNumber, extra);
 			this.sendMIDIMessage(command, noteNumber, this.noteVelocity);
 		},
@@ -474,10 +473,11 @@ define([
 		 * @return undefined
 		 */
 		sendAllNotesOff: function() {
+			var channel_idx = this.midiChannel - 1;
 			var notes = this.chords.getAllNotes();
 			var noteVelocity = this.noteVelocity;
 			for(var i = 0, len = notes.length; i < len; i++) {
-				this.sendMIDIMessage(MIDI_MSG_MAP.NOTE_OFF, notes[i], noteVelocity);
+				this.sendMIDIMessage(MIDI_MSG_MAP.NOTE_OFF[channel_idx], notes[i], noteVelocity);
 			}
 		},
 		/**

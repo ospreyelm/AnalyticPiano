@@ -1,5 +1,13 @@
 /* global define:false */
-define(['lodash', 'jquery', 'app/config'], function(_, $, Config) {
+define([
+	'lodash',
+	'jquery',
+	'app/config'
+], function(
+	_,
+	$,
+	Config
+) {
 	"use strict";
 
 	var KEY_MAP = Config.get('general.keyMap');

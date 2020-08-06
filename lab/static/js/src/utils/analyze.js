@@ -495,6 +495,13 @@ var spellingAndAnalysisFunctions = {
         /* Color in pitches on the sheet music to highlight musical phenomena. */
 
         var i, len;
+        if (this.Piano.highlightMode["solobass"]) {
+            if (note == notes[0]) {
+                return "";
+            } else {
+                return "white";
+            }
+        }
         if (this.Piano.highlightMode["roothighlight"]) {
             if ( _.contains(this.instances_of_root(notes), note) ) return "red";
         }
@@ -717,6 +724,9 @@ var spellingAndAnalysisFunctions = {
         var stack = new Stack(intervals.map(item => item[0]));
         /*---------*/
 
+        stack.parenth("8");
+        stack.expunge_parenthesized();
+        
         stack.relativize(4, 1);
         stack.relativize(5, 1);
         stack.relativize(6, 1);

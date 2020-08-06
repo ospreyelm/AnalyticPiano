@@ -4,7 +4,8 @@
 /* global define: false */
 define({
 	defaultKeyboardSize: 49, /* key count */
-	staffDistribution: ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias"][0],
+	maskTrebleStaff: false, /* copy this boolean as conditional on following line */
+	staffDistribution: (false ? "LH" : ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias"][0]),
 	voiceCountForKeyboardStyle: [2, 3, 4],
 	voiceCountForChoraleStyle: [4],
 	defaultNoteColor: "rgb(180,180,180)", /* gray */
@@ -52,6 +53,7 @@ define({
 			doublinghighlight: true,
 			modalmixturehighlight: true, /* minor mixture in a major key */
 			loweredhighlight: false, /* shifted flatwise enharmonically */
+			solobass: false,
 			octaveshighlight: false /* not recommended, hidden from UI */
 		}
 	},
