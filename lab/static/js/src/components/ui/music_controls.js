@@ -313,13 +313,12 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickUploadJSON: function(evt) {
-			var save_me = JSON.stringify({
-				"comment": "This data is hard coded!"
-				// "staffDistribution": Config.__config.general.staffDistribution,
-				// later, we want all these items from Config.__config.general (or UI) too ["autoExerciseAdvance","bankAfterMetronomeTick","defaultKeyboardSize","defaultRhythmValue","hideNextWhenAutoAdvance","highlightSettings","keyboardShortcutsEnabled","nextExerciseWait","noDoubleVision","repeatExercise","repeatExerciseWait","voiceCountForChoraleStyle","voiceCountForKeyboardStyle"];
-			}, null, 0);
-
-			var blob = new Blob([save_me], {type: "application/json;charset=utf-8"});
+			const json_data = sessionStorage.getItem('current_state')
+				|| JSON.stringify({
+					"comment": "Error: no exercise data detected"
+				}, null, 0);
+			
+			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
 			
 			console.log(blob);
 			return true;
@@ -331,14 +330,14 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickDownloadJSON: function(evt) {
-			var save_me = JSON.stringify({
-				"comment": "This data is hard coded!"
-			}, null, 0);
+			const json_data = sessionStorage.getItem('current_state')
+				|| JSON.stringify({
+					"comment": "Error: no exercise data detected"
+				}, null, 0);
+			
+			console.log(json_data);
 
-			/* TASK: should match the console output for onChordsUpdate in play_sheet.js */
-			console.log(save_me);
-
-			var blob = new Blob([save_me], {type: "application/json;charset=utf-8"});
+			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
 
 			// saveAs(blob, "exercise_download.json");
 			return true;

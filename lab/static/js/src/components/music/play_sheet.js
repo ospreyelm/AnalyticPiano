@@ -118,6 +118,10 @@ define([
 		render: function() { 
 			this.clear();
 			this.renderStaves();
+
+			/* save data for retrieval by MusicControlsComponent.onClickDownloadJSON and .onClickUploadJSON; this may not be the optimal or most professional solution */
+			sessionStorage.setItem('current_state', this.dataForSave());
+
 			return this;
 		},
 		/**
@@ -307,14 +311,11 @@ define([
 		 * @return undefined
 		 */
 		onChordsUpdate: function() {
-			/* for development only: make this data available to MusicControlsComponent.onClickDownloadJSON and .onClickUploadJSON and optimize so that app performance is not compromised */
-			console.log(this.dataForSave());
-
 			this.updateStaves();
 			this.render();
 		},
 		
-		/* for development only */
+		/* solution for saving data as exercise; called by render() and saved to sessionStorage */
 		dataForSave: function() {
 			const objs = this.chords._items.map(items => items._notes);
 			if (objs.length < 2) return null;
@@ -332,20 +333,53 @@ define([
 			}
 
 			/* simplify for testing */
-			chords = chords.map(chord => chord["visible"]);
+			// chords = chords.map(chord => chord["visible"]);
 
-			const save_me = JSON.stringify({
-				// "tempo": this.parentComponent.analyzeConfig.tempo,
-				// "keySignature": this.keySignature.signatureSpec,
+			let json_data = {
+				"keySignature": this.keySignature.signatureSpec,
 				"key": this.keySignature.key,
-				// "type": "matching",
-				// "introText": "",
-				// "reviewText": "",
-				// "staffDistribution": Config.__config.general.staffDistribution,
-				"analysis": this.parentComponent.analyzeConfig.enabled,
-				// "highlight": this.parentComponent.highlightConfig
-				"chord": chords,
-			}, null, 0);
+				"type": "matching",
+				"introText": "",
+				"reviewText": "",
+				"analysis": this.parentComponent.analyzeConfig,
+				"highlight": this.parentComponent.highlightConfig,
+				"chord": chords
+			}
+
+			json_data["staffDistribution"]
+				= Config.__config.general.staffDistribution;
+
+			/*
+			// These properties should also be included once we start changing these presets per user.
+			json_data["autoExerciseAdvance"]
+				= Config.__config.general.autoExerciseAdvance;
+			json_data["bankAfterMetronomeTick"]
+				= Config.__config.general.bankAfterMetronomeTick;
+			json_data["defaultKeyboardSize"]
+				= Config.__config.general.defaultKeyboardSize;
+			json_data["defaultRhythmValue"]
+				= Config.__config.general.defaultRhythmValue;
+			json_data["hideNextWhenAutoAdvance"]
+				= Config.__config.general.hideNextWhenAutoAdvance;
+			json_data["highlightSettings"]
+				= Config.__config.general.highlightSettings;
+			json_data["keyboardShortcutsEnabled"]
+				= Config.__config.general.keyboardShortcutsEnabled;
+			json_data["nextExerciseWait"]
+				= Config.__config.general.nextExerciseWait;
+			json_data["noDoubleVision"]
+				= Config.__config.general.noDoubleVision;
+			json_data["repeatExercise"]
+				= Config.__config.general.repeatExercise;
+			json_data["repeatExerciseWait"]
+				= Config.__config.general.repeatExerciseWait;
+			json_data["voiceCountForChoraleStyle"]
+				= Config.__config.general.voiceCountForChoraleStyle;
+			json_data["voiceCountForKeyboardStyle"]
+				= Config.__config.general.voiceCountForKeyboardStyle;
+			*/
+
+			const save_me = JSON.stringify(json_data, null, 2);
 
 			return save_me;
 		},
