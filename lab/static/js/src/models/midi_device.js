@@ -211,8 +211,7 @@ define([
 	 * @return undefined
 	 */
 	MidiDevice.prototype.sendMIDIMessage = function(msg) {
-		var use_midi_ouput = false;
-		if (use_midi_output) {
+		if (false) { /* midi output */
 			if (this._output) {
 				this._output.send(msg);
 			}
