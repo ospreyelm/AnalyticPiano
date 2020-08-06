@@ -314,13 +314,20 @@ define([
 		 */
 		onClickUploadJSON: function(evt) {
 			const json_data = sessionStorage.getItem('current_state')
-				|| JSON.stringify({
-					"comment": "Error: no exercise data detected"
-				}, null, 0);
+				|| false;
+			console.log("upload", json_data);
+			if (!json_data /* || json_data["chords"].length < 1 */) return false;
 			
-			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
+			/*
+			// enable later
+			$.ajax({
+				type: "POST",
+				url: 'exercises/add',
+				data: {'data': json_data},
+				dataType: 'json',
+			});
+			*/
 			
-			console.log(blob);
 			return true;
 		},
 		/**
@@ -331,15 +338,13 @@ define([
 		 */
 		onClickDownloadJSON: function(evt) {
 			const json_data = sessionStorage.getItem('current_state')
-				|| JSON.stringify({
-					"comment": "Error: no exercise data detected"
-				}, null, 0);
-			
-			console.log(json_data);
+				|| false;
+			console.log("download", json_data);
+			if (!json_data /* || json_data["chords"].length < 1 */) return false;
 
 			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
-
-			// saveAs(blob, "exercise_download.json");
+			saveAs(blob, "exercise_download.json");
+			
 			return true;
 		},
 		/**
