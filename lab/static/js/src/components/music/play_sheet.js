@@ -379,7 +379,7 @@ define([
 				= Config.__config.general.voiceCountForKeyboardStyle;
 			*/
 
-			const save_me = JSON.stringify(json_data, null, 2);
+			const save_me = JSON.stringify(json_data, null, 0);
 
 			return save_me;
 		},
