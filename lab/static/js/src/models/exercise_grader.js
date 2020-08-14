@@ -72,7 +72,7 @@ define([
 				console.log (definition.exercise.type);
 				switch (definition.exercise.type) {
 					case "matching":
-						result = this.analysisMatch(expected_notes, actual_notes);
+						result = this.notesMatch(expected_notes, actual_notes);
 						break
 					case "analytical":
 						result = this.analysisMatch(expected_notes, actual_notes);
