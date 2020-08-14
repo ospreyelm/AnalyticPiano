@@ -170,19 +170,22 @@ define([
 
 					this.endTimer();
 
-					if(!nextUrl) {
+					if (!nextUrl) {
 						if(this.sealed != true) {// For one-time function calls
 							this.endSeriesTimer();
-							this.submitReport();
+							this.submitExerciseReport();
+							this.submitPlaylistReport();
 						}
+					} else {
+						this.submitExerciseReport();
 					}
-					if(this.flawless === true) {
+					if (this.flawless === true) {
 						state = ExerciseContext.STATE.CORRECT;
 						if(this.sealed != true) {// For one-time function calls
 							this.recordTempoInformation();
 							this.triggerNextExercise();
 						}
-					}else if(this.flawless === false) {
+					} else if (this.flawless === false) {
 						state = ExerciseContext.STATE.FINISHED;
 						if(this.sealed != true) {// For one-time function calls
 							if(REPEAT_EXERCISE_ENABLED === true) {
@@ -191,8 +194,7 @@ define([
 								this.triggerNextExercise();
 							}
 						}
-					}
-					else {
+					} else {
 						state = ExerciseContext.STATE.CORRECT;
 					}
 					
@@ -513,7 +515,25 @@ define([
 			}
 			return this;
 		},
-		compileReport: function() {
+		compileExerciseReport: function() {
+			
+			let offset = new Date().getTimezoneOffset()
+			let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
+			
+			var report = {
+				performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
+				exercise_ID: this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id || "",
+				time: new Date().toJSON().slice(0,16) || "",
+				timezone: timezone_str || "",
+				exercise_error_tally: this.errorTally,
+				exercise_tempo_rating: this.timer.tempoRating.length,
+				exercise_mean_tempo: Math.round(this.timer.tempoMean) || "",
+				exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
+			};
+			
+			return report;
+		},
+		compilePlaylistReport: function() {
 			
 			let offset = new Date().getTimezoneOffset()
 			let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
@@ -539,8 +559,11 @@ define([
 			
 			return report;
 		},
-		submitReport: function() {
-			console.log( this.compileReport() );
+		submitExerciseReport: function() {
+			console.log( this.compileExerciseReport() );
+		},
+		submitPlaylistReport: function() {
+			console.log( this.compilePlaylistReport() );
 		},
 		/**
 		 * Returns chords for display on screen.
