@@ -186,9 +186,9 @@ define([
 		 * In ExerciseContext, this note is given special treatment not
 		 * to generate exercise errors.
 		 */
+		window.console.dir('send dummy note');
 		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'on', 86, 0);
 		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'off', 86, 0);
-		window.console.dir('sent dummy note');
 		// Ineffective. Try something else
 	};
 
