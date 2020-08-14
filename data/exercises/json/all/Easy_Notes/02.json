@@ -1,8 +1,8 @@
 {
-  "type": "matching",
+  "type": "analytical",
   "introText": "Play the notes on the bass staff.",
   "keySignature": "",
-  "key": "jC_",
+  "key": "jG_",
   "chord": [
     {"visible":[48],"hidden":[],"rhythmValue":"h"},
     {"visible":[47],"hidden":[],"rhythmValue":"h"},
@@ -14,8 +14,8 @@
     "mode": {
       "note_names": false,
       "scientific_pitch": false,
-      "scale_degrees": false,
-      "solfege": true,
+      "scale_degrees": true,
+      "solfege": false,
       "roman_numerals": false,
       "intervals": false
     }

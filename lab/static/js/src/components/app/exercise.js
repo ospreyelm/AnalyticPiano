@@ -71,7 +71,9 @@ define([
 		models.inputChords = new ExerciseChordBank({
 			staffDistribution: definition.staffDistribution
 		});
-		models.exerciseGrader = new ExerciseGrader();
+		models.exerciseGrader = new ExerciseGrader({
+			keySignature: new KeySignature(models.exerciseDefinition.getKey(), models.exerciseDefinition.getKeySignature())
+		});
 		models.exerciseContext = new ExerciseContext({
 			inputChords: models.inputChords,
 			grader: models.exerciseGrader,

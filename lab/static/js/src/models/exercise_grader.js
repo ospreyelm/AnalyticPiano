@@ -1,7 +1,9 @@
 define([
-	'lodash'
+	'lodash',
+	'app/utils/analyze'
 ], function(
-	_
+	_,
+	Analyze
 ) {
 	/**
 	 * ExerciseGrader object is responsible for grading a given inputChords for
@@ -12,6 +14,7 @@ define([
 	 */
 	var ExerciseGrader = function(settings) {
 		this.settings = settings || {};
+		this.analyzer = new Analyze(this.settings.keySignature); /* for analysis-based grading */
 	};
 
 	var INCORRECT = 'incorrect';
@@ -59,13 +62,30 @@ define([
 			result_map = [CORRECT,PARTIAL,INCORRECT];
 			score = score_map[CORRECT];
 
+
 			for(i = 0, len = problems.length; i < len; i++) {
 				expected_notes = problems[i].notes;
 				actual_notes = [];
 				if(chords[i]) {
 					actual_notes = chords[i].getNoteNumbers();
 				}
-				result = this.notesMatch(expected_notes, actual_notes);
+				console.log (definition.exercise.type);
+				switch (definition.exercise.type) {
+					case "matching":
+						result = this.analysisMatch(expected_notes, actual_notes);
+						break
+					case "analytical":
+						result = this.analysisMatch(expected_notes, actual_notes);
+						break;
+					case "echo_bass":
+						result = this.bassMatch(expected_notes, actual_notes);
+						break;
+					case "echo_soprano":
+						result = this.sopranoMatch(expected_notes, actual_notes);
+						break;
+					default:
+						result = this.notesMatch(expected_notes, actual_notes);
+				}
 				graded.problems[i] = {
 					score: score_map[result.state],
 					count: result.count,
@@ -92,57 +112,143 @@ define([
 		 *	- PARTIAL: one or more notes matched, but not all
 		 *	- CORRECT: all notes matches
 		 *
-		 * @param {array} expectedNotes
-		 * @param {array} actualNotes
-		 * @return {INCORRECT|PARTIAL|CORRECT} the result of the matching
+		 * in addition to other data for proper interaction.
+		 *
+		 * @param {array} expected
+		 * @param {array} delivered
 		 */
-		notesMatch: function(expectedNotes, actualNotes) {
-			var expected_matches = 0; 
-			var actual_matches = 0; 
-			var incorrect_matches = 0;
-			var bucket = {};
+		notesMatch: function(expected, delivered) {
+			/* parameters are arrays of midi numbers */
+
 			var result = {
 				state: null,
-				count: {},
+				count: { correct: [], incorrect: [] }, // poorly named
 				note: {},
-				notes: []
+				notes: delivered,
 			};
-			var i, len, note; 
 
-			result.count[INCORRECT] = [];
-			result.count[CORRECT] = [];
+			var mistake = false;
 
-			for(i = 0, len = expectedNotes.length; i < len; i++) {
-				bucket[expectedNotes[i]] = true;
-			}
+			var i, len;
+			for (i = 0, len = delivered.length; i < len; i++) {
+				midi = delivered[i];
 
-			for(var x in bucket) {
-				if(bucket.hasOwnProperty(x)) {
-					++expected_matches;
-				}
-			}
-
-			for(i = 0, len = actualNotes.length; i < len; i++) {
-				note = actualNotes[i];
-				if(bucket[note]) {
-					result.count[CORRECT].push(note);
-					result.note[note] = CORRECT;
-					++actual_matches;
+				if (expected.indexOf(midi) !== -1) {
+					result.note[midi] = CORRECT;
+					result.count[CORRECT].push(midi);
 				} else {
-					++incorrect_matches;
-					result.count[INCORRECT].push(note);
-					result.note[note] = INCORRECT;
+					result.note[midi] = INCORRECT;
+					result.count[INCORRECT].push(midi);
+					mistake = true;
 				}
-				result.notes.push(note);
 			}
 
-			if(incorrect_matches > 0) {
-				result.state = INCORRECT;
-			} else if(actual_matches < expected_matches) {
-				result.state = PARTIAL;
-			} else {
-				result.state = CORRECT;
+			result.state = (mistake === true ? INCORRECT :
+				(
+					result.count[CORRECT].length < expected.length
+					? PARTIAL : CORRECT
+				)
+			);
+
+			return result;
+		},
+		analysisMatch: function(expected, delivered) {
+			/* parameters are arrays of midi numbers */
+
+			var result = {
+				state: null,
+				count: { correct: [], incorrect: [] }, // poorly named
+				note: {},
+				notes: delivered,
+			};
+
+			var mistake = false;
+
+			/* inefficient to keep looking up the analysis; do once per exercise */
+			var target_analysis = this.analyzer.to_scale_degree(expected_notes);
+			var probe_analysis = this.analyzer.to_scale_degree(actual_notes);
+
+			result.state = (probe_analysis === target_analysis ? CORRECT : PARTIAL);
+
+			return result;
+		},
+		bassMatch: function(expected, delivered) {
+			/* parameters are arrays of midi numbers */
+
+			var result = {
+				state: null,
+				count: { correct: [], incorrect: [] }, // poorly named
+				note: {},
+				notes: delivered,
+			};
+
+			var mistake = false;
+
+			var i, len;
+			for (i = 0, len = Math.min(1, delivered.length) /* bass only */;
+				i < len; i++) {
+
+				midi = delivered[i];
+
+				if (expected.indexOf(midi) === 0) { /* bass only */
+					result.note[midi] = CORRECT;
+					result.count[CORRECT].push(midi);
+				} else {
+					result.note[midi] = INCORRECT;
+					result.count[INCORRECT].push(midi);
+					mistake = true;
+				}
 			}
+
+			console.log(result.count);
+
+			result.state = (mistake === true ? INCORRECT :
+				(
+					/* bass only */
+					result.count[CORRECT].length < Math.min(1, expected.length)
+					? PARTIAL : CORRECT
+				)
+			);
+
+			return result;
+		},
+		sopranoMatch: function(expected, delivered) {
+			/* parameters are arrays of midi numbers */
+
+			var result = {
+				state: null,
+				count: { correct: [], incorrect: [] }, // poorly named
+				note: {},
+				notes: delivered,
+			};
+
+			var mistake = false;
+
+			var i, len;
+			for (i = Math.max(0, delivered.length-1), len = delivered.length /* soprano only */;
+				i < len; i++) {
+
+				midi = delivered[i];
+
+				if (expected.indexOf(midi) === expected.length-1) { /* soprano only */
+					result.note[midi] = CORRECT;
+					result.count[CORRECT].push(midi);
+				} else {
+					result.note[midi] = INCORRECT;
+					result.count[INCORRECT].push(midi);
+					mistake = true;
+				}
+			}
+
+			console.log(result.count);
+
+			result.state = (mistake === true ? INCORRECT :
+				(
+					/* soprano only */
+					result.count[CORRECT].length < Math.min(1, expected.length)
+					? PARTIAL : CORRECT
+				)
+			);
 
 			return result;
 		}

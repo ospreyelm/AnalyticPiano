@@ -142,7 +142,7 @@ define([
 			if(this.isAnalyzerEnabled()) {
 				this.updateAnalyzer();
 				if(this.chord) {
-					this.notateChord();
+					this.drawLabel();
 				}
 			}
 
@@ -311,6 +311,8 @@ define([
 			if(helmholtz !== '' && notes.length === 1) {
 				ctx.fillText(helmholtz, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
+
+			return helmholtz; /* for grading */
 		},
 		/**
 		 * Draws the name of a note in scientific pitch notation.
@@ -323,15 +325,17 @@ define([
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
 			var note_name = this.getAnalyzer().getNoteName(notes[0],notes);
-			var scientific_pitch = this.getAnalyzer().to_scientific_pitch(note_name).replace(/b/g,'♭').replace(/#/g,'♯'); // replace: true flat and sharp signs (substitution okay since letter names are uppercase here)
+			var scientific_pitch = this.getAnalyzer().to_scientific_pitch(note_name).replace(/b/g,'♭').replace(/#/g,'♯') || ''; // replace: true flat and sharp signs (substitution okay since letter names are uppercase here)
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 
-			if(scientific_pitch !== '' && notes.length === 1) {
+			if (scientific_pitch !== '' && notes.length === 1) {
 				ctx.fillText(scientific_pitch, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
+
+			return scientific_pitch; /* for grading */
 		},
 		/**
 		 * Draws solfege.
@@ -357,6 +361,8 @@ define([
 			if(solfege !== '') {
 				ctx.fillText(solfege, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
+
+			return solfege; /* for grading */
 		},
 		/**
 		 * Draws the scale degree.
@@ -386,6 +392,8 @@ define([
 				ctx.fillText(numeral.replace(/b/g,'♭').replace(/#/g,'♯'), text_x + StaveNotater.prototype.annotateOffsetX, y); // replace: true flat and sharp signs
 				ctx.fillText("^", caret_x + StaveNotater.prototype.annotateOffsetX, y - 15);
 			}
+
+			return numeral; /* for grading */
 		},
 		/**
 		 * Draws the thoroughbass figures.
@@ -441,6 +449,8 @@ define([
 				return ctx.measureText(lines[0]).width;
 				/* return width of the first line */
 			});
+
+			return figure; /* for grading */
 		},
 		/**
 		 * Draws the roman numeral analysis.
@@ -450,9 +460,12 @@ define([
 		 * @return undefined
 		 */
 		drawRoman: function(x, y) {
+			var midi_nums = this.chord.getNoteNumbers();
+			var chord_entry = this.getAnalyzer().to_chord(midi_nums);
+			
+			/* not used for analysis proper, only text format */
 			var key = this.keySignature.getKeyShortName();
-			var notes = this.chord.getNoteNumbers();
-			var chord_entry = this.getAnalyzer().to_chord(notes);
+
 			var width = 0, offset = 0;
 			var ctx = this.getContext();
 
@@ -525,6 +538,8 @@ define([
 					return this.getContext().measureText(lines[0]).width + offset; // return the width of the first line for figured bass
 				});
 			}
+
+			return chord_entry; /* for grading */
 		},
 		/**
 		 * Draws the interval analysis.
@@ -534,13 +549,15 @@ define([
 		 * @return undefined
 		 */
 		drawInterval: function(x, y) {
-			var notes = this.chord.getNoteNumbers();
-			var interval = this.getAnalyzer().to_interval(notes);
+			var midi_nums = this.chord.getNoteNumbers();
+			var interval = this.getAnalyzer().to_interval(midi_nums);
 			
-			if(interval && interval.name !== '') {
+			if (interval && interval.name !== '') {
 				var lines = this.wrapText(interval.name);
 				this.drawTextLines(lines, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
+
+			return interval; /* for grading */
 		},
 		/**
 		 * Draws the metronome mark.
@@ -640,7 +657,7 @@ define([
 		/**
 		 * Notates the stave.
 		 *
-		 * Always called, in contrast to notateChord().
+		 * Always called, in contrast to drawLabel().
 		 *
 		 * @abstract
 		 * @return undefined
@@ -657,7 +674,7 @@ define([
 		 * @abstract
 		 * @return undefined
 		 */
-		notateChord: function() {
+		drawLabel: function() {
 			throw new Error("subclass responsibility");
 		},
 		/**
@@ -717,7 +734,9 @@ define([
 		 *
 		 * @return undefined
 		 */
-		notateChord: function() {
+		drawLabel: function() {
+			/* Above the current treble staff */
+
 			var x = this.getX();
 			var y = this.getY();
 			var notes = this.chord.getNoteNumbers();
@@ -726,22 +745,22 @@ define([
 
 			if(notes.length >= 1) {
 				if(mode.scale_degrees && !mode.solfege) {
-					this.drawScaleDegree(x, first_row);
+					return this.drawScaleDegree(x, first_row);
 				} else if(mode.solfege && !mode.scale_degrees) {
-					this.drawSolfege(x, first_row); 
+					return this.drawSolfege(x, first_row); 
 				}
 
 				if(mode.note_names && !mode.helmholtz) {
-					this.drawNoteName(x, second_row);
+					return this.drawNoteName(x, second_row);
 				} else if(notes.length === 1 && mode.scientific_pitch && !mode.note_names) {
-					this.drawScientificPitch(x, second_row);
+					return this.drawScientificPitch(x, second_row);
 				}
 			}
 		},
 		/**
 		 * Notates the stave.
 		 *
-		 * Always called, in contrast to notateChord().
+		 * Always called, in contrast to drawLabel().
 		 *
 		 * @return undefined
 		 */
@@ -807,7 +826,9 @@ define([
 		 *
 		 * @return undefined
 		 */
-		notateChord: function() {
+		drawLabel: function() {
+			/* Below the current bass staff */
+
 			var x = this.getX();
 			var y = this.getY(); 
 			var notes = this.chord.getNoteNumbers();
@@ -815,17 +836,17 @@ define([
 			var mode = this.analyzeConfig.mode;
 
 			if(num_notes >= 2 && (mode.thoroughbass)) {
-				this.drawThoroughbass(x, y);
+				return this.drawThoroughbass(x, y);
 			} else if(num_notes == 2 && mode.intervals) {
-				this.drawInterval(x, y);
+				return this.drawInterval(x, y);
 			} else if(num_notes > 2 && mode.roman_numerals) {
-				this.drawRoman(x, y);
+				return this.drawRoman(x, y);
 			}
 		},
 		/**
 		 * Notates the stave.
 		 *
-		 * Always called, in contrast to notateChord().
+		 * Always called, in contrast to drawLabel().
 		 *
 		 * @return undefined
 		 */
