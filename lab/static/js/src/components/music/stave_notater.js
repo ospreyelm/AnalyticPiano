@@ -745,15 +745,15 @@ define([
 
 			if(notes.length >= 1) {
 				if(mode.scale_degrees && !mode.solfege) {
-					return this.drawScaleDegree(x, first_row);
+					this.drawScaleDegree(x, first_row);
 				} else if(mode.solfege && !mode.scale_degrees) {
-					return this.drawSolfege(x, first_row); 
+					this.drawSolfege(x, first_row);
 				}
 
 				if(mode.note_names && !mode.helmholtz) {
-					return this.drawNoteName(x, second_row);
+					this.drawNoteName(x, second_row);
 				} else if(notes.length === 1 && mode.scientific_pitch && !mode.note_names) {
-					return this.drawScientificPitch(x, second_row);
+					this.drawScientificPitch(x, second_row);
 				}
 			}
 		},
@@ -836,11 +836,11 @@ define([
 			var mode = this.analyzeConfig.mode;
 
 			if(num_notes >= 2 && (mode.thoroughbass)) {
-				return this.drawThoroughbass(x, y);
+				this.drawThoroughbass(x, y);
 			} else if(num_notes == 2 && mode.intervals) {
-				return this.drawInterval(x, y);
+				this.drawInterval(x, y);
 			} else if(num_notes > 2 && mode.roman_numerals) {
-				return this.drawRoman(x, y);
+				this.drawRoman(x, y);
 			}
 		},
 		/**

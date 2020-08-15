@@ -69,13 +69,15 @@ define([
 			throw new Error("missing settings.sheet parameter");
 		}
 
+		// this.setComponent("pristine", this.settings.pristine);
 		this.setComponent("sheet", this.settings.sheet);
 
 		_.bindAll(this, [
 			'onAnalyzeChange',
 			'onHighlightChange',
 			'onStaffDistributionChange',
-			'onMetronomeChange'
+			'onMetronomeChange',
+			'onRedrawRequest'
 		]);
 	};
 
@@ -98,8 +100,10 @@ define([
 		initListeners: function() {
 			this.subscribe(EVENTS.BROADCAST.HIGHLIGHT_NOTES, this.onHighlightChange);
 			this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onAnalyzeChange);
-			this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onStaffDistributionChange);
+			this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onStaffDistributionChange); // ?
 			this.subscribe(EVENTS.BROADCAST.METRONOME, this.onMetronomeChange);
+			this.subscribe(EVENTS.BROADCAST.METRONOME, this.onRedrawRequest); /* hacking redraw */
+			this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onRedrawRequest);
 		},
 		/**
 		 * Renders the music.
@@ -117,6 +121,13 @@ define([
 		 */
 		renderSheet: function() {
 			var sheetComponent = this.getComponent('sheet');
+			sheetComponent.clear();
+			sheetComponent.render();
+			return this;
+		},
+		renderPristine: function() {
+			var sheetComponent = this.getComponent('sheet');
+			sheetComponent.chords.clear();
 			sheetComponent.clear();
 			sheetComponent.render();
 			return this;
@@ -179,7 +190,9 @@ define([
 			} else {
 				this.analyzeConfig.tempo = false;
 			}
-			this.render();
+		},
+		onRedrawRequest: function() {
+			this.renderPristine();
 		},
 		/**
 		 * Updates settings.
