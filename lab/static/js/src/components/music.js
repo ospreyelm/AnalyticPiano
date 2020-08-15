@@ -102,7 +102,6 @@ define([
 			this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onAnalyzeChange);
 			this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onStaffDistributionChange); // ?
 			this.subscribe(EVENTS.BROADCAST.METRONOME, this.onMetronomeChange);
-			this.subscribe(EVENTS.BROADCAST.METRONOME, this.onRedrawRequest); /* hacking redraw */
 			this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onRedrawRequest);
 		},
 		/**
@@ -190,6 +189,7 @@ define([
 			} else {
 				this.analyzeConfig.tempo = false;
 			}
+			this.render();
 		},
 		onRedrawRequest: function() {
 			this.renderPristine();

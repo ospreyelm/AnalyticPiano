@@ -92,7 +92,7 @@ define([
 			$('.js-btn-screenshot').on('mousedown', this.onClickScreenshot);
 			$('.js-btn-upload-json').on('mousedown', this.onClickUploadJSON);
 			$('.js-btn-download-json').on('mousedown', this.onClickDownloadJSON);
-			$('.js-btn-pristine').on('mousedown', this.onClickPristine);
+			$('.js-btn-pristine').on('mousedown', () => this.onClickPristine());
 
 			this.initControlsLayout();
 			this.initKeySignatureTab();
@@ -355,8 +355,7 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickPristine: function() {
-			console.log("Call of onClickPristine"); /* hacking redraw */
-			// do something with EVENTS.BROADCAST.PRISTINE;
+			this.broadcast(EVENTS.BROADCAST.PRISTINE);
 			return true;
 		},
 		/**
