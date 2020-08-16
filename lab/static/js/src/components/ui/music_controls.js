@@ -90,8 +90,8 @@ define([
 
 			$('.js-btn-help', this.headerEl).on('click', this.onClickInfo);
 			$('.js-btn-screenshot').on('mousedown', this.onClickScreenshot);
-			$('.js-btn-download-json').on('mousedown', this.onClickDownloadJSON);
 			$('.js-btn-upload-json').on('mousedown', this.onClickUploadJSON);
+			$('.js-btn-download-json').on('mousedown', this.onClickDownloadJSON);
 			$('.js-btn-pristine').on('mousedown', () => this.onClickPristine());
 
 			this.initControlsLayout();
