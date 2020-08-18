@@ -45,7 +45,6 @@ define([
 				throw new Error("missing settings."+attr+" constructor parameter");
 			} 
 		}, this);
-
 		this.definition = this.settings.definition;
 		this.grader = this.settings.grader;
 		this.inputChords = this.settings.inputChords;
@@ -141,8 +140,8 @@ define([
 		grade: function() {
 			var state, graded;
 			var nextUrl = this.definition.getNextExercise();
-
 			graded = this.grader.grade(this.definition, this.inputChords);
+            if (this.definition.getExerciseList().filter(e => e.url.includes(window.location.pathname) && e.selected).length === 0) return
 
 			switch(graded.result) {
 				case this.grader.STATE.CORRECT:
@@ -695,7 +694,8 @@ define([
 		triggerRepeatExercise: async function() {
 			if(this.done === true && AUTO_ADVANCE_ENABLED === true) {
 				await this.sleep(REPEAT_EXERCISE_WAIT);
-				window.location.reload();
+				// window.location.reload();
+				this.goToNextExercise();
 			}
 			// if(this.canGoToNextExercise(this.inputChords.current())) {
 			// 	this.goToNextExercise();

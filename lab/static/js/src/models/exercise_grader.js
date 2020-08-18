@@ -50,7 +50,8 @@ define([
 			var graded = {
 				result: null,
 				score: 0,
-				problems:[]
+				problems:[],
+				activeIndex: 0
 			};
 			var score_map = {};
 			var result_map = []; 
@@ -69,7 +70,6 @@ define([
 				if(chords[i]) {
 					actual_notes = chords[i].getNoteNumbers();
 				}
-				console.log (definition.exercise.type);
 				switch (definition.exercise.type) {
 					case "matching":
 						result = this.notesMatch(expected_notes, actual_notes);

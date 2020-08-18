@@ -62,7 +62,7 @@ define([
 			$.ajax({
 				"url": target.url,
 				"method": "POST",
-				"data": {getExercise: true, csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val()},
+				"data": {csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val()},
 			}).then((res) => {
 				window.history.pushState("", "", target.url)
 				reloadApp(res);
@@ -76,7 +76,7 @@ define([
 		 */
 		AppExerciseComponent.prototype.getModels = function() {
 			var models = {};
-			var definition = this.getExerciseDefinition()
+			var definition = this.getExerciseDefinition(payload)
 			models.midiDevice = new MidiDevice();
 			models.exerciseDefinition = new ExerciseDefinition({
 				definition: definition
@@ -100,7 +100,7 @@ define([
 		/**
 		 * Returns the exercise definition.
 		 */
-		AppExerciseComponent.prototype.getExerciseDefinition = function() {
+		AppExerciseComponent.prototype.getExerciseDefinition = function(payload) {
 			var exercise_config = payload? payload : module.config();
 			if(!exercise_config) { 
 				throw new Error("getExerciseDefinition(): missing exercise configuration data"); 
@@ -189,9 +189,8 @@ define([
 			];
 			return methods;
 		};
-
+		sessionStorage.clear()
 		app = new AppExerciseComponent();
-		app.initListeners();
 		app.init();
 
 	};
@@ -205,6 +204,7 @@ define([
 	AppExerciseComponent.ready = function() {
 		reloadApp();
 		app.log("App ready");
+		app.initListeners();
 		/**
 		 * The following on-off instruction is meant to stimulate a new call
 		 * of StaveNotater.prototype.drawRoman so that contextual

@@ -118,7 +118,7 @@ define([
         initListeners: function() {
             this.parentComponent.bind('change', this.render);
             this.keySignature.bind('change', this.render);
-            //this.getInputChords().bind('change', this.render);
+            // this.getInputChords().bind('change', this.render);
             this.getInputChords().bind('change', this.onChordsUpdate);
             this.getInputChords().bind('clear', this.onChordsUpdate);
             this.exerciseContext.bind('goto', (e) => this.onGoToExercise(e));
@@ -129,6 +129,7 @@ define([
          * @return this
          */
         render: function() {
+            if (this.exerciseContext.definition.getExerciseList().filter(e => e.url.includes(window.location.pathname) && e.selected).length === 0) return
             this.clear();
             this.renderStaves();
             this.renderExerciseText();
@@ -555,7 +556,6 @@ define([
          * @return undefined
          */
         onGoToExercise: function(target) {
-            this.clear();
             this.broadcast(EVENTS.BROADCAST.EXERCISE, target);
         }
     });
