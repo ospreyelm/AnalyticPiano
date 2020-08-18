@@ -21,6 +21,7 @@ define({
 		"TOGGLE_SHORTCUTS": "toggleshortcuts",
 		"KEYBOARD_SIZE": "keyboardsize",
 		"NOTIFICATION": "notification",
-		"PRISTINE": "pristine"
+		"PRISTINE": "pristine",
+		"EXERCISE": "exercise"
 	}
 });

@@ -398,11 +398,13 @@ define([
 
 			var semibreveCount = [];
 			for (i = 0, len = this.inputChords._items.length; i < len; i++) {
-				var rhythm_value = this.exerciseChords.settings.chords[i].settings.rhythm;
-				if (rhythm_value == null) {
-					rhythm_value = DEFAULT_RHYTHM_VALUE;
+				if (this.exerciseChords.settings.chords[i]) {
+					var rhythm_value = this.exerciseChords.settings.chords[i].settings.rhythm;
+					if (rhythm_value == null) {
+						rhythm_value = DEFAULT_RHYTHM_VALUE;
+					}
+					semibreveCount.push( semibreve_fraction[rhythm_value] || DEFAULT_RHYTHM_VALUE || 1 );
 				}
-				semibreveCount.push( semibreve_fraction[rhythm_value] || DEFAULT_RHYTHM_VALUE || 1 );
 			}
 			if (semibreveCount.length > 0) semibreveCount.pop();
 

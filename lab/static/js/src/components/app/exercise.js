@@ -57,118 +57,143 @@ define([
 
 	AppExerciseComponent.prototype = new AppComponent();
 
-	/**
-	 * Returns the models used by the app.
-	 */
-	AppExerciseComponent.prototype.getModels = function() {
-		var models = {};
-		var definition = this.getExerciseDefinition()
-		models.midiDevice = new MidiDevice();
-		models.exerciseDefinition = new ExerciseDefinition({
-			definition: definition
+	AppExerciseComponent.prototype.initListeners = function() {
+		this.subscribe(EVENTS.BROADCAST.EXERCISE, (target) => {
+			$.ajax({
+				"url": target.url,
+				"method": "POST",
+				"data": {getExercise: true, csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val()},
+			}).then((res) => {
+				window.history.pushState("", "", target.url)
+				reloadApp(res);
+			})
 		});
-		// push exercise-wide features through here
-		models.inputChords = new ExerciseChordBank({
-			staffDistribution: definition.staffDistribution
-		});
-		models.exerciseGrader = new ExerciseGrader({
-			keySignature: new KeySignature(models.exerciseDefinition.getKey(), models.exerciseDefinition.getKeySignature())
-		});
-		models.exerciseContext = new ExerciseContext({
-			inputChords: models.inputChords,
-			grader: models.exerciseGrader,
-			definition: models.exerciseDefinition
-		});
-		models.keySignature = new KeySignature(models.exerciseDefinition.getKey(), models.exerciseDefinition.getKeySignature());
-		return models;
-	};
+	}
 
-	/**
-	 * Returns the exercise definition.
-	 */
-	AppExerciseComponent.prototype.getExerciseDefinition = function() {
-		var exercise_config = module.config();
-		if(!exercise_config) { 
-			throw new Error("getExerciseDefinition(): missing exercise configuration data"); 
-		}
-		return exercise_config; //$.extend(true, {}, exercise_config); // Return deep copy of the config
-	};
-
-	/**
-	 * Returns an array of functions that will create and initialize
-	 * each sub-component of the application.
-	 *
-	 * @return {array} of functions
-	 */
-	AppExerciseComponent.prototype.getComponentMethods = function() {
-		var methods = [
-			function () {
-				var c = new NotificationsComponent();
-				c.init(this);
-				c.renderTo("#notifications", "#notificationAlerts");
-				this.addComponent(c);
-			},
-			function() {
-				var c = new PianoComponent({
-					toolbarConfig: {metronome: false}
-				});
-				c.init(this);
-				c.renderTo("#piano");
-				this.addComponent(c);
-			},
-			function() {
-				var c = new MidiComponent({
-					chords: this.models.inputChords,
-					midiDevice: this.models.midiDevice
-				});
-				c.init(this);
-				this.addComponent(c);
-			},
-			function() {
-				var c = new KeyboardShortcutsComponent({
-					keySignature: this.models.keySignature
-				});
-				c.init(this);
-				this.addComponent(c);
-			},
-			function() {
-				var c = new MainMenuComponent({
-					headerEl: "#header",
-					menuEl: "#mainmenu",
-					menuSelector: ".js-btn-menu"
-				});
-				c.init(this);
-				this.addComponent(c);
-			},
-			function() {
-				var c = new MusicControlsComponent({
-					headerEl: "#header",
-					containerEl: "#mainmenu",
-					keySignature: this.models.keySignature,
-					midiDevice: this.models.midiDevice,
-					exerciseContext: this.models.exerciseContext
-				});
-				c.init(this);
-				this.addComponent(c);
-			},
-			function() {
-				var definition = this.models.exerciseContext.getDefinition();
-				var c = new MusicComponent({
-					el: $("#staff-area"),
-					sheet: new ExerciseSheetComponent({
-						exerciseContext: this.models.exerciseContext,
-						keySignature: this.models.keySignature
-					}),
-					analysisSettings: definition.getAnalysisSettings(),
-					staffDistribution: definition.getStaffDistribution(),
-					highlightSettings: definition.getHighlightSettings()
-				});
-				c.init(this);
-				c.render();
-				this.addComponent(c);
+	var reloadApp = function(payload) {
+		/**
+		 * Returns the models used by the app.
+		 */
+		AppExerciseComponent.prototype.getModels = function() {
+			var models = {};
+			var definition = this.getExerciseDefinition()
+			models.midiDevice = new MidiDevice();
+			models.exerciseDefinition = new ExerciseDefinition({
+				definition: definition
+			});
+			// push exercise-wide features through here
+			models.inputChords = new ExerciseChordBank({
+				staffDistribution: definition.staffDistribution
+			});
+			models.exerciseGrader = new ExerciseGrader({
+				keySignature: new KeySignature(models.exerciseDefinition.getKey(), models.exerciseDefinition.getKeySignature())
+			});
+			models.exerciseContext = new ExerciseContext({
+				inputChords: models.inputChords,
+				grader: models.exerciseGrader,
+				definition: models.exerciseDefinition
+			});
+			models.keySignature = new KeySignature(models.exerciseDefinition.getKey(), models.exerciseDefinition.getKeySignature());
+			return models;
+		};
+	
+		/**
+		 * Returns the exercise definition.
+		 */
+		AppExerciseComponent.prototype.getExerciseDefinition = function() {
+			var exercise_config = payload? payload : module.config();
+			if(!exercise_config) { 
+				throw new Error("getExerciseDefinition(): missing exercise configuration data"); 
 			}
-		];
-		return methods;
+			return exercise_config; //$.extend(true, {}, exercise_config); // Return deep copy of the config
+		};
+	
+		/**
+		 * Returns an array of functions that will create and initialize
+		 * each sub-component of the application.
+		 *
+		 * @return {array} of functions
+		 */
+		AppExerciseComponent.prototype.getComponentMethods = function() {
+			var methods = [
+				function () {
+					$("#notifications").html('')
+					$("#notificationAlerts").html('')
+					var c = new NotificationsComponent();
+					c.init(this);
+					c.renderTo("#notifications", "#notificationAlerts");
+					this.addComponent(c);
+				},
+				function() {
+					$("#piano").html('')
+					var c = new PianoComponent({
+						toolbarConfig: {metronome: false}
+					});
+					c.init(this);
+					c.renderTo("#piano");
+					this.addComponent(c);
+				},
+				function() {
+					var c = new MidiComponent({
+						chords: this.models.inputChords,
+						midiDevice: this.models.midiDevice
+					});
+					c.init(this);
+					this.addComponent(c);
+				},
+				function() {
+					var c = new KeyboardShortcutsComponent({
+						keySignature: this.models.keySignature
+					});
+					c.init(this);
+					this.addComponent(c);
+				},
+				function() {
+					var c = new MainMenuComponent({
+						headerEl: "#header",
+						menuEl: "#mainmenu",
+						menuSelector: ".js-btn-menu"
+					});
+					c.init(this);
+					this.addComponent(c);
+				},
+				function() {
+					$("#header .js-keysignature-widget").html('')
+					// $("#mainmenu").html('')
+					var c = new MusicControlsComponent({
+						headerEl: "#header",
+						containerEl: "#mainmenu",
+						keySignature: this.models.keySignature,
+						midiDevice: this.models.midiDevice,
+						exerciseContext: this.models.exerciseContext
+					});
+					c.init(this);
+					this.addComponent(c);
+				},
+				function() {
+					var definition = this.models.exerciseContext.getDefinition();
+					var c = new MusicComponent({
+						el: $("#staff-area"),
+						sheet: new ExerciseSheetComponent({
+							exerciseContext: this.models.exerciseContext,
+							keySignature: this.models.keySignature
+						}),
+						analysisSettings: definition.getAnalysisSettings(),
+						staffDistribution: definition.getStaffDistribution(),
+						highlightSettings: definition.getHighlightSettings()
+					});
+					c.init(this);
+					c.render();
+					this.addComponent(c);
+				}
+			];
+			return methods;
+		};
+
+		app = new AppExerciseComponent();
+		app.initListeners();
+		app.init();
+
 	};
 
 	/**
@@ -178,8 +203,7 @@ define([
 	 * @return undefined
 	 */
 	AppExerciseComponent.ready = function() {
-		app = new AppExerciseComponent();
-		app.init();
+		reloadApp();
 		app.log("App ready");
 		/**
 		 * The following on-off instruction is meant to stimulate a new call

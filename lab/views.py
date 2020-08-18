@@ -102,7 +102,7 @@ class PlayView(RequirejsTemplateView):
         return context
 
 class ExerciseView(RequirejsView):
-    def get(self, request, course_id=None, group_name=None, exercise_name=None):
+    def post(self, request, course_id=None, group_name=None, exercise_name=None):
         context = {}
         er = ExerciseRepository.create(course_id=course_id)
 
@@ -138,6 +138,55 @@ class ExerciseView(RequirejsView):
 
         exercise.load()
         exercise.selected = True
+        print(exercise)
+        exercise_context = {}
+        exercise_context.update(exercise.asDict())
+        exercise_context.update({
+            "nextExercise": exercise.nextUrl(),
+            "previousExercise": exercise.previousUrl(),
+            "exerciseList": exercise.group.getList()
+        })
+
+        return HttpResponse(json.dumps(exercise_context), content_type='application/json', status=200)
+
+    def get(self, request, course_id=None, group_name=None, exercise_name=None):
+        context = {}
+        er = ExerciseRepository.create(course_id=course_id)
+        print('hello', exercise_name, request, group_name)
+
+        context['group_list'] = er.getGroupList()
+        context['has_manage_perm'] = has_instructor_role(request) and has_course_authorization(request, course_id)
+        if context['has_manage_perm']:
+            if course_id is None:
+                context['manage_url'] = reverse('lab:manage')
+            else:
+                context['manage_url'] = reverse('lab:course-manage', kwargs={"course_id":course_id})
+        
+        if course_id is None:
+            context['home_url'] = reverse('lab:index')
+        else:
+            context['home_url'] = reverse("lab:course-index", kwargs={"course_id":course_id})
+
+        if exercise_name is not None and group_name is not None:
+            exercise = er.findExerciseByGroup(group_name, exercise_name)
+            if exercise is None:
+                raise Http404("Exercise %s of group %s does not exist." % (exercise_name, group_name))
+        elif exercise_name is None and group_name is not None:
+            group = er.findGroup(group_name)
+            if group is None:
+                raise Http404("Exercise group %s does not exist." % group_name)
+            exercise = group.first()
+        elif exercise_name is not None and group_name is None:
+            raise Http404("Group name required to get exercise %s." % exercise_name)
+        else:
+            group = er.getGroupAtIndex(0)
+            if group is None:
+                raise Http404("No exercises found.")
+            exercise = group.first()
+
+        exercise.load()
+        exercise.selected = True
+        print(exercise)
         exercise_context = {}
         exercise_context.update(exercise.asDict())
         exercise_context.update({
@@ -151,7 +200,6 @@ class ExerciseView(RequirejsView):
         self.requirejs_context.add_to_view(context)
         
         return render(request, "exercise.html", context)
-
 
 class ManageView(RequirejsView, LoginRequiredMixin):
     @method_decorator(course_authorization_required(source="arguments"))

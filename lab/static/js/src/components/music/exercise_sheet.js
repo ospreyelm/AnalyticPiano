@@ -5,6 +5,7 @@ define([
     'lodash', 
     'vexflow',
     'app/config',
+	'app/components/events',
     'app/components/component',
     'app/utils/fontparser',
     './stave',
@@ -16,6 +17,7 @@ define([
     _, 
     Vex, 
     Config,
+	EVENTS,
     Component,
     FontParser,
     Stave, 
@@ -119,14 +121,14 @@ define([
             //this.getInputChords().bind('change', this.render);
             this.getInputChords().bind('change', this.onChordsUpdate);
             this.getInputChords().bind('clear', this.onChordsUpdate);
-            this.exerciseContext.bind('goto', this.onGoToExercise);
+            this.exerciseContext.bind('goto', (e) => this.onGoToExercise(e));
         },
         /**
          * Renders the grand staff and everything on it.
          *
          * @return this
          */
-        render: function() { 
+        render: function() {
             this.clear();
             this.renderStaves();
             this.renderExerciseText();
@@ -553,7 +555,8 @@ define([
          * @return undefined
          */
         onGoToExercise: function(target) {
-            window.location = target.url;
+            this.clear();
+            this.broadcast(EVENTS.BROADCAST.EXERCISE, target);
         }
     });
 
