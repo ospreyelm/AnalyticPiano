@@ -142,6 +142,7 @@ define([
 					this.addComponent(c);
 				},
 				function() {
+					// $('.js-keyboardsize settings-inline').html('')
 					var c = new KeyboardShortcutsComponent({
 						keySignature: this.models.keySignature
 					});

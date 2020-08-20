@@ -254,6 +254,7 @@ define([
 			var that = this;
 			var containerEl = this.containerEl;
 			var el = $('.js-keyboardsize', containerEl);
+			if(el[0].getElementsByTagName('label').length > 0) return
 			var selectEl = $("<select/>");
 			var tpl = _.template('<% _.forEach(sizes, function(size) { %><option value="<%= size %>"><%- size %></option><% }); %>');
 			var options = tpl({sizes: [25,37,49,88]})
@@ -277,6 +278,7 @@ define([
 			var that = this;
 			var containerEl = this.containerEl;
 			var el = $('.js-keyboardshortcuts', containerEl);
+			if($(el).find('input').length > 0) return
 			var inputEl = $('<input type="checkbox" name="keyboard_shortcuts" value="on" />');
 			el.append("Computer keyboard as piano&ensp;").append(inputEl).wrap("<label/>");
 
