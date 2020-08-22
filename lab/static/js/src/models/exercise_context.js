@@ -43,7 +43,7 @@ define([
 		_.each(['definition','grader','inputChords'], function(attr) {
 			if(!(attr in this.settings)) {
 				throw new Error("missing settings."+attr+" constructor parameter");
-			} 
+			}
 		}, this);
 
 		this.definition = this.settings.definition;
@@ -111,7 +111,7 @@ define([
 			this.initListeners();
 		},
 		/**
-		 * Initializes listeners. 
+		 * Initializes listeners.
 		 *
 		 * @return undefined
 		 */
@@ -197,7 +197,7 @@ define([
 					} else {
 						state = ExerciseContext.STATE.CORRECT;
 					}
-					
+
 					this.sealed = true;
 					break;
 				case this.grader.STATE.INCORRECT:
@@ -516,7 +516,7 @@ define([
 			return this;
 		},
 		compileExerciseReport: function() {
-			
+
 			let offset = new Date().getTimezoneOffset()
 			let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
 
@@ -536,23 +536,13 @@ define([
 				exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
 			};
 
-			// if (idx+1 === getExerciseList().length) {
-			// 	report[playlist_restart_tally]: this.restarts || 0,
-			// 	report[playlist_lowest_tempo_rating]:
-			// 		Math.min(
-			// 			sessionStorage.getItem('HarmonyLabPlaylistTempoRating').length,
-			// 			this.timer.tempoRating.length /* unclear whether this is already factored in */
-			// 		) || "",
-			// 	report[playlist_duration]: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
-			// }
-			
 			return report;
 		},
 		compilePlaylistReport: function() {
-			
+
 			let offset = new Date().getTimezoneOffset()
 			let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
-			
+
 			var report = {
 				performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
 				time: new Date().toJSON().slice(0,16) || "",
@@ -564,15 +554,30 @@ define([
 						this.timer.tempoRating.length /* unclear whether this is already factored in */
 					) || "",
 				playlist_duration: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
+				exercise_ID: this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id || "",
 			};
-			
+
 			return report;
 		},
 		submitExerciseReport: function() {
 			console.log( this.compileExerciseReport() );
+
+			$.ajax({
+				type: "POST",
+				url: 'exercise-performance',
+				data: {'data': JSON.stringify(this.compileExerciseReport())},
+				dataType: 'json',
+			});
 		},
 		submitPlaylistReport: function() {
 			console.log( this.compilePlaylistReport() );
+
+			$.ajax({
+				type: "POST",
+				url: 'playlist-performance',
+				data: {'data': JSON.stringify(this.compilePlaylistReport())},
+				dataType: 'json',
+			});
 		},
 		/**
 		 * Returns chords for display on screen.
@@ -769,7 +774,7 @@ define([
 		createExerciseChords: function() {
 			var problems = this.definition.getProblems();
 			var notes = [];
-			var exercise_chords = []; 
+			var exercise_chords = [];
 			var chords;
 			var rhythm;
 
