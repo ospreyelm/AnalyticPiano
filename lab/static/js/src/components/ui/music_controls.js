@@ -92,7 +92,6 @@ define([
 			$('.js-btn-screenshot').on('mousedown', this.onClickScreenshot);
 			$('.js-btn-download-json').on('mousedown', this.onClickDownloadJSON);
 			$('.js-btn-upload-json').on('mousedown', this.onClickUploadJSON);
-			$('.js-btn-pristine').on('mousedown', () => this.onClickPristine());
 
 			this.initControlsLayout();
 			this.initKeySignatureTab();
@@ -319,15 +318,12 @@ define([
 			console.log("upload", json_data);
 			if (!json_data /* || json_data["chords"].length < 1 */) return false;
 			
-			/*
-			// enable later
 			$.ajax({
 				type: "POST",
 				url: 'exercises/add',
 				data: {'data': json_data},
 				dataType: 'json',
 			});
-			*/
 			
 			return true;
 		},
@@ -346,18 +342,6 @@ define([
 			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
 			saveAs(blob, "exercise_download.json");
 			
-			return true;
-		},
-		/**
-		 * Handler to broadcast request for pristine sheet music div.
-		 *
-		 * @param {object} evt
-		 * @return {boolean} true
-		 */
-		onClickPristine: function() {
-			console.log("Call of onClickPristine"); /* hacking redraw */
-			// do something with EVENTS.BROADCAST.PRISTINE;
-			this.broadcast(EVENTS.BROADCAST.PRISTINE);
 			return true;
 		},
 		/**
