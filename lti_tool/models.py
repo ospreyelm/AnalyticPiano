@@ -1,12 +1,9 @@
 from django.db import models
 
-from lti_tool.fields import JSONField
-
-
 class LTICourse(models.Model):
     course_name_short = models.CharField(max_length=1024)
     course_name = models.CharField(max_length=2048)
-
+    
     @classmethod
     def getCourseNames(cls, course_id):
         result = {"name": "", "name_short": ""}
@@ -15,55 +12,14 @@ class LTICourse(models.Model):
             result['name'] = c.course_name
             result['name_short'] = c.course_name_short
         return result
-
+    
     def __str__(self):
         return self.course_name_short
 
     class Meta:
         verbose_name = 'LTI Course'
         verbose_name_plural = 'LTI Courses '
-        ordering = ['course_name_short', 'course_name']
-
-
-class Unit(models.Model):
-    name = models.CharField('Name', max_length=32)
-
-    # TODO this field should be mandatory in the future
-    course = models.ForeignKey(LTICourse, verbose_name='Course', related_name='units',
-                               on_delete=models.PROTECT, blank=True, null=True)
-
-    created = models.DateTimeField('Created at', auto_now_add=True)
-    updated = models.DateTimeField('Updated at', auto_now=True)
-
-    class Meta:
-        verbose_name = 'Unit'
-        verbose_name_plural = 'Units'
-
-    def __str__(self):
-        return self.name
-
-
-class Exercise(models.Model):
-    name = models.CharField('Name', max_length=32, )
-    data = JSONField('Data')
-
-    # FIXME if we won't have any non-course exercises, this field should be mandatory in the future
-    unit = models.ForeignKey(Unit, verbose_name='Unit', related_name='exercises',
-                             on_delete=models.PROTECT, blank=True, null=True)
-
-    created = models.DateTimeField('Created at', auto_now_add=True)
-    updated = models.DateTimeField('Updated at', auto_now=True)
-
-    class Meta:
-        verbose_name = 'Exercise'
-        verbose_name_plural = 'Exercises'
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def course(self):
-        return self.unit.course
+        ordering = ['course_name_short','course_name']
 
 
 class LTIConsumer(models.Model):
@@ -72,32 +28,32 @@ class LTIConsumer(models.Model):
     context_id = models.CharField(max_length=255, blank=True, null=True)
     canvas_course_id = models.CharField(max_length=255, blank=True, null=True)
     course = models.ForeignKey(LTICourse, on_delete=models.CASCADE)
-
+    
     @classmethod
     def hasCourse(cls, consumer_key, resource_link_id):
-        return cls.objects.filter(consumer_key=consumer_key, resource_link_id=resource_link_id).exists()
-
+        return cls.objects.filter(consumer_key=consumer_key,resource_link_id=resource_link_id).exists()
+    
     @classmethod
     def getConsumer(cls, consumer_key, resource_link_id):
-        result = cls.objects.filter(consumer_key=consumer_key, resource_link_id=resource_link_id)
+        result = cls.objects.filter(consumer_key=consumer_key,resource_link_id=resource_link_id)
         if len(result) > 0:
             return result[0]
         return None
-
+    
     @classmethod
     def setupCourse(cls, launch):
-        if not ("consumer_key" in launch and "resource_link_id" in launch):
+        if not ("consumer_key" in launch and "resource_link_id" in launch): 
             raise Exception("Missing required launch parameters: consumer_key and resource_link_id")
-
+ 
         course_name_short = launch.pop('course_name_short', 'untitled')
         course_name = launch.pop('course_name', 'Untitled Course')
-        course = LTICourse.objects.create(course_name_short=course_name_short, course_name=course_name)
-
+        course = LTICourse.objects.create(course_name_short=course_name_short,course_name=course_name)
+ 
         return cls.objects.create(course=course, **launch)
-
+    
     def __str__(self):
         return '{}:{}'.format(self.consumer_key, self.resource_link_id)
 
     class Meta:
         verbose_name = 'LTI Consumer'
-        ordering = ['consumer_key', 'resource_link_id', 'context_id']
+        ordering = ['consumer_key','resource_link_id','context_id']

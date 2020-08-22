@@ -14,11 +14,10 @@ from django_auth_lti import const
 from .objects import ExerciseRepository
 from .decorators import role_required, course_authorization_required
 from .verification import has_instructor_role, has_course_authorization
-from lti_tool.models import LTIConsumer, LTICourse, Exercise
+from lti_tool.models import LTIConsumer, LTICourse
 
 import json
 import copy
-
 
 # from django.core.mail import send_mail
 
@@ -26,7 +25,7 @@ class RequirejsContext(object):
     def __init__(self, config, debug=True):
         self._debug = debug
         self._config = copy.deepcopy(config)
-
+    
     def set_module_params(self, module_id, params):
         module_config = {}
         module_config.update(params)
@@ -36,11 +35,11 @@ class RequirejsContext(object):
             self._config['config'][module_id] = {}
         self._config['config'][module_id].update(module_config)
         return self
-
+    
     def set_app_module(self, app_module_id):
         self.set_module_params('app/main', {'app_module': app_module_id})
         return self
-
+    
     def add_to_view(self, view_context):
         view_context['requirejs'] = self
         return self
@@ -52,6 +51,7 @@ class RequirejsContext(object):
 
     def config_json(self):
         return json.dumps(self._config)
+    
 
 
 class RequirejsTemplateView(TemplateView):
@@ -60,7 +60,7 @@ class RequirejsTemplateView(TemplateView):
     def __init__(self, *args, **kwargs):
         super(RequirejsTemplateView, self).__init__(*args, **kwargs)
         self.requirejs_context = RequirejsContext(settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG)
-
+    
     def get_context_data(self, **kwargs):
         context = super(RequirejsTemplateView, self).get_context_data(**kwargs)
         self.requirejs_context.set_app_module(getattr(self, 'requirejs_app'))
@@ -68,10 +68,12 @@ class RequirejsTemplateView(TemplateView):
         return context
 
 
+
 class RequirejsView(View):
     def __init__(self, *args, **kwargs):
         super(RequirejsView, self).__init__(*args, **kwargs)
         self.requirejs_context = RequirejsContext(settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG)
+
 
 
 class PlayView(RequirejsTemplateView):
@@ -99,7 +101,6 @@ class PlayView(RequirejsTemplateView):
 
         return context
 
-
 class ExerciseView(RequirejsView):
     def get(self, request, course_id=None, group_name=None, exercise_name=None):
         context = {}
@@ -111,8 +112,8 @@ class ExerciseView(RequirejsView):
             if course_id is None:
                 context['manage_url'] = reverse('lab:manage')
             else:
-                context['manage_url'] = reverse('lab:course-manage', kwargs={"course_id": course_id})
-
+                context['manage_url'] = reverse('lab:course-manage', kwargs={"course_id":course_id})
+        
         if course_id is None:
             context['home_url'] = reverse('lab:index')
         else:
@@ -148,7 +149,7 @@ class ExerciseView(RequirejsView):
         self.requirejs_context.set_app_module('app/components/app/exercise')
         self.requirejs_context.set_module_params('app/components/app/exercise', exercise_context)
         self.requirejs_context.add_to_view(context)
-
+        
         return render(request, "exercise.html", context)
 
 
@@ -174,19 +175,17 @@ class ManageView(RequirejsView, LoginRequiredMixin):
         self.requirejs_context.set_app_module('app/components/app/manage')
         self.requirejs_context.set_module_params('app/components/app/manage', manage_params)
         self.requirejs_context.add_to_view(context)
-
+        
         return render(request, "manage.html", context)
 
 
 class APIView(View):
     api_version = 1
-
     def get(self, request):
         return HttpResponse(json.dumps({
             'url': reverse('lab:api'),
             'version': self.api_version
         }))
-
 
 class APIGroupView(CsrfExemptMixin, View):
     def get(self, request):
@@ -197,13 +196,12 @@ class APIGroupView(CsrfExemptMixin, View):
         json_data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
         return HttpResponse(json_data, content_type='application/json')
 
-
 class APIExerciseView(CsrfExemptMixin, View):
     def get(self, request):
         course_id = request.GET.get('course_id', None)
         group_name = request.GET.get('group_name', None)
         exercise_name = request.GET.get('exercise_name', None)
-
+        
         er = ExerciseRepository.create(course_id=course_id)
         if exercise_name is not None and group_name is not None:
             exercise = er.findExerciseByGroup(group_name, exercise_name)
@@ -219,9 +217,8 @@ class APIExerciseView(CsrfExemptMixin, View):
         else:
             data = er.asDict()
 
-        return HttpResponse(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')),
-                            content_type='application/json')
-
+        return HttpResponse(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')), content_type='application/json')
+ 
     @method_decorator(course_authorization_required(source='query'))
     @method_decorator(role_required([const.ADMINISTRATOR,const.INSTRUCTOR], redirect_url='lab:not_authorized', raise_exception=True))
     def post(self, request):
@@ -230,7 +227,7 @@ class APIExerciseView(CsrfExemptMixin, View):
         result = ExerciseRepository.create(course_id=course_id).createExercise(exercise_data)
 
         return HttpResponse(json.dumps(result), content_type='application/json')
-
+    
     @method_decorator(course_authorization_required(source='query'))
     @method_decorator(role_required([const.ADMINISTRATOR,const.INSTRUCTOR], redirect_url='lab:not_authorized', raise_exception=True))
     def delete(self, request):
@@ -252,13 +249,11 @@ class APIExerciseView(CsrfExemptMixin, View):
         else:
             result['status'] = "failure"
             result['description'] = "Error: %s" % description
-
+            
         return HttpResponse(json.dumps(result), content_type='application/json')
-
 
 def not_authorized(request):
     return HttpResponse('Unauthorized', status=401)
-
 
 def check_course_authorization(request, course_id, raise_exception=False):
     authorized = has_course_authorization(request, course_id, raise_exception)
@@ -269,18 +264,5 @@ def check_course_authorization(request, course_id, raise_exception=False):
     }
     status = 200
     if not authorized:
-        status = 403  # forbidden
+        status = 403 # forbidden
     return HttpResponse(json.dumps(result), content_type='application/json', status=status)
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class CourseExerciseView(View):
-    http_method_names = ['post']
-
-    def post(self, request, *args, **kwargs):
-        # FIXME add course, unit, and get exercise name from user
-        Exercise.objects.create(
-            data=request.POST.get('data'),
-            name='Test Exercise'
-        )
-        return HttpResponse(status=201)

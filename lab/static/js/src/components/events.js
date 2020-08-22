@@ -20,6 +20,7 @@ define({
 		"TOGGLE_METRONOME": "togglemetronome",
 		"TOGGLE_SHORTCUTS": "toggleshortcuts",
 		"KEYBOARD_SIZE": "keyboardsize",
-		"NOTIFICATION": "notification"
+		"NOTIFICATION": "notification",
+		"PRISTINE": "pristine"
 	}
 });

@@ -182,7 +182,7 @@ define([
                             '<a class="exercise-status-next-btn" href="<%= next_set %>">PROCEED TO NEXT SET</a> || ',
                         '<% } %>',
                         '<% if (typeof(current_set) !== "undefined" && current_set != "" && exercise_num != 1) { %>',
-                            '<a class="exercise-status-next-btn" href="<%= current_set %>">REDO CURRENT SET</a>',
+                            '<a class="exercise-status-next-btn" href="<%= current_set %>">REDO CURRENT PLAYLIST</a>',
                         '<% } %>',
                     '</div>',
                 '</div>'

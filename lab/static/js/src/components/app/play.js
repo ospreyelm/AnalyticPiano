@@ -117,6 +117,10 @@ define([
 			function() {
 				var c = new MusicComponent({
 					el: $("#staff-area"),
+					// pristine: new PlaySheetComponent({ 
+					// 	chords: this.models.chords,
+					// 	keySignature: this.models.keySignature
+					// }),
 					sheet: new PlaySheetComponent({ 
 						chords: this.models.chords,
 						keySignature: this.models.keySignature

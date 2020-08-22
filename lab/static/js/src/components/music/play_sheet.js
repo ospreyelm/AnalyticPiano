@@ -338,7 +338,7 @@ define([
 			let json_data = {
 				"keySignature": this.keySignature.signatureSpec,
 				"key": this.keySignature.key,
-				"type": "matching",
+				"type": "matching", /* provide options */
 				"introText": "",
 				"reviewText": "",
 				"analysis": this.parentComponent.analyzeConfig,

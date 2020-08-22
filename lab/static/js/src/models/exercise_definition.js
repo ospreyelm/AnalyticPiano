@@ -22,7 +22,8 @@ define(['lodash'], function(_) {
 	 * Defines the possible exercise types.
 	 */
 	ExerciseDefinition.TYPES = {
-		matching: "matching"
+		matching: "matching",
+		analytical: "analytical"
 	};
 
 	_.extend(ExerciseDefinition.prototype, {

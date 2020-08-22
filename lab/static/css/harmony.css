@@ -363,6 +363,20 @@ ul.menu-group-list li {
     border-radius: 3px;
 }
 
+.refresh-icon {
+    background: url(../img/icon-refresh.png); /* Wikimedia commons */
+    background-repeat: no-repeat;
+    background-size: 25px 25px;
+    height: 25px;
+    width: 25px;
+    margin: 4px 0 0 8px;
+    float: right;
+}
+.refresh-icon:hover {
+    background: url(../img/icon-refresh-hover.png);
+    background-repeat: no-repeat;
+    background-size: 25px 25px;
+}
 .save-icon {
     background: url(../img/icon-save.png); /* Wikimedia commons */
     background-repeat: no-repeat;
@@ -374,6 +388,20 @@ ul.menu-group-list li {
 }
 .save-icon:hover {
     background: url(../img/icon-save-hover.png);
+    background-repeat: no-repeat;
+    background-size: 25px 25px;
+}
+.download-icon {
+    background: url(../img/icon-download.png); /* Wikimedia commons */
+    background-repeat: no-repeat;
+    background-size: 25px 25px;
+    height: 25px;
+    width: 25px;
+    margin: 4px 0 0 8px;
+    float: right;
+}
+.download-icon:hover {
+    background: url(../img/icon-download-hover.png);
     background-repeat: no-repeat;
     background-size: 25px 25px;
 }
