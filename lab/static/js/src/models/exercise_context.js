@@ -537,7 +537,7 @@ define([
 			};
 
 			// if (idx+1 === getExerciseList().length) {
-			// 	report[playlist_restart_tally]: this.restarts || "",
+			// 	report[playlist_restart_tally]: this.restarts || 0,
 			// 	report[playlist_lowest_tempo_rating]:
 			// 		Math.min(
 			// 			sessionStorage.getItem('HarmonyLabPlaylistTempoRating').length,
@@ -557,7 +557,7 @@ define([
 				performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
 				time: new Date().toJSON().slice(0,16) || "",
 				timezone: timezone_str || "",
-				playlist_restart_tally: this.restarts || "",
+				playlist_restart_tally: this.restarts || 0,
 				playlist_lowest_tempo_rating:
 					Math.min(
 						sessionStorage.getItem('HarmonyLabPlaylistTempoRating').length,
