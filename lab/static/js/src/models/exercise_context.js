@@ -535,6 +535,16 @@ define([
 				exercise_mean_tempo: Math.round(this.timer.tempoMean) || "",
 				exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
 			};
+
+			// if (idx+1 === getExerciseList().length) {
+			// 	report[playlist_restart_tally]: this.restarts || "",
+			// 	report[playlist_lowest_tempo_rating]:
+			// 		Math.min(
+			// 			sessionStorage.getItem('HarmonyLabPlaylistTempoRating').length,
+			// 			this.timer.tempoRating.length /* unclear whether this is already factored in */
+			// 		) || "",
+			// 	report[playlist_duration]: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
+			// }
 			
 			return report;
 		},
@@ -545,13 +555,8 @@ define([
 			
 			var report = {
 				performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
-				exercise_ID: this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id || "",
 				time: new Date().toJSON().slice(0,16) || "",
 				timezone: timezone_str || "",
-				exercise_error_tally: this.errorTally,
-				exercise_tempo_rating: this.timer.tempoRating.length,
-				exercise_mean_tempo: Math.round(this.timer.tempoMean) || "",
-				exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
 				playlist_restart_tally: this.restarts || "",
 				playlist_lowest_tempo_rating:
 					Math.min(
@@ -559,7 +564,6 @@ define([
 						this.timer.tempoRating.length /* unclear whether this is already factored in */
 					) || "",
 				playlist_duration: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
-				// timepoints: this.timepoints || ""
 			};
 			
 			return report;
