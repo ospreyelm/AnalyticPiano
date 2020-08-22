@@ -75,7 +75,7 @@ define([
 		} else if (sessionStorage.HarmonyLabPlaylistStartTime) {
 			this.resetSeriesTimer();
 			this.seriesTimer.start = sessionStorage.getItem('HarmonyLabPlaylistStartTime');
-			this.restarts = sessionStorage.getItem('HarmonyLabPlaylistRestarts') || 0;
+			this.restarts = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) || 0;
 		} else {
 			this.seriesTimer = null;
 			this.restarts = null;
