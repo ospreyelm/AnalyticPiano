@@ -1,3 +1,19 @@
+The following copyright and licensing notice applies to the work done by
+developers at Harvard University (Academic Technology Group) ca. 2012. Much
+of the code in this project has been contributed by other parties since that
+date, and, pending a proper update to this notice, that later work may be
+regarded as free for copying and modifying within specifically non-commercial
+and open-source uses. Anyone wishing to build upon this project in any way
+that is not completely free, open-source, public, and non-commercial should
+contact the repository owner to ascertain which parts of this project they
+may legitimately use. Further, anyone wishing to build upon this project
+should request a full and updated list of contributors to publish in their
+code, so that those who have contributed to this project are credited.
+Developers are also advised that this project uses a number of existing open-
+source libraries, each with their own list of credits and licensing notices.
+
+-----------------------------------------------------------------------------
+
 Copyright (c) 2012, The President and Fellows of Harvard College
 All rights reserved.
 
