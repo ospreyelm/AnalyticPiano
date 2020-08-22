@@ -68,7 +68,7 @@ define({
 
    "2/58":  {"root": "2", "label": "ii°"},
    "5/28":  {"root": "2", "label": "ii°{z}"},
-   "8/25":  {"root": "2", "label": "ii{z4}"},
+   "8/25":  {"root": "2", "label": "ii°{z4}"},
 
    "2/058": {"root": "2", "label": "ii⌀{u}"},
    "5/028": {"root": "2", "label": "ii⌀{z5}", "altLabel": "iv{dz}"},

@@ -89,7 +89,7 @@ define([
 		/*
 		 * Remembers prior Roman numerals
 		 */
-		romanNumeralsHistory: [],
+		romanNumeralsHistory: Object.create(null),
 		/**
 		 * Initializes the notater.
 		 *
@@ -460,84 +460,130 @@ define([
 		 * @return undefined
 		 */
 		drawRoman: function(x, y) {
+			
+			var key = this.keySignature.getKeyShortName();
+
 			var midi_nums = this.chord.getNoteNumbers();
 			var chord_entry = this.getAnalyzer().to_chord(midi_nums);
-			
-			/* not used for analysis proper, only text format */
-			var key = this.keySignature.getKeyShortName();
 
 			var width = 0, offset = 0;
 			var ctx = this.getContext();
 
-			if(chord_entry) {
-				/**
-				 * Initial attempt at contextual analysis
-				 * Alter label based on preceding one
-				 */
-				this.romanNumeralsHistory[this.stave.position.index] = chord_entry.label;
-				var RnHistory = this.romanNumeralsHistory;
-				/* this is problematic: ignores the interposition of single pitches or intervals */
+			if (!chord_entry) return ""; /* for grading */
 
-				const idx = this.stave.position.index;
-				var final_label = chord_entry.label;
+			/**
+			 * Initial attempt at contextual analysis
+			 * Alter label based on preceding one
+			 */
+			var history = this.romanNumeralsHistory;
+			var resolution_lines = false;
+			var applied_arrow = false;
 
-				var substitutions = [
-					[["i{z4}", "V"], ["V{z4}", " {t3}"]],
-					[["I{z4}", "V"], ["V{z4}", " {t3}"]],
-					[["i{z4}", "V{u3}"], ["V{z4}", " {u3}"]],
-					[["I{z4}", "V{u3}"], ["V{z4}", " {u3}"]],
-					[["vii°{u}", "VI{z}"], ["c.t.°{u}", "VI{z}"]],
-				];
+			const idx = this.stave.position.index;
+			var display = chord_entry.label;
 
-				if ( RnHistory[idx-1] ) { /* has precursor */
-					let precursor = RnHistory[idx-1];
-					let current = RnHistory[idx]
-					if (precursor == current) final_label = "";
-					else {
-						let progression = [precursor, current];
-						let probe = substitutions.map(sub_arr => sub_arr[0].join(">")).indexOf(progression.join(">"));
-						if (probe !== -1) {
-							final_label = substitutions[probe][1][1];
+			var substitutions = [
+				/* cadential six-fours */
+				[["I{z4}", "V"], ["V{z4}", "{t3}"]],
+				[["I{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
+				[["I{z4}", "V{u}"], ["V{z4}", "{Ut3}"]],
+				[["i{z4}", "V"], ["V{z4}", "{t3}"]],
+				[["i{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
+				[["i{z4}", "V{u}"], ["V{z4}", "{Ut3}"]],
+				// [["vii°{u}", "VI{z}"], ["c.t.°{u}", "VI{z}"]],
+			];
 
-							/* change precursor label after the fact:
-							 * the postcursor logic is flawed because chords can change before banking */
-							// to do
-						}
-					}
-				}
-				if ( RnHistory[idx+1] ) { /* has postcursor */
-					let postcursor = RnHistory[idx+1];
-					let current = RnHistory[idx]
-					let progression = [current, postcursor];
+			if ( history[idx-1] ) { /* has precursor */
+				let precursor = history[idx-1];
+				let current = history[idx]
+				if (precursor == current) display = "";
+				else {
+					let progression = [precursor, current];
 					let probe = substitutions.map(sub_arr => sub_arr[0].join(">")).indexOf(progression.join(">"));
-					if (probe !== -1) final_label = substitutions[probe][1][0];
-					else if (RnHistory[idx].split("/").length == 2) {
-						let parts = RnHistory[idx].split("/")
-						if (parts[1] == postcursor) {
-							final_label = parts[0] + " →";
-						}
-					} else {
-						// final_label = chord_entry.label /* reset */
+					if (probe !== -1) {
+						display = substitutions[probe][1][1];
+
+						/* Also, change precursor label after the fact:
+						 * the postcursor logic alone is flawed because
+						 * chords can change before banking */
+
+						// to do ^
 					}
 				}
-
-				/* TO DO: add horizontal lines */
-
-				if (key === "") {
-					/* there should be no double-sharp or double-flat roots */
-					final_label = final_label.replace(/b/g,'♭').replace(/#/g,'♯');
-				}
-
-				this.parseAndDraw(final_label, x, y, function(text, x, y) {
-
-					text = this.convertSymbols(text).replace(/⌀/g,'⌀'); /* replace: one could improve appearance of half-diminished sign with standard fonts here, but currently using custom font instead */
-					offset = 0 - ((text.slice(0,1) == '\u266D') ? ctx.measureText(text.slice(0,1)).width : 0) - (text.slice(0,1) == '\u266F' ? ctx.measureText(text.slice(0,1)).width : 0);
-
-					var lines = this.wrapText(text);
-					this.drawTextLines(lines, x + offset + StaveNotater.prototype.annotateOffsetX, y);
-					return this.getContext().measureText(lines[0]).width + offset; // return the width of the first line for figured bass
-				});
 			}
+			if ( history[idx+1] ) { /* has postcursor */
+				let postcursor = history[idx+1];
+				let current = history[idx]
+				let progression = [current, postcursor];
+				let probe = substitutions.map(sub_arr => sub_arr[0].join(">")).indexOf(progression.join(">"));
+				if (probe !== -1) {
+					display = substitutions[probe][1][0];
+					resolution_lines = true;
+				}
+				else if (key !== "" && history[idx].split("/").length == 2) {
+					let parts = history[idx].split("/")
+					if (parts[1].split("{")[0] == postcursor) {
+						display = parts[0]; // + " →"
+						applied_arrow = true;
+					}
+				}
+				if (postcursor === "" && (current === "I{z4}" || current === "i{z4}")) {
+					display = "{z4}"
+				}
+			} else { /* no postcursor */
+				let current = history[idx]
+				if (current === "I{z4}" || current === "i{z4}") {
+					display = "{z4}"
+				}
+			}
+
+			/* TO DO: add horizontal lines */
+
+			if (key === "") {
+				/* there should be no double-sharp or double-flat roots */
+				display = display.replace(/b/g,'♭').replace(/#/g,'♯');
+			}
+
+			this.parseAndDraw(display, x, y, function(text, x, y) {
+
+				text = this.convertSymbols(text).replace(/⌀/g,'⌀'); /* replace: one could improve appearance of half-diminished sign with standard fonts here, but currently using custom font instead */
+
+				offset = 0 - (['\u266D','\u266F','='].includes(text.slice(0,1)) ? ctx.measureText(text.slice(0,1)).width : 0); /* horizontal alignment when label begins with flat, sharp, or equals in lieu of resolution lines */
+
+				var lines = this.wrapText(text);
+				this.drawTextLines(lines, x + offset + StaveNotater.prototype.annotateOffsetX, y);
+
+				var first_line_width = this.getContext().measureText(lines[0]).width + offset;
+
+				if (resolution_lines) {
+					var x_start = this.annotateOffsetX+x+first_line_width+15;
+					var stroke_length = 38; /* should not be hard coded */
+					ctx.beginPath();
+						ctx.moveTo(x_start, y-3);
+						ctx.lineTo(x_start+stroke_length, y-3);
+						ctx.moveTo(x_start, y-12);
+						ctx.lineTo(x_start+stroke_length, y-13);
+					ctx.stroke();
+				}
+				resolution_lines = false;
+
+				if (applied_arrow) {
+					var x_start = this.annotateOffsetX+x+(first_line_width/2);
+					var x_end = this.annotateOffsetX+x+80; /* should not be hard coded */
+					ctx.beginPath();
+						ctx.lineWidth = 1.5;
+						ctx.moveTo(x_start,y+6);
+						ctx.bezierCurveTo(x_start+10,y+16,x_end-10,y+16,x_end,y+6);
+						ctx.lineTo(x_end-8,y+5);
+						ctx.moveTo(x_end,y+6);
+						ctx.lineTo(x_end-3,y+14);
+					ctx.stroke(); 
+				}
+				applied_arrow = false;
+
+				return first_line_width; // return the width of the first line for figured bass
+			});
+
 
 			return chord_entry; /* for grading */
 		},
@@ -831,11 +877,13 @@ define([
 
 			var x = this.getX();
 			var y = this.getY(); 
-			var notes = this.chord.getNoteNumbers();
-			var num_notes = notes.length;
+			var midi_nums = this.chord.getNoteNumbers();
+			var num_notes = midi_nums.length;
 			var mode = this.analyzeConfig.mode;
 
-			if(num_notes >= 2 && (mode.thoroughbass)) {
+			this.romanNumeralsHistory[this.stave.position.index] = this.getAnalyzer().to_chord(midi_nums).label || ""; /* stores unedited chord labels */
+
+			if(num_notes >= 2 && mode.thoroughbass) {
 				this.drawThoroughbass(x, y);
 			} else if(num_notes == 2 && mode.intervals) {
 				this.drawInterval(x, y);
