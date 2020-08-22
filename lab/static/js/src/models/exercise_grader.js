@@ -62,6 +62,7 @@ define([
 			result_map = [CORRECT,PARTIAL,INCORRECT];
 			score = score_map[CORRECT];
 
+			console.log (definition.exercise.type);
 
 			for(i = 0, len = problems.length; i < len; i++) {
 				expected_notes = problems[i].notes;
@@ -69,7 +70,6 @@ define([
 				if(chords[i]) {
 					actual_notes = chords[i].getNoteNumbers();
 				}
-				console.log (definition.exercise.type);
 				switch (definition.exercise.type) {
 					case "matching":
 						result = this.notesMatch(expected_notes, actual_notes);

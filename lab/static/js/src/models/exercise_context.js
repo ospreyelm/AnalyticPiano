@@ -75,7 +75,7 @@ define([
 		} else if (sessionStorage.HarmonyLabPlaylistStartTime) {
 			this.resetSeriesTimer();
 			this.seriesTimer.start = sessionStorage.getItem('HarmonyLabPlaylistStartTime');
-			this.restarts = sessionStorage.getItem('HarmonyLabPlaylistRestarts') || 0;
+			this.restarts = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) || 0;
 		} else {
 			this.seriesTimer = null;
 			this.restarts = null;
@@ -520,9 +520,14 @@ define([
 			let offset = new Date().getTimezoneOffset()
 			let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
 
+			var idx = this.definition.getExerciseList().reduce(
+				function(selected, current, index) {
+					return (selected < 0 && current.selected) ? index : selected;
+				},-1);
+
 			var report = {
 				performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
-				exercise_ID: this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id || "",
+				exercise_ID: this.definition.getExerciseList()[idx].id || "",
 				time: new Date().toJSON().slice(0,16) || "",
 				timezone: timezone_str || "",
 				exercise_error_tally: this.errorTally,
@@ -542,7 +547,7 @@ define([
 				performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
 				time: new Date().toJSON().slice(0,16) || "",
 				timezone: timezone_str || "",
-				playlist_restart_tally: this.restarts || "",
+				playlist_restart_tally: this.restarts || 0,
 				playlist_lowest_tempo_rating:
 					Math.min(
 						sessionStorage.getItem('HarmonyLabPlaylistTempoRating').length,
