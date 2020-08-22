@@ -519,10 +519,15 @@ define([
 			
 			let offset = new Date().getTimezoneOffset()
 			let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
-			
+
+			var idx = this.definition.getExerciseList().reduce(
+				function(selected, current, index) {
+					return (selected < 0 && current.selected) ? index : selected;
+				},-1);
+
 			var report = {
 				performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
-				exercise_ID: this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id || "",
+				exercise_ID: this.definition.getExerciseList()[idx].id || "",
 				time: new Date().toJSON().slice(0,16) || "",
 				timezone: timezone_str || "",
 				exercise_error_tally: this.errorTally,
