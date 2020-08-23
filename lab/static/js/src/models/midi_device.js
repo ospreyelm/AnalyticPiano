@@ -211,7 +211,9 @@ define([
 	 * @return undefined
 	 */
 	MidiDevice.prototype.sendMIDIMessage = function(msg) {
-		if (false) { /* midi output */
+		if (msg[1] == 109) {
+			// midi note 109 is ignored (used for side-effect on frontend)
+		} else if (false) { /* midi output */
 			if (this._output) {
 				this._output.send(msg);
 			}
