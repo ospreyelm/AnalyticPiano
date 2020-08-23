@@ -63,7 +63,7 @@ define([
 			score = score_map[CORRECT];
 
 
-			if (definition.exercise.type === "analytical") {
+			if (["analytical", "figured_bass"].includes(definition.exercise.type)) {
 				var analysis_types = Object.keys(definition.exercise.analysis.mode)
 					.filter( function(key) {return definition.exercise.analysis.mode[key];} );
 				// console.log (analysis_types);
@@ -80,6 +80,9 @@ define([
 						result = this.notesMatch(expected_notes, actual_notes);
 						break
 					case "analytical":
+						result = this.analysisMatch(expected_notes, actual_notes, analysis_types);
+						break;
+					case "figured_bass": /* same grading, different display (createDisplayChords) */
 						result = this.analysisMatch(expected_notes, actual_notes, analysis_types);
 						break;
 					case "echo_bass":

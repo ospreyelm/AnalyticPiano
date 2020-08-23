@@ -728,8 +728,14 @@ define([
 			var CORRECT = this.grader.STATE.CORRECT;
 			var g_problem, chord, chords, rhythm;
 
-			for(var i = 0, len = problems.length; i < len; i++) {
-				notes = (this.definition.exercise.type === "analytical" ? [] : problems[i].visible);
+			for (var i = 0, len = problems.length; i < len; i++) {
+				if (this.definition.exercise.type === "analytical") {
+					notes = [];
+				} else if (this.definition.exercise.type === "figured_bass") {
+					notes = problems[i].visible.sort().slice(0,1);
+				} else {
+					notes = problems[i].visible;
+				}
 				rhythm = problems[i].rhythm;
 				g_problem = false;
 				if(this.graded !== false && this.graded.problems[i]) {
