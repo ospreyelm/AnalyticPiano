@@ -4,7 +4,6 @@ define([
 	'app/config',
 	'app/components/events',
 	'app/components/component',
-	'app/components/midi',
 	'./music/play_sheet'
 ], function(
 	$, 
@@ -12,7 +11,6 @@ define([
 	Config,
 	EVENTS,
 	Component,
-	MidiComponent,
 	PlainSheetComponent
 ) {
 	/**
@@ -148,8 +146,8 @@ define([
 				sheetComponent.exerciseContext.inputChords.clear();
 				sheetComponent.exerciseContext.inputChords.goTo(0);
 				window.console.dir('send dummy note');
-				MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
-				MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
+				this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
+				this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
 			} else {
 				/* play view */
 				sheetComponent.chords.clear();
