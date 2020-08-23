@@ -729,7 +729,7 @@ define([
 			var g_problem, chord, chords, rhythm;
 
 			for (var i = 0, len = problems.length; i < len; i++) {
-				if (this.definition.exercise.type === "analytical") {
+				if (["analytical", "analytical_pcs"].includes(this.definition.exercise.type)) {
 					notes = [];
 				} else if (this.definition.exercise.type === "figured_bass") {
 					notes = problems[i].visible.sort().slice(0,1);

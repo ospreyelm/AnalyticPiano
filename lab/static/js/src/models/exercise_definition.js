@@ -23,7 +23,9 @@ define(['lodash'], function(_) {
 	 */
 	ExerciseDefinition.TYPES = {
 		matching: "matching",
-		analytical: "analytical"
+		analytical: "analytical",
+		analytical_pcs: "analytical_pcs",
+		figured_bass: "figured_bass"
 	};
 
 	_.extend(ExerciseDefinition.prototype, {
