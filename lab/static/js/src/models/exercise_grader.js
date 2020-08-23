@@ -50,7 +50,7 @@ define([
 			var graded = {
 				result: null,
 				score: 0,
-				problems:[]
+				problems: []
 			};
 			var score_map = {};
 			var result_map = []; 
@@ -62,7 +62,12 @@ define([
 			result_map = [CORRECT,PARTIAL,INCORRECT];
 			score = score_map[CORRECT];
 
-			console.log (definition.exercise.type);
+
+			if (definition.exercise.type === "analytical") {
+				var analysis_types = Object.keys(definition.exercise.analysis.mode)
+					.filter( function(key) {return definition.exercise.analysis.mode[key];} );
+				// console.log (analysis_types);
+			}
 
 			for(i = 0, len = problems.length; i < len; i++) {
 				expected_notes = problems[i].notes;
@@ -75,7 +80,7 @@ define([
 						result = this.notesMatch(expected_notes, actual_notes);
 						break
 					case "analytical":
-						result = this.analysisMatch(expected_notes, actual_notes);
+						result = this.analysisMatch(expected_notes, actual_notes, analysis_types);
 						break;
 					case "echo_bass":
 						result = this.bassMatch(expected_notes, actual_notes);
@@ -152,8 +157,8 @@ define([
 
 			return result;
 		},
-		analysisMatch: function(expected, delivered) {
-			/* parameters are arrays of midi numbers */
+		analysisMatch: function(expected, delivered, analysis_types) {
+			/* first two parameters are arrays of midi numbers */
 
 			var result = {
 				state: null,
@@ -162,13 +167,46 @@ define([
 				notes: delivered,
 			};
 
-			var mistake = false;
+			var pc_mistake = false;
+			var wrong_analysis = false;
 
-			/* inefficient to keep looking up the analysis; do once per exercise */
-			var target_analysis = this.analyzer.to_scale_degree(expected_notes);
-			var probe_analysis = this.analyzer.to_scale_degree(actual_notes);
+			var analyze_func = {
+				"intervals": "to_interval",
+				"note_names": "to_note_name",
+				"roman_numerals": "to_chord",
+				"scale_degrees": "to_scale_degree",
+				"scientific_pitch": "to_scientific_pitch",
+				"solfege": "to_solfege"
+			};
+			var i, len;
+			for (i = 0, len = analysis_types.length; i < len; i++) {
+				let type = analyze_func[analysis_types[i]];
 
-			result.state = (probe_analysis === target_analysis ? CORRECT : PARTIAL);
+				/* Possible change: run this once only per exercise? */
+				let expected_result = eval("this.analyzer." + type + "(expected)");
+
+				let delivered_result = eval("this.analyzer." + type + "(delivered)");
+				if (expected_result !== delivered_result) wrong_analysis = true;
+			}
+
+			/* Checks pitch classes */
+			var expected_pcs = expected.map( function(midi) {return midi % 12} );
+			var i, len;
+			for (i = 0, len = delivered.length; i < len; i++) {
+				midi = delivered[i];
+
+				if (expected_pcs.indexOf(midi % 12) !== -1) {
+					result.note[midi] = CORRECT;
+					result.count[CORRECT].push(midi);
+				} else {
+					result.note[midi] = INCORRECT;
+					result.count[INCORRECT].push(midi);
+					pc_mistake = true;
+				}
+			}
+
+			result.state = (pc_mistake ? INCORRECT
+				: (wrong_analysis ? PARTIAL : CORRECT));
 
 			return result;
 		},
@@ -199,8 +237,6 @@ define([
 					mistake = true;
 				}
 			}
-
-			console.log(result.count);
 
 			result.state = (mistake === true ? INCORRECT :
 				(
@@ -239,8 +275,6 @@ define([
 					mistake = true;
 				}
 			}
-
-			console.log(result.count);
 
 			result.state = (mistake === true ? INCORRECT :
 				(

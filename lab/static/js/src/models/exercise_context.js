@@ -144,7 +144,10 @@ define([
 
 			graded = this.grader.grade(this.definition, this.inputChords);
 
-			switch(graded.result) {
+			if (this.inputChords._items[0]._notes[109]) {
+				window.console.dir('catch dummy note');
+				state = ExerciseContext.STATE.CORRECT;
+			} else { switch(graded.result) {
 				case this.grader.STATE.CORRECT:
 					if(this.sealed != true) {
 						this.makeTimestamp();
@@ -201,11 +204,6 @@ define([
 					this.sealed = true;
 					break;
 				case this.grader.STATE.INCORRECT:
-					if(this.inputChords._items[0]._notes[86]) {
-						window.console.dir('catch dummy note');
-						state = ExerciseContext.STATE.CORRECT;
-						break;
-					}
 					this.makeTimestamp();
 					state = ExerciseContext.STATE.INCORRECT;
 					this.done = false;
@@ -219,7 +217,7 @@ define([
 				default:
 					state = ExerciseContext.STATE.WAITING;
 					this.done = false;
-			}
+			}}
 
 			this.graded = graded;
 			this.state = state;
@@ -731,7 +729,7 @@ define([
 			var g_problem, chord, chords, rhythm;
 
 			for(var i = 0, len = problems.length; i < len; i++) {
-				notes = problems[i].visible;
+				notes = (this.definition.exercise.type === "analytical" ? [] : problems[i].visible);
 				rhythm = problems[i].rhythm;
 				g_problem = false;
 				if(this.graded !== false && this.graded.problems[i]) {

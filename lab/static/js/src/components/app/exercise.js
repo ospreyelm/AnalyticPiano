@@ -189,8 +189,8 @@ define([
 		 * to generate exercise errors.
 		 */
 		window.console.dir('send dummy note');
-		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'on', 86, 0);
-		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'off', 86, 0);
+		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
+		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
 		// Ineffective. Try something else
 	};
 
