@@ -281,7 +281,7 @@ class CourseExerciseView(View):
             return HttpResponse(status=400)
 
         exercise = Exercise()
-        exercise.data = data
+        exercise.data = json.loads(data)
 
         # FIXME
         exercise.authored_by = User.get_guest_user()
