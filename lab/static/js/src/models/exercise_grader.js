@@ -76,7 +76,6 @@ define([
 					.filter( function(key) {return definition.exercise.analysis.mode[key];} )
 					.filter( function(mode) {return supported.includes(mode);} );
 				var abbrev_switch = definition.exercise.analysis.mode.abbreviate_thoroughbass;
-				abbrev_switch = false; // assessments by abbreviated figure would be flawed in most cases
 			}
 
 			for(i = 0, len = problems.length; i < len; i++) {
@@ -96,6 +95,9 @@ define([
 						result = this.analysisPcsMatch(expected_notes, actual_notes, analysis_types);
 						break;
 					case "figured_bass":
+						// Assessments by abbreviated figure would be flawed in most cases,
+						// in the absence of pitch-class checks
+						abbrev_switch = false;
 						result = this.figuredBassMatch(expected_notes, actual_notes, abbrev_switch);
 						break;
 					case "figured_bass_pcs":
