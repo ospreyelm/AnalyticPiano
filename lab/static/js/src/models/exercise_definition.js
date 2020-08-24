@@ -25,7 +25,8 @@ define(['lodash'], function(_) {
 		matching: "matching",
 		analytical: "analytical",
 		analytical_pcs: "analytical_pcs",
-		figured_bass: "figured_bass"
+		figured_bass: "figured_bass",
+		figured_bass_pcs: "figured_bass_pcs"
 	};
 
 	_.extend(ExerciseDefinition.prototype, {

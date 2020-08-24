@@ -731,7 +731,7 @@ define([
 			for (var i = 0, len = problems.length; i < len; i++) {
 				if (["analytical", "analytical_pcs"].includes(this.definition.exercise.type)) {
 					notes = [];
-				} else if (this.definition.exercise.type === "figured_bass") {
+				} else if (["figured_bass", "figured_bass_pcs"].includes(this.definition.exercise.type)) {
 					notes = problems[i].visible.sort().slice(0,1);
 				} else {
 					notes = problems[i].visible;

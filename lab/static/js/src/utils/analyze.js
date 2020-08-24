@@ -595,13 +595,18 @@ var spellingAndAnalysisFunctions = {
     },
     full_thoroughbass_figure: function(midi_nums) {
         if (midi_nums.length < 2) return "";
-        return this.thoroughbass_stack(midi_nums).map(item => item[0])
-                   .join('/');
+        var stack = this.thoroughbass_stack(midi_nums).map(item => item[0]);
+        return stack.join('/');
+    },
+    full_thoroughbass_figure_minus_octave: function(midi_nums) {
+        if (midi_nums.length < 2) return "";
+        var stack = this.thoroughbass_stack(midi_nums).map(item => item[0]).filter(function(interval){return interval !== "8"});
+        return stack.join('/');
     },
     abbrev_thoroughbass_figure: function(midi_nums) {
         if (midi_nums.length < 2) return "";
-        return this.abbreviate_thoroughbass(this.thoroughbass_stack(midi_nums))
-                   .join('/');
+        var stack = this.abbreviate_thoroughbass(this.thoroughbass_stack(midi_nums));
+        return stack.join('/');
     },
     thoroughbass_stack: function(midi_nums) {
         var bass_midi = midi_nums[0];

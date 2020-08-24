@@ -71,11 +71,12 @@ define([
 				"solfege",
 				"thoroughbass"
 			];
-			if (["analytical", "analytical_pcs", "figured_bass"].includes(definition.exercise.type)) {
+			if (["analytical", "analytical_pcs", "figured_bass", "figured_bass_pcs"].includes(definition.exercise.type)) {
 				var analysis_types = Object.keys(definition.exercise.analysis.mode)
 					.filter( function(key) {return definition.exercise.analysis.mode[key];} )
 					.filter( function(mode) {return supported.includes(mode);} );
-				// console.log (analysis_types);
+				var abbrev_switch = definition.exercise.analysis.mode.abbreviate_thoroughbass;
+				abbrev_switch = false; // assessments by abbreviated figure would be flawed in most cases
 			}
 
 			for(i = 0, len = problems.length; i < len; i++) {
@@ -95,7 +96,10 @@ define([
 						result = this.analysisPcsMatch(expected_notes, actual_notes, analysis_types);
 						break;
 					case "figured_bass":
-						result = this.figuredBassMatch(expected_notes, actual_notes, analysis_types);
+						result = this.figuredBassMatch(expected_notes, actual_notes, abbrev_switch);
+						break;
+					case "figured_bass_pcs":
+						result = this.figuredBassPcsMatch(expected_notes, actual_notes, abbrev_switch);
 						break;
 					case "echo_bass":
 						result = this.bassMatch(expected_notes, actual_notes);
@@ -180,7 +184,8 @@ define([
 				"scale_degrees": "to_scale_degree",
 				"scientific_pitch": "getNoteName",
 				"solfege": "to_solfege",
-				"thoroughbass": "full_thoroughbass_figure"
+				"full_thoroughbass": "full_thoroughbass_figure_minus_octave",
+				"abbrev_thoroughbass": "abbrev_thoroughbass_figure"
 			};
 			var analyze_props = {
 				"intervals": ".name", // ok
@@ -189,7 +194,8 @@ define([
 				"scale_degrees": "", // ok
 				"scientific_pitch": "", // ok
 				"solfege": "", // ok
-				"thoroughbass": "" // ok
+				"full_thoroughbass": "", // ok
+				"abbrev_thoroughbass": "" // ok
 			};
 			var i, len;
 			for (i = 0, len = analysis_types.length; i < len; i++) {
@@ -233,6 +239,12 @@ define([
 				notes: delivered,
 			};
 
+			if (!delivered || delivered == null || delivered.length < 1) {
+				result.state = PARTIAL;
+				return result;
+			}
+
+
 			/* Checks pitch classes */
 			var pc_mistake = false;
 			var expected_pcs = expected.map( function(midi) {return midi % 12} );
@@ -267,6 +279,12 @@ define([
 				notes: delivered,
 			};
 
+			if (!delivered || delivered == null || delivered.length < 1) {
+				result.state = PARTIAL;
+				return result;
+			}
+
+
 			var analysisBool = this.analysisBool(expected, delivered, analysis_types);
 
 			if (analysisBool) {
@@ -287,7 +305,7 @@ define([
 
 			return result;
 		},
-		figuredBassMatch: function(expected, delivered, analysis_types) {
+		figuredBassPcsMatch: function(expected, delivered, abbreviated) {
 			/* first two parameters are arrays of midi numbers */
 
 			var result = {
@@ -296,6 +314,11 @@ define([
 				note: {},
 				notes: delivered,
 			};
+
+			if (!delivered || delivered == null || delivered.length < 1) {
+				result.state = PARTIAL;
+				return result;
+			}
 
 
 			var wrong_bass = false;
@@ -314,8 +337,9 @@ define([
 				}
 			}
 
+			var fig_type = (abbreviated ? "abbrev_thoroughbass" : "full_thoroughbass");
 			var analysisBool = (wrong_bass ? false
-				: this.analysisBool(expected, delivered, ["thoroughbass"])
+				: this.analysisBool(expected, delivered, [fig_type])
 				);
 
 			/* Checks pitch classes */
@@ -339,6 +363,65 @@ define([
 
 			result.state = (pc_mistake ? INCORRECT
 				: (analysisBool ? CORRECT : PARTIAL));
+
+			return result;
+		},
+		figuredBassMatch: function(expected, delivered, abbreviated) {
+			/* first two parameters are arrays of midi numbers */
+
+			var result = {
+				state: null,
+				count: { correct: [], incorrect: [] }, // poorly named
+				note: {},
+				notes: delivered,
+			};
+
+			if (!delivered || delivered == null || delivered.length < 1) {
+				result.state = PARTIAL;
+				return result;
+			}
+
+
+			var wrong_bass = false;
+			if (delivered.length >= 1 & expected.length >= 1) {
+
+				let bass_midi = delivered.sort()[0]; // sort should be redundant
+				let target = expected.sort()[0]; // sort should be redundant
+
+				if (bass_midi != target) {
+					result.note[bass_midi] = INCORRECT;
+					result.count[INCORRECT].push(bass_midi);
+					wrong_bass = true;
+				} else {
+					result.note[bass_midi] = CORRECT;
+					result.count[CORRECT].push(bass_midi);
+				}
+			}
+
+			var fig_type = (abbreviated ? "abbrev_thoroughbass" : "full_thoroughbass");
+			var analysisBool = (wrong_bass ? false
+				: this.analysisBool(expected, delivered, [fig_type])
+				);
+
+			if (analysisBool) {
+				for (i = 0, len = delivered.length; i < len; i++) {
+					if (i == 0) continue; // bass assessed already
+
+					var midi = delivered[i];
+					result.note[midi] = CORRECT;
+					result.count[CORRECT].push(midi);
+				}
+			} else {
+				for (i = 0, len = delivered.length; i < len; i++) {
+					if (i == 0) continue; // bass assessed already
+
+					var midi = delivered[i];
+					result.note[midi] = INCORRECT;
+					result.count[INCORRECT].push(midi);
+				}
+			}
+
+			result.state = (analysisBool ? CORRECT : PARTIAL);
 
 			return result;
 		},
