@@ -59,7 +59,9 @@ class PlaylistAdmin(admin.ModelAdmin):
     exercise_links.short_description = 'Exercise Links'
 
     def performances(self, obj):
-        link = reverse('lab:playlist_performance', kwargs={'playlist_id': obj.id})
+        if not (obj and obj._id):
+            return '-'
+        link = reverse('lab:performance-report', kwargs={'playlist_id': obj.id})
         return mark_safe("<a href='%s'>Show Data</a><br>" % link)
 
     performances.allow_tags = True

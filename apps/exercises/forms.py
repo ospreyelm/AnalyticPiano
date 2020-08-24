@@ -23,10 +23,10 @@ class PlaylistForm(forms.ModelForm):
 
     def clean(self):
         super(PlaylistForm, self).clean()
-        exercise_ids = self.cleaned_data['exercises'].split(',')
+        exercise_ids = self.cleaned_data.get('exercises', '').split(',')
         available_exercises = list(Exercise.objects.values_list('id', flat=True))
         for id_ in exercise_ids:
-            if id_ not in available_exercises:
+            if id_ != '' and id_ not in available_exercises:
                 self.add_error('exercises', f'Exercise with ID {id_} does not exist.')
 
 

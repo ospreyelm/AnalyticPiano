@@ -56,6 +56,6 @@ urlpatterns = [
     # Admin
     path('admin/exercises/playlist/<str:playlist_id>/performances/',
          playlist_performance_view,
-         name='playlist_performance'),
+         name='performance-report'),
 
 ]
