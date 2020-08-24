@@ -126,9 +126,35 @@ define([
 		},
 		renderPristine: function() {
 			var sheetComponent = this.getComponent('sheet');
-			sheetComponent.chords.clear();
+
+			if (sheetComponent.hasOwnProperty('exerciseContext')) {
+				// for debugging only
+				// console.log('exercise view, call of renderPristine');
+				// var items = sheetComponent.exerciseContext.inputChords.items();
+				// var chords = _.pluck(items, "chord");
+				// if (chords.length > 1) console.log('most recent played chord', chords[chords.length-2].getNoteNumbers());
+			} else {
+				// for debugging only
+				// console.log('play view, call of renderPristine');
+				// var items = sheetComponent.chords.items();
+				// var chords = _.pluck(items, "chord");
+				// console.log('most recent banked chord', chords[1].getNoteNumbers());
+			}
+
+			if (sheetComponent.hasOwnProperty('exerciseContext')) {
+				/* exercise view */
+				sheetComponent.exerciseContext.inputChords.clear();
+				sheetComponent.exerciseContext.inputChords.goTo(0);
+				window.console.dir('send dummy note');
+				this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
+				this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
+			} else {
+				/* play view */
+				sheetComponent.chords.clear();
+			}
 			sheetComponent.clear();
 			sheetComponent.render();
+
 			return this;
 		},
 		/**

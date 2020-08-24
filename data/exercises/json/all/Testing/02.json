@@ -1,37 +1,31 @@
 {
-  "type": "matching",
-  "introText": "<audio controls></audio>",
+  "type": "analytical",
+  "introText": "Play the notes on the bass staff.",
   "keySignature": "",
-  "key": "h",
+  "key": "jG_",
   "chord": [
-    {"visible":[52,64],"hidden":[]},
-    {"visible":[52,62,64,68],"hidden":[]},
-    {"visible":[45,61,64,69],"hidden":[]},
-    {"visible":[57,69],"hidden":[]},
-    {"visible":[57,67,69,73],"hidden":[]},
-    {"visible":[50,66,69,74],"hidden":[]},
-    {"visible":[50,62],"hidden":[]},
-    {"visible":[50,60,62,66],"hidden":[]},
-    {"visible":[43,59,62,67],"hidden":[]}
+    {"visible":[48,60],"hidden":[],"rhythmValue":"h"},
+    {"visible":[47],"hidden":[],"rhythmValue":"h"},
+    {"visible":[65,68],"hidden":[],"rhythmValue":"w"},
+    {"visible":[45],"hidden":[]}
   ],
   "reviewText": "",
-  "staffDistribution": "keyboard",
   "analysis": {
     "enabled": true,
     "mode": {
-      "note_names": true,
-      "scientific_pitch": false,
-      "scale_degrees": false,
+      "note_names": false,
+      "scientific_pitch": true,
+      "scale_degrees": true,
       "solfege": false,
-      "roman_numerals": true,
-      "intervals": false
+      "roman_numerals": false,
+      "intervals": true
     }
   },
   "highlight": {
     "enabled": true,
     "mode": {
       "roothighlight": false,
-      "tritonehighlight": true
+      "tritonehighlight": false
     }
   }
 }

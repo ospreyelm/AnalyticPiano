@@ -144,7 +144,10 @@ define([
 
 			graded = this.grader.grade(this.definition, this.inputChords);
 
-			switch(graded.result) {
+			if (this.inputChords._items[0]._notes[109]) {
+				window.console.dir('catch dummy note');
+				state = ExerciseContext.STATE.CORRECT;
+			} else { switch(graded.result) {
 				case this.grader.STATE.CORRECT:
 					if(this.sealed != true) {
 						this.makeTimestamp();
@@ -197,15 +200,10 @@ define([
 					} else {
 						state = ExerciseContext.STATE.CORRECT;
 					}
-
+					
 					this.sealed = true;
 					break;
 				case this.grader.STATE.INCORRECT:
-					if(this.inputChords._items[0]._notes[86]) {
-						window.console.dir('catch dummy note');
-						state = ExerciseContext.STATE.CORRECT;
-						break;
-					}
 					this.makeTimestamp();
 					state = ExerciseContext.STATE.INCORRECT;
 					this.done = false;
@@ -219,7 +217,7 @@ define([
 				default:
 					state = ExerciseContext.STATE.WAITING;
 					this.done = false;
-			}
+			}}
 
 			this.graded = graded;
 			this.state = state;
@@ -516,7 +514,7 @@ define([
 			return this;
 		},
 		compileExerciseReport: function() {
-
+			
 			let offset = new Date().getTimezoneOffset()
 			let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
 
@@ -536,13 +534,23 @@ define([
 				exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
 			};
 
+			// if (idx+1 === getExerciseList().length) {
+			// 	report[playlist_restart_tally]: this.restarts || 0,
+			// 	report[playlist_lowest_tempo_rating]:
+			// 		Math.min(
+			// 			sessionStorage.getItem('HarmonyLabPlaylistTempoRating').length,
+			// 			this.timer.tempoRating.length /* unclear whether this is already factored in */
+			// 		) || "",
+			// 	report[playlist_duration]: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
+			// }
+
 			return report;
 		},
 		compilePlaylistReport: function() {
-
+			
 			let offset = new Date().getTimezoneOffset()
 			let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
-
+			
 			var report = {
 				performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
 				time: new Date().toJSON().slice(0,16) || "",
@@ -735,8 +743,14 @@ define([
 			var CORRECT = this.grader.STATE.CORRECT;
 			var g_problem, chord, chords, rhythm;
 
-			for(var i = 0, len = problems.length; i < len; i++) {
-				notes = problems[i].visible;
+			for (var i = 0, len = problems.length; i < len; i++) {
+				if (["analytical", "analytical_pcs"].includes(this.definition.exercise.type)) {
+					notes = [];
+				} else if (["figured_bass", "figured_bass_pcs"].includes(this.definition.exercise.type)) {
+					notes = problems[i].visible.sort().slice(0,1);
+				} else {
+					notes = problems[i].visible;
+				}
 				rhythm = problems[i].rhythm;
 				g_problem = false;
 				if(this.graded !== false && this.graded.problems[i]) {

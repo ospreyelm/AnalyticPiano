@@ -62,7 +62,10 @@ define([
 	 */
 	AppExerciseComponent.prototype.getModels = function() {
 		var models = {};
-		var definition = this.getExerciseDefinition()
+		var definition = this.getExerciseDefinition(); /* EXERCISE DATA ENTERS HERE */
+
+		console.log("Exercise data at initiation of AppExerciseComponent", definition);
+
 		models.midiDevice = new MidiDevice();
 		models.exerciseDefinition = new ExerciseDefinition({
 			definition: definition
@@ -87,8 +90,8 @@ define([
 	 * Returns the exercise definition.
 	 */
 	AppExerciseComponent.prototype.getExerciseDefinition = function() {
-		var exercise_config = module.config();
-		if(!exercise_config) { 
+		var exercise_config = module.config(); /* EXERCISE DATA ENTERS HERE */
+		if (!exercise_config) {
 			throw new Error("getExerciseDefinition(): missing exercise configuration data"); 
 		}
 		return exercise_config; //$.extend(true, {}, exercise_config); // Return deep copy of the config
@@ -153,6 +156,16 @@ define([
 			},
 			function() {
 				var definition = this.models.exerciseContext.getDefinition();
+
+				// Working towards redraw instead of refresh
+				let list = definition.getExerciseList();
+	            let idx = definition.getExerciseList().reduce(function(selected, current, index) {
+	               return (selected < 0 && current.selected) ? index : selected;
+	            }, -1);
+	            let next_idx = (idx+1 < list.length ? idx+1 : false);
+	            console.log("At initiation of MusicComponent, this exercise is", list[idx].id );
+	            console.log("At initiation of MusicComponent, next exercise is", (next_idx ? list[next_idx].id : false) );
+
 				var c = new MusicComponent({
 					el: $("#staff-area"),
 					sheet: new ExerciseSheetComponent({
@@ -189,9 +202,8 @@ define([
 		 * to generate exercise errors.
 		 */
 		window.console.dir('send dummy note');
-		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'on', 86, 0);
-		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'off', 86, 0);
-		// Ineffective. Try something else
+		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
+		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
 	};
 
 	return AppExerciseComponent;
