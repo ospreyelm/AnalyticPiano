@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.http import HttpResponse, Http404
@@ -20,8 +21,10 @@ from apps.exercises.models import Exercise, Playlist
 import json
 import copy
 
-
 # from django.core.mail import send_mail
+
+User = get_user_model()
+
 
 class RequirejsContext(object):
     def __init__(self, config, debug=True):
@@ -162,7 +165,7 @@ class ManageView(RequirejsView, LoginRequiredMixin):
             context['manage_url'] = reverse('lab:course-manage', kwargs={"course_id": course_id})
             context['home_url'] = reverse("lab:course-index", kwargs={"course_id": course_id})
             manage_params['exercise_api_url'] = "%s?%s" % (
-            reverse('lab:api-exercises'), urlencode({"course_id": course_id}))
+                reverse('lab:api-exercises'), urlencode({"course_id": course_id}))
 
         self.requirejs_context.set_app_module('app/components/app/manage')
         self.requirejs_context.set_module_params('app/components/app/manage', manage_params)
@@ -273,9 +276,16 @@ class CourseExerciseView(View):
     http_method_names = ['post']
 
     def post(self, request, *args, **kwargs):
-        # FIXME add course, unit, and get exercise name from user
-        Exercise.objects.create(
-            data=request.POST.get('data'),
-            name='Test Exercise'
-        )
+        data = request.POST.get('data')
+        if data == 'null':
+            return HttpResponse(status=400)
+
+        exercise = Exercise()
+        exercise.data = data
+
+        # FIXME
+        exercise.authored_by = User.get_guest_user()
+        exercise.is_public = True
+
+        exercise.save()
         return HttpResponse(status=201)
