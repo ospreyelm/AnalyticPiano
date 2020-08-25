@@ -9,7 +9,7 @@ define([
 	'app/components/music',
 	'app/components/music/exercise_sheet',
 	'app/components/midi',
-	'app/components/notifications',
+	// 'app/components/notifications',
 	'app/components/input/shortcuts',
 	'app/components/ui/main_menu',
 	'app/components/ui/music_controls',
@@ -30,7 +30,7 @@ define([
 	MusicComponent,
 	ExerciseSheetComponent,
 	MidiComponent,
-	NotificationsComponent,
+	// NotificationsComponent,
 	KeyboardShortcutsComponent,
 	MainMenuComponent,
 	MusicControlsComponent,
@@ -105,12 +105,12 @@ define([
 	 */
 	AppExerciseComponent.prototype.getComponentMethods = function() {
 		var methods = [
-			function () {
-				var c = new NotificationsComponent();
-				c.init(this);
-				c.renderTo("#notifications", "#notificationAlerts");
-				this.addComponent(c);
-			},
+			// function () {
+			// 	var c = new NotificationsComponent();
+			// 	c.init(this);
+			// 	c.renderTo("#notifications", "#notificationAlerts");
+			// 	this.addComponent(c);
+			// },
 			function() {
 				var c = new PianoComponent({
 					toolbarConfig: {metronome: false}
