@@ -1,9 +1,21 @@
 <div id="header" class="header">
-	<ul>
-		{% block header_extra %}{% endblock %}
-		<li id="performerName"></li>
-		<li id="notificationAlerts" class="notificationAlerts"></li>
-	</ul>
+    <ul>
+        {% block header_extra %}{% endblock %}
+        <li id="performerName"></li>
+        <li id="notificationAlerts" class="notificationAlerts"></li>
+    </ul>
+    {% if user.is_authenticated %}
+        <p>
+            Logged in as: {{ user.email }}
+            <a href="{% url 'custom-logout' %}">Logout</a>
+        </p>
+    {% else %}
+        <p>
+            <a href="{% url 'custom-login' %}">Login</a>
+            <a href="{% url 'registration' %}">Register</a>
+        </p>
+    {% endif %}
+
 </div>
 
 <!-- <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;">

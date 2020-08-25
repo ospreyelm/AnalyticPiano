@@ -3,7 +3,7 @@ from django.contrib.auth import admin, get_user_model
 from django.contrib.auth.admin import UserChangeForm, UserCreationForm
 from django.contrib.auth.forms import AdminPasswordChangeForm
 
-from apps.accounts.forms import CustomUserCreationForm
+from apps.accounts.forms import UserAdminCreationForm
 
 User = get_user_model()
 
@@ -25,7 +25,7 @@ class UserAdmin(admin.UserAdmin):
         }),
     )
     form = UserChangeForm
-    add_form = CustomUserCreationForm
+    add_form = UserAdminCreationForm
     change_password_form = AdminPasswordChangeForm
 
     list_display = (

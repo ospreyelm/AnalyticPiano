@@ -48,12 +48,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta(AbstractBaseUser.Meta):
         verbose_name = _('User')
         verbose_name_plural = _('Users')
+        ordering = ('-date_joined',)
 
     def clean(self):
         super().clean()
-        # TODO move to frontend sign-up view
-        if not self.is_staff and self.raw_password:
-            self.set_password(self.raw_password)
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self):

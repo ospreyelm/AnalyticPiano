@@ -283,8 +283,8 @@ class CourseExerciseView(View):
         exercise = Exercise()
         exercise.data = json.loads(data)
 
-        # FIXME
-        exercise.authored_by = User.get_guest_user()
+        user = request.user if request.user.is_authenticated else User.get_guest_user()
+        exercise.authored_by = user
         exercise.is_public = True
 
         exercise.save()

@@ -55,8 +55,7 @@ def playlist_performance_view(request, playlist_id):
 def submit_exercise_performance(request):
     performance_data = json.loads(request.POST.get('data'))
 
-    # FIXME get request user
-    user = User.get_guest_user()
+    user = request.user if request.user.is_authenticated else User.get_guest_user()
 
     playlist_name, exercise_num = performance_data['exercise_ID'].split('/')
     performance_data.pop('exercise_ID')
@@ -77,8 +76,7 @@ def submit_exercise_performance(request):
 def submit_playlist_performance(request):
     performance_data = json.loads(request.POST.get('data'))
 
-    # FIXME get request user
-    user = User.get_guest_user()
+    user = request.user if request.user.is_authenticated else User.get_guest_user()
 
     playlist_name, _ = performance_data['exercise_ID'].split('/')
     performance_data.pop('exercise_ID')
