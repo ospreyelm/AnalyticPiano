@@ -326,6 +326,8 @@ define([
 				dataType: 'json',
 			});
 			
+			window.alert('Exercise uploaded!');
+			
 			return true;
 		},
 		/**
