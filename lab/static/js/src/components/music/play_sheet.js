@@ -329,7 +329,7 @@ define([
 				    return obj[key]
 				}).map(key => parseInt(key));
 				let hidden = [];
-				chords.unshift({"rhythmValue":"","visible":visible,"hidden":hidden});
+				chords.unshift({"rhythmValue":"w","visible":visible,"hidden":hidden});
 			}
 
 			/* simplify for testing */
