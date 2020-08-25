@@ -248,7 +248,7 @@ define([
 			var paper = this.paper;
 
 			// render keyboard container
-			paper.rect(0, 0, width, height).attr('stroke-width', 2);
+			paper.rect(0, 0, width, height).attr('stroke-width', 0);
 
 			// render keys 
 			_.invoke(this.keyComponents, "render", paper, keyWidth, width, height);
