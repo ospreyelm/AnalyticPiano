@@ -298,7 +298,7 @@ define([
 			 */
 			if(this.hasStaveNotes()) {
 				var rhythm_value = this.noteFactory.getRhythmValue();
-				if(rhythm_value == null || rhythm_value === "") {
+				if(rhythm_value == null) {
 					rhythm_value = DEFAULT_RHYTHM_VALUE;
 				}
 				if(rhythm_value === "w") {
