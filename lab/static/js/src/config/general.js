@@ -21,8 +21,8 @@ define({
 	autoExerciseAdvance: true,
 	hideNextWhenAutoAdvance: false,
 	repeatExercise: true,
-	nextExerciseWait: 3000,
-	repeatExerciseWait: 5000,
+	nextExerciseWait: 4000,
+	repeatExerciseWait: 6000,
 
 	numberedExerciseCount: 40,
 
