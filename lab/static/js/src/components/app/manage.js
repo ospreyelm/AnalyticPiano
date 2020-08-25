@@ -5,7 +5,7 @@ define([
 	'app/components/events',
 	'app/components/app',
 	'app/components/ui/main_menu',
-	'app/components/notifications',
+	// 'app/components/notifications',
 	'app/components/form/exercise_form'
 ], function(
 	module,
@@ -14,7 +14,7 @@ define([
 	EVENTS,
 	AppComponent,
 	MainMenuComponent,
-	NotificationsComponent,
+	// NotificationsComponent,
 	ExerciseFormComponent
 ) {
 	
@@ -61,12 +61,12 @@ define([
 	 */
 	AppManageComponent.prototype.getComponentMethods = function() {
 		var methods = [
-			function () {
-				var c = new NotificationsComponent({defaultHidden:false});
-				c.init(this);
-				c.renderTo("#notifications");
-				this.addComponent(c);
-			},
+			// function () {
+			// 	var c = new NotificationsComponent({defaultHidden:false});
+			// 	c.init(this);
+			// 	c.renderTo("#notifications");
+			// 	this.addComponent(c);
+			// },
 			function() {
 				var c = new MainMenuComponent({
 					headerEl: "#header",

@@ -509,6 +509,7 @@ ul.menu-group-list li {
 .keyboard-area {
     margin:0 10px;
     padding-bottom: 6px;
+    border: 0px solid #ffffff;
 }
 .keyboard-pedals {
     margin: 0px auto;
