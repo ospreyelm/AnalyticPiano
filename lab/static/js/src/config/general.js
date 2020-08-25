@@ -19,10 +19,10 @@ define({
 	noDoubleVision: false,
 
 	autoExerciseAdvance: true,
-	hideNextWhenAutoAdvance: true,
+	hideNextWhenAutoAdvance: false,
 	repeatExercise: true,
-	nextExerciseWait: 1000,
-	repeatExerciseWait: 4000,
+	nextExerciseWait: 3000,
+	repeatExerciseWait: 5000,
 
 	numberedExerciseCount: 40,
 
