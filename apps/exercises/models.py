@@ -89,7 +89,9 @@ class Exercise(models.Model):
         if not self.rhythm_value or not self.data:
             return
 
+        supported_rhythm_values = ["w", "h", "q"]
         rhythm_values = self.rhythm_value.split()
+        rhythm_values = [x for x in rhythm_values if x in supported_rhythm_values]
         chord_data = self.data.get('chord')
         del rhythm_values[len(chord_data):]  # truncate extra rhythms
         self.rhythm_value = ' '.join(rhythm_values)
