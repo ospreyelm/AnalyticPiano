@@ -146,6 +146,7 @@ body, #mainmenu, #helpmenu {
 }
 .header ul li {
     display: inline;
+    padding-right: 1.5em;
 }
 .header .js-keysignature-widget {
     padding-left: 0em;
