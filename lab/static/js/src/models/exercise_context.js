@@ -305,6 +305,12 @@ define([
 			}
 			return this.timer.maxTempo;
 		},
+		getTempoMean: function() {
+			if( !this.timer.tempoMean || isNaN(this.timer.tempoMean) ) {
+				return "";
+			}
+			return this.timer.tempoMean;
+		},
 		getTempoRating: function() {
 			if(!this.timer.tempoRating) {
 				return "";

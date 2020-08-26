@@ -2,9 +2,9 @@
 
 	<ul class="mainmenu-links">
 		<li><a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Reload main page</a></li>
-		{% if has_manage_perm %}
+		<!-- {% if has_manage_perm %}
 		<li><a href="{% if manage_url %}{{ manage_url }}{% else %}{% url 'lab:index' %}{% endif %}">Click to manage exercises</a></li>
-		{% endif %}
+		{% endif %} -->
 	</ul>
 	
     {% block menu_content %}

@@ -146,6 +146,7 @@ body, #mainmenu, #helpmenu {
 }
 .header ul li {
     display: inline;
+    padding-right: 1.5em;
 }
 .header .js-keysignature-widget {
     padding-left: 0em;
@@ -509,6 +510,7 @@ ul.menu-group-list li {
 .keyboard-area {
     margin:0 10px;
     padding-bottom: 6px;
+    border: 0px solid #ffffff;
 }
 .keyboard-pedals {
     margin: 0px auto;
@@ -578,4 +580,8 @@ ul.menu-group-list li {
     margin-left: -12px;
     margin-right: 6px;
     line-height: 18px;
+}
+
+form label {
+    color: white;
 }
