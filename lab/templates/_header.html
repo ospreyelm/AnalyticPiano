@@ -1,21 +1,17 @@
 <div id="header" class="header">
     <ul>
         {% block header_extra %}{% endblock %}
-        <li id="performerName"></li>
-        <li ><a href="https://webmidi.info" target="_blank">Does my browser support WebMIDI?</a></li>
+        <!-- <li id="performerName"></li> -->
+        {% if user.is_authenticated %}
+            <li>Logged in as: {{ user.email }}</li>
+            <li><a href="{% url 'custom-logout' %}">LOGOUT</a></li>
+        {% else %}
+            <li><a href="{% url 'custom-login' %}">LOGIN</a></li>
+            <li><a href="{% url 'registration' %}">REGISTER</a></li>
+        {% endif %}
+        <li><a href="https://webmidi.info" target="_blank">Does my browser support WebMIDI?</a></li>
         <!-- <li id="notificationAlerts" class="notificationAlerts"></li> -->
     </ul>
-    {% if user.is_authenticated %}
-        <p>
-            Logged in as: {{ user.email }}
-            <a href="{% url 'custom-logout' %}">Logout</a>
-        </p>
-    {% else %}
-        <p>
-            <a href="{% url 'custom-login' %}">Login</a>
-            <a href="{% url 'registration' %}">Register</a>
-        </p>
-    {% endif %}
 
 </div>
 
