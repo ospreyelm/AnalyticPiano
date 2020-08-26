@@ -155,8 +155,8 @@ define([
                         '<% if (typeof(time_to_complete) !== "undefined" && time_to_complete != "" && status_text !== "finished with errors") { %>',
                             '&nbsp;in&nbsp;<%= time_to_complete %></p>',
                         '<% } %>',
-                        '<% if (typeof(min_tempo) !== "undefined" && min_tempo != "" && typeof(max_tempo) !== "undefined" && max_tempo != "" && typeof(tempo_rating) !== "undefined") { %>',
-                            '<p>Tempo&nbsp;<%= min_tempo %>&ndash;<%= max_tempo %> <%= tempo_rating %></p>',
+                        '<% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined") { %>',
+                            '<p>Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %></p>',
                         '<% } %>',
                         '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "") { %>',
                             '<p>All&nbsp;done&nbsp;in&nbsp;<%= time_to_complete_series %></p>',
@@ -228,6 +228,7 @@ define([
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                         tpl_data.min_tempo = exc.getMinTempo();
                         tpl_data.max_tempo = exc.getMaxTempo();
+                        tpl_data.tempo_mean = exc.getTempoMean();
                         tpl_data.tempo_rating = exc.getTempoRating();
                     }
                     if(exc.hasSeriesTimer()) {
@@ -258,6 +259,7 @@ define([
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                         tpl_data.min_tempo = exc.getMinTempo();
                         tpl_data.max_tempo = exc.getMaxTempo();
+                        tpl_data.tempo_mean = exc.getTempoMean();
                         tpl_data.tempo_rating = exc.getTempoRating();
                     }
                     if(exc.hasSeriesTimer()) {
