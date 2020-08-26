@@ -3,7 +3,6 @@
         {% block header_extra %}{% endblock %}
         <!-- <li id="performerName"></li> -->
         {% if user.is_authenticated %}
-            <li>Logged in as: {{ user.email }}</li>
             <li><a href="{% url 'custom-logout' %}">LOGOUT</a></li>
         {% else %}
             <li><a href="{% url 'custom-login' %}">LOGIN</a></li>
@@ -12,6 +11,11 @@
         <li><a href="https://webmidi.info" target="_blank">WebMIDI support?</a></li>
         <!-- <li id="notificationAlerts" class="notificationAlerts"></li> -->
     </ul>
+    {% if user.is_authenticated %}
+        <p>
+            Logged in as: {{ user.email }}
+        </p>
+    {% endif %}
 
 </div>
 
