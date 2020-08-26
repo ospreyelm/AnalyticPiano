@@ -42,6 +42,11 @@ class PlaylistAdmin(admin.ModelAdmin):
         }),
     )
 
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super(PlaylistAdmin, self).get_form(request, obj, change, **kwargs)
+        form.context = {'user': request.user}
+        return form
+
     def save_model(self, request, obj, form, change):
         if not change:
             obj.authored_by = request.user

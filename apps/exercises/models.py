@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import copy
 
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
@@ -43,7 +44,8 @@ class Exercise(models.Model):
     @classmethod
     def get_data_order_list(cls):
         return ['type', 'introText', 'reviewText', 'staffDistribution',
-                'key', 'keySignature', 'analysis', 'highlight', 'chord']
+                'key', 'keySignature', 'analysis', 'highlight', 'chord',
+                'supported_rhythmValues']
 
     @property
     def is_private(self):
@@ -88,11 +90,16 @@ class Exercise(models.Model):
         if not self.rhythm_value or not self.data:
             return
 
-        rhythm_value = self.rhythm_value.split(' ')
+        rhythm_values = self.rhythm_value.split()
         chord_data = self.data.get('chord')
+        del rhythm_values[len(chord_data):]  # truncate extra rhythms
+        copied_values = copy(rhythm_values)
+        self.rhythm_value = ' '.join(rhythm_values)
+        self.data['supported_rhythmValues'] = copied_values
+
         for chord in chord_data:
             try:
-                chord.update(rhythmValue=rhythm_value.pop(0))
+                chord.update(rhythmValue=rhythm_values.pop(0))
             except IndexError:
                 break
         self.data['chord'] = chord_data

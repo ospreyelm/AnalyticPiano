@@ -42,6 +42,10 @@ class PlaylistForm(forms.ModelForm):
         self.cleaned_data.update({'exercises': ','.join(exercise_ids)})
 
     def _create_ranged_exercises(self, exercise_ids):
+        user_authored_exercises = list(Exercise.objects.filter(
+            authored_by_id=self.context.get('user').id
+        ).values_list('id', flat=True))
+
         ranged_exercises = []
         for id_ in exercise_ids:
             if '-' in id_:
@@ -53,6 +57,8 @@ class PlaylistForm(forms.ModelForm):
                 for char in chars:
                     ranged_exercises.append(f'{id_range}{char}')
                 exercise_ids.pop(exercise_ids.index(id_))
+        ranged_exercises = [f'{Exercise.zero_padding}{id_}' if len(id_) == 2 else id_ for id_ in ranged_exercises]
+        ranged_exercises = list(set(ranged_exercises).intersection(user_authored_exercises))
         return ranged_exercises
 
 
