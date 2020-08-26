@@ -44,8 +44,7 @@ class Exercise(models.Model):
     @classmethod
     def get_data_order_list(cls):
         return ['type', 'introText', 'reviewText', 'staffDistribution',
-                'key', 'keySignature', 'analysis', 'highlight', 'chord',
-                'supported_rhythmValues']
+                'key', 'keySignature', 'analysis', 'highlight', 'chord']
 
     @property
     def is_private(self):
@@ -93,9 +92,7 @@ class Exercise(models.Model):
         rhythm_values = self.rhythm_value.split()
         chord_data = self.data.get('chord')
         del rhythm_values[len(chord_data):]  # truncate extra rhythms
-        copied_values = copy(rhythm_values)
         self.rhythm_value = ' '.join(rhythm_values)
-        self.data['supported_rhythmValues'] = copied_values
 
         for chord in chord_data:
             try:
