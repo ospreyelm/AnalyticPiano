@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.db import models
@@ -9,11 +11,20 @@ from django.utils.timezone import now
 User = get_user_model()
 
 
+class RawJSONField(JSONField):
+    """ To preserve the data order. """
+
+    def db_type(self, connection):
+        return 'json'
+
+
 class Exercise(models.Model):
     _id = models.AutoField('_ID', unique=True, primary_key=True)
     id = models.CharField('ID', unique=True, max_length=16)
 
-    data = JSONField('Data')
+    data = RawJSONField('Data')
+    rhythm_value = models.CharField('Rhythm Value', max_length=64,
+                                    blank=True, null=True)
     is_public = models.BooleanField('Is Public', default=False)
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='exercises',
@@ -23,9 +34,16 @@ class Exercise(models.Model):
     created = models.DateTimeField('Created at', auto_now_add=True)
     updated = models.DateTimeField('Updated at', auto_now=True)
 
+    zero_padding = 'EA00'
+
     class Meta:
         verbose_name = 'Exercise'
         verbose_name_plural = 'Exercises'
+
+    @classmethod
+    def get_data_order_list(cls):
+        return ['type', 'introText', 'reviewText', 'staffDistribution',
+                'key', 'keySignature', 'analysis', 'highlight', 'chord']
 
     @property
     def is_private(self):
@@ -38,6 +56,8 @@ class Exercise(models.Model):
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
         self.set_id()
+        self.sort_data()
+        self.set_rhythm_values()
         super(Exercise, self).save(*args, **kwargs)
 
     def set_id(self):
@@ -55,6 +75,24 @@ class Exercise(models.Model):
             return None
         reverse_id += "E"
         self.id = reverse_id[::-1]
+
+    def sort_data(self):
+        if not all([key in self.data for key in self.get_data_order_list()]):
+            return
+
+        index_map = {v: i for i, v in enumerate(self.get_data_order_list())}
+        self.data = OrderedDict(sorted(self.data.items(),
+                                       key=lambda pair: index_map[pair[0]]))
+
+    def set_rhythm_values(self):
+        if not self.rhythm_value or not self.data:
+            return
+
+        rhythm_value = self.rhythm_value.split(' ')
+        chord_data = self.data.get('chord')
+        for chord in chord_data:
+            chord.update(rhythmValue=rhythm_value)
+        self.data['chord'] = chord_data
 
 
 class Playlist(models.Model):

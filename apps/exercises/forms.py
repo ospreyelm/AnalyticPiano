@@ -26,8 +26,21 @@ class PlaylistForm(forms.ModelForm):
     def clean(self):
         super(PlaylistForm, self).clean()
         exercise_ids = self.cleaned_data.get('exercises', '').split(',')
+        exercise_ids = [id_.upper() for id_ in exercise_ids]
         available_exercises = list(Exercise.objects.values_list('id', flat=True))
 
+        ranged_exercises = self._create_ranged_exercises(exercise_ids)
+
+        exercise_ids += ranged_exercises
+        exercise_ids = [f'{Exercise.zero_padding}{id_}' if len(id_) == 2 else id_ for id_ in exercise_ids]
+
+        for id_ in exercise_ids:
+            if id_ != '' and id_ not in available_exercises:
+                self.add_error('exercises', f'Exercise with ID {id_} does not exist.')
+
+        self.cleaned_data.update({'exercises': ','.join(exercise_ids)})
+
+    def _create_ranged_exercises(self, exercise_ids):
         ranged_exercises = []
         for id_ in exercise_ids:
             if '-' in id_:
@@ -39,13 +52,7 @@ class PlaylistForm(forms.ModelForm):
                 for char in chars:
                     ranged_exercises.append(f'{id_range}{char}')
                 exercise_ids.pop(exercise_ids.index(id_))
-
-        exercise_ids += ranged_exercises
-        for id_ in exercise_ids:
-            if id_ != '' and id_ not in available_exercises:
-                self.add_error('exercises', f'Exercise with ID {id_} does not exist.')
-
-        self.cleaned_data.update({'exercises': ','.join(exercise_ids)})
+        return ranged_exercises
 
 
 class PerformanceDataForm(forms.ModelForm):
