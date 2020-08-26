@@ -35,6 +35,7 @@ class PlaylistForm(forms.ModelForm):
         exercise_ids = [f'{Exercise.zero_padding}{id_}' if len(id_) == 2 else id_ for id_ in exercise_ids]
 
         for id_ in exercise_ids:
+            id_ = f'{Exercise.zero_padding}{id_}' if len(id_) == 2 else id_
             if id_ != '' and id_ not in available_exercises:
                 self.add_error('exercises', f'Exercise with ID {id_} does not exist.')
 

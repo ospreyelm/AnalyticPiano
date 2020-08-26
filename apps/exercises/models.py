@@ -91,7 +91,10 @@ class Exercise(models.Model):
         rhythm_value = self.rhythm_value.split(' ')
         chord_data = self.data.get('chord')
         for chord in chord_data:
-            chord.update(rhythmValue=rhythm_value)
+            try:
+                chord.update(rhythmValue=rhythm_value.pop(0))
+            except IndexError:
+                break
         self.data['chord'] = chord_data
 
 
