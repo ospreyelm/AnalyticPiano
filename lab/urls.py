@@ -6,7 +6,7 @@ from apps.exercises.views import playlist_performance_view, submit_exercise_perf
 from lti_tool.views import LTIToolConfigView, LTILaunchView
 from .views import (
     check_course_authorization,
-    CourseExerciseView,
+    AddExerciseView,
     PlayView,
     ExerciseView,
     ManageView,
@@ -31,7 +31,7 @@ urlpatterns = [
     re_path(r'^courses/(?P<course_id>\d+)$', PlayView.as_view(), name="course-index"),
 
     # FIXME should be added to a course: ^courses/(?P<course_id>\d+)/exercises/add/$?
-    re_path(r'^exercises/add$', CourseExerciseView.as_view(), name='add-exercise'),
+    re_path(r'^exercises/add$', AddExerciseView.as_view(), name='add-exercise'),
 
     re_path(r'exercise-performance$', submit_exercise_performance, name='exercise-performance'),
     re_path(r'playlist-performance$', submit_playlist_performance, name='playlist-performance'),

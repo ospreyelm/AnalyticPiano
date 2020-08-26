@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.http import urlencode
@@ -272,7 +272,7 @@ def check_course_authorization(request, course_id, raise_exception=False):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class CourseExerciseView(View):
+class AddExerciseView(View):
     http_method_names = ['post']
 
     def post(self, request, *args, **kwargs):
@@ -286,6 +286,6 @@ class CourseExerciseView(View):
         user = request.user if request.user.is_authenticated else User.get_guest_user()
         exercise.authored_by = user
         exercise.is_public = True
-
         exercise.save()
-        return HttpResponse(status=201)
+
+        return JsonResponse(status=201, data={'id': exercise.id})

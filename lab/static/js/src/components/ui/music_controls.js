@@ -324,10 +324,12 @@ define([
 				url: 'exercises/add',
 				data: {'data': json_data},
 				dataType: 'json',
+				success: function (data) {
+					let exerciseID = data.id;
+					window.alert('Exercise uploaded! Exercise ID: ' + exerciseID);
+    			}
 			});
-			
-			window.alert('Exercise uploaded!');
-			
+
 			return true;
 		},
 		/**
