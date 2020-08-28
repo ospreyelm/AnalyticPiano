@@ -156,7 +156,7 @@ define([
                             '&nbsp;in&nbsp;<%= time_to_complete %></p>',
                         '<% } %>',
                         '<% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined") { %>',
-                            '<p>Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %></p>',
+                            '<p>Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %> (stars for consistency)</p>',
                         '<% } %>',
                         '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "") { %>',
                             '<p>All&nbsp;done&nbsp;in&nbsp;<%= time_to_complete_series %></p>',
