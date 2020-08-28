@@ -316,7 +316,7 @@ define([
 		onClickUploadJSON: function(evt) {
 			const json_data = sessionStorage.getItem('current_state')
 				|| false;
-			console.log("upload", json_data);
+			// console.log("upload", json_data);
 			if (!json_data /* || json_data["chords"].length < 1 */) return false;
 
 			$.ajax({
