@@ -44,14 +44,22 @@ define([
 		defaultSmallHeight: 80,
 		defaultKeyWidth: 30,
 		numberOfKeys: 49,
+		octaveAdjustment: 0,
 		initComponent: function() {
 			if("numberOfKeys" in this.settings) {
 				this.numberOfKeys = this.settings.numberOfKeys;
-			} 
+			}
+			if("octaveAdjustment" in this.settings) {
+				this.octaveAdjustment = this.settings.octaveAdjustment;
+			}
 
-			this.keyboardGenerator = new KeyboardGenerator(this.numberOfKeys);
+			this.keyboardGenerator = new KeyboardGenerator(this.numberOfKeys, this.octaveAdjustment);
 			this.layout = this.getLayout();
-			this.keyComponents = this.makeKeyComponents();
+			if (typeof this.layout.leftPadding !== 'number') {
+				this.keyComponents = this.makeKeyComponents();
+			} else {
+				this.keyComponents = this.makeKeyComponents(this.layout.leftPadding);
+			}
 			this.keyMap = this.mapKeysByNumber(this.keyComponents);
 
 			this.keyboardEl = $('<div class="keyboard"></div>');
@@ -102,26 +110,27 @@ define([
 		getLayout: function() {
 			var layoutConfig = {};
 			var numWhiteKeys = this.getNumWhiteKeys();
-			var adjustment = 0;
-			if (this.numberOfKeys == 49) {
-				adjustment = 5
-			}
-			else if (this.numberOfKeys == 25) {
-				adjustment = 5
-			}
-			else if (this.numberOfKeys == 37) { // This ought to be -2 with the keyboard right-aligned
-				adjustment = 0
+			var nudge_left = 0; // semitones
+			var nudge_right = 0; // semitones
+			if ( [25,49].includes(this.numberOfKeys) ) {
+				nudge_left = 5;
+			} else if (this.numberOfKeys == 37) {
+				nudge_right = 4;
+			} else if (this.numberOfKeys == 32) {
+				nudge_right = 10;
 			}
 
-			if(window.screen.width >= (2 + numWhiteKeys) * this.defaultKeyWidth) {
-				layoutConfig.width = ((numWhiteKeys + adjustment) * this.defaultKeyWidth);
-				layoutConfig.keyWidth = this.defaultKeyWidth;
-				layoutConfig.height = this.defaultHeight; 
-			} else {
-				layoutConfig.keyWidth = (window.screen.width / (2 + numWhiteKeys));
+			// TO DO: extend responsive design for smaller factors
+
+			layoutConfig.keyWidth = this.defaultKeyWidth;
+			layoutConfig.height = this.defaultHeight;
+			layoutConfig.width = this.defaultKeyWidth * (nudge_right / 2 + numWhiteKeys + nudge_left);
+			layoutConfig.leftPadding = nudge_right;
+			if (window.screen.width < layoutConfig.width) {
+				layoutConfig.leftPadding = 0;
 				layoutConfig.width = (numWhiteKeys * layoutConfig.keyWidth);
+				layoutConfig.keyWidth = (window.screen.width / (2 + numWhiteKeys));
 				layoutConfig.height = (this.defaultHeight * layoutConfig.keyWidth / this.defaultKeyWidth);
-				// layoutConfig.keyWidth = this.defaultKeyWidth;
 			}
 
 			// layoutConfig.height = (window.screen.height <= 768 ? this.defaultSmallHeight: this.defaultHeight); 
@@ -175,10 +184,11 @@ define([
 		 *
 		 * @return {array}
 		 */
-		makeKeyComponents: function() {
+		makeKeyComponents: function(leftPadding = 0) {
 			var that = this;
 			var keys = [];
-			var whiteIndex = 0;
+			var whiteIndex = Number((leftPadding / 2).toFixed(1));
+			console.log(whiteIndex);
 
 			_.each(this.keyboardGenerator.keySpecs, function(keySpec, index) {
 				var keyComponent = KeyComponent.create({

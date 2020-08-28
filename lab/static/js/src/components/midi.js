@@ -358,8 +358,10 @@ define([
 		 */
 		onMidiMessage: function(msg) {
 			var command = msg.data[0];
-			// SPECIAL CASE: "note on" with 0 velocity implies "note off"
-			if(MIDI_MSG_MAP.NOTE_ON.indexOf(command) !== -1 && !msg.data[2]) {
+
+			// NOTE_ON with velocity == 0 or undefined => NOTE_OFF
+			if (MIDI_MSG_MAP.NOTE_ON.indexOf(command) !== -1 && (!msg.data[2] || msg.data[2] == 0)) {
+				// Get NOTE_OFF command for corresponding channel
 				command = MIDI_MSG_MAP.NOTE_OFF[MIDI_MSG_MAP.NOTE_ON.indexOf(command)];
 			}
 
@@ -375,7 +377,7 @@ define([
 				}
 			}
 			else {
-				console.log("midi message not handled: ", msg);
+				console.log("MIDI message not handled: ", msg);
 			}
 		},
 		/**
