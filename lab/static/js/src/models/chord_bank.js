@@ -18,7 +18,7 @@ define([
 
 	var NO_DOUBLE_VISION = Config.get('general.noDoubleVision');
 
-    var CHORD_BANK_SIZE = Config.get('general.chordBank.displaySize');
+	var CHORD_BANK_SIZE = Config.get('general.chordBank.displaySize');
 
 	/**
 	 * Creates an instance of a chord bank.
@@ -110,13 +110,16 @@ define([
 		 * @fires bank
 		 * @return undefined
 		 */
-		bank: function() {
-			if(!this._enableBanking) {
+		bank: function(request_origin = "unknown") {
+			if (!this._enableBanking) {
 				return;
 			}
-			var chord = new Chord();
 			var current = this.current();
+			if (request_origin === "by_metronome" && current.getNoteNumbers().length == 0) {
+				return;
+			}
 
+			var chord = new Chord();
 			if (NO_DOUBLE_VISION === true) {
 			}else {
 				// copy the current chord

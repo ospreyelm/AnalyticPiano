@@ -44,7 +44,7 @@ define([
 		var that = this;
 
 		metronome.bind("bank", function() {
-			that.broadcast(EVENTS.BROADCAST.BANK_NOTES);
+			that.broadcast(EVENTS.BROADCAST.BANK_NOTES, "by_metronome");
 		});
 		metronome.bind("change", function() {
 			that.broadcast(EVENTS.BROADCAST.METRONOME, metronome.getMetronome());
