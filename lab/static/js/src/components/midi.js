@@ -413,8 +413,8 @@ define([
 		 *
 		 * @return undefined
 		 */
-		onBankNotes: function() {
-			this.chords.bank();
+		onBankNotes: function(request_origin) {
+			this.chords.bank(request_origin);
 		},
 		/**
 		 * Handles a pedal change event. 
