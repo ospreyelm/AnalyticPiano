@@ -767,7 +767,7 @@ var spellingAndAnalysisFunctions = {
             stack.parenth("3","[5]");
         }
         else if (stack.matches(["7","3"], "nums")) {
-            stack.parenth("3");
+            // stack.parenth("3");
         }
 
         if (stack.length() > 1) {
