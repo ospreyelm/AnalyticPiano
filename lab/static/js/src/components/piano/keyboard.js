@@ -119,17 +119,18 @@ define([
 			} else if (this.numberOfKeys == 32) {
 				nudge_right = 10;
 			}
+			var keywiseWidth = nudge_right / 2 + numWhiteKeys + nudge_left;
 
 			// TO DO: extend responsive design for smaller factors
 
 			layoutConfig.keyWidth = this.defaultKeyWidth;
 			layoutConfig.height = this.defaultHeight;
-			layoutConfig.width = this.defaultKeyWidth * (nudge_right / 2 + numWhiteKeys + nudge_left);
+			layoutConfig.width = this.defaultKeyWidth * keywiseWidth;
 			layoutConfig.leftPadding = nudge_right;
 			if (window.screen.width < layoutConfig.width * 1.1) {
-				layoutConfig.leftPadding = 0;
+				// layoutConfig.leftPadding = 0;
 				layoutConfig.width = window.screen.width * 0.9;
-				layoutConfig.keyWidth = layoutConfig.width / numWhiteKeys;
+				layoutConfig.keyWidth = layoutConfig.width / keywiseWidth;
 				layoutConfig.height = this.defaultHeight * layoutConfig.keyWidth / this.defaultKeyWidth;
 			}
 
