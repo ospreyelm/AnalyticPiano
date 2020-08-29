@@ -519,11 +519,9 @@ define([
 				if (probe !== -1) {
 					display = substitutions[probe][1][0];
 					resolution_lines = true;
-				}
-				else if (key !== "" && history[idx].split("/").length == 2) {
-					let parts = history[idx].split("/")
-					if (parts[1].split("{")[0] == postcursor) {
-						display = parts[0]; // + " →"
+				} else if (key !== "" && current.split("/").length == 2) {
+					if (current.split("/")[1] == postcursor.split("{")[0]) {
+						display = current.split("/")[0]; // + " →"
 						applied_arrow = true;
 					}
 				}
