@@ -155,8 +155,8 @@ define([
                         '<% if (typeof(time_to_complete) !== "undefined" && time_to_complete != "" && status_text !== "finished with errors") { %>',
                             '&nbsp;in&nbsp;<%= time_to_complete %></p>',
                         '<% } %>',
-                        '<% if (typeof(min_tempo) !== "undefined" && min_tempo != "" && typeof(max_tempo) !== "undefined" && max_tempo != "" && typeof(tempo_rating) !== "undefined") { %>',
-                            '<p>Tempo&nbsp;<%= min_tempo %>&ndash;<%= max_tempo %> <%= tempo_rating %></p>',
+                        '<% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined") { %>',
+                            '<p>Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %> <a onclick="window.alert(\'PERFORMANCE DATA: This shows your average (mean) tempo in whole notes per minute, plus a star rating for the consistency of your tempo.\')">&#x1F6C8;</a></p>',
                         '<% } %>',
                         '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "") { %>',
                             '<p>All&nbsp;done&nbsp;in&nbsp;<%= time_to_complete_series %></p>',
@@ -164,8 +164,8 @@ define([
                         '<% if (typeof(ex_restarts) !== "undefined" && ex_restarts > 0) { %>',
                             '<p>Made&nbsp;<%= ex_restarts %>&nbsp;restart(s)</p>',
                         '<% } %>',
-                        '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(group_min_tempo) !== "undefined" && group_min_tempo != "" && typeof(group_max_tempo) !== "undefined" && group_max_tempo != "" && typeof(group_tempo_rating) !== "undefined") { %>',
-                            '<p>Overall tempo&nbsp;<%= group_min_tempo %>&ndash;<%= group_max_tempo %> <%= group_tempo_rating %></p>',
+                        '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(group_min_tempo) !== "undefined" && group_min_tempo != "" && typeof(group_max_tempo) !== "undefined" && group_max_tempo != "") { %>',
+                            '<p>Overall tempo&nbsp;<%= group_min_tempo %>&ndash;<%= group_max_tempo %></p>',
                         '<% } %>',
                         '<% if (typeof(next_exercise) !== "undefined" && next_exercise != "" && hide_next === false) { %>',
                             '<p><a class="exercise-status-next-btn" href="<%= next_exercise %>">Click for next</a></p>',
@@ -228,6 +228,7 @@ define([
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                         tpl_data.min_tempo = exc.getMinTempo();
                         tpl_data.max_tempo = exc.getMaxTempo();
+                        tpl_data.tempo_mean = exc.getTempoMean();
                         tpl_data.tempo_rating = exc.getTempoRating();
                     }
                     if(exc.hasSeriesTimer()) {
@@ -258,6 +259,7 @@ define([
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                         tpl_data.min_tempo = exc.getMinTempo();
                         tpl_data.max_tempo = exc.getMaxTempo();
+                        tpl_data.tempo_mean = exc.getTempoMean();
                         tpl_data.tempo_rating = exc.getTempoRating();
                     }
                     if(exc.hasSeriesTimer()) {

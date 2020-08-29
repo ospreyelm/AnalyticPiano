@@ -18,11 +18,11 @@ define({
 
 	noDoubleVision: false,
 
-	autoExerciseAdvance: true,
-	hideNextWhenAutoAdvance: true,
+	autoExerciseAdvance: false,
+	hideNextWhenAutoAdvance: false,
 	repeatExercise: true,
-	nextExerciseWait: 1000,
-	repeatExerciseWait: 4000,
+	nextExerciseWait: 4000,
+	repeatExerciseWait: 6000,
 
 	numberedExerciseCount: 40,
 
