@@ -154,7 +154,7 @@ define([
 					/* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
 
 					// The following variable was pasted from the console output above on a different exercise
-					var newData = {"type":"analytical_pcs","staffDistribution":"chorale","introText":"TEST OF REFRESH BUTTON WITH NEW DATA!!! Should show key signature of one flat and letter names, feature chorale distribution of four parts if played, and grade analytically. Challenge: pushing analysis and highlight options (see initNotationTab).","keySignature":"b","key":"h","chord":[{"visible":[53,60,65,69],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":true,"scientific_pitch":false,"scale_degrees":false,"solfege":false,"roman_numerals":true,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":true,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]};
+					var newData = {"type":"analytical_pcs","staffDistribution":"chorale","introText":"TEST OF REFRESH BUTTON WITH NEW DATA!!! Should show key signature of one flat and letter names, feature chorale distribution of four parts if played, and grade analytically.","keySignature":"b","key":"h","chord":[{"visible":[53,60,65,69],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":true,"scientific_pitch":false,"scale_degrees":false,"solfege":false,"roman_numerals":true,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":true,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]};
 
 					scex.definition.exercise
 						= scex.definition.parse(newData);
@@ -187,6 +187,7 @@ define([
 					/* add use of listeners here to update the menu */
 
 					// does not have expected effect
+					this.settings.staffDistribution = newData.staffDistribution;
 					this.staffDistributionConfig.staffDistribution = newData.staffDistribution;
 					console.log(sheetComponent);
 
