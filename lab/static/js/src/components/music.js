@@ -4,6 +4,7 @@ define([
 	'app/config',
 	'app/components/events',
 	'app/components/component',
+	'app/models/key_signature',
 	'./music/play_sheet'
 ], function(
 	$, 
@@ -11,6 +12,7 @@ define([
 	Config,
 	EVENTS,
 	Component,
+	KeySignature,
 	PlainSheetComponent
 ) {
 	/**
@@ -140,54 +142,63 @@ define([
 				scex.inputChords.clear();
 				scex.inputChords.goTo(0);
 
-				/* // Used to generate new data
-				let currentData = {
+				let setdef = scex.settings.definition;
 
-					// These are the needed properties
-					// Reveals much redundancy but hey ...
+				// Used to generate new data
+				// let currentData = setdef.settings.definition;
+				// console.log(JSON.stringify(currentData, null, 0));
 
-					definition: {
-						exercise: scex.definition.exercise,
-						settings: scex.definition.settings
-					},
-					settings: {
-						definition: {
-							exercise: scex.settings.definition.exercise,
-							settings: {
-								definition: scex.settings.definition.settings.definition
-							}
-						}
-					}
-				};
-				console.log(JSON.stringify(currentData, null, 0));
-				*/
-
-				var testing = false;
+				var testing = true;
 				if (testing) {
 
 					/* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
 
 					// The following variable was pasted from the console output above on a different exercise
-					var newData = {"definition":{"exercise":{"problems":[{"visible":[65],"hidden":[],"notes":[65],"rhythm":null},{"visible":[67],"hidden":[],"notes":[67],"rhythm":null},{"visible":[69],"hidden":[],"notes":[69],"rhythm":null}],"type":"analytical","key":"jC_","keySignature":"","introText":"TESTING CALL OF NEW DATA!!!","reviewText":false,"nextExercise":"/lab/exercises/Easy_Notes/04","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}],"analysis":{"enabled":true,"mode":{"note_names":false,"scientific_pitch":false,"scale_degrees":false,"solfege":true,"roman_numerals":false,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":false,"tritonehighlight":false}},"staffDistribution":{}},"settings":{"definition":{"type":"analytical","introText":"TESTING CALL OF NEW DATA!!!","keySignature":"","key":"jC_","chord":[{"visible":[65],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":false,"scientific_pitch":false,"scale_degrees":false,"solfege":true,"roman_numerals":false,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":false,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]}}},"settings":{"definition":{"exercise":{"problems":[{"visible":[65],"hidden":[],"notes":[65],"rhythm":null},{"visible":[67],"hidden":[],"notes":[67],"rhythm":null},{"visible":[69],"hidden":[],"notes":[69],"rhythm":null}],"type":"analytical","key":"jC_","keySignature":"","introText":"TESTING CALL OF NEW DATA!!!","reviewText":false,"nextExercise":"/lab/exercises/Easy_Notes/04","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}],"analysis":{"enabled":true,"mode":{"note_names":false,"scientific_pitch":false,"scale_degrees":false,"solfege":true,"roman_numerals":false,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":false,"tritonehighlight":false}},"staffDistribution":{}},"settings":{"definition":{"type":"analytical","introText":"TESTING CALL OF NEW DATA!!!","keySignature":"","key":"jC_","chord":[{"visible":[65],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":false,"scientific_pitch":false,"scale_degrees":false,"solfege":true,"roman_numerals":false,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":false,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]}}}}};
+					var newData = {"type":"analytical_pcs","staffDistribution":"chorale","introText":"TEST OF REFRESH BUTTON WITH NEW DATA!!! Should show key signature of one flat and letter names, feature chorale distribution of four parts if played, and grade analytically. Challenge: pushing analysis and highlight options (see initNotationTab).","keySignature":"b","key":"h","chord":[{"visible":[53,60,65,69],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":true,"scientific_pitch":false,"scale_degrees":false,"solfege":false,"roman_numerals":true,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":true,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]};
 
 					scex.definition.exercise
-						= newData.definition.exercise;
-					scex.definition.settings
-						= newData.definition.settings;
+						= scex.definition.parse(newData);
+
+					scex.definition.settings.definition
+						= newData;
+
 					scex.settings.definition.exercise
-						= newData.settings.definition.exercise;
+						= scex.definition.parse(newData);
+
 					scex.settings.definition.settings.definition
-						= newData.settings.definition.settings.definition;
+						= newData;
+
 					scex.displayChords = scex.createDisplayChords();
 					scex.exerciseChords = scex.createExerciseChords();
+
+					sheetComponent.keySignature = new KeySignature(newData.key, newData.keySignature);
+					sheetComponent.settings.keySignature = new KeySignature(newData.key, newData.keySignature);
+
+
+					/* similar to updateSettings */
+					// is there a way to do this things once each?
+					Object.assign(this.analyzeConfig, newData.analysis);
+					Object.assign(this.settings.analysisSettings, newData.analysis);
+					Object.assign(this.staffDistributionConfig.analysisSettings, newData.analysis);
+
+					Object.assign(this.highlightConfig, newData.highlight);
+					Object.assign(this.settings.highlightSettings, newData.highlight);
+					Object.assign(this.staffDistributionConfig.highlightSettings, newData.highlight);
+					/* add use of listeners here to update the menu */
+
+					// does not have expected effect
+					this.staffDistributionConfig.staffDistribution = newData.staffDistribution;
+					console.log(sheetComponent);
+
+					this.trigger('change');
 				}
 
-				sheetComponent.exerciseContext.state = "ready"; // READY
-				sheetComponent.renderExerciseText();
-				sheetComponent.exerciseContext.sealed = false;
-				sheetComponent.exerciseContext.done = false;
-				sheetComponent.exerciseContext.timer = null;
-				sheetComponent.exerciseContext.timepoints = [];
+				scex.state = "ready"; // READY
+				// sheetComponent.renderExerciseText(); // not necessary
+				scex.sealed = false;
+				scex.done = false;
+				scex.timer = null;
+				scex.timepoints = [];
 
 				window.console.dir('send dummy note');
 				this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
@@ -270,6 +281,9 @@ define([
 		 * @return this
 		 */
 		updateSettings: function(prop, setting) {
+			console.log('call of updateSettings');
+			console.log(prop);
+			console.log(setting);
 			var mode = _.cloneDeep(this[prop].mode);
 			switch(setting.key) {
 				case "enabled":
@@ -280,7 +294,8 @@ define([
 					this[prop].mode = mode;
 					break;
 				default:
-					throw new Error("Invalid setting key");
+					console.log(setting.key);
+					throw new Error("Invalid setting key: ", setting.key);
 			}
 			return this;
 		},

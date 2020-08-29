@@ -664,7 +664,6 @@ define([
 				return false;
 			}
 			var chord = this.inputChords.current().getSortedNotes();
-			console.log(chord);
 			var trigger_notes = [60, 62, 64, 65, 67, 69, 71];
 			if (chord.length != trigger_notes.length) {
 				return false;
