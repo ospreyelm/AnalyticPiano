@@ -174,6 +174,10 @@ define([
 					sheetComponent.keySignature = new KeySignature(newData.key, newData.keySignature);
 					sheetComponent.settings.keySignature = new KeySignature(newData.key, newData.keySignature);
 
+					// DOES NOT HAVE EXPECTED EFFECT
+					scex.inputChords.staffDistribution = newData.staffDistribution;
+					this.settings.staffDistribution = newData.staffDistribution;
+					this.staffDistributionConfig.staffDistribution = newData.staffDistribution;
 
 					/* similar to updateSettings */
 					// is there a way to do this things once each?
@@ -185,11 +189,6 @@ define([
 					Object.assign(this.settings.highlightSettings, newData.highlight);
 					Object.assign(this.staffDistributionConfig.highlightSettings, newData.highlight);
 					/* add use of listeners here to update the menu */
-
-					// does not have expected effect
-					this.settings.staffDistribution = newData.staffDistribution;
-					this.staffDistributionConfig.staffDistribution = newData.staffDistribution;
-					console.log(sheetComponent);
 
 					this.trigger('change');
 				}
