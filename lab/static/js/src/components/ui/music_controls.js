@@ -256,7 +256,7 @@ define([
 			var el = $('.js-keyboardsize', containerEl);
 			var selectEl = $("<select/>");
 			var tpl = _.template('<% _.forEach(sizes, function(size) { %><option value="<%= size %>"><%- size %></option><% }); %>');
-			var options = tpl({sizes: [25,37,49,88]})
+			var options = tpl({sizes: [25,32,37,49,88]})
 			var selected = DEFAULT_KEYBOARD_SIZE;
 
 			selectEl.append(options);
