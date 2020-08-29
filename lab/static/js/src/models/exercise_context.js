@@ -73,7 +73,7 @@ define([
 			this.restarts = null;
 			sessionStorage.removeItem('HarmonyLabPlaylistRestarts');
 		} else if (sessionStorage.HarmonyLabPlaylistStartTime) {
-			this.resetSeriesTimer();
+			this.resetSeriesTimer(); // ?
 			this.seriesTimer.start = sessionStorage.getItem('HarmonyLabPlaylistStartTime');
 			this.restarts = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) || 0;
 		} else {
@@ -81,7 +81,7 @@ define([
 			this.restarts = null;
 		}
 
-		this.sealed = false; /* when true, will be used to ignore input after completion */
+		this.sealed = false; /* will be used to ignore input post-completion */
 		this.timepoints = [];
 
 		_.bindAll(this, ['grade', 'triggerTimer']);
@@ -149,7 +149,7 @@ define([
 				state = ExerciseContext.STATE.CORRECT;
 			} else { switch(graded.result) {
 				case this.grader.STATE.CORRECT:
-					if(this.sealed != true) {
+					if (this.sealed != true) {
 						this.makeTimestamp();
 					}
 					this.done = true;
@@ -175,25 +175,27 @@ define([
 
 					if (!nextUrl) {
 						if(this.sealed != true) {// For one-time function calls
-							this.endSeriesTimer();
 							this.submitExerciseReport();
+							this.endSeriesTimer();
 							this.submitPlaylistReport();
 						}
 					} else {
 						this.submitExerciseReport();
 					}
+
+					this.recordTempoInformation();
+
 					if (this.flawless === true) {
 						state = ExerciseContext.STATE.CORRECT;
-						if(this.sealed != true) {// For one-time function calls
-							this.recordTempoInformation();
+						if (this.sealed != true) {// For one-time function calls
 							this.triggerNextExercise();
 						}
 					} else if (this.flawless === false) {
 						state = ExerciseContext.STATE.FINISHED;
-						if(this.sealed != true) {// For one-time function calls
-							if(REPEAT_EXERCISE_ENABLED === true) {
+						if (this.sealed != true) {// For one-time function calls
+							if (REPEAT_EXERCISE_ENABLED === true) {
 								this.triggerRepeatExercise();
-							}else {
+							} else {
 								this.triggerNextExercise();
 							}
 						}

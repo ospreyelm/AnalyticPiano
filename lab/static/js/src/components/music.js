@@ -154,6 +154,18 @@ define([
 			}
 			sheetComponent.clear();
 			sheetComponent.render();
+			if (sheetComponent.hasOwnProperty('exerciseContext')) {
+				sheetComponent.exerciseContext.state = "ready"; // READY
+				sheetComponent.renderExerciseText();
+				sheetComponent.exerciseContext.sealed = false;
+				sheetComponent.exerciseContext.done = false;
+				sheetComponent.exerciseContext.timer = null;
+				sheetComponent.exerciseContext.timepoints = [];
+				// console.log(sheetComponent.exerciseContext.sealed); // ok
+				// console.log(sheetComponent.exerciseContext.graded); // ok
+				// console.log(sheetComponent.exerciseContext.timer); // ok
+				// console.log(sheetComponent.exerciseContext.done); // ok
+			}
 
 			return this;
 		},

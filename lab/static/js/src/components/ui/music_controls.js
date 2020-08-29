@@ -99,6 +99,7 @@ define([
 			this.initNotationTab();
 			this.renderInstrumentSelect();
 			this.renderKeyboardSizeSelect();
+			this.renderOctaveAdjustment();
 			this.renderKeyboardShortcuts();
 			this.initMidiTab();
 		},
@@ -256,7 +257,7 @@ define([
 			var el = $('.js-keyboardsize', containerEl);
 			var selectEl = $("<select/>");
 			var tpl = _.template('<% _.forEach(sizes, function(size) { %><option value="<%= size %>"><%- size %></option><% }); %>');
-			var options = tpl({sizes: [25,37,49,88]})
+			var options = tpl({sizes: [25,32,37,49,88]})
 			var selected = DEFAULT_KEYBOARD_SIZE;
 
 			selectEl.append(options);
@@ -267,6 +268,29 @@ define([
 			});
 
 			el.append(selectEl).wrapInner("<label>Piano keys&ensp;</label>");
+		},
+		/**
+		 * Renders the octave adjustment selector.
+		 *
+		 * @return undefined
+		 */
+		renderOctaveAdjustment: function() {
+			var that = this;
+			var containerEl = this.containerEl;
+			var el = $('.js-octaveadjustment', containerEl);
+			var selectEl = $("<select/>");
+			var tpl = _.template('<% _.forEach(adjustments, function(adj) { %><option value="<%= adj %>"><%- adj %></option><% }); %>');
+			var options = tpl({adjustments: [-2,-1,0,1,2]})
+			var selected = 0;
+
+			selectEl.append(options);
+			selectEl.find("[value="+selected+"]").attr("selected", "selected");
+			selectEl.on('change', function() {
+				var adj = parseInt($(this).val(), 10);
+				that.broadcast(EVENTS.BROADCAST.OCTAVE_ADJUSTMENT, adj);
+			});
+
+			el.append(selectEl).wrapInner("<label>Octave adjustment&ensp;</label>");
 		},
 		/**
 		 * Renders the keyboard shorcuts.

@@ -125,7 +125,7 @@ define([
 				// NOT WORKING YET: adding isNovel property
 				// if the set of active notes matches the most recent bank
 				if(!this.isBanked) {
-					if(2 == 2) {
+					if(true) {
 						if(this.isNovel === false) {
 							this.staveNoteFactory.highlightNote(i, this.getUnchangedColorStyle(), 1);
 						}

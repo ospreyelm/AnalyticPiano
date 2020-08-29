@@ -156,7 +156,7 @@ define([
                             '&nbsp;in&nbsp;<%= time_to_complete %></p>',
                         '<% } %>',
                         '<% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined") { %>',
-                            '<p>Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %> (stars for consistency)</p>',
+                            '<p>Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %> <a onclick="window.alert(\'PERFORMANCE DATA: This shows your average (mean) tempo in whole notes per minute, plus a star rating for the consistency of your tempo.\')">&#x1F6C8;</a></p>',
                         '<% } %>',
                         '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "") { %>',
                             '<p>All&nbsp;done&nbsp;in&nbsp;<%= time_to_complete_series %></p>',
@@ -421,6 +421,7 @@ define([
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
+            // stave.setFirstBarWidth(this.keySignature);
             stave.setNotater(stave_notater);
             stave.setMaxWidth(this.getWidth());
             stave.updatePosition();
@@ -457,6 +458,7 @@ define([
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
+            // stave.setFirstBarWidth(this.keySignature);
             stave.setNoteFactory(new ExerciseNoteFactory({
                 clef: clef,
                 chord: displayChord,
