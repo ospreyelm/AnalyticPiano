@@ -127,45 +127,75 @@ define([
 		renderPristine: function() {
 			var sheetComponent = this.getComponent('sheet');
 
-			if (sheetComponent.hasOwnProperty('exerciseContext')) {
-				// for debugging only
-				// console.log('exercise view, call of renderPristine');
-				// var items = sheetComponent.exerciseContext.inputChords.items();
-				// var chords = _.pluck(items, "chord");
-				// if (chords.length > 1) console.log('most recent played chord', chords[chords.length-2].getNoteNumbers());
-			} else {
-				// for debugging only
-				// console.log('play view, call of renderPristine');
-				// var items = sheetComponent.chords.items();
-				// var chords = _.pluck(items, "chord");
-				// console.log('most recent banked chord', chords[1].getNoteNumbers());
-			}
+			if (!sheetComponent.hasOwnProperty('exerciseContext')) {
 
-			if (sheetComponent.hasOwnProperty('exerciseContext')) {
-				/* exercise view */
-				sheetComponent.exerciseContext.inputChords.clear();
-				sheetComponent.exerciseContext.inputChords.goTo(0);
-				window.console.dir('send dummy note');
-				this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
-				this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
-			} else {
 				/* play view */
 				sheetComponent.chords.clear();
-			}
-			sheetComponent.clear();
-			sheetComponent.render();
-			if (sheetComponent.hasOwnProperty('exerciseContext')) {
+
+			} else {
+
+				/* exercise view */
+				let scex = sheetComponent.exerciseContext;
+
+				scex.inputChords.clear();
+				scex.inputChords.goTo(0);
+
+				/* // Used to generate new data
+				let currentData = {
+
+					// These are the needed properties
+					// Reveals much redundancy but hey ...
+
+					definition: {
+						exercise: scex.definition.exercise,
+						settings: scex.definition.settings
+					},
+					settings: {
+						definition: {
+							exercise: scex.settings.definition.exercise,
+							settings: {
+								definition: scex.settings.definition.settings.definition
+							}
+						}
+					}
+				};
+				console.log(JSON.stringify(currentData, null, 0));
+				*/
+
+				var testing = false;
+				if (testing) {
+
+					/* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
+
+					// The following variable was pasted from the console output above on a different exercise
+					var newData = {"definition":{"exercise":{"problems":[{"visible":[65],"hidden":[],"notes":[65],"rhythm":null},{"visible":[67],"hidden":[],"notes":[67],"rhythm":null},{"visible":[69],"hidden":[],"notes":[69],"rhythm":null}],"type":"analytical","key":"jC_","keySignature":"","introText":"TESTING CALL OF NEW DATA!!!","reviewText":false,"nextExercise":"/lab/exercises/Easy_Notes/04","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}],"analysis":{"enabled":true,"mode":{"note_names":false,"scientific_pitch":false,"scale_degrees":false,"solfege":true,"roman_numerals":false,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":false,"tritonehighlight":false}},"staffDistribution":{}},"settings":{"definition":{"type":"analytical","introText":"TESTING CALL OF NEW DATA!!!","keySignature":"","key":"jC_","chord":[{"visible":[65],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":false,"scientific_pitch":false,"scale_degrees":false,"solfege":true,"roman_numerals":false,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":false,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]}}},"settings":{"definition":{"exercise":{"problems":[{"visible":[65],"hidden":[],"notes":[65],"rhythm":null},{"visible":[67],"hidden":[],"notes":[67],"rhythm":null},{"visible":[69],"hidden":[],"notes":[69],"rhythm":null}],"type":"analytical","key":"jC_","keySignature":"","introText":"TESTING CALL OF NEW DATA!!!","reviewText":false,"nextExercise":"/lab/exercises/Easy_Notes/04","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}],"analysis":{"enabled":true,"mode":{"note_names":false,"scientific_pitch":false,"scale_degrees":false,"solfege":true,"roman_numerals":false,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":false,"tritonehighlight":false}},"staffDistribution":{}},"settings":{"definition":{"type":"analytical","introText":"TESTING CALL OF NEW DATA!!!","keySignature":"","key":"jC_","chord":[{"visible":[65],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":false,"scientific_pitch":false,"scale_degrees":false,"solfege":true,"roman_numerals":false,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":false,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]}}}}};
+
+					scex.definition.exercise
+						= newData.definition.exercise;
+					scex.definition.settings
+						= newData.definition.settings;
+					scex.settings.definition.exercise
+						= newData.settings.definition.exercise;
+					scex.settings.definition.settings.definition
+						= newData.settings.definition.settings.definition;
+					scex.displayChords = scex.createDisplayChords();
+					scex.exerciseChords = scex.createExerciseChords();
+				}
+
 				sheetComponent.exerciseContext.state = "ready"; // READY
 				sheetComponent.renderExerciseText();
 				sheetComponent.exerciseContext.sealed = false;
 				sheetComponent.exerciseContext.done = false;
 				sheetComponent.exerciseContext.timer = null;
 				sheetComponent.exerciseContext.timepoints = [];
-				// console.log(sheetComponent.exerciseContext.sealed); // ok
-				// console.log(sheetComponent.exerciseContext.graded); // ok
-				// console.log(sheetComponent.exerciseContext.timer); // ok
-				// console.log(sheetComponent.exerciseContext.done); // ok
+
+				window.console.dir('send dummy note');
+				this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
+				this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
 			}
+
+			sheetComponent.clear();
+			sheetComponent.render();
 
 			return this;
 		},

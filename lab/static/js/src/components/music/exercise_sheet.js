@@ -56,16 +56,16 @@ define([
     var ExerciseSheetComponent = function(settings) {
         this.settings = settings || {};
 
-        if("exerciseContext" in this.settings) {
+        if ("exerciseContext" in this.settings) {
             this.exerciseContext = this.settings.exerciseContext;
         } else {
-            throw new Error("missing settings.exerciseContext");
+            throw new Error("Missing parameter property: .exerciseContext");
         }
 
-        if("keySignature" in this.settings) {
+        if ("keySignature" in this.settings) {
             this.keySignature = this.settings.keySignature;
         } else {
-            throw new Error("missing settings.keySignature");
+            throw new Error("Missing parameter property: .keySignature");
         }
 
         _.bindAll(this, [
