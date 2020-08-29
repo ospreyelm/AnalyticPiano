@@ -44,6 +44,7 @@ define(['lodash'], function(_) {
 	 */
 	KeyboardGenerator.startingNoteForSize = {
 		25: 48,
+		32: 53,
 		37: 48,
 		49: 36,
 		61: 36,
