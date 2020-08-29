@@ -129,7 +129,7 @@ define([
 			if (window.screen.width < layoutConfig.width * 1.1) {
 				layoutConfig.leftPadding = 0;
 				layoutConfig.width = window.screen.width * 0.9;
-				layoutConfig.keyWidth = window.screen.width / numWhiteKeys;
+				layoutConfig.keyWidth = layoutConfig.width / numWhiteKeys;
 				layoutConfig.height = this.defaultHeight * layoutConfig.keyWidth / this.defaultKeyWidth;
 			}
 
