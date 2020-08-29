@@ -126,11 +126,11 @@ define([
 			layoutConfig.height = this.defaultHeight;
 			layoutConfig.width = this.defaultKeyWidth * (nudge_right / 2 + numWhiteKeys + nudge_left);
 			layoutConfig.leftPadding = nudge_right;
-			if (window.screen.width < layoutConfig.width) {
+			if (window.screen.width < layoutConfig.width * 1.1) {
 				layoutConfig.leftPadding = 0;
-				layoutConfig.width = (numWhiteKeys * layoutConfig.keyWidth);
-				layoutConfig.keyWidth = (window.screen.width / (2 + numWhiteKeys));
-				layoutConfig.height = (this.defaultHeight * layoutConfig.keyWidth / this.defaultKeyWidth);
+				layoutConfig.width = window.screen.width * 0.9;
+				layoutConfig.keyWidth = window.screen.width / numWhiteKeys;
+				layoutConfig.height = this.defaultHeight * layoutConfig.keyWidth / this.defaultKeyWidth;
 			}
 
 			// layoutConfig.height = (window.screen.height <= 768 ? this.defaultSmallHeight: this.defaultHeight); 
