@@ -4,8 +4,8 @@ define([
 	'microevent',
 	'./exercise_chord',
 	'./exercise_chord_bank',
-    'app/config',
-    'simple-statistics.min'
+	'app/config',
+	'simple-statistics.min'
 ], function(
 	_,
 	$,
@@ -43,7 +43,7 @@ define([
 		_.each(['definition','grader','inputChords'], function(attr) {
 			if(!(attr in this.settings)) {
 				throw new Error("missing settings."+attr+" constructor parameter");
-			} 
+			}
 		}, this);
 
 		this.definition = this.settings.definition;
@@ -111,7 +111,7 @@ define([
 			this.initListeners();
 		},
 		/**
-		 * Initializes listeners. 
+		 * Initializes listeners.
 		 *
 		 * @return undefined
 		 */
@@ -552,7 +552,7 @@ define([
 			// 		) || "",
 			// 	report[playlist_duration]: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
 			// }
-			
+
 			return report;
 		},
 		compilePlaylistReport: function() {
@@ -571,15 +571,28 @@ define([
 						this.timer.tempoRating.length /* unclear whether this is already factored in */
 					) || "",
 				playlist_duration: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
+				// exercise_ID: this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id || "",
 			};
-			
+
 			return report;
 		},
 		submitExerciseReport: function() {
 			console.log( this.compileExerciseReport() );
+			// $.ajax({
+			// 	type: "POST",
+			// 	url: 'exercise-performance',
+			// 	data: {'data': JSON.stringify(this.compileExerciseReport())},
+			// 	dataType: 'json',
+			// });
 		},
 		submitPlaylistReport: function() {
 			console.log( this.compilePlaylistReport() );
+			// $.ajax({
+			// 	type: "POST",
+			// 	url: 'playlist-performance',
+			// 	data: {'data': JSON.stringify(this.compilePlaylistReport())},
+			// 	dataType: 'json',
+			// });
 		},
 		/**
 		 * Returns chords for display on screen.
@@ -764,7 +777,7 @@ define([
 		createExerciseChords: function() {
 			var problems = this.definition.getProblems();
 			var notes = [];
-			var exercise_chords = []; 
+			var exercise_chords = [];
 			var chords;
 			var rhythm;
 
