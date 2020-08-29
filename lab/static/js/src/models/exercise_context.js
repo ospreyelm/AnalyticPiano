@@ -173,14 +173,12 @@ define([
 
 					this.endTimer();
 
-					if (!nextUrl) {
-						if(this.sealed != true) {// For one-time function calls
-							this.submitExerciseReport();
+					if (this.sealed != true) {// For one-time function calls
+						this.submitExerciseReport();
+						if (!nextUrl) {
 							this.endSeriesTimer();
 							this.submitPlaylistReport();
 						}
-					} else {
-						this.submitExerciseReport();
 					}
 
 					this.recordTempoInformation();
@@ -190,6 +188,7 @@ define([
 						if (this.sealed != true) {// For one-time function calls
 							this.triggerNextExercise();
 						}
+						this.midiTriggerNextExercise();
 					} else if (this.flawless === false) {
 						state = ExerciseContext.STATE.FINISHED;
 						if (this.sealed != true) {// For one-time function calls
@@ -200,6 +199,7 @@ define([
 							}
 						}
 					} else {
+						console.log ('Unexpected condition');
 						state = ExerciseContext.STATE.CORRECT;
 					}
 					
@@ -403,11 +403,12 @@ define([
 			var semibreve_fraction = { "w": 1, "h": 0.5, "q": 0.25 };
 
 			var semibreveCount = [];
-			for (i = 0, len = this.inputChords._items.length; i < len; i++) {
-				var rhythm_value = this.exerciseChords.settings.chords[i].settings.rhythm;
-				if (rhythm_value == null) {
-					rhythm_value = DEFAULT_RHYTHM_VALUE;
-				}
+			len = Math.min(
+				this.inputChords._items.length,
+				this.exerciseChords.settings.chords.length
+			);
+			for (i = 0; i < len; i++) {
+				var rhythm_value = this.exerciseChords.settings.chords[i].settings.rhythm || DEFAULT_RHYTHM_VALUE;
 				semibreveCount.push( semibreve_fraction[rhythm_value] || DEFAULT_RHYTHM_VALUE || 1 );
 			}
 			if (semibreveCount.length > 0) semibreveCount.pop();
@@ -642,38 +643,26 @@ define([
 			}
 		},
 		/**
-		 * Checks if the next exercise can be loaded.
-		 *
 		 * Returns true if the trigger notes are played together on the
 		 * keyboard.
-		 *
-		 * @param {object} chord a Chord object
-		 * @return {boolean} true if "B" and "C" are played together, false otherwise.
 		 */
-		canGoToNextExercise: async function(chord) {
-			var is_exercise_done = (this.done === true);
-			var trigger_notes = [36]; // the "C" and "E" two octaves below middle "C"
-			var wanted_notes = {};
-			var count_notes = 0;
-			var can_trigger_next = false;
-			var note_nums, i, len, note;
-
-			if(is_exercise_done) {
-				note_nums = chord.getSortedNotes();
-				for(i = 0, len = note_nums.length; i < len; i++) {
-					note_num = note_nums[i];
-					if(_.contains(trigger_notes, note_num) && !(note_num in wanted_notes)) {
-						wanted_notes[note_num] = true;
-						++count_notes;
-					}
-					if(count_notes == trigger_notes.length) {
-						can_trigger_next = true;
-						break;
-					}
+		midiTriggerNextExercise: async function() {
+			if (this.done !== true || AUTO_ADVANCE_ENABLED === true) {
+				return false;
+			}
+			var chord = this.inputChords.current().getSortedNotes();
+			console.log(chord);
+			var trigger_notes = [60, 62, 64, 65, 67, 69, 71];
+			if (chord.length != trigger_notes.length) {
+				return false;
+			}
+			var i, len;
+			for (i = 0, len = chord.length; i < len; i += 1) {
+				if (chord[i] != trigger_notes[i]) {
+					return false;
 				}
 			}
-
-			return can_trigger_next;
+			this.goToNextExercise();
 		},
 		/**
 		 * Wait function.
@@ -692,13 +681,10 @@ define([
 		 * @return undefined
 		 */
 		triggerNextExercise: async function() {
-			if(this.done === true && AUTO_ADVANCE_ENABLED === true) {
+			if (this.done === true && AUTO_ADVANCE_ENABLED === true) {
 				await this.sleep(NEXT_EXERCISE_WAIT);
 				this.goToNextExercise();
 			}
-			// if(this.canGoToNextExercise(this.inputChords.current())) {
-			// 	this.goToNextExercise();
-			// }
 		},
 		/**
 		 * This will trigger the application to refresh the current exercise.
@@ -706,13 +692,10 @@ define([
 		 * @return undefined
 		 */
 		triggerRepeatExercise: async function() {
-			if(this.done === true && AUTO_ADVANCE_ENABLED === true) {
+			if (this.done === true && AUTO_ADVANCE_ENABLED === true) {
 				await this.sleep(REPEAT_EXERCISE_WAIT);
-				window.location.reload();
+				window.location.reload(); // DYMTRO: CHANGE THIS PLEASE
 			}
-			// if(this.canGoToNextExercise(this.inputChords.current())) {
-			// 	this.goToNextExercise();
-			// }
 		},
 		/**
 		 * Creates a new set of display chords.
