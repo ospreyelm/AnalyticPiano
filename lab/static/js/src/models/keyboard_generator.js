@@ -11,8 +11,8 @@ define(['lodash'], function(_) {
 	 * @param {number} size The size of the keyboard
 	 * @constructor
 	 */
-	var KeyboardGenerator = function(size) {
-		this.keySpecs = this.generate(size);
+	var KeyboardGenerator = function(size, octaveAdjustment = 0) {
+		this.keySpecs = this.generate(size, octaveAdjustment);
 	};
 
 	/**
@@ -57,12 +57,12 @@ define(['lodash'], function(_) {
 	 * @param {number} size The size of the keyboard
 	 * @return {number}
 	 */
-	KeyboardGenerator.prototype.startingNote = function(size) {
+	KeyboardGenerator.prototype.startingNote = function(size, octaveAdjustment = 0) {
 		var startingNoteForSize = KeyboardGenerator.startingNoteForSize;
 		if(!(size in startingNoteForSize)) {
 			throw new Error("invalid keyboard size: " + size + " must be one of " + _.keys(startingNoteForSize).join(', '));
 		}
-		return startingNoteForSize[size];
+		return startingNoteForSize[size] + octaveAdjustment * 12;
 	};
 
 	/**
@@ -72,8 +72,8 @@ define(['lodash'], function(_) {
 	 * @param {number} size The size of the keyboard
 	 * @return {array} 
 	 */
-	KeyboardGenerator.prototype.generate = function(size) {
-		var noteNumber = this.startingNote(size);
+	KeyboardGenerator.prototype.generate = function(size, octaveAdjustment = 0) {
+		var noteNumber = this.startingNote(size, octaveAdjustment);
 		var keySpecs = [];
 		var index;
 		

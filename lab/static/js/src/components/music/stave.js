@@ -259,20 +259,16 @@ define([
 			 * unless isFirstBar (this is used for clef and staff signature
 			 * display).
 			 */
+			staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
 			// if(this.isFirstBar()) {
-			// 	staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
 			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
 			// } else if(this.isPenultimateBar()) {
-			// 	staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
-			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.SINGLE);
 			// } else if(this.isLastBar()) {
-			// 	staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
 			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
 			// } else {
-			// 	staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
-			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.SINGLE);
 			// }
-			staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
 			staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
 
 			staveBar.clef = this.clef;
@@ -576,6 +572,20 @@ define([
 		setKeySignature: function(keySignature) {
 			this.keySignature = keySignature;
 		},
+		/*
+		setFirstBarWidth: function(keySignature) {
+			if (!keySignature.signatureSpec || !keySignature.signatureSpec.length || keySignature.signatureSpec === "") {
+				return null;
+			}
+			const tally = keySignature.signatureSpec.length;
+			if (isNaN(tally)) return null;
+			if (tally < 6) return null;
+			else {
+				this.firstBarWidth = 110;
+				// this.firstBarWidth = 45 + 12 * tally;
+			}
+		},
+		*/
 		/**
 		 * Sets the Vex.Flow renderer.
 		 *

@@ -188,7 +188,6 @@ define([
 			var that = this;
 			var keys = [];
 			var whiteIndex = Number((leftPadding / 2).toFixed(1));
-			console.log(whiteIndex);
 
 			_.each(this.keyboardGenerator.keySpecs, function(keySpec, index) {
 				var keyComponent = KeyComponent.create({

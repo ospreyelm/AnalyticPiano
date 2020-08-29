@@ -421,6 +421,7 @@ define([
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
+            // stave.setFirstBarWidth(this.keySignature);
             stave.setNotater(stave_notater);
             stave.setMaxWidth(this.getWidth());
             stave.updatePosition();
@@ -457,6 +458,7 @@ define([
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
+            // stave.setFirstBarWidth(this.keySignature);
             stave.setNoteFactory(new ExerciseNoteFactory({
                 clef: clef,
                 chord: displayChord,

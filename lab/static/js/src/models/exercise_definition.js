@@ -12,7 +12,7 @@ define(['lodash'], function(_) {
 		this.settings = settings || {};
 
 		if(!("definition" in this.settings)) {
-			throw new Error("misisng settings.definition");
+			throw new Error("missing settings.definition");
 		}
 
 		this.exercise = this.parse(this.settings.definition);

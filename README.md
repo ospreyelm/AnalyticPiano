@@ -34,10 +34,10 @@ The required  **Config Variables** that should be added on the app settings page
 SECRET_KEY = YOUR_RANDOM_LONG_PASSWORD
 DJANGO_SETTINGS_MODULE = harmony.settings.heroku
 ALLOWED_HOSTS = ["yoururl.com"]
-LTI_OAUTH_CREDENTIALS = {"your_lti_key":"your_lti_secret"}
+# LTI_OAUTH_CREDENTIALS = {"your_lti_key":"your_lti_secret"} # optional
 ```
 
-To create an admin account for creating course and exercise data, use the Heroku CLI as follows:
+To set up the app and create an admin account for creating course and exercise data, use the Heroku CLI as follows:
 
 ```bash
 $ heroku login # one-time setup
