@@ -4,6 +4,7 @@ define([
 	'app/config',
 	'app/components/events',
 	'app/components/component',
+	'app/models/key_signature',
 	'./music/play_sheet'
 ], function(
 	$, 
@@ -11,6 +12,7 @@ define([
 	Config,
 	EVENTS,
 	Component,
+	KeySignature,
 	PlainSheetComponent
 ) {
 	/**
@@ -142,10 +144,9 @@ define([
 
 				let setdef = scex.settings.definition;
 
-				 // Used to generate new data
-				let currentData = setdef.settings.definition;
+				// Used to generate new data
+				// let currentData = setdef.settings.definition;
 				// console.log(JSON.stringify(currentData, null, 0));
-
 
 				var testing = true;
 				if (testing) {
@@ -153,14 +154,13 @@ define([
 					/* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
 
 					// The following variable was pasted from the console output above on a different exercise
-					var newData = {"type":"matching","introText":"Play the notes on the treble staff.","keySignature":"","key":"jC_","chord":[{"visible":[65],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":false,"scientific_pitch":false,"scale_degrees":false,"solfege":true,"roman_numerals":false,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":false,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]};
+					var newData = {"type":"analytical_pcs","staffDistribution":"chorale","introText":"TEST OF REFRESH BUTTON WITH NEW DATA!!! Should show key signature of one flat and letter names, feature chorale distribution of four parts if played, and grade analytically. Challenge: pushing analysis and highlight options (see initNotationTab).","keySignature":"b","key":"h","chord":[{"visible":[53,60,65,69],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":true,"scientific_pitch":false,"scale_degrees":false,"solfege":false,"roman_numerals":true,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":true,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]};
 
 					scex.definition.exercise
 						= scex.definition.parse(newData);
 
 					scex.definition.settings.definition
 						= newData;
-						// this object probably does not have much impact
 
 					scex.settings.definition.exercise
 						= scex.definition.parse(newData);
@@ -170,14 +170,35 @@ define([
 
 					scex.displayChords = scex.createDisplayChords();
 					scex.exerciseChords = scex.createExerciseChords();
+
+					sheetComponent.keySignature = new KeySignature(newData.key, newData.keySignature);
+					sheetComponent.settings.keySignature = new KeySignature(newData.key, newData.keySignature);
+
+
+					/* similar to updateSettings */
+					// is there a way to do this things once each?
+					Object.assign(this.analyzeConfig, newData.analysis);
+					Object.assign(this.settings.analysisSettings, newData.analysis);
+					Object.assign(this.staffDistributionConfig.analysisSettings, newData.analysis);
+
+					Object.assign(this.highlightConfig, newData.highlight);
+					Object.assign(this.settings.highlightSettings, newData.highlight);
+					Object.assign(this.staffDistributionConfig.highlightSettings, newData.highlight);
+					/* add use of listeners here to update the menu */
+
+					// does not have expected effect
+					this.staffDistributionConfig.staffDistribution = newData.staffDistribution;
+					console.log(sheetComponent);
+
+					this.trigger('change');
 				}
 
-				sheetComponent.exerciseContext.state = "ready"; // READY
-				sheetComponent.renderExerciseText();
-				sheetComponent.exerciseContext.sealed = false;
-				sheetComponent.exerciseContext.done = false;
-				sheetComponent.exerciseContext.timer = null;
-				sheetComponent.exerciseContext.timepoints = [];
+				scex.state = "ready"; // READY
+				// sheetComponent.renderExerciseText(); // not necessary
+				scex.sealed = false;
+				scex.done = false;
+				scex.timer = null;
+				scex.timepoints = [];
 
 				window.console.dir('send dummy note');
 				this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
