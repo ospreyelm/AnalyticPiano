@@ -462,6 +462,7 @@ define([
 		drawRoman: function(x, y) {
 			
 			var key = this.keySignature.getKeyShortName();
+			let mode = this.keySignature.getKey()[0] || false;
 
 			var midi_nums = this.chord.getNoteNumbers();
 			var chord_entry = this.getAnalyzer().to_chord(midi_nums);
@@ -482,16 +483,29 @@ define([
 			const idx = this.stave.position.index;
 			var display = chord_entry.label;
 
-			var substitutions = [
-				/* cadential six-fours */
-				[["I{z4}", "V"], ["V{z4}", "{t3}"]],
-				[["I{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
-				[["I{z4}", "V{u}"], ["V{z4}", "{Ut3}"]],
-				[["i{z4}", "V"], ["V{z4}", "{t3}"]],
-				[["i{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
-				[["i{z4}", "V{u}"], ["V{z4}", "{Ut3}"]],
-				// [["vii°{u}", "VI{z}"], ["c.t.°{u}", "VI{z}"]],
-			];
+			var extra_wide_figures = false;
+			if (mode === "j") {
+				var substitutions = [
+					/* cadential six-fours */
+					[["I{z4}", "V"], ["V{z4}", "{t3}"]],
+					[["I{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
+					[["I{z4}", "V{u}"], ["V{z4}", "{Ut3}"]],
+					[["i{z4}", "V"], ["V{B z4}", "{t3}"]],
+					[["i{z4}", "V{u3}"], ["V{B z4}", "{u3}"]],
+					[["i{z4}", "V{u}"], ["V{B z4}", "{Ut3}"]],
+				];
+			} else if (mode === "i") {
+				var substitutions = [
+					/* cadential six-fours */
+					[["I{z4}", "V"], ["V{' z4}", "{t3}"]],
+					[["I{z4}", "V{u3}"], ["V{' z4}", "{u3}"]],
+					[["I{z4}", "V{u}"], ["V{' z4}", "{Ut3}"]],
+					[["i{z4}", "V"], ["V{z4}", "{t3}"]],
+					[["i{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
+					[["i{z4}", "V{u}"], ["V{z4}", "{Ut3}"]],
+					// [["vii°{u}", "VI{z}"], ["c.t.°{u}", "VI{z}"]],
+				];
+			}
 
 			if ( history[idx-1] ) { /* has precursor */
 				let precursor = history[idx-1];
@@ -518,6 +532,9 @@ define([
 				let probe = substitutions.map(sub_arr => sub_arr[0].join(">")).indexOf(progression.join(">"));
 				if (probe !== -1) {
 					display = substitutions[probe][1][0];
+					if (["V{B z4}","V{' z4}"].includes(display)) {
+						extra_wide_figures = true;
+					}
 					resolution_lines = true;
 				} else if (key !== "" && current.split("/").length == 2) {
 					if (current.split("/")[1] == postcursor.split("{")[0]) {
@@ -556,6 +573,10 @@ define([
 				if (resolution_lines) {
 					var x_start = this.annotateOffsetX+x+first_line_width+15;
 					var stroke_length = 38; /* should not be hard coded */
+					if (extra_wide_figures) {
+						x_start += 10;
+						stroke_length += -10;
+					}
 					ctx.beginPath();
 						ctx.moveTo(x_start, y-3);
 						ctx.lineTo(x_start+stroke_length, y-3);
