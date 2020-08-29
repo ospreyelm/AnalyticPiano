@@ -148,7 +148,7 @@ define([
 				// let currentData = setdef.settings.definition;
 				// console.log(JSON.stringify(currentData, null, 0));
 
-				var testing = true;
+				var testing = false;
 				if (testing) {
 
 					/* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
