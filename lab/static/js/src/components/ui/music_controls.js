@@ -338,11 +338,43 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickUploadJSON: function(evt) {
-			const json_data = sessionStorage.getItem('current_state')
+			testing = true;
+
+			if (testing) {
+
+			let user_input = prompt("Enter the Intro Text")
+			const intro_text = user_input
+				.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
+				.replace(/^\"/g, '“')
+				.replace(/ \"/, ' “')
+				.replace(/^\'/, '‘')
+				.replace(/ \'/, ' ‘')
+				.replace(/\"$/, '”')
+				.replace(/\" /, '” ')
+				.replace(/\'$/, '’')
+				.replace(/\' /, '’ ')
+				.replace(/\'(s)\b/, '’$1')
+				.replace(/-{3}/, '—')
+				.replace(/-{2}/, '–');
+				// do not allow < > until these field is verified as good html
+
+			var json_data = JSON.parse(sessionStorage.getItem('current_state'))
 				|| false;
-			console.log("upload", json_data);
+			// console.log("upload", json_data);
 			if (!json_data /* || json_data["chords"].length < 1 */) return false;
-			
+
+			json_data.introText = intro_text;
+			json_data = JSON.stringify(json_data,null,0);
+
+			} else {
+
+			var json_data = sessionStorage.getItem('current_state')
+				|| false;
+			// console.log("upload", json_data);
+			if (!json_data /* || json_data["chords"].length < 1 */) return false;
+
+			}
+
 			/*
 			// enable later
 			$.ajax({
@@ -350,9 +382,13 @@ define([
 				url: 'exercises/add',
 				data: {'data': json_data},
 				dataType: 'json',
+				success: function (data) {
+					let exerciseID = data.id;
+					window.alert('Exercise uploaded! Exercise ID: ' + exerciseID);
+    			}
 			});
 			*/
-			
+
 			return true;
 		},
 		/**
@@ -362,7 +398,7 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickDownloadJSON: function(evt) {
-			testing = false;
+			testing = true;
 
 			if (testing) {
 
