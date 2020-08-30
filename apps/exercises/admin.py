@@ -15,6 +15,17 @@ class ExerciseAdmin(admin.ModelAdmin):
     search_fields = ('id',)
     readonly_fields = ('id', 'authored_by', 'created', 'updated')
     raw_id_fields = ('authored_by',)
+    fieldsets = (
+        ('General Info', {
+            'fields': ('id', 'authored_by', 'is_public'),
+        }),
+        ('Exercise Data', {
+            'fields': ('data', 'type', 'intro_text', 'review_text', 'rhythm_value')
+        }),
+        ('Date Info', {
+            'fields': ('created', 'updated')
+        }),
+    )
 
     def save_model(self, request, obj, form, change):
         if not change:
