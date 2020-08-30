@@ -148,7 +148,7 @@ define([
 				// let currentData = setdef.settings.definition;
 				// console.log(JSON.stringify(currentData, null, 0));
 
-				var testing = true;
+				var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
 				if (testing) {
 
 					/* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
@@ -210,7 +210,6 @@ define([
 				this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
 
 				scex.state = "ready"; // READY
-				console.log(scex.state);
 			}
 
 			sheetComponent.clear();
