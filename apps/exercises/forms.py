@@ -89,13 +89,13 @@ class PlaylistForm(forms.ModelForm):
         chars = string.ascii_uppercase
 
         for id_ in exercise_ids:
-            if '-' in id_:
+            if '-' in id_ and len(id_.split('-')) == 2:
                 lower, upper = id_.split('-')
                 id_range = lower[:-1]
                 char_range_lower, char_range_upper = chars.find(lower[-1]), chars.find(upper[-1])
                 chars = sorted(chars[char_range_lower:char_range_upper + 1])
-                for char in chars:
-                    ranged_exercises.append(f'{id_range}{char}')
+                for idx in range(len(chars)):
+                    ranged_exercises.append(f'{id_range}{chars[idx]}')
                 exercise_ids.pop(exercise_ids.index(id_))
         ranged_exercises = [f'{Exercise.zero_padding[:-1] if len(id_) == 2  else Exercise.zero_padding}{id_}'
                             if len(id_) <= 2 else id_ for id_ in ranged_exercises]
