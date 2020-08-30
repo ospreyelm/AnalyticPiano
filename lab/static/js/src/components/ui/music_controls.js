@@ -338,10 +338,42 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickUploadJSON: function(evt) {
-			const json_data = sessionStorage.getItem('current_state')
+			testing = true;
+
+			if (testing) {
+
+			let user_input = prompt("Enter the Intro Text")
+			const intro_text = user_input
+				.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
+				.replace(/^\"/g, '“')
+				.replace(/ \"/, ' “')
+				.replace(/^\'/, '‘')
+				.replace(/ \'/, ' ‘')
+				.replace(/\"$/, '”')
+				.replace(/\" /, '” ')
+				.replace(/\'$/, '’')
+				.replace(/\' /, '’ ')
+				.replace(/\'(s)\b/, '’$1')
+				.replace(/-{3}/, '—')
+				.replace(/-{2}/, '–');
+				// do not allow < > until these field is verified as good html
+
+			var json_data = JSON.parse(sessionStorage.getItem('current_state'))
 				|| false;
 			// console.log("upload", json_data);
 			if (!json_data /* || json_data["chords"].length < 1 */) return false;
+
+			json_data.introText = intro_text;
+			json_data = JSON.stringify(json_data,null,0);
+
+			} else {
+
+			var json_data = sessionStorage.getItem('current_state')
+				|| false;
+			// console.log("upload", json_data);
+			if (!json_data /* || json_data["chords"].length < 1 */) return false;
+
+			}
 
 			$.ajax({
 				type: "POST",
@@ -363,6 +395,42 @@ define([
 		 * @return {boolean} true
 		 */
 		onClickDownloadJSON: function(evt) {
+			testing = true;
+
+			if (testing) {
+
+			let user_input = prompt("Enter the Intro Text")
+			const intro_text = user_input
+				.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
+				.replace(/^\"/g, '“')
+				.replace(/ \"/, ' “')
+				.replace(/^\'/, '‘')
+				.replace(/ \'/, ' ‘')
+				.replace(/\"$/, '”')
+				.replace(/\" /, '” ')
+				.replace(/\'$/, '’')
+				.replace(/\' /, '’ ')
+				.replace(/\'(s)\b/, '’$1')
+				.replace(/-{3}/, '—')
+				.replace(/-{2}/, '–');
+				// do not allow < > until these field is verified as good html
+			const file_name = user_input
+				.replace(/[^-\w ]+/g, '')
+				.replace(/ +/, '_');
+
+			let json_data = JSON.parse(sessionStorage.getItem('current_state'))
+				|| false;
+			if (!json_data /* || json_data["chords"].length < 1 */) return false;
+
+			json_data.introText = intro_text;
+			json_data = JSON.stringify(json_data,null,0);
+			console.log("download", json_data);
+
+			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
+			saveAs(blob, file_name + ".json");
+
+			} else {
+
 			const json_data = sessionStorage.getItem('current_state')
 				|| false;
 			console.log("download", json_data);
@@ -370,7 +438,9 @@ define([
 
 			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
 			saveAs(blob, "exercise_download.json");
-			
+
+			}
+
 			return true;
 		},
 		/**
