@@ -17,15 +17,16 @@ class ExerciseAdmin(admin.ModelAdmin):
     raw_id_fields = ('authored_by',)
     fieldsets = (
         ('General Info', {
-            'fields': ('id', 'authored_by', 'is_public'),
+            'fields': (
+                ('id', 'authored_by', 'type'),
+                ('created', 'updated'),
+                'is_public'),
         }),
         ('Exercise Data', {
-            'fields': ('data', 'type', 'intro_text', 'review_text', 'rhythm_value')
-        }),
-        ('Date Info', {
-            'fields': ('created', 'updated')
+            'fields': ('rhythm_value', ('intro_text', 'review_text'), 'data')
         }),
     )
+    save_on_top = True
 
     def save_model(self, request, obj, form, change):
         if not change:
@@ -43,15 +44,13 @@ class PlaylistAdmin(admin.ModelAdmin):
     raw_id_fields = ('authored_by',)
     fieldsets = (
         ('General Info', {
-            'fields': ('name', 'id', 'authored_by'),
+            'fields': ('name', 'id', 'authored_by', ('created', 'updated')),
         }),
         ('Exercises', {
-            'fields': ('exercises', 'exercise_links', 'performances')
-        }),
-        ('Date Info', {
-            'fields': ('created', 'updated')
+            'fields': ('performances', 'exercises', 'exercise_links')
         }),
     )
+    save_on_top = True
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super(PlaylistAdmin, self).get_form(request, obj, change, **kwargs)

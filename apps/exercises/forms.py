@@ -22,7 +22,7 @@ class ExerciseForm(forms.ModelForm):
     )
 
     intro_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
-    review_text = forms.CharField(widget=CKEditorWidget(), required=False)
+    review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False)
 
     def __init__(self, *arg, **kwargs):
