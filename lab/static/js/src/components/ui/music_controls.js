@@ -358,7 +358,7 @@ define([
 				.replace(/-{2}/, '–');
 				// do not allow < > until these field is verified as good html
 
-			let json_data = JSON.parse(sessionStorage.getItem('current_state'))
+			var json_data = JSON.parse(sessionStorage.getItem('current_state'))
 				|| false;
 			// console.log("upload", json_data);
 			if (!json_data /* || json_data["chords"].length < 1 */) return false;
@@ -368,7 +368,7 @@ define([
 
 			} else {
 
-			let json_data = sessionStorage.getItem('current_state')
+			var json_data = sessionStorage.getItem('current_state')
 				|| false;
 			// console.log("upload", json_data);
 			if (!json_data /* || json_data["chords"].length < 1 */) return false;
