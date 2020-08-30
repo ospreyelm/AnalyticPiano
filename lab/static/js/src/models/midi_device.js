@@ -1,7 +1,7 @@
 define([
 	'lodash',
 	'microevent',
-	'Tone', // Tone.js
+	'Tone', /* Tone.js */
 	'teoria'
 ], function(
 	_,
@@ -28,13 +28,20 @@ define([
 		this._outputidx = false;
 		_.bindAll(this, ['handleMIDIMessage','update']);
 	};
+	
 	/**
 	 * Initialize parameters for Tone.js
 	 */
+	if (Tone.context.state !== 'running') { 
+		alert("Welcome to Analytic Piano. Press OK to begin")
+	};
+	// else {div.innerHtml = “audio on”}
+	
 	var vol = new Tone.Volume(-12).toMaster();
 	var polySynth = new Tone.PolySynth(10, Tone.FMSynth);
 	polySynth.connect(vol);
 	var lastTiming = 0;
+	
 	/**
 	 * Sets a callback that will be called when the update() method
 	 * is called. 
@@ -66,7 +73,6 @@ define([
 	 * @param {array} outputs
 	 * @return undefined
 	 */
-
 	MidiDevice.prototype.setSources = function(inputs, outputs) {
 		this.inputs = inputs || [];
 		this.outputs = outputs || [];
@@ -97,17 +103,19 @@ define([
 	 * @return array
 	 */
 	MidiDevice.prototype.selectInput = function(index, inputs) {
+		var some_valid_selection = false;
 		for (i = 0, len = inputs.length; i < len; i++) {
-			if(this.isValidSelection(this.inputs, i)) {
+			if (this.isValidSelection(this.inputs, i)) {
 				this._inputidx = i;
 				this._input = this.inputs[i];
 				// this.clearInputListeners(); 
 				/* previously selected index as input device and cleared other listeners, now selects all inputs */
 				this.addInputListener();
+				some_valid_selection = true;
 			}
 		}
-		return true;
-};
+		return some_valid_selection;
+	};
 
 	/**
 	 * Selects an output device to be used.
@@ -116,7 +124,7 @@ define([
 	 * @return array
 	 */
 	MidiDevice.prototype.selectOutput = function(index) {
-		if(this.isValidSelection(this.outputs, index)) {
+		if (this.isValidSelection(this.outputs, index)) {
 			this._outputidx = index;
 			this._output = this.outputs[index];
 			return true;
@@ -208,32 +216,22 @@ define([
 	 * @return undefined
 	 */
 	MidiDevice.prototype.sendMIDIMessage = function(msg) {
-	
-	// Uncomment following 3 lines to use real midi output devices
-
-		// if(this._output) {
-		// 	this._output.send(msg);
-		// }
-
-		// Tone js synth ouput instead
-
-		// Convert MIDI number to a pitch name
-		var note = teoria.note.fromMIDI(msg[1]);
-		// Get the accidental
-		var accidental = note.accidental();
-		
-		// NoteOn
-	if (msg[0] == 144) {
-		// console.log("midi message is", msg);
-	    // console.log("note is", note.name() + accidental);
-        polySynth.triggerAttack(note.name() + accidental + note.octave());    
-	}
-
-		// NoteOff
-	if (msg[0] == 128) {
-		// console.log("midi message is", msg) 
-		polySynth.triggerRelease(note.name() + accidental + note.octave());
-	}
+		if (msg[1] == 109) {
+			// midi note 109 is ignored (used for side-effect on frontend)
+		} else if (false) { /* midi output */
+			if (this._output) {
+				this._output.send(msg);
+			}
+		} else { /* synth output */
+			var note = teoria.note.fromMIDI(msg[1]); /* convert MIDI number to pitch name */
+			var accidental = note.accidental();
+			if (msg[0] == 144) { /* note on, channel 1 */
+				polySynth.triggerAttack(note.name() + accidental + note.octave());    
+			}
+			if (msg[0] == 128) { /* note off, channel 1 */
+				polySynth.triggerRelease(note.name() + accidental + note.octave());
+			}
+		}
 	};
 
 	/**
