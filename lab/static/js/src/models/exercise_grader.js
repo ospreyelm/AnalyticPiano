@@ -265,9 +265,10 @@ define([
 			}
 
 			var analysisBool = this.analysisBool(expected, delivered, analysis_types);
+			var lengthBool = delivered.length == expected.length;
 
 			result.state = (pc_mistake ? INCORRECT
-				: (analysisBool ? CORRECT : PARTIAL));
+				: (analysisBool ? (lengthBool ? CORRECT : PARTIAL) : PARTIAL));
 
 			return result;
 		},
@@ -303,7 +304,9 @@ define([
 				}
 			}
 
-			result.state = (analysisBool ? CORRECT : PARTIAL);
+			var lengthBool = delivered.length == expected.length;
+
+			result.state = (analysisBool ? (lengthBool ? CORRECT : PARTIAL) : PARTIAL);
 
 			return result;
 		},
@@ -363,8 +366,10 @@ define([
 				}
 			}
 
+			var lengthBool = delivered.length == expected.length;
+
 			result.state = (pc_mistake ? INCORRECT
-				: (analysisBool ? CORRECT : PARTIAL));
+				: (analysisBool ? (lengthBool ? CORRECT : PARTIAL) : PARTIAL));
 
 			return result;
 		},
@@ -423,7 +428,9 @@ define([
 				}
 			}
 
-			result.state = (analysisBool ? CORRECT : PARTIAL);
+			var lengthBool = delivered.length == expected.length;
+
+			result.state = (analysisBool ? (lengthBool ? CORRECT : PARTIAL) : PARTIAL);
 
 			return result;
 		},
