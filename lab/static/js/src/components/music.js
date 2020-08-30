@@ -199,7 +199,6 @@ define([
 					this.trigger('change');
 				}
 
-				scex.state = "ready"; // READY
 				// sheetComponent.renderExerciseText(); // not necessary
 				scex.sealed = false;
 				scex.done = false;
@@ -209,6 +208,9 @@ define([
 				window.console.dir('send dummy note');
 				this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
 				this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
+
+				scex.state = "ready"; // READY
+				console.log(scex.state);
 			}
 
 			sheetComponent.clear();
