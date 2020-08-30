@@ -342,7 +342,17 @@ define([
 
 			if (testing) {
 
-			let user_input = prompt("Enter the Intro Text")
+			const type_input = prompt("Enter a number for exercise type: (1) matching (2) analytical (3) analytical_pcs (4) figured_bass (5) figured_bass_pcs");
+			const type_options = {
+				"1": "matching",
+				"2": "analytical",
+				"3": "analytical_pcs",
+				"4": "figured_bass",
+				"5": "figured_bass_pcs"
+			}
+			const type = (type_options.hasOwnProperty(type_input) ? type_options[type_input] : false);
+
+			const user_input = prompt("Enter the Intro Text");
 			const intro_text = user_input
 				.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
 				.replace(/^\"/g, '“')
@@ -360,21 +370,26 @@ define([
 
 			var json_data = JSON.parse(sessionStorage.getItem('current_state'))
 				|| false;
-			// console.log("upload", json_data);
+			console.log("upload", json_data);
 			if (!json_data /* || json_data["chords"].length < 1 */) return false;
 
 			json_data.introText = intro_text;
+			if (type) {
+				json_data.type = type;
+			}
 			json_data = JSON.stringify(json_data,null,0);
 
 			} else {
 
 			var json_data = sessionStorage.getItem('current_state')
 				|| false;
-			// console.log("upload", json_data);
+			console.log("upload", json_data);
 			if (!json_data /* || json_data["chords"].length < 1 */) return false;
 
 			}
 
+			/*
+			// enable later
 			$.ajax({
 				type: "POST",
 				url: 'exercises/add',
@@ -383,8 +398,9 @@ define([
 				success: function (data) {
 					let exerciseID = data.id;
 					window.alert('Exercise uploaded! Exercise ID: ' + exerciseID);
-    			}
+				}
 			});
+			*/
 
 			return true;
 		},
