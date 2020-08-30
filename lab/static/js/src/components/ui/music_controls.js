@@ -388,8 +388,6 @@ define([
 
 			}
 
-			/*
-			// enable later
 			$.ajax({
 				type: "POST",
 				url: 'exercises/add',
@@ -400,7 +398,6 @@ define([
 					window.alert('Exercise uploaded! Exercise ID: ' + exerciseID);
 				}
 			});
-			*/
 
 			return true;
 		},
