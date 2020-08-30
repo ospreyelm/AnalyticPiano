@@ -168,19 +168,21 @@ define([
 					scex.settings.definition.settings.definition
 						= newData;
 
-					scex.displayChords = scex.createDisplayChords();
-					scex.exerciseChords = scex.createExerciseChords();
+					sheetComponent.keySignature
+						= new KeySignature(newData.key, newData.keySignature);
 
-					sheetComponent.keySignature = new KeySignature(newData.key, newData.keySignature);
-					sheetComponent.settings.keySignature = new KeySignature(newData.key, newData.keySignature);
+					sheetComponent.settings.keySignature
+						= new KeySignature(newData.key, newData.keySignature);
 
 					// DOES NOT HAVE EXPECTED EFFECT
-					scex.inputChords.staffDistribution = newData.staffDistribution;
-					this.settings.staffDistribution = newData.staffDistribution;
-					this.staffDistributionConfig.staffDistribution = newData.staffDistribution;
+					this.settings.staffDistribution
+						= newData.staffDistribution;
+
+					this.staffDistributionConfig.staffDistribution
+						= newData.staffDistribution;
 
 					/* similar to updateSettings */
-					// is there a way to do this things once each?
+					// is there a way to do these things once each?
 					Object.assign(this.analyzeConfig, newData.analysis);
 					Object.assign(this.settings.analysisSettings, newData.analysis);
 					Object.assign(this.staffDistributionConfig.analysisSettings, newData.analysis);
@@ -189,6 +191,10 @@ define([
 					Object.assign(this.settings.highlightSettings, newData.highlight);
 					Object.assign(this.staffDistributionConfig.highlightSettings, newData.highlight);
 					/* add use of listeners here to update the menu */
+
+					scex.inputChords.staffDistribution = newData.staffDistribution;
+					scex.displayChords = scex.createDisplayChords();
+					scex.exerciseChords = scex.createExerciseChords();
 
 					this.trigger('change');
 				}
