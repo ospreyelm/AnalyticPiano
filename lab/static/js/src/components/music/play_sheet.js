@@ -119,7 +119,7 @@ define([
 			this.clear();
 			this.renderStaves();
 
-			/* save data for retrieval by MusicControlsComponent.onClickDownloadJSON and .onClickUploadJSON; this may not be the optimal or most professional solution */
+			/* save data for retrieval by MusicControlsComponent.onClickDownloadJSON, .onClickUploadJSON, onClickSaveJSON; this may not be the optimal or most professional solution */
 			sessionStorage.setItem('current_state', this.dataForSave());
 
 			return this;
