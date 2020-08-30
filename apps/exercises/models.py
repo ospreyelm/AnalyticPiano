@@ -35,7 +35,7 @@ class Exercise(models.Model):
     created = models.DateTimeField('Created at', auto_now_add=True)
     updated = models.DateTimeField('Updated at', auto_now=True)
 
-    zero_padding = 'EA00'
+    zero_padding = 'EA00A'
 
     class Meta:
         verbose_name = 'Exercise'
