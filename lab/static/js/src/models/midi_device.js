@@ -32,6 +32,9 @@ define([
 	/**
 	 * Initialize parameters for Tone.js
 	 */
+	if (Tone.context.state !== 'running') {
+		alert("Welcome to Analytic Piano. Press OK to begin")
+	};
 	var vol = new Tone.Volume(-12).toMaster();
 	var polySynth = new Tone.PolySynth(10, Tone.FMSynth);
 	polySynth.connect(vol);
