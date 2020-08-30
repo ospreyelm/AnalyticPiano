@@ -90,8 +90,8 @@ define([
 
 			$('.js-btn-help', this.headerEl).on('click', this.onClickInfo);
 			$('.js-btn-screenshot').on('mousedown', this.onClickScreenshot);
-			$('.js-btn-upload-json').on('mousedown', this.onClickUploadJSON);
-			$('.js-btn-download-json').on('mousedown', this.onClickDownloadJSON);
+			$('.js-btn-upload-json').on('mousedown', () => this.onClickSaveJSON("upload"));
+			$('.js-btn-download-json').on('mousedown', () => this.onClickSaveJSON());
 			$('.js-btn-pristine').on('mousedown', () => this.onClickPristine());
 
 			this.initControlsLayout();
@@ -332,139 +332,88 @@ define([
 			return true;
 		},
 		/**
-		 * Handler to upload JSON data for the current notation.
+		 * Handler to upload or download JSON data for the current notation.
 		 *
-		 * @param {object} evt
+		 * @param {string} destination
 		 * @return {boolean} true
 		 */
-		onClickUploadJSON: function(evt) {
+		onClickSaveJSON: function(destination="download") {
 			advanced = true;
 
+			var json_data = JSON.parse(sessionStorage.getItem('current_state')) || false;
+			if (!json_data /* || json_data["chords"].length < 1 */) {
+				console.log("Cannot find JSON data");
+				return false;
+			}
+
 			if (advanced) {
-
-			const type_input = prompt("Enter a number for exercise type: (1) matching (2) analytical (3) analytical_pcs (4) figured_bass (5) figured_bass_pcs");
-			const type_options = {
-				"1": "matching",
-				"2": "analytical",
-				"3": "analytical_pcs",
-				"4": "figured_bass",
-				"5": "figured_bass_pcs"
-			}
-			const type = (type_options.hasOwnProperty(type_input) ? type_options[type_input] : false);
-
-			const user_input = prompt("Enter the Intro Text");
-			const intro_text = user_input
-				.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
-				.replace(/^\"/g, '“')
-				.replace(/ \"/, ' “')
-				.replace(/^\'/, '‘')
-				.replace(/ \'/, ' ‘')
-				.replace(/\"$/, '”')
-				.replace(/\" /, '” ')
-				.replace(/\'$/, '’')
-				.replace(/\' /, '’ ')
-				.replace(/\'(s)\b/, '’$1')
-				.replace(/-{3}/, '—')
-				.replace(/-{2}/, '–');
-				// do not allow < > until these field is verified as good html
-
-			var json_data = JSON.parse(sessionStorage.getItem('current_state'))
-				|| false;
-			console.log("upload", json_data);
-			if (!json_data /* || json_data["chords"].length < 1 */) return false;
-
-			json_data.introText = intro_text;
-			if (type) {
-				json_data.type = type;
-			}
-			json_data = JSON.stringify(json_data,null,0);
-
-			} else {
-
-			var json_data = sessionStorage.getItem('current_state')
-				|| false;
-			console.log("upload", json_data);
-			if (!json_data /* || json_data["chords"].length < 1 */) return false;
-
-			}
-
-			$.ajax({
-				type: "POST",
-				url: 'exercises/add',
-				data: {'data': json_data},
-				dataType: 'json',
-				success: function (data) {
-					let exerciseID = data.id;
-					window.alert('Exercise uploaded! Exercise ID: ' + exerciseID);
+				const type_input = prompt("Enter a number for exercise type: (1) matching (2) analytical (3) analytical_pcs (4) figured_bass (5) figured_bass_pcs");
+				const type_options = {
+					"1": "matching",
+					"2": "analytical",
+					"3": "analytical_pcs",
+					"4": "figured_bass",
+					"5": "figured_bass_pcs"
 				}
-			});
+				const type = (type_input ? (type_options.hasOwnProperty(type_input) ? type_options[type_input] : false) : false);
 
-			return true;
-		},
-		/**
-		 * Handler to download JSON data for the current notation.
-		 *
-		 * @param {object} evt
-		 * @return {boolean} true
-		 */
-		onClickDownloadJSON: function(evt) {
-			advanced = true;
-
-			if (advanced) {
-
-			const type_input = prompt("Enter a number for exercise type: (1) matching (2) analytical (3) analytical_pcs (4) figured_bass (5) figured_bass_pcs");
-			const type_options = {
-				"1": "matching",
-				"2": "analytical",
-				"3": "analytical_pcs",
-				"4": "figured_bass",
-				"5": "figured_bass_pcs"
-			}
-			const type = (type_options.hasOwnProperty(type_input) ? type_options[type_input] : false);
-
-			let user_input = prompt("Enter the Intro Text")
-			const intro_text = user_input
-				.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
-				.replace(/^\"/g, '“')
-				.replace(/ \"/, ' “')
-				.replace(/^\'/, '‘')
-				.replace(/ \'/, ' ‘')
-				.replace(/\"$/, '”')
-				.replace(/\" /, '” ')
-				.replace(/\'$/, '’')
-				.replace(/\' /, '’ ')
-				.replace(/\'(s)\b/, '’$1')
-				.replace(/-{3}/, '—')
-				.replace(/-{2}/, '–');
+				const user_input = prompt("Enter the Intro Text");
+				const intro_text =  (!user_input ? false :
+					user_input
+					.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
+					.replace(/^\"/g, '“')
+					.replace(/ \"/g, ' “')
+					.replace(/^\'/g, '‘')
+					.replace(/ \'/g, ' ‘')
+					.replace(/\"$/g, '”')
+					.replace(/\" /g, '” ')
+					.replace(/\'$/g, '’')
+					.replace(/\' /g, '’ ')
+					.replace(/\'(s)\b/g, '’$1')
+					.replace(/-{3}/g, '—')
+					.replace(/-{2}/g, '–')
+				);
 				// do not allow < > until these field is verified as good html
-			const file_name = user_input
-				.replace(/[^-\w ]+/g, '')
-				.replace(/ +/, '_');
 
-			let json_data = JSON.parse(sessionStorage.getItem('current_state'))
-				|| false;
-			if (!json_data /* || json_data["chords"].length < 1 */) return false;
-
-			json_data.introText = intro_text;
-			if (type) {
-				json_data.type = type;
+				if (intro_text) {
+					json_data.introText = intro_text;
+				}
+				if (type) {
+					json_data.type = type;
+				}
 			}
-			json_data = JSON.stringify(json_data,null,0);
-			console.log("download", json_data);
 
-			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
-			saveAs(blob, file_name + ".json");
+			var intro_text = json_data.introText;
+			json_data = JSON.stringify(json_data,null,0);
+
+			if (destination === "upload") {
+				console.log("Upload", json_data);
+
+				$.ajax({
+					type: "POST",
+					url: 'exercises/add',
+					data: {'data': json_data},
+					dataType: 'json',
+					success: function (data) {
+						let exerciseID = data.id;
+						window.alert('Exercise uploaded! Exercise ID: ' + exerciseID);
+					}
+				});
 
 			} else {
+				console.log("Download", json_data);
+				var file_name = "exercise_download";
+				if (advanced) {
+					let probe = intro_text
+						.replace(/[^-\w ]+/g, '')
+						.replace(/ +/g, '_').slice(0,30);
+					if (probe && probe.length >= 1 && typeof probe === "string") {
+						file_name = probe;
+					}
+				}
 
-			const json_data = sessionStorage.getItem('current_state')
-				|| false;
-			console.log("download", json_data);
-			if (!json_data /* || json_data["chords"].length < 1 */) return false;
-
-			var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
-			saveAs(blob, "exercise_download.json");
-
+				var blob = new Blob([json_data], {type: "application/json;charset=utf-8"});
+				saveAs(blob, file_name + ".json");
 			}
 
 			return true;
