@@ -1,4 +1,14 @@
-define(['lodash'], function(_) {
+define([
+	'lodash',
+	'app/config'
+], function(
+	_,
+	Config
+) {
+
+	var ANALYSIS_SETTINGS = Config.get('general.analysisSettings');
+	var HIGHLIGHT_SETTINGS = Config.get('general.highlightSettings');
+	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
 
 	/**
 	 * ExerciseDefinition object is responsible for knowing the definition
@@ -267,21 +277,18 @@ define(['lodash'], function(_) {
 				exercise.exerciseList = definition.exerciseList.slice(0);
 			}
 
-			// get analysis options (see config.general.analysisSettings)
-			exercise.analysis = {};
-			if(definition.hasOwnProperty("analysis") && definition.analysis) {
-				exercise.analysis = definition.analysis;
+			exercise.analysis = ANALYSIS_SETTINGS;
+			if (definition.hasOwnProperty("analysis") && definition.analysis) {
+				Object.assign(exercise.analysis, definition.analysis);
 			}
 
-			// get highlight options (see config.general.highlightSettings)
-			exercise.highlight = {};
-			if(definition.hasOwnProperty("highlight") && definition.highlight) {
-				exercise.highlight = definition.highlight;
+			exercise.highlight = HIGHLIGHT_SETTINGS;
+			if (definition.hasOwnProperty("highlight") && definition.highlight) {
+				Object.assign(exercise.highlight, definition.highlight);
 			}
 
-			// get staff distribution option (see config.general.staffDistribution)
-			exercise.staffDistribution = {};
-			if(definition.hasOwnProperty("staffDistribution") && definition.staffDistribution) {
+			exercise.staffDistribution = STAFF_DISTRIBUTION;
+			if (definition.hasOwnProperty("staffDistribution") && definition.staffDistribution) {
 				exercise.staffDistribution = definition.staffDistribution;
 			}
 
