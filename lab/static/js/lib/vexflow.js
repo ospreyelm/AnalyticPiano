@@ -1111,6 +1111,7 @@ Vex.Flow.TickContext.prototype.init = function() {
   this.tickables = [];
   this.notePx = 0;
   this.extraLeftPx = 0;
+  this.extraLeftPxCOPY = 0; // variable added for HarmonyLab
   this.extraRightPx = 0;
   this.ignore_ticks = true;
   this.preFormatted = false;
@@ -1384,12 +1385,19 @@ Vex.Flow.Note.prototype.setContext = function(context) {
 Vex.Flow.Note.prototype.getExtraLeftPx = function() {
   return this.extraLeftPx
 };
+Vex.Flow.Note.prototype.getExtraLeftPxCOPY = function() {
+  return this.extraLeftPxCOPY // function added for Harmony Lab
+};
 Vex.Flow.Note.prototype.getExtraRightPx = function() {
   return this.extraRightPx
 };
 Vex.Flow.Note.prototype.setExtraLeftPx = function(x) {
   this.extraLeftPx = x;
   return this
+};
+Vex.Flow.Note.prototype.setExtraLeftPxCOPY = function(x) {
+  this.extraLeftPxCOPY = x;
+  return this // function added for Harmony Lab
 };
 Vex.Flow.Note.prototype.setExtraRightPx = function(x) {
   this.extraRightPx = x;
@@ -1904,7 +1912,8 @@ Vex.Flow.StaveNote.prototype.getVoiceShiftWidth = function() {
   return this.glyph.head_width * (this.displaced ? 2 : 1)
 };
 Vex.Flow.StaveNote.prototype.calcExtraPx = function() {
-  this.setExtraLeftPx(this.displaced && this.stem_direction == -1 ? this.glyph.head_width /* * 0 for HarmonyLab once accidental collisions resolved */ : 0);
+  this.setExtraLeftPx(this.displaced && this.stem_direction == -1 ? 0 /* for HarmonyLab instead of this.glyph.head_width */ : 0);
+  this.setExtraLeftPxCOPY(this.displaced && this.stem_direction == -1 ? this.glyph.head_width : 0); // chords with a second on a downstem
   this.setExtraRightPx(this.displaced && this.stem_direction == 1 ? this.glyph.head_width : 0)
 };
 Vex.Flow.StaveNote.prototype.preFormat = function() {
@@ -2910,7 +2919,7 @@ Vex.Flow.ModifierContext.prototype.formatAccidentals = function() {
     if(note != prev_note) {
       for(var n = 0;n < note.keys.length;++n) {
         props_tmp = note.getKeyProps()[n];
-        shiftL = props_tmp.displaced ? note.getExtraLeftPx() : shiftL
+        shiftL = props_tmp.displaced ? note.getExtraLeftPxCOPY() /*  for HarmonyLab instead of note.getExtraLeftPx() */ : shiftL
       }prev_note = note
     }if(stave != null) {
       hasStave = true;
