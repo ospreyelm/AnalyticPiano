@@ -148,7 +148,7 @@ define([
 				// let currentData = setdef.settings.definition;
 				// console.log(JSON.stringify(currentData, null, 0));
 
-				var testing = false;
+				var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
 				if (testing) {
 
 					/* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
@@ -199,7 +199,6 @@ define([
 					this.trigger('change');
 				}
 
-				scex.state = "ready"; // READY
 				// sheetComponent.renderExerciseText(); // not necessary
 				scex.sealed = false;
 				scex.done = false;
@@ -209,6 +208,8 @@ define([
 				window.console.dir('send dummy note');
 				this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
 				this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
+
+				scex.state = "ready"; // READY
 			}
 
 			sheetComponent.clear();
