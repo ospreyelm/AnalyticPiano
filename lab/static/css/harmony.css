@@ -144,6 +144,9 @@ body, #mainmenu, #helpmenu {
     padding: 0;
     list-style-type: none;
 }
+.header ul.header-second-row {
+    padding-top: 0.8em;
+}
 .header ul li {
     display: inline;
     padding-right: 1.5em;
