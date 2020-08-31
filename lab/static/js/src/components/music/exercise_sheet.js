@@ -126,9 +126,9 @@ define([
          *
          * @return this
          */
-        render: function() { 
+        render: function(exercise_midi_nums = false) {
             this.clear();
-            this.renderStaves();
+            this.renderStaves(exercise_midi_nums);
             this.renderExerciseText();
 
             return this;
@@ -182,7 +182,7 @@ define([
                             '<a class="exercise-status-next-btn" href="<%= next_set %>">PROCEED TO NEXT SET</a> || ',
                         '<% } %>',
                         '<% if (typeof(current_set) !== "undefined" && current_set != "" && exercise_num != 1) { %>',
-                            '<a class="exercise-status-next-btn" href="<%= current_set %>">REDO CURRENT PLAYLIST</a>',
+                            '<a class="exercise-status-next-btn" href="<%= current_set %>">CLICK TO REPEAT PLAYLIST</a>',
                         '<% } %>',
                     '</div>',
                 '</div>'
@@ -311,11 +311,11 @@ define([
          *
          * @return this
          */
-        renderStaves: function() {
+        renderStaves: function(exercise_midi_nums = false) {
             var i, len, stave, _staves = this.staves;
-            for(i = 0, len = _staves.length; i < len; i++) {
+            for (i = 0, len = _staves.length; i < len; i++) {
                 stave = _staves[i];
-                stave.render();
+                stave.render(exercise_midi_nums);
             }
             return this;
         },

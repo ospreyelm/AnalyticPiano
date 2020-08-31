@@ -160,7 +160,7 @@ define([
 		 *
 		 * @return this
 		 */
-		render: function() {
+		render: function(exercise_midi_nums = false) {
 			if(!this.isConnected()) {
 				return;
 			}
@@ -177,7 +177,7 @@ define([
 			this.renderStaveConnector();
 
 			this.notate();
-			this.doConnected('notate');
+			this.doConnected('notate', exercise_midi_nums); // pass variable to bass staff
 
 			return this;
 		},
@@ -362,9 +362,9 @@ define([
 		 *
 		 * @return undefined
 		 */
-		notate: function() {
-			if(this.notater) {
-				this.notater.notate();
+		notate: function(exercise_midi_nums = false) {
+			if (this.notater) {
+				this.notater.notate(exercise_midi_nums);
 			}
 		},
 		/**

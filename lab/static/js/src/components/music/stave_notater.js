@@ -131,7 +131,7 @@ define([
 		 * @fires notated
 		 * @return undefined
 		 */
-		notate: function() {
+		notate: function(exercise_midi_nums = false) {
 			var ctx = this.getContext();
 
 			ctx.save();
@@ -142,7 +142,7 @@ define([
 			if(this.isAnalyzerEnabled()) {
 				this.updateAnalyzer();
 				if(this.chord) {
-					this.drawLabel();
+					this.drawLabel(exercise_midi_nums);
 				}
 			}
 
@@ -460,7 +460,6 @@ define([
 		 * @return undefined
 		 */
 		drawRoman: function(x, y) {
-			
 			var key = this.keySignature.getKeyShortName();
 			let mode = this.keySignature.getKey()[0] || false;
 
@@ -799,7 +798,7 @@ define([
 		 *
 		 * @return undefined
 		 */
-		drawLabel: function() {
+		drawLabel: function(exercise_midi_nums = false) {
 			/* Above the current treble staff */
 
 			var x = this.getX();
@@ -829,7 +828,7 @@ define([
 		 *
 		 * @return undefined
 		 */
-		notateStave: function() {
+		notateStave: function(exercise_midi_nums = false) {
 			var x = this.getX();
 			var y = this.getY();
 
@@ -891,7 +890,7 @@ define([
 		 *
 		 * @return undefined
 		 */
-		drawLabel: function() {
+		drawLabel: function(exercise_midi_nums = false) {
 			/* Below the current bass staff */
 
 			var x = this.getX();
@@ -900,7 +899,17 @@ define([
 			var num_notes = midi_nums.length;
 			var mode = this.analyzeConfig.mode;
 
-			this.romanNumeralsHistory[this.stave.position.index] = this.getAnalyzer().to_chord(midi_nums).label || ""; /* stores unedited chord labels */
+			/* stores unedited chord labels */
+			if (exercise_midi_nums && typeof this.romanNumeralsHistory[this.stave.position.index] === 'undefined') {
+				let romanNumerals = exercise_midi_nums.map(midi_arr => this.getAnalyzer().to_chord(midi_arr).label || "");
+				var i, len;
+				for (i = 0, len = romanNumerals.length; i < len; i += 1) {
+					this.romanNumeralsHistory[i+1] = romanNumerals[i];
+				}
+				// console.log(this.romanNumeralsHistory);
+			} else if (!exercise_midi_nums) {
+				this.romanNumeralsHistory[this.stave.position.index] = this.getAnalyzer().to_chord(midi_nums).label || "";
+			}
 
 			if(num_notes >= 2 && mode.thoroughbass) {
 				this.drawThoroughbass(x, y);

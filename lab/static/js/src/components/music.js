@@ -123,7 +123,12 @@ define([
 		renderSheet: function() {
 			var sheetComponent = this.getComponent('sheet');
 			sheetComponent.clear();
-			sheetComponent.render();
+			if (sheetComponent.hasOwnProperty('exerciseContext')) {
+				var exercise_midi_nums = sheetComponent.exerciseContext.exerciseChords._items.map(item => Object.keys(item._notes));
+				sheetComponent.render(exercise_midi_nums);
+			} else {
+				sheetComponent.render();
+			}
 			return this;
 		},
 		renderPristine: function() {
