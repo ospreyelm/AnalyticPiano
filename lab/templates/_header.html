@@ -8,13 +8,15 @@
             <li><a href="{% url 'registration' %}">REGISTER</a></li>
         {% endif %}
         <li><a href="https://webmidi.info" target="_blank">WebMIDI support?</a></li>
-        <!-- <li id="notificationAlerts" class="notificationAlerts"></li> -->
     </ul>
-    {% if user.is_authenticated %}
-        <p>
-            Logged in as: {{ user.email }}
-        </p>
-    {% endif %}
+    <ul class="header-second-row">
+        <!-- <li id="notificationAlerts" class="notificationAlerts"></li> -->
+        <li style="padding-right:0.25em"><button id="audio-context" onclick="getElementById('audio-context').innerHTML = 'Audio On'">Enable Audio</button></li>
+        <li><button id="all-notes-off" >All Notes Off</button></li>
+        {% if user.is_authenticated %}
+            <li>Logged in as: {{ user.email }}<li>
+        {% endif %}
+    </ul>
 
 </div>
 
