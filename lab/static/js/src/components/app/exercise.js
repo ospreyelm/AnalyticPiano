@@ -176,7 +176,8 @@ define([
 					highlightSettings: definition.getHighlightSettings()
 				});
 				c.init(this);
-				c.render();
+				var exercise_midi_nums = c.settings.sheet.exerciseContext.exerciseChords._items.map(item => Object.keys(item._notes));
+				c.render(typeof exercise_midi_nums); // send midi nums from exercise chords ahead for the purposes of contextual Roman numeral analysis
 				this.addComponent(c);
 			}
 		];
@@ -200,9 +201,6 @@ define([
 		 * In ExerciseContext, this note is given special treatment not
 		 * to generate exercise errors.
 		 */
-		window.console.dir('send dummy note');
-		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
-		MidiComponent.prototype.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
 	};
 
 	return AppExerciseComponent;

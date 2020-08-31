@@ -56,16 +56,16 @@ define([
     var ExerciseSheetComponent = function(settings) {
         this.settings = settings || {};
 
-        if("exerciseContext" in this.settings) {
+        if ("exerciseContext" in this.settings) {
             this.exerciseContext = this.settings.exerciseContext;
         } else {
-            throw new Error("missing settings.exerciseContext");
+            throw new Error("Missing parameter property: .exerciseContext");
         }
 
-        if("keySignature" in this.settings) {
+        if ("keySignature" in this.settings) {
             this.keySignature = this.settings.keySignature;
         } else {
-            throw new Error("missing settings.keySignature");
+            throw new Error("Missing parameter property: .keySignature");
         }
 
         _.bindAll(this, [
@@ -126,9 +126,9 @@ define([
          *
          * @return this
          */
-        render: function() { 
+        render: function(exercise_midi_nums = false) {
             this.clear();
-            this.renderStaves();
+            this.renderStaves(exercise_midi_nums);
             this.renderExerciseText();
 
             return this;
@@ -311,11 +311,11 @@ define([
          *
          * @return this
          */
-        renderStaves: function() {
+        renderStaves: function(exercise_midi_nums = false) {
             var i, len, stave, _staves = this.staves;
-            for(i = 0, len = _staves.length; i < len; i++) {
+            for (i = 0, len = _staves.length; i < len; i++) {
                 stave = _staves[i];
-                stave.render();
+                stave.render(exercise_midi_nums);
             }
             return this;
         },
