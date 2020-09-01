@@ -253,7 +253,7 @@ var spellingAndAnalysisFunctions = {
         var bass_pc = (12 + chord[0]) % 12;
         
         if (chord.length == 2) {
-            var semitones = this.rel_pc(midi, bass_pc); /* register is irrelevant */
+            var semitones = this.rel_pc(chord[1], bass_pc); /* register is irrelevant */
             if (!this.hIntervals[semitones]) {
                 return this.noteNames[midi % 12]; /** return default spelling **/
             }
@@ -268,9 +268,7 @@ var spellingAndAnalysisFunctions = {
 
             var bass_name = this.spelling[scale][bass_pc].toLowerCase();
             var steps = this.hIntervals[semitones]["stepwise"];
-            if (midi % 12 == bass_pc) {
-                /* ?!! as function is currently called, never true ?!! */
-                /* make M3 below Eb and above G3 to see the difference */
+            if (midi == chord[0]) {
                 return bass_name;
             } else {
                 return this.upper_note_name(parseInt(bass_pc), bass_name, parseInt(semitones), parseInt(steps));
