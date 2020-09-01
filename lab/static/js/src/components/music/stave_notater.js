@@ -506,7 +506,7 @@ define([
 				];
 			}
 
-			if ( history[idx-1] ) { /* has precursor */
+			if ( ["i","j"].includes(mode) && history[idx-1] ) { /* has precursor */
 				let precursor = history[idx-1];
 				let current = history[idx]
 				if (precursor == current) display = "";
@@ -524,7 +524,7 @@ define([
 					}
 				}
 			}
-			if ( history[idx+1] ) { /* has postcursor */
+			if ( ["i","j"].includes(mode) && history[idx+1] ) { /* has postcursor */
 				let postcursor = history[idx+1];
 				let current = history[idx]
 				let progression = [current, postcursor];
@@ -553,7 +553,7 @@ define([
 
 			/* TO DO: add horizontal lines */
 
-			if (key === "") {
+			if (mode === "h") { // no key
 				/* there should be no double-sharp or double-flat roots */
 				display = display.replace(/b/g,'♭').replace(/#/g,'♯');
 			}
