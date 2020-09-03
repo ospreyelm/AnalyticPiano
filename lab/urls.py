@@ -8,11 +8,12 @@ from .views import (
     check_course_authorization,
     AddExerciseView,
     PlayView,
+    PlaylistView,
     ExerciseView,
+    APIGroupView,
     ManageView,
     APIView,
     APIExerciseView,
-    APIGroupView
 )
 
 app_name = 'lab'
@@ -24,10 +25,10 @@ urlpatterns = [
     re_path(r'^courses/(?P<course_id>\d+)/manage$', ManageView.as_view(), name="course-manage"),
     re_path(r'^courses/(?P<course_id>\d+)/authcheck$', check_course_authorization, name="course-authorization-check"),
     re_path(r'^courses/(?P<course_id>\d+)/exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)/(?P<exercise_name>\d+)$',
-            ExerciseView.as_view(), name="course-exercises"),
-    re_path(r'^courses/(?P<course_id>\d+)/exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)$', ExerciseView.as_view(),
+            PlaylistView.as_view(), name="course-exercises"),
+    re_path(r'^courses/(?P<course_id>\d+)/exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)$', PlaylistView.as_view(),
             name="course-exercise-groups"),
-    re_path(r'^courses/(?P<course_id>\d+)/exercises$', ExerciseView.as_view()),
+    re_path(r'^courses/(?P<course_id>\d+)/exercises$', PlaylistView.as_view()),
     re_path(r'^courses/(?P<course_id>\d+)$', PlayView.as_view(), name="course-index"),
 
     # FIXME should be added to a course: ^courses/(?P<course_id>\d+)/exercises/add/$?
@@ -38,10 +39,11 @@ urlpatterns = [
 
     # Non-Course Exercises
     re_path(r'^manage$', ManageView.as_view(), name="manage"),
-    path('exercises/<str:group_name>/<int:exercise_num>', ExerciseView.as_view(), name="exercises"),
-    re_path(r'^exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)$', ExerciseView.as_view(), name="exercise-groups"),
+    path('exercises/<str:exercise_id>/', ExerciseView.as_view(), name="exercise-view"),
+    path('exercises/<str:group_name>/<int:exercise_num>', PlaylistView.as_view(), name="exercises"),
+    re_path(r'^exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)$', PlaylistView.as_view(), name="exercise-groups"),
 
-    re_path(r'^exercises$', ExerciseView.as_view()),
+    re_path(r'^exercises$', PlaylistView.as_view()),
 
     # API
     re_path(r'^api$', APIView.as_view(), name="api"),

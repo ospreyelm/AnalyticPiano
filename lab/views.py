@@ -105,7 +105,7 @@ class PlayView(RequirejsTemplateView):
         return context
 
 
-class ExerciseView(RequirejsView):
+class PlaylistView(RequirejsView):
     def get(self, request, group_name, exercise_num=1, *args, **kwargs):
         playlist = get_object_or_404(Playlist, name=group_name)
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
@@ -139,6 +139,30 @@ class ExerciseView(RequirejsView):
             "exerciseList": exercise_list
         })
 
+        self.requirejs_context.set_app_module('app/components/app/exercise')
+        self.requirejs_context.set_module_params('app/components/app/exercise', exercise_context)
+        self.requirejs_context.add_to_view(context)
+
+        return render(request, "exercise.html", context)
+
+
+class ExerciseView(RequirejsView):
+    def get(self, request, exercise_id, *args, **kwargs):
+        exercise = get_object_or_404(Exercise, id=exercise_id)
+
+        url = reverse('lab:exercise-view', kwargs={'exercise_id': exercise_id})
+        exercise_info = [dict(id=exercise_id,
+                              name=f'{exercise._id}',
+                              url=url,
+                              selected=True)]
+
+        context = {'group_list': []}
+        exercise_context = {}
+
+        exercise_context.update(exercise.data)
+        exercise_context.update({
+            "exerciseList": [exercise_info]
+        })
         self.requirejs_context.set_app_module('app/components/app/exercise')
         self.requirejs_context.set_module_params('app/components/app/exercise', exercise_context)
         self.requirejs_context.add_to_view(context)

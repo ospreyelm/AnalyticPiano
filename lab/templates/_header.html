@@ -16,6 +16,9 @@
         {% if user.is_authenticated %}
             <li>Logged in as: {{ user.email }}<li>
         {% endif %}
+        {% if user.is_staff %}
+            <li><a href={% url 'admin:index'%} target="_blank">PANEL</a></li>
+        {% endif %}
     </ul>
 
 </div>

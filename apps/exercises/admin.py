@@ -10,15 +10,15 @@ from apps.exercises.forms import ExerciseForm, PlaylistForm, PerformanceDataForm
 @admin.register(Exercise)
 class ExerciseAdmin(admin.ModelAdmin):
     form = ExerciseForm
-    list_display = ('id', 'authored_by', 'is_public', 'created', 'updated')
+    list_display = ('id', 'authored_by', 'is_public', 'created', 'updated', 'show_on_site')
     list_filter = ('authored_by__email', 'is_public')
     search_fields = ('id',)
-    readonly_fields = ('id', 'authored_by', 'created', 'updated')
+    readonly_fields = ('id', 'authored_by', 'created', 'updated', 'show_on_site')
     raw_id_fields = ('authored_by',)
     fieldsets = (
         ('General Info', {
             'fields': (
-                ('id', 'authored_by', 'type'),
+                ('id', 'authored_by', 'type', 'show_on_site'),
                 ('created', 'updated'),
                 'is_public'),
         }),
@@ -33,18 +33,27 @@ class ExerciseAdmin(admin.ModelAdmin):
             obj.authored_by = request.user
         obj.save()
 
+    def show_on_site(self, obj):
+        link = reverse('lab:exercise-view', kwargs={'exercise_id': obj.id})
+        link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
+        return mark_safe(link)
+
+    show_on_site.short_description = ''
+
 
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
     form = PlaylistForm
-    list_display = ('name', 'exercise_links', 'authored_by', 'created', 'updated')
+    list_display = ('name', 'exercise_links', 'authored_by',
+                    'created', 'updated', 'show_on_site')
     list_filter = ('authored_by__email',)
     search_fields = ('name', 'exercises',)
-    readonly_fields = ('id', 'authored_by', 'created', 'updated', 'exercise_links', 'performances')
+    readonly_fields = ('id', 'authored_by', 'created', 'updated',
+                       'exercise_links', 'performances', 'show_on_site')
     raw_id_fields = ('authored_by',)
     fieldsets = (
         ('General Info', {
-            'fields': ('name', 'id', 'authored_by', ('created', 'updated')),
+            'fields': (('name', 'show_on_site'), 'id', 'authored_by', ('created', 'updated')),
         }),
         ('Exercises', {
             'fields': ('performances', 'exercises', 'exercise_links')
@@ -72,6 +81,13 @@ class PlaylistAdmin(admin.ModelAdmin):
 
     exercise_links.allow_tags = True
     exercise_links.short_description = 'Exercise Links'
+
+    def show_on_site(self, obj):
+        link = reverse('lab:exercise-groups', kwargs={'group_name': obj.name})
+        link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
+        return mark_safe(link)
+
+    show_on_site.short_description = ''
 
     def performances(self, obj):
         if not (obj and obj._id):
