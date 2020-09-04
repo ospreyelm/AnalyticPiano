@@ -223,7 +223,6 @@ define([
 
 			stave.setRenderer(this.vexRenderer);
 			stave.setKeySignature(this.keySignature);
-			// stave.setFirstBarWidth(this.keySignature);
 			stave.setNotater(stave_notater);
 			stave.setMaxWidth(this.getWidth());
 			stave.updatePosition();
@@ -243,7 +242,6 @@ define([
 
 			stave.setRenderer(this.vexRenderer);
 			stave.setKeySignature(this.keySignature);
-			// stave.setFirstBarWidth(this.keySignature);
 			stave.setNoteFactory(new PlayNoteFactory({
 				clef: clef,
 				chord: chord,

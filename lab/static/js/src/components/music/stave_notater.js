@@ -403,6 +403,9 @@ define([
 		 * @return undefined
 		 */
 		drawThoroughbass: function(x, y) {
+			let mode = this.keySignature.getKey()[0] || false;
+			if (mode === "h") { return false; } /* thoroughbass and no-key mode do not play nicely */
+
 			var midi_nums = this.chord.getNoteNumbers();
 			var figure = (this.analyzeConfig.mode.abbreviate_thoroughbass ?
 				this.getAnalyzer().abbrev_thoroughbass_figure(midi_nums) :
