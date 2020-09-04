@@ -14,6 +14,7 @@ from .views import (
     ManageView,
     APIView,
     APIExerciseView,
+    RefreshExerciseDefinition,
 )
 
 app_name = 'lab'
@@ -41,6 +42,8 @@ urlpatterns = [
     re_path(r'^manage$', ManageView.as_view(), name="manage"),
     path('exercises/<str:exercise_id>/', ExerciseView.as_view(), name="exercise-view"),
     path('exercises/<str:group_name>/<int:exercise_num>', PlaylistView.as_view(), name="exercises"),
+    re_path(r'definition$', RefreshExerciseDefinition.as_view(),
+            name="refresh-definition"),
     re_path(r'^exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)$', PlaylistView.as_view(), name="exercise-groups"),
 
     re_path(r'^exercises$', PlaylistView.as_view()),

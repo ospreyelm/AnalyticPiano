@@ -136,14 +136,60 @@ class PlaylistView(RequirejsView):
         exercise_context.update({
             "nextExercise": next_exercise,
             "previousExercise": prev_exercise,
-            "exerciseList": exercise_list
+            "exerciseList": exercise_list,
+            "exerciseId": exercise.id,
+            "exerciseNum": exercise_num,
+            "playlistName": playlist.name
         })
-
         self.requirejs_context.set_app_module('app/components/app/exercise')
         self.requirejs_context.set_module_params('app/components/app/exercise', exercise_context)
         self.requirejs_context.add_to_view(context)
 
         return render(request, "exercise.html", context)
+
+
+class RefreshExerciseDefinition(RequirejsView):
+    def get(self, request, *args, **kwargs):
+        playlist_name = request.GET.get('playlist_name')
+        exercise_id = request.GET.get('exercise_id')
+        exercise_num = int(request.GET.get('exercise_num', 1))
+        playlist = Playlist.objects.filter(name=playlist_name).first()
+        exercise = Exercise.objects.filter(id=exercise_id).first()
+        if exercise is None:
+            raise Http404("Exercise not found.")
+
+        next_exercise = playlist.get_exercise_url_by_num(
+            num=playlist.next_num(exercise_num)
+        )
+        prev_exercise = playlist.get_exercise_url_by_num(
+            num=playlist.prev_num(exercise_num)
+        )
+
+        exercise_context = {}
+
+        exercise_list = []
+        for num, ex in enumerate(playlist.exercise_list, 1):
+            exercise_list.append(
+                dict(id=f'{playlist_name}/{ex}',
+                     name=f'{num}',
+                     url=playlist.get_exercise_url_by_num(num),
+                     selected=exercise_num == num)
+            )
+
+        exercise_context.update(exercise.data)
+        exercise_context.update({
+            "nextExercise": next_exercise,
+            "previousExercise": prev_exercise,
+            "exerciseList": exercise_list,
+            "exerciseId": exercise.id,
+            "exerciseNum": exercise_num,
+            "playlistName": playlist.name
+        })
+
+        self.requirejs_context.set_app_module('app/components/app/exercise')
+        self.requirejs_context.set_module_params('app/components/app/exercise', exercise_context)
+        # self.requirejs_context.add_to_view(context)
+        return JsonResponse(data=exercise_context)
 
 
 class ExerciseView(RequirejsView):

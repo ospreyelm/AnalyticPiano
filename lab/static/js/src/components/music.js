@@ -1,14 +1,14 @@
 define([
 	'jquery',
-	'lodash', 
+	'lodash',
 	'app/config',
 	'app/components/events',
 	'app/components/component',
 	'app/models/key_signature',
 	'./music/play_sheet'
 ], function(
-	$, 
-	_, 
+	$,
+	_,
 	Config,
 	EVENTS,
 	Component,
@@ -65,7 +65,7 @@ define([
 		 * @type {object}
 		 */
 		this.staffDistributionConfig = _.extend({}, STAFF_DISTRIBUTION, this.settings);
-		
+
 
 		if(!("sheet" in this.settings)) {
 			throw new Error("missing settings.sheet parameter");
@@ -111,7 +111,7 @@ define([
 		 *
 		 * @return this
 		 */
-		render: function() { 
+		render: function() {
 			this.renderSheet();
 			return this;
 		},
@@ -156,10 +156,23 @@ define([
 				var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
 				if (testing) {
 
-					/* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
-
-					// The following variable was pasted from the console output above on a different exercise
-					var newData = {"type":"analytical_pcs","staffDistribution":"chorale","introText":"TEST OF REFRESH BUTTON WITH NEW DATA!!! Should show key signature of one flat and letter names, feature chorale distribution of four parts if played, and grade analytically.","keySignature":"b","key":"h","chord":[{"visible":[53,60,65,69],"hidden":[]},{"visible":[67],"hidden":[]},{"visible":[69],"hidden":[]}],"reviewText":"","analysis":{"enabled":true,"mode":{"note_names":true,"scientific_pitch":false,"scale_degrees":false,"solfege":false,"roman_numerals":true,"intervals":false}},"highlight":{"enabled":true,"mode":{"roothighlight":true,"tritonehighlight":false}},"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","group_name":"Easy_Notes","selected":true,"nextExercise":"/lab/exercises/Easy_Notes/04","previousExercise":"/lab/exercises/Easy_Notes/02","exerciseList":[{"id":"Easy_Notes/01","name":"01","url":"/lab/exercises/Easy_Notes/01","selected":false},{"id":"Easy_Notes/02","name":"02","url":"/lab/exercises/Easy_Notes/02","selected":false},{"id":"Easy_Notes/03","name":"03","url":"/lab/exercises/Easy_Notes/03","selected":true},{"id":"Easy_Notes/04","name":"04","url":"/lab/exercises/Easy_Notes/04","selected":false}]};
+                    /* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
+                    let newData = {};
+                    // The following variable was pasted from the console output above on a different exercise
+                    $.ajax({
+                        type: "GET",
+                        url: 'definition',
+                        async: false,
+                        data: {
+                            'playlist_name': setdef.settings.definition.playlistName,
+                            'exercise_id': setdef.settings.definition.exerciseId,
+                            'exercise_num': setdef.settings.definition.exerciseNum
+                        },
+                        dataType: 'json',
+                    success: function (data) {
+                            newData = data;
+                        }
+				    });
 
 					scex.definition.exercise
 						= scex.definition.parse(newData);
@@ -228,7 +241,7 @@ define([
 		 * @return {number}
 		 */
 		getWidth: function() {
-			return this.el.width(); 
+			return this.el.width();
 		},
 		/**
 		 * Returns the height.
@@ -296,10 +309,10 @@ define([
 			var mode = _.cloneDeep(this[prop].mode);
 			switch(setting.key) {
 				case "enabled":
-					this[prop].enabled = setting.value; 
+					this[prop].enabled = setting.value;
 					break;
 				case "mode":
-					_.assign(mode, setting.value);	
+					_.assign(mode, setting.value);
 					this[prop].mode = mode;
 					break;
 				default:

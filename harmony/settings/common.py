@@ -177,8 +177,8 @@ INSTALLED_APPS = (
     # 'django_openid_auth',
 )
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
-conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+# DATABASE_URL = os.environ.get('DATABASE_URL')
+# conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
 
