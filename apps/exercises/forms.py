@@ -63,43 +63,42 @@ class PlaylistForm(forms.ModelForm):
     def clean(self):
         super(PlaylistForm, self).clean()
         exercise_ids = self.cleaned_data.get('exercises', '').split(',')
-        exercise_ids = [id_.upper() for id_ in exercise_ids]
-        available_exercises = list(Exercise.objects.values_list('id', flat=True))
+        exercise_ids = [id_.upper().strip() for id_ in exercise_ids]
+        all_exercises = list(Exercise.objects.values_list('id', flat=True))
 
         ranged_exercises = self._create_ranged_exercises(exercise_ids)
 
+        exercise_ids = list(filter(lambda x: '-' not in x, exercise_ids))
         exercise_ids += ranged_exercises
         exercise_ids = [f'{Exercise.zero_padding[:-1] if len(id_) == 2  else Exercise.zero_padding}{id_}'
                         if len(id_) <= 2 else id_ for id_ in exercise_ids]
 
         for id_ in exercise_ids:
-            id_ = f'{Exercise.zero_padding[:-1] if len(id_) == 2  else Exercise.zero_padding}{id_}' \
-                if len(id_) <= 2 else id_
-            if id_ != '' and id_ not in available_exercises:
+            if id_ != '' and id_ not in all_exercises:
                 self.add_error('exercises', f'Exercise with ID {id_} does not exist.')
-
         self.cleaned_data.update({'exercises': ','.join(exercise_ids)})
 
     def _create_ranged_exercises(self, exercise_ids):
         user_authored_exercises = list(Exercise.objects.filter(
             authored_by_id=self.context.get('user').id
-        ).values_list('id', flat=True))
+        ).values_list('id', flat=True).order_by('id'))
 
         ranged_exercises = []
-        chars = string.ascii_uppercase
+        ascii_chars = string.ascii_uppercase
 
         for id_ in exercise_ids:
             if '-' in id_ and len(id_.split('-')) == 2:
                 lower, upper = id_.split('-')
                 id_range = lower[:-1]
-                char_range_lower, char_range_upper = chars.find(lower[-1]), chars.find(upper[-1])
-                chars = sorted(chars[char_range_lower:char_range_upper + 1])
+                char_range_lower, char_range_upper = ascii_chars.find(lower[-1]), ascii_chars.find(upper[-1])
+                chars = sorted(ascii_chars[char_range_lower:char_range_upper + 1])
                 for idx in range(len(chars)):
                     ranged_exercises.append(f'{id_range}{chars[idx]}')
-                exercise_ids.pop(exercise_ids.index(id_))
-        ranged_exercises = [f'{Exercise.zero_padding[:-1] if len(id_) == 2  else Exercise.zero_padding}{id_}'
+        ranged_exercises = [f'{Exercise.zero_padding[:-1] if len(id_) == 2 else Exercise.zero_padding}{id_}'
                             if len(id_) <= 2 else id_ for id_ in ranged_exercises]
-        ranged_exercises = list(set(ranged_exercises).intersection(user_authored_exercises))
+        ranged_exercises = sorted(set(ranged_exercises).intersection(user_authored_exercises),
+                                  key=lambda x: ranged_exercises.index(x))
+        ranged_exercises = list(ranged_exercises)
         return ranged_exercises
 
 
