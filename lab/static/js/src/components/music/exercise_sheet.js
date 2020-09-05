@@ -167,7 +167,7 @@ define([
                         '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(group_min_tempo) !== "undefined" && group_min_tempo != "" && typeof(group_max_tempo) !== "undefined" && group_max_tempo != "") { %>',
                             '<p>Overall tempo&nbsp;<%= group_min_tempo %>&ndash;<%= group_max_tempo %></p>',
                         '<% } %>',
-                        '<% if (typeof(next_exercise) !== "undefined" && next_exercise != "" && hide_next === false) { %>',
+                        '<% if (false && typeof(next_exercise) !== "undefined" && next_exercise != "" && hide_next === false) { %>',
                             '<p><a class="exercise-status-next-btn" href="<%= next_exercise %>">Click for next</a></p>',
                         '<% } %>',
                     '</div>',
