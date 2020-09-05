@@ -191,7 +191,7 @@ define([
                     if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
 
                 }
-                if (testing && !Object.keys(newData).length) {
+                if (testing && Object.keys(newData).length) {
 
                     scex.definition.exercise
                         = scex.definition.parse(newData);
