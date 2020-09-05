@@ -153,20 +153,37 @@ define([
 				// let currentData = setdef.settings.definition;
 				// console.log(JSON.stringify(currentData, null, 0));
 
-				var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
+				var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : true);
 				if (testing) {
 
                     /* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
                     let newData = {};
-                    // The following variable was pasted from the console output above on a different exercise
+
+                    // The AJAX call for Redraw
+                    // $.ajax({
+                    //     type: "GET",
+                    //     url: 'definition',
+                    //     async: false,
+                    //     data: {
+                    //         'playlist_name': setdef.settings.definition.playlistName,
+                    //         'exercise_id': setdef.settings.definition.exerciseId,
+                    //         'exercise_num': setdef.settings.definition.exerciseNum
+                    //     },
+                    //     dataType: 'json',
+                    // success: function (data) {
+                    //         newData = data;
+                    //     }
+				    // });
+
+                    // The AJAX call for Next Exercise
                     $.ajax({
                         type: "GET",
                         url: 'definition',
                         async: false,
                         data: {
                             'playlist_name': setdef.settings.definition.playlistName,
-                            'exercise_id': setdef.settings.definition.exerciseId,
-                            'exercise_num': setdef.settings.definition.exerciseNum
+                            'exercise_id': setdef.settings.definition.nextExerciseId,
+                            'exercise_num': setdef.settings.definition.nextExerciseNum
                         },
                         dataType: 'json',
                     success: function (data) {

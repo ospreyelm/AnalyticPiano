@@ -112,19 +112,19 @@ class PlaylistView(RequirejsView):
         if exercise is None:
             raise Http404("This playlist has no exercises.")
 
-        next_exercise = playlist.get_exercise_url_by_num(
+        next_exercise_url = playlist.get_exercise_url_by_num(
             num=playlist.next_num(exercise_num)
         )
-        prev_exercise = playlist.get_exercise_url_by_num(
+        prev_exercise_url = playlist.get_exercise_url_by_num(
             num=playlist.prev_num(exercise_num)
         )
-
+        next_exercise_obj = playlist.get_exercise_obj_by_num(playlist.next_num(exercise_num))
+        next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ''
         context = {'group_list': []}
         exercise_context = {}
 
         exercise_list = []
         for num, _ in enumerate(playlist.exercise_list, 1):
-            print(exercise_num, num)
             exercise_list.append(
                 dict(id=f'{group_name}/{num}',
                      name=f'{num}',
@@ -134,8 +134,10 @@ class PlaylistView(RequirejsView):
 
         exercise_context.update(exercise.data)
         exercise_context.update({
-            "nextExercise": next_exercise,
-            "previousExercise": prev_exercise,
+            "nextExercise": next_exercise_url,
+            "nextExerciseId": next_exercise_id,
+            "nextExerciseNum": playlist.next_num(exercise_num),
+            "previousExercise": prev_exercise_url,
             "exerciseList": exercise_list,
             "exerciseId": exercise.id,
             "exerciseNum": exercise_num,
@@ -158,13 +160,14 @@ class RefreshExerciseDefinition(RequirejsView):
         if exercise is None:
             raise Http404("Exercise not found.")
 
-        next_exercise = playlist.get_exercise_url_by_num(
+        next_exercise_url = playlist.get_exercise_url_by_num(
             num=playlist.next_num(exercise_num)
         )
-        prev_exercise = playlist.get_exercise_url_by_num(
+        prev_exercise_url = playlist.get_exercise_url_by_num(
             num=playlist.prev_num(exercise_num)
         )
-
+        next_exercise_obj = playlist.get_exercise_obj_by_num(playlist.next_num(exercise_num))
+        next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ''
         exercise_context = {}
 
         exercise_list = []
@@ -178,8 +181,10 @@ class RefreshExerciseDefinition(RequirejsView):
 
         exercise_context.update(exercise.data)
         exercise_context.update({
-            "nextExercise": next_exercise,
-            "previousExercise": prev_exercise,
+            "nextExercise": next_exercise_url,
+            "nextExerciseId": next_exercise_id,
+            "nextExerciseNum": playlist.next_num(exercise_num),
+            "previousExercise": prev_exercise_url,
             "exerciseList": exercise_list,
             "exerciseId": exercise.id,
             "exerciseNum": exercise_num,
