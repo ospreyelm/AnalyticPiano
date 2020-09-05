@@ -138,7 +138,7 @@ class Playlist(models.Model):
     def get_exercise_obj_by_num(self, num=1):
         try:
             return Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
-        except IndexError:
+        except (IndexError, TypeError):
             return Exercise.objects.filter(id=self.exercise_list[-1]).first()
 
     def get_exercise_url_by_num(self, num=1):
@@ -164,7 +164,7 @@ class Playlist(models.Model):
     def next_num(self, num=1):
         if num < self.exercise_count:
             return num + 1
-        return None
+        return num
 
     def prev_num(self, num=1):
         if 1 < num < self.exercise_count:
