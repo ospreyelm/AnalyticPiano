@@ -28,12 +28,14 @@ class ExerciseAdmin(admin.ModelAdmin):
     )
     save_on_top = True
 
-    def save_model(self, request, obj, form, change):
-        if not change:
-            obj.authored_by = request.user
-        obj.save()
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super(ExerciseAdmin, self).get_form(request, obj, change, **kwargs)
+        form.context = {'user': request.user}
+        return form
 
     def show_on_site(self, obj):
+        if not obj.pk:
+            return
         link = reverse('lab:exercise-view', kwargs={'exercise_id': obj.id})
         link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
         return mark_safe(link)
@@ -83,6 +85,8 @@ class PlaylistAdmin(admin.ModelAdmin):
     exercise_links.short_description = 'Exercise Links'
 
     def show_on_site(self, obj):
+        if not obj.pk:
+            return
         link = reverse('lab:exercise-groups', kwargs={'group_name': obj.name})
         link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
         return mark_safe(link)

@@ -27,7 +27,7 @@ class ExerciseForm(forms.ModelForm):
 
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
-        if self.instance:
+        if self.instance and self.instance.pk:
             self.fields['intro_text'].initial = self.instance.data.get('introText', None)
             self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
             self.fields['type'].initial = self.instance.data.get('type', self.TYPE_MATCHING)
@@ -39,6 +39,7 @@ class ExerciseForm(forms.ModelForm):
             instance.data['introText'] = self.cleaned_data['intro_text']
             instance.data['reviewText'] = self.cleaned_data['review_text']
             instance.data['type'] = self.cleaned_data['type']
+            instance.authored_by = self.context.get('user')
             instance.clean()
             instance.save()
 
