@@ -149,12 +149,12 @@ define([
 
                 let setdef = scex.settings.definition;
 
+                // The following was used to generate newData as we built this function
+                // let currentData = JSON.stringify(setdef.settings.definition, null, 0);
+                let newData = {};
+
                 var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : true);
                 if (testing) {
-
-                    // The following was used to generate newData as we built this function
-                    // let currentData = JSON.stringify(setdef.settings.definition, null, 0);
-                    let newData = {};
 
                     // The AJAX call for Redraw
                     // $.ajax({
