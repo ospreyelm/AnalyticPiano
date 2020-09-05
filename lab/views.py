@@ -168,9 +168,9 @@ class RefreshExerciseDefinition(RequirejsView):
         exercise_context = {}
 
         exercise_list = []
-        for num, ex in enumerate(playlist.exercise_list, 1):
+        for num, _ in enumerate(playlist.exercise_list, 1):
             exercise_list.append(
-                dict(id=f'{playlist_name}/{ex}',
+                dict(id=f'{playlist_name}/{num}',
                      name=f'{num}',
                      url=playlist.get_exercise_url_by_num(num),
                      selected=exercise_num == num)
