@@ -188,10 +188,10 @@ define([
                         }
                     });
 
-                    if (!newData.length) console.log('No next exercise; end of playlist');
+                    if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
 
                 }
-                if (testing && newData.length) {
+                if (testing && !Object.keys(newData).length) {
 
                     scex.definition.exercise
                         = scex.definition.parse(newData);
