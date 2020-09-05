@@ -105,6 +105,7 @@ define([
             this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onStaffDistributionChange); // ?
             this.subscribe(EVENTS.BROADCAST.METRONOME, this.onMetronomeChange);
             this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onRedrawRequest);
+            this.subscribe(EVENTS.BROADCAST.NEXTEXERCISE, this.onNextExerciseRequest);
         },
         /**
          * Renders the music.
@@ -439,6 +440,9 @@ define([
         },
         onRedrawRequest: function() {
             this.renderPristine();
+        },
+        onNextExerciseRequest: function() {
+            this.renderNextExercise();
         },
         /**
          * Updates settings.

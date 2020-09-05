@@ -22,6 +22,7 @@ define({
 		"KEYBOARD_SIZE": "keyboardsize",
 		"OCTAVE_ADJUSTMENT": "octaveadjustment",
 		"NOTIFICATION": "notification",
-		"PRISTINE": "pristine"
+		"PRISTINE": "pristine",
+		"NEXTEXERCISE": "nextexercise"
 	}
 });
