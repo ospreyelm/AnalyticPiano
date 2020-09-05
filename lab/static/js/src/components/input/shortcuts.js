@@ -3,13 +3,15 @@ define([
 	'app/config',
 	'app/components/events',
 	'app/components/component',
-	'./keyboard'
+	'./keyboard',
+	'app/models/exercise_context'
 ], function(
 	_,
 	Config,
 	EVENTS,
 	Component,
-	KeyboardInputComponent
+	KeyboardInputComponent,
+	ExerciseContext
 ) {
 
 	/**
@@ -227,8 +229,7 @@ define([
 		 * Go the next exercise.
 		 */
 		advanceExercise: function(state) {
-			// ExerciseContext.goToNextExercise();
-			alert('Advance to next exercise not yet working');
+			ExerciseContext.goToNextExercise();
 		},
 		/**
 		 * Depresses the sustain pedal.

@@ -5,7 +5,8 @@ define([
 	'./exercise_chord',
 	'./exercise_chord_bank',
 	'app/config',
-	'simple-statistics.min'
+	'simple-statistics.min',
+	'app/components/music'
 ], function(
 	_,
 	$,
@@ -13,7 +14,8 @@ define([
 	ExerciseChord,
 	ExerciseChordBank,
 	Config,
-	SimpleStatistics
+	SimpleStatistics,
+	MusicComponent
 ) {
 
 	var AUTO_ADVANCE_ENABLED = Config.get('general.autoExerciseAdvance');
@@ -649,11 +651,12 @@ define([
 		 * @return undefined
 		 */
 		goToNextExercise: function() {
-			var nextUrl = this.definition.getNextExercise();
-			var target = {"action": "next", "url": nextUrl};
-			if(nextUrl) {
-				this.trigger('goto', target);
-			}
+			MusicComponent.renderNext();
+			// var nextUrl = this.definition.getNextExercise();
+			// var target = {"action": "next", "url": nextUrl};
+			// if(nextUrl) {
+			// 	this.trigger('goto', target);
+			// }
 		},
 		/**
 		 * Returns true if the trigger notes are played together on the
