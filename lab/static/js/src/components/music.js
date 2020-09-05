@@ -183,17 +183,15 @@ define([
                             'exercise_num': setdef.settings.definition.nextExerciseNum
                         },
                         dataType: 'json',
-                        // error: function () {
-                        //     console.log('No next exercise; end of playlist');
-                        //     break;
-                        // },
                         success: function (data) {
                             newData = data;
                         }
                     });
 
+                    if (!newData.length) console.log('No next exercise; end of playlist');
+
                 }
-                if (testing && newData.length != 0) {
+                if (testing && newData.length) {
 
                     scex.definition.exercise
                         = scex.definition.parse(newData);
