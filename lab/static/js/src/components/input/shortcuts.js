@@ -229,7 +229,7 @@ define([
 		 * Go the next exercise.
 		 */
 		advanceExercise: function(state) {
-			ExerciseContext.goToNextExercise();
+			// ExerciseContext.goToNextExercise();
 		},
 		/**
 		 * Depresses the sustain pedal.

@@ -255,7 +255,7 @@ define([
 
             return this;
         },
-        renderNext: function() { /* TO DO: Eliminate redundancy with renderPristine */
+        renderNextExercise: function() { /* TO DO: Eliminate redundancy with renderPristine */
             var sheetComponent = this.getComponent('sheet');
 
             if (!sheetComponent.hasOwnProperty('exerciseContext')) {
