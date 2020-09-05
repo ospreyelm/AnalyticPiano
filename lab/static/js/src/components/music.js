@@ -149,14 +149,11 @@ define([
 
 				let setdef = scex.settings.definition;
 
-				// Used to generate new data
-				// let currentData = setdef.settings.definition;
-				// console.log(JSON.stringify(currentData, null, 0));
-
 				var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : true);
 				if (testing) {
 
-                    /* MAKE THE AJAX CALL AND PREPARE NEEDED PROPERTIES HERE */
+					// The following was used to generate newData as we built this function
+					// let currentData = JSON.stringify(setdef.settings.definition, null, 0);
                     let newData = {};
 
                     // The AJAX call for Redraw
@@ -186,10 +183,16 @@ define([
                             'exercise_num': setdef.settings.definition.nextExerciseNum
                         },
                         dataType: 'json',
-                    success: function (data) {
+                        success: function (data) {
                             newData = data;
+                        },
+                        error: function () {
+                            console.log('No next exercise; end of playlist');
+                            break;
                         }
 				    });
+
+				    if (!newData.length) break;
 
 					scex.definition.exercise
 						= scex.definition.parse(newData);
