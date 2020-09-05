@@ -79,7 +79,8 @@ define([
             'onHighlightChange',
             'onStaffDistributionChange',
             'onMetronomeChange',
-            'onRedrawRequest'
+            'onRedrawRequest',
+            'onNextExerciseRequest'
         ]);
     };
 
