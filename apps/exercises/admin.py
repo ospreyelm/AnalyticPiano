@@ -35,7 +35,7 @@ class ExerciseAdmin(admin.ModelAdmin):
 
     def show_on_site(self, obj):
         if not obj.pk:
-            return
+            return ''
         link = reverse('lab:exercise-view', kwargs={'exercise_id': obj.id})
         link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
         return mark_safe(link)
@@ -86,7 +86,7 @@ class PlaylistAdmin(admin.ModelAdmin):
 
     def show_on_site(self, obj):
         if not obj.pk:
-            return
+            return ''
         link = reverse('lab:exercise-groups', kwargs={'group_name': obj.name})
         link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
         return mark_safe(link)
