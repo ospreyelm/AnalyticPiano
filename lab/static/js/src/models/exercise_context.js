@@ -478,7 +478,8 @@ define([
                 sessionStorage.setItem('HarmonyLabPlaylistTempoRating', this.timer.tempoRating);
             }else {
                 var new_tempo_rating = this.timer.tempoRating;
-                if(new_tempo_rating.length < former_tempo_rating.length) {
+                let length = (new_tempo_rating ? new_tempo_rating.length : 0);
+                if (length < former_tempo_rating.length && length !== 0) {
                     sessionStorage.setItem('HarmonyLabPlaylistTempoRating', new_tempo_rating);
                 }
             }
@@ -568,10 +569,8 @@ define([
                 timezone: timezone_str || "",
                 playlist_restart_tally: this.restarts || 0,
                 playlist_lowest_tempo_rating:
-                    Math.min(
-                        sessionStorage.getItem('HarmonyLabPlaylistTempoRating').length,
-                        this.timer.tempoRating.length /* unclear whether this is already factored in */
-                    ) || "",
+                    // data from final exercise should be factored in already
+                    sessionStorage.getItem('HarmonyLabPlaylistTempoRating').length || "",
                 playlist_duration: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
                 exercise_ID: this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id || "",
                 };
@@ -769,7 +768,7 @@ define([
             }
 
             chords = new ExerciseChordBank({
-                // staffDistribution: staffDistribution, // no effect
+                // staffDistribution: staffDistribution,
                 chords: exercise_chords
             });
 
@@ -800,7 +799,10 @@ define([
                 exercise_chords.push(chord);
             }
 
-            chords = new ExerciseChordBank({chords: exercise_chords});
+            chords = new ExerciseChordBank({
+                // staffDistribution: staffDistribution,
+                chords: exercise_chords
+            });
 
             return chords;
         }
