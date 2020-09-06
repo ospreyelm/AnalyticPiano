@@ -730,6 +730,7 @@ define([
         createDisplayChords: function() {
             var notes = [];
             var exercise_chords = [];
+            var staffDistribution = this.definition.getStaffDistribution();
             var problems = this.definition.getProblems();
             var CORRECT = this.grader.STATE.CORRECT;
             var g_problem, chord, chords, rhythm;
@@ -767,7 +768,10 @@ define([
                 exercise_chords.push(chord);
             }
 
-            chords = new ExerciseChordBank({chords: exercise_chords});
+            chords = new ExerciseChordBank({
+                // staffDistribution: staffDistribution, // no effect
+                chords: exercise_chords
+            });
 
             return chords;
         },
@@ -777,6 +781,7 @@ define([
          * @return {object}
          */
         createExerciseChords: function() {
+            var staffDistribution = this.definition.getStaffDistribution();
             var problems = this.definition.getProblems();
             var notes = [];
             var exercise_chords = [];
@@ -787,7 +792,11 @@ define([
                 notes = problems[i].notes;
                 rhythm = problems[i].rhythm;
                 // we can push any notewise features through this entry point!
-                chord = new ExerciseChord({ notes: notes, rhythm: rhythm });
+                chord = new ExerciseChord({
+                    staffDistribution: staffDistribution,
+                    notes: notes,
+                    rhythm: rhythm
+                });
                 exercise_chords.push(chord);
             }
 

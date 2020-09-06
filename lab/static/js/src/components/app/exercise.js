@@ -64,7 +64,7 @@ define([
 		var models = {};
 		var definition = this.getExerciseDefinition(); /* EXERCISE DATA ENTERS HERE */
 
-		console.log("Exercise data at initiation of AppExerciseComponent", definition);
+		// console.log("Exercise data at initiation of AppExerciseComponent", definition);
 
 		models.midiDevice = new MidiDevice();
 		models.exerciseDefinition = new ExerciseDefinition({
