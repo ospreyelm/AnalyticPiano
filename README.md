@@ -8,13 +8,29 @@ An Open-Source application for the study of music theory and keyboard skills tha
 - To install Pip, see [their instructions](http://www.pip-installer.org/en/latest/installing.html).
 
 ```sh
-$ git clone https://github.com/ospreyelm/HarmonyLab.git harmony
-$ cd harmony
+$ mkdir AnalyticPiano && cd AnalyticPiano
+$ git clone https://github.com/ospreyelm/HarmonyLab.git clone
+$ sudo apt-get install python3-venv   # unless already installed
+$ python3 -m venv pianoenv
+$ source pianoenv/bin/activate
+$ cd clone
 $ pipenv install
+$ sudo apt-get install postgresql   # unless already installed
+$ sudo apt-get install python-psycopg2   # unless already installed
+$ sudo apt-get install libpq-dev   # unless already installed
+$ export DJANGO_SETTINGS_MODULE="harmony.settings.local"   # multiple local clones will use the same database
+$ ./manage.py makemigrations   # not always necessary
 $ ./manage.py migrate
+$ ./manage.py createsuperuser   # optional: create admin account
 $ ./manage.py runserver
 ```
-You should now be able to run the application on your localhost at ```http://127.0.0.1:8000```. 
+You should now be able to run the application on your localhost at ```http://127.0.0.1:8000```.
+
+```sh
+$ # USE APP
+$ # Follow terminal instructions
+$ deactivate
+```
 
 # Supported Web Browsers
 
