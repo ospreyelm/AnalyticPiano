@@ -517,82 +517,36 @@ define([
 		 * @param {string} clef treble|bass
 		 * @return {boolean}
 		 */
-		noteNumBelongsToClef: function(noteNumber, clef) {
-			switch(clef) {
-				case 'bass':
-					if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {// lowest note
-						if(noteNumber <= 65) {
-							return true;
-						}
-					}else if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber != this.getSortedNotes()[0]) {// not lowest note
-						if(noteNumber < 55) {
-							return true;
-						}
-					}else if(STAFF_DISTRIBUTION === 'keyboard' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber < 60) {
-						return true;
-					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber == this.getSortedNotes()[0]) {// lowest note
-						if(noteNumber <= 65) {
-							return true;
-						}
-					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber != this.getSortedNotes()[0]) {// not lowest note
-						if(noteNumber < 55) {
-							return true;
-						}
-					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber < 60) {
-						if(this.getSortedNotes().length === 1 && noteNumber >= 55) {
-							return false;
-						}
-						return true;
-					}else if(STAFF_DISTRIBUTION === 'LH') {
-						return true;
-					}else if(STAFF_DISTRIBUTION === 'RH') {
-						return false;
-					}else if(STAFF_DISTRIBUTION === 'chorale' && this.getSortedNotes().length === 4 && this.getSortedNotes().slice(0,2).includes(noteNumber)) {
-						return true;
-					}else if(STAFF_DISTRIBUTION === 'chorale' && this.getSortedNotes().length === 4 && this.getSortedNotes().slice(2).includes(noteNumber)) {
-						return false;
-					}else if(noteNumber < 60) {
-						return true;
-					}
-					break;
-				case 'treble':
-					if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
-						if(noteNumber >= 55) {
-							return true;
-						}
-					}else if(STAFF_DISTRIBUTION === 'keyboard' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && !this.getSortedNotes().slice(1).includes(noteNumber)) {
-						if(noteNumber > 65) {
-							return true;
-						}
-					}else if(STAFF_DISTRIBUTION === 'keyboard' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber >= 60) {
-						return true;
-					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && this.getSortedNotes().slice(1).includes(noteNumber)) {
-						if(noteNumber >= 55) {
-							return true;
-						}
-					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && !this.getSortedNotes().slice(1).includes(noteNumber)) {
-						if(noteNumber > 65) {
-							return true;
-						}
-					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) && noteNumber >= 60) {
-						return true;
-					}else if(STAFF_DISTRIBUTION === 'keyboardPlusRHBias' && this.getSortedNotes().length === 1 && noteNumber >= 55) {
-						return true;
-					}else if(STAFF_DISTRIBUTION === 'LH') {
-						return false;
-					}else if(STAFF_DISTRIBUTION === 'RH') {
-						return true;
-					}else if(STAFF_DISTRIBUTION === 'chorale' && this.getSortedNotes().length === 4 && this.getSortedNotes().slice(0,2).includes(noteNumber)) {
-						return false;
-					}else if(STAFF_DISTRIBUTION === 'chorale' && this.getSortedNotes().length === 4 && this.getSortedNotes().slice(2).includes(noteNumber)) {
-						return true;
-					}else if(noteNumber >= 60) {
-						return true;
-					}
-					break;
-				default:
-					throw new Error("invalid clef");
+		noteNumBelongsToClef: function(midi, clef) {
+			const high_threshold = 65;
+			const mid_threshold = 60;
+			const low_threshold = 55;
+
+			if (['keyboard','keyboardPlusRHBias'].includes(STAFF_DISTRIBUTION)
+			&& VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)
+			&& midi == this.getSortedNotes()[0]) { // lowest note
+				return clef == (midi <= high_threshold ? 'bass' : 'treble');
+			} else if (['keyboard','keyboardPlusRHBias'].includes(STAFF_DISTRIBUTION)
+			&& VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)
+			&& this.getSortedNotes().slice(1).includes(midi)) { // not lowest note
+				return clef == (midi < low_threshold ? 'bass' : 'treble');
+			} else if (STAFF_DISTRIBUTION === 'keyboard'
+			&& !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)) {
+				return clef == (midi < mid_threshold ? 'bass' : 'treble');
+			} else if (STAFF_DISTRIBUTION === 'keyboardPlusRHBias'
+			&& !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)) {
+				return clef == (midi < low_threshold ? 'bass' : 'treble');
+			} else if (STAFF_DISTRIBUTION === 'LH') {
+				return clef == 'bass';
+			} else if (STAFF_DISTRIBUTION === 'RH') {
+				return clef == 'treble';
+			} else if (STAFF_DISTRIBUTION === 'chorale'
+			&& this.getSortedNotes().length === 4) {
+				return clef == (this.getSortedNotes().slice(0,2).includes(midi) ? 'bass' : 'treble');
+			} else {
+				return clef == (midi < mid_threshold ? 'bass' : 'treble');
 			}
+			throw new Error("staff distribution code failed");
 			return false;
 		}
 	});
