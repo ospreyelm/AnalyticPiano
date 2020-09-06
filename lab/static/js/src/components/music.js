@@ -195,7 +195,28 @@ define([
 
                     if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
 
-                }
+                }/* else if (exerciseAction === 'previous') {
+                    // previousExerciseId and previousExerciseNum
+                    // must be added first
+
+                    $.ajax({
+                        type: "GET",
+                        url: 'definition',
+                        async: false,
+                        data: {
+                            'playlist_name': setdef.settings.definition.playlistName,
+                            'exercise_id': setdef.settings.definition.previousExerciseId,
+                            'exercise_num': setdef.settings.definition.previousExerciseNum
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            newData = data;
+                        }
+                    });
+
+                    if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
+
+                }*/
                 if (Object.keys(newData).length) {
 
                     scex.definition.exercise
@@ -232,7 +253,7 @@ define([
                     Object.assign(this.highlightConfig, newData.highlight);
                     Object.assign(this.settings.highlightSettings, newData.highlight);
                     Object.assign(this.staffDistributionConfig.highlightSettings, newData.highlight);
-                    /* add use of listeners here to update the menu */
+                    /* could add use of listeners here to update the menu */
 
                     scex.inputChords.staffDistribution = newData.staffDistribution;
                     scex.displayChords = scex.createDisplayChords();
