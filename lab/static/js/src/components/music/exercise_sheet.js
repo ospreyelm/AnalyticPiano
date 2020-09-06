@@ -167,7 +167,7 @@ define([
                         '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(group_min_tempo) !== "undefined" && group_min_tempo != "" && typeof(group_max_tempo) !== "undefined" && group_max_tempo != "") { %>',
                             '<p>Overall tempo&nbsp;<%= group_min_tempo %>&ndash;<%= group_max_tempo %></p>',
                         '<% } %>',
-                        '<% if (typeof(next_exercise) !== "undefined" && next_exercise != "" && hide_next === false) { %>',
+                        '<% if (false && typeof(next_exercise) !== "undefined" && next_exercise != "" && hide_next === false) { %>',
                             '<p><a class="exercise-status-next-btn" href="<%= next_exercise %>">Click for next</a></p>',
                         '<% } %>',
                     '</div>',
@@ -181,7 +181,7 @@ define([
                         '<% if (typeof(next_set) !== "undefined" && next_set != "") { %>',
                             '<a class="exercise-status-next-btn" href="<%= next_set %>">PROCEED TO NEXT SET</a> || ',
                         '<% } %>',
-                        '<% if (typeof(current_set) !== "undefined" && current_set != "" && exercise_num != 1) { %>',
+                        '<% if (false && typeof(current_set) !== "undefined" && current_set != "" && exercise_num != 1) { %>',
                             '<a class="exercise-status-next-btn" href="<%= current_set %>">CLICK TO REPEAT PLAYLIST</a>',
                         '<% } %>',
                     '</div>',
@@ -421,6 +421,7 @@ define([
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
+            // stave.setFirstBarWidth(this.keySignature);
             stave.setNotater(stave_notater);
             stave.setMaxWidth(this.getWidth());
 
@@ -462,6 +463,7 @@ define([
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
+            // stave.setFirstBarWidth(this.keySignature);
             stave.setNoteFactory(new ExerciseNoteFactory({
                 clef: clef,
                 chord: displayChord,

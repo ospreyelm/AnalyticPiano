@@ -15,3 +15,9 @@
 /harmony/static/js/build/*
 /static/*
 env/
+/venv/
+*.pot
+__pycache__/
+local_settings.py
+db.sqlite3
+venv/

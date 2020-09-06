@@ -1,0 +1,39 @@
+{% extends "__base.html" %}
+
+{% block js_extra %}
+    <script>require(['app/main']);</script>
+{% endblock %}
+
+{% block title %}Login{% endblock %}
+
+
+{% block content %}
+    {% if raw_password %}
+        <div id="raw-password-bar" class="regular closable">
+            <div class="hb-content-wrapper">
+                <div class="hb-text-wrapper">
+                    <div class="hb-headline-text" style="background-color: #34ce57">
+                        <p><span>This is a one-time message to inform you of your password.</span></p>
+                        <p><span>Your password is: {{ raw_password }}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <p>
+                {{ field.label_tag }}<br>
+                {{ field }}
+                {% if field.help_text %}
+                    <small style="color: grey">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p style="color: red">{{ error }}</p>
+                {% endfor %}
+            </p>
+        {% endfor %}
+        <button type="submit">Login</button>
+    </form>
+{% endblock %}

@@ -3,6 +3,10 @@ import os
 from os import path
 from glob import glob
 import time
+
+import dj_database_url
+import psycopg2
+
 from . import requirejs
 
 # Django settings for harmony project.
@@ -15,6 +19,8 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
+
+AUTH_USER_MODEL = 'accounts.User'
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -67,18 +73,18 @@ STATICFILES_DIRS = [
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-	path.join(ROOT_DIR, 'lab', 'static'),
-	path.join(ROOT_DIR, 'jasmine', 'static'),
+    path.join(ROOT_DIR, 'lab', 'static'),
+    path.join(ROOT_DIR, 'jasmine', 'static'),
 ]
 
-#STATICFILES_DIRS.extend([f for f in glob(path.join(ROOT_DIR, '*', 'static')) if path.isdir(f)])
+# STATICFILES_DIRS.extend([f for f in glob(path.join(ROOT_DIR, '*', 'static')) if path.isdir(f)])
 
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -88,7 +94,7 @@ SECRET_KEY = '#5g0vp545jp644!hha1)fb7v1hd!*t#b@fv&amp;1(mrnt5)$q%w0g'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [], 
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -98,6 +104,7 @@ TEMPLATES = [
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
+                'django.template.context_processors.request',
                 'django.contrib.messages.context_processors.messages',
             ],
         },
@@ -110,8 +117,8 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    #'cached_auth.Middleware',
-    'django_auth_lti.middleware.LTIAuthMiddleware',
+    # 'cached_auth.Middleware',
+    # 'django_auth_lti.middleware.LTIAuthMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -119,7 +126,8 @@ MIDDLEWARE = (
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'django_auth_lti.backends.LTIAuthBackend',
+    'apps.accounts.backend.EmailAuthenticationBackend'
+    # 'django_auth_lti.backends.LTIAuthBackend',
 )
 
 ROOT_URLCONF = 'harmony.urls'
@@ -131,11 +139,11 @@ TEMPLATE_DIRS = [
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-	path.join(ROOT_DIR, 'lab', 'templates'),
-	path.join(ROOT_DIR, 'jasmine', 'templates'),
+    path.join(ROOT_DIR, 'lab', 'templates'),
+    path.join(ROOT_DIR, 'jasmine', 'templates'),
 ]
 
-#TEMPLATE_DIRS.extend([f for f in glob(path.join(ROOT_DIR, '*', 'templates')) if path.isdir(f)])
+# TEMPLATE_DIRS.extend([f for f in glob(path.join(ROOT_DIR, '*', 'templates')) if path.isdir(f)])
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -145,26 +153,34 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    #'django_openid_auth',
+    # 'django_openid_auth',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
+
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
+
+    # Internal Apps
+    'apps.accounts',
+    'apps.exercises',
     'lab',
     'lti_tool',
     'jasmine',
+
+    # Third parties
+    'django_extensions',
+    'nested_admin',
+    'prettyjson',
+    'django_tables2',
+    'ckeditor',
+    'ckeditor_uploader'
+    # 'django_openid_auth',
 )
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': path.join(ROOT_DIR, 'data', 'harmony.db'),                      # Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-    }
-}
+# DATABASE_URL = os.environ.get('DATABASE_URL')
+# conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+
+DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
 
 LOGGING = {
     'version': 1,
@@ -214,4 +230,82 @@ LOGGING = {
 
 REQUIREJS_DEBUG, REQUIREJS_CONFIG = requirejs.configure(ROOT_DIR, STATIC_URL)
 
-LTI_OAUTH_CREDENTIALS = {"harmonykey":"harmonysecret"}
+LTI_OAUTH_CREDENTIALS = {"harmonykey": "harmonysecret"}
+
+DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap.html"
+
+CKEDITOR_UPLOAD_PATH = "uploads/"
+CKEDITOR_CONFIGS = {
+    'safe': {
+        'toolbar': [["Format", "Bold", "Italic", "Underline", "Strike", "SpellChecker"],
+                    ['NumberedList', 'BulletedList', "Indent", "Outdent", 'JustifyLeft', 'JustifyCenter',
+                     'JustifyRight', 'JustifyBlock'],
+                    ["Link", "Unlink", "SectionLink"],
+                    ['Undo', 'Redo'],
+                    ["Maximize"], ["Source"]],
+        'height': 200,
+    },
+    'default': {
+        'skin': 'moono',
+        'height': 200,
+        # 'skin': 'office2013',
+        'toolbar_Basic': [
+            ['Source', '-', 'Bold', 'Italic']
+        ],
+        'toolbar_YourCustomToolbarConfig': [
+            {'name': 'document', 'items': ['Source', '-', 'Save', 'NewPage', 'Preview', 'Print', '-', 'Templates']},
+            {'name': 'clipboard', 'items': ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo']},
+            {'name': 'editing', 'items': ['Find', 'Replace', '-', 'SelectAll']},
+            {'name': 'forms',
+             'items': ['Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton',
+                       'HiddenField']},
+            '/',
+            {'name': 'basicstyles',
+             'items': ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat']},
+            {'name': 'paragraph',
+             'items': ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv', '-',
+                       'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'BidiLtr', 'BidiRtl',
+                       'Language']},
+            {'name': 'links', 'items': ['Link', 'Unlink', 'Anchor']},
+            {'name': 'insert',
+             'items': ['Image', 'Flash', 'Table', 'HorizontalRule', 'Smiley', 'SpecialChar', 'PageBreak', 'Iframe']},
+            '/',
+            {'name': 'styles', 'items': ['Styles', 'Format', 'Font', 'FontSize']},
+            {'name': 'colors', 'items': ['TextColor', 'BGColor']},
+            {'name': 'tools', 'items': ['Maximize', 'ShowBlocks']},
+            {'name': 'about', 'items': ['About']},
+            '/',  # put this to force next toolbar on new line
+            {'name': 'yourcustomtools', 'items': [
+                # put the name of your editor.ui.addButton here
+                'Preview',
+                'Maximize',
+
+            ]},
+        ],
+        'toolbar': 'YourCustomToolbarConfig',  # put selected toolbar config here
+        # 'toolbarGroups': [{ 'name': 'document', 'groups': [ 'mode', 'document', 'doctools' ] }],
+        # 'height': 291,
+        # 'width': '100%',
+        # 'filebrowserWindowHeight': 725,
+        # 'filebrowserWindowWidth': 940,
+        # 'toolbarCanCollapse': True,
+        # 'mathJaxLib': '//cdn.mathjax.org/mathjax/2.2-latest/MathJax.js?config=TeX-AMS_HTML',
+        'tabSpaces': 4,
+        'extraPlugins': ','.join([
+            'uploadimage',  # the upload image feature
+            # your extra plugins here
+            'div',
+            'autolink',
+            'autoembed',
+            'embedsemantic',
+            'autogrow',
+            # 'devtools',
+            'widget',
+            'lineutils',
+            'clipboard',
+            'dialog',
+            'dialogui',
+            'elementspath'
+        ]),
+    }
+}

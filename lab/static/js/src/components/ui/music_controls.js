@@ -93,6 +93,7 @@ define([
 			$('.js-btn-upload-json').on('mousedown', () => this.onClickSaveJSON("upload"));
 			$('.js-btn-download-json').on('mousedown', () => this.onClickSaveJSON());
 			$('.js-btn-pristine').on('mousedown', () => this.onClickPristine());
+			$('.js-btn-nextexercise').on('mousedown', () => this.onClickNextExercise());
 
 			this.initControlsLayout();
 			this.initKeySignatureTab();
@@ -421,11 +422,21 @@ define([
 		/**
 		 * Handler to broadcast request for pristine sheet music div.
 		 *
-		 * @param {object} evt
+		 * @param {string} destination
 		 * @return {boolean} true
 		 */
 		onClickPristine: function() {
 			this.broadcast(EVENTS.BROADCAST.PRISTINE);
+			return true;
+		},
+		/**
+		 * Handler to broadcast request for sheet music div. of next exercise
+		 *
+		 * @param {object} evt
+		 * @return {boolean} true
+		 */
+		onClickNextExercise: function() {
+			this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
 			return true;
 		},
 		/**

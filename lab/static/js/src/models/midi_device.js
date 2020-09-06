@@ -32,10 +32,29 @@ define([
 	/**
 	 * Initialize parameters for Tone.js
 	 */
+	document.documentElement.addEventListener(
+		"mousedown", function(){
+		  mouse_IsDown = true;
+		  if (Tone.context.state !== 'running') {
+		  document.getElementById('audio-context').innerHTML = "Audio On"
+		  Tone.context.resume();
+		  polySynth.releaseAll();
+		}})
+	
+
+	All_Notes_Off = document.getElementById("all-notes-off");
+	All_Notes_Off.addEventListener("mousedown", function(){
+		  polySynth.releaseAll();
+	})
+
 	var vol = new Tone.Volume(-12).toMaster();
 	var polySynth = new Tone.PolySynth(10, Tone.FMSynth);
 	polySynth.connect(vol);
 	var lastTiming = 0;
+	
+	function AllNotesOff() {
+		polySynth.releaseAll();
+	}
 	
 	/**
 	 * Sets a callback that will be called when the update() method

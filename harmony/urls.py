@@ -12,9 +12,10 @@ import lti_tool.urls
 urlpatterns = [
     path('', RedirectView.as_view(url='/lab'), name='index'),
     path('lab/', include(lab.urls)),
+    path('accounts/', include('apps.accounts.urls')),
     path('lti/', include(lti_tool.urls)),
     path('jasmine/', include(jasmine.urls)),
-
+    path('ckeditor/', include('ckeditor_uploader.urls')),
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 

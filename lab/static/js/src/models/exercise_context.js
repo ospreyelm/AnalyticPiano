@@ -571,28 +571,28 @@ define([
 						this.timer.tempoRating.length /* unclear whether this is already factored in */
 					) || "",
 				playlist_duration: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
-				// exercise_ID: this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id || "",
-			};
+				exercise_ID: this.definition.getExerciseList()[this.definition.getExerciseList().length - 1].id || "",
+				};
 
 			return report;
 		},
 		submitExerciseReport: function() {
-			console.log( this.compileExerciseReport() );
-			// $.ajax({
-			// 	type: "POST",
-			// 	url: 'exercise-performance',
-			// 	data: {'data': JSON.stringify(this.compileExerciseReport())},
-			// 	dataType: 'json',
-			// });
+			// console.log( this.compileExerciseReport() );
+			$.ajax({
+				type: "POST",
+				url: 'exercise-performance',
+				data: {'data': JSON.stringify(this.compileExerciseReport())},
+				dataType: 'json',
+			});
 		},
 		submitPlaylistReport: function() {
-			console.log( this.compilePlaylistReport() );
-			// $.ajax({
-			// 	type: "POST",
-			// 	url: 'playlist-performance',
-			// 	data: {'data': JSON.stringify(this.compilePlaylistReport())},
-			// 	dataType: 'json',
-			// });
+			// console.log( this.compilePlaylistReport() );
+			$.ajax({
+				type: "POST",
+				url: 'playlist-performance',
+				data: {'data': JSON.stringify(this.compilePlaylistReport())},
+				dataType: 'json',
+			});
 		},
 		/**
 		 * Returns chords for display on screen.
@@ -649,11 +649,12 @@ define([
 		 * @return undefined
 		 */
 		goToNextExercise: function() {
-			var nextUrl = this.definition.getNextExercise();
-			var target = {"action": "next", "url": nextUrl};
-			if(nextUrl) {
-				this.trigger('goto', target);
-			}
+			// MusicComponent.renderNext(); // FIXME
+			// var nextUrl = this.definition.getNextExercise();
+			// var target = {"action": "next", "url": nextUrl};
+			// if(nextUrl) {
+			// 	this.trigger('goto', target);
+			// }
 		},
 		/**
 		 * Returns true if the trigger notes are played together on the
@@ -706,7 +707,7 @@ define([
 		triggerRepeatExercise: async function() {
 			if (this.done === true && AUTO_ADVANCE_ENABLED === true) {
 				await this.sleep(REPEAT_EXERCISE_WAIT);
-				window.location.reload(); // DYMTRO: CHANGE THIS PLEASE
+				window.location.reload(); // FIXME
 			}
 		},
 		/**
