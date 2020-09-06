@@ -10,6 +10,7 @@ An Open-Source application for the study of music theory and keyboard skills tha
 ```sh
 $ mkdir AnalyticPiano && cd AnalyticPiano
 $ git clone https://github.com/ospreyelm/HarmonyLab.git clone
+$ # git clone --single-branch --branch NAME https://github.com/ospreyelm/HarmonyLab.git branch_name
 $ sudo apt-get install python3-venv   # unless already installed
 $ python3 -m venv pianoenv
 $ source pianoenv/bin/activate
@@ -18,7 +19,8 @@ $ pipenv install
 $ sudo apt-get install postgresql   # unless already installed
 $ sudo apt-get install python-psycopg2   # unless already installed
 $ sudo apt-get install libpq-dev   # unless already installed
-$ export DJANGO_SETTINGS_MODULE="harmony.settings.local"   # multiple local clones will use the same database
+$ export DJANGO_SETTINGS_MODULE="harmony.settings.local"
+$ # ^ Multiple local clones will use the same database
 $ ./manage.py makemigrations   # not always necessary
 $ ./manage.py migrate
 $ ./manage.py createsuperuser   # optional: create admin account
