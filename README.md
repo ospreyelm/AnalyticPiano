@@ -18,7 +18,7 @@ $ pipenv install
 $ sudo apt-get install postgresql   # unless already installed
 $ sudo apt-get install python-psycopg2   # unless already installed
 $ sudo apt-get install libpq-dev   # unless already installed
-$ export DJANGO_SETTINGS_MODULE="harmony.settings.local"
+$ export DJANGO_SETTINGS_MODULE="harmony.settings.local"   # multiple local clones will use the same database
 $ ./manage.py makemigrations   # not always necessary
 $ ./manage.py migrate
 $ ./manage.py createsuperuser   # optional: create admin account
