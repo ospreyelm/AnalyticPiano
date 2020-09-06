@@ -16,11 +16,13 @@ define([
 	SimpleStatistics
 ) {
 
-	var AUTO_ADVANCE_ENABLED = Config.get('general.autoExerciseAdvance');
+	var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
 
-	var NEXT_EXERCISE_WAIT = Config.get('general.nextExerciseWait');
+	var AUTO_ADVANCE_ENABLED = (testing ? true : Config.get('general.autoExerciseAdvance'));
 
-	var REPEAT_EXERCISE_WAIT = Config.get('general.repeatExerciseWait');
+	var NEXT_EXERCISE_WAIT = (testing ? 1000 : Config.get('general.nextExerciseWait'));
+
+	var REPEAT_EXERCISE_WAIT = (testing ? 2000 : Config.get('general.repeatExerciseWait'));
 
 	var REPEAT_EXERCISE_ENABLED = Config.get('general.repeatExercise');
 
@@ -649,12 +651,12 @@ define([
 		 * @return undefined
 		 */
 		goToNextExercise: function() {
-			// MusicComponent.renderNext(); // FIXME
-			// var nextUrl = this.definition.getNextExercise();
-			// var target = {"action": "next", "url": nextUrl};
-			// if(nextUrl) {
-			// 	this.trigger('goto', target);
-			// }
+			console.log('call of goToNextExercise');
+			// Duplicate effect of this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE) in music_controls.js
+		},
+		reloadExercise: function() {
+			console.log('call of reloadExercise');
+			// Duplicate effect of this.broadcast(EVENTS.BROADCAST.PRISTINE) in music_controls.js
 		},
 		/**
 		 * Returns true if the trigger notes are played together on the
@@ -707,7 +709,7 @@ define([
 		triggerRepeatExercise: async function() {
 			if (this.done === true && AUTO_ADVANCE_ENABLED === true) {
 				await this.sleep(REPEAT_EXERCISE_WAIT);
-				window.location.reload(); // FIXME
+				this.reloadExercise();
 			}
 		},
 		/**

@@ -133,7 +133,7 @@ define([
             }
             return this;
         },
-        renderPristine: function() {
+        renderPristine: function(exerciseAction = 'refresh') {
             var sheetComponent = this.getComponent('sheet');
 
             if (!sheetComponent.hasOwnProperty('exerciseContext')) {
@@ -155,10 +155,10 @@ define([
                 // let currentData = JSON.stringify(setdef.settings.definition, null, 0);
                 let newData = {};
 
-                var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : true);
-                if (testing) {
+                // var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
 
-                    // The AJAX call for Redraw
+                if (exerciseAction === 'reload') {
+
                     $.ajax({
                         type: "GET",
                         url: 'definition',
@@ -176,8 +176,27 @@ define([
 
                     if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
 
+                } else if (exerciseAction === 'next') {
+
+                    $.ajax({
+                        type: "GET",
+                        url: 'definition',
+                        async: false,
+                        data: {
+                            'playlist_name': setdef.settings.definition.playlistName,
+                            'exercise_id': setdef.settings.definition.nextExerciseId,
+                            'exercise_num': setdef.settings.definition.nextExerciseNum
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            newData = data;
+                        }
+                    });
+
+                    if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
+
                 }
-                if (testing && Object.keys(newData).length) {
+                if (Object.keys(newData).length) {
 
                     scex.definition.exercise
                         = scex.definition.parse(newData);
@@ -241,114 +260,7 @@ define([
             return this;
         },
         renderNextExercise: function() {
-            /* TO DO: Eliminate redundancy with renderPristine */
-
-            var sheetComponent = this.getComponent('sheet');
-
-            if (!sheetComponent.hasOwnProperty('exerciseContext')) {
-
-                /* play view */
-                console.log('Unexpected call of renderNextExercise');
-                return null;
-
-            } else {
-
-                /* exercise view */
-                let scex = sheetComponent.exerciseContext;
-
-                scex.inputChords.clear();
-                scex.inputChords.goTo(0);
-
-                let setdef = scex.settings.definition;
-
-                // This was used to generate newData as we built this function
-                // let currentData = JSON.stringify(setdef.settings.definition, null, 0);
-                let newData = {};
-
-                var testing = true;
-                if (testing) {
-
-                    // The AJAX call for Next Exercise
-                    $.ajax({
-                        type: "GET",
-                        url: 'definition',
-                        async: false,
-                        data: {
-                            'playlist_name': setdef.settings.definition.playlistName,
-                            'exercise_id': setdef.settings.definition.nextExerciseId,
-                            'exercise_num': setdef.settings.definition.nextExerciseNum
-                        },
-                        dataType: 'json',
-                        success: function (data) {
-                            newData = data;
-                        }
-                    });
-
-                    if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
-
-                }
-                if (testing && Object.keys(newData).length) {
-
-                    scex.definition.exercise
-                        = scex.definition.parse(newData);
-
-                    scex.definition.settings.definition
-                        = newData;
-
-                    scex.settings.definition.exercise
-                        = scex.definition.parse(newData);
-
-                    scex.settings.definition.settings.definition
-                        = newData;
-
-                    sheetComponent.keySignature
-                        = new KeySignature(newData.key, newData.keySignature);
-
-                    sheetComponent.settings.keySignature
-                        = new KeySignature(newData.key, newData.keySignature);
-
-                    // DOES NOT HAVE EXPECTED EFFECT
-                    this.settings.staffDistribution
-                        = newData.staffDistribution;
-
-                    this.staffDistributionConfig.staffDistribution
-                        = newData.staffDistribution;
-
-                    /* similar to updateSettings */
-                    // is there a way to do these things once each?
-                    Object.assign(this.analyzeConfig, newData.analysis);
-                    Object.assign(this.settings.analysisSettings, newData.analysis);
-                    Object.assign(this.staffDistributionConfig.analysisSettings, newData.analysis);
-
-                    Object.assign(this.highlightConfig, newData.highlight);
-                    Object.assign(this.settings.highlightSettings, newData.highlight);
-                    Object.assign(this.staffDistributionConfig.highlightSettings, newData.highlight);
-                    /* add use of listeners here to update the menu */
-
-                    scex.inputChords.staffDistribution = newData.staffDistribution;
-                    scex.displayChords = scex.createDisplayChords();
-                    scex.exerciseChords = scex.createExerciseChords();
-
-                    this.trigger('change');
-                }
-
-                // sheetComponent.renderExerciseText(); // not necessary
-                scex.sealed = false;
-                scex.done = false;
-                scex.timer = null;
-                scex.timepoints = [];
-
-                window.console.dir('send dummy note');
-                this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
-                this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
-
-                scex.state = "ready"; // READY
-            }
-
-            sheetComponent.clear();
-            sheetComponent.render();
-
-            return this;
+            this.renderPristine('next');
         },
         /**
          * Returns the width.
