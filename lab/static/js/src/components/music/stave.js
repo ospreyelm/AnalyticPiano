@@ -572,20 +572,24 @@ define([
 		setKeySignature: function(keySignature) {
 			this.keySignature = keySignature;
 		},
-		/*
-		setFirstBarWidth: function(keySignature) {
-			if (!keySignature.signatureSpec || !keySignature.signatureSpec.length || keySignature.signatureSpec === "") {
-				return null;
+		setFirstBarWidth: function(staffSig) {
+			const minimize_movement = false;
+
+			let firstBarWidth = 65;
+
+			if (minimize_movement) {
+				firstBarWidth += 40
+				if (staffSig.length > 4) {
+					firstBarWidth += 25;
+				}
+			} else {
+				firstBarWidth += 9 * staffSig.length;
+				if (staffSig[0] === "#") {
+					firstBarWidth += 1 * staffSig.length;
+				}
 			}
-			const tally = keySignature.signatureSpec.length;
-			if (isNaN(tally)) return null;
-			if (tally < 6) return null;
-			else {
-				this.firstBarWidth = 110;
-				// this.firstBarWidth = 45 + 12 * tally;
-			}
+			this.firstBarWidth = firstBarWidth;
 		},
-		*/
 		/**
 		 * Sets the Vex.Flow renderer.
 		 *

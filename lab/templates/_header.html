@@ -1,4 +1,5 @@
 <div id="header" class="header">
+
     <ul>
         {% block header_extra %}{% endblock %}
         {% if user.is_authenticated %}
@@ -22,9 +23,3 @@
     </ul>
 
 </div>
-
-<!-- <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;">
-	<form id="exerciseReport">
-		<input id="reportPerformer" name="performer" type="text" value="Student" />
-	</form>
-</iframe> -->

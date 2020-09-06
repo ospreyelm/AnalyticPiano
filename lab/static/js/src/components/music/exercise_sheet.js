@@ -424,6 +424,11 @@ define([
             // stave.setFirstBarWidth(this.keySignature);
             stave.setNotater(stave_notater);
             stave.setMaxWidth(this.getWidth());
+
+            if (typeof this.keySignature.signatureSpec === 'string') {
+                const staffSig = this.keySignature.signatureSpec;
+                stave.setFirstBarWidth(staffSig);
+            }
             stave.updatePosition();
 
             return stave;
@@ -472,6 +477,11 @@ define([
                 analyzeConfig: this.getAnalyzeConfig()
             }));
             stave.setMaxWidth(this.getWidth());
+
+            if (typeof this.keySignature.signatureSpec === 'string') {
+                const staffSig = this.keySignature.signatureSpec;
+                stave.setFirstBarWidth(staffSig);
+            }
             stave.updatePositionWithRhythm(rhythmDivisor, elapsed_quarters);
 
             return stave;

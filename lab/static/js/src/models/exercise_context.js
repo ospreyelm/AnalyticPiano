@@ -5,8 +5,7 @@ define([
 	'./exercise_chord',
 	'./exercise_chord_bank',
 	'app/config',
-	'simple-statistics.min',
-	'app/components/music'
+	'simple-statistics.min'
 ], function(
 	_,
 	$,
@@ -14,8 +13,7 @@ define([
 	ExerciseChord,
 	ExerciseChordBank,
 	Config,
-	SimpleStatistics,
-	MusicComponent
+	SimpleStatistics
 ) {
 
 	var AUTO_ADVANCE_ENABLED = Config.get('general.autoExerciseAdvance');
@@ -579,7 +577,7 @@ define([
 			return report;
 		},
 		submitExerciseReport: function() {
-			console.log( this.compileExerciseReport() );
+			// console.log( this.compileExerciseReport() );
 			$.ajax({
 				type: "POST",
 				url: 'exercise-performance',
@@ -588,7 +586,7 @@ define([
 			});
 		},
 		submitPlaylistReport: function() {
-			console.log( this.compilePlaylistReport() );
+			// console.log( this.compilePlaylistReport() );
 			$.ajax({
 				type: "POST",
 				url: 'playlist-performance',
@@ -651,7 +649,7 @@ define([
 		 * @return undefined
 		 */
 		goToNextExercise: function() {
-			MusicComponent.renderNext();
+			// MusicComponent.renderNext(); // FIXME
 			// var nextUrl = this.definition.getNextExercise();
 			// var target = {"action": "next", "url": nextUrl};
 			// if(nextUrl) {
@@ -667,7 +665,6 @@ define([
 				return false;
 			}
 			var chord = this.inputChords.current().getSortedNotes();
-			console.log(chord);
 			var trigger_notes = [60, 62, 64, 65, 67, 69, 71];
 			if (chord.length != trigger_notes.length) {
 				return false;
@@ -710,7 +707,7 @@ define([
 		triggerRepeatExercise: async function() {
 			if (this.done === true && AUTO_ADVANCE_ENABLED === true) {
 				await this.sleep(REPEAT_EXERCISE_WAIT);
-				window.location.reload(); // DYMTRO: CHANGE THIS PLEASE
+				window.location.reload(); // FIXME
 			}
 		},
 		/**

@@ -422,7 +422,7 @@ define([
 		/**
 		 * Handler to broadcast request for pristine sheet music div.
 		 *
-		 * @param {object} evt
+		 * @param {string} destination
 		 * @return {boolean} true
 		 */
 		onClickPristine: function() {
