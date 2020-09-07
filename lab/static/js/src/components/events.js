@@ -24,6 +24,7 @@ define({
 		"NOTIFICATION": "notification",
 		"PRISTINE": "pristine",
 		"PREVIOUSEXERCISE": "previousexercise",
-		"NEXTEXERCISE": "nextexercise"
+		"NEXTEXERCISE": "nextexercise",
+		"FIRSTEXERCISE": "firstexercise"
 	}
 });

@@ -95,6 +95,7 @@ define([
 			$('.js-btn-pristine').on('mousedown', () => this.onClickPristine());
 			$('.js-btn-nextexercise').on('mousedown', () => this.onClickNextExercise());
 			$('.js-btn-previousexercise').on('mousedown', () => this.onClickPreviousExercise());
+			$('.js-btn-firstexercise').on('mousedown', () => this.onClickFirstExercise());
 
 			this.initControlsLayout();
 			this.initKeySignatureTab();
@@ -431,7 +432,7 @@ define([
 			return true;
 		},
 		/**
-		 * Handler to broadcast request for sheet music div. of next exercise
+		 * Handlers to broadcast requests for sheet music div. of exercises
 		 *
 		 * @param {object} evt
 		 * @return {boolean} true
@@ -440,14 +441,12 @@ define([
 			this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
 			return true;
 		},
-		/**
-		 * Handler to broadcast request for sheet music div. of next exercise
-		 *
-		 * @param {object} evt
-		 * @return {boolean} true
-		 */
 		onClickPreviousExercise: function() {
 			this.broadcast(EVENTS.BROADCAST.PREVIOUSEXERCISE);
+			return true;
+		},
+		onClickFirstExercise: function() {
+			this.broadcast(EVENTS.BROADCAST.FIRSTEXERCISE);
 			return true;
 		},
 		/**

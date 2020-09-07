@@ -81,7 +81,8 @@ define([
             'onMetronomeChange',
             'onRedrawRequest',
             'onNextExerciseRequest',
-            'onPreviousExerciseRequest'
+            'onPreviousExerciseRequest',
+            'onFirstExerciseRequest'
         ]);
     };
 
@@ -109,6 +110,7 @@ define([
             this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onRedrawRequest);
             this.subscribe(EVENTS.BROADCAST.NEXTEXERCISE, this.onNextExerciseRequest);
             this.subscribe(EVENTS.BROADCAST.PREVIOUSEXERCISE, this.onPreviousExerciseRequest);
+            this.subscribe(EVENTS.BROADCAST.FIRSTEXERCISE, this.onFirstExerciseRequest);
         },
         /**
          * Renders the music.
@@ -216,6 +218,25 @@ define([
 
                     if (!Object.keys(newData).length) console.log('No previous exercise; start of playlist');
 
+                } else if (exerciseAction === 'first') {
+
+                    $.ajax({
+                        type: "GET",
+                        url: 'definition',
+                        async: false,
+                        data: {
+                            'playlist_name': setdef.settings.definition.playlistName,
+                            'exercise_id': setdef.settings.definition.firstExerciseId,
+                            'exercise_num': 1
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            newData = data;
+                        }
+                    });
+
+                    if (!Object.keys(newData).length) console.log('Cannot find first exercise; error');
+
                 }
                 if (Object.keys(newData).length) {
 
@@ -286,6 +307,9 @@ define([
         renderPreviousExercise: function() {
             this.renderPristine('previous');
         },
+        renderFirstExercise: function() {
+            this.renderPristine('first');
+        },
         /**
          * Returns the width.
          *
@@ -354,6 +378,9 @@ define([
         },
         onPreviousExerciseRequest: function() {
             this.renderPreviousExercise();
+        },
+        onFirstExerciseRequest: function() {
+            this.renderFirstExercise();
         },
         /**
          * Updates settings.
