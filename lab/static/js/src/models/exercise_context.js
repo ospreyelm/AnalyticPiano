@@ -118,8 +118,11 @@ define([
          * @return undefined
          */
         initListeners: function() {
-            $('.js-analyze-widget').hide();
-            $('.js-keysignature-widget').hide();
+            let testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
+            if (testing) {
+                $('.js-analyze-widget').hide();
+                $('.js-keysignature-widget').hide();
+            }
             this.inputChords.bind("change", this.triggerTimer);
             this.inputChords.bind("change", this.grade);
         },
