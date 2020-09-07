@@ -167,7 +167,7 @@ class Playlist(models.Model):
         return num
 
     def prev_num(self, num=1):
-        if 1 < num < self.exercise_count:
+        if 1 < num <= self.exercise_count:
             return num - 1
         return 1
 
