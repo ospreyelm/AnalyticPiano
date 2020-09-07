@@ -2,19 +2,19 @@
 
 An Open-Source application for the study of music theory and keyboard skills that takes input from a MIDI keyboard and outputs staff notation. Various analytical vocabularies of melody and harmony are represented. As a practice aid and exercise platform that operates across aural, visual, and tactile domains, this tool accelerates the acquisition of fluency in certain fundamentals of tonal music.
 
-# Quickstart
+# Quickstart for local development
 
 - Requires [Python 3.6.x](http://python.org/downloads/) and [Pip](http://www.pip-installer.org/) to install. 
 - To install Pip, see [their instructions](http://www.pip-installer.org/en/latest/installing.html).
 
+On Linux:
 ```sh
 $ mkdir AnalyticPiano && cd AnalyticPiano
-$ git clone https://github.com/ospreyelm/HarmonyLab.git clone
-$ # git clone --single-branch --branch NAME https://github.com/ospreyelm/HarmonyLab.git branch_name
+$ git clone --single-branch --branch dev https://github.com/ospreyelm/HarmonyLab.git dev
 $ sudo apt-get install python3-venv   # unless already installed
 $ python3 -m venv pianoenv
 $ source pianoenv/bin/activate
-$ cd clone
+$ cd dev
 $ pipenv install
 $ sudo apt-get install postgresql   # unless already installed
 $ sudo apt-get install python-psycopg2   # unless already installed
