@@ -80,7 +80,8 @@ define([
             'onStaffDistributionChange',
             'onMetronomeChange',
             'onRedrawRequest',
-            'onNextExerciseRequest'
+            'onNextExerciseRequest',
+            'onPreviousExerciseRequest'
         ]);
     };
 
@@ -107,6 +108,7 @@ define([
             this.subscribe(EVENTS.BROADCAST.METRONOME, this.onMetronomeChange);
             this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onRedrawRequest);
             this.subscribe(EVENTS.BROADCAST.NEXTEXERCISE, this.onNextExerciseRequest);
+            this.subscribe(EVENTS.BROADCAST.PREVIOUSEXERCISE, this.onPreviousExerciseRequest);
         },
         /**
          * Renders the music.
@@ -195,9 +197,7 @@ define([
 
                     if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
 
-                }/* else if (exerciseAction === 'previous') {
-                    // previousExerciseId and previousExerciseNum
-                    // must be added first
+                } else if (exerciseAction === 'previous') {
 
                     $.ajax({
                         type: "GET",
@@ -214,9 +214,9 @@ define([
                         }
                     });
 
-                    if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
+                    if (!Object.keys(newData).length) console.log('No previous exercise; start of playlist');
 
-                }*/
+                }
                 if (Object.keys(newData).length) {
 
                     scex.definition.exercise
@@ -283,6 +283,9 @@ define([
         renderNextExercise: function() {
             this.renderPristine('next');
         },
+        renderPreviousExercise: function() {
+            this.renderPristine('previous');
+        },
         /**
          * Returns the width.
          *
@@ -348,6 +351,9 @@ define([
         },
         onNextExerciseRequest: function() {
             this.renderNextExercise();
+        },
+        onPreviousExerciseRequest: function() {
+            this.renderPreviousExercise();
         },
         /**
          * Updates settings.

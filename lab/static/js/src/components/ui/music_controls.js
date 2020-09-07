@@ -94,6 +94,7 @@ define([
 			$('.js-btn-download-json').on('mousedown', () => this.onClickSaveJSON());
 			$('.js-btn-pristine').on('mousedown', () => this.onClickPristine());
 			$('.js-btn-nextexercise').on('mousedown', () => this.onClickNextExercise());
+			$('.js-btn-previousexercise').on('mousedown', () => this.onClickPreviousExercise());
 
 			this.initControlsLayout();
 			this.initKeySignatureTab();
@@ -437,6 +438,16 @@ define([
 		 */
 		onClickNextExercise: function() {
 			this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
+			return true;
+		},
+		/**
+		 * Handler to broadcast request for sheet music div. of next exercise
+		 *
+		 * @param {object} evt
+		 * @return {boolean} true
+		 */
+		onClickPreviousExercise: function() {
+			this.broadcast(EVENTS.BROADCAST.PREVIOUSEXERCISE);
 			return true;
 		},
 		/**

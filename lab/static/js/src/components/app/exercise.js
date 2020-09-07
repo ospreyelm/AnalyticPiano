@@ -156,15 +156,6 @@ define([
 			function() {
 				var definition = this.models.exerciseContext.getDefinition();
 
-				// Working towards redraw instead of refresh
-				let list = definition.getExerciseList();
-				let idx = definition.getExerciseList().reduce(function(selected, current, index) {
-					return (selected < 0 && current.selected) ? index : selected;
-				}, -1);
-				let next_idx = (idx+1 < list.length ? idx+1 : false);
-				// console.log("At initiation of MusicComponent, this exercise is", list[idx].id );
-				// console.log("At initiation of MusicComponent, next exercise is", (next_idx ? list[next_idx].id : false) );
-
 				var c = new MusicComponent({
 					el: $("#staff-area"),
 					sheet: new ExerciseSheetComponent({

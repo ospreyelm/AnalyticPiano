@@ -23,6 +23,7 @@ define({
 		"OCTAVE_ADJUSTMENT": "octaveadjustment",
 		"NOTIFICATION": "notification",
 		"PRISTINE": "pristine",
+		"PREVIOUSEXERCISE": "previousexercise",
 		"NEXTEXERCISE": "nextexercise"
 	}
 });
