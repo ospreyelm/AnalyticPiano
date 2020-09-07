@@ -359,6 +359,8 @@ define([
 				= Config.__config.general.bankAfterMetronomeTick;
 			json_data["defaultKeyboardSize"]
 				= Config.__config.general.defaultKeyboardSize;
+			json_data["defaultOctaveAdjustment"]
+				= Config.__config.general.defaultOctaveAdjustment;
 			json_data["defaultRhythmValue"]
 				= Config.__config.general.defaultRhythmValue;
 			json_data["hideNextWhenAutoAdvance"]
