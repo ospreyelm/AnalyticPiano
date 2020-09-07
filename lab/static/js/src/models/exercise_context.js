@@ -118,6 +118,8 @@ define([
          * @return undefined
          */
         initListeners: function() {
+            $('.js-analyze-widget').hide();
+            $('.js-keysignature-widget').hide();
             this.inputChords.bind("change", this.triggerTimer);
             this.inputChords.bind("change", this.grade);
         },
