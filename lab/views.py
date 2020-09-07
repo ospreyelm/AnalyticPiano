@@ -122,8 +122,8 @@ class PlaylistView(RequirejsView):
         next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ''
         prev_exercise_obj = playlist.get_exercise_obj_by_num(playlist.prev_num(exercise_num))
         prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ''
-        first_exercise_obj = playlist.get_exercise_obj_by_num(playlist.prev_num())
-        first_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ''
+        first_exercise_obj = playlist.get_exercise_obj_by_num(1)
+        first_exercise_id = first_exercise_obj.id if first_exercise_obj.id != exercise.id else ''
         context = {'group_list': []}
         exercise_context = {}
 
@@ -177,8 +177,8 @@ class RefreshExerciseDefinition(RequirejsView):
         next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ''
         prev_exercise_obj = playlist.get_exercise_obj_by_num(playlist.prev_num(exercise_num))
         prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ''
-        first_exercise_obj = playlist.get_exercise_obj_by_num(playlist.prev_num())
-        first_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ''
+        first_exercise_obj = playlist.get_exercise_obj_by_num(1)
+        first_exercise_id = first_exercise_obj.id if first_exercise_obj.id != exercise.id else ''
         exercise_context = {}
 
         exercise_list = []
