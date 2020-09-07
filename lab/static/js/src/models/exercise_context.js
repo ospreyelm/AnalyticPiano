@@ -545,7 +545,7 @@ define([
                 exercise_ID: this.definition.getExerciseList()[idx].id || "",
                 time: new Date().toJSON().slice(0,16) || "",
                 timezone: timezone_str || "",
-                exercise_error_tally: this.errorTally,
+                exercise_error_tally: (["analytical", "figured_bass"].includes(this.definition.exercise.type) ? "n/a" : this.errorTally),
                 exercise_tempo_rating: (this.timer.tempoRating ? this.timer.tempoRating.length : 0), // 0 means unable to asses
                 exercise_mean_tempo: Math.round(this.timer.tempoMean) || "",
                 exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
