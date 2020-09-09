@@ -522,11 +522,11 @@ define([
 			const mid_threshold = 60;
 			const low_threshold = 55;
 
-			if (['keyboard','keyboardPlusRHBias'].includes(STAFF_DISTRIBUTION)
+			if (['keyboard','keyboardPlusRHBias','keyboardPlusLHBias'].includes(STAFF_DISTRIBUTION)
 			&& VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)
 			&& midi == this.getSortedNotes()[0]) { // lowest note
 				return clef == (midi <= high_threshold ? 'bass' : 'treble');
-			} else if (['keyboard','keyboardPlusRHBias'].includes(STAFF_DISTRIBUTION)
+			} else if (['keyboard','keyboardPlusRHBias','keyboardPlusLHBias'].includes(STAFF_DISTRIBUTION)
 			&& VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)
 			&& this.getSortedNotes().slice(1).includes(midi)) { // not lowest note
 				return clef == (midi < low_threshold ? 'bass' : 'treble');
@@ -536,6 +536,9 @@ define([
 			} else if (STAFF_DISTRIBUTION === 'keyboardPlusRHBias'
 			&& !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)) {
 				return clef == (midi < low_threshold ? 'bass' : 'treble');
+			} else if (STAFF_DISTRIBUTION === 'keyboardPlusLHBias'
+			&& !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)) {
+				return clef == (midi < high_threshold ? 'bass' : 'treble');
 			} else if (STAFF_DISTRIBUTION === 'LH') {
 				return clef == 'bass';
 			} else if (STAFF_DISTRIBUTION === 'RH') {
