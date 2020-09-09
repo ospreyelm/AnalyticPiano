@@ -538,7 +538,7 @@ define([
 				return clef == (midi < low_threshold ? 'bass' : 'treble');
 			} else if (STAFF_DISTRIBUTION === 'keyboardPlusLHBias'
 			&& !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)) {
-				return clef == (midi < high_threshold ? 'bass' : 'treble');
+				return clef == (midi <= high_threshold ? 'bass' : 'treble');
 			} else if (STAFF_DISTRIBUTION === 'LH') {
 				return clef == 'bass';
 			} else if (STAFF_DISTRIBUTION === 'RH') {
