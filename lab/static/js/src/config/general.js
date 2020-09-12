@@ -18,7 +18,7 @@ define({
 
 	noDoubleVision: false,
 
-	autoExerciseAdvance: false,
+	autoExerciseAdvance: true,
 	hideNextWhenAutoAdvance: false,
 	repeatExercise: true,
 	nextExerciseWait: 4000,
