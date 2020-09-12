@@ -3,15 +3,13 @@ define([
 	'app/config',
 	'app/components/events',
 	'app/components/component',
-	'./keyboard',
-	'app/models/exercise_context'
+	'./keyboard'
 ], function(
 	_,
 	Config,
 	EVENTS,
 	Component,
-	KeyboardInputComponent,
-	ExerciseContext
+	KeyboardInputComponent
 ) {
 
 	/**
@@ -79,7 +77,8 @@ define([
 				'rotateKeySharpward',
 				'setKeyToNone',
 				'setKeyToC',
-				'advanceExercise',
+				'nextExercise',
+				'previousExercise',
 				'toggleMetronome',
 				'toggleMode',
 				'clearNotes',
@@ -226,10 +225,13 @@ define([
 			this.keySignature.changeKey('jC_', true);	
 		},
 		/**
-		 * Go the next exercise.
+		 * Navigate to a different exercise.
 		 */
-		advanceExercise: function(state) {
-			// ExerciseContext.goToNextExercise();
+		nextExercise: function(state) {
+			this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
+		},
+		previousExercise: function(state) {
+			this.broadcast(EVENTS.BROADCAST.PREVIOUSEXERCISE);
 		},
 		/**
 		 * Depresses the sustain pedal.

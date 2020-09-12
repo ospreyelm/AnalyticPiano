@@ -46,6 +46,7 @@ define([
 	 * @const
 	 */
 	var DEFAULT_KEYBOARD_SIZE = Config.get('general.defaultKeyboardSize');
+	var DEFAULT_OCTAVE_ADJUSTMENT = Config.get('general.defaultOctaveAdjustment');
 
 	/**
 	 * Defines a namespace for settings.
@@ -94,6 +95,8 @@ define([
 			$('.js-btn-download-json').on('mousedown', () => this.onClickSaveJSON());
 			$('.js-btn-pristine').on('mousedown', () => this.onClickPristine());
 			$('.js-btn-nextexercise').on('mousedown', () => this.onClickNextExercise());
+			$('.js-btn-previousexercise').on('mousedown', () => this.onClickPreviousExercise());
+			$('.js-btn-firstexercise').on('mousedown', () => this.onClickFirstExercise());
 
 			this.initControlsLayout();
 			this.initKeySignatureTab();
@@ -282,7 +285,7 @@ define([
 			var selectEl = $("<select/>");
 			var tpl = _.template('<% _.forEach(adjustments, function(adj) { %><option value="<%= adj %>"><%- adj %></option><% }); %>');
 			var options = tpl({adjustments: [-2,-1,0,1,2]})
-			var selected = 0;
+			var selected = DEFAULT_OCTAVE_ADJUSTMENT;
 
 			selectEl.append(options);
 			selectEl.find("[value="+selected+"]").attr("selected", "selected");
@@ -430,13 +433,21 @@ define([
 			return true;
 		},
 		/**
-		 * Handler to broadcast request for sheet music div. of next exercise
+		 * Handlers to broadcast requests for sheet music div. of exercises
 		 *
 		 * @param {object} evt
 		 * @return {boolean} true
 		 */
 		onClickNextExercise: function() {
 			this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
+			return true;
+		},
+		onClickPreviousExercise: function() {
+			this.broadcast(EVENTS.BROADCAST.PREVIOUSEXERCISE);
+			return true;
+		},
+		onClickFirstExercise: function() {
+			this.broadcast(EVENTS.BROADCAST.FIRSTEXERCISE);
 			return true;
 		},
 		/**

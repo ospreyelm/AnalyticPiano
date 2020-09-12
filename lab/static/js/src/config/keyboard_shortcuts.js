@@ -58,7 +58,8 @@ define({
 		"SPACE":  {msg:"bankChord"},
 		"ENTER":  {msg:"bankChord"},
 		// "/":      {msg:"toggleAnalysis"}, // not created yet
-		"PAGEDOWN":  {msg:"advanceExercise"} // not connected yet
+		"PAGEUP": {msg:"previousExercise"},
+		"PAGEDOWN": {msg:"nextExercise"}
 	},
 
 	// Defines javascript key code -> key name mappings.
@@ -69,6 +70,7 @@ define({
 		"13": "ENTER",
 		"27": "ESC",
 		"32": "SPACE",
+		"33": "PAGEUP",
 		"34": "PAGEDOWN",
 		"37": "LEFT",
 		"38": "UP",

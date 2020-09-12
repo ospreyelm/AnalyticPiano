@@ -43,8 +43,8 @@ define([
 		defaultHeight: 120,
 		defaultSmallHeight: 80,
 		defaultKeyWidth: 30,
-		numberOfKeys: 49,
-		octaveAdjustment: 0,
+		numberOfKeys: null,
+		octaveAdjustment: null,
 		initComponent: function() {
 			if("numberOfKeys" in this.settings) {
 				this.numberOfKeys = this.settings.numberOfKeys;
@@ -121,15 +121,15 @@ define([
 			}
 			var keywiseWidth = nudge_right / 2 + numWhiteKeys + nudge_left;
 
-			// TO DO: extend responsive design for smaller factors
+			// TO DO: improve responsive design
 
 			layoutConfig.keyWidth = this.defaultKeyWidth;
 			layoutConfig.height = this.defaultHeight;
 			layoutConfig.width = this.defaultKeyWidth * keywiseWidth;
 			layoutConfig.leftPadding = nudge_right;
-			if (window.screen.width < layoutConfig.width * 1.1) {
+			if (window.innerWidth < layoutConfig.width * 1.1) {
 				// layoutConfig.leftPadding = 0;
-				layoutConfig.width = window.screen.width * 0.9;
+				layoutConfig.width = window.innerWidth * 0.9;
 				layoutConfig.keyWidth = layoutConfig.width / keywiseWidth;
 				layoutConfig.height = this.defaultHeight * layoutConfig.keyWidth / this.defaultKeyWidth;
 			}

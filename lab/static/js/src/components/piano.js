@@ -23,6 +23,7 @@ define([
 	 * @const
 	 */
 	var DEFAULT_KEYBOARD_SIZE = Config.get('general.defaultKeyboardSize');
+	var DEFAULT_OCTAVE_ADJUSTMENT = Config.get('general.defaultOctaveAdjustment');
 
 	/**
 	 * Creates a PianoComponent
@@ -36,7 +37,10 @@ define([
 		this.settings = settings || {};
 
 		var toolbarConfig = {metronome: false};
-		var keyboardConfig = {numberOfKeys: DEFAULT_KEYBOARD_SIZE};
+		var keyboardConfig = {
+			numberOfKeys: DEFAULT_KEYBOARD_SIZE,
+			octaveAdjustment: DEFAULT_OCTAVE_ADJUSTMENT
+		};
 		var toolbarEnabled = true;
 		var pedalsEnabled = true;
 
@@ -62,7 +66,7 @@ define([
 
 		this.setComponent('keyboard', new KeyboardComponent(keyboardConfig));
 
-		_.bindAll(this, ['onKeyboardChange']);
+		_.bindAll(this, ['onKeyboardChange', 'onOctaveChange']);
 	};
 
 	PianoComponent.prototype = new Component();
@@ -84,8 +88,8 @@ define([
 	 */
 	PianoComponent.prototype.initListeners = function() {
 		this.subscribe(EVENTS.BROADCAST.KEYBOARD_SIZE, this.onKeyboardChange);
+		this.subscribe(EVENTS.BROADCAST.OCTAVE_ADJUSTMENT, this.onOctaveChange);
 	};
-
 	/**
 	 * Removes listeners.
 	 *
@@ -93,6 +97,7 @@ define([
 	 */
 	PianoComponent.prototype.removeListeners = function() {
 		this.unsubscribe(EVENTS.BROADCAST.KEYBOARD_SIZE, this.onKeyboardChange);
+		this.unsubscribe(EVENTS.BROADCAST.OCTAVE_ADJUSTMENT, this.onOctaveChange);
 	};
 
 	/**
@@ -135,9 +140,27 @@ define([
 	 *
 	 * @return undefined
 	 */
-	PianoComponent.prototype.onKeyboardChange = function(size) {
+	PianoComponent.prototype.onKeyboardChange = function(numberOfKeys) {
 		var oldKeyboardComponent = this.getComponent('keyboard');
-		var newKeyboardComponent = new KeyboardComponent({numberOfKeys: size});
+		var newKeyboardComponent = new KeyboardComponent({
+			numberOfKeys: numberOfKeys,
+			octaveAdjustment: oldKeyboardComponent.octaveAdjustment
+		});
+		newKeyboardComponent.init(this);
+
+		this.removeComponent(oldKeyboardComponent);
+		oldKeyboardComponent.destroy();
+
+		this.setComponent('keyboard', newKeyboardComponent);
+		this.render();
+		this.updateWidth();
+	};
+	PianoComponent.prototype.onOctaveChange = function(octaveAdjustment) {
+		var oldKeyboardComponent = this.getComponent('keyboard');
+		var newKeyboardComponent = new KeyboardComponent({
+			numberOfKeys: oldKeyboardComponent.numberOfKeys,
+			octaveAdjustment: octaveAdjustment
+		});
 		newKeyboardComponent.init(this);
 
 		this.removeComponent(oldKeyboardComponent);
