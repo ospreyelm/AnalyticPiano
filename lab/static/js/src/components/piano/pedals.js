@@ -63,7 +63,7 @@ define([
 
 		$(el).on('click', function() {
 			pedal.toggle();
-			component.broadcast(EVENTS.BROADCAST.PEDAL, name, pedal.state);
+			component.broadcast(EVENTS.BROADCAST.PEDAL, name, pedal.state, 'ui');
 		});
 	};
 

@@ -239,7 +239,7 @@ define([
 		 * @return undefined
 		 */
 		depressSustain: function(state) {
-			this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'on');
+			this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'on', 'ui');
 			SUSTAINING = true;
 		},
 		/**
@@ -281,7 +281,7 @@ define([
 		 * @return undefined
 		 */
 		bankChord: function(state) {
-			this.broadcast(EVENTS.BROADCAST.BANK_NOTES);
+			this.broadcast(EVENTS.BROADCAST.BANK_NOTES, 'ui');
 		},
 		/**
 		 * Toggles the metronome (play and stop).

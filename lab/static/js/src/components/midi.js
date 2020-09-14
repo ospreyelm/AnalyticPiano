@@ -418,7 +418,21 @@ define([
 		 * @return undefined
 		 */
 		onBankNotes: function(request_origin) {
-			this.chords.bank(request_origin);
+			/* critical side-effect */
+			var notes_off = this.chords.bank();
+			if (request_origin === 'ui') {
+				// Lift pedal on ui-originating chord bank
+				this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off', 'ui');
+				this.turnOffSustainedNotesOnPedalLift(notes_off);
+			}
+		},
+		turnOffSustainedNotesOnPedalLift: function(notes_off) {
+			var i, len;
+			for (i = 0, len = notes_off.length; i < len; i++) {
+				let channel_idx = this.midiChannel - 1;
+				let command = MIDI_MSG_MAP.NOTE_OFF[channel_idx];
+				this.sendMIDIMessage(command, notes_off[i], 0);
+			}
 		},
 		/**
 		 * Handles a pedal change event. 
@@ -427,7 +441,7 @@ define([
 		 * @param {string} state on|off
 		 * @return undefined
 		 */
-		onPedalChange: function(pedal, state) {
+		onPedalChange: function(pedal, state, request_origin) {
 			var chord = this.chords.current();
 			switch(pedal) {
 				case 'soft':
@@ -436,19 +450,17 @@ define([
 				case 'sustain':
 					if(state==='on') {
 						chord.sustainNotes();
-						this.chords.bank();// why is this not clearable?
+						if (request_origin !== 'ui') {
+							this.chords.bank();
+						}
 						this.sendMIDIPedalMessage(pedal, state);
 						SUSTAINING = true;
 					} else if (state === 'off') {
 						chord.releaseSustain();
 						/* critical side-effect */
 						var notes_off = chord.syncSustainedNotes();
-						var i, len;
-						for (i = 0, len = notes_off.length; i < len; i++) {
-							let channel_idx = this.midiChannel - 1;
-							let command = MIDI_MSG_MAP.NOTE_OFF[channel_idx];
-							this.sendMIDIMessage(command, notes_off[i], 0);
-						}
+						this.turnOffSustainedNotesOnPedalLift(notes_off);
+						// also turn off notes not being sustained that match the most recently banked
 						this.sendMIDIPedalMessage(pedal, state);
 						SUSTAINING = false;
 					} else {}
