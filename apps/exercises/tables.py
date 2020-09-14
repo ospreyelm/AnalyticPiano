@@ -1,7 +1,7 @@
 import django_tables2 as tables
 
 
-class PlaylistPerformanceTable(tables.Table):
+class AdminPlaylistPerformanceTable(tables.Table):
     email = tables.Column()
     exercise_count = tables.Column()
 

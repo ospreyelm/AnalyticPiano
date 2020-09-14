@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django_tables2 import Column
 
 from apps.exercises.models import Playlist, PerformanceData
-from apps.exercises.tables import PlaylistPerformanceTable
+from apps.exercises.tables import AdminPlaylistPerformanceTable
 
 User = get_user_model()
 
@@ -41,7 +41,7 @@ def playlist_performance_view(request, playlist_id):
                                      f'{"*" * exercise["exercise_tempo_rating"]} '
                                      f'({exercise["exercise_error_tally"]})'}) for exercise in exercises_data]
 
-    table = PlaylistPerformanceTable(
+    table = AdminPlaylistPerformanceTable(
         data=data,
         extra_columns=[(exercise, Column()) for exercise in exercises]
     )

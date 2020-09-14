@@ -20,9 +20,12 @@ class UserAdmin(admin.UserAdmin):
                 
                 'is_staff',
                 'is_superuser',
-                'is_active'
+                'is_active',
+                '_supervisors'
             ),
         }),
+
+
     )
     form = UserChangeForm
     add_form = UserAdminCreationForm
