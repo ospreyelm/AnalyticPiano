@@ -1,11 +1,9 @@
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
-from django.contrib.postgres.fields import JSONField
-from django.core.exceptions import ValidationError
+from django.contrib.postgres.fields import ArrayField
 from django.core.mail import send_mail
 from django.db import models
 from django.utils import timezone
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from apps.accounts.managers import UserManager
@@ -19,7 +17,8 @@ class User(AbstractBaseUser, PermissionsMixin):
                                               "The user's password and this field are only the same for frontend users.")
 
     email = models.EmailField(_('Email'), unique=True)
-
+    _supervisors = ArrayField(base_field=models.IntegerField(), default=list,
+                              verbose_name='Supervisors')
     is_staff = models.BooleanField(
         _('Is Admin'),
         default=False,
@@ -64,3 +63,26 @@ class User(AbstractBaseUser, PermissionsMixin):
     @classmethod
     def get_guest_user(cls):
         return cls.objects.filter(email='guest@harmonylab.com').first()
+
+    @property
+    def supervisors(self):
+        return User.objects.filter(id__in=self._supervisors)
+
+    @property
+    def subscribers(self):
+        return User.objects.filter(_supervisors__contains=[self.id])
+
+    def subscribe_to(self, supervisor):
+        if supervisor.id in self._supervisors:
+            return
+        self._supervisors.append(supervisor.id)
+        self.save()
+
+    def unsubscribe_from(self, supervisor):
+        if supervisor.id not in self._supervisors:
+            return
+        self._supervisors.remove(supervisor.id)
+        self.save()
+
+    def is_supervisor_to(self, subscriber):
+        return self.subscribers.filter(id=subscriber.id).exists() or subscriber.id == self.id

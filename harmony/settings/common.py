@@ -163,6 +163,7 @@ INSTALLED_APPS = (
     # Internal Apps
     'apps.accounts',
     'apps.exercises',
+    'apps.dashboard',
     'lab',
     'lti_tool',
     'jasmine',
@@ -173,7 +174,9 @@ INSTALLED_APPS = (
     'prettyjson',
     'django_tables2',
     'ckeditor',
-    'ckeditor_uploader'
+    'ckeditor_uploader',
+    'bootstrap4',
+    'widget_tweaks'
     # 'django_openid_auth',
 )
 
@@ -232,7 +235,7 @@ REQUIREJS_DEBUG, REQUIREJS_CONFIG = requirejs.configure(ROOT_DIR, STATIC_URL)
 
 LTI_OAUTH_CREDENTIALS = {"harmonykey": "harmonysecret"}
 
-DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap.html"
+DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap4.html"
 
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {

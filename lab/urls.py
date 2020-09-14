@@ -1,6 +1,4 @@
-from django.contrib.auth.decorators import permission_required
 from django.urls import re_path, path
-from django.views.generic import TemplateView
 
 from apps.exercises.views import playlist_performance_view, submit_exercise_performance, submit_playlist_performance
 from lti_tool.views import LTIToolConfigView, LTILaunchView

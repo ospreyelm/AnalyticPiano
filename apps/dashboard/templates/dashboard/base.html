@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="{{ STATIC_URL }}css/ionicons-needed.css" type="text/css" rel="stylesheet"/>
+    <link href="{{ STATIC_URL }}css/harmony.css" type="text/css" rel="stylesheet"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ STATIC_URL }}apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ STATIC_URL }}favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ STATIC_URL }}favicon-16x16.png">
+    <link rel="manifest" href="{{ STATIC_URL }}site.webmanifest">
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}django_tables2/themes/paleblue/css/screen.css"/>
+    {% block css_extra %}{% endblock %}
+</head>
+<body>
+
+{% block content %}{% endblock %}
+
+{% block js_require %}
+
+{#    {% autoescape off %}#}
+{#        <script src="{{ STATIC_URL }}js/lib/require.js"></script>#}
+{#        <script>requirejs.config({enforceDefine: true, waitSeconds: 0});</script>#}
+{#        <script>requirejs.config({{ requirejs.config_json }});</script>#}
+{#        <script>window.appStaticUrl = '{{ STATIC_URL }}';</script>#}
+{#        {% if requirejs.debug %}#}
+{#            <script>requirejs.config({'urlArgs': 't=' + (new Date().getTime())});</script>{% endif %}#}
+{#    {% endautoescape %}#}
+
+{% endblock %}
+
+{% block js_extra %}{% endblock %}
+
+{#<!-- {% include "_googleanalytics.html" %} -->#}
+</body>
+</html>
