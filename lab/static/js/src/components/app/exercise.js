@@ -79,7 +79,8 @@ define([
 		models.exerciseContext = new ExerciseContext({
 			inputChords: models.inputChords,
 			grader: models.exerciseGrader,
-			definition: models.exerciseDefinition
+			definition: models.exerciseDefinition,
+			exercise: this
 		});
 		models.keySignature = new KeySignature(models.exerciseDefinition.getKey(), models.exerciseDefinition.getKeySignature());
 		return models;

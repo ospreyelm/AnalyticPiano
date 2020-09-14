@@ -5,6 +5,7 @@ define([
     './exercise_chord',
     './exercise_chord_bank',
     'app/config',
+    'app/components/events',
     'simple-statistics.min'
 ], function(
     _,
@@ -13,6 +14,7 @@ define([
     ExerciseChord,
     ExerciseChordBank,
     Config,
+    EVENTS,
     SimpleStatistics
 ) {
 
@@ -51,6 +53,7 @@ define([
         this.definition = this.settings.definition;
         this.grader = this.settings.grader;
         this.inputChords = this.settings.inputChords;
+        this.exercise = this.settings.exercise;
 
         this.state = ExerciseContext.STATE.READY;
         this.graded = false;
@@ -655,12 +658,10 @@ define([
          * @return undefined
          */
         goToNextExercise: function() {
-            console.log('call of goToNextExercise');
-            // Duplicate effect of this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE) in music_controls.js
+            this.exercise.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
         },
         reloadExercise: function() {
-            console.log('call of reloadExercise');
-            // Duplicate effect of this.broadcast(EVENTS.BROADCAST.PRISTINE) in music_controls.js
+            this.exercise.broadcast(EVENTS.BROADCAST.PRISTINE);
         },
         /**
          * Returns true if the trigger notes are played together on the
