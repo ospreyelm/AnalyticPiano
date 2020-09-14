@@ -150,9 +150,6 @@ define([
                 /* exercise view */
                 let scex = sheetComponent.exerciseContext;
 
-                scex.inputChords.clear();
-                scex.inputChords.goTo(0);
-
                 let setdef = scex.settings.definition;
 
                 // The following was used to generate newData as we built this function
@@ -178,7 +175,10 @@ define([
                         }
                     });
 
-                    if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
+                    if (!Object.keys(newData).length) {
+                        console.log('Error reloading exercise data!');
+                        return null;
+                    }
 
                 } else if (exerciseAction === 'next') {
 
@@ -197,7 +197,10 @@ define([
                         }
                     });
 
-                    if (!Object.keys(newData).length) console.log('No next exercise; end of playlist');
+                    if (!Object.keys(newData).length) {
+                        console.log('No next exercise; end of playlist');
+                        return null;
+                    }
 
                 } else if (exerciseAction === 'previous') {
 
@@ -216,7 +219,10 @@ define([
                         }
                     });
 
-                    if (!Object.keys(newData).length) console.log('No previous exercise; start of playlist');
+                    if (!Object.keys(newData).length) {
+                        console.log('No previous exercise; start of playlist');
+                        return null;
+                    }
 
                 } else if (exerciseAction === 'first') {
 
@@ -235,9 +241,16 @@ define([
                         }
                     });
 
-                    if (!Object.keys(newData).length) console.log('Cannot find first exercise; error');
+                    if (!Object.keys(newData).length) {
+                        console.log('Error finding first exercise!');
+                        return null;
+                    }
 
                 }
+
+                scex.inputChords.clear();
+                scex.inputChords.goTo(0);
+
                 if (Object.keys(newData).length) {
 
                     scex.definition.exercise
@@ -258,7 +271,6 @@ define([
                     sheetComponent.settings.keySignature
                         = new KeySignature(newData.key, newData.keySignature);
 
-                    // DOES NOT HAVE EXPECTED EFFECT
                     this.settings.staffDistribution
                         = newData.staffDistribution;
 

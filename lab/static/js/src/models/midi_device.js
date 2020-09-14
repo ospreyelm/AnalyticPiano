@@ -241,9 +241,10 @@ define([
 			var accidental = note.accidental();
 			if (msg[0] == 144) { /* note on, channel 1 */
 				polySynth.triggerAttack(note.name() + accidental + note.octave());    
-			}
-			if (msg[0] == 128) { /* note off, channel 1 */
+			} else if (msg[0] == 128) { /* note off, channel 1 */
 				polySynth.triggerRelease(note.name() + accidental + note.octave());
+			} else {
+				// console.log(msg);
 			}
 		}
 	};

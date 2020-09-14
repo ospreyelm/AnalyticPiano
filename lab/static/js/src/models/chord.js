@@ -263,8 +263,11 @@ define([
 			var _sustained = this._sustained;
 			var changed = false;
 
+			let notes_to_turn_off = [];
+
 			_.each(_sustained, function(state, noteNumber) {
 				if(_notes[noteNumber] !== state) {
+					notes_to_turn_off.push(noteNumber);
 					_notes[noteNumber] = state;
 					changed = true;
 				}
@@ -275,6 +278,8 @@ define([
 			if(changed) {
 				this.trigger('change');
 			}
+
+			return notes_to_turn_off;
 		},
 		/**
 		 * Returns true if notes are being sustained, false otherwise.

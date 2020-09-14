@@ -266,40 +266,38 @@ define([
 			// the pedal is released and other values when it is depressed.
 		
 			if(pedal_name == 'sustain') {
-				if(controlVal >= 50 && !SUSTAINING) {
+				if (!SUSTAINING && controlVal >= 50) {
 					SUSTAINING = true;
 					pedal_state = 'on';
-				} else if(controlVal == 0 && SUSTAINING) {
+				} else if (SUSTAINING && controlVal == 0) {
 					SUSTAINING = false;
 					pedal_state = 'off';
 				} else {
 					pedal_state = 'null';
 				};
 			}
-			else if(pedal_name == 'soft') {
-				if(controlVal >= 50 && !UNA_CORDA_ON) {
+			else if (pedal_name == 'soft') {
+				if (!UNA_CORDA_ON && controlVal >= 50) {
 					UNA_CORDA_ON = true;
 					pedal_state = 'on';
-				} else if(controlVal == 0 && UNA_CORDA_ON) {
+				} else if (UNA_CORDA_ON && controlVal == 0) {
 					UNA_CORDA_ON = false;
 					pedal_state = 'off';
 				} else {
 					pedal_state = 'null';
 				};
 			}
-			else if(pedal_name == 'sostenuto') {
-				if(controlVal >= 50 && !SOSTENUTO_ON) {
+			else if (pedal_name == 'sostenuto') {
+				if (!SOSTENUTO_ON && controlVal >= 50) {
 					SOSTENUTO_ON = true;
-					pedal_state = 'on';
-					// ExerciseContext.goToNextExercise();
-					window.location.reload();
-				} else if(controlVal == 0 && SOSTENUTO_ON) {
+					// pedal_state = 'on';
+					this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
+				} else if (SOSTENUTO_ON && controlVal == 0) {
 					SOSTENUTO_ON = false;
-					pedal_state = 'off';
+					// pedal_state = 'off';
 				} else {
-					pedal_state = 'null';
+					// pedal_state = 'null';
 				};
-				// pedal_state = 'null'; // using to advance exercise
 			}
 			else { pedal_state = 'null' };
 
@@ -393,7 +391,11 @@ define([
 			var channel_idx = this.midiChannel - 1;
 			var command = (noteState === 'on' ? MIDI_MSG_MAP.NOTE_ON[channel_idx] : MIDI_MSG_MAP.NOTE_OFF[channel_idx]);
 			this.toggleNote(noteState, noteNumber, extra);
-			this.sendMIDIMessage(command, noteNumber, this.noteVelocity);
+			if (SUSTAINING && noteState === 'off') {
+				// will be turned off by onPedalChange when sustain is released
+			} else {
+				this.sendMIDIMessage(command, noteNumber, this.noteVelocity);
+			}
 		},
 		/**
 		 * Clears all notes that are sounding.
@@ -436,10 +438,19 @@ define([
 						chord.sustainNotes();
 						this.chords.bank();// why is this not clearable?
 						this.sendMIDIPedalMessage(pedal, state);
+						SUSTAINING = true;
 					} else if (state === 'off') {
 						chord.releaseSustain();
-						chord.syncSustainedNotes();
+						/* critical side-effect */
+						var notes_off = chord.syncSustainedNotes();
+						var i, len;
+						for (i = 0, len = notes_off.length; i < len; i++) {
+							let channel_idx = this.midiChannel - 1;
+							let command = MIDI_MSG_MAP.NOTE_OFF[channel_idx];
+							this.sendMIDIMessage(command, notes_off[i], 0);
+						}
 						this.sendMIDIPedalMessage(pedal, state);
+						SUSTAINING = false;
 					} else {}
 					break;
 				default:
@@ -504,8 +515,8 @@ define([
 			var command = MIDI_MSG_MAP.CONTROL_CHANGE;
 			var controlNumber = MIDI_CONTROL_MAP.pedal[pedal];
 			var controlValue = (state === 'off' ? 0 : 127);
-			this.sendMIDIMessage(command, 64, 127, 1);
-			// this.sendMIDIMessage(command, controlNumber, controlValue, this.midiChannel);
+			// this.sendMIDIMessage(command, 64, 127, 1);
+			this.sendMIDIMessage(command, controlNumber, controlValue, this.midiChannel);
 		}
 	});
 
