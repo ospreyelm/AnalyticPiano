@@ -5,7 +5,7 @@ define([
     './exercise_chord',
     './exercise_chord_bank',
     'app/config',
-	'app/components/events',
+    'app/components/events',
     'simple-statistics.min'
 ], function(
     _,
@@ -14,7 +14,7 @@ define([
     ExerciseChord,
     ExerciseChordBank,
     Config,
-	EVENTS,
+    EVENTS,
     SimpleStatistics
 ) {
 
@@ -658,10 +658,10 @@ define([
          * @return undefined
          */
         goToNextExercise: function() {
-			this.exercise.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
+            this.exercise.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
         },
         reloadExercise: function() {
-			this.exercise.broadcast(EVENTS.BROADCAST.PRISTINE);
+            this.exercise.broadcast(EVENTS.BROADCAST.PRISTINE);
         },
         /**
          * Returns true if the trigger notes are played together on the
