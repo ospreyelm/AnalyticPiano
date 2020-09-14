@@ -266,40 +266,38 @@ define([
 			// the pedal is released and other values when it is depressed.
 		
 			if(pedal_name == 'sustain') {
-				if(controlVal >= 50 && !SUSTAINING) {
+				if (!SUSTAINING && controlVal >= 50) {
 					SUSTAINING = true;
 					pedal_state = 'on';
-				} else if(controlVal == 0 && SUSTAINING) {
+				} else if (SUSTAINING && controlVal == 0) {
 					SUSTAINING = false;
 					pedal_state = 'off';
 				} else {
 					pedal_state = 'null';
 				};
 			}
-			else if(pedal_name == 'soft') {
-				if(controlVal >= 50 && !UNA_CORDA_ON) {
+			else if (pedal_name == 'soft') {
+				if (!UNA_CORDA_ON && controlVal >= 50) {
 					UNA_CORDA_ON = true;
 					pedal_state = 'on';
-				} else if(controlVal == 0 && UNA_CORDA_ON) {
+				} else if (UNA_CORDA_ON && controlVal == 0) {
 					UNA_CORDA_ON = false;
 					pedal_state = 'off';
 				} else {
 					pedal_state = 'null';
 				};
 			}
-			else if(pedal_name == 'sostenuto') {
-				if(controlVal >= 50 && !SOSTENUTO_ON) {
+			else if (pedal_name == 'sostenuto') {
+				if (!SOSTENUTO_ON && controlVal >= 50) {
 					SOSTENUTO_ON = true;
-					pedal_state = 'on';
-					// ExerciseContext.goToNextExercise();
-					window.location.reload();
-				} else if(controlVal == 0 && SOSTENUTO_ON) {
+					// pedal_state = 'on';
+					this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
+				} else if (SOSTENUTO_ON && controlVal == 0) {
 					SOSTENUTO_ON = false;
-					pedal_state = 'off';
+					// pedal_state = 'off';
 				} else {
-					pedal_state = 'null';
+					// pedal_state = 'null';
 				};
-				// pedal_state = 'null'; // using to advance exercise
 			}
 			else { pedal_state = 'null' };
 
