@@ -27,10 +27,13 @@ define([
 				'<legend><label><input type="checkbox" name="analysis_enabled" value="1" accesskey="a"> ANALYZE</label></legend>',
 				'<ul>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony</label>',
+					'<label><input type="checkbox" name="analysis_note_names" value="note_names" accesskey="l"> Letters</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_intervals" value="intervals" accesskey="i"> Intervals</label>',	
+					'<label><input type="checkbox" name="analysis_scientific_pitch" value="scientific_pitch" accesskey="s"> Scientific pitch</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_fixed_do" value="fixed_do" accesskey="f"> Fixed-do</label>',
 				'</li>',
 				'<li>',
 					'<label><input type="checkbox" name="analysis_degrees" value="scale_degrees" accesskey="d"> Degrees</label>',
@@ -39,13 +42,13 @@ define([
 					'<label><input type="checkbox" name="analysis_solfege" value="solfege"  accesskey="m"> Movable-do</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_letters" value="note_names" accesskey="l"> Letters</label>',
+					'<label><input type="checkbox" name="analysis_intervals" value="intervals" accesskey="i"> Intervals</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_scientific_pitch" value="scientific_pitch" accesskey="s"> Scientific pitch</label>',
+					'<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G)</label>',
+					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G) as harmony</label>',
 				'</li>',
 				'<li>',
 					'<label><input type="checkbox" name="analysis_abbreviate_thoroughbass" value="abbreviate_thoroughbass" accesskey="v"> Abbreviate figured bass (V)</label>',
@@ -78,38 +81,74 @@ define([
 				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
 				document.getElementById('staff').focus();
 			},
+			/* FIX ME: the next three functions are identical; consolidate them */
 			analysis_scientific_pitch: function(e) {
-				var opt = e.target.value;
-				this.state.mode[opt] = e.target.checked;
-				var altBox = 'analysis_letters';
-				var altOpt = 'note_names';
-				if (this.state.mode[opt] === true && document.getElementsByName(altBox)[0].checked === false){
-					this.trigger('changeOption', 'analyze', opt, true);
-				}else if (this.state.mode[opt] === true && document.getElementsByName(altBox)[0].checked === true){
-					document.getElementsByName(altBox)[0].checked = false;
-					this.trigger('changeOption', 'analyze', opt, true);
-					this.trigger('changeOption', 'analyze', altOpt, false);
-				}else if (this.state.mode[opt] === false){
-					this.trigger('changeOption', 'analyze', opt, false);
-				}else {
-					alert('ERROR');
+				let sel = e.target.value;
+				this.state.mode[sel] = e.target.checked;
+
+				var opts = ['scientific_pitch', 'fixed_do', 'note_names'];
+				if (!opts.includes(sel)) {
+					console.log("Error");
+					return null;
+				}
+
+				if (this.state.mode[sel] === true) {
+					this.trigger('changeOption', 'analyze', sel, true);
+					var i, len;
+					for (var i = 0, len = opts.length; i < len; i++) {
+						let opt = opts[i];
+						if (opt === sel) continue;
+						document.getElementsByName('analysis_' + opt)[0].checked = false;
+						this.trigger('changeOption', 'analyze', opt, false);
+					}
+				} else if (this.state.mode[sel] === false) {
+					this.trigger('changeOption', 'analyze', sel, false);
 				}
 			},
-			analysis_letters: function(e) {
-				var opt = e.target.value;
-				this.state.mode[opt] = e.target.checked;
-				var altBox = 'analysis_scientific_pitch';
-				var altOpt = 'scientific_pitch';
-				if (this.state.mode[opt] === true && document.getElementsByName(altBox)[0].checked === false){
-					this.trigger('changeOption', 'analyze', opt, true);
-				}else if (this.state.mode[opt] === true && document.getElementsByName(altBox)[0].checked === true){
-					document.getElementsByName(altBox)[0].checked = false;
-					this.trigger('changeOption', 'analyze', opt, true);
-					this.trigger('changeOption', 'analyze', altOpt, false);
-				}else if (this.state.mode[opt] === false){
-					this.trigger('changeOption', 'analyze', opt, false);
-				}else {
-					alert('ERROR');
+			analysis_note_names: function(e) {
+				let sel = e.target.value;
+				this.state.mode[sel] = e.target.checked;
+
+				var opts = ['scientific_pitch', 'fixed_do', 'note_names'];
+				if (!opts.includes(sel)) {
+					console.log("Error");
+					return null;
+				}
+
+				if (this.state.mode[sel] === true) {
+					this.trigger('changeOption', 'analyze', sel, true);
+					var i, len;
+					for (var i = 0, len = opts.length; i < len; i++) {
+						let opt = opts[i];
+						if (opt === sel) continue;
+						document.getElementsByName('analysis_' + opt)[0].checked = false;
+						this.trigger('changeOption', 'analyze', opt, false);
+					}
+				} else if (this.state.mode[sel] === false) {
+					this.trigger('changeOption', 'analyze', sel, false);
+				}
+			},
+			analysis_fixed_do: function(e) {
+				let sel = e.target.value;
+				this.state.mode[sel] = e.target.checked;
+
+				var opts = ['scientific_pitch', 'fixed_do', 'note_names'];
+				if (!opts.includes(sel)) {
+					console.log("Error");
+					return null;
+				}
+
+				if (this.state.mode[sel] === true) {
+					this.trigger('changeOption', 'analyze', sel, true);
+					var i, len;
+					for (var i = 0, len = opts.length; i < len; i++) {
+						let opt = opts[i];
+						if (opt === sel) continue;
+						document.getElementsByName('analysis_' + opt)[0].checked = false;
+						this.trigger('changeOption', 'analyze', opt, false);
+					}
+				} else if (this.state.mode[sel] === false) {
+					this.trigger('changeOption', 'analyze', sel, false);
 				}
 			},
 			analysis_solfege: function(e) {

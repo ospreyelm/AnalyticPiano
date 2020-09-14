@@ -291,6 +291,19 @@ define([
 				ctx.fillText(note_name, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
 		},
+		drawFixedDo: function(x, y) { // mostly copied from drawNoteName
+			var ctx = this.getContext();
+			var notes = this.chord.getNoteNumbers();
+			var note_name = this.getAnalyzer().to_fixed_do(notes);
+			var cFont = ctx.font;
+			var fontArgs = ctx.font.split(' ');
+			var newSize = '20px';
+			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
+
+			if(note_name !== '' && notes.length >= 1) {
+				ctx.fillText(note_name, x + StaveNotater.prototype.annotateOffsetX, y);
+			}
+		},
 		/**
 		 * Draws the name of a note in helmholtz pitch notation.
 		 *
@@ -817,8 +830,10 @@ define([
 					this.drawSolfege(x, first_row);
 				}
 
-				if(mode.note_names && !mode.helmholtz) {
+				if(mode.note_names) {
 					this.drawNoteName(x, second_row);
+				} else if (mode.fixed_do) {
+					this.drawFixedDo(x, second_row);
 				} else if(notes.length === 1 && mode.scientific_pitch && !mode.note_names) {
 					this.drawScientificPitch(x, second_row);
 				}

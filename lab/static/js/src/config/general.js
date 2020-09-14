@@ -34,6 +34,7 @@ define({
 			
 			/* max one of the following may be true */
 			note_names: false,
+			fixed_do: false,
 			scientific_pitch: true,
 
 			/* max one of the following may be true */

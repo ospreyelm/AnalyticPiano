@@ -65,6 +65,7 @@ define([
 			var supported = [
 				"intervals",
 				"note_names",
+				"fixed_do",
 				"roman_numerals",
 				"scale_degrees",
 				"scientific_pitch",
@@ -182,6 +183,7 @@ define([
 			var analyze_funcs = {
 				"intervals": "to_interval",
 				"note_names": "to_note_name",
+				"fixed_do": "to_fixed_do",
 				"roman_numerals": "to_chord",
 				"scale_degrees": "to_scale_degree",
 				"scientific_pitch": "getNoteName",
@@ -192,6 +194,7 @@ define([
 			var analyze_props = {
 				"intervals": ".name", // ok
 				"note_names": "", // ok
+				"fixed_do": "", // ok
 				"roman_numerals": ".label", // ok
 				"scale_degrees": "", // ok
 				"scientific_pitch": "", // ok
