@@ -248,6 +248,7 @@ define([
 
                 }
 
+                this.broadcast(EVENTS.BROADCAST.CLEAR_NOTES); // rough fix for stuck notes on exercise advance
                 scex.inputChords.clear();
                 scex.inputChords.goTo(0);
 
