@@ -84,6 +84,10 @@ define([
 				actual_notes = [];
 				if(chords[i]) {
 					actual_notes = chords[i].getNoteNumbers();
+					const dummy_idx = actual_notes.indexOf(109);
+					if (dummy_idx > -1) {
+						actual_notes.splice(dummy_idx, 1);
+					}
 				}
 				switch (definition.exercise.type) {
 					case "matching":
