@@ -307,7 +307,7 @@ define([
                 window.console.dir('send dummy note');
                 this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
                 this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
-                this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off');
+                this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off', 'refresh');
 
                 scex.state = "ready"; // READY
             }

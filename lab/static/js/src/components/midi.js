@@ -442,13 +442,19 @@ define([
 		 * @return undefined
 		 */
 		onPedalChange: function(pedal, state, request_origin) {
+			if (request_origin === 'refresh') {
+				this.sendMIDIPedalMessage(pedal, state);
+				SUSTAINING = false;
+				return;
+			}
+
 			var chord = this.chords.current();
 			switch(pedal) {
 				case 'soft':
 					this.noteVelocity = (state === 'off' ? DEFAULT_NOTE_VELOCITY : SOFT_NOTE_VELOCITY);
 					break;
 				case 'sustain':
-					if(state==='on') {
+					if (state === 'on') {
 						chord.sustainNotes();
 						if (request_origin !== 'ui') {
 							this.chords.bank();
