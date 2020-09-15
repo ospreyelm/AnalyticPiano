@@ -460,10 +460,15 @@ define([
 						/* critical side-effect */
 						var notes_off = chord.syncSustainedNotes();
 						this.turnOffSustainedNotesOnPedalLift(notes_off);
+
 						// also turn off notes not being sustained that match the most recently banked
+						chord = this.chords.previous();
+						notes_off = chord.syncSustainedNotes(chord);
+						this.turnOffSustainedNotesOnPedalLift(notes_off);
+
 						this.sendMIDIPedalMessage(pedal, state);
 						SUSTAINING = false;
-					} else {}
+					}
 					break;
 				default:
 					break;

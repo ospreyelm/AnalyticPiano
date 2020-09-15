@@ -258,8 +258,8 @@ define([
 		 *
 		 * @returns {boolean}
 		 */
-		syncSustainedNotes: function() {
-			var _notes = this._notes;
+		syncSustainedNotes: function(notes = false) {
+			var _notes = (notes ? notes : this._notes);
 			var _sustained = this._sustained;
 			var changed = false;
 

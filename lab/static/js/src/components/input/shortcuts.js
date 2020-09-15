@@ -248,7 +248,7 @@ define([
 		 * @return undefined
 		 */
 		releaseSustain: function(state) {
-			this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off');
+			this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off', 'ui');
 			SUSTAINING = false;
 		},
 		/**

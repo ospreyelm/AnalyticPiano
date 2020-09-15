@@ -196,6 +196,9 @@ define([
 		current: function() {
 			return this._items[0];
 		},
+		previous: function() {
+			return this._items[1] || false;
+		},
 		/*
 		 * Functions for isNovel calculation. HELP!!!
 		 */
