@@ -250,7 +250,6 @@ define([
 
                 // rough fix for stuck notes on exercise advance
                 this.broadcast(EVENTS.BROADCAST.CLEAR_NOTES);
-                this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off', 'refresh');
 
                 scex.inputChords.clear();
                 scex.inputChords.goTo(0);
@@ -308,6 +307,7 @@ define([
                 window.console.dir('send dummy note');
                 this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
                 this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
+                this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off');
 
                 scex.state = "ready"; // READY
             }
