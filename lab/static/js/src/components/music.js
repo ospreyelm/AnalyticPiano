@@ -304,9 +304,9 @@ define([
                 scex.timer = null;
                 scex.timepoints = [];
 
-                // window.console.dir('send dummy note');
-                // this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 1);
-                // this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
+                window.console.dir('send dummy note');
+                this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 1);
+                this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
                 this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off', 'refresh');
 
                 scex.state = "ready"; // READY
