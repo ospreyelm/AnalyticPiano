@@ -41,17 +41,36 @@ define([
 		  polySynth.releaseAll();
 		}})
 	
-
+		function myFunction() {
+			// Get the checkbox
+			var checkBox = document.getElementById("myCheck");
+			// Get the output text
+			var text = document.getElementById("text");
+		  
+			// If the checkbox is checked, display the output text
+			if (checkBox.checked == true){
+			  text.style.display = "block";
+			} else {
+			  text.style.display = "none";
+			}
+		  }
 	All_Notes_Off = document.getElementById("all-notes-off");
 	All_Notes_Off.addEventListener("mousedown", function(){
 		  polySynth.releaseAll();
 	})
 
-	var vol = new Tone.Volume(-12).toMaster();
+	var slider = document.getElementById("myRange");
+	var vol = new Tone.Volume(slider.value).toMaster();
 	var polySynth = new Tone.PolySynth(10, Tone.FMSynth);
 	polySynth.connect(vol);
-	var lastTiming = 0;
+	// var lastTiming = 0;
 	
+	slider.oninput = function() {
+		console.log(parseInt(this.value));
+		polySynth.volume.value = parseInt(this.value);
+	}
+	  
+
 	function AllNotesOff() {
 		polySynth.releaseAll();
 	}
@@ -239,6 +258,7 @@ define([
 		} else { /* synth output */
 			var note = teoria.note.fromMIDI(msg[1]); /* convert MIDI number to pitch name */
 			var accidental = note.accidental();
+			console.log(polySynth)
 			if (msg[0] == 144) { /* note on, channel 1 */
 				polySynth.triggerAttack(note.name() + accidental + note.octave());    
 			} else if (msg[0] == 128) { /* note off, channel 1 */
