@@ -32,31 +32,31 @@ define([
 	/**
 	 * Initialize parameters for Tone.js
 	 */
-	document.documentElement.addEventListener("mousedown", function(){
-		mouse_IsDown = true;
-		if (Tone.context.state !== 'running') {
-			document.getElementById('audio-context').innerHTML = "Audio On"
-			Tone.context.resume();
-			polySynth.releaseAll();
-		}
-	})
+	document.documentElement.addEventListener(
+		"mousedown", function(){
+		  mouse_IsDown = true;
+		  if (Tone.context.state !== 'running') {
+		  document.getElementById('audio-context').innerHTML = "Audio On"
+		  Tone.context.resume();
+		  polySynth.releaseAll();
+		}})
 	
-	function myFunction() {
-		// Get the checkbox
-		var checkBox = document.getElementById("myCheck");
-		// Get the output text
-		var text = document.getElementById("text");
-
-		// If the checkbox is checked, display the output text
-		if (checkBox.checked == true){
-			text.style.display = "block";
-		} else {
-			text.style.display = "none";
-		}
-	}
+		function myFunction() {
+			// Get the checkbox
+			var checkBox = document.getElementById("myCheck");
+			// Get the output text
+			var text = document.getElementById("text");
+		  
+			// If the checkbox is checked, display the output text
+			if (checkBox.checked == true){
+			  text.style.display = "block";
+			} else {
+			  text.style.display = "none";
+			}
+		  }
 	All_Notes_Off = document.getElementById("all-notes-off");
 	All_Notes_Off.addEventListener("mousedown", function(){
-		polySynth.releaseAll();
+		  polySynth.releaseAll();
 	})
 
 	var slider = document.getElementById("myRange");
@@ -69,6 +69,7 @@ define([
 		console.log(parseInt(this.value));
 		polySynth.volume.value = parseInt(this.value);
 	}
+	  
 
 	function AllNotesOff() {
 		polySynth.releaseAll();
