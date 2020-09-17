@@ -16,8 +16,7 @@
         <li><button id="all-notes-off" >All Notes Off</button></li>
         <li><div class="slidecontainer">
             <input type="range" min="-50" max="0" value="-12" class="slider" id="myRange">
-          </div>
-          </li>
+        </div></li>
         {% if user.is_authenticated %}
             <li>Logged in as: {{ user.email }}</li>
         {% endif %}
