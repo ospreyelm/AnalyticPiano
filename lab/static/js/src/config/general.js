@@ -30,7 +30,7 @@ define({
 	analysisSettings: {
 		enabled: true,
 		mode: {
-			abbreviate_thoroughbass: true,
+			abbreviate_thoroughbass: false,
 			
 			/* max one of the following may be true */
 			note_names: true,
@@ -43,7 +43,7 @@ define({
 
 			thoroughbass: false,
 			roman_numerals: true,
-			intervals: true
+			intervals: false
 		}
 	},
 
