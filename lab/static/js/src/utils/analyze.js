@@ -313,13 +313,13 @@ var spellingAndAnalysisFunctions = {
     },
     to_fixed_do: function(notes) {
         return this.to_note_name(notes)
-            .replace(/A/g,'La')
-            .replace(/B/g,'Si')
-            .replace(/C/g,'Do')
-            .replace(/D/g,'Re')
-            .replace(/E/g,'Mi')
-            .replace(/F/g,'Fa')
-            .replace(/G/g,'Sol');
+            .replace(/^A/g,'La')
+            .replace(/^B/g,'Si')
+            .replace(/^D/g,'Re')
+            .replace(/^C/g,'Do')
+            .replace(/^E/g,'Mi')
+            .replace(/^F/g,'Fa')
+            .replace(/^G/g,'Sol');
     },
     to_helmholtz: function (note) {
         var noteParts = note.split('/');
