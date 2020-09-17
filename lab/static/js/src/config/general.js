@@ -12,7 +12,7 @@ define({
 	defaultNoteColor: "rgb(180,180,180)", /* gray */
 	defaultRhythmValue: "w", /* whole note (semibreve) */
 	chordBank: {displaySize:9}, /* number of chords spread across the sheet music */
-	defaultKeyAndSignature: "h",
+	defaultKeyAndSignature: "jC_",
 	metronomeSettings: {defaultTempo:40,maxTempo:360},
 	bankAfterMetronomeTick: 0.25, /* fraction of beat */
 	keyboardShortcutsEnabled: true,
@@ -33,15 +33,15 @@ define({
 			abbreviate_thoroughbass: true,
 			
 			/* max one of the following may be true */
-			note_names: true,
+			note_names: false,
 			fixed_do: false,
-			scientific_pitch: false,
+			scientific_pitch: true,
 
 			/* max one of the following may be true */
-			scale_degrees: false,
+			scale_degrees: true,
 			solfege: false,
 
-			thoroughbass: false,
+			thoroughbass: true,
 			roman_numerals: true,
 			intervals: true
 		}
@@ -50,10 +50,10 @@ define({
 	highlightSettings: {
 		enabled: true,
 		mode: {
-			roothighlight: true,
-			tritonehighlight: true,
-			doublinghighlight: false,
-			modalmixturehighlight: false, /* minor mixture in a major key */
+			roothighlight: false,
+			tritonehighlight: false,
+			doublinghighlight: true,
+			modalmixturehighlight: true, /* minor mixture in a major key */
 			loweredhighlight: false, /* shifted flatwise enharmonically */
 			solobass: false,
 			octaveshighlight: false /* not recommended, hidden from UI */
