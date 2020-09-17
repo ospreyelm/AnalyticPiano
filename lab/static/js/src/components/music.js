@@ -28,7 +28,16 @@ define([
      */
     var HIGHLIGHT_SETTINGS = Config.get('general.highlightSettings');
 
-    var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
+    var getUrlVars = function() {
+        var vars = {};
+        var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+            vars[key] = value;
+        });
+        return vars;
+    };
+    console.log(getUrlVars());
+
+    var STAFF_DISTRIBUTION = (getUrlVars().hasOwnProperty('staffDistribution') && ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias","keyboardPlusLHBias"].includes(getUrlVars()['staffDistribution']) ? getUrlVars()['staffDistribution'] : Config.get('general.staffDistribution'));
 
     /**
      * Creates an instance of MusicComponent.
