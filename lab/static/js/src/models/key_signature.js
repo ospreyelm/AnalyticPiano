@@ -128,8 +128,8 @@ define([
 			}
 		},
 		/**
-		 * Change the key value. When lock is true, sets the signature to match
-		 * the key.
+		 * Change the key. When lock is true, also changes the staff signature
+		 * to match.
 		 *
 		 * @param {string} key
 		 * @param {boolean} lock
@@ -147,8 +147,8 @@ define([
 			this.trigger('change');
 		},
 		/**
-		 * Change the signature key value. When lock is true, sets the key to
-		 * match the signature.
+		 * Change the staff signature. When lock is true and key is not note,
+		 * also changes the key to match.
 		 *
 		 * @param {string} keyOfSignature
 		 * @param {boolean} lock
@@ -159,7 +159,7 @@ define([
 		changeSignatureKey: function(keyOfSignature, lock) {
 			this.setKeyOfSignature(keyOfSignature);
 			this.setSignature(this.keyToSignature(keyOfSignature));
-			if(lock) {
+			if(lock && this.getKey() !== "h") {
 				this.setKey(keyOfSignature);
 			}
 			this.lock = lock;
