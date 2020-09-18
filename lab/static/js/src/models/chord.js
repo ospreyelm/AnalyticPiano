@@ -544,7 +544,7 @@ define([
 			&& VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)
 			&& this.getSortedNotes().slice(1).includes(midi)) { // not lowest note
 				return clef == (midi < low_threshold ? 'bass' : 'treble');
-			} else if (STAFF_DISTRIBUTION === 'grandstaff') {
+			} else if (STAFF_DISTRIBUTION === 'grandStaff') {
 				return clef == (midi < mid_threshold ? 'bass' : 'treble');
 			} else if (STAFF_DISTRIBUTION === 'keyboard'
 			&& !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)) {
