@@ -543,6 +543,10 @@ define([
                     return (selected < 0 && current.selected) ? index : selected;
                 },-1);
 
+            if (! this.definition.getExerciseList()[idx] ) {
+                return null;
+            }
+
             var report = {
                 performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
                 exercise_ID: this.definition.getExerciseList()[idx].id || false,
@@ -570,6 +574,10 @@ define([
             
             let offset = new Date().getTimezoneOffset()
             let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
+
+            if (! this.definition.getExerciseList()[this.definition.getExerciseList().length - 1] ) {
+                return null;
+            }
             
             var report = {
                 performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
@@ -586,28 +594,30 @@ define([
             return report;
         },
         submitExerciseReport: function() {
-            if ( ! this.definition.getExerciseList() ) {
+            if (this.compileExerciseReport() == null) {
                 console.log( "Outisde of a playlist. No data submitted.")
                 return null;
             }
             // console.log( this.compileExerciseReport() );
+            const json_data = JSON.stringify(this.compileExerciseReport());
             $.ajax({
                 type: "POST",
                 url: 'exercise-performance',
-                data: {'data': JSON.stringify(this.compileExerciseReport())},
+                data: {'data': json_data},
                 dataType: 'json',
             });
         },
         submitPlaylistReport: function() {
-            if ( ! this.definition.getExerciseList() ) {
+            if (this.compilePlaylistReport() == null) {
                 console.log( "Outisde of a playlist. No data submitted.")
                 return null;
             }
             // console.log( this.compilePlaylistReport() );
+            const json_data = JSON.stringify(this.compilePlaylistReport());
             $.ajax({
                 type: "POST",
                 url: 'playlist-performance',
-                data: {'data': JSON.stringify(this.compilePlaylistReport())},
+                data: {'data': json_data},
                 dataType: 'json',
             });
         },
