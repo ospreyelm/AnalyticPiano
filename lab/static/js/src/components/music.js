@@ -28,7 +28,16 @@ define([
      */
     var HIGHLIGHT_SETTINGS = Config.get('general.highlightSettings');
 
-    var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
+    var getUrlVars = function() {
+        var vars = {};
+        var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+            vars[key] = value;
+        });
+        return vars;
+    };
+    console.log(getUrlVars());
+
+    var STAFF_DISTRIBUTION = (getUrlVars().hasOwnProperty('staffDistribution') && ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"].includes(getUrlVars()['staffDistribution']) ? getUrlVars()['staffDistribution'] : Config.get('general.staffDistribution'));
 
     /**
      * Creates an instance of MusicComponent.
@@ -248,6 +257,9 @@ define([
 
                 }
 
+                // rough fix for stuck notes on exercise advance
+                this.broadcast(EVENTS.BROADCAST.CLEAR_NOTES);
+
                 scex.inputChords.clear();
                 scex.inputChords.goTo(0);
 
@@ -304,6 +316,7 @@ define([
                 window.console.dir('send dummy note');
                 this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
                 this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
+                this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off', 'refresh');
 
                 scex.state = "ready"; // READY
             }

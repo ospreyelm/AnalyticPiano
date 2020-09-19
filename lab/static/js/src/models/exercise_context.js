@@ -543,15 +543,19 @@ define([
                     return (selected < 0 && current.selected) ? index : selected;
                 },-1);
 
+            if (! this.definition.getExerciseList()[idx] ) {
+                return null;
+            }
+
             var report = {
                 performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
-                exercise_ID: this.definition.getExerciseList()[idx].id || "",
-                time: new Date().toJSON().slice(0,16) || "",
-                timezone: timezone_str || "",
+                exercise_ID: this.definition.getExerciseList()[idx].id || false,
+                time: new Date().toJSON().slice(0,16) || false,
+                timezone: timezone_str || false,
                 exercise_error_tally: (["analytical", "figured_bass"].includes(this.definition.exercise.type) ? "n/a" : this.errorTally),
                 exercise_tempo_rating: (this.timer.tempoRating ? this.timer.tempoRating.length : 0), // 0 means unable to asses
-                exercise_mean_tempo: Math.round(this.timer.tempoMean) || "",
-                exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
+                exercise_mean_tempo: Math.round(this.timer.tempoMean) || false,
+                exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || false, /* seconds, sensitive to 1/10 */
             };
 
             // if (idx+1 === getExerciseList().length) {
@@ -570,6 +574,10 @@ define([
             
             let offset = new Date().getTimezoneOffset()
             let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
+
+            if (! this.definition.getExerciseList()[this.definition.getExerciseList().length - 1] ) {
+                return null;
+            }
             
             var report = {
                 performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
@@ -586,20 +594,30 @@ define([
             return report;
         },
         submitExerciseReport: function() {
+            if (this.compileExerciseReport() == null) {
+                console.log( "Outisde of a playlist. No data submitted.")
+                return null;
+            }
             // console.log( this.compileExerciseReport() );
+            const json_data = JSON.stringify(this.compileExerciseReport());
             $.ajax({
                 type: "POST",
                 url: 'exercise-performance',
-                data: {'data': JSON.stringify(this.compileExerciseReport())},
+                data: {'data': json_data},
                 dataType: 'json',
             });
         },
         submitPlaylistReport: function() {
+            if (this.compilePlaylistReport() == null) {
+                console.log( "Outisde of a playlist. No data submitted.")
+                return null;
+            }
             // console.log( this.compilePlaylistReport() );
+            const json_data = JSON.stringify(this.compilePlaylistReport());
             $.ajax({
                 type: "POST",
                 url: 'playlist-performance',
-                data: {'data': JSON.stringify(this.compilePlaylistReport())},
+                data: {'data': json_data},
                 dataType: 'json',
             });
         },

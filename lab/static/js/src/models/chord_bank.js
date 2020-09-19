@@ -121,10 +121,11 @@ define([
 
 			var chord = new Chord();
 			if (NO_DOUBLE_VISION === true) {
-			}else {
+			} else {
 				// copy the current chord
 				chord.copy(current);
-				chord.syncSustainedNotes();
+				/* critical side-effect */
+				var notes_off = chord.syncSustainedNotes();
 			}
 
 			// re-wires listeners to the current chord
@@ -134,6 +135,7 @@ define([
 
 			this.trigger('bank');
 
+			return notes_off;
 			// add novelty to false setting for better isNovel performance
 		},
 		/**
@@ -193,6 +195,9 @@ define([
 		 */
 		current: function() {
 			return this._items[0];
+		},
+		previous: function() {
+			return this._items[1] || false;
 		},
 		/*
 		 * Functions for isNovel calculation. HELP!!!

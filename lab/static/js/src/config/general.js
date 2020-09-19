@@ -6,13 +6,13 @@ define({
 	defaultKeyboardSize: 49, /* key count */
 	defaultOctaveAdjustment: 0,
 	maskTrebleStaff: false, /* copy this boolean as conditional on following line */
-	staffDistribution: (false ? "LH" : ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias","keyboardPlusLHBias"][0]),
+	staffDistribution: (false ? "LH" : ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"][0]),
 	voiceCountForKeyboardStyle: [2, 3, 4],
 	voiceCountForChoraleStyle: [4],
 	defaultNoteColor: "rgb(180,180,180)", /* gray */
 	defaultRhythmValue: "w", /* whole note (semibreve) */
 	chordBank: {displaySize:9}, /* number of chords spread across the sheet music */
-	defaultKeyAndSignature: "jC_",
+	defaultKeyAndSignature: "h",
 	metronomeSettings: {defaultTempo:40,maxTempo:360},
 	bankAfterMetronomeTick: 0.25, /* fraction of beat */
 	keyboardShortcutsEnabled: true,
@@ -30,29 +30,30 @@ define({
 	analysisSettings: {
 		enabled: true,
 		mode: {
-			abbreviate_thoroughbass: true,
+			abbreviate_thoroughbass: false,
 			
 			/* max one of the following may be true */
-			note_names: false,
-			scientific_pitch: true,
+			note_names: true,
+			fixed_do: false,
+			scientific_pitch: false,
 
 			/* max one of the following may be true */
-			scale_degrees: true,
+			scale_degrees: false,
 			solfege: false,
 
-			thoroughbass: true,
+			thoroughbass: false,
 			roman_numerals: true,
-			intervals: true
+			intervals: false
 		}
 	},
 
 	highlightSettings: {
 		enabled: true,
 		mode: {
-			roothighlight: false,
-			tritonehighlight: false,
-			doublinghighlight: true,
-			modalmixturehighlight: true, /* minor mixture in a major key */
+			roothighlight: true,
+			tritonehighlight: true,
+			doublinghighlight: false,
+			modalmixturehighlight: false, /* minor mixture in a major key */
 			loweredhighlight: false, /* shifted flatwise enharmonically */
 			solobass: false,
 			octaveshighlight: false /* not recommended, hidden from UI */

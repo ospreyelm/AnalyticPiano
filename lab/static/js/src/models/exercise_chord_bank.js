@@ -27,6 +27,12 @@ define([
 		return this._items[this._currentIndex];
 	};
 
+	proto.previous = function() {
+		return (this._items.length && this._items.length > 1
+			? this._items[this._currentIndex - 1]
+			: false);
+	};
+
 	// Override superclass method to be a no-op
 	proto.bank = function() {};
 

@@ -65,6 +65,7 @@ define([
 			var supported = [
 				"intervals",
 				"note_names",
+				"fixed_do",
 				"roman_numerals",
 				"scale_degrees",
 				"scientific_pitch",
@@ -83,6 +84,10 @@ define([
 				actual_notes = [];
 				if(chords[i]) {
 					actual_notes = chords[i].getNoteNumbers();
+					const dummy_idx = actual_notes.indexOf(109);
+					if (dummy_idx > -1) {
+						actual_notes.splice(dummy_idx, 1);
+					}
 				}
 				switch (definition.exercise.type) {
 					case "matching":
@@ -182,6 +187,7 @@ define([
 			var analyze_funcs = {
 				"intervals": "to_interval",
 				"note_names": "to_note_name",
+				"fixed_do": "to_fixed_do",
 				"roman_numerals": "to_chord",
 				"scale_degrees": "to_scale_degree",
 				"scientific_pitch": "getNoteName",
@@ -192,6 +198,7 @@ define([
 			var analyze_props = {
 				"intervals": ".name", // ok
 				"note_names": "", // ok
+				"fixed_do": "", // ok
 				"roman_numerals": ".label", // ok
 				"scale_degrees": "", // ok
 				"scientific_pitch": "", // ok

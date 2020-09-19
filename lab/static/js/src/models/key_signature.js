@@ -128,8 +128,8 @@ define([
 			}
 		},
 		/**
-		 * Change the key value. When lock is true, sets the signature to match
-		 * the key.
+		 * Change the key. When lock is true, also changes the staff signature
+		 * to match.
 		 *
 		 * @param {string} key
 		 * @param {boolean} lock
@@ -147,8 +147,8 @@ define([
 			this.trigger('change');
 		},
 		/**
-		 * Change the signature key value. When lock is true, sets the key to
-		 * match the signature.
+		 * Change the staff signature. When lock is true and key is not note,
+		 * also changes the key to match.
 		 *
 		 * @param {string} keyOfSignature
 		 * @param {boolean} lock
@@ -159,7 +159,7 @@ define([
 		changeSignatureKey: function(keyOfSignature, lock) {
 			this.setKeyOfSignature(keyOfSignature);
 			this.setSignature(this.keyToSignature(keyOfSignature));
-			if(lock) {
+			if(lock && this.getKey() !== "h") {
 				this.setKey(keyOfSignature);
 			}
 			this.lock = lock;
@@ -388,7 +388,11 @@ define([
 		 * @return undefined
 		 */
 		rotateSharpward: function() {
-			this.rotateKey(1);
+			if (this.getKey() === "h") {
+				this.nudgeStaffSignature(1);
+			} else {
+				this.rotateKey(1);
+			}
 		},
 		/**
 		 * Flattens the key using the current key wheel.
@@ -396,24 +400,35 @@ define([
 		 * @return undefined
 		 */
 		rotateFlatward: function() {
-			this.rotateKey(-1);
+			if (this.getKey() === "h") {
+				this.nudgeStaffSignature(-1);
+			} else {
+				this.rotateKey(-1);
+			}
 		},
 
 		/**
-		 * Rotates the key in the specified direction using the current key
-		 * wheel. The direction should be a positive or negative integer. 
+		 * Rotates the key in the specified vector using the current key
+		 * wheel. The vector should be a positive or negative integer.
 		 *
-		 * @param {number} direction Positive or negative integer.
+		 * @param {number} vector Positive or negative integer.
 		 * @return undefined
 		 */
-		rotateKey: function(direction) {
+		rotateKey: function(vector) {
 			var wheel = KEY_WHEEL.slice(0);
 			var index = wheel.indexOf(this.getKey());
 			if(index === -1) {
 				index = 0;
 			}
-			var new_key = wheel[(wheel.length + index + direction) % wheel.length];
+			var new_key = wheel[(wheel.length + index + vector) % wheel.length];
 			this.changeKey(new_key, this.locked());
+		},
+		nudgeStaffSignature: function(vector) {
+			var arr = Object.keys(KEY_SIGNATURE_MAP);
+			var idx = arr.indexOf(this.getSignatureSpec()) + vector;
+			if (idx >= 0 && idx < arr.length) {
+				this.changeSignatureKey(KEY_SIGNATURE_MAP[arr[idx]], this.locked());
+			}
 		},
 
 		//--------------------------------------------------

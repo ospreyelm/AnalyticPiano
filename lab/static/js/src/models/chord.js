@@ -9,7 +9,16 @@ define([
 ) {
 	"use strict";
 
-	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
+	var getUrlVars = function() {
+		var vars = {};
+		var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+			vars[key] = value;
+		});
+		return vars;
+	};
+	console.log(getUrlVars());
+
+	var STAFF_DISTRIBUTION = (getUrlVars().hasOwnProperty('staffDistribution') && ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"].includes(getUrlVars()['staffDistribution']) ? getUrlVars()['staffDistribution'] : Config.get('general.staffDistribution'));
 	
 	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
 
@@ -258,8 +267,8 @@ define([
 		 *
 		 * @returns {boolean}
 		 */
-		syncSustainedNotes: function() {
-			var _notes = this._notes;
+		syncSustainedNotes: function(notes = false) {
+			var _notes = (notes ? notes : this._notes);
 			var _sustained = this._sustained;
 			var changed = false;
 
@@ -535,6 +544,8 @@ define([
 			&& VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)
 			&& this.getSortedNotes().slice(1).includes(midi)) { // not lowest note
 				return clef == (midi < low_threshold ? 'bass' : 'treble');
+			} else if (STAFF_DISTRIBUTION === 'grandStaff') {
+				return clef == (midi < mid_threshold ? 'bass' : 'treble');
 			} else if (STAFF_DISTRIBUTION === 'keyboard'
 			&& !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)) {
 				return clef == (midi < mid_threshold ? 'bass' : 'treble');
