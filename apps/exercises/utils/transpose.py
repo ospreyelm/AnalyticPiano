@@ -1,13 +1,14 @@
 # """
-# Flesh out this Python script to transpose exercise content per a new text field in playlist admin.
-# E.g. text field: `C e G c#'.
-# Then populate playlist with each exercise in C major, E minor, G major, C# minor.
-# Consider best approach.
-# Either save needed transpositions in a separate section of database from original exercises
-# or create dynamically.
-# Exercise ID could look like EA00DD+16 or EA00DD-2 where you see the midi_vector.
+# Transpose exercise content per a new text field in playlist editor.
 #
-# Once this works, add options:
+# User input example: `C G c#'
+# Result: populate playlist with each exercise in 0, 1, 4 sharps
+#
+# The distinction of major and minor is immaterial; this is a convenient shorthand.
+#
+# Exercise ID will appear as EA00DD+16 or EA00DD-2 where you see the midi_vector.
+#
+# Options:
 # (1) loop transpositions per exercise,
 # (2) loop transpositions per playlist,
 # (3) shuffle transpositions per exercise (pseudo-random),
@@ -40,7 +41,6 @@ def transpose(exercise, target_request):
     if key_orig == "h":
         key_target = key_orig
     else:
-        # wrap these in try Except and abort transposition if error
         try:
             fifth_chain_move = all_sigs.index(sig_target) - all_sigs.index(sig_orig)
             key_target = all_keys[all_keys.index(key_orig) + 2 * fifth_chain_move]
@@ -50,15 +50,12 @@ def transpose(exercise, target_request):
     # 12 + not necessary here but keep it in case this function copied to Javascript
     pc_vector = (12 + pc_ref_target - pc_ref_orig) % 12
 
-    # FIXME
-    # midi_all_ex =  # get all midi numbers from json exercise chord subdictionaries (visible and hidden)
     midi_all_ex = []
     for chord in exercise.data['chord']:
-        midi_max_ex = max(chord['visible'] + chord['hidden'])
-        midi_min_ex = min(chord['visible'] + chord['hidden'])
+        midi_all_ex.extend(chord['visible'] + chord['hidden'])
 
-    # midi_max_ex = max(midi_all_ex)
-    # midi_min_ex = min(midi_all_ex)
+    midi_max_ex = max(midi_all_ex)
+    midi_min_ex = min(midi_all_ex)
     midi_mean_floor_ex = (midi_max_ex + midi_min_ex) // 2
     midi_range_ex = midi_max_ex + 1 - midi_min_ex
 
@@ -67,8 +64,12 @@ def transpose(exercise, target_request):
     if midi_range_ex <= 14:
         # suitable for 25-key controllers, C3 to C5
         midi_mean_floor_target_min = 54
+    elif midi_range_ex <= 21:
+        # suitable for 32-key controllers, 8vb, F2 to C5
+        # Arturia, Midiplus, Native Instruments
+        midi_mean_floor_target_min = 51
     elif midi_range_ex <= 26:
-        # suitable for 37-key controllers, C2 to C5
+        # suitable for 37-key controllers, 8vb, C2 to C5
         midi_mean_floor_target_min = 48
     elif midi_range_ex <= 38:
         # suitable for 49-key controllers, C2 to C6
@@ -93,8 +94,7 @@ def transpose(exercise, target_request):
     if midi_vector == None:
         return exercise
 
-    # WRITE TRANSPOSED EXERCISE: add midi_vector to all integers within json_data.chord and change
-    # json_data.key = key_target and json_data.keySignature = sig_target
+    # make the transposition
     for chord in exercise.data['chord']:
         transposed = [note + midi_vector for note in chord['visible']]
         chord.update(visible=transposed)
