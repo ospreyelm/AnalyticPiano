@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django_better_admin_arrayfield.admin.mixins import DynamicArrayMixin
 
 from apps.exercises.models import Exercise, Playlist, PerformanceData
 from apps.exercises.forms import ExerciseForm, PlaylistForm, PerformanceDataForm
@@ -24,7 +25,7 @@ class ExerciseAdmin(admin.ModelAdmin):
         }),
         ('Exercise Data', {
             'fields': ('rhythm_value', ('intro_text', 'review_text'), 'data')
-        }),
+        })
     )
     save_on_top = True
 
@@ -44,22 +45,34 @@ class ExerciseAdmin(admin.ModelAdmin):
 
 
 @admin.register(Playlist)
-class PlaylistAdmin(admin.ModelAdmin):
+class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
     form = PlaylistForm
     list_display = ('name', 'exercise_links', 'authored_by',
                     'created', 'updated', 'show_on_site')
     list_filter = ('authored_by__email',)
     search_fields = ('name', 'exercises',)
-    readonly_fields = ('id', 'authored_by', 'created', 'updated',
-                       'exercise_links', 'performances', 'show_on_site')
+    readonly_fields = ('id', 'authored_by', 'created', 'updated', 'exercise_links',
+                       'performances', 'transposition_matrix', 'transposed_exercises_display',
+                       'show_on_site')
     raw_id_fields = ('authored_by',)
     fieldsets = (
         ('General Info', {
-            'fields': (('name', 'show_on_site'), 'id', 'authored_by', ('created', 'updated')),
+            'fields': (('name', 'show_on_site'),
+                       'id',
+                       'authored_by',
+                       ('created', 'updated')),
         }),
         ('Exercises', {
-            'fields': ('performances', 'exercises', 'exercise_links')
+            'fields': ('performances',
+                       'exercises',
+                       'exercise_links')
         }),
+        ('Transpose', {
+            'fields': ('transpose_requests',
+                       'transposition_type',
+                       # 'transposition_matrix',
+                       'transposed_exercises_display')
+        })
     )
     save_on_top = True
 
@@ -101,6 +114,11 @@ class PlaylistAdmin(admin.ModelAdmin):
 
     performances.allow_tags = True
     performances.short_description = 'Performances'
+
+    def transposed_exercises_display(self, obj):
+        return ','.join(str(id_) for id_ in obj.transposed_exercises_ids) if obj.is_transposed() else ''
+
+    transposed_exercises_display.short_description = 'Exercises Transposed'
 
 
 @admin.register(PerformanceData)

@@ -54,6 +54,9 @@ class ExerciseForm(forms.ModelForm):
 
 
 class PlaylistForm(forms.ModelForm):
+    transposition_type = forms.ChoiceField(choices=Playlist.TRANSPOSE_TYPE_CHOICES,
+                                           widget=forms.RadioSelect(), required=False)
+
     class Meta:
         model = Playlist
         exclude = []
@@ -63,6 +66,7 @@ class PlaylistForm(forms.ModelForm):
 
     def clean(self):
         super(PlaylistForm, self).clean()
+
         exercise_ids = self.cleaned_data.get('exercises', '').split(',')
         exercise_ids = [id_.upper().strip() for id_ in exercise_ids]
         all_exercises = list(Exercise.objects.values_list('id', flat=True))

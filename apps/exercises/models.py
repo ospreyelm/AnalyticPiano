@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from copy import copy
+from itertools import product
 
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
@@ -8,6 +8,10 @@ from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
 from django.utils.functional import cached_property
 from django.utils.timezone import now
+from django_better_admin_arrayfield.models.fields import ArrayField
+
+from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES
+from apps.exercises.utils.transpose import transpose
 
 User = get_user_model()
 
@@ -111,6 +115,25 @@ class Playlist(models.Model):
     name = models.CharField('Name', unique=True, max_length=32)
     exercises = models.CharField('Exercises', max_length=1024,
                                  help_text='Ordered set of exercise IDs, separated by comma.')
+
+    # TRANSPOSE
+    transpose_requests = ArrayField(base_field=models.CharField(max_length=10, choices=SIGNATURE_CHOICES),
+                                    default=list, blank=True, null=True,
+                                    help_text=f'Valid choices are {" ".join(str(x) for x in KEY_SIGNATURES)}',
+                                    verbose_name='Transpose Requests')
+
+    TRANSPOSE_EXERCISE_LOOP = 'Exercise Loop'
+    TRANSPOSE_PLAYLIST_LOOP = 'Playlist Loop'
+    TRANSPOSE_EXERCISE_SHUFFLE = 'Exercise Shuffle'
+    TRANSPOSE_PLAYLIST_SHUFFLE = 'Playlist Shuffle'
+    TRANSPOSE_TYPE_CHOICES = (
+        (TRANSPOSE_EXERCISE_LOOP, TRANSPOSE_EXERCISE_LOOP),
+        (TRANSPOSE_PLAYLIST_LOOP, TRANSPOSE_PLAYLIST_LOOP),
+        (TRANSPOSE_EXERCISE_SHUFFLE, TRANSPOSE_EXERCISE_SHUFFLE),
+        (TRANSPOSE_PLAYLIST_SHUFFLE, TRANSPOSE_PLAYLIST_SHUFFLE)
+    )
+    transposition_type = models.CharField('Transposition Types', max_length=32,
+                                          choices=TRANSPOSE_TYPE_CHOICES, blank=True, null=True)
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='playlists',
                                     on_delete=models.PROTECT,
@@ -125,21 +148,60 @@ class Playlist(models.Model):
 
     @cached_property
     def exercise_list(self):
-        return self.exercises.split(',')
+        if not self.is_transposed():
+            return self.exercises.split(',')
+
+        return self.transposed_exercises_ids
 
     @property
     def exercise_count(self):
-        return len(self.exercise_list)
+        if not self.is_transposed():
+            return len(self.exercise_list)
+
+        return len(self.transposed_exercises_ids)
+
+    @cached_property
+    def transposition_matrix(self):
+        if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
+            return list(product(self.exercises.split(','), self.transpose_requests))
+        elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
+            return [(t[1], t[0]) for t in product(self.transpose_requests, self.exercises.split(','))]
+
+    @cached_property
+    def transposed_exercises_ids(self):
+        if not self.transposition_matrix:
+            return []
+
+        result = []
+        for transposition in self.transposition_matrix:
+            exercise_id, target_request = transposition
+            exercise = Exercise.objects.get(id=exercise_id)
+            result.append(transpose(exercise, target_request).id)
+        return result
 
     @property
     def exercise_objects(self):
         return Exercise.objects.filter(id__in=self.exercise_list)
 
+    def is_transposed(self):
+        return self.transpose_requests and self.transposition_type
+
     def get_exercise_obj_by_num(self, num=1):
         try:
-            return Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
+            exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
         except (IndexError, TypeError):
-            return Exercise.objects.filter(id=self.exercise_list[-1]).first()
+            exercise = Exercise.objects.filter(id=self.exercise_list[-1]).first()
+
+        if not self.is_transposed():
+            return exercise
+
+        # print(self.transposed_exercises[num])
+        # import pdb; pdb.set_trace()
+        exercise_id, target_request  = self.transposition_matrix[num - 1]
+        exercise = Exercise.objects.get(id=exercise_id)
+        transposed_exercise = transpose(exercise, target_request)
+        # import pdb; pdb.set_trace()
+        return transposed_exercise
 
     def get_exercise_url_by_num(self, num=1):
         try:
@@ -152,12 +214,12 @@ class Playlist(models.Model):
             return None
 
     def first(self):
-        if len(self.exercise_list) > 0:
+        if self.exercise_count > 0:
             return self.exercise_list[0]
         return None
 
     def last(self):
-        if len(self.exercise_list) > 0:
+        if self.exercise_count > 0:
             return self.exercise_list[-1]
         return None
 
