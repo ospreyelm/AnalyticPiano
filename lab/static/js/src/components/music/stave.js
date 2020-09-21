@@ -74,6 +74,17 @@ define([
 		 */
 		this._isNovel = true;
 
+		var getUrlVars = function() {
+			var vars = {};
+			var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+				vars[key] = value;
+			});
+			return vars;
+		};
+		// console.log('URL variables', getUrlVars());
+
+		this.showDiagram = (getUrlVars().hasOwnProperty('diagram') && getUrlVars()['diagram'] === 'true' ? true : false );
+
 		_.bindAll(this, ['onNotated']);
 
 		this.init(clef, position);
@@ -114,6 +125,9 @@ define([
 
 			this.clef = clef;
 			this.position = position;
+			if (this.showDiagram) {
+				this.margin['left'] = 80;
+			}
 		},
 		/**
 		 * Validates the position of the stave.

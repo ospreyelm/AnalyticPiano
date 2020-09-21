@@ -12,7 +12,7 @@ define({
 	defaultNoteColor: "rgb(180,180,180)", /* gray */
 	defaultRhythmValue: "w", /* whole note (semibreve) */
 	chordBank: {displaySize:9}, /* number of chords spread across the sheet music */
-	defaultKeyAndSignature: "h",
+	defaultKeyAndSignature: "jC_",
 	metronomeSettings: {defaultTempo:40,maxTempo:360},
 	bankAfterMetronomeTick: 0.25, /* fraction of beat */
 	keyboardShortcutsEnabled: true,

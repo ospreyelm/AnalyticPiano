@@ -22,6 +22,18 @@ define([
 	/* not ready: also masks thoroughbass figures */
 	var MASK_TREBLE = Config.get('general.maskTrebleStaff');
 
+    var getUrlVars = function() {
+        var vars = {};
+        var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+            vars[key] = value;
+        });
+        return vars;
+    };
+    // console.log('URL variables', getUrlVars());
+
+    var SHOW_DIAGRAM = (getUrlVars().hasOwnProperty('diagram') && getUrlVars()['diagram'] === 'true' ? true : false );
+
+
 	/**
 	 * Defines an image of a metronome that may be rendered to a canvas element.
 	 * @type {Image}
@@ -830,6 +842,26 @@ define([
 					this.drawSolfege(x, first_row);
 				}
 
+				var solfege = this.convertSymbols(this.getAnalyzer().to_solfege(notes));
+				if (SHOW_DIAGRAM) {
+					var ctx = this.getContext();
+					ctx.fillStyle = 'rgb(238, 238, 221)';
+					ctx.beginPath();
+					ctx.rect(0, 0, 14, 300);
+					ctx.fill();
+					ctx.fillStyle = 'black';
+					let y = 100;
+					let w = 12;
+					let arrow_pos = [y,y+2*w,y+4*w,y+5*w,y+7*w,y+9*w,y+10*w][['La','So','Fa','Mi','Re','Do','Ti'].indexOf(solfege)]
+					ctx.beginPath();
+					ctx.moveTo(0, arrow_pos+6);
+					ctx.lineTo(13, arrow_pos+6);
+					ctx.moveTo(10, arrow_pos+3);
+					ctx.lineTo(13, arrow_pos+6);
+					ctx.lineTo(10, arrow_pos+9);
+					ctx.stroke();
+				}
+
 				if(mode.note_names) {
 					this.drawNoteName(x, second_row);
 				} else if (mode.fixed_do) {
@@ -858,6 +890,44 @@ define([
 				ctx.rect(0, 95, 800, 41);
 				ctx.rect(0, 95, 21, 123);
 				ctx.rect(22, 80, 30, 71);
+				ctx.fill();
+
+				ctx.fillStyle = 'black';
+			}
+
+			if (SHOW_DIAGRAM) {
+				var ctx = this.getContext();
+
+				let y = 100;
+				let w = 12;
+				let l = 2
+				ctx.strokeStyle = 'black';
+				ctx.lineWidth = new String(l);
+				ctx.beginPath();
+				ctx.rect(20, y, w, w);
+				ctx.rect(20, y+2*w, w, w);
+				ctx.rect(20, y+4*w, w, w);
+				ctx.rect(20, y+5*w, w, w);
+				ctx.rect(20, y+7*w, w, w);
+				ctx.rect(20, y+9*w, w, w);
+				ctx.rect(20, y+10*w, w, w);
+				ctx.stroke();
+
+				ctx.lineWidth = '0';
+				ctx.beginPath();
+				ctx.fillStyle = '#ff6666'; // red
+				ctx.rect(20+l/2, y+4*w+l/2, w-l, w-l);
+				ctx.fill();
+
+				ctx.beginPath();
+				ctx.fillStyle = '#66a3ff'; // blue
+				ctx.rect(20+l/2, y+5*w+l/2, w-l, w-l);
+				ctx.fill();
+
+				ctx.lineWidth = '0';
+				ctx.beginPath();
+				ctx.fillStyle = '#ffff66'; // yellow
+				ctx.rect(20+l/2, y+10*w+l/2, w-l, w-l);
 				ctx.fill();
 
 				ctx.fillStyle = 'black';

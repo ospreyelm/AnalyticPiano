@@ -35,7 +35,7 @@ define([
         });
         return vars;
     };
-    console.log(getUrlVars());
+    // console.log('URL variables', getUrlVars());
 
     var STAFF_DISTRIBUTION = (getUrlVars().hasOwnProperty('staffDistribution') && ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"].includes(getUrlVars()['staffDistribution']) ? getUrlVars()['staffDistribution'] : Config.get('general.staffDistribution'));
 
