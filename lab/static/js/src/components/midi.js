@@ -469,8 +469,10 @@ define([
 
 						// also turn off notes not being sustained that match the most recently banked
 						chord = this.chords.previous();
-						notes_off = chord.syncSustainedNotes(chord);
-						this.turnOffSustainedNotesOnPedalLift(notes_off);
+						if (! chord.syncSustainedNotes == undefined) {
+							notes_off = chord.syncSustainedNotes(chord);
+							this.turnOffSustainedNotesOnPedalLift(notes_off);
+						}
 
 						this.sendMIDIPedalMessage(pedal, state);
 						SUSTAINING = false;
