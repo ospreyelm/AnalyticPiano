@@ -17,6 +17,10 @@ class User(AbstractBaseUser, PermissionsMixin):
                                               "The user's password and this field are only the same for frontend users.")
 
     email = models.EmailField(_('Email'), unique=True)
+
+    first_name = models.CharField(_('first_name'), max_length=32, unique=False)
+    last_name = models.CharField(_('last_name'), max_length=32, unique = False)
+
     _supervisors = ArrayField(base_field=models.IntegerField(), default=list,
                               verbose_name='Supervisors')
     is_staff = models.BooleanField(
