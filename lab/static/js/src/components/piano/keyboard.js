@@ -114,7 +114,7 @@ define([
 			var nudge_right = 0; // semitones
 			if ( [25,49].includes(this.numberOfKeys) ) {
 				nudge_left = 5;
-			} else if (this.numberOfKeys == 37) {
+			} else if ( [37,61].includes(this.numberOfKeys) ) {
 				nudge_right = 4;
 			} else if (this.numberOfKeys == 32) {
 				nudge_right = 10;
