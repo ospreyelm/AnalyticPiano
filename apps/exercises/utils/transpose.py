@@ -80,17 +80,23 @@ def transpose(exercise, target_request):
     midi_mean_floor_target_range = range(midi_mean_floor_target_min, midi_mean_floor_target_min + 12)
 
     midi_vector = None
-    octave_displ = 0
-    arbitrary_limit = 7
-    while octave_displ < arbitrary_limit and octave_displ > -arbitrary_limit:
-        if (midi_mean_floor_ex + pc_vector + 12 * octave_displ) in midi_mean_floor_target_range:
-            midi_vector = pc_vector + 12 * octave_displ
-            break
-        if octave_displ >= 0:
-            octave_displ += 1
-        octave_displ *= -1
 
-    # FIXME
+    if False:
+        # algorithm that fits exercise onto smallest standard keyboard
+        # that will accommodate all keys
+        octave_displ = 0
+        arbitrary_limit = 7
+        while octave_displ < arbitrary_limit and octave_displ > -arbitrary_limit:
+            if (midi_mean_floor_ex + pc_vector + 12 * octave_displ) in midi_mean_floor_target_range:
+                midi_vector = pc_vector + 12 * octave_displ
+                break
+            if octave_displ >= 0:
+                octave_displ += 1
+            octave_displ *= -1
+    else:
+        # simply transpose upwards
+        midi_vector = pc_vector
+
     if midi_vector == None:
         return exercise
 
