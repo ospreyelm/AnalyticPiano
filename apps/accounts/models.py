@@ -18,11 +18,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(_('Email'), unique=True)
 
-    first_name = models.CharField(_('first_name'), max_length=32, unique=False, default="")
-    last_name = models.CharField(_('last_name'), max_length=32, unique = False, default="")
+    first_name = models.CharField(_('first_name'), max_length=32, unique=False, default="", blank=True)
+    last_name = models.CharField(_('last_name'), max_length=32, unique = False, default="", blank=True)
 
     _supervisors = ArrayField(base_field=models.IntegerField(), default=list,
-                              verbose_name='Supervisors')
+                              verbose_name='Supervisors', blank=True)
+    
     is_staff = models.BooleanField(
         _('Is Admin'),
         default=False,
