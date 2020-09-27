@@ -417,7 +417,7 @@ define([
 		 *
 		 * @return undefined
 		 */
-		onBankNotes: function(request_origin) {
+		onBankNotes: function(request_origin = "unknown") {
 			/* critical side-effect */
 			var notes_off = this.chords.bank(request_origin);
 			if (request_origin === 'ui') {
