@@ -679,12 +679,15 @@ define([
 		drawKeyName: function(x, y) {
 			var key = this.keySignature.getKeyShortName();
 			var thoroughbass = this.analyzeConfig.mode.thoroughbass;
+			var harmony = this.analyzeConfig.mode.roman_numerals;
 			var ctx = this.getContext();
 			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
-			if(key !== '' && !thoroughbass) {
+			if (key === '' && !thoroughbass && harmony) {
+				ctx.fillText('chords:', x - 18, y);
+			} else if(key !== '' && !thoroughbass) {
 				ctx.fillText(this.convertSymbols(key) + ':', x - 8, y);
 			}
 		},

@@ -48,7 +48,7 @@ define({
 	},
 
 	highlightSettings: {
-		enabled: true,
+		enabled: false,
 		mode: {
 			roothighlight: true,
 			tritonehighlight: true,
