@@ -18,8 +18,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(_('Email'), unique=True)
 
-    first_name = models.CharField(_('first_name'), max_length=32, unique=False)
-    last_name = models.CharField(_('last_name'), max_length=32, unique = False)
+    first_name = models.CharField(_('first_name'), max_length=32, unique=False, default="")
+    last_name = models.CharField(_('last_name'), max_length=32, unique = False, default="")
 
     _supervisors = ArrayField(base_field=models.IntegerField(), default=list,
                               verbose_name='Supervisors')
