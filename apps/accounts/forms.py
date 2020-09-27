@@ -8,7 +8,7 @@ User = get_user_model()
 
 class UserAdminCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
-        fields = ('email','first_name','last_name',)
+        fields = ('email',)
 
 
 class CustomAuthenticationForm(forms.ModelForm):
@@ -50,5 +50,5 @@ class RegistrationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ("email",)
+        fields = ("email","first_name","last_name")
         field_classes = {'email': UsernameField}
