@@ -419,7 +419,7 @@ define([
 		 */
 		onBankNotes: function(request_origin) {
 			/* critical side-effect */
-			var notes_off = this.chords.bank();
+			var notes_off = this.chords.bank(request_origin);
 			if (request_origin === 'ui') {
 				// Lift pedal on ui-originating chord bank
 				this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off', 'ui');
