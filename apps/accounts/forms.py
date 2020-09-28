@@ -50,7 +50,7 @@ class RegistrationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ("email","first_name","last_name")
+        fields = ("email", "first_name", "last_name")
         field_classes = {'email': UsernameField}
 
 
@@ -60,7 +60,7 @@ class ForgotPasswordForm(forms.Form):
     def clean(self):
         super(ForgotPasswordForm, self).clean()
 
-        user = User.objects.filter(email=self.cleaned_data['email']).first()
+        user = User.objects.filter(email=self.cleaned_data.get('email', '')).first()
         if user is None:
             raise ValidationError({'email': ' There is no registered user with this email.'})
 
@@ -68,4 +68,4 @@ class ForgotPasswordForm(forms.Form):
             raise ValidationError({'email': 'This email belongs to an admin user.'
                                             'To reset the password, please proceed from the admin panel.'})
 
-        return user
+        user.send_forgotten_password()

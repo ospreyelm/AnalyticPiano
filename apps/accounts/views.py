@@ -59,8 +59,6 @@ def forgot_password_view(request):
     if request.method == 'POST':
         form = ForgotPasswordForm(request.POST)
         if form.is_valid():
-            user = form.clean()
-            user.send_forgotten_password()
             request.session['password_sent'] = True
             return redirect(reverse_lazy('custom-login'))
         else:
