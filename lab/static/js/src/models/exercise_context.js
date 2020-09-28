@@ -122,7 +122,7 @@ define([
          */
         initListeners: function() {
             let testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
-            if (testing) {
+            if (testing && false) {
                 $('.js-analyze-widget').hide();
                 $('.js-keysignature-widget').hide();
             }
@@ -759,13 +759,9 @@ define([
             var g_problem, chord, chords, rhythm;
 
             for (var i = 0, len = problems.length; i < len; i++) {
-                if (["analytical", "analytical_pcs"].includes(this.definition.exercise.type)) {
-                    notes = [];
-                } else if (["figured_bass", "figured_bass_pcs"].includes(this.definition.exercise.type)) {
-                    notes = problems[i].visible.sort().slice(0,1);
-                } else {
-                    notes = problems[i].visible;
-                }
+                notes = problems[i].visible;
+                full_context = problems[i].notes;
+
                 rhythm = problems[i].rhythm;
                 g_problem = false;
                 if(this.graded !== false && this.graded.problems[i]) {
@@ -777,7 +773,11 @@ define([
                     notes = _.uniq(notes);
                 }
 
-                chord = new ExerciseChord({ notes: notes, rhythm: rhythm });
+                chord = new ExerciseChord({
+                    notes: notes,
+                    full_context: full_context,
+                    rhythm: rhythm
+                });
 
                 if(g_problem) {
                     _.each(g_problem.count, function(notes, correctness) {

@@ -13,6 +13,8 @@ class UserAdmin(admin.UserAdmin):
         ('Account Information', {
             'fields': (
                 'email',
+                'first_name',
+                'last_name',
                 'password',
 
                 # FIXME RAAAAAWW PASSSWORDD!!
@@ -32,7 +34,7 @@ class UserAdmin(admin.UserAdmin):
     change_password_form = AdminPasswordChangeForm
 
     list_display = (
-        'email', 'is_staff', 'is_superuser', 'is_active'
+        'email', 'is_staff', 'is_superuser', 'is_active', 'first_name', 'last_name'
     )
 
     search_fields = ('email',)

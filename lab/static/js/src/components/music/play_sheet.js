@@ -337,19 +337,19 @@ define([
 			/* simplify for testing */
 			// chords = chords.map(chord => chord["visible"]);
 
+			let STAFF_DISTRIBUTION = (this.chords.settings.staffDistribution ? this.chords.settings.staffDistribution : Config.__config.general.staffDistribution);
+
 			let json_data = {
 				"keySignature": this.keySignature.signatureSpec,
 				"key": this.keySignature.key,
 				"type": "matching", /* provide options */
+				"staffDistribution": STAFF_DISTRIBUTION,
 				"introText": "",
 				"reviewText": "",
 				"analysis": this.parentComponent.analyzeConfig,
 				"highlight": this.parentComponent.highlightConfig,
 				"chord": chords
 			}
-
-			json_data["staffDistribution"]
-				= Config.__config.general.staffDistribution;
 
 			/*
 			// These properties should also be included once we start changing these presets per user.

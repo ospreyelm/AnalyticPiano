@@ -417,9 +417,9 @@ define([
 		 *
 		 * @return undefined
 		 */
-		onBankNotes: function(request_origin) {
+		onBankNotes: function(request_origin = "unknown") {
 			/* critical side-effect */
-			var notes_off = this.chords.bank();
+			var notes_off = this.chords.bank(request_origin);
 			if (request_origin === 'ui') {
 				// Lift pedal on ui-originating chord bank
 				this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off', 'ui');
@@ -469,8 +469,10 @@ define([
 
 						// also turn off notes not being sustained that match the most recently banked
 						chord = this.chords.previous();
-						notes_off = chord.syncSustainedNotes(chord);
-						this.turnOffSustainedNotesOnPedalLift(notes_off);
+						if (! chord.syncSustainedNotes == undefined) {
+							notes_off = chord.syncSustainedNotes(chord);
+							this.turnOffSustainedNotesOnPedalLift(notes_off);
+						}
 
 						this.sendMIDIPedalMessage(pedal, state);
 						SUSTAINING = false;

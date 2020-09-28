@@ -3,7 +3,7 @@
 
 /* global define: false */
 define({
-	defaultKeyboardSize: 49, /* key count */
+	defaultKeyboardSize: [25, 32, 37, 49, 61, 88][3], /* key count */
 	defaultOctaveAdjustment: 0,
 	maskTrebleStaff: false, /* copy this boolean as conditional on following line */
 	staffDistribution: (false ? "LH" : ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"][0]),
@@ -12,7 +12,7 @@ define({
 	defaultNoteColor: "rgb(180,180,180)", /* gray */
 	defaultRhythmValue: "w", /* whole note (semibreve) */
 	chordBank: {displaySize:9}, /* number of chords spread across the sheet music */
-	defaultKeyAndSignature: "h",
+	defaultKeyAndSignature: ["jC_","h"][0],
 	metronomeSettings: {defaultTempo:40,maxTempo:360},
 	bankAfterMetronomeTick: 0.25, /* fraction of beat */
 	keyboardShortcutsEnabled: true,
@@ -48,7 +48,7 @@ define({
 	},
 
 	highlightSettings: {
-		enabled: true,
+		enabled: false,
 		mode: {
 			roothighlight: true,
 			tritonehighlight: true,

@@ -98,6 +98,9 @@ define([
 		getNoteKeys: function() {
 			var note_nums = this.chord.getNoteNumbers(this.clef);
 			var all_note_nums = this.chord.getNoteNumbers();
+			if (typeof this.chord.settings.full_context === 'object') {
+				all_note_nums = this.chord.settings.full_context;
+			}
 			var note_name, note_keys = [];
 
 			for(var i = 0, len = note_nums.length; i < len; i++) {

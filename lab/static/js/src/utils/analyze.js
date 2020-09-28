@@ -94,7 +94,8 @@ var spellingAndAnalysisFunctions = {
         var letter = "abcdefg"[mod_7];
 
         /* change this calculation at your peril! */
-        var displ = (5 + mod_12 - this.mod_12(letter)) % 12 - 5;
+        var displ = (12 + 5 + mod_12 - this.mod_12(letter)) % 12 - 5;
+        // B# was not returned properly until "12 +" (remainder operator!)
 
         if (displ > 0) return letter + "#".repeat(displ);
         if (displ < 0) return letter + "b".repeat(-1*displ);

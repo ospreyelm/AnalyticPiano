@@ -40,6 +40,8 @@ define([
 		this.settings = settings || {};
 		if(this.settings.staffDistribution) {
 			STAFF_DISTRIBUTION = this.settings.staffDistribution;
+		} else {
+			this.settings.staffDistribution = STAFF_DISTRIBUTION; // for exercise creation (Sept. 2020)
 		}
 		this.init();
 	};

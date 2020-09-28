@@ -25,7 +25,7 @@ define({
   
     "36": {"label": "&Rdim", "description": "&R diminished &53; (!)", "spellbass": "iE_", "stepwise": "24", "root": "0", "rootstepwise": "0"},
     "39": {"label": "&Rdim/&X", "description": "&R diminished &6;", "spellbass": "iG_", "stepwise": "25", "root": "9", "rootstepwise": "5"},
-    "69": {"label": "&Rdim/&X", "description": "?!", "spellbass": "iBb", "stepwise": "25", "root": "6", "rootstepwise": "3"},
+    "69": {"label": "&Rdim/&X", "description": "?!", "spellbass": "iBb", "stepwise": "35", "root": "6", "rootstepwise": "3"},
   
   // augmented triad, assuming root position (given symmetrical division)
   
