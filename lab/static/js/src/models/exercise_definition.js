@@ -199,6 +199,13 @@ define([
 				}
 			} 
 
+			// check that the problem type is supported
+			if(definition.hasOwnProperty('type') && (definition.type in ExerciseDefinition.TYPES)) {
+				exercise.type = definition.type;
+			} else {
+				throw new Error("invalid definition.type: " + definition.type);
+			}
+
 			// normalize the internal representation of each chord in the
 			// set of problems to have VISIBLE/HIDDEN parts
 			problems = _.map(problems, function(chord, index) {
@@ -211,19 +218,22 @@ define([
 					if(!chord.hasOwnProperty("visible") || !chord.hasOwnProperty("hidden")) {
 						throw new Error("invalid chord at index: " + index + "; chord must have 'visible' and 'hidden' properties");
 					}
-					normalized.visible = chord.visible;
-					normalized.hidden = chord.hidden;
+					normalized.visible = ExerciseDefinition.sortNotes(chord.visible);
+					normalized.hidden = ExerciseDefinition.sortNotes(chord.hidden);
 				} else {
 					throw new Error("invalid chord at index: " + index);
 				}
 
-				// get the sum of the visible and hidden notes
-				normalized.notes = ExerciseDefinition.getNotesForProblem(normalized.visible, normalized.hidden);
+				// sum of the visible and hidden notes
+				normalized.notes = ExerciseDefinition.sortNotes(ExerciseDefinition.getNotesForProblem(normalized.visible, normalized.hidden));
 
-				// normalize the note order
-				normalized.visible = ExerciseDefinition.sortNotes(normalized.visible);
-				normalized.hidden = ExerciseDefinition.sortNotes(normalized.hidden);
-				normalized.notes = ExerciseDefinition.sortNotes(normalized.notes);
+				if (["analytical", "analytical_pcs"].includes(exercise.type)) {
+					normalized.visible = [];
+					normalized.hidden = normalized.notes;
+				} else if (["figured_bass", "figured_bass_pcs"].includes(exercise.type)) {
+					normalized.visible = normalized.notes.slice(0,1);
+					normalized.hidden = normalized.notes.slice(1);
+				}
 
 				if(chord.hasOwnProperty("rhythmValue")) {
 					normalized.rhythm = chord.rhythmValue;
@@ -233,13 +243,6 @@ define([
 			});
 
 			exercise.problems = problems;
-
-			// check that the problem type is supported
-			if(definition.hasOwnProperty('type') && (definition.type in ExerciseDefinition.TYPES)) {
-				exercise.type = definition.type;
-			} else {
-				throw new Error("invalid definition.type: "+definition.type);
-			}
 
 			// check for the "key" entry to use for the problem set
 			exercise.key = "h"; // means "no key" 
