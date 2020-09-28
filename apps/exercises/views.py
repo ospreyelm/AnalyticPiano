@@ -2,6 +2,7 @@ import json
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -51,6 +52,7 @@ def playlist_performance_view(request, playlist_id):
     })
 
 
+@login_required
 @method_decorator(csrf_exempt)
 def submit_exercise_performance(request):
     performance_data = json.loads(request.POST.get('data'))

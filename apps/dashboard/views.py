@@ -100,14 +100,15 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
     ).select_related('user', 'playlist')
     playlist = Playlist.objects.filter(id=playlist_id).first()
     exercises = [exercise for exercise in playlist.exercise_list]
-    users = list(set(list(performances.values_list('user__email', flat=True))))
+    users_email_list = list(set(list(performances.values_list('user__email', flat=True))))
 
-    for user in users:
+    for user in users_email_list:
         user_data = {
             'performer': user,
             'subscriber_id': subscriber_id,
             'playlist_id': playlist.id,
-            'performance_data': performances.filter(user__email=user).first().data
+            'performance_data': performances.filter(user__email=user).first().data,
+            'perfomer_obj': subscriber
         }
         user_data.update({'exercise_count': len(user_data['performance_data'])})
         data.append(user_data)
