@@ -18,8 +18,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(_('Email'), unique=True)
 
-    first_name = models.CharField(_('first_name'), max_length=32, unique=False, default="", blank=True)
-    last_name = models.CharField(_('last_name'), max_length=32, unique = False, default="", blank=True)
+    first_name = models.CharField(_('First Name'), max_length=32, unique=False, default="", blank=True)
+    last_name = models.CharField(_('Last Name'), max_length=32, unique = False, default="", blank=True)
 
     _supervisors = ArrayField(base_field=models.IntegerField(), default=list,
                               verbose_name='Supervisors', blank=True)
@@ -59,10 +59,17 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self):
-        return f'{self.email}'
+        name_is_set = self.first_name and self.last_name
+        return f'{self.first_name} {self.last_name}' if name_is_set else 'NOT SET'
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         send_mail(subject, message, from_email, [self.email], **kwargs)
+
+    def send_forgotten_password(self):
+        self.email_user(
+            subject='Password Reminder',
+            message=f'Your password is: {self.raw_password}',
+        )
 
     # TODO remove this in the future
     @classmethod

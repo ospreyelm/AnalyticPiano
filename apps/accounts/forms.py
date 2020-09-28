@@ -52,3 +52,20 @@ class RegistrationForm(forms.ModelForm):
         model = User
         fields = ("email","first_name","last_name")
         field_classes = {'email': UsernameField}
+
+
+class ForgotPasswordForm(forms.Form):
+    email = forms.EmailField()
+
+    def clean(self):
+        super(ForgotPasswordForm, self).clean()
+
+        user = User.objects.filter(email=self.cleaned_data['email']).first()
+        if user is None:
+            raise ValidationError({'email': ' There is no registered user with this email.'})
+
+        if user.is_staff:
+            raise ValidationError({'email': 'This email belongs to an admin user.'
+                                            'To reset the password, please proceed from the admin panel.'})
+
+        return user

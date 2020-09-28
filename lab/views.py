@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.http import HttpResponse, Http404, JsonResponse
@@ -106,6 +107,10 @@ class PlayView(RequirejsTemplateView):
 
 
 class PlaylistView(RequirejsView):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
     def get(self, request, group_name, exercise_num=1, *args, **kwargs):
         playlist = get_object_or_404(Playlist, name=group_name)
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
@@ -159,11 +164,9 @@ class PlaylistView(RequirejsView):
 
 class RefreshExerciseDefinition(RequirejsView):
     def get(self, request, *args, **kwargs):
-        playlist_name = request.GET.get('playlist_name')
-        exercise_id = request.GET.get('exercise_id')
+        playlist = get_object_or_404(Playlist, name=request.GET.get('playlist_name'))
         exercise_num = int(request.GET.get('exercise_num', 1))
-        playlist = Playlist.objects.filter(name=playlist_name).first()
-        exercise = Exercise.objects.filter(id=exercise_id).first()
+        exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if exercise is None:
             raise Http404("Exercise not found.")
 
@@ -184,7 +187,7 @@ class RefreshExerciseDefinition(RequirejsView):
         exercise_list = []
         for num, _ in enumerate(playlist.exercise_list, 1):
             exercise_list.append(
-                dict(id=f'{playlist_name}/{num}',
+                dict(id=f'{playlist.name}/{num}',
                      name=f'{num}',
                      url=playlist.get_exercise_url_by_num(num),
                      selected=exercise_num == num)
@@ -212,6 +215,10 @@ class RefreshExerciseDefinition(RequirejsView):
 
 
 class ExerciseView(RequirejsView):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
     def get(self, request, exercise_id, *args, **kwargs):
         exercise = get_object_or_404(Exercise, id=exercise_id)
 
