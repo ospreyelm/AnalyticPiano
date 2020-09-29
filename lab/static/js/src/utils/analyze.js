@@ -293,8 +293,12 @@ var spellingAndAnalysisFunctions = {
             var bass_name = this.spelling[scale][bass_pc].toLowerCase();
             var semitones = this.rel_pc(midi, bass_pc);
             var idx = profile.indexOf(this.pitchClasses[semitones]);
-            var steps = (idx === -1 ? 0 : parseInt(all_steps[idx])); /* parseInt is critical */
-            return this.upper_note_name(chord[0], bass_name, semitones, steps);
+            if (idx === -1) {
+                return this.noteNames[midi % 12]; /** return default spelling **/
+            } else {
+                var steps = parseInt(all_steps[idx]); /* parseInt is critical */
+                return this.upper_note_name(chord[0], bass_name, semitones, steps);
+            }
         }
 
         return this.noteNames[midi % 12]; /** return default spelling **/
