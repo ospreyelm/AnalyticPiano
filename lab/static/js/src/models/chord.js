@@ -269,7 +269,7 @@ define([
 		 *
 		 * @returns {boolean}
 		 */
-		syncSustainedNotes: function(prev_notes = false) {
+		syncSustainedNotes: function(prev_notes = false, prev_sustained = false) {
 			var _notes = this._notes;
 			var _sustained = this._sustained;
 			var changed = false;
@@ -278,17 +278,21 @@ define([
 
 			_.each(_sustained, function(state, noteNumber) {
 				if(_notes[noteNumber] !== state) {
-					notes_to_turn_off.push(noteNumber);
+					if(state === false) {
+						notes_to_turn_off.push(noteNumber);
+					}
 					_notes[noteNumber] = state;
 					changed = true;
 				}
 			}, this);
 
-			if (prev_notes) {
-				// needs improvement
-				_.each(prev_notes, function(state, noteNumber) {
-					if(_sustained[noteNumber] !== state) {
-						notes_to_turn_off.push(noteNumber);
+			if (prev_notes && prev_sustained) {
+				_.each(prev_sustained, function(state, noteNumber) {
+					if(prev_notes[noteNumber] !== state) {
+						if(state === false) {
+							notes_to_turn_off.push(noteNumber);
+						}
+						prev_notes[noteNumber] = state;
 						changed = true;
 					}
 				}, this);

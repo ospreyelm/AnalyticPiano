@@ -467,8 +467,11 @@ define([
 						var prev_notes
 							= this.chords.previous()._notes
 							|| false;
+						var prev_sustained
+							= this.chords.previous()._sustained
+							|| false;
 						/* critical side-effect */
-						var notes_off = chord.syncSustainedNotes(prev_notes);
+						var notes_off = chord.syncSustainedNotes(prev_notes, prev_sustained);
 						this.turnOffSustainedNotesOnPedalLift(notes_off);
 
 						this.sendMIDIPedalMessage(pedal, state);
