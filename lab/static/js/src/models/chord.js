@@ -292,7 +292,8 @@ define([
 						if(state === false) {
 							notes_to_turn_off.push(noteNumber);
 						}
-						prev_notes[noteNumber] = state;
+						// DO NOT EDIT prev_notes (as _notes above)
+						// Breaks exercise grading
 						changed = true;
 					}
 				}, this);
