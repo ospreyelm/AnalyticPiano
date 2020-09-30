@@ -269,8 +269,8 @@ define([
 		 *
 		 * @returns {boolean}
 		 */
-		syncSustainedNotes: function(notes = false) {
-			var _notes = (notes ? notes : this._notes);
+		syncSustainedNotes: function(prev_notes = false) {
+			var _notes = this._notes;
 			var _sustained = this._sustained;
 			var changed = false;
 
@@ -283,6 +283,16 @@ define([
 					changed = true;
 				}
 			}, this);
+
+			if (prev_notes) {
+				// needs improvement
+				_.each(prev_notes, function(state, noteNumber) {
+					if(_sustained[noteNumber] !== state) {
+						notes_to_turn_off.push(noteNumber);
+						changed = true;
+					}
+				}, this);
+			}
 
 			this._sustained = {};
 

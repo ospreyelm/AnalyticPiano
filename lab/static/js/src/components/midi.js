@@ -463,16 +463,13 @@ define([
 						SUSTAINING = true;
 					} else if (state === 'off') {
 						chord.releaseSustain();
+						/* prepare to turn off notes in previous bank too */
+						var prev_notes
+							= this.chords.previous()._notes
+							|| false;
 						/* critical side-effect */
-						var notes_off = chord.syncSustainedNotes();
+						var notes_off = chord.syncSustainedNotes(prev_notes);
 						this.turnOffSustainedNotesOnPedalLift(notes_off);
-
-						// also turn off notes not being sustained that match the most recently banked
-						chord = this.chords.previous();
-						if (! chord.syncSustainedNotes == undefined) {
-							notes_off = chord.syncSustainedNotes(chord);
-							this.turnOffSustainedNotesOnPedalLift(notes_off);
-						}
 
 						this.sendMIDIPedalMessage(pedal, state);
 						SUSTAINING = false;
