@@ -231,7 +231,8 @@ define([
 			highlight_widget.render();
 			staff_distribution_widget.render();
 
-			el.append(analyze_widget.el, highlight_widget.el, staff_distribution_widget.el);
+			el.append(analyze_widget.el, highlight_widget.el);
+			// el.append(analyze_widget.el, highlight_widget.el, staff_distribution_widget.el);
 		},
 		/**
 		 * Renders the instrument selector.
