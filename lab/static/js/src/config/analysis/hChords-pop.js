@@ -57,14 +57,16 @@ define({
   // minor tetrad
   
     "37y": {"label": "&Rm7", "description": "&R minor &7;", "spellbass": "iD_", "stepwise": "246", "root": "0", "rootstepwise": "0"},
-    "479": {"label": "&Rm7/&X", "description": "&R minor &65;", "spellbass": "iF_", "stepwise": "245", "root": "9", "rootstepwise": "5"},
+    "479": {"label": "&R6", "description": "&R major added sixth", "spellbass": "iF_", "stepwise": "245", "root": "0", "rootstepwise": "0"},
+    // "479": {"label": "&Rm7/&X", "description": "&R minor &65;", "spellbass": "iF_", "stepwise": "245", "root": "9", "rootstepwise": "5"},
     "358": {"label": "&Rm7/&X", "description": "&R minor &43;", "spellbass": "iA_", "stepwise": "235", "root": "5", "rootstepwise": "3"},
     "259": {"label": "&Rm7/&X", "description": "&R minor &42;", "spellbass": "iC_", "stepwise": "135", "root": "2", "rootstepwise": "1"},
   
   // half-diminished tetrad
   
     "36y": {"label": "&Rm7♭5", "description": "&R half-dim. &7;", "spellbass": "iE_", "stepwise": "246", "root": "0", "rootstepwise": "0"},
-    "379": {"label": "&Rm7♭5/&X", "description": "&R half-dim. &65;", "spellbass": "iG_", "stepwise": "245", "root": "9", "rootstepwise": "5"},
+    "379": {"label": "&Rm6", "description": "&R minor added sixth", "spellbass": "iG_", "stepwise": "245", "root": "0", "rootstepwise": "0"},
+    // "379": {"label": "&R&hdim;7/&X", "description": "&R half-dim. &65;", "spellbass": "iG_", "stepwise": "245", "root": "9", "rootstepwise": "5"},
     "469": {"label": "&Rm7♭5/&X", "description": "&R half-dim. &43;", "spellbass": "iBb", "stepwise": "235", "root": "6", "rootstepwise": "3"},
     "258": {"label": "&Rm7♭5/&X", "description": "&R half-dim. &42;", "spellbass": "iD_", "stepwise": "135", "root": "2", "rootstepwise": "1"},
 
