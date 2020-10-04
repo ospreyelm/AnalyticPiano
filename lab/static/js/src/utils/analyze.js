@@ -238,6 +238,13 @@ var spellingAndAnalysisFunctions = {
             return this.push_flat(midi,name);
             /* augmented sixths and other pre-dominant chords */
         }
+        if (rel_pc == 8
+        && (_.contains(rpcs,11) && _.contains(rpcs,2) && _.contains(rpcs,5))
+        && midi != chord[0]
+        ) {
+            return this.push_flat(midi,name);
+            /* fully diminished leading-tone sevenths except for third inversion */
+        }
 
         return name;
     },

@@ -135,15 +135,15 @@ define({
 
    // viio/vi
    
-   "8/2z":  {"root": "1", "label": "vii°/vi", "priority": "90"},
-   "z/28":  {"root": "1", "label": "vii°{z}/vi", "priority": "80"},
-   "2/8z":  {"root": "1", "label": "vii°{z4}/vi", "priority": "90"},
+   "8/2z":  {"root": "8", "label": "vii°/vi", "priority": "90"},
+   "z/28":  {"root": "8", "label": "vii°{z}/vi", "priority": "80"},
+   "2/8z":  {"root": "8", "label": "vii°{z4}/vi", "priority": "90"},
 
    // contextual enharmonic respelling is needed for these chords and for diminished sevenths generally
-   "8/25z": {"root": "1", "label": "vii°{u}/vi", "priority": "80"},
-   "z/258": {"root": "1", "label": "vii°{z5}/vi", "priority": "90"},
-   "2/58z": {"root": "1", "label": "vii°{r3}/vi", "priority": "90"},
-   "5/28z": {"root": "1", "label": "vii°{r2}/vi", "priority": "90"},
+   "8/25z": {"root": "8", "label": "vii°{u}/vi", "priority": "80"},
+   "z/258": {"root": "z", "label": "vii°", "priority": "80"},
+   "2/58z": {"root": "z", "label": "vii°{z5}", "priority": "80"},
+   "5/28z": {"root": "z", "label": "vii°{r3}", "priority": "80"},
    
    // vi
    
