@@ -214,6 +214,7 @@ var spellingAndAnalysisFunctions = {
             rpcs.push(this.rel_pc(chord[i], this.Piano.keynotePC));
         }
         var rel_pc = this.rel_pc(midi, this.Piano.keynotePC);
+        let rel_pc_of_bass = this.rel_pc(chord[0], this.Piano.keynotePC);
 
         /** call enharmonic changes **/
         if (rel_pc == 1 && _.contains(rpcs,8)) {
@@ -244,6 +245,13 @@ var spellingAndAnalysisFunctions = {
         ) {
             return this.push_flat(midi,name);
             /* fully diminished leading-tone sevenths except for third inversion */
+        }
+        if (rel_pc == 3
+        && (_.contains(rpcs,6) && _.contains(rpcs,9) && _.contains(rpcs,0))
+        && [6,9].includes(rel_pc_of_bass)
+        ) {
+            return this.push_flat(midi,name);
+            /* fully diminished secondary leading-tone sevenths except for third inversion */
         }
 
         return name;

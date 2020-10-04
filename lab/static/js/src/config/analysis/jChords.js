@@ -119,6 +119,11 @@ define({
    "0/469": {"root": "6", "label": "vii⌀{r3}/V", "priority": "80"},
    "4/069": {"root": "6", "label": "vii⌀{r2}/V", "priority": "80"},
    
+   "6/039": {"root": "6", "label": "vii°{u}/V", "priority": "80"},
+   "9/036": {"root": "6", "label": "vii°{z5}/V", "priority": "80"},
+   // "0/369": {"root": "6", "label": "vii°{r3}/V", "priority": "80"},
+   "3/069": {"root": "3", "label": "vii°{u}/iii", "priority": "90"},
+
    // V
    
    "7/2z": {"root": "7", "label": "V", "priority": "1"},
