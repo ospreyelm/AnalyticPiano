@@ -551,7 +551,7 @@ var spellingAndAnalysisFunctions = {
         if (this.Piano.highlightMode["doublinghighlight"]) {
             var key_pc = this.Piano.keynotePC;
             if ( (this.key_is_minor() && _.contains( [4,6,11], this.rel_pc(note, key_pc) )) /* tendency tones in minor */
-            || (this.key_is_major() && _.contains( [1,6,8,11],this.rel_pc(note, key_pc) )) /* tendency tones in major */
+            || (this.key_is_major() && _.contains( [1,6,11],this.rel_pc(note, key_pc) )) /* tendency tones in major (8 removed, Sept 2020) */
             ) {
                 for (i = 0, len = notes.length; i < len; i++) {
                     other = notes[i];
