@@ -38,7 +38,7 @@ def playlist_performance_view(request, playlist_id):
 
         [d.update(**{exercise['id']:
             f'{"Error(s) " if ( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) else "Pass "}'
-            f'{"" if (( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) or not isinstance(exercise["exercise_mean_tempo"], int)) else exercise["exercise_mean_tempo"]}'
+            f'{"" if (( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
             f'{"" if ( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) else "*" * exercise["exercise_tempo_rating"]} '
             }) for exercise in exercises_data]
 
