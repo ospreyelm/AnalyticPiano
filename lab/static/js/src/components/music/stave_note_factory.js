@@ -99,7 +99,7 @@ define([
 			var note_nums = this.chord.getNoteNumbers(this.clef);
 			var all_note_nums = this.chord.getNoteNumbers();
 			if (typeof this.chord.settings.full_context === 'object'
-				&& ! (all_note_nums.length === 2 && this.keySignature.key === "h")) {
+				&& ! (this.chord.settings.full_context.length === 2 && this.keySignature.key === "h")) {
 				/* the second half of the conditional safeguards spelling of intervals in no key*/
 				all_note_nums = this.chord.settings.full_context;
 			}
