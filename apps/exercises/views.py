@@ -38,9 +38,11 @@ def playlist_performance_view(request, playlist_id):
 
         # format is: [mean tempo, rounded to integer][tempo star-rating] (err count).
         # example: 66** (2)
-        [d.update(**{exercise['id']: f'{exercise["exercise_mean_tempo"]}'
-                                     f'{"*" * exercise["exercise_tempo_rating"]} '
-                                     f'({exercise["exercise_error_tally"]})'}) for exercise in exercises_data]
+        [d.update(**{exercise['id']:
+            f'{"Error(s) " if ( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) else "Pass "}'
+            f'{"" if ( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) else exercise["exercise_mean_tempo"]}'
+            f'{"" if ( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) else "*" * exercise["exercise_tempo_rating"]} '
+            }) for exercise in exercises_data]
 
     table = AdminPlaylistPerformanceTable(
         data=data,
