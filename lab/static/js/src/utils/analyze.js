@@ -254,24 +254,29 @@ var spellingAndAnalysisFunctions = {
         var bass_pc = (12 + chord[0]) % 12;
         
         if (chord.length == 2) {
-            var semitones = this.rel_pc(chord[1], bass_pc); /* register is irrelevant */
-            if (!this.hIntervals[semitones]) {
+            var profile = chord[1] - chord[0]; /* register is irrelevant; profile is a semitone count here */
+            if (!this.hIntervals[profile]) {
                 return this.noteNames[midi % 12]; /** return default spelling **/
             }
 
             /* how the bass is spelled according to the type of interval */
             /* expressed as a minor key */
-            var scale = this.hIntervals[semitones]["spellbass"];
+            var scale = this.hIntervals[profile]["spellbass"];
 
             if (scale === "___") {
                 return this.noteNames[midi % 12]; /** return default spelling **/
             }
 
             var bass_name = this.spelling[scale][bass_pc].toLowerCase();
-            var steps = this.hIntervals[semitones]["stepwise"];
-            if (midi == chord[0]) {
+            if (midi === chord[0]) {
                 return bass_name;
-            } else {
+            }
+
+            var steps = this.hIntervals[profile]["stepwise"];
+            var semitones = this.rel_pc(midi, bass_pc);
+            if (semitones === 0) {
+                return bass_name;
+            } else if (semitones === profile) {
                 return this.upper_note_name(parseInt(bass_pc), bass_name, parseInt(semitones), parseInt(steps));
             }
         }
@@ -292,6 +297,9 @@ var spellingAndAnalysisFunctions = {
             var all_steps = this.hChords[profile]["stepwise"];
             var bass_name = this.spelling[scale][bass_pc].toLowerCase();
             var semitones = this.rel_pc(midi, bass_pc);
+            if (semitones === 0) {
+                return bass_name;
+            }
             var idx = profile.indexOf(this.pitchClasses[semitones]);
             if (idx === -1) {
                 return this.noteNames[midi % 12]; /** return default spelling **/
