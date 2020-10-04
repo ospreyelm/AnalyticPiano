@@ -12,12 +12,12 @@
     </ul>
     <ul class="header-second-row">
         <!-- <li id="notificationAlerts" class="notificationAlerts"></li> -->
-        <li style="padding-right:0.25em"><button id="audio-context" onclick="getElementById('audio-context').innerHTML = 'Audio On'">Enable Audio</button></li>
+        <li style="padding-right:0.25em"><button id="audio-context" style="min-width:107px" onclick="getElementById('audio-context').innerHTML = 'Audio Enabled'">Enable Audio </button></li>
+        <li style="padding-right:0.25em"><button id="volume" style="min-width:37px;font-weight:bold">mf</button></li>
+        <li style="padding-right:0.25em"><button id="Mute" style="min-width:68px">Mute</button></li>
         <li><button id="all-notes-off" >All Notes Off</button></li>
         {% if user.is_authenticated %}
             <li>Logged in as: {{ user.email }}</li>
-            <li><a href={% url 'dashboard:performed-playlists'%} target="_blank">Data</a></li>
-            <li><a href={% url 'dashboard:supervisors'%} target="_blank">Connect</a></li>
         {% endif %}
         {% if user.is_staff %}
             <li><a href={% url 'admin:index'%} target="_blank">PANEL</a></li>

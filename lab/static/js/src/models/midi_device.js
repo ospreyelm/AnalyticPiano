@@ -34,31 +34,71 @@ define([
 	 */
 	document.documentElement.addEventListener(
 		"mousedown", function(){
-		  mouse_IsDown = true;
-		  if (Tone.context.state !== 'running') {
-		  document.getElementById('audio-context').innerHTML = "Audio On"
-		  Tone.context.resume();
-		  polySynth.releaseAll();
-		}})
-	
+			mouse_IsDown = true;
+			if (Tone.context.state !== 'running') {
+				document.getElementById('audio-context').innerHTML
+					= "Audio Enabled"
+				Tone.context.resume();
+				polySynth.releaseAll();
+			}
+		});
 
-	All_Notes_Off = document.getElementById("all-notes-off");
-	All_Notes_Off.addEventListener("mousedown", function(){
-		  polySynth.releaseAll();
-	})
-
-	var vol = new Tone.Volume(-12).toMaster();
+	/* Create Polyphonic Synthesizer */
 	var polySynth = new Tone.PolySynth(10, Tone.FMSynth);
+	var vol = new Tone.Volume(-6).toMaster();
 	polySynth.connect(vol);
-	var lastTiming = 0;
-	
-	function AllNotesOff() {
-		polySynth.releaseAll();
+
+	/* defaults per _header.html */
+	polySynth.volume.value = -12;
+	vol.mute = false;
+
+
+	/* All Notes Off button */
+	if ($("all-notes-off")){
+		$("all-notes-off").click( function () {
+			polySynth.releaseAll();
+		});
 	}
-	
+
+
+	/* Mute button */
+	if ($("#Mute").length > 0) {
+		$("#Mute").click( function (){
+			let mute = document.getElementById("Mute");
+			if (mute.innerHTML == "Mute") {
+				vol.mute = true;
+				mute.innerHTML = "Unmute";
+			} else if (mute.innerHTML == "Unmute") {
+				vol.mute = false;
+				mute.innerHTML = "Mute";
+			}
+		});
+	}
+
+	const volumeOpts = {
+		"ff": 0,
+		"f": -5,
+		"mf": -12,
+		"mp": -22,
+		"p": -35,
+		"pp": -50
+	};
+	const volumeOptsKeys = Object.keys(volumeOpts);
+
+	/* Volume control */
+	if ($("#volume").length > 0) {
+		$("#volume").click( function (){
+			let volumeDiv = document.getElementById("volume");
+			volumeDiv.innerHTML = volumeOptsKeys[(1 + volumeOptsKeys.indexOf(volumeDiv.innerHTML)) % volumeOptsKeys.length];
+			polySynth.volume.value = volumeOpts[volumeDiv.innerHTML];
+		});
+	}
+
+
+
 	/**
 	 * Sets a callback that will be called when the update() method
-	 * is called. 
+	 * is called.
 	 *
 	 * @param {Function} callback
 	 * @return undefined
@@ -122,7 +162,7 @@ define([
 			if (this.isValidSelection(this.inputs, i)) {
 				this._inputidx = i;
 				this._input = this.inputs[i];
-				// this.clearInputListeners(); 
+				// this.clearInputListeners();
 				/* previously selected index as input device and cleared other listeners, now selects all inputs */
 				this.addInputListener();
 				some_valid_selection = true;
@@ -142,7 +182,7 @@ define([
 			this._outputidx = index;
 			this._output = this.outputs[index];
 			return true;
-		} 
+		}
 		return false;
 	};
 
@@ -151,10 +191,10 @@ define([
 	 *
 	 * @return undefined
 	 *
-	 */ 
+	 */
 	MidiDevice.prototype.selectDefaults = function(input) {
 		this.selectInput(0, input); /* previously selectInput(0), now sending all inputs*/
-		this.selectOutput(0, input); 
+		this.selectOutput(0, input);
 	};
 
 	/**
@@ -216,7 +256,7 @@ define([
 
 	/**
 	 * Receives the MIDI message from the input device and triggers it
-	 * so that interested subscribers can act on it. 
+	 * so that interested subscribers can act on it.
 	 *
 	 * @return undefined
 	 */
@@ -237,14 +277,17 @@ define([
 				this._output.send(msg);
 			}
 		} else { /* synth output */
-			var note = teoria.note.fromMIDI(msg[1]); /* convert MIDI number to pitch name */
+			/* convert MIDI number to pitch name */
+			var note = teoria.note.fromMIDI(msg[1]);
+
 			var accidental = note.accidental();
+
+			// console.log(polySynth);
+
 			if (msg[0] == 144) { /* note on, channel 1 */
-				polySynth.triggerAttack(note.name() + accidental + note.octave());    
+				polySynth.triggerAttack(note.name() + accidental + note.octave());
 			} else if (msg[0] == 128) { /* note off, channel 1 */
 				polySynth.triggerRelease(note.name() + accidental + note.octave());
-			} else {
-				// console.log(msg);
 			}
 		}
 	};
