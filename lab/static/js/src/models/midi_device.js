@@ -54,11 +54,11 @@ define([
 
 
 	/* All Notes Off button */
-	if ($("all-notes-off")){
-		$("all-notes-off").click( function () {
-			polySynth.releaseAll();
-		});
-	}
+	// if ($("all-notes-off")){
+	// 	$("all-notes-off").click( function () {
+	// 		polySynth.releaseAll();
+	// 	});
+	// }
 
 
 	/* Mute button */
@@ -66,6 +66,10 @@ define([
 		$("#Mute").click( function (){
 			let mute = document.getElementById("Mute");
 			if (mute.innerHTML == "Mute") {
+
+				/* all notes off */
+				polySynth.releaseAll();
+
 				vol.mute = true;
 				mute.innerHTML = "Unmute";
 			} else if (mute.innerHTML == "Unmute") {
