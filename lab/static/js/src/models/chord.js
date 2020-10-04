@@ -286,18 +286,40 @@ define([
 				}
 			}, this);
 
-			if (prev_notes && prev_sustained) {
-				_.each(prev_sustained, function(state, noteNumber) {
-					if(prev_notes[noteNumber] !== state) {
-						if(state === false) {
-							notes_to_turn_off.push(noteNumber);
-						}
-						// DO NOT EDIT prev_notes (as _notes above)
-						// Breaks exercise grading
+			if (prev_notes) {
+				// needs improvement: too harsh
+				_.each(prev_notes, function(state, noteNumber) {
+					if(_sustained[noteNumber] !== state) {
+						notes_to_turn_off.push(noteNumber);
 						changed = true;
 					}
 				}, this);
 			}
+
+			// if (prev_notes && prev_sustained) {
+			// 	_.each(prev_sustained, function(state, noteNumber) {
+			// 		if(prev_notes[noteNumber] !== state) {
+			// 			if(state === false) {
+			// 				notes_to_turn_off.push(noteNumber);
+			// 			}
+			// 			// DO NOT EDIT prev_notes (as _notes above)
+			// 			// Breaks exercise grading
+			// 			changed = true;
+			// 		}
+			// 	}, this);
+			// }
+
+			// if (prev_notes) {
+			// 	// this is too lenient
+			// 	_.each(prev_notes, function(state, noteNumber) {
+			// 		console.log(state, noteNumber, _sustained[noteNumber]);
+			// 		if(_sustained[noteNumber] !== undefined && _sustained[noteNumber] === false && state === false) {
+			// 			notes_to_turn_off.push(noteNumber);
+			// 			_notes[noteNumber] = false;
+			// 			changed = true;
+			// 		}
+			// 	}, this);
+			// }
 
 			this._sustained = {};
 
