@@ -19,7 +19,7 @@ class ExerciseAdmin(admin.ModelAdmin):
     fieldsets = (
         ('General Info', {
             'fields': (
-                ('id', 'authored_by', 'type', 'show_on_site'),
+                ('id', 'authored_by', 'type', 'staff_distribution', 'show_on_site'),
                 ('created', 'updated'),
                 'is_public'),
         }),
