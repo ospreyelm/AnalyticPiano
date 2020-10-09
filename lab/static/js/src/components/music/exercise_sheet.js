@@ -345,7 +345,7 @@ define([
          */
         updateStaves: function() {
             var chord, treble, bass;
-            var limit = CHORD_BANK_SIZE * 4;// Adjusted now that rhythms varied
+            var limit = CHORD_BANK_SIZE * 4 + 1;// Adjusted now that rhythms varied
             var display_items = this.getDisplayChords().items({limit: limit, reverse: false});
             var exercise_items = this.getExerciseChords().items({limit: limit, reverse: false});
             var staves = [];
