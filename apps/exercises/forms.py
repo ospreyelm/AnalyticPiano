@@ -21,9 +21,26 @@ class ExerciseForm(forms.ModelForm):
         (TYPE_FIGURED_BASS_PCS, TYPE_FIGURED_BASS_PCS)
     )
 
+    DISTRIBUTION_KEYBOARD = 'keyboard'
+    DISTRIBUTION_CHORALE = 'chorale'
+    DISTRIBUTION_LH = 'LH'
+    DISTRIBUTION_RH = 'RH'
+    DISTRIBUTION_KEYBOARD_RH_PREFERENCE = 'keyboardPlusRHBias'
+    DISTRIBUTION_KEYBOARD_LH_PREFERENCE = 'keyboardPlusLHBias'
+
+    DISTRIBUTION_CHOICES = (
+        (DISTRIBUTION_KEYBOARD, DISTRIBUTION_KEYBOARD),
+        (DISTRIBUTION_CHORALE, DISTRIBUTION_CHORALE),
+        (DISTRIBUTION_LH, DISTRIBUTION_LH),
+        (DISTRIBUTION_RH, DISTRIBUTION_RH),
+        (DISTRIBUTION_KEYBOARD_RH_PREFERENCE, DISTRIBUTION_KEYBOARD_RH_PREFERENCE),
+        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, DISTRIBUTION_KEYBOARD_RH_PREFERENCE)
+    )
+
     intro_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False)
+    staff_distribution = forms.ChoiceField(choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False)
 
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
@@ -31,6 +48,7 @@ class ExerciseForm(forms.ModelForm):
             self.fields['intro_text'].initial = self.instance.data.get('introText', None)
             self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
             self.fields['type'].initial = self.instance.data.get('type', self.TYPE_MATCHING)
+            self.fields['staff_distribution'].initial = self.instance.data.get('staffDistribution', self.DISTRIBUTION_KEYBOARD)
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
@@ -39,6 +57,7 @@ class ExerciseForm(forms.ModelForm):
             instance.data['introText'] = self.cleaned_data['intro_text']
             instance.data['reviewText'] = self.cleaned_data['review_text']
             instance.data['type'] = self.cleaned_data['type']
+            instance.data['staffDistribution'] = self.cleaned_data['staff_distribution']
             instance.authored_by = self.context.get('user')
             instance.clean()
             instance.save()
