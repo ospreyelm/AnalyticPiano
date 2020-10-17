@@ -222,7 +222,6 @@ define({
 
    "2/058": {"root": "2", "label": "ii⌀{u}"},
    "5/028": {"root": "2", "label": "ii⌀{z5}", "altLabel": "iv{dz}"},
-   "5/02":  {"root": "2", "label": "ii⌀{z5}"},
    "8/025": {"root": "2", "label": "ii⌀{r3}"},
    "0/258": {"root": "2", "label": "ii⌀{r2}"},
 
