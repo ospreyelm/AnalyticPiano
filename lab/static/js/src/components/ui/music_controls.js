@@ -369,7 +369,6 @@ define([
 				if (type == 'matching') {
 					const visibility_input = prompt("Enter a visibility pattern using any combination of: b = bass, f = first, l = last, s = soprano");
 					const visibility_reqs = visibility_input.replace(/[^flsb]/gi, "").split("").sort();
-					console.log(visibility_reqs);
 
 					let flsb = json_data.chord;
 					if (visibility_reqs.length >= 1) {
@@ -400,7 +399,6 @@ define([
 						flsb[idx].hidden = [];
 					}
 
-					console.log(flsb);
 					if (visibility_reqs.length >= 1) {
 						json_data.chord = flsb;
 					}
