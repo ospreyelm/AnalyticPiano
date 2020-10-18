@@ -366,6 +366,46 @@ define([
 				}
 				const type = (type_input ? (type_options.hasOwnProperty(type_input) ? type_options[type_input] : false) : false);
 
+				if (type == 'matching') {
+					const visibility_input = prompt("Enter a visibility pattern using any combination of: b = bass, f = first, l = last, s = soprano");
+					const visibility_reqs = visibility_input.replace(/[^flsb]/gi, "").split("").sort();
+					console.log(visibility_reqs);
+
+					let flsb = json_data.chord;
+					if (visibility_reqs.length >= 1) {
+						var i, len;
+						for (i = 0, len = flsb.length; i < len; i++) {
+							flsb[i].hidden = flsb[i].visible;
+							flsb[i].visible = [];
+						}
+					}
+
+					if (visibility_reqs.indexOf("b") !== -1) {
+						for (i = 0, len = flsb.length; i < len; i++) {
+							flsb[i].visible = [].concat(flsb[i].visible, flsb[i].hidden.shift()).sort();
+						}
+					}
+					if (visibility_reqs.indexOf("s") !== -1) {
+						for (i = 0, len = flsb.length; i < len; i++) {
+							flsb[i].visible = flsb[i].visible.concat(flsb[i].hidden.pop()).sort();
+						}
+					}
+					if (visibility_reqs.indexOf("f") !== -1 && flsb.length >= 1) {
+						flsb[0].visible = [].concat(flsb[0].visible, flsb[0].hidden).sort();
+						flsb[0].hidden = [];
+					}
+					if (visibility_reqs.indexOf("l") !== -1 && flsb.length >= 2) {
+						let idx = flsb.length - 1;
+						flsb[idx].visible = flsb[idx].visible.concat(flsb[idx].hidden).sort();
+						flsb[idx].hidden = [];
+					}
+
+					console.log(flsb);
+					if (visibility_reqs.length >= 1) {
+						json_data.chord = flsb;
+					}
+				}
+
 				const user_input = prompt("Enter the Intro Text");
 				const intro_text =  (!user_input ? false :
 					user_input
