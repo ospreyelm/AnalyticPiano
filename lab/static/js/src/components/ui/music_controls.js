@@ -386,7 +386,7 @@ define([
 					}
 					if (visibility_reqs.indexOf("s") !== -1) {
 						for (i = 0, len = flsb.length; i < len; i++) {
-							flsb[i].visible = flsb[i].visible.concat(flsb[i].hidden.pop()).sort();
+							flsb[i].visible = [].concat(flsb[i].visible, flsb[i].hidden.pop()).sort();
 						}
 					}
 					if (visibility_reqs.indexOf("f") !== -1 && flsb.length >= 1) {
@@ -395,7 +395,7 @@ define([
 					}
 					if (visibility_reqs.indexOf("l") !== -1 && flsb.length >= 2) {
 						let idx = flsb.length - 1;
-						flsb[idx].visible = flsb[idx].visible.concat(flsb[idx].hidden).sort();
+						flsb[idx].visible = [].concat(flsb[idx].visible, flsb[idx].hidden).sort();
 						flsb[idx].hidden = [];
 					}
 
