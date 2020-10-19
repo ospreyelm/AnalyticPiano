@@ -39,6 +39,7 @@ define([
 		POLY_PRESSURE : 0xA0, // 160
 		CONTROL_CHANGE : 0xB0, // 176
 		PROGRAM_CHANGE : 0xC0, // 192
+		PITCH_BEND : 0xE0, // 224
 	};
 	/**
 	 * Maps MIDI control numbers to names and vice versa for lookup
@@ -369,13 +370,20 @@ define([
 			else if (MIDI_MSG_MAP.NOTE_OFF.indexOf(command) !== -1) {
 				this.triggerNoteOff(msg.data[1], msg.data[2]);
 			}
-			else if (MIDI_MSG_MAP.CONTROL_CHANGE === command) {
+			else if (command === MIDI_MSG_MAP.CONTROL_CHANGE) {
 				if(this.isPedalControlChange(msg.data[1])) {
 					this.triggerPedalChange(msg.data[1], msg.data[2]);
 				}
 			}
+			else if (command === MIDI_MSG_MAP.PITCH_BEND && msg.data[2] === 64) {
+				// console.log('pitch bend', msg.data);
+				this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
+			}
+			else if (command === MIDI_MSG_MAP.PITCH_BEND) {
+				// console.log("MIDI pitch bend: ", msg.data);
+			}
 			else {
-				console.log("MIDI message not handled: ", msg);
+				// console.log("MIDI message not handled: ", msg);
 			}
 		},
 		/**
