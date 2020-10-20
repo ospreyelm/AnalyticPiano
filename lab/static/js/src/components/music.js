@@ -179,7 +179,7 @@ define([
                             'exercise_num': setdef.settings.definition.exerciseNum
                         },
                         dataType: 'json',
-                    success: function (data) {
+                        success: function (data) {
                             newData = data;
                         }
                     });
@@ -202,7 +202,9 @@ define([
                         },
                         dataType: 'json',
                         success: function (data) {
-                            newData = data;
+                            if (setdef.settings.definition.nextExerciseId) {
+                                newData = data;
+                            }
                         }
                     });
 
@@ -224,7 +226,9 @@ define([
                         },
                         dataType: 'json',
                         success: function (data) {
-                            newData = data;
+                            if (setdef.settings.definition.previousExerciseId) {
+                                newData = data;
+                            }
                         }
                     });
 
