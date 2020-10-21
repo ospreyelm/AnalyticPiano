@@ -434,7 +434,6 @@ define([
 			json_data = JSON.stringify(json_data,null,0);
 
 			if (destination === "upload") {
-				console.log("Upload", json_data);
 
 				$.ajax({
 					type: "POST",
