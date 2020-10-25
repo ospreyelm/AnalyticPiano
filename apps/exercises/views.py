@@ -27,7 +27,10 @@ def playlist_performance_view(request, playlist_id):
 
     for user in users:
         user_data = {
-            'email': user,
+            # 'email': user,
+            # 'given_name': request.user.first_name,
+            # 'surname': request.user.last_name,
+            'performer': " ".join([n for n in [request.user.last_name.upper(), request.user.first_name, user] if n != '']),
             'performance_data': performances.filter(user__email=user).first().data
         }
         user_data.update({'exercise_count': len(user_data['performance_data'])})
