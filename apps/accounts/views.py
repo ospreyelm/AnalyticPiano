@@ -20,8 +20,9 @@ def login(request):
             email = form.cleaned_data.get('email')
             password = form.cleaned_data.get('password')
             user = authenticate(username=email, password=password)
+            goto = request.GET.get('next', '/lab/')
             django_login(request, user)
-            return redirect(reverse_lazy('lab:index'))
+            return redirect(goto)
         else:
             return render(request, 'accounts/login.html', {'form': form})
     else:
