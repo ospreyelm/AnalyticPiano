@@ -161,11 +161,15 @@ class PlaylistForm(forms.ModelForm):
             upper = self._integer_from_id(split_input[-1])
             if not lower < upper:
                 return exercise_ids
+            allowance = 100
             for num in range(lower, upper + 1):
                 item = self._id_from_integer(num)
                 if item in user_authored_exercises:
                     # Self-authored exercises only
                     exercise_ids.append(item)
+                    allowance += -1
+                if allowance == 0:
+                    break
 
         return exercise_ids
 
