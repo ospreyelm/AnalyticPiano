@@ -116,7 +116,6 @@ class PlaylistForm(forms.ModelForm):
     def _integer_from_id(self, ex_str):
         letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         digits = "0123456789"
-        bases = [26, 26, 10, 10, 26]
         reverse_str = ex_str[::-1]
         integer = 0
         base = 1
