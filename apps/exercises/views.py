@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django_tables2 import Column
 
-from apps.exercises.models import Playlist, PerformanceData
+from apps.exercises.models import Playlist, PerformanceData, User as Performers
 from apps.exercises.tables import AdminPlaylistPerformanceTable
 
 User = get_user_model()
@@ -25,12 +25,16 @@ def playlist_performance_view(request, playlist_id):
     exercises = [exercise for exercise in playlist.exercise_list]
     users = list(set(list(performances.values_list('user__email', flat=True))))
 
+
     for user in users:
+        name = [n for n in list(Performers.objects.filter(email=user).values_list('first_name', 'last_name'))[0]]
         user_data = {
-            # 'email': user,
-            # 'given_name': request.user.first_name,
-            # 'surname': request.user.last_name,
-            'performer': " ".join([n for n in [request.user.last_name.upper(), request.user.first_name, user] if n != '']),
+            'email': user,
+            'performer': " ".join([n for n in [
+                    name[0],
+                    name[1].upper(),
+                    '<' + user + '>',
+                ] if n != '']),
             'performance_data': performances.filter(user__email=user).first().data
         }
         user_data.update({'exercise_count': len(user_data['performance_data'])})

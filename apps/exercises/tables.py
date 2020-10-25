@@ -6,4 +6,5 @@ class AdminPlaylistPerformanceTable(tables.Table):
     exercise_count = tables.Column()
 
     class Meta:
-        order_by = ('-exercise_count', 'email')
+        # order_by = ('-exercise_count')
+        order_by = ('performer')
