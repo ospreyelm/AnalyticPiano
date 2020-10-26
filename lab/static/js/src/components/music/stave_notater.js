@@ -688,7 +688,7 @@ define([
 				ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 				ctx.fillText('chords', x - 18, 35);
 				if (letters) {
-					ctx.fillText('notes', x - 18, 60);
+					// ctx.fillText('notes', x - 18, 60);
 				}
 			} else if (key !== '' && !thoroughbass) {
 				var newSize = '20px';

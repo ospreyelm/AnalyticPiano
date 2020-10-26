@@ -8,7 +8,8 @@ define([
 	'app/utils/instruments',
 	'app/widgets/key_signature',
 	'app/widgets/analyze',
-	'app/widgets/highlight'
+	'app/widgets/highlight',
+	'app/widgets/staff_distribute'
 ], function(
 	$, 
 	_, 
@@ -19,7 +20,8 @@ define([
 	Instruments,
 	KeySignatureWidget,
 	AnalyzeWidget,
-	HighlightWidget
+	HighlightWidget,
+	StaffDistributionWidget
 ) {
 	
 	/**
@@ -222,7 +224,7 @@ define([
 		initNotationTab: function() {
 			var that = this;
 			var containerEl = this.containerEl;
-			var el = $('.js-analyze-widget', containerEl);
+			var el = $('.js-notation-opts-widget', containerEl);
 			var analysisSettings = {};
 			var highlightSettings = {};
 			var staffDistribution = {};
@@ -234,6 +236,7 @@ define([
 			}
 			var analyze_widget = new AnalyzeWidget(analysisSettings);
 			var highlight_widget = new HighlightWidget(highlightSettings);
+			var staff_distribution_widget = new StaffDistributionWidget(staffDistribution);
 			var event_for = {
 				'highlight': EVENTS.BROADCAST.HIGHLIGHT_NOTES,
 				'analyze': EVENTS.BROADCAST.ANALYZE_NOTES
@@ -259,8 +262,10 @@ define([
 
 			analyze_widget.render();
 			highlight_widget.render();
+			staff_distribution_widget.render();
 
 			el.append(analyze_widget.el, highlight_widget.el);
+			// el.append(analyze_widget.el, highlight_widget.el, staff_distribution_widget.el);
 		},
 		/**
 		 * Renders the instrument selector.

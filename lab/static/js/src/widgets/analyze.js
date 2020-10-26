@@ -23,7 +23,7 @@ define([
 
 	_.extend(AnalyzeWidget.prototype, {
 		templateHTML: [
-			'<fieldset class="settings-notation">',
+			'<fieldset class="settings-notation" style="margin-top:0px">',
 				'<legend><label><input type="checkbox" name="analysis_enabled" value="1" accesskey="a"> ANALYZE</label></legend>',
 				'<ul>',
 				'<li>',

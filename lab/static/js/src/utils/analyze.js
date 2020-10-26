@@ -214,6 +214,7 @@ var spellingAndAnalysisFunctions = {
             rpcs.push(this.rel_pc(chord[i], this.Piano.keynotePC));
         }
         var rel_pc = this.rel_pc(midi, this.Piano.keynotePC);
+        let rel_pc_of_bass = this.rel_pc(chord[0], this.Piano.keynotePC);
 
         /** call enharmonic changes **/
         if (rel_pc == 1 && _.contains(rpcs,8)) {
@@ -237,6 +238,20 @@ var spellingAndAnalysisFunctions = {
         )) {
             return this.push_flat(midi,name);
             /* augmented sixths and other pre-dominant chords */
+        }
+        if (rel_pc == 8
+        && (_.contains(rpcs,11) && _.contains(rpcs,2) && _.contains(rpcs,5))
+        && midi != chord[0]
+        ) {
+            return this.push_flat(midi,name);
+            /* fully diminished leading-tone sevenths except for third inversion */
+        }
+        if (rel_pc == 3
+        && (_.contains(rpcs,6) && _.contains(rpcs,9) && _.contains(rpcs,0))
+        && [6,9].includes(rel_pc_of_bass)
+        ) {
+            return this.push_flat(midi,name);
+            /* fully diminished secondary leading-tone sevenths except for third inversion */
         }
 
         return name;
@@ -536,7 +551,7 @@ var spellingAndAnalysisFunctions = {
         if (this.Piano.highlightMode["doublinghighlight"]) {
             var key_pc = this.Piano.keynotePC;
             if ( (this.key_is_minor() && _.contains( [4,6,11], this.rel_pc(note, key_pc) )) /* tendency tones in minor */
-            || (this.key_is_major() && _.contains( [1,6,8,11],this.rel_pc(note, key_pc) )) /* tendency tones in major */
+            || (this.key_is_major() && _.contains( [1,6,11],this.rel_pc(note, key_pc) )) /* tendency tones in major (8 removed, Sept 2020) */
             ) {
                 for (i = 0, len = notes.length; i < len; i++) {
                     other = notes[i];
