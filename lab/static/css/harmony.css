@@ -630,3 +630,8 @@ ul.menu-group-list li {
 form label {
     color: white;
 }
+
+ul.pagination li {
+    display: inline;
+    color: white;
+}
