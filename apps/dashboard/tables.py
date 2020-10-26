@@ -58,7 +58,7 @@ class PerformancesListTable(tables.Table):
       }
     )
     created = tables.columns.DateColumn(
-      verbose_name='Most recent activity',
+      verbose_name='Date of first practice',
       format='Y-m-d • l, F j',
       attrs={
         "td": {"bgcolor": "white", "width": "auto"}
