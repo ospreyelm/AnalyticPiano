@@ -16,6 +16,7 @@ class UserAdmin(admin.UserAdmin):
                 'first_name',
                 'last_name',
                 'password',
+                'keyboard_size',
 
                 # FIXME RAAAAAWW PASSSWORDD!!
                 'raw_password',

@@ -10,6 +10,19 @@ from apps.accounts.managers import UserManager
 from apps.accounts.utils import generate_raw_password
 
 
+# Possible Keyboard Choices
+
+KEYBOARD_CHOICES = (
+    (25, _("25")),
+    (32, _("32")),
+    (37, _("37")),
+    (49, _("49")),
+    (61, _("61")),
+    (88, _("88"))
+)
+
+
+
 class User(AbstractBaseUser, PermissionsMixin):
     # FIXME RAW PASSWORD !!!!!!!!
     raw_password = models.CharField(max_length=32, default=generate_raw_password,
@@ -20,6 +33,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     first_name = models.CharField(_('First Name'), max_length=32, unique=False, default="", blank=True)
     last_name = models.CharField(_('Last Name'), max_length=32, unique = False, default="", blank=True)
+
+    keyboard_size = models.IntegerField(choices=KEYBOARD_CHOICES, default=49)   
+
 
     _supervisors = ArrayField(base_field=models.IntegerField(), default=list,
                               verbose_name='Supervisors', blank=True)
@@ -70,6 +86,9 @@ class User(AbstractBaseUser, PermissionsMixin):
             subject='Password Reminder',
             message=f'Your password is: {self.raw_password}',
         )
+
+    def get_keyboard_size(self):
+        return self.keyboard_size
 
     # TODO remove this in the future
     @classmethod

@@ -22,6 +22,8 @@ from apps.exercises.models import Exercise, Playlist
 import json
 import copy
 
+
+
 # from django.core.mail import send_mail
 
 User = get_user_model()
@@ -102,6 +104,12 @@ class PlayView(RequirejsTemplateView):
             context['home_url'] = reverse('lab:index')
         else:
             context['home_url'] = reverse("lab:course-index", kwargs={"course_id": course_id})
+
+
+        # this would send the keyboard size in the main context
+        # cur_user = self.request.user 
+        # print ("the keyboard size is ", cur_user.keyboard_size)
+        # context['keyboard_size'] = cur_user.keyboard_size
 
         return context
 

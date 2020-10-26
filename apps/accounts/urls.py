@@ -1,10 +1,11 @@
 from django.urls import path
 
-from apps.accounts.views import LogoutView, register, login, forgot_password_view
+from apps.accounts.views import LogoutView, register, login, forgot_password_view, send_keyboard_size
 
 urlpatterns = [
     path('register/', register, name='registration'),
     path('login/', login, name='custom-login'),
     path('logout/', LogoutView.as_view(), name='custom-logout'),
-    path('forgot-password/', forgot_password_view, name='forgot-password')
+    path('forgot-password/', forgot_password_view, name='forgot-password'),
+    # path('keyboard-size/', send_keyboard_size, name='keyboard-size'),
 ]
