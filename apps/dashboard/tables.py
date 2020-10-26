@@ -48,7 +48,7 @@ class SubscribersTable(tables.Table):
 class PerformancesListTable(tables.Table):
     playlist = tables.columns.LinkColumn(
       'dashboard:subscriber-playlist-performance',
-      verbose_name='Playlist',
+      verbose_name='Playlist (sorts by ID)',
       kwargs={
         'playlist_id': A('playlist.id'),
         'subscriber_id': A('user.id')
