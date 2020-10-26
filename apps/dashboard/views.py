@@ -82,9 +82,12 @@ def performance_list_view(request, subscriber_id=None):
     table = PerformancesListTable(
         performances
     )
+    subscriber_name = subscriber
 
+    RequestConfig(request).configure(table)
     return render(request, "dashboard/performances.html", {
-        "table": table
+        "table": table,
+        "subscriber_name": subscriber_name
     })
 
 
@@ -107,6 +110,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
             'performer': user,
             'subscriber_id': subscriber_id,
             'playlist_id': playlist.id,
+            'playlist_name': playlist.name,
             'performance_data': performances.filter(user__email=user).first().data,
             'perfomer_obj': subscriber
         }
@@ -127,6 +131,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
         extra_columns=[(exercise, Column()) for exercise in exercises]
     )
 
+    RequestConfig(request).configure(table)
     return render(request, "dashboard/performances.html", {
         "table": table
     })
