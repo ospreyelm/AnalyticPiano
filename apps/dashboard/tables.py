@@ -21,6 +21,7 @@ class SupervisorsTable(tables.Table):
 
     class Meta:
         attrs = {'class': 'paleblue'}
+        table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
 
 
@@ -40,6 +41,7 @@ class SubscribersTable(tables.Table):
 
     class Meta:
         attrs = {'class': 'paleblue'}
+        table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
 
 
@@ -87,6 +89,7 @@ class PerformancesListTable(tables.Table):
 
     class Meta:
         attrs = {'class': 'paleblue'}
+        table_pagination = False
         order_by = ('-created')
         template_name = "django_tables2/bootstrap4.html"
 
@@ -119,6 +122,7 @@ class SubscriberPlaylistPerformanceTable(tables.Table):
 
     class Meta:
         attrs = {'class': 'paleblue'}
+        table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
         order_by = ('-exercise_count', 'email')
         sequence = ('playlist_name', 'exercise_count', '...', 'performer_name', 'performer')
