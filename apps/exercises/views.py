@@ -54,8 +54,11 @@ def playlist_performance_view(request, playlist_id):
         extra_columns=[(exercise, Column()) for exercise in exercises]
     )
 
+    playlist_name = Playlist.objects.filter(id=playlist_id).first().name
+
     return render(request, "admin/performances.html", {
-        "table": table
+        "table": table,
+        "playlist_name": playlist_name
     })
 
 

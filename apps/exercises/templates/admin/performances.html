@@ -1,6 +1,10 @@
 {% load render_table from django_tables2 %}
 <!doctype html>
 
+<html lang="en" xml:lang="en">
+<meta name="google" content="notranslate">
+<meta http-equiv="Content-Language" content="en">
+
 <script>
 function downloadCSV(csv, filename) {
     var csvFile;
@@ -57,6 +61,7 @@ function exportTableToCSV(filename, colcount=false) {
         <title>Performance Data</title>
     </head>
     <body>
+        <h3>{% block playlist_name %}{{ playlist_name }}{% endblock %}</h3>
         {% render_table table %}
     </body>
 </html>
