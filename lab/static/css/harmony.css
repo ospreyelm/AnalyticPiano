@@ -634,4 +634,6 @@ form label {
 ul.pagination li {
     display: inline;
     color: white;
+    padding-left: 12px;
+    padding-right: 12px;
 }
