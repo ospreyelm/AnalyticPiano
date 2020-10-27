@@ -49,6 +49,29 @@ define([
 	 */
 	var DEFAULT_KEYBOARD_SIZE = Config.get('general.defaultKeyboardSize');
 	var DEFAULT_OCTAVE_ADJUSTMENT = Config.get('general.defaultOctaveAdjustment');
+	
+	/** 
+	 * ajax call to GET the keyboard size
+	 * this will set the keyboard size in the controls on the right (not the actual keyboard)
+	 * if no one is logged in the size is 49 (this is defined in apps.views.send_keyboard_size)
+	 */
+
+	$.ajax({
+		type: 'GET',
+		url: "keyboard-size/",
+		async: false,
+		data: {'email': 'email'},
+		success: function (response) {
+			if(!response["valid"]){
+				/** if the call is successful response.instance will hold the json sent by the server 
+				 * use the following two lines to log the response to the console
+				 * console.log(response);
+				 * console.log(JSON.parse(response.instance)); */
+				var sticky_settings = JSON.parse(response.instance);
+				DEFAULT_KEYBOARD_SIZE = sticky_settings.keyboard_size;
+			}
+		}
+	})
 
 	/**
 	 * Defines a namespace for settings.
