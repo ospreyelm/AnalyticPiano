@@ -22,8 +22,6 @@ from apps.exercises.models import Exercise, Playlist
 import json
 import copy
 
-
-
 # from django.core.mail import send_mail
 
 User = get_user_model()
