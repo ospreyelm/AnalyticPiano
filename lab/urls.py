@@ -23,6 +23,7 @@ urlpatterns = [
 
     # User Preferences
     path('keyboard-size/', send_keyboard_size, name='keyboard-size'),
+    path('exercises/keyboard-size/', send_keyboard_size, name='keyboard-size'),
 
     # Course Exercises
     re_path(r'^courses/(?P<course_id>\d+)/manage$', ManageView.as_view(), name="course-manage"),
