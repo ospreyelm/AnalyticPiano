@@ -10,7 +10,7 @@
 <label style="color: white;">Change default keyboard size</label>
 <form method="POST" class="post-form">
   {% csrf_token %}
-  {{ kbd_size_form.as_p }}
+  {{ form.as_p }}
   <input type="submit" value="Submit">
 </form>
 
