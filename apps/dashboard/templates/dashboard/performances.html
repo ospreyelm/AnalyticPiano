@@ -6,4 +6,12 @@
 
 {% include 'django_tables2/bootstrap4.html' with table=table %}
 
+<br>
+<label style="color: white;">Change default keyboard size</label>
+<form method="POST" class="post-form">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <input type="submit" value="Submit">
+</form>
+
 {% endblock content %}
