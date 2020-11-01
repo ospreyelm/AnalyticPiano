@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import redirect, get_object_or_404
 from django.shortcuts import render
 from django_tables2 import Column
@@ -95,7 +96,7 @@ def performance_list_view(request, subscriber_id=None):
         if kbd_size_form.is_valid() and not curr_user.is_anonymous:
             curr_user.keyboard_size = kbd_size_form.cleaned_data['keyboard_size']
             curr_user.save()
-        return None
+        return HttpResponseRedirect('')
     
     RequestConfig(request).configure(table)
     return render(request, "dashboard/performances.html", {
