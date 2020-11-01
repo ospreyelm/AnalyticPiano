@@ -10,6 +10,7 @@ from apps.dashboard.forms import AddSupervisorForm, AddSubscriberForm
 from apps.dashboard.tables import SupervisorsTable, SubscribersTable, PerformancesListTable, \
     SubscriberPlaylistPerformanceTable
 from apps.exercises.models import Playlist, PerformanceData
+from .forms import KeyboardForm
 
 User = get_user_model()
 
@@ -73,6 +74,7 @@ def remove_subscriber_view(request, subscriber_id):
 def performance_list_view(request, subscriber_id=None):
     subscriber_id = subscriber_id or request.user.id
     subscriber = get_object_or_404(User, id=subscriber_id)
+    curr_user = request.user # rewrite to also take parameter
     if not request.user.is_supervisor_to(subscriber):
         raise PermissionDenied
     performances = PerformanceData.objects.filter(
@@ -83,11 +85,23 @@ def performance_list_view(request, subscriber_id=None):
         performances
     )
     subscriber_name = subscriber
+    
+    kbd_size_form = KeyboardForm()
+    if subscriber.keyboard_size:
+        kbd_size_form.fields['keyboard_size'].initial = curr_user.keyboard_size
 
+    if request.method == 'POST':
+        kbd_size_form = KeyboardForm(request.POST)
+        if kbd_size_form.is_valid() and not curr_user.is_anonymous:
+            curr_user.keyboard_size = form.cleaned_data['keyboard_size']
+            curr_user.save()
+        return None
+    
     RequestConfig(request).configure(table)
     return render(request, "dashboard/performances.html", {
         "table": table,
-        "subscriber_name": subscriber_name
+        "subscriber_name": subscriber_name,
+        "form": kbd_size_form
     })
 
 
