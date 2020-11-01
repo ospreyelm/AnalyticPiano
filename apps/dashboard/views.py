@@ -96,7 +96,7 @@ def performance_list_view(request, subscriber_id=None):
         if kbd_size_form.is_valid() and not curr_user.is_anonymous:
             curr_user.keyboard_size = kbd_size_form.cleaned_data['keyboard_size']
             curr_user.save()
-        return HttpResponseRedirect('/')
+        return HttpResponseRedirect('/dashboard/performances/') # should be rewritten properly as reload; '' seemed not to work
     
     RequestConfig(request).configure(table)
     return render(request, "dashboard/performances.html", {
