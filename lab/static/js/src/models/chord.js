@@ -269,8 +269,8 @@ define([
 		 *
 		 * @returns {boolean}
 		 */
-		syncSustainedNotes: function(notes = false) {
-			var _notes = (notes ? notes : this._notes);
+		syncSustainedNotes: function(prev_notes = false, prev_sustained = false) {
+			var _notes = this._notes;
 			var _sustained = this._sustained;
 			var changed = false;
 
@@ -278,11 +278,48 @@ define([
 
 			_.each(_sustained, function(state, noteNumber) {
 				if(_notes[noteNumber] !== state) {
-					notes_to_turn_off.push(noteNumber);
+					if(state === false) {
+						notes_to_turn_off.push(noteNumber);
+					}
 					_notes[noteNumber] = state;
 					changed = true;
 				}
 			}, this);
+
+			if (prev_notes) {
+				// needs improvement: too harsh
+				_.each(prev_notes, function(state, noteNumber) {
+					if(_sustained[noteNumber] !== state) {
+						notes_to_turn_off.push(noteNumber);
+						changed = true;
+					}
+				}, this);
+			}
+
+			// if (prev_notes && prev_sustained) {
+			// 	_.each(prev_sustained, function(state, noteNumber) {
+			// 		if(prev_notes[noteNumber] !== state) {
+			// 			if(state === false) {
+			// 				notes_to_turn_off.push(noteNumber);
+			// 			}
+			// 			// DO NOT EDIT prev_notes (as _notes above)
+			// 			// Breaks exercise grading
+			// 			changed = true;
+			// 		}
+			// 	}, this);
+			// }
+
+			// if (prev_notes) {
+			// 	// this is too lenient
+			// 	_.each(prev_notes, function(state, noteNumber) {
+			// 		console.log(state, noteNumber, _sustained[noteNumber]);
+			// 		if(_sustained[noteNumber] !== undefined && _sustained[noteNumber] === false && state === false) {
+			// 			notes_to_turn_off.push(noteNumber);
+			// 			_notes[noteNumber] = false;
+			// 			changed = true;
+			// 		}
+			// 	}, this);
+			// }
 
 			this._sustained = {};
 

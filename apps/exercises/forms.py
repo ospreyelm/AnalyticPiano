@@ -1,4 +1,4 @@
-import string
+import string, re
 
 from ckeditor.widgets import CKEditorWidget
 from django import forms
@@ -21,9 +21,28 @@ class ExerciseForm(forms.ModelForm):
         (TYPE_FIGURED_BASS_PCS, TYPE_FIGURED_BASS_PCS)
     )
 
+    DISTRIBUTION_KEYBOARD = 'keyboard'
+    DISTRIBUTION_CHORALE = 'chorale'
+    DISTRIBUTION_GRANDSTAFF = 'grandStaff'
+    DISTRIBUTION_LH = 'LH'
+    DISTRIBUTION_RH = 'RH'
+    DISTRIBUTION_KEYBOARD_RH_PREFERENCE = 'keyboardPlusRHBias'
+    DISTRIBUTION_KEYBOARD_LH_PREFERENCE = 'keyboardPlusLHBias'
+
+    DISTRIBUTION_CHOICES = (
+        (DISTRIBUTION_KEYBOARD, DISTRIBUTION_KEYBOARD),
+        (DISTRIBUTION_CHORALE, DISTRIBUTION_CHORALE),
+        (DISTRIBUTION_GRANDSTAFF, DISTRIBUTION_GRANDSTAFF),
+        (DISTRIBUTION_LH, DISTRIBUTION_LH),
+        (DISTRIBUTION_RH, DISTRIBUTION_RH),
+        (DISTRIBUTION_KEYBOARD_RH_PREFERENCE, DISTRIBUTION_KEYBOARD_RH_PREFERENCE),
+        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, DISTRIBUTION_KEYBOARD_LH_PREFERENCE)
+    )
+
     intro_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False)
+    staff_distribution = forms.ChoiceField(choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False)
 
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
@@ -31,6 +50,7 @@ class ExerciseForm(forms.ModelForm):
             self.fields['intro_text'].initial = self.instance.data.get('introText', None)
             self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
             self.fields['type'].initial = self.instance.data.get('type', self.TYPE_MATCHING)
+            self.fields['staff_distribution'].initial = self.instance.data.get('staffDistribution', self.DISTRIBUTION_KEYBOARD)
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
@@ -39,6 +59,7 @@ class ExerciseForm(forms.ModelForm):
             instance.data['introText'] = self.cleaned_data['intro_text']
             instance.data['reviewText'] = self.cleaned_data['review_text']
             instance.data['type'] = self.cleaned_data['type']
+            instance.data['staffDistribution'] = self.cleaned_data['staff_distribution']
             instance.authored_by = self.context.get('user')
             instance.clean()
             instance.save()
@@ -67,44 +88,93 @@ class PlaylistForm(forms.ModelForm):
     def clean(self):
         super(PlaylistForm, self).clean()
 
-        exercise_ids = self.cleaned_data.get('exercises', '').split(',')
-        exercise_ids = [id_.upper().strip() for id_ in exercise_ids]
+        parsed_input = [n.upper().strip() for n in
+            re.split('-*[,; ]+-*',
+                self.cleaned_data.get('exercises', '')
+            )
+        ]
+        id_ranges = list(filter(lambda x: '-' in x, parsed_input))
+        single_ids = list(filter(lambda x: '-' not in x, parsed_input))
+
+        exercise_ids = []
+        for item in single_ids:
+            if len(item) <= 6:
+                full_id = f'{Exercise.zero_padding[:-len(item)]}{item}'
+                exercise_ids.append(full_id)
+
+        for id_range in id_ranges:
+            for item in self._expand_exercise_range(id_range):
+                exercise_ids.append(item)
+
         all_exercises = list(Exercise.objects.values_list('id', flat=True))
+        for item in exercise_ids:
+            if item not in all_exercises:
+                # also remove from list?
+                self.add_error('exercises',
+                    f'Exercise with ID {id_} does not exist.')
 
-        ranged_exercises = self._create_ranged_exercises(exercise_ids)
-
-        exercise_ids = list(filter(lambda x: '-' not in x, exercise_ids))
-        exercise_ids += ranged_exercises
-        exercise_ids = [f'{Exercise.zero_padding[:-1] if len(id_) == 2  else Exercise.zero_padding}{id_}'
-                        if len(id_) <= 2 else id_ for id_ in exercise_ids]
-
-        for id_ in exercise_ids:
-            if id_ != '' and id_ not in all_exercises:
-                self.add_error('exercises', f'Exercise with ID {id_} does not exist.')
         self.cleaned_data.update({'exercises': ','.join(exercise_ids)})
 
-    def _create_ranged_exercises(self, exercise_ids):
+    def _integer_from_id(self, ex_str):
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        digits = "0123456789"
+        reverse_str = ex_str[::-1]
+        integer = 0
+        base = 1
+        for i in range(len(reverse_str)):
+            char = reverse_str[i]
+            if char in letters:
+                integer += base * letters.index(char)
+                base *= 26
+            elif char in digits:
+                integer += base * digits.index(char)
+                base *= 10
+            else:
+                return None
+        return integer
+
+    def _id_from_integer(self, num):
+        # must accord with models.py (do not make format changes)
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        reverse_id = ""
+        bases = [26, 26, 10, 10, 26]
+        for base in bases:
+            if base == 26:
+                reverse_id += letters[num % base]
+            elif base == 10:
+                reverse_id += str(num % base)
+            num //= base
+        if num != 0 or len(reverse_id) != len(bases):
+            return None
+        reverse_id += "E"
+        return reverse_id[::-1]
+
+    def _expand_exercise_range(self, id_range):
         user_authored_exercises = list(Exercise.objects.filter(
             authored_by_id=self.context.get('user').id
         ).values_list('id', flat=True).order_by('id'))
 
-        ranged_exercises = []
-        ascii_chars = string.ascii_uppercase
+        exercise_ids = []
 
-        for id_ in exercise_ids:
-            if '-' in id_ and len(id_.split('-')) == 2:
-                lower, upper = id_.split('-')
-                id_range = lower[:-1]
-                char_range_lower, char_range_upper = ascii_chars.find(lower[-1]), ascii_chars.find(upper[-1])
-                chars = sorted(ascii_chars[char_range_lower:char_range_upper + 1])
-                for idx in range(len(chars)):
-                    ranged_exercises.append(f'{id_range}{chars[idx]}')
-        ranged_exercises = [f'{Exercise.zero_padding[:-1] if len(id_) == 2 else Exercise.zero_padding}{id_}'
-                            if len(id_) <= 2 else id_ for id_ in ranged_exercises]
-        ranged_exercises = sorted(set(ranged_exercises).intersection(user_authored_exercises),
-                                  key=lambda x: ranged_exercises.index(x))
-        ranged_exercises = list(ranged_exercises)
-        return ranged_exercises
+        split_input = re.split('-+', id_range)
+        if len(split_input) >= 2:
+            lower = self._integer_from_id(split_input[0])
+            upper = self._integer_from_id(split_input[-1])
+            if lower == None or upper == None:
+                return exercise_ids
+            if not lower < upper:
+                return exercise_ids
+            allowance = 100
+            for num in range(lower, upper + 1):
+                item = self._id_from_integer(num)
+                if item != None and item in user_authored_exercises:
+                    # Self-authored exercises only
+                    exercise_ids.append(item)
+                    allowance += -1
+                if allowance == 0:
+                    break
+
+        return exercise_ids
 
 
 class PerformanceDataForm(forms.ModelForm):

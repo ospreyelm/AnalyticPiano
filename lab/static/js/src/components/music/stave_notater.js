@@ -294,7 +294,6 @@ define([
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
 			var note_name = this.getAnalyzer().to_note_name(notes);
-			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -307,7 +306,6 @@ define([
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
 			var note_name = this.getAnalyzer().to_fixed_do(notes);
-			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -328,7 +326,6 @@ define([
 			var notes = this.chord.getNoteNumbers();
 			var note_name = this.getAnalyzer().getNoteName(notes[0],notes);
 			var helmholtz = this.getAnalyzer().to_helmholtz(note_name);
-			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -351,7 +348,6 @@ define([
 			var notes = this.chord.getNoteNumbers();
 			var note_name = this.getAnalyzer().getNoteName(notes[0],notes);
 			var scientific_pitch = this.getAnalyzer().to_scientific_pitch(note_name).replace(/b/g,'♭').replace(/#/g,'♯') || ''; // replace: true flat and sharp signs (substitution okay since letter names are uppercase here)
-			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -373,7 +369,6 @@ define([
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
 			var solfege = this.getAnalyzer().to_solfege(notes);
-			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -401,7 +396,6 @@ define([
 			var notes = this.chord.getNoteNumbers();
 			var width = 0, caret_offset = 0, caret_x = x, text_x = x;
 			var numeral = this.getAnalyzer().to_scale_degree(notes);
-			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -428,8 +422,8 @@ define([
 		 * @return undefined
 		 */
 		drawThoroughbass: function(x, y) {
-			let mode = this.keySignature.getKey()[0] || false;
-			if (mode === "h") { return false; } /* thoroughbass and no-key mode do not play nicely */
+			let keyCategory = this.keySignature.getKey()[0] || false;
+			if (keyCategory === "h") { return false; } /* thoroughbass and no-key mode do not play nicely */
 
 			var midi_nums = this.chord.getNoteNumbers();
 			var figure = (this.analyzeConfig.mode.abbreviate_thoroughbass ?
@@ -489,7 +483,7 @@ define([
 		 */
 		drawRoman: function(x, y) {
 			var key = this.keySignature.getKeyShortName();
-			let mode = this.keySignature.getKey()[0] || false;
+			let keyCategory = this.keySignature.getKey()[0] || false;
 
 			var midi_nums = this.chord.getNoteNumbers();
 			var chord_entry = this.getAnalyzer().to_chord(midi_nums);
@@ -511,7 +505,7 @@ define([
 			var display = chord_entry.label;
 
 			var extra_wide_figures = false;
-			if (mode === "j") {
+			if (keyCategory === "j") {
 				var substitutions = [
 					/* cadential six-fours */
 					[["I{z4}", "V"], ["V{z4}", "{t3}"]],
@@ -521,7 +515,7 @@ define([
 					[["i{z4}", "V{u3}"], ["V{B z4}", "{u3}"]],
 					[["i{z4}", "V{u}"], ["V{B z4}", "{Ut3}"]],
 				];
-			} else if (mode === "i") {
+			} else if (keyCategory === "i") {
 				var substitutions = [
 					/* cadential six-fours */
 					[["I{z4}", "V"], ["V{' z4}", "{t3}"]],
@@ -534,7 +528,7 @@ define([
 				];
 			}
 
-			if ( ["i","j"].includes(mode) && history[idx-1] ) { /* has precursor */
+			if ( ["i","j"].includes(keyCategory) && history[idx-1] ) { /* has precursor */
 				let precursor = history[idx-1];
 				let current = history[idx]
 				if (precursor == current) display = "";
@@ -552,7 +546,7 @@ define([
 					}
 				}
 			}
-			if ( ["i","j"].includes(mode) && history[idx+1] ) { /* has postcursor */
+			if ( ["i","j"].includes(keyCategory) && history[idx+1] ) { /* has postcursor */
 				let postcursor = history[idx+1];
 				let current = history[idx]
 				let progression = [current, postcursor];
@@ -581,9 +575,10 @@ define([
 
 			/* TO DO: add horizontal lines */
 
-			if (mode === "h") { // no key
+			if (keyCategory === "h") { // no key
 				/* there should be no double-sharp or double-flat roots */
 				display = display.replace(/b/g,'♭').replace(/#/g,'♯');
+				y = 35;
 			}
 
 			this.parseAndDraw(display, x, y, function(text, x, y) {
@@ -643,6 +638,11 @@ define([
 		drawInterval: function(x, y) {
 			var midi_nums = this.chord.getNoteNumbers();
 			var interval = this.getAnalyzer().to_interval(midi_nums);
+
+			var ctx = this.getContext();
+			var fontArgs = ctx.font.split(' ');
+			var newSize = '20px';
+			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 			
 			if (interval && interval.name !== '') {
 				var lines = this.wrapText(interval.name);
@@ -679,15 +679,20 @@ define([
 		drawKeyName: function(x, y) {
 			var key = this.keySignature.getKeyShortName();
 			var thoroughbass = this.analyzeConfig.mode.thoroughbass;
+			var letters = this.analyzeConfig.mode.note_names;
 			var harmony = this.analyzeConfig.mode.roman_numerals;
 			var ctx = this.getContext();
-			var cFont = ctx.font;
 			var fontArgs = ctx.font.split(' ');
-			var newSize = '20px';
-			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 			if (key === '' && !thoroughbass && harmony) {
-				ctx.fillText('chords:', x - 18, y);
-			} else if(key !== '' && !thoroughbass) {
+				var newSize = '16px';
+				ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
+				ctx.fillText('chords', x - 18, 35);
+				if (letters) {
+					// ctx.fillText('notes', x - 18, 60);
+				}
+			} else if (key !== '' && !thoroughbass) {
+				var newSize = '20px';
+				ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 				ctx.fillText(this.convertSymbols(key) + ':', x - 8, y);
 			}
 		},
@@ -735,7 +740,6 @@ define([
 					x += padding / 3;
 					ctx.restore();
 				} else {
-					var cFont = ctx.font;
 					var fontArgs = ctx.font.split(' ');
 					var newSize = ( key == 'h' ? '20px' : '24px'); /* size for chord symbols and Roman numerals */
 					ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];

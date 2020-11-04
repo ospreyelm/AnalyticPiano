@@ -21,6 +21,7 @@ class SupervisorsTable(tables.Table):
 
     class Meta:
         attrs = {'class': 'paleblue'}
+        table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
 
 
@@ -40,51 +41,90 @@ class SubscribersTable(tables.Table):
 
     class Meta:
         attrs = {'class': 'paleblue'}
+        table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
 
 
 class PerformancesListTable(tables.Table):
-    playlist = tables.columns.LinkColumn('dashboard:subscriber-playlist-performance',
-                                         kwargs={'playlist_id': A('playlist.id'),
-                                                 'subscriber_id': A('user.id')},
-                                         attrs={"td": {"bgcolor": "white", "width": "200px"}},
-                                         verbose_name='Playlist')
-    created = tables.columns.DateTimeColumn(verbose_name='Performed At',
-                                            attrs={"td": {"bgcolor": "white", "width": "200px"}})
-    user = tables.columns.LinkColumn('dashboard:subscriber-performances',
-                                     kwargs={'subscriber_id': A('user.id')},
-                                     accessor=A('user.get_full_name'),
-                                     attrs={"td": {"bgcolor": "white", "width": "200px"}},
-                                     verbose_name='Performer Name')
-    email = tables.columns.LinkColumn('dashboard:subscriber-performances',
-                                      kwargs={'subscriber_id': A('user.id')},
-                                      accessor=A('user.email'),
-                                      attrs={"td": {"bgcolor": "white", "width": "200px"}},
-                                      verbose_name='Performer Email')
+    playlist = tables.columns.LinkColumn(
+      'dashboard:subscriber-playlist-performance',
+      verbose_name='Playlist',
+      # text=lambda record: record.playlist.name,
+      accessor=A('playlist.name'),
+      kwargs={
+        'playlist_id': A('playlist.id'),
+        'subscriber_id': A('user.id')
+      },
+      attrs={
+        "td": {"bgcolor": "white", "width": "auto"}
+      }
+    )
+    created = tables.columns.DateColumn(
+      verbose_name='Date of first practice',
+      format='Y-m-d • l, F j',
+      attrs={
+        "td": {"bgcolor": "white", "width": "auto"}
+      }
+    )
+    # user = tables.columns.LinkColumn(
+    #   'dashboard:subscriber-performances',
+    #   verbose_name='Performer Name',
+    #   kwargs={
+    #     'subscriber_id': A('user.id')
+    #   },
+    #   accessor=A('user.get_full_name'),
+    #   attrs={
+    #     "td": {"bgcolor": "white", "width": "auto"}
+    #   }
+    # )
+    email = tables.columns.LinkColumn(
+      'dashboard:subscriber-performances',
+      verbose_name='Performer Email',
+      kwargs={
+        'subscriber_id': A('user.id')
+      },
+      accessor=A('user.email'),
+      attrs={
+        "td": {"bgcolor": "white", "width": "auto"}
+      }
+    )
 
     class Meta:
         attrs = {'class': 'paleblue'}
+        table_pagination = False
+        order_by = ('-created')
         template_name = "django_tables2/bootstrap4.html"
 
 
 class SubscriberPlaylistPerformanceTable(tables.Table):
-    playlist_id = tables.columns.Column(attrs={"td": {"bgcolor": "white", "width": "100px"}})
+    playlist_name = tables.columns.LinkColumn(
+      attrs={"td": {"bgcolor": "white", "width": "auto"}},
+      viewname='lab:exercise-groups',
+      kwargs={'group_name': A('playlist_name')},
+    )
 
     # performed_at = tables.columns.DateTimeColumn(verbose_name='Performed At')
-    exercise_count = tables.columns.Column(verbose_name='Total exercises performed',
-                                           attrs={"td": {"bgcolor": "white", "width": "100px"}})
-    performer = tables.columns.LinkColumn('dashboard:subscriber-performances',
-                                          kwargs={'subscriber_id': A('subscriber_id')},
-                                          attrs={"td": {"bgcolor": "white", "width": "120px"}},
-                                          verbose_name='Performer Email')
-    performer_name = tables.columns.LinkColumn('dashboard:subscriber-performances',
-                                               kwargs={'subscriber_id': A('subscriber_id')},
-                                               accessor=A('perfomer_obj.get_full_name'),
-                                               attrs={"td": {"bgcolor": "white", "width": "120px"}},
-                                               verbose_name='Performer Name')
+    exercise_count = tables.columns.Column(
+      verbose_name='Exercise tally',
+      attrs={"td": {"bgcolor": "white", "width": "auto"}}
+    )
+    performer_name = tables.columns.LinkColumn(
+      'dashboard:subscriber-performances',
+      kwargs={'subscriber_id': A('subscriber_id')},
+      accessor=A('performer_obj.get_full_name'),
+      attrs={"td": {"bgcolor": "white", "width": "auto"}},
+      verbose_name='Performer Name'
+    )
+    performer = tables.columns.LinkColumn(
+      'dashboard:subscriber-performances',
+      kwargs={'subscriber_id': A('subscriber_id')},
+      attrs={"td": {"bgcolor": "white", "width": "auto"}},
+      verbose_name='Performer Email'
+    )
 
     class Meta:
         attrs = {'class': 'paleblue'}
+        table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
         order_by = ('-exercise_count', 'email')
-        sequence = ('playlist_id', '...', 'exercise_count', 'performer_name', 'performer')
+        sequence = ('playlist_name', 'exercise_count', '...', 'performer_name', 'performer')

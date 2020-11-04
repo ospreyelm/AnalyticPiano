@@ -1,3 +1,4 @@
+from apps.accounts.views import send_keyboard_size
 from django.urls import re_path, path
 
 from apps.exercises.views import playlist_performance_view, submit_exercise_performance, submit_playlist_performance
@@ -19,6 +20,10 @@ app_name = 'lab'
 
 urlpatterns = [
     re_path(r'^$', PlayView.as_view(), name='index'),
+
+    # User Preferences
+    path('keyboard-size/', send_keyboard_size, name='keyboard-size'),
+    path('exercises/keyboard-size/', send_keyboard_size, name='keyboard-size'),
 
     # Course Exercises
     re_path(r'^courses/(?P<course_id>\d+)/manage$', ManageView.as_view(), name="course-manage"),

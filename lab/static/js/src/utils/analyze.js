@@ -214,6 +214,7 @@ var spellingAndAnalysisFunctions = {
             rpcs.push(this.rel_pc(chord[i], this.Piano.keynotePC));
         }
         var rel_pc = this.rel_pc(midi, this.Piano.keynotePC);
+        let rel_pc_of_bass = this.rel_pc(chord[0], this.Piano.keynotePC);
 
         /** call enharmonic changes **/
         if (rel_pc == 1 && _.contains(rpcs,8)) {
@@ -238,6 +239,20 @@ var spellingAndAnalysisFunctions = {
             return this.push_flat(midi,name);
             /* augmented sixths and other pre-dominant chords */
         }
+        if (rel_pc == 8
+        && (_.contains(rpcs,11) && _.contains(rpcs,2) && _.contains(rpcs,5))
+        && midi != chord[0]
+        ) {
+            return this.push_flat(midi,name);
+            /* fully diminished leading-tone sevenths except for third inversion */
+        }
+        if (rel_pc == 3
+        && (_.contains(rpcs,6) && _.contains(rpcs,9) && _.contains(rpcs,0))
+        && [6,9].includes(rel_pc_of_bass)
+        ) {
+            return this.push_flat(midi,name);
+            /* fully diminished secondary leading-tone sevenths except for third inversion */
+        }
 
         return name;
     },
@@ -254,24 +269,29 @@ var spellingAndAnalysisFunctions = {
         var bass_pc = (12 + chord[0]) % 12;
         
         if (chord.length == 2) {
-            var semitones = this.rel_pc(chord[1], bass_pc); /* register is irrelevant */
-            if (!this.hIntervals[semitones]) {
+            var profile = chord[1] - chord[0]; /* register is irrelevant; profile is a semitone count here */
+            if (!this.hIntervals[profile]) {
                 return this.noteNames[midi % 12]; /** return default spelling **/
             }
 
             /* how the bass is spelled according to the type of interval */
             /* expressed as a minor key */
-            var scale = this.hIntervals[semitones]["spellbass"];
+            var scale = this.hIntervals[profile]["spellbass"];
 
             if (scale === "___") {
                 return this.noteNames[midi % 12]; /** return default spelling **/
             }
 
             var bass_name = this.spelling[scale][bass_pc].toLowerCase();
-            var steps = this.hIntervals[semitones]["stepwise"];
-            if (midi == chord[0]) {
+            if (midi === chord[0]) {
                 return bass_name;
-            } else {
+            }
+
+            var steps = this.hIntervals[profile]["stepwise"];
+            var semitones = this.rel_pc(midi, bass_pc);
+            if (semitones === 0) {
+                return bass_name;
+            } else if (semitones === profile) {
                 return this.upper_note_name(parseInt(bass_pc), bass_name, parseInt(semitones), parseInt(steps));
             }
         }
@@ -292,9 +312,16 @@ var spellingAndAnalysisFunctions = {
             var all_steps = this.hChords[profile]["stepwise"];
             var bass_name = this.spelling[scale][bass_pc].toLowerCase();
             var semitones = this.rel_pc(midi, bass_pc);
+            if (semitones === 0) {
+                return bass_name;
+            }
             var idx = profile.indexOf(this.pitchClasses[semitones]);
-            var steps = (idx === -1 ? 0 : parseInt(all_steps[idx])); /* parseInt is critical */
-            return this.upper_note_name(chord[0], bass_name, semitones, steps);
+            if (idx === -1) {
+                return this.noteNames[midi % 12]; /** return default spelling **/
+            } else {
+                var steps = parseInt(all_steps[idx]); /* parseInt is critical */
+                return this.upper_note_name(chord[0], bass_name, semitones, steps);
+            }
         }
 
         return this.noteNames[midi % 12]; /** return default spelling **/
@@ -524,7 +551,7 @@ var spellingAndAnalysisFunctions = {
         if (this.Piano.highlightMode["doublinghighlight"]) {
             var key_pc = this.Piano.keynotePC;
             if ( (this.key_is_minor() && _.contains( [4,6,11], this.rel_pc(note, key_pc) )) /* tendency tones in minor */
-            || (this.key_is_major() && _.contains( [1,6,8,11],this.rel_pc(note, key_pc) )) /* tendency tones in major */
+            || (this.key_is_major() && _.contains( [1,6,11],this.rel_pc(note, key_pc) )) /* tendency tones in major (8 removed, Sept 2020) */
             ) {
                 for (i = 0, len = notes.length; i < len; i++) {
                     other = notes[i];

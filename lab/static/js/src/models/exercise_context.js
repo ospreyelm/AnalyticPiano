@@ -123,7 +123,7 @@ define([
         initListeners: function() {
             let testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
             if (testing && false) {
-                $('.js-analyze-widget').hide();
+                $('.js-notation-opts-widget').hide();
                 $('.js-keysignature-widget').hide();
             }
             this.inputChords.bind("change", this.triggerTimer);

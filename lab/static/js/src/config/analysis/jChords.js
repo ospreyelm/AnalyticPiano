@@ -119,6 +119,11 @@ define({
    "0/469": {"root": "6", "label": "vii⌀{r3}/V", "priority": "80"},
    "4/069": {"root": "6", "label": "vii⌀{r2}/V", "priority": "80"},
    
+   "6/039": {"root": "6", "label": "vii°{u}/V", "priority": "80"},
+   "9/036": {"root": "6", "label": "vii°{z5}/V", "priority": "80"},
+   // "0/369": {"root": "6", "label": "vii°{r3}/V", "priority": "80"},
+   "3/069": {"root": "3", "label": "vii°{u}/iii", "priority": "90"},
+
    // V
    
    "7/2z": {"root": "7", "label": "V", "priority": "1"},
@@ -135,15 +140,15 @@ define({
 
    // viio/vi
    
-   "8/2z":  {"root": "1", "label": "vii°/vi", "priority": "90"},
-   "z/28":  {"root": "1", "label": "vii°{z}/vi", "priority": "80"},
-   "2/8z":  {"root": "1", "label": "vii°{z4}/vi", "priority": "90"},
+   "8/2z":  {"root": "8", "label": "vii°/vi", "priority": "90"},
+   "z/28":  {"root": "8", "label": "vii°{z}/vi", "priority": "80"},
+   "2/8z":  {"root": "8", "label": "vii°{z4}/vi", "priority": "90"},
 
    // contextual enharmonic respelling is needed for these chords and for diminished sevenths generally
-   "8/25z": {"root": "1", "label": "vii°{u}/vi", "priority": "80"},
-   "z/258": {"root": "1", "label": "vii°{z5}/vi", "priority": "90"},
-   "2/58z": {"root": "1", "label": "vii°{r3}/vi", "priority": "90"},
-   "5/28z": {"root": "1", "label": "vii°{r2}/vi", "priority": "90"},
+   "8/25z": {"root": "8", "label": "vii°{u}/vi", "priority": "80"},
+   "z/258": {"root": "z", "label": "vii°", "priority": "80"},
+   "2/58z": {"root": "z", "label": "vii°{z5}", "priority": "80"},
+   "5/28z": {"root": "z", "label": "vii°{r3}", "priority": "80"},
    
    // vi
    
@@ -217,7 +222,6 @@ define({
 
    "2/058": {"root": "2", "label": "ii⌀{u}"},
    "5/028": {"root": "2", "label": "ii⌀{z5}", "altLabel": "iv{dz}"},
-   "5/02":  {"root": "2", "label": "ii⌀{z5}"},
    "8/025": {"root": "2", "label": "ii⌀{r3}"},
    "0/258": {"root": "2", "label": "ii⌀{r2}"},
 

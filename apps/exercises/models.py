@@ -39,7 +39,7 @@ class Exercise(models.Model):
     created = models.DateTimeField('Created at', auto_now_add=True)
     updated = models.DateTimeField('Updated at', auto_now=True)
 
-    zero_padding = 'EA00A'
+    zero_padding = 'EA00A0'
 
     class Meta:
         verbose_name = 'Exercise'
@@ -197,7 +197,7 @@ class Playlist(models.Model):
 
         # print(self.transposed_exercises[num])
         # import pdb; pdb.set_trace()
-        exercise_id, target_request  = self.transposition_matrix[num - 1]
+        exercise_id, target_request = self.transposition_matrix[num - 1]
         exercise = Exercise.objects.get(id=exercise_id)
         transposed_exercise = transpose(exercise, target_request)
         # import pdb; pdb.set_trace()
@@ -325,3 +325,11 @@ class PerformanceData(models.Model):
         pd.full_clean()
         pd.save()
         return pd
+
+    def get_exercise_first_pass(self, exercise_id):
+        for exercise in self.data:
+            if exercise['id'] == exercise_id and exercise['exercise_error_tally'] in [0, 'n/a']:
+                return exercise['performed_at'].split()[0]
+            elif exercise['id'] == exercise_id:
+                continue
+        return 'Not Passed'

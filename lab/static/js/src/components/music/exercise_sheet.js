@@ -152,11 +152,11 @@ define([
                             '<p><%= last_exercise_id %></p>',
                         '<% } %>',
                         '<p><span class="exercise-status-state" style="background-color:<%= status_color %>"><%= status_text %> <%= status_icon %></span>',
-                        '<% if (typeof(time_to_complete) !== "undefined" && time_to_complete != "" && status_text !== "finished with errors") { %>',
+                        '<% if (false && typeof(time_to_complete) !== "undefined" && time_to_complete != "" && status_text !== "finished with errors") { %>',
                             '&nbsp;in&nbsp;<%= time_to_complete %></p>',
                         '<% } %>',
                         '<% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined") { %>',
-                            '<p>Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %> <a onclick="window.alert(\'PERFORMANCE DATA: This shows your average (mean) tempo in whole notes per minute, plus a star rating for the consistency of your tempo.\')">[&nbsp;info&nbsp;]</a></p>',
+                            '<p><a onclick="window.alert(\'PERFORMANCE DATA: This shows your average (mean) tempo in whole notes per minute, plus a star rating for the consistency of your tempo.\')">Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %></a></p>',
                         '<% } %>',
                         '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "") { %>',
                             '<p>All&nbsp;done&nbsp;in&nbsp;<%= time_to_complete_series %></p>',
@@ -345,7 +345,7 @@ define([
          */
         updateStaves: function() {
             var chord, treble, bass;
-            var limit = CHORD_BANK_SIZE * 4;// Adjusted now that rhythms varied
+            var limit = CHORD_BANK_SIZE * 4 + 1;// Adjusted now that rhythms varied
             var display_items = this.getDisplayChords().items({limit: limit, reverse: false});
             var exercise_items = this.getExerciseChords().items({limit: limit, reverse: false});
             var staves = [];

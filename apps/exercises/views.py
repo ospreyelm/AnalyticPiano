@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django_tables2 import Column
 
-from apps.exercises.models import Playlist, PerformanceData
+from apps.exercises.models import Playlist, PerformanceData, User as Performers
 from apps.exercises.tables import AdminPlaylistPerformanceTable
 
 User = get_user_model()
@@ -25,9 +25,16 @@ def playlist_performance_view(request, playlist_id):
     exercises = [exercise for exercise in playlist.exercise_list]
     users = list(set(list(performances.values_list('user__email', flat=True))))
 
+
     for user in users:
+        name = [n for n in list(Performers.objects.filter(email=user).values_list('first_name', 'last_name'))[0]]
         user_data = {
             'email': user,
+            'performer': " ".join([n for n in [
+                    name[0],
+                    name[1].upper(),
+                    '<' + user + '>',
+                ] if n != '']),
             'performance_data': performances.filter(user__email=user).first().data
         }
         user_data.update({'exercise_count': len(user_data['performance_data'])})
@@ -36,19 +43,22 @@ def playlist_performance_view(request, playlist_id):
     for d in data:
         exercises_data = d['performance_data']
 
-        # format is: [mean tempo, rounded to integer][tempo star-rating] (err count).
-        # example: 66** (2)
-        [d.update(**{exercise['id']: f'{exercise["exercise_mean_tempo"]}'
-                                     f'{"*" * exercise["exercise_tempo_rating"]} '
-                                     f'({exercise["exercise_error_tally"]})'}) for exercise in exercises_data]
+        [d.update(**{exercise['id']:
+            f'{"Error(s) " if ( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) else "Pass "}'
+            f'{"" if (( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
+            f'{"" if ( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) else "*" * exercise["exercise_tempo_rating"]} '
+            }) for exercise in exercises_data]
 
     table = AdminPlaylistPerformanceTable(
         data=data,
         extra_columns=[(exercise, Column()) for exercise in exercises]
     )
 
+    playlist_name = Playlist.objects.filter(id=playlist_id).first().name
+
     return render(request, "admin/performances.html", {
-        "table": table
+        "table": table,
+        "playlist_name": playlist_name
     })
 
 

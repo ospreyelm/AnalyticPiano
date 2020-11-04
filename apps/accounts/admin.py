@@ -16,6 +16,7 @@ class UserAdmin(admin.UserAdmin):
                 'first_name',
                 'last_name',
                 'password',
+                'keyboard_size',
 
                 # FIXME RAAAAAWW PASSSWORDD!!
                 'raw_password',
@@ -34,11 +35,11 @@ class UserAdmin(admin.UserAdmin):
     change_password_form = AdminPasswordChangeForm
 
     list_display = (
-        'email', 'is_staff', 'is_superuser', 'is_active', 'first_name', 'last_name'
+        'email', 'first_name', 'last_name', 'keyboard_size', 'is_staff', 'is_active', 'is_superuser'
     )
 
     search_fields = ('email',)
-    ordering = ('id',)
+    ordering = ('-is_active', '-is_superuser', '-is_staff', 'last_name', 'first_name', 'id',)
 
     add_fieldsets = (
         (None, {

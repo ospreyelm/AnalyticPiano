@@ -8,7 +8,8 @@ define([
 	'app/utils/instruments',
 	'app/widgets/key_signature',
 	'app/widgets/analyze',
-	'app/widgets/highlight'
+	'app/widgets/highlight',
+	'app/widgets/staff_distribute'
 ], function(
 	$, 
 	_, 
@@ -19,7 +20,8 @@ define([
 	Instruments,
 	KeySignatureWidget,
 	AnalyzeWidget,
-	HighlightWidget
+	HighlightWidget,
+	StaffDistributionWidget
 ) {
 	
 	/**
@@ -47,6 +49,29 @@ define([
 	 */
 	var DEFAULT_KEYBOARD_SIZE = Config.get('general.defaultKeyboardSize');
 	var DEFAULT_OCTAVE_ADJUSTMENT = Config.get('general.defaultOctaveAdjustment');
+	
+	/** 
+	 * ajax call to GET the keyboard size
+	 * this will set the keyboard size in the controls on the right (not the actual keyboard)
+	 * if no one is logged in the size is 49 (this is defined in apps.views.send_keyboard_size)
+	 */
+
+	$.ajax({
+		type: 'GET',
+		url: "keyboard-size/",
+		async: false,
+		data: {'email': 'email'},
+		success: function (response) {
+			if(!response["valid"]){
+				/** if the call is successful response.instance will hold the json sent by the server 
+				 * use the following two lines to log the response to the console
+				 * console.log(response);
+				 * console.log(JSON.parse(response.instance)); */
+				var sticky_settings = JSON.parse(response.instance);
+				DEFAULT_KEYBOARD_SIZE = sticky_settings.keyboard_size;
+			}
+		}
+	})
 
 	/**
 	 * Defines a namespace for settings.
@@ -189,7 +214,7 @@ define([
 		initNotationTab: function() {
 			var that = this;
 			var containerEl = this.containerEl;
-			var el = $('.js-analyze-widget', containerEl);
+			var el = $('.js-notation-opts-widget', containerEl);
 			var analysisSettings = {};
 			var highlightSettings = {};
 			var staffDistribution = {};
@@ -201,6 +226,7 @@ define([
 			}
 			var analyze_widget = new AnalyzeWidget(analysisSettings);
 			var highlight_widget = new HighlightWidget(highlightSettings);
+			var staff_distribution_widget = new StaffDistributionWidget(staffDistribution);
 			var event_for = {
 				'highlight': EVENTS.BROADCAST.HIGHLIGHT_NOTES,
 				'analyze': EVENTS.BROADCAST.ANALYZE_NOTES
@@ -226,8 +252,10 @@ define([
 
 			analyze_widget.render();
 			highlight_widget.render();
+			staff_distribution_widget.render();
 
 			el.append(analyze_widget.el, highlight_widget.el);
+			// el.append(analyze_widget.el, highlight_widget.el, staff_distribution_widget.el);
 		},
 		/**
 		 * Renders the instrument selector.
@@ -361,6 +389,44 @@ define([
 				}
 				const type = (type_input ? (type_options.hasOwnProperty(type_input) ? type_options[type_input] : false) : false);
 
+				if (type == 'matching') {
+					const visibility_input = prompt("Enter a visibility pattern using any combination of: b = bass, f = first, l = last, s = soprano, n = none.");
+					const visibility_reqs = (visibility_input === "n" ? ["none"] : visibility_input.replace(/[^flsb]/gi, "").split("").sort());
+
+					let flsb = json_data.chord;
+					if (visibility_reqs.length >= 1) {
+						var i, len;
+						for (i = 0, len = flsb.length; i < len; i++) {
+							flsb[i].hidden = flsb[i].visible;
+							flsb[i].visible = [];
+						}
+					}
+
+					if (visibility_reqs.indexOf("b") !== -1) {
+						for (i = 0, len = flsb.length; i < len; i++) {
+							flsb[i].visible = [].concat(flsb[i].visible, flsb[i].hidden.shift()).sort();
+						}
+					}
+					if (visibility_reqs.indexOf("s") !== -1) {
+						for (i = 0, len = flsb.length; i < len; i++) {
+							flsb[i].visible = [].concat(flsb[i].visible, flsb[i].hidden.pop()).sort();
+						}
+					}
+					if (visibility_reqs.indexOf("f") !== -1 && flsb.length >= 1) {
+						flsb[0].visible = [].concat(flsb[0].visible, flsb[0].hidden).sort();
+						flsb[0].hidden = [];
+					}
+					if (visibility_reqs.indexOf("l") !== -1 && flsb.length >= 2) {
+						let idx = flsb.length - 1;
+						flsb[idx].visible = [].concat(flsb[idx].visible, flsb[idx].hidden).sort();
+						flsb[idx].hidden = [];
+					}
+
+					if (visibility_reqs.length >= 1) {
+						json_data.chord = flsb;
+					}
+				}
+
 				const user_input = prompt("Enter the Intro Text");
 				const intro_text =  (!user_input ? false :
 					user_input
@@ -391,7 +457,6 @@ define([
 			json_data = JSON.stringify(json_data,null,0);
 
 			if (destination === "upload") {
-				console.log("Upload", json_data);
 
 				$.ajax({
 					type: "POST",

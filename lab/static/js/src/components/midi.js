@@ -39,6 +39,7 @@ define([
 		POLY_PRESSURE : 0xA0, // 160
 		CONTROL_CHANGE : 0xB0, // 176
 		PROGRAM_CHANGE : 0xC0, // 192
+		PITCH_BEND : 0xE0, // 224
 	};
 	/**
 	 * Maps MIDI control numbers to names and vice versa for lookup
@@ -369,13 +370,20 @@ define([
 			else if (MIDI_MSG_MAP.NOTE_OFF.indexOf(command) !== -1) {
 				this.triggerNoteOff(msg.data[1], msg.data[2]);
 			}
-			else if (MIDI_MSG_MAP.CONTROL_CHANGE === command) {
+			else if (command === MIDI_MSG_MAP.CONTROL_CHANGE) {
 				if(this.isPedalControlChange(msg.data[1])) {
 					this.triggerPedalChange(msg.data[1], msg.data[2]);
 				}
 			}
+			else if (command === MIDI_MSG_MAP.PITCH_BEND && msg.data[2] === 64) {
+				// console.log('pitch bend', msg.data);
+				this.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
+			}
+			else if (command === MIDI_MSG_MAP.PITCH_BEND) {
+				// console.log("MIDI pitch bend: ", msg.data);
+			}
 			else {
-				console.log("MIDI message not handled: ", msg);
+				// console.log("MIDI message not handled: ", msg);
 			}
 		},
 		/**
@@ -463,16 +471,16 @@ define([
 						SUSTAINING = true;
 					} else if (state === 'off') {
 						chord.releaseSustain();
+						/* prepare to turn off notes in previous bank too */
+						var prev_notes
+							= this.chords.previous()._notes
+							|| false;
+						var prev_sustained
+							= this.chords.previous()._sustained
+							|| false;
 						/* critical side-effect */
-						var notes_off = chord.syncSustainedNotes();
+						var notes_off = chord.syncSustainedNotes(prev_notes, prev_sustained);
 						this.turnOffSustainedNotesOnPedalLift(notes_off);
-
-						// also turn off notes not being sustained that match the most recently banked
-						chord = this.chords.previous();
-						if (! chord.syncSustainedNotes == undefined) {
-							notes_off = chord.syncSustainedNotes(chord);
-							this.turnOffSustainedNotesOnPedalLift(notes_off);
-						}
 
 						this.sendMIDIPedalMessage(pedal, state);
 						SUSTAINING = false;

@@ -1,8 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import redirect, get_object_or_404
 from django.shortcuts import render
+from django.utils.safestring import mark_safe
 from django_tables2 import Column
 from django_tables2 import RequestConfig
 
@@ -10,6 +12,7 @@ from apps.dashboard.forms import AddSupervisorForm, AddSubscriberForm
 from apps.dashboard.tables import SupervisorsTable, SubscribersTable, PerformancesListTable, \
     SubscriberPlaylistPerformanceTable
 from apps.exercises.models import Playlist, PerformanceData
+from .forms import KeyboardForm
 
 User = get_user_model()
 
@@ -73,6 +76,7 @@ def remove_subscriber_view(request, subscriber_id):
 def performance_list_view(request, subscriber_id=None):
     subscriber_id = subscriber_id or request.user.id
     subscriber = get_object_or_404(User, id=subscriber_id)
+    curr_user = request.user # rewrite to also take parameter
     if not request.user.is_supervisor_to(subscriber):
         raise PermissionDenied
     performances = PerformanceData.objects.filter(
@@ -82,9 +86,24 @@ def performance_list_view(request, subscriber_id=None):
     table = PerformancesListTable(
         performances
     )
+    subscriber_name = subscriber
+    
+    kbd_size_form = KeyboardForm()
+    if subscriber.keyboard_size:
+        kbd_size_form.fields['keyboard_size'].initial = curr_user.keyboard_size
 
+    if request.method == 'POST':
+        kbd_size_form = KeyboardForm(request.POST)
+        if kbd_size_form.is_valid() and not curr_user.is_anonymous:
+            curr_user.keyboard_size = kbd_size_form.cleaned_data['keyboard_size']
+            curr_user.save()
+        return HttpResponseRedirect('/dashboard/performances/') # should be rewritten properly as reload; '' seemed not to work
+    
+    RequestConfig(request).configure(table)
     return render(request, "dashboard/performances.html", {
-        "table": table
+        "table": table,
+        "subscriber_name": subscriber_name,
+        "form": kbd_size_form
     })
 
 
@@ -103,30 +122,37 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
     users_email_list = list(set(list(performances.values_list('user__email', flat=True))))
 
     for user in users_email_list:
+        performance_obj = performances.filter(user__email=user).first()
         user_data = {
             'performer': user,
             'subscriber_id': subscriber_id,
             'playlist_id': playlist.id,
-            'performance_data': performances.filter(user__email=user).first().data,
-            'perfomer_obj': subscriber
+            'playlist_name': playlist.name,
+            'performance_obj': performance_obj,
+            'performance_data': performance_obj.data,
+            'performer_obj': subscriber
         }
         user_data.update({'exercise_count': len(user_data['performance_data'])})
         data.append(user_data)
 
     for d in data:
+        performance_obj = d['performance_obj']
         exercises_data = d['performance_data']
 
-        # format is: [mean tempo, rounded to integer][tempo star-rating] (err count).
-        # example: 66** (2)
-        [d.update(**{exercise['id']: f'{exercise["exercise_mean_tempo"]}'
-                                     f'{"*" * exercise["exercise_tempo_rating"]} '
-                                     f'({exercise["exercise_error_tally"]})'}) for exercise in exercises_data]
+        [d.update(**{exercise['id']: mark_safe(
+            f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "Pass "}'
+            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else exercise["exercise_mean_tempo"]}'
+            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]}'
+            f'<br>'
+            f'{performance_obj.get_exercise_first_pass(exercise["id"])}'
+        )}) for exercise in exercises_data]
 
     table = SubscriberPlaylistPerformanceTable(
         data=data,
         extra_columns=[(exercise, Column()) for exercise in exercises]
     )
 
+    RequestConfig(request).configure(table)
     return render(request, "dashboard/performances.html", {
         "table": table
     })

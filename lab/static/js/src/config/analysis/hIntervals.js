@@ -28,6 +28,7 @@ define({
         "root": "0", "rootstepwise": "0"},
    24: {"label": "15", "stepwise": "14", "spellbass": "iD_",
         "root": "0", "rootstepwise": "0"},
+   27: {"label": "m17", "stepwise": "16", "spellbass": "iE_"},
    28: {"label": "M17", "stepwise": "16", "spellbass": "iC_",
         "root": "0", "rootstepwise": "0"},
    31: {"label": "P19", "stepwise": "18", "spellbass": "iG_",
