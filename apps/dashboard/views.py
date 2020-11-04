@@ -100,7 +100,7 @@ def performance_list_view(request, subscriber_id=None):
         return HttpResponseRedirect('/dashboard/performances/') # should be rewritten properly as reload; '' seemed not to work
     
     RequestConfig(request).configure(table)
-    return render(request, "dashboard/performances.html", {
+    return render(request, "dashboard/performances-list.html", {
         "table": table,
         "subscriber_name": subscriber_name,
         "form": kbd_size_form
@@ -153,6 +153,6 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
     )
 
     RequestConfig(request).configure(table)
-    return render(request, "dashboard/performances.html", {
+    return render(request, "dashboard/performance_details.html", {
         "table": table
     })
