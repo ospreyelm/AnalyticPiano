@@ -333,3 +333,50 @@ class PerformanceData(models.Model):
             elif exercise['id'] == exercise_id:
                 continue
         return 'Not Passed'
+
+
+class Course(models.Model):
+    _id = models.AutoField('_ID', unique=True, primary_key=True)
+    id = models.CharField('ID', unique=True, max_length=16)
+
+    title = models.CharField('Title', unique=True, max_length=64)
+    slug = models.SlugField('Slug', unique=True, max_length=64)
+    playlists = models.CharField('Playlists', max_length=1024,
+                                 help_text='Ordered set of playlist names or IDs, separated by comma.')
+
+    authored_by = models.ForeignKey('accounts.User',
+                                    related_name='courses',
+                                    on_delete=models.PROTECT,
+                                    verbose_name='Authored By')
+
+    created = models.DateTimeField('Created at', auto_now_add=True)
+    updated = models.DateTimeField('Updated at', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Course'
+        verbose_name_plural = 'Courses'
+
+    def __str__(self):
+        return self.id
+
+    def save(self, *args, **kwargs):
+        if not self._id:
+            super(Course, self).save(*args, **kwargs)
+        self.set_id()
+        super(Course, self).save(*args, **kwargs)
+
+    def set_id(self):
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        reverse_id = ""
+        bases = [26, 26, 10, 10, 26]
+        _id = self._id
+        for base in bases:
+            if base == 26:
+                reverse_id += letters[_id % base]
+            elif base == 10:
+                reverse_id += str(_id % base)
+            _id //= base
+        if _id != 0 or len(reverse_id) != len(bases):
+            return None
+        reverse_id += "C"
+        self.id = reverse_id[::-1]

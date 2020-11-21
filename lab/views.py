@@ -15,9 +15,10 @@ from django_auth_lti import const
 
 from .objects import ExerciseRepository
 from .decorators import role_required, course_authorization_required
+from .tables import CoursePlaylistsTable
 from .verification import has_instructor_role, has_course_authorization
 from lti_tool.models import LTIConsumer, LTICourse
-from apps.exercises.models import Exercise, Playlist
+from apps.exercises.models import Exercise, Playlist, Course
 
 import json
 import copy
@@ -240,6 +241,22 @@ class ExerciseView(RequirejsView):
         self.requirejs_context.add_to_view(context)
 
         return render(request, "exercise.html", context)
+
+
+class CourseView(RequirejsView):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get(self, request, course_slug, *args, **kwargs):
+        course = get_object_or_404(Course, slug=course_slug)
+        playlists = Playlist.objects.filter(name__in=course.playlists.split(','))
+        playlists_table = CoursePlaylistsTable(playlists)
+        context = {
+            'course_title': course.title,
+            'playlists_table': playlists_table
+        }
+        return render(request, "course.html", context)
 
 
 class ManageView(RequirejsView, LoginRequiredMixin):
