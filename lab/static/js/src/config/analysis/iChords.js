@@ -78,13 +78,13 @@ define({
 
    // [!]ii
    
-   "2/59":  {"root": "2", "label": "[!]ii"},
-   "5/29":  {"root": "2", "label": "[!]ii{z}"},
+   "2/59":  {"root": "2", "label": "ii"},
+   "5/29":  {"root": "2", "label": "ii{z}"},
 
-   "2/059": {"root": "2", "label": "[!]ii{u}"},
-   "5/029": {"root": "2", "label": "[!]ii{z5}"},
-   "9/025": {"root": "2", "label": "[!]ii{r3}"},
-   "0/259": {"root": "2", "label": "[!]ii{r2}"},
+   "2/059": {"root": "2", "label": "ii{u}"},
+   "5/029": {"root": "2", "label": "ii{z5}"},
+   "9/025": {"root": "2", "label": "ii{r3}"},
+   "0/259": {"root": "2", "label": "ii{r2}"},
 
    // II (a.k.a. V/V)
 
@@ -175,7 +175,7 @@ define({
 
    // v
 
-   "7/2y":  {"root": "7", "label": "[!]v"},
+   "7/2y":  {"root": "7", "label": "v"},
    "y/27":  {"root": "7", "label": "v{z}"},
 
    // VI
