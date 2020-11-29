@@ -36,7 +36,6 @@ urlpatterns = [
     path('courses/<str:course_slug>/', CourseView.as_view(), name="course-view"),
     re_path(r'definition$', RefreshExerciseDefinition.as_view(),
             name="refresh-definition"),
-    re_path(r'^exercises/(?P<group_name>[a-zA-Z0-9_\-.]+)$', PlaylistView.as_view(), name="exercise-groups"),
     re_path(r'^exercises$', PlaylistView.as_view()),
 
     # Performance
