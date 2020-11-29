@@ -2,9 +2,10 @@ import string, re
 
 from ckeditor.widgets import CKEditorWidget
 from django import forms
+from django.db.models import Q
 from prettyjson import PrettyJSONWidget
 
-from apps.exercises.models import Exercise, Playlist, PerformanceData
+from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
 
 
 class ExerciseForm(forms.ModelForm):
@@ -185,3 +186,34 @@ class PerformanceDataForm(forms.ModelForm):
             'data': PrettyJSONWidget(),
             'playlist_performances': PrettyJSONWidget(),
         }
+
+
+
+class CourseForm(forms.ModelForm):
+    class Meta:
+        model = Course
+        exclude = []
+        widgets = {
+            'playlists': forms.Textarea,
+        }
+
+    def clean(self):
+        super(CourseForm, self).clean()
+
+        playlist_ids = [n.strip() for n in
+            re.split('-*[,; ]+-*',
+                self.cleaned_data.get('playlists', '')
+            )
+        ]
+        result = []
+        for item in playlist_ids:
+            qs = Playlist.objects.filter(
+                Q(id__iexact=item) | Q(name__iexact=item)
+            )
+            if not qs.exists():
+                self.add_error('playlists',
+                    f'Playlist {item} does not exist.')
+                continue
+            result.append(qs.first().name)
+
+        self.cleaned_data.update({'playlists': ','.join(result)})

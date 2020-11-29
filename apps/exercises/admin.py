@@ -4,8 +4,8 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.admin.mixins import DynamicArrayMixin
 
-from apps.exercises.models import Exercise, Playlist, PerformanceData
-from apps.exercises.forms import ExerciseForm, PlaylistForm, PerformanceDataForm
+from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
+from apps.exercises.forms import ExerciseForm, PlaylistForm, PerformanceDataForm, CourseForm
 
 
 @admin.register(Exercise)
@@ -140,3 +140,59 @@ class PerformanceDataAdmin(admin.ModelAdmin):
             'fields': ('created', 'updated')
         }),
     )
+
+
+@admin.register(Course)
+class CourseAdmin(DynamicArrayMixin, admin.ModelAdmin):
+    form = CourseForm
+    list_display = ('title', 'playlist_links', 'authored_by',
+                    'created', 'updated', 'show_on_site')
+    list_filter = ('authored_by__email',)
+    search_fields = ('title', 'exercises',)
+    readonly_fields = ('id', 'authored_by', 'created', 'updated', 'playlist_links',
+                       'show_on_site')
+    raw_id_fields = ('authored_by',)
+    fieldsets = (
+        ('General Info', {
+            'fields': (('title', 'show_on_site'),
+                       'slug',
+                       'id',
+                       'authored_by',
+                       ('created', 'updated')),
+        }),
+        ('Playlists', {
+            'fields': ('playlists',
+                       'playlist_links')
+        })
+    )
+    save_on_top = True
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super(CourseAdmin, self).get_form(request, obj, change, **kwargs)
+        form.context = {'user': request.user}
+        return form
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.authored_by = request.user
+        obj.save()
+
+    def playlist_links(self, obj):
+        links = ''
+        playlists = Playlist.objects.filter(name__in=obj.playlists.split(','))
+        for playlist in playlists:
+            link = reverse('admin:%s_%s_change' % ('exercises', 'playlist'), args=(playlist._id,))
+            links += "<a href='%s'>%s</a><br>" % (link, playlist.name)
+        return mark_safe(links)
+
+    playlist_links.allow_tags = True
+    playlist_links.short_description = 'Playlist Links'
+
+    def show_on_site(self, obj):
+        if not obj.pk:
+            return ''
+        link = reverse('lab:course-view', kwargs={'course_slug': obj.slug})
+        link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
+        return mark_safe(link)
+
+    show_on_site.short_description = ''
