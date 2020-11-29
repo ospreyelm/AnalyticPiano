@@ -31,7 +31,7 @@ urlpatterns = [
     re_path(r'^exercises/add$', AddExerciseView.as_view(), name='add-exercise'),
     re_path(r'^manage$', ManageView.as_view(), name="manage"),
     path('exercises/<str:exercise_id>/', ExerciseView.as_view(), name="exercise-view"),
-    path('exercises/<str:group_name>/', PlaylistView.as_view(), name="exercise-groups"),
+    path('exercises/<str:group_name>', PlaylistView.as_view(), name="exercise-groups"),
     path('exercises/<str:group_name>/<int:exercise_num>', PlaylistView.as_view(), name="exercises"),
     path('courses/<str:course_slug>/', CourseView.as_view(), name="course-view"),
     re_path(r'definition$', RefreshExerciseDefinition.as_view(),
