@@ -9,13 +9,13 @@
     <link rel="manifest" href="{{ STATIC_URL }}site.webmanifest">
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}django_tables2/themes/paleblue/css/screen.css"/>
     {% block css_extra %}{% endblock %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
 
 {% block content %}{% endblock %}
 
 {% block js_require %}
-
 {#    {% autoescape off %}#}
 {#        <script src="{{ STATIC_URL }}js/lib/require.js"></script>#}
 {#        <script>requirejs.config({enforceDefine: true, waitSeconds: 0});</script>#}

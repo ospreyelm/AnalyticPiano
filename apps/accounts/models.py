@@ -32,7 +32,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(_('First Name'), max_length=32, unique=False, default="", blank=True)
     last_name = models.CharField(_('Last Name'), max_length=32, unique = False, default="", blank=True)
 
-    keyboard_size = models.IntegerField(choices=KEYBOARD_CHOICES, default=49)   
+    keyboard_size = models.IntegerField(choices=KEYBOARD_CHOICES, default=49)
 
     _supervisors = ArrayField(base_field=models.IntegerField(), default=list,
                               verbose_name='Supervisors', blank=True)

@@ -111,7 +111,7 @@ class SubscriberPlaylistPerformanceTable(tables.Table):
     performer_name = tables.columns.LinkColumn(
       'dashboard:subscriber-performances',
       kwargs={'subscriber_id': A('subscriber_id')},
-      accessor=A('perfomer_obj.get_full_name'),
+      accessor=A('performer_obj.get_full_name'),
       attrs={"td": {"bgcolor": "white", "width": "auto"}},
       verbose_name='Performer Name'
     )
