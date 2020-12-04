@@ -66,6 +66,7 @@ define([
 				"intervals",
 				"note_names",
 				"fixed_do",
+				"pitch_class",
 				"roman_numerals",
 				"scale_degrees",
 				"scientific_pitch",
@@ -188,6 +189,7 @@ define([
 				"intervals": "to_interval",
 				"note_names": "to_note_name",
 				"fixed_do": "to_fixed_do",
+				"pitch_class": "to_pitch_class",
 				"roman_numerals": "to_chord",
 				"scale_degrees": "to_scale_degree",
 				"scientific_pitch": "getNoteName",
@@ -199,6 +201,7 @@ define([
 				"intervals": ".name", // ok
 				"note_names": "", // ok
 				"fixed_do": "", // ok
+				"pitch_class": "",
 				"roman_numerals": ".label", // ok
 				"scale_degrees": "", // ok
 				"scientific_pitch": "", // ok

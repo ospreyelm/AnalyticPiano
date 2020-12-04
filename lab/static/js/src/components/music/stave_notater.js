@@ -290,10 +290,13 @@ define([
 		 * @param {number} y
 		 * @return undefined
 		 */
+		/* FIX ME: the next three functions are nearly identical; consolidate them */
 		drawNoteName: function(x, y) {
-			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
+
 			var note_name = this.getAnalyzer().to_note_name(notes);
+
+			var ctx = this.getContext();
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -302,10 +305,28 @@ define([
 				ctx.fillText(note_name, x + StaveNotater.prototype.annotateOffsetX, y);
 			}
 		},
-		drawFixedDo: function(x, y) { // mostly copied from drawNoteName
-			var ctx = this.getContext();
+		drawFixedDo: function(x, y) {
 			var notes = this.chord.getNoteNumbers();
+
+			// copied from drawNoteName except this line
 			var note_name = this.getAnalyzer().to_fixed_do(notes);
+
+			var ctx = this.getContext();
+			var fontArgs = ctx.font.split(' ');
+			var newSize = '20px';
+			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
+
+			if(note_name !== '' && notes.length >= 1) {
+				ctx.fillText(note_name, x + StaveNotater.prototype.annotateOffsetX, y);
+			}
+		},
+		drawPitchClass: function(x, y) {
+			var notes = this.chord.getNoteNumbers();
+
+			// copied from drawNoteName except this line
+			var note_name = this.getAnalyzer().to_pitch_class(notes);
+
+			var ctx = this.getContext();
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -873,6 +894,8 @@ define([
 					this.drawNoteName(x, second_row);
 				} else if (mode.fixed_do) {
 					this.drawFixedDo(x, second_row);
+				} else if (mode.pitch_class) {
+					this.drawPitchClass(x, second_row);
 				} else if(notes.length === 1 && mode.scientific_pitch && !mode.note_names) {
 					this.drawScientificPitch(x, second_row);
 				}

@@ -36,6 +36,7 @@ define({
 			note_names: true,
 			fixed_do: false,
 			scientific_pitch: false,
+			pitch_class: false,
 
 			/* max one of the following may be true */
 			scale_degrees: false,

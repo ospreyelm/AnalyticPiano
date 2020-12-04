@@ -36,6 +36,9 @@ define([
 					'<label><input type="checkbox" name="analysis_fixed_do" value="fixed_do" accesskey="f"> Fixed-do</label>',
 				'</li>',
 				'<li>',
+					'<label><input type="checkbox" name="analysis_pitch_class" value="pitch_class" accesskey="p"> Pitch class</label>',
+				'</li>',
+				'<li>',
 					'<label><input type="checkbox" name="analysis_degrees" value="scale_degrees" accesskey="d"> Degrees</label>',
 				'</li>',
 				'<li>',
@@ -81,35 +84,12 @@ define([
 				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
 				document.getElementById('staff').focus();
 			},
-			/* FIX ME: the next three functions are identical; consolidate them */
-			analysis_scientific_pitch: function(e) {
-				let sel = e.target.value;
-				this.state.mode[sel] = e.target.checked;
-
-				var opts = ['scientific_pitch', 'fixed_do', 'note_names'];
-				if (!opts.includes(sel)) {
-					console.log("Error");
-					return null;
-				}
-
-				if (this.state.mode[sel] === true) {
-					this.trigger('changeOption', 'analyze', sel, true);
-					var i, len;
-					for (var i = 0, len = opts.length; i < len; i++) {
-						let opt = opts[i];
-						if (opt === sel) continue;
-						document.getElementsByName('analysis_' + opt)[0].checked = false;
-						this.trigger('changeOption', 'analyze', opt, false);
-					}
-				} else if (this.state.mode[sel] === false) {
-					this.trigger('changeOption', 'analyze', sel, false);
-				}
-			},
+			/* FIX ME: the next four functions are identical; consolidate them */
 			analysis_note_names: function(e) {
 				let sel = e.target.value;
 				this.state.mode[sel] = e.target.checked;
 
-				var opts = ['scientific_pitch', 'fixed_do', 'note_names'];
+				var opts = ['scientific_pitch', 'fixed_do', 'note_names', 'pitch_class'];
 				if (!opts.includes(sel)) {
 					console.log("Error");
 					return null;
@@ -132,7 +112,53 @@ define([
 				let sel = e.target.value;
 				this.state.mode[sel] = e.target.checked;
 
-				var opts = ['scientific_pitch', 'fixed_do', 'note_names'];
+				var opts = ['scientific_pitch', 'fixed_do', 'note_names', 'pitch_class'];
+				if (!opts.includes(sel)) {
+					console.log("Error");
+					return null;
+				}
+
+				if (this.state.mode[sel] === true) {
+					this.trigger('changeOption', 'analyze', sel, true);
+					var i, len;
+					for (var i = 0, len = opts.length; i < len; i++) {
+						let opt = opts[i];
+						if (opt === sel) continue;
+						document.getElementsByName('analysis_' + opt)[0].checked = false;
+						this.trigger('changeOption', 'analyze', opt, false);
+					}
+				} else if (this.state.mode[sel] === false) {
+					this.trigger('changeOption', 'analyze', sel, false);
+				}
+			},
+			analysis_pitch_class: function(e) {
+				let sel = e.target.value;
+				this.state.mode[sel] = e.target.checked;
+
+				var opts = ['scientific_pitch', 'fixed_do', 'note_names', 'pitch_class'];
+				if (!opts.includes(sel)) {
+					console.log("Error");
+					return null;
+				}
+
+				if (this.state.mode[sel] === true) {
+					this.trigger('changeOption', 'analyze', sel, true);
+					var i, len;
+					for (var i = 0, len = opts.length; i < len; i++) {
+						let opt = opts[i];
+						if (opt === sel) continue;
+						document.getElementsByName('analysis_' + opt)[0].checked = false;
+						this.trigger('changeOption', 'analyze', opt, false);
+					}
+				} else if (this.state.mode[sel] === false) {
+					this.trigger('changeOption', 'analyze', sel, false);
+				}
+			},
+			analysis_scientific_pitch: function(e) {
+				let sel = e.target.value;
+				this.state.mode[sel] = e.target.checked;
+
+				var opts = ['scientific_pitch', 'fixed_do', 'note_names', 'pitch_class'];
 				if (!opts.includes(sel)) {
 					console.log("Error");
 					return null;

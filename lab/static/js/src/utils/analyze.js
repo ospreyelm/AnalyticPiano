@@ -349,6 +349,15 @@ var spellingAndAnalysisFunctions = {
             .replace(/^F/g,'Fa')
             .replace(/^G/g,'Sol');
     },
+    to_pitch_class: function(notes) {
+        if ( notes.length < 1 ) return "";
+        if ( !this.bare_octave_or_unison(notes) ) return "";
+
+        if (typeof notes == 'number') var midi = notes;
+        else var midi = notes[0];
+
+        return midi % 12;
+    },
     to_helmholtz: function (note) {
         var noteParts = note.split('/');
         var octave = parseInt(noteParts[1], 10);

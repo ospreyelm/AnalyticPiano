@@ -49,7 +49,7 @@ define([
 				'</li>',
 				'<li>',
 					'<label>',
-						'<input type="checkbox" name="highlight_lowered" value="loweredhighlight" accesskey="p"> Lowered pitches (P)',
+						'<input type="checkbox" name="highlight_lowered" value="loweredhighlight" accesskey="y"> Lowered pitches (Y)',
 						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.lowered)+'"></div>',
 					'</label>',						
 				'</li>',
