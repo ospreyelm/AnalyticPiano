@@ -2,6 +2,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import models
+from django.db.models import When, Case
 from django.urls import reverse
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -250,7 +252,16 @@ class CourseView(RequirejsView):
 
     def get(self, request, course_slug, *args, **kwargs):
         course = get_object_or_404(Course, slug=course_slug)
-        playlists = Playlist.objects.filter(name__in=course.playlists.split(','))
+        course_playlists = course.playlists.split(',')
+        playlists = Playlist.objects.filter(name__in=course_playlists)
+        whens = []
+        for sort_index, value in enumerate(course_playlists):
+            whens.append(When(name=value, then=sort_index))
+
+        playlists = playlists.annotate(
+            _sort_index=Case(*whens, output_field=models.CharField())
+        ).order_by('_sort_index')
+
         playlists_table = CoursePlaylistsTable(playlists)
         context = {
             'course_title': course.title,
