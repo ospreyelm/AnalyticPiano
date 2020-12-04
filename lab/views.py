@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 from braces.views import CsrfExemptMixin, LoginRequiredMixin
 from django_auth_lti import const
+from django_tables2 import RequestConfig
 
 from .objects import ExerciseRepository
 from .decorators import role_required, course_authorization_required
@@ -267,6 +268,9 @@ class CourseView(RequirejsView):
             'course_title': course.title,
             'playlists_table': playlists_table
         }
+
+        RequestConfig(request).configure(playlists_table)
+
         return render(request, "course.html", context)
 
 
