@@ -585,12 +585,12 @@ define([
 					}
 				}
 				if (postcursor === "" && (current === "I{z4}" || current === "i{z4}")) {
-					display = "{z4}"
+					// display = "{z4}"
 				}
 			} else { /* no postcursor */
 				let current = history[idx]
 				if (current === "I{z4}" || current === "i{z4}") {
-					display = "{z4}"
+					// display = "{z4}"
 				}
 			}
 
