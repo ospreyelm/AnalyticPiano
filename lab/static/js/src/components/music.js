@@ -37,7 +37,17 @@ define([
     };
     // console.log('URL variables', getUrlVars());
 
-    var STAFF_DISTRIBUTION = (getUrlVars().hasOwnProperty('staffDistribution') && ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"].includes(getUrlVars()['staffDistribution']) ? getUrlVars()['staffDistribution'] : Config.get('general.staffDistribution'));
+    var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
+    var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
+
+    let url_staff_dist = getUrlVars().hasOwnProperty('staffDistribution');
+    let storage_staff_dist = sessionStorage.getItem('staffDistribution');
+    let valid_staff_dists = ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"];
+    if (storage_staff_dist && valid_staff_dists.includes(url_staff_dist)) {
+        STAFF_DISTRIBUTION = storage_staff_dist;
+    } else if (url_staff_dist && valid_staff_dists.includes(url_staff_dist)) {
+        STAFF_DISTRIBUTION = url_staff_dist;
+    }
 
     /**
      * Creates an instance of MusicComponent.
@@ -73,7 +83,7 @@ define([
          * Configuration settings for staff distribution on the sheet music.
          * @type {object}
          */
-        this.staffDistributionConfig = _.extend({}, STAFF_DISTRIBUTION, this.settings);
+        this.staffDistributionConfig = _.extend({}, STAFF_DISTRIBUTION, this.settings.sheet.chords.settings);
 
 
         if(!("sheet" in this.settings)) {
@@ -114,7 +124,7 @@ define([
         initListeners: function() {
             this.subscribe(EVENTS.BROADCAST.HIGHLIGHT_NOTES, this.onHighlightChange);
             this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onAnalyzeChange);
-            this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onStaffDistributionChange); // ?
+            this.subscribe(EVENTS.BROADCAST.HIGHLIGHT_NOTES, this.onStaffDistributionChange); // not working?
             this.subscribe(EVENTS.BROADCAST.METRONOME, this.onMetronomeChange);
             this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onRedrawRequest);
             this.subscribe(EVENTS.BROADCAST.NEXTEXERCISE, this.onNextExerciseRequest);
@@ -381,8 +391,9 @@ define([
          * @param {object} settings
          * @return undefined
          */
-        onStaffDistributionChange: function(settings) {
-            this.updateSettings('staffDistributionConfig', settings);
+        onStaffDistributionChange: function(value) {
+            this['staffDistributionConfig'].staffDistribution = value;
+            this.settings.sheet.chords._items[0].settings.staffDistribution = value;
             this.trigger('change');
         },
         /**

@@ -229,7 +229,8 @@ define([
 			var staff_distribution_widget = new StaffDistributionWidget(staffDistribution);
 			var event_for = {
 				'highlight': EVENTS.BROADCAST.HIGHLIGHT_NOTES,
-				'analyze': EVENTS.BROADCAST.ANALYZE_NOTES
+				'analyze': EVENTS.BROADCAST.ANALYZE_NOTES,
+				'distribute': EVENTS.BROADCAST.DISTRIBUTE_NOTES
 			};
 			var onChangeCategory = function(category, enabled) {
 				if(event_for[category]) {
@@ -243,6 +244,9 @@ define([
 					that.broadcast(event_for[category], {key: "mode", value: value});
 				}
 			};
+			var onChangeValue = function(category, value) {
+				that.broadcast(event_for[category], value);
+			}
 
 			highlight_widget.bind('changeCategory', onChangeCategory);
 			highlight_widget.bind('changeOption', onChangeOption);
@@ -250,12 +254,13 @@ define([
 			analyze_widget.bind('changeCategory', onChangeCategory);
 			analyze_widget.bind('changeOption', onChangeOption);
 
+			staff_distribution_widget.bind('changeValue', onChangeValue);
+
 			analyze_widget.render();
 			highlight_widget.render();
 			staff_distribution_widget.render();
 
-			el.append(analyze_widget.el, highlight_widget.el);
-			// el.append(analyze_widget.el, highlight_widget.el, staff_distribution_widget.el);
+			el.append(analyze_widget.el, highlight_widget.el, staff_distribution_widget.el);
 		},
 		/**
 		 * Renders the instrument selector.

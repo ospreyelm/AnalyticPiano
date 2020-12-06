@@ -337,13 +337,11 @@ define([
 			/* simplify for testing */
 			// chords = chords.map(chord => chord["visible"]);
 
-			let STAFF_DISTRIBUTION = (this.chords.settings.staffDistribution ? this.chords.settings.staffDistribution : Config.__config.general.staffDistribution);
-
 			let json_data = {
 				"keySignature": this.keySignature.signatureSpec,
 				"key": this.keySignature.key,
 				"type": "matching", /* provide options */
-				"staffDistribution": STAFF_DISTRIBUTION,
+				"staffDistribution": this.parentComponent.staffDistributionConfig.staffDistribution,
 				"introText": "",
 				"reviewText": "",
 				"analysis": this.parentComponent.analyzeConfig,

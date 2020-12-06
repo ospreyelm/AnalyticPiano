@@ -16,11 +16,20 @@ define([
 		});
 		return vars;
 	};
-	console.log(getUrlVars());
+	// console.log(getUrlVars());
 
-	var STAFF_DISTRIBUTION = (getUrlVars().hasOwnProperty('staffDistribution') && ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"].includes(getUrlVars()['staffDistribution']) ? getUrlVars()['staffDistribution'] : Config.get('general.staffDistribution'));
-	
+	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
 	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
+
+	let url_staff_dist = getUrlVars().hasOwnProperty('staffDistribution');
+	let storage_staff_dist = sessionStorage.getItem('staffDistribution');
+	let valid_staff_dists = ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"];
+
+	if (storage_staff_dist && valid_staff_dists.includes(url_staff_dist)) {
+		STAFF_DISTRIBUTION = storage_staff_dist;
+	} else if (url_staff_dist && valid_staff_dists.includes(url_staff_dist)) {
+		STAFF_DISTRIBUTION = url_staff_dist;
+	}
 
 	/**
 	 * Creates an instance of a chord.
@@ -37,12 +46,18 @@ define([
 	 * @constructor 
 	 */
 	var Chord = function(settings) {
-		this.settings = settings || {};
-		if(this.settings.staffDistribution) {
-			STAFF_DISTRIBUTION = this.settings.staffDistribution;
-		} else {
-			this.settings.staffDistribution = STAFF_DISTRIBUTION; // for exercise creation (Sept. 2020)
+		/* temporary hack */
+		if(sessionStorage.getItem('staffDistribution')) {
+			STAFF_DISTRIBUTION = sessionStorage.getItem('staffDistribution');
 		}
+
+		this.settings = settings || {};
+		if (this.settings.staffDistribution) {
+			STAFF_DISTRIBUTION = sessionStorage.getItem('staffDistribution') || this.settings.staffDistribution;
+		} else {
+			this.settings.staffDistribution = sessionStorage.getItem('staffDistribution') || STAFF_DISTRIBUTION; // for exercise creation (Sept. 2020)
+		}
+
 		this.init();
 	};
 

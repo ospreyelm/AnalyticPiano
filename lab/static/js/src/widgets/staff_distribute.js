@@ -14,16 +14,27 @@ define([
 
 	var distribution_options = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"]
 
-    var getUrlVars = function() {
-        var vars = {};
-        var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
-            vars[key] = value;
-        });
-        return vars;
-    };
-    // console.log('URL variables', getUrlVars());
+	var getUrlVars = function() {
+		var vars = {};
+		var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+			vars[key] = value;
+		});
+		return vars;
+	};
+	// console.log('URL variables', getUrlVars());
 
-    var STAFF_DISTRIBUTION = (getUrlVars().hasOwnProperty('staffDistribution') && distribution_options.includes(getUrlVars()['staffDistribution']) ? getUrlVars()['staffDistribution'] : Config.get('general.staffDistribution'));
+	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
+	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
+
+	let url_staff_dist = getUrlVars().hasOwnProperty('staffDistribution');
+	let storage_staff_dist = sessionStorage.getItem('staffDistribution');
+	let valid_staff_dists = ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"];
+
+	if (storage_staff_dist) {
+		STAFF_DISTRIBUTION = storage_staff_dist;
+	} else if (url_staff_dist && valid_staff_dists.includes(url_staff_dist)) {
+		STAFF_DISTRIBUTION = url_staff_dist;
+	}
 
 	var StaffDistributionWidget = function(distribution=false) {
 		this.el = $('<div></div>');
@@ -59,11 +70,14 @@ define([
 		},
 		handlers: {
 			staff_distribution: function(e) {
+				var opt = e.target.value; // e.g. "keyboard"
+				this.state = opt;
+				/* temporary hack */
+				sessionStorage.setItem('staffDistribution', opt);
 				if (e.target.checked) {
-					var opt = e.target.value;
-					this.state = opt;
-					this.render();
+					this.trigger('changeValue', 'distribute', opt);
 				}
+				this.render();
 			},
 		},
 		render: function() {
