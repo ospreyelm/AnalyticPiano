@@ -67,7 +67,7 @@ define([
 		getRhythmValue: function() {
 			if (!this.chord._rhythmValue) {
 				return DEFAULT_RHYTHM_VALUE;
-			}else {
+			} else {
 				return this.chord._rhythmValue;
 			}
 		},
