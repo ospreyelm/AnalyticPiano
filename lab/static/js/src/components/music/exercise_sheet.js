@@ -360,9 +360,9 @@ define([
             var exercise_chord;
 
             // scrolling exercise view when more than twenty items
-            if (count > 20 ) {
+            if ( count > 20 ) {
                 let cursor = this.getInputChords()._currentIndex;
-                let leftIndex = Math.floor(cursor / 8) * 8;
+                let leftIndex = Math.floor((cursor >= 1 ? cursor - 1 : 0) / 8) * 8;
                 display_items = display_items.slice(leftIndex);
                 exercise_items = exercise_items.slice(leftIndex);
             }
