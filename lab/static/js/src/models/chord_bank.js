@@ -128,10 +128,10 @@ define([
 				var notes_off = chord.syncSustainedNotes();
 			}
 
-			// re-wires listeners to the current chord
-			this._removeListeners(current);
-			this._addListeners(chord);
 			if (request_origin !== "redistribute") {
+				// re-wires listeners to the current chord
+				this._removeListeners(current);
+				this._addListeners(chord);
 				this._add(chord);
 			}
 
