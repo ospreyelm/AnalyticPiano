@@ -14,7 +14,7 @@ define({
 		"BANK_NOTES": "banknotes",
 		"HIGHLIGHT_NOTES": "notation:highlight",
 		"ANALYZE_NOTES": "notation:analyze",
-		"DISTRIBUTE_NOTES": "notation:distribution",
+		"DISTRIBUTE_NOTES": "notation:distribute",
 		"INSTRUMENT": "instrument",
 		"TRANSPOSE": "transpose",
 		"METRONOME": "metronome",

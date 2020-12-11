@@ -131,7 +131,9 @@ define([
 			// re-wires listeners to the current chord
 			this._removeListeners(current);
 			this._addListeners(chord);
-			this._add(chord);
+			if (request_origin !== "redistribute") {
+				this._add(chord);
+			}
 
 			this.trigger('bank');
 

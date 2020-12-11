@@ -124,7 +124,7 @@ define([
         initListeners: function() {
             this.subscribe(EVENTS.BROADCAST.HIGHLIGHT_NOTES, this.onHighlightChange);
             this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onAnalyzeChange);
-            this.subscribe(EVENTS.BROADCAST.HIGHLIGHT_NOTES, this.onStaffDistributionChange); // not working?
+            this.subscribe(EVENTS.BROADCAST.DISTRIBUTE_NOTES, this.onStaffDistributionChange);
             this.subscribe(EVENTS.BROADCAST.METRONOME, this.onMetronomeChange);
             this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onRedrawRequest);
             this.subscribe(EVENTS.BROADCAST.NEXTEXERCISE, this.onNextExerciseRequest);
@@ -394,7 +394,8 @@ define([
         onStaffDistributionChange: function(value) {
             this['staffDistributionConfig'].staffDistribution = value;
             this.settings.sheet.chords._items[0].settings.staffDistribution = value;
-            this.trigger('change');
+            var sheetComponent = this.getComponent('sheet');
+            sheetComponent.chords.bank('redistribute');
         },
         /**
          * Handles a change to the metronome settings.
