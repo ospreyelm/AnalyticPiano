@@ -83,7 +83,7 @@ define([
          * Configuration settings for staff distribution on the sheet music.
          * @type {object}
          */
-        this.staffDistributionConfig = _.extend({}, STAFF_DISTRIBUTION, this.settings.sheet.chords.settings || {});
+        this.staffDistributionConfig = _.extend({}, STAFF_DISTRIBUTION, this.settings.sheet?.chords?.settings || {});
 
 
         if(!("sheet" in this.settings)) {
