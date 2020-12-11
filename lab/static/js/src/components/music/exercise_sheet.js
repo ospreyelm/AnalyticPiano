@@ -239,7 +239,7 @@ define([
                         tpl_data.group_tempo_rating = exc.getGroupTempoRating();
                         tpl_data.last_exercise_id = exc.definition.getExerciseList()[exc.definition.getExerciseList().length - 1].id;
                     }
-                    if(tpl_data.last_exercise_id.split("/")[0] && tpl_data.exercise_num == tpl_data.exercise_list.length) {
+                    if(tpl_data.last_exercise_id && tpl_data.last_exercise_id.split("/")[0] && tpl_data.exercise_num == tpl_data.exercise_list.length) {
                         tpl_data.current_set = "../" + tpl_data.last_exercise_id.split("/")[0];
                     }
                     if(tpl_data.time_to_complete_series && tpl_data.time_to_complete_series != "") {
