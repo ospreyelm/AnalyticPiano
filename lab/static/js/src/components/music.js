@@ -28,25 +28,13 @@ define([
      */
     var HIGHLIGHT_SETTINGS = Config.get('general.highlightSettings');
 
-    var getUrlVars = function() {
-        var vars = {};
-        var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
-            vars[key] = value;
-        });
-        return vars;
-    };
-    // console.log('URL variables', getUrlVars());
-
     var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
     var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
 
-    let url_staff_dist = getUrlVars().hasOwnProperty('staffDistribution');
     let storage_staff_dist = sessionStorage.getItem('staffDistribution');
-    let valid_staff_dists = ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"];
-    if (storage_staff_dist && valid_staff_dists.includes(url_staff_dist)) {
+    let valid_staff_dists = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"];
+    if (storage_staff_dist && valid_staff_dists.includes(storage_staff_dist)) {
         STAFF_DISTRIBUTION = storage_staff_dist;
-    } else if (url_staff_dist && valid_staff_dists.includes(url_staff_dist)) {
-        STAFF_DISTRIBUTION = url_staff_dist;
     }
 
     /**

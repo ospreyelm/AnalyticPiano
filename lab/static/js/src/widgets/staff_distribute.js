@@ -12,28 +12,14 @@ define([
 ) {
 	"use strict";
 
-	var distribution_options = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"]
-
-	var getUrlVars = function() {
-		var vars = {};
-		var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
-			vars[key] = value;
-		});
-		return vars;
-	};
-	// console.log('URL variables', getUrlVars());
+	var valid_staff_dists = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"];
 
 	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
 	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
 
-	let url_staff_dist = getUrlVars().hasOwnProperty('staffDistribution');
 	let storage_staff_dist = sessionStorage.getItem('staffDistribution');
-	let valid_staff_dists = ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"];
-
-	if (storage_staff_dist) {
+	if (storage_staff_dist && valid_staff_dists.includes(storage_staff_dist)) {
 		STAFF_DISTRIBUTION = storage_staff_dist;
-	} else if (url_staff_dist && valid_staff_dists.includes(url_staff_dist)) {
-		STAFF_DISTRIBUTION = url_staff_dist;
 	}
 
 	var StaffDistributionWidget = function(distribution=false) {
@@ -48,7 +34,7 @@ define([
 			'<fieldset class="settings-notation">',
 				'<legend><label>STAFF DISTRIBUTION</label></legend>',
 				'<ul>'].join('') +
-				distribution_options.map(
+				valid_staff_dists.map(
 					(opt) =>
 					['<li><label><input type="checkbox" name="staff_distribution" value="', opt, '"> ', opt, '</label></li>'].join('')
 					).join('') +
@@ -87,7 +73,7 @@ define([
 			this.el.html(this.templateHTML);
 			
 			// update the input states
-			$.each(distribution_options, function(idx, val) {
+			$.each(valid_staff_dists, function(idx, val) {
 				var $input = that.el.find('input[value='+val+']');
 				$input.attr('checked', val == that.state ? true : false);
 			});
