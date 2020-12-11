@@ -360,10 +360,12 @@ define([
             var exercise_chord;
 
             // scrolling exercise view when more than twenty items
-            let cursor = this.getInputChords()._currentIndex;
-            let leftIndex = Math.min(cursor, count > 20 && cursor >= 6 ? cursor - 6 : 0);
-            display_items = display_items.slice(leftIndex);
-            exercise_items = exercise_items.slice(leftIndex);
+            if (count > 20 ) {
+                let cursor = this.getInputChords()._currentIndex;
+                let leftIndex = Math.floor(cursor / 8) * 8;
+                display_items = display_items.slice(leftIndex);
+                exercise_items = exercise_items.slice(leftIndex);
+            }
 
             // the first stave bar is a special case: it's reserved to show the
             // clef and key signature and nothing else
