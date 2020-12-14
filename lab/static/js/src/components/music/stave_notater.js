@@ -529,22 +529,22 @@ define([
 			if (keyCategory === "j") {
 				var substitutions = [
 					/* cadential six-fours */
-					[["I{z4}", "V"], ["V{z4}", "{t3}"]],
-					[["I{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
-					[["I{z4}", "V{u}"], ["V{z4}", "{Ut3}"]],
-					[["i{z4}", "V"], ["V{B z4}", "{t3}"]],
-					[["i{z4}", "V{u3}"], ["V{B z4}", "{u3}"]],
-					[["i{z4}", "V{u}"], ["V{B z4}", "{Ut3}"]],
+					[["I{z4}", "V"], ["V{z4}", "={t3}"]],
+					[["I{z4}", "V{u3}"], ["V{z4}", "={u3}"]],
+					[["I{z4}", "V{u}"], ["V{z4}", "={Ut3}"]],
+					[["i{z4}", "V"], ["V{B z4}", "={t3}"]],
+					[["i{z4}", "V{u3}"], ["V{B z4}", "={u3}"]],
+					[["i{z4}", "V{u}"], ["V{B z4}", "={Ut3}"]],
 				];
 			} else if (keyCategory === "i") {
 				var substitutions = [
 					/* cadential six-fours */
-					[["I{z4}", "V"], ["V{' z4}", "{t3}"]],
-					[["I{z4}", "V{u3}"], ["V{' z4}", "{u3}"]],
-					[["I{z4}", "V{u}"], ["V{' z4}", "{Ut3}"]],
-					[["i{z4}", "V"], ["V{z4}", "{t3}"]],
-					[["i{z4}", "V{u3}"], ["V{z4}", "{u3}"]],
-					[["i{z4}", "V{u}"], ["V{z4}", "{Ut3}"]],
+					[["I{z4}", "V"], ["V{' z4}", "={t3}"]],
+					[["I{z4}", "V{u3}"], ["V{' z4}", "={u3}"]],
+					[["I{z4}", "V{u}"], ["V{' z4}", "={Ut3}"]],
+					[["i{z4}", "V"], ["V{z4}", "={t3}"]],
+					[["i{z4}", "V{u3}"], ["V{z4}", "={u3}"]],
+					[["i{z4}", "V{u}"], ["V{z4}", "={Ut3}"]],
 					// [["vii°{u}", "VI{z}"], ["c.t.°{u}", "VI{z}"]],
 				];
 			}
@@ -606,7 +606,11 @@ define([
 
 				text = this.convertSymbols(text).replace(/⌀/g,'⌀'); /* replace: one could improve appearance of half-diminished sign with standard fonts here, but currently using custom font instead */
 
-				offset = 0 - (['\u266D','\u266F','='].includes(text.slice(0,1)) ? ctx.measureText(text.slice(0,1)).width : 0); /* horizontal alignment when label begins with flat, sharp, or equals in lieu of resolution lines */
+				offset = ['\u266D','\u266F'].includes(text.slice(0,1)) ? -ctx.measureText(text.slice(0,1)).width : 0; /* horizontal alignment when label begins with flat or sharp */
+
+				if (text == '=') {
+					text = ''; /* hack for proper horizontal placement of figured bass without prior numeral per above substitutions */
+				}
 
 				var lines = this.wrapText(text);
 				this.drawTextLines(lines, x + offset + StaveNotater.prototype.annotateOffsetX, y);
@@ -614,8 +618,9 @@ define([
 				var first_line_width = this.getContext().measureText(lines[0]).width + offset;
 
 				if (resolution_lines) {
-					var x_start = this.annotateOffsetX+x+first_line_width+15;
-					var stroke_length = 38; /* should not be hard coded */
+					let label_width = first_line_width + 15;
+					let x_start = this.annotateOffsetX + x + label_width;
+					let stroke_length = this.stave.width - label_width;
 					if (extra_wide_figures) {
 						x_start += 10;
 						stroke_length += -10;
@@ -624,14 +629,15 @@ define([
 						ctx.moveTo(x_start, y-3);
 						ctx.lineTo(x_start+stroke_length, y-3);
 						ctx.moveTo(x_start, y-12);
-						ctx.lineTo(x_start+stroke_length, y-13);
+						ctx.lineTo(x_start+stroke_length, y-12);
 					ctx.stroke();
 				}
 				resolution_lines = false;
 
 				if (applied_arrow) {
-					var x_start = this.annotateOffsetX+x+(first_line_width/2);
-					var x_end = this.annotateOffsetX+x+80; /* should not be hard coded */
+					let width = this.stave.width;
+					let x_start = this.annotateOffsetX+x+(first_line_width/2);
+					let x_end = this.annotateOffsetX+x+width;
 					ctx.beginPath();
 						ctx.lineWidth = 1.5;
 						ctx.moveTo(x_start,y+6);
@@ -1012,7 +1018,7 @@ define([
 			/* Below the current bass staff */
 
 			var x = this.getX();
-			var y = this.getY(); 
+			var y = this.getY();
 			var midi_nums = this.chord.getNoteNumbers();
 			var num_notes = midi_nums.length;
 			var mode = this.analyzeConfig.mode;
