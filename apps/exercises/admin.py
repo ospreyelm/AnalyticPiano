@@ -11,23 +11,29 @@ from apps.exercises.forms import ExerciseForm, PlaylistForm, PerformanceDataForm
 @admin.register(Exercise)
 class ExerciseAdmin(admin.ModelAdmin):
     form = ExerciseForm
-    list_display = ('id', 'authored_by', 'is_public', 'created', 'updated', 'show_on_site')
+    list_display = ('id', 'show_on_site', 'authored_by', 'is_public', 'created', 'updated')
     list_filter = ('authored_by__email', 'is_public')
     search_fields = ('id',)
     readonly_fields = ('id', 'authored_by', 'created', 'updated', 'show_on_site')
     raw_id_fields = ('authored_by',)
     fieldsets = (
-        ('General Info', {
-            'fields': (
-                ('id', 'authored_by', 'type', 'staff_distribution', 'show_on_site'),
-                ('created', 'updated'),
-                'is_public'),
+        ('Exercise Information', {
+            'fields': (('id', 'show_on_site', 'authored_by', 'is_public'),)
+            # ('created', 'updated')
         }),
-        ('Exercise Data', {
-            'fields': ('rhythm_value', ('intro_text', 'review_text'), 'data')
+        ('Options', {
+            'fields': (('type', 'staff_distribution', 'rhythm_value'),)
+
+        }),
+        ('Accompanying Text', {
+            'fields': (
+                ('intro_text', 'review_text'),
+                # 'data'
+            )
         })
     )
     save_on_top = True
+    save_as = True
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super(ExerciseAdmin, self).get_form(request, obj, change, **kwargs)
@@ -38,17 +44,17 @@ class ExerciseAdmin(admin.ModelAdmin):
         if not obj.pk:
             return ''
         link = reverse('lab:exercise-view', kwargs={'exercise_id': obj.id})
-        link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
+        link = "<a href='%s' target='_blank'>Show On Site</a><br>" % link
         return mark_safe(link)
 
-    show_on_site.short_description = ''
+    show_on_site.short_description = 'Link'
 
 
 @admin.register(Playlist)
 class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
     form = PlaylistForm
-    list_display = ('name', 'exercise_links', 'authored_by',
-                    'created', 'updated', 'show_on_site')
+    list_display = ('name', 'show_on_site', 'authored_by',
+                    'created', 'updated')
     list_filter = ('authored_by__email',)
     search_fields = ('name', 'exercises',)
     readonly_fields = ('id', 'authored_by', 'created', 'updated', 'exercise_links',
@@ -56,25 +62,27 @@ class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
                        'show_on_site')
     raw_id_fields = ('authored_by',)
     fieldsets = (
-        ('General Info', {
-            'fields': (('name', 'show_on_site'),
-                       'id',
-                       'authored_by',
-                       ('created', 'updated')),
-        }),
-        ('Exercises', {
-            'fields': ('performances',
-                       'exercises',
-                       'exercise_links')
+        ('Playlist Information', {
+            'fields': (
+                ('name', 'exercises', 'id', 'authored_by', 'show_on_site', 'performances'),
+                # ('created', 'updated')
+            ),
         }),
         ('Transpose', {
-            'fields': ('transpose_requests',
-                       'transposition_type',
-                       # 'transposition_matrix',
-                       'transposed_exercises_display')
+            'fields': (
+                ('transposition_type', 'transpose_requests'),
+                # 'transposition_matrix',
+            ),
+        }),
+        ('Quick Edit Access for Associated Exercises', {
+            'fields': (
+                ('exercise_links'),
+                ('transposed_exercises_display'),
+            )
         })
     )
     save_on_top = True
+    save_as = True
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super(PlaylistAdmin, self).get_form(request, obj, change, **kwargs)
@@ -101,19 +109,19 @@ class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
         if not obj.pk:
             return ''
         link = reverse('lab:exercise-groups', kwargs={'group_name': obj.name})
-        link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
+        link = "<a href='%s' target='_blank'>Show On Site</a><br>" % link
         return mark_safe(link)
 
-    show_on_site.short_description = ''
+    show_on_site.short_description = 'Link'
 
     def performances(self, obj):
         if not (obj and obj._id):
             return '-'
         link = reverse('lab:performance-report', kwargs={'playlist_id': obj.id})
-        return mark_safe("<a href='%s'>Show Data</a><br>" % link)
+        return mark_safe("<a href='%s'>Review Data</a><br>" % link)
 
     performances.allow_tags = True
-    performances.short_description = 'Performances'
+    performances.short_description = 'Performance Data'
 
     def transposed_exercises_display(self, obj):
         return ','.join(str(id_) for id_ in obj.transposed_exercises_ids) if obj.is_transposed() else ''
@@ -145,8 +153,8 @@ class PerformanceDataAdmin(admin.ModelAdmin):
 @admin.register(Course)
 class CourseAdmin(DynamicArrayMixin, admin.ModelAdmin):
     form = CourseForm
-    list_display = ('title', 'playlist_links', 'authored_by',
-                    'created', 'updated', 'show_on_site')
+    list_display = ('title', 'show_on_site', 'authored_by',
+                    'created', 'updated')
     list_filter = ('authored_by__email',)
     search_fields = ('title', 'exercises',)
     readonly_fields = ('id', 'authored_by', 'created', 'updated', 'playlist_links',
@@ -166,6 +174,7 @@ class CourseAdmin(DynamicArrayMixin, admin.ModelAdmin):
         })
     )
     save_on_top = True
+    save_as = True
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super(CourseAdmin, self).get_form(request, obj, change, **kwargs)
@@ -192,7 +201,7 @@ class CourseAdmin(DynamicArrayMixin, admin.ModelAdmin):
         if not obj.pk:
             return ''
         link = reverse('lab:course-view', kwargs={'course_slug': obj.slug})
-        link = "<a href='%s' target='_blank' style='font-size: medium'>Show On Site</a><br>" % link
+        link = "<a href='%s' target='_blank'>Show On Site</a><br>" % link
         return mark_safe(link)
 
-    show_on_site.short_description = ''
+    show_on_site.short_description = 'Link'

@@ -9,6 +9,10 @@ import jasmine.urls
 import lab.urls
 import lti_tool.urls
 
+admin.site.site_header = "Analytic Piano • Admin Main Menu"
+admin.site.site_title = "Analytic Piano"
+admin.site.index_title = "Admin Main Menu"
+
 urlpatterns = [
     path('', RedirectView.as_view(url='/lab'), name='index'),
     path('lab/', include(lab.urls)),

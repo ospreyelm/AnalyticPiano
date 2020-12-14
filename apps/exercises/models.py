@@ -28,16 +28,16 @@ class Exercise(models.Model):
     id = models.CharField('ID', unique=True, max_length=16)
 
     data = RawJSONField('Data')
-    rhythm_value = models.CharField('Rhythm Value', max_length=64,
+    rhythm_value = models.CharField('Rhythm', max_length=64,
                                     blank=True, null=True)
     is_public = models.BooleanField('Is Public', default=False)
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='exercises',
                                     on_delete=models.PROTECT,
-                                    verbose_name='Authored By')
+                                    verbose_name='Author')
 
-    created = models.DateTimeField('Created at', auto_now_add=True)
-    updated = models.DateTimeField('Updated at', auto_now=True)
+    created = models.DateTimeField('Created', auto_now_add=True)
+    updated = models.DateTimeField('Updated', auto_now=True)
 
     zero_padding = 'EA00A0'
 
@@ -93,8 +93,8 @@ class Exercise(models.Model):
         if not self.rhythm_value or not self.data:
             return
 
-        supported_rhythm_values = ["w", "h", "q"]
-        rhythm_values = self.rhythm_value.split()
+        supported_rhythm_values = ["w", "h", "q", "1", "2", "4"]
+        rhythm_values = self.rhythm_value.replace("1", "w").replace("2", "h").replace("4", "q")
         rhythm_values = [x for x in rhythm_values if x in supported_rhythm_values]
         chord_data = self.data.get('chord')
         del rhythm_values[len(chord_data):]  # truncate extra rhythms
@@ -126,11 +126,13 @@ class Playlist(models.Model):
     TRANSPOSE_PLAYLIST_LOOP = 'Playlist Loop'
     TRANSPOSE_EXERCISE_SHUFFLE = 'Exercise Shuffle'
     TRANSPOSE_PLAYLIST_SHUFFLE = 'Playlist Shuffle'
+    TRANSPOSE_OFF = None
     TRANSPOSE_TYPE_CHOICES = (
         (TRANSPOSE_EXERCISE_LOOP, TRANSPOSE_EXERCISE_LOOP),
         (TRANSPOSE_PLAYLIST_LOOP, TRANSPOSE_PLAYLIST_LOOP),
-        (TRANSPOSE_EXERCISE_SHUFFLE, TRANSPOSE_EXERCISE_SHUFFLE),
-        (TRANSPOSE_PLAYLIST_SHUFFLE, TRANSPOSE_PLAYLIST_SHUFFLE)
+        # (TRANSPOSE_EXERCISE_SHUFFLE, TRANSPOSE_EXERCISE_SHUFFLE),
+        # (TRANSPOSE_PLAYLIST_SHUFFLE, TRANSPOSE_PLAYLIST_SHUFFLE),
+        (TRANSPOSE_OFF, TRANSPOSE_OFF)
     )
     transposition_type = models.CharField('Transposition Types', max_length=32,
                                           choices=TRANSPOSE_TYPE_CHOICES, blank=True, null=True)
@@ -285,7 +287,7 @@ class PerformanceData(models.Model):
 
     class Meta:
         verbose_name = 'Performance'
-        verbose_name_plural = 'Performances'
+        verbose_name_plural = 'Performance Data'
         unique_together = (('user', 'playlist'),)
 
     def __str__(self):

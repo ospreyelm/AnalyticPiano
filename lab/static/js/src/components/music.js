@@ -295,11 +295,11 @@ define([
                     // is there a way to do these things once each?
                     Object.assign(this.analyzeConfig, newData.analysis);
                     Object.assign(this.settings.analysisSettings, newData.analysis);
-                    Object.assign(this.staffDistributionConfig.analysisSettings, newData.analysis);
+                    // Object.assign(this.staffDistributionConfig.analysisSettings, newData.analysis);
 
                     Object.assign(this.highlightConfig, newData.highlight);
                     Object.assign(this.settings.highlightSettings, newData.highlight);
-                    Object.assign(this.staffDistributionConfig.highlightSettings, newData.highlight);
+                    // Object.assign(this.staffDistributionConfig.highlightSettings, newData.highlight);
                     /* could add use of listeners here to update the menu */
 
                     scex.inputChords.staffDistribution = newData.staffDistribution;
@@ -315,7 +315,7 @@ define([
                 scex.timer = null;
                 scex.timepoints = [];
 
-                window.console.dir('send dummy note');
+                // window.console.dir('send dummy note');
                 this.broadcast(EVENTS.BROADCAST.NOTE, 'on', 109, 0);
                 this.broadcast(EVENTS.BROADCAST.NOTE, 'off', 109, 0);
                 this.broadcast(EVENTS.BROADCAST.PEDAL, 'sustain', 'off', 'refresh');

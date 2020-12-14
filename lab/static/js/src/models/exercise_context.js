@@ -155,7 +155,7 @@ define([
             graded = this.grader.grade(this.definition, this.inputChords);
 
             if (this.inputChords._items[0]._notes[109]) {
-                window.console.dir('catch dummy note');
+                // window.console.dir('catch dummy note');
                 state = ExerciseContext.STATE.CORRECT;
             } else { switch(graded.result) {
                 case this.grader.STATE.CORRECT:
