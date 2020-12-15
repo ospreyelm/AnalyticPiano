@@ -98,7 +98,9 @@ class Exercise(models.Model):
         rhythm_values = [x for x in rhythm_values if x in supported_rhythm_values]
         chord_data = self.data.get('chord')
         del rhythm_values[len(chord_data):]  # truncate extra rhythms
-        self.rhythm_value = ' '.join(rhythm_values)
+        if len(rhythm_values) > 0 and len(rhythm_values) < len(chord_data):
+            rhythm_values.append("w" * (len(chord_data) - len(rhythm_values)))
+        self.rhythm_value = ''.join(rhythm_values)
 
         for chord in chord_data:
             try:

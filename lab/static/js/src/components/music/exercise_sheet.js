@@ -368,7 +368,7 @@ define([
             var pageturns = [0];
             for (var i = 0, len = rhythmValues.length; i < len; i++) {
                 let neededSpace = this.getVisualWidth(rhythmValues[i]);
-                if (neededSpace > availableSpace) {
+                if (neededSpace + 1 > availableSpace) {
                     availableSpace = CHORD_BANK_SIZE;
                     pageturns.push(i);
                     scroll_exercise = true;
@@ -377,17 +377,12 @@ define([
             }
             if (scroll_exercise) {
                 let cursor = this.getInputChords()._currentIndex;
-                var page_start = pageturns.filter(function(x){return x <= cursor}).pop();
-                var next_page = pageturns.filter(function(x){return x > cursor})[0] || false;
-                if (page_start > 0) {
-                    page_start -= 1;
-                    if (next_page) {
-                        next_page -= 1;
-                    }
-                }
+                var page_start = pageturns.filter(function(x,idx){return x <= cursor}).pop();
+                var next_page = pageturns.filter(function(x,idx){return x > cursor})[0] || false;
+                if (page_start > 0) page_start -= 1;
+                display_items = display_items.slice(page_start);
+                exercise_items = exercise_items.slice(page_start);
                 position.offset = page_start;
-                display_items = next_page ? display_items.slice(page_start,next_page) : display_items.slice(page_start);
-                exercise_items = next_page ? exercise_items.slice(page_start,next_page) : exercise_items.slice(page_start);
             }
 
             // the first stave bar is a special case: it's reserved to show the
