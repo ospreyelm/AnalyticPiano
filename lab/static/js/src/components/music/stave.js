@@ -220,6 +220,9 @@ define([
 		 */
 		drawBeginStaveConnector: function() {
 			var SINGLE = Vex.Flow.StaveConnector.type.SINGLE_LEFT;
+			if (Vex.Version && Vex.Version == "old") {
+				var SINGLE = Vex.Flow.StaveConnector.type.SINGLE;
+			}
 			var BRACE = Vex.Flow.StaveConnector.type.BRACE;
 			var staff1 = this.getStaveBar();
 			var staff2 = this.connectedStave.getStaveBar();

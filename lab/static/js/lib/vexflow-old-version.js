@@ -35,6 +35,7 @@ define(function() {
 function Vex() {
 }
 Vex.Debug = true;
+Vex.Version = "old"; // AnalyticPiano
 Vex.LogLevels = {DEBUG:5, INFO:4, WARN:3, ERROR:2, FATAL:1};
 Vex.LogLevel = 5;
 Vex.LogMessage = function(level, message) {

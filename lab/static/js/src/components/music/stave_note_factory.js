@@ -342,7 +342,9 @@ define([
 		},
 		makeStemModifier: function(stemStyle) {
 			return function(staveNote) {
-				staveNote.setStemStyle(stemStyle);
+				if (typeof staveNote.setStemStyle === "function") {
+					staveNote.setStemStyle(stemStyle);
+				}
 			};
 		},
 		/**

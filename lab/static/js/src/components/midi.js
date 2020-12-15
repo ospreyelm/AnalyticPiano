@@ -434,7 +434,7 @@ define([
 				this.turnOffSustainedNotesOnPedalLift(notes_off);
 			}
 		},
-		turnOffSustainedNotesOnPedalLift: function(notes_off) {
+		turnOffSustainedNotesOnPedalLift: function(notes_off=[]) {
 			var i, len;
 			for (i = 0, len = notes_off.length; i < len; i++) {
 				let channel_idx = this.midiChannel - 1;
