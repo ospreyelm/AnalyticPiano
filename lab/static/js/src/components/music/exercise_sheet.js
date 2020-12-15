@@ -350,31 +350,44 @@ define([
             var exercise_items = this.getExerciseChords().items({limit: limit, reverse: false});
             var staves = [];
             var index = 0;
+            var offset = 0;
             var count = display_items.length;
             var position = {
                 index:index,
                 count:count,
+                offset:offset,
                 maxCount:CHORD_BANK_SIZE
             };
             var display_chord;
             var exercise_chord;
 
             // scrolling exercise view
-            var scroll = false;
+            var scroll_exercise = false;
             let rhythmValues = display_items.map( item => item.chord._rhythmValue );
             var availableSpace = CHORD_BANK_SIZE;
+            var pageturns = [0];
             for (var i = 0, len = rhythmValues.length; i < len; i++) {
-                availableSpace -= this.getVisualWidth(rhythmValues[i]);
-                if (availableSpace < 0) {
-                    scroll = true;
-                    break;
+                let neededSpace = this.getVisualWidth(rhythmValues[i]);
+                if (neededSpace > availableSpace) {
+                    availableSpace = CHORD_BANK_SIZE;
+                    pageturns.push(i);
+                    scroll_exercise = true;
                 }
+                availableSpace -= this.getVisualWidth(rhythmValues[i]);
             }
-            if (scroll) {
+            if (scroll_exercise) {
                 let cursor = this.getInputChords()._currentIndex;
-                let leftIndex = Math.floor((cursor >= 1 ? cursor - 1 : 0) / 8) * 8;
-                display_items = display_items.slice(leftIndex);
-                exercise_items = exercise_items.slice(leftIndex);
+                var page_start = pageturns.filter(function(x){return x <= cursor}).pop();
+                var next_page = pageturns.filter(function(x){return x > cursor})[0] || false;
+                if (page_start > 0) {
+                    page_start -= 1;
+                    if (next_page) {
+                        next_page -= 1;
+                    }
+                }
+                position.offset = page_start;
+                display_items = next_page ? display_items.slice(page_start,next_page) : display_items.slice(page_start);
+                exercise_items = next_page ? exercise_items.slice(page_start,next_page) : exercise_items.slice(page_start);
             }
 
             // the first stave bar is a special case: it's reserved to show the

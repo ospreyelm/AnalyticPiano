@@ -720,7 +720,7 @@ define([
 		 * @return {boolean}
 		 */
 		isLastBar: function() {
-			return this.position.index === this.position.count;
+			return this.position.index + (this.position.offset ? this.position.offset : 0) === this.position.count;
 		},
 		/**
 		 * Sets the status of this stave as "banked" or not.
