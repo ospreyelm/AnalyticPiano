@@ -663,7 +663,7 @@ define([
 				start_x = (this.margin.left + this.firstBarWidth);
 				basic_width = Math.floor((this.maxWidth - start_x) / this.position.maxCount);
 				width = basic_width;
-				if(rhythmDivisor != null && Number.isInteger(rhythmDivisor) && Number.isInteger(elapsedQuarters)) {
+				if(rhythmDivisor != null && Number.isInteger(rhythmDivisor)) {
 					if(rhythmDivisor <= 4) {
 						width = Math.floor(basic_width / rhythmDivisor);
 					}
