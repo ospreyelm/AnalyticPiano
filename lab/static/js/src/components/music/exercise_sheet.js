@@ -377,9 +377,8 @@ define([
 
             // now add the staves for showing the notes
             for(var i = 0, len = display_items.length; i < len; i++) {
-                var elapsed_quarters = 0;
+                var elapsedWidthUnits = 0;
                 for(var j = 0; j < i; j++) {
-                    var duration = 4;
                     var rhythm_value = null;
                     if(display_items[j].chord.settings.rhythm) {
                         rhythm_value = display_items[j].chord.settings.rhythm;
@@ -387,21 +386,13 @@ define([
                     if(rhythm_value == null) {
                         rhythm_value = DEFAULT_RHYTHM_VALUE;
                     }
-
-                    if(rhythm_value === "w") {
-                        duration = 4;
-                    }else if(rhythm_value === "h") {
-                        duration = 2;
-                    }else if(rhythm_value === "q") {
-                        duration = 1;
-                    }
-                    elapsed_quarters += duration;
+                    elapsedWidthUnits += this.getVisualWidth(rhythm_value);
                 }
 
                 display_chord = display_items[i].chord;
                 exercise_chord = exercise_items[i].chord;
-                treble = this.createNoteStave('treble', _.clone(position), display_chord, exercise_chord, elapsed_quarters);
-                bass = this.createNoteStave('bass', _.clone(position), display_chord, exercise_chord, elapsed_quarters);
+                treble = this.createNoteStave('treble', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits);
+                bass = this.createNoteStave('bass', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits);
                 position.index += 1;
                 treble.connect(bass);
                 staves.push(treble);
@@ -440,6 +431,18 @@ define([
 
             return stave;
         },
+        getVisualWidth: function(rhythm_value) {
+            if (rhythm_value === "w") {
+                return 1;
+            } else if (rhythm_value === "h") {
+                return 0.675;
+            } else if (rhythm_value === "q") {
+                return 0.375;
+            } else {
+                console.log('Unknown rhythm_value passed to getVisualWidth');
+                return 1;
+            }
+        },
         /**
          * Creates a stave to display notes.
          *
@@ -448,24 +451,15 @@ define([
          * @param {Chord} chord
          * @return {Stave}
          */
-        createNoteStave: function(clef, position, displayChord, exerciseChord, elapsed_quarters) {
+        createNoteStave: function(clef, position, displayChord, exerciseChord, elapsedWidthUnits) {
             var stave = new Stave(clef, position);
-            var rhythmDivisor = null;
-            if(exerciseChord.settings.rhythm) {
+            var widthUnits = null;
+            if (exerciseChord.settings.rhythm) {
                 var rhythm_value = exerciseChord.settings.rhythm;
-                if(rhythm_value == null) {
+                if (rhythm_value == null) {
                     rhythm_value = DEFAULT_RHYTHM_VALUE;
                 }
-
-                if(rhythm_value === "w") {
-                    rhythmDivisor = 1;
-                }else if(rhythm_value === "h") {
-                    rhythmDivisor = 2;
-                }else if(rhythm_value === "q") {
-                    rhythmDivisor = 4;
-                }else {// should be false
-                    rhythmDivisor = 1;
-                }
+                widthUnits = this.getVisualWidth(rhythm_value);
             }
 
             stave.setRenderer(this.vexRenderer);
@@ -489,7 +483,7 @@ define([
                 const staffSig = this.keySignature.signatureSpec;
                 stave.setFirstBarWidth(staffSig);
             }
-            stave.updatePositionWithRhythm(rhythmDivisor, elapsed_quarters);
+            stave.updatePositionWithRhythm(widthUnits, elapsedWidthUnits);
 
             return stave;
         },

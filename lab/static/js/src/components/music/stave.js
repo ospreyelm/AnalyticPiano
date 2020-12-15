@@ -653,7 +653,7 @@ define([
 		 *
 		 * @return undefined
 		 */
-		updatePositionWithRhythm: function(rhythmDivisor, elapsedQuarters) {
+		updatePositionWithRhythm: function(widthUnits, elapsedWidthUnits) {
 			var start_x, basic_width, width;
 
 			if(this.isFirstBar()) {
@@ -663,14 +663,12 @@ define([
 				start_x = (this.margin.left + this.firstBarWidth);
 				basic_width = Math.floor((this.maxWidth - start_x) / this.position.maxCount);
 				width = basic_width;
-				if(rhythmDivisor != null && Number.isInteger(rhythmDivisor)) {
-					if(rhythmDivisor <= 4) {
-						width = Math.floor(basic_width / rhythmDivisor);
-					}
+				if (widthUnits != null && !isNaN(widthUnits)) {
+					width = Math.floor(basic_width * widthUnits);
 				}
 
 				// start_x += ((this.position.index - 1) * basic_width);
-				start_x += (basic_width * elapsedQuarters / 4);
+				start_x += (basic_width * elapsedWidthUnits);
 
 				this.start_x = start_x;
 
