@@ -1,11 +1,11 @@
 define([
-	'lodash', 
+	'lodash',
 	'vexflow',
 	'app/utils/analyze',
 	'./stave_note_factory'
 ], function(
-	_, 
-	Vex, 
+	_,
+	Vex,
 	Analyze,
 	StaveNoteFactory
 ) {
@@ -19,7 +19,7 @@ define([
 	 * @constructor
 	 * @param {object} settings
 	 * @param {object} settings.clef
-	 * @param {object} settings.chord 
+	 * @param {object} settings.chord
 	 * @param {object} settings.keySignature
 	 * @param {object} settings.highlightConfig
 	 * @return
@@ -109,7 +109,12 @@ define([
 
 			this.staveNoteFactory.resetHighlight();
 
-			for(var i = 0, len = keys.length; i < len; i++) {
+			var stemStyle = {
+				fillStyle:this.noteColorMap.notplayed,
+				strokeStyle:this.noteColorMap.notplayed
+			};
+			var all_correct = true;
+			for (var i = 0, len = keys.length; i < len; i++) {
 				note = clefMidiKeys[i];
 
 				// Apply accidentals (if any)
@@ -119,7 +124,7 @@ define([
 
 				// Set highlights in order of priority
 				this.staveNoteFactory.highlightNote(i, {
-					fillStyle:this.noteColorMap.notplayed, 
+					fillStyle:this.noteColorMap.notplayed,
 					strokeStyle:this.noteColorMap.notplayed
 				}, 1);
 
@@ -132,14 +137,26 @@ define([
 
 				if(noteProps[note] && noteProps[note].hasOwnProperty('correctness')) {
 					keyStyle = this.getCorrectnessColorStyle(noteProps[note].correctness);
-					if(keyStyle !== false) {
-						this.staveNoteFactory.highlightNote(i, keyStyle, 3); 
+					if (!noteProps[note].correctness) {
+						all_correct = false;
 					}
+					if(keyStyle !== false) {
+						this.staveNoteFactory.highlightNote(i, keyStyle, 3);
+					}
+				} else {
+					all_correct = false;
 				}
 
 				keyStyle = this.staveNoteFactory.getHighlightOf(i);
 				modifiers.push(this.staveNoteFactory.makeHighlightModifier(i, keyStyle));
 			}
+			if (all_correct) {
+				stemStyle = {
+					fillStyle: this.noteColorMap.correct,
+					strokeStyle: this.noteColorMap.correct
+				}
+			};
+			modifiers.push(this.staveNoteFactory.makeStemModifier(stemStyle));
 
 			return modifiers;
 		},

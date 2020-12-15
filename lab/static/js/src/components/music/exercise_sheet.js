@@ -345,7 +345,7 @@ define([
          */
         updateStaves: function() {
             var chord, treble, bass;
-            var limit = CHORD_BANK_SIZE * 4 + 1;// Adjusted now that rhythms varied
+            var limit = 100; // arbitrary
             var display_items = this.getDisplayChords().items({limit: limit, reverse: false});
             var exercise_items = this.getExerciseChords().items({limit: limit, reverse: false});
             var staves = [];
@@ -359,8 +359,18 @@ define([
             var display_chord;
             var exercise_chord;
 
-            // scrolling exercise view when more than twenty items
-            if ( count > 20 ) {
+            // scrolling exercise view
+            var scroll = false;
+            let rhythmValues = display_items.map( item => item.chord._rhythmValue );
+            var availableSpace = CHORD_BANK_SIZE;
+            for (var i = 0, len = rhythmValues.length; i < len; i++) {
+                availableSpace -= this.getVisualWidth(rhythmValues[i]);
+                if (availableSpace < 0) {
+                    scroll = true;
+                    break;
+                }
+            }
+            if (scroll) {
                 let cursor = this.getInputChords()._currentIndex;
                 let leftIndex = Math.floor((cursor >= 1 ? cursor - 1 : 0) / 8) * 8;
                 display_items = display_items.slice(leftIndex);

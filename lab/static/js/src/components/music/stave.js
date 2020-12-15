@@ -210,7 +210,7 @@ define([
 		 */
 		renderStaveConnector: function() {
 			if ( this.isFirstBar() ) this.drawBeginStaveConnector();
-			// else if ( this.isLastBar() ) this.drawEndStaveConnector();
+			if ( this.isLastBar() ) this.drawEndStaveConnector();
 			return this;
 		},
 		/**
@@ -219,7 +219,7 @@ define([
 		 * @return undefined
 		 */
 		drawBeginStaveConnector: function() {
-			var SINGLE = Vex.Flow.StaveConnector.type.SINGLE;
+			var SINGLE = Vex.Flow.StaveConnector.type.SINGLE_LEFT;
 			var BRACE = Vex.Flow.StaveConnector.type.BRACE;
 			var staff1 = this.getStaveBar();
 			var staff2 = this.connectedStave.getStaveBar();
@@ -232,17 +232,18 @@ define([
 		 * @return undefined
 		 */
 		drawEndStaveConnector: function() {
-			var SINGLE = Vex.Flow.StaveConnector.type.SINGLE;
-			var ctx = this.getContext();
-			var next_x = this.start_x + this.width;
-			var width = 3; // width of stave connector
-			var staff1 = new Vex.Flow.Stave(next_x, this.getYForClef('treble'), width);
-			var staff2 = new Vex.Flow.Stave(next_x, this.getYForClef('bass'), width);
+			let next_x = this.start_x + this.width;
+			let treble_y = this.getYForClef('treble');
+			let bass_y = this.getYForClef('bass');
+			var staff1 = new Vex.Flow.Stave(next_x, treble_y, -1);
+			var staff2 = new Vex.Flow.Stave(next_x, bass_y, -1);
 
+			let ctx = this.getContext();
 			staff1.setContext(ctx);
 			staff2.setContext(ctx);
 
-			this.drawStaveConnector(staff1, staff2, SINGLE);
+			let END_EXERCISE = Vex.Flow.StaveConnector.type.THIN_DOUBLE;
+			this.drawStaveConnector(staff1, staff2, END_EXERCISE);
 		},
 		/**
 		 * Draws a stave connector between two staves.
@@ -266,33 +267,33 @@ define([
 			var x = this.start_x;
 			var y = this.start_y;
 			var width = this.width;
-			var staveBar = new Vex.Flow.Stave(x, y, width);
+			var staffSegment = new Vex.Flow.Stave(x, y, width, {fill_style: 'black'});
 
 			/**
 			 * To show barlines, call Vex.Flow.Barline.type.SINGLE
 			 * unless isFirstBar (this is used for clef and staff signature
 			 * display).
 			 */
-			staveBar.setBegBarType(Vex.Flow.Barline.type.NONE);
+			staffSegment.setBegBarType(Vex.Flow.Barline.type.NONE);
 			// if(this.isFirstBar()) {
-			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			// 	staffSegment.setEndBarType(Vex.Flow.Barline.type.NONE);
 			// } else if(this.isPenultimateBar()) {
-			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.SINGLE);
+			// 	staffSegment.setEndBarType(Vex.Flow.Barline.type.SINGLE);
 			// } else if(this.isLastBar()) {
-			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			// 	staffSegment.setEndBarType(Vex.Flow.Barline.type.NONE);
 			// } else {
-			// 	staveBar.setEndBarType(Vex.Flow.Barline.type.SINGLE);
+			// 	staffSegment.setEndBarType(Vex.Flow.Barline.type.SINGLE);
 			// }
-			staveBar.setEndBarType(Vex.Flow.Barline.type.NONE);
+			staffSegment.setEndBarType(Vex.Flow.Barline.type.NONE);
 
-			staveBar.clef = this.clef;
-			staveBar.setContext(this.getContext());
+			staffSegment.clef = this.clef;
+			staffSegment.setContext(this.getContext());
 			if (this.isFirstBar()) {
-				staveBar.addClef(this.clef);
-				staveBar.addKeySignature(this.keySignature.getVexKey());
+				staffSegment.addClef(this.clef);
+				staffSegment.addKeySignature(this.keySignature.getVexKey());
 			}
 
-			this.staveBar = staveBar;
+			this.staffSegment = staffSegment;
 		},
 		/**
 		 * Creates the Vex.Flow.Voice.
@@ -348,7 +349,7 @@ define([
 
 			if(voices.length > 0) {
 				formatter = new Vex.Flow.Formatter();
-				formatter.joinVoices([voice]).formatToStave(voices, this.staveBar);
+				formatter.joinVoices([voice]).formatToStave(voices, this.staffSegment);
 			}
 		},
 		/**
@@ -358,7 +359,7 @@ define([
 		 */
 		drawStaveVoice: function() {
 			if(this.staveVoice) {
-				this.staveVoice.draw(this.getContext(), this.staveBar);
+				this.staveVoice.draw(this.getContext(), this.staffSegment);
 			}
 		},
 		/**
@@ -368,7 +369,7 @@ define([
 		 */
 		drawStaveBar: function() {
 			var ctx = this.getContext();
-			this.staveBar.draw(ctx);
+			this.staffSegment.draw(ctx);
 		},
 		/**
 		 * Notates the Stave. Delegates this responsibility 
@@ -504,7 +505,7 @@ define([
 		 * @return {object}
 		 */
 		getStaveBar: function() {
-			return this.staveBar;
+			return this.staffSegment;
 		},
 		/**
 		 * Returns the underlying Vex.Flow.Voice object.
@@ -536,7 +537,7 @@ define([
 		 * @return {number}
 		 */
 		getTopY: function() {
-			return this.staveBar.getYForTopText();
+			return this.staffSegment.getYForTopText();
 		},
 		/**
 		 * Returns the bottom Y position of the stave.
@@ -544,7 +545,7 @@ define([
 		 * @return {number}
 		 */
 		getBottomY: function() {
-			return this.staveBar.getBottomY();
+			return this.staffSegment.getBottomY();
 		},
 		/**
 		 * Returns the canvas rendering context used by the Vex.Flow renderer.
@@ -634,10 +635,9 @@ define([
 
 				this.start_x = start_x;
 
-				if(this.isLastBar()) {
-					// stretch to fill remaining area
-					// this.width = this.maxWidth - this.start_x - this.margin.right;
-					this.width = width;
+				let stretch = false;
+				if(this.isLastBar() && stretch) {
+					this.width = this.maxWidth - this.start_x - this.margin.right;
 				} else {
 					this.width = width;
 				}
@@ -672,9 +672,11 @@ define([
 
 				this.start_x = start_x;
 
-				if(this.isLastBar()) {
-					// stretch to fill remaining area
+				let stretch = false;
+				if (this.isLastBar() && stretch) {
 					this.width = this.maxWidth - this.start_x - this.margin.right;
+				} else if (this.isLastBar()) {
+					this.width = width + 15;
 				} else {
 					this.width = width;
 				}

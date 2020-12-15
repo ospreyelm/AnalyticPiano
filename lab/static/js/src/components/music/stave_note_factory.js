@@ -337,6 +337,11 @@ define([
 				staveNote.setKeyStyle(keyIndex, keyStyle);
 			};
 		},
+		makeStemModifier: function(stemStyle) {
+			return function(staveNote) {
+				staveNote.setStemStyle(stemStyle);
+			};
+		},
 		/**
 		 * Returns a new instance of Analyze using the current key signature.
 		 *
