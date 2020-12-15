@@ -1012,8 +1012,9 @@ Vex.Flow.StaveConnector.prototype.draw = function() {
       topX -= this.width + 2;
       break;
     case Vex.Flow.StaveConnector.type.BRACE:
-      width = 12;
-      var x1 = this.top_stave.getX() - 2;
+      let AnalyticPiano = true;
+      width = AnalyticPiano ? 10 : 12;
+      var x1 = this.top_stave.getX() - (AnalyticPiano ? 3 : 2);
       var y1 = topY;
       var x3 = x1;
       var y3 = botY;

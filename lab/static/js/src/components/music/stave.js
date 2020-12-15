@@ -219,14 +219,14 @@ define([
 		 * @return undefined
 		 */
 		drawBeginStaveConnector: function() {
-			var SINGLE = Vex.Flow.StaveConnector.type.SINGLE_LEFT;
+			var systemLine = Vex.Flow.StaveConnector.type.SINGLE_LEFT;
 			if (Vex.Version && Vex.Version == "old") {
-				var SINGLE = Vex.Flow.StaveConnector.type.SINGLE;
+				var systemLine = Vex.Flow.StaveConnector.type.SINGLE;
 			}
 			var BRACE = Vex.Flow.StaveConnector.type.BRACE;
 			var staff1 = this.getStaveBar();
 			var staff2 = this.connectedStave.getStaveBar();
-			this.drawStaveConnector(staff1, staff2, SINGLE); 
+			this.drawStaveConnector(staff1, staff2, systemLine);
 			this.drawStaveConnector(staff1, staff2, BRACE); 
 		},
 		/**
@@ -245,8 +245,14 @@ define([
 			staff1.setContext(ctx);
 			staff2.setContext(ctx);
 
-			let END_EXERCISE = Vex.Flow.StaveConnector.type.THIN_DOUBLE;
-			this.drawStaveConnector(staff1, staff2, END_EXERCISE);
+			var finishLine = Vex.Flow.StaveConnector.type.THIN_DOUBLE;
+			if (Vex.Version && Vex.Version == "old") {
+				var finishLine = Vex.Flow.StaveConnector.type.SINGLE;
+				let staff1 = new Vex.Flow.Stave(next_x - 3, treble_y, -1);
+				let staff2 = new Vex.Flow.Stave(next_x - 3, bass_y, -1);
+				this.drawStaveConnector(staff1, staff2, finishLine);
+			}
+			this.drawStaveConnector(staff1, staff2, finishLine);
 		},
 		/**
 		 * Draws a stave connector between two staves.
@@ -269,7 +275,9 @@ define([
 		createStaveBar: function() {
 			var x = this.start_x;
 			var y = this.start_y;
-			var width = this.width;
+			var width = this.width + 1; // +1 to prevent gaps
+			/* manipulating the above setting reveals that new Vexflow is
+			 * rendering the staff lines with transparency */
 			var staffSegment = new Vex.Flow.Stave(x, y, width, {fill_style: 'black'});
 
 			/**
