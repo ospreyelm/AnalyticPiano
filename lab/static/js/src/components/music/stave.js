@@ -314,6 +314,8 @@ define([
 				}
 				if(rhythm_value === "w") {
 					time = {num_beats:4, beat_value:4, resolution:Vex.Flow.RESOLUTION};
+				} else if(rhythm_value === "H") {
+					time = {num_beats:3, beat_value:4, resolution:Vex.Flow.RESOLUTION};
 				}else if(rhythm_value === "h") {
 					time = {num_beats:2, beat_value:4, resolution:Vex.Flow.RESOLUTION};
 				}else if(rhythm_value === "q") {

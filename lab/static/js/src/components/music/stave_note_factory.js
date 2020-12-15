@@ -60,6 +60,7 @@ define([
 		/**
 		 * VexFlow rhythm code:
 		 * w = whole note
+		 * H = dotted half note // AnalyticPiano code, later parsed for VexFlow
 		 * h = half note
 		 * q = quarter note
 		 * Unsupported in stave.js: createStaveVoice(): "r" = suffix for rest
@@ -78,7 +79,9 @@ define([
 		 * @return {array}
 		 */
 		createStaveNotes: function() {
-			var stave_note_1 = this._makeStaveNote(this.getNoteKeys(), this.getNoteModifiers(), this.getRhythmValue());
+			let vexflow_duration = this.getRhythmValue().toLowerCase();
+			let vexflow_dots = this.getRhythmValue().toUpperCase() == this.getRhythmValue() ? 1 : 0;
+			var stave_note_1 = this._makeStaveNote(this.getNoteKeys(), this.getNoteModifiers(), vexflow_duration, vexflow_dots);
 			return [stave_note_1];
 		},
 		/**
@@ -362,7 +365,7 @@ define([
 		 * @param {array} modifiers
 		 * @return {Vex.Flow.StaveNote}
 		 */
-		_makeStaveNote: function(keys, modifiers, rhythm_value) {
+		_makeStaveNote: function(keys, modifiers, rhythm_value, dot_count=0) {
 			modifiers = modifiers || [];
 
 			var stave_note = new Vex.Flow.StaveNote({
@@ -372,6 +375,8 @@ define([
 				 * in stave.js and vexflow.js (Vex.Flow.METER)
 				 */
 				duration: rhythm_value,
+				// type: "r", // make a rest
+				dots: dot_count,
 				clef: this.clef,
 				/**
 				 * Currently, downstemmed chords including seconds are
@@ -382,6 +387,9 @@ define([
 				 */
 				auto_stem: true
 			});
+			if (dot_count == 1) {
+				stave_note = stave_note.addDotToAll();
+			}
 
 			for(var i = 0, len = modifiers.length; i < len; i++) {
 				modifiers[i](stave_note);

@@ -452,6 +452,8 @@ define([
         getVisualWidth: function(rhythm_value) {
             if (rhythm_value === "w") {
                 return 1;
+            } else if (rhythm_value === "H") {
+                return 0.75;
             } else if (rhythm_value === "h") {
                 return 0.675;
             } else if (rhythm_value === "q") {

@@ -56,7 +56,7 @@ define([
 		 */
 		init: function() {
 			/**
-			 * Rhythm value for specific note. Value can be "w", "h", or "q"
+			 * Duration for specific note. Value can be "w", "H", "h", or "q"
 			 * @type {string}
 			 * @protected
 			 */

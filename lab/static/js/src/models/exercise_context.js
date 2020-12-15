@@ -410,7 +410,7 @@ define([
                 time_intervals.push( rel_timepoints[i][1] - rel_timepoints[i-1][1] );
             }
 
-            var semibreve_fraction = { "w": 1, "h": 0.5, "q": 0.25 };
+            var semibreve_fraction = { "w": 1, "H": 0.75, "h": 0.5, "q": 0.25 };
 
             var semibreveCount = [];
             len = Math.min(
