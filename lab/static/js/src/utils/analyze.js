@@ -545,7 +545,7 @@ var spellingAndAnalysisFunctions = {
             if (note == notes[0]) {
                 return "";
             } else {
-                return "white";
+                return "rgba(0,0,0,0)";
             }
         }
         if (this.Piano.highlightMode["roothighlight"]) {
