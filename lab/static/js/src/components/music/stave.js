@@ -102,7 +102,7 @@ define([
 		 * The default width of a stave.
 		 * @type {number}
 		 */
-		defaultWidth: 120,
+		defaultBarWidth: 80,
 		/**
 		 * The margins for the stave.
 		 * @type {number}
@@ -275,10 +275,11 @@ define([
 		createStaveBar: function() {
 			var x = this.start_x;
 			var y = this.start_y;
-			var width = this.width + 1; // +1 to prevent gaps
+			var width = this.width + 0; // +1 to prevent gaps from rounding errors
 			/* manipulating the above setting reveals that new Vexflow is
 			 * rendering the staff lines with transparency */
-			var staffSegment = new Vex.Flow.Stave(x, y, width, {fill_style: 'black'});
+			let style = {num_lines: 5, fill_style: "rgba(0, 0, 0, 1)"};
+			var staffSegment = new Vex.Flow.Stave(x, y, width, style);
 
 			/**
 			 * To show barlines, call Vex.Flow.Barline.type.SINGLE
@@ -674,7 +675,8 @@ define([
 				this.width = this.firstBarWidth;
 			} else {
 				start_x = (this.margin.left + this.firstBarWidth);
-				basic_width = Math.floor((this.maxWidth - start_x) / this.position.maxCount);
+				let avoid_gaps = true; // rounding errors
+				basic_width = avoid_gaps ? this.defaultBarWidth : Math.floor((this.maxWidth - start_x) / this.position.maxCount);
 				width = basic_width;
 				if (widthUnits != null && !isNaN(widthUnits)) {
 					width = Math.floor(basic_width * widthUnits);
