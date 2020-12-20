@@ -169,8 +169,8 @@ class Playlist(models.Model):
                                     on_delete=models.PROTECT,
                                     verbose_name='Authored By')
 
-    created = models.DateTimeField('Created at', auto_now_add=True)
-    updated = models.DateTimeField('Updated at', auto_now=True)
+    created = models.DateTimeField('Created', auto_now_add=True)
+    updated = models.DateTimeField('Updated', auto_now=True)
 
     class Meta:
         verbose_name = 'Playlist'
@@ -322,8 +322,8 @@ class PerformanceData(models.Model):
     data = JSONField('Raw Data', default=list)
     playlist_performances = JSONField('Playlist Performances', default=list, blank=True)
 
-    created = models.DateTimeField('Created at', auto_now_add=True)
-    updated = models.DateTimeField('Updated at', auto_now=True)
+    created = models.DateTimeField('Created', auto_now_add=True)
+    updated = models.DateTimeField('Updated', auto_now=True)
 
     class Meta:
         verbose_name = 'Performance'
@@ -391,8 +391,8 @@ class Course(models.Model):
                                     on_delete=models.PROTECT,
                                     verbose_name='Authored By')
 
-    created = models.DateTimeField('Created at', auto_now_add=True)
-    updated = models.DateTimeField('Updated at', auto_now=True)
+    created = models.DateTimeField('Created', auto_now_add=True)
+    updated = models.DateTimeField('Updated', auto_now=True)
 
     class Meta:
         verbose_name = 'Course'

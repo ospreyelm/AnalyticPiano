@@ -16,7 +16,7 @@ def exercises_list_view(request):
 
     table = ExercisesListTable(exercises)
 
-    RequestConfig(request, paginate={"per_page": 10}).configure(table)
+    RequestConfig(request, paginate={"per_page": 25}).configure(table)
     return render(request, "dashboard/exercises-list.html", {
         "table": table,
     })

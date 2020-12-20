@@ -16,7 +16,7 @@ def courses_list_view(request):
 
     table = CoursesListTable(courses)
 
-    RequestConfig(request, paginate={"per_page": 10}).configure(table)
+    RequestConfig(request, paginate={"per_page": 25}).configure(table)
     return render(request, "dashboard/courses-list.html", {
         "table": table,
     })

@@ -7,17 +7,16 @@ User = get_user_model()
 class SupervisorsTable(tables.Table):
     name = tables.columns.Column(
         accessor=A('supervisor.get_full_name'),
-        attrs={"td": {"bgcolor": "white", "width": "250px"}},
-        verbose_name='Supervisor Name'
+        attrs={"td": {"width": "250px"}},
+        verbose_name='Name of Supervisor'
     )
     supervisor = tables.columns.Column(
-        attrs={"td": {"bgcolor": "white", "width": "250px"}},
-        verbose_name='Supervisor Email'
+        attrs={"td": {"width": "250px"}},
+        verbose_name='Email Address of Supervisor'
     )
-
-    # remove = tables.columns.LinkColumn('dashboard:unsubscribe',
-    #                                    kwargs={'supervisor_id': A('supervisor.id')},
-    #                                    text='remove', verbose_name='', orderable=False)
+    remove = tables.columns.LinkColumn('dashboard:unsubscribe',
+                                       kwargs={'supervisor_id': A('supervisor.id')},
+                                       text='remove', verbose_name='Remove', orderable=False)
 
     class Meta:
         attrs = {'class': 'paleblue'}
@@ -29,15 +28,15 @@ class SubscribersTable(tables.Table):
     name = tables.columns.LinkColumn('dashboard:subscriber-performances',
                                      kwargs={'subscriber_id': A('subscriber.id')},
                                      accessor=A('subscriber.get_full_name'),
-                                     attrs={"td": {"bgcolor": "white", "width": "250px"}},
-                                     verbose_name='Subscriber Name')
+                                     attrs={"td": {"width": "250px"}},
+                                     verbose_name='Name of Subscriber')
     subscriber = tables.columns.LinkColumn('dashboard:subscriber-performances',
                                            kwargs={'subscriber_id': A('subscriber.id')},
-                                           attrs={"td": {"bgcolor": "white", "width": "250px"}},
-                                           verbose_name='Subscriber Email')
+                                           attrs={"td": {"width": "250px"}},
+                                           verbose_name='Email Address of Subscriber')
     remove = tables.columns.LinkColumn('dashboard:remove-subscriber',
                                        kwargs={'subscriber_id': A('subscriber.id')},
-                                       text='remove', verbose_name='', orderable=False)
+                                       text='remove', verbose_name='Remove', orderable=False)
 
     class Meta:
         attrs = {'class': 'paleblue'}
@@ -48,7 +47,7 @@ class SubscribersTable(tables.Table):
 class PerformancesListTable(tables.Table):
     playlist = tables.columns.LinkColumn(
         'dashboard:subscriber-playlist-performance',
-        verbose_name='Playlist',
+        verbose_name='Activity',
         # text=lambda record: record.playlist.name,
         accessor=A('playlist.name'),
         kwargs={
@@ -60,34 +59,34 @@ class PerformancesListTable(tables.Table):
         }
     )
     created = tables.columns.DateColumn(
-        verbose_name='Date of first practice',
-        format='Y-m-d • l, F j',
+        verbose_name='Begun',
+        format='Y-m-d • l',
         attrs={
             "td": {"bgcolor": "white", "width": "auto"}
         }
     )
-    # user = tables.columns.LinkColumn(
-    #   'dashboard:subscriber-performances',
-    #   verbose_name='Performer Name',
-    #   kwargs={
-    #     'subscriber_id': A('user.id')
-    #   },
-    #   accessor=A('user.get_full_name'),
-    #   attrs={
-    #     "td": {"bgcolor": "white", "width": "auto"}
-    #   }
+    user = tables.columns.LinkColumn(
+      'dashboard:subscriber-performances',
+      verbose_name='Performer Name',
+      kwargs={
+        'subscriber_id': A('user.id')
+      },
+      accessor=A('user.get_full_name'),
+      attrs={
+        "td": {"bgcolor": "white", "width": "auto"}
+      }
+    )
+    # email = tables.columns.LinkColumn(
+    #     'dashboard:subscriber-performances',
+    #     verbose_name='Performer Email',
+    #     kwargs={
+    #         'subscriber_id': A('user.id')
+    #     },
+    #     accessor=A('user.email'),
+    #     attrs={
+    #         "td": {"bgcolor": "white", "width": "auto"}
+    #     }
     # )
-    email = tables.columns.LinkColumn(
-        'dashboard:subscriber-performances',
-        verbose_name='Performer Email',
-        kwargs={
-            'subscriber_id': A('user.id')
-        },
-        accessor=A('user.email'),
-        attrs={
-            "td": {"bgcolor": "white", "width": "auto"}
-        }
-    )
 
     class Meta:
         attrs = {'class': 'paleblue'}
@@ -134,34 +133,41 @@ class ExercisesListTable(tables.Table):
     id = tables.columns.LinkColumn(
         'lab:exercise-view',
         kwargs={'exercise_id': A('id')},
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     name = tables.columns.Column(
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+        verbose_name='Description of Exercise',
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    created = tables.columns.DateTimeColumn(
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+    created = tables.columns.DateColumn(
+        verbose_name='Created',
+        format='Y-m-d • h:m A',
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    updated = tables.columns.DateTimeColumn(
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+    updated = tables.columns.DateColumn(
+        verbose_name='Modified',
+        format='Y-m-d • h:m A',
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     edit = tables.columns.LinkColumn('dashboard:edit-exercise',
                                      kwargs={'exercise_id': A('id')},
-                                     text='Edit', verbose_name='', orderable=False)
+                                     # attrs={"td": {"bgcolor": "white", "width": "auto"}},
+                                     text='Edit', verbose_name='Edit', orderable=False)
 
     delete = tables.columns.LinkColumn('dashboard:delete-exercise',
                                        kwargs={'exercise_id': A('id')},
-                                       text='Delete', verbose_name='', orderable=False)
+                                       # attrs={"td": {"bgcolor": "white", "width": "auto"}},
+                                       text='Delete', verbose_name='Delete', orderable=False)
 
     def render_edit(self, record):
         if not record.has_been_performed:
             return 'Edit'
-        return ''
+        return '--'
 
     def render_delete(self, record):
         if not record.has_been_performed:
             return 'Delete'
-        return ''
+        return '--'
 
     class Meta:
         attrs = {'class': 'paleblue'}
@@ -173,32 +179,37 @@ class ExercisesListTable(tables.Table):
 class PlaylistsListTable(tables.Table):
     name = tables.columns.LinkColumn(
         'lab:exercise-groups',
+        verbose_name='Name of Playlist',
         kwargs={'group_name': A('name')},
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    created = tables.columns.DateTimeColumn(
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+    created = tables.columns.DateColumn(
+        verbose_name='Created',
+        format='Y-m-d • h:m A',
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    updated = tables.columns.DateTimeColumn(
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+    updated = tables.columns.DateColumn(
+        verbose_name='Modified',
+        format='Y-m-d • h:m A',
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     edit = tables.columns.LinkColumn('dashboard:edit-playlist',
                                      kwargs={'playlist_name': A('name')},
-                                     text='Edit', verbose_name='', orderable=False)
+                                     text='Edit', verbose_name='Edit', orderable=False)
 
     delete = tables.columns.LinkColumn('dashboard:delete-playlist',
                                        kwargs={'playlist_name': A('name')},
-                                       text='Delete', verbose_name='', orderable=False)
+                                       text='Delete', verbose_name='Delete', orderable=False)
 
     def render_edit(self, record):
         if not record.has_been_performed:
             return 'Edit'
-        return ''
+        return '--'
 
     def render_delete(self, record):
         if not record.has_been_performed:
             return 'Delete'
-        return ''
+        return '--'
 
     class Meta:
         attrs = {'class': 'paleblue'}
@@ -210,32 +221,37 @@ class PlaylistsListTable(tables.Table):
 class CoursesListTable(tables.Table):
     title = tables.columns.LinkColumn(
         'lab:course-view',
+        verbose_name='Title of Course',
         kwargs={'course_slug': A('slug')},
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    created = tables.columns.DateTimeColumn(
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+    created = tables.columns.DateColumn(
+        verbose_name='Created',
+        format='Y-m-d • h:m A',
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    updated = tables.columns.DateTimeColumn(
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+    updated = tables.columns.DateColumn(
+        verbose_name='Modified',
+        format='Y-m-d • h:m A',
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     edit = tables.columns.LinkColumn('dashboard:edit-course',
                                      kwargs={'course_name': A('title')},
-                                     text='Edit', verbose_name='', orderable=False)
+                                     text='Edit', verbose_name='Edit', orderable=False)
 
     delete = tables.columns.LinkColumn('dashboard:delete-course',
                                        kwargs={'course_name': A('title')},
-                                       text='Delete', verbose_name='', orderable=False)
+                                       text='Delete', verbose_name='Delete', orderable=False)
 
     def render_edit(self, record):
         if not record.has_been_performed:
             return 'Edit'
-        return ''
+        return '--'
 
     def render_delete(self, record):
         if not record.has_been_performed:
             return 'Delete'
-        return ''
+        return '--'
 
     class Meta:
         attrs = {'class': 'paleblue'}

@@ -24,11 +24,11 @@
 {% block sidebar %}
     <div class="sidenav">
     {% with url_name=request.resolver_match.url_name %}
-        <p class="sidenav-header"><strong>Dashboard</strong></p>
+        <p class="sidenav-header"><strong>AnalyticPiano Dashboard</strong></p>
         <a {% if url_name == 'exercises-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:exercises-list' %}">Exercises</a>
         <a {% if url_name == 'playlists-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:playlists-list' %}">Playlists</a>
         <a {% if url_name == 'courses-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:courses-list' %}">Courses</a>
-        <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:performed-playlists' %}">Performances</a>
+        <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
         <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:subscribers' %}">Subscribers</a>
         <a {% if url_name == 'supervisors' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:supervisors' %}">Supervisors</a>
         <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:preferences' %}">Preferences</a>
