@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,23 +8,46 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ STATIC_URL }}favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ STATIC_URL }}favicon-16x16.png">
     <link rel="manifest" href="{{ STATIC_URL }}site.webmanifest">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}django_tables2/themes/paleblue/css/screen.css"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/dashboard.css' %}"/>
     {% block css_extra %}{% endblock %}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+            integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+            crossorigin="anonymous"></script>
+
 </head>
-<body>
+<body style="background-color: #335271">
 
-{% block content %}{% endblock %}
+{% block sidebar %}
+    <div class="sidenav">
+    {% with url_name=request.resolver_match.url_name %}
+        <p class="sidenav-header"><strong>Dashboard</strong></p>
+        <a {% if url_name == 'exercises-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:exercises-list' %}">Exercises</a>
+        <a {% if url_name == 'playlists-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:playlists-list' %}">Playlists</a>
+        <a {% if url_name == 'courses-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:courses-list' %}">Courses</a>
+        <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:performed-playlists' %}">Performances</a>
+        <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:subscribers' %}">Subscribers</a>
+        <a {% if url_name == 'supervisors' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:supervisors' %}">Supervisors</a>
+        <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:preferences' %}">Preferences</a>
+    {% endwith %}
+    </div>
+{% endblock %}
 
+<div class="main">
+    {% block content %}{% endblock %}
+</div>
 {% block js_require %}
-{#    {% autoescape off %}#}
-{#        <script src="{{ STATIC_URL }}js/lib/require.js"></script>#}
-{#        <script>requirejs.config({enforceDefine: true, waitSeconds: 0});</script>#}
-{#        <script>requirejs.config({{ requirejs.config_json }});</script>#}
-{#        <script>window.appStaticUrl = '{{ STATIC_URL }}';</script>#}
-{#        {% if requirejs.debug %}#}
-{#            <script>requirejs.config({'urlArgs': 't=' + (new Date().getTime())});</script>{% endif %}#}
-{#    {% endautoescape %}#}
+    {#    {% autoescape off %}#}
+    {#        <script src="{{ STATIC_URL }}js/lib/require.js"></script>#}
+    {#        <script>requirejs.config({enforceDefine: true, waitSeconds: 0});</script>#}
+    {#        <script>requirejs.config({{ requirejs.config_json }});</script>#}
+    {#        <script>window.appStaticUrl = '{{ STATIC_URL }}';</script>#}
+    {#        {% if requirejs.debug %}#}
+    {#            <script>requirejs.config({'urlArgs': 't=' + (new Date().getTime())});</script>{% endif %}#}
+    {#    {% endautoescape %}#}
 
 {% endblock %}
 

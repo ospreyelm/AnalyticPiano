@@ -3,12 +3,19 @@
 {% load django_tables2 %}
 {% load i18n %}
 {% block content %}
+    <div class="row">
+        <div class="column col-sm-6 left">
+            {% include 'django_tables2/bootstrap4.html' with table=table %}
+        </div>
+        <div class="column col-sm-4 right">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% include 'dashboard/bs4_form.html' with form=form %}
+                <button type="submit" class="btn btn-primary">
+                    Add
+                </button>
+            </form>
+        </div>
+    </div>
 
-{% include 'django_tables2/bootstrap4.html' with table=table %}
-
-<form method="post" novalidate>
-  {% csrf_token %}
-  {% include 'dashboard/bs4_form.html' with form=form %}
-  <button type="submit" class="btn btn-primary">Submit</button>
-</form>
 {% endblock content %}

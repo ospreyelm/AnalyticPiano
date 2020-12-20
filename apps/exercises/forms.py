@@ -84,6 +84,8 @@ class PlaylistForm(forms.ModelForm):
         exclude = []
         widgets = {
             'exercises': forms.Textarea,
+            'id': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'authored_by': forms.TextInput(attrs={'readonly': 'readonly'}),
         }
 
     def clean(self):
@@ -112,7 +114,7 @@ class PlaylistForm(forms.ModelForm):
             if item not in all_exercises:
                 # also remove from list?
                 self.add_error('exercises',
-                    f'Exercise with ID {id_} does not exist.')
+                    f'Exercise with ID {item} does not exist.')
 
         self.cleaned_data.update({'exercises': ','.join(exercise_ids)})
 

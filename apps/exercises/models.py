@@ -4,6 +4,7 @@ from itertools import product
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.db import models
+from django.db.models import When, Case
 from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
 from django.utils.functional import cached_property
@@ -109,6 +110,14 @@ class Exercise(models.Model):
                 break
         self.data['chord'] = chord_data
 
+    @cached_property
+    def has_been_performed(self):
+        return PerformanceData.objects.filter(data__contains=[{'id': self.id}]).exists()
+
+    @property
+    def lab_url(self):
+        return reverse('lab:exercise-view', kwargs={'exercise_id': self.id})
+
 
 class Playlist(models.Model):
     _id = models.AutoField('_ID', unique=True, primary_key=True)
@@ -185,7 +194,15 @@ class Playlist(models.Model):
 
     @property
     def exercise_objects(self):
-        return Exercise.objects.filter(id__in=self.exercise_list)
+        whens = []
+        for sort_index, value in enumerate(self.exercise_list):
+            whens.append(When(id=value, then=sort_index))
+
+        exercises = Exercise.objects.filter(id__in=self.exercise_list).annotate(
+            _sort_index=Case(*whens, output_field=models.CharField())
+        ).order_by('_sort_index')
+
+        return exercises
 
     def is_transposed(self):
         return self.transpose_requests and self.transposition_type
@@ -267,6 +284,10 @@ class Playlist(models.Model):
             return None
         reverse_id += "P"
         self.id = reverse_id[::-1]
+
+    @cached_property
+    def has_been_performed(self):
+        return PerformanceData.objects.filter(playlist=self).exists()
 
 
 def get_default_data():
@@ -384,3 +405,7 @@ class Course(models.Model):
             return None
         reverse_id += "C"
         self.id = reverse_id[::-1]
+
+    @cached_property
+    def has_been_performed(self):
+        return PerformanceData.objects.filter(playlist__name__in=self.playlists.split(',')).exists()

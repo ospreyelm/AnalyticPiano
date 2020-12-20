@@ -1,0 +1,98 @@
+.sidenav {
+    height: 100%;
+    width: 140px;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #111;
+    overflow-x: hidden;
+    /*padding-top: 20px;*/
+}
+
+.sidenav a {
+    padding: 6px 8px 6px 6px;
+    text-decoration: none;
+    font-size: 14px;
+    color: #818181;
+    display: block;
+    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
+}
+
+.sidenav-active {
+    background-color: #0f74a8;
+    color: #ffffff !important;
+}
+
+.sidenav a:hover {
+    background-color: #0f74a8;
+    color: white;
+}
+
+
+.sidenav-header {
+    color: whitesmoke;
+    background-color: #666666;
+    text-align: center;
+    font-size: 17px;
+    font-style: normal;
+}
+
+.main {
+    margin-left: 160px;
+    padding: 0px 10px;
+}
+
+.pagination {
+    display: flex;
+    padding-left: 0;
+    list-style: revert;
+    border-radius: 0.1rem;
+}
+
+.header-add {
+    color: white;
+    padding-top: 10px;
+    padding-left: 10px;
+}
+
+input[type=checkbox] {
+    width: 12px;
+    height: 12px;
+}
+
+.text-muted {
+    color: white !important;
+}
+
+.page-item {
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+    padding-top: 3px !important;
+}
+
+
+.page-link {
+    color: dodgerblue !important;
+}
+
+.active {
+    color: white !important;
+}
+
+.column {
+    float: left !important;
+    margin-left: 5px !important;
+}
+
+.left, .right {
+    width: 10% !important;
+}
+
+.middle {
+    width: 50% !important;
+}
+
+.row {
+    margin-top: 20px;
+}

@@ -1,11 +1,10 @@
 from django.contrib import admin
-from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.admin.mixins import DynamicArrayMixin
 
-from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
 from apps.exercises.forms import ExerciseForm, PlaylistForm, PerformanceDataForm, CourseForm
+from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
 
 
 @admin.register(Exercise)
@@ -43,8 +42,7 @@ class ExerciseAdmin(admin.ModelAdmin):
     def show_on_site(self, obj):
         if not obj.pk:
             return ''
-        link = reverse('lab:exercise-view', kwargs={'exercise_id': obj.id})
-        link = "<a href='%s' target='_blank'>Show On Site</a><br>" % link
+        link = "<a href='%s' target='_blank'>Show On Site</a><br>" % obj.lab_url
         return mark_safe(link)
 
     show_on_site.short_description = 'Link'
@@ -96,8 +94,7 @@ class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
 
     def exercise_links(self, obj):
         links = ''
-        exercises = Exercise.objects.filter(id__in=obj.exercises.split(','))
-        for exercise in exercises:
+        for exercise in obj.exercise_objects:
             link = reverse('admin:%s_%s_change' % ('exercises', 'exercise'), args=(exercise._id,))
             links += "<a href='%s'>%s</a><br>" % (link, exercise.id)
         return mark_safe(links)
