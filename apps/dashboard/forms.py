@@ -38,6 +38,8 @@ class DashboardExerciseForm(ExerciseForm):
 class TransposeRequestsField(forms.CharField):
     def to_python(self, value):
         value = super(TransposeRequestsField, self).to_python(value)
+        if not value:
+            return []
         return value.replace(' ', '').split(',')
 
     def prepare_value(self, value):
@@ -51,7 +53,7 @@ class TransposeRequestsField(forms.CharField):
 
 
 class DashboardAddPlaylistForm(PlaylistForm):
-    transpose_requests = TransposeRequestsField(label='Transpose Request')
+    transpose_requests = TransposeRequestsField(label='Transpose Request', required=False)
 
     class Meta(PlaylistForm.Meta):
         exclude = ['id', 'authored_by']

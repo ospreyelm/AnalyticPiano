@@ -136,6 +136,9 @@ class ExercisesListTable(tables.Table):
         kwargs={'exercise_id': A('id')},
         attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
+    name = tables.columns.Column(
+        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+    )
     created = tables.columns.DateTimeColumn(
         attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )

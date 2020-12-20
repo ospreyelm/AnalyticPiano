@@ -15,7 +15,7 @@
 {% for field in form.visible_fields %}
     <div class="col-sm-4">
         <div class="form-check form-group form-inline {{ field|widget_type }}">
-            {{ field.label_tag }}
+            {% if field.field.required %}<strong>{{ field.label_tag }}</strong>{% else %}{{ field.label_tag }}{% endif %}
             {% if form.is_bound %}
                 {% if field.errors %}
                     {% render_field field|add_class:'form-control' class="form-control is-invalid" %}

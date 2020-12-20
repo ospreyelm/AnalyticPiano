@@ -3,8 +3,9 @@ from itertools import product
 
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import When, Case
+from django.db.models import When, Case, Q
 from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
 from django.utils.functional import cached_property
@@ -27,6 +28,9 @@ class RawJSONField(JSONField):
 class Exercise(models.Model):
     _id = models.AutoField('_ID', unique=True, primary_key=True)
     id = models.CharField('ID', unique=True, max_length=16)
+    name = models.CharField('Name', max_length=60,
+                            help_text='Optional name for reminder',
+                            blank=True, null=True)
 
     data = RawJSONField('Data')
     rhythm_value = models.CharField('Rhythm', max_length=64,
@@ -58,9 +62,22 @@ class Exercise(models.Model):
     def __str__(self):
         return self.id
 
+    def validate_unique(self, exclude=None):
+        if not self._id:
+            return
+
+        if Exercise.objects.exclude(id=self.id).filter(
+                name=self.name,
+                authored_by=self.authored_by
+        ).exclude(Q(name='') | Q(name=None)).exists():
+            raise ValidationError("Exercise with this name and this user already exists.")
+        super(Exercise, self).validate_unique(exclude)
+
     def save(self, *args, **kwargs):
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
+
+        self.validate_unique()
         self.set_id()
         self.sort_data()
         self.set_rhythm_values()
