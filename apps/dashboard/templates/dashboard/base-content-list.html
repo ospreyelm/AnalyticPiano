@@ -1,0 +1,15 @@
+{% extends "dashboard/base.html" %}
+{% load widget_tweaks %}
+{% load django_tables2 %}
+{% load i18n %}
+{% block content %}
+    <div class="row">
+        <div class="column">
+            {% include 'django_tables2/bootstrap4.html' with table=table %}
+        </div>
+        <div class="column">
+            {% block add-button %}
+            {% endblock %}
+        </div>
+    </div>
+{% endblock content %}

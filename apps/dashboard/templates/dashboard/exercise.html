@@ -1,0 +1,4 @@
+{% extends 'dashboard/base-add-content.html' %}
+{% block content-header %}
+    {% if form.instance.pk == None %}<h4 class="header-add">Add new exercise</h4>{% endif %}
+{% endblock %}

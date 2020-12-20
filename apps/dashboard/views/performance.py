@@ -1,82 +1,21 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http.response import HttpResponseRedirect
-from django.shortcuts import redirect, get_object_or_404
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.utils.safestring import mark_safe
-from django_tables2 import Column
-from django_tables2 import RequestConfig
+from django_tables2 import RequestConfig, Column
 
-from apps.dashboard.forms import AddSupervisorForm, AddSubscriberForm
-from apps.dashboard.tables import SupervisorsTable, SubscribersTable, PerformancesListTable, \
-    SubscriberPlaylistPerformanceTable
-from apps.exercises.models import Playlist, PerformanceData
-from .forms import KeyboardForm
+from apps.dashboard.tables import PerformancesListTable, SubscriberPlaylistPerformanceTable
+from apps.exercises.models import PerformanceData, Playlist
 
 User = get_user_model()
-
-
-def dashboard_index_view(request):
-    raise NotImplemented
-
-
-@login_required
-def supervisors_view(request):
-    if request.method == 'POST':
-        form = AddSupervisorForm(data={'email': request.POST.get('email')})
-        if form.is_valid():
-            supervisor = get_object_or_404(User, email=form.cleaned_data['email'])
-            request.user.subscribe_to(supervisor)
-            return redirect('dashboard:supervisors')
-    else:
-        form = AddSupervisorForm()
-
-    supervisors_table = SupervisorsTable([{"supervisor": x} for x in request.user.supervisors])
-    RequestConfig(request).configure(supervisors_table)
-
-    return render(request, "dashboard/supervisors.html", {
-        "form": form, "table": supervisors_table
-    })
-
-
-@login_required
-def subscribers_view(request):
-    if request.method == 'POST':
-        form = AddSubscriberForm(data={'email': request.POST.get('email')})
-        if form.is_valid():
-            subscriber = get_object_or_404(User, email=form.cleaned_data['email'])
-            subscriber.subscribe_to(request.user)
-            return redirect('dashboard:subscribers')
-    else:
-        form = AddSubscriberForm()
-    subscribers_table = SubscribersTable([{"subscriber": x} for x in request.user.subscribers])
-    RequestConfig(request).configure(subscribers_table)
-
-    return render(request, "dashboard/supervisors.html", {
-        "form": form, "table": subscribers_table
-    })
-
-
-@login_required
-def unsubscribe_view(request, supervisor_id):
-    supervisor = get_object_or_404(User, id=supervisor_id)
-    request.user.unsubscribe_from(supervisor)
-    return redirect('dashboard:supervisors')
-
-
-@login_required
-def remove_subscriber_view(request, subscriber_id):
-    subscriber = get_object_or_404(User, id=subscriber_id)
-    subscriber.unsubscribe_from(request.user)
-    return redirect('dashboard:subscribers')
 
 
 @login_required
 def performance_list_view(request, subscriber_id=None):
     subscriber_id = subscriber_id or request.user.id
     subscriber = get_object_or_404(User, id=subscriber_id)
-    curr_user = request.user # rewrite to also take parameter
+
     if not request.user.is_supervisor_to(subscriber):
         raise PermissionDenied
     performances = PerformanceData.objects.filter(
@@ -87,23 +26,11 @@ def performance_list_view(request, subscriber_id=None):
         performances
     )
     subscriber_name = subscriber
-    
-    kbd_size_form = KeyboardForm()
-    if subscriber.keyboard_size:
-        kbd_size_form.fields['keyboard_size'].initial = curr_user.keyboard_size
 
-    if request.method == 'POST':
-        kbd_size_form = KeyboardForm(request.POST)
-        if kbd_size_form.is_valid() and not curr_user.is_anonymous:
-            curr_user.keyboard_size = kbd_size_form.cleaned_data['keyboard_size']
-            curr_user.save()
-        return HttpResponseRedirect('/dashboard/performances/') # should be rewritten properly as reload; '' seemed not to work
-    
     RequestConfig(request).configure(table)
     return render(request, "dashboard/performances-list.html", {
         "table": table,
         "subscriber_name": subscriber_name,
-        "form": kbd_size_form
     })
 
 
