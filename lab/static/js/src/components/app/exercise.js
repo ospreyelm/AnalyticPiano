@@ -113,7 +113,8 @@ define([
 			// },
 			function() {
 				var c = new PianoComponent({
-					toolbarConfig: {metronome: false}
+					toolbarConfig: {metronome: false},
+					toolbarEnabled: false
 				});
 				c.init(this);
 				c.renderTo("#piano");

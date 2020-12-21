@@ -1,13 +1,8 @@
 <div id="mainmenu">
 
-    {% block menu_content %}
+    {% block music_menu_content %}
+    {% endblock %}
+    {% block piano_menu_content %}
     {% endblock %}
 
-	<ul class="mainmenu-links">
-		<li><a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Load a new play view</a></li>
-		<!-- {% if has_manage_perm %}
-		<li><a href="{% if manage_url %}{{ manage_url }}{% else %}{% url 'lab:index' %}{% endif %}">Click to manage exercises</a></li>
-		{% endif %} -->
-	</ul>
-	
 </div>

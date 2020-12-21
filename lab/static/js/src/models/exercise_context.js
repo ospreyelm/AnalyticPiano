@@ -122,9 +122,8 @@ define([
          */
         initListeners: function() {
             let testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
-            if (testing && false) {
-                $('.js-notation-opts-widget').hide();
-                $('.js-keysignature-widget').hide();
+            if (true || testing) {
+                $('.js-play-view-controls').hide();
             }
             this.inputChords.bind("change", this.triggerTimer);
             this.inputChords.bind("change", this.grade);

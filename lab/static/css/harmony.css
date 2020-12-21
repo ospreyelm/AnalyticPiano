@@ -34,6 +34,7 @@ a:hover, .btn:hover { cursor: pointer; color: inherit; }
 /* .exercise-status-col > a, .exercise-status-col > a:visited { color: blue; } */
 body {
     text-align: center;
+    margin-top: 0px;
 }
 body, #mainmenu, #helpmenu {
     background-color: #335271;
@@ -46,8 +47,8 @@ body, #mainmenu, #helpmenu {
 /* Structural/Layout */
 #container {
     width: 100%;
-    margin: 50px auto;
-    margin-bottom: 30px;
+    margin: 20px auto;
+    margin-bottom: 20px;
     text-align: center;
 }
 #footer {
@@ -78,7 +79,7 @@ body, #mainmenu, #helpmenu {
     width: 50em;
 }
 #staff {
-    height: 500px;
+    height: 350px;
     position: static;
     z-index: 1;
     margin: 0;
@@ -101,13 +102,17 @@ body, #mainmenu, #helpmenu {
     border: 0px solid black;
     border-radius: 6px;
 }
-#display-settings {
+#sheet-music-options, #piano-options, #display-settings {
     color: #fff;
     font-size: 0.9em;
 }
 .mainmenu-section {
     margin-top: 0;
     margin-bottom: 1em;
+}
+.mainmenu-section:last-of-type {
+    margin-top: 0;
+    margin-bottom: 0em;
 }
 #mainmenu, #helpmenu {
     display: none;
@@ -145,7 +150,7 @@ body, #mainmenu, #helpmenu {
     list-style-type: none;
 }
 .header ul.header-second-row {
-    padding-top: 0.8em;
+    padding-top: 1.2em;
 }
 .header ul li {
     display: inline;
@@ -165,6 +170,11 @@ body, #mainmenu, #helpmenu {
     padding-left: 2em;
     padding-right: 0em;
     font-size: 1em;
+    float: right;
+}
+.header .audio-controls {
+    padding-left: 0.25em;
+    padding-right: 0em;
     float: right;
 }
 
@@ -193,10 +203,13 @@ fieldset.settings-notation {
 .settings-notation legend {
     padding: 4px 8px 0px 8px;
 }
+.menu-widgets {
+    display: inline-block;
+}
 
 /*--------------------------------------------------*/
 /* Notifications Styles */
-.notificationAlerts {
+/*.notificationAlerts {
     color: white;
     background-color: black;
     padding: 3px 6px;
@@ -247,7 +260,7 @@ fieldset.settings-notation {
 .notification .details {
     display: block;
     margin-top: 0.5em;
-}
+}*/
 
 /*--------------------------------------------------*/
 /* Exercise Status Styles */

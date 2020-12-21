@@ -13,7 +13,7 @@ define([
 
 	var HighlightWidget = function(settings) {
 		settings = settings || {};
-		this.el = $('<div></div>');
+		this.el = $('<div class="menu-widgets" style="display:inline-block;padding-right:1em"></div>');
 		this.state = _.merge(_.cloneDeep(HIGHLIGHT_SETTINGS), settings);
 		this.init();
 	};
