@@ -130,34 +130,30 @@ class SubscriberPlaylistPerformanceTable(tables.Table):
 
 
 class ExercisesListTable(tables.Table):
-    id = tables.columns.LinkColumn(
-        'lab:exercise-view',
-        kwargs={'exercise_id': A('id')},
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
-    )
+    id = tables.columns.Column()
     name = tables.columns.Column(
         verbose_name='Description of Exercise',
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    created = tables.columns.DateColumn(
-        verbose_name='Created',
-        format='Y-m-d • h:m A',
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
-    )
-    updated = tables.columns.DateColumn(
-        verbose_name='Modified',
-        format='Y-m-d • h:m A',
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
-    )
+    view = tables.columns.LinkColumn('lab:exercise-view',
+                                     kwargs={'exercise_id': A('id')},
+                                     text='View', verbose_name='View', orderable=False)
+
     edit = tables.columns.LinkColumn('dashboard:edit-exercise',
                                      kwargs={'exercise_id': A('id')},
-                                     # attrs={"td": {"bgcolor": "white", "width": "auto"}},
                                      text='Edit', verbose_name='Edit', orderable=False)
 
     delete = tables.columns.LinkColumn('dashboard:delete-exercise',
                                        kwargs={'exercise_id': A('id')},
-                                       # attrs={"td": {"bgcolor": "white", "width": "auto"}},
                                        text='Delete', verbose_name='Delete', orderable=False)
+    created = tables.columns.DateColumn(
+        verbose_name='Created',
+        format='Y-m-d • h:m A',
+    )
+    updated = tables.columns.DateColumn(
+        verbose_name='Modified',
+        format='Y-m-d • h:m A',
+    )
 
     def render_edit(self, record):
         if not record.has_been_performed:
@@ -167,32 +163,25 @@ class ExercisesListTable(tables.Table):
     def render_delete(self, record):
         if not record.has_been_performed:
             return 'Delete'
-        return '--'
+        return ''
 
     class Meta:
         attrs = {'class': 'paleblue'}
         table_pagination = False
-        order_by = ('-created')
+        order_by = ('-id')
         template_name = "django_tables2/bootstrap4.html"
 
 
 class PlaylistsListTable(tables.Table):
-    name = tables.columns.LinkColumn(
-        'lab:exercise-groups',
+    name = tables.columns.Column(
         verbose_name='Name of Playlist',
-        kwargs={'group_name': A('name')},
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    created = tables.columns.DateColumn(
-        verbose_name='Created',
-        format='Y-m-d • h:m A',
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
-    )
-    updated = tables.columns.DateColumn(
-        verbose_name='Modified',
-        format='Y-m-d • h:m A',
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
-    )
+    id = tables.columns.Column()
+    view = tables.columns.LinkColumn('lab:exercise-groups',
+                                     kwargs={'group_name': A('name')},
+                                     text='View', verbose_name='View', orderable=False)
+
     edit = tables.columns.LinkColumn('dashboard:edit-playlist',
                                      kwargs={'playlist_name': A('name')},
                                      text='Edit', verbose_name='Edit', orderable=False)
@@ -200,6 +189,14 @@ class PlaylistsListTable(tables.Table):
     delete = tables.columns.LinkColumn('dashboard:delete-playlist',
                                        kwargs={'playlist_name': A('name')},
                                        text='Delete', verbose_name='Delete', orderable=False)
+    created = tables.columns.DateColumn(
+        verbose_name='Created',
+        format='Y-m-d • h:m A',
+    )
+    updated = tables.columns.DateColumn(
+        verbose_name='Modified',
+        format='Y-m-d • h:m A',
+    )
 
     def render_edit(self, record):
         if not record.has_been_performed:
@@ -209,32 +206,25 @@ class PlaylistsListTable(tables.Table):
     def render_delete(self, record):
         if not record.has_been_performed:
             return 'Delete'
-        return '--'
+        return ''
 
     class Meta:
         attrs = {'class': 'paleblue'}
         table_pagination = False
-        order_by = ('-created')
+        order_by = ('-id')
         template_name = "django_tables2/bootstrap4.html"
 
 
 class CoursesListTable(tables.Table):
-    title = tables.columns.LinkColumn(
-        'lab:course-view',
+    title = tables.columns.Column(
         verbose_name='Title of Course',
-        kwargs={'course_slug': A('slug')},
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    created = tables.columns.DateColumn(
-        verbose_name='Created',
-        format='Y-m-d • h:m A',
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
-    )
-    updated = tables.columns.DateColumn(
-        verbose_name='Modified',
-        format='Y-m-d • h:m A',
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
-    )
+    id = tables.columns.Column()
+    view = tables.columns.LinkColumn('lab:course-view',
+                                     kwargs={'course_slug': A('slug')},
+                                     text='View', verbose_name='View', orderable=False)
+
     edit = tables.columns.LinkColumn('dashboard:edit-course',
                                      kwargs={'course_name': A('title')},
                                      text='Edit', verbose_name='Edit', orderable=False)
@@ -242,6 +232,14 @@ class CoursesListTable(tables.Table):
     delete = tables.columns.LinkColumn('dashboard:delete-course',
                                        kwargs={'course_name': A('title')},
                                        text='Delete', verbose_name='Delete', orderable=False)
+    created = tables.columns.DateColumn(
+        verbose_name='Created',
+        format='Y-m-d • h:m A',
+    )
+    updated = tables.columns.DateColumn(
+        verbose_name='Modified',
+        format='Y-m-d • h:m A',
+    )
 
     def render_edit(self, record):
         if not record.has_been_performed:
@@ -251,10 +249,10 @@ class CoursesListTable(tables.Table):
     def render_delete(self, record):
         if not record.has_been_performed:
             return 'Delete'
-        return '--'
+        return ''
 
     class Meta:
         attrs = {'class': 'paleblue'}
         table_pagination = False
-        order_by = ('-created')
+        order_by = ('-id')
         template_name = "django_tables2/bootstrap4.html"
