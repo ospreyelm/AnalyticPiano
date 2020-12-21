@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('exercises', models.CharField(help_text='Ordered set of exercise IDs, separated by comma.', max_length=1024, verbose_name='Exercises')),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name='Created at')),
                 ('updated', models.DateTimeField(auto_now=True, verbose_name='Updated at')),
-                ('authored_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='playlists', to=settings.AUTH_USER_MODEL, verbose_name='Authored By')),
+                ('authored_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='playlists', to=settings.AUTH_USER_MODEL, verbose_name='Author')),
             ],
             options={
                 'verbose_name': 'Playlist',
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 ('is_public', models.BooleanField(default=False, verbose_name='Is Public')),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name='Created at')),
                 ('updated', models.DateTimeField(auto_now=True, verbose_name='Updated at')),
-                ('authored_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='exercises', to=settings.AUTH_USER_MODEL, verbose_name='Authored By')),
+                ('authored_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='exercises', to=settings.AUTH_USER_MODEL, verbose_name='Author')),
             ],
             options={
                 'verbose_name': 'Exercise',

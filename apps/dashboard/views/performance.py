@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils.safestring import mark_safe
 from django_tables2 import RequestConfig, Column
 
-from apps.dashboard.tables import PerformancesListTable, SubscriberPlaylistPerformanceTable
+from apps.dashboard.tables import MyActivityTable, MyActivityDetailsTable
 from apps.exercises.models import PerformanceData, Playlist
 
 User = get_user_model()
@@ -22,7 +22,7 @@ def performance_list_view(request, subscriber_id=None):
         user=subscriber
     ).select_related('user', 'playlist')
 
-    table = PerformancesListTable(
+    table = MyActivityTable(
         performances
     )
     subscriber_name = subscriber
@@ -67,19 +67,23 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
         exercises_data = d['performance_data']
 
         [d.update(**{exercise['id']: mark_safe(
-            f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "Pass "}'
-            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else exercise["exercise_mean_tempo"]}'
-            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]}'
+            f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "PASS "}'
             f'<br>'
             f'{performance_obj.get_exercise_first_pass(exercise["id"])}'
+            f'<br>'
+            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else exercise["exercise_mean_tempo"]}'
+            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]}'
         )}) for exercise in exercises_data]
 
-    table = SubscriberPlaylistPerformanceTable(
+    print(exercises_data[0])
+
+    table = MyActivityDetailsTable(
         data=data,
-        extra_columns=[(exercise, Column()) for exercise in exercises]
+        # extra_columns=[(str(num+1), Column()) for num in range(len(exercises))],
+        extra_columns=[(exercises[num], Column(verbose_name=str(num+1),orderable=False)) for num in range(len(exercises))]
     )
 
     RequestConfig(request).configure(table)
     return render(request, "dashboard/performance_details.html", {
-        "table": table
+        "table": table,
     })

@@ -167,7 +167,7 @@ class Playlist(models.Model):
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='playlists',
                                     on_delete=models.PROTECT,
-                                    verbose_name='Authored By')
+                                    verbose_name='Author')
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
@@ -389,7 +389,7 @@ class Course(models.Model):
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='courses',
                                     on_delete=models.PROTECT,
-                                    verbose_name='Authored By')
+                                    verbose_name='Author')
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)

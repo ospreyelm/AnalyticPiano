@@ -18,7 +18,7 @@ from django_tables2 import RequestConfig
 
 from .objects import ExerciseRepository
 from .decorators import role_required, course_authorization_required
-from .tables import CoursePlaylistsTable
+from .tables import CoursePageTable
 from .verification import has_instructor_role, has_course_authorization
 from lti_tool.models import LTIConsumer, LTICourse
 from apps.exercises.models import Exercise, Playlist, Course
@@ -263,7 +263,7 @@ class CourseView(RequirejsView):
             _sort_index=Case(*whens, output_field=models.CharField())
         ).order_by('_sort_index')
 
-        playlists_table = CoursePlaylistsTable(playlists)
+        playlists_table = CoursePageTable(playlists)
         context = {
             'course_title': course.title,
             'playlists_table': playlists_table

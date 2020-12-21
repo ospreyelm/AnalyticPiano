@@ -1,7 +1,7 @@
 import django_tables2 as tables
 
 
-class AdminPlaylistPerformanceTable(tables.Table):
+class PlaylistActivityTable(tables.Table):
     performer = tables.Column()
     exercise_count = tables.Column()
 

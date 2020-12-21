@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('playlists', models.CharField(help_text='Ordered set of playlist names or IDs, separated by comma.', max_length=1024, verbose_name='Playlists')),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name='Created at')),
                 ('updated', models.DateTimeField(auto_now=True, verbose_name='Updated at')),
-                ('authored_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='courses', to=settings.AUTH_USER_MODEL, verbose_name='Authored By')),
+                ('authored_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='courses', to=settings.AUTH_USER_MODEL, verbose_name='Author')),
             ],
             options={
                 'verbose_name': 'Course',

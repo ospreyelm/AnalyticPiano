@@ -3,12 +3,12 @@ from django_tables2 import tables, A
 from apps.exercises.models import Playlist
 
 
-class CoursePlaylistsTable(tables.Table):
+class CoursePageTable(tables.Table):
     name = tables.columns.LinkColumn(
-        attrs={"td": {"bgcolor": "white", "width": "auto"}},
+        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
         viewname='lab:exercise-groups',
         kwargs={'group_name': A('name')},
-        verbose_name='Playlist Name'
+        verbose_name='Name of Playlist'
     )
 
     class Meta:
