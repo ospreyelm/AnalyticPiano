@@ -22,7 +22,8 @@ def supervisors_view(request):
     RequestConfig(request).configure(supervisors_table)
 
     return render(request, "dashboard/supervisors.html", {
-        "form": form, "table": supervisors_table
+        "form": form,
+        "table": supervisors_table,
     })
 
 
