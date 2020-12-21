@@ -21,7 +21,7 @@ class ExerciseAdmin(admin.ModelAdmin):
             # ('created', 'updated')
         }),
         ('Options', {
-            'fields': (('type', 'staff_distribution', 'rhythm_value'),)
+            'fields': (('type', 'staff_distribution', 'rhythm'),)
 
         }),
         ('Accompanying Text', {

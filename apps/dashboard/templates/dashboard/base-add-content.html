@@ -2,11 +2,22 @@
 {% load widget_tweaks %}
 {% load django_tables2 %}
 {% load i18n %}
+
+{% block css_extra %}
+<script type="text/css">
+    /* has no effect---why? */
+    .form-check {
+        padding-left: 0px !important;
+    }
+</script>
+{% endblock %}
+
+
 {% block content %}
     <form method="post" novalidate style="text-align: left">
         {% block content-header %}  {% endblock %}
         {% csrf_token %}
-        {% include 'dashboard/bs4_form.html' with form=form %}
+        {% include 'dashboard/bs4_form_v2.html' with form=form %}
         {{ form.media }}
         <button type="submit" class="btn btn-primary">Save</button>
         <button type="reset" class="btn btn-secondary" onclick="location.href='{% url 'dashboard:courses-list' %}'">
