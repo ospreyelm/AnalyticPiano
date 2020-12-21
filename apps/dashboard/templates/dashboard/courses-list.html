@@ -1,6 +1,8 @@
 {% extends 'dashboard/base-content-list.html' %}
 {% block add-button %}
-    <button type="submit" class="btn btn-primary" onclick="location.href='{% url 'dashboard:add-course' %}'">
-        New Course
-    </button>
+    <div style="padding-top:20px">
+        <button type="submit" class="btn" onclick="location.href='{% url 'dashboard:add-course' %}'">
+            New Course
+        </button>
+    </div>
 {% endblock %}

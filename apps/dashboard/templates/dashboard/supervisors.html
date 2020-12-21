@@ -1,7 +1,7 @@
 {% extends 'dashboard/base-content-list.html' %}
 
 {% block content %}
-    <div>
+    <div style="padding-top:20px">
         <form method="post" novalidate>
             {% csrf_token %}
             {% include 'dashboard/bs4_form.html' with form=form %}
@@ -10,6 +10,7 @@
             </button>
         </form>
     </div>
-
-{% include 'django_tables2/bootstrap4.html' with table=table %}
+    <div>
+        {% include 'django_tables2/bootstrap4.html' with table=table %}
+    </div>
 {% endblock content %}

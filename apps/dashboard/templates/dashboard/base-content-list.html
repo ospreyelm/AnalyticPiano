@@ -3,13 +3,9 @@
 {% load django_tables2 %}
 {% load i18n %}
 {% block content %}
-    <div class="row">
-        <div class="column">
-            {% include 'django_tables2/bootstrap4.html' with table=table %}
-        </div>
-        <div class="column">
-            {% block add-button %}
-            {% endblock %}
-        </div>
+    {% block add-button %}
+    {% endblock %}
+    <div style="padding-top:20px">
+        {% include 'django_tables2/bootstrap4.html' with table=table %}
     </div>
 {% endblock content %}
