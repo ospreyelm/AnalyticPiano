@@ -16,7 +16,7 @@ class SupervisorsTable(tables.Table):
     )
     remove = tables.columns.LinkColumn('dashboard:unsubscribe',
                                        kwargs={'supervisor_id': A('supervisor.id')},
-                                       text='remove', verbose_name='Remove', orderable=False)
+                                       text='Remove', verbose_name='Remove', orderable=False)
 
     class Meta:
         attrs = {'class': 'paleblue'}
@@ -36,7 +36,7 @@ class SubscribersTable(tables.Table):
                                            verbose_name='Email Address of Subscriber')
     remove = tables.columns.LinkColumn('dashboard:remove-subscriber',
                                        kwargs={'subscriber_id': A('subscriber.id')},
-                                       text='remove', verbose_name='Remove', orderable=False)
+                                       text='Remove', verbose_name='Remove', orderable=False)
 
     class Meta:
         attrs = {'class': 'paleblue'}

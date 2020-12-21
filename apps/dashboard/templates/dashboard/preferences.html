@@ -3,9 +3,11 @@
 {% load django_tables2 %}
 {% load i18n %}
 {% block content %}
-    <form method="POST" class="post-form">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Save</button>
-    </form>
+    <div style="padding-top:20px">
+        <form method="POST" class="post-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn">Save</button>
+        </form>
+    </div>
 {% endblock content %}
