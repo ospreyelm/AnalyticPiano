@@ -67,6 +67,10 @@ input[type=checkbox] {
     color: white !important;
 }
 
+.help-text {
+    padding-left: 10px;
+}
+
 .page-item {
     padding-left: 3px !important;
     padding-right: 3px !important;
