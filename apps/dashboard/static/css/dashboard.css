@@ -11,29 +11,30 @@
 }
 
 .sidenav a {
-    padding: 6px 8px 6px 6px;
+    padding: 10px 8px 4px 8px;
     text-decoration: none;
     font-size: 14px;
-    color: #818181;
+    color: #00a9a5;
     display: block;
     font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
 }
 
 .sidenav-active {
-    background-color: #0f74a8;
+    background-color: #335271;
     color: #ffffff !important;
 }
 
 .sidenav a:hover {
-    background-color: #0f74a8;
+    background-color: #00a9a5;
     color: white;
 }
 
-
 .sidenav-header {
-    color: whitesmoke;
-    background-color: #666666;
-    text-align: center;
+    color: black;
+    background-color: #90c2e7;
+    padding: 16px 8px;
+    margin: 0px;
+    text-align: left;
     font-size: 17px;
     font-style: normal;
 }
