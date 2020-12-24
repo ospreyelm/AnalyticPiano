@@ -124,8 +124,8 @@ ul li input{
 }
 
 form label{
-    /*width: 150px;*/
-    /*justify-content: flex-start !important;*/
+    width: 150px;
+    justify-content: flex-start !important;
     padding-right: 10px;
 }
 
