@@ -33,6 +33,28 @@ def performance_list_view(request, subscriber_id=None):
         "subscriber_name": subscriber_name,
     })
 
+def playlist_pass_bool(exercises_data, playlist_length):
+    parsed_data = {}
+    for completion in exercises_data:
+        c_id = completion['id']
+        if c_id not in parsed_data.keys():
+            parsed_data[c_id] = []
+        parsed_data[c_id].append([
+            completion['performed_at'],
+            completion['exercise_duration'],
+            completion['exercise_error_tally'],
+        ])
+        del c_id
+
+    playlist_pass = True
+    if len(parsed_data.keys()) < playlist_length:
+        playlist_pass = False
+    else:
+        for key in parsed_data:
+            least_err = sorted([x[2] for x in parsed_data[key]])[0]
+            if isinstance(least_err, int) and least_err > 0:
+                playlist_pass = False
+    return playlist_pass
 
 def playlist_performance_view(request, playlist_id, subscriber_id=None):
     subscriber_id = subscriber_id or request.user.id
@@ -56,7 +78,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
             'subscriber_id': subscriber_id,
             'playlist_id': playlist.id,
             'playlist_name': playlist.name,
-            # 'playlist_length': len(playlist.exercise_list),
+            'playlist_length': len(playlist.exercise_list),
             'performance_obj': performance_obj,
             'performance_data': performance_obj.data,
             'performer_obj': subscriber
@@ -68,7 +90,8 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
         performance_obj = d['performance_obj']
         exercises_data = d['performance_data']
 
-        # also record whether all exercises in the playlist were a pass
+        d['playlist_pass'] = playlist_pass_bool(exercises_data, d['playlist_length'])
+        # get pass date too
 
         [d.update(**{exercise['id']: mark_safe(
             f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "PASS "}'

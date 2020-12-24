@@ -65,6 +65,12 @@ class MyActivityTable(tables.Table):
         verbose_name='View Progress',
         orderable=False
     )
+    # playlist_pass = tables.columns.Column(
+    #     verbose_name='Playlist passed'
+    # )
+    # pass_date = tables.columns.Column(
+    #     verbose_name='Pass date'
+    # )
     created = tables.columns.DateColumn(
         verbose_name='Begun',
         format='Y-m-d • l',
@@ -132,9 +138,12 @@ class MyActivityDetailsTable(tables.Table):
         orderable=False,
         attrs={"td": {"bgcolor": "lightgray"}}
     )
-    # performed_at = tables.columns.DateTimeColumn(verbose_name='Performed At') # what is this?
     exercise_count = tables.columns.Column(
         verbose_name='Tally of finished exercises',
+        orderable=False,
+    )
+    playlist_pass = tables.columns.Column(
+        verbose_name='Playlist passed',
         orderable=False,
     )
     # performer_name = tables.columns.LinkColumn(
