@@ -13,22 +13,22 @@
 {% endif %}
 
 {% for field in form.visible_fields %}
-    <div style="padding-right:10px">
-        <div class="form-check form-group form-inline {{ field|widget_type }}">
-            {{ field.label_tag }}&nbsp;&nbsp;
+    <div style="padding-right:10px" class="{{ field|widget_type }}">
+        <div class="form-check form-group form-inline ">
+            {{ field.label_tag }}
             {% if form.is_bound %}
                 {% if field.errors %}
-                    {% render_field field|add_class:'form-control' class="form-control is-invalid" %}
+                    {% render_field field|add_class:'form-control' class="is-invalid" %}
                     {% for error in field.errors %}
                         <div class="invalid-feedback">
                             <strong><span style="color: red">{{ error }}</span></strong>
                         </div>
                     {% endfor %}
                 {% else %}
-                    {% render_field field|add_class:'form-control' class="form-control is-valid" %}
+                    {% render_field field|add_class:'form-control' class="is-valid" %}
                 {% endif %}
             {% else %}
-                {% render_field field|add_class:'form-control' class="form-control" %}
+                {% render_field field|add_class:'form-control' %}
             {% endif %}
 
             {% if field.help_text %}
