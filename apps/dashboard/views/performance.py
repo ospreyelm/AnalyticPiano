@@ -75,11 +75,8 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
             f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]}'
         )}) for exercise in exercises_data]
 
-    print(exercises_data[0])
-
     table = MyActivityDetailsTable(
         data=data,
-        # extra_columns=[(str(num+1), Column()) for num in range(len(exercises))],
         extra_columns=[(exercises[num], Column(verbose_name=str(num+1),orderable=False)) for num in range(len(exercises))]
     )
 
