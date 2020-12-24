@@ -39,6 +39,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
     subscriber = get_object_or_404(User, id=subscriber_id)
     if not request.user.is_supervisor_to(subscriber):
         raise PermissionDenied
+    subscriber_name = subscriber
 
     data = []
     performances = PerformanceData.objects.filter(
@@ -86,4 +87,5 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
     RequestConfig(request).configure(table)
     return render(request, "dashboard/performance_details.html", {
         "table": table,
+        "subscriber_name": subscriber_name,
     })
