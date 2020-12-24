@@ -55,6 +55,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
             'subscriber_id': subscriber_id,
             'playlist_id': playlist.id,
             'playlist_name': playlist.name,
+            # 'playlist_length': len(playlist.exercise_list),
             'performance_obj': performance_obj,
             'performance_data': performance_obj.data,
             'performer_obj': subscriber
@@ -65,6 +66,8 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
     for d in data:
         performance_obj = d['performance_obj']
         exercises_data = d['performance_data']
+
+        # also record whether all exercises in the playlist were a pass
 
         [d.update(**{exercise['id']: mark_safe(
             f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "PASS "}'

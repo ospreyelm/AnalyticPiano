@@ -69,9 +69,20 @@ class MyActivityTable(tables.Table):
         verbose_name='Begun',
         format='Y-m-d • l',
         attrs={
-            "td": {"bgcolor": "white", "width": "auto"}
+            # "td": {"bgcolor": "white", "width": "auto"}
         }
     )
+    updated = tables.columns.DateColumn(
+        verbose_name='Latest activity',
+        format='Y-m-d • l',
+        attrs={
+            # "td": {"bgcolor": "white", "width": "auto"}
+        }
+    )
+    # data = tables.columns.Column(
+    #     verbose_name='Progress',
+    #     accessor='data.0',
+    # )
     # user = tables.columns.LinkColumn(
     #   'dashboard:subscriber-performances',
     #   verbose_name='Performer Name',
