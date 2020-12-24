@@ -53,7 +53,7 @@ class TransposeRequestsField(forms.CharField):
 
 
 class DashboardAddPlaylistForm(PlaylistForm):
-    transpose_requests = TransposeRequestsField(label='Transpose Request', required=False)
+    transpose_requests = TransposeRequestsField(label='Transposition requests', required=False)
 
     class Meta(PlaylistForm.Meta):
         exclude = ['id', 'authored_by']

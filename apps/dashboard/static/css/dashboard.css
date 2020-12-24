@@ -42,6 +42,7 @@
 .main {
     margin-left: 160px;
     padding: 0px 10px;
+    font-size: 14px;
 }
 
 .pagination {
@@ -53,8 +54,8 @@
 
 .header-add {
     color: white;
-    padding-top: 10px;
-    padding-left: 10px;
+    padding-top: 0px;
+    padding-left: 0px;
 }
 
 input[type=checkbox] {
@@ -98,6 +99,10 @@ input[type=checkbox] {
     margin-top: 20px;
 }
 
+.form-check {
+    padding-left: 0px;
+}
+
 .radioselect {
     float: left !important;
     margin-right: 50px;
@@ -107,19 +112,21 @@ input[type=checkbox] {
     height: unset !important;
     background-color: unset !important;
     border: unset !important;
-    padding: 10px;
+    padding: 0px;
     margin: 0px !important;
     list-style: none;
+    font-size: 14px;
 }
 
 ul li input{
     margin-right: 10px;
+    height: 20px !important;
 }
 
-
 form label{
-    width: 150px;
-    justify-content: flex-start !important;
+    /*width: 150px;*/
+    /*justify-content: flex-start !important;*/
+    padding-right: 10px;
 }
 
 .radioselect > div{
@@ -128,4 +135,8 @@ form label{
 
 .radioselect ul label{
     display: inline;
+}
+
+.btn {
+    margin-bottom: 1px !important;
 }

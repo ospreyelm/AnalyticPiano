@@ -146,7 +146,7 @@ class Playlist(models.Model):
     transpose_requests = ArrayField(base_field=models.CharField(max_length=10, choices=SIGNATURE_CHOICES),
                                     default=list, blank=True, null=True,
                                     help_text=f'Valid choices are {" ".join(str(x) for x in KEY_SIGNATURES)}',
-                                    verbose_name='Transpose Requests')
+                                    verbose_name='Transpose requests')
 
     TRANSPOSE_EXERCISE_LOOP = 'Exercise Loop'
     TRANSPOSE_PLAYLIST_LOOP = 'Playlist Loop'
