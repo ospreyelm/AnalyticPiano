@@ -85,10 +85,6 @@ class MyActivityTable(tables.Table):
             # "td": {"bgcolor": "white", "width": "auto"}
         }
     )
-    # data = tables.columns.Column(
-    #     verbose_name='Progress',
-    #     accessor='data.0',
-    # )
     # user = tables.columns.LinkColumn(
     #   'dashboard:subscriber-performances',
     #   verbose_name='Performer Name',
@@ -115,7 +111,7 @@ class MyActivityTable(tables.Table):
     class Meta:
         attrs = {'class': 'paleblue'}
         table_pagination = False
-        order_by = ('-created')
+        order_by = ('-updated')
         template_name = "django_tables2/bootstrap4.html"
 
 
