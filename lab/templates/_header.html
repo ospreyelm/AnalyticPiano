@@ -12,10 +12,9 @@
             <li><a href="{% url 'registration' %}">REGISTER</a></li>
         {% endif %}
         <!-- <li id="notificationAlerts" class="notificationAlerts"></li> -->
+        <li><a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">New Play View</a></li>
         {% if user.is_staff %}
-            <li><a href={% url 'admin:index'%} target="_blank">ADMIN PANEL</a></li>
-        {% else %}
-            <li><a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">New Play View</a></li>
+            <li><a href={% url 'admin:index'%} target="_blank">ADMIN</a></li>
         {% endif %}
         {% if user.is_authenticated %}
             <li class="audio-controls"><button id="Mute" style="min-width:68px">Mute</button></li>
