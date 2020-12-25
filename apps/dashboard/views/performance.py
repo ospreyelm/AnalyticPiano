@@ -39,11 +39,7 @@ def playlist_pass_bool(exercises_data, playlist_length):
         c_id = completion['id']
         if c_id not in parsed_data.keys():
             parsed_data[c_id] = []
-        parsed_data[c_id].append([
-            completion['performed_at'],
-            completion['exercise_duration'],
-            completion['exercise_error_tally'],
-        ])
+        parsed_data[c_id].append(completion['exercise_error_tally'])
         del c_id
 
     playlist_pass = True
@@ -51,10 +47,54 @@ def playlist_pass_bool(exercises_data, playlist_length):
         playlist_pass = False
     else:
         for key in parsed_data:
-            least_err = sorted([x[2] for x in parsed_data[key]])[0]
+            least_err = sorted(parsed_data[key])[0]
             if isinstance(least_err, int) and least_err > 0:
                 playlist_pass = False
     return playlist_pass
+
+def playlist_pass_date(exercises_data, playlist_length):
+    parsed_data = {}
+    for completion in exercises_data:
+        c_id = completion['id']
+        if c_id not in parsed_data.keys():
+            parsed_data[c_id] = []
+        parsed_data[c_id].append({
+            'date': completion['performed_at'],
+            'dur': completion['exercise_duration'],
+            'err': completion['exercise_error_tally']
+        })
+        del c_id
+
+    ex_pass_dates = []
+    for key in parsed_data:
+        error_free = []
+        for occasion in parsed_data[key]:
+            print (occasion)
+            if not isinstance(occasion['err'], int) or occasion['err'] < 6:
+                error_free.append(occasion['date'])
+        ex_pass_dates.append(sorted(error_free)[0])
+
+    if len(ex_pass_dates) < playlist_length:
+        return None
+    else:
+        return sorted(ex_pass_dates)[-1]
+
+def playing_time(exercises_data):
+    seconds = 0
+    for completion in exercises_data:
+        seconds += completion['exercise_duration']
+        # data gives seconds
+    hours = int(seconds // 3600)
+    minutes = int((seconds // 60) % 60)
+    seconds = int((seconds // 1) % 60)
+    if hours >= 2:
+        return str(hours) + "+ hrs"
+    elif hours == 1:
+        return str(hours) + " hrs, " + str(minutes) + " mins"
+    elif minutes >= 1:
+        return str(minutes) + "+ mins"
+    else:
+        return str(seconds) + "s"
 
 def playlist_performance_view(request, playlist_id, subscriber_id=None):
     subscriber_id = subscriber_id or request.user.id
@@ -90,8 +130,9 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
         performance_obj = d['performance_obj']
         exercises_data = d['performance_data']
 
-        d['playlist_pass'] = playlist_pass_bool(exercises_data, d['playlist_length'])
-        # get pass date too
+        d['playing_time'] = playing_time(exercises_data)
+        d['playlist_pass_bool'] = playlist_pass_bool(exercises_data, d['playlist_length'])
+        d['playlist_pass_date'] = playlist_pass_date(exercises_data, d['playlist_length'])
 
         [d.update(**{exercise['id']: mark_safe(
             f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "PASS "}'

@@ -65,7 +65,7 @@ class MyActivityTable(tables.Table):
         verbose_name='View Progress',
         orderable=False
     )
-    # playlist_pass = tables.columns.Column(
+    # playlist_pass_bool = tables.columns.Column(
     #     verbose_name='Playlist passed'
     # )
     # pass_date = tables.columns.Column(
@@ -142,8 +142,17 @@ class MyActivityDetailsTable(tables.Table):
         verbose_name='Tally of finished exercises',
         orderable=False,
     )
-    playlist_pass = tables.columns.Column(
-        verbose_name='Playlist passed',
+    playing_time = tables.columns.Column(
+        verbose_name='Playing time',
+        orderable=False,
+    )
+    playlist_pass_bool = tables.columns.Column(
+        verbose_name='Pass',
+        # is conditional formatting possible?
+        orderable=False,
+    )
+    playlist_pass_date = tables.columns.Column(
+        verbose_name='Date all exercises passed',
         orderable=False,
     )
     # performer_name = tables.columns.LinkColumn(
