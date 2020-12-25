@@ -77,7 +77,7 @@ def playlist_pass_date(exercises_data, playlist_length):
     if len(ex_pass_dates) < playlist_length:
         return None
     else:
-        return sorted(ex_pass_dates)[-1]
+        return sorted(ex_pass_dates)[-1] + " GMT"
 
 def playing_time(exercises_data):
     seconds = 0

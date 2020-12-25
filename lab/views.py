@@ -264,9 +264,11 @@ class CourseView(RequirejsView):
         ).order_by('_sort_index')
 
         playlists_table = CoursePageTable(playlists)
+        course_author = course.authored_by
         context = {
             'course_title': course.title,
-            'playlists_table': playlists_table
+            'playlists_table': playlists_table,
+            'course_author': course_author
         }
 
         RequestConfig(request).configure(playlists_table)

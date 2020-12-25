@@ -165,7 +165,7 @@ class Playlist(models.Model):
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='playlists',
                                     on_delete=models.PROTECT,
-                                    verbose_name='Author')
+                                    verbose_name='Author of Playlist')
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)

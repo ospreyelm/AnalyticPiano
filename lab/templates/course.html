@@ -13,7 +13,10 @@
 <body>
 
 {% block content %}
-    <p style="color: white;">{{ course_title }}</p>
+    <p style="color:white;font-weight:bold;font-size:17px;padding-top:20px">{{ course_title }}</p>
+    {% if course_author %}
+        <p style="color:white;padding-bottom:20px">Compiled by {{ course_author }}</p>
+    {% endif %}
     {% include 'django_tables2/bootstrap4.html' with table=playlists_table %}
 {% endblock %}
 
