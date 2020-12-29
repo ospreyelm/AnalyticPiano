@@ -495,6 +495,38 @@ define([
 
 			return figure; /* for grading */
 		},
+		drawChordLabel: function(x, y=35) {
+			var key = this.keySignature.getKeyShortName();
+			let keyCategory = this.keySignature.getKey()[0] || false;
+
+			var midi_nums = this.chord.getNoteNumbers();
+			var chord_entry = this.getAnalyzer().to_chord(midi_nums, "chord label");
+
+			var width = 0, offset = 0;
+			var ctx = this.getContext();
+
+			if (!chord_entry) return ""; /* for grading */
+
+			var display = chord_entry.label.replace(/bb/g,'𝄫').replace(/b/g,'♭').replace(/##/g,'𝄪').replace(/#/g,'♯');
+
+			this.parseAndDraw(display, x, y, function(text, x, y) {
+
+				text = this.convertSymbols(text).replace(/⌀/g,'⌀'); /* replace: one could improve appearance of half-diminished sign with standard fonts here, but currently using custom font instead */
+
+				var lines = this.wrapText(text);
+
+				var fontArgs = ctx.font.split(' ');
+				var newSize = '20px'; /* size for chord symbols */
+				ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
+
+				var first_line_width = this.getContext().measureText(lines[0]).width + offset;
+				offset += 5 - Math.floor(first_line_width / 2.5);
+
+				this.drawTextLines(lines, x + offset + StaveNotater.prototype.annotateOffsetX, y);
+			});
+
+			return chord_entry; /* for grading */
+		},
 		/**
 		 * Draws the roman numeral analysis.
 		 *
@@ -507,7 +539,7 @@ define([
 			let keyCategory = this.keySignature.getKey()[0] || false;
 
 			var midi_nums = this.chord.getNoteNumbers();
-			var chord_entry = this.getAnalyzer().to_chord(midi_nums);
+			var chord_entry = this.getAnalyzer().to_chord(midi_nums, "roman only");
 
 			var width = 0, offset = 0;
 			var ctx = this.getContext();
@@ -704,19 +736,25 @@ define([
 		 */
 		drawKeyName: function(x, y) {
 			var key = this.keySignature.getKeyShortName();
+
 			var thoroughbass = this.analyzeConfig.mode.thoroughbass;
-			var letters = this.analyzeConfig.mode.note_names;
-			var harmony = this.analyzeConfig.mode.roman_numerals;
+			var note_names = this.analyzeConfig.mode.note_names;
+			var roman_numerals = this.analyzeConfig.mode.roman_numerals;
+			var chord_labels = this.analyzeConfig.mode.chord_labels;
+
 			var ctx = this.getContext();
 			var fontArgs = ctx.font.split(' ');
-			if (key === '' && !thoroughbass && harmony) {
+
+			// if (key === '' && !thoroughbass && harmony) {
+			if (chord_labels) {
 				var newSize = '16px';
 				ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 				ctx.fillText('chords', x - 18, 35);
-				if (letters) {
-					// ctx.fillText('notes', x - 18, 60);
-				}
-			} else if (key !== '' && !thoroughbass) {
+			}
+			if (note_names) {
+				// ctx.fillText('notes', x - 18, 60);
+			}
+			if (roman_numerals && key !== '' && !thoroughbass) {
 				var newSize = '20px';
 				ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 				ctx.fillText(this.convertSymbols(key) + ':', x - 8, y);
@@ -767,7 +805,7 @@ define([
 					ctx.restore();
 				} else {
 					var fontArgs = ctx.font.split(' ');
-					var newSize = ( key == 'h' ? '20px' : '24px'); /* size for chord symbols and Roman numerals */
+					var newSize = ( key == 'h' ? '20px' : '24px'); /* size for chord symbols and Roman numerals; old implementation */
 					ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 					if ( key === "h" && str.length > 6 ) {
 						/* add line break to long applied-chord labels */
@@ -1038,8 +1076,13 @@ define([
 				this.drawThoroughbass(x, y);
 			} else if(num_notes == 2 && mode.intervals) {
 				this.drawInterval(x, y);
-			} else if(num_notes > 2 && mode.roman_numerals) {
-				this.drawRoman(x, y);
+			} else if(num_notes > 2) {
+				if (mode.roman_numerals) {
+					this.drawRoman(x, y);
+				}
+				if (mode.chord_labels) {
+					this.drawChordLabel(x);
+				}
 			}
 		},
 		/**

@@ -428,11 +428,11 @@ var spellingAndAnalysisFunctions = {
 
         return {"name": all_labels[profile]["label"]};
     },
-    to_chord: function(notes) {
+    to_chord: function(notes, type = undefined) {
         if (notes.length < 2) return "";
         if (notes.length == 2) return this.to_interval(notes);
 
-        if ( this.key_is_none() ) {
+        if ( (this.key_is_none() && type !== "roman only") || type === "chord label" ) {
             return this.hFindChord(notes);
         } else {
             return this.ijFindChord(notes);

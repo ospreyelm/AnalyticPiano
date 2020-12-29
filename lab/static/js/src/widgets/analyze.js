@@ -48,7 +48,10 @@ define([
 					'<label><input type="checkbox" name="analysis_intervals" value="intervals" accesskey="i"> Intervals</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony</label>',
+					'<label><input type="checkbox" name="analysis_chords" value="chord_labels" accesskey="a"> Chord labels (A)</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony in Roman numerals</label>',
 				'</li>',
 				'<li>',
 					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G) as harmony</label>',
@@ -217,6 +220,12 @@ define([
 				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
 			},
 			analysis_harmony: function(e) {
+				var opt = e.target.value;
+				this.state.mode[opt] = e.target.checked;
+				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
+				document.getElementById('staff').focus();
+			},
+			analysis_chords: function(e) {
 				var opt = e.target.value;
 				this.state.mode[opt] = e.target.checked;
 				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
