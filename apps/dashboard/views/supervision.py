@@ -14,14 +14,14 @@ def supervisors_view(request):
         if form.is_valid():
             supervisor = get_object_or_404(User, email=form.cleaned_data['email'])
             request.user.subscribe_to(supervisor)
-            return redirect('dashboard:supervisors')
+            return redirect('dashboard:subscriptions')
     else:
         form = AddSupervisorForm()
 
     supervisors_table = SupervisorsTable([{"supervisor": x} for x in request.user.supervisors])
     RequestConfig(request).configure(supervisors_table)
 
-    return render(request, "dashboard/supervisors.html", {
+    return render(request, "dashboard/subscriptions.html", {
         "form": form,
         "table": supervisors_table,
     })
@@ -40,7 +40,7 @@ def subscribers_view(request):
     subscribers_table = SubscribersTable([{"subscriber": x} for x in request.user.subscribers])
     RequestConfig(request).configure(subscribers_table)
 
-    return render(request, "dashboard/supervisors.html", {
+    return render(request, "dashboard/subscribers.html", {
         "form": form, "table": subscribers_table
     })
 
@@ -49,7 +49,7 @@ def subscribers_view(request):
 def unsubscribe_view(request, supervisor_id):
     supervisor = get_object_or_404(User, id=supervisor_id)
     request.user.unsubscribe_from(supervisor)
-    return redirect('dashboard:supervisors')
+    return redirect('dashboard:subscriptions')
 
 
 @login_required

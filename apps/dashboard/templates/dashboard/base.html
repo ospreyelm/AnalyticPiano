@@ -29,8 +29,8 @@
         <a {% if url_name == 'courses-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:courses-list' %}">Courses</a>
         <a {% if url_name == 'playlists-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:playlists-list' %}">Units / Playlists</a>
         <a {% if url_name == 'exercises-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:exercises-list' %}">Exercises</a>
-        <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:subscribers' %}">My Subscribers</a>
-        <a {% if url_name == 'supervisors' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:supervisors' %}">My Supervisors</a>
+        <a {% if url_name == 'subscriptions' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:subscriptions' %}">Subscriptions</a>
+        <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:subscribers' %}">Subscribers</a>
         <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:preferences' %}">Preferences</a>
         <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Exit Dashboard</a>
 

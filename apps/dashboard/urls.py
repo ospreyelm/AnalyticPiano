@@ -59,8 +59,8 @@ urlpatterns = [
          name="subscriber-playlist-performance"),
     path('playlist-performance/<str:playlist_id>/', playlist_performance_view, name="playlist-performance"),
 
-    # Supervisors / Subscribers
-    path('supervisors/', supervisors_view, name="supervisors"),
+    # Subscriptions / Subscribers
+    path('subscriptions/', supervisors_view, name="subscriptions"),
     path('unsubscribe/<int:supervisor_id>/', unsubscribe_view, name="unsubscribe"),
 
     path('subscribers/', subscribers_view, name="subscribers"),

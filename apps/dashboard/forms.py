@@ -10,11 +10,11 @@ User = get_user_model()
 
 
 class AddSupervisorForm(forms.Form):
-    email = forms.EmailField(label='New supervisor email:')
+    email = forms.EmailField(label='Subscribe me to:')
 
 
 class AddSubscriberForm(forms.Form):
-    email = forms.EmailField(label='New subscriber email:')
+    email = forms.EmailField(label='Send invitation to:')
 
 
 class KeyboardForm(forms.Form):

@@ -8,11 +8,11 @@ class SupervisorsTable(tables.Table):
     name = tables.columns.Column(
         accessor=A('supervisor.get_full_name'),
         attrs={"td": {"width": "250px"}},
-        verbose_name='Name of Supervisor'
+        verbose_name='Name of User'
     )
     supervisor = tables.columns.Column(
         attrs={"td": {"width": "250px"}},
-        verbose_name='Email Address of Supervisor'
+        verbose_name='Email Address of User'
     )
     remove = tables.columns.LinkColumn('dashboard:unsubscribe',
                                        kwargs={'supervisor_id': A('supervisor.id')},
@@ -29,11 +29,11 @@ class SubscribersTable(tables.Table):
                                      kwargs={'subscriber_id': A('subscriber.id')},
                                      accessor=A('subscriber.get_full_name'),
                                      attrs={"td": {"width": "250px"}},
-                                     verbose_name='Name of Subscriber')
+                                     verbose_name='Name of User')
     subscriber = tables.columns.LinkColumn('dashboard:subscriber-performances',
                                            kwargs={'subscriber_id': A('subscriber.id')},
                                            attrs={"td": {"width": "250px"}},
-                                           verbose_name='Email Address of Subscriber')
+                                           verbose_name='Email Address of User')
     remove = tables.columns.LinkColumn('dashboard:remove-subscriber',
                                        kwargs={'subscriber_id': A('subscriber.id')},
                                        text='Remove', verbose_name='Remove', orderable=False)

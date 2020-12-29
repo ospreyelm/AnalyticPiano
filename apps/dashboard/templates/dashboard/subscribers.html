@@ -1,0 +1,17 @@
+{% extends 'dashboard/base-content-list.html' %}
+
+{% block content %}
+    <div style="padding-top:20px">
+        <p style="color:white">Here, you can approve subscription requests from other users or send other users an invitation to subscribe along with pre-approval.<br>Your confirmed subscribers will appear below.</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% include 'dashboard/bs4_form.html' with form=form %}
+            <button type="submit" class="btn" style="">
+                Add
+            </button>
+        </form>
+    </div>
+    <div>
+        {% include 'django_tables2/bootstrap4.html' with table=table %}
+    </div>
+{% endblock content %}
