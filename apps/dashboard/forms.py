@@ -9,11 +9,21 @@ from apps.exercises.models import Exercise
 User = get_user_model()
 
 
-class AddSupervisorForm(forms.Form):
+class BaseSupervisionForm(forms.Form):
+    def clean(self):
+        email = self.cleaned_data.get('email')
+        if email == self.context.get('user').email:
+            self.add_error('email', 'You cannot add yourself as your subscriber/supervisor!')
+        if not User.objects.filter(email=email).exists():
+            self.add_error('email', 'User with this email does not exist.')
+        return self.cleaned_data
+
+
+class AddSupervisorForm(BaseSupervisionForm):
     email = forms.EmailField(label='Subscribe me to:')
 
 
-class AddSubscriberForm(forms.Form):
+class AddSubscriberForm(BaseSupervisionForm):
     email = forms.EmailField(label='Send invitation to:')
 
 
@@ -26,6 +36,8 @@ class KeyboardForm(forms.Form):
 
 
 class DashboardExerciseForm(ExerciseForm):
+    id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
+
     class Meta:
         model = Exercise
         exclude = ['data', 'authored_by']
@@ -33,6 +45,12 @@ class DashboardExerciseForm(ExerciseForm):
             'data': PrettyJSONWidget(attrs={'initial': 'parsed'}),
             'id': forms.TextInput(attrs={'readonly': 'readonly'}),
         }
+
+    def __init__(self, disable_fields=False, *args, **kwargs):
+        super(DashboardExerciseForm, self).__init__(*args, **kwargs)
+        if disable_fields:
+            for field in self.fields:
+                self.fields.get(field).disabled = True
 
 
 class TransposeRequestsField(forms.CharField):
@@ -52,11 +70,17 @@ class TransposeRequestsField(forms.CharField):
         return ','.join(value)
 
 
-class DashboardAddPlaylistForm(PlaylistForm):
-    transpose_requests = TransposeRequestsField(label='Transposition requests', required=False)
+class DashboardPlaylistForm(PlaylistForm):
+    transpose_requests = TransposeRequestsField(label='Transposition Requests', required=False)
 
     class Meta(PlaylistForm.Meta):
         exclude = ['id', 'authored_by']
+
+    def __init__(self, disable_fields=False, *args, **kwargs):
+        super(DashboardPlaylistForm, self).__init__(*args, **kwargs)
+        if disable_fields:
+            for field in self.fields:
+                self.fields.get(field).disabled = True
 
 
 class DashboardCourseForm(CourseForm):

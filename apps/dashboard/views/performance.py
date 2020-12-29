@@ -33,6 +33,7 @@ def performance_list_view(request, subscriber_id=None):
         "subscriber_name": subscriber_name,
     })
 
+
 def playlist_pass_bool(exercises_data, playlist_length):
     parsed_data = {}
     for completion in exercises_data:
@@ -52,6 +53,7 @@ def playlist_pass_bool(exercises_data, playlist_length):
                 playlist_pass = False
     return playlist_pass
 
+
 def playlist_pass_date(exercises_data, playlist_length):
     parsed_data = {}
     for completion in exercises_data:
@@ -69,7 +71,7 @@ def playlist_pass_date(exercises_data, playlist_length):
     for key in parsed_data:
         error_free = []
         for occasion in parsed_data[key]:
-            print (occasion)
+            print(occasion)
             if not isinstance(occasion['err'], int) or occasion['err'] < 6:
                 error_free.append(occasion['date'])
         ex_pass_dates.append(sorted(error_free)[0])
@@ -78,6 +80,7 @@ def playlist_pass_date(exercises_data, playlist_length):
         return None
     else:
         return sorted(ex_pass_dates)[-1] + " GMT"
+
 
 def playing_time(exercises_data):
     seconds = 0
@@ -95,6 +98,7 @@ def playing_time(exercises_data):
         return str(minutes) + "+ mins"
     else:
         return str(seconds) + "s"
+
 
 def playlist_performance_view(request, playlist_id, subscriber_id=None):
     subscriber_id = subscriber_id or request.user.id
@@ -145,7 +149,8 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
 
     table = MyActivityDetailsTable(
         data=data,
-        extra_columns=[(exercises[num], Column(verbose_name=str(num+1),orderable=False)) for num in range(len(exercises))]
+        extra_columns=[(exercises[num], Column(verbose_name=str(num + 1), orderable=False)) for num in
+                       range(len(exercises))]
     )
 
     RequestConfig(request).configure(table)

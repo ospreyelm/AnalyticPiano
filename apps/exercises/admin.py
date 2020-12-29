@@ -185,10 +185,10 @@ class CourseAdmin(DynamicArrayMixin, admin.ModelAdmin):
 
     def playlist_links(self, obj):
         links = ''
-        playlists = Playlist.objects.filter(name__in=obj.playlists.split(','))
+        playlists = Playlist.objects.filter(id__in=obj.playlists.split(','))
         for playlist in playlists:
             link = reverse('admin:%s_%s_change' % ('exercises', 'playlist'), args=(playlist._id,))
-            links += "<a href='%s'>%s</a><br>" % (link, playlist.name)
+            links += "<a href='%s'>%s</a><br>" % (link, playlist.id)
         return mark_safe(links)
 
     playlist_links.allow_tags = True

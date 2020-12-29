@@ -1,4 +1,4 @@
-from django.urls import re_path, path
+from django.urls import path
 from django.views.generic import TemplateView
 
 app_name = 'exercises'
