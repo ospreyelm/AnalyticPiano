@@ -8,7 +8,7 @@ class CoursePageTable(tables.Table):
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
         viewname='lab:exercise-groups',
         kwargs={'group_name': A('name')},
-        verbose_name='Name of Playlist'
+        verbose_name='Unit'
     )
 
     class Meta:

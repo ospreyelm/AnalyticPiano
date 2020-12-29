@@ -27,7 +27,7 @@
         <p class="sidenav-header">AnalyticPiano Dashboard</p>
         <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
         <a {% if url_name == 'courses-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:courses-list' %}">Courses</a>
-        <a {% if url_name == 'playlists-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:playlists-list' %}">Playlists</a>
+        <a {% if url_name == 'playlists-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:playlists-list' %}">Units / Playlists</a>
         <a {% if url_name == 'exercises-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:exercises-list' %}">Exercises</a>
         <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:subscribers' %}">My Subscribers</a>
         <a {% if url_name == 'supervisors' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:supervisors' %}">My Supervisors</a>
