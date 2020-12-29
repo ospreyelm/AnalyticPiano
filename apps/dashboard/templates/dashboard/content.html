@@ -15,7 +15,7 @@
 
 {% block content %}
     {% block content-header %}
-        {% if form.instance.pk == None %}<h4 class="header-add">Add new {{ verbose_name }}</h4>{% endif %}
+        {% if form.instance.pk == None %}<h4 class="header-add">New {{ verbose_name }}</h4>{% else %}<h4 class="header-add">Edit {{ verbose_name }}</h4>{% endif %}
         {% if has_been_performed %}
             <div class="alert alert-danger" role="alert" style="top: 20px">
                 <strong>NOTE: </strong>{{ verbose_name_plural }} that have been performed cannot be edited.
@@ -35,16 +35,14 @@
         {{ form.media }}
         {% if not has_been_performed %}
             <div style="display: inline-block; width: 100%;">
-                <button type="submit" class="btn btn-primary">Save</button>
-                <button type="submit" class="btn btn-primary" name="save-and-continue">
-                    Save and continue editing
-                </button>
+                <button type="submit" class="btn dashboard-btn" name="save-and-continue">Save</button>
+                <button type="submit" class="btn dashboard-btn">Save and close</button>
                 {% if not form.instance.pk == None %}
-                    <button type="submit" class="btn btn-light" name="save-as-new">
+                    <button type="submit" class="btn dashboard-btn" name="save-as-new">
                         Save as new
                     </button>
                 {% endif %}
-                <button type="reset" class="btn btn-secondary"
+                <button type="reset" class="btn dashboard-btn"
                         onclick="location.href='{{ redirect_url }}'">
                     Cancel
                 </button>
