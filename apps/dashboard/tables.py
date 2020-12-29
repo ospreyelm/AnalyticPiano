@@ -85,6 +85,7 @@ class MyActivityTable(tables.Table):
             # "td": {"bgcolor": "white", "width": "auto"}
         }
     )
+
     # user = tables.columns.LinkColumn(
     #   'dashboard:subscriber-performances',
     #   verbose_name='Performer Name',
@@ -151,6 +152,7 @@ class MyActivityDetailsTable(tables.Table):
         verbose_name='Date all exercises passed',
         orderable=False,
     )
+
     # performer_name = tables.columns.LinkColumn(
     #     'dashboard:subscriber-performances',
     #     kwargs={'subscriber_id': A('subscriber_id')},
@@ -207,7 +209,7 @@ class ExercisesListTable(tables.Table):
     def render_edit(self, record):
         if not record.has_been_performed:
             return 'Edit'
-        return '--'
+        return ''
 
     def render_delete(self, record):
         if not record.has_been_performed:
@@ -250,7 +252,7 @@ class PlaylistsListTable(tables.Table):
     def render_edit(self, record):
         if not record.has_been_performed:
             return 'Edit'
-        return '--'
+        return ''
 
     def render_delete(self, record):
         if not record.has_been_performed:
@@ -289,16 +291,6 @@ class CoursesListTable(tables.Table):
         verbose_name='Modified',
         format='Y-m-d • h:m A',
     )
-
-    def render_edit(self, record):
-        # if record.has_been_performed:
-            # return '--'
-        return 'Edit'
-
-    def render_delete(self, record):
-        if not record.has_been_performed:
-            return 'Delete'
-        return ''
 
     class Meta:
         attrs = {'class': 'paleblue'}

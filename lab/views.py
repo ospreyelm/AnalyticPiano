@@ -254,10 +254,10 @@ class CourseView(RequirejsView):
     def get(self, request, course_slug, *args, **kwargs):
         course = get_object_or_404(Course, slug=course_slug)
         course_playlists = course.playlists.split(',')
-        playlists = Playlist.objects.filter(name__in=course_playlists)
+        playlists = Playlist.objects.filter(id__in=course_playlists)
         whens = []
         for sort_index, value in enumerate(course_playlists):
-            whens.append(When(name=value, then=sort_index))
+            whens.append(When(id=value, then=sort_index))
 
         playlists = playlists.annotate(
             _sort_index=Case(*whens, output_field=models.CharField())

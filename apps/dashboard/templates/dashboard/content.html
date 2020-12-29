@@ -1,0 +1,60 @@
+{% extends "dashboard/base.html" %}
+{% load widget_tweaks %}
+{% load django_tables2 %}
+{% load i18n %}
+
+
+{% block css_extra %}
+    <script type="text/css">
+        /* has no effect---why? */
+        .form-check {
+            padding-left: 0px !important;
+        }
+    </script>
+{% endblock %}
+
+{% block content %}
+    {% block content-header %}
+        {% if form.instance.pk == None %}<h4 class="header-add">Add new {{ verbose_name }}</h4>{% endif %}
+        {% if has_been_performed %}
+            <div class="alert alert-danger" role="alert" style="top: 20px">
+                <strong>NOTE: </strong>{{ verbose_name_plural }} that have been performed cannot be edited.
+            </div>
+        {% endif %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info" role="alert" style="top: 20px">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endblock %}
+    <form method="post" novalidate style="text-align: left; padding: 20px 0px">
+        {% csrf_token %}
+        {% include 'dashboard/bs4_form_v2.html' with form=form %}
+        {{ form.media }}
+        {% if not has_been_performed %}
+            <div style="display: inline-block; width: 100%;">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="submit" class="btn btn-primary" name="save-and-continue">
+                    Save and continue editing
+                </button>
+                {% if not form.instance.pk == None %}
+                    <button type="submit" class="btn btn-light" name="save-as-new">
+                        Save as new
+                    </button>
+                {% endif %}
+                <button type="reset" class="btn btn-secondary"
+                        onclick="location.href='{{ redirect_url }}'">
+                    Cancel
+                </button>
+            </div>
+        {% else %}
+            <div style="display: inline-block; width: 100%;">
+                <button type="reset" class="btn btn-secondary" onclick="location.href='{{ redirect_url }}'">
+                    Back
+                </button>
+            </div>
+        {% endif %}
+    </form>
+{% endblock content %}

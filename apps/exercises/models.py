@@ -4,6 +4,7 @@ from itertools import product
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import When, Case, Q
 from django.urls import reverse, NoReverseMatch
@@ -25,7 +26,17 @@ class RawJSONField(JSONField):
         return 'json'
 
 
-class Exercise(models.Model):
+class ClonableModelMixin():
+    @classmethod
+    def get_unique_fields(cls):
+        fields = []
+        for field in cls._meta.fields:
+            if field.unique:
+                fields.append(field.name)
+        return fields
+
+
+class Exercise(ClonableModelMixin, models.Model):
     _id = models.AutoField('_ID', unique=True, primary_key=True)
     id = models.CharField('ID', unique=True, max_length=16)
     name = models.CharField('Description', max_length=60,
@@ -134,11 +145,18 @@ class Exercise(models.Model):
         return reverse('lab:exercise-view', kwargs={'exercise_id': self.id})
 
 
-class Playlist(models.Model):
+class Playlist(ClonableModelMixin, models.Model):
     _id = models.AutoField('_ID', unique=True, primary_key=True)
     id = models.CharField('ID', unique=True, max_length=16)
 
-    name = models.CharField('Name', unique=True, max_length=32)
+    name = models.CharField(
+        'Name', unique=True, max_length=32,
+        validators=[
+            RegexValidator(
+                regex='^[a-zA-Z0-9-_ ]+$',
+                message='Enter a valid name consisting of letters, numbers, spaces, underscores or hyphens',
+            )]
+    )
     exercises = models.CharField('Exercises', max_length=1024,
                                  help_text='Ordered set of exercise IDs, separated by comma.')
 
@@ -169,6 +187,8 @@ class Playlist(models.Model):
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
+
+    zero_padding = 'PA00A0'
 
     class Meta:
         verbose_name = 'Playlist'
@@ -309,6 +329,65 @@ def get_default_data():
     return {'exercises': []}
 
 
+class Course(ClonableModelMixin, models.Model):
+    _id = models.AutoField('_ID', unique=True, primary_key=True)
+    id = models.CharField('ID', unique=True, max_length=16)
+
+    title = models.CharField(
+        'Title', unique=True, max_length=64,
+        validators=[
+            RegexValidator(
+                regex='^[a-zA-Z0-9-_ +]+$',
+                message='Enter a valid title consisting of letters, numbers, spaces, underscores or hyphens',
+            )]
+    )
+    slug = models.SlugField('Slug', unique=True, max_length=64)
+    playlists = models.CharField('Playlists', max_length=1024,
+                                 help_text='Ordered set of playlist IDs, separated by comma.')
+
+    authored_by = models.ForeignKey('accounts.User',
+                                    related_name='courses',
+                                    on_delete=models.PROTECT,
+                                    verbose_name='Author')
+
+    created = models.DateTimeField('Created', auto_now_add=True)
+    updated = models.DateTimeField('Updated', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Course'
+        verbose_name_plural = 'Courses'
+
+    def __str__(self):
+        return self.id
+
+    def save(self, *args, **kwargs):
+        if not self._id:
+            super(Course, self).save(*args, **kwargs)
+        self.set_id()
+        super(Course, self).save(*args, **kwargs)
+
+    def set_id(self):
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        reverse_id = ""
+        bases = [26, 26, 10, 10, 26]
+        _id = self._id
+        for base in bases:
+            if base == 26:
+                reverse_id += letters[_id % base]
+            elif base == 10:
+                reverse_id += str(_id % base)
+            _id //= base
+        if _id != 0 or len(reverse_id) != len(bases):
+            return None
+        reverse_id += "C"
+        self.id = reverse_id[::-1]
+
+    @cached_property
+    def has_been_performed(self):
+        return False
+        # return PerformanceData.objects.filter(playlist__name__in=self.playlists.split(',')).exists()
+
+
 class PerformanceData(models.Model):
     user = models.ForeignKey(User, related_name='performance_data',
                              on_delete=models.PROTECT)
@@ -317,6 +396,8 @@ class PerformanceData(models.Model):
                                    on_delete=models.PROTECT)
     playlist = models.ForeignKey(Playlist, related_name='performance_data',
                                  on_delete=models.PROTECT)
+    # course = models.ForeignKey(Course, related_name='performance_data',
+    #                            on_delete=models.PROTECT, blank=True, null=True)
     data = JSONField('Raw Data', default=list)
     playlist_performances = JSONField('Playlist Performances', default=list, blank=True)
 
@@ -373,54 +454,3 @@ class PerformanceData(models.Model):
             elif exercise['id'] == exercise_id:
                 continue
         return 'Not Passed'
-
-
-class Course(models.Model):
-    _id = models.AutoField('_ID', unique=True, primary_key=True)
-    id = models.CharField('ID', unique=True, max_length=16)
-
-    title = models.CharField('Title', unique=True, max_length=64)
-    slug = models.SlugField('Slug', unique=True, max_length=64)
-    playlists = models.CharField('Playlists', max_length=1024,
-                                 help_text='Ordered set of playlist names or IDs, separated by comma.')
-
-    authored_by = models.ForeignKey('accounts.User',
-                                    related_name='courses',
-                                    on_delete=models.PROTECT,
-                                    verbose_name='Author')
-
-    created = models.DateTimeField('Created', auto_now_add=True)
-    updated = models.DateTimeField('Updated', auto_now=True)
-
-    class Meta:
-        verbose_name = 'Course'
-        verbose_name_plural = 'Courses'
-
-    def __str__(self):
-        return self.id
-
-    def save(self, *args, **kwargs):
-        if not self._id:
-            super(Course, self).save(*args, **kwargs)
-        self.set_id()
-        super(Course, self).save(*args, **kwargs)
-
-    def set_id(self):
-        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        reverse_id = ""
-        bases = [26, 26, 10, 10, 26]
-        _id = self._id
-        for base in bases:
-            if base == 26:
-                reverse_id += letters[_id % base]
-            elif base == 10:
-                reverse_id += str(_id % base)
-            _id //= base
-        if _id != 0 or len(reverse_id) != len(bases):
-            return None
-        reverse_id += "C"
-        self.id = reverse_id[::-1]
-
-    @cached_property
-    def has_been_performed(self):
-        return PerformanceData.objects.filter(playlist__name__in=self.playlists.split(',')).exists()

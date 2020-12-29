@@ -1,6 +1,10 @@
+from copy import copy
+
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django_tables2 import RequestConfig
 
 from apps.dashboard.forms import DashboardExerciseForm
@@ -24,6 +28,11 @@ def exercises_list_view(request):
 
 @login_required
 def exercise_add_view(request):
+    context = {
+        'verbose_name': Exercise._meta.verbose_name,
+        'verbose_name_plural': Exercise._meta.verbose_name_plural,
+    }
+
     if request.method == 'POST':
         form = DashboardExerciseForm(data=request.POST)
         form.context = {'user': request.user}
@@ -31,33 +40,74 @@ def exercise_add_view(request):
             exercise = form.save(commit=False)
             exercise.authored_by = request.user
             exercise.save()
-            return redirect('dashboard:exercises-list')
+            if 'save-and-continue' in request.POST:
+                success_url = reverse('dashboard:edit-exercise',
+                                      kwargs={'exercise_id': exercise.id})
+                messages.add_message(request, messages.SUCCESS,
+                                     f"{context['verbose_name']} has been saved successfully.")
+            else:
+                success_url = reverse('dashboard:exercises-list')
+            return redirect(success_url)
+        context['form'] = form
+        return render(request, "dashboard/content.html", context)
     else:
-        form = DashboardExerciseForm()
+        if not request.session.get('clone_data'):
+            return redirect('dashboard:exercises-list')
 
-    return render(request, "dashboard/exercise.html", {
-        "form": form
-    })
+        clone_data = request.session.get('clone_data') or {}
+        clone_data['id'] = ' '
+        clone_data['name'] = None
+        form = DashboardExerciseForm(initial=clone_data)
+        request.session['clone_data'] = None
+
+    context['form'] = form
+    return render(request, "dashboard/content.html", context)
 
 
 @login_required
 def exercise_edit_view(request, exercise_id):
     exercise = get_object_or_404(Exercise, id=exercise_id)
 
+    context = {
+        'verbose_name': exercise._meta.verbose_name,
+        'verbose_name_plural': exercise._meta.verbose_name_plural,
+        'has_been_performed': exercise.has_been_performed,
+        'redirect_url': reverse('dashboard:exercises-list')
+    }
+
     if request.method == 'POST':
         form = DashboardExerciseForm(data=request.POST, instance=exercise)
         form.context = {'user': request.user}
         if form.is_valid():
+            if 'save-as-new' in request.POST:
+                unique_fields = Exercise.get_unique_fields()
+                clone_data = copy(form.cleaned_data)
+                for field in clone_data:
+                    if field in unique_fields:
+                        clone_data[field] = None
+                request.session['clone_data'] = clone_data
+                return redirect('dashboard:add-exercise')
+
             exercise = form.save(commit=False)
             exercise.authored_by = request.user
             exercise.save()
-            return redirect('dashboard:exercises-list')
+            if 'save-and-continue' in request.POST:
+                success_url = reverse('dashboard:edit-exercise',
+                                      kwargs={'exercise_id': exercise.id})
+                messages.add_message(request, messages.SUCCESS,
+                                     f"{context['verbose_name']} has been saved successfully.")
+            else:
+                success_url = reverse('dashboard:exercises-list')
+            return redirect(success_url)
+        context['form'] = form
+
+    if exercise.has_been_performed:
+        form = DashboardExerciseForm(instance=exercise, disable_fields=True)
     else:
         form = DashboardExerciseForm(instance=exercise)
 
-    return render(request, "dashboard/exercise.html", {
-        "form": form
-    })
+    context['form'] = form
+    return render(request, "dashboard/content.html", context)
 
 
 @login_required
@@ -66,8 +116,15 @@ def exercise_delete_view(request, exercise_id):
     if exercise.authored_by != request.user:
         raise PermissionDenied
 
-    if exercise.has_been_performed:
-        raise ValidationError('Exercises that have been performed cannot be deleted.')
+    if request.method == 'POST':
+        if exercise.has_been_performed:
+            raise ValidationError('Execises that have been performed cannot be deleted.')
+        exercise.delete()
+        return redirect('dashboard:exercises-list')
 
-    exercise.delete()
-    return redirect('dashboard:exercises-list')
+    context = {'obj': exercise, 'obj_name': exercise.id,
+               'verbose_name': exercise._meta.verbose_name,
+               'verbose_name_plural': exercise._meta.verbose_name_plural,
+               'has_been_performed': exercise.has_been_performed,
+               'redirect_url': reverse('dashboard:exercises-list')}
+    return render(request, 'dashboard/delete-confirmation.html', context)
