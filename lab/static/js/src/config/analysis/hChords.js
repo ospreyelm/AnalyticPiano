@@ -17,9 +17,9 @@ define({
 
   // minor triad
 
-    "37": {"label": "&R-", "description": "&R minor", "spellbass": "iD_", "stepwise": "24", "root": "0", "rootstepwise": "0"},
-    "49": {"label": "&R-/&X", "description": "&R minor &6;", "spellbass": "iF_", "stepwise": "25", "root": "9", "rootstepwise": "5"},
-    "58": {"label": "&R-/&X", "description": "&64; dischord", "spellbass": "iA_", "stepwise": "35", "root": "5", "rootstepwise": "3"},
+    "37": {"label": "&R−", "description": "&R minor", "spellbass": "iD_", "stepwise": "24", "root": "0", "rootstepwise": "0"},
+    "49": {"label": "&R−/&X", "description": "&R minor &6;", "spellbass": "iF_", "stepwise": "25", "root": "9", "rootstepwise": "5"},
+    "58": {"label": "&R−/&X", "description": "&64; dischord", "spellbass": "iA_", "stepwise": "35", "root": "5", "rootstepwise": "3"},
 
   // diminished triad
 
@@ -44,7 +44,7 @@ define({
 
   // incomplete dominant tetrad
 
-    // "4y": {"label": "&R7(no5)", "description": "&R dominant &73;", "spellbass": "iG_", "stepwise": "26", "root": "0", "rootstepwise": "0"},
+    "4y": {"label": "&R7(no5)", "description": "&R dominant &73;", "spellbass": "iG_", "stepwise": "26", "root": "0", "rootstepwise": "0"},
 
   // dominant tetrad
 
@@ -56,29 +56,33 @@ define({
   // minor tetrad
 
 
-    "37y": {"label": "&R-7", "description": "&R minor &7;", "spellbass": "iD_", "stepwise": "246", "root": "0", "rootstepwise": "0"},
-    "479": {"label": "&R-7/&X", "description": "&R minor &65;", "spellbass": "iF_", "stepwise": "245", "root": "9", "rootstepwise": "5"},
-    "358": {"label": "&R-7/&X", "description": "&R minor &43;", "spellbass": "iA_", "stepwise": "235", "root": "5", "rootstepwise": "3"},
-    "259": {"label": "&R-7/&X", "description": "&R minor &42;", "spellbass": "iC_", "stepwise": "135", "root": "2", "rootstepwise": "1"},
+    "37y": {"label": "&R−7", "description": "&R minor &7;", "spellbass": "iD_", "stepwise": "246", "root": "0", "rootstepwise": "0"},
+    "479": {"label": "&R6", "description": "&R major added sixth", "spellbass": "iF_", "stepwise": "245", "root": "0", "rootstepwise": "0"},
+    // "479": {"label": "&R−7/&X", "description": "&R minor &65;", "spellbass": "iF_", "stepwise": "245", "root": "9", "rootstepwise": "5"},
+    "358": {"label": "&R−7/&X", "description": "&R minor &43;", "spellbass": "iA_", "stepwise": "235", "root": "5", "rootstepwise": "3"},
+    "259": {"label": "&R−7/&X", "description": "&R minor &42;", "spellbass": "iC_", "stepwise": "135", "root": "2", "rootstepwise": "1"},
 
   // half-diminished tetrad
 
     "36y": {"label": "&R&hdim;7", "description": "&R half-dim. &7;", "spellbass": "iE_", "stepwise": "246", "root": "0", "rootstepwise": "0"},
-    "379": {"label": "&R&hdim;7/&X", "description": "&R half-dim. &65;", "spellbass": "iG_", "stepwise": "245", "root": "9", "rootstepwise": "5"},
+    "379": {"label": "&Rm6", "description": "&R minor added sixth", "spellbass": "iG_", "stepwise": "245", "root": "0", "rootstepwise": "0"},
+    // "379": {"label": "&R&hdim;7/&X", "description": "&R half-dim. &65;", "spellbass": "iG_", "stepwise": "245", "root": "9", "rootstepwise": "5"},
     "469": {"label": "&R&hdim;7/&X", "description": "&R half-dim. &43;", "spellbass": "iBb", "stepwise": "235", "root": "6", "rootstepwise": "3"},
     "258": {"label": "&R&hdim;7/&X", "description": "&R half-dim. &42;", "spellbass": "iD_", "stepwise": "135", "root": "2", "rootstepwise": "1"},
 
   // diminished tetrad, assuming root position (given symmetrical division)
 
     "369": {"label": "&R&dim;7", "description": "&R dim. &7;", "spellbass": "iF#", "stepwise": "246", "root": "0", "rootstepwise": "0"},
+
     // or not making that assumption:
+
     // "369": {"label": "&dim;7", "description": "fully diminished seventh", spellbass": "___", "stepwise": "___", ""root": "_", "rootstepwise": "_"},
 
   // major tetrad
 
-    "47z": {"label": "&RM7", "description": "&R major &7;", "spellbass": "iC_", "stepwise": "246", "root": "0", "rootstepwise": "0"},
-    "378": {"label": "&RM7/&X", "description": "&R major &65;", "spellbass": "iE_", "stepwise": "245", "root": "8", "rootstepwise": "5"},
-    "459": {"label": "&RM7/&X", "description": "&R major &43;", "spellbass": "iG_", "stepwise": "235", "root": "5", "rootstepwise": "3"},
-    "158": {"label": "&RM7/&X", "description": "&R major &42;", "spellbass": "iB_", "stepwise": "135", "root": "1", "rootstepwise": "1"}
+    "47z": {"label": "&RΔ7", "description": "&R major &7;", "spellbass": "iC_", "stepwise": "246", "root": "0", "rootstepwise": "0"},
+    "378": {"label": "&RΔ7/&X", "description": "&R major &65;", "spellbass": "iE_", "stepwise": "245", "root": "8", "rootstepwise": "5"},
+    "459": {"label": "&RΔ7/&X", "description": "&R major &43;", "spellbass": "iG_", "stepwise": "235", "root": "5", "rootstepwise": "3"},
+    "158": {"label": "&RΔ7/&X", "description": "&R major &42;", "spellbass": "iB_", "stepwise": "135", "root": "1", "rootstepwise": "1"}
 
 });

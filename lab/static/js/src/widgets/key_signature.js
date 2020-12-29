@@ -72,7 +72,7 @@ define([
 			var lock = (this.lock ? true : false);
 			var lockCls = ['btn ion-locked '+this.settings.lockedCls,'btn ion-unlocked '+this.settings.unlockedCls];
 			var lockContainerEl = $("<span/>"); 
-			var lockEl = $('<span class="'+(lock?lockCls[0]:lockCls[1])+'" data-lock="'+(lock?'yes':'no')+'"/>');
+			var lockEl = $('<span title="Toggle lock of key and staff signature" class="'+(lock?lockCls[0]:lockCls[1])+'" data-lock="'+(lock?'yes':'no')+'"/>');
 			var style='style="margin: 0 10px"';
 
 			lockContainerEl.append(lockEl);
@@ -100,10 +100,11 @@ define([
 			select.name = "keysignature";
 			var selected_signature = this.keySignature.getSignatureSpec();
 
-			_.each(KEY_SIGNATURE_MAP, function(key, signature) {
+			_.each(KEY_SIGNATURE_MAP, function(majorKey, signature) {
 				var option = document.createElement('option');
-				option.text = signature;
-				option.value = key;
+				option.text = signature === "" ? "all naturals" : signature;
+					// .replace(/b/g,'♭').replace(/#/g,'♯')
+				option.value = majorKey;
 				if(signature === selected_signature) {
 					option.selected = true;
 				}

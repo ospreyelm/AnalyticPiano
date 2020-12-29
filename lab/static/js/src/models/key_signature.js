@@ -139,7 +139,7 @@ define([
 		 */
 		changeKey: function(key, lock) {
 			this.setKey(key);
-			if(lock) {
+			if(lock && key !== "h") {
 				this.setKeyOfSignature(key);
 				this.setSignature(this.keyToSignature(key));
 			}

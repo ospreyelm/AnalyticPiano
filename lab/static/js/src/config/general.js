@@ -82,7 +82,7 @@ define({
 		"h": { /* key undefined a.k.a "key is none" */
 			spelling: ["C","C#","D","D#","E","F","F#","G","G#","A","Bb","B"], 
 			pitchClass: 0,
-			name: "No key",
+			name: "Snap to chords",
 			shortName: "",
 			signature: ""
 		},
