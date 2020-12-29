@@ -102,7 +102,7 @@ define([
 
 			_.each(KEY_SIGNATURE_MAP, function(majorKey, signature) {
 				var option = document.createElement('option');
-				option.text = signature === "" ? "all naturals" : signature;
+				option.text = signature === "" ? "No staff signature" : signature;
 					// .replace(/b/g,'♭').replace(/#/g,'♯')
 				option.value = majorKey;
 				if(signature === selected_signature) {
