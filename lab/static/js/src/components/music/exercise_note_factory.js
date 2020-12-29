@@ -105,14 +105,10 @@ define([
 			var clefMidiKeys = this.chord.getNoteNumbers(this.clef);
 			var noteProps = this.chord.getNoteProps();
 			var modifiers = [];
-			var note, keyStyle;
+			var note, noteStyle;
 
 			this.staveNoteFactory.resetHighlight();
 
-			var stemStyle = {
-				fillStyle:this.noteColorMap.notplayed,
-				strokeStyle:this.noteColorMap.notplayed
-			};
 			var all_correct = true;
 			for (var i = 0, len = keys.length; i < len; i++) {
 				note = clefMidiKeys[i];
@@ -129,34 +125,40 @@ define([
 				}, 1);
 
 				if(this.highlightConfig.enabled) {
-					keyStyle = this.staveNoteFactory.getAnalysisHighlightOf(note, allMidiKeys);
-					if(keyStyle !== false) {
-						this.staveNoteFactory.highlightNote(i, keyStyle, 2);
+					noteStyle = this.staveNoteFactory.getAnalysisHighlightOf(note, allMidiKeys);
+					if(noteStyle !== false) {
+						this.staveNoteFactory.highlightNote(i, noteStyle, 2);
 					}
 				}
 
 				if(noteProps[note] && noteProps[note].hasOwnProperty('correctness')) {
-					keyStyle = this.getCorrectnessColorStyle(noteProps[note].correctness);
+					noteStyle = this.getCorrectnessColorStyle(noteProps[note].correctness);
 					if (!noteProps[note].correctness) {
 						all_correct = false;
 					}
-					if(keyStyle !== false) {
-						this.staveNoteFactory.highlightNote(i, keyStyle, 3);
+					if(noteStyle !== false) {
+						this.staveNoteFactory.highlightNote(i, noteStyle, 3);
 					}
 				} else {
 					all_correct = false;
 				}
 
-				keyStyle = this.staveNoteFactory.getHighlightOf(i);
-				modifiers.push(this.staveNoteFactory.makeHighlightModifier(i, keyStyle));
+				noteStyle = this.staveNoteFactory.getHighlightOf(i);
+				modifiers.push(this.staveNoteFactory.makeHighlightModifier(i, noteStyle));
 			}
+
+			var style = {
+				fillStyle:this.noteColorMap.notplayed,
+				strokeStyle:this.noteColorMap.notplayed
+			};
 			if (all_correct) {
-				stemStyle = {
+				style = {
 					fillStyle: this.noteColorMap.correct,
 					strokeStyle: this.noteColorMap.correct
 				}
 			};
-			modifiers.push(this.staveNoteFactory.makeStemModifier(stemStyle));
+			modifiers.push(this.staveNoteFactory.setStemStyle(style));
+			modifiers.push(this.staveNoteFactory.setLedgerLineStyle(style));
 
 			return modifiers;
 		},

@@ -55,7 +55,7 @@ define([
 				'</li>',
 				'<li>',
 					'<label>',
-						'<input type="checkbox" name="highlight_solobass" value="solobass" accesskey="b"> Bass solo (B) / hide upper parts',
+						'<input type="checkbox" name="highlight_solobass" value="solobass" accesskey="z"> Bass solo (Z) / hide upper parts',
 						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.solobass)+'"></div>',
 					'</label>',						
 				'</li>',

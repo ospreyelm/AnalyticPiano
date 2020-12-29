@@ -340,10 +340,17 @@ define([
 				staveNote.setKeyStyle(keyIndex, keyStyle);
 			};
 		},
-		makeStemModifier: function(stemStyle) {
+		setStemStyle: function(style) {
 			return function(staveNote) {
 				if (typeof staveNote.setStemStyle === "function") {
-					staveNote.setStemStyle(stemStyle);
+					staveNote.setStemStyle(style);
+				}
+			};
+		},
+		setLedgerLineStyle: function(style) {
+			return function(staveNote) {
+				if (typeof staveNote.setLedgerLineStyle === "function") {
+					staveNote.setLedgerLineStyle(style);
 				}
 			};
 		},

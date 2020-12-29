@@ -100,7 +100,7 @@ define([
 			var allMidiKeys = this.chord.getNoteNumbers(); // for highlightConfig across stave boundaries
 			var clefMidiKeys = this.chord.getNoteNumbers(this.clef);
 			var modifiers = [];
-			var note, keyStyle;
+			var note, noteStyle;
 
 			this.staveNoteFactory.resetHighlight();
 
@@ -117,9 +117,9 @@ define([
 					this.staveNoteFactory.highlightNote(i, this.getBankedColorStyle(), 1);
 				}
 				if(this.highlightConfig.enabled) {
-					keyStyle = this.staveNoteFactory.getAnalysisHighlightOf(note, allMidiKeys);
-					if(keyStyle !== false) {
-						this.staveNoteFactory.highlightNote(i, keyStyle, 2);
+					noteStyle = this.staveNoteFactory.getAnalysisHighlightOf(note, allMidiKeys);
+					if(noteStyle !== false) {
+						this.staveNoteFactory.highlightNote(i, noteStyle, 2);
 					}
 				}
 				// NOT WORKING YET: adding isNovel property
@@ -132,8 +132,16 @@ define([
 					}
 				}
 
-				keyStyle = this.staveNoteFactory.getHighlightOf(i);
-				modifiers.push(this.staveNoteFactory.makeHighlightModifier(i, keyStyle));
+				noteStyle = this.staveNoteFactory.getHighlightOf(i);
+				modifiers.push(this.staveNoteFactory.makeHighlightModifier(i, noteStyle));
+			}
+
+			if (noteStyle.strokeStyle === 'rgba(0,0,0,0)') {
+				/* Hide ledger lines, stems from treble staff in bass solo mode
+				 * See Analyze.spellingAndAnalysisFunctions.get_color
+				 * which depends on this.Piano.highlightMode["solobass"] */
+				modifiers.push(this.staveNoteFactory.setStemStyle(noteStyle));
+				modifiers.push(this.staveNoteFactory.setLedgerLineStyle(noteStyle));
 			}
 
 			return modifiers;
