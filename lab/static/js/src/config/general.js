@@ -46,7 +46,8 @@ define({
 			thoroughbass: false,
 			roman_numerals: true,
 			chord_labels: true,
-			intervals: false
+			intervals: false,
+			pci: false
 		}
 	},
 

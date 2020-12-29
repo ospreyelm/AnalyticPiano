@@ -48,6 +48,9 @@ define([
 					'<label><input type="checkbox" name="analysis_intervals" value="intervals" accesskey="i"> Intervals</label>',
 				'</li>',
 				'<li>',
+					'<label><input type="checkbox" name="analysis_pci" value="pci"> Pitch-class intervals</label>',
+				'</li>',
+				'<li>',
 					'<label><input type="checkbox" name="analysis_chords" value="chord_labels" accesskey="a"> Chord labels (A)</label>',
 				'</li>',
 				'<li>',
@@ -214,11 +217,54 @@ define([
 					alert('ERROR');
 				}
 			},
+			/* FIX: consolidate next two functions */
 			analysis_intervals: function(e) {
-				var opt = e.target.value;
-				this.state.mode[opt] = e.target.checked;
-				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
+				let sel = e.target.value;
+				this.state.mode[sel] = e.target.checked;
+
+				var opts = ['intervals', 'pci']; // N.B.
+				if (!opts.includes(sel)) {
+					console.log("Error");
+					return null;
+				}
+
+				if (this.state.mode[sel] === true) {
+					this.trigger('changeOption', 'analyze', sel, true);
+					var i, len;
+					for (var i = 0, len = opts.length; i < len; i++) {
+						let opt = opts[i];
+						if (opt === sel) continue;
+						document.getElementsByName('analysis_' + opt)[0].checked = false;
+						this.trigger('changeOption', 'analyze', opt, false);
+					}
+				} else if (this.state.mode[sel] === false) {
+					this.trigger('changeOption', 'analyze', sel, false);
+				}
 			},
+			analysis_pci: function(e) {
+				let sel = e.target.value;
+				this.state.mode[sel] = e.target.checked;
+
+				var opts = ['intervals', 'pci']; // N.B.
+				if (!opts.includes(sel)) {
+					console.log("Error");
+					return null;
+				}
+
+				if (this.state.mode[sel] === true) {
+					this.trigger('changeOption', 'analyze', sel, true);
+					var i, len;
+					for (var i = 0, len = opts.length; i < len; i++) {
+						let opt = opts[i];
+						if (opt === sel) continue;
+						document.getElementsByName('analysis_' + opt)[0].checked = false;
+						this.trigger('changeOption', 'analyze', opt, false);
+					}
+				} else if (this.state.mode[sel] === false) {
+					this.trigger('changeOption', 'analyze', sel, false);
+				}
+			},
+			/* FIX: consolidate next three functions */
 			analysis_harmony: function(e) {
 				var opt = e.target.value;
 				this.state.mode[opt] = e.target.checked;

@@ -63,15 +63,17 @@ define([
 			score = score_map[CORRECT];
 
 			var supported = [
+				"chord_labels",
+				"fixed_do",
 				"intervals",
 				"note_names",
-				"fixed_do",
+				"pci",
 				"pitch_class",
 				"roman_numerals",
 				"scale_degrees",
 				"scientific_pitch",
 				"solfege",
-				"thoroughbass"
+				"thoroughbass",
 			];
 			if (["analytical", "analytical_pcs", "figured_bass", "figured_bass_pcs"].includes(definition.exercise.type)) {
 				var analysis_types = Object.keys(definition.exercise.analysis.mode)
@@ -101,8 +103,8 @@ define([
 						result = this.analysisPcsMatch(expected_notes, actual_notes, analysis_types);
 						break;
 					case "figured_bass":
-						// Assessments by abbreviated figure would be flawed in most cases,
-						// in the absence of pitch-class checks
+						/* Assessments by abbreviated figure likely flawed
+						 * in the absence of pitch-class checks */
 						abbrev_switch = false;
 						result = this.figuredBassMatch(expected_notes, actual_notes, abbrev_switch);
 						break;
@@ -186,28 +188,32 @@ define([
 		},
 		analysisBool: function(expected, delivered, analysis_types) {
 			var analyze_funcs = {
+				"abbrev_thoroughbass": "abbrev_thoroughbass_figure",
+				"chord_labels": "to_chord",
+				"fixed_do": "to_fixed_do",
+				"full_thoroughbass": "full_thoroughbass_figure_minus_octave",
 				"intervals": "to_interval",
 				"note_names": "to_note_name",
-				"fixed_do": "to_fixed_do",
+				"pci": "to_pci",
 				"pitch_class": "to_pitch_class",
 				"roman_numerals": "to_chord",
 				"scale_degrees": "to_scale_degree",
 				"scientific_pitch": "getNoteName",
 				"solfege": "to_solfege",
-				"full_thoroughbass": "full_thoroughbass_figure_minus_octave",
-				"abbrev_thoroughbass": "abbrev_thoroughbass_figure"
 			};
 			var analyze_props = {
+				"abbrev_thoroughbass": "", // ok
+				"chord_labels": ".label", // ok
+				"fixed_do": "", // ok
+				"full_thoroughbass": "", // ok
 				"intervals": ".name", // ok
 				"note_names": "", // ok
-				"fixed_do": "", // ok
+				"pci": "", // ok
 				"pitch_class": "",
 				"roman_numerals": ".label", // ok
 				"scale_degrees": "", // ok
 				"scientific_pitch": "", // ok
 				"solfege": "", // ok
-				"full_thoroughbass": "", // ok
-				"abbrev_thoroughbass": "" // ok
 			};
 			var i, len;
 			for (i = 0, len = analysis_types.length; i < len; i++) {

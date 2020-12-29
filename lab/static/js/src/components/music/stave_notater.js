@@ -683,6 +683,21 @@ define([
 
 			return chord_entry; /* for grading */
 		},
+		drawPci: function(x, y) {
+			var midi_nums = this.chord.getNoteNumbers();
+			var interval = this.getAnalyzer().to_pci(midi_nums);
+
+			var ctx = this.getContext();
+			var fontArgs = ctx.font.split(' ');
+			var newSize = '20px';
+			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
+
+			if (interval && interval !== '') {
+				ctx.fillText(interval, x + StaveNotater.prototype.annotateOffsetX + 3, y)
+			}
+
+			return interval; /* for grading */
+		},
 		/**
 		 * Draws the interval analysis.
 		 *
@@ -1071,8 +1086,13 @@ define([
 
 			if(num_notes >= 2 && mode.thoroughbass) {
 				this.drawThoroughbass(x, y);
-			} else if(num_notes == 2 && mode.intervals) {
-				this.drawInterval(x, y);
+			} else if(num_notes == 2) {
+				if (mode.intervals) {
+					this.drawInterval(x, y);
+				}
+				if (mode.pci) {
+					this.drawPci(x, y);
+				}
 			} else if(num_notes > 2) {
 				if (mode.roman_numerals) {
 					this.drawRoman(x, y);

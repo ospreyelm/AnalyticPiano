@@ -410,6 +410,10 @@ var spellingAndAnalysisFunctions = {
     to_scale_degree: function(notes) {
         return this.get_label(notes, "numeral");
     },
+    to_pci: function (notes) {
+        if (notes.length !== 2) return "";
+        return (Math.abs(notes[1] - notes[0]) % 12).toString();
+    },
     to_interval: function (notes) {
         var anon = {"name": ""}
         
