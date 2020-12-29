@@ -1,11 +1,118 @@
-import string, re
+import re
 
 from ckeditor.widgets import CKEditorWidget
 from django import forms
-from django.db.models import Q
 from prettyjson import PrettyJSONWidget
 
 from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
+
+
+class ExpansiveForm(forms.ModelForm):
+    EXPANSIVE_FIELD = None
+    EXPANSIVE_FIELD_MODEL = None
+    EXPANSIVE_FIELD_INITIAL = None
+
+    def clean(self):
+        super(ExpansiveForm, self).clean()
+        self.expand()
+
+    def expand(self):
+        assert self.EXPANSIVE_FIELD is not None
+        assert self.EXPANSIVE_FIELD_MODEL is not None
+        assert self.EXPANSIVE_FIELD_INITIAL is not None
+
+        expansive_field_data = self.cleaned_data.get(self.EXPANSIVE_FIELD, '').rstrip(',')
+        parsed_input = [n.upper().strip() for n in re.split('-*[,; ]+-*', expansive_field_data)]
+        id_ranges = list(filter(lambda x: '-' in x, parsed_input))
+        single_ids = list(filter(lambda x: '-' not in x, parsed_input))
+
+        object_ids = []
+        for item in single_ids:
+            if len(item) <= 6:
+                full_id = f'{self.EXPANSIVE_FIELD_MODEL.zero_padding[:-len(item)]}{item}'
+                object_ids.append(full_id)
+            else:
+                object_ids.append(item)
+
+        all_object_ids = list(self.EXPANSIVE_FIELD_MODEL.objects.values_list('id', flat=True))
+        for id_range in id_ranges:
+            for item in self._expand_range(id_range, all_object_ids):
+                object_ids.append(item)
+
+        for item in object_ids:
+            if item != '' and item not in all_object_ids:
+                self.add_error(
+                    field=self.EXPANSIVE_FIELD,
+                    error=f'{self.EXPANSIVE_FIELD_MODEL._meta.verbose_name} with ID {item} does not exist.'
+                )
+
+        self.cleaned_data.update({self.EXPANSIVE_FIELD: ','.join(object_ids)})
+
+    def _integer_from_id(self, ex_str):
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        digits = "0123456789"
+        reverse_str = ex_str[::-1]
+        integer = 0
+        base = 1
+        for i in range(len(reverse_str)):
+            char = reverse_str[i]
+            if char in letters:
+                integer += base * letters.index(char)
+                base *= 26
+            elif char in digits:
+                integer += base * digits.index(char)
+                base *= 10
+            else:
+                return None
+        return integer
+
+    def _id_from_integer(self, num):
+        # must accord with models.py (do not make format changes)
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        reverse_id = ""
+        bases = [26, 26, 10, 10, 26]
+        for base in bases:
+            if base == 26:
+                reverse_id += letters[num % base]
+            elif base == 10:
+                reverse_id += str(num % base)
+            num //= base
+        if num != 0 or len(reverse_id) != len(bases):
+            return None
+        reverse_id += self.EXPANSIVE_FIELD_INITIAL
+        return reverse_id[::-1]
+
+    def _expand_range(self, id_range, all_object_ids):
+        user_authored_objects = list(self.EXPANSIVE_FIELD_MODEL.objects.filter(
+            authored_by_id=self.context.get('user').id
+        ).values_list('id', flat=True).order_by('id'))
+
+        object_ids = []
+
+        split_input = re.split('-+', id_range)
+        if len(split_input) >= 2:
+            lower = self._integer_from_id(split_input[0])
+            upper = self._integer_from_id(split_input[-1])
+            if lower is None or upper is None:
+                return object_ids
+            if not lower < upper:
+                return object_ids
+            allowance = 100
+            for num in range(lower, upper + 1):
+                item = self._id_from_integer(num)
+                if item != '' and item not in all_object_ids:
+                    self.add_error(
+                        field=self.EXPANSIVE_FIELD,
+                        error=f'{self.EXPANSIVE_FIELD_MODEL._meta.verbose_name} with ID {item} does not exist.'
+                    )
+                if item is not None and item in user_authored_objects:
+                    # Self-authored exercises only
+                    object_ids.append(item)
+                    allowance += -1
+                if allowance == 0:
+                    break
+
+        return object_ids
 
 
 class ExerciseForm(forms.ModelForm):
@@ -51,12 +158,14 @@ class ExerciseForm(forms.ModelForm):
             self.fields['intro_text'].initial = self.instance.data.get('introText', None)
             self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
             self.fields['type'].initial = self.instance.data.get('type', self.TYPE_MATCHING)
-            self.fields['staff_distribution'].initial = self.instance.data.get('staffDistribution', self.DISTRIBUTION_KEYBOARD)
+            self.fields['staff_distribution'].initial = self.instance.data.get('staffDistribution',
+                                                                               self.DISTRIBUTION_KEYBOARD)
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
 
         if instance:
+            instance.data = {}
             instance.data['introText'] = self.cleaned_data['intro_text']
             instance.data['reviewText'] = self.cleaned_data['review_text']
             instance.data['type'] = self.cleaned_data['type']
@@ -75,12 +184,17 @@ class ExerciseForm(forms.ModelForm):
         }
 
 
-class PlaylistForm(forms.ModelForm):
+class PlaylistForm(ExpansiveForm):
+    EXPANSIVE_FIELD = 'exercises'
+    EXPANSIVE_FIELD_MODEL = Exercise
+    EXPANSIVE_FIELD_INITIAL = 'E'
+
     transposition_type = forms.ChoiceField(choices=Playlist.TRANSPOSE_TYPE_CHOICES,
                                            widget=forms.RadioSelect(), required=False)
 
     class Meta:
         model = Playlist
+        expansive_model = Exercise
         exclude = []
         widgets = {
             'exercises': forms.Textarea,
@@ -88,96 +202,18 @@ class PlaylistForm(forms.ModelForm):
             'authored_by': forms.TextInput(attrs={'readonly': 'readonly'}),
         }
 
-    def clean(self):
-        super(PlaylistForm, self).clean()
 
-        parsed_input = [n.upper().strip() for n in
-            re.split('-*[,; ]+-*',
-                self.cleaned_data.get('exercises', '')
-            )
-        ]
-        id_ranges = list(filter(lambda x: '-' in x, parsed_input))
-        single_ids = list(filter(lambda x: '-' not in x, parsed_input))
+class CourseForm(ExpansiveForm):
+    EXPANSIVE_FIELD = 'playlists'
+    EXPANSIVE_FIELD_MODEL = Playlist
+    EXPANSIVE_FIELD_INITIAL = 'P'
 
-        exercise_ids = []
-        for item in single_ids:
-            if len(item) <= 6:
-                full_id = f'{Exercise.zero_padding[:-len(item)]}{item}'
-                exercise_ids.append(full_id)
-
-        for id_range in id_ranges:
-            for item in self._expand_exercise_range(id_range):
-                exercise_ids.append(item)
-
-        all_exercises = list(Exercise.objects.values_list('id', flat=True))
-        for item in exercise_ids:
-            if item not in all_exercises:
-                # also remove from list?
-                self.add_error('exercises',
-                    f'Exercise with ID {item} does not exist.')
-
-        self.cleaned_data.update({'exercises': ','.join(exercise_ids)})
-
-    def _integer_from_id(self, ex_str):
-        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        digits = "0123456789"
-        reverse_str = ex_str[::-1]
-        integer = 0
-        base = 1
-        for i in range(len(reverse_str)):
-            char = reverse_str[i]
-            if char in letters:
-                integer += base * letters.index(char)
-                base *= 26
-            elif char in digits:
-                integer += base * digits.index(char)
-                base *= 10
-            else:
-                return None
-        return integer
-
-    def _id_from_integer(self, num):
-        # must accord with models.py (do not make format changes)
-        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        reverse_id = ""
-        bases = [26, 26, 10, 10, 26]
-        for base in bases:
-            if base == 26:
-                reverse_id += letters[num % base]
-            elif base == 10:
-                reverse_id += str(num % base)
-            num //= base
-        if num != 0 or len(reverse_id) != len(bases):
-            return None
-        reverse_id += "E"
-        return reverse_id[::-1]
-
-    def _expand_exercise_range(self, id_range):
-        user_authored_exercises = list(Exercise.objects.filter(
-            authored_by_id=self.context.get('user').id
-        ).values_list('id', flat=True).order_by('id'))
-
-        exercise_ids = []
-
-        split_input = re.split('-+', id_range)
-        if len(split_input) >= 2:
-            lower = self._integer_from_id(split_input[0])
-            upper = self._integer_from_id(split_input[-1])
-            if lower == None or upper == None:
-                return exercise_ids
-            if not lower < upper:
-                return exercise_ids
-            allowance = 100
-            for num in range(lower, upper + 1):
-                item = self._id_from_integer(num)
-                if item != None and item in user_authored_exercises:
-                    # Self-authored exercises only
-                    exercise_ids.append(item)
-                    allowance += -1
-                if allowance == 0:
-                    break
-
-        return exercise_ids
+    class Meta:
+        model = Course
+        exclude = []
+        widgets = {
+            'playlists': forms.Textarea,
+        }
 
 
 class PerformanceDataForm(forms.ModelForm):
@@ -188,34 +224,3 @@ class PerformanceDataForm(forms.ModelForm):
             'data': PrettyJSONWidget(),
             'playlist_performances': PrettyJSONWidget(),
         }
-
-
-
-class CourseForm(forms.ModelForm):
-    class Meta:
-        model = Course
-        exclude = []
-        widgets = {
-            'playlists': forms.Textarea,
-        }
-
-    def clean(self):
-        super(CourseForm, self).clean()
-
-        playlist_ids = [n.strip() for n in
-            re.split('-*[,; ]+-*',
-                self.cleaned_data.get('playlists', '')
-            )
-        ]
-        result = []
-        for item in playlist_ids:
-            qs = Playlist.objects.filter(
-                Q(id__iexact=item) | Q(name__iexact=item)
-            )
-            if not qs.exists():
-                self.add_error('playlists',
-                    f'Playlist {item} does not exist.')
-                continue
-            result.append(qs.first().name)
-
-        self.cleaned_data.update({'playlists': ','.join(result)})

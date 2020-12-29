@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.dashboard.views import dashboard_index_view
+from apps.dashboard.views.index import dashboard_index_view
 from apps.dashboard.views.courses import (
     courses_list_view,
     course_add_view,
