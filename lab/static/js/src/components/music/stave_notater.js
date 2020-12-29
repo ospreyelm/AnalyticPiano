@@ -597,8 +597,7 @@ define([
 			/* TO DO: add horizontal lines */
 
 			if (keyCategory === "h") { // no key
-				/* there should be no double-sharp or double-flat roots */
-				display = display.replace(/b/g,'♭').replace(/#/g,'♯');
+				display = display.replace(/bb/g,'𝄫').replace(/b/g,'♭').replace(/##/g,'𝄪').replace(/#/g,'♯');
 				y = 35;
 			}
 
