@@ -601,20 +601,21 @@ define([
 		setKeySignature: function(keySignature) {
 			this.keySignature = keySignature;
 		},
-		setFirstBarWidth: function(staffSig) {
+		setFirstBarWidth: function(staffSig, minimum = 0) {
 			const minimize_movement = false;
+			const length = Math.max(staffSig.length, minimum);
 
 			let firstBarWidth = 65;
 
 			if (minimize_movement) {
 				firstBarWidth += 40
-				if (staffSig.length > 4) {
+				if (length > 4) {
 					firstBarWidth += 25;
 				}
 			} else {
-				firstBarWidth += 9 * staffSig.length;
+				firstBarWidth += 9 * length;
 				if (staffSig[0] === "#") {
-					firstBarWidth += 1 * staffSig.length;
+					firstBarWidth += 1 * length;
 				}
 			}
 			this.firstBarWidth = firstBarWidth;

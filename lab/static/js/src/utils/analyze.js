@@ -185,6 +185,7 @@ var spellingAndAnalysisFunctions = {
             name = this.jEnharmonicAlterations(note, name, chord).toLowerCase();
         }
         if ( this.key_is_none() ) {
+            name = this.spelling[this.Piano.keyOfSignature][note % 12].toLowerCase();
             name = this.hEnharmonicAlterations(note, name, chord).toLowerCase();
         }
 
@@ -267,11 +268,16 @@ var spellingAndAnalysisFunctions = {
         chord = chord.sort(function(a,b){return a-b});
 
         var bass_pc = (12 + chord[0]) % 12;
+
+        let relativize = Config.get('general.flexNoKeySpelling');
+        let defaultSpelling = relativize ?
+            this.spelling[this.Piano.keyOfSignature][midi % 12].toLowerCase() :
+            this.noteNames[midi % 12];
         
         if (chord.length == 2) {
             var profile = chord[1] - chord[0]; /* register is irrelevant; profile is a semitone count here */
             if (!this.hIntervals[profile]) {
-                return this.noteNames[midi % 12]; /** return default spelling **/
+                return defaultSpelling;
             }
 
             /* how the bass is spelled according to the type of interval */
@@ -279,7 +285,9 @@ var spellingAndAnalysisFunctions = {
             var scale = this.hIntervals[profile]["spellbass"];
 
             if (scale === "___") {
-                return this.noteNames[midi % 12]; /** return default spelling **/
+                return defaultSpelling;
+            } else {
+                scale = this.hGetScale(scale);
             }
 
             var bass_name = this.spelling[scale][bass_pc].toLowerCase();
@@ -298,7 +306,7 @@ var spellingAndAnalysisFunctions = {
         if (chord.length >= 3) {
             var profile = this.intervals_above_bass(chord);
             if (!this.hChords[profile]) {
-                return this.noteNames[midi % 12]; /** return default spelling **/
+                return defaultSpelling;
             }
 
             /* how the bass is spelled according to the type of interval */
@@ -306,7 +314,9 @@ var spellingAndAnalysisFunctions = {
             var scale = this.hChords[profile]["spellbass"];
 
             if (scale === "___") {
-                return this.noteNames[midi % 12]; /** return default spelling **/
+                return defaultSpelling;
+            } else {
+                scale = this.hGetScale(scale);
             }
 
             var all_steps = this.hChords[profile]["stepwise"];
@@ -317,14 +327,14 @@ var spellingAndAnalysisFunctions = {
             }
             var idx = profile.indexOf(this.pitchClasses[semitones]);
             if (idx === -1) {
-                return this.noteNames[midi % 12]; /** return default spelling **/
+                return defaultSpelling;
             } else {
                 var steps = parseInt(all_steps[idx]); /* parseInt is critical */
                 return this.upper_note_name(chord[0], bass_name, semitones, steps);
             }
         }
 
-        return this.noteNames[midi % 12]; /** return default spelling **/
+        return defaultSpelling;
     },
 
     /* analytical labels */
@@ -332,10 +342,11 @@ var spellingAndAnalysisFunctions = {
         if ( notes.length < 1 ) return "";
         if ( !this.bare_octave_or_unison(notes) ) return "";
 
-        if (typeof notes == 'number') var midi = notes;
-        else var midi = notes[0];
-        if ( this.key_is_none() ) var scale = this.noteNames; /* per D minor */
-        else var scale = this.spelling[this.Piano.key];
+        var midi = (typeof notes == 'number') ?
+            notes : notes[0];
+
+        var scale = this.spelling[this.key_is_none() ?
+            this.hGetScale() : this.Piano.key];
 
         return scale[midi % 12].replace(/b/g,'♭').replace(/#/g,'♯');
     },
@@ -427,16 +438,35 @@ var spellingAndAnalysisFunctions = {
             return this.ijFindChord(notes);
         }
     },
+    hGetScale: function (scale=false) {
+        if (Config.get('general.flexNoKeySpelling') !== true) {
+            return scale ? scale : "iD_";
+        }
+        const keys_arr = Object.keys(KEY_MAP);
+        const idx = keys_arr.indexOf(this.Piano.keyOfSignature)
+            + keys_arr.indexOf(scale ? scale : "iD_")
+            - keys_arr.indexOf("jC_");
+        if (idx > 30) {
+            return keys_arr[30]
+        } else if (idx < 1) {
+            return keys_arr[1]
+        } else {
+            return keys_arr[idx]
+        }
+    },
     hFindChord: function (notes) {
         var profile = this.intervals_above_bass(notes);
         var chordEntry = _.cloneDeep(this.hChords[profile]);
         if (!chordEntry) return "";
 
-        if (chordEntry["spellbass"] === "___") {
+        let scale = chordEntry["spellbass"];
+        if (scale === "___") {
             return chordEntry;
+        } else {
+            scale = this.hGetScale(scale);
         }
 
-        var bassName = this.spelling[chordEntry["spellbass"]][notes[0] % 12];
+        var bassName = this.spelling[scale][notes[0] % 12];
 
         var rootName = "";
         if (chordEntry["root"] != "_") {

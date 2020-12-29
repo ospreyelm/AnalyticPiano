@@ -226,10 +226,10 @@ define([
 			stave.setNotater(stave_notater);
 			stave.setMaxWidth(this.getWidth());
 
-			// if (typeof this.keySignature.signatureSpec === 'string') {
-			// 	const staffSig = this.keySignature.signatureSpec;
-			// 	stave.setFirstBarWidth(staffSig);
-			// }
+			if (typeof this.keySignature.signatureSpec === 'string') {
+				const staffSig = this.keySignature.signatureSpec;
+				stave.setFirstBarWidth(staffSig, 4);
+			}
 			stave.updatePosition();
 
 			return stave;
@@ -266,6 +266,12 @@ define([
 			stave.updatePosition();
 			stave.setBanked(isBanked);
 			stave.setNovel(isNovel);
+
+			if (typeof this.keySignature.signatureSpec === 'string') {
+				const staffSig = this.keySignature.signatureSpec;
+				stave.setFirstBarWidth(staffSig, 4);
+			}
+			stave.updatePosition();
 
 			return stave;
 		},

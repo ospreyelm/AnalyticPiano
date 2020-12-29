@@ -223,7 +223,7 @@ define([
 		 * @return undefined
 		 */
 		setKeyOfSignature: function(key) {
-			this.keyOfSignature = key;
+			this.keyOfSignature = (key === "h") ? "jC_" : key;
 		},
 
 		//--------------------------------------------------

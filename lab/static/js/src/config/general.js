@@ -6,6 +6,7 @@ define({
 	defaultKeyboardSize: [25, 32, 37, 49, 61, 88][3], /* key count */
 	defaultOctaveAdjustment: 0,
 	maskTrebleStaff: false, /* copy this boolean as conditional on following line */
+	flexNoKeySpelling: true, /* boolean */
 	staffDistribution: ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"][false ? 2 : 0],
 	voiceCountForKeyboardStyle: [2, 3, 4],
 	voiceCountForChoraleStyle: [4],
