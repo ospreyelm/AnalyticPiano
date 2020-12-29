@@ -8,6 +8,11 @@
 
 @font-face {
     font-family: 'MainSerifs';
+    src: url('../fonts/Alegreya-Regular-Modified.woff') format('woff');
+}
+
+@font-face {
+    font-family: 'JazzSerifs';
     src: url('../fonts/Alegreya-Regular-Modified-v2.woff') format('woff');
 }
 

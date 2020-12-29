@@ -222,10 +222,7 @@ define([
 		 *
 		 * @return {string}
 		 */
-		getFiguredBassFont: function(size) {
-			if(!size) {
-				size = "32px";
-			}
+		getFiguredBassFont: function(size = "32px") {
 			return size + " Sebastian";
 		},
 		/**
@@ -517,7 +514,7 @@ define([
 
 				var fontArgs = ctx.font.split(' ');
 				var newSize = '20px'; /* size for chord symbols */
-				ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
+				ctx.font = newSize + ' JazzSerifs'; /* jazz-style chord labels */
 
 				var first_line_width = this.getContext().measureText(lines[0]).width + offset;
 				offset += 5 - Math.floor(first_line_width / 2.5);
