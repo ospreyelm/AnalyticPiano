@@ -165,7 +165,6 @@ class ExerciseForm(forms.ModelForm):
         instance = super(ExerciseForm, self).save(commit)
 
         if instance:
-            instance.data = {}
             instance.data['introText'] = self.cleaned_data['intro_text']
             instance.data['reviewText'] = self.cleaned_data['review_text']
             instance.data['type'] = self.cleaned_data['type']
