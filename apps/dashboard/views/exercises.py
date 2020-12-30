@@ -34,6 +34,9 @@ def exercise_add_view(request):
     }
 
     if request.method == 'POST':
+        clone_data = request.session.pop('clone_data', None)
+        if not clone_data:
+            return redirect('dashboard:exercises-list')
         form = DashboardExerciseForm(data=request.POST)
         form.context = {'user': request.user}
         if form.is_valid():
@@ -54,11 +57,8 @@ def exercise_add_view(request):
         if not request.session.get('clone_data'):
             return redirect('dashboard:exercises-list')
 
-        clone_data = request.session.get('clone_data') or {}
-        clone_data['id'] = ' '
-        clone_data['name'] = None
+        clone_data = request.session.get('clone_data')
         form = DashboardExerciseForm(initial=clone_data)
-        request.session['clone_data'] = None
 
     context['form'] = form
     return render(request, "dashboard/content.html", context)

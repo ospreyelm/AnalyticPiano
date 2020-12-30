@@ -78,8 +78,10 @@ define([
 		 * @public
 		 * @return {array}
 		 */
-		createStaveNotes: function() {
-			let vexflow_duration = this.getRhythmValue().toLowerCase();
+		createStaveNotes: function(duration = undefined) {
+			// console.log(duration, 'passed to createStaveNotes');
+			let vexflow_duration = duration ? duration
+				: this.getRhythmValue().toLowerCase();
 			let vexflow_dots = this.getRhythmValue().toUpperCase() == this.getRhythmValue() ? 1 : 0;
 			var stave_note_1 = this._makeStaveNote(this.getNoteKeys(), this.getNoteModifiers(), vexflow_duration, vexflow_dots);
 			return [stave_note_1];

@@ -6,7 +6,7 @@
         <form method="post" novalidate>
             {% csrf_token %}
             {% include 'dashboard/bs4_form.html' with form=form %}
-            <button type="submit" class="btn" style="">
+            <button type="submit" class="btn dashboard-btn" style="">
                 Add
             </button>
         </form>

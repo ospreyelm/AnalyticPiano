@@ -337,6 +337,7 @@ define([
 				}
 				voice = new Vex.Flow.Voice(time);
 				voice.addTickables(this.createStaveNotes());
+				// voice.addTickables(this.createStaveNotes("h")); // how to add multiple chords per measure
 			}
 			this.staveVoice = voice;
 		},
@@ -575,9 +576,9 @@ define([
 		 *
 		 * @return {array}
 		 */
-		createStaveNotes: function() {
+		createStaveNotes: function(duration = undefined) {
 			if(this.noteFactory) {
-				return this.noteFactory.createStaveNotes();
+				return this.noteFactory.createStaveNotes(duration);
 			}
 			return [];
 		},

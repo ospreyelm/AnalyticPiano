@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.forms import JSONField
 from prettyjson import PrettyJSONWidget
 
 from apps.accounts.models import KEYBOARD_CHOICES
@@ -37,10 +38,11 @@ class KeyboardForm(forms.Form):
 
 class DashboardExerciseForm(ExerciseForm):
     id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
+    data = JSONField(widget=forms.HiddenInput)
 
     class Meta:
         model = Exercise
-        exclude = ['data', 'authored_by']
+        exclude = ['authored_by']
         widgets = {
             'data': PrettyJSONWidget(attrs={'initial': 'parsed'}),
             'id': forms.TextInput(attrs={'readonly': 'readonly'}),
