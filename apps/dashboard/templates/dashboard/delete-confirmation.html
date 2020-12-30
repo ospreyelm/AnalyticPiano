@@ -21,10 +21,10 @@
             {% csrf_token %}
             {% include 'dashboard/bs4_form_v2.html' with form=form %}
             {{ form.media }}
-            <h4 class="header-add">Are you sure you want to delete the {{ verbose_name }}: {{ obj_name }}?</h4>
+            <h4 class="header-add">Are you sure you want to delete the {{ verbose_name }}, {{ obj_name }}?</h4>
             <div style="display: inline-block; width: 100%;">
-                <button type="submit" class="btn btn-primary">Confirm Delete</button>
-                <button type="reset" class="btn btn-secondary" onclick="location.href='{{ redirect_url }}'">
+                <button type="submit" class="btn dashboard-btn">Confirm Delete</button>
+                <button type="reset" class="btn dashboard-btn" onclick="location.href='{{ redirect_url }}'">
                     Cancel
                 </button>
             </div>
