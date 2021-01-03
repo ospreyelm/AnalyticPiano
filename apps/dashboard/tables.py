@@ -3,6 +3,7 @@ from django_tables2 import tables, A
 
 User = get_user_model()
 
+# Possible styling: attrs = {'class': 'table table-primary'}
 
 class SupervisorsTable(tables.Table):
     name = tables.columns.Column(
