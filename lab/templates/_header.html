@@ -10,6 +10,7 @@
         {% else %}
             <li><a href="{% url 'custom-login' %}">LOGIN</a></li>
             <li><a href="{% url 'registration' %}">REGISTER</a></li>
+            <li><a href="https://webmidi.info" target="_blank">WebMIDI support?</a></li>
         {% endif %}
         <!-- <li id="notificationAlerts" class="notificationAlerts"></li> -->
         <li><a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">New Play View</a></li>
@@ -20,10 +21,6 @@
         <li class="audio-controls"><button id="volume" style="min-width:37px;font-weight:bold">mf</button></li>
         <li class="audio-controls"><button id="audio-context" style="min-width:107px" onclick="getElementById('audio-context').innerHTML = 'Audio Enabled'">Enable Audio </button></li>
         <!-- <li><button id="all-notes-off" >All Notes Off</button></li> -->
-        {% if user.is_authenticated %}
-        {% else %}
-            <li style="float:right;padding:0px"><a href="https://webmidi.info" target="_blank">WebMIDI support?</a></li>
-        {% endif %}
     </ul>
     <ul class="header-second-row js-play-view-controls">
         {% block header_extra %}{% endblock %}
