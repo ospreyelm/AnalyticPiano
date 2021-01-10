@@ -51,7 +51,7 @@ define([
 					'<label><input type="checkbox" name="analysis_pci" value="pci"> Pitch-class intervals</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_chords" value="chord_labels"> Chord labels (A)</label>',
+					'<label><input type="checkbox" name="analysis_chords" value="chord_labels" accesskey="e"> Chord labels (E)</label>',
 				'</li>',
 				'<li>',
 					'<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony in Roman numerals</label>',

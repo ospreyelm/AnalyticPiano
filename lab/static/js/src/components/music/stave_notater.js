@@ -749,6 +749,7 @@ define([
 		drawKeyName: function(x, y) {
 			var key = this.keySignature.getKeyShortName();
 
+			var analysis = this.analyzeConfig.enabled;
 			var thoroughbass = this.analyzeConfig.mode.thoroughbass;
 			var note_names = this.analyzeConfig.mode.note_names;
 			var roman_numerals = this.analyzeConfig.mode.roman_numerals;
@@ -758,15 +759,15 @@ define([
 			var fontArgs = ctx.font.split(' ');
 
 			// if (key === '' && !thoroughbass && harmony) {
-			if (chord_labels) {
+			if (chord_labels && analysis) {
 				var newSize = '16px';
 				ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 				ctx.fillText('chords', x - 18, 35);
 			}
-			if (note_names) {
+			if (note_names && analysis) {
 				// ctx.fillText('notes', x - 18, 60);
 			}
-			if (roman_numerals && key !== '' && !thoroughbass) {
+			if (roman_numerals && key !== '' && !thoroughbass && analysis) {
 				var newSize = '20px';
 				ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
 				ctx.fillText(this.convertSymbols(key) + ':', x - 8, y);
