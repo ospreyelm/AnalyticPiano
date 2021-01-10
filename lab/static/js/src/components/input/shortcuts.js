@@ -203,6 +203,9 @@ define([
 		 * @return undefined
 		 */
 		rotateKeyFlatward: function(state) {
+			if (this.parentComponent.models.exerciseContext) {
+				return;
+			}
 			this.keySignature.rotateFlatward();
 		},
 		/**
@@ -211,6 +214,9 @@ define([
 		 * @return undefined
 		 */
 		rotateKeySharpward: function(state) {
+			if (this.parentComponent.models.exerciseContext) {
+				return;
+			}
 			this.keySignature.rotateSharpward();
 		},
 		/**
@@ -219,9 +225,15 @@ define([
 		 * @return undefined
 		 */
 		setKeyToNone: function(state) {
+			if (this.parentComponent.models.exerciseContext) {
+				return;
+			}
 			this.keySignature.changeKey('h', true);	
 		},
 		setKeyToC: function(state) {
+			if (this.parentComponent.models.exerciseContext) {
+				return;
+			}
 			this.keySignature.changeKey('jC_', true);	
 		},
 		/**

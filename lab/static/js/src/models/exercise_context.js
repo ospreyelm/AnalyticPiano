@@ -123,7 +123,8 @@ define([
         initListeners: function() {
             let testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
             if (true || testing) {
-                $('.js-play-view-controls').hide();
+                $('.js-play-view-controls').remove();
+                $('#mainmenu').remove();
             }
             this.inputChords.bind("change", this.triggerTimer);
             this.inputChords.bind("change", this.grade);

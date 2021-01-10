@@ -48,10 +48,10 @@ define({
 		"'":      {msg:"depressSustain"},
 		";":      {msg:"retakeSustain"},
 		"l":      {msg:"releaseSustain"},
-		"DOWN":   {msg:"rotateKeyFlatward"},
-		"UP":     {msg:"rotateKeySharpward"},
-		"RIGHT":  {msg:"setKeyToC"},
-		"LEFT":   {msg:"setKeyToNone"},  
+		"DOWN":   {msg:"rotateKeyFlatward"}, // not in exercises
+		"UP":     {msg:"rotateKeySharpward"}, // not in exercises
+		"RIGHT":  {msg:"setKeyToC"}, // not in exercises
+		"LEFT":   {msg:"setKeyToNone"}, // not in exercises
 		"BACKSL": {msg:"toggleMetronome"},
 		"ESC":    {msg:"toggleMode"},
 		"BACKSP": {msg:"clearNotes"},
