@@ -74,7 +74,8 @@ def playlist_pass_date(exercises_data, playlist_length):
             print(occasion)
             if not isinstance(occasion['err'], int) or occasion['err'] < 6:
                 error_free.append(occasion['date'])
-        ex_pass_dates.append(sorted(error_free)[0])
+        if len(error_free) > 0:
+            ex_pass_dates.append(sorted(error_free)[0])
 
     if len(ex_pass_dates) < playlist_length:
         return None
