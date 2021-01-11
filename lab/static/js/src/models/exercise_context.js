@@ -123,8 +123,9 @@ define([
         initListeners: function() {
             let testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
             if (true || testing) {
-                $('.js-play-view-controls').remove();
-                $('#mainmenu').remove();
+                // using .remove() in the following lines hampers the staff distribution (analysis too?)
+                $('.js-play-view-controls').hide();
+                $('#mainmenu').hide();
             }
             this.inputChords.bind("change", this.triggerTimer);
             this.inputChords.bind("change", this.grade);
