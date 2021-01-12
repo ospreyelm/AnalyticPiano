@@ -146,6 +146,10 @@ input[type=checkbox] {
     padding-top: 3px !important;
 }
 
+.page-item.active {
+    border-color: var(--primary-color) !important;
+    background-color: white !important;
+}
 
 .page-link {
     color: var(--primary-color) !important;
