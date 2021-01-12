@@ -95,6 +95,10 @@ body {
     background-color: #f7f7f7;
 }
 
+nav {
+    margin-top: 12px;
+}
+
 .dashboard-btn {
     color: var(--primary-color);
     background-color: white;
@@ -144,7 +148,7 @@ input[type=checkbox] {
 
 
 .page-link {
-    color: dodgerblue !important;
+    color: var(--primary-color) !important;
 }
 
 .active {
