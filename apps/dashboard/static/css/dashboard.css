@@ -151,7 +151,8 @@ body {
 }
 
 nav {
-    margin-top: 12px;
+    margin-top: 1rem;
+    padding-bottom: 1rem;
 }
 
 .dashboard-btn {
@@ -199,19 +200,26 @@ input[type=checkbox] {
     padding-left: 3px !important;
     padding-right: 3px !important;
     padding-top: 3px !important;
-}
-
-.page-item.active .page-link {
-    border-color: var(--primary-color) !important;
-    background-color: white !important;
+    border: 1px solid var(--background-color);
+    border-radius: 0.25rem;
+    margin-right: 0.25rem;
+    background-color: white;
 }
 
 .page-link {
     color: var(--primary-color) !important;
 }
 
-.active {
-    color: white !important;
+.page-item:hover .page-link {
+    color: var(--link-color) !important;
+}
+
+.page-item.active {
+    border-color: var(--primary-color);
+}
+
+.page-item:hover {
+    border-color: var(--link-color);
 }
 
 .column {
