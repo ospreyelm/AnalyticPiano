@@ -27,26 +27,27 @@ body {
     background-color: var(--primary-color);
     overflow-x: hidden;
     text-align: left;
+    color: white;
+    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
 }
 
 .sidenav-header {
-    color: white;
-    padding: 16px 8px 8px 8px;
     margin: 0px;
-    text-align: left;
+    padding: 16px 8px 8px 8px;
     font-size: 16px;
-    font-style: normal;
-    display: none;
+    display: block;
 }
 
 .sidenav-subhead, .sidenav a {
-    padding: 6px 8px 4px 8px;
-    text-decoration: none;
-    font-size: 14px;
-    color: var(--link-color);
-    display: block;
-    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
     margin-top: 6px;
+    padding: 6px 8px 4px 8px;
+    font-size: 14px;
+    text-decoration: none;
+    display: block;
+}
+
+.sidenav a {
+    color: var(--link-color);
 }
 
 .sidenav-subhead {
