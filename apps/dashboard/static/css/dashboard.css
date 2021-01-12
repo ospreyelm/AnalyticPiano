@@ -1,5 +1,4 @@
 :root {
-    /*--primary-color: #424141;*/
     --primary-color: #335271;
     --secondary-color: #00693e;
     --link-color: #ffa00f;
@@ -27,7 +26,16 @@ body {
     left: 0;
     background-color: var(--primary-color);
     overflow-x: hidden;
-    /*padding-top: 20px;*/
+    text-align: left;
+}
+
+.sidenav-header {
+    color: white;
+    padding: 16px 8px 8px 8px;
+    margin: 0px;
+    text-align: left;
+    font-size: 16px;
+    font-style: normal;
 }
 
 .sidenav-subhead, .sidenav a {
@@ -40,26 +48,6 @@ body {
     margin-top: 6px;
 }
 
-.sidenav-active {
-    border-left: 6px solid var(--link-color);
-    color: white !important;
-}
-
-.sidenav a:hover {
-    background-color: var(--link-color);
-    color: white;
-}
-
-.sidenav-header {
-    color: white;
-    /*background-color: #9d162e;*/
-    padding: 16px 8px 8px 8px;
-    margin: 0px;
-    text-align: left;
-    font-size: 16px;
-    font-style: normal;
-}
-
 .sidenav-subhead {
     color: white;
     margin: 30px 6px 0px 0px;
@@ -67,10 +55,71 @@ body {
     border-radius: 6px;
 }
 
+.sidenav a:hover {
+    background-color: var(--link-color);
+    color: white;
+}
+
+.sidenav-active {
+    border-left: 6px solid var(--link-color);
+    color: white !important;
+}
+
 .main {
     margin-left: 160px;
     padding: 0px 10px;
     font-size: 14px;
+    text-align: left;
+    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
+    line-height: 1.5;
+}
+
+.main p, .main form {
+    margin-bottom: 1rem;
+}
+
+.main :last-child {
+    margin-bottom: 0px;
+}
+
+.main .form-inline label {
+    width: 140px;
+    justify-content: flex-start !important;
+    padding-right: 10px;
+}
+
+.main .form-inline {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-flow: row wrap;
+    flex-flow: row wrap;
+    -ms-flex-align: center;
+    align-items: center;
+}
+
+.main .form-group {
+    margin-bottom: 1rem;
+}
+
+.main .form-control {
+    color: #495057;
+}
+
+.main input, .main textarea {
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.main input:focus, .main textarea:focus, .main select:focus {
+    outline: none;
+}
+
+.main input:read-only {
+    background-color: #e9ecef;
 }
 
 .pagination {
@@ -85,6 +134,10 @@ body {
     padding-top: 20px;
     padding-left: 0px;
     font-size: 1.15rem;
+    margin-bottom: .5rem;
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1.2;
 }
 
 .paleblue td a:link, .paleblue td a:visited {
@@ -105,15 +158,12 @@ nav {
     font-size: 15px;
     border: 2px solid var(--primary-color);
     border-radius: 5px;
+    padding: .375rem .75rem;
 }
 
 .dashboard-btn:hover {
     color: var(--link-color);
     border-color: var(--link-color);
-}
-
-.invalid-feedback {
-    /*width: auto;*/
 }
 
 .form-control.is-invalid {
@@ -122,12 +172,15 @@ nav {
 
 .invalid-feedback p {
     font-weight: bold;
+    font-size: 0.8rem;
     padding: 0px;
     margin: 0px;
+    margin-left: 10px;
 }
 
 #id_keyboard_size {
     background-color: white;
+    margin-left: 10px;
 }
 
 input[type=checkbox] {
@@ -200,18 +253,21 @@ ul li input{
     height: 20px !important;
 }
 
-form label{
-    width: 150px;
-    justify-content: flex-start !important;
-    padding-right: 10px;
+.radioselect li {
+    line-height: 1.5;
 }
 
-.radioselect > div{
-    align-items: baseline;
+.radioselect input[type="radio"] {
+    margin-top: -1px;
+    vertical-align: middle;
 }
 
-.radioselect ul label{
-    display: inline;
+.radioselect > div, .textarea > div {
+    align-items: baseline !important;
+}
+
+.radioselect ul label {
+    display: inline !important;
 }
 
 .btn {
