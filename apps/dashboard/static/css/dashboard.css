@@ -1,3 +1,23 @@
+:root {
+    /*--primary-color: #424141;*/
+    --primary-color: #335271;
+    --secondary-color: #00693e;
+    --link-color: #ffa00f;
+    --background-color: #e2e2e2;
+}
+
+body {
+    background-color: var(--background-color);
+}
+
+.dashboard-page {
+    padding-top: 20px
+}
+
+.dashboard-page p, form label {
+    color: var(--primary-color);
+}
+
 .sidenav {
     height: 100%;
     width: 140px;
@@ -5,38 +25,46 @@
     z-index: 1;
     top: 0;
     left: 0;
-    background-color: #111;
+    background-color: var(--primary-color);
     overflow-x: hidden;
     /*padding-top: 20px;*/
 }
 
-.sidenav a {
-    padding: 10px 8px 4px 8px;
+.sidenav-subhead, .sidenav a {
+    padding: 6px 8px 4px 8px;
     text-decoration: none;
     font-size: 14px;
-    color: #00a9a5;
+    color: var(--link-color);
     display: block;
     font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
+    margin-top: 6px;
 }
 
 .sidenav-active {
-    background-color: #335271;
-    color: #ffffff !important;
+    border-left: 6px solid var(--link-color);
+    color: white !important;
 }
 
 .sidenav a:hover {
-    background-color: #00a9a5;
+    background-color: var(--link-color);
     color: white;
 }
 
 .sidenav-header {
-    color: black;
-    background-color: #90c2e7;
-    padding: 16px 8px;
+    color: white;
+    /*background-color: #9d162e;*/
+    padding: 16px 8px 8px 8px;
     margin: 0px;
     text-align: left;
-    font-size: 17px;
+    font-size: 16px;
     font-style: normal;
+}
+
+.sidenav-subhead {
+    color: white;
+    margin: 30px 6px 0px 0px;
+    border: 2px solid #999;
+    border-radius: 6px;
 }
 
 .main {
@@ -53,18 +81,45 @@
 }
 
 .header-add {
-    color: white;
+    color:var(--primary-color);
     padding-top: 20px;
     padding-left: 0px;
     font-size: 1.15rem;
 }
 
+.paleblue td a:link, .paleblue td a:visited {
+    color: var(--link-color) !important;
+}
+
+.paleblue tr.odd td {
+    background-color: #f7f7f7;
+}
+
 .dashboard-btn {
-    color: white;
-    background-color: #00a9a5;
+    color: var(--primary-color);
+    background-color: white;
     font-size: 15px;
-    border: 2px solid white;
+    border: 2px solid var(--primary-color);
     border-radius: 5px;
+}
+
+.dashboard-btn:hover {
+    color: var(--link-color);
+    border-color: var(--link-color);
+}
+
+.invalid-feedback {
+    /*width: auto;*/
+}
+
+.form-control.is-invalid {
+    border-color: var(--link-color);
+}
+
+.invalid-feedback p {
+    font-weight: bold;
+    padding: 0px;
+    margin: 0px;
 }
 
 #id_keyboard_size {
@@ -76,11 +131,8 @@ input[type=checkbox] {
     height: 12px;
 }
 
-.text-muted {
-    color: white !important;
-}
-
 .help-text {
+    color: var(--primary-color);
     padding-left: 10px;
 }
 

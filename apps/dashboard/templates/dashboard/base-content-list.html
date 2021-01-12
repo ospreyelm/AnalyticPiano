@@ -5,12 +5,12 @@
 {% block content %}
     {% block add-button %}
     {% endblock %}
-    <div style="padding-top:20px">
+    <div class="dashboard-page">
 		{% if subscriber_name %}
-		    <p style="color:white">Activity report for {{ subscriber_name }}</p>
+		    <p>Activity report for {{ subscriber_name }}</p>
 		{% endif %}
 		{% if course_author %}
-            <p style="color:white">Courses authored by {{ course_author }}</p>
+            <p>Courses authored by {{ course_author }}</p>
         {% endif %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
     </div>

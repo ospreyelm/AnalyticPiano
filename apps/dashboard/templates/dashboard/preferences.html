@@ -3,7 +3,7 @@
 {% load django_tables2 %}
 {% load i18n %}
 {% block content %}
-    <div style="padding-top:20px">
+    <div class="dashboard-page">
         <form method="POST" class="post-form">
             {% csrf_token %}
             {{ form.as_p }}

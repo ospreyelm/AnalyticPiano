@@ -1,8 +1,8 @@
 {% extends 'dashboard/base-content-list.html' %}
 
 {% block content %}
-    <div style="padding-top:20px">
-        <p style="color:white">Subscribe to other users in order to access their content and let them review your progress on content that they created.<br>Your subscription will appear below once approved by the other user.</p>
+    <div class="dashboard-page">
+        <p>Subscribe to other users in order to access their content and let them review your progress on content that they created.<br>Your subscription will appear below once approved by the other user.</p>
         <form method="post" novalidate>
             {% csrf_token %}
             {% include 'dashboard/bs4_form.html' with form=form %}

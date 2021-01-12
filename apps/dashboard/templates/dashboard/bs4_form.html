@@ -21,7 +21,7 @@
                     {% render_field field|add_class:'form-control' class="form-control is-invalid" %}
                     {% for error in field.errors %}
                         <div class="invalid-feedback">
-                            <strong><span style="color: red">{{ error }}</span></strong>
+                            <p>{{ error }}</p>
                         </div>
                     {% endfor %}
                 {% else %}
