@@ -15,7 +15,7 @@
 
 {% block content %}
     {% block content-header %}
-        {% if form.instance.pk == None %}<h4 class="header-add">Add {{ verbose_name }}</h4>{% else %}<h4 class="header-add">Edit {{ verbose_name }}</h4>{% endif %}
+        {% if form.instance.pk == None %}<h4 class="dashboard-page-header">Add {{ verbose_name }}</h4>{% else %}<h4 class="dashboard-page-header">Edit {{ verbose_name }}</h4>{% endif %}
         {% if has_been_performed %}
             <div class="alert alert-danger" role="alert" style="top: 20px">
                 <strong>NOTE: </strong>{{ verbose_name_plural }} that have been performed cannot be edited.

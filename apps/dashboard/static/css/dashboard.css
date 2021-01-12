@@ -80,7 +80,7 @@ body {
     border-radius: 0.1rem;
 }
 
-.header-add {
+.dashboard-page-header {
     color:var(--primary-color);
     padding-top: 20px;
     padding-left: 0px;
