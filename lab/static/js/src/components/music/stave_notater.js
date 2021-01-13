@@ -820,7 +820,8 @@ define([
 					var fontArgs = ctx.font.split(' ');
 					var newSize = ( key == 'h' ? '20px' : '24px'); /* size for chord symbols and Roman numerals; old implementation */
 					ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
-					if ( key === "h" && str.length > 6 ) {
+					if ( false && key === "h" && str.length > 6 ) {
+						/* taken out of commission: causes problems with jazz style labels */
 						/* add line break to long applied-chord labels */
 						x += callback.call(that, text.replace(/\//g,'\n/'), x, y);
 					} else {
