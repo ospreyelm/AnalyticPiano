@@ -189,10 +189,14 @@ body, #mainmenu, #helpmenu {
 }
 .js-notation-opts-widget .menu-widgets {
     display: inline-block;
+    vertical-align: top;
     padding-right: 1rem;
 }
 .js-notation-opts-widget .menu-widgets:last-child {
     padding-right: 0px;
+}
+.menu-widgets fieldset.settings-notation {
+    margin-top: 0px;
 }
 .highlight-swatch {
     margin-left: 5px;
