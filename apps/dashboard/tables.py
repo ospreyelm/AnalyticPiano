@@ -127,7 +127,7 @@ class MyActivityDetailsTable(tables.Table):
         'lab:exercise-groups',
         kwargs={'group_name': A('playlist_name')},
         text='Revisit',
-        verbose_name='View',
+        verbose_name='Load',
         orderable=False
     )
     id = tables.columns.Column(
@@ -189,7 +189,7 @@ class ExercisesListTable(tables.Table):
     )
     view = tables.columns.LinkColumn('lab:exercise-view',
                                      kwargs={'exercise_id': A('id')},
-                                     text='View', verbose_name='View', orderable=False)
+                                     text='Load', verbose_name='Load', orderable=False)
 
     edit = tables.columns.LinkColumn('dashboard:edit-exercise',
                                      kwargs={'exercise_id': A('id')},
@@ -210,7 +210,7 @@ class ExercisesListTable(tables.Table):
     def render_edit(self, record):
         if not record.has_been_performed:
             return 'Edit'
-        return ''
+        return 'View'
 
     def render_delete(self, record):
         if not record.has_been_performed:
@@ -232,7 +232,7 @@ class PlaylistsListTable(tables.Table):
     id = tables.columns.Column()
     view = tables.columns.LinkColumn('lab:exercise-groups',
                                      kwargs={'group_name': A('name')},
-                                     text='View', verbose_name='View', orderable=False)
+                                     text='Load', verbose_name='Load', orderable=False)
 
     edit = tables.columns.LinkColumn('dashboard:edit-playlist',
                                      kwargs={'playlist_name': A('name')},
@@ -253,7 +253,7 @@ class PlaylistsListTable(tables.Table):
     def render_edit(self, record):
         if not record.has_been_performed:
             return 'Edit'
-        return ''
+        return 'View'
 
     def render_delete(self, record):
         if not record.has_been_performed:
@@ -275,7 +275,7 @@ class CoursesListTable(tables.Table):
     id = tables.columns.Column()
     view = tables.columns.LinkColumn('lab:course-view',
                                      kwargs={'course_slug': A('slug')},
-                                     text='View', verbose_name='View', orderable=False)
+                                     text='Load', verbose_name='Load', orderable=False)
 
     edit = tables.columns.LinkColumn('dashboard:edit-course',
                                      kwargs={'course_name': A('title')},
