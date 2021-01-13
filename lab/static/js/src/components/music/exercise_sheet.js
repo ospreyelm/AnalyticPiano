@@ -175,15 +175,6 @@ define([
                         '<% if (prompt_text !== "") { %>',
                             '<p><%= prompt_text %></p>',
                         '<% } %>',
-                        '<% if (typeof(next_set_skip) !== "undefined" && next_set_skip != "") { %>',
-                            '<a class="exercise-status-next-btn" href="<%= next_set_skip %>">SKIP TO NEXT SET</a>',
-                        '<% } %>',
-                        '<% if (typeof(next_set) !== "undefined" && next_set != "") { %>',
-                            '<a class="exercise-status-next-btn" href="<%= next_set %>">PROCEED TO NEXT SET</a> || ',
-                        '<% } %>',
-                        '<% if (false && typeof(current_set) !== "undefined" && current_set != "" && exercise_num != 1) { %>',
-                            '<a class="exercise-status-next-btn" href="<%= current_set %>">CLICK TO REPEAT PLAYLIST</a>',
-                        '<% } %>',
                     '</div>',
                 '</div>'
             ].join(''));
@@ -255,6 +246,9 @@ define([
                     }
                     break;
                 case exc.STATE.FINISHED:
+                    if(exc.definition.hasIntro()) {
+                        tpl_data.prompt_text = exc.definition.getIntro();
+                    }
                     if(exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                         tpl_data.min_tempo = exc.getMinTempo();

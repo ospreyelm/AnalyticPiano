@@ -148,7 +148,7 @@ class ExerciseForm(forms.ModelForm):
     )
 
     intro_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
-    review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
+    # review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False)
     staff_distribution = forms.ChoiceField(choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False)
 
@@ -156,17 +156,16 @@ class ExerciseForm(forms.ModelForm):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
         if self.instance and self.instance.pk:
             self.fields['intro_text'].initial = self.instance.data.get('introText', None)
-            self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
+            # self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
             self.fields['type'].initial = self.instance.data.get('type', self.TYPE_MATCHING)
-            self.fields['staff_distribution'].initial = self.instance.data.get('staffDistribution',
-                                                                               self.DISTRIBUTION_KEYBOARD)
+            self.fields['staff_distribution'].initial = self.instance.data.get('staffDistribution', self.DISTRIBUTION_KEYBOARD)
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
 
         if instance:
             instance.data['introText'] = self.cleaned_data['intro_text']
-            instance.data['reviewText'] = self.cleaned_data['review_text']
+            # instance.data['reviewText'] = self.cleaned_data['review_text']
             instance.data['type'] = self.cleaned_data['type']
             instance.data['staffDistribution'] = self.cleaned_data['staff_distribution']
             instance.authored_by = self.context.get('user')
