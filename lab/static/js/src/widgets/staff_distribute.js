@@ -23,7 +23,7 @@ define([
 	}
 
 	var StaffDistributionWidget = function(distribution=false) {
-		this.el = $('<div class="menu-widgets" style="display:inline-block;padding-right:1em"></div>');
+		this.el = $('<div class="menu-widgets"></div>');
 		this.state = (distribution && ["keyboard","chorale"].includes(distribution) ? distribution : STAFF_DISTRIBUTION);
 		// console.log('new widget', this.state);
 		this.init();

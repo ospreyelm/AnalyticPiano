@@ -16,7 +16,7 @@ define([
 
 	var AnalyzeWidget = function(settings) {
 		settings = settings || {};
-		this.el = $('<div class="menu-widgets" style="display:inline-block;padding-right:1em"></div>');
+		this.el = $('<div class="menu-widgets"></div>');
 		this.state = _.merge(_.cloneDeep(ANALYSIS_SETTINGS), settings);
 		this.init();
 	};

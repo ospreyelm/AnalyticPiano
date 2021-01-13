@@ -13,7 +13,7 @@ define([
 
 	var HighlightWidget = function(settings) {
 		settings = settings || {};
-		this.el = $('<div class="menu-widgets" style="display:inline-block;padding-right:1em"></div>');
+		this.el = $('<div class="menu-widgets"></div>');
 		this.state = _.merge(_.cloneDeep(HIGHLIGHT_SETTINGS), settings);
 		this.init();
 	};
@@ -26,37 +26,37 @@ define([
 				'<li>',
 					'<label>',
 						'<input type="checkbox" name="highlight_roots" value="roothighlight" accesskey="r"> Roots',
-						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.root)+'"></div>',
+						'<div class="highlight-swatch" style="background-color: '+util.toHSLString(HIGHLIGHT_COLORS.root)+'"></div>',
 					'</label>',						
 				'</li>',
 				'<li>',
 					'<label>',
 						'<input type="checkbox" name="highlight_tritones" value="tritonehighlight" accesskey="t"> Tritones',
-						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.tritone)+'"></div>',
+						'<div class="highlight-swatch" style="background-color: '+util.toHSLString(HIGHLIGHT_COLORS.tritone)+'"></div>',
 					'</label>',						
 				'</li>',
 				'<li>',
 					'<label>',
 						'<input type="checkbox" name="highlight_doublings" value="doublinghighlight" accesskey="w"> Doubling warnings (W)',
-						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.double)+'"></div>',
+						'<div class="highlight-swatch" style="background-color: '+util.toHSLString(HIGHLIGHT_COLORS.double)+'"></div>',
 					'</label>',						
 				'</li>',
 				'<li>',
 					'<label>',
 						'<input type="checkbox" name="highlight_modalmixture" value="modalmixturehighlight" accesskey="x"> Mixed from parallel minor (X)',
-						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.modalmixture)+'"></div>',
+						'<div class="highlight-swatch" style="background-color: '+util.toHSLString(HIGHLIGHT_COLORS.modalmixture)+'"></div>',
 					'</label>',						
 				'</li>',
 				'<li>',
 					'<label>',
 						'<input type="checkbox" name="highlight_lowered" value="loweredhighlight" accesskey="y"> Lowered pitches (Y)',
-						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.lowered)+'"></div>',
+						'<div class="highlight-swatch" style="background-color: '+util.toHSLString(HIGHLIGHT_COLORS.lowered)+'"></div>',
 					'</label>',						
 				'</li>',
 				'<li>',
 					'<label>',
 						'<input type="checkbox" name="highlight_solobass" value="solobass" accesskey="z"> Bass solo (Z) / hide upper parts',
-						'<div style="margin-left: 5px; width:12px;height:6px;display:inline-block; background-color: '+util.toHSLString(HIGHLIGHT_COLORS.solobass)+'"></div>',
+						'<div class="highlight-swatch" style="background-color: '+util.toHSLString(HIGHLIGHT_COLORS.solobass)+'"></div>',
 					'</label>',						
 				'</li>',
 				'</ul>',

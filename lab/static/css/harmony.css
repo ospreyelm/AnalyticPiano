@@ -32,7 +32,7 @@ html, body, h1, h2, h3, h4, div, p  {
     border-width: 0;
 }
 
-p {padding: .4em 0; }
+p {padding: .4rem 0; }
 button, input, optgroup, select, textarea { color: #000; }
 a,a:visited, .btn { color: inherit; text-decoration: none; }
 a:hover, .btn:hover { cursor: pointer; color: inherit; }
@@ -57,7 +57,7 @@ body, #mainmenu, #helpmenu {
     text-align: center;
 }
 #footer {
-    min-height: 1em;
+    min-height: 1rem;
 }
 #staff-area {
     /*width: 888px;*/
@@ -92,8 +92,8 @@ body, #mainmenu, #helpmenu {
     padding: 0;
 }
 #staff-status {
-    margin: 0em auto;
-    margin-bottom: 1em;
+    margin: 0rem auto;
+    margin-bottom: 1rem;
     min-height: 100px;
     /*height: 100%;
     overflow: hidden;
@@ -109,39 +109,39 @@ body, #mainmenu, #helpmenu {
 }
 #sheet-music-options, #piano-options, #display-settings {
     color: #fff;
-    font-size: 0.9em;
+    font-size: 0.9rem;
 }
 .mainmenu-section {
     margin-top: 0;
-    margin-bottom: 1em;
+    margin-bottom: 1rem;
 }
 .mainmenu-section:last-of-type {
     margin-top: 0;
-    margin-bottom: 0em;
+    margin-bottom: 0rem;
 }
 #mainmenu, #helpmenu {
     display: none;
     position: absolute;
-    right: 1em;
+    right: 1rem;
     z-index: 100;
-    margin: 1em auto;
+    margin: 1rem auto;
     text-align: left;
-    padding: 1em;
-    line-height: 1.2em;
+    padding: 1rem;
+    line-height: 1.2rem;
 }
 .mainmenu-links {
     list-style-type: none;
     padding: 0;
     margin: 0;
     color: #fff;
-    font-size: 0.9em;
+    font-size: 0.9rem;
 }
 
 /*--------------------------------------------------*/
 /* Header Styles */
 .header {
     margin: 0 auto;
-    margin-bottom: 1.5em;
+    margin-bottom: 1.5rem;
     font-size: 14px;
     font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
     background: transparent;
@@ -156,31 +156,29 @@ body, #mainmenu, #helpmenu {
     list-style-type: none;
 }
 .header ul.header-second-row {
-    padding-top: 1.2em;
+    padding-top: 1.2rem;
 }
 .header ul li {
     display: inline;
-    padding-right: 1.5em;
+    padding-right: 1.5rem;
 }
 .header .js-keysignature-widget {
-    padding-left: 0em;
-    padding-right: 2em;
+    padding-left: 0rem;
+    padding-right: 2rem;
 }
 .header .js-btn-menu {
-    padding-left: 2em;
-    padding-right: 0em;
-    font-size: 1em;
+    padding-left: 2rem;
+    padding-right: 0rem;
     float:right;
 }
 .header .js-btn-help, .tip {
-    padding-left: 2em;
-    padding-right: 0em;
-    font-size: 1em;
+    padding-left: 2rem;
+    padding-right: 0rem;
     float: right;
 }
 .header .audio-controls {
-    padding-left: 0.25em;
-    padding-right: 0em;
+    padding-left: 0.25rem;
+    padding-right: 0rem;
     float: right;
 }
 .header .audio-controls button {
@@ -188,6 +186,19 @@ body, #mainmenu, #helpmenu {
     background-color: #eee;
     border-radius: 3px;
     outline: none;
+}
+.js-notation-opts-widget .menu-widgets {
+    display: inline-block;
+    padding-right: 1rem;
+}
+.js-notation-opts-widget .menu-widgets:last-child {
+    padding-right: 0px;
+}
+.highlight-swatch {
+    margin-left: 5px;
+    width: 12px;
+    height: 6px;
+    display:inline-block;
 }
 
 /*--------------------------------------------------*/
@@ -238,11 +249,11 @@ fieldset.settings-notation {
 }
 .notification {
     position: relative;
-    margin-bottom: 1em;
+    margin-bottom: 1rem;
     border: 0px solid #fff;
     border-radius: 6px;
     background-color: white;
-    padding: 1em;
+    padding: 1rem;
     color: #000;
 }
 .notification .title b {
@@ -267,18 +278,18 @@ fieldset.settings-notation {
 }
 .notification .moredetails, .delete {
     float: right;
-    margin-left: 0.5em;
+    margin-left: 0.5rem;
 }
 .notification .details {
     display: block;
-    margin-top: 0.5em;
+    margin-top: 0.5rem;
 }*/
 
 /*--------------------------------------------------*/
 /* Exercise Status Styles */
 .exercise-status-area {
     margin: 0;
-    padding: 0.5em 0.75em;
+    padding: 0.5rem 0.75rem;
     color: #333;
     border: 1px solid black;
     border-radius: 6px;
@@ -294,13 +305,13 @@ fieldset.settings-notation {
     width: 11rem;
 }
 .exercise-status-col1 p {
-    line-height: 1.6em;
+    line-height: 1.6rem;
     margin: 0;
     padding: 0;
 }
 .exercise-status-col2 {
     width: 30rem;
-    margin-left: 1em;
+    margin-left: 1rem;
 }
 .exercise-status-state {
     padding: 4px 6px 2px 6px;
@@ -323,15 +334,15 @@ fieldset.settings-notation {
     margin: 5px 0;
 }
 .exerciseform .help {
-    font-size: .95em;
+    font-size: .95rem;
     color: #333;
     background-color: rgba(153, 153, 153, 0.38);
-    margin: .5em 0;
-    padding: .5em;
+    margin: .5rem 0;
+    padding: .5rem;
 }
 .exercise-collapse-all {
     border-bottom: 1px solid #666;
-    padding: .5em 0;
+    padding: .5rem 0;
 }
 ul.exercise-groups, ul.exercise-groups ul {
     list-style-type: none;
@@ -341,13 +352,13 @@ ul.exercise-groups, ul.exercise-groups ul {
 ul.exercise-groups {
 }
 ul.exercise-groups .btn {
-    padding: .5em;
+    padding: .5rem;
 }
 ul.exercise-groups > li {
     display: block;
 }
 ul.exercise-groups > li li {
-    padding-left: 2em;
+    padding-left: 2rem;
 }
 ul.exercise-groups .group {
     display: block;
@@ -370,13 +381,13 @@ ul.exercise-groups li.odd {
 }
 ul.menu-group-list {
     list-style: none;
-    padding: 0.5em;
+    padding: 0.5rem;
     border-radius: 6px;
-    margin: .5em 0;
+    margin: .5rem 0;
     max-height: 20rem;
     max-width: 20rem;
     overflow: auto;
-    line-height: 1em;
+    line-height: 1rem;
     background-color: rgb(10,80,80);
 }
 #mainmenu-exercise-area {
@@ -386,8 +397,8 @@ ul.menu-group-list a {
 }
 ul.menu-group-list li {
     display: inline-block;
-    margin: 0.2em;
-    padding: 0.2em 0.4em;
+    margin: 0.2rem;
+    padding: 0.2rem 0.4rem;
     background-color: rgba(0,0,0,0.5);
     border-radius: 3px;
 }
@@ -477,7 +488,7 @@ ul.menu-group-list li {
     background-size: 25px 25px;
 }
 .sig-lock-block {
-    line-height: 3em;
+    line-height: 3rem;
     margin-left: 50px;
 }
 .sig-lock-inline {
@@ -547,7 +558,7 @@ ul.menu-group-list li {
     width: 150px;
 }
 .metronome-control-input {
-    font-size: 0.7em;
+    font-size: 0.7rem;
     text-align: center;
     width: 2rem;
     height: 20px;
@@ -629,9 +640,9 @@ ul.menu-group-list li {
 }
 .widget-keysignature optgroup {
     margin: 0;
-    padding-top: 0.5em;
-    padding-left: 0.25em;
-    padding-right: 0.25em;
+    padding-top: 0.5rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
     border: 1px solid #555;
     border-bottom-width: 0px;
 }
@@ -641,8 +652,8 @@ ul.menu-group-list li {
 .widget-keysignature optgroup option {
     text-align: left;
     margin: 0;
-    padding-left: 0.5em;
-    padding-right: 0.25em;
+    padding-left: 0.5rem;
+    padding-right: 0.25rem;
 }
 .widget-keysignature-header {
     background-color: rgba(255,255,255,0.3);
