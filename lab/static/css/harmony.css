@@ -81,7 +81,7 @@ body, #mainmenu, #helpmenu {
     overflow-y: hidden;
 }
 #staff, #staff-status, .header {
-    width: 50em;
+    width: 50rem;
 }
 #staff {
     height: 350px;
@@ -142,7 +142,8 @@ body, #mainmenu, #helpmenu {
 .header {
     margin: 0 auto;
     margin-bottom: 1.5em;
-    font-size: 1em;
+    font-size: 14px;
+    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
     background: transparent;
     color: white;
     position: relative;
@@ -181,6 +182,12 @@ body, #mainmenu, #helpmenu {
     padding-left: 0.25em;
     padding-right: 0em;
     float: right;
+}
+.header .audio-controls button {
+    border: 1px solid #555;
+    background-color: #eee;
+    border-radius: 3px;
+    outline: none;
 }
 
 /*--------------------------------------------------*/
@@ -284,7 +291,7 @@ fieldset.settings-notation {
     margin: 0;
 }
 .exercise-status-col1 {
-    width: 11em;
+    width: 11rem;
 }
 .exercise-status-col1 p {
     line-height: 1.6em;
@@ -292,7 +299,7 @@ fieldset.settings-notation {
     padding: 0;
 }
 .exercise-status-col2 {
-    width: 30em;
+    width: 30rem;
     margin-left: 1em;
 }
 .exercise-status-state {
@@ -366,8 +373,8 @@ ul.menu-group-list {
     padding: 0.5em;
     border-radius: 6px;
     margin: .5em 0;
-    max-height: 20em;
-    max-width: 20em;
+    max-height: 20rem;
+    max-width: 20rem;
     overflow: auto;
     line-height: 1em;
     background-color: rgb(10,80,80);
@@ -542,7 +549,7 @@ ul.menu-group-list li {
 .metronome-control-input {
     font-size: 0.7em;
     text-align: center;
-    width: 2em;
+    width: 2rem;
     height: 20px;
     margin: 0px 10px 0px 10px;
     border: none;
@@ -577,26 +584,31 @@ ul.menu-group-list li {
 }
 .keyboard-pedals {
     margin: 0px auto;
-    width: 90px;
+    width: 102px;
 }
 .keyboard-pedals .pedal {
     float: left;
     display: block;
-    background-color: #b5a642;
-    border: 0px solid #fff;
+    background-color: #aaa;
+    border: 2px solid #aaa;
     width: 20px; 
     margin-top: 6px;/*compare keyboard-wrapper padding*/
     margin-right: 15px;
-    height: 30px;
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
+    height: 20px;
+    /*border-bottom-left-radius: 6px;*/
+    /*border-bottom-right-radius: 6px;*/
+    border-radius: 12px;
     cursor: pointer;
 }
 .keyboard-pedals .pedal:last-of-type {
     margin-right: 0px;
 }
+.keyboard-pedals .pedal:hover {
+    border-color: #ccc;
+}
 .keyboard-pedals .pedal-active {
-    background-color: #665e25;
+    background-color: #555;
+    border-color: #ccc;
 }
 
 /*--------------------------------------------------*/
@@ -636,6 +648,10 @@ ul.menu-group-list li {
     background-color: rgba(255,255,255,0.3);
     padding: 8px 6px;
     border-radius: 3px;
+}
+.widget-keysignature select, .widget-keysignature optgroup {
+    background-color: #eee;
+    outline: none;
 }
 .figuredbass {
     font-family: Sebastian;
