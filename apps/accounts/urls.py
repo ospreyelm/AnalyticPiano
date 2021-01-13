@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.accounts.views import LogoutView, register, login, forgot_password_view, send_keyboard_size
+from apps.accounts.views import LogoutView, register, login, forgot_password_view
 
 urlpatterns = [
     path('register/', register, name='registration'),

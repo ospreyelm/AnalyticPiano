@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.forms import JSONField
 from prettyjson import PrettyJSONWidget
 
-from apps.accounts.models import KEYBOARD_CHOICES
+from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE
 from apps.exercises.forms import ExerciseForm, PlaylistForm, CourseForm
 from apps.exercises.models import Exercise
 
@@ -29,7 +29,8 @@ class AddSubscriberForm(BaseSupervisionForm):
 
 
 class KeyboardForm(forms.Form):
-    keyboard_size = forms.ChoiceField(widget=forms.Select(), choices=KEYBOARD_CHOICES, initial=49)
+    keyboard_size = forms.ChoiceField(widget=forms.Select(), choices=KEYBOARD_CHOICES,
+                                      initial=DEFAULT_KEYBOARD_SIZE)
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)

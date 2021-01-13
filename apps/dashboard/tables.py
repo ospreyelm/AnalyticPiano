@@ -15,9 +15,36 @@ class SupervisorsTable(tables.Table):
         attrs={"td": {"width": "250px"}},
         verbose_name='Email Address of User'
     )
+    status = tables.columns.Column(empty_values=())
+
+    accept = tables.columns.LinkColumn('dashboard:accept-subscription', empty_values=(),
+                                       kwargs={
+                                           'subscriber_id': A('user.id'),
+                                           'supervisor_id': A('supervisor.id'),
+                                       },
+                                       verbose_name='Accept', orderable=False)
+    decline = tables.columns.LinkColumn('dashboard:decline-subscription', empty_values=(),
+                                        kwargs={
+                                            'subscriber_id': A('user.id'),
+                                            'supervisor_id': A('supervisor.id'),
+                                        },
+                                       verbose_name='Decline', orderable=False)
     remove = tables.columns.LinkColumn('dashboard:unsubscribe',
                                        kwargs={'supervisor_id': A('supervisor.id')},
                                        text='Remove', verbose_name='Remove', orderable=False)
+
+    def render_status(self, record):
+        return self.request.user._supervisors_dict[str(record['supervisor'].id)]
+
+    def render_accept(self, record):
+        if self.request.user._supervisors_dict.get(str(record['supervisor'].id)) == User.SUPERVISOR_STATUS_INVITATION_WAIT:
+            return 'Accept'
+        return ''
+
+    def render_decline(self, record):
+        if self.request.user._supervisors_dict.get(str(record['supervisor'].id)) == User.SUPERVISOR_STATUS_INVITATION_WAIT:
+            return 'Decline'
+        return ''
 
     class Meta:
         attrs = {'class': 'paleblue'}
@@ -35,9 +62,35 @@ class SubscribersTable(tables.Table):
                                            kwargs={'subscriber_id': A('subscriber.id')},
                                            attrs={"td": {"width": "250px"}},
                                            verbose_name='Email Address of User')
+    status = tables.columns.Column(empty_values=())
+    accept = tables.columns.LinkColumn('dashboard:accept-subscription', empty_values=(),
+                                       kwargs={
+                                           'subscriber_id': A('subscriber.id'),
+                                           'supervisor_id': A('user.id'),
+                                       },
+                                       verbose_name='Accept', orderable=False)
+    decline = tables.columns.LinkColumn('dashboard:decline-subscription', empty_values=(),
+                                        kwargs={
+                                            'subscriber_id': A('subscriber.id'),
+                                            'supervisor_id': A('user.id'),
+                                        },
+                                        verbose_name='Decline', orderable=False)
     remove = tables.columns.LinkColumn('dashboard:remove-subscriber',
                                        kwargs={'subscriber_id': A('subscriber.id')},
                                        text='Remove', verbose_name='Remove', orderable=False)
+
+    def render_status(self, record):
+        return record['subscriber']._supervisors_dict[str(self.request.user.id)]
+
+    def render_accept(self, record):
+        if record['subscriber']._supervisors_dict[str(self.request.user.id)] == User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT:
+            return 'Approve'
+        return ''
+
+    def render_decline(self, record):
+        if record['subscriber']._supervisors_dict[str(self.request.user.id)] == User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT:
+            return 'Decline'
+        return ''
 
     class Meta:
         attrs = {'class': 'paleblue'}
@@ -55,6 +108,10 @@ class MyActivityTable(tables.Table):
     id = tables.columns.Column(
         verbose_name='ID',
         accessor=('playlist.id'),
+    )
+    playlist_pass = tables.columns.BooleanColumn(
+        verbose_name='Pass',
+        orderable=False,
     )
     view = tables.columns.LinkColumn(
         'dashboard:subscriber-playlist-performance',
@@ -110,6 +167,9 @@ class MyActivityTable(tables.Table):
     #     }
     # )
 
+    def render_playlist_pass(self, record):
+        return record.playlist_passed
+
     class Meta:
         attrs = {'class': 'paleblue'}
         table_pagination = False
@@ -124,8 +184,8 @@ class MyActivityDetailsTable(tables.Table):
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     view = tables.columns.LinkColumn(
-        'lab:exercise-groups',
-        kwargs={'group_name': A('playlist_name')},
+        'lab:playlist-view',
+        kwargs={'playlist_name': A('playlist_name')},
         text='Revisit',
         verbose_name='Load',
         orderable=False
@@ -206,6 +266,7 @@ class ExercisesListTable(tables.Table):
         verbose_name='Modified',
         format='Y-m-d • h:m A',
     )
+    is_public = tables.columns.BooleanColumn()
 
     def render_edit(self, record):
         if not record.has_been_performed:
@@ -230,8 +291,8 @@ class PlaylistsListTable(tables.Table):
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     id = tables.columns.Column()
-    view = tables.columns.LinkColumn('lab:exercise-groups',
-                                     kwargs={'group_name': A('name')},
+    view = tables.columns.LinkColumn('lab:playlist-view',
+                                     kwargs={'playlist_name': A('name')},
                                      text='Load', verbose_name='Load', orderable=False)
 
     edit = tables.columns.LinkColumn('dashboard:edit-playlist',
@@ -249,6 +310,7 @@ class PlaylistsListTable(tables.Table):
         verbose_name='Modified',
         format='Y-m-d • h:m A',
     )
+    is_public = tables.columns.BooleanColumn()
 
     def render_edit(self, record):
         if not record.has_been_performed:
@@ -292,6 +354,7 @@ class CoursesListTable(tables.Table):
         verbose_name='Modified',
         format='Y-m-d • h:m A',
     )
+    is_public = tables.columns.BooleanColumn()
 
     class Meta:
         attrs = {'class': 'paleblue'}

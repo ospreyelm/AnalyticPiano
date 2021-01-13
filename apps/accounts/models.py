@@ -1,6 +1,6 @@
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.mail import send_mail
 from django.db import models
 from django.utils import timezone
@@ -9,8 +9,8 @@ from django.utils.translation import gettext_lazy as _
 from apps.accounts.managers import UserManager
 from apps.accounts.utils import generate_raw_password
 
-
 # Possible Keyboard Choices
+DEFAULT_KEYBOARD_SIZE = 49
 KEYBOARD_CHOICES = (
     (25, _("25")),
     (32, _("32")),
@@ -20,6 +20,20 @@ KEYBOARD_CHOICES = (
     (88, _("88"))
 )
 
+DEFAULT_VOLUME_CHOICE = "mf"
+VOLUME_CHOICES = (
+    ("pp", _("pp")),
+    ("p", _("p")),
+    ("mp", _("mp")),
+    ("mf", _("mf")),
+    ("f", _("f")),
+    ("ff", _("ff")),
+)
+
+def get_preferences_default():
+    return {'keyboard_size': DEFAULT_KEYBOARD_SIZE,
+            'volume': DEFAULT_VOLUME_CHOICE,
+            'mute': False}
 
 class User(AbstractBaseUser, PermissionsMixin):
     # FIXME RAW PASSWORD !!!!!!!!
@@ -30,13 +44,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_('Email'), unique=True)
 
     first_name = models.CharField(_('First Name'), max_length=32, unique=False, default="", blank=True)
-    last_name = models.CharField(_('Last Name'), max_length=32, unique = False, default="", blank=True)
+    last_name = models.CharField(_('Last Name'), max_length=32, unique=False, default="", blank=True)
 
-    keyboard_size = models.IntegerField(choices=KEYBOARD_CHOICES, default=49)
-
+    # FIXME remove this field after 0008 migration is applied
     _supervisors = ArrayField(base_field=models.IntegerField(), default=list,
                               verbose_name='Supervisors', blank=True)
-    
+
+    SUPERVISOR_STATUS_ACCEPTED = 'Accepted'
+    SUPERVISOR_STATUS_DECLINED = 'Declined'
+    SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = 'Awaiting Subscription Approval'
+    SUPERVISOR_STATUS_INVITATION_WAIT = 'Awaiting Invitation Approval'
+    _supervisors_dict = JSONField(default=dict, verbose_name='Supervisors', blank=True)
+
+    # FIXME remove this field after 0008 migration is applied
+    keyboard_size = models.IntegerField(choices=KEYBOARD_CHOICES, default=DEFAULT_KEYBOARD_SIZE)
+
+    preferences = JSONField(default=get_preferences_default, verbose_name='Preferences', blank=True)
+
     is_staff = models.BooleanField(
         _('Is Admin'),
         default=False,
@@ -84,9 +108,6 @@ class User(AbstractBaseUser, PermissionsMixin):
             message=f'Your password is: {self.raw_password}',
         )
 
-    def get_keyboard_size(self):
-        return self.keyboard_size
-
     # TODO remove this in the future
     @classmethod
     def get_guest_user(cls):
@@ -94,23 +115,38 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def supervisors(self):
-        return User.objects.filter(id__in=self._supervisors)
+        return User.objects.filter(id__in=self._supervisors_dict.keys())
 
     @property
     def subscribers(self):
-        return User.objects.filter(_supervisors__contains=[self.id])
+        return User.objects.filter(_supervisors_dict__has_key=str(self.id))
 
-    def subscribe_to(self, supervisor):
-        if supervisor.id in self._supervisors:
+    def subscribe_to(self, supervisor, status=SUPERVISOR_STATUS_SUBSCRIPTION_WAIT):
+        if supervisor.id in self._supervisors_dict:
             return
-        self._supervisors.append(supervisor.id)
+        self._supervisors_dict[str(supervisor.id)] = status
         self.save()
 
     def unsubscribe_from(self, supervisor):
-        if supervisor.id not in self._supervisors:
+        if supervisor.id in self._supervisors_dict:
             return
-        self._supervisors.remove(supervisor.id)
+        del self._supervisors_dict[str(supervisor.id)]
         self.save()
 
+    @staticmethod
+    def accept_subscription(supervisor, subscriber):
+        if str(supervisor.id) not in subscriber._supervisors_dict:
+            return
+        subscriber._supervisors_dict[str(supervisor.id)] = User.SUPERVISOR_STATUS_ACCEPTED
+        subscriber.save()
+
+    @staticmethod
+    def decline_subscription(supervisor, subscriber):
+        if str(supervisor.id) not in subscriber._supervisors_dict:
+            return
+        subscriber._supervisors_dict[str(supervisor.id)] = User.SUPERVISOR_STATUS_DECLINED
+        subscriber.save()
+
     def is_supervisor_to(self, subscriber):
-        return self.subscribers.filter(id=subscriber.id).exists() or subscriber.id == self.id
+        return self == subscriber or self.id in subscriber._supervisors_dict and subscriber._supervisors_dict[
+            self.id] == User.SUPERVISOR_STATUS_ACCEPTED

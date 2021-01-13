@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import models
-from django.db.models import When, Case
+from django.db.models import When, Case, Q
 from django.urls import reverse
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -21,7 +21,7 @@ from .decorators import role_required, course_authorization_required
 from .tables import CoursePageTable
 from .verification import has_instructor_role, has_course_authorization
 from lti_tool.models import LTIConsumer, LTICourse
-from apps.exercises.models import Exercise, Playlist, Course
+from apps.exercises.models import Exercise, Playlist, Course, PerformanceData
 
 import json
 import copy
@@ -115,8 +115,11 @@ class PlaylistView(RequirejsView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def get(self, request, group_name, exercise_num=1, *args, **kwargs):
-        playlist = get_object_or_404(Playlist, name=group_name)
+    def get(self, request, playlist_name, exercise_num=1, *args, **kwargs):
+        playlist = Playlist.objects.filter(Q(name=playlist_name) | Q(id=playlist_name)).first()
+        if playlist is None:
+            raise Http404("Playlist with this name or ID does not exist.")
+
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if exercise is None:
             raise Http404("This playlist has no exercises.")
@@ -139,11 +142,18 @@ class PlaylistView(RequirejsView):
         exercise_list = []
         for num, _ in enumerate(playlist.exercise_list, 1):
             exercise_list.append(
-                dict(id=f'{group_name}/{num}',
+                dict(id=f'{playlist_name}/{num}',
                      name=f'{num}',
                      url=playlist.get_exercise_url_by_num(num),
                      selected=exercise_num == num)
             )
+
+        exercise_is_performed = False
+        exercise_error_count = 0
+        playlist_performance = PerformanceData.objects.filter(playlist=playlist, user=request.user).last()
+        if playlist_performance:
+            exercise_is_performed = playlist_performance.exercise_is_performed(exercise.id)
+            exercise_error_count = playlist_performance.exercise_error_count(exercise.id)
 
         exercise_context.update(exercise.data)
         exercise_context.update({
@@ -157,6 +167,8 @@ class PlaylistView(RequirejsView):
             "exerciseList": exercise_list,
             "exerciseId": exercise.id,
             "exerciseNum": exercise_num,
+            "exerciseIsPerformed": exercise_is_performed,
+            "exerciseErrorCount": exercise_error_count,
             "playlistName": playlist.name
         })
         self.requirejs_context.set_app_module('app/components/app/exercise')
@@ -327,18 +339,18 @@ class APIGroupView(CsrfExemptMixin, View):
 class APIExerciseView(CsrfExemptMixin, View):
     def get(self, request):
         course_id = request.GET.get('course_id', None)
-        group_name = request.GET.get('group_name', None)
+        playlist_name = request.GET.get('playlist_name', None)
         exercise_name = request.GET.get('exercise_name', None)
 
         er = ExerciseRepository.create(course_id=course_id)
-        if exercise_name is not None and group_name is not None:
-            exercise = er.findExerciseByGroup(group_name, exercise_name)
+        if exercise_name is not None and playlist_name is not None:
+            exercise = er.findExerciseByGroup(playlist_name, exercise_name)
             if exercise is None:
                 raise Http404("Exercise does not exist.")
             exercise.load()
             data = exercise.asDict()
-        elif exercise_name is None and group_name is not None:
-            group = er.findGroup(group_name)
+        elif exercise_name is None and playlist_name is not None:
+            group = er.findGroup(playlist_name)
             if group is None:
                 raise Http404("Exercise group does not exist.")
             data = group.asDict()
@@ -363,15 +375,15 @@ class APIExerciseView(CsrfExemptMixin, View):
         role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url='lab:not_authorized', raise_exception=True))
     def delete(self, request):
         course_id = request.GET.get("course_id", None)
-        group_name = request.GET.get('group_name', None)
+        playlist_name = request.GET.get('playlist_name', None)
         exercise_name = request.GET.get('exercise_name', None)
 
         er = ExerciseRepository.create(course_id=course_id)
         deleted, description = (False, "No action taken")
-        if group_name is not None and exercise_name is not None:
-            deleted, description = er.deleteExercise(group_name, exercise_name)
-        elif group_name is not None:
-            deleted, description = er.deleteGroup(group_name)
+        if playlist_name is not None and exercise_name is not None:
+            deleted, description = er.deleteExercise(playlist_name, exercise_name)
+        elif playlist_name is not None:
+            deleted, description = er.deleteGroup(playlist_name)
 
         result = {}
         if deleted:
@@ -415,7 +427,7 @@ class AddExerciseView(View):
 
         user = request.user if request.user.is_authenticated else User.get_guest_user()
         exercise.authored_by = user
-        exercise.is_public = True
+        # exercise.is_public = True
         exercise.save()
 
         return JsonResponse(status=201, data={'id': exercise.id})

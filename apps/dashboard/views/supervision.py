@@ -9,7 +9,7 @@ from apps.dashboard.views.performance import User
 
 @login_required
 def supervisors_view(request):
-    supervisors_table = SupervisorsTable([{"supervisor": x} for x in request.user.supervisors])
+    supervisors_table = SupervisorsTable([{"supervisor": x, "user": request.user} for x in request.user.supervisors])
     RequestConfig(request).configure(supervisors_table)
 
     if request.method == 'POST':
@@ -19,7 +19,7 @@ def supervisors_view(request):
 
         if form.is_valid():
             supervisor = get_object_or_404(User, email=form.cleaned_data['email'])
-            request.user.subscribe_to(supervisor)
+            request.user.subscribe_to(supervisor, status=User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT)
             return redirect('dashboard:subscriptions')
         return render(request, "dashboard/subscriptions.html", {
             "form": form, "table": supervisors_table
@@ -35,7 +35,7 @@ def supervisors_view(request):
 
 @login_required
 def subscribers_view(request):
-    subscribers_table = SubscribersTable([{"subscriber": x} for x in request.user.subscribers])
+    subscribers_table = SubscribersTable([{"subscriber": x, "user": request.user} for x in request.user.subscribers])
     RequestConfig(request).configure(subscribers_table)
 
     if request.method == 'POST':
@@ -43,7 +43,7 @@ def subscribers_view(request):
         form.context = {'user': request.user}
         if form.is_valid():
             subscriber = get_object_or_404(User, email=form.cleaned_data['email'])
-            subscriber.subscribe_to(request.user)
+            subscriber.subscribe_to(request.user, status=User.SUPERVISOR_STATUS_INVITATION_WAIT)
             return redirect('dashboard:subscribers')
         return render(request, "dashboard/subscribers.html", {
             "form": form, "table": subscribers_table
@@ -68,3 +68,19 @@ def remove_subscriber_view(request, subscriber_id):
     subscriber = get_object_or_404(User, id=subscriber_id)
     subscriber.unsubscribe_from(request.user)
     return redirect('dashboard:subscribers')
+
+
+@login_required
+def accept_subscription_view(request, supervisor_id, subscriber_id):
+    subscriber = get_object_or_404(User, id=subscriber_id)
+    supervisor = get_object_or_404(User, id=supervisor_id)
+    supervisor.accept_subscription(supervisor, subscriber)
+    return redirect(request.META['HTTP_REFERER'])
+
+
+@login_required
+def decline_subscription_view(request, supervisor_id, subscriber_id):
+    subscriber = get_object_or_404(User, id=subscriber_id)
+    supervisor = get_object_or_404(User, id=supervisor_id)
+    supervisor.decline_subscription(supervisor, subscriber)
+    return redirect(request.META['HTTP_REFERER'])

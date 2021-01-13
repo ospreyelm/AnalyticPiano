@@ -1,14 +1,16 @@
 import json
-from django import forms
+
 from django.contrib.auth import authenticate, login as django_login, get_user_model
-from django.contrib.auth.views import LogoutView as DjangoLogoutView, LoginView as DjangoLoginView
-from django.core import serializers
-from django.http.response import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LogoutView as DjangoLogoutView
+from django.http.response import JsonResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from .forms import CustomAuthenticationForm, RegistrationForm, ForgotPasswordForm
-from .models import User
+from .models import get_preferences_default
 
 User = get_user_model()
 
@@ -34,12 +36,12 @@ def login(request):
         raw_password = request.session.get('raw_password')
         if raw_password:
             request.session.pop('raw_password')
-        
+
         password_sent = request.session.get('password_sent')
         if password_sent:
             request.session.pop('password_sent')
-            
-        return render(request, 'accounts/login.html', {'form': form, 
+
+        return render(request, 'accounts/login.html', {'form': form,
                                                        'raw_password': raw_password,
                                                        'password_sent': password_sent})
 
@@ -76,19 +78,33 @@ def forgot_password_view(request):
 # The following view function is used to send the keyboard size to the front-end
 # Can be extended to include other preferences as it sends a JSON
 
-def send_keyboard_size(request):
+def preferences_view(request):
     if request.is_ajax and request.method == "GET":
         cur_user = request.user
         if cur_user.is_anonymous:
-            data_set = {"keyboard_size": 49}
-            json_dump = json.dumps(data_set)
+            json_dump = json.dumps(get_preferences_default())
             return JsonResponse({"instance": json_dump}, status=200)
 
-        keyboard_size = cur_user.keyboard_size
-        print ("keyboard size is ", keyboard_size)
-        data_set = {"keyboard_size": keyboard_size}
-        json_dump = json.dumps(data_set)
-        return JsonResponse({"instance": json_dump}, status=200)
+        preferences = json.dumps(cur_user.preferences)
+        return JsonResponse({"instance": preferences}, status=200)
     else:
-         # some form errors occured.
+        # some form errors occurred.
         return JsonResponse({"error": "something went wrong"}, status=400)
+
+
+@login_required()
+@method_decorator(csrf_exempt)
+def set_preferred_mute_value(request):
+    if request.method == 'POST':
+        request.user.preferences['mute'] = json.loads(request.POST.get('mute'))
+        request.user.save()
+    return HttpResponse(json.dumps(request.user.preferences))
+
+
+@login_required()
+@method_decorator(csrf_exempt)
+def set_preferred_volume(request):
+    if request.method == 'POST':
+        request.user.preferences['volume'] = request.POST.get('volume')
+        request.user.save()
+    return HttpResponse(json.dumps(request.user.preferences))

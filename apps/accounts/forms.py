@@ -69,3 +69,11 @@ class ForgotPasswordForm(forms.Form):
                                             'To reset the password, please proceed from the admin panel.'})
 
         user.send_forgotten_password()
+
+
+class PreferredMuteValue(forms.Form):
+    mute = forms.BooleanField(initial=False)
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(PreferredMuteValue, self).__init__(*args, **kwargs)

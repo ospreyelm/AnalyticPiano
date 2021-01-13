@@ -71,6 +71,9 @@ class Exercise(ClonableModelMixin, models.Model):
     def __str__(self):
         return self.id
 
+    def get_next_authored_exercise(self):
+        return Exercise.objects.filter(authored_by=self.authored_by, created__gt=self.created).first()
+
     def validate_unique(self, exclude=None):
         if not self._id:
             return
@@ -138,7 +141,9 @@ class Exercise(ClonableModelMixin, models.Model):
 
     @cached_property
     def has_been_performed(self):
-        return PerformanceData.objects.filter(data__contains=[{'id': self.id}]).exists()
+        return PerformanceData.objects.filter(
+            data__contains=[{'id': self.id}]
+        ).exclude(user=self.authored_by).exists()
 
     @property
     def lab_url(self):
@@ -184,6 +189,8 @@ class Playlist(ClonableModelMixin, models.Model):
                                     related_name='playlists',
                                     on_delete=models.PROTECT,
                                     verbose_name='Author of Unit')
+
+    is_public = models.BooleanField('Is Public', default=False)
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
@@ -263,7 +270,7 @@ class Playlist(ClonableModelMixin, models.Model):
         try:
             return reverse(
                 'lab:exercises',
-                kwargs={"group_name": self.name,
+                kwargs={"playlist_name": self.name,
                         "exercise_num": num}
             )
         except NoReverseMatch:
@@ -322,7 +329,7 @@ class Playlist(ClonableModelMixin, models.Model):
 
     @cached_property
     def has_been_performed(self):
-        return PerformanceData.objects.filter(playlist=self).exists()
+        return PerformanceData.objects.filter(playlist=self).exclude(user=self.authored_by).exists()
 
 
 def get_default_data():
@@ -349,6 +356,7 @@ class Course(ClonableModelMixin, models.Model):
                                     related_name='courses',
                                     on_delete=models.PROTECT,
                                     verbose_name='Author')
+    is_public = models.BooleanField('Is Public', default=False)
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
@@ -454,3 +462,21 @@ class PerformanceData(models.Model):
             elif exercise['id'] == exercise_id:
                 continue
         return 'Not Passed'
+
+    @property
+    def playlist_passed(self):
+        from apps.dashboard.views.performance import playlist_pass_bool
+        return playlist_pass_bool(self.data, len(self.playlist.exercise_list))
+
+    def exercise_is_performed(self, exercise_id):
+        return any([exercise['id'] == exercise_id for exercise in self.data])
+
+    def exercise_error_count(self, exercise_id):
+        error_count = 0
+        for exercise in self.data:
+            if exercise['id'] == exercise_id and exercise['exercise_error_tally'] == 0:
+                error_count = 0
+                break
+            if exercise['id'] == exercise_id and exercise['exercise_error_tally'] not in [0, 'n/a']:
+                error_count = exercise['exercise_error_tally']
+        return error_count
