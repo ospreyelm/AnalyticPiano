@@ -105,7 +105,7 @@ class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
     def show_on_site(self, obj):
         if not obj.pk:
             return ''
-        link = reverse('lab:exercise-groups', kwargs={'group_name': obj.name})
+        link = reverse('lab:playlist-view', kwargs={'playlist_name': obj.name})
         link = "<a href='%s' target='_blank'>Show On Site</a><br>" % link
         return mark_safe(link)
 

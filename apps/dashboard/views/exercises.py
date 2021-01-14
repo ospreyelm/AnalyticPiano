@@ -96,6 +96,9 @@ def exercise_edit_view(request, exercise_id):
                                       kwargs={'exercise_id': exercise.id})
                 messages.add_message(request, messages.SUCCESS,
                                      f"{context['verbose_name']} has been saved successfully.")
+            elif 'save-and-edit-next' in request.POST:
+                success_url = reverse('dashboard:edit-exercise',
+                                      kwargs={'exercise_id': exercise.get_next_authored_exercise().id})
             else:
                 success_url = reverse('dashboard:exercises-list')
             return redirect(success_url)
@@ -107,7 +110,7 @@ def exercise_edit_view(request, exercise_id):
         form = DashboardExerciseForm(instance=exercise)
 
     context['form'] = form
-    return render(request, "dashboard/content.html", context)
+    return render(request, "dashboard/edit-exercise.html", context)
 
 
 @login_required

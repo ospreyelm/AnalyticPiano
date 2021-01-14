@@ -11,28 +11,35 @@
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}django_tables2/themes/paleblue/css/screen.css"/>
     <link rel="stylesheet" type="text/css" href="{% static 'css/dashboard.css' %}"/>
     {% block css_extra %}{% endblock %}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="{% static 'js/jquery-3.5.1.min.js' %}"></script>
 
 </head>
 <body>
 
 {% block sidebar %}
     <div class="sidenav">
-    {% with url_name=request.resolver_match.url_name %}
-        <p class="sidenav-header">ANALYTIC PIANO</p>
-        <p class="sidenav-subhead">PRACTICE</p>
-        <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
-        <a {% if url_name == 'subscriptions' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:subscriptions' %}">Subscriptions</a>
-        <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:preferences' %}">Preferences</a>
-        <p class="sidenav-subhead">TEACH</p>
-        <a {% if url_name == 'courses-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:courses-list' %}">Courses</a>
-        <a {% if url_name == 'playlists-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:playlists-list' %}">Playlists</a>
-        <a {% if url_name == 'exercises-list' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:exercises-list' %}">Exercises</a>
-        <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %} href="{% url 'dashboard:subscribers' %}">Subscribers</a>
-        <p></p>
-        <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play View</a>
+        {% with url_name=request.resolver_match.url_name %}
+            <p class="sidenav-header">ANALYTIC PIANO</p>
+            <p class="sidenav-subhead">PRACTICE</p>
+            <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
+            <a {% if url_name == 'subscriptions' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:subscriptions' %}">Subscriptions</a>
+            <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:preferences' %}">Preferences</a>
+            <p class="sidenav-subhead">TEACH</p>
+            <a {% if url_name == 'courses-list' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:courses-list' %}">Courses</a>
+            <a {% if url_name == 'playlists-list' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:playlists-list' %}">Playlists</a>
+            <a {% if url_name == 'exercises-list' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:exercises-list' %}">Exercises</a>
+            <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:subscribers' %}">Subscribers</a>
+            <p></p>
+            <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play View</a>
 
-    {% endwith %}
+        {% endwith %}
     </div>
 {% endblock %}
 

@@ -25,7 +25,9 @@ from apps.dashboard.views.supervision import (
     supervisors_view,
     subscribers_view,
     unsubscribe_view,
-    remove_subscriber_view
+    remove_subscriber_view,
+    accept_subscription_view,
+    decline_subscription_view
 )
 
 app_name = 'dashboard'
@@ -64,6 +66,10 @@ urlpatterns = [
     path('unsubscribe/<int:supervisor_id>/', unsubscribe_view, name="unsubscribe"),
 
     path('subscribers/', subscribers_view, name="subscribers"),
+    path('accept-subscriber/<int:supervisor_id>/<int:subscriber_id>/', accept_subscription_view,
+         name="accept-subscription"),
+    path('decline-subscriber/<int:supervisor_id>/<int:subscriber_id>/', decline_subscription_view,
+         name="decline-subscription"),
     path('remove-subscriber/<int:subscriber_id>/', remove_subscriber_view, name="remove-subscriber"),
 
     # Preferences

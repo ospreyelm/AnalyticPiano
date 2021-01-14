@@ -320,3 +320,5 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'analyticalpiano.test@gmail.com'
 EMAIL_HOST_PASSWORD = '8F6WLb3pekMEV4cB'
 EMAIL_USE_TLS = True
+
+APPEND_SLASH = True

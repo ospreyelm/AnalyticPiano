@@ -6,7 +6,7 @@ define([
     'app/components/component',
     'app/models/key_signature',
     './music/play_sheet'
-], function(
+], function (
     $,
     _,
     Config,
@@ -47,7 +47,7 @@ define([
      * @param {object} settings
      * @param {Sheet} settings.sheet Required property.
      */
-    var MusicComponent = function(settings) {
+    var MusicComponent = function (settings) {
         this.settings = settings || {};
         this.settings.analysisSettings = this.settings.analysisSettings || {};
         this.settings.highlightSettings = this.settings.highlightSettings || {};
@@ -66,7 +66,7 @@ define([
          * Configuration settings for analyzing notes on the sheet music.
          * @type {object}
          */
-        this.analyzeConfig = _.extend({tempo:false}, ANALYSIS_SETTINGS, this.settings.analysisSettings);
+        this.analyzeConfig = _.extend({tempo: false}, ANALYSIS_SETTINGS, this.settings.analysisSettings);
         /**
          * Configuration settings for staff distribution on the sheet music.
          * @type {object}
@@ -74,7 +74,7 @@ define([
         this.staffDistributionConfig = _.extend({}, STAFF_DISTRIBUTION, this.settings.sheet?.chords?.settings || {});
 
 
-        if(!("sheet" in this.settings)) {
+        if (!("sheet" in this.settings)) {
             throw new Error("missing settings.sheet parameter");
         }
 
@@ -101,7 +101,7 @@ define([
          *
          * @return undefined
          */
-        initComponent: function() {
+        initComponent: function () {
             this.initListeners();
         },
         /**
@@ -109,7 +109,7 @@ define([
          *
          * @return undefined
          */
-        initListeners: function() {
+        initListeners: function () {
             this.subscribe(EVENTS.BROADCAST.HIGHLIGHT_NOTES, this.onHighlightChange);
             this.subscribe(EVENTS.BROADCAST.ANALYZE_NOTES, this.onAnalyzeChange);
             this.subscribe(EVENTS.BROADCAST.DISTRIBUTE_NOTES, this.onStaffDistributionChange);
@@ -124,7 +124,7 @@ define([
          *
          * @return this
          */
-        render: function() {
+        render: function () {
             this.renderSheet();
             return this;
         },
@@ -133,9 +133,17 @@ define([
          *
          * @return this
          */
-        renderSheet: function() {
+        renderSheet: function () {
+
             var sheetComponent = this.getComponent('sheet');
+
+            if (sheetComponent.hasOwnProperty('exerciseContext')) {
+                console.log(sheetComponent.exerciseContext.settings.definition);
+
+            }
+
             sheetComponent.clear();
+
             if (sheetComponent.hasOwnProperty('exerciseContext')) {
                 var exercise_midi_nums = sheetComponent.exerciseContext.exerciseChords._items.map(item => Object.keys(item._notes));
                 sheetComponent.render(exercise_midi_nums);
@@ -144,9 +152,8 @@ define([
             }
             return this;
         },
-        renderPristine: function(exerciseAction = 'refresh') {
+        renderPristine: function (exerciseAction = 'refresh') {
             var sheetComponent = this.getComponent('sheet');
-
             if (!sheetComponent.hasOwnProperty('exerciseContext')) {
 
                 /* play view */
@@ -156,7 +163,6 @@ define([
 
                 /* exercise view */
                 let scex = sheetComponent.exerciseContext;
-
                 let setdef = scex.settings.definition;
 
                 // The following was used to generate newData as we built this function
@@ -164,7 +170,6 @@ define([
                 let newData = {};
 
                 // var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
-
                 if (exerciseAction === 'reload') {
 
                     $.ajax({
@@ -328,13 +333,13 @@ define([
 
             return this;
         },
-        renderNextExercise: function() {
+        renderNextExercise: function () {
             this.renderPristine('next');
         },
-        renderPreviousExercise: function() {
+        renderPreviousExercise: function () {
             this.renderPristine('previous');
         },
-        renderFirstExercise: function() {
+        renderFirstExercise: function () {
             this.renderPristine('first');
         },
         /**
@@ -342,7 +347,7 @@ define([
          *
          * @return {number}
          */
-        getWidth: function() {
+        getWidth: function () {
             return this.el.width();
         },
         /**
@@ -350,7 +355,7 @@ define([
          *
          * @return {number}
          */
-        getHeight: function() {
+        getHeight: function () {
             return this.el.height();
         },
         /**
@@ -359,7 +364,7 @@ define([
          * @param {object} settings
          * @return undefined
          */
-        onHighlightChange: function(settings) {
+        onHighlightChange: function (settings) {
             this.updateSettings('highlightConfig', settings);
             this.trigger('change');
         },
@@ -369,7 +374,7 @@ define([
          * @param {object} settings
          * @return undefined
          */
-        onAnalyzeChange: function(settings) {
+        onAnalyzeChange: function (settings) {
             this.updateSettings('analyzeConfig', settings);
             this.trigger('change');
         },
@@ -379,7 +384,7 @@ define([
          * @param {object} settings
          * @return undefined
          */
-        onStaffDistributionChange: function(value) {
+        onStaffDistributionChange: function (value) {
             this['staffDistributionConfig'].staffDistribution = value;
             this.settings.sheet.chords._items[0].settings.staffDistribution = value;
             var sheetComponent = this.getComponent('sheet');
@@ -391,24 +396,24 @@ define([
          * @param {object} settings
          * @return undefined
          */
-        onMetronomeChange: function(metronome) {
-            if(metronome.isPlaying()) {
+        onMetronomeChange: function (metronome) {
+            if (metronome.isPlaying()) {
                 this.analyzeConfig.tempo = metronome.getTempo();
             } else {
                 this.analyzeConfig.tempo = false;
             }
             this.render();
         },
-        onRedrawRequest: function() {
+        onRedrawRequest: function () {
             this.renderPristine();
         },
-        onNextExerciseRequest: function() {
+        onNextExerciseRequest: function () {
             this.renderNextExercise();
         },
-        onPreviousExerciseRequest: function() {
+        onPreviousExerciseRequest: function () {
             this.renderPreviousExercise();
         },
-        onFirstExerciseRequest: function() {
+        onFirstExerciseRequest: function () {
             this.renderFirstExercise();
         },
         /**
@@ -418,9 +423,9 @@ define([
          * @param {object} setting
          * @return this
          */
-        updateSettings: function(prop, setting) {
+        updateSettings: function (prop, setting) {
             var mode = _.cloneDeep(this[prop].mode);
-            switch(setting.key) {
+            switch (setting.key) {
                 case "enabled":
                     this[prop].enabled = setting.value;
                     break;

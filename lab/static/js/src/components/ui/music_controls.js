@@ -58,9 +58,8 @@ define([
 
 	$.ajax({
 		type: 'GET',
-		url: "keyboard-size/",
+		url: this.location.origin + "/ajax/preferences/",
 		async: false,
-		data: {'email': 'email'},
 		success: function (response) {
 			if(!response["valid"]){
 				/** if the call is successful response.instance will hold the json sent by the server 

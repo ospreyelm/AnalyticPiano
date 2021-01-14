@@ -14,8 +14,7 @@ admin.site.site_title = "Analytic Piano"
 admin.site.index_title = "Admin Main Menu"
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/lab'), name='index'),
-    path('lab/', include(lab.urls)),
+    path('', include(lab.urls)),
     path('accounts/', include('apps.accounts.urls'), name='accounts'),
     path('dashboard/', include('apps.dashboard.urls')),
     path('lti/', include(lti_tool.urls)),

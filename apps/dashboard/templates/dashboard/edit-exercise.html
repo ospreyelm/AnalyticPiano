@@ -1,0 +1,8 @@
+{% extends 'dashboard/content.html' %}
+{% block extra_buttons %}
+    {% with form.instance.get_next_authored_exercise as next %}
+        {% if not next == None %}
+            <button type="submit" class="btn dashboard-btn" name="save-and-edit-next">Save and edit next</button>
+        {% endif %}
+    {% endwith %}
+{% endblock %}

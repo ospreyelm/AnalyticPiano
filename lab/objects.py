@@ -503,12 +503,12 @@ class ExerciseFile:
         '''Returns the URL to the exercise.'''
         if self.group.course_id is None:
             return reverse('lab:exercises', kwargs={
-                "group_name": self.group.name, 
+                "playlist_name": self.group.name,
                 "exercise_name": self.name
             })
         return reverse('lab:course-exercises', kwargs={
                 "course_id": self.group.course_id,
-                "group_name": self.group.name, 
+                "playlist_name": self.group.name,
                 "exercise_name": self.name           
         })
     
@@ -542,7 +542,7 @@ class ExerciseFile:
             "id": self.getID(),
             "name": self.name,
             "url": self.url(),
-            "group_name": self.group.name,
+            "playlist_name": self.group.name,
             "selected": self.selected,
         })
         return d
@@ -572,14 +572,14 @@ class ExerciseFile:
     def create(**kwargs):
         '''Creates an exercise file.'''
         course_id = kwargs.get("course_id", None)
-        group_name = kwargs.get('group_name', None)
+        playlist_name = kwargs.get('playlist_name', None)
         file_name = kwargs.get('file_name', None)
         exercise_definition = kwargs.get("exercise_definition", None)
         
         er = ExerciseFileRepository(course_id=course_id)
-        group = er.findGroup(group_name)
+        group = er.findGroup(playlist_name)
         if group is None:
-            group_name = re.sub(r'[^a-zA-Z0-9._\-]', r'', group_name) # scrub group name
+            group_name = re.sub(r'[^a-zA-Z0-9._\-]', r'', playlist_name) # scrub group name
             group = ExerciseGroup(group_name, course_id=course_id)
 
         group_size = group.size()
@@ -620,8 +620,8 @@ class ExerciseGroup:
 
     def url(self):
         if self.course_id is None:
-            return reverse('lab:exercise-groups', kwargs={"group_name": self.name})
-        return reverse('lab:course-exercise-groups', kwargs={"group_name": self.name, "course_id": self.course_id})
+            return reverse('lab:playlist-view', kwargs={"playlist_name": self.name})
+        return reverse('lab:course-exercise-groups', kwargs={"playlist_name": self.name, "course_id": self.course_id})
 
     def first(self):
         if len(self.exercises) > 0:
