@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView as DjangoLogoutView
 from django.http.response import JsonResponse, HttpResponse
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
@@ -26,9 +26,8 @@ def login(request):
             email = form.cleaned_data.get('email')
             password = form.cleaned_data.get('password')
             user = authenticate(username=email, password=password)
-            goto = request.GET.get('next', '/lab/')
             django_login(request, user)
-            return redirect(goto)
+            return redirect(reverse('lab:index'))
         else:
             return render(request, 'accounts/login.html', {'form': form})
     else:
