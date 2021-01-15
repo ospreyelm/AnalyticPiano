@@ -18,7 +18,7 @@ def update_subscribers(apps, schema_editor):
     db_alias = schema_editor.connection.alias
     for user in User.objects.using(db_alias).all():
         for supervisor in user._supervisors:
-            user._supervisors_dict[supervisor.id] = 'Accepted'
+            user._supervisors_dict[supervisor] = 'Accepted'
             user.save()
 
 
