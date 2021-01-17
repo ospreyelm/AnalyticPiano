@@ -44,7 +44,7 @@ class Exercise(ClonableModelMixin, models.Model):
     data = RawJSONField('Data')
     rhythm = models.CharField('Rhythm', max_length=64,
                               blank=True, null=True)
-    is_public = models.BooleanField('Is Public', default=False)
+    is_public = models.BooleanField('Share', default=False)
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='exercises',
                                     on_delete=models.PROTECT,
@@ -190,7 +190,7 @@ class Playlist(ClonableModelMixin, models.Model):
                                     on_delete=models.PROTECT,
                                     verbose_name='Author of Unit')
 
-    is_public = models.BooleanField('Is Public', default=False)
+    is_public = models.BooleanField('Share', default=False)
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
@@ -356,7 +356,7 @@ class Course(ClonableModelMixin, models.Model):
                                     related_name='courses',
                                     on_delete=models.PROTECT,
                                     verbose_name='Author')
-    is_public = models.BooleanField('Is Public', default=False)
+    is_public = models.BooleanField('Share', default=False)
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)

@@ -317,6 +317,10 @@ fieldset.settings-notation {
     width: 30rem;
     margin-left: 1rem;
 }
+.exercise-status-col3 {
+    width: 6rem;
+    margin-left: 1rem;
+}
 .exercise-status-state {
     padding: 4px 6px 2px 6px;
     margin: 0;

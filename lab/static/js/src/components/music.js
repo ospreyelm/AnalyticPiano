@@ -138,8 +138,9 @@ define([
             var sheetComponent = this.getComponent('sheet');
 
             if (sheetComponent.hasOwnProperty('exerciseContext')) {
-                console.log(sheetComponent.exerciseContext.settings.definition);
-
+                // NOT WHAT WE NEED
+                // console.log('previously performed:', sheetComponent.exerciseContext.settings.definition.settings.definition.exerciseIsPerformed);
+                // console.log('most recent error count:', sheetComponent.exerciseContext.settings.definition.settings.definition.exerciseErrorCount);
             }
 
             sheetComponent.clear();

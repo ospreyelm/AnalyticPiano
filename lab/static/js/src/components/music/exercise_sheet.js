@@ -139,6 +139,7 @@ define([
          * @return this
          */
         renderExerciseText: function() {
+            // NOT EFFICIENT: ONLY exercise-status-col1 must be constantly re-rendered after exercise is loaded
             var exc = this.exerciseContext;
             var definition = exc.getDefinition();
             var $statusEl = $("#staff-status");
@@ -176,6 +177,11 @@ define([
                             '<%= prompt_text %>',
                         '<% } %>',
                     '</div>',
+                    // '<div class="exercise-status-col exercise-status-col3">',
+                    //     '<% if (is_performed && typeof(latest_err_count) == "integer" && latest_err_count == 0) { %>',
+                    //         '<p>PASSED on most recent attempt</p>',
+                    //     '<% } %>',
+                    // '</div>',
                 '</div>'
             ].join(''));
             var html = '';
@@ -206,15 +212,19 @@ define([
             if(AUTO_ADVANCE_ENABLED && SETTING_HIDE_NEXT) {
                 tpl_data.hide_next = true;
             }
+            tpl_data.is_performed = exc.settings.definition.settings.definition.exerciseIsPerformed;
+            tpl_data.latest_err_count = exc.settings.definition.settings.definition.exerciseErrorCount;
+            console.log('This should be the history for this exercise', tpl_data.is_performed, tpl_data.latest_err_count);
 
-            tpl_data.prompt_text = "";
+            // tpl_data.prompt_text = "";
+            tpl_data.prompt_text = exc.definition.getIntro();
             switch(exc.state) {
                 case exc.STATE.CORRECT:
-                    if(exc.definition.hasReview()) {
-                        tpl_data.prompt_text = exc.definition.getReview();
-                    }else if(exc.definition.hasIntro()) {
-                        tpl_data.prompt_text = exc.definition.getIntro();
-                    }
+                    // if (exc.definition.hasReview()) {
+                    //     tpl_data.prompt_text = exc.definition.getReview();
+                    // } else if (exc.definition.hasIntro()) {
+                    //     tpl_data.prompt_text = exc.definition.getIntro();
+                    // }
                     if(exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                         tpl_data.min_tempo = exc.getMinTempo();
@@ -246,9 +256,9 @@ define([
                     }
                     break;
                 case exc.STATE.FINISHED:
-                    if(exc.definition.hasIntro()) {
-                        tpl_data.prompt_text = exc.definition.getIntro();
-                    }
+                    // if (exc.definition.hasIntro()) {
+                    //     tpl_data.prompt_text = exc.definition.getIntro();
+                    // }
                     if(exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                         tpl_data.min_tempo = exc.getMinTempo();
@@ -263,9 +273,9 @@ define([
                     break;
                 case exc.STATE.READY:
                 default:
-                    if(exc.definition.hasIntro()) {
-                        tpl_data.prompt_text = exc.definition.getIntro();
-                    }
+                    // if (exc.definition.hasIntro()) {
+                    //     tpl_data.prompt_text = exc.definition.getIntro();
+                    // }
 
                     tpl_data.last_exercise_id = exc.definition.getExerciseList()[exc.definition.getExerciseList().length - 1].id;
 

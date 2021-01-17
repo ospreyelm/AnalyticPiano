@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django_tables2 import tables, A
+from django.db import models
 
 User = get_user_model()
 
@@ -113,6 +114,7 @@ class MyActivityTable(tables.Table):
         verbose_name='Pass',
         orderable=False,
     )
+    # pass_date
     view = tables.columns.LinkColumn(
         'dashboard:subscriber-playlist-performance',
         kwargs={
@@ -123,12 +125,6 @@ class MyActivityTable(tables.Table):
         verbose_name='View Progress',
         orderable=False
     )
-    # playlist_pass_bool = tables.columns.Column(
-    #     verbose_name='Playlist passed'
-    # )
-    # pass_date = tables.columns.Column(
-    #     verbose_name='Pass date'
-    # )
     created = tables.columns.DateColumn(
         verbose_name='Begun',
         format='Y-m-d • l',
@@ -143,29 +139,8 @@ class MyActivityTable(tables.Table):
             # "td": {"bgcolor": "white", "width": "auto"}
         }
     )
-
-    # user = tables.columns.LinkColumn(
-    #   'dashboard:subscriber-performances',
-    #   verbose_name='Performer Name',
-    #   kwargs={
-    #     'subscriber_id': A('user.id')
-    #   },
-    #   accessor=A('user.get_full_name'),
-    #   attrs={
-    #     "td": {"bgcolor": "white", "width": "auto"}
-    #   }
-    # )
-    # email = tables.columns.LinkColumn(
-    #     'dashboard:subscriber-performances',
-    #     verbose_name='Performer Email',
-    #     kwargs={
-    #         'subscriber_id': A('user.id')
-    #     },
-    #     accessor=A('user.email'),
-    #     attrs={
-    #         "td": {"bgcolor": "white", "width": "auto"}
-    #     }
-    # )
+    # user
+    # email
 
     def render_playlist_pass(self, record):
         return record.playlist_passed
@@ -204,9 +179,8 @@ class MyActivityDetailsTable(tables.Table):
         verbose_name='Playing time',
         orderable=False,
     )
-    playlist_pass_bool = tables.columns.Column(
+    playlist_pass_bool = tables.columns.BooleanColumn(
         verbose_name='Pass',
-        # is conditional formatting possible?
         orderable=False,
     )
     playlist_pass_date = tables.columns.Column(
