@@ -8,7 +8,7 @@
 
 
 {% block content %}
-  <form method="post">
+  <form method="post" id="register-div">
     {% csrf_token %}
     {% for field in form %}
       <p>

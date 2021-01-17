@@ -195,6 +195,7 @@ define([
 				"403": function() {
 					that.notify({
 						title: "Permission Denied",
+						/* This should not be true */
 						description: "<p>You must be logged in as an instructor or administrator to submit an exercise.</p>",
 						type: "error"
 					});					

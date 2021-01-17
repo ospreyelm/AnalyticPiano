@@ -31,7 +31,7 @@
             </div>
         </div>
     {% endif %}
-    <form method="post">
+    <form method="post" id="login-div">
         {% csrf_token %}
         {% for field in form %}
             <p>

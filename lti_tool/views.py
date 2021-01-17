@@ -53,8 +53,8 @@ class LTILaunchView(CsrfExemptMixin, LoginRequiredMixin, View):
         return redirect(reverse('lab:course-index', kwargs={"course_id": course_id}))
 
 class LTIToolConfigView(View):
-    TOOL_TITLE = 'Harmony Lab'
-    TOOL_DESCRIPTION = 'Harmony Lab is an application for music theory students and instructors.'
+    TOOL_TITLE = 'AnalyticPiano'
+    TOOL_DESCRIPTION = 'AnalyticPiano is an application for music students and instructors.'
     LAUNCH_URL = 'lti:launch'
     """
     Outputs LTI configuration XML for Canvas as specified in the IMS Global Common Cartridge Profile.

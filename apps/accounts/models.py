@@ -41,9 +41,11 @@ class User(AbstractBaseUser, PermissionsMixin):
                                     help_text="** Temporary field **.\n"
                                               "The user's password and this field are only the same for frontend users.")
 
+    # E-mail
     email = models.EmailField(_('Email'), unique=True)
-
+    # Given name
     first_name = models.CharField(_('First Name'), max_length=32, unique=False, default="", blank=True)
+    # Surname
     last_name = models.CharField(_('Last Name'), max_length=32, unique=False, default="", blank=True)
 
     # FIXME remove this field after 0008 migration is applied

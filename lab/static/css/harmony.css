@@ -22,8 +22,9 @@
 }
 
 html {
-    font-size: 100%;
-    font-family: 'Alegreya Sans',sans-serif;
+    font-size: 14px;
+    /*font-family: 'Alegreya Sans',sans-serif;*/
+    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
 }
 
 html, body, h1, h2, h3, h4, div, p  {
@@ -100,8 +101,14 @@ body, #mainmenu, #helpmenu {
     overflow-y:auto;*/
 }
 .content-area, button, input, optgroup, select, textarea {
-    background-color: rgb(238, 238, 221);
     color: black;
+    background-color: #eee;
+}
+.content-area {
+    background-color: rgb(238, 238, 221);
+}
+#login-div, #register-div {
+    margin-top: 20px;
 }
 #mainmenu, #helpmenu {
     border: 0px solid black;
@@ -183,7 +190,7 @@ body, #mainmenu, #helpmenu {
 }
 .header .audio-controls button {
     border: 1px solid #555;
-    background-color: #eee;
+    /*background-color: #eee;*/
     border-radius: 3px;
     outline: none;
 }
@@ -669,6 +676,10 @@ ul.menu-group-list li {
     border-radius: 3px;
 }
 .widget-keysignature select, .widget-keysignature optgroup {
+    background-color: #eee;
+    outline: none;
+}
+#login-div input, #register-div input {
     background-color: #eee;
     outline: none;
 }
