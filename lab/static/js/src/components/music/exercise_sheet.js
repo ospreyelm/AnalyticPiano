@@ -173,7 +173,7 @@ define([
                     '</div>',
                     '<div class="exercise-status-col exercise-status-col2">',
                         '<% if (prompt_text !== "") { %>',
-                            '<p><%= prompt_text %></p>',
+                            '<%= prompt_text %>',
                         '<% } %>',
                     '</div>',
                 '</div>'

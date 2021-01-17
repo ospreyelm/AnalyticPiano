@@ -432,7 +432,7 @@ define([
 				}
 
 				const user_input = prompt("Enter the Intro Text");
-				const intro_text =  (!user_input ? false :
+				const intro_text = "<p>" + (!user_input ? false :
 					user_input
 					.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
 					.replace(/^\"/g, '“')
@@ -446,7 +446,7 @@ define([
 					.replace(/\'(s)\b/g, '’$1')
 					.replace(/-{3}/g, '—')
 					.replace(/-{2}/g, '–')
-				);
+				) + "</p>";
 				// do not allow < > until these field is verified as good html
 
 				if (intro_text) {

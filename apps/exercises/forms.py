@@ -147,7 +147,7 @@ class ExerciseForm(forms.ModelForm):
         (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, DISTRIBUTION_KEYBOARD_LH_PREFERENCE)
     )
 
-    intro_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
+    intro_text = forms.CharField(widget=CKEditorWidget(config_name="limited"), required=False)
     # review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False)
     staff_distribution = forms.ChoiceField(choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False)

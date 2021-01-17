@@ -239,20 +239,25 @@ LTI_OAUTH_CREDENTIALS = {"harmonykey": "harmonysecret"}
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap4.html"
 
 CKEDITOR_UPLOAD_PATH = "uploads/"
+CKEDITOR_ALLOW_NONIMAGE_FILES = False
 CKEDITOR_CONFIGS = {
-    'safe': {
-        'toolbar': [["Format", "Bold", "Italic", "Underline", "Strike", "SpellChecker"],
-                    ['NumberedList', 'BulletedList', "Indent", "Outdent", 'JustifyLeft', 'JustifyCenter',
-                     'JustifyRight', 'JustifyBlock'],
-                    ["Link", "Unlink", "SectionLink"],
-                    ['Undo', 'Redo'],
-                    ["Maximize"], ["Source"]],
-        'height': 200,
+    'limited': {
+        'toolbar': [
+            # ["Format", "Maximize", "Underline", "SpellChecker", "JustifyRight", "JustifyBlock", "SectionLink"],
+            ["Bold", "Italic", "Strike", "Subscript", "Superscript", "RemoveFormat"],
+            ["JustifyLeft", "JustifyCenter"],
+            ["Link", "Unlink", "SpecialChar"],
+            ["NumberedList", "BulletedList", "Indent", "Outdent"],
+            ['Undo', 'Redo'],
+            ["Source"]
+        ],
+        'height': 100,
+        'width': 600
     },
-    'default': {
+    'full': {
         'skin': 'moono',
-        'height': 200,
         # 'skin': 'office2013',
+        'height': 200,
         'toolbar_Basic': [
             ['Source', '-', 'Bold', 'Italic']
         ],
@@ -263,7 +268,6 @@ CKEDITOR_CONFIGS = {
             {'name': 'forms',
              'items': ['Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton',
                        'HiddenField']},
-            '/',
             {'name': 'basicstyles',
              'items': ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat']},
             {'name': 'paragraph',
@@ -278,12 +282,11 @@ CKEDITOR_CONFIGS = {
             {'name': 'colors', 'items': ['TextColor', 'BGColor']},
             {'name': 'tools', 'items': ['Maximize', 'ShowBlocks']},
             {'name': 'about', 'items': ['About']},
-            '/',  # put this to force next toolbar on new line
+            # '/',  # put this to force next toolbar on new line
             {'name': 'yourcustomtools', 'items': [
                 # put the name of your editor.ui.addButton here
                 'Preview',
                 'Maximize',
-
             ]},
         ],
         'toolbar': 'YourCustomToolbarConfig',  # put selected toolbar config here
