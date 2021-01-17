@@ -464,12 +464,15 @@ define([
 
 				$.ajax({
 					type: "POST",
-					url: 'exercises/add',
+					url: window.location.origin + '/exercises/add/',
 					data: {'data': json_data},
 					dataType: 'json',
 					success: function (data) {
 						let exerciseID = data.id;
 						window.alert('Exercise uploaded! Exercise ID: ' + exerciseID);
+					},
+					error: function(error){
+						console.log(error)
 					}
 				});
 

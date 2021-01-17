@@ -28,7 +28,7 @@ urlpatterns = [
     path('ajax/set-volume/', set_preferred_volume, name='user-preferred-volume'),
 
     # FIXME should be added to a course: ^courses/(?P<course_id>\d+)/exercises/add/$?
-    re_path(r'^exercises/add$', AddExerciseView.as_view(), name='add-exercise'),
+    path('exercises/add/', AddExerciseView.as_view(), name='add-exercise'),
 
     # Performance
     re_path(r'exercise-performance$', submit_exercise_performance, name='exercise-performance'),

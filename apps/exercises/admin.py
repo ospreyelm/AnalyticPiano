@@ -26,7 +26,7 @@ class ExerciseAdmin(admin.ModelAdmin):
         }),
         ('Accompanying Text', {
             'fields': (
-                ('intro_text', 'review_text'),
+                ('intro_text'),
                 # 'data'
             )
         })
