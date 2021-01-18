@@ -355,13 +355,13 @@ define([
         } else { /* synth output */
             /* convert MIDI number to pitch name */
             const pitchNames = ['c', 'c#', 'd', 'eb', 'e', 'f', 'f#', 'g', 'g#', 'a', 'bb', 'b']
-            let noteName = pitchNames[(msg[1] + 12) % 12]
+            let toneJsNoteName = pitchNames[(msg[1] + 12) % 12]
                 + (Math.floor(msg[1] / 12) - 1).toString()
 
             if (msg[0] == 144) { /* note on, channel 1 */
-                polySynth.triggerAttack(noteName);
+                polySynth.triggerAttack(toneJsNoteName);
             } else if (msg[0] == 128) { /* note off, channel 1 */
-                polySynth.triggerRelease(noteName);
+                polySynth.triggerRelease(toneJsNoteName);
             }
         }
     };
