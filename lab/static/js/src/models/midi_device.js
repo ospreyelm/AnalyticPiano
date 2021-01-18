@@ -1,13 +1,11 @@
 define([
     'lodash',
     'microevent',
-    'Tone', /* Tone.js */
-    'teoria'
+    'Tone' /* Tone.js */
 ], function (
     _,
     MicroEvent,
-    Tone,
-    teoria
+    Tone
 ) {
 
     /**
@@ -315,16 +313,14 @@ define([
             }
         } else { /* synth output */
             /* convert MIDI number to pitch name */
-            var note = teoria.note.fromMIDI(msg[1]);
-
-            var accidental = note.accidental();
-
-            // console.log(polySynth);
+            const pitchNames = ['c', 'c#', 'd', 'eb', 'e', 'f', 'f#', 'g', 'g#', 'a', 'bb', 'b']
+            let noteName = pitchNames[(msg[1] + 12) % 12]
+                + (Math.floor(msg[1] / 12) - 1).toString()
 
             if (msg[0] == 144) { /* note on, channel 1 */
-                polySynth.triggerAttack(note.name() + accidental + note.octave());
+                polySynth.triggerAttack(noteName);
             } else if (msg[0] == 128) { /* note off, channel 1 */
-                polySynth.triggerRelease(note.name() + accidental + note.octave());
+                polySynth.triggerRelease(noteName);
             }
         }
     };
