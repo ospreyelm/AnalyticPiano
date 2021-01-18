@@ -3,7 +3,7 @@
     <ul>
         {% if user.is_authenticated %}
             <li>
-                {{ user.email }} • 
+                <span id="email">{{ user.email }}</span> • 
                 <a href="{% url 'custom-logout' %}">Log Out</a>
             </li>
             <li><a href={% url 'dashboard:performed-playlists'%}>Dashboard</a></li>

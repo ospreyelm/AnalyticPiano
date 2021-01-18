@@ -211,6 +211,16 @@ body, #mainmenu, #helpmenu {
     height: 6px;
     display:inline-block;
 }
+#email {
+    display: inline-block;
+    width: 8rem;
+    vertical-align: bottom;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 0px;
+    margin: 0px;
+}
 
 /*--------------------------------------------------*/
 /* Settings Styles */
