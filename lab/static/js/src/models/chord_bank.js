@@ -68,7 +68,7 @@ define([
 			 * @type {number}
 			 * @protected
 			 */
-			this._limit = CHORD_BANK_SIZE * 4; // limit number of chords in the bank
+			this._limit = 100; // arbitrary
 			if(typeof this.settings.limit === 'number' && this.settings.limit >= 0) {
 				this._limit = this.settings.limit;
 			}

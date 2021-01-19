@@ -29,7 +29,7 @@ define([
      * screen).
      * @type {number}
      */
-    var CHORD_BANK_SIZE = Config.get('general.chordBank.displaySize');
+    var CHORD_BANK_SIZE = Config.get('general.chordBank.displaySize') - 1;
 
     var DEFAULT_RHYTHM_VALUE = Config.get('general.defaultRhythmValue');
 
@@ -328,10 +328,10 @@ define([
             var offset = 0;
             var count = display_items.length;
             var position = {
-                index:index,
-                count:count,
-                offset:offset,
-                maxCount:CHORD_BANK_SIZE
+                index: index,
+                count: count,
+                offset: offset,
+                maxCount: CHORD_BANK_SIZE
             };
             var display_chord;
             var exercise_chord;

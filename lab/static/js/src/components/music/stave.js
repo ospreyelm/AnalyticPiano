@@ -651,7 +651,7 @@ define([
 
 				this.start_x = start_x;
 
-				let stretch = false;
+				const stretch = false;
 				if(this.isLastBar() && stretch) {
 					this.width = this.maxWidth - this.start_x - this.margin.right;
 				} else {
@@ -670,30 +670,31 @@ define([
 		 * @return undefined
 		 */
 		updatePositionWithRhythm: function(widthUnits, elapsedWidthUnits) {
-			var start_x, basic_width, width;
-
-			if(this.isFirstBar()) {
+			if (this.isFirstBar()) {
 				this.start_x = this.margin.left;
 				this.width = this.firstBarWidth;
 			} else {
-				start_x = (this.margin.left + this.firstBarWidth);
-				let avoid_gaps = true; // rounding errors
-				basic_width = avoid_gaps ? this.defaultBarWidth : Math.floor((this.maxWidth - start_x) / this.position.maxCount);
-				width = basic_width;
+				// const avoid_gaps = false; // rounding errors
+				var start_x = this.margin.left + this.firstBarWidth;
+				const last_bar_buffer = 15;
+				const flex_width = Math.floor((this.maxWidth - start_x - last_bar_buffer) / this.position.maxCount);
+
+				const basic_width = flex_width - (flex_width + 8) % 1;
+
+				var width = basic_width;
 				if (widthUnits != null && !isNaN(widthUnits)) {
-					width = Math.floor(basic_width * widthUnits);
+					width = basic_width * widthUnits;
 				}
 
-				// start_x += ((this.position.index - 1) * basic_width);
-				start_x += (basic_width * elapsedWidthUnits);
+				start_x += basic_width * elapsedWidthUnits;
 
 				this.start_x = start_x;
 
-				let stretch = false;
+				const stretch = false;
 				if (this.isLastBar() && stretch) {
 					this.width = this.maxWidth - this.start_x - this.margin.right;
 				} else if (this.isLastBar()) {
-					this.width = width + 15;
+					this.width = width + last_bar_buffer;
 				} else {
 					this.width = width;
 				}

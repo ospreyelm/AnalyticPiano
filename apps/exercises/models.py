@@ -44,7 +44,7 @@ class Exercise(ClonableModelMixin, models.Model):
     data = RawJSONField('Data')
     rhythm = models.CharField('Rhythm', max_length=64,
                               blank=True, null=True)
-    is_public = models.BooleanField('Share', default=False)
+    is_public = models.BooleanField('Share', default=True)
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='exercises',
                                     on_delete=models.PROTECT,
