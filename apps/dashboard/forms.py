@@ -29,8 +29,11 @@ class AddSubscriberForm(BaseSupervisionForm):
 
 
 class KeyboardForm(forms.Form):
-    keyboard_size = forms.ChoiceField(widget=forms.Select(), choices=KEYBOARD_CHOICES,
-                                      initial=DEFAULT_KEYBOARD_SIZE)
+    keyboard_size = forms.ChoiceField(
+        widget=forms.Select(),
+        choices=KEYBOARD_CHOICES,
+        initial=DEFAULT_KEYBOARD_SIZE
+    )
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)

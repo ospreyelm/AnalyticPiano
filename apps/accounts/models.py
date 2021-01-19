@@ -20,7 +20,7 @@ KEYBOARD_CHOICES = (
     (88, _("88"))
 )
 
-DEFAULT_VOLUME_CHOICE = "mf"
+DEFAULT_VOLUME = "mf"
 VOLUME_CHOICES = (
     ("pp", _("pp")),
     ("p", _("p")),
@@ -32,7 +32,7 @@ VOLUME_CHOICES = (
 
 def get_preferences_default():
     return {'keyboard_size': DEFAULT_KEYBOARD_SIZE,
-            'volume': DEFAULT_VOLUME_CHOICE,
+            'volume': DEFAULT_VOLUME,
             'mute': False}
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -107,12 +107,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     def send_forgotten_password(self):
         self.email_user(
             subject='Password Reminder',
-            message=f'Your password is: {self.raw_password}',
+            message=f'Your AnalyticPiano password is: {self.raw_password}',
         )
 
     # TODO remove this in the future
     @classmethod
     def get_guest_user(cls):
+        # 'guest@analyticpiano.herokuapp.com'
         return cls.objects.filter(email='guest@harmonylab.com').first()
 
     @property

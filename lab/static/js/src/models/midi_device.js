@@ -87,10 +87,54 @@ define([
     var vol = new Tone.Volume(-6).toMaster();
     polySynth.connect(vol);
 
+    /* load sticky settings */
+    var STICKY_VOLUME = null;
+    var STICKY_MUTE = null;
+    $.ajax({
+        type: 'GET',
+        url: this.location.origin + "/ajax/preferences/",
+        async: false,
+        success: function (response) {
+            if(!response["valid"]){
+                var sticky_settings = JSON.parse(response.instance);
+                STICKY_VOLUME = sticky_settings.volume;
+                STICKY_MUTE = sticky_settings.mute;
+                console.log(STICKY_VOLUME, STICKY_MUTE);
+            }
+        }
+    })
+
+    const volumeOpts = {
+        "ff": 0,
+        "f": -5,
+        "mf": -12,
+        "mp": -22,
+        "p": -35,
+        "pp": -50
+    };
+    const volumeOptsKeys = Object.keys(volumeOpts);
+    const muteToggleText = ["Mute", "Unmute"];
+    // use icons in static/img
+
     /* defaults per _header.html */
-    polySynth.volume.value = -12;
+    polySynth.volume.value = volumeOpts["mf"];
     vol.mute = false;
 
+    /* apply sticky settings */
+    if (STICKY_VOLUME != null && volumeOptsKeys.indexOf(STICKY_VOLUME) != -1) {
+        polySynth.volume.value = volumeOpts[STICKY_VOLUME];
+        let volumeDiv = document.getElementById("volume");
+        volumeDiv.innerHTML = STICKY_VOLUME;
+    }
+    if (typeof(STICKY_MUTE) == 'boolean') {
+        vol.mute = STICKY_MUTE;
+        let mute = document.getElementById("Mute");
+        if (STICKY_MUTE) {
+            mute.innerHTML = muteToggleText[1];
+        } else {
+            mute.innerHTML = muteToggleText[0];
+        }
+    }
 
     /* All Notes Off button */
     // if ($("all-notes-off")){
@@ -99,12 +143,11 @@ define([
     // 	});
     // }
 
-
     /* Mute button */
     if ($("#Mute").length > 0) {
         $("#Mute").click(function () {
             let mute = document.getElementById("Mute");
-            if (mute.innerHTML == "Mute") {
+            if (mute.innerHTML == muteToggleText[0]) {
 
                 /* all notes off */
                 polySynth.releaseAll();
@@ -120,8 +163,8 @@ define([
                     }
                 });
                 vol.mute = true;
-                mute.innerHTML = "Unmute";
-            } else if (mute.innerHTML == "Unmute") {
+                mute.innerHTML = muteToggleText[1];
+            } else if (mute.innerHTML == muteToggleText[1]) {
                 $.ajax({
                     type: "POST",
                     url: "/ajax/set-mute/",
@@ -133,20 +176,10 @@ define([
                     }
                 });
                 vol.mute = false;
-                mute.innerHTML = "Mute";
+                mute.innerHTML = muteToggleText[0];
             }
         });
     }
-
-    const volumeOpts = {
-        "ff": 0,
-        "f": -5,
-        "mf": -12,
-        "mp": -22,
-        "p": -35,
-        "pp": -50
-    };
-    const volumeOptsKeys = Object.keys(volumeOpts);
 
     /* Volume control */
     if ($("#volume").length > 0) {
@@ -154,14 +187,12 @@ define([
             let volumeDiv = document.getElementById("volume");
             volumeDiv.innerHTML = volumeOptsKeys[(1 + volumeOptsKeys.indexOf(volumeDiv.innerHTML)) % volumeOptsKeys.length];
 
-
             $.ajax({
                 type: "POST",
                 url: "/ajax/set-volume/",
                 dataType: 'json',
                 data: {'volume': volumeDiv.innerHTML},
                 success: function (data) {
-                    alert(data);
                 },
                 error: function (error) {
                 }
