@@ -468,6 +468,11 @@ class PerformanceData(models.Model):
         from apps.dashboard.views.performance import playlist_pass_bool
         return playlist_pass_bool(self.data, len(self.playlist.exercise_list))
 
+    @property
+    def playlist_pass_date(self):
+        from apps.dashboard.views.performance import playlist_pass_date
+        return playlist_pass_date(self.data, len(self.playlist.exercise_list))
+
     def exercise_is_performed(self, exercise_id):
         return any([exercise['id'] == exercise_id for exercise in self.data])
 

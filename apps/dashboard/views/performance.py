@@ -85,7 +85,7 @@ def playlist_pass_date(exercises_data, playlist_length):
         local_timezone = timezone('US/Eastern')
         last_date = sorted(ex_pass_dates)[-1] + "+00:00"
         date_obj = datetime.strptime(last_date, "%Y-%m-%d %H:%M:%S%z")
-        localized = datetime.strftime(date_obj.astimezone(local_timezone), "%Y_%m_%d").lower() # %-I.%M%p
+        localized = datetime.strftime(date_obj.astimezone(local_timezone), "%Y_%m_%d • %a") # (%-I.%M%p).lower()
         return localized
 
 

@@ -101,7 +101,7 @@ class SubscribersTable(tables.Table):
 
 class MyActivityTable(tables.Table):
     playlist = tables.columns.Column(
-        verbose_name='Name of Playlist',
+        verbose_name='Playlist name',
         # text=lambda record: record.playlist.name,
         accessor=('playlist.name'),
         # attrs={"td": {"bgcolor": "white", "width": "auto"}}
@@ -110,11 +110,14 @@ class MyActivityTable(tables.Table):
         verbose_name='ID',
         accessor=('playlist.id'),
     )
-    playlist_pass = tables.columns.BooleanColumn(
-        verbose_name='Pass',
+    playlist_passed = tables.columns.BooleanColumn(
+        verbose_name='Passed',
         orderable=False,
     )
-    # pass_date
+    playlist_pass_date = tables.columns.Column(
+        verbose_name='Pass Date',
+        orderable=False,
+    )
     view = tables.columns.LinkColumn(
         'dashboard:subscriber-playlist-performance',
         kwargs={
@@ -126,15 +129,15 @@ class MyActivityTable(tables.Table):
         orderable=False
     )
     created = tables.columns.DateColumn(
-        verbose_name='Begun',
-        format='Y-m-d • l',
+        verbose_name='First attempt',
+        format='Y_m_d • D',
         attrs={
             # "td": {"bgcolor": "white", "width": "auto"}
         }
     )
     updated = tables.columns.DateColumn(
-        verbose_name='Latest activity',
-        format='Y-m-d • l',
+        verbose_name='Latest attempt',
+        format='Y_m_d • D',
         attrs={
             # "td": {"bgcolor": "white", "width": "auto"}
         }
@@ -142,8 +145,11 @@ class MyActivityTable(tables.Table):
     # user
     # email
 
-    def render_playlist_pass(self, record):
+    def render_playlist_passed(self, record):
         return record.playlist_passed
+
+    def render_playlist_pass_date(self, record):
+        return record.playlist_pass_date
 
     class Meta:
         attrs = {'class': 'paleblue'}
@@ -154,7 +160,7 @@ class MyActivityTable(tables.Table):
 
 class MyActivityDetailsTable(tables.Table):
     playlist_name = tables.columns.Column(
-        verbose_name='Name of Playlist',
+        verbose_name='Playlist name',
         orderable=False,
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
@@ -180,11 +186,11 @@ class MyActivityDetailsTable(tables.Table):
         orderable=False,
     )
     playlist_pass_bool = tables.columns.BooleanColumn(
-        verbose_name='Pass',
+        verbose_name='Passed',
         orderable=False,
     )
     playlist_pass_date = tables.columns.Column(
-        verbose_name='Date all exercises passed',
+        verbose_name='Pass date',
         orderable=False,
     )
 
