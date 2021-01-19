@@ -120,7 +120,7 @@ class PlaylistView(RequirejsView):
         if playlist is None:
             raise Http404("Playlist with this name or ID does not exist.")
 
-        if not request.user.is_subscribed_to(playlist.authored_by):
+        if not playlist.is_public and not request.user.is_subscribed_to(playlist.authored_by):
             raise PermissionDenied
 
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
@@ -241,7 +241,7 @@ class ExerciseView(RequirejsView):
     def get(self, request, exercise_id, *args, **kwargs):
         exercise = get_object_or_404(Exercise, id=exercise_id)
 
-        if not request.user.is_subscribed_to(exercise.authored_by):
+        if not exercise.is_public and not request.user.is_subscribed_to(exercise.authored_by):
             raise PermissionDenied
 
         url = reverse('lab:exercise-view', kwargs={'exercise_id': exercise_id})
@@ -272,7 +272,7 @@ class CourseView(RequirejsView):
     def get(self, request, course_slug, *args, **kwargs):
         course = get_object_or_404(Course, slug=course_slug)
 
-        if not request.user.is_subscribed_to(course.authored_by):
+        if not course.is_public and not request.user.is_subscribed_to(course.authored_by):
             raise PermissionDenied
 
         course_playlists = course.playlists.split(',')

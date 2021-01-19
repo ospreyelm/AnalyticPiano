@@ -62,7 +62,7 @@ class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
     fieldsets = (
         ('Playlist Information', {
             'fields': (
-                ('name', 'exercises', 'id', 'authored_by', 'show_on_site', 'performances'),
+                ('name', 'exercises', 'id', 'authored_by', 'show_on_site', 'performances', 'is_public'),
                 # ('created', 'updated')
             ),
         }),
