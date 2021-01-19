@@ -63,6 +63,10 @@ def course_add_view(request):
 @login_required
 def course_edit_view(request, course_name):
     course = get_object_or_404(Course, title=course_name)
+
+    if request.user != course.authored_by:
+        raise PermissionDenied
+
     context = {
         'verbose_name': course._meta.verbose_name,
         'verbose_name_plural': course._meta.verbose_name_plural,
@@ -106,6 +110,10 @@ def course_edit_view(request, course_name):
 @login_required
 def course_delete_view(request, course_name):
     course = get_object_or_404(Course, title=course_name)
+
+    if request.user != course.authored_by:
+        raise PermissionDenied
+
     if course.authored_by != request.user:
         raise PermissionDenied
     if request.method == 'POST':

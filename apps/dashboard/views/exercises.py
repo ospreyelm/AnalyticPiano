@@ -68,6 +68,9 @@ def exercise_add_view(request):
 def exercise_edit_view(request, exercise_id):
     exercise = get_object_or_404(Exercise, id=exercise_id)
 
+    if request.user != exercise.authored_by:
+        raise PermissionDenied
+
     context = {
         'verbose_name': exercise._meta.verbose_name,
         'verbose_name_plural': exercise._meta.verbose_name_plural,
@@ -116,7 +119,8 @@ def exercise_edit_view(request, exercise_id):
 @login_required
 def exercise_delete_view(request, exercise_id):
     exercise = get_object_or_404(Exercise, id=exercise_id)
-    if exercise.authored_by != request.user:
+
+    if request.user != exercise.authored_by:
         raise PermissionDenied
 
     if request.method == 'POST':

@@ -125,13 +125,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         return User.objects.filter(_supervisors_dict__has_key=str(self.id))
 
     def subscribe_to(self, supervisor, status=SUPERVISOR_STATUS_SUBSCRIPTION_WAIT):
-        if supervisor.id in self._supervisors_dict:
+        if str(supervisor.id) in self._supervisors_dict:
             return
         self._supervisors_dict[str(supervisor.id)] = status
         self.save()
 
     def unsubscribe_from(self, supervisor):
-        if supervisor.id in self._supervisors_dict:
+        if not str(supervisor.id) in self._supervisors_dict:
             return
         del self._supervisors_dict[str(supervisor.id)]
         self.save()
@@ -151,5 +151,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         subscriber.save()
 
     def is_supervisor_to(self, subscriber):
-        return self == subscriber or self.id in subscriber._supervisors_dict and subscriber._supervisors_dict[
-            self.id] == User.SUPERVISOR_STATUS_ACCEPTED
+        return self == subscriber or str(self.id) in subscriber._supervisors_dict and subscriber._supervisors_dict[
+            str(self.id)] == User.SUPERVISOR_STATUS_ACCEPTED
+
+    def is_subscribed_to(self, supervisor):
+        return self == supervisor or str(supervisor.id) in self._supervisors_dict and self._supervisors_dict[
+            str(supervisor.id)] == User.SUPERVISOR_STATUS_ACCEPTED

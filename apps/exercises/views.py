@@ -25,16 +25,15 @@ def playlist_performance_view(request, playlist_id):
     exercises = [exercise for exercise in playlist.exercise_list]
     users = list(set(list(performances.values_list('user__email', flat=True))))
 
-
     for user in users:
         name = [n for n in list(Performers.objects.filter(email=user).values_list('first_name', 'last_name'))[0]]
         user_data = {
             'email': user,
             'performer': " ".join([n for n in [
-                    name[0],
-                    name[1].upper(),
-                    '<' + user + '>',
-                ] if n != '']),
+                name[0],
+                name[1].upper(),
+                '<' + user + '>',
+            ] if n != '']),
             'performance_data': performances.filter(user__email=user).first().data
         }
         user_data.update({'exercise_count': len(user_data['performance_data'])})
@@ -44,10 +43,10 @@ def playlist_performance_view(request, playlist_id):
         exercises_data = d['performance_data']
 
         [d.update(**{exercise['id']:
-            f'{"Error(s) " if ( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) else "Pass "}'
-            f'{"" if (( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
-            f'{"" if ( isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 ) else "*" * exercise["exercise_tempo_rating"]} '
-            }) for exercise in exercises_data]
+                         f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "Pass "}'
+                         f'{"" if ((isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
+                         f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]} '
+                     }) for exercise in exercises_data]
 
     table = PlaylistActivityTable(
         data=data,
