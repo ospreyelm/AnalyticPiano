@@ -4,6 +4,8 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, render
 from django.utils.safestring import mark_safe
 from django_tables2 import RequestConfig, Column
+from datetime import datetime
+from pytz import timezone
 
 from apps.dashboard.tables import MyActivityTable, MyActivityDetailsTable
 from apps.exercises.models import PerformanceData, Playlist
@@ -80,7 +82,11 @@ def playlist_pass_date(exercises_data, playlist_length):
     if len(ex_pass_dates) < playlist_length:
         return None
     else:
-        return sorted(ex_pass_dates)[-1] + " GMT"
+        local_timezone = timezone('US/Eastern')
+        last_date = sorted(ex_pass_dates)[-1] + "+00:00"
+        date_obj = datetime.strptime(last_date, "%Y-%m-%d %H:%M:%S%z")
+        localized = datetime.strftime(date_obj.astimezone(local_timezone), "%Y_%m_%d").lower() # %-I.%M%p
+        return localized
 
 
 def playing_time(exercises_data):

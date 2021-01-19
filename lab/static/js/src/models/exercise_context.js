@@ -61,6 +61,7 @@ define([
         this.displayChords = this.createDisplayChords();
         this.exerciseChords = this.createExerciseChords();
 
+        // following lines may be obsolete
         var ex_num_current = this.definition.getExerciseList().reduce(
             function(selected, current, index) {
                 return (selected < 0 && current.selected) ? index + 1 : selected;
@@ -537,7 +538,7 @@ define([
         compileExerciseReport: function() {
             
             let offset = new Date().getTimezoneOffset()
-            let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
+            let timezone_str = "UTC" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
 
             var idx = this.definition.getExerciseList().reduce(
                 function(selected, current, index) {
@@ -574,7 +575,7 @@ define([
         compilePlaylistReport: function() {
             
             let offset = new Date().getTimezoneOffset()
-            let timezone_str = "GMT" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
+            let timezone_str = "UTC" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
 
             if (! this.definition.getExerciseList()[this.definition.getExerciseList().length - 1] ) {
                 return null;
@@ -596,7 +597,7 @@ define([
         },
         submitExerciseReport: function() {
             if (this.compileExerciseReport() == null) {
-                console.log( "Outisde of a playlist. No data submitted.")
+                console.log( "Outside of a playlist. No data submitted.")
                 return null;
             }
             // console.log( this.compileExerciseReport() );
@@ -609,8 +610,9 @@ define([
             });
         },
         submitPlaylistReport: function() {
+            console.log('Call of submitPlaylistReport');
             if (this.compilePlaylistReport() == null) {
-                console.log( "Outisde of a playlist. No data submitted.")
+                console.log( "Outside of a playlist. No data submitted.")
                 return null;
             }
             // console.log( this.compilePlaylistReport() );
