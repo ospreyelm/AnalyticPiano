@@ -68,7 +68,7 @@ define([
             },
             -1
         );
-        if (ex_num_current == 1) {
+        if (true || ex_num_current == 1) { // FIXME
             sessionStorage.removeItem('HarmonyLabPlaylistStartTime');
             sessionStorage.removeItem('HarmonyLabPlaylistTracker');
             sessionStorage.removeItem('HarmonyLabPlaylistRestarts');
@@ -79,7 +79,7 @@ define([
             this.restarts = null;
             sessionStorage.removeItem('HarmonyLabPlaylistRestarts');
         } else if (sessionStorage.HarmonyLabPlaylistStartTime) {
-            this.resetSeriesTimer(); // ?
+            this.resetSeriesTimer();
             this.seriesTimer.start = sessionStorage.getItem('HarmonyLabPlaylistStartTime');
             this.restarts = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) || 0;
         } else {
@@ -187,10 +187,10 @@ define([
 
                     if (this.sealed != true) {// For one-time function calls
                         this.submitExerciseReport();
-                        if (!nextUrl) {
-                            this.endSeriesTimer();
-                            this.submitPlaylistReport();
-                        }
+                        // if (!nextUrl) {
+                        //     this.endSeriesTimer();
+                        //     this.submitPlaylistReport();
+                        // }
                     }
 
                     this.recordTempoInformation();
@@ -247,9 +247,9 @@ define([
          * @return undefined
          */
         triggerTimer: function() {
-            if (this.seriesTimer == null) {
-                this.beginSeriesTimer();
-            }
+            // if (this.seriesTimer == null) {
+            //     this.beginSeriesTimer();
+            // }
             if (this.timer == null) {
                 this.beginTimer();
                 /**
@@ -550,25 +550,15 @@ define([
             }
 
             var report = {
-                performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
+                // performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
                 exercise_ID: this.definition.getExerciseList()[idx].id || false,
                 time: new Date().toJSON().slice(0,16) || false,
                 timezone: timezone_str || false,
                 exercise_error_tally: (["analytical", "figured_bass"].includes(this.definition.exercise.type) ? -1 : this.errorTally),
                 exercise_tempo_rating: (this.timer.tempoRating ? this.timer.tempoRating.length : 0), // 0 means unable to asses
                 exercise_mean_tempo: Math.round(this.timer.tempoMean) || false,
-                exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || false, /* seconds, sensitive to 1/10 */
+                exercise_duration: Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 || false /* seconds, sensitive to 1/10 */
             };
-
-            // if (idx+1 === getExerciseList().length) {
-            //  report[playlist_restart_tally]: this.restarts || 0,
-            //  report[playlist_lowest_tempo_rating]:
-            //      Math.min(
-            //          sessionStorage.getItem('HarmonyLabPlaylistTempoRating').length,
-            //          this.timer.tempoRating.length /* unclear whether this is already factored in */
-            //      ) || "",
-            //  report[playlist_duration]: Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 || "", /* seconds, sensitive to 1/10 */
-            // }
 
             return report;
         },
@@ -596,32 +586,46 @@ define([
             return report;
         },
         submitExerciseReport: function() {
+            // console.log('Call of submitExerciseReport');
             if (this.compileExerciseReport() == null) {
                 console.log( "Outside of a playlist. No data submitted.")
                 return null;
             }
-            // console.log( this.compileExerciseReport() );
             const json_data = JSON.stringify(this.compileExerciseReport());
             $.ajax({
                 type: "POST",
                 url: 'exercise-performance',
                 data: {'data': json_data},
-                dataType: 'json',
+                dataType: 'text',
+            })
+            .done( function (data) {
+                console.log('Exercise performance saved');
+            })
+            .fail( function (jqXHR, textStatus, errorThrown) {
+                console.log('Possible save failure', textStatus, errorThrown);
             });
         },
         submitPlaylistReport: function() {
+
+            return null
+
             console.log('Call of submitPlaylistReport');
             if (this.compilePlaylistReport() == null) {
                 console.log( "Outside of a playlist. No data submitted.")
                 return null;
             }
-            // console.log( this.compilePlaylistReport() );
             const json_data = JSON.stringify(this.compilePlaylistReport());
             $.ajax({
                 type: "POST",
                 url: 'playlist-performance',
                 data: {'data': json_data},
-                dataType: 'json',
+                dataType: 'text',
+            })
+            .done( function (data) {
+                // console.log('performance saved', data);
+            })
+            .fail( function (jqXHR, textStatus, errorThrown) {
+                // console.log(jqXHR, textStatus, errorThrown);
             });
         },
         /**

@@ -461,7 +461,7 @@ class PerformanceData(models.Model):
                 return exercise['performed_at'].split()[0]
             elif exercise['id'] == exercise_id:
                 continue
-        return 'Not Passed'
+        return False
 
     @property
     def playlist_passed(self):

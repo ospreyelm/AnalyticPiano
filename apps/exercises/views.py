@@ -70,7 +70,7 @@ def submit_exercise_performance(request):
 
     playlist_name, exercise_num = performance_data['exercise_ID'].split('/')
     performance_data.pop('exercise_ID')
-    performance_data.pop('performer')
+    # performance_data.pop('performer')
 
     playlist = Playlist.objects.filter(name=playlist_name).first()
     exercise = playlist.get_exercise_obj_by_num(int(exercise_num))

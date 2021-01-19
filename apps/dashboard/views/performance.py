@@ -147,11 +147,12 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
         d['playlist_pass_date'] = playlist_pass_date(exercises_data, d['playlist_length'])
 
         [d.update(**{exercise['id']: mark_safe(
-            f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "PASS "}'
-            f'<br>'
-            f'{performance_obj.get_exercise_first_pass(exercise["id"])}'
-            f'<br>'
-            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else exercise["exercise_mean_tempo"]}'
+            f'{"PASS " + performance_obj.get_exercise_first_pass(exercise["id"]) + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else ""}'
+            f'{"Latest: "}'
+            f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ""}'
+            f'{"Done " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == -1) else ""}'
+            f'{"Perfect " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == 0) else ""}'
+            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
             f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]}'
         )}) for exercise in exercises_data]
 
