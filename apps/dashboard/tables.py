@@ -114,8 +114,9 @@ class MyActivityTable(tables.Table):
         verbose_name='Passed',
         orderable=False,
     )
-    playlist_pass_date = tables.columns.Column(
+    playlist_pass_date = tables.columns.DateColumn(
         verbose_name='Pass Date',
+        format='Y_m_d • D',
         orderable=False,
     )
     view = tables.columns.LinkColumn(

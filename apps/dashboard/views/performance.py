@@ -73,7 +73,7 @@ def playlist_pass_date(exercises_data, playlist_length):
     for key in parsed_data:
         error_free = []
         for occasion in parsed_data[key]:
-            print(occasion)
+            # print(occasion)
             if not isinstance(occasion['err'], int) or occasion['err'] < 6:
                 error_free.append(occasion['date'])
         if len(error_free) > 0:
