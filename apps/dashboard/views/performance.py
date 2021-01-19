@@ -20,6 +20,7 @@ def performance_list_view(request, subscriber_id=None):
 
     if not request.user.is_supervisor_to(subscriber):
         raise PermissionDenied
+
     performances = PerformanceData.objects.filter(
         user=subscriber
     ).select_related('user', 'playlist')

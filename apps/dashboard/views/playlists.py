@@ -63,6 +63,9 @@ def playlist_add_view(request):
 def playlist_edit_view(request, playlist_name):
     playlist = get_object_or_404(Playlist, name=playlist_name)
 
+    if request.user != playlist.authored_by:
+        raise PermissionDenied
+
     context = {
         'verbose_name': playlist._meta.verbose_name,
         'verbose_name_plural': playlist._meta.verbose_name_plural,
@@ -109,7 +112,8 @@ def playlist_edit_view(request, playlist_name):
 @login_required
 def playlist_delete_view(request, playlist_name):
     playlist = get_object_or_404(Playlist, name=playlist_name)
-    if playlist.authored_by != request.user:
+
+    if request.user != playlist.authored_by:
         raise PermissionDenied
 
     if request.method == 'POST':
