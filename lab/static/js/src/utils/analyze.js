@@ -185,7 +185,7 @@ var spellingAndAnalysisFunctions = {
             name = this.jEnharmonicAlterations(note, name, chord).toLowerCase();
         }
         if ( this.key_is_none() ) {
-            name = this.spelling[this.Piano.keyOfSignature][note % 12].toLowerCase();
+            // name = this.spelling[this.Piano.keyOfSignature][note % 12].toLowerCase();
             name = this.hEnharmonicAlterations(note, name, chord).toLowerCase();
         }
 
@@ -271,7 +271,7 @@ var spellingAndAnalysisFunctions = {
 
         let relativize = Config.get('general.flexNoKeySpelling');
         let defaultSpelling = relativize ?
-            this.spelling[this.Piano.keyOfSignature][midi % 12].toLowerCase() :
+            this.spelling[this.hGetScale()][midi % 12].toLowerCase() :
             this.noteNames[midi % 12];
         
         if (chord.length == 2) {
