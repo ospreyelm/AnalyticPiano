@@ -37,7 +37,7 @@ p {padding: .4rem 0; }
 button, input, optgroup, select, textarea { color: #000; }
 a,a:visited, .btn { color: inherit; text-decoration: none; }
 a:hover, .btn:hover { cursor: pointer; color: inherit; }
-/* .exercise-status-col > a, .exercise-status-col > a:visited { color: blue; } */
+/* .instruction-panel-col > a, .instruction-panel-col > a:visited { color: blue; } */
 body {
     text-align: center;
     margin-top: 0px;
@@ -81,7 +81,7 @@ body, #mainmenu, #helpmenu {
     overflow: hidden;
     overflow-y: hidden;
 }
-#staff, #staff-status, .header {
+#staff, #instruction-panel, .header {
     width: 50rem;
 }
 #staff {
@@ -92,7 +92,7 @@ body, #mainmenu, #helpmenu {
     border: 0px solid black;
     padding: 0;
 }
-#staff-status {
+#instruction-panel {
     margin: 0rem auto;
     margin-bottom: 1rem;
     min-height: 100px;
@@ -307,38 +307,46 @@ fieldset.settings-notation {
 }*/
 
 /*--------------------------------------------------*/
-/* Exercise Status Styles */
-.exercise-status-area {
+/* Instruction Panel Styles */
+.instruction-panel {
     margin: 0;
-    padding: 0.5rem 0.75rem;
+    padding: 0.75rem;
+    padding-top: 0.5rem;
     color: #333;
     border: 1px solid black;
     border-radius: 6px;
     text-align: left;
 }
-.exercise-status-col,
-.exercise-status-col {
+.instruction-panel-col {
     display: inline-block;
     vertical-align: top;
     margin: 0;
+    padding: 0;
 }
-.exercise-status-col1 {
+.instruction-panel-col1 {
     width: 11rem;
+    margin-right: 1rem;
 }
-.exercise-status-col1 p {
+.instruction-panel-col2 {
+    width: 29rem;
+    margin-right: 1rem;
+}
+.instruction-panel-col3 {
+    width: 5.5rem;
+}
+.instruction-panel-col1 p {
     line-height: 1.6rem;
     margin: 0;
     padding: 0;
 }
-.exercise-status-col2 {
-    width: 30rem;
-    margin-left: 1rem;
+#exercise-text {
+    font-family: 'Alegreya Sans',sans-serif;
+    font-size: 17px;
 }
-.exercise-status-col3 {
-    width: 6rem;
-    margin-left: 1rem;
+#exercise-status-and-tempo {
 }
-.exercise-status-state {
+.exercise-status {
+    font-size: 0.9rem;
     padding: 4px 6px 2px 6px;
     margin: 0;
     text-transform: uppercase;
@@ -346,10 +354,7 @@ fieldset.settings-notation {
     border-radius: 6px;
     background-color: black;
 }
-.exercise-status-next-btn {
-    text-transform: uppercase;
-    font-weight: bold;
-}
+
 /*--------------------------------------------------*/
 /* Exercise form */
 .exerciseform label {

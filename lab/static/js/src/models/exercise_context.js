@@ -424,7 +424,7 @@ define([
             }
             if (semibreveCount.length > 0) semibreveCount.pop();
 
-            if (time_intervals.length < 1 || time_intervals.length != semibreveCount.length) {
+            if (time_intervals.length <= 1 || time_intervals.length != semibreveCount.length) {
                 this.timer.minTempo = null;
                 this.timer.maxTempo = null;
                 this.timer.tempoSD = null;

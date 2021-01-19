@@ -6,7 +6,7 @@
 
 {% block content %}
 <div id="container" class="js-fade-in fade" style="opacity: 0;">
-    {% include "_header_music.html" %}
+	{% include "_header_music.html" %}
 	{% include "_menu_music.html" %}
 	{% include "_menu_piano.html" %}
 	{% include "_notifications.html" %}
@@ -23,12 +23,23 @@
 				<canvas id="staff"></canvas>
 			</div>
 			<div>
-				<div id="staff-status"></div>
+				<div id="instruction-panel">
+					<div class="instruction-panel">
+						<div class="instruction-panel-col instruction-panel-col1">
+							<div id="exercise-info"></div>
+							<div id="exercise-status-and-tempo"></div>
+						</div>
+						<div class="instruction-panel-col instruction-panel-col2" id="exercise-text">
+						</div>
+						<div class="instruction-panel-col instruction-panel-col3">
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<div id="piano"></div>
 	</div>
-    {% include "_footer.html" %}
+	{% include "_footer.html" %}
 </div>
 <div style="font-family: 'Sebastian'">&nbsp;<!-- make sure font is loaded  --></div>
 <div style="font-family: 'MainSerifs'">&nbsp;<!-- make sure font is loaded  --></div>

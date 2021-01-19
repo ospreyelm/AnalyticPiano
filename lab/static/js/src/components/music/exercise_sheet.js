@@ -99,6 +99,8 @@ define([
         initRenderer: function() {
             var CANVAS = Vex.Flow.Renderer.Backends.CANVAS;
             this.vexRenderer = new Vex.Flow.Renderer(this.el[0], CANVAS);
+            this.renderExerciseInfo();
+            this.renderExerciseText();
         },
         /**
          * Initializes the staves that together will form the grand staff.
@@ -129,175 +131,144 @@ define([
         render: function(exercise_midi_nums = false) {
             this.clear();
             this.renderStaves(exercise_midi_nums);
-            this.renderExerciseText();
+            this.renderExerciseStatus();
 
             return this;
         },
         /**
-         * Renders intro or review text for the exercise.
+         * Renders textual prompt for the exercise.
          *
          * @return this
          */
-        renderExerciseText: function() {
-            // NOT EFFICIENT: ONLY exercise-status-col1 must be constantly re-rendered after exercise is loaded
+        renderExerciseStatus: function() {
             var exc = this.exerciseContext;
             var definition = exc.getDefinition();
-            var $statusEl = $("#staff-status");
-            var tpl = _.template([
-                '<div class="exercise-status-area">',
-                    '<div class="exercise-status-col exercise-status-col1">',
-                        '<% if (typeof(exercise_list) !== "undefined" && exercise_list.length > 0) { %>',
-                            '<p>Exercise <%= exercise_num %> of <%= exercise_list.length %></p>',
-                        '<% } %>',
-                        '<% if (1 == 2 && typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(last_exercise_id) !== "undefined") { %>',
-                            '<p><%= last_exercise_id %></p>',
-                        '<% } %>',
-                        '<p><span class="exercise-status-state" style="background-color:<%= status_color %>"><%= status_text %> <%= status_icon %></span>',
-                        '<% if (false && typeof(time_to_complete) !== "undefined" && time_to_complete != "" && status_text !== "finished with errors") { %>',
-                            '&nbsp;in&nbsp;<%= time_to_complete %></p>',
-                        '<% } %>',
-                        '<% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined") { %>',
-                            '<p><a onclick="window.alert(\'PERFORMANCE DATA: This shows your average (mean) tempo in whole notes per minute, plus a star rating for the consistency of your tempo.\')">Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %></a></p>',
-                        '<% } %>',
-                        '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "") { %>',
-                            '<p>All&nbsp;done&nbsp;in&nbsp;<%= time_to_complete_series %></p>',
-                        '<% } %>',
-                        '<% if (typeof(ex_restarts) !== "undefined" && ex_restarts > 0) { %>',
-                            '<p>Made&nbsp;<%= ex_restarts %>&nbsp;restart(s)</p>',
-                        '<% } %>',
-                        '<% if (typeof(time_to_complete_series) !== "undefined" && time_to_complete_series != "" && typeof(group_min_tempo) !== "undefined" && group_min_tempo != "" && typeof(group_max_tempo) !== "undefined" && group_max_tempo != "") { %>',
-                            '<p>Overall tempo&nbsp;<%= group_min_tempo %>&ndash;<%= group_max_tempo %></p>',
-                        '<% } %>',
-                        '<% if (false && typeof(next_exercise) !== "undefined" && next_exercise != "" && hide_next === false) { %>',
-                            '<p><a class="exercise-status-next-btn" href="<%= next_exercise %>">Click for next</a></p>',
-                        '<% } %>',
-                    '</div>',
-                    '<div class="exercise-status-col exercise-status-col2">',
-                        '<% if (prompt_text !== "") { %>',
-                            '<%= prompt_text %>',
-                        '<% } %>',
-                    '</div>',
-                    // '<div class="exercise-status-col exercise-status-col3">',
-                    //     '<% if (is_performed && typeof(latest_err_count) == "integer" && latest_err_count == 0) { %>',
-                    //         '<p>PASSED on most recent attempt</p>',
-                    //     '<% } %>',
-                    // '</div>',
-                '</div>'
-            ].join(''));
+            var $statusEl = $("#exercise-status-and-tempo");
+            var tpl = _.template(
+                // not called: time_to_complete and more; seriesTimer obsolete
+                `<p><span class="exercise-status" style="background-color:<%= status_color %>"><%= status_text %></span></p>
+                <% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined") { %>
+                    <p><a onclick="window.alert('PERFORMANCE DATA: This shows your average (mean) tempo in whole notes per minute, plus a star rating for the consistency of your tempo.')">Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %></a></p>
+                <% } %>`
+            );
             var html = '';
-            var status_map = {};
             var tpl_data = {};
-            var parsed_prompt_html;
 
-            status_map[exc.STATE.INCORRECT] = {text:"incorrect",color:"#990000",iconCls:"ion-close"};
-            status_map[exc.STATE.CORRECT] = {text:"complete",color:"#4C9900",iconCls:"ion-checkmark"};
-            status_map[exc.STATE.FINISHED] = {text:"finished with errors",color:"#999900",iconCls:""};
-            status_map[exc.STATE.WAITING] = {text:"in progress",color:"#999900",iconCls:""};
-            status_map[exc.STATE.READY] = {text:"ready",color:"#000000",iconCls:""};
+            var status_map = {};
+            status_map[exc.STATE.INCORRECT] = {
+                text: "incorrect",
+                color:"#990000"
+            };
+            status_map[exc.STATE.CORRECT] = {
+                text: "complete",
+                color:"#4C9900"
+            };
+            status_map[exc.STATE.FINISHED] = {
+                text: "finished with errors",
+                color:"#999900"
+            };
+            status_map[exc.STATE.WAITING] = {
+                text: "in progress",
+                color:"#999900"
+            };
+            status_map[exc.STATE.READY] = {
+                text: "ready",
+                color:"#000000"
+            };
 
             tpl_data.exercise_list = exc.definition.getExerciseList();
-            tpl_data.exercise_num = tpl_data.exercise_list.reduce(function(selected, current, index) {
-               return (selected < 0 && current.selected) ? index + 1 : selected;
-            }, -1);
+            tpl_data.exercise_num = tpl_data.exercise_list.reduce(function(selected, current, index) { return (selected < 0 && current.selected) ? index + 1 : selected; }, -1);
             tpl_data.status_text = status_map[exc.state].text;
             tpl_data.status_color = status_map[exc.state].color;
-            tpl_data.status_icon = status_map[exc.state].iconCls;
-            if(tpl_data.status_icon) {
-                tpl_data.status_icon = '<i class="'+tpl_data.status_icon+'"></i>';
-            }
-            if(exc.definition.getNextExercise()) {
-                tpl_data.next_exercise = exc.definition.getNextExercise();
-            }
-            tpl_data.hide_next = false;
-            if(AUTO_ADVANCE_ENABLED && SETTING_HIDE_NEXT) {
-                tpl_data.hide_next = true;
-            }
-            tpl_data.is_performed = exc.settings.definition.settings.definition.exerciseIsPerformed;
-            tpl_data.latest_err_count = exc.settings.definition.settings.definition.exerciseErrorCount;
-            console.log('This should be the history for this exercise', tpl_data.is_performed, tpl_data.latest_err_count);
 
-            // tpl_data.prompt_text = "";
-            tpl_data.prompt_text = exc.definition.getIntro();
             switch(exc.state) {
                 case exc.STATE.CORRECT:
-                    // if (exc.definition.hasReview()) {
-                    //     tpl_data.prompt_text = exc.definition.getReview();
-                    // } else if (exc.definition.hasIntro()) {
-                    //     tpl_data.prompt_text = exc.definition.getIntro();
-                    // }
-                    if(exc.hasTimer()) {
+                    if (exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                         tpl_data.min_tempo = exc.getMinTempo();
                         tpl_data.max_tempo = exc.getMaxTempo();
                         tpl_data.tempo_mean = exc.getTempoMean();
                         tpl_data.tempo_rating = exc.getTempoRating();
-                    }
-                    if(exc.hasSeriesTimer()) {
-                        tpl_data.time_to_complete_series = exc.getExerciseSeriesDuration();
-                        tpl_data.ex_restarts = exc.getExerciseGroupRestarts();
-                        tpl_data.group_min_tempo = exc.getGroupMinTempo();
-                        tpl_data.group_max_tempo = exc.getGroupMaxTempo();
-                        tpl_data.group_tempo_rating = exc.getGroupTempoRating();
-                        tpl_data.last_exercise_id = exc.definition.getExerciseList()[exc.definition.getExerciseList().length - 1].id;
-                    }
-                    if(tpl_data.last_exercise_id && tpl_data.last_exercise_id.split("/")[0] && tpl_data.exercise_num == tpl_data.exercise_list.length) {
-                        tpl_data.current_set = "../" + tpl_data.last_exercise_id.split("/")[0];
-                    }
-                    if(tpl_data.time_to_complete_series && tpl_data.time_to_complete_series != "") {
-                        if(tpl_data.last_exercise_id.split("/")[0].split("_")[1]) {
-                            var group_id = tpl_data.last_exercise_id.split("/")[0];
-                            var group_number = tpl_data.last_exercise_id.split("/")[0].split("_")[0];
-                            var key_schema_number = tpl_data.last_exercise_id.split("/")[0].split("_")[1];
-                            if(parseInt(group_number) != NaN && parseInt(group_number) < NUMBERED_EXERCISE_COUNT) {
-                                /* Crude solution */
-                                tpl_data.next_set = "../" + (parseInt(group_number) + 1) + "_" + key_schema_number + "/01";
-                            }
-                        }
                     }
                     break;
                 case exc.STATE.FINISHED:
-                    // if (exc.definition.hasIntro()) {
-                    //     tpl_data.prompt_text = exc.definition.getIntro();
-                    // }
-                    if(exc.hasTimer()) {
+                    if (exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
                         tpl_data.min_tempo = exc.getMinTempo();
                         tpl_data.max_tempo = exc.getMaxTempo();
                         tpl_data.tempo_mean = exc.getTempoMean();
                         tpl_data.tempo_rating = exc.getTempoRating();
-                    }
-                    if(exc.hasSeriesTimer()) {
-                        tpl_data.group_min_tempo = exc.getGroupMinTempo();
-                        tpl_data.group_max_tempo = exc.getGroupMaxTempo();
                     }
                     break;
                 case exc.STATE.READY:
                 default:
-                    // if (exc.definition.hasIntro()) {
-                    //     tpl_data.prompt_text = exc.definition.getIntro();
-                    // }
-
-                    tpl_data.last_exercise_id = exc.definition.getExerciseList()[exc.definition.getExerciseList().length - 1].id;
-
-                    if(tpl_data.exercise_num == 1) {
-                        if(tpl_data.last_exercise_id.split("/")[0].split("_")[1]) {
-                            var group_id = tpl_data.last_exercise_id.split("/")[0];
-                            var group_number = tpl_data.last_exercise_id.split("/")[0].split("_")[0];
-                            var key_schema_number = tpl_data.last_exercise_id.split("/")[0].split("_")[1];
-                            if(parseInt(group_number) != NaN && parseInt(group_number) < NUMBERED_EXERCISE_COUNT) {
-                                /* Crude solution */
-                                tpl_data.next_set_skip = "../" + (parseInt(group_number) + 1) + "_" + key_schema_number + "/01";
-                            }
-                        }
-                    }
                     break;
             }
             
-            // parse the prompt text in case there are any tokens that should use the figured bass font
-            tpl_data.prompt_text = FontParser.parseHTMLFiguredBass(tpl_data.prompt_text);
-    
             html = tpl(tpl_data);
             $statusEl.html(html);
+
+            return this;
+        },
+        renderExerciseInfo: function() {
+            var exc = this.exerciseContext;
+            var definition = exc.getDefinition();
+            var $infoEl = $("#exercise-info");
+            var tpl = _.template(
+                `<% if (typeof(exercise_list) !== "undefined" && exercise_list.length > 0) { %>
+                    <p>Exercise <%= exercise_num %> of <%= exercise_list.length %></p>
+                <% } %>`
+            );
+            var html = '';
+            var tpl_data = {};
+
+            tpl_data.exercise_list = exc.definition.getExerciseList();
+            tpl_data.exercise_num = tpl_data.exercise_list.reduce(function(selected, current, index) { return (selected < 0 && current.selected) ? index + 1 : selected; }, -1);
+
+            html = tpl(tpl_data);
+            $infoEl.html(html);
+
+            return this;
+        },
+        renderExerciseText: function() {
+            var exc = this.exerciseContext;
+            var definition = exc.getDefinition();
+            var $textEl = $("#exercise-text");
+            var tpl = _.template(
+                `<% if (typeof(prompt_text) == "string") { %>
+                    <%= prompt_text %>
+                <% } %>`
+            );
+            var html = '';
+            var tpl_data = {};
+
+            // Parse the text for tokens that should use the figured bass font
+            tpl_data.prompt_text = FontParser.parseHTMLFiguredBass(exc.definition.getIntro());
+
+            html = tpl(tpl_data);
+            $textEl.html(html);
+
+            return this;
+        },
+        renderExerciseHistory: function() {
+            var exc = this.exerciseContext;
+            var definition = exc.getDefinition();
+            var $historyEl = $("#exercise-history");
+            var tpl = _.template(
+                `<% if (false && is_performed && typeof(latest_err_count) == "integer" && latest_err_count == 0) { %>
+                    <p>PASSED on most recent attempt</p>
+                <% } %>`
+            );
+            var html = '';
+            var tpl_data = {};
+
+            // Not the correct data
+            tpl_data.is_performed = exc.settings.definition.settings.definition.exerciseIsPerformed;
+            tpl_data.latest_err_count = exc.settings.definition.settings.definition.exerciseErrorCount;
+            // console.log('This should be the history for this exercise', tpl_data.is_performed, tpl_data.latest_err_count);
+
+            html = tpl(tpl_data);
+            $historyEl.html(html);
 
             return this;
         },

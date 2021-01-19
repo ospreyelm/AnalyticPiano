@@ -315,7 +315,8 @@ define([
                     this.trigger('change');
                 }
 
-                // sheetComponent.renderExerciseText(); // not necessary
+                sheetComponent.renderExerciseInfo();
+                sheetComponent.renderExerciseText();
                 scex.sealed = false;
                 scex.done = false;
                 scex.timer = null;
