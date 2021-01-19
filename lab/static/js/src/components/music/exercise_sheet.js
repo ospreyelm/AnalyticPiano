@@ -343,7 +343,7 @@ define([
             var pageturns = [0];
             for (var i = 0, len = rhythmValues.length; i < len; i++) {
                 let neededSpace = this.getVisualWidth(rhythmValues[i]);
-                if (neededSpace + 1 > availableSpace) {
+                if (neededSpace > availableSpace) {
                     availableSpace = CHORD_BANK_SIZE;
                     pageturns.push(i);
                     scroll_exercise = true;
