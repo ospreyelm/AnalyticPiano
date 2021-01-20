@@ -458,7 +458,7 @@ class PerformanceData(models.Model):
     def get_exercise_first_pass(self, exercise_id):
         for exercise in self.data:
             if exercise['id'] == exercise_id and exercise['exercise_error_tally'] in [0, 'n/a']:
-                return exercise['performed_at'].split()[0]
+                return exercise['performed_at']
             elif exercise['id'] == exercise_id:
                 continue
         return False

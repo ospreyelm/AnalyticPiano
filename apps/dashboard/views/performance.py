@@ -57,6 +57,14 @@ def playlist_pass_bool(exercises_data, playlist_length):
     return playlist_pass
 
 
+def localtime(timestamp = "2000-01-01 13:00:00", format = "%Y_%m_%d • %a", locality = 'US/Eastern'):
+    local_timezone = timezone(locality)
+    utc_datetime = timestamp + "+0000"
+    date_obj = datetime.strptime(utc_datetime, "%Y-%m-%d %H:%M:%S%z")
+    localized = datetime.strftime(date_obj.astimezone(local_timezone), format) # (%-I.%M%p).lower()
+    return localized
+
+
 def playlist_pass_date(exercises_data, playlist_length):
     parsed_data = {}
     for completion in exercises_data:
@@ -83,11 +91,7 @@ def playlist_pass_date(exercises_data, playlist_length):
     if len(ex_pass_dates) < playlist_length:
         return None
     else:
-        local_timezone = timezone('US/Eastern')
-        last_date = sorted(ex_pass_dates)[-1] + "+0000"
-        date_obj = datetime.strptime(last_date, "%Y-%m-%d %H:%M:%S%z")
-        localized = datetime.strftime(date_obj.astimezone(local_timezone), "%Y_%m_%d • %a") # (%-I.%M%p).lower()
-        return localized
+        return localtime(sorted(ex_pass_dates)[-1])
 
 
 def playing_time(exercises_data):
@@ -147,7 +151,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
         d['playlist_pass_date'] = playlist_pass_date(exercises_data, d['playlist_length'])
 
         [d.update(**{exercise['id']: mark_safe(
-            f'{"PASS " + performance_obj.get_exercise_first_pass(exercise["id"]) + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else ""}'
+            f'{"PASS " + localtime(performance_obj.get_exercise_first_pass(exercise["id"]), "%Y_%m_%d") + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else ""}'
             f'{"Latest: "}'
             f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ""}'
             f'{"Done " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == -1) else ""}'
