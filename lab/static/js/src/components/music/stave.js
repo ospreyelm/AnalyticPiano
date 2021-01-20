@@ -174,7 +174,7 @@ define([
 		 *
 		 * @return this
 		 */
-		render: function(exercise_midi_nums = false) {
+		render: function(exercise_midi_nums = false, exercise_view_bool = false) {
 			if(!this.isConnected()) {
 				return;
 			}
@@ -188,7 +188,7 @@ define([
 			this.drawStaveBar();
 			this.doConnected('drawStaveBar');
 
-			this.renderStaveConnector();
+			this.renderStaveConnector(exercise_view_bool);
 
 			this.notate();
 			this.doConnected('notate', exercise_midi_nums); // pass variable to bass staff
@@ -208,9 +208,9 @@ define([
 		 *
 		 * @return this
 		 */
-		renderStaveConnector: function() {
+		renderStaveConnector: function(exercise_view_bool) {
 			if ( this.isFirstBar() ) this.drawBeginStaveConnector();
-			if ( this.isLastBar() ) this.drawEndStaveConnector();
+			if ( this.isLastBar() && exercise_view_bool ) this.drawEndStaveConnector();
 			return this;
 		},
 		/**
@@ -651,7 +651,7 @@ define([
 
 				this.start_x = start_x;
 
-				const stretch = false;
+				const stretch = true;
 				if(this.isLastBar() && stretch) {
 					this.width = this.maxWidth - this.start_x - this.margin.right;
 				} else {

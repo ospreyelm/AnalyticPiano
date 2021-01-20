@@ -290,7 +290,7 @@ define([
             var i, len, stave, _staves = this.staves;
             for (i = 0, len = _staves.length; i < len; i++) {
                 stave = _staves[i];
-                stave.render(exercise_midi_nums);
+                stave.render(exercise_midi_nums, true);
             }
             return this;
         },
