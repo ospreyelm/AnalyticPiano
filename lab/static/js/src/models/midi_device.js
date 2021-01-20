@@ -390,9 +390,9 @@ define([
                 + (Math.floor(msg[1] / 12) - 1).toString()
 
             if (msg[0] == 144) { /* note on, channel 1 */
-                polySynth.triggerAttack(toneJsNoteName);
+                sampler.triggerAttack(toneJsNoteName);
             } else if (msg[0] == 128) { /* note off, channel 1 */
-                polySynth.triggerRelease(toneJsNoteName);
+                sampler.triggerRelease(toneJsNoteName);
             }
         }
     };
