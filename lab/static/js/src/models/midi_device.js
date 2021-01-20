@@ -377,13 +377,14 @@ define([
      * @return undefined
      */
     MidiDevice.prototype.sendMIDIMessage = function (msg) {
+        // msg should be an array of integers!
         if (msg[1] == 109) {
             // midi note 109 is ignored (used for side-effect on frontend)
         } else if (false) { /* midi output */
             if (this._output) {
                 this._output.send(msg);
             }
-        } else { /* synth output */
+        } else { /* Tone.js output */
             /* convert MIDI number to pitch name */
             const pitchNames = ['c', 'c#', 'd', 'eb', 'e', 'f', 'f#', 'g', 'g#', 'a', 'bb', 'b']
             let toneJsNoteName = pitchNames[(msg[1] + 12) % 12]
