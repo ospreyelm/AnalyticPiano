@@ -344,17 +344,19 @@ define([
             for (var i = 0, len = rhythmValues.length; i < len; i++) {
                 let neededSpace = this.getVisualWidth(rhythmValues[i]);
                 if (neededSpace > availableSpace) {
-                    availableSpace = CHORD_BANK_SIZE;
+                    availableSpace = CHORD_BANK_SIZE - neededSpace;
+                    // minus operation is due to overlap (see below)
                     pageturns.push(i);
                     scroll_exercise = true;
                 }
-                availableSpace -= this.getVisualWidth(rhythmValues[i]);
+                availableSpace -= neededSpace;
             }
             if (scroll_exercise) {
                 let cursor = this.getInputChords()._currentIndex;
                 var page_start = pageturns.filter(function(x,idx){return x <= cursor}).pop();
                 var next_page = pageturns.filter(function(x,idx){return x > cursor})[0] || false;
                 if (page_start > 0) page_start -= 1;
+                // minus operation creates overlap (see above)
                 display_items = display_items.slice(page_start);
                 exercise_items = exercise_items.slice(page_start);
                 position.offset = page_start;
