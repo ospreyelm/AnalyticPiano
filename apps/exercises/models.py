@@ -269,21 +269,9 @@ class Playlist(ClonableModelMixin, models.Model):
     def get_exercise_url_by_num(self, num=1):
         try:
             return reverse(
-                'lab:playlist-view',
+                'lab:exercises',
                 kwargs={"playlist_name": self.name,
                         "exercise_num": num}
-            )
-        except NoReverseMatch:
-            return None
-
-    def get_exercise_url_by_id(self, id):
-        exercise_num = self.exercise_list.index(id) + 1
-
-        try:
-            return reverse(
-                'lab:playlist-view',
-                kwargs={"playlist_name": self.name,
-                        "exercise_num": exercise_num}
             )
         except NoReverseMatch:
             return None

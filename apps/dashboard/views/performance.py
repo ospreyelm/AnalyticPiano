@@ -158,15 +158,12 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
             f'{"Perfect " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == 0) else ""}'
             f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
             f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]}'
-            f'<br><a href="{performance_obj.playlist.get_exercise_url_by_id(exercise["id"])}">Try Again</a>'
         )}) for exercise in exercises_data]
 
     table = MyActivityDetailsTable(
         data=data,
-        extra_columns=[(exercises[num], Column(verbose_name=str(num + 1),
-                                               orderable=False,
-                                               default=mark_safe(f'<a href="{performance_obj.playlist.get_exercise_url_by_num(num + 1)}">Try</a>')))
-                       for num in range(len(exercises))]
+        extra_columns=[(exercises[num], Column(verbose_name=str(num + 1), orderable=False)) for num in
+                       range(len(exercises))]
     )
 
     RequestConfig(request).configure(table)
