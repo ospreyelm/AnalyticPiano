@@ -146,7 +146,7 @@ class MyActivityTable(tables.Table):
     # user
     # email
 
-    def render_playlist_passed(self, record):
+    def value_playlist_passed(self, record):
         return record.playlist_passed
 
     def render_playlist_pass_date(self, record):
