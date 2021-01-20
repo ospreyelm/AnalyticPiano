@@ -83,7 +83,7 @@ define([
             "C8": "C8.ogg"
         },
         release: 1,
-        baseUrl: "https://tonejs.github.io/audio/salamander/"
+        baseUrl: "/static/audio/"
     }).connect(vol);
 
 
