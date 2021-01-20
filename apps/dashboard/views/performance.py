@@ -37,7 +37,7 @@ def performance_list_view(request, subscriber_id=None):
     })
 
 
-def playlist_pass_bool(exercises_data, playlist_length):
+def playlist_pass_bool(exercise_list, exercises_data, playlist_length):
     parsed_data = {}
     for completion in exercises_data:
         c_id = completion['id']
@@ -50,10 +50,15 @@ def playlist_pass_bool(exercises_data, playlist_length):
     if len(parsed_data.keys()) < playlist_length:
         playlist_pass = False
     else:
+        for item in exercise_list:
+            if item not in parsed_data.keys():
+                playlist_pass = False
+                break
         for key in parsed_data:
             least_err = sorted(parsed_data[key])[0]
             if isinstance(least_err, int) and least_err > 0:
                 playlist_pass = False
+                break
     return playlist_pass
 
 
@@ -65,7 +70,10 @@ def localtime(timestamp = "2000-01-01 13:00:00", format = "%Y_%m_%d • %a", loc
     return localized
 
 
-def playlist_pass_date(exercises_data, playlist_length):
+def playlist_pass_date(exercise_list, exercises_data, playlist_length):
+    if not playlist_pass_bool(exercise_list, exercises_data, playlist_length):
+        return None
+
     parsed_data = {}
     for completion in exercises_data:
         c_id = completion['id']
@@ -142,13 +150,14 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
         user_data.update({'exercise_count': len(user_data['performance_data'])})
         data.append(user_data)
 
+
     for d in data:
         performance_obj = d['performance_obj']
         exercises_data = d['performance_data']
 
         d['playing_time'] = playing_time(exercises_data)
-        d['playlist_pass_bool'] = playlist_pass_bool(exercises_data, d['playlist_length'])
-        d['playlist_pass_date'] = playlist_pass_date(exercises_data, d['playlist_length'])
+        d['playlist_pass_bool'] = playlist_pass_bool(exercises, exercises_data, d['playlist_length']) # or len(exercises)
+        d['playlist_pass_date'] = playlist_pass_date(exercises, exercises_data, d['playlist_length']) # or len(exercises)
 
         [d.update(**{exercise['id']: mark_safe(
             f'{"PASS " + localtime(performance_obj.get_exercise_first_pass(exercise["id"]), "%Y_%m_%d") + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else ""}'

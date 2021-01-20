@@ -277,8 +277,11 @@ class Playlist(ClonableModelMixin, models.Model):
             return None
 
     def get_exercise_url_by_id(self, id):
-        exercise_num = self.exercise_list.index(id) + 1
-
+        try:
+            exercise_num = self.exercise_list.index(id) + 1
+        except ValueError:
+            # print ('playlist changed since this exercise performed', id, self.exercise_list);
+            return None
         try:
             return reverse(
                 'lab:playlist-view',
@@ -469,7 +472,7 @@ class PerformanceData(models.Model):
 
     def get_exercise_first_pass(self, exercise_id):
         for exercise in self.data:
-            if exercise['id'] == exercise_id and exercise['exercise_error_tally'] in [0, 'n/a']:
+            if exercise['id'] == exercise_id and exercise['exercise_error_tally'] in [0, -1, 'n/a']:
                 return exercise['performed_at']
             elif exercise['id'] == exercise_id:
                 continue
@@ -478,12 +481,12 @@ class PerformanceData(models.Model):
     @property
     def playlist_passed(self):
         from apps.dashboard.views.performance import playlist_pass_bool
-        return playlist_pass_bool(self.data, len(self.playlist.exercise_list))
+        return playlist_pass_bool(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
 
     @property
     def playlist_pass_date(self):
         from apps.dashboard.views.performance import playlist_pass_date
-        return playlist_pass_date(self.data, len(self.playlist.exercise_list))
+        return playlist_pass_date(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
 
     def exercise_is_performed(self, exercise_id):
         return any([exercise['id'] == exercise_id for exercise in self.data])
