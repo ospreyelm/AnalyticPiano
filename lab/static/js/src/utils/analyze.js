@@ -392,7 +392,7 @@ var spellingAndAnalysisFunctions = {
         return ''; /* should never be reached */
     },
     get_label: function(notes, label_type) {
-        /* used by to_solfege and to_scale_degree */
+        /* used by to_solfege, to_do_based_solfege, and to_scale_degree */
         if ( this.key_is_none() ) return "";
         if (notes.length < 1) return "";
         if (notes.length > 1 && !this.bare_octave_or_unison(notes)) return "";
@@ -406,6 +406,13 @@ var spellingAndAnalysisFunctions = {
     },
     to_solfege: function(notes) {
         return this.get_label(notes, "solfege");
+    },
+    to_do_based_solfege: function(notes) {
+        if ( this.key_is_minor() ) {
+            return this.get_label(notes, "do_based_solfege");
+        } else {
+            return this.get_label(notes, "solfege");
+        }
     },
     to_scale_degree: function(notes) {
         return this.get_label(notes, "numeral");

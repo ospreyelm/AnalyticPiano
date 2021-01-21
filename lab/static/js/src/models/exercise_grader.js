@@ -73,6 +73,7 @@ define([
 				"scale_degrees",
 				"scientific_pitch",
 				"solfege",
+				"do_based_solfege",
 				"thoroughbass",
 			];
 			if (["analytical", "analytical_pcs", "figured_bass", "figured_bass_pcs"].includes(definition.exercise.type)) {
@@ -200,6 +201,7 @@ define([
 				"scale_degrees": "to_scale_degree",
 				"scientific_pitch": "getNoteName",
 				"solfege": "to_solfege",
+				"do_based_solfege": "to_do_based_solfege",
 			};
 			var analyze_props = {
 				"abbrev_thoroughbass": "", // ok
@@ -214,6 +216,7 @@ define([
 				"scale_degrees": "", // ok
 				"scientific_pitch": "", // ok
 				"solfege": "", // ok
+				"do_based_solfege": "",
 			};
 			var i, len;
 			for (i = 0, len = analysis_types.length; i < len; i++) {

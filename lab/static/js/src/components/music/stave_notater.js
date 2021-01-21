@@ -383,10 +383,13 @@ define([
 		 * @param {number} y
 		 * @return undefined
 		 */
-		drawSolfege: function(x, y) {
+		drawSolfege: function(x, y, do_based_bool=false) {
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
 			var solfege = this.getAnalyzer().to_solfege(notes);
+			if (do_based_bool) {
+				solfege = this.getAnalyzer().to_do_based_solfege(notes);
+			}
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -923,8 +926,10 @@ define([
 			if(notes.length >= 1) {
 				if(mode.scale_degrees && !mode.solfege) {
 					this.drawScaleDegree(x, first_row);
-				} else if(mode.solfege && !mode.scale_degrees) {
+				} else if(mode.solfege && !mode.scale_degrees && !mode.do_based_solfege) {
 					this.drawSolfege(x, first_row);
+				} else if(mode.do_based_solfege && !mode.scale_degrees && !mode.solfege) {
+					this.drawSolfege(x, first_row, true); // do-minor
 				}
 
 				var solfege = this.convertSymbols(this.getAnalyzer().to_solfege(notes));

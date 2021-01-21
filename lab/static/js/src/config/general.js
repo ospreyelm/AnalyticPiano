@@ -42,10 +42,13 @@ define({
 			/* max one of the following may be true */
 			scale_degrees: false,
 			solfege: false,
+			do_based_solfege: false,
 
 			thoroughbass: false,
 			roman_numerals: true,
 			chord_labels: true,
+
+			/* max one of the following may be true */
 			intervals: false,
 			pci: false
 		}
