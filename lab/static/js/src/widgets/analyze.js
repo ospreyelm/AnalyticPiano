@@ -166,6 +166,7 @@ define([
 				this.toggle_analysis_option(e);
 			},
 			analysis_thoroughbass: function(e) {
+				this.toggle_analysis_option(e);
 			}
 		},
 		render: function() {
