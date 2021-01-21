@@ -60,7 +60,7 @@ define([
 					'<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony in Roman numerals</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G) as harmony</label>',
+					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G)</label>',
 				'</li>',
 				'<li>',
 					'<label><input type="checkbox" name="analysis_abbreviate_thoroughbass" value="abbreviate_thoroughbass" accesskey="v"> Abbreviate figured bass (V)</label>',
