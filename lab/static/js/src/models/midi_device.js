@@ -34,8 +34,9 @@ define([
         "mousedown", function () {
             mouse_IsDown = true;
             if (Tone.context.state !== 'running') {
-                document.getElementById('audio-context').innerHTML
-                    = "Audio Enabled"
+                // document.getElementById('midi-switch').innerHTML
+                //     = "Disable MIDI" // Audio Enabled
+                sampler.releaseAll(); // does this prevent brief cacophony?
                 Tone.context.resume();
                 sampler.releaseAll();
             }
@@ -128,7 +129,7 @@ define([
     }
     if (typeof(STICKY_MUTE) == 'boolean') {
         vol.mute = STICKY_MUTE;
-        let mute = document.getElementById("Mute");
+        let mute = document.getElementById("mute-toggle");
         if (STICKY_MUTE) {
             mute.innerHTML = muteToggleText[1];
         } else {
@@ -144,9 +145,9 @@ define([
     // }
 
     /* Mute button */
-    if ($("#Mute").length > 0) {
-        $("#Mute").click(function () {
-            let mute = document.getElementById("Mute");
+    if ($("#mute-toggle").length > 0) {
+        $("#mute-toggle").click(function () {
+            let mute = document.getElementById("mute-toggle");
             if (mute.innerHTML == muteToggleText[0]) {
 
                 /* all notes off */
@@ -202,6 +203,25 @@ define([
         });
     }
 
+    /* MIDI input on/off */
+    const midiToggleText = ["Disable MIDI", "Enable MIDI"]
+    var MIDI_INPUT_ON = true;
+    if ($("#midi-switch").length > 0) {
+        $("#midi-switch").click(function (){
+            let midiSwitch = document.getElementById("midi-switch");
+            if (midiSwitch.innerHTML == midiToggleText[0]) {
+                MIDI_INPUT_ON = false;
+                midiSwitch.innerHTML = midiToggleText[1];
+            }
+            else if (midiSwitch.innerHTML == midiToggleText[1]) {
+                MIDI_INPUT_ON = true;
+                midiSwitch.innerHTML = midiToggleText[0]
+            } else {
+                MIDI_INPUT_ON = true;
+                midiSwitch.innerHTML = midiToggleText[0]
+            }
+        });
+    }
 
     /**
      * Sets a callback that will be called when the update() method
@@ -368,6 +388,9 @@ define([
      * @return undefined
      */
     MidiDevice.prototype.handleMIDIMessage = function (msg) {
+        if (MIDI_INPUT_ON === false) {
+            return null;
+        }
         this.trigger("midimessage", msg);
     };
 

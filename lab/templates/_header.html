@@ -17,9 +17,9 @@
         {% if user.is_staff %}
             <li><a href={% url 'admin:index'%} target="_blank">ADMIN</a></li>
         {% endif %}
-        <li class="audio-controls"><button id="Mute" style="min-width:68px" title="Toggle mute">Mute</button></li>
+        <li class="audio-controls"><button id="mute-toggle" style="min-width:68px" title="Toggle mute">Mute</button></li>
         <li class="audio-controls"><button id="volume" style="min-width:37px;font-weight:bold" title="Adjust volume">mf</button></li>
-        <li class="audio-controls"><button id="audio-context" style="min-width:107px" onclick="getElementById('audio-context').innerHTML = 'Audio Enabled'" title="Interaction required to start browser sound">Enable Audio </button></li>
+        <li class="audio-controls"><button id="midi-switch" style="min-width:107px" title="After a first interaction to start the browser sound, this button turns MIDI input on or off">Enable Audio</button></li>
         <!-- <li><button id="all-notes-off" >All Notes Off</button></li> -->
     </ul>
     <ul class="header-second-row js-play-view-controls">
