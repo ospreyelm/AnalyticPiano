@@ -287,10 +287,16 @@ define([
          * @return this
          */
         renderStaves: function(exercise_midi_nums = false) {
+
+            const show_barlines = false; // set to true once spacing, time signatures, and metric notation switch are ready
+
             var i, len, stave, _staves = this.staves;
+            var _barlines = this.barlines;
             for (i = 0, len = _staves.length; i < len; i++) {
                 stave = _staves[i];
-                stave.render(exercise_midi_nums, true);
+                const exercise_view_bool = true;
+                const append_barline = (_barlines.indexOf(i) != -1) && show_barlines;
+                stave.render(exercise_midi_nums, exercise_view_bool, append_barline);
             }
             return this;
         },
@@ -301,6 +307,7 @@ define([
          */
         resetStaves: function() {
             this.staves = [];
+            this.barlines = [];
             return this;
         },
         /**
@@ -324,6 +331,7 @@ define([
             var display_items = this.getDisplayChords().items({limit: limit, reverse: false});
             var exercise_items = this.getExerciseChords().items({limit: limit, reverse: false});
             var staves = [];
+            var barlines = [];
             var index = 0;
             var offset = 0;
             var count = display_items.length;
@@ -373,6 +381,7 @@ define([
             // now add the staves for showing the notes
             for(var i = 0, len = display_items.length; i < len; i++) {
                 var elapsedWidthUnits = 0;
+                var elapsedWholeNotes = 0;
                 for(var j = 0; j < i; j++) {
                     var rhythm_value = null;
                     if(display_items[j].chord.settings.rhythm) {
@@ -382,6 +391,10 @@ define([
                         rhythm_value = DEFAULT_RHYTHM_VALUE;
                     }
                     elapsedWidthUnits += this.getVisualWidth(rhythm_value);
+                    elapsedWholeNotes += this.getWholeNoteCount(rhythm_value);
+                }
+                if (elapsedWholeNotes == parseInt(elapsedWholeNotes)) {
+                    barlines.push(i)
                 }
 
                 display_chord = display_items[i].chord;
@@ -395,6 +408,7 @@ define([
 
             this.resetStaves();
             this.addStaves(staves);
+            this.barlines = barlines;
 
             return this;
         },
@@ -438,6 +452,20 @@ define([
             } else {
                 console.log('Unknown rhythm_value passed to getVisualWidth');
                 return 1;
+            }
+        },
+        getWholeNoteCount: function(rhythm_value) {
+            if (rhythm_value === "w") {
+                return 1;
+            } else if (rhythm_value === "H") {
+                return 0.75;
+            } else if (rhythm_value === "h") {
+                return 0.5;
+            } else if (rhythm_value === "q") {
+                return 0.25;
+            } else {
+                console.log('Unknown rhythm_value passed to getVisualWidth');
+                return 0.1; // this will prevent display of bogus barlines
             }
         },
         /**

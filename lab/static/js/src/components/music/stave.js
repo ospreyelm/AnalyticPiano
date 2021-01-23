@@ -164,8 +164,8 @@ define([
 		 *
 		 * @return this
 		 */
-		prepareForRender: function() {
-			this.createStaveBar();
+		prepareForRender: function(append_barline = false) {
+			this.createStaveBar(append_barline);
 			this.createStaveVoice();
 			return this;
 		},
@@ -174,12 +174,12 @@ define([
 		 *
 		 * @return this
 		 */
-		render: function(exercise_midi_nums = false, exercise_view_bool = false) {
+		render: function(exercise_midi_nums = false, exercise_view_bool = false, append_barline = false) {
 			if(!this.isConnected()) {
 				return;
 			}
-			this.prepareForRender();
-			this.doConnected('prepareForRender');
+			this.prepareForRender(append_barline);
+			this.doConnected('prepareForRender', append_barline);
 
 			this.formatStaveVoices();
 
@@ -188,7 +188,7 @@ define([
 			this.drawStaveBar();
 			this.doConnected('drawStaveBar');
 
-			this.renderStaveConnector(exercise_view_bool);
+			this.renderStaveConnector(exercise_view_bool, append_barline);
 
 			this.notate();
 			this.doConnected('notate', exercise_midi_nums); // pass variable to bass staff
@@ -208,9 +208,12 @@ define([
 		 *
 		 * @return this
 		 */
-		renderStaveConnector: function(exercise_view_bool) {
+		renderStaveConnector: function(exercise_view_bool = false, append_barline = false) {
 			if ( this.isFirstBar() ) this.drawBeginStaveConnector();
 			if ( this.isLastBar() && exercise_view_bool ) this.drawEndStaveConnector();
+			if ( append_barline && !this.isFirstBar() ) {
+				this.drawBarline();
+			}
 			return this;
 		},
 		/**
@@ -254,6 +257,27 @@ define([
 			}
 			this.drawStaveConnector(staff1, staff2, finishLine);
 		},
+		drawBarline: function() {
+			// similar to drawEndStaveConnector
+			let next_x = this.start_x + this.width;
+			let treble_y = this.getYForClef('treble');
+			let bass_y = this.getYForClef('bass');
+			var staff1 = new Vex.Flow.Stave(next_x, treble_y, -1);
+			var staff2 = new Vex.Flow.Stave(next_x, bass_y, -1);
+
+			let ctx = this.getContext();
+			staff1.setContext(ctx);
+			staff2.setContext(ctx);
+
+			var barline_type = Vex.Flow.StaveConnector.type.SINGLE;
+			if (Vex.Version && Vex.Version == "old") {
+				var finishLine = Vex.Flow.StaveConnector.type.SINGLE;
+				let staff1 = new Vex.Flow.Stave(next_x - 3, treble_y, -1);
+				let staff2 = new Vex.Flow.Stave(next_x - 3, bass_y, -1);
+				this.drawStaveConnector(staff1, staff2, finishLine);
+			}
+			this.drawStaveConnector(staff1, staff2, barline_type);
+		},
 		/**
 		 * Draws a stave connector between two staves.
 		 *
@@ -263,6 +287,7 @@ define([
 		 * @return undefined
 		 */
 		drawStaveConnector: function(staff1, staff2, connectorType) {
+			// obsolete ?
 			var ctx = this.getContext();
 			var connector = new Vex.Flow.StaveConnector(staff1, staff2);
 			connector.setContext(ctx).setType(connectorType).draw();
@@ -272,7 +297,8 @@ define([
 		 *
 		 * @return undefined
 		 */
-		createStaveBar: function() {
+		createStaveBar: function(append_barline = false) {
+			const barlines_on_staves = false; // in addition to barlines through both staves
 			var x = this.start_x;
 			var y = this.start_y;
 			var width = this.width + 0; // +1 to prevent gaps from rounding errors
@@ -287,16 +313,12 @@ define([
 			 * display).
 			 */
 			staffSegment.setBegBarType(Vex.Flow.Barline.type.NONE);
-			// if(this.isFirstBar()) {
-			// 	staffSegment.setEndBarType(Vex.Flow.Barline.type.NONE);
-			// } else if(this.isPenultimateBar()) {
-			// 	staffSegment.setEndBarType(Vex.Flow.Barline.type.SINGLE);
-			// } else if(this.isLastBar()) {
-			// 	staffSegment.setEndBarType(Vex.Flow.Barline.type.NONE);
-			// } else {
-			// 	staffSegment.setEndBarType(Vex.Flow.Barline.type.SINGLE);
-			// }
 			staffSegment.setEndBarType(Vex.Flow.Barline.type.NONE);
+			if (append_barline && barlines_on_staves && !this.isFirstBar()) {
+				staffSegment.setEndBarType(Vex.Flow.Barline.type.SINGLE);
+			}
+			// useful conditions:
+			// this.isFirstBar(), this.isPenultimateBar(), this.isLastBar()
 
 			staffSegment.clef = this.clef;
 			staffSegment.setContext(this.getContext());
