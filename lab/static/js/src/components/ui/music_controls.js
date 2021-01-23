@@ -217,15 +217,17 @@ define([
 			var analysisSettings = {};
 			var highlightSettings = {};
 			var staffDistribution = {};
-			if(this.exerciseContext) {
-				/* TO DO: grab additional settings */
+			var is_exercise_view = false;
+			if (this.exerciseContext) {
+				is_exercise_view = true;
 				analysisSettings = this.exerciseContext.getDefinition().getAnalysisSettings();
 				highlightSettings = this.exerciseContext.getDefinition().getHighlightSettings();
 				staffDistribution = this.exerciseContext.getDefinition().getStaffDistribution();
+				/* TO DO: grab additional settings <-- no longer sure which */
 			}
-			var analyze_widget = new AnalyzeWidget(analysisSettings);
-			var highlight_widget = new HighlightWidget(highlightSettings);
-			var staff_distribution_widget = new StaffDistributionWidget(staffDistribution);
+			var analyze_widget = new AnalyzeWidget(analysisSettings, is_exercise_view);
+			var highlight_widget = new HighlightWidget(highlightSettings, is_exercise_view);
+			var staff_distribution_widget = new StaffDistributionWidget(staffDistribution, is_exercise_view);
 			var event_for = {
 				'highlight': EVENTS.BROADCAST.HIGHLIGHT_NOTES,
 				'analyze': EVENTS.BROADCAST.ANALYZE_NOTES,

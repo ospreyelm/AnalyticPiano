@@ -22,7 +22,8 @@ define([
 		STAFF_DISTRIBUTION = storage_staff_dist;
 	}
 
-	var StaffDistributionWidget = function(distribution=false) {
+	var StaffDistributionWidget = function(distribution = false, is_exercise_view = false) {
+		this.is_exercise_view = is_exercise_view || false;
 		this.el = $('<div class="menu-widgets"></div>');
 		this.state = (distribution && ["keyboard","chorale"].includes(distribution) ? distribution : STAFF_DISTRIBUTION);
 		// console.log('new widget', this.state);
@@ -70,7 +71,11 @@ define([
 			var that = this;
 			
 			// update the element content
-			this.el.html(this.templateHTML);
+			if (this.is_exercise_view) {
+				this.el.html(this.templateHTML.replace(/type="checkbox"/gi, 'type="checkbox" onclick="return false;"'));
+			} else {
+				this.el.html(this.templateHTML);
+			}
 			
 			// update the input states
 			$.each(valid_staff_dists, function(idx, val) {

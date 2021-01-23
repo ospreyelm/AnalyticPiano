@@ -11,7 +11,8 @@ define([
 	var HIGHLIGHT_COLORS = Config.get('highlight.colors');
 	var HIGHLIGHT_SETTINGS = Config.get('general.highlightSettings');
 
-	var HighlightWidget = function(settings) {
+	var HighlightWidget = function(settings, is_exercise_view = false) {
+		this.is_exercise_view = is_exercise_view || false;
 		settings = settings || {};
 		this.el = $('<div class="menu-widgets"></div>');
 		this.state = _.merge(_.cloneDeep(HIGHLIGHT_SETTINGS), settings);
@@ -117,7 +118,11 @@ define([
 			var that = this;
 			
 			// update the element content
-			this.el.html(this.templateHTML);
+			if (this.is_exercise_view) {
+				this.el.html(this.templateHTML.replace(/type="checkbox"/gi, 'type="checkbox" onclick="return false;"'));
+			} else {
+				this.el.html(this.templateHTML);
+			}
 			
 			// update the input states
 			this.el.find('input[name=highlight_enabled]')[0].checked = this.state.enabled;

@@ -14,7 +14,8 @@ define([
 
 	var ANALYSIS_SETTINGS = Config.get('general.analysisSettings');
 
-	var AnalyzeWidget = function(settings) {
+	var AnalyzeWidget = function(settings, is_exercise_view = false) {
+		this.is_exercise_view = is_exercise_view || false;
 		settings = settings || {};
 		this.el = $('<div class="menu-widgets"></div>');
 		this.state = _.merge(_.cloneDeep(ANALYSIS_SETTINGS), settings);
@@ -173,7 +174,11 @@ define([
 			var that = this;
 			
 			// update the element content
-			this.el.html(this.templateHTML);
+			if (this.is_exercise_view) {
+				this.el.html(this.templateHTML.replace(/type="checkbox"/gi, 'type="checkbox" onclick="return false;"'));
+			} else {
+				this.el.html(this.templateHTML);
+			}
 			
 			// update the input states
 			this.el.find('input[name=analysis_enabled]')[0].checked = this.state.enabled;
