@@ -158,8 +158,8 @@ class Playlist(ClonableModelMixin, models.Model):
         'Name', unique=True, max_length=32,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z0-9-_ ]+$',
-                message='Enter a valid name consisting of letters, numbers, spaces, underscores or hyphens',
+                regex='^[a-zA-Z0-9-_]+$',
+                message='Enter a name consisting of letters, numbers, underscores or hyphens',
             )]
     )
     exercises = models.CharField('Exercises', max_length=1024,
