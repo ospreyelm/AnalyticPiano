@@ -19,7 +19,7 @@
             <h4 class="dashboard-page-header">Edit {{ verbose_name }}</h4>{% endif %}
         {% if has_been_performed %}
             <div class="alert alert-danger" role="alert" style="top: 20px">
-                <strong>NOTE: </strong>Some fields of the {{ verbose_name_plural }} that have been performed cannot be edited.
+                <em>Some fields cannot be edited after another user has performed the {{ verbose_name }}.</em>
             </div>
         {% endif %}
         {% if messages %}

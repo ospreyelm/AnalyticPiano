@@ -32,7 +32,7 @@
     {% else %}
         {% if has_been_performed %}
             <div class="alert alert-danger" role="alert" style="top: 20px">
-                <strong>NOTE: </strong>{{ verbose_name_plural }} that have been performed cannot be deleted.
+                <strong>{{ verbose_name_plural }} that have been performed cannot be deleted.</strong>
             </div>
             <div style="padding-top: 15px;">
                 <button type="reset" class="btn dashboard-btn" onclick="location.href='{{ redirect_url }}'">
