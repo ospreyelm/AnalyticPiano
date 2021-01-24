@@ -2,7 +2,8 @@
 
 {% block content %}
     <div class="dashboard-page">
-        <p>Subscribe to other users in order to access their content and let them review your progress on content that they created.<br>Your subscription will appear below once approved by the other user.</p>
+        <p>Subscribe to other users in order to access their content and let them review your progress on content that
+            they created.<br>Your subscription will appear below once approved by the other user.</p>
         <form method="post" novalidate>
             {% csrf_token %}
             {% include 'dashboard/bs4_form.html' with form=form %}
@@ -11,7 +12,9 @@
             </button>
         </form>
     </div>
-    <div>
+    <div class="dashboard-page">
         {% include 'django_tables2/bootstrap4.html' with table=table %}
+        <p>Available courses:</p>
+        {% include 'django_tables2/bootstrap4.html' with table=courses_table %}
     </div>
 {% endblock content %}

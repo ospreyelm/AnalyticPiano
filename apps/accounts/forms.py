@@ -32,16 +32,15 @@ class CustomAuthenticationForm(forms.ModelForm):
     }
 
     def clean(self):
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get('email').lower()
         password = self.cleaned_data.get('password')
 
-        # PLEASEFIX apply .lower() to user input in the email field
         user = authenticate(username=email, password=password)
         if user is None:
             raise ValidationError({'password': 'Invalid credentials.'})
         if not user.is_active:
             raise ValidationError({'email': 'This user is not active.'})
-        return self.cleaned_data
+        return {'email': email, 'password': password}
 
 
 class RegistrationForm(forms.ModelForm):

@@ -342,3 +342,28 @@ class CoursesListTable(tables.Table):
         table_pagination = False
         order_by = ('-id')
         template_name = "django_tables2/bootstrap4.html"
+
+
+class SupervisorsCoursesListTable(tables.Table):
+    title = tables.columns.Column(
+        verbose_name='Title of Course',
+    )
+    id = tables.columns.Column()
+    view = tables.columns.LinkColumn('lab:course-view',
+                                     kwargs={'course_slug': A('slug')},
+                                     text='Load', verbose_name='Load', orderable=False)
+    created = tables.columns.DateColumn(
+        verbose_name='Created',
+        format='Y-m-d • h:m A',
+    )
+    updated = tables.columns.DateColumn(
+        verbose_name='Modified',
+        format='Y-m-d • h:m A',
+    )
+    is_public = tables.columns.BooleanColumn()
+
+    class Meta:
+        attrs = {'class': 'paleblue'}
+        table_pagination = False
+        order_by = ('-id')
+        template_name = "django_tables2/bootstrap4.html"
