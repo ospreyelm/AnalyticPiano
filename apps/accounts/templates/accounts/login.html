@@ -47,7 +47,9 @@
         {% endfor %}
         <button type="submit">Login</button>
     </form>
-    <!-- <strong><a style="color: white" href={% url "forgot-password" %}>Forgot password?</a></strong><br> -->
-    <p style="padding-top:20px"><strong><a style="color:white" href={% url "registration" %}>Register</a></strong></p>
-    <p style="color:white">If you forgot your password, ask your instructor or administrator for assistance.</p>
+    <p style="padding-top:20px;line-height:2rem">
+        <a style="color:white;font-weight:bold" href={% url "forgot-password" %}>Click here for a PASSWORD REMINDER</a>
+        <br>
+        <a style="color:white;font-weight:bold" href={% url "registration" %}>Click here to REGISTER</a>
+    </p>
 {% endblock %}
