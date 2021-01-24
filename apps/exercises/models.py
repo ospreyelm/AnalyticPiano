@@ -16,6 +16,9 @@ from django_better_admin_arrayfield.models.fields import ArrayField
 from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES
 from apps.exercises.utils.transpose import transpose
 
+import re
+
+
 User = get_user_model()
 
 
@@ -159,11 +162,13 @@ class Playlist(ClonableModelMixin, models.Model):
         validators=[
             RegexValidator(
                 regex='^[a-zA-Z0-9-_]+$',
-                message='Enter a name consisting of letters, numbers, underscores or hyphens',
+                message='Use letters, numbers, underscores, or hyphens',
             )]
     )
-    exercises = models.CharField('Exercises', max_length=1024,
-                                 help_text='Ordered set of exercise IDs, separated by comma.')
+    exercises = models.CharField(
+        'Exercises', max_length=1024,
+        help_text='Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.'
+    )
 
     # TRANSPOSE
     transpose_requests = ArrayField(base_field=models.CharField(max_length=10, choices=SIGNATURE_CHOICES),
@@ -204,7 +209,7 @@ class Playlist(ClonableModelMixin, models.Model):
     @cached_property
     def exercise_list(self):
         if not self.is_transposed():
-            return self.exercises.split(',')
+            return re.split(r'[,; \n]+', self.exercises)
 
         return self.transposed_exercises_ids
 
@@ -218,9 +223,15 @@ class Playlist(ClonableModelMixin, models.Model):
     @cached_property
     def transposition_matrix(self):
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
-            return list(product(self.exercises.split(','), self.transpose_requests))
+            return list(product(
+                re.split(r'[,; \n]+', self.exercises),
+                self.transpose_requests
+            ))
         elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
-            return [(t[1], t[0]) for t in product(self.transpose_requests, self.exercises.split(','))]
+            return [(t[1], t[0]) for t in product(
+                self.transpose_requests,
+                re.split(r'[,; \n]+', self.exercises)
+            )]
 
     @cached_property
     def transposed_exercises_ids(self):
@@ -359,13 +370,16 @@ class Course(ClonableModelMixin, models.Model):
         'Title', unique=True, max_length=64,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z0-9-_ +]+$',
-                message='Enter a valid title consisting of letters, numbers, spaces, underscores or hyphens',
+                regex='^[a-zA-Z0-9-_]+$',
+                message='Use letters, numbers, underscores, or hyphens',
             )]
     )
-    slug = models.SlugField('Slug', unique=True, max_length=64)
-    playlists = models.CharField('Playlists', max_length=1024,
-                                 help_text='Ordered set of playlist IDs, separated by comma.')
+    slug = models.SlugField('URL slug', unique=True, max_length=64)
+    playlists = models.CharField(
+        'Playlists', max_length=1024,
+        # PLEASEFIX make this required=False,
+        help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
+    )
 
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='courses',
@@ -408,7 +422,7 @@ class Course(ClonableModelMixin, models.Model):
     @cached_property
     def has_been_performed(self):
         return False
-        # return PerformanceData.objects.filter(playlist__name__in=self.playlists.split(',')).exists()
+        # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
 
 
 class PerformanceData(models.Model):

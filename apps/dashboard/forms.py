@@ -7,6 +7,9 @@ from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE
 from apps.exercises.forms import ExerciseForm, PlaylistForm, CourseForm
 from apps.exercises.models import Exercise
 
+import re
+
+
 User = get_user_model()
 
 
@@ -64,7 +67,7 @@ class TransposeRequestsField(forms.CharField):
         value = super(TransposeRequestsField, self).to_python(value)
         if not value:
             return []
-        return value.replace(' ', '').split(',')
+        return re.split(r'[,; \n]+', value.strip())
 
     def prepare_value(self, value):
         if value is None:
@@ -73,7 +76,8 @@ class TransposeRequestsField(forms.CharField):
         value = super(TransposeRequestsField, self).prepare_value(value)
         if isinstance(value, str):
             return value
-        return ','.join(value)
+        TRANSP_JOIN_STR = ' ' # r'[,; \n]+'
+        return TRANSP_JOIN_STR.join(value)
 
 
 class DashboardPlaylistForm(PlaylistForm):

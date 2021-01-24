@@ -25,6 +25,8 @@ from apps.exercises.models import Exercise, Playlist, Course, PerformanceData
 
 import json
 import copy
+import re
+
 
 # from django.core.mail import send_mail
 
@@ -275,7 +277,7 @@ class CourseView(RequirejsView):
         if not course.is_public and not request.user.is_subscribed_to(course.authored_by):
             raise PermissionDenied
 
-        course_playlists = course.playlists.split(',')
+        course_playlists = re.split(r'[,; \n]+', course.playlists)
         playlists = Playlist.objects.filter(id__in=course_playlists)
         whens = []
         for sort_index, value in enumerate(course_playlists):

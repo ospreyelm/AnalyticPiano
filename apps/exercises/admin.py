@@ -6,6 +6,8 @@ from django_better_admin_arrayfield.admin.mixins import DynamicArrayMixin
 from apps.exercises.forms import ExerciseForm, PlaylistForm, PerformanceDataForm, CourseForm
 from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
 
+import re
+
 
 @admin.register(Exercise)
 class ExerciseAdmin(admin.ModelAdmin):
@@ -121,7 +123,8 @@ class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
     performances.short_description = 'Performance Data'
 
     def transposed_exercises_display(self, obj):
-        return ','.join(str(id_) for id_ in obj.transposed_exercises_ids) if obj.is_transposed() else ''
+        TRANSP_JOIN_STR = ' ' # r'[,; \n]+'
+        return TRANSP_JOIN_STR.join(str(id_) for id_ in obj.transposed_exercises_ids) if obj.is_transposed() else ''
 
     transposed_exercises_display.short_description = 'Exercises Transposed'
 
@@ -185,7 +188,7 @@ class CourseAdmin(DynamicArrayMixin, admin.ModelAdmin):
 
     def playlist_links(self, obj):
         links = ''
-        playlists = Playlist.objects.filter(id__in=obj.playlists.split(','))
+        playlists = Playlist.objects.filter(id__in = re.split(r'[,; \n]+', obj.playlists))
         for playlist in playlists:
             link = reverse('admin:%s_%s_change' % ('exercises', 'playlist'), args=(playlist._id,))
             links += "<a href='%s'>%s</a><br>" % (link, playlist.id)
