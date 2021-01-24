@@ -9,17 +9,18 @@ from apps.exercises.models import Exercise
 
 import re
 
-
 User = get_user_model()
 
 
 class BaseSupervisionForm(forms.Form):
     def clean(self):
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get('email').lower()
         if email == self.context.get('user').email:
             self.add_error('email', 'This is your own email address! Enter the email of another user.')
         if not User.objects.filter(email=email).exists():
             self.add_error('email', 'No user is registered with this email.')
+
+        self.cleaned_data['email'] = email
         return self.cleaned_data
 
 
@@ -47,6 +48,8 @@ class DashboardExerciseForm(ExerciseForm):
     id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
     data = JSONField(widget=forms.HiddenInput)
 
+    editable_fields = ['name', 'is_public']
+
     class Meta:
         model = Exercise
         exclude = ['authored_by']
@@ -59,7 +62,8 @@ class DashboardExerciseForm(ExerciseForm):
         super(DashboardExerciseForm, self).__init__(*args, **kwargs)
         if disable_fields:
             for field in self.fields:
-                self.fields.get(field).disabled = True
+                if field not in self.editable_fields:
+                  self.fields.get(field).disabled = True
 
 
 class TransposeRequestsField(forms.CharField):
@@ -76,7 +80,7 @@ class TransposeRequestsField(forms.CharField):
         value = super(TransposeRequestsField, self).prepare_value(value)
         if isinstance(value, str):
             return value
-        TRANSP_JOIN_STR = ' ' # r'[,; \n]+'
+        TRANSP_JOIN_STR = ' '  # r'[,; \n]+'
         return TRANSP_JOIN_STR.join(value)
 
 

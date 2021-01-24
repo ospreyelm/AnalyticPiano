@@ -113,8 +113,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # TODO remove this in the future
     @classmethod
     def get_guest_user(cls):
-        # 'guest@analyticpiano.herokuapp.com'
-        return cls.objects.filter(email='guest@harmonylab.com').first()
+        return cls.objects.filter(email='guest@analyticpiano.herokuapp.com').first()
 
     @property
     def supervisors(self):
