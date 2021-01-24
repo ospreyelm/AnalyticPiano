@@ -14,9 +14,9 @@ class BaseSupervisionForm(forms.Form):
     def clean(self):
         email = self.cleaned_data.get('email')
         if email == self.context.get('user').email:
-            self.add_error('email', 'You cannot add yourself as your subscriber/supervisor!')
+            self.add_error('email', 'This is your own email address! Enter the email of another user.')
         if not User.objects.filter(email=email).exists():
-            self.add_error('email', 'User with this email does not exist.')
+            self.add_error('email', 'No user is registered with this email.')
         return self.cleaned_data
 
 

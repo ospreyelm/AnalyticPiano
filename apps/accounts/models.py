@@ -95,7 +95,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def clean(self):
         super().clean()
-        self.email = self.__class__.objects.normalize_email(self.email)
+        self.email = self.__class__.objects.normalize_email(self.email).lower()
 
     def get_full_name(self):
         name_is_set = self.first_name and self.last_name

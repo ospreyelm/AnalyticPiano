@@ -2,7 +2,7 @@ import os
 import json
 from harmony.settings.common import *
 
-DEBUG = True
+DEBUG = False
 
 SECRET_KEY = os.environ['SECRET_KEY']
 
