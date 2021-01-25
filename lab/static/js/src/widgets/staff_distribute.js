@@ -12,12 +12,13 @@ define([
 ) {
 	"use strict";
 
-	var valid_staff_dists = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"];
+	const valid_staff_dists = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"];
 
 	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
 	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
 
-	let storage_staff_dist = sessionStorage.getItem('staffDistribution');
+	let storage_staff_dist = false;
+	// storage_staff_dist = sessionStorage.getItem('staffDistribution');
 	if (storage_staff_dist && valid_staff_dists.includes(storage_staff_dist)) {
 		STAFF_DISTRIBUTION = storage_staff_dist;
 	}
@@ -25,8 +26,7 @@ define([
 	var StaffDistributionWidget = function(distribution = false, is_exercise_view = false) {
 		this.is_exercise_view = is_exercise_view || false;
 		this.el = $('<div class="menu-widgets"></div>');
-		this.state = (distribution && ["keyboard","chorale"].includes(distribution) ? distribution : STAFF_DISTRIBUTION);
-		// console.log('new widget', this.state);
+		this.state = (distribution && valid_staff_dists.includes(distribution) ? distribution : STAFF_DISTRIBUTION);
 		this.init();
 	};
 
