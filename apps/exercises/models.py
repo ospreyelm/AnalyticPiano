@@ -145,8 +145,9 @@ class Exercise(ClonableModelMixin, models.Model):
     @cached_property
     def has_been_performed(self):
         return PerformanceData.objects.filter(
-            data__contains=[{'id': self.id}]
+            data__contains=[{'id': self.id[:6]}]
         ).exclude(user=self.authored_by).exists()
+        ## self.id[:6] because of transposed exercises
 
     @property
     def lab_url(self):
