@@ -24,6 +24,7 @@ define([
 	}
 
 	var StaffDistributionWidget = function(distribution = false, is_exercise_view = false) {
+		console.log('staff distribution', distribution);
 		this.is_exercise_view = is_exercise_view || false;
 		this.el = $('<div class="menu-widgets"></div>');
 		this.state = (distribution && valid_staff_dists.includes(distribution) ? distribution : STAFF_DISTRIBUTION);
