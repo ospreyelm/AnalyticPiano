@@ -54,8 +54,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     SUPERVISOR_STATUS_ACCEPTED = 'Accepted'
     SUPERVISOR_STATUS_DECLINED = 'Declined'
-    SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = 'Awaiting Subscription Approval'
-    SUPERVISOR_STATUS_INVITATION_WAIT = 'Awaiting Invitation Approval'
+    SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = 'Awaiting Approval'
+    SUPERVISOR_STATUS_INVITATION_WAIT = 'Invitation Sent'
     _supervisors_dict = JSONField(default=dict, verbose_name='Supervisors', blank=True)
 
     # FIXME remove this field after 0008 migration is applied

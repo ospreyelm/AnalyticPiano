@@ -144,10 +144,17 @@ class Exercise(ClonableModelMixin, models.Model):
 
     @cached_property
     def has_been_performed(self):
+        author = self.authored_by
+        performed_exercises = []
+        for x in list(PerformanceData.objects.exclude(user=self.authored_by).values_list('data', flat=True)):
+            for y in x:
+                performed_exercises.append(y['id'][:6]) ## because of transposed exercises
+        performed_exercises = set(performed_exercises)
+        return self.id in performed_exercises
+
         return PerformanceData.objects.filter(
-            data__contains=[{'id': self.id[:6]}]
+            data__contains=[{'id': self.id}]
         ).exclude(user=self.authored_by).exists()
-        ## self.id[:6] because of transposed exercises
 
     @property
     def lab_url(self):

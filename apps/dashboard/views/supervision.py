@@ -10,8 +10,12 @@ from apps.exercises.models import Course
 
 @login_required
 def supervisors_view(request):
-    supervisors_table = SupervisorsTable([{"supervisor": x, "user": request.user} for x in request.user.supervisors])
-    supervisors_courses = Course.objects.filter(authored_by__in=request.user.supervisors)
+
+    visible_supervisors = [x for x in request.user.supervisors]
+    approved_supervisors = [x for x in request.user.supervisors if request.user.is_subscribed_to(x)]
+
+    supervisors_table = SupervisorsTable([{"supervisor": x, "user": request.user} for x in visible_supervisors])
+    supervisors_courses = Course.objects.filter(authored_by__in=approved_supervisors)
     supervisors_courses_table = SupervisorsCoursesListTable(supervisors_courses)
     RequestConfig(request).configure(supervisors_table)
     RequestConfig(request).configure(supervisors_courses_table)
