@@ -12,8 +12,7 @@ define([
 	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
 	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
 
-	let storage_staff_dist = false;
-	// storage_staff_dist = sessionStorage.getItem('staffDistribution');
+	let storage_staff_dist = sessionStorage.getItem('staffDistribution');
 	let valid_staff_dists = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"];
 	if (storage_staff_dist && valid_staff_dists.includes(storage_staff_dist)) {
 		STAFF_DISTRIBUTION = storage_staff_dist;
@@ -35,9 +34,9 @@ define([
 	 */
 	var Chord = function(settings) {
 		/* temporary hack */
-		// if (sessionStorage.getItem('staffDistribution')) {
-		// 	STAFF_DISTRIBUTION = sessionStorage.getItem('staffDistribution');
-		// }
+		if(sessionStorage.getItem('staffDistribution')) {
+			STAFF_DISTRIBUTION = sessionStorage.getItem('staffDistribution');
+		}
 
 		this.settings = settings || {};
 		if (this.settings.staffDistribution) {

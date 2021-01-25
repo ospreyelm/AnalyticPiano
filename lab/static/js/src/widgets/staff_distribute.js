@@ -12,22 +12,21 @@ define([
 ) {
 	"use strict";
 
-	const valid_staff_dists = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"];
+	var valid_staff_dists = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"];
 
 	var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
 	var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
 
-	let storage_staff_dist = false;
-	// storage_staff_dist = sessionStorage.getItem('staffDistribution');
+	let storage_staff_dist = sessionStorage.getItem('staffDistribution');
 	if (storage_staff_dist && valid_staff_dists.includes(storage_staff_dist)) {
 		STAFF_DISTRIBUTION = storage_staff_dist;
 	}
 
 	var StaffDistributionWidget = function(distribution = false, is_exercise_view = false) {
-		console.log('staff distribution', distribution);
 		this.is_exercise_view = is_exercise_view || false;
 		this.el = $('<div class="menu-widgets"></div>');
 		this.state = (distribution && valid_staff_dists.includes(distribution) ? distribution : STAFF_DISTRIBUTION);
+		// console.log('new widget', this.state);
 		this.init();
 	};
 
@@ -71,13 +70,14 @@ define([
 		render: function() {
 			var that = this;
 			
-			// update the element content
-			if (this.is_exercise_view) {
-				this.el.html(this.templateHTML.replace(/type="checkbox"/gi, 'type="checkbox" onclick="return false;"'));
-			} else {
-				this.el.html(this.templateHTML);
-			}
-			
+			// update the element content; FAULTY?
+			// if (this.is_exercise_view) {
+			// 	this.el.html(this.templateHTML.replace(/type="checkbox"/gi, 'type="checkbox" onclick="return false;"'));
+			// } else {
+			// 	this.el.html(this.templateHTML);
+			// }
+			this.el.html(this.templateHTML);
+
 			// update the input states
 			$.each(valid_staff_dists, function(idx, val) {
 				var $input = that.el.find('input[value='+val+']');
