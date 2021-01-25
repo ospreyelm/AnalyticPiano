@@ -42,7 +42,7 @@ class ClonableModelMixin():
 class Exercise(ClonableModelMixin, models.Model):
     _id = models.AutoField('_ID', unique=True, primary_key=True)
     id = models.CharField('ID', unique=True, max_length=16)
-    name = models.CharField('Description', max_length=60,
+    description = models.CharField('Description', max_length=60,
                             blank=True, null=True)
     data = RawJSONField('Data')
     rhythm = models.CharField('Rhythm', max_length=64,
@@ -81,10 +81,11 @@ class Exercise(ClonableModelMixin, models.Model):
         if not self._id:
             return
 
+        ## description need not be unique
         if Exercise.objects.exclude(id=self.id).filter(
-                name=self.name,
-                authored_by=self.authored_by
-        ).exclude(Q(name='') | Q(name=None)).exists():
+            description=self.description,
+            authored_by=self.authored_by
+        ).exclude(Q(description='') | Q(description=None)).exists():
             raise ValidationError("Exercise with this name and this user already exists.")
         super(Exercise, self).validate_unique(exclude)
 
@@ -174,11 +175,11 @@ class Playlist(ClonableModelMixin, models.Model):
             )]
     )
     exercises = models.CharField(
-        'Exercises', max_length=1024,
-        help_text='Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.'
+        'Exercise IDs',
+        max_length=1024,
+        # help_text='Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.'
     )
 
-    # TRANSPOSE
     transpose_requests = ArrayField(base_field=models.CharField(max_length=10, choices=SIGNATURE_CHOICES),
                                     default=list, blank=True, null=True,
                                     help_text=f'Valid choices are {" ".join(str(x) for x in KEY_SIGNATURES)}',
@@ -384,9 +385,10 @@ class Course(ClonableModelMixin, models.Model):
     )
     slug = models.SlugField('URL slug', unique=True, max_length=64)
     playlists = models.CharField(
-        'Playlists', max_length=1024,
+        'Playlist IDs',
+        max_length=1024,
         # PLEASEFIX make this required=False,
-        help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
+        # help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
     )
 
     authored_by = models.ForeignKey('accounts.User',

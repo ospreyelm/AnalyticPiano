@@ -224,7 +224,7 @@ class MyActivityDetailsTable(tables.Table):
 
 class ExercisesListTable(tables.Table):
     id = tables.columns.Column()
-    name = tables.columns.Column(
+    description = tables.columns.Column(
         verbose_name='Description of Exercise',
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )

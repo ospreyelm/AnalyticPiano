@@ -48,7 +48,7 @@ class DashboardExerciseForm(ExerciseForm):
     id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
     data = JSONField(widget=forms.HiddenInput)
 
-    editable_fields = ['name', 'is_public']
+    editable_fields = ['description', 'is_public']
 
     class Meta:
         model = Exercise
@@ -85,10 +85,10 @@ class TransposeRequestsField(forms.CharField):
 
 
 class DashboardPlaylistForm(PlaylistForm):
-    transpose_requests = TransposeRequestsField(label='Transposition Requests', required=False)
+    transpose_requests = TransposeRequestsField(label='Transposition requests', required=False)
 
     class Meta(PlaylistForm.Meta):
-        exclude = ['id', 'authored_by']
+        exclude = ['authored_by']
 
     def __init__(self, disable_fields=False, *args, **kwargs):
         super(DashboardPlaylistForm, self).__init__(*args, **kwargs)

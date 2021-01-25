@@ -5,12 +5,6 @@
 
 
 {% block css_extra %}
-    <script type="text/css">
-        /* has no effect---why? */
-        .form-check {
-            padding-left: 0px !important;
-        }
-    </script>
 {% endblock %}
 
 {% block content %}
@@ -18,7 +12,7 @@
         {% if form.instance.pk == None %}<h4 class="dashboard-page-header">Add {{ verbose_name }}</h4>{% else %}
             <h4 class="dashboard-page-header">Edit {{ verbose_name }}</h4>{% endif %}
         {% if has_been_performed %}
-            <div class="alert alert-danger" role="alert" style="top: 20px">
+            <div class="alert alert-info" role="alert" style="top: 20px">
                 <em>Some fields cannot be edited after another user has performed the {{ verbose_name }}.</em>
             </div>
         {% endif %}
