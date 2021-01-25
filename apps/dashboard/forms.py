@@ -87,6 +87,8 @@ class TransposeRequestsField(forms.CharField):
 class DashboardPlaylistForm(PlaylistForm):
     transpose_requests = TransposeRequestsField(label='Transposition requests', required=False)
 
+    editable_fields = ['is_public']
+
     class Meta(PlaylistForm.Meta):
         exclude = ['authored_by']
 

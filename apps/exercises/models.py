@@ -174,6 +174,15 @@ class Playlist(ClonableModelMixin, models.Model):
                 message='Use letters, numbers, underscores, or hyphens',
             )]
     )
+    is_public = models.BooleanField('Share', default=False)
+    authored_by = models.ForeignKey('accounts.User',
+                                    related_name='playlists',
+                                    on_delete=models.PROTECT,
+                                    verbose_name='Author of Unit')
+
+    created = models.DateTimeField('Created', auto_now_add=True)
+    updated = models.DateTimeField('Updated', auto_now=True)
+
     exercises = models.CharField(
         'Exercise IDs',
         max_length=1024,
@@ -199,16 +208,6 @@ class Playlist(ClonableModelMixin, models.Model):
     )
     transposition_type = models.CharField('Transposition Types', max_length=32,
                                           choices=TRANSPOSE_TYPE_CHOICES, blank=True, null=True)
-    authored_by = models.ForeignKey('accounts.User',
-                                    related_name='playlists',
-                                    on_delete=models.PROTECT,
-                                    verbose_name='Author of Unit')
-
-    is_public = models.BooleanField('Share', default=False)
-
-    created = models.DateTimeField('Created', auto_now_add=True)
-    updated = models.DateTimeField('Updated', auto_now=True)
-
     zero_padding = 'PA00A0'
 
     class Meta:
