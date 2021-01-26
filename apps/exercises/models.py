@@ -74,6 +74,9 @@ class Exercise(ClonableModelMixin, models.Model):
     def __str__(self):
         return self.id
 
+    def get_previous_authored_exercise(self):
+        return Exercise.objects.filter(authored_by=self.authored_by, created__lt=self.created).last()
+
     def get_next_authored_exercise(self):
         return Exercise.objects.filter(authored_by=self.authored_by, created__gt=self.created).first()
 

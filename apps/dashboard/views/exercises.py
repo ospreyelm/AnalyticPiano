@@ -92,13 +92,16 @@ def exercise_edit_view(request, exercise_id):
                 return redirect('dashboard:add-exercise')
 
             exercise = form.save(commit=False)
-            exercise.authored_by = request.user
+            exercise.authored_by = request.user # FIXME: do not transfer authorship to (admin) editor
             exercise.save()
             if 'save-and-continue' in request.POST:
                 success_url = reverse('dashboard:edit-exercise',
                                       kwargs={'exercise_id': exercise.id})
                 messages.add_message(request, messages.SUCCESS,
                                      f"{context['verbose_name']} has been saved successfully.")
+            elif 'save-and-edit-previous' in request.POST:
+                success_url = reverse('dashboard:edit-exercise',
+                                      kwargs={'exercise_id': exercise.get_previous_authored_exercise().id})
             elif 'save-and-edit-next' in request.POST:
                 success_url = reverse('dashboard:edit-exercise',
                                       kwargs={'exercise_id': exercise.get_next_authored_exercise().id})
