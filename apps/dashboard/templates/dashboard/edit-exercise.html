@@ -2,12 +2,20 @@
 {% block extra_buttons %}
     {% with form.instance.get_previous_authored_exercise as previous %}
         {% if not previous == None %}
-            <button type="submit" class="btn dashboard-btn" name="save-and-edit-previous">← Save</button>
+            {% if not has_been_performed %}
+                <button type="submit" class="btn dashboard-btn" name="save-and-edit-previous">← Save</button>
+            {% else %}
+                <button type="submit" class="btn dashboard-btn limited-save-btn" name="save-and-edit-previous">← Save</button>
+            {% endif %}
         {% endif %}
     {% endwith %}
 	{% with form.instance.get_next_authored_exercise as next %}
         {% if not next == None %}
-            <button type="submit" class="btn dashboard-btn" name="save-and-edit-next">Save →</button>
+            {% if not has_been_performed %}
+                <button type="submit" class="btn dashboard-btn" name="save-and-edit-next">Save →</button>
+            {% else %}
+                <button type="submit" class="btn dashboard-btn limited-save-btn" name="save-and-edit-next">Save →</button>
+            {% endif %}
         {% endif %}
     {% endwith %}
 {% endblock %}

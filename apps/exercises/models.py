@@ -45,7 +45,7 @@ class Exercise(ClonableModelMixin, models.Model):
     description = models.CharField('Description', max_length=60,
                             blank=True, null=True)
     data = RawJSONField('Data')
-    rhythm = models.CharField('Rhythm', max_length=64,
+    rhythm = models.CharField('Rhythm', max_length=255,
                               blank=True, null=True)
     is_public = models.BooleanField('Share', default=True)
     authored_by = models.ForeignKey('accounts.User',
@@ -156,9 +156,9 @@ class Exercise(ClonableModelMixin, models.Model):
         performed_exercises = set(performed_exercises)
         return self.id in performed_exercises
 
-        return PerformanceData.objects.filter(
-            data__contains=[{'id': self.id}]
-        ).exclude(user=self.authored_by).exists()
+        # return PerformanceData.objects.filter(
+        #     data__contains=[{'id': self.id}]
+        # ).exclude(user=self.authored_by).exists()
 
     @property
     def lab_url(self):

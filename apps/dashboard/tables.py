@@ -241,11 +241,11 @@ class ExercisesListTable(tables.Table):
                                        text='Delete', verbose_name='Delete', orderable=False)
     created = tables.columns.DateColumn(
         verbose_name='Created',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     updated = tables.columns.DateColumn(
         verbose_name='Modified',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     is_public = tables.columns.BooleanColumn()
 
@@ -285,11 +285,11 @@ class PlaylistsListTable(tables.Table):
                                        text='Delete', verbose_name='Delete', orderable=False)
     created = tables.columns.DateColumn(
         verbose_name='Created',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     updated = tables.columns.DateColumn(
         verbose_name='Modified',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     is_public = tables.columns.BooleanColumn()
 
@@ -329,11 +329,11 @@ class CoursesListTable(tables.Table):
                                        text='Delete', verbose_name='Delete', orderable=False)
     created = tables.columns.DateColumn(
         verbose_name='Created',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     updated = tables.columns.DateColumn(
         verbose_name='Modified',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     is_public = tables.columns.BooleanColumn()
 
@@ -356,11 +356,11 @@ class SupervisorsCoursesListTable(tables.Table):
 
     # created = tables.columns.DateColumn(
     #     verbose_name='Created',
-    #     format='Y-m-d • h:m A',
+    #     format='Y-m-d • h:i A',
     # )
     # updated = tables.columns.DateColumn(
     #     verbose_name='Modified',
-    #     format='Y-m-d • h:m A',
+    #     format='Y-m-d • h:i A',
     # )
     # is_public = tables.columns.BooleanColumn()
 
