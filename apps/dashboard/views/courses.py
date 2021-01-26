@@ -78,7 +78,7 @@ def course_edit_view(request, course_name):
         form = DashboardCourseForm(data=request.POST, instance=course)
         form.context = {'user': request.user}
         if form.is_valid():
-            if 'save-as-new' in request.POST:
+            if 'duplicate' in request.POST:
                 unique_fields = Course.get_unique_fields()
                 clone_data = copy(form.cleaned_data)
                 for field in clone_data:

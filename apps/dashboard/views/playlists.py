@@ -77,7 +77,7 @@ def playlist_edit_view(request, playlist_name):
         form = DashboardPlaylistForm(data=request.POST, instance=playlist)
         form.context = {'user': request.user}
         if form.is_valid():
-            if 'save-as-new' in request.POST:
+            if 'duplicate' in request.POST:
                 unique_fields = Playlist.get_unique_fields()
                 clone_data = copy(form.cleaned_data)
                 for field in clone_data:

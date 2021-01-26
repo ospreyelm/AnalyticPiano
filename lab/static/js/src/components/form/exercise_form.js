@@ -212,7 +212,7 @@ define([
 			if ("status" in response) {
 				if (response.status == "success") {
 					that.notify({
-						title: "Exercise Saved",
+						title: "✓ Exercise saved",
 						description: 'Exercise saved successfully! <a href="'+response.data.url+'">Click to view exercise</a>.',
 						type: "success"
 					});

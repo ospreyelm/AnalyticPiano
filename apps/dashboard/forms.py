@@ -45,7 +45,7 @@ class KeyboardForm(forms.Form):
 
 
 class DashboardExerciseForm(ExerciseForm):
-    id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
+    # id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID') ## CAUSES PROBLEMS
     data = JSONField(widget=forms.HiddenInput)
 
     editable_fields = ['description', 'is_public']
