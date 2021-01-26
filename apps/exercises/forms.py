@@ -38,6 +38,7 @@ class ExpansiveForm(forms.ModelForm):
                     # ^ _id already verified
                     object_ids.append(_id)
             else:
+
                 _id = string
 
                 if len(_id) <= 6:
@@ -48,8 +49,18 @@ class ExpansiveForm(forms.ModelForm):
                 if _id not in all_object_ids:
                     # generate WARNING
                     continue
-                if True:
-                    # ^ FIXME test whether item is authored by the user or is listed as shared (is_public = True) exercises only
+
+                item_is_public = self.EXPANSIVE_FIELD_MODEL.objects.filter(id=_id).first().is_public == True
+
+                if item_is_public:
+                    object_ids.append(_id)
+                    continue
+
+                user_authored_objects = list(self.EXPANSIVE_FIELD_MODEL.objects.filter(
+                    authored_by_id=self.context.get('user').id
+                ).values_list('id', flat=True))
+
+                if _id in user_authored_objects:
                     object_ids.append(_id)
 
         JOIN_STR = ' ' # r'[,; \n]+'
