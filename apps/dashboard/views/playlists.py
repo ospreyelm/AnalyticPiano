@@ -73,6 +73,8 @@ def playlist_edit_view(request, playlist_name):
         'redirect_url': reverse('dashboard:playlists-list')
     }
 
+    PROTECT_PLAYLIST_CONTENT = playlist.has_been_performed
+
     if request.method == 'POST':
         form = DashboardPlaylistForm(data=request.POST, instance=playlist)
         form.context = {'user': request.user}
@@ -86,24 +88,34 @@ def playlist_edit_view(request, playlist_name):
                 request.session['clone_data'] = clone_data
                 return redirect('dashboard:add-playlist')
 
-            playlist = form.save(commit=False)
-            playlist.authored_by = request.user
-            playlist.save()
+            if PROTECT_PLAYLIST_CONTENT:
+                playlist.name = playlist_name ## critical in case user tries to edit playlist name and gets a bad redirect
+                ## only alter is_public field
+                ## under no circumstances allow other changes to data
+                playlist.save(update_fields=["is_public"])
+                ## ^ is this ok?
+            else:
+                playlist = form.save(commit=False)
+                playlist.authored_by = request.user
+                ## ^ original authorship of playlist should not change
+                playlist.save()
+
             if 'save-and-continue' in request.POST:
                 success_url = reverse('dashboard:edit-playlist',
                                       kwargs={'playlist_name': playlist.name})
                 messages.add_message(request, messages.SUCCESS,
-                                     f"{context['verbose_name']} has been saved successfully.")
+                                     f"{context['verbose_name']} saved")
             else:
                 success_url = reverse('dashboard:playlists-list')
             return redirect(success_url)
         context['form'] = form
         return render(request, "dashboard/content.html", context)
 
-    if playlist.has_been_performed:
-        form = DashboardPlaylistForm(instance=playlist, disable_fields=True)
-    else:
-        form = DashboardPlaylistForm(instance=playlist)
+    form = DashboardPlaylistForm(instance=playlist)
+
+    # if playlist.has_been_performed:
+    #     ## CAUSES BIG PROBLEMS! DESTROYS FORM VALIDATION
+    #     form = DashboardPlaylistForm(instance=playlist, disable_fields=True)
 
     context['form'] = form
     return render(request, "dashboard/content.html", context)

@@ -45,7 +45,7 @@ class KeyboardForm(forms.Form):
 
 
 class DashboardExerciseForm(ExerciseForm):
-    # id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID') ## CAUSES PROBLEMS
+    id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
     data = JSONField(widget=forms.HiddenInput)
 
     editable_fields = ['description', 'is_public']
@@ -63,7 +63,7 @@ class DashboardExerciseForm(ExerciseForm):
         if disable_fields:
             for field in self.fields:
                 if field not in self.editable_fields:
-                  self.fields.get(field).disabled = True
+                    self.fields.get(field).disabled = True
 
 
 class TransposeRequestsField(forms.CharField):
@@ -85,6 +85,8 @@ class TransposeRequestsField(forms.CharField):
 
 
 class DashboardPlaylistForm(PlaylistForm):
+    id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
+
     transpose_requests = TransposeRequestsField(label='Transposition requests', required=False)
 
     editable_fields = ['is_public']
@@ -96,7 +98,8 @@ class DashboardPlaylistForm(PlaylistForm):
         super(DashboardPlaylistForm, self).__init__(*args, **kwargs)
         if disable_fields:
             for field in self.fields:
-                self.fields.get(field).disabled = True
+                if field not in self.editable_fields:
+                    self.fields.get(field).disabled = True
 
 
 class DashboardCourseForm(CourseForm):
