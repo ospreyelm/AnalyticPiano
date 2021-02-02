@@ -70,7 +70,8 @@ def playlist_edit_view(request, playlist_name):
         'verbose_name': playlist._meta.verbose_name,
         'verbose_name_plural': playlist._meta.verbose_name_plural,
         'has_been_performed': playlist.has_been_performed,
-        'redirect_url': reverse('dashboard:playlists-list')
+        'redirect_url': reverse('dashboard:playlists-list'),
+        'delete_url': reverse('dashboard:delete-playlist', kwargs={'playlist_name': playlist_name}),
     }
 
     PROTECT_PLAYLIST_CONTENT = playlist.has_been_performed

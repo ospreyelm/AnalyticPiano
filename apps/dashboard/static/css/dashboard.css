@@ -169,6 +169,11 @@ nav {
     border-color: var(--link-color);
 }
 
+.dashboard-btn-secondary {
+    color: white;
+    background-color: darkred;
+}
+
 .form-control.is-invalid {
     border-color: var(--link-color);
 }

@@ -46,6 +46,21 @@ class KeyboardForm(forms.Form):
 
 class DashboardExerciseForm(ExerciseForm):
     id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
+
+    analysis_enabled = forms.BooleanField(label='Enable Analysis', required=False)
+    analysis_modes = forms.MultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple(),
+        choices=Exercise.ANALYSIS_MODE_CHOICES
+    )
+
+    highlight_enabled = forms.BooleanField(label='Enable Highlight', required=False)
+    highlight_modes = forms.MultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple,
+        choices=Exercise.HIGHLIGHT_MODE_CHOICES
+    )
+
+    data_fields = ['analysis', 'highlight']
+
     data = JSONField(widget=forms.HiddenInput)
 
     editable_fields = ['description', 'is_public']
@@ -64,6 +79,30 @@ class DashboardExerciseForm(ExerciseForm):
             for field in self.fields:
                 if field not in self.editable_fields:
                     self.fields.get(field).disabled = True
+
+        if self.instance and self.instance.pk:
+            self._init_data_modes()
+
+    def _init_data_modes(self):
+        for field in self.data_fields:
+            if field not in self.instance.data:
+                break
+
+            _field = self.instance.data[field]
+            _field_modes = []
+            for mode, val in _field['mode'].items():
+                if val:
+                    _field_modes.append(mode)
+            self.fields[f'{field}_enabled'].initial = _field['enabled']
+            self.fields[f'{field}_modes'].initial = _field_modes
+
+    def save(self, commit=True):
+        instance = super(DashboardExerciseForm, self).save(commit)
+        for field in self.data_fields:
+            modes = self.cleaned_data.pop(f'{field}_modes', [])
+            enabled = self.cleaned_data.pop(f'{field}_enabled', False)
+            instance = instance.set_data_modes(modes=modes, enabled=enabled, field_name=field)
+        return instance
 
 
 class TransposeRequestsField(forms.CharField):
@@ -93,6 +132,12 @@ class DashboardPlaylistForm(PlaylistForm):
 
     class Meta(PlaylistForm.Meta):
         exclude = ['authored_by']
+        widgets = {
+            'exercises': forms.Textarea,
+            'id': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'is_auto': forms.CheckboxInput(attrs={'disabled': 'disabled'}),
+            'authored_by': forms.TextInput(attrs={'readonly': 'readonly'}),
+        }
 
     def __init__(self, disable_fields=False, *args, **kwargs):
         super(DashboardPlaylistForm, self).__init__(*args, **kwargs)

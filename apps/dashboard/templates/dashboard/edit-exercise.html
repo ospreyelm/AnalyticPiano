@@ -5,9 +5,15 @@
             <button type="submit" class="btn dashboard-btn" name="save-and-edit-previous">← Save</button>
         {% endif %}
     {% endwith %}
-	{% with form.instance.get_next_authored_exercise as next %}
+    {% with form.instance.get_next_authored_exercise as next %}
         {% if not next == None %}
             <button type="submit" class="btn dashboard-btn" name="save-and-edit-next">Save →</button>
         {% endif %}
     {% endwith %}
+{% endblock %}
+
+{% block js_extra %}
+    <script>
+        $('ul > li').css('display', 'table');
+    </script>
 {% endblock %}

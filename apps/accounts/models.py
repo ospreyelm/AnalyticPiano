@@ -110,6 +110,12 @@ class User(AbstractBaseUser, PermissionsMixin):
             message=f'Your AnalyticPiano password is: {self.raw_password}',
         )
 
+    def send_password(self):
+        self.email_user(
+            subject='Welcome To AnalyticPiano',
+            message=f'Your AnalyticPiano password is: {self.raw_password}',
+        )
+
     # TODO remove this in the future
     @classmethod
     def get_guest_user(cls):

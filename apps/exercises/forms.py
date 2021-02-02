@@ -222,6 +222,7 @@ class PlaylistForm(ExpansiveForm):
         widgets = {
             'exercises': forms.Textarea,
             'id': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'is_auto': forms.CheckboxInput(attrs={'readonly': 'readonly'}),
             'authored_by': forms.TextInput(attrs={'readonly': 'readonly'}),
         }
 

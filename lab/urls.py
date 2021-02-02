@@ -14,6 +14,7 @@ from .views import (
     RefreshExerciseDefinition,
     CourseView,
     ManageView,
+    exercise_performance_history,
 )
 
 app_name = 'lab'
@@ -26,6 +27,11 @@ urlpatterns = [
     path('ajax/preferences/', preferences_view, name='user-preferences'),
     path('ajax/set-mute/', set_preferred_mute_value, name='user-preferred-mute'),
     path('ajax/set-volume/', set_preferred_volume, name='user-preferred-volume'),
+
+    # Exercise Performance History
+    path('ajax/playlists/<str:playlist_name>/<int:exercise_num>/history/', exercise_performance_history,
+         name='exercise-performance-history'),
+    path('ajax/playlists/<str:playlist_name>/history/', exercise_performance_history, name='exercise-performance-history'),
 
     # FIXME should be added to a course: ^courses/(?P<course_id>\d+)/exercises/add/$?
     path('exercises/add/', AddExerciseView.as_view(), name='add-exercise'),

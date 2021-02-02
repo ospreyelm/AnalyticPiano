@@ -5,7 +5,8 @@ from apps.dashboard.views.courses import (
     courses_list_view,
     course_add_view,
     course_edit_view,
-    course_delete_view
+    course_delete_view,
+    course_activity_view
 )
 from apps.dashboard.views.exercises import (
     exercises_list_view,
@@ -52,6 +53,7 @@ urlpatterns = [
     path('courses/add/', course_add_view, name="add-course"),
     path('courses/<str:course_name>/', course_edit_view, name="edit-course"),
     path('courses/<str:course_name>/delete/', course_delete_view, name="delete-course"),
+    path('courses/<str:course_name>/activity/', course_activity_view, name="course-activity"),
 
     # Performances
     path('performances/<int:subscriber_id>/', performance_list_view,
