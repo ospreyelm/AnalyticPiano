@@ -439,12 +439,12 @@ var spellingAndAnalysisFunctions = {
 
         return {"name": all_labels[profile]["label"]};
     },
-    to_chord: function(notes, type = undefined) {
+    to_chord: function(notes, type=undefined, relativize_bool=false) {
         if (notes.length < 2) return "";
         if (notes.length == 2) return this.to_interval(notes);
 
         if ( (this.key_is_none() && type !== "roman only") || type === "chord label" ) {
-            return this.hFindChord(notes);
+            return this.hFindChord(notes, relativize_bool=relativize_bool);
         } else {
             return this.ijFindChord(notes);
         }
@@ -465,7 +465,7 @@ var spellingAndAnalysisFunctions = {
             return keys_arr[idx]
         }
     },
-    hFindChord: function (notes) {
+    hFindChord: function (notes, relativize_bool=false) {
         var profile = this.intervals_above_bass(notes);
         var chordEntry = _.cloneDeep(this.hChords[profile]);
         if (!chordEntry) return "";
@@ -486,6 +486,62 @@ var spellingAndAnalysisFunctions = {
             let semitones = parseInt(chordEntry["root"])
             let steps = parseInt(chordEntry["rootstepwise"])
             rootName = this.upper_note_name(bass_pc, bass_name, semitones, steps);  
+        }
+
+        if ( relativize_bool == true && (this.key_is_minor() || this.key_is_major()) ) {
+            const keynote = this.Piano.key.slice(1).replace(/_/g, '').toLowerCase();
+            console.log(keynote);
+            const fifths_chain = {
+                "b##": "",
+                "e##": "",
+                "a##": "",
+                "d##": "",
+                "g##": "",
+                "c##": "",
+                "f##": "",
+                "b#": "",
+                "e#": "",
+                "a#": "Li",
+                "d#": "Ri",
+                "g#": "Si",
+                "c#": "Di",
+                "f#": "Fi",
+                "b": "Ti",
+                "e": "Mi",
+                "a": "La",
+                "d": "Re",
+                "g": "So",
+                "c": "Do",
+                "f": "Fa",
+                "bb": "Te",
+                "eb": "Me",
+                "ab": "Le",
+                "db": "Ra",
+                "gb": "Sa",
+                "cb": "Da",
+                "fb": "",
+                "bbb": "",
+                "ebb": "",
+                "abb": "",
+                "dbb": "",
+                "gbb": "",
+                "cbb": "",
+                "fbb": ""
+            }
+            const obj_keys = Object.keys(fifths_chain);
+            const kn_index = obj_keys.indexOf(keynote)
+            if (kn_index != -1) {
+                let shift = -1 * kn_index;
+                if (this.key_is_minor()) {
+                    shift += obj_keys.indexOf('a')
+                } else { // must be major
+                    shift += obj_keys.indexOf('c')
+                }
+                // bassName = fifths_chain[ obj_keys[obj_keys.indexOf(bassName.toLowerCase()) + shift] ];
+                // rootName = fifths_chain[ obj_keys[obj_keys.indexOf(rootName.toLowerCase()) + shift] ];
+                bassName = obj_keys[obj_keys.indexOf(bassName.toLowerCase()) + shift];
+                rootName = obj_keys[obj_keys.indexOf(rootName.toLowerCase()) + shift];
+            }
         }
 
         var label = chordEntry["label"];

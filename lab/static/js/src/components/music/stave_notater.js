@@ -495,12 +495,12 @@ define([
 
 			return figure; /* for grading */
 		},
-		drawChordLabel: function(x, y=35) {
+		drawChordLabel: function(x, y=35, relativize_bool=false) {
 			var key = this.keySignature.getKeyShortName();
 			let keyCategory = this.keySignature.getKey()[0] || false;
 
 			var midi_nums = this.chord.getNoteNumbers();
-			var chord_entry = this.getAnalyzer().to_chord(midi_nums, "chord label");
+			var chord_entry = this.getAnalyzer().to_chord(midi_nums, "chord label", relativize_bool=relativize_bool);
 
 			var width = 0, offset = 0;
 			var ctx = this.getContext();
