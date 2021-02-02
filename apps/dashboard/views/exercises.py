@@ -75,7 +75,8 @@ def exercise_edit_view(request, exercise_id):
         'verbose_name': exercise._meta.verbose_name,
         'verbose_name_plural': exercise._meta.verbose_name_plural,
         'has_been_performed': exercise.has_been_performed,
-        'redirect_url': reverse('dashboard:exercises-list')
+        'redirect_url': reverse('dashboard:exercises-list'),
+        'delete_url': reverse('dashboard:delete-exercise', kwargs={'exercise_id': exercise_id}),
     }
 
     PROTECT_EXERCISE_CONTENT = exercise.has_been_performed
@@ -120,6 +121,7 @@ def exercise_edit_view(request, exercise_id):
             return redirect(success_url)
         context['form'] = form
 
+    exercise.refresh_from_db()
     form = DashboardExerciseForm(instance=exercise)
 
     # if exercise.has_been_performed:

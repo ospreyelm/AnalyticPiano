@@ -8,23 +8,11 @@
 
 
 {% block content %}
-    {% if raw_password %}
+    {% if request.session.just_signed_up or request.session.password_sent %}
         <div id="raw-password-bar" class="regular closable">
             <div class="hb-content-wrapper">
                 <div class="hb-text-wrapper">
                     <div class="hb-headline-text" style="background-color: #34ce57">
-                        <p><span>This is a one-time message to inform you of your password. You will NOT be able to change this.</span></p>
-                        <p><span>Your password is: {{ raw_password }}</span></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-    {% if password_sent %}
-        <div id="password-sent-bar" class="regular closable">
-            <div class="hb-content-wrapper">
-                <div class="hb-text-wrapper">
-                    <div class="hb-headline-text" style="background-color: deepskyblue">
                         <p><span>The password has been sent to your email address.</span></p>
                     </div>
                 </div>

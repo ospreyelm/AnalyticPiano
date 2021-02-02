@@ -27,7 +27,6 @@ import json
 import copy
 import re
 
-
 # from django.core.mail import send_mail
 
 User = get_user_model()
@@ -443,3 +442,27 @@ class AddExerciseView(View):
         exercise.save()
 
         return JsonResponse(status=201, data={'id': exercise.id})
+
+
+@login_required()
+@method_decorator(csrf_exempt)
+def exercise_performance_history(request, playlist_name, exercise_num=1, *args, **kwargs):
+    playlist = Playlist.objects.filter(Q(name=playlist_name) | Q(id=playlist_name)).first()
+    if playlist is None:
+        raise Http404("Playlist with this name or ID does not exist.")
+
+    if not playlist.is_public and not request.user.is_subscribed_to(playlist.authored_by):
+        raise PermissionDenied
+
+    exercise = playlist.get_exercise_obj_by_num(exercise_num)
+    if exercise is None:
+        raise Http404("This playlist has no exercises.")
+
+    playlist_performance = PerformanceData.objects.filter(playlist=playlist, user=request.user).last()
+
+    exercise_data = json.dumps(
+        {'exerciseIsPerformed': playlist_performance.exercise_is_performed(
+            exercise.id) if playlist_performance else False,
+         'exerciseErrorCount': playlist_performance.exercise_error_count(exercise.id) if playlist_performance else 0}
+    )
+    return HttpResponse(exercise_data, status=200)

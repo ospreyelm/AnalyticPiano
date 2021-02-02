@@ -5,11 +5,12 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django_tables2 import RequestConfig
+from django.utils.safestring import mark_safe
+from django_tables2 import RequestConfig, Column
 
 from apps.dashboard.forms import DashboardCourseForm
-from apps.dashboard.tables import CoursesListTable
-from apps.exercises.models import Course
+from apps.dashboard.tables import CoursesListTable, CourseActivityTable
+from apps.exercises.models import Course, PerformanceData
 
 
 @login_required
@@ -114,8 +115,6 @@ def course_delete_view(request, course_name):
     if request.user != course.authored_by:
         raise PermissionDenied
 
-    if course.authored_by != request.user:
-        raise PermissionDenied
     if request.method == 'POST':
         course.delete()
         return redirect('dashboard:courses-list')
@@ -126,3 +125,49 @@ def course_delete_view(request, course_name):
                'has_been_performed': course.has_been_performed,
                'redirect_url': reverse('dashboard:courses-list')}
     return render(request, 'dashboard/delete-confirmation.html', context)
+
+
+@login_required
+def course_activity_view(request, course_name):
+    course = get_object_or_404(Course, title=course_name)
+
+    if request.user != course.authored_by:
+        raise PermissionDenied
+
+    subscribers = request.user.subscribers
+
+    data = []
+    course_performances = PerformanceData.objects.filter(
+        playlist__id__in=course.playlists.split(' '), user__in=subscribers
+    ).select_related('user', 'playlist')
+
+    for subscriber in subscribers:
+        user_performances = course_performances.filter(user=subscriber)
+        user_data = {
+            'subscriber_email': subscriber.email,
+            'subscriber_name': subscriber.get_full_name(),
+        }
+        for playlist in course.playlist_objects:
+            playlist_performance = user_performances.filter(playlist=playlist).last()
+            if playlist_performance:
+                user_data[playlist.name] = mark_safe(
+                    f'<span class="{str(playlist_performance.playlist_passed).lower()}">✘</span><br>'
+                    f'{playlist_performance.playlist_pass_date if playlist_performance.playlist_pass_date else ""}'
+                )
+            else:
+                user_data[playlist.name] = playlist_performance.playlist_passed if playlist_performance else ''
+
+        data.append(user_data)
+
+    table = CourseActivityTable(
+        data=data,
+        extra_columns=[(playlist.name, Column(verbose_name=playlist.name,
+                                               orderable=True))
+                       for playlist in course.playlist_objects]
+    )
+
+    RequestConfig(request).configure(table)
+    return render(request, "dashboard/course-activity.html", {
+        "table": table,
+        "course_name": course_name
+    })
