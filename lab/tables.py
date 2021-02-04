@@ -10,6 +10,10 @@ class CoursePageTable(tables.Table):
         kwargs={'playlist_name': A('name')},
         verbose_name='Unit'
     )
+    # num = tables.columns.Column(
+    #     verbose_name='#',
+    #     # index of this playlist in course.playlists
+    # )
 
     class Meta:
         model = Playlist

@@ -248,12 +248,12 @@ input[type=checkbox] {
     padding-left: 0px;
 }
 
-.radioselect {
+.radioselect, .checkboxselectmultiple {
     float: left !important;
     margin-right: 50px;
 }
 
-.radioselect ul{
+.radioselect ul, .checkboxselectmultiple ul {
     height: unset !important;
     background-color: unset !important;
     border: unset !important;
@@ -268,7 +268,7 @@ ul li input{
     height: 20px !important;
 }
 
-.radioselect li {
+.radioselect li, .checkboxselectmultiple li {
     line-height: 1.5;
 }
 
@@ -277,11 +277,16 @@ ul li input{
     vertical-align: middle;
 }
 
-.radioselect > div, .textarea > div {
+.checkboxselectmultiple input[type="checkbox"] {
+    margin-top: 0px;
+    vertical-align: top;
+}
+
+.radioselect > div, .textarea > div, .checkboxselectmultiple > div {
     align-items: baseline !important;
 }
 
-.radioselect ul label {
+.radioselect ul label, .checkboxselectmultiple ul label {
     display: inline !important;
 }
 
