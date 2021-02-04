@@ -9,7 +9,7 @@
             {% endif %}
         {% endif %}
     {% endwith %}
-	{% with form.instance.get_next_authored_exercise as next %}
+    {% with form.instance.get_next_authored_exercise as next %}
         {% if not next == None %}
             {% if not has_been_performed %}
                 <button type="submit" class="btn dashboard-btn" name="save-and-edit-next">Save →</button>
@@ -18,4 +18,10 @@
             {% endif %}
         {% endif %}
     {% endwith %}
+{% endblock %}
+
+{% block js_extra %}
+    <script>
+        $('ul > li').css('display', 'table');
+    </script>
 {% endblock %}

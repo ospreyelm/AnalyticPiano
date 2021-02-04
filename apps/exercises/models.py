@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from datetime import timedelta
 from itertools import product
 
 from django.contrib.auth import get_user_model
@@ -18,7 +19,6 @@ from apps.exercises.utils.transpose import transpose
 
 import re
 
-
 User = get_user_model()
 
 
@@ -27,6 +27,31 @@ class RawJSONField(JSONField):
 
     def db_type(self, connection):
         return 'json'
+
+
+class BaseContentModel(models.Model):
+    _id = models.AutoField('_ID', unique=True, primary_key=True)
+
+    class Meta:
+        abstract = True
+
+    def set_id(self, initial):
+        assert len(initial) == 1
+
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        reverse_id = ""
+        bases = [26, 26, 10, 10, 26]
+        _id = self._id
+        for base in bases:
+            if base == 26:
+                reverse_id += letters[_id % base]
+            elif base == 10:
+                reverse_id += str(_id % base)
+            _id //= base
+        if _id != 0 or len(reverse_id) != len(bases):
+            return None
+        reverse_id += initial
+        self.id = reverse_id[::-1]
 
 
 class ClonableModelMixin():
@@ -39,11 +64,10 @@ class ClonableModelMixin():
         return fields
 
 
-class Exercise(ClonableModelMixin, models.Model):
-    _id = models.AutoField('_ID', unique=True, primary_key=True)
+class Exercise(ClonableModelMixin, BaseContentModel):
     id = models.CharField('ID', unique=True, max_length=16)
     description = models.CharField('Description', max_length=60,
-                            blank=True, null=True)
+                                   blank=True, null=True)
     data = RawJSONField('Data')
     rhythm = models.CharField('Rhythm', max_length=255,
                               blank=True, null=True)
@@ -57,6 +81,20 @@ class Exercise(ClonableModelMixin, models.Model):
     updated = models.DateTimeField('Updated', auto_now=True)
 
     zero_padding = 'EA00A0'
+
+    ANALYSIS_MODE_CHOICES = (
+        ("note_names", "Note Names"),
+        ("scientific_pitch", "Scientific Pitch"),
+        ("scale_degrees", "Scale Degrees"),
+        ("solfege", "Solfege"),
+        ("roman_numerals", "Roman Numerals"),
+        ("intervals", "Intervals")
+    )
+
+    HIGHLIGHT_MODE_CHOICES = (
+        ("roothighlight", "Root Highlight"),
+        ("tritonehighlight", "Tritone Highlight")
+    )
 
     class Meta:
         verbose_name = 'Exercise'
@@ -86,8 +124,8 @@ class Exercise(ClonableModelMixin, models.Model):
 
         ## description need not be unique
         if Exercise.objects.exclude(id=self.id).filter(
-            description=self.description,
-            authored_by=self.authored_by
+                description=self.description,
+                authored_by=self.authored_by
         ).exclude(Q(description='') | Q(description=None)).exists():
             raise ValidationError("Exercise with this name and this user already exists.")
         super(Exercise, self).validate_unique(exclude)
@@ -95,28 +133,14 @@ class Exercise(ClonableModelMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
+            self.set_id(initial='E')
+            self.set_auto_playlist()
 
         self.validate_unique()
-        self.set_id()
+        self.set_id(initial='E')
         self.sort_data()
         self.set_rhythm_values()
         super(Exercise, self).save(*args, **kwargs)
-
-    def set_id(self):
-        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        reverse_id = ""
-        bases = [26, 26, 10, 10, 26]
-        _id = self._id
-        for base in bases:
-            if base == 26:
-                reverse_id += letters[_id % base]
-            elif base == 10:
-                reverse_id += str(_id % base)
-            _id //= base
-        if _id != 0 or len(reverse_id) != len(bases):
-            return None
-        reverse_id += "E"
-        self.id = reverse_id[::-1]
 
     def sort_data(self):
         if not all([key in self.data for key in self.get_data_order_list()]):
@@ -146,13 +170,29 @@ class Exercise(ClonableModelMixin, models.Model):
                 break
         self.data['chord'] = chord_data
 
+    def set_auto_playlist(self):
+        auto_playlist = Playlist.objects.filter(
+            authored_by=self.authored_by,
+            is_auto=True,
+            updated__gt=now() - timedelta(hours=6)
+        ).last()
+        if auto_playlist is None:
+            auto_playlist = Playlist.create_auto_playlist(authored_by=self.authored_by,
+                                                          initial_exercise_id=self.id)
+        lately_edited_playlists = Playlist.objects.filter(updated__gt=auto_playlist.updated)
+        if lately_edited_playlists.exists():
+            Playlist.create_auto_playlist(authored_by=self.authored_by,
+                                          initial_exercise_id=self.id)
+            return
+        auto_playlist.append_exercise(self.id)
+
     @cached_property
     def has_been_performed(self):
         author = self.authored_by
         performed_exercises = []
         for x in list(PerformanceData.objects.exclude(user=self.authored_by).values_list('data', flat=True)):
             for y in x:
-                performed_exercises.append(y['id'][:6]) ## because of transposed exercises
+                performed_exercises.append(y['id'][:6])  ## because of transposed exercises
         performed_exercises = set(performed_exercises)
         return self.id in performed_exercises
 
@@ -164,9 +204,22 @@ class Exercise(ClonableModelMixin, models.Model):
     def lab_url(self):
         return reverse('lab:exercise-view', kwargs={'exercise_id': self.id})
 
+    def set_data_modes(self, field_name, modes, enabled):
+        if field_name not in self.data:
+            return
 
-class Playlist(ClonableModelMixin, models.Model):
-    _id = models.AutoField('_ID', unique=True, primary_key=True)
+        _data = self.data.get(field_name)
+        for mode in _data['mode']:
+            if modes and mode in modes:
+                _data['mode'][mode] = True
+            elif not modes or mode not in modes:
+                _data['mode'][mode] = False
+
+        self.data[field_name] = _data
+        self.data[field_name]['enabled'] = enabled
+        return self
+
+class Playlist(ClonableModelMixin, BaseContentModel):
     id = models.CharField('ID', unique=True, max_length=16)
 
     name = models.CharField(
@@ -178,6 +231,7 @@ class Playlist(ClonableModelMixin, models.Model):
             )]
     )
     is_public = models.BooleanField('Share', default=False)
+    is_auto = models.BooleanField('Is Auto Playlist', default=False)
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='playlists',
                                     on_delete=models.PROTECT,
@@ -268,6 +322,13 @@ class Playlist(ClonableModelMixin, models.Model):
 
         return exercises
 
+    def append_exercise(self, exercise_id):
+        if self.exercises == '':
+            self.exercises = exercise_id
+        elif exercise_id not in self.exercises:
+            self.exercises += f', {exercise_id}'
+        self.save()
+
     def is_transposed(self):
         return self.transpose_requests and self.transposition_type
 
@@ -345,36 +406,36 @@ class Playlist(ClonableModelMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self._id:
             super(Playlist, self).save(*args, **kwargs)
-        self.set_id()
+        self.set_id(initial='P')
+        self.set_auto_name()
         super(Playlist, self).save(*args, **kwargs)
-
-    def set_id(self):
-        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        reverse_id = ""
-        bases = [26, 26, 10, 10, 26]
-        _id = self._id
-        for base in bases:
-            if base == 26:
-                reverse_id += letters[_id % base]
-            elif base == 10:
-                reverse_id += str(_id % base)
-            _id //= base
-        if _id != 0 or len(reverse_id) != len(bases):
-            return None
-        reverse_id += "P"
-        self.id = reverse_id[::-1]
 
     @cached_property
     def has_been_performed(self):
         return PerformanceData.objects.filter(playlist=self).exclude(user=self.authored_by).exists()
+
+    @classmethod
+    def create_auto_playlist(cls, initial_exercise_id, authored_by):
+        auto_playlist = Playlist(authored_by=authored_by,
+                                 exercises=initial_exercise_id,
+                                 is_auto=True)
+        auto_playlist.save()
+        return auto_playlist
+
+    def set_auto_name(self):
+        if self.is_auto and not self.name:
+            auto_id = list(self.id)
+            auto_id[0] = 'U'
+            auto_id = ''.join(auto_id)
+            date, time = now().date().strftime('%Y%m%d'), now().time().strftime('%H%M')
+            self.name = f'{auto_id}_{date}_{time}'
 
 
 def get_default_data():
     return {'exercises': []}
 
 
-class Course(ClonableModelMixin, models.Model):
-    _id = models.AutoField('_ID', unique=True, primary_key=True)
+class Course(ClonableModelMixin, BaseContentModel):
     id = models.CharField('ID', unique=True, max_length=16)
 
     title = models.CharField(
@@ -412,29 +473,17 @@ class Course(ClonableModelMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self._id:
             super(Course, self).save(*args, **kwargs)
-        self.set_id()
+        self.set_id(initial='C')
         super(Course, self).save(*args, **kwargs)
-
-    def set_id(self):
-        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        reverse_id = ""
-        bases = [26, 26, 10, 10, 26]
-        _id = self._id
-        for base in bases:
-            if base == 26:
-                reverse_id += letters[_id % base]
-            elif base == 10:
-                reverse_id += str(_id % base)
-            _id //= base
-        if _id != 0 or len(reverse_id) != len(bases):
-            return None
-        reverse_id += "C"
-        self.id = reverse_id[::-1]
 
     @cached_property
     def has_been_performed(self):
         return False
         # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
+
+    @cached_property
+    def playlist_objects(self):
+        return Playlist.objects.filter(id__in=self.playlists.split(' '))
 
 
 class PerformanceData(models.Model):
@@ -522,7 +571,6 @@ class PerformanceData(models.Model):
         for exercise in self.data:
             if exercise['id'] == exercise_id and exercise['exercise_error_tally'] == 0:
                 error_count = 0
-                break
             if exercise['id'] == exercise_id and exercise['exercise_error_tally'] not in [0, 'n/a']:
                 error_count = exercise['exercise_error_tally']
         return error_count

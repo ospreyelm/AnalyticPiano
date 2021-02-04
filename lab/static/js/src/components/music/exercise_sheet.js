@@ -2,7 +2,7 @@
 define([
     'jquery',
     'jquery-ui',
-    'lodash', 
+    'lodash',
     'vexflow',
     'app/config',
     'app/components/component',
@@ -10,15 +10,15 @@ define([
     './stave',
     './stave_notater',
     './exercise_note_factory'
-], function(
+], function (
     $,
     $UI,
-    _, 
-    Vex, 
+    _,
+    Vex,
     Config,
     Component,
     FontParser,
-    Stave, 
+    Stave,
     StaveNotater,
     ExerciseNoteFactory
 ) {
@@ -53,7 +53,7 @@ define([
      * @param {ChordBank} settings.chords Required property.
      * @param {KeySignature} settings.keySignature Required property.
      */
-    var ExerciseSheetComponent = function(settings) {
+    var ExerciseSheetComponent = function (settings) {
         this.settings = settings || {};
 
         if ("exerciseContext" in this.settings) {
@@ -83,10 +83,10 @@ define([
          * @param {object} config
          * @return undefined
          */
-        initComponent: function() {
+        initComponent: function () {
             this.el = $("canvas#staff");
-            this.el[0].width= this.el.width();
-            this.el[0].height= this.el.height();
+            this.el[0].width = this.el.width();
+            this.el[0].height = this.el.height();
             this.initRenderer();
             this.initStaves();
             this.initListeners();
@@ -96,7 +96,7 @@ define([
          *
          * @return
          */
-        initRenderer: function() {
+        initRenderer: function () {
             var CANVAS = Vex.Flow.Renderer.Backends.CANVAS;
             this.vexRenderer = new Vex.Flow.Renderer(this.el[0], CANVAS);
             this.renderExerciseInfo();
@@ -107,7 +107,7 @@ define([
          *
          * @return undefined
          */
-        initStaves: function() {
+        initStaves: function () {
             this.updateStaves();
         },
         /**
@@ -115,7 +115,7 @@ define([
          *
          * @return undefined
          */
-        initListeners: function() {
+        initListeners: function () {
             this.parentComponent.bind('change', this.render);
             this.keySignature.bind('change', this.render);
             //this.getInputChords().bind('change', this.render);
@@ -128,7 +128,7 @@ define([
          *
          * @return this
          */
-        render: function(exercise_midi_nums = false) {
+        render: function (exercise_midi_nums = false) {
             this.clear();
             this.renderStaves(exercise_midi_nums);
             this.renderExerciseStatus();
@@ -140,7 +140,7 @@ define([
          *
          * @return this
          */
-        renderExerciseStatus: function() {
+        renderExerciseStatus: function () {
             var exc = this.exerciseContext;
             var definition = exc.getDefinition();
             var $statusEl = $("#exercise-status-and-tempo");
@@ -157,31 +157,33 @@ define([
             var status_map = {};
             status_map[exc.STATE.INCORRECT] = {
                 text: "incorrect",
-                color:"#990000"
+                color: "#990000"
             };
             status_map[exc.STATE.CORRECT] = {
                 text: "complete",
-                color:"#4C9900"
+                color: "#4C9900"
             };
             status_map[exc.STATE.FINISHED] = {
                 text: "finished with errors",
-                color:"#999900"
+                color: "#999900"
             };
             status_map[exc.STATE.WAITING] = {
                 text: "in progress",
-                color:"#999900"
+                color: "#999900"
             };
             status_map[exc.STATE.READY] = {
                 text: "ready",
-                color:"#000000"
+                color: "#000000"
             };
 
             tpl_data.exercise_list = exc.definition.getExerciseList();
-            tpl_data.exercise_num = tpl_data.exercise_list.reduce(function(selected, current, index) { return (selected < 0 && current.selected) ? index + 1 : selected; }, -1);
+            tpl_data.exercise_num = tpl_data.exercise_list.reduce(function (selected, current, index) {
+                return (selected < 0 && current.selected) ? index + 1 : selected;
+            }, -1);
             tpl_data.status_text = status_map[exc.state].text;
             tpl_data.status_color = status_map[exc.state].color;
 
-            switch(exc.state) {
+            switch (exc.state) {
                 case exc.STATE.CORRECT:
                     if (exc.hasTimer()) {
                         tpl_data.time_to_complete = exc.getExerciseDuration();
@@ -204,13 +206,13 @@ define([
                 default:
                     break;
             }
-            
+
             html = tpl(tpl_data);
             $statusEl.html(html);
 
             return this;
         },
-        renderExerciseInfo: function() {
+        renderExerciseInfo: function () {
             var exc = this.exerciseContext;
             var definition = exc.getDefinition();
             var $infoEl = $("#exercise-info");
@@ -223,14 +225,16 @@ define([
             var tpl_data = {};
 
             tpl_data.exercise_list = exc.definition.getExerciseList();
-            tpl_data.exercise_num = tpl_data.exercise_list.reduce(function(selected, current, index) { return (selected < 0 && current.selected) ? index + 1 : selected; }, -1);
+            tpl_data.exercise_num = tpl_data.exercise_list.reduce(function (selected, current, index) {
+                return (selected < 0 && current.selected) ? index + 1 : selected;
+            }, -1);
 
             html = tpl(tpl_data);
             $infoEl.html(html);
 
             return this;
         },
-        renderExerciseText: function() {
+        renderExerciseText: function () {
             var exc = this.exerciseContext;
             var definition = exc.getDefinition();
             var $textEl = $("#exercise-text");
@@ -250,7 +254,7 @@ define([
 
             return this;
         },
-        renderExerciseHistory: function() {
+        renderExerciseHistory: function () {
             var exc = this.exerciseContext;
             var definition = exc.getDefinition();
             var $historyEl = $("#exercise-history");
@@ -262,10 +266,21 @@ define([
             var html = '';
             var tpl_data = {};
 
-            // Not the correct data
-            tpl_data.is_performed = exc.settings.definition.settings.definition.exerciseIsPerformed;
-            tpl_data.latest_err_count = exc.settings.definition.settings.definition.exerciseErrorCount;
-            // console.log('This should be the history for this exercise', tpl_data.is_performed, tpl_data.latest_err_count);
+            $.ajax({
+                type: 'GET',
+                url: window.location.origin + "/ajax" + window.location.pathname + 'history/',
+                async: false,
+                success: function (response) {
+                    if (!response["valid"]) {
+                        var exerciseData = JSON.parse(response);
+                        tpl_data.is_performed = exerciseData.exerciseIsPerformed;
+                        tpl_data.latest_err_count = exerciseData.exerciseErrorCount;
+                    }
+                },
+                error: function (error) {
+                    alert('An error occurred while getting the exercise history.');
+                }
+            })
 
             html = tpl(tpl_data);
             $historyEl.html(html);
@@ -277,7 +292,7 @@ define([
          *
          * @return this
          */
-        clear: function() {
+        clear: function () {
             this.vexRenderer.getContext().clear();
             return this;
         },
@@ -286,7 +301,7 @@ define([
          *
          * @return this
          */
-        renderStaves: function(exercise_midi_nums = false) {
+        renderStaves: function (exercise_midi_nums = false) {
 
             const show_barlines = false; // set to true once spacing, time signatures, and metric notation switch are ready
 
@@ -305,7 +320,7 @@ define([
          *
          * @return this
          */
-        resetStaves: function() {
+        resetStaves: function () {
             this.staves = [];
             this.barlines = [];
             return this;
@@ -316,7 +331,7 @@ define([
          * @param {array} staves
          * @return this
          */
-        addStaves: function(staves) {
+        addStaves: function (staves) {
             this.staves = this.staves.concat(staves);
             return this;
         },
@@ -325,7 +340,7 @@ define([
          *
          * @return this
          */
-        updateStaves: function() {
+        updateStaves: function () {
             var chord, treble, bass;
             var limit = 100; // arbitrary
             var display_items = this.getDisplayChords().items({limit: limit, reverse: false});
@@ -346,7 +361,7 @@ define([
 
             // scrolling exercise view
             var scroll_exercise = false;
-            let rhythmValues = display_items.map( item => item.chord._rhythmValue );
+            let rhythmValues = display_items.map(item => item.chord._rhythmValue);
             var availableSpace = CHORD_BANK_SIZE;
             var pageturns = [0];
             for (var i = 0, len = rhythmValues.length; i < len; i++) {
@@ -361,8 +376,12 @@ define([
             }
             if (scroll_exercise) {
                 let cursor = this.getInputChords()._currentIndex;
-                var page_start = pageturns.filter(function(x,idx){return x <= cursor}).pop();
-                var next_page = pageturns.filter(function(x,idx){return x > cursor})[0] || false;
+                var page_start = pageturns.filter(function (x, idx) {
+                    return x <= cursor
+                }).pop();
+                var next_page = pageturns.filter(function (x, idx) {
+                    return x > cursor
+                })[0] || false;
                 if (page_start > 0) page_start -= 1;
                 // minus operation creates overlap (see above)
                 display_items = display_items.slice(page_start);
@@ -379,15 +398,15 @@ define([
             staves.push(treble);
 
             // now add the staves for showing the notes
-            for(var i = 0, len = display_items.length; i < len; i++) {
+            for (var i = 0, len = display_items.length; i < len; i++) {
                 var elapsedWidthUnits = 0;
                 var elapsedWholeNotes = 0;
-                for(var j = 0; j < i; j++) {
+                for (var j = 0; j < i; j++) {
                     var rhythm_value = null;
-                    if(display_items[j].chord.settings.rhythm) {
+                    if (display_items[j].chord.settings.rhythm) {
                         rhythm_value = display_items[j].chord.settings.rhythm;
                     }
-                    if(rhythm_value == null) {
+                    if (rhythm_value == null) {
                         rhythm_value = DEFAULT_RHYTHM_VALUE;
                     }
                     elapsedWidthUnits += this.getVisualWidth(rhythm_value);
@@ -419,7 +438,7 @@ define([
          * @param {object} position
          * @return {Stave}
          */
-        createDisplayStave: function(clef, position) {
+        createDisplayStave: function (clef, position) {
             var stave = new Stave(clef, position);
             var stave_notater = this.createStaveNotater(clef, {
                 stave: stave,
@@ -440,7 +459,7 @@ define([
 
             return stave;
         },
-        getVisualWidth: function(rhythm_value) {
+        getVisualWidth: function (rhythm_value) {
             if (rhythm_value === "w") {
                 return 1;
             } else if (rhythm_value === "H") {
@@ -454,7 +473,7 @@ define([
                 return 1;
             }
         },
-        getWholeNoteCount: function(rhythm_value) {
+        getWholeNoteCount: function (rhythm_value) {
             if (rhythm_value === "w") {
                 return 1;
             } else if (rhythm_value === "H") {
@@ -476,7 +495,7 @@ define([
          * @param {Chord} chord
          * @return {Stave}
          */
-        createNoteStave: function(clef, position, displayChord, exerciseChord, elapsedWidthUnits) {
+        createNoteStave: function (clef, position, displayChord, exerciseChord, elapsedWidthUnits) {
             var stave = new Stave(clef, position);
             var widthUnits = null;
             if (exerciseChord.settings.rhythm) {
@@ -519,7 +538,7 @@ define([
          * @param {object} config The config for the StaveNotater.
          * @return {object}
          */
-        createStaveNotater: function(clef, config) {
+        createStaveNotater: function (clef, config) {
             return StaveNotater.create(clef, config);
         },
         /**
@@ -527,7 +546,7 @@ define([
          *
          * @return {number}
          */
-        getWidth: function() {
+        getWidth: function () {
             return this.el.width()
         },
         /**
@@ -535,7 +554,7 @@ define([
          *
          * @return {number}
          */
-        getHeight: function() {
+        getHeight: function () {
             return this.el.height();
         },
         /**
@@ -543,7 +562,7 @@ define([
          *
          * @return {object}
          */
-        getAnalyzeConfig: function() {
+        getAnalyzeConfig: function () {
             return this.parentComponent.analyzeConfig;
         },
         /**
@@ -551,7 +570,7 @@ define([
          *
          * @return {object}
          */
-        getHighlightConfig: function() {
+        getHighlightConfig: function () {
             return this.parentComponent.highlightConfig;
         },
         /**
@@ -559,7 +578,7 @@ define([
          *
          * @return undefined
          */
-        getDisplayChords: function() {
+        getDisplayChords: function () {
             return this.exerciseContext.getDisplayChords();
         },
         /**
@@ -567,7 +586,7 @@ define([
          *
          * @return undefined
          */
-        getExerciseChords: function() {
+        getExerciseChords: function () {
             return this.exerciseContext.getExerciseChords();
         },
         /**
@@ -575,7 +594,7 @@ define([
          *
          * @return undefined
          */
-        getInputChords: function() {
+        getInputChords: function () {
             return this.exerciseContext.getInputChords();
         },
         /**
@@ -583,7 +602,7 @@ define([
          *
          * @return undefined
          */
-        onChordsUpdate: function() {
+        onChordsUpdate: function () {
             this.updateStaves();
             this.render();
         },
@@ -592,7 +611,7 @@ define([
          *
          * @return undefined
          */
-        onGoToExercise: function(target) {
+        onGoToExercise: function (target) {
             window.location = target.url;
         }
     });
