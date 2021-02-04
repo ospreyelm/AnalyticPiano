@@ -13,7 +13,7 @@
             <p>Courses authored by {{ course_author }}</p>
         {% endif %}
         {% if course_name %}
-            <p>Activity report for {{ course_name }}</p>
+            <p>Activity report for course: {{ course_name }}</p>
         {% endif %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
     </div>

@@ -382,12 +382,12 @@ class SupervisorsCoursesListTable(tables.Table):
 
 
 class CourseActivityTable(tables.Table):
-    subscriber_email = tables.columns.Column(
-        verbose_name='Subscriber Email',
-    )
     subscriber_name = tables.columns.Column(
-        verbose_name='Subscriber Name',
+        verbose_name='Subscriber',
     )
+    # subscriber_email = tables.columns.Column(
+    #     verbose_name='Subscriber Email',
+    # )
 
     class Meta:
         attrs = {'class': 'paleblue'}

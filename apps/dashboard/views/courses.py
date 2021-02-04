@@ -147,23 +147,26 @@ def course_activity_view(request, course_name):
             'subscriber_email': subscriber.email,
             'subscriber_name': subscriber.get_full_name(),
         }
-        for playlist in course.playlist_objects:
+        # for playlist in course.playlist_objects:
+        for idx in range(len(course.playlist_objects)):
+            playlist = course.playlist_objects[idx]
             playlist_performance = user_performances.filter(playlist=playlist).last()
             if playlist_performance:
-                user_data[playlist.name] = mark_safe(
-                    f'<span class="{str(playlist_performance.playlist_passed).lower()}">✘</span><br>'
-                    f'{playlist_performance.playlist_pass_date if playlist_performance.playlist_pass_date else ""}'
+                user_data[idx] = mark_safe(
+                    f'<span class="{str(playlist_performance.playlist_passed).lower()}">✘</span>'
+                    # f'<br>'
+                    # f'{playlist_performance.playlist_pass_date if playlist_performance.playlist_pass_date else ""}'
                 )
             else:
-                user_data[playlist.name] = playlist_performance.playlist_passed if playlist_performance else ''
+                user_data[idx] = playlist_performance.playlist_passed if playlist_performance else ''
 
         data.append(user_data)
 
     table = CourseActivityTable(
         data=data,
-        extra_columns=[(playlist.name, Column(verbose_name=playlist.name,
+        extra_columns=[(str(idx), Column(verbose_name=str(idx+1),
                                                orderable=True))
-                       for playlist in course.playlist_objects]
+                       for idx in range(len(course.playlist_objects))]
     )
 
     RequestConfig(request).configure(table)
