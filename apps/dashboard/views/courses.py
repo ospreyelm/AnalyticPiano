@@ -137,8 +137,11 @@ def course_activity_view(request, course_name):
     subscribers = request.user.subscribers
 
     data = []
+
+    JOIN_STR = ' '
+    PLAYLISTS = course.playlists.split(JOIN_STR)
     course_performances = PerformanceData.objects.filter(
-        playlist__id__in=course.playlists.split(' '), user__in=subscribers
+        playlist__id__in=PLAYLISTS, user__in=subscribers
     ).select_related('user', 'playlist')
 
     for subscriber in subscribers:
@@ -147,9 +150,9 @@ def course_activity_view(request, course_name):
             'subscriber_email': subscriber.email,
             'subscriber_name': subscriber.get_full_name(),
         }
-        # for playlist in course.playlist_objects:
-        for idx in range(len(course.playlist_objects)):
-            playlist = course.playlist_objects[idx]
+        for idx in range(len(PLAYLISTS)):
+            ## FIXME: inefficient
+            playlist = course.playlist_objects.filter(id=PLAYLISTS[idx]).first()
             playlist_performance = user_performances.filter(playlist=playlist).last()
             if playlist_performance:
                 user_data[idx] = mark_safe(

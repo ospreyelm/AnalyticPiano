@@ -483,7 +483,8 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def playlist_objects(self):
-        return Playlist.objects.filter(id__in=self.playlists.split(' '))
+        JOIN_STR = ' '
+        return Playlist.objects.filter(id__in=self.playlists.split(JOIN_STR))
 
 
 class PerformanceData(models.Model):
