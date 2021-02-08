@@ -84,7 +84,12 @@ define({
     "459": {"label": "&RΔ7/&X", "description": "&R major &43;", "spellbass": "iG_", "stepwise": "235", "root": "5", "rootstepwise": "3"},
     "158": {"label": "&RΔ7/&X", "description": "&R major &42;", "spellbass": "iB_", "stepwise": "135", "root": "1", "rootstepwise": "1"},
 
-  // dominant ninth
+  // ninth chords
   
-    "24y": {"label": "&R9", "spellbass": "iG_", "stepwise": "126", "root": "0", "rootstepwise": "0"}
+    //"237y": {"label": "&R−9", "spellbass": "iD_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
+    "23y": {"label": "&R−9", "spellbass": "iD_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
+    //"247y": {"label": "&R9", "spellbass": "iG_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
+    "24y": {"label": "&R9", "spellbass": "iG_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
+    //"247z": {"label": "&RΔ9", "spellbass": "iC_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
+    "24z": {"label": "&RΔ9", "spellbass": "iC_", "stepwise": "126", "root": "0", "rootstepwise": "0"}
 });
