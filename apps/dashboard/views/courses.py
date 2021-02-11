@@ -22,7 +22,7 @@ def courses_list_view(request):
     table = CoursesListTable(courses)
     course_author = request.user
 
-    RequestConfig(request, paginate={"per_page": 25}).configure(table)
+    RequestConfig(request, paginate={"per_page": 50}).configure(table)
     return render(request, "dashboard/courses-list.html", {
         "table": table,
         "course_author": course_author
