@@ -20,7 +20,7 @@ def playlists_list_view(request):
 
     table = PlaylistsListTable(playlists)
 
-    RequestConfig(request, paginate={"per_page": 25}).configure(table)
+    RequestConfig(request, paginate={"per_page": 50}).configure(table)
     return render(request, "dashboard/playlists-list.html", {
         "table": table,
     })
