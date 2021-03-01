@@ -90,6 +90,13 @@ define({
     "23y": {"label": "&R−9", "spellbass": "iD_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
     //"247y": {"label": "&R9", "spellbass": "iG_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
     "24y": {"label": "&R9", "spellbass": "iG_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
+    //"147y": {"label": "&R♭9", "spellbass": "iA_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
+    "14y": {"label": "&R♭9", "spellbass": "iA_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
     //"247z": {"label": "&RΔ9", "spellbass": "iC_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
-    "24z": {"label": "&RΔ9", "spellbass": "iC_", "stepwise": "126", "root": "0", "rootstepwise": "0"}
+    "24z": {"label": "&RΔ9", "spellbass": "iC_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
+  
+  // thirteenth chords
+  
+    "29y": {"label": "&R13", "spellbass": "iG_", "stepwise": "156", "root": "0", "rootstepwise": "0"},
+    "28y": {"label": "&R7(♭13)", "spellbass": "iD_", "stepwise": "156", "root": "0", "rootstepwise": "0"}
 });
