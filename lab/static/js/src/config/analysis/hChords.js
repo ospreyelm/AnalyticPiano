@@ -97,6 +97,6 @@ define({
   
   // thirteenth chords
   
-    "29y": {"label": "&R13", "spellbass": "iG_", "stepwise": "156", "root": "0", "rootstepwise": "0"},
-    "28y": {"label": "&R7(♭13)", "spellbass": "iD_", "stepwise": "156", "root": "0", "rootstepwise": "0"}
+    "49y": {"label": "&R13", "spellbass": "iG_", "stepwise": "256", "root": "0", "rootstepwise": "0"},
+    "48y": {"label": "&R7(♭13)", "spellbass": "iD_", "stepwise": "256", "root": "0", "rootstepwise": "0"}
 });
