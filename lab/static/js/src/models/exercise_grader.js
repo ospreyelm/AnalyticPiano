@@ -116,12 +116,12 @@ define([
 					case "figured_bass_pcs":
 						result = this.figuredBassPcsMatch(expected_notes, actual_notes, abbrev_switch);
 						break;
-					case "echo_bass":
-						result = this.bassMatch(expected_notes, actual_notes);
-						break;
-					case "echo_soprano":
-						result = this.sopranoMatch(expected_notes, actual_notes);
-						break;
+					// case "echo_bass":
+					// 	result = this.bassMatch(expected_notes, actual_notes);
+					// 	break;
+					// case "echo_soprano":
+					// 	result = this.sopranoMatch(expected_notes, actual_notes);
+					// 	break;
 					default:
 						result = this.notesMatch(expected_notes, actual_notes);
 				}
@@ -165,6 +165,11 @@ define([
 				note: {},
 				notes: delivered,
 			};
+
+			// if (expected.length == 0) {
+			// 	result.state = CORRECT;
+			// 	return result;
+			// }
 
 			var mistake = false;
 
