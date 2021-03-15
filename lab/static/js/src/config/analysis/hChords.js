@@ -55,7 +55,6 @@ define({
 
   // minor tetrad
 
-
     "37y": {"label": "&R−7", "description": "&R minor &7;", "spellbass": "iD_", "stepwise": "246", "root": "0", "rootstepwise": "0"},
     // "479": {"label": "&R6", "description": "&R major added sixth", "spellbass": "iF_", "stepwise": "245", "root": "0", "rootstepwise": "0"},
     "479": {"label": "&R−7/&X", "description": "&R minor &65;", "spellbass": "iF_", "stepwise": "245", "root": "9", "rootstepwise": "5"},
@@ -83,6 +82,21 @@ define({
     "47z": {"label": "&RΔ7", "description": "&R major &7;", "spellbass": "iC_", "stepwise": "246", "root": "0", "rootstepwise": "0"},
     "378": {"label": "&RΔ7/&X", "description": "&R major &65;", "spellbass": "iE_", "stepwise": "245", "root": "8", "rootstepwise": "5"},
     "459": {"label": "&RΔ7/&X", "description": "&R major &43;", "spellbass": "iG_", "stepwise": "235", "root": "5", "rootstepwise": "3"},
-    "158": {"label": "&RΔ7/&X", "description": "&R major &42;", "spellbass": "iB_", "stepwise": "135", "root": "1", "rootstepwise": "1"}
+    "158": {"label": "&RΔ7/&X", "description": "&R major &42;", "spellbass": "iB_", "stepwise": "135", "root": "1", "rootstepwise": "1"},
 
+  // ninth chords
+  
+    //"237y": {"label": "&R−9", "spellbass": "iD_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
+    "23y": {"label": "&R−9", "spellbass": "iD_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
+    //"247y": {"label": "&R9", "spellbass": "iG_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
+    "24y": {"label": "&R9", "spellbass": "iG_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
+    //"147y": {"label": "&R♭9", "spellbass": "iA_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
+    "14y": {"label": "&R♭9", "spellbass": "iA_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
+    //"247z": {"label": "&RΔ9", "spellbass": "iC_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
+    "24z": {"label": "&RΔ9", "spellbass": "iC_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
+  
+  // thirteenth chords
+  
+    "49y": {"label": "&R13", "spellbass": "iG_", "stepwise": "256", "root": "0", "rootstepwise": "0"},
+    "48y": {"label": "&R7(♭13)", "spellbass": "iD_", "stepwise": "256", "root": "0", "rootstepwise": "0"}
 });
