@@ -450,16 +450,16 @@ var spellingAndAnalysisFunctions = {
         }
     },
     to_set_class_set: function(notes) {
-        return to_set_class(notes, "set");
+        return this.to_set_class(notes, "set");
     },
     to_set_class_normal: function(notes) {
-        return to_set_class(notes, "normal");
+        return this.to_set_class(notes, "normal");
     },
     to_set_class_prime: function(notes) {
-        return to_set_class(notes, "prime");
+        return this.to_set_class(notes, "prime");
     },
     to_set_class_forte: function(notes) {
-        return to_set_class(notes, "forte");
+        return this.to_set_class(notes, "forte");
     },
     to_set_class: function(notes, format=false) {
         if (typeof notes == 'number') var midi_nums = [notes];
