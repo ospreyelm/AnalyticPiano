@@ -13,11 +13,6 @@ admin.site.site_header = "Analytic Piano • Admin Main Menu"
 admin.site.site_title = "Analytic Piano"
 admin.site.index_title = "Admin Main Menu"
 
-from django.urls import path
-
-def trigger_error(request):
-    division_by_zero = 1 / 0
-
 urlpatterns = [
     path('', include(lab.urls)),
     path('accounts/', include('apps.accounts.urls'), name='accounts'),
@@ -30,7 +25,4 @@ urlpatterns = [
 
     # Uncomment the next line to enable the admin:
     path('analytic-piano-app-admin/', admin.site.urls, name='admin'),
-
-    # Sentry
-    path('sentry-debug/', trigger_error),
 ]
