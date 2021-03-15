@@ -491,7 +491,11 @@ var spellingAndAnalysisFunctions = {
         }
 
         const floor_idx = pcs.indexOf(floor);
-        const ord = [pcs.slice(floor_idx)].concat([pcs.slice(0, floor_idx)]);
+        if ( floor_idx > 0 ) {
+            const ord = [pcs.slice(floor_idx)].concat([pcs.slice(0, floor_idx)]);
+        } else {
+            const ord = pcs;
+        }
         const ord_str = ord.toString().replace("10", "t").replace("11", "e");
         if ( format == "normal" ) {
             return "[" + ord_str + "]"; // normal order
