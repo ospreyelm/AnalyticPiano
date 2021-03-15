@@ -701,6 +701,21 @@ define([
 
 			return interval; /* for grading */
 		},
+		drawSetClass: function(x, y, format=false) {
+			var midi_nums = this.chord.getNoteNumbers();
+			var set_class = this.getAnalyzer().to_set_class(midi_nums, format);
+
+			var ctx = this.getContext();
+			var fontArgs = ctx.font.split(' ');
+			var newSize = '20px';
+			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
+
+			if (set_class && set_class !== '') {
+				ctx.fillText(set_class, x + StaveNotater.prototype.annotateOffsetX + 3, y)
+			}
+
+			return set_class; /* for grading */
+		},
 		/**
 		 * Draws the interval analysis.
 		 *
@@ -1106,6 +1121,22 @@ define([
 				}
 				if (mode.chord_labels) {
 					this.drawChordLabel(x);
+				}
+			}
+
+			if (num_notes >= 3) {
+				var set_format = false;
+				if (mode.set_class_forte) {
+					set_format = "Forte";
+				} else if (mode.set_class_prime) {
+					set_format = "prime";
+				} else if (mode.set_class_normal) {
+					set_format = "normal";
+				} else if (mode.set_class_set) {
+					set_format = "set";
+				}
+				if (set_format) {
+					this.drawSetClass(x, y - 25, set_format);
 				}
 			}
 		},

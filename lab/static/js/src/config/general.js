@@ -51,7 +51,13 @@ define({
 
 			/* max one of the following may be true */
 			intervals: false,
-			pci: false
+			pci: false,
+
+			/* max one of the following may be true */
+			set_class_set: false,
+			set_class_normal: false,
+			set_class_prime: false,
+			set_class_forte: false,
 		}
 	},
 

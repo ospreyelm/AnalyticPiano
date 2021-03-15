@@ -69,6 +69,10 @@ define([
 				"note_names",
 				"pci",
 				"pitch_class",
+				"set_class_set",
+				"set_class_normal",
+				"set_class_prime",
+				"set_class_forte",
 				"roman_numerals",
 				"scale_degrees",
 				"scientific_pitch",
@@ -197,6 +201,10 @@ define([
 				"note_names": "to_note_name",
 				"pci": "to_pci",
 				"pitch_class": "to_pitch_class",
+				"set_class_set": "to_set_class_set",
+				"set_class_normal": "to_set_class_normal",
+				"set_class_prime": "to_set_class_prime",
+				"set_class_forte": "to_set_class_forte",
 				"roman_numerals": "to_chord",
 				"scale_degrees": "to_scale_degree",
 				"scientific_pitch": "getNoteName",
@@ -212,6 +220,10 @@ define([
 				"note_names": "", // ok
 				"pci": "", // ok
 				"pitch_class": "",
+				"set_class_set": "",
+				"set_class_normal": "",
+				"set_class_prime": "",
+				"set_class_forte": "",
 				"roman_numerals": ".label", // ok
 				"scale_degrees": "", // ok
 				"scientific_pitch": "", // ok

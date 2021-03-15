@@ -83,6 +83,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     zero_padding = 'EA00A0'
 
     ANALYSIS_MODE_CHOICES = (
+        # not good that this is hard coded, where is this used currently?
         ("note_names", "Note Names"),
         ("scientific_pitch", "Scientific Pitch"),
         ("scale_degrees", "Scale Degrees"),

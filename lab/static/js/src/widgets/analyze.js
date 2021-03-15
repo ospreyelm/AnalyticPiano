@@ -61,6 +61,18 @@ define([
 					'<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony in Roman numerals</label>',
 				'</li>',
 				'<li>',
+					'<label><input type="checkbox" name="analysis_set_class_set" value="set_class_set"> Set class—set</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_set_class_normal" value="set_class_normal"> Set class—normal order</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_set_class_prime" value="set_class_prime"> Set class—prime form</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_set_class_forte" value="set_class_forte"> Set class—Forte</label>',
+				'</li>',
+				'<li>',
 					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G)</label>',
 				'</li>',
 				'<li>',
@@ -158,6 +170,22 @@ define([
 			},
 			analysis_pci: function(e) {
 				var opts = ['intervals', 'pci'];
+				this.toggle_exclusive_analysis_option(e, opts);
+			},
+			analysis_set_class_set: function(e) {
+				var opts = ['set_class_set', 'set_class_normal', 'set_class_prime', 'set_class_forte'];
+				this.toggle_exclusive_analysis_option(e, opts);
+			},
+			analysis_set_class_normal: function(e) {
+				var opts = ['set_class_set', 'set_class_normal', 'set_class_prime', 'set_class_forte'];
+				this.toggle_exclusive_analysis_option(e, opts);
+			},
+			analysis_set_class_prime: function(e) {
+				var opts = ['set_class_set', 'set_class_normal', 'set_class_prime', 'set_class_forte'];
+				this.toggle_exclusive_analysis_option(e, opts);
+			},
+			analysis_set_class_forte: function(e) {
+				var opts = ['set_class_set', 'set_class_normal', 'set_class_prime', 'set_class_forte'];
 				this.toggle_exclusive_analysis_option(e, opts);
 			},
 			analysis_harmony: function(e) {
