@@ -461,6 +461,31 @@ var spellingAndAnalysisFunctions = {
     to_set_class_forte: function(notes) {
         return this.to_set_class(notes, "forte");
     },
+    to_normal_order: function(pcs) {
+        var min_span = false;
+        var min_penult_span = false;
+        var floor = false;
+        for (i = 0, len = pcs.length; i < len; i++) {
+            // var upward_displacements = pcs.map(pc => (12 + pc - pcs[i]) % 12).reduce((a, b) => a + b, 0);
+
+            var span = (12 - pcs[i] + pcs[(len + i - 1) % len]) % 12;
+            var penult_span = (12 - pcs[i] + pcs[(len + i - 2) % len]) % 12;
+            if ( !min_span || span < min_span ) {
+                min_span = span;
+                min_penult_span = penult_span;
+                floor = pcs[i];
+            } else if ( span == min_span && penult_span < min_penult_span ) {
+                min_penult_span = penult_span;
+                floor = pcs[i];
+            }
+        }
+        const floor_idx = pcs.indexOf(floor);
+        var norm = pcs;
+        if ( floor_idx > 0 ) {
+            norm = pcs.slice(floor_idx).concat(pcs.slice(0, floor_idx));
+        }
+        return norm;
+    },
     to_set_class: function(notes, format=false) {
         if (typeof notes == 'number') var midi_nums = [notes];
         else var midi_nums = notes;
@@ -480,33 +505,20 @@ var spellingAndAnalysisFunctions = {
             return "set(" + pcs.toString() + ")";
         }
 
-        var best_compactness = false;
-        var floor = false;
-        for (i = 0, len = pcs.length; i < len; i++) {
-            var upward_displacements = pcs.map(pc => (12 + pc - pcs[i]) % 12).reduce((a, b) => a + b, 0)
-            if ( !best_compactness || upward_displacements < best_compactness ) {
-                best_compactness = upward_displacements;
-                floor = pcs[i];
-            }
-        }
-
-        const floor_idx = pcs.indexOf(floor);
-        var ord = pcs;
-        if ( floor_idx > 0 ) {
-            ord = [pcs.slice(floor_idx)].concat([pcs.slice(0, floor_idx)]);
-        }
-        const ord_str = ord.toString().replace("10", "t").replace("11", "e");
-        if ( format == "normal" ) {
-            return "[" + ord_str + "]"; // normal order
-        }
-
-        const norm = pcs.map(pc => (12 + pc - floor) % 12).sort(sortNumber);
+        const norm = this.to_normal_order(pcs);
         const norm_str = norm.toString().replace("10", "t").replace("11", "e");
+        if ( format == "normal" ) {
+            return "[" + norm_str + "]"; // normal order
+        }
+        const norm_z = norm.map(pc => (12 + pc - norm[0]) % 12).sort(sortNumber);
 
-        var prime = norm; // provisional
-        const inv_norm = norm.map(pc => -pc + norm[norm.length-1]).sort(sortNumber);
-        if ( inv_norm.reduce((a, b) => a + b, 0) < norm.reduce((a, b) => a + b, 0) ) {
-            prime = inv_norm;
+        const pcs_inverted = pcs.map(pc => (12 - pc) % 12).sort(sortNumber);
+        const invs = this.to_normal_order(pcs_inverted);
+        const invs_z = invs.map(pc => (12 + pc - invs[0]) % 12).sort(sortNumber);
+
+        var prime = norm_z; // provisional
+        if ( invs_z.reduce((a, b) => a + b, 0) < norm_z.reduce((a, b) => a + b, 0) ) {
+            prime = invs_z;
         }
 
         const prime_str = prime.toString().replace("10", "t").replace("11", "e").replaceAll(",", "");

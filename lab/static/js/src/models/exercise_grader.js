@@ -166,11 +166,6 @@ define([
 				notes: delivered,
 			};
 
-			// if (expected.length == 0) {
-			// 	result.state = CORRECT;
-			// 	return result;
-			// }
-
 			var mistake = false;
 
 			var i, len;
