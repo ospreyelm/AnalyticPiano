@@ -11,7 +11,7 @@ django-ckeditor = "==5.9.0"
 gunicorn = "==20.0.4"
 whitenoise = "==5.1.0"
 django-auth-lti = {git = "https://github.com/Harvard-University-iCommons/django-auth-lti.git", ref = "v2.0.2"}
-Django = "==2.2.18"
+Django = "==2.2.24"
 django-nested-admin = "==3.3.2"
 django-prettyjson = "==0.4.1"
 dj-database-url = "==0.5.0"
