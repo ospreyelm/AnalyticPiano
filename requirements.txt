@@ -1,7 +1,7 @@
 certifi==2020.6.20
 chardet==3.0.4
 dj-database-url==0.5.0
-Django==2.2.18
+Django==2.2.24
 django-better-admin-arrayfield==1.3.0
 django-braces==1.13.0
 django-bootstrap-modal-forms==2.0.0
@@ -14,7 +14,7 @@ django-prettyjson==0.4.1
 django-tables2==2.3.1
 gunicorn==20.0.4
 idna==2.10
-lxml==4.6.2
+lxml==4.6.3
 oauthlib==3.1.0
 psycopg2==2.8.5
 psycopg2-binary==2.8.5
