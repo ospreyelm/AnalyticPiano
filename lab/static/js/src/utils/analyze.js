@@ -490,8 +490,8 @@ var spellingAndAnalysisFunctions = {
         if (typeof notes == 'number') var midi_nums = [notes];
         else var midi_nums = notes;
 
-        /* 3+ notes and 2+ pitch classes */
-        if ( midi_nums.length < 3 ) return "";
+        /* 2+ notes and 2+ pitch classes */
+        if ( midi_nums.length < 2 ) return "";
         if ( this.bare_octave_or_unison(midi_nums) ) return "";
 
         function sortNumber(a, b) {

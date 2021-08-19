@@ -1124,7 +1124,7 @@ define([
 				}
 			}
 
-			if (num_notes >= 3) {
+			if (num_notes >= 2) {
 				var set_format = false;
 				if (mode.set_class_forte) {
 					set_format = "Forte";
