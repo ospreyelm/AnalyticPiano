@@ -36,7 +36,7 @@ define([
 	var StaveNoteFactory = function(settings) {
 		this.settings = settings || {};
 
-		_.each(['chord','keySignature','clef','highlightConfig','modifierCallback'], function(prop) {
+		_.each(['chord','keySignature','clef','highlightConfig','modifierCallback','activeAlterations'], function(prop) {
 			if(prop in this.settings) {
 				this[prop] = this.settings[prop];
 			} else {
@@ -149,49 +149,128 @@ define([
 		 * @param {array} noteKeys
 		 * @return {array}
 		 */
-		getAccidentalsOf: function(noteKeys) {
-			var keySignature = this.keySignature;
-			var accidentals = [];
-			var accidental, 
-				note, 
+		getAccidentalsOf: function(noteKeys, activeAlterations = Object.create(null)) {
+			let keySignature = this.keySignature;
+			let accidentals = [];
+			let note,
 				note_spelling,
+				quality,
 				natural_note, 
 				natural_found_idx,
 				is_doubled;
 
 			for(var i = 0, len = noteKeys.length; i < len; i++) {
+				accidentals.push('');
+			}
+
+			for(var i = 0, len = noteKeys.length; i < len; i++) {
 				// skip to next iteration is for the case that the
 				// note has already been assigned a natural because
 				// the same note name appears twice (i.e. is doubled).
-				if(accidentals[i]) {
+				if (accidentals[i]) {
 					continue;
 				}
 
 				note = noteKeys[i];
 				note_spelling = note.replace(/\/\d$/, '');
-				accidental = note_spelling.substr(1); // get default accidental
-				natural_note = note.replace(accidental + "\/", '/');
+				quality = note_spelling.substr(1); // get qualifier
+				natural_note = note.replace(quality + "\/", '/');
 				natural_found_idx = noteKeys.indexOf(natural_note);
 				is_doubled = natural_found_idx !== -1 && i !== natural_found_idx;
 
 				// check to see if this note is doubled - that is, the natural version of
 				// the note is also active at the same time, in which case it needs to be
 				// distinguished with a natural accidental
-				if(is_doubled) {
+				if (is_doubled) {
 					accidentals[natural_found_idx] = 'n';
 				} else {
-					// otherwise check the key signature to determine the accidental
-					if(keySignature.signatureContains(note_spelling)) {
-						accidental = '';	
-					} else if(keySignature.needsNatural(note_spelling)) {
-						accidental = 'n';
-					} 
-				}
 
-				accidentals[i] = accidental;
+					accidentals[i] = quality;
+
+					// let is_signed_alteration =
+					// 	keySignature.signatureContains(note_spelling);
+					// 	// diatonic and non-natural
+					const staff_line = note[0] + note.split('/')[1];
+					const is_diatonic = keySignature.isDiatonic(note_spelling);
+
+					if (is_diatonic) {
+
+						if (activeAlterations[staff_line] == undefined) {
+							accidentals[i] = '';
+						}
+						else if (activeAlterations[staff_line] != quality) {
+							if (quality == '') {
+								accidentals[i] = 'n';
+							} else { accidentals[i] = quality };
+						}
+
+					} else { // chromatic
+						if (activeAlterations[staff_line] == quality) {
+							accidentals[i] = '';
+						} else if (activeAlterations[staff_line] == undefined) {
+							if (quality == '') { accidentals[i] = 'n' }
+						} else if (activeAlterations[staff_line] !== quality) {
+							if (quality == '') { accidentals[i] = 'n' }
+						}
+					}
+
+				}
 			}
 
 			return accidentals;
+		},
+		getCancellations: function(noteKeys, activeAlterations=Object.create(null)) {
+			var keySignature = this.keySignature;
+			var cancellations = [];
+			var accidental,
+				note,
+				note_spelling;
+
+			for(var i = 0, len = noteKeys.length; i < len; i++) {
+
+				note = noteKeys[i];
+				note_spelling = note.replace(/\/\d$/, '');
+				accidental = note_spelling.substr(1); // get qualifier
+
+				let staff_line = note[0] + note.split('/')[1];
+				let is_diatonic = keySignature.isDiatonic(note_spelling);
+
+				if (is_diatonic) {
+					if (activeAlterations[staff_line] != undefined) {
+						cancellations.push(staff_line);
+					}
+				}
+			}
+
+			return cancellations;
+		},
+		isolateChromatics: function(noteKeys) {
+			var keySignature = this.keySignature;
+			var chromatics = Object.create(null);
+			var accidental,
+				note,
+				note_spelling,
+				staff_line;
+
+			for (var i = 0, len = noteKeys.length; i < len; i++) {
+				note = noteKeys[i];
+				note_spelling = note.replace(/\/\d$/, '');
+				if (keySignature.isDiatonic(note_spelling)) {
+					continue;
+				}
+
+				accidental = note_spelling.substr(1); // get qualifier
+				staff_line = note[0] + note.split('/')[1];
+
+				// allow for strange case of two chromatics on the same staff line in a single chord
+				if (chromatics[staff_line] != undefined && chromatics[staff_line] != accidental) {
+					chromatics[staff_line] = [chromatics[staff_line], accidental];
+				} else {
+					chromatics[staff_line] = accidental;
+				}
+			}
+
+			return chromatics;
 		},
 		/**
 		 * Returns the analysis color for a given note.

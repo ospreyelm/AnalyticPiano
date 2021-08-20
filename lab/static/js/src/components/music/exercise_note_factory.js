@@ -27,7 +27,7 @@ define([
 	var ExerciseNoteFactory = function(settings) {
 		this.settings = settings || {};
 
-		_.each(['chord','keySignature','clef','highlightConfig'], function(prop) {
+		_.each(['chord','keySignature','clef','highlightConfig','activeAlterations'], function(prop) {
 			if(prop in this.settings) {
 				this[prop] = this.settings[prop];
 			} else {
@@ -65,7 +65,8 @@ define([
 				keySignature: this.keySignature,
 				clef: this.clef,
 				highlightConfig: this.highlightConfig,
-				modifierCallback: this.createModifiers
+				modifierCallback: this.createModifiers,
+				activeAlterations: this.activeAlterations
 			});
 		},
 		/**
@@ -100,7 +101,11 @@ define([
 		 */
 		createModifiers: function() {
 			var keys = this.staveNoteFactory.getNoteKeys();
-			var accidentals = this.staveNoteFactory.getAccidentalsOf(keys);
+
+			const alteration_history = this.activeAlterations;
+
+			const accidentals = this.staveNoteFactory.getAccidentalsOf(keys, alteration_history);
+
 			var allMidiKeys = this.chord.getNoteNumbers(); // for highlightConfig across stave boundaries
 			var clefMidiKeys = this.chord.getNoteNumbers(this.clef);
 			var noteProps = this.chord.getNoteProps();

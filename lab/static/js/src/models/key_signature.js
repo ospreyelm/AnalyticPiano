@@ -378,6 +378,21 @@ define([
 			}
 			return false;
 		},
+		isDiatonic: function(note) {
+		var i, len, signature = this.signature, flats_or_sharps = [];
+			for(i = 0, len = signature.length; i < len; i++) {
+				if(signature[i].toLowerCase() === note.toLowerCase()) {
+					return true;
+				}
+				flats_or_sharps.push(signature[i].toLowerCase()[0]);
+			}
+			if (['a','b','c','d','e','f','g'].includes(note.toLowerCase())
+				&& !flats_or_sharps.includes(note.toLowerCase())
+				) {
+				return true
+			}
+			return false;
+		},
 
 		//--------------------------------------------------
 		// Key manipulation functions

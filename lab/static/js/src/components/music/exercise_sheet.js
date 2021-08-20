@@ -358,6 +358,10 @@ define([
             };
             var display_chord;
             var exercise_chord;
+            var activeAlterations = Object.create(null);
+            // activeAlterations['a4'] = '#';
+            // activeAlterations['a2'] = '#';
+            // console.log('initiate', activeAlterations);
 
             // scrolling exercise view
             var scroll_exercise = false;
@@ -397,6 +401,8 @@ define([
             treble.connect(bass);
             staves.push(treble);
 
+            var alterationHistory = Object.create(null);;
+
             // now add the staves for showing the notes
             for (var i = 0, len = display_items.length; i < len; i++) {
                 var elapsedWidthUnits = 0;
@@ -416,14 +422,29 @@ define([
                     barlines.push(i)
                 }
 
+                // console.log('IN --> ' + i.toString(), activeAlterations);
+                alterationHistory[i] = activeAlterations;
+
                 display_chord = display_items[i].chord;
                 exercise_chord = exercise_items[i].chord;
-                treble = this.createNoteStave('treble', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits);
-                bass = this.createNoteStave('bass', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits);
+                treble = this.createNoteStave('treble', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits, activeAlterations);
+                bass = this.createNoteStave('bass', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits, activeAlterations);
                 position.index += 1;
                 treble.connect(bass);
                 staves.push(treble);
+
+                let merged = {...activeAlterations, ...treble.noteFactory.bequestAlterations};
+                let cancellations = treble.noteFactory.bequestCancellations;
+                for (let j = 0, len_j = cancellations.length; j < len_j; j++) {
+                    delete merged[cancellations[j]];
+                }
+
+                activeAlterations = merged;
+                // console.log('OUT--> ' + i.toString(), activeAlterations);
+                // console.log('---');
             }
+
+            treble.noteFactory.alterationHistory = alterationHistory;
 
             this.resetStaves();
             this.addStaves(staves);
@@ -495,7 +516,7 @@ define([
          * @param {Chord} chord
          * @return {Stave}
          */
-        createNoteStave: function (clef, position, displayChord, exerciseChord, elapsedWidthUnits) {
+        createNoteStave: function (clef, position, displayChord, exerciseChord, elapsedWidthUnits, activeAlterations) {
             var stave = new Stave(clef, position);
             var widthUnits = null;
             if (exerciseChord.settings.rhythm) {
@@ -513,7 +534,8 @@ define([
                 clef: clef,
                 chord: displayChord,
                 keySignature: this.keySignature,
-                highlightConfig: this.getHighlightConfig()
+                highlightConfig: this.getHighlightConfig(),
+                activeAlterations: activeAlterations
             }));
             stave.setNotater(this.createStaveNotater(clef, {
                 stave: stave,
@@ -528,6 +550,7 @@ define([
                 stave.setFirstBarWidth(staffSig);
             }
             stave.updatePositionWithRhythm(widthUnits, elapsedWidthUnits);
+            stave.updateAlterations(activeAlterations);
 
             return stave;
         },

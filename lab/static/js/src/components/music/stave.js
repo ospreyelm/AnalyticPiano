@@ -723,7 +723,27 @@ define([
 			}
 
 			this.start_y = this.getYForClef(this.clef);
-		},		/**
+		},
+		updateAlterations: function(activeAlterations = Object.create(null)) {
+
+			let factory = this.noteFactory.staveNoteFactory
+
+			var keys = factory.getNoteKeys();
+			var alterations = factory.isolateChromatics(keys);
+
+			let merged = {...activeAlterations, ...alterations};
+
+			var cancellations = factory.getCancellations(keys, activeAlterations);
+			this.noteFactory.bequestCancellations = factory.getCancellations(keys, activeAlterations);
+
+			for (var i = 0, len = cancellations.length; i < len; i++) {
+				delete merged[cancellations[i]];
+			}
+
+			this.noteFactory.bequestAlterations = merged;
+
+		},
+		/**
 		 * Returns the vertical Y position associated with the given clef.
 		 *
 		 * @param {string} clef treble|bass

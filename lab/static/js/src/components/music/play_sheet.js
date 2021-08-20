@@ -254,7 +254,8 @@ define([
 				isBanked: isBanked,
 				isNovel: isNovel,
 				keySignature: this.keySignature,
-				highlightConfig: this.getHighlightConfig()
+				highlightConfig: this.getHighlightConfig(),
+				activeAlterations: Object.create(null)
 			}));
 			stave.setNotater(this.createStaveNotater(clef, {
 				stave: stave,
