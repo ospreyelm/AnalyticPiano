@@ -71,6 +71,8 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     data = RawJSONField('Data')
     rhythm = models.CharField('Rhythm', max_length=255,
                               blank=True, null=True)
+    time_signature = models.CharField('Meter', max_length=5,
+                                      blank=True, null=True)
     is_public = models.BooleanField('Share', default=True)
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='exercises',
@@ -104,7 +106,8 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     @classmethod
     def get_data_order_list(cls):
         return ['type', 'introText', 'reviewText', 'staffDistribution',
-                'key', 'keySignature', 'analysis', 'highlight', 'chord']
+                'key', 'keySignature', 'analysis', 'highlight', 'chord',
+                'timeSignature']
 
     @property
     def is_private(self):

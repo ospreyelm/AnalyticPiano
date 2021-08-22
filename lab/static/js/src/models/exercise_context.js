@@ -60,6 +60,7 @@ define([
         this.timer = null;
         this.displayChords = this.createDisplayChords();
         this.exerciseChords = this.createExerciseChords();
+        this.timeSignature = this.definition.getTimeSignature();
 
         // following lines may be obsolete
         var ex_num_current = this.definition.getExerciseList().reduce(
@@ -661,6 +662,14 @@ define([
          */
         getExerciseChords: function() {
             return this.exerciseChords;
+        },
+        /**
+         * Returns the time signature for display.
+         *
+         * @return undefined
+         */
+        getTimeSignature: function() {
+            return this.timeSignature;
         },
         /**
          * Returns the chords being used for input to the exercise.

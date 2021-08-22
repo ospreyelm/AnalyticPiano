@@ -181,6 +181,7 @@ class ExerciseForm(forms.ModelForm):
             # self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
             self.fields['type'].initial = self.instance.data.get('type', self.TYPE_MATCHING)
             self.fields['staff_distribution'].initial = self.instance.data.get('staffDistribution', self.DISTRIBUTION_KEYBOARD)
+            self.fields['time_signature'].initial = self.instance.data.get('timeSignature', None)
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
@@ -190,6 +191,7 @@ class ExerciseForm(forms.ModelForm):
             # instance.data['reviewText'] = self.cleaned_data['review_text']
             instance.data['type'] = self.cleaned_data['type']
             instance.data['staffDistribution'] = self.cleaned_data['staff_distribution']
+            instance.data['timeSignature'] = self.cleaned_data['time_signature']
             instance.authored_by = self.context.get('user')
             instance.clean()
             instance.save()
