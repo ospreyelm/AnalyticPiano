@@ -396,7 +396,7 @@ define([
             var exercise_chord;
             var activeAlterations = Object.create(null);
             const timeSignature = this.getTimeSignature();
-            const barlineSpace = 0.125; // relative to width of whole note
+            const barlineSpace = 0.25; // relative to width of whole note
 
             // scrolling exercise view
             var scroll_exercise = false;
