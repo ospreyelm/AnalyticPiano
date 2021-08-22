@@ -462,7 +462,7 @@ define([
                 } else {
                     curr_value = DEFAULT_RHYTHM_VALUE;
                 }
-                if (i + 1 < len) {
+                if (i < len) {
                     if (this.getsBarline(timeSignature, elapsedWholeNotes)
                         ) {
                         // new bar begins here: draw barline at left
