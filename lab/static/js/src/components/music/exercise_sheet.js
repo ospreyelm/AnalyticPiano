@@ -447,8 +447,7 @@ define([
                     var rhythm_value = null;
                     if (display_items[j].chord.settings.rhythm) {
                         rhythm_value = display_items[j].chord.settings.rhythm;
-                    }
-                    if (rhythm_value == null) {
+                    } else {
                         rhythm_value = DEFAULT_RHYTHM_VALUE;
                     }
                     elapsedWidthUnits += this.getVisualWidth(rhythm_value);
@@ -457,33 +456,22 @@ define([
 
                 // spacing for barlines
                 elapsedWidthUnits += barlineSpace * (this.countElapsedBars(timeSignature, elapsedWholeNotes - 0.01));
-                if (this.getsBarline(timeSignature, elapsedWholeNotes)) {
-                    barlines.push(i);
-                    activeAlterations = Object.create(null); // accidentals reset
-                    elapsedWidthUnits += barlineSpace; // affects the bar AFTER
+                var curr_value = null;
+                if (display_items[i].chord.settings.rhythm) {
+                    curr_value = display_items[i].chord.settings.rhythm;
+                } else {
+                    curr_value = DEFAULT_RHYTHM_VALUE;
                 }
-                if (i > 0 && i < len - 1) {
-                    let next_value = null;
-                    if (display_items[i+1].chord.settings.rhythm) {
-                        next_value = display_items[i+1].chord.settings.rhythm;
-                    }
-                    if (next_value == null) {
-                        next_value = DEFAULT_RHYTHM_VALUE;
-                    }
-                    if (this.getsBarline(timeSignature, elapsedWholeNotes + this.getWholeNoteCount(next_value))) {
-                        extraWidth += barlineSpace; // affects the bar BEFORE
-                    }
-                } else if (i == 0 && len > 1) {
-                    let next_value = null;
-                    if (display_items[i+1].chord.settings.rhythm) {
-                        next_value = display_items[i+1].chord.settings.rhythm;
-                    }
-                    if (next_value == null) {
-                        next_value = DEFAULT_RHYTHM_VALUE;
-                    }
-                    if (this.getsBarline(timeSignature, elapsedWholeNotes + this.getWholeNoteCount(next_value))
-                        && this.getsBarline(timeSignature, this.getWholeNoteCount(next_value))
+                if (i + 1 < len) {
+                    if (this.getsBarline(timeSignature, elapsedWholeNotes)
                         ) {
+                        // new bar begins here: draw barline at left
+                        barlines.push(i+1);
+                        activeAlterations = Object.create(null); // RESET # n b
+                        elapsedWidthUnits += barlineSpace;
+                    }
+                    if (this.getsBarline(timeSignature, elapsedWholeNotes + this.getWholeNoteCount(curr_value))) {
+                        // bar is completed here: add space
                         extraWidth += barlineSpace;
                     }
                 }

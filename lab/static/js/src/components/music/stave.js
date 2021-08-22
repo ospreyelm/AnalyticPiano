@@ -238,7 +238,7 @@ define([
 		 * @return undefined
 		 */
 		drawEndStaveConnector: function() {
-			let next_x = this.start_x + this.width;
+			let next_x = this.start_x + this.width; // RIGHT-HAND SIDE
 			let treble_y = this.getYForClef('treble');
 			let bass_y = this.getYForClef('bass');
 			var staff1 = new Vex.Flow.Stave(next_x, treble_y, -1);
@@ -258,24 +258,22 @@ define([
 			this.drawStaveConnector(staff1, staff2, finishLine);
 		},
 		drawBarline: function() {
-			// similar to drawEndStaveConnector
-			let next_x = this.start_x + this.width;
+			let x_pos = this.start_x; // LEFT-HAND SIDE
 			let treble_y = this.getYForClef('treble');
 			let bass_y = this.getYForClef('bass');
-			var staff1 = new Vex.Flow.Stave(next_x, treble_y, -1);
-			var staff2 = new Vex.Flow.Stave(next_x, bass_y, -1);
+			var staff1 = new Vex.Flow.Stave(x_pos, treble_y, -1);
+			var staff2 = new Vex.Flow.Stave(x_pos, bass_y, -1);
+
+			if (Vex.Version && Vex.Version == "old") {
+				staff1 = new Vex.Flow.Stave(x_pos - 3, treble_y, -1);
+				staff2 = new Vex.Flow.Stave(x_pos - 3, bass_y, -1);
+			}
 
 			let ctx = this.getContext();
 			staff1.setContext(ctx);
 			staff2.setContext(ctx);
 
 			var barline_type = Vex.Flow.StaveConnector.type.SINGLE;
-			if (Vex.Version && Vex.Version == "old") {
-				var finishLine = Vex.Flow.StaveConnector.type.SINGLE;
-				let staff1 = new Vex.Flow.Stave(next_x - 3, treble_y, -1);
-				let staff2 = new Vex.Flow.Stave(next_x - 3, bass_y, -1);
-				this.drawStaveConnector(staff1, staff2, finishLine);
-			}
 			this.drawStaveConnector(staff1, staff2, barline_type);
 		},
 		/**
@@ -287,7 +285,6 @@ define([
 		 * @return undefined
 		 */
 		drawStaveConnector: function(staff1, staff2, connectorType) {
-			// obsolete ?
 			var ctx = this.getContext();
 			var connector = new Vex.Flow.StaveConnector(staff1, staff2);
 			connector.setContext(ctx).setType(connectorType).draw();
