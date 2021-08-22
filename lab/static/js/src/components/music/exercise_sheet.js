@@ -371,6 +371,17 @@ define([
             const barCount = (elapsedWholeNotes * ts[1]) / ts[0];
             return parseInt(barCount);
         },
+        getBarRemainder: function (timeSignature = false, elapsedWholeNotes) {
+            const ts = this.timeSignatureParsed(timeSignature)
+            if (!ts) {
+                return false;
+            }
+            const barCount = (elapsedWholeNotes * ts[1]) / ts[0];
+            if (isNaN(barCount) || barCount < 0) {
+                return null;
+            }
+            return barCount % 1;
+        },
         /**
          * Updates and configures the staves.
          *
@@ -405,6 +416,7 @@ define([
             var pageturns = [0];
             for (var i = 0, len = rhythmValues.length; i < len; i++) {
                 let neededSpace = this.getVisualWidth(rhythmValues[i]);
+                // TO DO: adjust for barline spacing
                 if (neededSpace > availableSpace) {
                     availableSpace = CHORD_BANK_SIZE - neededSpace;
                     // minus operation is due to overlap (see below)
@@ -413,8 +425,10 @@ define([
                 }
                 availableSpace -= neededSpace;
             }
+            let previous_whole_note_count = 0;
             if (scroll_exercise) {
                 let cursor = this.getInputChords()._currentIndex;
+                // TO DO: adjust for barline spacing
                 var page_start = pageturns.filter(function (x, idx) {
                     return x <= cursor
                 }).pop();
@@ -423,9 +437,20 @@ define([
                 })[0] || false;
                 if (page_start > 0) page_start -= 1;
                 // minus operation creates overlap (see above)
+                let previous_items = display_items.slice(0,page_start);
                 display_items = display_items.slice(page_start);
                 exercise_items = exercise_items.slice(page_start);
                 position.offset = page_start;
+
+                for (var i = 0, len = previous_items.length; i < len; i++) {
+                    let rhythm_value = null;
+                    if (previous_items[i].chord.settings.rhythm) {
+                        rhythm_value = previous_items[i].chord.settings.rhythm;
+                    } else {
+                        rhythm_value = DEFAULT_RHYTHM_VALUE;
+                    }
+                    previous_whole_note_count += this.getWholeNoteCount(rhythm_value);
+                }
             }
 
             // the first stave bar is a special case: it's reserved to show the
@@ -455,7 +480,21 @@ define([
                 }
 
                 // spacing for barlines
-                elapsedWidthUnits += barlineSpace * (this.countElapsedBars(timeSignature, elapsedWholeNotes - 0.01));
+
+                var mid_bar_page_turn = false;
+                if (previous_whole_note_count > 0
+                    && this.getBarRemainder(timeSignature, previous_whole_note_count)
+                    && this.getBarRemainder(timeSignature, previous_whole_note_count) > 0) {
+                    mid_bar_page_turn = true;
+                }
+
+                if (mid_bar_page_turn == true) {
+                    elapsedWidthUnits += barlineSpace * (this.countElapsedBars(timeSignature, elapsedWholeNotes));
+                    elapsedWholeNotes += previous_whole_note_count;
+                } else {
+                    elapsedWidthUnits += barlineSpace * (this.countElapsedBars(timeSignature, elapsedWholeNotes - 0.01));
+                }
+
                 var curr_value = null;
                 if (display_items[i].chord.settings.rhythm) {
                     curr_value = display_items[i].chord.settings.rhythm;
