@@ -180,6 +180,7 @@ define([
 				maxCount: CHORD_BANK_SIZE
 			};
 			var staves = []; /* the successive items of this array will correspond to measures */
+			var activeAlterations = Object.create(null);
 
 			/* the first vexflow measure is a special case: it is reserved to
 			 * show the clef and key signature and nothing else */
@@ -189,17 +190,34 @@ define([
 			treble.connect(bass);
 			staves.push(treble);
 
+			var alterationHistory = Object.create(null);
+
 			/* add the subsequent measures */
 			for(var i = 0; i < items.length; i++) {
 				let chord = items[i].chord;
 				let isBanked = items[i].isBanked;
 				let isNovel = items[i].isNovel;
-				treble = this.createNoteStave('treble', _.clone(position), chord, isBanked, isNovel);
-				bass = this.createNoteStave('bass', _.clone(position), chord, isBanked, isNovel);
+
+				// console.log('IN --> ' + i.toString(), activeAlterations);
+				alterationHistory[i] = activeAlterations;
+
+				treble = this.createNoteStave('treble', _.clone(position), chord, isBanked, isNovel, activeAlterations);
+				bass = this.createNoteStave('bass', _.clone(position), chord, isBanked, isNovel, activeAlterations);
 				position.index += 1;
 				treble.connect(bass);
 				staves.push(treble);
+
+				let merged = {...activeAlterations, ...treble.noteFactory.bequestAlterations};
+				let cancellations = treble.noteFactory.bequestCancellations;
+				for (let j = 0, len_j = cancellations.length; j < len_j; j++) {
+					delete merged[cancellations[j]];
+				}
+
+				activeAlterations = merged;
+				// console.log('OUT--> ' + i.toString(), activeAlterations);
 			}
+
+			treble.noteFactory.alterationHistory = alterationHistory;
 
 			this.resetStaves();
 			this.addStaves(staves);
@@ -242,7 +260,7 @@ define([
 		 * @param {Chord} chord
 		 * @return {Stave}
 		 */
-		createNoteStave: function(clef, position, chord, isBanked, isNovel) {
+		createNoteStave: function(clef, position, chord, isBanked, isNovel, activeAlterations) {
 			var stave = new Stave(clef, position);
 
 			stave.setRenderer(this.vexRenderer);
@@ -255,7 +273,7 @@ define([
 				isNovel: isNovel,
 				keySignature: this.keySignature,
 				highlightConfig: this.getHighlightConfig(),
-				activeAlterations: Object.create(null)
+				activeAlterations: activeAlterations
 			}));
 			stave.setNotater(this.createStaveNotater(clef, {
 				stave: stave,
@@ -273,6 +291,7 @@ define([
 				stave.setFirstBarWidth(staffSig, 4);
 			}
 			stave.updatePosition();
+			stave.updateAlterations(activeAlterations);
 
 			return stave;
 		},

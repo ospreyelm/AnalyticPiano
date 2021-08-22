@@ -62,7 +62,7 @@ define([
 				clef: this.clef,
 				highlightConfig: this.highlightConfig,
 				modifierCallback: this.createModifiers,
-				activeAlterations: Object.create(null)
+				activeAlterations: this.activeAlterations
 			});
 		},
 		/**
@@ -97,7 +97,10 @@ define([
 		 */
 		createModifiers: function() {
 			var keys = this.staveNoteFactory.getNoteKeys();
-			var accidentals = this.staveNoteFactory.getAccidentalsOf(keys);
+
+			const alteration_history = this.activeAlterations;
+			const accidentals = this.staveNoteFactory.getAccidentalsOf(keys, alteration_history);
+
 			var allMidiKeys = this.chord.getNoteNumbers(); // for highlightConfig across stave boundaries
 			var clefMidiKeys = this.chord.getNoteNumbers(this.clef);
 			var modifiers = [];

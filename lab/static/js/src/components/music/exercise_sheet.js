@@ -359,9 +359,6 @@ define([
             var display_chord;
             var exercise_chord;
             var activeAlterations = Object.create(null);
-            // activeAlterations['a4'] = '#';
-            // activeAlterations['a2'] = '#';
-            // console.log('initiate', activeAlterations);
 
             // scrolling exercise view
             var scroll_exercise = false;
@@ -401,7 +398,7 @@ define([
             treble.connect(bass);
             staves.push(treble);
 
-            var alterationHistory = Object.create(null);;
+            var alterationHistory = Object.create(null);
 
             // now add the staves for showing the notes
             for (var i = 0, len = display_items.length; i < len; i++) {
@@ -441,7 +438,6 @@ define([
 
                 activeAlterations = merged;
                 // console.log('OUT--> ' + i.toString(), activeAlterations);
-                // console.log('---');
             }
 
             treble.noteFactory.alterationHistory = alterationHistory;
