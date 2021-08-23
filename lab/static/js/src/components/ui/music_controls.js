@@ -408,7 +408,7 @@ define([
 					window.alert('Exercise upload cancelled by user.');
 					return false;
 				}
-				const intro_text = "<p>" + (!user_input ? false :
+				const intro_text = "<p>" + (!user_input ? '' :
 					user_input
 					.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
 					.replace(/^\"/g, '“')

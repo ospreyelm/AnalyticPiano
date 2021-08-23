@@ -173,6 +173,7 @@ class ExerciseForm(forms.ModelForm):
     # review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False)
     staff_distribution = forms.ChoiceField(choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False)
+    time_signature = forms.CharField(required=False)
 
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
@@ -191,7 +192,10 @@ class ExerciseForm(forms.ModelForm):
             # instance.data['reviewText'] = self.cleaned_data['review_text']
             instance.data['type'] = self.cleaned_data['type']
             instance.data['staffDistribution'] = self.cleaned_data['staff_distribution']
-            instance.data['timeSignature'] = self.cleaned_data['time_signature']
+            if self.cleaned_data['time_signature']:
+                instance.data['timeSignature'] = self.cleaned_data['time_signature']
+            else:
+                instance.data['timeSignature'] = ''
             instance.authored_by = self.context.get('user')
             instance.clean()
             instance.save()

@@ -71,8 +71,8 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     data = RawJSONField('Data')
     rhythm = models.CharField('Rhythm', max_length=255,
                               blank=True, null=True)
-    time_signature = models.CharField('Meter', max_length=5,
-                                      blank=True, null=True)
+    time_signature = models.CharField('Meter', max_length=8,
+                                      blank=True, null=True, default='')
     is_public = models.BooleanField('Share', default=True)
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='exercises',
@@ -140,7 +140,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
             self.set_id(initial='E')
             self.set_auto_playlist()
 
-        self.validate_unique()
+        # self.validate_unique()
         self.set_id(initial='E')
         self.sort_data()
         self.set_rhythm_values()

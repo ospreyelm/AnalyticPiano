@@ -266,13 +266,13 @@ define([
 
 			// check for the introductory text
 			exercise.introText = false;
-			if(definition.hasOwnProperty("introText") && definition.introText) {
+			if(definition.hasOwnProperty("introText")) {
 				exercise.introText = definition.introText;
 			}
 
 			// check for the review text
 			exercise.reviewText = false;
-			if(definition.hasOwnProperty("reviewText") && definition.reviewText) {
+			if(definition.hasOwnProperty("reviewText")) {
 				exercise.reviewText = definition.reviewText;
 			}
 
@@ -304,7 +304,7 @@ define([
 			}
 
 			exercise.timeSignature = false;
-			if (definition.hasOwnProperty("timeSignature") && definition.timeSignature) {
+			if (definition.hasOwnProperty("timeSignature")) {
 				exercise.timeSignature = definition.timeSignature;
 			}
 
