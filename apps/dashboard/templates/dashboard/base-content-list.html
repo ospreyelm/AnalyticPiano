@@ -6,12 +6,14 @@
     {% block add-button %}
     {% endblock %}
     <div class="dashboard-page">
-		{% if subscriber_name %}
-            <!-- <p><a href="https://analyticpiano.herokuapp.com/lab/courses/Dartmouth-2021-W-MUS20/"><strong>→ MUS 20 exercises</strong></a></p> -->
-		    <p>Activity report for {{ subscriber_name }}</p>
-		{% endif %}
-		{% if course_author %}
+        {% if subscriber_name %}
+            <p>Activity report for {{ subscriber_name }}</p>
+        {% endif %}
+        {% if course_author %}
             <p>Courses authored by {{ course_author }}</p>
+        {% endif %}
+        {% if course_name %}
+            <p>Activity report for course: {{ course_name }}</p>
         {% endif %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
     </div>

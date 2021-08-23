@@ -383,10 +383,13 @@ define([
 		 * @param {number} y
 		 * @return undefined
 		 */
-		drawSolfege: function(x, y) {
+		drawSolfege: function(x, y, do_based_bool=false) {
 			var ctx = this.getContext();
 			var notes = this.chord.getNoteNumbers();
 			var solfege = this.getAnalyzer().to_solfege(notes);
+			if (do_based_bool) {
+				solfege = this.getAnalyzer().to_do_based_solfege(notes);
+			}
 			var fontArgs = ctx.font.split(' ');
 			var newSize = '20px';
 			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
@@ -492,12 +495,12 @@ define([
 
 			return figure; /* for grading */
 		},
-		drawChordLabel: function(x, y=35) {
+		drawChordLabel: function(x, y=35, relativize_bool=false) {
 			var key = this.keySignature.getKeyShortName();
 			let keyCategory = this.keySignature.getKey()[0] || false;
 
 			var midi_nums = this.chord.getNoteNumbers();
-			var chord_entry = this.getAnalyzer().to_chord(midi_nums, "chord label");
+			var chord_entry = this.getAnalyzer().to_chord(midi_nums, "chord label", relativize_bool=relativize_bool);
 
 			var width = 0, offset = 0;
 			var ctx = this.getContext();
@@ -697,6 +700,21 @@ define([
 			}
 
 			return interval; /* for grading */
+		},
+		drawSetClass: function(x, y, format=false) {
+			var midi_nums = this.chord.getNoteNumbers();
+			var set_class = this.getAnalyzer().to_set_class(midi_nums, format);
+
+			var ctx = this.getContext();
+			var fontArgs = ctx.font.split(' ');
+			var newSize = '20px';
+			ctx.font = newSize + ' ' + fontArgs[fontArgs.length - 1];
+
+			if (set_class && set_class !== '') {
+				ctx.fillText(set_class, x + StaveNotater.prototype.annotateOffsetX + 3, y)
+			}
+
+			return set_class; /* for grading */
 		},
 		/**
 		 * Draws the interval analysis.
@@ -923,8 +941,10 @@ define([
 			if(notes.length >= 1) {
 				if(mode.scale_degrees && !mode.solfege) {
 					this.drawScaleDegree(x, first_row);
-				} else if(mode.solfege && !mode.scale_degrees) {
+				} else if(mode.solfege && !mode.scale_degrees && !mode.do_based_solfege) {
 					this.drawSolfege(x, first_row);
+				} else if(mode.do_based_solfege && !mode.scale_degrees && !mode.solfege) {
+					this.drawSolfege(x, first_row, true); // do-minor
 				}
 
 				var solfege = this.convertSymbols(this.getAnalyzer().to_solfege(notes));
@@ -1101,6 +1121,22 @@ define([
 				}
 				if (mode.chord_labels) {
 					this.drawChordLabel(x);
+				}
+			}
+
+			if (num_notes >= 2) {
+				var set_format = false;
+				if (mode.set_class_forte) {
+					set_format = "Forte";
+				} else if (mode.set_class_prime) {
+					set_format = "prime";
+				} else if (mode.set_class_normal) {
+					set_format = "normal";
+				} else if (mode.set_class_set) {
+					set_format = "set";
+				}
+				if (set_format) {
+					this.drawSetClass(x, y - 25, set_format);
 				}
 			}
 		},

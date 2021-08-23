@@ -169,6 +169,11 @@ nav {
     border-color: var(--link-color);
 }
 
+.dashboard-btn-secondary {
+    color: white;
+    background-color: darkred;
+}
+
 .form-control.is-invalid {
     border-color: var(--link-color);
 }
@@ -243,12 +248,12 @@ input[type=checkbox] {
     padding-left: 0px;
 }
 
-.radioselect {
+.radioselect, .checkboxselectmultiple {
     float: left !important;
     margin-right: 50px;
 }
 
-.radioselect ul{
+.radioselect ul, .checkboxselectmultiple ul {
     height: unset !important;
     background-color: unset !important;
     border: unset !important;
@@ -263,7 +268,7 @@ ul li input{
     height: 20px !important;
 }
 
-.radioselect li {
+.radioselect li, .checkboxselectmultiple li {
     line-height: 1.5;
 }
 
@@ -272,14 +277,26 @@ ul li input{
     vertical-align: middle;
 }
 
-.radioselect > div, .textarea > div {
+.checkboxselectmultiple input[type="checkbox"] {
+    margin-top: 0px;
+    vertical-align: top;
+}
+
+.radioselect > div, .textarea > div, .checkboxselectmultiple > div {
     align-items: baseline !important;
 }
 
-.radioselect ul label {
+.radioselect ul label, .checkboxselectmultiple ul label {
     display: inline !important;
 }
 
 .btn {
     margin-bottom: 1px !important;
+}
+
+.protected-edit-view label[for=id_description], .protected-edit-view label[for=id_is_public], .protected-edit-view .limited-save-btn {
+    background-color: yellow;
+}
+
+.protected-edit-view label[for=id_description], .protected-edit-view label[for=id_is_public] {
 }

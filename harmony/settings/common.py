@@ -88,7 +88,7 @@ STATICFILES_FINDERS = (
 )
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '#5g0vp545jp644!hha1)fb7v1hd!*t#b@fv&amp;1(mrnt5)$q%w0g'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'fake-key')
 
 # Load templates from django app directories
 TEMPLATES = [
@@ -113,6 +113,7 @@ TEMPLATES = [
 
 MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -320,8 +321,8 @@ CKEDITOR_CONFIGS = {
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'analyticalpiano.test@gmail.com'
-EMAIL_HOST_PASSWORD = '8F6WLb3pekMEV4cB'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'fake-user')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'fake-password')
 EMAIL_USE_TLS = True
 
 APPEND_SLASH = True

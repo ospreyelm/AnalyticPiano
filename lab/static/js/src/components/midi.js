@@ -439,7 +439,7 @@ define([
 			for (i = 0, len = notes_off.length; i < len; i++) {
 				let channel_idx = this.midiChannel - 1;
 				let command = MIDI_MSG_MAP.NOTE_OFF[channel_idx];
-				this.sendMIDIMessage(command, notes_off[i], 0);
+				this.sendMIDIMessage(command, parseInt(notes_off[i]), 0);
 			}
 		},
 		/**

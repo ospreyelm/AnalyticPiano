@@ -60,6 +60,7 @@ define([
         this.timer = null;
         this.displayChords = this.createDisplayChords();
         this.exerciseChords = this.createExerciseChords();
+        this.timeSignature = this.definition.getTimeSignature();
 
         // following lines may be obsolete
         var ex_num_current = this.definition.getExerciseList().reduce(
@@ -69,6 +70,9 @@ define([
             -1
         );
         if (true || ex_num_current == 1) { // FIXME
+
+            // leave this active for a while to clear sessionStorage for our users
+
             sessionStorage.removeItem('HarmonyLabPlaylistStartTime');
             sessionStorage.removeItem('HarmonyLabPlaylistTracker');
             sessionStorage.removeItem('HarmonyLabPlaylistRestarts');
@@ -78,14 +82,14 @@ define([
             this.seriesTimer = null;
             this.restarts = null;
             sessionStorage.removeItem('HarmonyLabPlaylistRestarts');
-        } else if (sessionStorage.HarmonyLabPlaylistStartTime) {
-            this.resetSeriesTimer();
-            this.seriesTimer.start = sessionStorage.getItem('HarmonyLabPlaylistStartTime');
-            this.restarts = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) || 0;
-        } else {
-            this.seriesTimer = null;
-            this.restarts = null;
-        }
+        } // else if (sessionStorage.HarmonyLabPlaylistStartTime) {
+        //     this.resetSeriesTimer();
+        //     this.seriesTimer.start = sessionStorage.getItem('HarmonyLabPlaylistStartTime');
+        //     this.restarts = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) || 0;
+        // } else {
+        //     this.seriesTimer = null;
+        //     this.restarts = null;
+        // }
 
         this.sealed = false; /* will be used to ignore input post-completion */
         this.timepoints = [];
@@ -166,22 +170,22 @@ define([
                     }
                     this.done = true;
 
-                    var ex_num_current = this.definition.getExerciseList().reduce(function(selected, current, index) {
-                        return (selected < 0 && current.selected) ? index + 1 : selected;
-                    }, -1);
-                    var ex_num_prior = parseInt(sessionStorage.getItem('HarmonyLabPlaylistTracker'));
-                    if(ex_num_current == ex_num_prior + 1) {
-                        sessionStorage.setItem('HarmonyLabPlaylistTracker', ex_num_current);
-                    }else if(ex_num_current == ex_num_prior) {
-                        if(this.sealed != true) {
-                            var restart_count = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) + 1;
-                            this.restarts = restart_count;
-                            sessionStorage.setItem('HarmonyLabPlaylistRestarts', restart_count);
-                            sessionStorage.setItem('HarmonyLabPlaylistTracker', ex_num_current);
-                        }
-                    }else {
-                        sessionStorage.setItem('HarmonyLabPlaylistTracker', -1);
-                    }
+                    // var ex_num_current = this.definition.getExerciseList().reduce(function(selected, current, index) {
+                    //     return (selected < 0 && current.selected) ? index + 1 : selected;
+                    // }, -1);
+                    // var ex_num_prior = parseInt(sessionStorage.getItem('HarmonyLabPlaylistTracker'));
+                    // if(ex_num_current == ex_num_prior + 1) {
+                    //     sessionStorage.setItem('HarmonyLabPlaylistTracker', ex_num_current);
+                    // }else if(ex_num_current == ex_num_prior) {
+                    //     if(this.sealed != true) {
+                    //         var restart_count = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) + 1;
+                    //         this.restarts = restart_count;
+                    //         sessionStorage.setItem('HarmonyLabPlaylistRestarts', restart_count);
+                    //         sessionStorage.setItem('HarmonyLabPlaylistTracker', ex_num_current);
+                    //     }
+                    // }else {
+                    //     sessionStorage.setItem('HarmonyLabPlaylistTracker', -1);
+                    // }
 
                     this.endTimer();
 
@@ -193,7 +197,7 @@ define([
                         // }
                     }
 
-                    this.recordTempoInformation();
+                    // this.recordTempoInformation();
 
                     if (this.flawless === true) {
                         state = ExerciseContext.STATE.CORRECT;
@@ -223,8 +227,6 @@ define([
                     this.done = false;
                     this.flawless = false;
                     this.errorTally += 1;
-                    /* The seriesFlawless value may be useful in addition to restarts. */
-                    // this.seriesFlawless = false;
                     break;
                 case this.grader.STATE.PARTIAL:
                     this.makeTimestamp();
@@ -278,6 +280,9 @@ define([
             return this;
         },
         resetSeriesTimer: function() {
+
+            return null // this function is obsolete
+
             this.seriesTimer = {};
             this.seriesTimer.start = null;
             this.seriesTimer.end = null;
@@ -294,7 +299,7 @@ define([
         hasTimer: function() {
             return this.timer !== null;
         },
-        hasSeriesTimer: function() {
+        hasSeriesTimer: function() { // this function is obsolete
             return this.seriesTimer !== null;
         },
         /**
@@ -332,6 +337,7 @@ define([
             return this.timer.tempoRating;
         },
         getGroupMinTempo: function() {
+            return null // this function is obsolete
             if(parseInt(sessionStorage.getItem('HarmonyLabPlaylistMinTempo')) == NaN) {
                 window.console.dir('tempo not integer');
                 return "";
@@ -339,6 +345,7 @@ define([
             return sessionStorage.getItem('HarmonyLabPlaylistMinTempo');
         },
         getGroupMaxTempo: function() {
+            return null // this function is obsolete
             if(parseInt(sessionStorage.getItem('HarmonyLabPlaylistMaxTempo')) == NaN) {
                 window.console.dir('tempo not integer');
                 return "";
@@ -346,18 +353,21 @@ define([
             return sessionStorage.getItem('HarmonyLabPlaylistMaxTempo');
         },
         getGroupTempoRating: function() {
+            return null // this function is obsolete
             if(!sessionStorage.getItem('HarmonyLabPlaylistTempoRating')) {
                 return "";
             }
             return sessionStorage.getItem('HarmonyLabPlaylistTempoRating');
         },
         getExerciseSeriesDuration: function() {
+            return null // this function is obsolete
             if(sessionStorage.getItem('HarmonyLabPlaylistTracker') == -1) {
                 return "";
             }
             return this.seriesTimer.durationString;
         },
         getExerciseGroupRestarts: function() {
+            return null // this function is obsolete
             if(sessionStorage.getItem('HarmonyLabPlaylistTracker') == -1) {
                 return "";
             }
@@ -457,6 +467,9 @@ define([
         },
         /* Assess tempo aspect of exercise completion */
         recordTempoInformation: function() {
+
+            return null // this function is obsolete
+
             /* Prepares tempo information */
             var former_min_tempo = null;
             var former_max_tempo = null;
@@ -500,6 +513,9 @@ define([
          * @return this
          */
         beginSeriesTimer: function() {
+
+            return null // this function is obsolete
+
             if(this.seriesTimer === null) {
                 this.resetSeriesTimer();
             }
@@ -518,7 +534,9 @@ define([
          * @return this
          */
         endSeriesTimer: function() {
-            // window.console.dir('end series timer');
+
+            return null // this function is obsolete
+
             var mins, seconds;
             if(this.seriesTimer && this.seriesTimer.start && !this.seriesTimer.end) {
                 this.seriesTimer.end = (Math.floor(new Date().getTime()) / 1000);
@@ -563,6 +581,8 @@ define([
             return report;
         },
         compilePlaylistReport: function() {
+
+            return null // this function is obsolete
             
             let offset = new Date().getTimezoneOffset()
             let timezone_str = "UTC" + ( offset === 0 ? "" : offset > 0 ? String(offset * -1 / 60) : "+" + String(offset *-1 / 60) );
@@ -586,7 +606,6 @@ define([
             return report;
         },
         submitExerciseReport: function() {
-            // console.log('Call of submitExerciseReport');
             if (this.compileExerciseReport() == null) {
                 console.log( "Outside of a playlist. No data submitted.")
                 return null;
@@ -607,7 +626,7 @@ define([
         },
         submitPlaylistReport: function() {
 
-            return null
+            return null // this function is obsolete
 
             console.log('Call of submitPlaylistReport');
             if (this.compilePlaylistReport() == null) {
@@ -643,6 +662,14 @@ define([
          */
         getExerciseChords: function() {
             return this.exerciseChords;
+        },
+        /**
+         * Returns the time signature for display.
+         *
+         * @return undefined
+         */
+        getTimeSignature: function() {
+            return this.timeSignature;
         },
         /**
          * Returns the chords being used for input to the exercise.

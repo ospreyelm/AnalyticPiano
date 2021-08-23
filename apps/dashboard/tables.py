@@ -4,6 +4,7 @@ from django.db import models
 
 User = get_user_model()
 
+
 # Possible styling: attrs = {'class': 'table table-primary'}
 
 class SupervisorsTable(tables.Table):
@@ -29,7 +30,7 @@ class SupervisorsTable(tables.Table):
                                             'subscriber_id': A('user.id'),
                                             'supervisor_id': A('supervisor.id'),
                                         },
-                                       verbose_name='Decline', orderable=False)
+                                        verbose_name='Decline', orderable=False)
     remove = tables.columns.LinkColumn('dashboard:unsubscribe',
                                        kwargs={'supervisor_id': A('supervisor.id')},
                                        text='Remove', verbose_name='Remove', orderable=False)
@@ -38,12 +39,14 @@ class SupervisorsTable(tables.Table):
         return self.request.user._supervisors_dict[str(record['supervisor'].id)]
 
     def render_accept(self, record):
-        if self.request.user._supervisors_dict.get(str(record['supervisor'].id)) == User.SUPERVISOR_STATUS_INVITATION_WAIT:
+        if self.request.user._supervisors_dict.get(
+                str(record['supervisor'].id)) == User.SUPERVISOR_STATUS_INVITATION_WAIT:
             return 'Accept'
         return ''
 
     def render_decline(self, record):
-        if self.request.user._supervisors_dict.get(str(record['supervisor'].id)) == User.SUPERVISOR_STATUS_INVITATION_WAIT:
+        if self.request.user._supervisors_dict.get(
+                str(record['supervisor'].id)) == User.SUPERVISOR_STATUS_INVITATION_WAIT:
             return 'Decline'
         return ''
 
@@ -84,12 +87,14 @@ class SubscribersTable(tables.Table):
         return record['subscriber']._supervisors_dict[str(self.request.user.id)]
 
     def render_accept(self, record):
-        if record['subscriber']._supervisors_dict[str(self.request.user.id)] == User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT:
+        if record['subscriber']._supervisors_dict[
+            str(self.request.user.id)] == User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT:
             return 'Approve'
         return ''
 
     def render_decline(self, record):
-        if record['subscriber']._supervisors_dict[str(self.request.user.id)] == User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT:
+        if record['subscriber']._supervisors_dict[
+            str(self.request.user.id)] == User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT:
             return 'Decline'
         return ''
 
@@ -143,10 +148,11 @@ class MyActivityTable(tables.Table):
             # "td": {"bgcolor": "white", "width": "auto"}
         }
     )
+
     # user
     # email
 
-    def render_playlist_passed(self, record):
+    def value_playlist_passed(self, record):
         return record.playlist_passed
 
     def render_playlist_pass_date(self, record):
@@ -224,7 +230,7 @@ class MyActivityDetailsTable(tables.Table):
 
 class ExercisesListTable(tables.Table):
     id = tables.columns.Column()
-    name = tables.columns.Column(
+    description = tables.columns.Column(
         verbose_name='Description of Exercise',
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
@@ -241,11 +247,11 @@ class ExercisesListTable(tables.Table):
                                        text='Delete', verbose_name='Delete', orderable=False)
     created = tables.columns.DateColumn(
         verbose_name='Created',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     updated = tables.columns.DateColumn(
         verbose_name='Modified',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     is_public = tables.columns.BooleanColumn()
 
@@ -285,13 +291,14 @@ class PlaylistsListTable(tables.Table):
                                        text='Delete', verbose_name='Delete', orderable=False)
     created = tables.columns.DateColumn(
         verbose_name='Created',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     updated = tables.columns.DateColumn(
         verbose_name='Modified',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     is_public = tables.columns.BooleanColumn()
+    is_auto = tables.columns.BooleanColumn(verbose_name='Is Auto')
 
     def render_edit(self, record):
         if not record.has_been_performed:
@@ -329,16 +336,60 @@ class CoursesListTable(tables.Table):
                                        text='Delete', verbose_name='Delete', orderable=False)
     created = tables.columns.DateColumn(
         verbose_name='Created',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     updated = tables.columns.DateColumn(
         verbose_name='Modified',
-        format='Y-m-d • h:m A',
+        format='Y-m-d • h:i A',
     )
     is_public = tables.columns.BooleanColumn()
+    activity = tables.columns.LinkColumn('dashboard:course-activity',
+                                         kwargs={'course_name': A('title')},
+                                         text='Activity', verbose_name='Activity', orderable=False)
 
     class Meta:
         attrs = {'class': 'paleblue'}
         table_pagination = False
         order_by = ('-id')
+        template_name = "django_tables2/bootstrap4.html"
+
+
+class SupervisorsCoursesListTable(tables.Table):
+    title = tables.columns.Column(
+        verbose_name='Title of Course',
+    )
+    view = tables.columns.LinkColumn('lab:course-view',
+                                     kwargs={'course_slug': A('slug')},
+                                     text='Load', verbose_name='Load', orderable=False)
+    authored_by = tables.columns.Column()
+    id = tables.columns.Column()
+
+    # created = tables.columns.DateColumn(
+    #     verbose_name='Created',
+    #     format='Y-m-d • h:i A',
+    # )
+    # updated = tables.columns.DateColumn(
+    #     verbose_name='Modified',
+    #     format='Y-m-d • h:i A',
+    # )
+    # is_public = tables.columns.BooleanColumn()
+
+    class Meta:
+        attrs = {'class': 'paleblue'}
+        table_pagination = False
+        order_by = ('authored_by', 'title')
+        template_name = "django_tables2/bootstrap4.html"
+
+
+class CourseActivityTable(tables.Table):
+    subscriber_name = tables.columns.Column(
+        verbose_name='Subscriber',
+    )
+    # subscriber_email = tables.columns.Column(
+    #     verbose_name='Subscriber Email',
+    # )
+
+    class Meta:
+        attrs = {'class': 'paleblue'}
+        table_pagination = False
         template_name = "django_tables2/bootstrap4.html"

@@ -1,6 +1,4 @@
-// This DOES NOT USE Rowland's new encoding standard.
 // 0=keynote
-
 // "2/1" means note is 2 semitones and 1 steps above keynote
 
 /* global define: false */

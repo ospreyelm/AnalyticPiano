@@ -7,16 +7,20 @@ from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE
 from apps.exercises.forms import ExerciseForm, PlaylistForm, CourseForm
 from apps.exercises.models import Exercise
 
+import re
+
 User = get_user_model()
 
 
 class BaseSupervisionForm(forms.Form):
     def clean(self):
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get('email').lower()
         if email == self.context.get('user').email:
-            self.add_error('email', 'You cannot add yourself as your subscriber/supervisor!')
+            self.add_error('email', 'This is your own email address! Enter the email of another user.')
         if not User.objects.filter(email=email).exists():
-            self.add_error('email', 'User with this email does not exist.')
+            self.add_error('email', 'No user is registered with this email.')
+
+        self.cleaned_data['email'] = email
         return self.cleaned_data
 
 
@@ -42,7 +46,24 @@ class KeyboardForm(forms.Form):
 
 class DashboardExerciseForm(ExerciseForm):
     id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
+
+    # analysis_enabled = forms.BooleanField(label='Enable Analysis', required=False)
+    # analysis_modes = forms.MultipleChoiceField(
+    #     widget=forms.CheckboxSelectMultiple(),
+    #     choices=Exercise.ANALYSIS_MODE_CHOICES
+    # )
+
+    # highlight_enabled = forms.BooleanField(label='Enable Highlight', required=False)
+    # highlight_modes = forms.MultipleChoiceField(
+    #     widget=forms.CheckboxSelectMultiple,
+    #     choices=Exercise.HIGHLIGHT_MODE_CHOICES
+    # )
+
+    # data_fields = ['analysis', 'highlight']
+
     data = JSONField(widget=forms.HiddenInput)
+
+    editable_fields = ['description', 'is_public']
 
     class Meta:
         model = Exercise
@@ -56,7 +77,32 @@ class DashboardExerciseForm(ExerciseForm):
         super(DashboardExerciseForm, self).__init__(*args, **kwargs)
         if disable_fields:
             for field in self.fields:
-                self.fields.get(field).disabled = True
+                if field not in self.editable_fields:
+                    self.fields.get(field).disabled = True
+
+    #     if self.instance and self.instance.pk:
+    #         self._init_data_modes()
+
+    # def _init_data_modes(self):
+    #     for field in self.data_fields:
+    #         if field not in self.instance.data:
+    #             break
+
+    #         _field = self.instance.data[field]
+    #         _field_modes = []
+    #         for mode, val in _field['mode'].items():
+    #             if val:
+    #                 _field_modes.append(mode)
+    #         self.fields[f'{field}_enabled'].initial = _field['enabled']
+    #         self.fields[f'{field}_modes'].initial = _field_modes
+
+    # def save(self, commit=True):
+    #     instance = super(DashboardExerciseForm, self).save(commit)
+    #     for field in self.data_fields:
+    #         modes = self.cleaned_data.pop(f'{field}_modes', [])
+    #         enabled = self.cleaned_data.pop(f'{field}_enabled', False)
+    #         instance = instance.set_data_modes(modes=modes, enabled=enabled, field_name=field)
+    #     return instance
 
 
 class TransposeRequestsField(forms.CharField):
@@ -64,7 +110,7 @@ class TransposeRequestsField(forms.CharField):
         value = super(TransposeRequestsField, self).to_python(value)
         if not value:
             return []
-        return value.replace(' ', '').split(',')
+        return re.split(r'[,; \n]+', value.strip())
 
     def prepare_value(self, value):
         if value is None:
@@ -73,20 +119,32 @@ class TransposeRequestsField(forms.CharField):
         value = super(TransposeRequestsField, self).prepare_value(value)
         if isinstance(value, str):
             return value
-        return ','.join(value)
+        TRANSP_JOIN_STR = ' '  # r'[,; \n]+'
+        return TRANSP_JOIN_STR.join(value)
 
 
 class DashboardPlaylistForm(PlaylistForm):
-    transpose_requests = TransposeRequestsField(label='Transposition Requests', required=False)
+    id = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False, label='ID')
+
+    transpose_requests = TransposeRequestsField(label='Transposition requests', required=False)
+
+    editable_fields = ['is_public']
 
     class Meta(PlaylistForm.Meta):
-        exclude = ['id', 'authored_by']
+        exclude = ['authored_by']
+        widgets = {
+            'exercises': forms.Textarea,
+            'id': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'is_auto': forms.CheckboxInput(attrs={'disabled': 'disabled'}),
+            'authored_by': forms.TextInput(attrs={'readonly': 'readonly'}),
+        }
 
     def __init__(self, disable_fields=False, *args, **kwargs):
         super(DashboardPlaylistForm, self).__init__(*args, **kwargs)
         if disable_fields:
             for field in self.fields:
-                self.fields.get(field).disabled = True
+                if field not in self.editable_fields:
+                    self.fields.get(field).disabled = True
 
 
 class DashboardCourseForm(CourseForm):

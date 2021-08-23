@@ -3,21 +3,16 @@ import os
 from harmony.settings.common import *
 
 DEBUG = False
-ALLOWED_HOSTS = ['.fas.harvard.edu'] # Required when Debug=False
+ALLOWED_HOSTS = [] # Required when Debug=False
 FORCE_SCRIPT_NAME = None
 STATIC_URL = '/static/'
 
 # Configuration specific to shared hosting PROD/DEV environments
 # PRODUCTION
-if os.environ.get('SERVER_NAME') == 'harmonylab.fas.harvard.edu':
-    FORCE_SCRIPT_NAME = '/'
-    STATIC_URL = '/static/'
-    DEBUG = False
-# DEVELOPMENT
-elif os.environ.get('SERVER_NAME') == 'sites.dev.fas.harvard.edu':
-    FORCE_SCRIPT_NAME = '/~harmonylab/'
-    STATIC_URL = '/~harmonylab/static/'
-    DEBUG = True
+# if os.environ.get('SERVER_NAME') == '':
+    # FORCE_SCRIPT_NAME = ''
+    # STATIC_URL = ''
+    # DEBUG = True
 
 # Update the requirejs configuration to use the modified STATIC_URL
 REQUIREJS_DEBUG, REQUIREJS_CONFIG = requirejs.configure(ROOT_DIR, STATIC_URL)

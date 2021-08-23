@@ -11,7 +11,7 @@ def forwards_func(apps, schema_editor):
     # if we directly import it, it'll be the wrong version
     User = apps.get_model("accounts", "User")
     db_alias = schema_editor.connection.alias
-    User.objects.using(db_alias).create(email='guest@harmonylab.com')  # FIXME remove this in the future
+    User.objects.using(db_alias).create(email='guest@analyticpiano.herokuapp.com')  # FIXME remove this in the future
 
 
 class Migration(migrations.Migration):

@@ -54,8 +54,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     SUPERVISOR_STATUS_ACCEPTED = 'Accepted'
     SUPERVISOR_STATUS_DECLINED = 'Declined'
-    SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = 'Awaiting Subscription Approval'
-    SUPERVISOR_STATUS_INVITATION_WAIT = 'Awaiting Invitation Approval'
+    SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = 'Pending'
+    SUPERVISOR_STATUS_INVITATION_WAIT = 'Pending'
     _supervisors_dict = JSONField(default=dict, verbose_name='Supervisors', blank=True)
 
     # FIXME remove this field after 0008 migration is applied
@@ -95,7 +95,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def clean(self):
         super().clean()
-        self.email = self.__class__.objects.normalize_email(self.email)
+        self.email = self.__class__.objects.normalize_email(self.email).lower()
 
     def get_full_name(self):
         name_is_set = self.first_name and self.last_name
@@ -110,11 +110,16 @@ class User(AbstractBaseUser, PermissionsMixin):
             message=f'Your AnalyticPiano password is: {self.raw_password}',
         )
 
+    def send_password(self):
+        self.email_user(
+            subject='Welcome To AnalyticPiano',
+            message=f'Your AnalyticPiano password is: {self.raw_password}',
+        )
+
     # TODO remove this in the future
     @classmethod
     def get_guest_user(cls):
-        # 'guest@analyticpiano.herokuapp.com'
-        return cls.objects.filter(email='guest@harmonylab.com').first()
+        return cls.objects.filter(email='guest@analyticpiano.herokuapp.com').first()
 
     @property
     def supervisors(self):

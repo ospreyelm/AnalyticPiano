@@ -392,7 +392,7 @@ var spellingAndAnalysisFunctions = {
         return ''; /* should never be reached */
     },
     get_label: function(notes, label_type) {
-        /* used by to_solfege and to_scale_degree */
+        /* used by to_solfege, to_do_based_solfege, and to_scale_degree */
         if ( this.key_is_none() ) return "";
         if (notes.length < 1) return "";
         if (notes.length > 1 && !this.bare_octave_or_unison(notes)) return "";
@@ -406,6 +406,13 @@ var spellingAndAnalysisFunctions = {
     },
     to_solfege: function(notes) {
         return this.get_label(notes, "solfege");
+    },
+    to_do_based_solfege: function(notes) {
+        if ( this.key_is_minor() ) {
+            return this.get_label(notes, "do_based_solfege");
+        } else {
+            return this.get_label(notes, "solfege");
+        }
     },
     to_scale_degree: function(notes) {
         return this.get_label(notes, "numeral");
@@ -432,14 +439,96 @@ var spellingAndAnalysisFunctions = {
 
         return {"name": all_labels[profile]["label"]};
     },
-    to_chord: function(notes, type = undefined) {
+    to_chord: function(notes, type=undefined, relativize_bool=false) {
         if (notes.length < 2) return "";
         if (notes.length == 2) return this.to_interval(notes);
 
         if ( (this.key_is_none() && type !== "roman only") || type === "chord label" ) {
-            return this.hFindChord(notes);
+            return this.hFindChord(notes, relativize_bool=relativize_bool);
         } else {
             return this.ijFindChord(notes);
+        }
+    },
+    to_set_class_set: function(notes) {
+        return this.to_set_class(notes, "set");
+    },
+    to_set_class_normal: function(notes) {
+        return this.to_set_class(notes, "normal");
+    },
+    to_set_class_prime: function(notes) {
+        return this.to_set_class(notes, "prime");
+    },
+    to_set_class_forte: function(notes) {
+        return this.to_set_class(notes, "forte");
+    },
+    to_normal_order: function(pcs) {
+        var min_span = false;
+        var min_penult_span = false;
+        var floor = false;
+        for (i = 0, len = pcs.length; i < len; i++) {
+            // var upward_displacements = pcs.map(pc => (12 + pc - pcs[i]) % 12).reduce((a, b) => a + b, 0);
+
+            var span = (12 - pcs[i] + pcs[(len + i - 1) % len]) % 12;
+            var penult_span = (12 - pcs[i] + pcs[(len + i - 2) % len]) % 12;
+            if ( !min_span || span < min_span ) {
+                min_span = span;
+                min_penult_span = penult_span;
+                floor = pcs[i];
+            } else if ( span == min_span && penult_span < min_penult_span ) {
+                min_penult_span = penult_span;
+                floor = pcs[i];
+            }
+        }
+        const floor_idx = pcs.indexOf(floor);
+        var norm = pcs;
+        if ( floor_idx > 0 ) {
+            norm = pcs.slice(floor_idx).concat(pcs.slice(0, floor_idx));
+        }
+        return norm;
+    },
+    to_set_class: function(notes, format=false) {
+        if (typeof notes == 'number') var midi_nums = [notes];
+        else var midi_nums = notes;
+
+        /* 2+ notes and 2+ pitch classes */
+        if ( midi_nums.length < 2 ) return "";
+        if ( this.bare_octave_or_unison(midi_nums) ) return "";
+
+        function sortNumber(a, b) {
+            return a - b;
+        }
+        function onlyUnique(value, index, self) {
+            return self.indexOf(value) === index;
+        }
+        var pcs = midi_nums.map(num => num % 12).filter(onlyUnique).sort(sortNumber);
+        if ( format == "set" ) {
+            return "set(" + pcs.toString() + ")";
+        }
+
+        const norm = this.to_normal_order(pcs);
+        const norm_str = norm.toString().replace("10", "t").replace("11", "e");
+        if ( format == "normal" ) {
+            return "[" + norm_str + "]"; // normal order
+        }
+        const norm_z = norm.map(pc => (12 + pc - norm[0]) % 12).sort(sortNumber);
+
+        const pcs_inverted = pcs.map(pc => (12 - pc) % 12).sort(sortNumber);
+        const invs = this.to_normal_order(pcs_inverted);
+        const invs_z = invs.map(pc => (12 + pc - invs[0]) % 12).sort(sortNumber);
+
+        var prime = norm_z; // provisional
+        if ( invs_z.reduce((a, b) => a + b, 0) < norm_z.reduce((a, b) => a + b, 0) ) {
+            prime = invs_z;
+        }
+
+        const prime_str = prime.toString().replace("10", "t").replace("11", "e").replaceAll(",", "");
+        if ( format == "prime" ) {
+            return "sc(" + prime_str + ")"; // prime form
+        }
+
+        const Forte = {"":"0-1","0":"1-1","01":"2-1","02":"2-2","03":"2-3","04":"2-4","05":"2-5","06":"2-6","012":"3-1","013":"3-2","014":"3-3","015":"3-4","016":"3-5","024":"3-6","025":"3-7","026":"3-8","027":"3-9","036":"3-10","037":"3-11","048":"3-12","0123":"4-1","0124":"4-2","0134":"4-3","0125":"4-4","0126":"4-5","0127":"4-6","0145":"4-7","0156":"4-8","0167":"4-9","0235":"4-10","0135":"4-11","0236":"4-12","0136":"4-13","0237":"4-14","0146":"4-z15","0157":"4-16","0347":"4-17","0147":"4-18","0148":"4-19","0158":"4-20","0246":"4-21","0247":"4-22","0257":"4-23","0248":"4-24","0268":"4-25","0358":"4-26","0258":"4-27","0369":"4-28","0137":"4-z29","01234":"5-1","01235":"5-2","01245":"5-3","01236":"5-4","01237":"5-5","01256":"5-6","01267":"5-7","02346":"5-8","01246":"5-9","01346":"5-10","02347":"5-11","01356":"5-z12","01248":"5-13","01257":"5-14","01268":"5-15","01347":"5-16","01348":"5-z17","01457":"5-z18","01367":"5-19","01568":"5-20","01458":"5-21","01478":"5-22","02357":"5-23","01357":"5-24","02358":"5-25","02458":"5-26","01358":"5-27","02368":"5-28","01368":"5-29","01468":"5-30","01369":"5-31","01469":"5-32","02468":"5-33","02469":"5-34","02479":"5-35","01247":"5-z36","03458":"5-z37","01258":"5-z38","012345":"6-1","012346":"6-2","012356":"6-z3","012456":"6-z4","012367":"6-5","012567":"6-z6","012678":"6-7","023457":"6-8","012357":"6-9","013457":"6-z10","012457":"6-z11","012467":"6-z12","013467":"6-z13","013458":"6-14","012458":"6-15","014568":"6-16","012478":"6-z17","012578":"6-18","013478":"6-z19","014589":"6-20","023468":"6-21","012468":"6-22","023568":"6-z23","013468":"6-z24","013568":"6-z25","013578":"6-z26","013469":"6-27","013569":"6-z28","023679":"6-z29","013679":"6-30","014579":"6-31","024579":"6-32","023579":"6-33","013579":"6-34","02468t":"6-35","012347":"6-z36","012348":"6-z37","012378":"6-z38","023458":"6-z39","012358":"6-z40","012368":"6-z41","012369":"6-z42","012568":"6-z43","012569":"6-z44","023469":"6-z45","012469":"6-z46","012479":"6-z47","012579":"6-z48","013479":"6-z49","014679":"6-z50","0123456":"7-1","0123457":"7-2","0123458":"7-3","0123467":"7-4","0123567":"7-5","0123478":"7-6","0123678":"7-7","0234568":"7-8","0123468":"7-9","0123469":"7-10","0134568":"7-11","0123479":"7-z12","0124568":"7-13","0123578":"7-14","0124678":"7-15","0123569":"7-16","0124569":"7-z17","0145679":"7-z18","0123679":"7-19","0125679":"7-20","0124589":"7-21","0125689":"7-22","0234579":"7-23","0123579":"7-24","0234679":"7-25","0134579":"7-26","0124579":"7-27","0135679":"7-28","0124679":"7-29","0124689":"7-30","0134679":"7-31","0134689":"7-32","012468t":"7-33","013468t":"7-34","013568t":"7-35","0123568":"7-z36","0134578":"7-z37","0124578":"7-z38","01234567":"8-1","01234568":"8-2","01234569":"8-3","01234578":"8-4","01234678":"8-5","01235678":"8-6","01234589":"8-7","01234789":"8-8","01236789":"8-9","02345679":"8-10","01234579":"8-11","01345679":"8-12","01234679":"8-13","01245679":"8-14","01234689":"8-z15","01235789":"8-16","01345689":"8-17","01235689":"8-18","01245689":"8-19","01245789":"8-20","0123468t":"8-21","0123568t":"8-22","0123578t":"8-23","0124568t":"8-24","0124678t":"8-25","0134578t":"8-26","0124578t":"8-27","0134679t":"8-28","01235679":"8-z29","012345678":"9-1","012345679":"9-2","012345689":"9-3","012345789":"9-4","012346789":"9-5","01234568t":"9-6","01234578t":"9-7","01234678t":"9-8","01235678t":"9-9","01234679t":"9-10","01235679t":"9-11","01245689t":"9-12","0123456789":"10-1","012345678t":"10-2","012345679t":"10-3","012345689t":"10-4","012345789t":"10-5","012346789t":"10-6","0123456789t":"11-1","0123456789te":"12-1"}
+        if ( Forte[prime_str] ) {
+            return Forte[prime_str];
         }
     },
     hGetScale: function (scale=false) {
@@ -458,7 +547,7 @@ var spellingAndAnalysisFunctions = {
             return keys_arr[idx]
         }
     },
-    hFindChord: function (notes) {
+    hFindChord: function (notes, relativize_bool=false) {
         var profile = this.intervals_above_bass(notes);
         var chordEntry = _.cloneDeep(this.hChords[profile]);
         if (!chordEntry) return "";
@@ -479,6 +568,62 @@ var spellingAndAnalysisFunctions = {
             let semitones = parseInt(chordEntry["root"])
             let steps = parseInt(chordEntry["rootstepwise"])
             rootName = this.upper_note_name(bass_pc, bass_name, semitones, steps);  
+        }
+
+        if ( relativize_bool == true && (this.key_is_minor() || this.key_is_major()) ) {
+            const keynote = this.Piano.key.slice(1).replace(/_/g, '').toLowerCase();
+            console.log(keynote);
+            const fifths_chain = {
+                "b##": "",
+                "e##": "",
+                "a##": "",
+                "d##": "",
+                "g##": "",
+                "c##": "",
+                "f##": "",
+                "b#": "",
+                "e#": "",
+                "a#": "Li",
+                "d#": "Ri",
+                "g#": "Si",
+                "c#": "Di",
+                "f#": "Fi",
+                "b": "Ti",
+                "e": "Mi",
+                "a": "La",
+                "d": "Re",
+                "g": "So",
+                "c": "Do",
+                "f": "Fa",
+                "bb": "Te",
+                "eb": "Me",
+                "ab": "Le",
+                "db": "Ra",
+                "gb": "Sa",
+                "cb": "Da",
+                "fb": "",
+                "bbb": "",
+                "ebb": "",
+                "abb": "",
+                "dbb": "",
+                "gbb": "",
+                "cbb": "",
+                "fbb": ""
+            }
+            const obj_keys = Object.keys(fifths_chain);
+            const kn_index = obj_keys.indexOf(keynote)
+            if (kn_index != -1) {
+                let shift = -1 * kn_index;
+                if (this.key_is_minor()) {
+                    shift += obj_keys.indexOf('a')
+                } else { // must be major
+                    shift += obj_keys.indexOf('c')
+                }
+                // bassName = fifths_chain[ obj_keys[obj_keys.indexOf(bassName.toLowerCase()) + shift] ];
+                // rootName = fifths_chain[ obj_keys[obj_keys.indexOf(rootName.toLowerCase()) + shift] ];
+                bassName = obj_keys[obj_keys.indexOf(bassName.toLowerCase()) + shift];
+                rootName = obj_keys[obj_keys.indexOf(rootName.toLowerCase()) + shift];
+            }
         }
 
         var label = chordEntry["label"];

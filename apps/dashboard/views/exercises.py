@@ -75,14 +75,17 @@ def exercise_edit_view(request, exercise_id):
         'verbose_name': exercise._meta.verbose_name,
         'verbose_name_plural': exercise._meta.verbose_name_plural,
         'has_been_performed': exercise.has_been_performed,
-        'redirect_url': reverse('dashboard:exercises-list')
+        'redirect_url': reverse('dashboard:exercises-list'),
+        'delete_url': reverse('dashboard:delete-exercise', kwargs={'exercise_id': exercise_id}),
     }
+
+    PROTECT_EXERCISE_CONTENT = exercise.has_been_performed
 
     if request.method == 'POST':
         form = DashboardExerciseForm(data=request.POST, instance=exercise)
         form.context = {'user': request.user}
         if form.is_valid():
-            if 'save-as-new' in request.POST:
+            if 'duplicate' in request.POST:
                 unique_fields = Exercise.get_unique_fields()
                 clone_data = copy(form.cleaned_data)
                 for field in clone_data:
@@ -91,14 +94,25 @@ def exercise_edit_view(request, exercise_id):
                 request.session['clone_data'] = clone_data
                 return redirect('dashboard:add-exercise')
 
-            exercise = form.save(commit=False)
-            exercise.authored_by = request.user
-            exercise.save()
+            if PROTECT_EXERCISE_CONTENT:
+                ## only alter is_public, description fields
+                ## under no circumstances allow other changes to data
+                exercise.save(update_fields=["description", "is_public"])
+                ## ^ is this ok?
+            else:
+                exercise = form.save(commit=False)
+                exercise.authored_by = request.user
+                ## ^ original authorship of exercise should not change
+                exercise.save()
+
             if 'save-and-continue' in request.POST:
                 success_url = reverse('dashboard:edit-exercise',
                                       kwargs={'exercise_id': exercise.id})
                 messages.add_message(request, messages.SUCCESS,
-                                     f"{context['verbose_name']} has been saved successfully.")
+                                     f"{context['verbose_name']} saved")
+            elif 'save-and-edit-previous' in request.POST:
+                success_url = reverse('dashboard:edit-exercise',
+                                      kwargs={'exercise_id': exercise.get_previous_authored_exercise().id})
             elif 'save-and-edit-next' in request.POST:
                 success_url = reverse('dashboard:edit-exercise',
                                       kwargs={'exercise_id': exercise.get_next_authored_exercise().id})
@@ -107,10 +121,12 @@ def exercise_edit_view(request, exercise_id):
             return redirect(success_url)
         context['form'] = form
 
-    if exercise.has_been_performed:
-        form = DashboardExerciseForm(instance=exercise, disable_fields=True)
-    else:
-        form = DashboardExerciseForm(instance=exercise)
+    exercise.refresh_from_db()
+    form = DashboardExerciseForm(instance=exercise)
+
+    # if exercise.has_been_performed:
+    #     ## CAUSES BIG PROBLEMS! DESTROYS FORM VALIDATION
+    #     form = DashboardExerciseForm(instance=exercise, disable_fields=True)
 
     context['form'] = form
     return render(request, "dashboard/edit-exercise.html", context)

@@ -14,7 +14,8 @@ define([
 
 	var ANALYSIS_SETTINGS = Config.get('general.analysisSettings');
 
-	var AnalyzeWidget = function(settings) {
+	var AnalyzeWidget = function(settings, is_exercise_view = false) {
+		this.is_exercise_view = is_exercise_view || false;
 		settings = settings || {};
 		this.el = $('<div class="menu-widgets"></div>');
 		this.state = _.merge(_.cloneDeep(ANALYSIS_SETTINGS), settings);
@@ -39,10 +40,13 @@ define([
 					'<label><input type="checkbox" name="analysis_pitch_class" value="pitch_class" accesskey="p"> Pitch class</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_degrees" value="scale_degrees" accesskey="d"> Degrees</label>',
+					'<label><input type="checkbox" name="analysis_scale_degrees" value="scale_degrees" accesskey="d"> Degrees</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_solfege" value="solfege"  accesskey="m"> Movable-do</label>',
+					'<label><input type="checkbox" name="analysis_solfege" value="solfege"  accesskey="m"> Movable-do with LA- minor</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_do_based_solfege" value="do_based_solfege"  accesskey="m"> Movable-do with DO-minor</label>',
 				'</li>',
 				'<li>',
 					'<label><input type="checkbox" name="analysis_intervals" value="intervals" accesskey="i"> Intervals</label>',
@@ -57,7 +61,19 @@ define([
 					'<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony in Roman numerals</label>',
 				'</li>',
 				'<li>',
-					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G) as harmony</label>',
+					'<label><input type="checkbox" name="analysis_set_class_set" value="set_class_set"> Set class—set</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_set_class_normal" value="set_class_normal"> Set class—normal order</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_set_class_prime" value="set_class_prime"> Set class—prime form</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_set_class_forte" value="set_class_forte"> Set class—Forte</label>',
+				'</li>',
+				'<li>',
+					'<label><input type="checkbox" name="analysis_thoroughbass" value="thoroughbass" accesskey="g"> Figured bass (G)</label>',
 				'</li>',
 				'<li>',
 					'<label><input type="checkbox" name="analysis_abbreviate_thoroughbass" value="abbreviate_thoroughbass" accesskey="v"> Abbreviate figured bass (V)</label>',
@@ -78,6 +94,36 @@ define([
 				e.stopPropagation();
 			});
 		},
+		toggle_analysis_option: function(e) {
+			var opt = e.target.value;
+			this.state.mode[opt] = e.target.checked;
+			this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
+			document.getElementById('staff').focus();
+		},
+		toggle_exclusive_analysis_option: function(e, opts=[]) {
+			let sel = e.target.value;
+			this.state.mode[sel] = e.target.checked;
+
+			var opts = opts;
+			if (!opts.includes(sel)) {
+				console.log("Error");
+				return null;
+			}
+
+			if (this.state.mode[sel] === true) {
+				this.trigger('changeOption', 'analyze', sel, true);
+				var i, len;
+				for (var i = 0, len = opts.length; i < len; i++) {
+					let opt = opts[i];
+					if (opt === sel) continue;
+					document.getElementsByName('analysis_' + opt)[0].checked = false;
+					this.trigger('changeOption', 'analyze', opt, false);
+				}
+			} else if (this.state.mode[sel] === false) {
+				this.trigger('changeOption', 'analyze', sel, false);
+			}
+			document.getElementById('staff').focus();
+		},
 		handlers: {
 			analysis_enabled: function(e) {
 				this.state.enabled = e.target.checked;
@@ -90,205 +136,77 @@ define([
 				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
 				document.getElementById('staff').focus();
 			},
-			/* FIX ME: the next four functions are identical; consolidate them */
 			analysis_note_names: function(e) {
-				let sel = e.target.value;
-				this.state.mode[sel] = e.target.checked;
-
 				var opts = ['scientific_pitch', 'fixed_do', 'note_names', 'pitch_class'];
-				if (!opts.includes(sel)) {
-					console.log("Error");
-					return null;
-				}
-
-				if (this.state.mode[sel] === true) {
-					this.trigger('changeOption', 'analyze', sel, true);
-					var i, len;
-					for (var i = 0, len = opts.length; i < len; i++) {
-						let opt = opts[i];
-						if (opt === sel) continue;
-						document.getElementsByName('analysis_' + opt)[0].checked = false;
-						this.trigger('changeOption', 'analyze', opt, false);
-					}
-				} else if (this.state.mode[sel] === false) {
-					this.trigger('changeOption', 'analyze', sel, false);
-				}
+				this.toggle_exclusive_analysis_option(e, opts);
 			},
 			analysis_fixed_do: function(e) {
-				let sel = e.target.value;
-				this.state.mode[sel] = e.target.checked;
-
 				var opts = ['scientific_pitch', 'fixed_do', 'note_names', 'pitch_class'];
-				if (!opts.includes(sel)) {
-					console.log("Error");
-					return null;
-				}
-
-				if (this.state.mode[sel] === true) {
-					this.trigger('changeOption', 'analyze', sel, true);
-					var i, len;
-					for (var i = 0, len = opts.length; i < len; i++) {
-						let opt = opts[i];
-						if (opt === sel) continue;
-						document.getElementsByName('analysis_' + opt)[0].checked = false;
-						this.trigger('changeOption', 'analyze', opt, false);
-					}
-				} else if (this.state.mode[sel] === false) {
-					this.trigger('changeOption', 'analyze', sel, false);
-				}
+				this.toggle_exclusive_analysis_option(e, opts);
 			},
 			analysis_pitch_class: function(e) {
-				let sel = e.target.value;
-				this.state.mode[sel] = e.target.checked;
-
 				var opts = ['scientific_pitch', 'fixed_do', 'note_names', 'pitch_class'];
-				if (!opts.includes(sel)) {
-					console.log("Error");
-					return null;
-				}
-
-				if (this.state.mode[sel] === true) {
-					this.trigger('changeOption', 'analyze', sel, true);
-					var i, len;
-					for (var i = 0, len = opts.length; i < len; i++) {
-						let opt = opts[i];
-						if (opt === sel) continue;
-						document.getElementsByName('analysis_' + opt)[0].checked = false;
-						this.trigger('changeOption', 'analyze', opt, false);
-					}
-				} else if (this.state.mode[sel] === false) {
-					this.trigger('changeOption', 'analyze', sel, false);
-				}
+				this.toggle_exclusive_analysis_option(e, opts);
 			},
 			analysis_scientific_pitch: function(e) {
-				let sel = e.target.value;
-				this.state.mode[sel] = e.target.checked;
-
 				var opts = ['scientific_pitch', 'fixed_do', 'note_names', 'pitch_class'];
-				if (!opts.includes(sel)) {
-					console.log("Error");
-					return null;
-				}
-
-				if (this.state.mode[sel] === true) {
-					this.trigger('changeOption', 'analyze', sel, true);
-					var i, len;
-					for (var i = 0, len = opts.length; i < len; i++) {
-						let opt = opts[i];
-						if (opt === sel) continue;
-						document.getElementsByName('analysis_' + opt)[0].checked = false;
-						this.trigger('changeOption', 'analyze', opt, false);
-					}
-				} else if (this.state.mode[sel] === false) {
-					this.trigger('changeOption', 'analyze', sel, false);
-				}
+				this.toggle_exclusive_analysis_option(e, opts);
 			},
 			analysis_solfege: function(e) {
-				var opt = e.target.value;
-				this.state.mode[opt] = e.target.checked;
-				var altBox = 'analysis_degrees';
-				var altOpt = 'scale_degrees';
-				if (this.state.mode[opt] === true && document.getElementsByName(altBox)[0].checked === false){
-					this.trigger('changeOption', 'analyze', opt, true);
-				}else if (this.state.mode[opt] === true && document.getElementsByName(altBox)[0].checked === true){
-					document.getElementsByName(altBox)[0].checked = false;
-					this.trigger('changeOption', 'analyze', opt, true);
-					this.trigger('changeOption', 'analyze', altOpt, false);
-				}else if (this.state.mode[opt] === false){
-					this.trigger('changeOption', 'analyze', opt, false);
-				}else {
-					alert('ERROR');
-				}
+				var opts = ['scale_degrees', 'solfege', 'do_based_solfege'];
+				this.toggle_exclusive_analysis_option(e, opts);
 			},
-			analysis_degrees: function(e) {
-				var opt = e.target.value;
-				this.state.mode[opt] = e.target.checked;
-				var altBox = 'analysis_solfege';
-				var altOpt = 'solfege';
-				if (this.state.mode[opt] === true && document.getElementsByName(altBox)[0].checked === false){
-					this.trigger('changeOption', 'analyze', opt, true);
-				}else if (this.state.mode[opt] === true && document.getElementsByName(altBox)[0].checked === true){
-					document.getElementsByName(altBox)[0].checked = false;
-					this.trigger('changeOption', 'analyze', opt, true);
-					this.trigger('changeOption', 'analyze', altOpt, false);
-				}else if (this.state.mode[opt] === false){
-					this.trigger('changeOption', 'analyze', opt, false);
-				}else {
-					alert('ERROR');
-				}
+			analysis_do_based_solfege: function(e) {
+				var opts = ['scale_degrees', 'solfege', 'do_based_solfege'];
+				this.toggle_exclusive_analysis_option(e, opts);
 			},
-			/* FIX: consolidate next two functions */
+			analysis_scale_degrees: function(e) {
+				var opts = ['scale_degrees', 'solfege', 'do_based_solfege'];
+				this.toggle_exclusive_analysis_option(e, opts);
+			},
 			analysis_intervals: function(e) {
-				let sel = e.target.value;
-				this.state.mode[sel] = e.target.checked;
-
-				var opts = ['intervals', 'pci']; // N.B.
-				if (!opts.includes(sel)) {
-					console.log("Error");
-					return null;
-				}
-
-				if (this.state.mode[sel] === true) {
-					this.trigger('changeOption', 'analyze', sel, true);
-					var i, len;
-					for (var i = 0, len = opts.length; i < len; i++) {
-						let opt = opts[i];
-						if (opt === sel) continue;
-						document.getElementsByName('analysis_' + opt)[0].checked = false;
-						this.trigger('changeOption', 'analyze', opt, false);
-					}
-				} else if (this.state.mode[sel] === false) {
-					this.trigger('changeOption', 'analyze', sel, false);
-				}
+				var opts = ['intervals', 'pci'];
+				this.toggle_exclusive_analysis_option(e, opts);
 			},
 			analysis_pci: function(e) {
-				let sel = e.target.value;
-				this.state.mode[sel] = e.target.checked;
-
-				var opts = ['intervals', 'pci']; // N.B.
-				if (!opts.includes(sel)) {
-					console.log("Error");
-					return null;
-				}
-
-				if (this.state.mode[sel] === true) {
-					this.trigger('changeOption', 'analyze', sel, true);
-					var i, len;
-					for (var i = 0, len = opts.length; i < len; i++) {
-						let opt = opts[i];
-						if (opt === sel) continue;
-						document.getElementsByName('analysis_' + opt)[0].checked = false;
-						this.trigger('changeOption', 'analyze', opt, false);
-					}
-				} else if (this.state.mode[sel] === false) {
-					this.trigger('changeOption', 'analyze', sel, false);
-				}
+				var opts = ['intervals', 'pci'];
+				this.toggle_exclusive_analysis_option(e, opts);
 			},
-			/* FIX: consolidate next three functions */
+			analysis_set_class_set: function(e) {
+				var opts = ['set_class_set', 'set_class_normal', 'set_class_prime', 'set_class_forte'];
+				this.toggle_exclusive_analysis_option(e, opts);
+			},
+			analysis_set_class_normal: function(e) {
+				var opts = ['set_class_set', 'set_class_normal', 'set_class_prime', 'set_class_forte'];
+				this.toggle_exclusive_analysis_option(e, opts);
+			},
+			analysis_set_class_prime: function(e) {
+				var opts = ['set_class_set', 'set_class_normal', 'set_class_prime', 'set_class_forte'];
+				this.toggle_exclusive_analysis_option(e, opts);
+			},
+			analysis_set_class_forte: function(e) {
+				var opts = ['set_class_set', 'set_class_normal', 'set_class_prime', 'set_class_forte'];
+				this.toggle_exclusive_analysis_option(e, opts);
+			},
 			analysis_harmony: function(e) {
-				var opt = e.target.value;
-				this.state.mode[opt] = e.target.checked;
-				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
-				document.getElementById('staff').focus();
+				this.toggle_analysis_option(e);
 			},
 			analysis_chords: function(e) {
-				var opt = e.target.value;
-				this.state.mode[opt] = e.target.checked;
-				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
-				document.getElementById('staff').focus();
+				this.toggle_analysis_option(e);
 			},
 			analysis_thoroughbass: function(e) {
-				var opt = e.target.value;
-				this.state.mode[opt] = e.target.checked;
-				this.trigger('changeOption', 'analyze', opt, this.state.mode[opt]);
-				document.getElementById('staff').focus();
+				this.toggle_analysis_option(e);
 			}
 		},
 		render: function() {
 			var that = this;
 			
 			// update the element content
-			this.el.html(this.templateHTML);
+			if (this.is_exercise_view) {
+				this.el.html(this.templateHTML.replace(/type="checkbox"/gi, 'type="checkbox" onclick="return false;"'));
+			} else {
+				this.el.html(this.templateHTML);
+			}
 			
 			// update the input states
 			this.el.find('input[name=analysis_enabled]')[0].checked = this.state.enabled;

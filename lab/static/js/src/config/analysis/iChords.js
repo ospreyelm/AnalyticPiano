@@ -35,8 +35,8 @@ define({
 
    // i#
 
-   "0/47":  {"root": "0", "label": "i{'}"},
-   "0/4":   {"root": "0", "label": "i{'e}"},
+   "0/47":  {"root": "0", "label": "I"},
+   "0/4":   {"root": "0", "label": "I{e}"},
 
    // V/iv
 

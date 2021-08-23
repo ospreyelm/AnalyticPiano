@@ -180,6 +180,8 @@ define([
 				maxCount: CHORD_BANK_SIZE
 			};
 			var staves = []; /* the successive items of this array will correspond to measures */
+			var treble_activeAlterations = Object.create(null);
+			var bass_activeAlterations = Object.create(null);
 
 			/* the first vexflow measure is a special case: it is reserved to
 			 * show the clef and key signature and nothing else */
@@ -189,17 +191,49 @@ define([
 			treble.connect(bass);
 			staves.push(treble);
 
+			var treble_alterationHistory = Object.create(null);
+			var bass_alterationHistory = Object.create(null);
+
 			/* add the subsequent measures */
 			for(var i = 0; i < items.length; i++) {
 				let chord = items[i].chord;
 				let isBanked = items[i].isBanked;
 				let isNovel = items[i].isNovel;
-				treble = this.createNoteStave('treble', _.clone(position), chord, isBanked, isNovel);
-				bass = this.createNoteStave('bass', _.clone(position), chord, isBanked, isNovel);
+
+				treble_alterationHistory[i] = treble_activeAlterations;
+				bass_alterationHistory[i] = bass_activeAlterations;
+
+				treble = this.createNoteStave('treble', _.clone(position), chord, isBanked, isNovel, treble_activeAlterations);
+				bass = this.createNoteStave('bass', _.clone(position), chord, isBanked, isNovel, bass_activeAlterations);
 				position.index += 1;
 				treble.connect(bass);
 				staves.push(treble);
+
+				// TO DO: compress code (see also exercise sheet)
+
+				let treble_merged = {
+					...treble_activeAlterations,
+					...treble.noteFactory.bequestAlterations
+				};
+				let treble_cancellations = treble.noteFactory.bequestCancellations;
+				for (let j = 0, len_j = treble_cancellations.length; j < len_j; j++) {
+					delete treble_merged[treble_cancellations[j]];
+				}
+				treble_activeAlterations = treble_merged;
+
+				let bass_merged = {
+					...bass_activeAlterations,
+					...bass.noteFactory.bequestAlterations
+				};
+				let bass_cancellations = bass.noteFactory.bequestCancellations;
+				for (let j = 0, len_j = bass_cancellations.length; j < len_j; j++) {
+					delete bass_merged[bass_cancellations[j]];
+				}
+				bass_activeAlterations = bass_merged;
 			}
+
+			treble.noteFactory.alterationHistory = treble_alterationHistory;
+			bass.noteFactory.alterationHistory = bass_alterationHistory;
 
 			this.resetStaves();
 			this.addStaves(staves);
@@ -242,7 +276,7 @@ define([
 		 * @param {Chord} chord
 		 * @return {Stave}
 		 */
-		createNoteStave: function(clef, position, chord, isBanked, isNovel) {
+		createNoteStave: function(clef, position, chord, isBanked, isNovel, activeAlterations) {
 			var stave = new Stave(clef, position);
 
 			stave.setRenderer(this.vexRenderer);
@@ -254,7 +288,8 @@ define([
 				isBanked: isBanked,
 				isNovel: isNovel,
 				keySignature: this.keySignature,
-				highlightConfig: this.getHighlightConfig()
+				highlightConfig: this.getHighlightConfig(),
+				activeAlterations: activeAlterations
 			}));
 			stave.setNotater(this.createStaveNotater(clef, {
 				stave: stave,
@@ -272,6 +307,7 @@ define([
 				stave.setFirstBarWidth(staffSig, 4);
 			}
 			stave.updatePosition();
+			stave.updateAlterations(activeAlterations);
 
 			return stave;
 		},

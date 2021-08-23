@@ -28,14 +28,19 @@ define([
      */
     var HIGHLIGHT_SETTINGS = Config.get('general.highlightSettings');
 
-    var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
-    var VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get('general.voiceCountForKeyboardStyle');
 
-    let storage_staff_dist = sessionStorage.getItem('staffDistribution');
-    let valid_staff_dists = ["keyboard", "chorale", "grandStaff", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias"];
-    if (storage_staff_dist && valid_staff_dists.includes(storage_staff_dist)) {
-        STAFF_DISTRIBUTION = storage_staff_dist;
+    const VALID_STAFF_DISTRIBUTIONS = Config.get('general.validStaffDistributions');
+    var STAFF_DISTRIBUTION = Config.get('general.staffDistribution');
+
+    if (false) {
+        sessionStorage.removeItem('staffDistribution'); // retire this function
+    } else {
+        var storage_staff_dist = sessionStorage.getItem('staffDistribution');
+        if (storage_staff_dist && VALID_STAFF_DISTRIBUTIONS.includes(storage_staff_dist)) {
+            STAFF_DISTRIBUTION = storage_staff_dist;
+        }
     }
+
 
     /**
      * Creates an instance of MusicComponent.
@@ -387,6 +392,9 @@ define([
          * @return undefined
          */
         onStaffDistributionChange: function (value) {
+            if (this.settings.sheet.chords == undefined) {
+                return null;
+            }
             this['staffDistributionConfig'].staffDistribution = value;
             this.settings.sheet.chords._items[0].settings.staffDistribution = value;
             var sheetComponent = this.getComponent('sheet');

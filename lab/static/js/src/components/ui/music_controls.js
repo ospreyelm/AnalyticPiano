@@ -217,15 +217,17 @@ define([
 			var analysisSettings = {};
 			var highlightSettings = {};
 			var staffDistribution = {};
-			if(this.exerciseContext) {
-				/* TO DO: grab additional settings */
+			var is_exercise_view = false;
+			if (this.exerciseContext) {
+				is_exercise_view = true;
 				analysisSettings = this.exerciseContext.getDefinition().getAnalysisSettings();
 				highlightSettings = this.exerciseContext.getDefinition().getHighlightSettings();
 				staffDistribution = this.exerciseContext.getDefinition().getStaffDistribution();
+				/* TO DO: grab additional settings <-- no longer sure which */
 			}
-			var analyze_widget = new AnalyzeWidget(analysisSettings);
-			var highlight_widget = new HighlightWidget(highlightSettings);
-			var staff_distribution_widget = new StaffDistributionWidget(staffDistribution);
+			var analyze_widget = new AnalyzeWidget(analysisSettings, is_exercise_view);
+			var highlight_widget = new HighlightWidget(highlightSettings, is_exercise_view);
+			var staff_distribution_widget = new StaffDistributionWidget(staffDistribution, is_exercise_view);
 			var event_for = {
 				'highlight': EVENTS.BROADCAST.HIGHLIGHT_NOTES,
 				'analyze': EVENTS.BROADCAST.ANALYZE_NOTES,
@@ -384,6 +386,10 @@ define([
 
 			if (advanced) {
 				const type_input = prompt("Enter a number for exercise type: (1) matching (2) analytical (3) analytical_pcs (4) figured_bass (5) figured_bass_pcs");
+				if (type_input == null) {
+					window.alert('Exercise upload cancelled by user.');
+					return false;
+				}
 				const type_options = {
 					"1": "matching",
 					"2": "analytical",
@@ -392,9 +398,39 @@ define([
 					"5": "figured_bass_pcs"
 				}
 				const type = (type_input ? (type_options.hasOwnProperty(type_input) ? type_options[type_input] : false) : false);
+				if (type == false) {
+					window.alert('Exercise upload cancelled due to invalid input.');
+					return false;
+				}
+
+				const user_input = prompt("Enter the Intro Text");
+				if (user_input == null) {
+					window.alert('Exercise upload cancelled by user.');
+					return false;
+				}
+				const intro_text = "<p>" + (!user_input ? '' :
+					user_input
+					.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
+					.replace(/^\"/g, '“')
+					.replace(/ \"/g, ' “')
+					.replace(/^\'/g, '‘')
+					.replace(/ \'/g, ' ‘')
+					.replace(/\"$/g, '”')
+					.replace(/\" /g, '” ')
+					.replace(/\'$/g, '’')
+					.replace(/\' /g, '’ ')
+					.replace(/\'(s)\b/g, '’$1')
+					.replace(/-{3}/g, '—')
+					.replace(/-{2}/g, '–')
+				) + "</p>";
+				// do not allow < > until these field is verified as good html
 
 				if (type == 'matching') {
 					const visibility_input = prompt("Enter a visibility pattern using any combination of: b = bass, f = first, l = last, s = soprano, n = none.");
+					if (visibility_input == null) {
+						window.alert('Exercise upload cancelled by user.');
+						return false;
+					}
 					const visibility_reqs = (visibility_input === "n" ? ["none"] : visibility_input.replace(/[^flsb]/gi, "").split("").sort());
 
 					let flsb = json_data.chord;
@@ -430,24 +466,6 @@ define([
 						json_data.chord = flsb;
 					}
 				}
-
-				const user_input = prompt("Enter the Intro Text");
-				const intro_text = "<p>" + (!user_input ? false :
-					user_input
-					.replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, '')
-					.replace(/^\"/g, '“')
-					.replace(/ \"/g, ' “')
-					.replace(/^\'/g, '‘')
-					.replace(/ \'/g, ' ‘')
-					.replace(/\"$/g, '”')
-					.replace(/\" /g, '” ')
-					.replace(/\'$/g, '’')
-					.replace(/\' /g, '’ ')
-					.replace(/\'(s)\b/g, '’$1')
-					.replace(/-{3}/g, '—')
-					.replace(/-{2}/g, '–')
-				) + "</p>";
-				// do not allow < > until these field is verified as good html
 
 				if (intro_text) {
 					json_data.introText = intro_text;

@@ -5,9 +5,10 @@
 define({
 	defaultKeyboardSize: [25, 32, 37, 49, 61, 88][3], /* key count */
 	defaultOctaveAdjustment: 0,
-	maskTrebleStaff: false, /* copy this boolean as conditional on following line */
+	maskTrebleStaff: false, /* if true, staffDistribution should == "LH" */
 	flexNoKeySpelling: true, /* boolean */
-	staffDistribution: ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"][false ? 2 : 0],
+	validStaffDistributions: ["keyboard", "chorale", "LH", "RH", "keyboardPlusRHBias", "keyboardPlusLHBias", "grandStaff"],
+	staffDistribution: "keyboard",
 	voiceCountForKeyboardStyle: [2, 3, 4],
 	voiceCountForChoraleStyle: [4],
 	defaultNoteColor: "rgb(180,180,180)", /* gray */
@@ -42,12 +43,21 @@ define({
 			/* max one of the following may be true */
 			scale_degrees: false,
 			solfege: false,
+			do_based_solfege: false,
 
 			thoroughbass: false,
 			roman_numerals: true,
 			chord_labels: true,
+
+			/* max one of the following may be true */
 			intervals: false,
-			pci: false
+			pci: false,
+
+			/* max one of the following may be true */
+			set_class_set: false,
+			set_class_normal: false,
+			set_class_prime: false,
+			set_class_forte: false,
 		}
 	},
 

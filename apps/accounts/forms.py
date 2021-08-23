@@ -25,14 +25,14 @@ class CustomAuthenticationForm(forms.ModelForm):
 
     error_messages = {
         'invalid_login':
-            "Please enter a correct %(username)s and password. Note that both "
-            "fields may be case-sensitive."
+            "Please enter a correct email and password. The password "
+            "is case-sensitive."
         ,
         'inactive': "This account is inactive."
     }
 
     def clean(self):
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get('email').lower()
         password = self.cleaned_data.get('password')
 
         user = authenticate(username=email, password=password)
@@ -40,7 +40,7 @@ class CustomAuthenticationForm(forms.ModelForm):
             raise ValidationError({'password': 'Invalid credentials.'})
         if not user.is_active:
             raise ValidationError({'email': 'This user is not active.'})
-        return self.cleaned_data
+        return {'email': email, 'password': password}
 
 
 class RegistrationForm(forms.ModelForm):
@@ -60,13 +60,13 @@ class ForgotPasswordForm(forms.Form):
     def clean(self):
         super(ForgotPasswordForm, self).clean()
 
-        user = User.objects.filter(email=self.cleaned_data.get('email', '')).first()
+        # applies .lower() to user input
+        user = User.objects.filter(email=self.cleaned_data.get('email', '').lower()).first()
         if user is None:
             raise ValidationError({'email': ' There is no registered user with this email.'})
 
         if user.is_staff:
-            raise ValidationError({'email': 'This email belongs to an admin user.'
-                                            'To reset the password, please proceed from the admin panel.'})
+            raise ValidationError({'email': 'This email belongs to an admin user. To reset the password, please proceed from the admin panel.'})
 
         user.send_forgotten_password()
 

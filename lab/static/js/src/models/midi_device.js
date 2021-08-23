@@ -1,7 +1,7 @@
 define([
     'lodash',
     'microevent',
-    'Tone' /* Tone.js */
+    'Tone' /* Tone.js 14.8.3 */
 ], function (
     _,
     MicroEvent,
@@ -34,58 +34,59 @@ define([
         "mousedown", function () {
             mouse_IsDown = true;
             if (Tone.context.state !== 'running') {
-                document.getElementById('audio-context').innerHTML
-                    = "Audio Enabled"
+                // document.getElementById('midi-switch').innerHTML
+                //     = "Disable MIDI" // Audio Enabled
+                sampler.releaseAll(); // does this prevent brief cacophony?
                 Tone.context.resume();
-                polySynth.releaseAll();
+                sampler.releaseAll();
             }
         });
 
+
     /* Create Polyphonic Synthesizer */
-    var polySynth = new Tone.PolySynth(10, Tone.FMSynth);
+    // var polySynth = new Tone.PolySynth(Tone.FMSynth);
+    // var vol = new Tone.Volume(-6).toDestination();
+    // sampler.connect(vol);
 
-    /* Create sampler */
-    // const sampler = new Tone.Sampler({
-    //     urls: {
-    //         "A0": "A0.ogg",
-    //         "C1": "C1.ogg",
-    //         "D#1": "Ds1.ogg",
-    //         "F#1": "Fs1.ogg",
-    //         "A1": "A1.ogg",
-    //         "C2": "C2.ogg",
-    //         "D#2": "Ds2.ogg",
-    //         "F#2": "Fs2.ogg",
-    //         "A2": "A2.ogg",
-    //         "C3": "C3.ogg",
-    //         "D#3": "Ds3.ogg",
-    //         "F#3": "Fs3.ogg",
-    //         "A3": "A3.ogg",
-    //         "C4": "C4.ogg",
-    //         "D#4": "Ds4.ogg",
-    //         "F#4": "Fs4.ogg",
-    //         "A4": "A4.ogg",
-    //         "C5": "C5.ogg",
-    //         "D#5": "Ds5.ogg",
-    //         "F#5": "Fs5.ogg",
-    //         "A5": "A5.ogg",
-    //         "C6": "C6.ogg",
-    //         "D#6": "Ds6.ogg",
-    //         "F#6": "Fs6.ogg",
-    //         "A6": "A6.ogg",
-    //         "C7": "C7.ogg",
-    //         "D#7": "Ds7.ogg",
-    //         "F#7": "Fs7.ogg",
-    //         "A7": "A7.ogg",
-    //         "C8": "C8.ogg"
-    //     },
-    //     release: 1,
-    //     baseUrl: "https://tonejs.github.io/audio/salamander/"
-    // }).toDestination();
+    /* Create Sampler */
+    var vol = new Tone.Volume(-6).toDestination();
+    const sampler = new Tone.Sampler({
+        urls: {
+            "A0": "A0.ogg",
+            "C1": "C1.ogg",
+            "D#1": "Ds1.ogg",
+            "F#1": "Fs1.ogg",
+            "A1": "A1.ogg",
+            "C2": "C2.ogg",
+            "D#2": "Ds2.ogg",
+            "F#2": "Fs2.ogg",
+            "A2": "A2.ogg",
+            "C3": "C3.ogg",
+            "D#3": "Ds3.ogg",
+            "F#3": "Fs3.ogg",
+            "A3": "A3.ogg",
+            "C4": "C4.ogg",
+            "D#4": "Ds4.ogg",
+            "F#4": "Fs4.ogg",
+            "A4": "A4.ogg",
+            "C5": "C5.ogg",
+            "D#5": "Ds5.ogg",
+            "F#5": "Fs5.ogg",
+            "A5": "A5.ogg",
+            "C6": "C6.ogg",
+            "D#6": "Ds6.ogg",
+            "F#6": "Fs6.ogg",
+            "A6": "A6.ogg",
+            "C7": "C7.ogg",
+            "D#7": "Ds7.ogg",
+            "F#7": "Fs7.ogg",
+            "A7": "A7.ogg",
+            "C8": "C8.ogg"
+        },
+        release: 1,
+        baseUrl: "/static/audio/"
+    }).connect(vol);
 
-
-    /* volume */
-    var vol = new Tone.Volume(-6).toMaster();
-    polySynth.connect(vol);
 
     /* load sticky settings */
     var STICKY_VOLUME = null;
@@ -117,18 +118,18 @@ define([
     // use icons in static/img
 
     /* defaults per _header.html */
-    polySynth.volume.value = volumeOpts["mf"];
+    sampler.volume.value = volumeOpts["mf"];
     vol.mute = false;
 
     /* apply sticky settings */
     if (STICKY_VOLUME != null && volumeOptsKeys.indexOf(STICKY_VOLUME) != -1) {
-        polySynth.volume.value = volumeOpts[STICKY_VOLUME];
+        sampler.volume.value = volumeOpts[STICKY_VOLUME];
         let volumeDiv = document.getElementById("volume");
         volumeDiv.innerHTML = STICKY_VOLUME;
     }
     if (typeof(STICKY_MUTE) == 'boolean') {
         vol.mute = STICKY_MUTE;
-        let mute = document.getElementById("Mute");
+        let mute = document.getElementById("mute-toggle");
         if (STICKY_MUTE) {
             mute.innerHTML = muteToggleText[1];
         } else {
@@ -139,18 +140,18 @@ define([
     /* All Notes Off button */
     // if ($("all-notes-off")){
     // 	$("all-notes-off").click( function () {
-    // 		polySynth.releaseAll();
+    // 		sampler.releaseAll();
     // 	});
     // }
 
     /* Mute button */
-    if ($("#Mute").length > 0) {
-        $("#Mute").click(function () {
-            let mute = document.getElementById("Mute");
+    if ($("#mute-toggle").length > 0) {
+        $("#mute-toggle").click(function () {
+            let mute = document.getElementById("mute-toggle");
             if (mute.innerHTML == muteToggleText[0]) {
 
                 /* all notes off */
-                polySynth.releaseAll();
+                sampler.releaseAll();
 
                 $.ajax({
                     type: "POST",
@@ -198,10 +199,29 @@ define([
                 }
             });
 
-            polySynth.volume.value = volumeOpts[volumeDiv.innerHTML];
+            sampler.volume.value = volumeOpts[volumeDiv.innerHTML];
         });
     }
 
+    /* MIDI input on/off */
+    const midiToggleText = ["Disable MIDI", "Enable MIDI"]
+    var MIDI_INPUT_ON = true;
+    if ($("#midi-switch").length > 0) {
+        $("#midi-switch").click(function (){
+            let midiSwitch = document.getElementById("midi-switch");
+            if (midiSwitch.innerHTML == midiToggleText[0]) {
+                MIDI_INPUT_ON = false;
+                midiSwitch.innerHTML = midiToggleText[1];
+            }
+            else if (midiSwitch.innerHTML == midiToggleText[1]) {
+                MIDI_INPUT_ON = true;
+                midiSwitch.innerHTML = midiToggleText[0]
+            } else {
+                MIDI_INPUT_ON = true;
+                midiSwitch.innerHTML = midiToggleText[0]
+            }
+        });
+    }
 
     /**
      * Sets a callback that will be called when the update() method
@@ -368,6 +388,9 @@ define([
      * @return undefined
      */
     MidiDevice.prototype.handleMIDIMessage = function (msg) {
+        if (MIDI_INPUT_ON === false) {
+            return null;
+        }
         this.trigger("midimessage", msg);
     };
 
@@ -377,22 +400,23 @@ define([
      * @return undefined
      */
     MidiDevice.prototype.sendMIDIMessage = function (msg) {
+        // msg should be an array of integers!
         if (msg[1] == 109) {
             // midi note 109 is ignored (used for side-effect on frontend)
         } else if (false) { /* midi output */
             if (this._output) {
                 this._output.send(msg);
             }
-        } else { /* synth output */
+        } else { /* Tone.js output */
             /* convert MIDI number to pitch name */
             const pitchNames = ['c', 'c#', 'd', 'eb', 'e', 'f', 'f#', 'g', 'g#', 'a', 'bb', 'b']
             let toneJsNoteName = pitchNames[(msg[1] + 12) % 12]
                 + (Math.floor(msg[1] / 12) - 1).toString()
 
             if (msg[0] == 144) { /* note on, channel 1 */
-                polySynth.triggerAttack(toneJsNoteName);
+                sampler.triggerAttack(toneJsNoteName);
             } else if (msg[0] == 128) { /* note off, channel 1 */
-                polySynth.triggerRelease(toneJsNoteName);
+                sampler.triggerRelease(toneJsNoteName);
             }
         }
     };

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from datetime import timedelta
 from itertools import product
 
 from django.contrib.auth import get_user_model
@@ -16,6 +17,8 @@ from django_better_admin_arrayfield.models.fields import ArrayField
 from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES
 from apps.exercises.utils.transpose import transpose
 
+import re
+
 User = get_user_model()
 
 
@@ -26,76 +29,15 @@ class RawJSONField(JSONField):
         return 'json'
 
 
-class ClonableModelMixin():
-    @classmethod
-    def get_unique_fields(cls):
-        fields = []
-        for field in cls._meta.fields:
-            if field.unique:
-                fields.append(field.name)
-        return fields
-
-
-class Exercise(ClonableModelMixin, models.Model):
+class BaseContentModel(models.Model):
     _id = models.AutoField('_ID', unique=True, primary_key=True)
-    id = models.CharField('ID', unique=True, max_length=16)
-    name = models.CharField('Description', max_length=60,
-                            blank=True, null=True)
-    data = RawJSONField('Data')
-    rhythm = models.CharField('Rhythm', max_length=64,
-                              blank=True, null=True)
-    is_public = models.BooleanField('Share', default=True)
-    authored_by = models.ForeignKey('accounts.User',
-                                    related_name='exercises',
-                                    on_delete=models.PROTECT,
-                                    verbose_name='Author')
-
-    created = models.DateTimeField('Created', auto_now_add=True)
-    updated = models.DateTimeField('Updated', auto_now=True)
-
-    zero_padding = 'EA00A0'
 
     class Meta:
-        verbose_name = 'Exercise'
-        verbose_name_plural = 'Exercises'
+        abstract = True
 
-    @classmethod
-    def get_data_order_list(cls):
-        return ['type', 'introText', 'reviewText', 'staffDistribution',
-                'key', 'keySignature', 'analysis', 'highlight', 'chord']
+    def set_id(self, initial):
+        assert len(initial) == 1
 
-    @property
-    def is_private(self):
-        return not self.is_public
-
-    def __str__(self):
-        return self.id
-
-    def get_next_authored_exercise(self):
-        return Exercise.objects.filter(authored_by=self.authored_by, created__gt=self.created).first()
-
-    def validate_unique(self, exclude=None):
-        if not self._id:
-            return
-
-        if Exercise.objects.exclude(id=self.id).filter(
-                name=self.name,
-                authored_by=self.authored_by
-        ).exclude(Q(name='') | Q(name=None)).exists():
-            raise ValidationError("Exercise with this name and this user already exists.")
-        super(Exercise, self).validate_unique(exclude)
-
-    def save(self, *args, **kwargs):
-        if not self._id:
-            super(Exercise, self).save(*args, **kwargs)
-
-        self.validate_unique()
-        self.set_id()
-        self.sort_data()
-        self.set_rhythm_values()
-        super(Exercise, self).save(*args, **kwargs)
-
-    def set_id(self):
         letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         reverse_id = ""
         bases = [26, 26, 10, 10, 26]
@@ -108,8 +50,101 @@ class Exercise(ClonableModelMixin, models.Model):
             _id //= base
         if _id != 0 or len(reverse_id) != len(bases):
             return None
-        reverse_id += "E"
+        reverse_id += initial
         self.id = reverse_id[::-1]
+
+
+class ClonableModelMixin():
+    @classmethod
+    def get_unique_fields(cls):
+        fields = []
+        for field in cls._meta.fields:
+            if field.unique:
+                fields.append(field.name)
+        return fields
+
+
+class Exercise(ClonableModelMixin, BaseContentModel):
+    id = models.CharField('ID', unique=True, max_length=16)
+    description = models.CharField('Description', max_length=60,
+                                   blank=True, null=True)
+    data = RawJSONField('Data')
+    rhythm = models.CharField('Rhythm', max_length=255,
+                              blank=True, null=True)
+    time_signature = models.CharField('Meter', max_length=8,
+                                      blank=True, null=True, default='')
+    is_public = models.BooleanField('Share', default=True)
+    authored_by = models.ForeignKey('accounts.User',
+                                    related_name='exercises',
+                                    on_delete=models.PROTECT,
+                                    verbose_name='Author')
+
+    created = models.DateTimeField('Created', auto_now_add=True)
+    updated = models.DateTimeField('Updated', auto_now=True)
+
+    zero_padding = 'EA00A0'
+
+    ANALYSIS_MODE_CHOICES = (
+        # not good that this is hard coded, where is this used currently?
+        ("note_names", "Note Names"),
+        ("scientific_pitch", "Scientific Pitch"),
+        ("scale_degrees", "Scale Degrees"),
+        ("solfege", "Solfege"),
+        ("roman_numerals", "Roman Numerals"),
+        ("intervals", "Intervals")
+    )
+
+    HIGHLIGHT_MODE_CHOICES = (
+        ("roothighlight", "Root Highlight"),
+        ("tritonehighlight", "Tritone Highlight")
+    )
+
+    class Meta:
+        verbose_name = 'Exercise'
+        verbose_name_plural = 'Exercises'
+
+    @classmethod
+    def get_data_order_list(cls):
+        return ['type', 'introText', 'reviewText', 'staffDistribution',
+                'key', 'keySignature', 'analysis', 'highlight', 'chord',
+                'timeSignature']
+
+    @property
+    def is_private(self):
+        return not self.is_public
+
+    def __str__(self):
+        return self.id
+
+    def get_previous_authored_exercise(self):
+        return Exercise.objects.filter(authored_by=self.authored_by, created__lt=self.created).last()
+
+    def get_next_authored_exercise(self):
+        return Exercise.objects.filter(authored_by=self.authored_by, created__gt=self.created).first()
+
+    def validate_unique(self, exclude=None):
+        if not self._id:
+            return
+
+        ## description need not be unique
+        if Exercise.objects.exclude(id=self.id).filter(
+                description=self.description,
+                authored_by=self.authored_by
+        ).exclude(Q(description='') | Q(description=None)).exists():
+            raise ValidationError("Exercise with this name and this user already exists.")
+        super(Exercise, self).validate_unique(exclude)
+
+    def save(self, *args, **kwargs):
+        if not self._id:
+            super(Exercise, self).save(*args, **kwargs)
+            self.set_id(initial='E')
+            self.set_auto_playlist()
+
+        # self.validate_unique()
+        self.set_id(initial='E')
+        self.sort_data()
+        self.set_rhythm_values()
+        super(Exercise, self).save(*args, **kwargs)
 
     def sort_data(self):
         if not all([key in self.data for key in self.get_data_order_list()]):
@@ -139,33 +174,82 @@ class Exercise(ClonableModelMixin, models.Model):
                 break
         self.data['chord'] = chord_data
 
+    def set_auto_playlist(self):
+        auto_playlist = Playlist.objects.filter(
+            authored_by=self.authored_by,
+            is_auto=True,
+            updated__gt=now() - timedelta(hours=6)
+        ).last()
+        if auto_playlist is None:
+            auto_playlist = Playlist.create_auto_playlist(authored_by=self.authored_by,
+                                                          initial_exercise_id=self.id)
+        lately_edited_playlists = Playlist.objects.filter(updated__gt=auto_playlist.updated)
+        if lately_edited_playlists.exists():
+            Playlist.create_auto_playlist(authored_by=self.authored_by,
+                                          initial_exercise_id=self.id)
+            return
+        auto_playlist.append_exercise(self.id)
+
     @cached_property
     def has_been_performed(self):
-        return PerformanceData.objects.filter(
-            data__contains=[{'id': self.id}]
-        ).exclude(user=self.authored_by).exists()
+        author = self.authored_by
+        performed_exercises = []
+        for x in list(PerformanceData.objects.exclude(user=self.authored_by).values_list('data', flat=True)):
+            for y in x:
+                performed_exercises.append(y['id'][:6])  ## because of transposed exercises
+        performed_exercises = set(performed_exercises)
+        return self.id in performed_exercises
+
+        # return PerformanceData.objects.filter(
+        #     data__contains=[{'id': self.id}]
+        # ).exclude(user=self.authored_by).exists()
 
     @property
     def lab_url(self):
         return reverse('lab:exercise-view', kwargs={'exercise_id': self.id})
 
+    def set_data_modes(self, field_name, modes, enabled):
+        if field_name not in self.data:
+            return
 
-class Playlist(ClonableModelMixin, models.Model):
-    _id = models.AutoField('_ID', unique=True, primary_key=True)
+        _data = self.data.get(field_name)
+        for mode in _data['mode']:
+            if modes and mode in modes:
+                _data['mode'][mode] = True
+            elif not modes or mode not in modes:
+                _data['mode'][mode] = False
+
+        self.data[field_name] = _data
+        self.data[field_name]['enabled'] = enabled
+        return self
+
+class Playlist(ClonableModelMixin, BaseContentModel):
     id = models.CharField('ID', unique=True, max_length=16)
 
     name = models.CharField(
         'Name', unique=True, max_length=32,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z0-9-_ ]+$',
-                message='Enter a valid name consisting of letters, numbers, spaces, underscores or hyphens',
+                regex='^[a-zA-Z0-9-_]+$',
+                message='Use letters, numbers, underscores, or hyphens',
             )]
     )
-    exercises = models.CharField('Exercises', max_length=1024,
-                                 help_text='Ordered set of exercise IDs, separated by comma.')
+    is_public = models.BooleanField('Share', default=False)
+    is_auto = models.BooleanField('Is Auto Playlist', default=False)
+    authored_by = models.ForeignKey('accounts.User',
+                                    related_name='playlists',
+                                    on_delete=models.PROTECT,
+                                    verbose_name='Author of Unit')
 
-    # TRANSPOSE
+    created = models.DateTimeField('Created', auto_now_add=True)
+    updated = models.DateTimeField('Updated', auto_now=True)
+
+    exercises = models.CharField(
+        'Exercise IDs',
+        max_length=1024,
+        # help_text='Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.'
+    )
+
     transpose_requests = ArrayField(base_field=models.CharField(max_length=10, choices=SIGNATURE_CHOICES),
                                     default=list, blank=True, null=True,
                                     help_text=f'Valid choices are {" ".join(str(x) for x in KEY_SIGNATURES)}',
@@ -185,16 +269,6 @@ class Playlist(ClonableModelMixin, models.Model):
     )
     transposition_type = models.CharField('Transposition Types', max_length=32,
                                           choices=TRANSPOSE_TYPE_CHOICES, blank=True, null=True)
-    authored_by = models.ForeignKey('accounts.User',
-                                    related_name='playlists',
-                                    on_delete=models.PROTECT,
-                                    verbose_name='Author of Unit')
-
-    is_public = models.BooleanField('Share', default=False)
-
-    created = models.DateTimeField('Created', auto_now_add=True)
-    updated = models.DateTimeField('Updated', auto_now=True)
-
     zero_padding = 'PA00A0'
 
     class Meta:
@@ -204,7 +278,7 @@ class Playlist(ClonableModelMixin, models.Model):
     @cached_property
     def exercise_list(self):
         if not self.is_transposed():
-            return self.exercises.split(',')
+            return re.split(r'[,; \n]+', self.exercises)
 
         return self.transposed_exercises_ids
 
@@ -218,9 +292,15 @@ class Playlist(ClonableModelMixin, models.Model):
     @cached_property
     def transposition_matrix(self):
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
-            return list(product(self.exercises.split(','), self.transpose_requests))
+            return list(product(
+                re.split(r'[,; \n]+', self.exercises),
+                self.transpose_requests
+            ))
         elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
-            return [(t[1], t[0]) for t in product(self.transpose_requests, self.exercises.split(','))]
+            return [(t[1], t[0]) for t in product(
+                self.transpose_requests,
+                re.split(r'[,; \n]+', self.exercises)
+            )]
 
     @cached_property
     def transposed_exercises_ids(self):
@@ -246,6 +326,13 @@ class Playlist(ClonableModelMixin, models.Model):
 
         return exercises
 
+    def append_exercise(self, exercise_id):
+        if self.exercises == '':
+            self.exercises = exercise_id
+        elif exercise_id not in self.exercises:
+            self.exercises += f', {exercise_id}'
+        self.save()
+
     def is_transposed(self):
         return self.transpose_requests and self.transposition_type
 
@@ -269,9 +356,24 @@ class Playlist(ClonableModelMixin, models.Model):
     def get_exercise_url_by_num(self, num=1):
         try:
             return reverse(
-                'lab:exercises',
+                'lab:playlist-view',
                 kwargs={"playlist_name": self.name,
                         "exercise_num": num}
+            )
+        except NoReverseMatch:
+            return None
+
+    def get_exercise_url_by_id(self, id):
+        try:
+            exercise_num = self.exercise_list.index(id) + 1
+        except ValueError:
+            # print ('playlist changed since this exercise performed', id, self.exercise_list);
+            return None
+        try:
+            return reverse(
+                'lab:playlist-view',
+                kwargs={"playlist_name": self.name,
+                        "exercise_num": exercise_num}
             )
         except NoReverseMatch:
             return None
@@ -308,49 +410,53 @@ class Playlist(ClonableModelMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self._id:
             super(Playlist, self).save(*args, **kwargs)
-        self.set_id()
+        self.set_id(initial='P')
+        self.set_auto_name()
         super(Playlist, self).save(*args, **kwargs)
-
-    def set_id(self):
-        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        reverse_id = ""
-        bases = [26, 26, 10, 10, 26]
-        _id = self._id
-        for base in bases:
-            if base == 26:
-                reverse_id += letters[_id % base]
-            elif base == 10:
-                reverse_id += str(_id % base)
-            _id //= base
-        if _id != 0 or len(reverse_id) != len(bases):
-            return None
-        reverse_id += "P"
-        self.id = reverse_id[::-1]
 
     @cached_property
     def has_been_performed(self):
         return PerformanceData.objects.filter(playlist=self).exclude(user=self.authored_by).exists()
+
+    @classmethod
+    def create_auto_playlist(cls, initial_exercise_id, authored_by):
+        auto_playlist = Playlist(authored_by=authored_by,
+                                 exercises=initial_exercise_id,
+                                 is_auto=True)
+        auto_playlist.save()
+        return auto_playlist
+
+    def set_auto_name(self):
+        if self.is_auto and not self.name:
+            auto_id = list(self.id)
+            auto_id[0] = 'U'
+            auto_id = ''.join(auto_id)
+            date, time = now().date().strftime('%Y%m%d'), now().time().strftime('%H%M')
+            self.name = f'{auto_id}_{date}_{time}'
 
 
 def get_default_data():
     return {'exercises': []}
 
 
-class Course(ClonableModelMixin, models.Model):
-    _id = models.AutoField('_ID', unique=True, primary_key=True)
+class Course(ClonableModelMixin, BaseContentModel):
     id = models.CharField('ID', unique=True, max_length=16)
 
     title = models.CharField(
         'Title', unique=True, max_length=64,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z0-9-_ +]+$',
-                message='Enter a valid title consisting of letters, numbers, spaces, underscores or hyphens',
+                regex='^[a-zA-Z0-9-_]+$',
+                message='Use letters, numbers, underscores, or hyphens',
             )]
     )
-    slug = models.SlugField('Slug', unique=True, max_length=64)
-    playlists = models.CharField('Playlists', max_length=1024,
-                                 help_text='Ordered set of playlist IDs, separated by comma.')
+    slug = models.SlugField('URL slug', unique=True, max_length=64)
+    playlists = models.CharField(
+        'Playlist IDs',
+        max_length=1024,
+        # PLEASEFIX make this required=False,
+        # help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
+    )
 
     authored_by = models.ForeignKey('accounts.User',
                                     related_name='courses',
@@ -371,29 +477,18 @@ class Course(ClonableModelMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self._id:
             super(Course, self).save(*args, **kwargs)
-        self.set_id()
+        self.set_id(initial='C')
         super(Course, self).save(*args, **kwargs)
-
-    def set_id(self):
-        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        reverse_id = ""
-        bases = [26, 26, 10, 10, 26]
-        _id = self._id
-        for base in bases:
-            if base == 26:
-                reverse_id += letters[_id % base]
-            elif base == 10:
-                reverse_id += str(_id % base)
-            _id //= base
-        if _id != 0 or len(reverse_id) != len(bases):
-            return None
-        reverse_id += "C"
-        self.id = reverse_id[::-1]
 
     @cached_property
     def has_been_performed(self):
         return False
-        # return PerformanceData.objects.filter(playlist__name__in=self.playlists.split(',')).exists()
+        # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
+
+    @cached_property
+    def playlist_objects(self):
+        JOIN_STR = ' '
+        return Playlist.objects.filter(id__in=self.playlists.split(JOIN_STR))
 
 
 class PerformanceData(models.Model):
@@ -457,8 +552,8 @@ class PerformanceData(models.Model):
 
     def get_exercise_first_pass(self, exercise_id):
         for exercise in self.data:
-            if exercise['id'] == exercise_id and exercise['exercise_error_tally'] in [0, 'n/a']:
-                return exercise['performed_at'].split()[0]
+            if exercise['id'] == exercise_id and exercise['exercise_error_tally'] in [0, -1, 'n/a']:
+                return exercise['performed_at']
             elif exercise['id'] == exercise_id:
                 continue
         return False
@@ -466,12 +561,12 @@ class PerformanceData(models.Model):
     @property
     def playlist_passed(self):
         from apps.dashboard.views.performance import playlist_pass_bool
-        return playlist_pass_bool(self.data, len(self.playlist.exercise_list))
+        return playlist_pass_bool(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
 
     @property
     def playlist_pass_date(self):
         from apps.dashboard.views.performance import playlist_pass_date
-        return playlist_pass_date(self.data, len(self.playlist.exercise_list))
+        return playlist_pass_date(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
 
     def exercise_is_performed(self, exercise_id):
         return any([exercise['id'] == exercise_id for exercise in self.data])
@@ -481,7 +576,6 @@ class PerformanceData(models.Model):
         for exercise in self.data:
             if exercise['id'] == exercise_id and exercise['exercise_error_tally'] == 0:
                 error_count = 0
-                break
             if exercise['id'] == exercise_id and exercise['exercise_error_tally'] not in [0, 'n/a']:
                 error_count = exercise['exercise_error_tally']
         return error_count

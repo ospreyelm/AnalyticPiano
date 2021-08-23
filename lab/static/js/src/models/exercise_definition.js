@@ -142,6 +142,14 @@ define([
 			return this.exercise.staffDistribution;
 		},
 		/**
+		 * Returns the time signature setting.
+		 *
+		 * @return {string}
+		 */
+		getTimeSignature: function() {
+			return this.exercise.timeSignature;
+		},
+		/**
 		 * Returns all the problems.
 		 *
 		 * @return {array}
@@ -258,13 +266,13 @@ define([
 
 			// check for the introductory text
 			exercise.introText = false;
-			if(definition.hasOwnProperty("introText") && definition.introText) {
+			if(definition.hasOwnProperty("introText")) {
 				exercise.introText = definition.introText;
 			}
 
 			// check for the review text
 			exercise.reviewText = false;
-			if(definition.hasOwnProperty("reviewText") && definition.reviewText) {
+			if(definition.hasOwnProperty("reviewText")) {
 				exercise.reviewText = definition.reviewText;
 			}
 
@@ -293,6 +301,11 @@ define([
 			exercise.staffDistribution = STAFF_DISTRIBUTION;
 			if (definition.hasOwnProperty("staffDistribution") && definition.staffDistribution) {
 				exercise.staffDistribution = definition.staffDistribution;
+			}
+
+			exercise.timeSignature = false;
+			if (definition.hasOwnProperty("timeSignature")) {
+				exercise.timeSignature = definition.timeSignature;
 			}
 
 			return exercise;

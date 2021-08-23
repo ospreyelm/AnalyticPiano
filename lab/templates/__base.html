@@ -10,17 +10,21 @@
     {% block css_extra %}{% endblock %}
 </head>
 <body>
+{% load static %}
 	
 {% block content %}{% endblock %}
 
 {% block js_require %}
 
 {% autoescape off %}
+
 <script src="{{ STATIC_URL }}js/lib/require.js"></script>
 <script>requirejs.config({ enforceDefine: true, waitSeconds: 0 });</script>
 <script>requirejs.config({{ requirejs.config_json }});</script>
 <script>window.appStaticUrl = '{{ STATIC_URL }}';</script>
+
 {% if requirejs.debug %}<script>requirejs.config({'urlArgs': 't='+(new Date().getTime())});</script>{% endif %}
+
 {% endautoescape %}
 
 {% endblock %}

@@ -21,32 +21,50 @@ class ExpansiveForm(forms.ModelForm):
         assert self.EXPANSIVE_FIELD_MODEL is not None
         assert self.EXPANSIVE_FIELD_INITIAL is not None
 
-        expansive_field_data = self.cleaned_data.get(self.EXPANSIVE_FIELD, '').rstrip(',')
-        parsed_input = [n.upper().strip() for n in re.split('-*[,; ]+-*', expansive_field_data)]
-        id_ranges = list(filter(lambda x: '-' in x, parsed_input))
-        single_ids = list(filter(lambda x: '-' not in x, parsed_input))
+        expansive_field_data = re.sub(r'[^a-zA-Z0-9-,; \n]', '',
+            self.cleaned_data.get(self.EXPANSIVE_FIELD, '').rstrip(',')
+        )
+        parsed_input = [n.upper().strip() for n in re.split('-*[,; \n]+-*', expansive_field_data)]
+
+        # to test if item exists
+        all_object_ids = list(self.EXPANSIVE_FIELD_MODEL.objects.values_list('id', flat=True))
 
         object_ids = []
-        for item in single_ids:
-            if len(item) <= 6:
-                full_id = f'{self.EXPANSIVE_FIELD_MODEL.zero_padding[:-len(item)]}{item}'
-                object_ids.append(full_id)
+        for string in parsed_input:
+            if '-' in string:
+                id_range = string
+                for _id in self._expand_range(id_range, all_object_ids):
+                    # ^ returns only items authored by the user
+                    # ^ _id already verified
+                    object_ids.append(_id)
             else:
-                object_ids.append(item)
 
-        all_object_ids = list(self.EXPANSIVE_FIELD_MODEL.objects.values_list('id', flat=True))
-        for id_range in id_ranges:
-            for item in self._expand_range(id_range, all_object_ids):
-                object_ids.append(item)
+                _id = string
 
-        for item in object_ids:
-            if item != '' and item not in all_object_ids:
-                self.add_error(
-                    field=self.EXPANSIVE_FIELD,
-                    error=f'{self.EXPANSIVE_FIELD_MODEL._meta.verbose_name} with ID {item} does not exist.'
-                )
+                if len(_id) <= 6:
+                    _id = f'{self.EXPANSIVE_FIELD_MODEL.zero_padding[:-len(_id)]}{_id}'
 
-        self.cleaned_data.update({self.EXPANSIVE_FIELD: ','.join(object_ids)})
+                if _id == '':
+                    continue
+                if _id not in all_object_ids:
+                    # generate WARNING
+                    continue
+
+                item_is_public = self.EXPANSIVE_FIELD_MODEL.objects.filter(id=_id).first().is_public == True
+
+                if item_is_public:
+                    object_ids.append(_id)
+                    continue
+
+                user_authored_objects = list(self.EXPANSIVE_FIELD_MODEL.objects.filter(
+                    authored_by_id=self.context.get('user').id
+                ).values_list('id', flat=True))
+
+                if _id in user_authored_objects:
+                    object_ids.append(_id)
+
+        JOIN_STR = ' ' # r'[,; \n]+'
+        self.cleaned_data.update({self.EXPANSIVE_FIELD: JOIN_STR.join(object_ids)})
 
     def _integer_from_id(self, ex_str):
         letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -82,7 +100,7 @@ class ExpansiveForm(forms.ModelForm):
         reverse_id += self.EXPANSIVE_FIELD_INITIAL
         return reverse_id[::-1]
 
-    def _expand_range(self, id_range, all_object_ids):
+    def _expand_range(self, id_range, all_object_ids, allowance=100):
         user_authored_objects = list(self.EXPANSIVE_FIELD_MODEL.objects.filter(
             authored_by_id=self.context.get('user').id
         ).values_list('id', flat=True).order_by('id'))
@@ -97,19 +115,23 @@ class ExpansiveForm(forms.ModelForm):
                 return object_ids
             if not lower < upper:
                 return object_ids
-            allowance = 100
             for num in range(lower, upper + 1):
                 item = self._id_from_integer(num)
-                if item != '' and item not in all_object_ids:
+                if item is None or item == '':
+                    continue
+                if item not in all_object_ids:
+                    # generate WARNING
+                    continue
                     self.add_error(
                         field=self.EXPANSIVE_FIELD,
                         error=f'{self.EXPANSIVE_FIELD_MODEL._meta.verbose_name} with ID {item} does not exist.'
                     )
-                if item is not None and item in user_authored_objects:
-                    # Self-authored exercises only
+                if item in user_authored_objects and item is not None and item != '':
+                    # self-authored exercises only
                     object_ids.append(item)
                     allowance += -1
                 if allowance == 0:
+                    # FIXME generate warning message
                     break
 
         return object_ids
@@ -151,6 +173,7 @@ class ExerciseForm(forms.ModelForm):
     # review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False)
     staff_distribution = forms.ChoiceField(choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False)
+    time_signature = forms.CharField(required=False)
 
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
@@ -159,6 +182,7 @@ class ExerciseForm(forms.ModelForm):
             # self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
             self.fields['type'].initial = self.instance.data.get('type', self.TYPE_MATCHING)
             self.fields['staff_distribution'].initial = self.instance.data.get('staffDistribution', self.DISTRIBUTION_KEYBOARD)
+            self.fields['time_signature'].initial = self.instance.data.get('timeSignature', None)
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
@@ -168,6 +192,10 @@ class ExerciseForm(forms.ModelForm):
             # instance.data['reviewText'] = self.cleaned_data['review_text']
             instance.data['type'] = self.cleaned_data['type']
             instance.data['staffDistribution'] = self.cleaned_data['staff_distribution']
+            if self.cleaned_data['time_signature']:
+                instance.data['timeSignature'] = self.cleaned_data['time_signature']
+            else:
+                instance.data['timeSignature'] = ''
             instance.authored_by = self.context.get('user')
             instance.clean()
             instance.save()
@@ -187,8 +215,11 @@ class PlaylistForm(ExpansiveForm):
     EXPANSIVE_FIELD_MODEL = Exercise
     EXPANSIVE_FIELD_INITIAL = 'E'
 
-    transposition_type = forms.ChoiceField(choices=Playlist.TRANSPOSE_TYPE_CHOICES,
-                                           widget=forms.RadioSelect(), required=False)
+    transposition_type = forms.ChoiceField(
+        choices=Playlist.TRANSPOSE_TYPE_CHOICES,
+        widget=forms.RadioSelect(),
+        required=False
+    )
 
     class Meta:
         model = Playlist
@@ -197,6 +228,7 @@ class PlaylistForm(ExpansiveForm):
         widgets = {
             'exercises': forms.Textarea,
             'id': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'is_auto': forms.CheckboxInput(attrs={'readonly': 'readonly'}),
             'authored_by': forms.TextInput(attrs={'readonly': 'readonly'}),
         }
 

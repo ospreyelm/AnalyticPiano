@@ -28,7 +28,7 @@ define([
 	var PlayNoteFactory = function(settings) {
 		this.settings = settings || {};
 
-		_.each(['chord','keySignature','clef','highlightConfig','isBanked', 'isNovel'], function(prop) {
+		_.each(['chord','keySignature','clef','highlightConfig','isBanked','isNovel','activeAlterations'], function(prop) {
 			if(prop in this.settings) {
 				this[prop] = this.settings[prop];
 			} else {
@@ -51,8 +51,8 @@ define([
 			 * Color for banked notes. 
 			 * @type {string}
 			 */
-			this.bankedColor = 'rgb(0,0,0)'; 
-			this.unchangedColor = 'rgba(0,0,0,0)'; 
+			this.bankedColor = 'rgb(0,0,0)';
+			this.unchangedColor = 'rgba(0,0,0,0)';
 
 			_.bindAll(this, ['createModifiers']);
 
@@ -61,7 +61,8 @@ define([
 				keySignature: this.keySignature,
 				clef: this.clef,
 				highlightConfig: this.highlightConfig,
-				modifierCallback: this.createModifiers
+				modifierCallback: this.createModifiers,
+				activeAlterations: this.activeAlterations
 			});
 		},
 		/**
@@ -96,7 +97,10 @@ define([
 		 */
 		createModifiers: function() {
 			var keys = this.staveNoteFactory.getNoteKeys();
-			var accidentals = this.staveNoteFactory.getAccidentalsOf(keys);
+
+			const alteration_history = this.activeAlterations;
+			const accidentals = this.staveNoteFactory.getAccidentalsOf(keys, alteration_history);
+
 			var allMidiKeys = this.chord.getNoteNumbers(); // for highlightConfig across stave boundaries
 			var clefMidiKeys = this.chord.getNoteNumbers(this.clef);
 			var modifiers = [];

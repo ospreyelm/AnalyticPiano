@@ -572,14 +572,14 @@ class ExerciseFile:
     def create(**kwargs):
         '''Creates an exercise file.'''
         course_id = kwargs.get("course_id", None)
-        playlist_name = kwargs.get('playlist_name', None)
-        file_name = kwargs.get('file_name', None)
+        playlist_name = kwargs.get("playlist_name", None)
+        file_name = kwargs.get("file_name", None)
         exercise_definition = kwargs.get("exercise_definition", None)
         
         er = ExerciseFileRepository(course_id=course_id)
         group = er.findGroup(playlist_name)
         if group is None:
-            group_name = re.sub(r'[^a-zA-Z0-9._\-]', r'', playlist_name) # scrub group name
+            group_name = re.sub(r'[^a-zA-Z0-9-_]', '', playlist_name) # scrub group name
             group = ExerciseGroup(group_name, course_id=course_id)
 
         group_size = group.size()

@@ -69,10 +69,15 @@ define([
 				"note_names",
 				"pci",
 				"pitch_class",
+				"set_class_set",
+				"set_class_normal",
+				"set_class_prime",
+				"set_class_forte",
 				"roman_numerals",
 				"scale_degrees",
 				"scientific_pitch",
 				"solfege",
+				"do_based_solfege",
 				"thoroughbass",
 			];
 			if (["analytical", "analytical_pcs", "figured_bass", "figured_bass_pcs"].includes(definition.exercise.type)) {
@@ -111,12 +116,12 @@ define([
 					case "figured_bass_pcs":
 						result = this.figuredBassPcsMatch(expected_notes, actual_notes, abbrev_switch);
 						break;
-					case "echo_bass":
-						result = this.bassMatch(expected_notes, actual_notes);
-						break;
-					case "echo_soprano":
-						result = this.sopranoMatch(expected_notes, actual_notes);
-						break;
+					// case "echo_bass":
+					// 	result = this.bassMatch(expected_notes, actual_notes);
+					// 	break;
+					// case "echo_soprano":
+					// 	result = this.sopranoMatch(expected_notes, actual_notes);
+					// 	break;
 					default:
 						result = this.notesMatch(expected_notes, actual_notes);
 				}
@@ -196,10 +201,15 @@ define([
 				"note_names": "to_note_name",
 				"pci": "to_pci",
 				"pitch_class": "to_pitch_class",
+				"set_class_set": "to_set_class_set",
+				"set_class_normal": "to_set_class_normal",
+				"set_class_prime": "to_set_class_prime",
+				"set_class_forte": "to_set_class_forte",
 				"roman_numerals": "to_chord",
 				"scale_degrees": "to_scale_degree",
 				"scientific_pitch": "getNoteName",
 				"solfege": "to_solfege",
+				"do_based_solfege": "to_do_based_solfege",
 			};
 			var analyze_props = {
 				"abbrev_thoroughbass": "", // ok
@@ -210,10 +220,15 @@ define([
 				"note_names": "", // ok
 				"pci": "", // ok
 				"pitch_class": "",
+				"set_class_set": "",
+				"set_class_normal": "",
+				"set_class_prime": "",
+				"set_class_forte": "",
 				"roman_numerals": ".label", // ok
 				"scale_degrees": "", // ok
 				"scientific_pitch": "", // ok
 				"solfege": "", // ok
+				"do_based_solfege": "",
 			};
 			var i, len;
 			for (i = 0, len = analysis_types.length; i < len; i++) {
