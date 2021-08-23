@@ -322,6 +322,9 @@ define([
 			if (this.isFirstBar()) {
 				staffSegment.addClef(this.clef);
 				staffSegment.addKeySignature(this.keySignature.getVexKey());
+				if (this.timeSignature) {
+					staffSegment.addTimeSignature(this.timeSignature);
+				}
 			}
 
 			this.staffSegment = staffSegment;
@@ -620,6 +623,9 @@ define([
 		 */
 		setKeySignature: function(keySignature) {
 			this.keySignature = keySignature;
+		},
+		setTimeSignature: function(timeSignature) {
+			this.timeSignature = timeSignature;
 		},
 		setFirstBarWidth: function(staffSig, minimum = 0) {
 			const minimize_movement = false;

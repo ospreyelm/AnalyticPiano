@@ -68,6 +68,12 @@ define([
             throw new Error("Missing parameter property: .keySignature");
         }
 
+        if ("timeSignature" in this.settings.exerciseContext) {
+            this.timeSignature = this.settings.exerciseContext.timeSignature;
+        } else {
+            throw new Error("Missing parameter property: .timeSignature");
+        }
+
         _.bindAll(this, [
             'render',
             'onChordsUpdate'
@@ -567,6 +573,12 @@ define([
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
+            if (this.timeSignatureParsed(this.timeSignature)) {
+                console.log(this.timeSignatureParsed(this.timeSignature).join('/'));
+                stave.setTimeSignature(this.timeSignatureParsed(this.timeSignature).join('/'));
+            } else {
+                stave.setTimeSignature(false);
+            }
             stave.setNotater(stave_notater);
             stave.setMaxWidth(this.getWidth());
 
@@ -627,6 +639,7 @@ define([
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
+            // timeSignature not required here
             // stave.setFirstBarWidth(this.keySignature);
             stave.setNoteFactory(new ExerciseNoteFactory({
                 clef: clef,
