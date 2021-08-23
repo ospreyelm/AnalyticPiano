@@ -411,7 +411,8 @@ define([
             };
             var display_chord;
             var exercise_chord;
-            var activeAlterations = Object.create(null);
+            var treble_activeAlterations = Object.create(null);
+            var bass_activeAlterations = Object.create(null);
             const timeSignature = this.getTimeSignature();
             const barlineSpace = 0.25; // relative to width of whole note
 
@@ -461,13 +462,18 @@ define([
 
             // the first stave bar is a special case: it's reserved to show the
             // clef and key signature and nothing else
-            treble = this.createDisplayStave('treble', _.clone(position));
-            bass = this.createDisplayStave('bass', _.clone(position));
+            var first_page = true;
+            if (previous_whole_note_count > 0) {
+                first_page = false;
+            }
+            treble = this.createDisplayStave('treble', _.clone(position), first_page);
+            bass = this.createDisplayStave('bass', _.clone(position), first_page);
             position.index += 1;
             treble.connect(bass);
             staves.push(treble);
 
-            var alterationHistory = Object.create(null);
+            var treble_alterationHistory = Object.create(null);
+            var bass_alterationHistory = Object.create(null);
 
             // now add the staves for showing the notes
             for (var i = 0, len = display_items.length; i < len; i++) {
@@ -512,7 +518,10 @@ define([
                         ) {
                         // new bar begins here: draw barline at left
                         barlines.push(i+1);
-                        activeAlterations = Object.create(null); // RESET # n b
+                        // RESET # n b
+                        treble_activeAlterations = Object.create(null);
+                        bass_activeAlterations = Object.create(null);
+                        // add space to left of barline
                         elapsedWidthUnits += barlineSpace;
                     }
                     if (this.getsBarline(timeSignature, elapsedWholeNotes + this.getWholeNoteCount(curr_value))) {
@@ -527,28 +536,40 @@ define([
                     }
                 }
 
-                // console.log('IN --> ' + i.toString(), activeAlterations);
-                alterationHistory[i] = activeAlterations;
+                treble_alterationHistory[i] = treble_activeAlterations;
+                bass_alterationHistory[i] = bass_activeAlterations;
 
                 display_chord = display_items[i].chord;
                 exercise_chord = exercise_items[i].chord;
-                treble = this.createNoteStave('treble', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits, activeAlterations, extraWidth);
-                bass = this.createNoteStave('bass', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits, activeAlterations, extraWidth);
+                treble = this.createNoteStave('treble', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits, treble_activeAlterations, extraWidth);
+                bass = this.createNoteStave('bass', _.clone(position), display_chord, exercise_chord, elapsedWidthUnits, bass_activeAlterations, extraWidth);
                 position.index += 1;
                 treble.connect(bass);
                 staves.push(treble);
 
-                let merged = {...activeAlterations, ...treble.noteFactory.bequestAlterations};
-                let cancellations = treble.noteFactory.bequestCancellations;
-                for (let j = 0, len_j = cancellations.length; j < len_j; j++) {
-                    delete merged[cancellations[j]];
+                let treble_merged = {
+                    ...treble_activeAlterations,
+                    ...treble.noteFactory.bequestAlterations
+                };
+                let treble_cancellations = treble.noteFactory.bequestCancellations;
+                for (let j = 0, len_j = treble_cancellations.length; j < len_j; j++) {
+                    delete treble_merged[treble_cancellations[j]];
                 }
+                treble_activeAlterations = treble_merged;
 
-                activeAlterations = merged;
-                // console.log('OUT--> ' + i.toString(), activeAlterations);
+                let bass_merged = {
+                    ...bass_activeAlterations,
+                    ...bass.noteFactory.bequestAlterations
+                };
+                let bass_cancellations = bass.noteFactory.bequestCancellations;
+                for (let j = 0, len_j = bass_cancellations.length; j < len_j; j++) {
+                    delete bass_merged[bass_cancellations[j]];
+                }
+                bass_activeAlterations = bass_merged;
             }
 
-            treble.noteFactory.alterationHistory = alterationHistory;
+            treble.noteFactory.alterationHistory = treble_alterationHistory;
+            bass.noteFactory.alterationHistory = bass_alterationHistory;
 
             this.resetStaves();
             this.addStaves(staves);
@@ -563,7 +584,7 @@ define([
          * @param {object} position
          * @return {Stave}
          */
-        createDisplayStave: function (clef, position) {
+        createDisplayStave: function (clef, position, first_page=true) {
             var stave = new Stave(clef, position);
             var stave_notater = this.createStaveNotater(clef, {
                 stave: stave,
@@ -573,7 +594,7 @@ define([
 
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
-            if (this.timeSignatureParsed(this.timeSignature)) {
+            if (first_page && this.timeSignatureParsed(this.timeSignature)) {
                 console.log(this.timeSignatureParsed(this.timeSignature).join('/'));
                 stave.setTimeSignature(this.timeSignatureParsed(this.timeSignature).join('/'));
             } else {
