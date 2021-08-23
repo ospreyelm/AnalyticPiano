@@ -437,7 +437,7 @@ define([
                 })[0] || false;
                 if (page_start > 0) page_start -= 1;
                 // minus operation creates overlap (see above)
-                let previous_items = display_items.slice(0,page_start);
+                const previous_items = display_items.slice(0,page_start);
                 display_items = display_items.slice(page_start);
                 exercise_items = exercise_items.slice(page_start);
                 position.offset = page_start;
@@ -512,6 +512,12 @@ define([
                     if (this.getsBarline(timeSignature, elapsedWholeNotes + this.getWholeNoteCount(curr_value))) {
                         // bar is completed here: add space
                         extraWidth += barlineSpace;
+                    }
+                    if (mid_bar_page_turn == true
+                        && !this.getsBarline(timeSignature, elapsedWholeNotes)
+                        && !this.getsBarline(timeSignature, elapsedWholeNotes + this.getWholeNoteCount(curr_value))) {
+                        // bar is neither begun nor completed here, following mid-bar page turn
+                        elapsedWidthUnits += barlineSpace;
                     }
                 }
 
