@@ -1,3 +1,4 @@
+import datetime
 from collections import OrderedDict
 from datetime import timedelta
 from itertools import product
@@ -78,6 +79,8 @@ class Exercise(ClonableModelMixin, BaseContentModel):
                                     related_name='exercises',
                                     on_delete=models.PROTECT,
                                     verbose_name='Author')
+
+    locked = models.BooleanField('Locked', default=False)
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
@@ -192,13 +195,15 @@ class Exercise(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def has_been_performed(self):
-        author = self.authored_by
-        performed_exercises = []
-        for x in list(PerformanceData.objects.exclude(user=self.authored_by).values_list('data', flat=True)):
-            for y in x:
-                performed_exercises.append(y['id'][:6])  ## because of transposed exercises
-        performed_exercises = set(performed_exercises)
-        return self.id in performed_exercises
+        return self.locked
+
+        # author = self.authored_by
+        # performed_exercises = []
+        # for x in list(PerformanceData.objects.exclude(user=self.authored_by).values_list('data', flat=True)):
+        #     for y in x:
+        #         performed_exercises.append(y['id'][:6])  ## because of transposed exercises
+        # performed_exercises = set(performed_exercises)
+        # return self.id in performed_exercises
 
         # return PerformanceData.objects.filter(
         #     data__contains=[{'id': self.id}]
@@ -222,6 +227,11 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         self.data[field_name] = _data
         self.data[field_name]['enabled'] = enabled
         return self
+
+    def lock(self):
+        self.locked = True
+        self.save()
+
 
 class Playlist(ClonableModelMixin, BaseContentModel):
     id = models.CharField('ID', unique=True, max_length=16)
@@ -464,6 +474,12 @@ class Course(ClonableModelMixin, BaseContentModel):
                                     verbose_name='Author')
     is_public = models.BooleanField('Share', default=False)
 
+    publish_dates = models.CharField('Publish Dates', max_length=1024, blank=True, null=True,
+                                     help_text='Publish date of each playlist, separated by space.')
+
+    due_dates = models.CharField('Due Dates', max_length=1024, blank=True, null=True,
+                                 help_text='Due date of each playlist, separated by space.')
+
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
 
@@ -485,10 +501,30 @@ class Course(ClonableModelMixin, BaseContentModel):
         return False
         # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
 
+    @property
+    def split_playlist_ids(self):
+        return re.split(r'[,; \n]+', self.playlists)
+
     @cached_property
     def playlist_objects(self):
-        JOIN_STR = ' '
-        return Playlist.objects.filter(id__in=self.playlists.split(JOIN_STR))
+        return Playlist.objects.filter(id__in=self.split_playlist_ids)
+
+    @property
+    def publish_dates_dict(self):
+        return dict(zip(self.playlists.split(' '), self.publish_dates.split(' ')))
+
+    @property
+    def due_dates_dict(self):
+        return dict(zip(self.playlists.split(' '), self.due_dates.split(' ')))
+
+    @cached_property
+    def published_playlists(self):
+        if not self.publish_dates:
+            return self.playlist_objects
+
+        published_playlists = [playlist_id for playlist_id, publish_date in self.publish_dates_dict.items()
+                               if now().date() >= datetime.datetime.strptime(publish_date, '%Y-%m-%d').date()]
+        return self.playlist_objects.filter(id__in=published_playlists)
 
 
 class PerformanceData(models.Model):
@@ -537,6 +573,11 @@ class PerformanceData(models.Model):
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
+
+        exercise = Exercise.objects.get(id=exercise_id)
+        if exercise.authored_by_id != user_id and not exercise.locked:
+            exercise.lock()
+
         return pd
 
     @classmethod
