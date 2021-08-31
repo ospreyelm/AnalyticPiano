@@ -275,6 +275,9 @@ define([
 
                 scex.inputChords.clear();
                 scex.inputChords.goTo(0);
+                sheetComponent.barlines = [];
+                this.settings.sheet.barlines = [];
+                console.log(sheetComponent.barlines, this.settings.sheet.barlines);
 
                 if (Object.keys(newData).length) {
 
@@ -301,6 +304,18 @@ define([
 
                     this.staffDistributionConfig.staffDistribution
                         = newData.staffDistribution;
+
+                    sheetComponent.timeSignature
+                        = newData.timeSignature;
+
+                    // FIX ME: BEST ROUTE TO THIS PROPERTY?
+                    try {
+                        this.parentComponent.models.exerciseContext.timeSignature
+                            = newData.timeSignature;
+                    }
+                    catch(err) {
+                        console.log('Cannot find this.parentComponent.models.exerciseContext.timeSignature');
+                    }
 
                     /* similar to updateSettings */
                     // is there a way to do these things once each?

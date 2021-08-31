@@ -595,7 +595,7 @@ define([
             stave.setRenderer(this.vexRenderer);
             stave.setKeySignature(this.keySignature);
             if (first_page && this.timeSignatureParsed(this.timeSignature)) {
-                console.log(this.timeSignatureParsed(this.timeSignature).join('/'));
+                // console.log(this.timeSignatureParsed(this.timeSignature).join('/'));
                 stave.setTimeSignature(this.timeSignatureParsed(this.timeSignature).join('/'));
             } else {
                 stave.setTimeSignature(false);
