@@ -4,10 +4,12 @@ from django import forms
 
 
 class MultiDateField(forms.CharField):
+    def to_python(self, value):
+        return " ".join(value.split())
+
     def validate(self, value):
         if not value:
             return
-
         dates = value.split(' ')
         for date in dates:
             try:
