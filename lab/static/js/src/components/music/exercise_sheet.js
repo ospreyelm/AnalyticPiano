@@ -605,7 +605,9 @@ define([
 
             if (typeof this.keySignature.signatureSpec === 'string') {
                 const staffSig = this.keySignature.signatureSpec;
-                stave.setFirstBarWidth(staffSig);
+                const minimum = 0;
+                const hasTimeSig = this.timeSignatureParsed(this.timeSignature) != false;
+                stave.setFirstBarWidth(staffSig, minimum, hasTimeSig);
             }
             stave.updatePosition();
 
@@ -679,7 +681,9 @@ define([
 
             if (typeof this.keySignature.signatureSpec === 'string') {
                 const staffSig = this.keySignature.signatureSpec;
-                stave.setFirstBarWidth(staffSig);
+                const minimum = 0;
+                const hasTimeSig = this.timeSignatureParsed(this.timeSignature) != false;
+                stave.setFirstBarWidth(staffSig, minimum, hasTimeSig);
             }
             stave.updatePositionWithRhythm(widthUnits, elapsedWidthUnits);
             stave.updateAlterations(activeAlterations);

@@ -277,7 +277,6 @@ define([
                 scex.inputChords.goTo(0);
                 sheetComponent.barlines = [];
                 this.settings.sheet.barlines = [];
-                console.log(sheetComponent.barlines, this.settings.sheet.barlines);
 
                 if (Object.keys(newData).length) {
 

@@ -627,11 +627,15 @@ define([
 		setTimeSignature: function(timeSignature) {
 			this.timeSignature = timeSignature;
 		},
-		setFirstBarWidth: function(staffSig, minimum = 0) {
+		setFirstBarWidth: function(staffSig, minimum = 0, hasTimeSig = false) {
 			const minimize_movement = false;
 			const length = Math.max(staffSig.length, minimum);
 
 			let firstBarWidth = 65;
+
+			if (hasTimeSig == true) {
+				firstBarWidth += 15;
+			}
 
 			if (minimize_movement) {
 				firstBarWidth += 40
