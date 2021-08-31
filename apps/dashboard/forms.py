@@ -4,6 +4,7 @@ from django.contrib.postgres.forms import JSONField
 from prettyjson import PrettyJSONWidget
 
 from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE
+from apps.dashboard.fields import MultiDateField
 from apps.exercises.forms import ExerciseForm, PlaylistForm, CourseForm
 from apps.exercises.models import Exercise
 
@@ -67,7 +68,7 @@ class DashboardExerciseForm(ExerciseForm):
 
     class Meta:
         model = Exercise
-        exclude = ['authored_by']
+        exclude = ['authored_by', 'locked']
         widgets = {
             'data': PrettyJSONWidget(attrs={'initial': 'parsed'}),
             'id': forms.TextInput(attrs={'readonly': 'readonly'}),
@@ -148,5 +149,39 @@ class DashboardPlaylistForm(PlaylistForm):
 
 
 class DashboardCourseForm(CourseForm):
+    publish_dates = MultiDateField(
+        widget=forms.Textarea(
+            attrs={'placeholder': 'e.g. for a course with three playlists: 2021-09-30 2021-10-10 2021-10-17'}
+        )
+    )
+
+    due_dates = MultiDateField(
+        widget=forms.Textarea(
+            attrs={'placeholder': 'e.g. for a course with three playlists: 2021-09-30 2021-10-10 2021-10-17'}
+        )
+    )
+
     class Meta(CourseForm.Meta):
-        exclude = ['id', 'authored_by']
+        fields = ['title', 'slug', 'playlists', 'publish_dates', 'due_dates', 'is_public']
+
+    def clean_due_dates(self):
+        if not self.cleaned_data['due_dates']:
+            return
+        self._clean_multi_dates(
+            dates=self.cleaned_data['due_dates'],
+            playlists=self.cleaned_data['playlists']
+        )
+        return self.cleaned_data['due_dates']
+
+    def clean_publish_dates(self):
+        if not self.cleaned_data['publish_dates']:
+            return
+        self._clean_multi_dates(
+            dates=self.cleaned_data['publish_dates'],
+            playlists=self.cleaned_data['playlists']
+        )
+        return self.cleaned_data['publish_dates']
+
+    def _clean_multi_dates(self, dates, playlists):
+        if dates and len(dates.split(' ')) != len(playlists.split(' ')):
+            raise forms.ValidationError('Make sure the dates are set for either all or none of the playlists.')

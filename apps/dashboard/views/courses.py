@@ -144,11 +144,13 @@ def course_activity_view(request, course_name):
         playlist__id__in=PLAYLISTS, user__in=subscribers
     ).select_related('user', 'playlist')
 
-    for subscriber in subscribers:
-        user_performances = course_performances.filter(user=subscriber)
+    # In the course activity table, only show the subscribers who have performed at least one playlist from the course
+    performers = subscribers.filter(id__in=list(course_performances.values_list('user', flat=True)))
+    for performer in performers:
+        user_performances = course_performances.filter(user=performer)
         user_data = {
-            'subscriber_email': subscriber.email,
-            'subscriber_name': subscriber.get_full_name(),
+            'subscriber_email': performer.email,
+            'subscriber_name': performer.get_full_name(),
         }
         for idx in range(len(PLAYLISTS)):
             ## FIXME: inefficient

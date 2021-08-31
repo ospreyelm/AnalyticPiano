@@ -19,7 +19,7 @@ class ExerciseAdmin(admin.ModelAdmin):
     raw_id_fields = ('authored_by',)
     fieldsets = (
         ('Exercise Information', {
-            'fields': (('id', 'show_on_site', 'authored_by', 'is_public'), 'description')
+            'fields': (('id', 'show_on_site', 'authored_by', 'is_public'), 'description', 'locked')
             # ('created', 'updated')
         }),
         ('Options', {
