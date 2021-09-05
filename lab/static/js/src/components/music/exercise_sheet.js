@@ -470,18 +470,18 @@ define([
                 var page_start = pageturns.filter(function (x, idx) {
                     return x <= cursor
                 }).pop();
-                var page_end = pageturns.filter(function (x, idx) {
+                var next_page = pageturns.filter(function (x, idx) {
                     return x > cursor
                 })[0] || false;
                 if (page_start > 0) {
-                    page_start -= 1;
                     // create overlap (start new page with completed chord)
+                    page_start -= 1;
+                    // next_page -= 1; //unwise
                 }
 
                 position.offset = page_start;
                 const previous_items = display_items.slice(0,page_start);
 
-                const next_page = (page_end && page_end + 1 < display_items.length) ? page_end + 1 : false;
                 if (next_page) {
                     display_items = display_items.slice(page_start,next_page);
                     exercise_items = exercise_items.slice(page_start,next_page);
