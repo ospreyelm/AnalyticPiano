@@ -144,33 +144,23 @@ def course_activity_view(request, course_name):
         playlist__id__in=PLAYLISTS, user__in=subscribers
     ).select_related('user', 'playlist')
 
-    # In the course activity table, only show the subscribers who have performed at least one playlist from the course
-    performers = subscribers.filter(id__in=list(course_performances.values_list('user', flat=True)))
-    for performer in performers:
-        user_performances = course_performances.filter(user=performer)
-        user_data = {
-            'subscriber_email': performer.email,
-            'subscriber_name': performer.get_full_name(),
-        }
-        for idx in range(len(PLAYLISTS)):
-            ## FIXME: inefficient
-            playlist = course.playlist_objects.filter(id=PLAYLISTS[idx]).first()
-            playlist_performance = user_performances.filter(playlist=playlist).last()
-            if playlist_performance:
-                user_data[idx] = mark_safe(
-                    f'<span class="{str(playlist_performance.playlist_passed).lower()}">✘</span>'
-                    # f'<br>'
-                    # f'{playlist_performance.playlist_pass_date if playlist_performance.playlist_pass_date else ""}'
-                )
-            else:
-                user_data[idx] = playlist_performance.playlist_passed if playlist_performance else ''
+    performance_data = {}
+    for performance in course_performances:
+        performer = performance.user.get_full_name()
+        performance_data[performer] = performance_data.get(performer, {})
+        playlist_num = PLAYLISTS.index(performance.playlist.id)
+        performance_data[performer].setdefault(
+            playlist_num, mark_safe(f'<span class="true">✘</span>') if performance.playlist_passed else ''
+        )
 
-        data.append(user_data)
+    for performer, playlists in performance_data.items():
+        [performance_data[performer].setdefault(idx, '') for idx in range(len(PLAYLISTS))]
+        data.append({'subscriber_name': performer, **playlists})
 
     table = CourseActivityTable(
         data=data,
-        extra_columns=[(str(idx), Column(verbose_name=str(idx+1),
-                                               orderable=True))
+        extra_columns=[(str(idx), Column(verbose_name=str(idx + 1),
+                                         orderable=True))
                        for idx in range(len(course.playlist_objects))]
     )
 
