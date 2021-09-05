@@ -147,7 +147,7 @@ def course_activity_view(request, course_name):
     performance_data = {}
     for performance in course_performances:
         performer = performance.user.get_full_name()
-        performance_data[performer] = {}
+        performance_data[performer] = performance_data.get(performer, {})
         playlist_num = PLAYLISTS.index(performance.playlist.id)
         performance_data[performer].setdefault(
             playlist_num, mark_safe(f'<span class="true">✘</span>') if performance.playlist_passed else ''
