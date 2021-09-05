@@ -532,7 +532,7 @@ define([
                         && !this.getsBarline(timeSignature, elapsedWholeNotes)
                         && !this.getsBarline(timeSignature, elapsedWholeNotes + this.getWholeNoteCount(curr_value))) {
                         // bar is neither begun nor completed here, following mid-bar page turn
-                        elapsedWidthUnits += barlineSpace;
+                        // elapsedWidthUnits += barlineSpace;
                     }
                 }
 
