@@ -410,6 +410,7 @@ define([
         updateStaves: function () {
             var chord, treble, bass;
             var limit = 100; // arbitrary
+            let bankSize = CHORD_BANK_SIZE;
             var display_items = this.getDisplayChords().items({limit: limit, reverse: false});
             var exercise_items = this.getExerciseChords().items({limit: limit, reverse: false});
             var staves = [];
@@ -421,7 +422,7 @@ define([
                 index: index,
                 count: count,
                 offset: offset,
-                maxCount: CHORD_BANK_SIZE
+                maxCount: bankSize
             };
             var display_chord;
             var exercise_chord;
@@ -435,7 +436,7 @@ define([
             var pageturns = [0];
 
             let rhythmValues = display_items.map(item => item.chord._rhythmValue);
-            let availableSpace = CHORD_BANK_SIZE;
+            let availableSpace = bankSize;
 
             const endOfBarWholeNoteCounts = [];
             if (timeSignature) {
@@ -455,8 +456,8 @@ define([
                     neededSpace += barlineSpace;
                 }
                 if (neededSpace > availableSpace) {
-                    availableSpace = CHORD_BANK_SIZE - neededSpace;
-                    pageturns.push(i - 1); // -1 to create overlap (begin new page with already completed chord)
+                    availableSpace = bankSize - neededSpace; // overlap space
+                    pageturns.push(i);
                     scroll_exercise = true;
                 }
                 availableSpace -= neededSpace;
@@ -472,6 +473,10 @@ define([
                 var page_end = pageturns.filter(function (x, idx) {
                     return x > cursor
                 })[0] || false;
+                if (page_start > 0) {
+                    page_start -= 1;
+                    // create overlap (start new page with completed chord)
+                }
 
                 position.offset = page_start;
                 const previous_items = display_items.slice(0,page_start);
