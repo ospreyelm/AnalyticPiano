@@ -280,7 +280,8 @@ class CourseView(RequirejsView):
         for sort_index, value in enumerate(course.split_playlist_ids):
             whens.append(When(id=value, then=sort_index))
 
-        playlists = course.published_playlists.annotate(
+        qs = course.playlist_objects if course.authored_by == request.user else course.published_playlists
+        playlists = qs.annotate(
             _sort_index=Case(*whens, output_field=models.CharField())
         ).order_by('_sort_index')
 
