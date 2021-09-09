@@ -33,7 +33,7 @@ class Command(BaseCommand):
 
             for key, value in performed_exercises.items():
                 if exercise.id not in key:  # filtering for regular and transposed exercises
-                    break
+                    continue
 
                 # if more than one users have performed exercise, or if only one user did and it is not the author of exercise
                 if len(value) > 1 or (len(value) == 1 and value != exercise.authored_by_id):
