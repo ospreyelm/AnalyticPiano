@@ -141,7 +141,7 @@ def exercise_delete_view(request, exercise_id):
 
     if request.method == 'POST':
         if exercise.has_been_performed:
-            raise ValidationError('Execises that have been performed cannot be deleted.')
+            raise ValidationError('Exercises that have been performed cannot be deleted.')
         exercise.delete()
         return redirect('dashboard:exercises-list')
 
