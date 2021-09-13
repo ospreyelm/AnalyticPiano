@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import When, Case, Q
+from django.dispatch import receiver
 from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
 from django.utils.functional import cached_property
@@ -233,6 +234,14 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         self.save()
 
 
+@receiver(models.signals.post_delete, sender=Exercise)
+def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
+    """
+    Remove the deleted exercise from all playlists that contain it
+    """
+    Playlist.remove_exercise_from_playlists(exercise_id=instance.id)
+
+
 class Playlist(ClonableModelMixin, BaseContentModel):
     id = models.CharField('ID', unique=True, max_length=16)
 
@@ -422,7 +431,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             super(Playlist, self).save(*args, **kwargs)
         self.set_id(initial='P')
         self.set_auto_name()
+        self.clean_exercises()
         super(Playlist, self).save(*args, **kwargs)
+
+    def clean_exercises(self):
+        self.exercises = re.sub(' +', ' ', self.exercises).strip()
 
     @cached_property
     def has_been_performed(self):
@@ -435,6 +448,16 @@ class Playlist(ClonableModelMixin, BaseContentModel):
                                  is_auto=True)
         auto_playlist.save()
         return auto_playlist
+
+    @classmethod
+    def remove_exercise_from_playlists(cls, exercise_id):
+        playlists = Playlist.objects.filter(exercises__contains=exercise_id)
+        for playlist in playlists:
+            playlist.remove_exercise(exercise_id)
+
+    def remove_exercise(self, exercise_id):
+        self.exercises = self.exercises.replace(exercise_id, '')
+        self.save()
 
     def set_auto_name(self):
         if self.is_auto and not self.name:
