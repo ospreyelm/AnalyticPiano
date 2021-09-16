@@ -164,7 +164,7 @@ def course_activity_view(request, course_name):
                        for idx in range(len(course.playlist_objects))]
     )
 
-    RequestConfig(request).configure(table)
+    RequestConfig(request, paginate={"per_page": 35}).configure(table)
     return render(request, "dashboard/course-activity.html", {
         "table": table,
         "course_name": course_name
