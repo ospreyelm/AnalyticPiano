@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.dashboard.views.groups import groups_list_view, group_add_view, group_edit_view, group_delete_view, \
+    remove_member
 from apps.dashboard.views.index import dashboard_index_view
 from apps.dashboard.views.courses import (
     courses_list_view,
@@ -30,6 +32,7 @@ from apps.dashboard.views.supervision import (
     accept_subscription_view,
     decline_subscription_view
 )
+
 
 app_name = 'dashboard'
 
@@ -73,6 +76,13 @@ urlpatterns = [
     path('decline-subscriber/<int:supervisor_id>/<int:subscriber_id>/', decline_subscription_view,
          name="decline-subscription"),
     path('remove-subscriber/<int:subscriber_id>/', remove_subscriber_view, name="remove-subscriber"),
+
+    # Groups
+    path('groups/', groups_list_view, name="groups-list"),
+    path('groups/add/', group_add_view, name="add-group"),
+    path('groups/<str:group_id>/', group_edit_view, name="edit-group"),
+    path('groups/<str:group_id>/delete/', group_delete_view, name="delete-group"),
+    path('groups/<str:group_id>/remove-member/<int:member_id>/', remove_member, name="remove-group-member"),
 
     # Preferences
     path('preferences/', dashboard_preferences_view, name="preferences"),

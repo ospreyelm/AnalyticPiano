@@ -36,6 +36,8 @@
                href="{% url 'dashboard:exercises-list' %}">Exercises</a>
             <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:subscribers' %}">Subscribers</a>
+            <a {% if url_name == 'groups-list' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:groups-list' %}">Groups</a>
             <p></p>
             <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play View</a>
 

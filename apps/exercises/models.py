@@ -16,6 +16,7 @@ from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django_better_admin_arrayfield.models.fields import ArrayField
 
+from apps.accounts.models import Group
 from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES
 from apps.exercises.utils.transpose import transpose
 
@@ -508,6 +509,9 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     due_dates = models.CharField('Due Dates', max_length=1024, blank=True, null=True,
                                  help_text='Due date of each playlist, separated by space.')
+
+    visible_to = models.ManyToManyField(to=Group, related_name='visible_courses', blank=True,
+                                        help_text='If no group is selected, course will be visible to all subscribers.')
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)

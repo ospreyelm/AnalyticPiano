@@ -15,6 +15,7 @@
         {% if course_name %}
             <p>Activity report for course: {{ course_name }}</p>
         {% endif %}
+        {% block filters %}{% endblock %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
     </div>
 {% endblock content %}
