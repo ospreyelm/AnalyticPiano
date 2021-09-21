@@ -310,6 +310,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def transposition_matrix(self):
+        if not self.exercises:
+            return []
+
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
             return list(product(
                 re.split(r'[,; \n]+', self.exercises),
@@ -356,6 +359,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return self.transpose_requests and self.transposition_type
 
     def get_exercise_obj_by_num(self, num=1):
+        if not self.exercises:
+            return
+
         try:
             exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
         except (IndexError, TypeError):
