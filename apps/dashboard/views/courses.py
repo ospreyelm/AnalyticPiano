@@ -37,12 +37,15 @@ def course_add_view(request):
     }
 
     if request.method == 'POST':
-        form = DashboardCourseForm(data=request.POST)
+        form = DashboardCourseForm(data=request.POST, user=request.user)
         form.context = {'user': request.user}
         if form.is_valid():
             course = form.save(commit=False)
             course.authored_by = request.user
             course.save()
+
+            form.save_m2m()
+
             if 'save-and-continue' in request.POST:
                 success_url = reverse('dashboard:edit-course',
                                       kwargs={'course_name': course.title})
@@ -54,7 +57,7 @@ def course_add_view(request):
         context['form'] = form
         return render(request, "dashboard/content.html", context)
     else:
-        form = DashboardCourseForm(initial=request.session.get('clone_data'))
+        form = DashboardCourseForm(initial=request.session.get('clone_data'), user=request.user)
         request.session['clone_data'] = None
 
     context['form'] = form
@@ -76,12 +79,13 @@ def course_edit_view(request, course_name):
     }
 
     if request.method == 'POST':
-        form = DashboardCourseForm(data=request.POST, instance=course)
+        form = DashboardCourseForm(data=request.POST, instance=course, user=request.user)
         form.context = {'user': request.user}
         if form.is_valid():
             if 'duplicate' in request.POST:
                 unique_fields = Course.get_unique_fields()
                 clone_data = copy(form.cleaned_data)
+                clone_data['visible_to'] = list(form.cleaned_data.pop('visible_to').values_list('id', flat=True))
                 for field in clone_data:
                     if field in unique_fields:
                         clone_data[field] = None
@@ -91,6 +95,9 @@ def course_edit_view(request, course_name):
             course = form.save(commit=False)
             course.authored_by = request.user
             course.save()
+
+            form.save_m2m()
+
             if 'save-and-continue' in request.POST:
                 success_url = reverse('dashboard:edit-course',
                                       kwargs={'course_name': course.title})
@@ -102,7 +109,7 @@ def course_edit_view(request, course_name):
         context['form'] = form
         return render(request, "dashboard/content.html", context)
 
-    form = DashboardCourseForm(instance=course)
+    form = DashboardCourseForm(instance=course, user=request.user)
 
     context['form'] = form
     return render(request, "dashboard/content.html", context)

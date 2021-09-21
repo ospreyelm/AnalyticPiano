@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.forms import JSONField
 from prettyjson import PrettyJSONWidget
 
-from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE
+from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE, Group
 from apps.dashboard.fields import MultiDateField
 from apps.exercises.forms import ExerciseForm, PlaylistForm, CourseForm
 from apps.exercises.models import Exercise
@@ -161,8 +161,19 @@ class DashboardCourseForm(CourseForm):
         )
     )
 
+    visible_to = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.all(), required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'multiselect'}),
+        help_text='If no group is selected, course will be visible to all subscribers.'
+    )
+
     class Meta(CourseForm.Meta):
-        fields = ['title', 'slug', 'playlists', 'publish_dates', 'due_dates', 'is_public']
+        fields = ['title', 'slug', 'playlists', 'publish_dates', 'due_dates', 'visible_to', 'is_public']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
+        super(DashboardCourseForm, self).__init__(*args, **kwargs)
+        self.fields['visible_to'].queryset = user.managed_groups.all()
 
     def clean_due_dates(self):
         if not self.cleaned_data['due_dates']:
@@ -185,3 +196,49 @@ class DashboardCourseForm(CourseForm):
     def _clean_multi_dates(self, dates, playlists):
         if dates and len(dates.split(' ')) != len(playlists.split(' ')):
             raise forms.ValidationError('Make sure the dates are set for either all or none of the playlists.')
+
+
+class BaseDashboardGroupForm(forms.ModelForm):
+    new_members = forms.CharField(
+        widget=forms.Textarea(
+            attrs={'placeholder': 'Comma-separated emails of new members'}
+        ),
+        required=False
+    )
+
+    class Meta:
+        model = Group
+        fields = ('name', 'new_members')
+
+    def clean_new_members(self):
+        new_members_list = self.cleaned_data['new_members'].rstrip(',').replace(' ', '').split(',')
+        new_members = list(self.context['user'].subscribers.filter(
+            email__in=new_members_list
+        ).values_list('id', flat=True))
+        return new_members
+
+    def save(self, commit=True):
+        self.instance.manager = self.context['user']
+        group = super(BaseDashboardGroupForm, self).save(commit=True)
+        group.add_members(self.cleaned_data['new_members'])
+        return group
+
+
+class DashboardGroupAddForm(BaseDashboardGroupForm):
+    def __init__(self, *args, **kwargs):
+        super(DashboardGroupAddForm, self).__init__(*args, **kwargs)
+        self.fields['new_members'].label = 'Members'
+
+    def clean_name(self):
+        if Group.objects.filter(manager=self.context['user'],
+                                name=self.cleaned_data['name']).exists():
+            raise forms.ValidationError('Group with this name already exists.')
+        return self.cleaned_data['name']
+
+
+class DashboardGroupEditForm(BaseDashboardGroupForm):
+    def clean_name(self):
+        if Group.objects.exclude(id=self.context['group_id']).filter(manager=self.context['user'],
+                                                                     name=self.cleaned_data['name']).exists():
+            raise forms.ValidationError('Group with this name already exists.')
+        return self.cleaned_data['name']
