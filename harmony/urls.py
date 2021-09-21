@@ -28,6 +28,8 @@ urlpatterns = [
     path('analytic-piano-app-admin/', admin.site.urls, name='admin'),
 ]
 
+handler404 = 'harmony.views.error_404'
+
 
 # FIXME remove after Sentry test was successful
 def trigger_error(request):
