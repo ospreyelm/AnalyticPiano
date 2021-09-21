@@ -6,6 +6,8 @@ import time
 
 import dj_database_url
 import psycopg2
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 from . import requirejs
 
@@ -326,3 +328,9 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'fake-password')
 EMAIL_USE_TLS = True
 
 APPEND_SLASH = True
+
+ENVIRONMENT_LOCAL = 'local'
+ENVIRONMENT_DEV = 'dev'
+ENVIRONMENT_PROD = 'prod'
+
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
