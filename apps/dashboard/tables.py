@@ -383,8 +383,9 @@ class SupervisorsCoursesListTable(tables.Table):
 
 class CourseActivityTable(tables.Table):
     subscriber_name = tables.columns.Column(
-        verbose_name='Subscriber',
+        verbose_name='Subscriber'
     )
+    groups = tables.columns.Column(verbose_name='Group(s)')
 
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
@@ -394,6 +395,7 @@ class CourseActivityTable(tables.Table):
         attrs = {'class': 'paleblue'}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
+        sequence = ['subscriber_name', 'groups', '...']
 
 
 class GroupsListTable(tables.Table):
@@ -429,11 +431,11 @@ class GroupsListTable(tables.Table):
 
 class GroupMembersTable(tables.Table):
     member_name = tables.columns.Column(accessor=A('member.get_full_name'),
-                                            attrs={"td": {"width": "250px"}},
-                                            verbose_name='Name of User')
+                                        attrs={"td": {"width": "250px"}},
+                                        verbose_name='Name of User')
     member_email = tables.columns.Column(accessor=A('member.email'),
-                                             attrs={"td": {"width": "250px"}},
-                                             verbose_name='Email Address of User')
+                                         attrs={"td": {"width": "250px"}},
+                                         verbose_name='Email Address of User')
     subscription_status = tables.columns.Column(empty_values=(), verbose_name='Subscription Status')
 
     remove = tables.columns.LinkColumn('dashboard:remove-group-member',
@@ -447,4 +449,3 @@ class GroupMembersTable(tables.Table):
         attrs = {'class': 'paleblue'}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
-
