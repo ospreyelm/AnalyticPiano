@@ -33,6 +33,17 @@ class AddSubscriberForm(BaseSupervisionForm):
     email = forms.EmailField(label='Send invitation to:')
 
 
+class RemoveSubscriptionConfirmationForm(forms.Form):
+    CONFIRMATION_PHRASE = 'remove'
+
+    confirmation_text = forms.CharField(label='')
+
+    def clean_confirmation_text(self):
+        if self.cleaned_data['confirmation_text'] not in [self.CONFIRMATION_PHRASE, self.context.get('email')]:
+            raise forms.ValidationError('Wrong value.')
+        return self.cleaned_data['confirmation_text']
+
+
 class KeyboardForm(forms.Form):
     keyboard_size = forms.ChoiceField(
         widget=forms.Select(),

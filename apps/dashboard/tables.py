@@ -31,7 +31,7 @@ class SupervisorsTable(tables.Table):
                                             'supervisor_id': A('supervisor.id'),
                                         },
                                         verbose_name='Decline', orderable=False)
-    remove = tables.columns.LinkColumn('dashboard:unsubscribe',
+    remove = tables.columns.LinkColumn('dashboard:unsubscribe-confirmation',
                                        kwargs={'supervisor_id': A('supervisor.id')},
                                        text='Remove', verbose_name='Remove', orderable=False)
 
@@ -79,7 +79,7 @@ class SubscribersTable(tables.Table):
                                             'supervisor_id': A('user.id'),
                                         },
                                         verbose_name='Decline', orderable=False)
-    remove = tables.columns.LinkColumn('dashboard:remove-subscriber',
+    remove = tables.columns.LinkColumn('dashboard:remove-subscriber-confirmation',
                                        kwargs={'subscriber_id': A('subscriber.id')},
                                        text='Remove', verbose_name='Remove', orderable=False)
 
@@ -429,11 +429,11 @@ class GroupsListTable(tables.Table):
 
 class GroupMembersTable(tables.Table):
     member_name = tables.columns.Column(accessor=A('member.get_full_name'),
-                                            attrs={"td": {"width": "250px"}},
-                                            verbose_name='Name of User')
+                                        attrs={"td": {"width": "250px"}},
+                                        verbose_name='Name of User')
     member_email = tables.columns.Column(accessor=A('member.email'),
-                                             attrs={"td": {"width": "250px"}},
-                                             verbose_name='Email Address of User')
+                                         attrs={"td": {"width": "250px"}},
+                                         verbose_name='Email Address of User')
     subscription_status = tables.columns.Column(empty_values=(), verbose_name='Subscription Status')
 
     remove = tables.columns.LinkColumn('dashboard:remove-group-member',
@@ -447,4 +447,3 @@ class GroupMembersTable(tables.Table):
         attrs = {'class': 'paleblue'}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
-
