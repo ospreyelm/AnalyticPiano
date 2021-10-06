@@ -127,18 +127,6 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     def get_next_authored_exercise(self):
         return Exercise.objects.filter(authored_by=self.authored_by, created__gt=self.created).first()
 
-    def validate_unique(self, exclude=None):
-        if not self._id:
-            return
-
-        ## description need not be unique
-        if Exercise.objects.exclude(id=self.id).filter(
-                description=self.description,
-                authored_by=self.authored_by
-        ).exclude(Q(description='') | Q(description=None)).exists():
-            raise ValidationError("Exercise with this name and this user already exists.")
-        super(Exercise, self).validate_unique(exclude)
-
     def save(self, *args, **kwargs):
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
