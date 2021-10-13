@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.forms import JSONField
+from django.core.validators import FileExtensionValidator
 from prettyjson import PrettyJSONWidget
 
 from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE, Group
@@ -253,3 +254,10 @@ class DashboardGroupEditForm(BaseDashboardGroupForm):
                                                                      name=self.cleaned_data['name']).exists():
             raise forms.ValidationError('Group with this name already exists.')
         return self.cleaned_data['name']
+
+
+class ContentImportForm(forms.Form):
+    file = forms.FileField(
+        validators=[FileExtensionValidator(allowed_extensions=['csv'])],
+        widget=forms.FileInput(attrs={'accept': ".csv"})
+    )

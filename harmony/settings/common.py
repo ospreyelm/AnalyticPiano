@@ -180,7 +180,8 @@ INSTALLED_APPS = (
     'ckeditor_uploader',
     'bootstrap4',
     'widget_tweaks',
-    'django_better_admin_arrayfield'
+    'django_better_admin_arrayfield',
+    'import_export'
     # 'django_openid_auth',
 )
 

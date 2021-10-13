@@ -1,7 +1,17 @@
 from django.urls import path
 
-from apps.dashboard.views.groups import groups_list_view, group_add_view, group_edit_view, group_delete_view, \
+from apps.dashboard.views.groups import (
+    groups_list_view,
+    group_add_view,
+    group_edit_view,
+    group_delete_view,
     remove_member
+)
+from apps.dashboard.views.import_export import (
+    ExerciseExportView, ExerciseImportView,
+    PlaylistExportView, PlaylistImportView,
+    CourseExportView, CourseImportView
+)
 from apps.dashboard.views.index import dashboard_index_view
 from apps.dashboard.views.courses import (
     courses_list_view,
@@ -90,4 +100,12 @@ urlpatterns = [
 
     # Preferences
     path('preferences/', dashboard_preferences_view, name="preferences"),
+
+    # Import/Export
+    path('export/exercises/', ExerciseExportView.as_view(), name="export-exercises"),
+    path('import/exercises/', ExerciseImportView.as_view(), name="import-exercises"),
+    path('export/playlists/', PlaylistExportView.as_view(), name="export-playlists"),
+    path('import/playlists/', PlaylistImportView.as_view(), name="import-playlists"),
+    path('export/courses/', CourseExportView.as_view(), name="export-courses"),
+    path('import/courses/', CourseImportView.as_view(), name="import-courses")
 ]
