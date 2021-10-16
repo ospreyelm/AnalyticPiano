@@ -1,14 +1,15 @@
 import datetime
+import re
 from collections import OrderedDict
 from datetime import timedelta
 from itertools import product
 
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
-from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-from django.db import models
-from django.db.models import When, Case, Q
+from django.db import models, connections
+from django.db.models import When, Case
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
@@ -19,8 +20,6 @@ from django_better_admin_arrayfield.models.fields import ArrayField
 from apps.accounts.models import Group
 from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES
 from apps.exercises.utils.transpose import transpose
-
-import re
 
 User = get_user_model()
 
@@ -137,6 +136,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         self.set_id(initial='E')
         self.sort_data()
         self.set_rhythm_values()
+
         super(Exercise, self).save(*args, **kwargs)
 
     def sort_data(self):
@@ -641,3 +641,21 @@ class PerformanceData(models.Model):
             if exercise['id'] == exercise_id and exercise['exercise_error_tally'] not in [0, 'n/a']:
                 error_count = exercise['exercise_error_tally']
         return error_count
+
+
+@receiver(post_save, sender=Exercise)
+@receiver(post_save, sender=Playlist)
+@receiver(post_save, sender=Course)
+@receiver(post_save, sender=PerformanceData)
+def truncate_timestamps(sender, instance, *args, **kwargs):
+    """ Remove microseconds from 'created' and 'updated' fields """
+    with connections['default'].cursor() as cursor:
+        cursor.execute(
+            "UPDATE {} "
+            "SET created = DATE_TRUNC('second', created), updated = DATE_TRUNC('second', updated) "
+            "WHERE {} = {}".format(
+                instance._meta.db_table,
+                instance._meta.pk.name,
+                instance.pk
+            )
+        )
