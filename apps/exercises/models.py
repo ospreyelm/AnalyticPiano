@@ -55,6 +55,10 @@ class BaseContentModel(models.Model):
         reverse_id += initial
         self.id = reverse_id[::-1]
 
+    def full_clean(self, exclude=None, validate_unique=True):
+        super(BaseContentModel, self).full_clean(exclude=['id', '_id', 'authored_by'],
+                                                 validate_unique=validate_unique)
+
 
 class ClonableModelMixin():
     @classmethod

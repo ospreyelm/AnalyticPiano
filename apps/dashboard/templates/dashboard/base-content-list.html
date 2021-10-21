@@ -3,6 +3,12 @@
 {% load django_tables2 %}
 {% load i18n %}
 {% block content %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success" role="alert">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
     {% block add-button %}
     {% endblock %}
     <div class="dashboard-page">
