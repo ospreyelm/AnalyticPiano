@@ -2,15 +2,17 @@ from copy import copy
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError, PermissionDenied
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_tables2 import RequestConfig, Column
 
+from apps.dashboard.filters import CourseActivityGroupsFilter
 from apps.dashboard.forms import DashboardCourseForm
 from apps.dashboard.tables import CoursesListTable, CourseActivityTable
 from apps.exercises.models import Course, PerformanceData
+from apps.accounts.models import Group
 
 
 @login_required
@@ -153,7 +155,7 @@ def course_activity_view(request, course_name):
 
     performance_data = {}
     for performance in course_performances:
-        performer = performance.user.get_full_name()
+        performer = performance.user
         performance_data[performer] = performance_data.get(performer, {})
         playlist_num = PLAYLISTS.index(performance.playlist.id)
         performance_data[performer].setdefault(
@@ -162,7 +164,31 @@ def course_activity_view(request, course_name):
 
     for performer, playlists in performance_data.items():
         [performance_data[performer].setdefault(idx, '') for idx in range(len(PLAYLISTS))]
-        data.append({'subscriber_name': performer, **playlists})
+        data.append({'subscriber': performer,
+                     'subscriber_name': performer.get_full_name(),
+                     'groups': [], **playlists})
+
+    filters = CourseActivityGroupsFilter(
+        queryset=course.visible_to.all(), data=request.GET
+    )
+    filters.form.is_valid()
+    filtered_groups = filters.form.cleaned_data['groups']
+
+    if filtered_groups:
+        groups = Group.objects.filter(id__in=list(map(int, filtered_groups)))
+
+        # separate performers by the filtered groups
+        for group in groups:
+            for performance in data:
+                if performance['subscriber'].id in group._members:
+                    performance['groups'].append(group.name)
+
+        for performance in data:
+            performance['groups'] = ', '.join(performance['groups'])
+
+            # remove performers who are not members of the filtered groups
+            if not performance['groups']:
+                data.pop(data.index(performance))
 
     table = CourseActivityTable(
         data=data,
@@ -171,8 +197,12 @@ def course_activity_view(request, course_name):
                        for idx in range(len(course.playlist_objects))]
     )
 
+    if not filtered_groups:
+        table.exclude = ('groups',)
+
     RequestConfig(request, paginate={"per_page": 35}).configure(table)
     return render(request, "dashboard/course-activity.html", {
         "table": table,
-        "course_name": course_name
+        "course_name": course_name,
+        "filters": filters
     })

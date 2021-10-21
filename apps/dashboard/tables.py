@@ -383,8 +383,9 @@ class SupervisorsCoursesListTable(tables.Table):
 
 class CourseActivityTable(tables.Table):
     subscriber_name = tables.columns.Column(
-        verbose_name='Subscriber',
+        verbose_name='Subscriber'
     )
+    groups = tables.columns.Column(verbose_name='Group(s)')
 
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
@@ -394,6 +395,7 @@ class CourseActivityTable(tables.Table):
         attrs = {'class': 'paleblue'}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
+        sequence = ['subscriber_name', 'groups', '...']
 
 
 class GroupsListTable(tables.Table):
