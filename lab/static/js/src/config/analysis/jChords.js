@@ -137,6 +137,8 @@ define({
    "z/257": {"root": "7", "label": "V{z5}", "priority": "6"},
    "2/57z": {"root": "7", "label": "V{r3}", "priority": "9"},
    "5/27z": {"root": "7", "label": "V{r2}", "priority": "9"},
+   
+   "7/45z": {"root": "7", "label": "V{u}", "priority": "95"},
 
    // viio/vi
    
