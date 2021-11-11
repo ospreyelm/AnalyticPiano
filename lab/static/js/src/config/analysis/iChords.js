@@ -173,7 +173,7 @@ define({
    "2/57z": {"root": "7", "label": "V{r3}"},
    "5/27z": {"root": "7", "label": "V{r2}"},
 
-   "7/35z": {"root": "7", "label": "V{qe}", "priority": "95"}, // V13
+   "7/35z": {"root": "7", "label": "V{q}{e}", "priority": "95"}, // V13
 
    // v
 
