@@ -39,6 +39,7 @@ def performance_list_view(request, subscriber_id=None):
 
 def playlist_pass_bool(exercise_list, exercises_data, playlist_length):
     parsed_data = {}
+
     for completion in exercises_data:
         c_id = completion['id']
         if c_id not in parsed_data.keys():
@@ -70,7 +71,7 @@ def localtime(timestamp = "2000-01-01 13:00:00", format = "%Y_%m_%d • %a", loc
     return localized
 
 
-def playlist_pass_date(exercise_list, exercises_data, playlist_length):
+def playlist_pass_date(exercise_list, exercises_data, playlist_length, reformat=True):
     if not playlist_pass_bool(exercise_list, exercises_data, playlist_length):
         return None
 
@@ -99,7 +100,7 @@ def playlist_pass_date(exercise_list, exercises_data, playlist_length):
     if len(ex_pass_dates) < playlist_length:
         return None
     else:
-        return localtime(sorted(ex_pass_dates)[-1])
+        return localtime(sorted(ex_pass_dates)[-1]) if reformat else sorted(ex_pass_dates)[-1]
 
 
 def playing_time(exercises_data):
