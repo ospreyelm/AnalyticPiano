@@ -3,6 +3,8 @@ from collections import OrderedDict
 from datetime import timedelta
 from itertools import product
 
+import pytz
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
@@ -12,6 +14,7 @@ from django.db.models import When, Case, Q
 from django.dispatch import receiver
 from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
+from django.utils.dateparse import parse_datetime
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django_better_admin_arrayfield.models.fields import ArrayField
@@ -54,6 +57,10 @@ class BaseContentModel(models.Model):
             return None
         reverse_id += initial
         self.id = reverse_id[::-1]
+
+    def full_clean(self, exclude=None, validate_unique=True):
+        super(BaseContentModel, self).full_clean(exclude=['id', '_id', 'authored_by'],
+                                                 validate_unique=validate_unique)
 
 
 class ClonableModelMixin():
@@ -126,18 +133,6 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     def get_next_authored_exercise(self):
         return Exercise.objects.filter(authored_by=self.authored_by, created__gt=self.created).first()
 
-    def validate_unique(self, exclude=None):
-        if not self._id:
-            return
-
-        ## description need not be unique
-        if Exercise.objects.exclude(id=self.id).filter(
-                description=self.description,
-                authored_by=self.authored_by
-        ).exclude(Q(description='') | Q(description=None)).exists():
-            raise ValidationError("Exercise with this name and this user already exists.")
-        super(Exercise, self).validate_unique(exclude)
-
     def save(self, *args, **kwargs):
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
@@ -148,6 +143,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         self.set_id(initial='E')
         self.sort_data()
         self.set_rhythm_values()
+
         super(Exercise, self).save(*args, **kwargs)
 
     def sort_data(self):
@@ -310,6 +306,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def transposition_matrix(self):
+        if not self.exercises:
+            return []
+
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
             return list(product(
                 re.split(r'[,; \n]+', self.exercises),
@@ -356,6 +355,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return self.transpose_requests and self.transposition_type
 
     def get_exercise_obj_by_num(self, num=1):
+        if not self.exercises:
+            return
+
         try:
             exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
         except (IndexError, TypeError):
@@ -549,6 +551,10 @@ class Course(ClonableModelMixin, BaseContentModel):
                                if now().date() >= datetime.datetime.strptime(publish_date, '%Y-%m-%d').date()]
         return self.playlist_objects.filter(id__in=published_playlists)
 
+    def get_due_date(self, playlist):
+        tz_naive = parse_datetime(f"{self.due_dates_dict.get(playlist.id)} 23:59:59")
+        return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)
+
 
 class PerformanceData(models.Model):
     user = models.ForeignKey(User, related_name='performance_data',
@@ -622,12 +628,12 @@ class PerformanceData(models.Model):
                 continue
         return False
 
-    @property
+    @cached_property
     def playlist_passed(self):
         from apps.dashboard.views.performance import playlist_pass_bool
         return playlist_pass_bool(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
 
-    @property
+    @cached_property
     def playlist_pass_date(self):
         from apps.dashboard.views.performance import playlist_pass_date
         return playlist_pass_date(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
@@ -643,3 +649,15 @@ class PerformanceData(models.Model):
             if exercise['id'] == exercise_id and exercise['exercise_error_tally'] not in [0, 'n/a']:
                 error_count = exercise['exercise_error_tally']
         return error_count
+
+    def get_local_pass_date(self):
+        from apps.dashboard.views.performance import playlist_pass_date
+
+        pass_date = playlist_pass_date(
+            exercise_list=self.playlist.exercise_list,
+            exercises_data=self.data,
+            playlist_length=len(self.playlist.exercise_list),
+            reformat=False
+        )
+        pass_date = datetime.datetime.strptime(pass_date, '%Y-%m-%d %H:%M:%S')
+        return pytz.timezone(settings.TIME_ZONE).localize(pass_date)

@@ -132,7 +132,7 @@ body {
 }
 
 .dashboard-page-header {
-    color:var(--primary-color);
+    color: var(--primary-color);
     padding-top: 20px;
     padding-left: 0px;
     font-size: 1.15rem;
@@ -184,6 +184,7 @@ nav {
     padding: 0px;
     margin: 0px;
     margin-left: 10px;
+    /*color: red;*/
 }
 
 #id_keyboard_size {
@@ -263,7 +264,7 @@ input[type=checkbox] {
     font-size: 14px;
 }
 
-ul li input{
+ul li input {
     margin-right: 10px;
     height: 20px !important;
 }
@@ -299,4 +300,25 @@ ul li input{
 }
 
 .protected-edit-view label[for=id_description], .protected-edit-view label[for=id_is_public] {
+}
+
+.multiselect {
+    width: 320px;
+    background: rgb(255, 255, 255);
+    height: 150px;
+}
+
+.due-date-hours-exceed {
+    background-image: url(../img/hours-exceed.png) !important;
+    background-size: contain;
+}
+
+.due-date-days-exceed {
+    background-image: url(../img/days-exceed.png) !important;
+    background-size: contain;
+}
+
+table.paleblue > tbody > tr > td > span.true {
+    background-image: url(../img/true.png);
+    background-size: contain;
 }
