@@ -1,0 +1,70 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="{{ STATIC_URL }}css/ionicons-needed.css" type="text/css" rel="stylesheet"/>
+    <link href="{{ STATIC_URL }}css/harmony.css" type="text/css" rel="stylesheet"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ STATIC_URL }}apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ STATIC_URL }}favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ STATIC_URL }}favicon-16x16.png">
+    <link rel="manifest" href="{{ STATIC_URL }}site.webmanifest">
+    {% block css_extra %}
+        <style>
+            html {
+                font-size: 14px;
+                font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
+            }
+
+            body {
+                background-color: #335271;
+                text-align: center;
+                margin-top: 0px;
+
+            }
+
+            h1 {
+                margin: 0;
+                padding: 0;
+            }
+
+            p {
+                padding: .4rem 0;
+                margin: 0;
+            }
+
+            .error-box {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+            }
+
+            .error-code {
+                font-size: xx-large;
+                color: #fff;
+            }
+
+            .error-message {
+                color: #fff;
+            }
+        </style>
+    {% endblock %}
+</head>
+<body>
+
+{% block content %}
+{% endblock %}
+
+{% block js_require %}
+
+{% autoescape off %}
+{% endautoescape %}
+
+{% endblock %}
+
+{% block js_extra %}{% endblock %}
+
+</body>
+</html>

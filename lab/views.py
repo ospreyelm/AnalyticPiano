@@ -276,23 +276,30 @@ class CourseView(RequirejsView):
         if not course.is_public and not request.user.is_subscribed_to(course.authored_by):
             raise PermissionDenied
 
-        course_playlists = re.split(r'[,; \n]+', course.playlists)
-        playlists = Playlist.objects.filter(id__in=course_playlists)
         whens = []
-        for sort_index, value in enumerate(course_playlists):
+        for sort_index, value in enumerate(course.split_playlist_ids):
             whens.append(When(id=value, then=sort_index))
 
-        playlists = playlists.annotate(
+        qs = course.playlist_objects if course.authored_by == request.user else course.published_playlists
+        playlists = qs.annotate(
             _sort_index=Case(*whens, output_field=models.CharField())
         ).order_by('_sort_index')
 
-        playlists_table = CoursePageTable(playlists)
+        playlists_table = CoursePageTable(playlists, course=course)
         course_author = course.authored_by
         context = {
             'course_title': course.title,
             'playlists_table': playlists_table,
             'course_author': course_author
         }
+
+        # publish date only visible to author, due date to everyone
+        exclude_fields = list(playlists_table.exclude)
+        if not course.publish_dates or request.user != course_author:
+            exclude_fields.append('publish_date')
+        if not course.due_dates:
+            exclude_fields.append('due_date')
+        playlists_table.exclude = exclude_fields
 
         RequestConfig(request).configure(playlists_table)
 

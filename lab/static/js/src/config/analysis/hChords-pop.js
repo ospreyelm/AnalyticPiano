@@ -85,4 +85,8 @@ define({
     "459": {"label": "&RM7/&X", "description": "&R major &43;", "spellbass": "iG_", "stepwise": "235", "root": "5", "rootstepwise": "3"},
     "158": {"label": "&RM7/&X", "description": "&R major &42;", "spellbass": "iB_", "stepwise": "135", "root": "1", "rootstepwise": "1"}
 
+  // slash chords
+
+    "25y": {"label": "&R/&X", "spellbass": "iD_", "stepwise": "136", "root": "y", "rootstepwise": "6"}, // e.g. F/G
+
 });

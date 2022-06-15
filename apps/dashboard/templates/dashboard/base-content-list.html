@@ -3,6 +3,12 @@
 {% load django_tables2 %}
 {% load i18n %}
 {% block content %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success" role="alert">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
     {% block add-button %}
     {% endblock %}
     <div class="dashboard-page">
@@ -15,6 +21,7 @@
         {% if course_name %}
             <p>Activity report for course: {{ course_name }}</p>
         {% endif %}
+        {% block filters %}{% endblock %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
     </div>
 {% endblock content %}

@@ -2,6 +2,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.mail import send_mail
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -30,10 +31,12 @@ VOLUME_CHOICES = (
     ("ff", _("ff")),
 )
 
+
 def get_preferences_default():
     return {'keyboard_size': DEFAULT_KEYBOARD_SIZE,
             'volume': DEFAULT_VOLUME,
             'mute': False}
+
 
 class User(AbstractBaseUser, PermissionsMixin):
     # FIXME RAW PASSWORD !!!!!!!!
@@ -55,7 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     SUPERVISOR_STATUS_ACCEPTED = 'Accepted'
     SUPERVISOR_STATUS_DECLINED = 'Declined'
     SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = 'Pending'
-    SUPERVISOR_STATUS_INVITATION_WAIT = 'Pending'
+    SUPERVISOR_STATUS_INVITATION_WAIT = 'Pending Invitation'
     _supervisors_dict = JSONField(default=dict, verbose_name='Supervisors', blank=True)
 
     # FIXME remove this field after 0008 migration is applied
@@ -162,3 +165,43 @@ class User(AbstractBaseUser, PermissionsMixin):
     def is_subscribed_to(self, supervisor):
         return self == supervisor or str(supervisor.id) in self._supervisors_dict and self._supervisors_dict[
             str(supervisor.id)] == User.SUPERVISOR_STATUS_ACCEPTED
+
+
+class Group(models.Model):
+    name = models.CharField('Name', max_length=128, validators=[
+        RegexValidator(
+            regex='^[a-zA-Z0-9-_]+$',
+            message='Use letters, numbers, underscores, or hyphens',
+        )])
+    # members = models.ManyToManyField(to=User, blank=True, verbose_name='Members')
+    _members = ArrayField(base_field=models.IntegerField(), default=list,
+                          verbose_name='Members', blank=True)
+    manager = models.ForeignKey(to=User, related_name='managed_groups',
+                                on_delete=models.PROTECT, verbose_name='Manager')
+
+    created = models.DateTimeField('Created', auto_now_add=True)
+    updated = models.DateTimeField('Updated', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Group'
+        verbose_name_plural = 'Groups'
+
+    def __str__(self):
+        return self.name
+
+    def add_members(self, new_members):
+        for member_id in new_members:
+            if member_id in self._members:
+                continue
+            self._members.append(member_id)
+        self.save()
+
+    def remove_member(self, member_id):
+        if member_id not in self._members:
+            return
+        self._members.pop(self._members.index(member_id))
+        self.save()
+
+    @property
+    def members(self):
+        return User.objects.filter(id__in=self._members)

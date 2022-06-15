@@ -1,9 +1,11 @@
 from django.contrib import admin as django_admin
+from django.contrib.admin import ModelAdmin
 from django.contrib.auth import admin, get_user_model
 from django.contrib.auth.admin import UserChangeForm, UserCreationForm
 from django.contrib.auth.forms import AdminPasswordChangeForm
 
 from apps.accounts.forms import UserAdminCreationForm
+from apps.accounts.models import Group
 
 User = get_user_model()
 
@@ -20,14 +22,13 @@ class UserAdmin(admin.UserAdmin):
 
                 # FIXME RAAAAAWW PASSSWORDD!!
                 'raw_password',
-                
+
                 'is_staff',
                 'is_superuser',
                 'is_active',
                 '_supervisors'
             ),
         }),
-
 
     )
     form = UserChangeForm
@@ -49,4 +50,9 @@ class UserAdmin(admin.UserAdmin):
     )
 
 
+class GroupAdmin(ModelAdmin):
+    pass
+
+
 django_admin.site.register(User, UserAdmin)
+django_admin.site.register(Group, GroupAdmin)
