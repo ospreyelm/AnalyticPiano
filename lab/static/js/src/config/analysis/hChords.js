@@ -95,6 +95,11 @@ define({
     //"247z": {"label": "&RΔ9", "spellbass": "iC_", "stepwise": "1246", "root": "0", "rootstepwise": "0"},
     "24z": {"label": "&RΔ9", "spellbass": "iC_", "stepwise": "126", "root": "0", "rootstepwise": "0"},
   
+
+  // slash chords
+
+    "25y": {"label": "&R/&X", "spellbass": "iD_", "stepwise": "136", "root": "y", "rootstepwise": "6"}, // e.g. F/G
+
   // thirteenth chords
   
     "49y": {"label": "&R13", "spellbass": "iG_", "stepwise": "256", "root": "0", "rootstepwise": "0"},
