@@ -184,6 +184,9 @@ var spellingAndAnalysisFunctions = {
         if ( this.key_is_major() ) {
             name = this.jEnharmonicAlterations(note, name, chord).toLowerCase();
         }
+        if ( this.key_is_minor() ) {
+            name = this.iEnharmonicAlterations(note, name, chord).toLowerCase();
+        }
         if ( this.key_is_none() ) {
             // name = this.spelling[this.Piano.keyOfSignature][note % 12].toLowerCase();
             name = this.hEnharmonicAlterations(note, name, chord).toLowerCase();
@@ -253,6 +256,31 @@ var spellingAndAnalysisFunctions = {
         ) {
             return this.push_flat(midi,name);
             /* fully diminished secondary leading-tone sevenths except for third inversion */
+        }
+
+        return name;
+    },
+    iEnharmonicAlterations: function (midi, name, chord) {
+        /* Changes the spelling of some chords in minor keys */
+
+        /* param {chord} is a list of midi numbers */
+        /* param {name} is a string e.g. "c#" */
+
+        if ( this.key_is_major() || this.key_is_none() ) return name;
+
+        /* relativize pitch class integers to keynote */
+        var rpcs = [];
+        var i, len;
+        for (i = 0, len = chord.length; i < len; i++) {
+            rpcs.push(this.rel_pc(chord[i], this.Piano.keynotePC));
+        }
+        var rel_pc = this.rel_pc(midi, this.Piano.keynotePC);
+        let rel_pc_of_bass = this.rel_pc(chord[0], this.Piano.keynotePC);
+
+        /** call enharmonic changes **/
+        if (rel_pc == 1 && _.contains(rpcs,9) && (_.contains(rpcs,4) || _.contains(rpcs,7))) {
+            return this.push_sharp(midi,name);
+            /* V/ii (Dorian) */
         }
 
         return name;

@@ -76,7 +76,7 @@ define({
    "8/025": {"root": "2", "label": "ii⌀{r3}"},
    "0/258": {"root": "2", "label": "ii⌀{r2}"},
 
-   // [!]ii
+   // ii (mode mixture from major mode or Dorian mode)
    
    "2/59":  {"root": "2", "label": "ii"},
    "5/29":  {"root": "2", "label": "ii{z}"},
@@ -173,6 +173,8 @@ define({
    "2/57z": {"root": "7", "label": "V{r3}"},
    "5/27z": {"root": "7", "label": "V{r2}"},
 
+   "7/35z": {"root": "7", "label": "V{q e}", "priority": "95"}, // V13
+
    // v
 
    "7/2y":  {"root": "7", "label": "v"},
@@ -188,6 +190,18 @@ define({
    "0/378": {"root": "8", "label": "VI{z5}"},
    "3/078": {"root": "8", "label": "VI{r3}"},
    "7/038": {"root": "8", "label": "VI{r2}"},
+   
+   // V/ii (mode mixture from major mode or Dorian mode) i.e. #VI
+
+   "9/14":  {"root": "9", "label": "V/ii", "priority": "80"},
+   "1/49":  {"root": "9", "label": "V{z}/ii", "priority": "80"},
+   "4/14":  {"root": "9", "label": "V{z4}/ii", "priority": "80"},
+   
+   "9/147": {"root": "9", "label": "V{u}/ii", "priority": "80"},
+   "9/17":  {"root": "9", "label": "V{u3}/ii", "priority": "80"},
+   "1/479": {"root": "9", "label": "V{z5}/ii", "priority": "80"},
+   "4/179": {"root": "9", "label": "V{r3}/ii", "priority": "80"},
+   "7/149": {"root": "9", "label": "V{r2}/ii", "priority": "80"},
 
    // VII
 

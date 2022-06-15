@@ -98,7 +98,7 @@ define({
 
   // slash chords
 
-    "25y": {"label": "&R/&X", "spellbass": "iD_", "stepwise": "136", "root": "y", "rootstepwise": "6"},
+    "25y": {"label": "&R/&X", "spellbass": "iD_", "stepwise": "136", "root": "y", "rootstepwise": "6"}, // e.g. F/G
 
   // thirteenth chords
   

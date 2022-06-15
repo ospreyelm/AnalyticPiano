@@ -13,6 +13,8 @@
     {% block css_extra %}{% endblock %}
     <script src="{% static 'js/jquery-3.5.1.min.js' %}"></script>
 
+    {% block extrahead %}
+    {% endblock %}
 </head>
 <body>
 
@@ -36,6 +38,8 @@
                href="{% url 'dashboard:exercises-list' %}">Exercises</a>
             <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:subscribers' %}">Subscribers</a>
+            <a {% if url_name == 'groups-list' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:groups-list' %}">Groups</a>
             <p></p>
             <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play View</a>
 

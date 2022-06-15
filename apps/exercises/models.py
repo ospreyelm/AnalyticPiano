@@ -1,4 +1,5 @@
 import datetime
+import re
 from collections import OrderedDict
 from datetime import timedelta
 from itertools import product
@@ -7,10 +8,10 @@ import pytz
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
-from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-from django.db import models
-from django.db.models import When, Case, Q
+from django.db import models, connections
+from django.db.models import When, Case
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
@@ -19,10 +20,9 @@ from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django_better_admin_arrayfield.models.fields import ArrayField
 
+from apps.accounts.models import Group
 from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES
 from apps.exercises.utils.transpose import transpose
-
-import re
 
 User = get_user_model()
 
@@ -505,6 +505,9 @@ class Course(ClonableModelMixin, BaseContentModel):
     due_dates = models.CharField('Due Dates', max_length=1024, blank=True, null=True,
                                  help_text='Due date of each playlist, separated by space.')
 
+    visible_to = models.ManyToManyField(to=Group, related_name='visible_courses', blank=True,
+                                        help_text='If no group is selected, course will be visible to all subscribers.')
+
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
 
@@ -661,3 +664,20 @@ class PerformanceData(models.Model):
         )
         pass_date = datetime.datetime.strptime(pass_date, '%Y-%m-%d %H:%M:%S')
         return pytz.timezone(settings.TIME_ZONE).localize(pass_date)
+
+@receiver(post_save, sender=Exercise)
+@receiver(post_save, sender=Playlist)
+@receiver(post_save, sender=Course)
+@receiver(post_save, sender=PerformanceData)
+def truncate_timestamps(sender, instance, *args, **kwargs):
+    """ Remove microseconds from 'created' and 'updated' fields """
+    with connections['default'].cursor() as cursor:
+        cursor.execute(
+            "UPDATE {} "
+            "SET created = DATE_TRUNC('second', created), updated = DATE_TRUNC('second', updated) "
+            "WHERE {} = {}".format(
+                instance._meta.db_table,
+                instance._meta.pk.name,
+                instance.pk
+            )
+        )

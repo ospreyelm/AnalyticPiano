@@ -8,9 +8,11 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_tables2 import RequestConfig, Column
 
+from apps.dashboard.filters import CourseActivityGroupsFilter
 from apps.dashboard.forms import DashboardCourseForm
 from apps.dashboard.tables import CoursesListTable, CourseActivityTable
 from apps.exercises.models import Course, PerformanceData
+from apps.accounts.models import Group
 
 
 @login_required
@@ -37,12 +39,15 @@ def course_add_view(request):
     }
 
     if request.method == 'POST':
-        form = DashboardCourseForm(data=request.POST)
+        form = DashboardCourseForm(data=request.POST, user=request.user)
         form.context = {'user': request.user}
         if form.is_valid():
             course = form.save(commit=False)
             course.authored_by = request.user
             course.save()
+
+            form.save_m2m()
+
             if 'save-and-continue' in request.POST:
                 success_url = reverse('dashboard:edit-course',
                                       kwargs={'course_name': course.title})
@@ -54,7 +59,7 @@ def course_add_view(request):
         context['form'] = form
         return render(request, "dashboard/content.html", context)
     else:
-        form = DashboardCourseForm(initial=request.session.get('clone_data'))
+        form = DashboardCourseForm(initial=request.session.get('clone_data'), user=request.user)
         request.session['clone_data'] = None
 
     context['form'] = form
@@ -76,12 +81,13 @@ def course_edit_view(request, course_name):
     }
 
     if request.method == 'POST':
-        form = DashboardCourseForm(data=request.POST, instance=course)
+        form = DashboardCourseForm(data=request.POST, instance=course, user=request.user)
         form.context = {'user': request.user}
         if form.is_valid():
             if 'duplicate' in request.POST:
                 unique_fields = Course.get_unique_fields()
                 clone_data = copy(form.cleaned_data)
+                clone_data['visible_to'] = list(form.cleaned_data.pop('visible_to').values_list('id', flat=True))
                 for field in clone_data:
                     if field in unique_fields:
                         clone_data[field] = None
@@ -91,6 +97,9 @@ def course_edit_view(request, course_name):
             course = form.save(commit=False)
             course.authored_by = request.user
             course.save()
+
+            form.save_m2m()
+
             if 'save-and-continue' in request.POST:
                 success_url = reverse('dashboard:edit-course',
                                       kwargs={'course_name': course.title})
@@ -102,7 +111,7 @@ def course_edit_view(request, course_name):
         context['form'] = form
         return render(request, "dashboard/content.html", context)
 
-    form = DashboardCourseForm(instance=course)
+    form = DashboardCourseForm(instance=course, user=request.user)
 
     context['form'] = form
     return render(request, "dashboard/content.html", context)
@@ -150,7 +159,7 @@ def course_activity_view(request, course_name):
 
     performance_data = {}
     for performance in course_performances:
-        performer = performance.user.get_full_name()
+        performer = performance.user
         performance_data[performer] = performance_data.get(performer, {})
 
         playlist_num = PLAYLISTS.index(performance.playlist.id)
@@ -177,7 +186,31 @@ def course_activity_view(request, course_name):
 
     for performer, playlists in performance_data.items():
         [performance_data[performer].setdefault(idx, '') for idx in range(len(PLAYLISTS))]
-        data.append({'subscriber_name': performer, **playlists})
+        data.append({'subscriber': performer,
+                     'subscriber_name': performer.get_full_name(),
+                     'groups': [], **playlists})
+
+    filters = CourseActivityGroupsFilter(
+        queryset=course.visible_to.all(), data=request.GET
+    )
+    filters.form.is_valid()
+    filtered_groups = filters.form.cleaned_data['groups']
+
+    if filtered_groups:
+        groups = Group.objects.filter(id__in=list(map(int, filtered_groups)))
+
+        # separate performers by the filtered groups
+        for group in groups:
+            for performance in data:
+                if performance['subscriber'].id in group._members:
+                    performance['groups'].append(group.name)
+
+        for performance in data:
+            performance['groups'] = ', '.join(performance['groups'])
+
+            # remove performers who are not members of the filtered groups
+            if not performance['groups']:
+                data.pop(data.index(performance))
 
     table = CourseActivityTable(
         data=data,
@@ -186,8 +219,12 @@ def course_activity_view(request, course_name):
                        for idx in range(len(course.playlist_objects))]
     )
 
+    if not filtered_groups:
+        table.exclude = ('groups',)
+
     RequestConfig(request, paginate={"per_page": 35}).configure(table)
     return render(request, "dashboard/course-activity.html", {
         "table": table,
-        "course_name": course_name
+        "course_name": course_name,
+        "filters": filters
     })

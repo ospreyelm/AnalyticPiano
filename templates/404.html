@@ -1,0 +1,12 @@
+{% extends "_base_error.html" %}
+
+{% block content %}
+    <div class="error-box">
+        <div class="error-code">
+            <h1>404</h1>
+        </div>
+        <div class="error-message">
+                <p>{{ error_message|default:"Page Not Found"}}</p>
+        </div>
+    </div>
+{% endblock %}

@@ -6,6 +6,8 @@ import time
 
 import dj_database_url
 import psycopg2
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 from . import requirejs
 
@@ -94,7 +96,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'fake-key')
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [path.join(ROOT_DIR, 'templates/')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -178,7 +180,8 @@ INSTALLED_APPS = (
     'ckeditor_uploader',
     'bootstrap4',
     'widget_tweaks',
-    'django_better_admin_arrayfield'
+    'django_better_admin_arrayfield',
+    'import_export'
     # 'django_openid_auth',
 )
 
@@ -326,3 +329,9 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'fake-password')
 EMAIL_USE_TLS = True
 
 APPEND_SLASH = True
+
+ENVIRONMENT_LOCAL = 'local'
+ENVIRONMENT_DEV = 'dev'
+ENVIRONMENT_PROD = 'prod'
+
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
