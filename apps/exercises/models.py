@@ -4,6 +4,8 @@ from collections import OrderedDict
 from datetime import timedelta
 from itertools import product
 
+import pytz
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.core.validators import RegexValidator
@@ -13,6 +15,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
+from django.utils.dateparse import parse_datetime
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django_better_admin_arrayfield.models.fields import ArrayField
@@ -551,6 +554,10 @@ class Course(ClonableModelMixin, BaseContentModel):
                                if now().date() >= datetime.datetime.strptime(publish_date, '%Y-%m-%d').date()]
         return self.playlist_objects.filter(id__in=published_playlists)
 
+    def get_due_date(self, playlist):
+        tz_naive = parse_datetime(f"{self.due_dates_dict.get(playlist.id)} 23:59:59")
+        return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)
+
 
 class PerformanceData(models.Model):
     user = models.ForeignKey(User, related_name='performance_data',
@@ -624,12 +631,12 @@ class PerformanceData(models.Model):
                 continue
         return False
 
-    @property
+    @cached_property
     def playlist_passed(self):
         from apps.dashboard.views.performance import playlist_pass_bool
         return playlist_pass_bool(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
 
-    @property
+    @cached_property
     def playlist_pass_date(self):
         from apps.dashboard.views.performance import playlist_pass_date
         return playlist_pass_date(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
@@ -646,6 +653,17 @@ class PerformanceData(models.Model):
                 error_count = exercise['exercise_error_tally']
         return error_count
 
+    def get_local_pass_date(self):
+        from apps.dashboard.views.performance import playlist_pass_date
+
+        pass_date = playlist_pass_date(
+            exercise_list=self.playlist.exercise_list,
+            exercises_data=self.data,
+            playlist_length=len(self.playlist.exercise_list),
+            reformat=False
+        )
+        pass_date = datetime.datetime.strptime(pass_date, '%Y-%m-%d %H:%M:%S')
+        return pytz.timezone(settings.TIME_ZONE).localize(pass_date)
 
 @receiver(post_save, sender=Exercise)
 @receiver(post_save, sender=Playlist)

@@ -308,8 +308,22 @@ ul li input {
     height: 150px;
 }
 
+.due-date-hours-exceed {
+    background-image: url(../img/hours-exceed.png) !important;
+    background-size: contain;
+}
 
-.alert {
+.due-date-days-exceed {
+    background-image: url(../img/days-exceed.png) !important;
+    background-size: contain;
+}
+
+table.paleblue > tbody > tr > td > span.true {
+    background-image: url(../img/true.png);
+    background-size: contain;
+}
+
+.alert { // obsolete?
     position: relative;
     padding: 1rem 0.5rem;
     margin-top: 0.3rem;
@@ -318,7 +332,7 @@ ul li input {
     width: fit-content;
 }
 
-.alert-success {
+.alert-success { // obsolete?
     color: #155724;
     background-color: #d4edda;
     border-color: #c3e6cb;

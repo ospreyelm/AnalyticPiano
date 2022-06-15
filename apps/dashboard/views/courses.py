@@ -153,13 +153,35 @@ def course_activity_view(request, course_name):
         playlist__id__in=PLAYLISTS, user__in=subscribers
     ).select_related('user', 'playlist')
 
+    if course.due_dates:
+        due_dates = {playlist: course.get_due_date(playlist)
+                     for playlist in course.playlist_objects}
+
     performance_data = {}
     for performance in course_performances:
         performer = performance.user
         performance_data[performer] = performance_data.get(performer, {})
+
         playlist_num = PLAYLISTS.index(performance.playlist.id)
+
+        pass_mark = f'<span class="true">✘</span>' if performance.playlist_passed else ''
+
+        if course.due_dates and performance.playlist_passed:
+            pass_date = performance.get_local_pass_date()
+            playlist_due_date = due_dates.get(performance.playlist)
+            if playlist_due_date < pass_date:
+                diff = pass_date - playlist_due_date
+                days, seconds = diff.days, diff.seconds
+                hours = days * 24 + seconds // 3600
+
+                if hours >= 6:
+                    pass_mark = '<span class="true due-date-hours-exceed">✘</span>'
+
+                if days >= 7:
+                    pass_mark = '<span class="true due-date-days-exceed">✘</span>'
+
         performance_data[performer].setdefault(
-            playlist_num, mark_safe(f'<span class="true">✘</span>') if performance.playlist_passed else ''
+            playlist_num, mark_safe(pass_mark)
         )
 
     for performer, playlists in performance_data.items():
