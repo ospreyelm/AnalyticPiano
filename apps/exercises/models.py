@@ -24,6 +24,8 @@ from apps.accounts.models import Group
 from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES
 from apps.exercises.utils.transpose import transpose
 
+import re
+
 User = get_user_model()
 
 
