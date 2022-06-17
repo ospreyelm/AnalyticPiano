@@ -21,7 +21,6 @@ django-tables2==2.3.1
 django-widget-tweaks==1.4.8
 django==2.2.28
 et-xmlfile==1.1.0; python_version >= '3.6'
-git+https://github.com/Harvard-University-iCommons/django-auth-lti.git@0d89f4d0c62b960793e14fdcb823d5a5b5336bf5#egg=django-auth-lti
 gunicorn==20.0.4
 idna==2.10
 importlib-metadata==1.7.0; python_version < '3.8'
