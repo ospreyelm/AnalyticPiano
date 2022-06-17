@@ -164,7 +164,7 @@ def course_activity_view(request, course_name):
 
         playlist_num = PLAYLISTS.index(performance.playlist.id)
 
-        pass_mark = f'<span class="true">✘</span>' if performance.playlist_passed else ''
+        pass_mark = f'<span class="true">P</span>' if performance.playlist_passed else '' # Pass
 
         if course.due_dates and performance.playlist_passed:
             pass_date = performance.get_local_pass_date()
@@ -175,10 +175,10 @@ def course_activity_view(request, course_name):
                 hours = days * 24 + seconds // 3600
 
                 if hours >= 6:
-                    pass_mark = '<span class="true due-date-hours-exceed">✘</span>'
+                    pass_mark = '<span class="true due-date-hours-exceed">T</span>' # Tardy
 
                 if days >= 7:
-                    pass_mark = '<span class="true due-date-days-exceed">✘</span>'
+                    pass_mark = '<span class="true due-date-days-exceed">L</span>' # Late
 
         performance_data[performer].setdefault(
             playlist_num, mark_safe(pass_mark)
