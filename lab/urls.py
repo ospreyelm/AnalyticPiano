@@ -42,11 +42,11 @@ urlpatterns = [
 
     # Exercises, Playlists, Courses
     path('exercises/<str:exercise_id>/', ExerciseView.as_view(), name="exercise-view"),
+    path('playlists/<str:playlist_name>/definition/', RefreshExerciseDefinition.as_view(), name="refresh-definition"),
     path('playlists/<str:playlist_name>/<int:exercise_num>/', PlaylistView.as_view(), name="playlist-view"),
     path('playlists/<str:playlist_name>/', PlaylistView.as_view(), name="playlist-view"),
     path('courses/<str:course_slug>/', CourseView.as_view(), name="course-view"),
     path('ajax/exercise-stats/', CourseView.as_view(), name="exercise-stats"),
-    re_path(r'definition$', RefreshExerciseDefinition.as_view(), name="refresh-definition"),
     re_path(r'^manage$', ManageView.as_view(), name="manage"),
 
     # API
