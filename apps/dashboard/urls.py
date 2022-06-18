@@ -24,6 +24,7 @@ from apps.dashboard.views.playlists import (
 from apps.dashboard.views.preferences import dashboard_preferences_view
 from apps.dashboard.views.supervision import (
     supervisors_view,
+    supervisors_courses_view,
     subscribers_view,
     unsubscribe_view,
     remove_subscriber_view,
@@ -65,6 +66,7 @@ urlpatterns = [
 
     # Subscriptions / Subscribers
     path('subscriptions/', supervisors_view, name="subscriptions"),
+    path('subscriptions-courses/', supervisors_courses_view, name="subscriptions-courses"),
     path('unsubscribe/<int:supervisor_id>/', unsubscribe_view, name="unsubscribe"),
 
     path('subscribers/', subscribers_view, name="subscribers"),

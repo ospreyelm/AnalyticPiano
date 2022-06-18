@@ -15,10 +15,10 @@ def supervisors_view(request):
     approved_supervisors = [x for x in request.user.supervisors if request.user.is_subscribed_to(x)]
 
     supervisors_table = SupervisorsTable([{"supervisor": x, "user": request.user} for x in visible_supervisors])
-    supervisors_courses = Course.objects.filter(authored_by__in=approved_supervisors)
-    supervisors_courses_table = SupervisorsCoursesListTable(supervisors_courses)
+    # supervisors_courses = Course.objects.filter(authored_by__in=approved_supervisors)
+    # supervisors_courses_table = SupervisorsCoursesListTable(supervisors_courses)
     RequestConfig(request).configure(supervisors_table)
-    RequestConfig(request).configure(supervisors_courses_table)
+    # RequestConfig(request).configure(supervisors_courses_table)
 
     if request.method == 'POST':
         supervisor_email = request.POST.get('email').lower()
@@ -38,6 +38,21 @@ def supervisors_view(request):
     return render(request, "dashboard/subscriptions.html", {
         "form": form,
         "table": supervisors_table,
+        # "courses_table": supervisors_courses_table
+    })
+
+
+@login_required
+def supervisors_courses_view(request):
+
+    visible_supervisors = [x for x in request.user.supervisors]
+    approved_supervisors = [x for x in request.user.supervisors if request.user.is_subscribed_to(x)]
+
+    supervisors_courses = Course.objects.filter(authored_by__in=approved_supervisors)
+    supervisors_courses_table = SupervisorsCoursesListTable(supervisors_courses)
+    RequestConfig(request).configure(supervisors_courses_table)
+
+    return render(request, "dashboard/subscriptions-courses.html", {
         "courses_table": supervisors_courses_table
     })
 

@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django_tables2 import RequestConfig
 
+
 from apps.dashboard.forms import DashboardExerciseForm
 from apps.dashboard.tables import ExercisesListTable
 from apps.exercises.models import Exercise
@@ -19,10 +20,12 @@ def exercises_list_view(request):
     ).select_related('authored_by')
 
     table = ExercisesListTable(exercises)
+    exercises_author = request.user
 
     RequestConfig(request, paginate={"per_page": 25}).configure(table)
     return render(request, "dashboard/exercises-list.html", {
         "table": table,
+        "exercises_author": exercises_author
     })
 
 

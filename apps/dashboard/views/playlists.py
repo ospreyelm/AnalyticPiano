@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django_tables2 import RequestConfig
 
+
 from apps.dashboard.forms import DashboardPlaylistForm
 from apps.dashboard.tables import PlaylistsListTable
 from apps.exercises.models import Playlist
@@ -19,10 +20,12 @@ def playlists_list_view(request):
     ).select_related('authored_by')
 
     table = PlaylistsListTable(playlists)
+    playlists_author = request.user
 
     RequestConfig(request, paginate={"per_page": 50}).configure(table)
     return render(request, "dashboard/playlists-list.html", {
         "table": table,
+        "playlists_author": playlists_author
     })
 
 

@@ -273,11 +273,11 @@ class ExercisesListTable(tables.Table):
 
 
 class PlaylistsListTable(tables.Table):
+    id = tables.columns.Column()
     name = tables.columns.Column(
         verbose_name='Name of Playlist',
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    id = tables.columns.Column()
     view = tables.columns.LinkColumn('lab:playlist-view',
                                      kwargs={'playlist_name': A('name')},
                                      text='Load', verbose_name='Load', orderable=False)
@@ -318,11 +318,11 @@ class PlaylistsListTable(tables.Table):
 
 
 class CoursesListTable(tables.Table):
+    id = tables.columns.Column()
     title = tables.columns.Column(
         verbose_name='Title of Course',
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    id = tables.columns.Column()
     view = tables.columns.LinkColumn('lab:course-view',
                                      kwargs={'course_slug': A('slug')},
                                      text='Load', verbose_name='Load', orderable=False)
