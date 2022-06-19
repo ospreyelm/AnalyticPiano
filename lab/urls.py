@@ -37,8 +37,8 @@ urlpatterns = [
     path('exercises/add/', AddExerciseView.as_view(), name='add-exercise'),
 
     # Performance
-    re_path(r'exercise-performance$', submit_exercise_performance, name='exercise-performance'),
-    re_path(r'playlist-performance$', submit_playlist_performance, name='playlist-performance'),
+    path('ajax/exercise-performance/', submit_exercise_performance, name='exercise-performance'),
+    path('ajax/playlist-performance/', submit_playlist_performance, name='playlist-performance'),
 
     # Exercises, Playlists, Courses
     path('exercises/<str:exercise_id>/', ExerciseView.as_view(), name="exercise-view"),
