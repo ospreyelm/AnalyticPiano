@@ -51,7 +51,7 @@ def supervisors_courses_view(request):
     supervisors_courses_table = SupervisorsCoursesListTable(supervisors_courses)
     RequestConfig(request).configure(supervisors_courses_table)
 
-    return render(request, "dashboard/subscriptions.html", {
+    return render(request, "dashboard/subscriptions-courses.html", {
         "courses_table": supervisors_courses_table
     })
 
