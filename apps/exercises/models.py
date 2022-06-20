@@ -1,19 +1,26 @@
+import datetime
+import re
 from collections import OrderedDict
 from datetime import timedelta
 from itertools import product
 
+import pytz
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
-from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-from django.db import models
-from django.db.models import When, Case, Q
+from django.db import models, connections
+from django.db.models import When, Case
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
+from django.utils.dateparse import parse_datetime
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django_better_admin_arrayfield.models.fields import ArrayField
 
+from apps.accounts.models import Group
 from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES
 from apps.exercises.utils.transpose import transpose
 
@@ -53,6 +60,10 @@ class BaseContentModel(models.Model):
         reverse_id += initial
         self.id = reverse_id[::-1]
 
+    def full_clean(self, exclude=None, validate_unique=True):
+        super(BaseContentModel, self).full_clean(exclude=['id', '_id', 'authored_by'],
+                                                 validate_unique=validate_unique)
+
 
 class ClonableModelMixin():
     @classmethod
@@ -78,6 +89,8 @@ class Exercise(ClonableModelMixin, BaseContentModel):
                                     related_name='exercises',
                                     on_delete=models.PROTECT,
                                     verbose_name='Author')
+
+    locked = models.BooleanField('Locked', default=False)
 
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
@@ -122,18 +135,6 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     def get_next_authored_exercise(self):
         return Exercise.objects.filter(authored_by=self.authored_by, created__gt=self.created).first()
 
-    def validate_unique(self, exclude=None):
-        if not self._id:
-            return
-
-        ## description need not be unique
-        if Exercise.objects.exclude(id=self.id).filter(
-                description=self.description,
-                authored_by=self.authored_by
-        ).exclude(Q(description='') | Q(description=None)).exists():
-            raise ValidationError("Exercise with this name and this user already exists.")
-        super(Exercise, self).validate_unique(exclude)
-
     def save(self, *args, **kwargs):
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
@@ -144,6 +145,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         self.set_id(initial='E')
         self.sort_data()
         self.set_rhythm_values()
+
         super(Exercise, self).save(*args, **kwargs)
 
     def sort_data(self):
@@ -192,13 +194,15 @@ class Exercise(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def has_been_performed(self):
-        author = self.authored_by
-        performed_exercises = []
-        for x in list(PerformanceData.objects.exclude(user=self.authored_by).values_list('data', flat=True)):
-            for y in x:
-                performed_exercises.append(y['id'][:6])  ## because of transposed exercises
-        performed_exercises = set(performed_exercises)
-        return self.id in performed_exercises
+        return self.locked
+
+        # author = self.authored_by
+        # performed_exercises = []
+        # for x in list(PerformanceData.objects.exclude(user=self.authored_by).values_list('data', flat=True)):
+        #     for y in x:
+        #         performed_exercises.append(y['id'][:6])  ## because of transposed exercises
+        # performed_exercises = set(performed_exercises)
+        # return self.id in performed_exercises
 
         # return PerformanceData.objects.filter(
         #     data__contains=[{'id': self.id}]
@@ -222,6 +226,19 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         self.data[field_name] = _data
         self.data[field_name]['enabled'] = enabled
         return self
+
+    def lock(self):
+        self.locked = True
+        self.save()
+
+
+@receiver(models.signals.post_delete, sender=Exercise)
+def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
+    """
+    Remove the deleted exercise from all playlists that contain it
+    """
+    Playlist.remove_exercise_from_playlists(exercise_id=instance.id)
+
 
 class Playlist(ClonableModelMixin, BaseContentModel):
     id = models.CharField('ID', unique=True, max_length=16)
@@ -291,6 +308,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def transposition_matrix(self):
+        if not self.exercises:
+            return []
+
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
             return list(product(
                 re.split(r'[,; \n]+', self.exercises),
@@ -337,6 +357,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return self.transpose_requests and self.transposition_type
 
     def get_exercise_obj_by_num(self, num=1):
+        if not self.exercises:
+            return
+
         try:
             exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
         except (IndexError, TypeError):
@@ -412,7 +435,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             super(Playlist, self).save(*args, **kwargs)
         self.set_id(initial='P')
         self.set_auto_name()
+        self.clean_exercises()
         super(Playlist, self).save(*args, **kwargs)
+
+    def clean_exercises(self):
+        self.exercises = re.sub(' +', ' ', self.exercises).strip()
 
     @cached_property
     def has_been_performed(self):
@@ -425,6 +452,16 @@ class Playlist(ClonableModelMixin, BaseContentModel):
                                  is_auto=True)
         auto_playlist.save()
         return auto_playlist
+
+    @classmethod
+    def remove_exercise_from_playlists(cls, exercise_id):
+        playlists = Playlist.objects.filter(exercises__contains=exercise_id)
+        for playlist in playlists:
+            playlist.remove_exercise(exercise_id)
+
+    def remove_exercise(self, exercise_id):
+        self.exercises = self.exercises.replace(exercise_id, '')
+        self.save()
 
     def set_auto_name(self):
         if self.is_auto and not self.name:
@@ -464,6 +501,15 @@ class Course(ClonableModelMixin, BaseContentModel):
                                     verbose_name='Author')
     is_public = models.BooleanField('Share', default=False)
 
+    publish_dates = models.CharField('Publish Dates', max_length=1024, blank=True, null=True,
+                                     help_text='Publish date of each playlist, separated by space.')
+
+    due_dates = models.CharField('Due Dates', max_length=1024, blank=True, null=True,
+                                 help_text='Due date of each playlist, separated by space.')
+
+    visible_to = models.ManyToManyField(to=Group, related_name='visible_courses', blank=True,
+                                        help_text='If no group is selected, course will be visible to all subscribers.')
+
     created = models.DateTimeField('Created', auto_now_add=True)
     updated = models.DateTimeField('Updated', auto_now=True)
 
@@ -485,10 +531,34 @@ class Course(ClonableModelMixin, BaseContentModel):
         return False
         # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
 
+    @property
+    def split_playlist_ids(self):
+        return re.split(r'[,; \n]+', self.playlists)
+
     @cached_property
     def playlist_objects(self):
-        JOIN_STR = ' '
-        return Playlist.objects.filter(id__in=self.playlists.split(JOIN_STR))
+        return Playlist.objects.filter(id__in=self.split_playlist_ids)
+
+    @property
+    def publish_dates_dict(self):
+        return dict(zip(self.playlists.split(' '), self.publish_dates.split(' ')))
+
+    @property
+    def due_dates_dict(self):
+        return dict(zip(self.playlists.split(' '), self.due_dates.split(' ')))
+
+    @cached_property
+    def published_playlists(self):
+        if not self.publish_dates:
+            return self.playlist_objects
+
+        published_playlists = [playlist_id for playlist_id, publish_date in self.publish_dates_dict.items()
+                               if now().date() >= datetime.datetime.strptime(publish_date, '%Y-%m-%d').date()]
+        return self.playlist_objects.filter(id__in=published_playlists)
+
+    def get_due_date(self, playlist):
+        tz_naive = parse_datetime(f"{self.due_dates_dict.get(playlist.id)} 23:59:59")
+        return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)
 
 
 class PerformanceData(models.Model):
@@ -537,6 +607,11 @@ class PerformanceData(models.Model):
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
+
+        exercise = Exercise.objects.get(id=exercise_id)
+        if exercise.authored_by_id != user_id and not exercise.locked:
+            exercise.lock()
+
         return pd
 
     @classmethod
@@ -558,12 +633,12 @@ class PerformanceData(models.Model):
                 continue
         return False
 
-    @property
+    @cached_property
     def playlist_passed(self):
         from apps.dashboard.views.performance import playlist_pass_bool
         return playlist_pass_bool(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
 
-    @property
+    @cached_property
     def playlist_pass_date(self):
         from apps.dashboard.views.performance import playlist_pass_date
         return playlist_pass_date(self.playlist.exercise_list, self.data, len(self.playlist.exercise_list))
@@ -579,3 +654,32 @@ class PerformanceData(models.Model):
             if exercise['id'] == exercise_id and exercise['exercise_error_tally'] not in [0, 'n/a']:
                 error_count = exercise['exercise_error_tally']
         return error_count
+
+    def get_local_pass_date(self):
+        from apps.dashboard.views.performance import playlist_pass_date
+
+        pass_date = playlist_pass_date(
+            exercise_list=self.playlist.exercise_list,
+            exercises_data=self.data,
+            playlist_length=len(self.playlist.exercise_list),
+            reformat=False
+        )
+        pass_date = datetime.datetime.strptime(pass_date, '%Y-%m-%d %H:%M:%S')
+        return pytz.timezone(settings.TIME_ZONE).localize(pass_date)
+
+@receiver(post_save, sender=Exercise)
+@receiver(post_save, sender=Playlist)
+@receiver(post_save, sender=Course)
+@receiver(post_save, sender=PerformanceData)
+def truncate_timestamps(sender, instance, *args, **kwargs):
+    """ Remove microseconds from 'created' and 'updated' fields """
+    with connections['default'].cursor() as cursor:
+        cursor.execute(
+            "UPDATE {} "
+            "SET created = DATE_TRUNC('second', created), updated = DATE_TRUNC('second', updated) "
+            "WHERE {} = {}".format(
+                instance._meta.db_table,
+                instance._meta.pk.name,
+                instance.pk
+            )
+        )

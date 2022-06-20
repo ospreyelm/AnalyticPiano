@@ -2,15 +2,18 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.admin.mixins import DynamicArrayMixin
+from import_export.admin import ImportExportModelAdmin
 
 from apps.exercises.forms import ExerciseForm, PlaylistForm, PerformanceDataForm, CourseForm
 from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
 
 import re
 
+from apps.exercises.resources import ExerciseResource, PlaylistResource, CourseResource
+
 
 @admin.register(Exercise)
-class ExerciseAdmin(admin.ModelAdmin):
+class ExerciseAdmin(ImportExportModelAdmin):
     form = ExerciseForm
     list_display = ('id', 'show_on_site', 'authored_by', 'is_public', 'created', 'updated')
     list_filter = ('authored_by__email', 'is_public')
@@ -19,7 +22,7 @@ class ExerciseAdmin(admin.ModelAdmin):
     raw_id_fields = ('authored_by',)
     fieldsets = (
         ('Exercise Information', {
-            'fields': (('id', 'show_on_site', 'authored_by', 'is_public'), 'description')
+            'fields': (('id', 'show_on_site', 'authored_by', 'is_public'), 'description', 'locked')
             # ('created', 'updated')
         }),
         ('Options', {
@@ -36,6 +39,13 @@ class ExerciseAdmin(admin.ModelAdmin):
     save_on_top = True
     save_as = True
 
+    resource_class = ExerciseResource
+
+    def get_import_resource_kwargs(self, request, *args, **kwargs):
+        import_kwargs = super(ExerciseAdmin, self).get_import_resource_kwargs(request, *args, **kwargs)
+        import_kwargs['request'] = request
+        return import_kwargs
+
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super(ExerciseAdmin, self).get_form(request, obj, change, **kwargs)
         form.context = {'user': request.user}
@@ -51,7 +61,7 @@ class ExerciseAdmin(admin.ModelAdmin):
 
 
 @admin.register(Playlist)
-class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
+class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
     form = PlaylistForm
     list_display = ('name', 'show_on_site', 'authored_by',
                     'created', 'updated')
@@ -83,6 +93,13 @@ class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
     )
     save_on_top = True
     save_as = True
+
+    resource_class = PlaylistResource
+
+    def get_import_resource_kwargs(self, request, *args, **kwargs):
+        import_kwargs = super(PlaylistAdmin, self).get_import_resource_kwargs(request, *args, **kwargs)
+        import_kwargs['request'] = request
+        return import_kwargs
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super(PlaylistAdmin, self).get_form(request, obj, change, **kwargs)
@@ -123,7 +140,7 @@ class PlaylistAdmin(DynamicArrayMixin, admin.ModelAdmin):
     performances.short_description = 'Performance Data'
 
     def transposed_exercises_display(self, obj):
-        TRANSP_JOIN_STR = ' ' # r'[,; \n]+'
+        TRANSP_JOIN_STR = ' '  # r'[,; \n]+'
         return TRANSP_JOIN_STR.join(str(id_) for id_ in obj.transposed_exercises_ids) if obj.is_transposed() else ''
 
     transposed_exercises_display.short_description = 'Exercises Transposed'
@@ -151,7 +168,7 @@ class PerformanceDataAdmin(admin.ModelAdmin):
 
 
 @admin.register(Course)
-class CourseAdmin(DynamicArrayMixin, admin.ModelAdmin):
+class CourseAdmin(DynamicArrayMixin, ImportExportModelAdmin):
     form = CourseForm
     list_display = ('title', 'show_on_site', 'authored_by',
                     'created', 'updated')
@@ -176,6 +193,13 @@ class CourseAdmin(DynamicArrayMixin, admin.ModelAdmin):
     save_on_top = True
     save_as = True
 
+    resource_class = CourseResource
+
+    def get_import_resource_kwargs(self, request, *args, **kwargs):
+        import_kwargs = super(CourseAdmin, self).get_import_resource_kwargs(request, *args, **kwargs)
+        import_kwargs['request'] = request
+        return import_kwargs
+
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super(CourseAdmin, self).get_form(request, obj, change, **kwargs)
         form.context = {'user': request.user}
@@ -188,7 +212,7 @@ class CourseAdmin(DynamicArrayMixin, admin.ModelAdmin):
 
     def playlist_links(self, obj):
         links = ''
-        playlists = Playlist.objects.filter(id__in = re.split(r'[,; \n]+', obj.playlists))
+        playlists = Playlist.objects.filter(id__in=re.split(r'[,; \n]+', obj.playlists))
         for playlist in playlists:
             link = reverse('admin:%s_%s_change' % ('exercises', 'playlist'), args=(playlist._id,))
             links += "<a href='%s'>%s</a><br>" % (link, playlist.id)

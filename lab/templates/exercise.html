@@ -1,7 +1,17 @@
 {% extends "__base.html" %}
 
 {% block js_extra %}
-<script>require(['app/main']);</script>
+    <script>require(['app/main']);</script>
+    <script>
+        window.addEventListener('load', function () {
+            setTimeout(() => {
+                let introLinks = document.querySelectorAll("#exercise-text a");
+                for (let i = 0, len = introLinks.length; i < len; i++) {
+                    introLinks[i].style.textDecoration = "underline";
+                }
+            }, 100)
+        }, false);
+    </script>
 {% endblock %}
 
 {% block content %}

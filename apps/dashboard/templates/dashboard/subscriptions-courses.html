@@ -1,0 +1,9 @@
+{% extends 'dashboard/base-content-list.html' %}
+
+{% block content %}
+    <div class="dashboard-page">
+        <!-- {% include 'django_tables2/bootstrap4.html' with table=table %} -->
+        <p>These are the courses available to you authored by users to whom you are subscribed. (To access courses that you have authored, go to the Courses page under CREATE.)</p>
+        {% include 'django_tables2/bootstrap4.html' with table=courses_table %}
+    </div>
+{% endblock content %}

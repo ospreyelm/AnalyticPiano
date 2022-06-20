@@ -37,16 +37,16 @@ urlpatterns = [
     path('exercises/add/', AddExerciseView.as_view(), name='add-exercise'),
 
     # Performance
-    re_path(r'exercise-performance$', submit_exercise_performance, name='exercise-performance'),
-    re_path(r'playlist-performance$', submit_playlist_performance, name='playlist-performance'),
+    path('ajax/exercise-performance/', submit_exercise_performance, name='exercise-performance'),
+    path('ajax/playlist-performance/', submit_playlist_performance, name='playlist-performance'),
 
     # Exercises, Playlists, Courses
     path('exercises/<str:exercise_id>/', ExerciseView.as_view(), name="exercise-view"),
+    path('playlists/<str:playlist_name>/definition/', RefreshExerciseDefinition.as_view(), name="refresh-definition"),
     path('playlists/<str:playlist_name>/<int:exercise_num>/', PlaylistView.as_view(), name="playlist-view"),
     path('playlists/<str:playlist_name>/', PlaylistView.as_view(), name="playlist-view"),
     path('courses/<str:course_slug>/', CourseView.as_view(), name="course-view"),
     path('ajax/exercise-stats/', CourseView.as_view(), name="exercise-stats"),
-    re_path(r'definition$', RefreshExerciseDefinition.as_view(), name="refresh-definition"),
     re_path(r'^manage$', ManageView.as_view(), name="manage"),
 
     # API

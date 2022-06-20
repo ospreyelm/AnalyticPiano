@@ -613,7 +613,7 @@ define([
             const json_data = JSON.stringify(this.compileExerciseReport());
             $.ajax({
                 type: "POST",
-                url: 'exercise-performance',
+                url: '/ajax/exercise-performance/',
                 data: {'data': json_data},
                 dataType: 'text',
             })
@@ -636,7 +636,7 @@ define([
             const json_data = JSON.stringify(this.compilePlaylistReport());
             $.ajax({
                 type: "POST",
-                url: 'playlist-performance',
+                url: '/ajax/playlist-performance/',
                 data: {'data': json_data},
                 dataType: 'text',
             })

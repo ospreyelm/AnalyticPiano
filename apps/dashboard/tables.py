@@ -31,7 +31,7 @@ class SupervisorsTable(tables.Table):
                                             'supervisor_id': A('supervisor.id'),
                                         },
                                         verbose_name='Decline', orderable=False)
-    remove = tables.columns.LinkColumn('dashboard:unsubscribe',
+    remove = tables.columns.LinkColumn('dashboard:unsubscribe-confirmation',
                                        kwargs={'supervisor_id': A('supervisor.id')},
                                        text='Remove', verbose_name='Remove', orderable=False)
 
@@ -79,7 +79,7 @@ class SubscribersTable(tables.Table):
                                             'supervisor_id': A('user.id'),
                                         },
                                         verbose_name='Decline', orderable=False)
-    remove = tables.columns.LinkColumn('dashboard:remove-subscriber',
+    remove = tables.columns.LinkColumn('dashboard:remove-subscriber-confirmation',
                                        kwargs={'subscriber_id': A('subscriber.id')},
                                        text='Remove', verbose_name='Remove', orderable=False)
 
@@ -273,11 +273,11 @@ class ExercisesListTable(tables.Table):
 
 
 class PlaylistsListTable(tables.Table):
+    id = tables.columns.Column()
     name = tables.columns.Column(
         verbose_name='Name of Playlist',
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    id = tables.columns.Column()
     view = tables.columns.LinkColumn('lab:playlist-view',
                                      kwargs={'playlist_name': A('name')},
                                      text='Load', verbose_name='Load', orderable=False)
@@ -318,11 +318,11 @@ class PlaylistsListTable(tables.Table):
 
 
 class CoursesListTable(tables.Table):
+    id = tables.columns.Column()
     title = tables.columns.Column(
         verbose_name='Title of Course',
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
-    id = tables.columns.Column()
     view = tables.columns.LinkColumn('lab:course-view',
                                      kwargs={'course_slug': A('slug')},
                                      text='Load', verbose_name='Load', orderable=False)
@@ -383,11 +383,67 @@ class SupervisorsCoursesListTable(tables.Table):
 
 class CourseActivityTable(tables.Table):
     subscriber_name = tables.columns.Column(
-        verbose_name='Subscriber',
+        verbose_name='Subscriber'
     )
+    groups = tables.columns.Column(verbose_name='Group(s)')
+
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
     # )
+
+    class Meta:
+        attrs = {'class': 'paleblue'}
+        table_pagination = False
+        template_name = "django_tables2/bootstrap4.html"
+        sequence = ['subscriber_name', 'groups', '...']
+
+
+class GroupsListTable(tables.Table):
+    name = tables.columns.Column()
+    members = tables.columns.Column(accessor=A('members_count'))
+
+    edit = tables.columns.LinkColumn(
+        'dashboard:edit-group',
+        kwargs={'group_id': A('id')},
+        text='Edit', verbose_name='Edit', orderable=False
+    )
+
+    delete = tables.columns.LinkColumn(
+        'dashboard:delete-group',
+        kwargs={'group_id': A('id')},
+        text='Delete', verbose_name='Delete', orderable=False
+    )
+
+    created = tables.columns.DateColumn(
+        verbose_name='Created',
+        format='Y-m-d • h:i A',
+    )
+    updated = tables.columns.DateColumn(
+        verbose_name='Modified',
+        format='Y-m-d • h:i A',
+    )
+
+    class Meta:
+        attrs = {'class': 'paleblue'}
+        table_pagination = False
+        template_name = "django_tables2/bootstrap4.html"
+
+
+class GroupMembersTable(tables.Table):
+    member_name = tables.columns.Column(accessor=A('member.get_full_name'),
+                                        attrs={"td": {"width": "250px"}},
+                                        verbose_name='Name of User')
+    member_email = tables.columns.Column(accessor=A('member.email'),
+                                         attrs={"td": {"width": "250px"}},
+                                         verbose_name='Email Address of User')
+    subscription_status = tables.columns.Column(empty_values=(), verbose_name='Subscription Status')
+
+    remove = tables.columns.LinkColumn('dashboard:remove-group-member',
+                                       kwargs={'group_id': A('group_id'), 'member_id': A('member.id')},
+                                       text='Remove', verbose_name='Remove', orderable=False)
+
+    def render_subscription_status(self, record):
+        return record['member']._supervisors_dict[str(self.request.user.id)]
 
     class Meta:
         attrs = {'class': 'paleblue'}
