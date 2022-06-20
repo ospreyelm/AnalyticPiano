@@ -22,12 +22,12 @@ def courses_list_view(request):
     ).select_related('authored_by')
 
     table = CoursesListTable(courses)
-    course_author = request.user
+    courses_author = request.user
 
     RequestConfig(request, paginate={"per_page": 50}).configure(table)
     return render(request, "dashboard/courses-list.html", {
         "table": table,
-        "course_author": course_author
+        "courses_author": courses_author
     })
 
 

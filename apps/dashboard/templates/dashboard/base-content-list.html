@@ -15,8 +15,14 @@
         {% if subscriber_name %}
             <p>Activity report for {{ subscriber_name }}</p>
         {% endif %}
-        {% if course_author %}
-            <p>Courses authored by {{ course_author }}</p>
+        {% if courses_author %}
+            <p>Courses authored by {{ courses_author }}</p>
+        {% endif %}
+        {% if playlists_author %}
+            <p>Playlists authored by {{ playlists_author }}</p>
+        {% endif %}
+        {% if exercises_author %}
+            <p>Exercises authored by {{ exercises_author }}</p>
         {% endif %}
         {% if course_name %}
             <p>Activity report for course: {{ course_name }}</p>

@@ -22,27 +22,28 @@
     <div class="sidenav">
         {% with url_name=request.resolver_match.url_name %}
             <p class="sidenav-header">ANALYTIC PIANO</p>
+            <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Go to Play View</a>
             <p class="sidenav-subhead">PRACTICE</p>
             <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
-            <a {% if url_name == 'subscriptions' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:subscriptions' %}">Subscriptions</a>
+            <a {% if url_name == 'subscriptions-courses' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:subscriptions-courses' %}">Available Courses</a>
             <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:preferences' %}">Preferences</a>
-            <p class="sidenav-subhead">TEACH</p>
+               href="{% url 'dashboard:preferences' %}">Settings</a>
+            <p class="sidenav-subhead">CONNECT</p>
+            <a {% if url_name == 'subscriptions' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:subscriptions' %}">Follow</a>
+            <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:subscribers' %}">Enroll and Invite</a>
+            <a {% if url_name == 'groups-list' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:groups-list' %}">Populate Classes</a>
+            <p class="sidenav-subhead">CREATE</p>
             <a {% if url_name == 'courses-list' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:courses-list' %}">Courses</a>
             <a {% if url_name == 'playlists-list' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:playlists-list' %}">Playlists</a>
             <a {% if url_name == 'exercises-list' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:exercises-list' %}">Exercises</a>
-            <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:subscribers' %}">Subscribers</a>
-            <a {% if url_name == 'groups-list' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:groups-list' %}">Groups</a>
-            <p></p>
-            <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play View</a>
-
         {% endwith %}
     </div>
 {% endblock %}
