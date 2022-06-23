@@ -53,7 +53,7 @@ define([
 	/** 
 	 * ajax call to GET the keyboard size
 	 * this will set the keyboard size in the controls on the right (not the actual keyboard)
-	 * if no one is logged in the size is 49 (this is defined in apps.views.send_keyboard_size)
+	 * if no one is logged in the size is 49 per apps.accounts.models
 	 */
 
 	$.ajax({

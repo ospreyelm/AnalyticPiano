@@ -397,8 +397,6 @@ define([
 
 			/*
 			// These properties should also be included once we start changing these presets per user.
-			json_data["autoExerciseAdvance"]
-				= Config.__config.general.autoExerciseAdvance;
 			json_data["bankAfterMetronomeTick"]
 				= Config.__config.general.bankAfterMetronomeTick;
 			json_data["defaultKeyboardSize"]
@@ -407,20 +405,14 @@ define([
 				= Config.__config.general.defaultOctaveAdjustment;
 			json_data["defaultRhythmValue"]
 				= Config.__config.general.defaultRhythmValue;
-			json_data["hideNextWhenAutoAdvance"]
-				= Config.__config.general.hideNextWhenAutoAdvance;
+			json_data["hideNextForAutoAdvance"]
+				= Config.__config.general.hideNextForAutoAdvance;
 			json_data["highlightSettings"]
 				= Config.__config.general.highlightSettings;
 			json_data["keyboardShortcutsEnabled"]
 				= Config.__config.general.keyboardShortcutsEnabled;
-			json_data["nextExerciseWait"]
-				= Config.__config.general.nextExerciseWait;
 			json_data["noDoubleVision"]
 				= Config.__config.general.noDoubleVision;
-			json_data["repeatExercise"]
-				= Config.__config.general.repeatExercise;
-			json_data["repeatExerciseWait"]
-				= Config.__config.general.repeatExerciseWait;
 			json_data["voiceCountForChoraleStyle"]
 				= Config.__config.general.voiceCountForChoraleStyle;
 			json_data["voiceCountForKeyboardStyle"]

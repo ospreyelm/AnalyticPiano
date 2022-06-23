@@ -100,7 +100,7 @@ define([
                 var sticky_settings = JSON.parse(response.instance);
                 STICKY_VOLUME = sticky_settings.volume;
                 STICKY_MUTE = sticky_settings.mute;
-                console.log(STICKY_VOLUME, STICKY_MUTE);
+                console.log('volume:', STICKY_VOLUME, '/ muted:', STICKY_MUTE);
             }
         }
     })

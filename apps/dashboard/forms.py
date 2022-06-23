@@ -52,6 +52,28 @@ class KeyboardForm(forms.Form):
         initial=DEFAULT_KEYBOARD_SIZE
     )
 
+    auto_advance = forms.BooleanField(
+        required=False,
+        initial=False
+    )
+
+    auto_advance_delay = forms.IntegerField(
+        widget=forms.NumberInput(attrs={'step': 1, 'max': 60, 'min': 0}),
+        label_suffix=' (seconds):',
+        initial=4
+    )
+
+    auto_repeat = forms.BooleanField(
+        required=False,
+        initial=False
+    )
+
+    auto_repeat_delay = forms.IntegerField(
+        widget=forms.NumberInput(attrs={'step': 1, 'max': 60, 'min': 0}),
+        label_suffix=' (seconds):',
+        initial=6
+    )
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super(KeyboardForm, self).__init__(*args, **kwargs)

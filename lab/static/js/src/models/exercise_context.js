@@ -18,17 +18,37 @@ define([
     SimpleStatistics
 ) {
 
-    var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
+    var AUTO_ADVANCE = Config.get('general.autoAdvance');
+    var AUTO_ADVANCE_DELAY = Config.get('general.autoAdvanceDelay');
 
-    var AUTO_ADVANCE_ENABLED = (testing ? true : Config.get('general.autoExerciseAdvance'));
+    var AUTO_REPEAT = Config.get('general.autoRepeat');
+    var AUTO_REPEAT_DELAY = Config.get('general.autoRepeatDelay');
 
-    var NEXT_EXERCISE_WAIT = (testing ? 1000 : Config.get('general.nextExerciseWait'));
+    /**
+     * ajax call to GET the user preferences
+     */
 
-    var REPEAT_EXERCISE_WAIT = (testing ? 2000 : Config.get('general.repeatExerciseWait'));
-
-    var REPEAT_EXERCISE_ENABLED = Config.get('general.repeatExercise');
+    $.ajax({
+        type: 'GET',
+        url: this.location.origin + "/ajax/preferences/",
+        async: false,
+        success: function (response) {
+            if(!response["valid"]){
+                /** if the call is successful response.instance will hold the json sent by the server
+                 * use the following two lines to log the response to the console
+                 * console.log(response);
+                 * console.log(JSON.parse(response.instance)); */
+                var sticky_settings = JSON.parse(response.instance);
+                AUTO_ADVANCE = sticky_settings.auto_advance;
+                AUTO_ADVANCE_DELAY = sticky_settings.auto_advance_delay;
+                AUTO_REPEAT = sticky_settings.auto_repeat;
+                AUTO_REPEAT_DELAY = sticky_settings.auto_repeat_delay;
+            }
+        }
+    })
 
     var DEFAULT_RHYTHM_VALUE = Config.get('general.defaultRhythmValue');
+    var IGNORE_MISTAKES_ON_AUTO_ADVANCE = Config.get('general.ignoreMistakesOnAutoAdvance')
 
     /**
      * ExerciseContext object coordinates the display and grading of
@@ -69,27 +89,10 @@ define([
             },
             -1
         );
-        if (true || ex_num_current == 1) { // FIXME
-
-            // leave this active for a while to clear sessionStorage for our users
-
-            sessionStorage.removeItem('HarmonyLabPlaylistStartTime');
-            sessionStorage.removeItem('HarmonyLabPlaylistTracker');
-            sessionStorage.removeItem('HarmonyLabPlaylistRestarts');
-            sessionStorage.removeItem('HarmonyLabPlaylistMinTempo');
-            sessionStorage.removeItem('HarmonyLabPlaylistMaxTempo');
-            sessionStorage.removeItem('HarmonyLabPlaylistTempoRating');
+        if (true || ex_num_current == 1) {
             this.seriesTimer = null;
             this.restarts = null;
-            sessionStorage.removeItem('HarmonyLabPlaylistRestarts');
-        } // else if (sessionStorage.HarmonyLabPlaylistStartTime) {
-        //     this.resetSeriesTimer();
-        //     this.seriesTimer.start = sessionStorage.getItem('HarmonyLabPlaylistStartTime');
-        //     this.restarts = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) || 0;
-        // } else {
-        //     this.seriesTimer = null;
-        //     this.restarts = null;
-        // }
+        }
 
         this.sealed = false; /* will be used to ignore input post-completion */
         this.timepoints = [];
@@ -170,23 +173,6 @@ define([
                     }
                     this.done = true;
 
-                    // var ex_num_current = this.definition.getExerciseList().reduce(function(selected, current, index) {
-                    //     return (selected < 0 && current.selected) ? index + 1 : selected;
-                    // }, -1);
-                    // var ex_num_prior = parseInt(sessionStorage.getItem('HarmonyLabPlaylistTracker'));
-                    // if(ex_num_current == ex_num_prior + 1) {
-                    //     sessionStorage.setItem('HarmonyLabPlaylistTracker', ex_num_current);
-                    // }else if(ex_num_current == ex_num_prior) {
-                    //     if(this.sealed != true) {
-                    //         var restart_count = parseInt(sessionStorage.getItem('HarmonyLabPlaylistRestarts')) + 1;
-                    //         this.restarts = restart_count;
-                    //         sessionStorage.setItem('HarmonyLabPlaylistRestarts', restart_count);
-                    //         sessionStorage.setItem('HarmonyLabPlaylistTracker', ex_num_current);
-                    //     }
-                    // }else {
-                    //     sessionStorage.setItem('HarmonyLabPlaylistTracker', -1);
-                    // }
-
                     this.endTimer();
 
                     if (this.sealed != true) {// For one-time function calls
@@ -208,10 +194,10 @@ define([
                     } else if (this.flawless === false) {
                         state = ExerciseContext.STATE.FINISHED;
                         if (this.sealed != true) {// For one-time function calls
-                            if (REPEAT_EXERCISE_ENABLED === true) {
-                                this.triggerRepeatExercise();
-                            } else {
+                            if (IGNORE_MISTAKES_ON_AUTO_ADVANCE === true) {
                                 this.triggerNextExercise();
+                            } else {
+                                this.triggerRepeatExercise();
                             }
                         }
                     } else {
@@ -720,7 +706,7 @@ define([
          * keyboard.
          */
         midiTriggerNextExercise: async function() {
-            if (this.done !== true || AUTO_ADVANCE_ENABLED === true) {
+            if (this.done !== true || AUTO_ADVANCE === true) {
                 return false;
             }
             var chord = this.inputChords.current().getSortedNotes();
@@ -753,8 +739,8 @@ define([
          * @return undefined
          */
         triggerNextExercise: async function() {
-            if (this.done === true && AUTO_ADVANCE_ENABLED === true) {
-                await this.sleep(NEXT_EXERCISE_WAIT);
+            if (this.done === true && AUTO_ADVANCE === true) {
+                await this.sleep(AUTO_ADVANCE_DELAY * 1000);
                 this.goToNextExercise();
             }
         },
@@ -764,8 +750,8 @@ define([
          * @return undefined
          */
         triggerRepeatExercise: async function() {
-            if (this.done === true && AUTO_ADVANCE_ENABLED === true) {
-                await this.sleep(REPEAT_EXERCISE_WAIT);
+            if (this.done === true && AUTO_REPEAT === true) {
+                await this.sleep(AUTO_REPEAT_DELAY * 1000);
                 this.reloadExercise();
             }
         },
