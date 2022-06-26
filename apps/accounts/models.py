@@ -35,7 +35,11 @@ VOLUME_CHOICES = (
 def get_preferences_default():
     return {'keyboard_size': DEFAULT_KEYBOARD_SIZE,
             'volume': DEFAULT_VOLUME,
-            'mute': False}
+            'mute': False,
+            'auto_advance': False,
+            'auto_advance_delay': 4,
+            'auto_repeat': False,
+            'auto_repeat_delay': 6}
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -60,6 +64,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = 'Pending'
     SUPERVISOR_STATUS_INVITATION_WAIT = 'Pending Invitation'
     _supervisors_dict = JSONField(default=dict, verbose_name='Supervisors', blank=True)
+
+    # FIXME remove these fields after 0011 migration is applied
+    auto_advance = models.BooleanField(default=False)
+    auto_repeat = models.BooleanField(default=False)
+    auto_advance_delay = models.PositiveIntegerField(default=4)
+    auto_repeat_delay = models.PositiveIntegerField(default=6)
 
     # FIXME remove this field after 0008 migration is applied
     keyboard_size = models.IntegerField(choices=KEYBOARD_CHOICES, default=DEFAULT_KEYBOARD_SIZE)
@@ -109,13 +119,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def send_forgotten_password(self):
         self.email_user(
-            subject='Password Reminder',
+            subject='Password Reminder for AnalyticPiano',
             message=f'Your AnalyticPiano password is: {self.raw_password}',
         )
 
     def send_password(self):
         self.email_user(
-            subject='Welcome To AnalyticPiano',
+            subject='Welcome to AnalyticPiano',
             message=f'Your AnalyticPiano password is: {self.raw_password}',
         )
 

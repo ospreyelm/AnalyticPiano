@@ -33,9 +33,9 @@ define([
 
     var DEFAULT_RHYTHM_VALUE = Config.get('general.defaultRhythmValue');
 
-    var AUTO_ADVANCE_ENABLED = Config.get('general.autoExerciseAdvance');
+    // var AUTO_ADVANCE_ENABLED = Config.get('general.autoAdvance');
 
-    var SETTING_HIDE_NEXT = Config.get('general.hideNextWhenAutoAdvance');
+    var SETTING_HIDE_NEXT = Config.get('general.hideNextForAutoAdvance');
 
     var NUMBERED_EXERCISE_COUNT = Config.get('general.numberedExerciseCount');
 
@@ -154,32 +154,32 @@ define([
                 // not called: time_to_complete and more; seriesTimer obsolete
                 `<p><span class="exercise-status" style="background-color:<%= status_color %>"><%= status_text %></span></p>
                 <% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined") { %>
-                    <p><a onclick="window.alert('PERFORMANCE DATA: This shows your average (mean) tempo in whole notes per minute, plus a star rating for the consistency of your tempo.')">Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %></a></p>
+                    <p><a onclick="window.alert('PERFORMANCE DATA: This shows your average (mean) tempo in whole notes per minute, plus a star rating out of five for the consistency of your tempo.')">Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %></a></p>
                 <% } %>`
             );
             var html = '';
             var tpl_data = {};
 
             var status_map = {};
-            status_map[exc.STATE.INCORRECT] = {
-                text: "incorrect",
-                color: "#990000"
-            };
-            status_map[exc.STATE.CORRECT] = {
-                text: "complete",
-                color: "#4C9900"
-            };
-            status_map[exc.STATE.FINISHED] = {
-                text: "finished with errors",
-                color: "#999900"
+            status_map[exc.STATE.READY] = {
+                text: "Ready",
+                color: "#333333"
             };
             status_map[exc.STATE.WAITING] = {
-                text: "in progress",
-                color: "#999900"
+                text: "Keep going",
+                color: "#FF7F00"
             };
-            status_map[exc.STATE.READY] = {
-                text: "ready",
-                color: "#000000"
+            status_map[exc.STATE.INCORRECT] = {
+                text: "Fix the error",
+                color: "#990000"
+            };
+            status_map[exc.STATE.FINISHED] = {
+                text: "Go again",
+                color: "#FFB700"
+            };
+            status_map[exc.STATE.CORRECT] = {
+                text: "Well done",
+                color: "#4C9900"
             };
 
             tpl_data.exercise_list = exc.definition.getExerciseList();

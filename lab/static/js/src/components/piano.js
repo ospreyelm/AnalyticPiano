@@ -22,12 +22,12 @@ define([
 	 * @type {number}
 	 * @const
 	 */
-	var DEFAULT_KEYBOARD_SIZE = Config.get('general.defaultKeyboardSize');
+	var DESIRED_KEYBOARD_SIZE = Config.get('general.defaultKeyboardSize');
 
 	/** 
 	 * ajax call to GET the keyboard size
 	 * this will set the keyboard size to user's preference
-	 * if no one is logged in the size is 49 (this is defined in apps.views.send_keyboard_size)
+	 * if no one is logged in the size is 49 per apps.accounts.models
 	 */
 
 	$.ajax({
@@ -41,12 +41,12 @@ define([
 				 * console.log(response);
 				 * console.log(JSON.parse(response.instance)); */
 				var sticky_settings = JSON.parse(response.instance);
-				DEFAULT_KEYBOARD_SIZE = sticky_settings.keyboard_size;
+				DESIRED_KEYBOARD_SIZE = sticky_settings.keyboard_size;
 			}
 		}
 	})
 
-	var DEFAULT_OCTAVE_ADJUSTMENT = Config.get('general.defaultOctaveAdjustment');
+	var DESIRED_OCTAVE_ADJUSTMENT = Config.get('general.defaultOctaveAdjustment');
 
 	/**
 	 * Creates a PianoComponent
@@ -61,8 +61,8 @@ define([
 
 		var toolbarConfig = {metronome: false};
 		var keyboardConfig = {
-			numberOfKeys: DEFAULT_KEYBOARD_SIZE,
-			octaveAdjustment: DEFAULT_OCTAVE_ADJUSTMENT
+			numberOfKeys: DESIRED_KEYBOARD_SIZE,
+			octaveAdjustment: DESIRED_OCTAVE_ADJUSTMENT
 		};
 		var toolbarEnabled = true;
 		var pedalsEnabled = true;

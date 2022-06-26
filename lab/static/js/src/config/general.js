@@ -21,11 +21,12 @@ define({
 
 	noDoubleVision: false,
 
-	autoExerciseAdvance: false,
-	hideNextWhenAutoAdvance: false,
-	repeatExercise: true,
-	nextExerciseWait: 4000,
-	repeatExerciseWait: 6000,
+	autoAdvance: false,
+	autoAdvanceDelay: 4,
+	autoRepeat: false,
+	autoRepeatDelay: 6,
+	hideNextForAutoAdvance: false,
+	ignoreMistakesOnAutoAdvance: false,
 
 	numberedExerciseCount: 40,
 
