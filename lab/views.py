@@ -25,7 +25,6 @@ from apps.exercises.models import Exercise, Playlist, Course, PerformanceData
 
 import json
 import copy
-import re
 
 # from django.core.mail import send_mail
 
@@ -40,19 +39,19 @@ class RequirejsContext(object):
     def set_module_params(self, module_id, params):
         module_config = {}
         module_config.update(params)
-        if 'config' not in self._config:
-            self._config['config'] = {}
-        if module_id not in self._config['config']:
-            self._config['config'][module_id] = {}
-        self._config['config'][module_id].update(module_config)
+        if "config" not in self._config:
+            self._config["config"] = {}
+        if module_id not in self._config["config"]:
+            self._config["config"][module_id] = {}
+        self._config["config"][module_id].update(module_config)
         return self
 
     def set_app_module(self, app_module_id):
-        self.set_module_params('app/main', {'app_module': app_module_id})
+        self.set_module_params("app/main", {"app_module": app_module_id})
         return self
 
     def add_to_view(self, view_context):
-        view_context['requirejs'] = self
+        view_context["requirejs"] = self
         return self
 
     def debug(self):
@@ -73,7 +72,7 @@ class RequirejsTemplateView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(RequirejsTemplateView, self).get_context_data(**kwargs)
-        self.requirejs_context.set_app_module(getattr(self, 'requirejs_app'))
+        self.requirejs_context.set_app_module(getattr(self, "requirejs_app"))
         self.requirejs_context.add_to_view(context)
         return context
 
@@ -86,27 +85,28 @@ class RequirejsView(View):
 
 class PlayView(RequirejsTemplateView):
     template_name = "play.html"
-    requirejs_app = 'app/components/app/play'
+    requirejs_app = "app/components/app/play"
 
     def get_context_data(self, course_id=None, **kwargs):
         context = super(PlayView, self).get_context_data(**kwargs)
         er = ExerciseRepository.create(course_id=course_id)
 
-        context['group_list'] = er.getGroupList()
+        context["group_list"] = er.getGroupList()
         # for testing on Windows, use following line
         # context['group_list'] = []
-        context['has_manage_perm'] = has_instructor_role(self.request) and has_course_authorization(self.request,
-                                                                                                    course_id)
-        if context['has_manage_perm']:
+        context["has_manage_perm"] = has_instructor_role(self.request) and has_course_authorization(
+            self.request, course_id
+        )
+        if context["has_manage_perm"]:
             if course_id is None:
-                context['manage_url'] = reverse('lab:manage')
+                context["manage_url"] = reverse("lab:manage")
             else:
-                context['manage_url'] = reverse('lab:course-manage', kwargs={"course_id": course_id})
+                context["manage_url"] = reverse("lab:course-manage", kwargs={"course_id": course_id})
 
         if course_id is None:
-            context['home_url'] = reverse('lab:index')
+            context["home_url"] = reverse("lab:index")
         else:
-            context['home_url'] = reverse("lab:course-index", kwargs={"course_id": course_id})
+            context["home_url"] = reverse("lab:course-index", kwargs={"course_id": course_id})
 
         return context
 
@@ -128,28 +128,26 @@ class PlaylistView(RequirejsView):
         if exercise is None:
             raise Http404("This playlist has no exercises.")
 
-        next_exercise_url = playlist.get_exercise_url_by_num(
-            num=playlist.next_num(exercise_num)
-        )
-        prev_exercise_url = playlist.get_exercise_url_by_num(
-            num=playlist.prev_num(exercise_num)
-        )
+        next_exercise_url = playlist.get_exercise_url_by_num(num=playlist.next_num(exercise_num))
+        prev_exercise_url = playlist.get_exercise_url_by_num(num=playlist.prev_num(exercise_num))
         next_exercise_obj = playlist.get_exercise_obj_by_num(playlist.next_num(exercise_num))
-        next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ''
+        next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ""
         prev_exercise_obj = playlist.get_exercise_obj_by_num(playlist.prev_num(exercise_num))
-        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ''
+        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ""
         first_exercise_obj = playlist.get_exercise_obj_by_num(1)
-        first_exercise_id = first_exercise_obj.id if first_exercise_obj.id != exercise.id else ''
-        context = {'group_list': []}
+        first_exercise_id = first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
+        context = {"group_list": []}
         exercise_context = {}
 
         exercise_list = []
         for num, _ in enumerate(playlist.exercise_list, 1):
             exercise_list.append(
-                dict(id=f'{playlist_name}/{num}',
-                     name=f'{num}',
-                     url=playlist.get_exercise_url_by_num(num),
-                     selected=exercise_num == num)
+                dict(
+                    id=f"{playlist_name}/{num}",
+                    name=f"{num}",
+                    url=playlist.get_exercise_url_by_num(num),
+                    selected=exercise_num == num,
+                )
             )
 
         exercise_is_performed = False
@@ -160,23 +158,25 @@ class PlaylistView(RequirejsView):
             exercise_error_count = playlist_performance.exercise_error_count(exercise.id)
 
         exercise_context.update(exercise.data)
-        exercise_context.update({
-            "nextExercise": next_exercise_url,
-            "nextExerciseId": next_exercise_id,
-            "nextExerciseNum": playlist.next_num(exercise_num),
-            "previousExercise": prev_exercise_url,
-            "previousExerciseId": prev_exercise_id,
-            "previousExerciseNum": playlist.prev_num(exercise_num),
-            "firstExerciseId": first_exercise_id,
-            "exerciseList": exercise_list,
-            "exerciseId": exercise.id,
-            "exerciseNum": exercise_num,
-            "exerciseIsPerformed": exercise_is_performed,
-            "exerciseErrorCount": exercise_error_count,
-            "playlistName": playlist.name
-        })
-        self.requirejs_context.set_app_module('app/components/app/exercise')
-        self.requirejs_context.set_module_params('app/components/app/exercise', exercise_context)
+        exercise_context.update(
+            {
+                "nextExercise": next_exercise_url,
+                "nextExerciseId": next_exercise_id,
+                "nextExerciseNum": playlist.next_num(exercise_num),
+                "previousExercise": prev_exercise_url,
+                "previousExerciseId": prev_exercise_id,
+                "previousExerciseNum": playlist.prev_num(exercise_num),
+                "firstExerciseId": first_exercise_id,
+                "exerciseList": exercise_list,
+                "exerciseId": exercise.id,
+                "exerciseNum": exercise_num,
+                "exerciseIsPerformed": exercise_is_performed,
+                "exerciseErrorCount": exercise_error_count,
+                "playlistName": playlist.name,
+            }
+        )
+        self.requirejs_context.set_app_module("app/components/app/exercise")
+        self.requirejs_context.set_module_params("app/components/app/exercise", exercise_context)
         self.requirejs_context.add_to_view(context)
 
         return render(request, "exercise.html", context)
@@ -184,52 +184,52 @@ class PlaylistView(RequirejsView):
 
 class RefreshExerciseDefinition(RequirejsView):
     def get(self, request, *args, **kwargs):
-        playlist = get_object_or_404(Playlist, name=request.GET.get('playlist_name'))
-        exercise_num = int(request.GET.get('exercise_num', 1))
+        playlist = get_object_or_404(Playlist, name=request.GET.get("playlist_name"))
+        exercise_num = int(request.GET.get("exercise_num", 1))
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if exercise is None:
             raise Http404("Exercise not found.")
 
-        next_exercise_url = playlist.get_exercise_url_by_num(
-            num=playlist.next_num(exercise_num)
-        )
-        prev_exercise_url = playlist.get_exercise_url_by_num(
-            num=playlist.prev_num(exercise_num)
-        )
+        next_exercise_url = playlist.get_exercise_url_by_num(num=playlist.next_num(exercise_num))
+        prev_exercise_url = playlist.get_exercise_url_by_num(num=playlist.prev_num(exercise_num))
         next_exercise_obj = playlist.get_exercise_obj_by_num(playlist.next_num(exercise_num))
-        next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ''
+        next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ""
         prev_exercise_obj = playlist.get_exercise_obj_by_num(playlist.prev_num(exercise_num))
-        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ''
+        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ""
         first_exercise_obj = playlist.get_exercise_obj_by_num(1)
-        first_exercise_id = first_exercise_obj.id if first_exercise_obj.id != exercise.id else ''
+        first_exercise_id = first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
         exercise_context = {}
 
         exercise_list = []
         for num, _ in enumerate(playlist.exercise_list, 1):
             exercise_list.append(
-                dict(id=f'{playlist.name}/{num}',
-                     name=f'{num}',
-                     url=playlist.get_exercise_url_by_num(num),
-                     selected=exercise_num == num)
+                dict(
+                    id=f"{playlist.name}/{num}",
+                    name=f"{num}",
+                    url=playlist.get_exercise_url_by_num(num),
+                    selected=exercise_num == num,
+                )
             )
 
         exercise_context.update(exercise.data)
-        exercise_context.update({
-            "nextExercise": next_exercise_url,
-            "nextExerciseId": next_exercise_id,
-            "nextExerciseNum": playlist.next_num(exercise_num),
-            "previousExercise": prev_exercise_url,
-            "previousExerciseId": prev_exercise_id,
-            "previousExerciseNum": playlist.prev_num(exercise_num),
-            "firstExerciseId": first_exercise_id,
-            "exerciseList": exercise_list,
-            "exerciseId": exercise.id,
-            "exerciseNum": exercise_num,
-            "playlistName": playlist.name
-        })
+        exercise_context.update(
+            {
+                "nextExercise": next_exercise_url,
+                "nextExerciseId": next_exercise_id,
+                "nextExerciseNum": playlist.next_num(exercise_num),
+                "previousExercise": prev_exercise_url,
+                "previousExerciseId": prev_exercise_id,
+                "previousExerciseNum": playlist.prev_num(exercise_num),
+                "firstExerciseId": first_exercise_id,
+                "exerciseList": exercise_list,
+                "exerciseId": exercise.id,
+                "exerciseNum": exercise_num,
+                "playlistName": playlist.name,
+            }
+        )
 
-        self.requirejs_context.set_app_module('app/components/app/exercise')
-        self.requirejs_context.set_module_params('app/components/app/exercise', exercise_context)
+        self.requirejs_context.set_app_module("app/components/app/exercise")
+        self.requirejs_context.set_module_params("app/components/app/exercise", exercise_context)
         # self.requirejs_context.add_to_view(context)
         return JsonResponse(data=exercise_context)
 
@@ -245,21 +245,16 @@ class ExerciseView(RequirejsView):
         if not exercise.is_public and not request.user.is_subscribed_to(exercise.authored_by):
             raise PermissionDenied
 
-        url = reverse('lab:exercise-view', kwargs={'exercise_id': exercise_id})
-        exercise_info = [dict(id=exercise_id,
-                              name=f'{exercise._id}',
-                              url=url,
-                              selected=True)]
+        url = reverse("lab:exercise-view", kwargs={"exercise_id": exercise_id})
+        exercise_info = [dict(id=exercise_id, name=f"{exercise._id}", url=url, selected=True)]
 
-        context = {'group_list': []}
+        context = {"group_list": []}
         exercise_context = {}
 
         exercise_context.update(exercise.data)
-        exercise_context.update({
-            "exerciseList": [exercise_info]
-        })
-        self.requirejs_context.set_app_module('app/components/app/exercise')
-        self.requirejs_context.set_module_params('app/components/app/exercise', exercise_context)
+        exercise_context.update({"exerciseList": [exercise_info]})
+        self.requirejs_context.set_app_module("app/components/app/exercise")
+        self.requirejs_context.set_module_params("app/components/app/exercise", exercise_context)
         self.requirejs_context.add_to_view(context)
 
         return render(request, "exercise.html", context)
@@ -281,24 +276,18 @@ class CourseView(RequirejsView):
             whens.append(When(id=value, then=sort_index))
 
         qs = course.playlist_objects if course.authored_by == request.user else course.published_playlists
-        playlists = qs.annotate(
-            _sort_index=Case(*whens, output_field=models.CharField())
-        ).order_by('_sort_index')
+        playlists = qs.annotate(_sort_index=Case(*whens, output_field=models.CharField())).order_by("_sort_index")
 
         playlists_table = CoursePageTable(playlists, course=course)
         course_author = course.authored_by
-        context = {
-            'course_title': course.title,
-            'playlists_table': playlists_table,
-            'course_author': course_author
-        }
+        context = {"course_title": course.title, "playlists_table": playlists_table, "course_author": course_author}
 
         # publish date only visible to author, due date to everyone
         exclude_fields = list(playlists_table.exclude)
         if not course.publish_dates or request.user != course_author:
-            exclude_fields.append('publish_date')
+            exclude_fields.append("publish_date")
         if not course.due_dates:
-            exclude_fields.append('due_date')
+            exclude_fields.append("due_date")
         playlists_table.exclude = exclude_fields
 
         RequestConfig(request).configure(playlists_table)
@@ -309,26 +298,29 @@ class CourseView(RequirejsView):
 class ManageView(RequirejsView, LoginRequiredMixin):
     @method_decorator(course_authorization_required(source="arguments"))
     @method_decorator(
-        role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url='lab:not_authorized', raise_exception=True))
+        role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url="lab:not_authorized", raise_exception=True)
+    )
     def get(self, request, course_id=None):
         er = ExerciseRepository.create(course_id=course_id)
         context = {"course_label": "", "has_manage_perm": True}
         manage_params = {"group_list": er.getGroupList()}
 
         if course_id is None:
-            context['manage_url'] = reverse('lab:manage')
-            context['home_url'] = reverse('lab:index')
-            manage_params['exercise_api_url'] = reverse('lab:api-exercises')
+            context["manage_url"] = reverse("lab:manage")
+            context["home_url"] = reverse("lab:index")
+            manage_params["exercise_api_url"] = reverse("lab:api-exercises")
         else:
             course_names = LTICourse.getCourseNames(course_id)
-            context['course_label'] = "%s (ID: %s)" % (course_names.get('name'), course_id)
-            context['manage_url'] = reverse('lab:course-manage', kwargs={"course_id": course_id})
-            context['home_url'] = reverse("lab:course-index", kwargs={"course_id": course_id})
-            manage_params['exercise_api_url'] = "%s?%s" % (
-                reverse('lab:api-exercises'), urlencode({"course_id": course_id}))
+            context["course_label"] = "%s (ID: %s)" % (course_names.get("name"), course_id)
+            context["manage_url"] = reverse("lab:course-manage", kwargs={"course_id": course_id})
+            context["home_url"] = reverse("lab:course-index", kwargs={"course_id": course_id})
+            manage_params["exercise_api_url"] = "%s?%s" % (
+                reverse("lab:api-exercises"),
+                urlencode({"course_id": course_id}),
+            )
 
-        self.requirejs_context.set_app_module('app/components/app/manage')
-        self.requirejs_context.set_module_params('app/components/app/manage', manage_params)
+        self.requirejs_context.set_app_module("app/components/app/manage")
+        self.requirejs_context.set_module_params("app/components/app/manage", manage_params)
         self.requirejs_context.add_to_view(context)
 
         return render(request, "manage.html", context)
@@ -338,27 +330,24 @@ class APIView(View):
     api_version = 1
 
     def get(self, request):
-        return HttpResponse(json.dumps({
-            'url': reverse('lab:api'),
-            'version': self.api_version
-        }))
+        return HttpResponse(json.dumps({"url": reverse("lab:api"), "version": self.api_version}))
 
 
 class APIGroupView(CsrfExemptMixin, View):
     def get(self, request):
-        '''Public list of groups and exercises.'''
-        course_id = request.GET.get('course_id', None)
+        """Public list of groups and exercises."""
+        course_id = request.GET.get("course_id", None)
         er = ExerciseRepository.create(course_id=course_id)
         data = er.getGroupList()
-        json_data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
-        return HttpResponse(json_data, content_type='application/json')
+        json_data = json.dumps(data, sort_keys=True, indent=4, separators=(",", ": "))
+        return HttpResponse(json_data, content_type="application/json")
 
 
 class APIExerciseView(CsrfExemptMixin, View):
     def get(self, request):
-        course_id = request.GET.get('course_id', None)
-        playlist_name = request.GET.get('playlist_name', None)
-        exercise_name = request.GET.get('exercise_name', None)
+        course_id = request.GET.get("course_id", None)
+        playlist_name = request.GET.get("playlist_name", None)
+        exercise_name = request.GET.get("exercise_name", None)
 
         er = ExerciseRepository.create(course_id=course_id)
         if exercise_name is not None and playlist_name is not None:
@@ -375,26 +364,29 @@ class APIExerciseView(CsrfExemptMixin, View):
         else:
             data = er.asDict()
 
-        return HttpResponse(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')),
-                            content_type='application/json')
+        return HttpResponse(
+            json.dumps(data, sort_keys=True, indent=4, separators=(",", ": ")), content_type="application/json"
+        )
 
-    @method_decorator(course_authorization_required(source='query'))
+    @method_decorator(course_authorization_required(source="query"))
     @method_decorator(
-        role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url='lab:not_authorized', raise_exception=True))
+        role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url="lab:not_authorized", raise_exception=True)
+    )
     def post(self, request):
         course_id = request.GET.get("course_id", None)
-        exercise_data = json.loads(request.POST.get('exercise', None))
+        exercise_data = json.loads(request.POST.get("exercise", None))
         result = ExerciseRepository.create(course_id=course_id).createExercise(exercise_data)
 
-        return HttpResponse(json.dumps(result), content_type='application/json')
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
-    @method_decorator(course_authorization_required(source='query'))
+    @method_decorator(course_authorization_required(source="query"))
     @method_decorator(
-        role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url='lab:not_authorized', raise_exception=True))
+        role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url="lab:not_authorized", raise_exception=True)
+    )
     def delete(self, request):
         course_id = request.GET.get("course_id", None)
-        playlist_name = request.GET.get('playlist_name', None)
-        exercise_name = request.GET.get('exercise_name', None)
+        playlist_name = request.GET.get("playlist_name", None)
+        exercise_name = request.GET.get("exercise_name", None)
 
         er = ExerciseRepository.create(course_id=course_id)
         deleted, description = (False, "No action taken")
@@ -405,39 +397,35 @@ class APIExerciseView(CsrfExemptMixin, View):
 
         result = {}
         if deleted:
-            result['status'] = "success"
-            result['description'] = description
+            result["status"] = "success"
+            result["description"] = description
         else:
-            result['status'] = "failure"
-            result['description'] = "Error: %s" % description
+            result["status"] = "failure"
+            result["description"] = "Error: %s" % description
 
-        return HttpResponse(json.dumps(result), content_type='application/json')
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
 
 def not_authorized(request):
-    return HttpResponse('Unauthorized', status=401)
+    return HttpResponse("Unauthorized", status=401)
 
 
 def check_course_authorization(request, course_id, raise_exception=False):
     authorized = has_course_authorization(request, course_id, raise_exception)
-    result = {
-        "user_id": request.user.id,
-        "course_id": course_id,
-        "is_authorized": authorized
-    }
+    result = {"user_id": request.user.id, "course_id": course_id, "is_authorized": authorized}
     status = 200
     if not authorized:
         status = 403  # forbidden
-    return HttpResponse(json.dumps(result), content_type='application/json', status=status)
+    return HttpResponse(json.dumps(result), content_type="application/json", status=status)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class AddExerciseView(View):
-    http_method_names = ['post']
+    http_method_names = ["post"]
 
     def post(self, request, *args, **kwargs):
-        data = request.POST.get('data')
-        if data == 'null':
+        data = request.POST.get("data")
+        if data == "null":
             return HttpResponse(status=400)
 
         exercise = Exercise()
@@ -448,7 +436,7 @@ class AddExerciseView(View):
         # exercise.is_public = True
         exercise.save()
 
-        return JsonResponse(status=201, data={'id': exercise.id})
+        return JsonResponse(status=201, data={"id": exercise.id})
 
 
 @login_required()
@@ -468,8 +456,11 @@ def exercise_performance_history(request, playlist_name, exercise_num=1, *args, 
     playlist_performance = PerformanceData.objects.filter(playlist=playlist, user=request.user).last()
 
     exercise_data = json.dumps(
-        {'exerciseIsPerformed': playlist_performance.exercise_is_performed(
-            exercise.id) if playlist_performance else False,
-         'exerciseErrorCount': playlist_performance.exercise_error_count(exercise.id) if playlist_performance else 0}
+        {
+            "exerciseIsPerformed": playlist_performance.exercise_is_performed(exercise.id)
+            if playlist_performance
+            else False,
+            "exerciseErrorCount": playlist_performance.exercise_error_count(exercise.id) if playlist_performance else 0,
+        }
     )
     return HttpResponse(exercise_data, status=200)
