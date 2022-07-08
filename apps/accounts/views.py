@@ -16,61 +16,59 @@ User = get_user_model()
 
 
 class LogoutView(DjangoLogoutView):
-    next_page = reverse_lazy('lab:index')
+    next_page = reverse_lazy("lab:index")
 
 
 def login(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CustomAuthenticationForm(request.POST)
 
-        request.session['just_signed_up'] = False
-        request.session['password_sent'] = False
+        request.session["just_signed_up"] = False
+        request.session["password_sent"] = False
 
         if form.is_valid():
-            email = form.cleaned_data.get('email')
-            password = form.cleaned_data.get('password')
+            email = form.cleaned_data.get("email")
+            password = form.cleaned_data.get("password")
             user = authenticate(username=email, password=password)
             django_login(request, user)
-            return redirect(reverse('lab:index'))
+            return redirect(reverse("lab:index"))
         else:
-            return render(request, 'accounts/login.html', {'form': form})
+            return render(request, "accounts/login.html", {"form": form})
     else:
         form = CustomAuthenticationForm()
-        return render(request, 'accounts/login.html', {'form': form})
+        return render(request, "accounts/login.html", {"form": form})
 
 
 def register(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            user.set_password(user.raw_password)
-            user.save()
-            user.send_password()
-            request.session['just_signed_up'] = True
-            return redirect(reverse_lazy('custom-login'))
+            form.save()
+            request.session["just_signed_up"] = True
+            return redirect(reverse_lazy("custom-login"))
         else:
-            return render(request, 'accounts/register.html', {'form': form})
+            return render(request, "accounts/register.html", {"form": form})
     else:
         form = RegistrationForm()
-        return render(request, 'accounts/register.html', {'form': form})
+        return render(request, "accounts/register.html", {"form": form})
 
 
 def forgot_password_view(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ForgotPasswordForm(request.POST)
         if form.is_valid():
-            request.session['password_sent'] = True
-            return redirect(reverse_lazy('custom-login'))
+            request.session["password_sent"] = True
+            return redirect(reverse_lazy("custom-login"))
         else:
-            return render(request, 'accounts/send_password.html', {'form': form})
+            return render(request, "accounts/send_password.html", {"form": form})
     else:
         form = ForgotPasswordForm()
-        return render(request, 'accounts/send_password.html', {'form': form})
+        return render(request, "accounts/send_password.html", {"form": form})
 
 
 # The following view function is used to send the keyboard size to the front-end
 # Can be extended to include other preferences as it sends a JSON
+
 
 def preferences_view(request):
     if request.is_ajax and request.method == "GET":
@@ -89,8 +87,8 @@ def preferences_view(request):
 @login_required()
 @method_decorator(csrf_exempt)
 def set_preferred_mute_value(request):
-    if request.method == 'POST':
-        request.user.preferences['mute'] = json.loads(request.POST.get('mute'))
+    if request.method == "POST":
+        request.user.preferences["mute"] = json.loads(request.POST.get("mute"))
         request.user.save()
     return HttpResponse(json.dumps(request.user.preferences))
 
@@ -98,7 +96,7 @@ def set_preferred_mute_value(request):
 @login_required()
 @method_decorator(csrf_exempt)
 def set_preferred_volume(request):
-    if request.method == 'POST':
-        request.user.preferences['volume'] = request.POST.get('volume')
+    if request.method == "POST":
+        request.user.preferences["volume"] = request.POST.get("volume")
         request.user.save()
     return HttpResponse(json.dumps(request.user.preferences))
