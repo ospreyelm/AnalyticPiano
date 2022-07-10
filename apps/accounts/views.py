@@ -2,7 +2,12 @@ import json
 
 from django.contrib.auth import authenticate, login as django_login, get_user_model
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LogoutView as DjangoLogoutView
+from django.contrib.auth.views import (
+    LogoutView as DjangoLogoutView,
+    PasswordResetView as DjangoPasswordResetView,
+    PasswordResetDoneView as DjangoPasswordResetDoneView,
+    PasswordResetConfirmView as DjangoPasswordResetConfirmView,
+)
 from django.http.response import JsonResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
@@ -17,6 +22,18 @@ User = get_user_model()
 
 class LogoutView(DjangoLogoutView):
     next_page = reverse_lazy("lab:index")
+
+
+class PasswordResetView(DjangoPasswordResetView):
+    template_name = "accounts/reset_password.html"
+
+
+class PasswordResetDoneView(DjangoPasswordResetDoneView):
+    template_name = "accounts/reset_password_done.html"
+
+
+class PasswordResetConfirmView(DjangoPasswordResetConfirmView):
+    template_name = "accounts/reset_password_confirm"
 
 
 def login(request):

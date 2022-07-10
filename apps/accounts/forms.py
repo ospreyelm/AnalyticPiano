@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.forms import UserCreationForm, UsernameField
 from django.core.exceptions import ValidationError
+from psycopg2 import IntegrityError
 
 User = get_user_model()
 
@@ -63,9 +64,19 @@ class RegistrationForm(forms.ModelForm):
         confirm_password = self.cleaned_data.get("confirm_password")
         if password != confirm_password:
             raise ValidationError({"confirm_password": "Passwords don't match."})
+        email = self.cleaned_data.get("email")
+        try:
+            existingUser = User.objects.get(email=email)
+            raise ValidationError({"email": "This email is already in use."})
+        except User.DoesNotExist:
+            pass
 
     def save(self, commit=True):
-        return super(RegistrationForm, self).save(commit=commit)
+        formUser = self.instance
+        user = User.objects.create_user(email=formUser.email, password=formUser.password)
+        user.first_name = formUser.first_name
+        user.last_name = formUser.last_name
+        return user.save()
 
 
 class ForgotPasswordForm(forms.Form):

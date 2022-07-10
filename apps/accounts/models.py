@@ -42,12 +42,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     # raw_password = models.CharField(max_length=32, default=generate_raw_password,
     #                                 help_text="** Temporary field **.\n"
     #                                           "The user's password and this field are only the same for frontend users.")
-    # Password
-    password = models.CharField(
-        max_length=32,
-        unique=False,
-        default="",
-    )
 
     # E-mail
     email = models.EmailField(_("Email"), unique=True)
@@ -122,11 +116,11 @@ class User(AbstractBaseUser, PermissionsMixin):
             message=f"Your AnalyticPiano password is: {self.raw_password}",
         )
 
-    def send_password(self):
-        self.email_user(
-            subject="Welcome to AnalyticPiano",
-            message=f"Your AnalyticPiano password is: {self.raw_password}",
-        )
+    # def send_password(self):
+    #     self.email_user(
+    #         subject="Welcome to AnalyticPiano",
+    #         message=f"Your AnalyticPiano password is: {self.raw_password}",
+    #     )
 
     # TODO remove this in the future
     @classmethod
