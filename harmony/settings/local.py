@@ -6,7 +6,7 @@ ALLOWED_HOSTS = ["0.0.0.0", "localhost", "127.0.0.1"]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "postgres",
+        "NAME": "harmony",
         "USER": "postgres",
         "PASSWORD": "password",
         "HOST": "localhost",
