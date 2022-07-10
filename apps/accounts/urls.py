@@ -7,7 +7,6 @@ from apps.accounts.views import (
     PasswordResetConfirmView,
     register,
     login,
-    forgot_password_view,
 )
 
 urlpatterns = [
@@ -16,7 +15,7 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="custom-logout"),
     # path("forgot-password/", forgot_password_view, name="forgot-password"),
     path("reset-password/", PasswordResetView.as_view(), name="reset-password"),
-    path("reset-password-done/", PasswordResetDoneView.as_view(), name="reset-password-done"),
+    path("reset-password-done/", PasswordResetDoneView.as_view(), name="password_reset_done"),
     path(
         "reset-password-confirm/<str:uidb64>/<str:token>",
         PasswordResetConfirmView.as_view(),

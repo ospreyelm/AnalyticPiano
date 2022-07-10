@@ -14,7 +14,7 @@ from django.urls import reverse_lazy, reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
-from .forms import CustomAuthenticationForm, RegistrationForm, ForgotPasswordForm
+from .forms import CustomAuthenticationForm, RegistrationForm
 from .models import get_preferences_default
 
 User = get_user_model()
@@ -70,17 +70,17 @@ def register(request):
         return render(request, "accounts/register.html", {"form": form})
 
 
-def forgot_password_view(request):
-    if request.method == "POST":
-        form = ForgotPasswordForm(request.POST)
-        if form.is_valid():
-            request.session["password_sent"] = True
-            return redirect(reverse_lazy("custom-login"))
-        else:
-            return render(request, "accounts/send_password.html", {"form": form})
-    else:
-        form = ForgotPasswordForm()
-        return render(request, "accounts/send_password.html", {"form": form})
+# def forgot_password_view(request):
+#     if request.method == "POST":
+#         form = ForgotPasswordForm(request.POST)
+#         if form.is_valid():
+#             request.session["password_sent"] = True
+#             return redirect(reverse_lazy("custom-login"))
+#         else:
+#             return render(request, "accounts/send_password.html", {"form": form})
+#     else:
+#         form = ForgotPasswordForm()
+#         return render(request, "accounts/send_password.html", {"form": form})
 
 
 # The following view function is used to send the keyboard size to the front-end

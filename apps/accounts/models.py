@@ -38,11 +38,6 @@ def get_preferences_default():
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    # # FIXME RAW PASSWORD !!!!!!!!
-    # raw_password = models.CharField(max_length=32, default=generate_raw_password,
-    #                                 help_text="** Temporary field **.\n"
-    #                                           "The user's password and this field are only the same for frontend users.")
-
     # E-mail
     email = models.EmailField(_("Email"), unique=True)
     # Given name

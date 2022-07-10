@@ -79,25 +79,25 @@ class RegistrationForm(forms.ModelForm):
         return user.save()
 
 
-class ForgotPasswordForm(forms.Form):
-    email = forms.EmailField()
+# class ForgotPasswordForm(forms.Form):
+#     email = forms.EmailField()
 
-    def clean(self):
-        super(ForgotPasswordForm, self).clean()
+#     def clean(self):
+#         super(ForgotPasswordForm, self).clean()
 
-        # applies .lower() to user input
-        user = User.objects.filter(email=self.cleaned_data.get("email", "").lower()).first()
-        if user is None:
-            raise ValidationError({"email": " There is no registered user with this email."})
+#         # applies .lower() to user input
+#         user = User.objects.filter(email=self.cleaned_data.get("email", "").lower()).first()
+#         if user is None:
+#             raise ValidationError({"email": " There is no registered user with this email."})
 
-        if user.is_staff:
-            raise ValidationError(
-                {
-                    "email": "This email belongs to an admin user. To reset the password, please proceed from the admin panel."
-                }
-            )
+#         if user.is_staff:
+#             raise ValidationError(
+#                 {
+#                     "email": "This email belongs to an admin user. To reset the password, please proceed from the admin panel."
+#                 }
+#             )
 
-        user.send_forgotten_password()
+#         user.send_forgotten_password()
 
 
 class PreferredMuteValue(forms.Form):
