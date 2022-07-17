@@ -2,6 +2,7 @@ from django.urls import path
 
 from apps.accounts.views import (
     LogoutView,
+    PasswordResetCompleteView,
     PasswordResetView,
     PasswordResetDoneView,
     PasswordResetConfirmView,
@@ -22,4 +23,5 @@ urlpatterns = [
         # different naming pattern because the email is generated with a URL to this name
         name="password_reset_confirm",
     ),
+    path("reset-password-complete/", PasswordResetCompleteView.as_view(), name="password_reset_complete"),
 ]

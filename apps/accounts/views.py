@@ -7,6 +7,7 @@ from django.contrib.auth.views import (
     PasswordResetView as DjangoPasswordResetView,
     PasswordResetDoneView as DjangoPasswordResetDoneView,
     PasswordResetConfirmView as DjangoPasswordResetConfirmView,
+    PasswordResetCompleteView as DjangoPasswordResetCompleteView,
 )
 from django.http.response import JsonResponse, HttpResponse
 from django.shortcuts import redirect, render
@@ -34,6 +35,10 @@ class PasswordResetDoneView(DjangoPasswordResetDoneView):
 
 class PasswordResetConfirmView(DjangoPasswordResetConfirmView):
     template_name = "accounts/reset_password_confirm.html"
+
+
+class PasswordResetCompleteView(DjangoPasswordResetCompleteView):
+    template_name = "accounts/reset_password_complete.html"
 
 
 def login(request):
