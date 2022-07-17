@@ -33,7 +33,7 @@ class PasswordResetDoneView(DjangoPasswordResetDoneView):
 
 
 class PasswordResetConfirmView(DjangoPasswordResetConfirmView):
-    template_name = "accounts/reset_password_confirm"
+    template_name = "accounts/reset_password_confirm.html"
 
 
 def login(request):
