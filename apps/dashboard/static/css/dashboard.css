@@ -1,339 +1,395 @@
 :root {
-    --primary-color: #335271;
-    --secondary-color: #00693e;
-    --link-color: #ffa00f;
-    --background-color: #e2e2e2;
+  --primary-color: #335271;
+  --secondary-color: #00693e;
+  --link-color: #ffa00f;
+  --background-color: #e2e2e2;
 }
 
 body {
-    background-color: var(--background-color);
+  background-color: var(--background-color);
 }
 
-.dashboard-page {
-    padding-top: 20px
-}
-
-.dashboard-page p, form label {
-    color: var(--primary-color);
+.dashboard-page p,
+form label {
+  color: var(--primary-color);
 }
 
 .sidenav {
-    height: 100%;
-    width: 140px;
-    position: fixed;
-    z-index: 1;
-    top: 0;
-    left: 0;
-    background-color: var(--primary-color);
-    overflow-x: hidden;
-    text-align: left;
-    color: white;
-    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
+  height: 100%;
+  width: 140px;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: var(--primary-color);
+  overflow-x: hidden;
+  text-align: left;
+  color: white;
+  font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans",
+    Verdana, Arial, sans-serif;
 }
 
 .sidenav-header {
-    margin: 0px;
-    padding: 16px 8px 8px 8px;
-    font-size: 16px;
-    display: block;
+  margin: 0px;
+  padding: 16px 8px 8px 8px;
+  font-size: 16px;
+  display: block;
 }
 
-.sidenav-subhead, .sidenav a {
-    margin-top: 6px;
-    padding: 6px 8px 4px 8px;
-    font-size: 14px;
-    text-decoration: none;
-    display: block;
+.sidenav-subhead,
+.sidenav a {
+  margin-top: 6px;
+  padding: 6px 8px 4px 8px;
+  font-size: 14px;
+  text-decoration: none;
+  display: block;
 }
 
 .sidenav a {
-    color: var(--link-color);
+  color: var(--link-color);
 }
 
 .sidenav-subhead {
-    color: white;
-    margin: 30px 6px 0px 0px;
-    border: 2px solid #999;
-    border-radius: 6px;
+  color: white;
+  margin: 30px 6px 0px 0px;
+  border: 2px solid #999;
+  border-radius: 6px;
 }
 
 .sidenav a:hover {
-    background-color: var(--link-color);
-    color: white;
+  background-color: var(--link-color);
+  color: white;
 }
 
 .sidenav-active {
-    border-left: 6px solid var(--link-color);
-    color: white !important;
+  border-left: 6px solid var(--link-color);
+  color: white !important;
 }
 
 .main {
-    margin-left: 160px;
-    padding: 0px 10px;
-    font-size: 14px;
-    text-align: left;
-    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
-    line-height: 1.5;
+  margin-left: 160px;
+  padding: 0px 10px;
+  font-size: 14px;
+  text-align: left;
+  font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans",
+    Verdana, Arial, sans-serif;
+  line-height: 1.5;
+  padding-top: 20px;
 }
 
-.main p, .main form {
-    margin-bottom: 1rem;
+.main p,
+.main form {
+  margin-bottom: 1rem;
 }
 
 .main :last-child {
-    margin-bottom: 0px;
+  margin-bottom: 0px;
 }
 
 .main .form-inline label {
-    width: 140px;
-    justify-content: flex-start !important;
-    padding-right: 10px;
+  width: 140px;
+  justify-content: flex-start !important;
+  padding-right: 10px;
 }
 
 .main .form-inline {
-    display: -ms-flexbox;
-    display: flex;
-    -ms-flex-flow: row wrap;
-    flex-flow: row wrap;
-    -ms-flex-align: center;
-    align-items: center;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-flow: row wrap;
+  flex-flow: row wrap;
+  -ms-flex-align: center;
+  align-items: center;
 }
 
 .main .form-group {
-    margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 .main .form-control {
-    color: #495057;
+  color: #495057;
 }
 
-.main input, .main textarea {
-    background-color: #fff;
-    border: 1px solid #ced4da;
-    border-radius: .25rem;
-    padding: .375rem .75rem;
-    font-size: 1rem;
-    line-height: 1.5;
+.main input,
+.main textarea {
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
-.main input:focus, .main textarea:focus, .main select:focus {
-    outline: none;
+.main input:focus,
+.main textarea:focus,
+.main select:focus {
+  outline: none;
 }
 
 .main input:read-only {
-    background-color: #e9ecef;
+  background-color: #e9ecef;
 }
 
 .pagination {
-    display: flex;
-    padding-left: 0;
-    list-style: revert;
-    border-radius: 0.1rem;
+  display: flex;
+  padding-left: 0;
+  list-style: revert;
+  border-radius: 0.1rem;
 }
 
 .dashboard-page-header {
-    color: var(--primary-color);
-    padding-top: 20px;
-    padding-left: 0px;
-    font-size: 1.15rem;
-    margin-bottom: .5rem;
-    font-family: inherit;
-    font-weight: 500;
-    line-height: 1.2;
+  color: var(--primary-color);
+  padding-left: 0px;
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
-.paleblue td a:link, .paleblue td a:visited {
-    color: var(--link-color) !important;
+.paleblue td a:link,
+.paleblue td a:visited {
+  color: var(--link-color) !important;
 }
 
 .paleblue tr.odd td {
-    background-color: #f7f7f7;
+  background-color: #f7f7f7;
 }
 
 nav {
-    margin-top: 1rem;
-    padding-bottom: 1rem;
+  margin-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .dashboard-btn {
-    color: var(--primary-color);
-    background-color: white;
-    font-size: 15px;
-    border: 2px solid var(--primary-color);
-    border-radius: 5px;
-    padding: .375rem .75rem;
+  color: var(--primary-color);
+  background-color: white;
+  font-size: 15px;
+  border: 2px solid var(--primary-color);
+  border-radius: 5px;
+  padding: 0.375rem 0.75rem;
 }
 
 .dashboard-btn:hover {
-    color: var(--link-color);
-    border-color: var(--link-color);
+  color: var(--link-co llor);
+  border-color: var(--link-color);
 }
 
 .dashboard-btn-secondary {
-    color: white;
-    background-color: darkred;
+  color: white;
+  background-color: darkred;
 }
 
 .form-control.is-invalid {
-    border-color: var(--link-color);
+  border-color: var(--link-color);
 }
 
 .invalid-feedback p {
-    font-weight: bold;
-    font-size: 0.8rem;
-    padding: 0px;
-    margin: 0px;
-    margin-left: 10px;
-    /*color: red;*/
+  font-weight: bold;
+  font-size: 0.8rem;
+  padding: 0px;
+  margin: 0px;
+  margin-left: 10px;
+  /*color: red;*/
 }
 
 #id_keyboard_size {
-    background-color: white;
-    margin-left: 10px;
+  background-color: white;
+  margin-left: 10px;
 }
 
-input[type=checkbox] {
-    width: 12px;
-    height: 12px;
+input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
 }
 
 .help-text {
-    color: var(--primary-color);
-    padding-left: 10px;
+  color: var(--primary-color);
+  padding-left: 10px;
 }
 
 .page-item {
-    padding-left: 3px !important;
-    padding-right: 3px !important;
-    padding-top: 3px !important;
-    border: 1px solid var(--background-color);
-    border-radius: 0.25rem;
-    margin-right: 0.25rem;
-    background-color: white;
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+  padding-top: 3px !important;
+  border: 1px solid var(--background-color);
+  border-radius: 0.25rem;
+  margin-right: 0.25rem;
+  background-color: white;
 }
 
 .page-link {
-    color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
 }
 
 .page-item:hover .page-link {
-    color: var(--link-color) !important;
+  color: var(--link-color) !important;
 }
 
 .page-item.active {
-    border-color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .page-item:hover {
-    border-color: var(--link-color);
+  border-color: var(--link-color);
 }
 
 .column {
-    float: left !important;
-    margin-left: 5px !important;
+  float: left !important;
+  margin-left: 5px !important;
 }
 
-.left, .right {
-    width: 10% !important;
+.left,
+.right {
+  width: 10% !important;
 }
 
 .middle {
-    width: 50% !important;
+  width: 50% !important;
 }
 
 .row {
-    margin-top: 20px;
+  margin-top: 20px;
 }
 
 .form-check {
-    padding-left: 0px;
+  padding-left: 0px;
 }
 
-.radioselect, .checkboxselectmultiple {
-    float: left !important;
-    margin-right: 50px;
+.radioselect,
+.checkboxselectmultiple {
+  float: left !important;
+  margin-right: 50px;
 }
 
-.radioselect ul, .checkboxselectmultiple ul {
-    height: unset !important;
-    background-color: unset !important;
-    border: unset !important;
-    padding: 0px;
-    margin: 0px !important;
-    list-style: none;
-    font-size: 14px;
+.radioselect ul,
+.checkboxselectmultiple ul {
+  height: unset !important;
+  background-color: unset !important;
+  border: unset !important;
+  padding: 0px;
+  margin: 0px !important;
+  list-style: none;
+  font-size: 14px;
 }
 
 ul li input {
-    margin-right: 10px;
-    height: 20px !important;
+  margin-right: 10px;
+  height: 20px !important;
 }
 
-.radioselect li, .checkboxselectmultiple li {
-    line-height: 1.5;
+.radioselect li,
+.checkboxselectmultiple li {
+  line-height: 1.5;
 }
 
 .radioselect input[type="radio"] {
-    margin-top: -1px;
-    vertical-align: middle;
+  margin-top: -1px;
+  vertical-align: middle;
 }
 
 .checkboxselectmultiple input[type="checkbox"] {
-    margin-top: 0px;
-    vertical-align: top;
+  margin-top: 0px;
+  vertical-align: top;
 }
 
-.radioselect > div, .textarea > div, .checkboxselectmultiple > div {
-    align-items: baseline !important;
+.radioselect > div,
+.textarea > div,
+.checkboxselectmultiple > div {
+  align-items: baseline !important;
 }
 
-.radioselect ul label, .checkboxselectmultiple ul label {
-    display: inline !important;
+.radioselect ul label,
+.checkboxselectmultiple ul label {
+  display: inline !important;
 }
 
 .btn {
-    margin-bottom: 1px !important;
+  margin-bottom: 1px !important;
 }
 
-.protected-edit-view label[for=id_description], .protected-edit-view label[for=id_is_public], .protected-edit-view .limited-save-btn {
-    background-color: yellow;
+.protected-edit-view label[for="id_description"],
+.protected-edit-view label[for="id_is_public"],
+.protected-edit-view .limited-save-btn {
+  background-color: yellow;
 }
 
-.protected-edit-view label[for=id_description], .protected-edit-view label[for=id_is_public] {
+.protected-edit-view label[for="id_description"],
+.protected-edit-view label[for="id_is_public"] {
 }
 
 .multiselect {
-    width: 320px;
-    background: rgb(255, 255, 255);
-    height: 150px;
+  width: 320px;
+  background: rgb(255, 255, 255);
+  height: 150px;
 }
 
 .due-date-hours-exceed {
-    background-image: url(../img/hours-exceed.png) !important;
-    background-size: contain;
+  background-image: url(../img/hours-exceed.png) !important;
+  background-size: contain;
 }
 
 .due-date-days-exceed {
-    background-image: url(../img/days-exceed.png) !important;
-    background-size: contain;
+  background-image: url(../img/days-exceed.png) !important;
+  background-size: contain;
 }
 
 table.paleblue > tbody > tr > td > span.true {
-    background-image: url(../img/true.png);
-    background-size: contain;
+  background-image: url(../img/true.png);
+  background-size: contain;
 }
 
-.alert { // obsolete?
-    position: relative;
-    padding: 1rem 0.5rem;
-    margin-top: 0.3rem;
-    border: 1px solid transparent;
-    border-radius: 0.25rem;
-    width: fit-content;
+.alert {
+  // obsolete?
+  position: relative;
+  padding: 1rem 0.5rem;
+  margin-top: 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  width: fit-content;
 }
 
-.alert-success { // obsolete?
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
+.alert-success {
+  // obsolete?
+  color: #155724;
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.column-container {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+.nav-column {
+  display: flex;
+  flex-direction: column;
+  width: 30%;
+}
+
+.nav-column > h2 {
+  margin-bottom: 8px;
+}
+
+.link-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-link {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.nav-link > a {
+  color: var(--link-color);
+  font-size: 16px;
+}
+
+.nav-link > span {
 }

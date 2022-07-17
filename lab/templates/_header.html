@@ -6,7 +6,7 @@
                 <span id="email">{{ user.email }}</span> • 
                 <a href="{% url 'custom-logout' %}">Log Out</a>
             </li>
-            <li><a href={% url 'dashboard:performed-playlists'%}>Dashboard</a></li>
+            <li><a href={% url 'dashboard:index'%}>Dashboard</a></li>
         {% else %}
             <li><a href="{% url 'custom-login' %}">LOGIN</a></li>
             <li><a href="{% url 'registration' %}">REGISTER</a></li>
