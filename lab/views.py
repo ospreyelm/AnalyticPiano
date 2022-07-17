@@ -116,8 +116,8 @@ class PlaylistView(RequirejsView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def get(self, request, playlist_name, exercise_num=1, *args, **kwargs):
-        playlist = Playlist.objects.filter(Q(name=playlist_name) | Q(id=playlist_name)).first()
+    def get(self, request, playlist_slug, exercise_num=1, *args, **kwargs):
+        playlist = Playlist.objects.filter(Q(slug=playlist_slug) | Q(id=playlist_slug)).first()
         if playlist is None:
             raise Http404("Playlist with this name or ID does not exist.")
 
@@ -143,7 +143,7 @@ class PlaylistView(RequirejsView):
         for num, _ in enumerate(playlist.exercise_list, 1):
             exercise_list.append(
                 dict(
-                    id=f"{playlist_name}/{num}",
+                    id=f"{playlist_slug}/{num}",
                     name=f"{num}",
                     url=playlist.get_exercise_url_by_num(num),
                     selected=exercise_num == num,
@@ -184,7 +184,7 @@ class PlaylistView(RequirejsView):
 
 class RefreshExerciseDefinition(RequirejsView):
     def get(self, request, *args, **kwargs):
-        playlist = get_object_or_404(Playlist, name=request.GET.get("playlist_name"))
+        playlist = get_object_or_404(Playlist, slug=request.GET.get("playlist_slug"))
         exercise_num = int(request.GET.get("exercise_num", 1))
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if exercise is None:
@@ -346,18 +346,18 @@ class APIGroupView(CsrfExemptMixin, View):
 class APIExerciseView(CsrfExemptMixin, View):
     def get(self, request):
         course_id = request.GET.get("course_id", None)
-        playlist_name = request.GET.get("playlist_name", None)
+        playlist_slug = request.GET.get("playlist_slug", None)
         exercise_name = request.GET.get("exercise_name", None)
 
         er = ExerciseRepository.create(course_id=course_id)
-        if exercise_name is not None and playlist_name is not None:
-            exercise = er.findExerciseByGroup(playlist_name, exercise_name)
+        if exercise_name is not None and playlist_slug is not None:
+            exercise = er.findExerciseByGroup(playlist_slug, exercise_name)
             if exercise is None:
                 raise Http404("Exercise does not exist.")
             exercise.load()
             data = exercise.asDict()
-        elif exercise_name is None and playlist_name is not None:
-            group = er.findGroup(playlist_name)
+        elif exercise_name is None and playlist_slug is not None:
+            group = er.findGroup(playlist_slug)
             if group is None:
                 raise Http404("Exercise group does not exist.")
             data = group.asDict()

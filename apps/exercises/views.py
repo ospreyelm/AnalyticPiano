@@ -18,84 +18,80 @@ User = get_user_model()
 @staff_member_required
 def playlist_performance_view(request, playlist_id):
     data = []
-    performances = PerformanceData.objects.filter(
-        playlist__id=playlist_id
-    ).select_related('user', 'playlist')
+    performances = PerformanceData.objects.filter(playlist__id=playlist_id).select_related("user", "playlist")
     playlist = Playlist.objects.filter(id=playlist_id).first()
     exercises = [exercise for exercise in playlist.exercise_list]
-    users = list(set(list(performances.values_list('user__email', flat=True))))
+    users = list(set(list(performances.values_list("user__email", flat=True))))
 
     for user in users:
-        name = [n for n in list(Performers.objects.filter(email=user).values_list('first_name', 'last_name'))[0]]
+        name = [n for n in list(Performers.objects.filter(email=user).values_list("first_name", "last_name"))[0]]
         user_data = {
-            'email': user,
-            'performer': " ".join([n for n in [
-                name[0],
-                name[1].upper(),
-                '<' + user + '>',
-            ] if n != '']),
-            'performance_data': performances.filter(user__email=user).first().data
+            "email": user,
+            "performer": " ".join(
+                [
+                    n
+                    for n in [
+                        name[0],
+                        name[1].upper(),
+                        "<" + user + ">",
+                    ]
+                    if n != ""
+                ]
+            ),
+            "performance_data": performances.filter(user__email=user).first().data,
         }
-        user_data.update({'exercise_count': len(user_data['performance_data'])})
+        user_data.update({"exercise_count": len(user_data["performance_data"])})
         data.append(user_data)
 
     for d in data:
-        exercises_data = d['performance_data']
+        exercises_data = d["performance_data"]
 
-        [d.update(**{exercise['id']:
-                         f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "Pass "}'
-                         f'{"" if ((isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
-                         f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]} '
-                     }) for exercise in exercises_data]
+        [
+            d.update(
+                **{
+                    exercise[
+                        "id"
+                    ]: f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "Pass "}'
+                    f'{"" if ((isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
+                    f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]} '
+                }
+            )
+            for exercise in exercises_data
+        ]
 
-    table = PlaylistActivityTable(
-        data=data,
-        extra_columns=[(exercise, Column()) for exercise in exercises]
-    )
+    table = PlaylistActivityTable(data=data, extra_columns=[(exercise, Column()) for exercise in exercises])
 
-    playlist_name = Playlist.objects.filter(id=playlist_id).first().name
+    playlist_slug = Playlist.objects.filter(id=playlist_id).first().slug
 
-    return render(request, "admin/performances.html", {
-        "table": table,
-        "playlist_name": playlist_name
-    })
+    return render(request, "admin/performances.html", {"table": table, "playlist_slug": playlist_slug})
 
 
 @login_required
 @method_decorator(csrf_exempt)
 def submit_exercise_performance(request):
-    performance_data = json.loads(request.POST.get('data'))
+    performance_data = json.loads(request.POST.get("data"))
 
     user = request.user if request.user.is_authenticated else User.get_guest_user()
 
-    playlist_name, exercise_num = performance_data['exercise_ID'].split('/')
-    performance_data.pop('exercise_ID')
+    playlist_name, exercise_num = performance_data["exercise_ID"].split("/")
+    performance_data.pop("exercise_ID")
     # performance_data.pop('performer')
 
     playlist = Playlist.objects.filter(name=playlist_name).first()
     exercise = playlist.get_exercise_obj_by_num(int(exercise_num))
-    PerformanceData.submit(
-        playlist_id=playlist._id,
-        exercise_id=exercise.id,
-        user_id=user.id,
-        data=performance_data
-    )
+    PerformanceData.submit(playlist_id=playlist._id, exercise_id=exercise.id, user_id=user.id, data=performance_data)
     return HttpResponse(status=201)
 
 
 @method_decorator(csrf_exempt)
 def submit_playlist_performance(request):
-    performance_data = json.loads(request.POST.get('data'))
+    performance_data = json.loads(request.POST.get("data"))
 
     user = request.user if request.user.is_authenticated else User.get_guest_user()
 
-    playlist_name, _ = performance_data['exercise_ID'].split('/')
-    performance_data.pop('exercise_ID')
+    playlist_name, _ = performance_data["exercise_ID"].split("/")
+    performance_data.pop("exercise_ID")
 
     playlist = Playlist.objects.filter(name=playlist_name).first()
-    PerformanceData.submit_playlist_performance(
-        playlist_id=playlist._id,
-        user_id=user.id,
-        data=performance_data
-    )
+    PerformanceData.submit_playlist_performance(playlist_id=playlist._id, user_id=user.id, data=performance_data)
     return HttpResponse(status=201)

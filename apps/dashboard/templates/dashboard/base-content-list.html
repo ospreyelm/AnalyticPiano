@@ -24,9 +24,10 @@
             <p>Playlists authored by {{ playlists_author }}</p>
         {% endif %}
         {% if exercises_author %}
-            <h1>My Playlists</h1>
+            <h1>My Exercises</h1>
             <p>Exercises authored by {{ exercises_author }}</p>
         {% endif %}
+        {#% TODO: no longer works because of course_slug use %#}
         {% if course_name %}
             <h1>Course Activity</h1>
             <p>Activity report for course: {{ course_name }}</p>

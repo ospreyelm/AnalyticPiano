@@ -50,7 +50,7 @@ def course_add_view(request):
 
             if 'save-and-continue' in request.POST:
                 success_url = reverse('dashboard:edit-course',
-                                      kwargs={'course_name': course.title})
+                                      kwargs={'course_slug': course.slug})
                 messages.add_message(request, messages.SUCCESS,
                                      f"{context['verbose_name']} has been saved successfully.")
             else:
@@ -67,8 +67,8 @@ def course_add_view(request):
 
 
 @login_required
-def course_edit_view(request, course_name):
-    course = get_object_or_404(Course, title=course_name)
+def course_edit_view(request, course_slug):
+    course = get_object_or_404(Course, slug=course_slug)
 
     if request.user != course.authored_by:
         raise PermissionDenied
@@ -102,7 +102,7 @@ def course_edit_view(request, course_name):
 
             if 'save-and-continue' in request.POST:
                 success_url = reverse('dashboard:edit-course',
-                                      kwargs={'course_name': course.title})
+                                      kwargs={'course_slug': course.slug})
                 messages.add_message(request, messages.SUCCESS,
                                      f"{context['verbose_name']} has been saved successfully.")
             else:
@@ -118,8 +118,8 @@ def course_edit_view(request, course_name):
 
 
 @login_required
-def course_delete_view(request, course_name):
-    course = get_object_or_404(Course, title=course_name)
+def course_delete_view(request, course_slug):
+    course = get_object_or_404(Course, slug=course_slug)
 
     if request.user != course.authored_by:
         raise PermissionDenied
@@ -137,8 +137,8 @@ def course_delete_view(request, course_name):
 
 
 @login_required
-def course_activity_view(request, course_name):
-    course = get_object_or_404(Course, title=course_name)
+def course_activity_view(request, course_slug):
+    course = get_object_or_404(Course, slug=course_slug)
 
     if request.user != course.authored_by:
         raise PermissionDenied
@@ -225,6 +225,6 @@ def course_activity_view(request, course_name):
     RequestConfig(request, paginate={"per_page": 35}).configure(table)
     return render(request, "dashboard/course-activity.html", {
         "table": table,
-        "course_name": course_name,
+        "course_slug": course_slug,
         "filters": filters
     })

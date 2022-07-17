@@ -2,253 +2,295 @@
 @import "pure.css";
 
 @font-face {
-    font-family: 'Alegreya Sans';
-    src: url('../fonts/alegreya-sans-v8-latin-regular.woff') format('woff');
+  font-family: "Alegreya Sans";
+  src: url("../fonts/alegreya-sans-v8-latin-regular.woff") format("woff");
 }
 
 @font-face {
-    font-family: 'MainSerifs';
-    src: url('../fonts/Alegreya-Regular-Modified.woff') format('woff');
+  font-family: "MainSerifs";
+  src: url("../fonts/Alegreya-Regular-Modified.woff") format("woff");
 }
 
 @font-face {
-    font-family: 'JazzSerifs';
-    src: url('../fonts/Alegreya-Regular-Modified-v2.woff') format('woff');
+  font-family: "JazzSerifs";
+  src: url("../fonts/Alegreya-Regular-Modified-v2.woff") format("woff");
 }
 
 @font-face {
-    font-family: 'Sebastian';
-    src: url('../fonts/Sebastian-FigBass-Modified.woff') format('woff');
+  font-family: "Sebastian";
+  src: url("../fonts/Sebastian-FigBass-Modified.woff") format("woff");
 }
 
 html {
-    font-size: 14px;
-    /*font-family: 'Alegreya Sans',sans-serif;*/
-    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
+  font-size: 14px;
+  /*font-family: 'Alegreya Sans',sans-serif;*/
+  font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans",
+    Verdana, Arial, sans-serif;
 }
 
-html, body, h1, h2, h3, h4, div, p  {
-    margin: 0; 
-    padding: 0; 
-    border-width: 0;
+html,
+body,
+h1,
+h2,
+h3,
+h4,
+div,
+p {
+  margin: 0;
+  padding: 0;
+  border-width: 0;
 }
 
-p {padding: .4rem 0; }
-button, input, optgroup, select, textarea { color: #000; }
-a,a:visited, .btn { color: inherit; text-decoration: none; }
-a:hover, .btn:hover { cursor: pointer; color: inherit; }
+p {
+  padding: 0.4rem 0;
+}
+button,
+input,
+optgroup,
+select,
+textarea {
+  color: #000;
+}
+a,
+a:visited,
+.btn {
+  color: inherit;
+  text-decoration: none;
+}
+a:hover,
+.btn:hover {
+  cursor: pointer;
+  color: inherit;
+}
 /* .instruction-panel-col > a, .instruction-panel-col > a:visited { color: blue; } */
 body {
-    text-align: center;
-    margin-top: 0px;
+  text-align: center;
+  margin-top: 0px;
 }
-body, #mainmenu, #helpmenu {
-    background-color: #335271;
+body,
+#mainmenu,
+#helpmenu {
+  background-color: #335271;
 }
-#mainmenu, #helpmenu {
-    background-color: rgba(80,80,80,1);
+#mainmenu,
+#helpmenu {
+  background-color: rgba(80, 80, 80, 1);
 }
 
 /*--------------------------------------------------*/
 /* Structural/Layout */
 #container {
-    width: 100%;
-    margin: 20px auto;
-    margin-bottom: 20px;
-    text-align: center;
+  width: 100%;
+  margin: 20px auto;
+  margin-bottom: 20px;
+  text-align: center;
 }
 #footer {
-    min-height: 1rem;
+  min-height: 1rem;
 }
 #staff-area {
-    /*width: 888px;*/
-    width: 100%;
-    margin: 0px auto;
-    position:relative;
-    z-index:0;
-    padding:0;
-    overflow:hidden;
+  /*width: 888px;*/
+  width: 100%;
+  margin: 0px auto;
+  position: relative;
+  z-index: 0;
+  padding: 0;
+  overflow: hidden;
 }
 #staff-toolbar {
-    position: absolute;
-    height: 35px;
-    width: 100%;
-    padding: 0px;
-    z-index: 1;
+  position: absolute;
+  height: 35px;
+  width: 100%;
+  padding: 0px;
+  z-index: 1;
 }
 #staffwrapper {
-    height: 320px;
-    overflow: hidden;
-    overflow-y: hidden;
+  height: 320px;
+  overflow: hidden;
+  overflow-y: hidden;
 }
-#staff, #instruction-panel, .header {
-    width: 50rem;
+#staff,
+#instruction-panel,
+.header {
+  width: 50rem;
 }
 #staff {
-    height: 350px;
-    position: static;
-    z-index: 1;
-    margin: 0;
-    border: 0px solid black;
-    padding: 0;
+  height: 350px;
+  position: static;
+  z-index: 1;
+  margin: 0;
+  border: 0px solid black;
+  padding: 0;
 }
 #instruction-panel {
-    margin: 0rem auto;
-    margin-bottom: 1rem;
-    min-height: 100px;
-    /*height: 100%;
+  margin: 0rem auto;
+  margin-bottom: 1rem;
+  min-height: 100px;
+  /*height: 100%;
     overflow: hidden;
     overflow-y:auto;*/
 }
-.content-area, button, input, optgroup, select, textarea {
-    color: black;
-    background-color: #eee;
+.content-area,
+button,
+input,
+optgroup,
+select,
+textarea {
+  color: black;
+  background-color: #eee;
 }
 .content-area {
-    background-color: rgb(238, 238, 221);
+  background-color: rgb(238, 238, 221);
 }
-#login-div, #register-div {
-    margin-top: 20px;
+#login-div,
+#register-div {
+  margin-top: 20px;
 }
-#mainmenu, #helpmenu {
-    border: 0px solid black;
-    border-radius: 6px;
+#mainmenu,
+#helpmenu {
+  border: 0px solid black;
+  border-radius: 6px;
 }
-#sheet-music-options, #piano-options, #display-settings {
-    color: #fff;
-    font-size: 0.9rem;
+#sheet-music-options,
+#piano-options,
+#display-settings {
+  color: #fff;
+  font-size: 0.9rem;
 }
 .mainmenu-section {
-    margin-top: 0;
-    margin-bottom: 1rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
 }
 .mainmenu-section:last-of-type {
-    margin-top: 0;
-    margin-bottom: 0rem;
+  margin-top: 0;
+  margin-bottom: 0rem;
 }
-#mainmenu, #helpmenu {
-    display: none;
-    position: absolute;
-    right: 1rem;
-    z-index: 100;
-    margin: 1rem auto;
-    text-align: left;
-    padding: 1rem;
-    line-height: 1.2rem;
+#mainmenu,
+#helpmenu {
+  display: none;
+  position: absolute;
+  right: 1rem;
+  z-index: 100;
+  margin: 1rem auto;
+  text-align: left;
+  padding: 1rem;
+  line-height: 1.2rem;
 }
 .mainmenu-links {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    color: #fff;
-    font-size: 0.9rem;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  color: #fff;
+  font-size: 0.9rem;
 }
 
 /*--------------------------------------------------*/
 /* Header Styles */
 .header {
-    margin: 0 auto;
-    margin-bottom: 1.5rem;
-    font-size: 14px;
-    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
-    background: transparent;
-    color: white;
-    position: relative;
-    align: center;
-    text-align: left;
+  margin: 0 auto;
+  margin-bottom: 1.5rem;
+  font-size: 14px;
+  font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans",
+    Verdana, Arial, sans-serif;
+  background: transparent;
+  color: white;
+  position: relative;
+  align: center;
+  text-align: left;
 }
 .header ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
 }
 .header ul.header-second-row {
-    padding-top: 1.2rem;
+  padding-top: 1.2rem;
 }
 .header ul li {
-    display: inline;
-    padding-right: 1.5rem;
+  display: inline;
+  padding-right: 1.5rem;
 }
 .header .js-keysignature-widget {
-    padding-left: 0rem;
-    padding-right: 2rem;
+  padding-left: 0rem;
+  padding-right: 2rem;
 }
 .header .js-btn-menu {
-    padding-left: 2rem;
-    padding-right: 0rem;
-    float:right;
+  padding-left: 2rem;
+  padding-right: 0rem;
+  float: right;
 }
-.header .js-btn-help, .tip {
-    padding-left: 2rem;
-    padding-right: 0rem;
-    float: right;
+.header .js-btn-help,
+.tip {
+  padding-left: 2rem;
+  padding-right: 0rem;
+  float: right;
 }
 .header .audio-controls {
-    padding-left: 0.25rem;
-    padding-right: 0rem;
-    float: right;
+  padding-left: 0.25rem;
+  padding-right: 0rem;
+  float: right;
 }
 .header .audio-controls button {
-    border: 1px solid #555;
-    /*background-color: #eee;*/
-    border-radius: 3px;
-    outline: none;
+  border: 1px solid #555;
+  /*background-color: #eee;*/
+  border-radius: 3px;
+  outline: none;
 }
 .js-notation-opts-widget .menu-widgets {
-    display: inline-block;
-    vertical-align: top;
-    padding-right: 1rem;
+  display: inline-block;
+  vertical-align: top;
+  padding-right: 1rem;
 }
 .js-notation-opts-widget .menu-widgets:last-child {
-    padding-right: 0px;
+  padding-right: 0px;
 }
 .menu-widgets fieldset.settings-notation {
-    margin-top: 0px;
+  margin-top: 0px;
 }
 .highlight-swatch {
-    margin-left: 5px;
-    width: 12px;
-    height: 6px;
-    display:inline-block;
+  margin-left: 5px;
+  width: 12px;
+  height: 6px;
+  display: inline-block;
 }
 #email {
-    display: inline-block;
-    width: 8rem;
-    vertical-align: bottom;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    padding: 0px;
-    margin: 0px;
+  display: inline-block;
+  width: 8rem;
+  vertical-align: bottom;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0px;
+  margin: 0px;
 }
 
 /*--------------------------------------------------*/
 /* Settings Styles */
 fieldset.settings-notation {
-    border: 1px solid white;
-    border-radius: 6px;
-    width: auto;
-    display: inline-block;
-    padding: 12px;
-    text-align: left;
-    margin-top: 12px;
+  border: 1px solid white;
+  border-radius: 6px;
+  width: auto;
+  display: inline-block;
+  padding: 12px;
+  text-align: left;
+  margin-top: 12px;
 }
 .settings-notation ol {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 .settings-notation > ul {
-    margin: 0;
-    padding: 0;
-    padding-left: 8px;
-    padding-right: 8px;
-    list-style-type: none;
+  margin: 0;
+  padding: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+  list-style-type: none;
 }
 .settings-notation legend {
-    padding: 4px 8px 0px 8px;
+  padding: 4px 8px 0px 8px;
 }
 .menu-widgets {
-    display: inline-block;
+  display: inline-block;
 }
 
 /*--------------------------------------------------*/
@@ -309,354 +351,371 @@ fieldset.settings-notation {
 /*--------------------------------------------------*/
 /* Instruction Panel Styles */
 .instruction-panel {
-    margin: 0;
-    padding: 0.75rem;
-    padding-top: 0.5rem;
-    color: #333;
-    border: 1px solid black;
-    border-radius: 6px;
-    text-align: left;
+  margin: 0;
+  padding: 0.75rem;
+  padding-top: 0.5rem;
+  color: #333;
+  border: 1px solid black;
+  border-radius: 6px;
+  text-align: left;
 }
 .instruction-panel-col {
-    display: inline-block;
-    vertical-align: top;
-    margin: 0;
-    padding: 0;
+  display: inline-block;
+  vertical-align: top;
+  margin: 0;
+  padding: 0;
 }
 .instruction-panel-col1 {
-    width: 11rem;
-    margin-right: 1rem;
+  width: 11rem;
+  margin-right: 1rem;
 }
 .instruction-panel-col2 {
-    width: 29rem;
-    margin-right: 1rem;
+  width: 29rem;
+  margin-right: 1rem;
 }
 .instruction-panel-col3 {
-    width: 5.5rem;
+  width: 5.5rem;
 }
 .instruction-panel-col1 p {
-    line-height: 1.6rem;
-    margin: 0;
-    padding: 0;
+  line-height: 1.6rem;
+  margin: 0;
+  padding: 0;
 }
 #exercise-text {
-    font-family: 'Alegreya Sans',sans-serif;
-    font-size: 17px;
+  font-family: "Alegreya Sans", sans-serif;
+  font-size: 17px;
 }
 #exercise-status-and-tempo {
 }
 .exercise-status {
-    font-size: 0.9rem;
-    padding: 4px 6px 2px 6px;
-    margin: 0;
-    text-transform: uppercase;
-    color: #fff;
-    border-radius: 6px;
-    background-color: black;
+  font-size: 0.9rem;
+  padding: 4px 6px 2px 6px;
+  margin: 0;
+  text-transform: uppercase;
+  color: #fff;
+  border-radius: 6px;
+  background-color: black;
 }
 
 /*--------------------------------------------------*/
 /* Exercise form */
 .exerciseform label {
-    display: block;
+  display: block;
 }
 .exerciseform div {
-    margin: 5px 0;
+  margin: 5px 0;
 }
 .exerciseform .help {
-    font-size: .95rem;
-    color: #333;
-    background-color: rgba(153, 153, 153, 0.38);
-    margin: .5rem 0;
-    padding: .5rem;
+  font-size: 0.95rem;
+  color: #333;
+  background-color: rgba(153, 153, 153, 0.38);
+  margin: 0.5rem 0;
+  padding: 0.5rem;
 }
 .exercise-collapse-all {
-    border-bottom: 1px solid #666;
-    padding: .5rem 0;
+  border-bottom: 1px solid #666;
+  padding: 0.5rem 0;
 }
-ul.exercise-groups, ul.exercise-groups ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
+ul.exercise-groups,
+ul.exercise-groups ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
 }
 ul.exercise-groups {
 }
 ul.exercise-groups .btn {
-    padding: .5rem;
+  padding: 0.5rem;
 }
 ul.exercise-groups > li {
-    display: block;
+  display: block;
 }
 ul.exercise-groups > li li {
-    padding-left: 2rem;
+  padding-left: 2rem;
 }
 ul.exercise-groups .group {
-    display: block;
-    border-bottom: 1px solid #666;
-    font-size: 125%;
+  display: block;
+  border-bottom: 1px solid #666;
+  font-size: 125%;
 }
 ul.exercise-groups .btn.btn-group,
 ul.exercise-groups .btn.btn-exercise,
-ul.exercise-groups .actions{
-    display: inline-block;
+ul.exercise-groups .actions {
+  display: inline-block;
 }
 ul.exercise-groups .actions {
-    
 }
 ul.exercise-groups li.even {
-    background-color: inherit;
+  background-color: inherit;
 }
 ul.exercise-groups li.odd {
-    background-color: rgba(0,0,0,.1);
+  background-color: rgba(0, 0, 0, 0.1);
 }
 ul.menu-group-list {
-    list-style: none;
-    padding: 0.5rem;
-    border-radius: 6px;
-    margin: .5rem 0;
-    max-height: 20rem;
-    max-width: 20rem;
-    overflow: auto;
-    line-height: 1rem;
-    background-color: rgb(10,80,80);
+  list-style: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin: 0.5rem 0;
+  max-height: 20rem;
+  max-width: 20rem;
+  overflow: auto;
+  line-height: 1rem;
+  background-color: rgb(10, 80, 80);
 }
 #mainmenu-exercise-area {
-    text-align: left;
+  text-align: left;
 }
 ul.menu-group-list a {
 }
 ul.menu-group-list li {
-    display: inline-block;
-    margin: 0.2rem;
-    padding: 0.2rem 0.4rem;
-    background-color: rgba(0,0,0,0.5);
-    border-radius: 3px;
+  display: inline-block;
+  margin: 0.2rem;
+  padding: 0.2rem 0.4rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
 }
 
 .startover-icon {
-    background: url(../img/icon-startover.png); /* Wikimedia commons */
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
-    height: 25px;
-    width: 25px;
-    margin: 4px 0 0 8px;
-    float: right;
+  background: url(../img/icon-startover.png); /* Wikimedia commons */
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
+  height: 25px;
+  width: 25px;
+  margin: 4px 0 0 8px;
+  float: right;
 }
 .startover-icon:hover {
-    background: url(../img/icon-startover-hover.png);
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
+  background: url(../img/icon-startover-hover.png);
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
 }
 .previous-icon {
-    background: url(../img/icon-previous.png); /* Wikimedia commons */
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
-    height: 25px;
-    width: 25px;
-    margin: 4px 0 0 8px;
-    float: right;
+  background: url(../img/icon-previous.png); /* Wikimedia commons */
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
+  height: 25px;
+  width: 25px;
+  margin: 4px 0 0 8px;
+  float: right;
 }
 .previous-icon:hover {
-    background: url(../img/icon-previous-hover.png);
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
+  background: url(../img/icon-previous-hover.png);
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
 }
 .next-icon {
-    background: url(../img/icon-next.png); /* Wikimedia commons */
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
-    height: 25px;
-    width: 25px;
-    margin: 4px 0 0 8px;
-    float: right;
+  background: url(../img/icon-next.png); /* Wikimedia commons */
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
+  height: 25px;
+  width: 25px;
+  margin: 4px 0 0 8px;
+  float: right;
 }
 .next-icon:hover {
-    background: url(../img/icon-next-hover.png);
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
+  background: url(../img/icon-next-hover.png);
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
 }
 .refresh-icon {
-    background: url(../img/icon-refresh.png); /* Wikimedia commons */
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
-    height: 25px;
-    width: 25px;
-    margin: 4px 0 0 8px;
-    float: right;
+  background: url(../img/icon-refresh.png); /* Wikimedia commons */
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
+  height: 25px;
+  width: 25px;
+  margin: 4px 0 0 8px;
+  float: right;
 }
 .refresh-icon:hover {
-    background: url(../img/icon-refresh-hover.png);
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
+  background: url(../img/icon-refresh-hover.png);
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
 }
 .save-icon {
-    background: url(../img/icon-save.png); /* Wikimedia commons */
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
-    height: 25px;
-    width: 25px;
-    margin: 4px 0 0 8px;
-    float: right;
+  background: url(../img/icon-save.png); /* Wikimedia commons */
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
+  height: 25px;
+  width: 25px;
+  margin: 4px 0 0 8px;
+  float: right;
 }
 .save-icon:hover {
-    background: url(../img/icon-save-hover.png);
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
+  background: url(../img/icon-save-hover.png);
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
 }
 .download-icon {
-    background: url(../img/icon-download.png); /* Wikimedia commons */
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
-    height: 25px;
-    width: 25px;
-    margin: 4px 0 0 8px;
-    float: right;
+  background: url(../img/icon-download.png); /* Wikimedia commons */
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
+  height: 25px;
+  width: 25px;
+  margin: 4px 0 0 8px;
+  float: right;
 }
 .download-icon:hover {
-    background: url(../img/icon-download-hover.png);
-    background-repeat: no-repeat;
-    background-size: 25px 25px;
+  background: url(../img/icon-download-hover.png);
+  background-repeat: no-repeat;
+  background-size: 25px 25px;
 }
 .sig-lock-block {
-    line-height: 3rem;
-    margin-left: 50px;
+  line-height: 3rem;
+  margin-left: 50px;
 }
 .sig-lock-inline {
-    margin: 0 15px;
+  margin: 0 15px;
 }
 
 /*--------------------------------------------------*/
 /* Custom Icons for this project by Jeff Martini */
 .icon-btn {
-    background: url(../img/icon-btn-sprite.png) no-repeat;
-    height: 25px;
-    margin: 4px 0 0 8px;
+  background: url(../img/icon-btn-sprite.png) no-repeat;
+  height: 25px;
+  margin: 4px 0 0 8px;
 }
-.icon-btn-left { float: left; }
-.icon-btn-right { float: right; }
-.icon-btn-camera { background-position: -410px -50px; width: 50px; }
-.icon-btn-camera:hover { background-position: -410px -150px; width: 50px; }
+.icon-btn-left {
+  float: left;
+}
+.icon-btn-right {
+  float: right;
+}
+.icon-btn-camera {
+  background-position: -410px -50px;
+  width: 50px;
+}
+.icon-btn-camera:hover {
+  background-position: -410px -150px;
+  width: 50px;
+}
 
 /*--------------------------------------------------*/
 /* Classes to be used in conjunction with ionicons
  * http://ionicons.com/ */
 
 .ioncustom-siglocked {
-    color: #ffffff;
-    margin-left: 10px;
-    margin-right: 10px;
+  color: #ffffff;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 .ioncustom-sigunlocked {
-    color: #ffffff;
-    margin-left: 10px;
-    margin-right: 10px;
+  color: #ffffff;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 /*--------------------------------------------------*/
 /* On-screen keyboard */
 
 .keyboard-wrapper {
-    width: 888px;
-    margin: 20px auto;
-    margin-bottom: 0px;
-    border: 0px solid #ffffff;
-    padding: 0px 6px;/*compare keyboard-pedals pedal margin-top*/
-    border-radius: 0px;
-    /*border-radius: 6px;*/
-    position: relative;
-    background-color: rgba(255,255,255,0);
+  width: 888px;
+  margin: 20px auto;
+  margin-bottom: 0px;
+  border: 0px solid #ffffff;
+  padding: 0px 6px; /*compare keyboard-pedals pedal margin-top*/
+  border-radius: 0px;
+  /*border-radius: 6px;*/
+  position: relative;
+  background-color: rgba(255, 255, 255, 0);
 }
 .keyboard-controls {
-    height: 40px;
-    margin: 0px;
-    padding: 5px 0;
-    border: 0px;
+  height: 40px;
+  margin: 0px;
+  padding: 5px 0;
+  border: 0px;
 }
 .transpose-control {
-    width: 150px;
-    margin: 2px auto;
-    color: white;
+  width: 150px;
+  margin: 2px auto;
+  color: white;
 }
 .transpose-icon {
-    background-color: red;
-    width: 28px;
-    height: 20px;
+  background-color: red;
+  width: 28px;
+  height: 20px;
 }
 .metronome-control {
-    /*float: right;*/
-    color: #fff;
-    margin: auto;
-    width: 150px;
+  /*float: right;*/
+  color: #fff;
+  margin: auto;
+  width: 150px;
 }
 .metronome-control-input {
-    font-size: 0.7rem;
-    text-align: center;
-    width: 2rem;
-    height: 20px;
-    margin: 0px 10px 0px 10px;
-    border: none;
+  font-size: 0.7rem;
+  text-align: center;
+  width: 2rem;
+  height: 20px;
+  margin: 0px 10px 0px 10px;
+  border: none;
 }
 .metronome-icon {
-    background-color: #5c5c5c;
-    height: 20px;
-    padding: 3px 6px 1px 6px;
+  background-color: #5c5c5c;
+  height: 20px;
+  padding: 3px 6px 1px 6px;
 }
 .metronome-icon:hover {
-    background-color: #b6a9a4;
+  background-color: #b6a9a4;
 }
-.metronome-icon:active, .metronome-icon-active {
-    background-color: #8b0000;
+.metronome-icon:active,
+.metronome-icon-active {
+  background-color: #8b0000;
 }
 .metronome-led {
-    background-color: transparent;
-    width: 8px;
-    height: 8px;
-    margin-top: 6px;
+  background-color: transparent;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
 }
 .metronome-led-on {
-    background-color: red;
+  background-color: red;
 }
 #metronome-audio {
-    display: hidden;
+  display: hidden;
 }
 .keyboard-area {
-    margin:0 10px;
-    padding-bottom: 6px;
-    border: 0px solid #ffffff;
+  margin: 0 10px;
+  padding-bottom: 6px;
+  border: 0px solid #ffffff;
 }
 .keyboard-pedals {
-    margin: 0px auto;
-    width: 102px;
+  margin: 0px auto;
+  width: 102px;
 }
 .keyboard-pedals .pedal {
-    float: left;
-    display: block;
-    background-color: #aaa;
-    border: 2px solid #aaa;
-    width: 20px; 
-    margin-top: 6px;/*compare keyboard-wrapper padding*/
-    margin-right: 15px;
-    height: 20px;
-    /*border-bottom-left-radius: 6px;*/
-    /*border-bottom-right-radius: 6px;*/
-    border-radius: 12px;
-    cursor: pointer;
+  float: left;
+  display: block;
+  background-color: #aaa;
+  border: 2px solid #aaa;
+  width: 20px;
+  margin-top: 6px; /*compare keyboard-wrapper padding*/
+  margin-right: 15px;
+  height: 20px;
+  /*border-bottom-left-radius: 6px;*/
+  /*border-bottom-right-radius: 6px;*/
+  border-radius: 12px;
+  cursor: pointer;
 }
 .keyboard-pedals .pedal:last-of-type {
-    margin-right: 0px;
+  margin-right: 0px;
 }
 .keyboard-pedals .pedal:hover {
-    border-color: #ccc;
+  border-color: #ccc;
 }
 .keyboard-pedals .pedal-active {
-    background-color: #555;
-    border-color: #ccc;
+  background-color: #555;
+  border-color: #ccc;
+}
+
+.keyboard > svg {
+  margin: auto;
 }
 
 /*--------------------------------------------------*/
 /* Utilities */
 
-.hide { display: none; }
+.hide {
+  display: none;
+}
 /*.fade {
     transition: opacity .25s ease-in-out;
     -moz-transition: opacity .25s ease-in-out;
@@ -667,53 +726,55 @@ ul.menu-group-list li {
 */
 
 .widget-keysignature {
-    display: inline;
+  display: inline;
 }
 .widget-keysignature optgroup {
-    margin: 0;
-    padding-top: 0.5rem;
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
-    border: 1px solid #555;
-    border-bottom-width: 0px;
+  margin: 0;
+  padding-top: 0.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  border: 1px solid #555;
+  border-bottom-width: 0px;
 }
 .widget-keysignature optgroup:last-of-type {
-    border-bottom-width: 1px;
+  border-bottom-width: 1px;
 }
 .widget-keysignature optgroup option {
-    text-align: left;
-    margin: 0;
-    padding-left: 0.5rem;
-    padding-right: 0.25rem;
+  text-align: left;
+  margin: 0;
+  padding-left: 0.5rem;
+  padding-right: 0.25rem;
 }
 .widget-keysignature-header {
-    background-color: rgba(255,255,255,0.3);
-    padding: 8px 6px;
-    border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.3);
+  padding: 8px 6px;
+  border-radius: 3px;
 }
-.widget-keysignature select, .widget-keysignature optgroup {
-    background-color: #eee;
-    outline: none;
+.widget-keysignature select,
+.widget-keysignature optgroup {
+  background-color: #eee;
+  outline: none;
 }
-#login-div input, #register-div input {
-    background-color: #eee;
-    outline: none;
+#login-div input,
+#register-div input {
+  background-color: #eee;
+  outline: none;
 }
 .figuredbass {
-    font-family: Sebastian;
-    font-size: 32px;
-    margin-left: -12px;
-    margin-right: 6px;
-    line-height: 18px;
+  font-family: Sebastian;
+  font-size: 32px;
+  margin-left: -12px;
+  margin-right: 6px;
+  line-height: 18px;
 }
 
 form label {
-    color: white;
+  color: white;
 }
 
 ul.pagination li {
-    display: inline;
-    color: white;
-    padding-left: 12px;
-    padding-right: 12px;
+  display: inline;
+  color: white;
+  padding-left: 12px;
+  padding-right: 12px;
 }

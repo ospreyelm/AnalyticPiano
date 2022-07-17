@@ -368,6 +368,7 @@ table.paleblue > tbody > tr > td > span.true {
   display: flex;
   flex-direction: column;
   width: 30%;
+  min-width: 240px;
 }
 
 .nav-column > h2 {
@@ -377,6 +378,7 @@ table.paleblue > tbody > tr > td > span.true {
 .link-container {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
 .nav-link {

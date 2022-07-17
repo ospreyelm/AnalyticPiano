@@ -21,17 +21,17 @@ class ExpansiveForm(forms.ModelForm):
         assert self.EXPANSIVE_FIELD_MODEL is not None
         assert self.EXPANSIVE_FIELD_INITIAL is not None
 
-        expansive_field_data = re.sub(r'[^a-zA-Z0-9-,; \n]', '',
-            self.cleaned_data.get(self.EXPANSIVE_FIELD, '').rstrip(',')
+        expansive_field_data = re.sub(
+            r"[^a-zA-Z0-9-,; \n]", "", self.cleaned_data.get(self.EXPANSIVE_FIELD, "").rstrip(",")
         )
-        parsed_input = [n.upper().strip() for n in re.split('-*[,; \n]+-*', expansive_field_data)]
+        parsed_input = [n.upper().strip() for n in re.split("-*[,; \n]+-*", expansive_field_data)]
 
         # to test if item exists
-        all_object_ids = list(self.EXPANSIVE_FIELD_MODEL.objects.values_list('id', flat=True))
+        all_object_ids = list(self.EXPANSIVE_FIELD_MODEL.objects.values_list("id", flat=True))
 
         object_ids = []
         for string in parsed_input:
-            if '-' in string:
+            if "-" in string:
                 id_range = string
                 for _id in self._expand_range(id_range, all_object_ids):
                     # ^ returns only items authored by the user
@@ -42,9 +42,9 @@ class ExpansiveForm(forms.ModelForm):
                 _id = string
 
                 if len(_id) <= 6:
-                    _id = f'{self.EXPANSIVE_FIELD_MODEL.zero_padding[:-len(_id)]}{_id}'
+                    _id = f"{self.EXPANSIVE_FIELD_MODEL.zero_padding[:-len(_id)]}{_id}"
 
-                if _id == '':
+                if _id == "":
                     continue
                 if _id not in all_object_ids:
                     # generate WARNING
@@ -56,14 +56,16 @@ class ExpansiveForm(forms.ModelForm):
                     object_ids.append(_id)
                     continue
 
-                user_authored_objects = list(self.EXPANSIVE_FIELD_MODEL.objects.filter(
-                    authored_by_id=self.context.get('user').id
-                ).values_list('id', flat=True))
+                user_authored_objects = list(
+                    self.EXPANSIVE_FIELD_MODEL.objects.filter(authored_by_id=self.context.get("user").id).values_list(
+                        "id", flat=True
+                    )
+                )
 
                 if _id in user_authored_objects:
                     object_ids.append(_id)
 
-        JOIN_STR = ' ' # r'[,; \n]+'
+        JOIN_STR = " "  # r'[,; \n]+'
         self.cleaned_data.update({self.EXPANSIVE_FIELD: JOIN_STR.join(object_ids)})
 
     def _integer_from_id(self, ex_str):
@@ -101,13 +103,15 @@ class ExpansiveForm(forms.ModelForm):
         return reverse_id[::-1]
 
     def _expand_range(self, id_range, all_object_ids, allowance=100):
-        user_authored_objects = list(self.EXPANSIVE_FIELD_MODEL.objects.filter(
-            authored_by_id=self.context.get('user').id
-        ).values_list('id', flat=True).order_by('id'))
+        user_authored_objects = list(
+            self.EXPANSIVE_FIELD_MODEL.objects.filter(authored_by_id=self.context.get("user").id)
+            .values_list("id", flat=True)
+            .order_by("id")
+        )
 
         object_ids = []
 
-        split_input = re.split('-+', id_range)
+        split_input = re.split("-+", id_range)
         if len(split_input) >= 2:
             lower = self._integer_from_id(split_input[0])
             upper = self._integer_from_id(split_input[-1])
@@ -117,16 +121,16 @@ class ExpansiveForm(forms.ModelForm):
                 return object_ids
             for num in range(lower, upper + 1):
                 item = self._id_from_integer(num)
-                if item is None or item == '':
+                if item is None or item == "":
                     continue
                 if item not in all_object_ids:
                     # generate WARNING
                     continue
                     self.add_error(
                         field=self.EXPANSIVE_FIELD,
-                        error=f'{self.EXPANSIVE_FIELD_MODEL._meta.verbose_name} with ID {item} does not exist.'
+                        error=f"{self.EXPANSIVE_FIELD_MODEL._meta.verbose_name} with ID {item} does not exist.",
                     )
-                if item in user_authored_objects and item is not None and item != '':
+                if item in user_authored_objects and item is not None and item != "":
                     # self-authored exercises only
                     object_ids.append(item)
                     allowance += -1
@@ -138,26 +142,26 @@ class ExpansiveForm(forms.ModelForm):
 
 
 class ExerciseForm(forms.ModelForm):
-    TYPE_MATCHING = 'matching'
-    TYPE_ANALYTICAL = 'analytical'
-    TYPE_ANALYTICAL_PCS = 'analytical_pcs'
-    TYPE_FIGURED_BASS = 'figured_bass'
-    TYPE_FIGURED_BASS_PCS = 'figured_bass_pcs'
+    TYPE_MATCHING = "matching"
+    TYPE_ANALYTICAL = "analytical"
+    TYPE_ANALYTICAL_PCS = "analytical_pcs"
+    TYPE_FIGURED_BASS = "figured_bass"
+    TYPE_FIGURED_BASS_PCS = "figured_bass_pcs"
     TYPE_CHOICES = (
         (TYPE_MATCHING, TYPE_MATCHING),
         (TYPE_ANALYTICAL, TYPE_ANALYTICAL),
         (TYPE_ANALYTICAL_PCS, TYPE_ANALYTICAL_PCS),
         (TYPE_FIGURED_BASS, TYPE_FIGURED_BASS),
-        (TYPE_FIGURED_BASS_PCS, TYPE_FIGURED_BASS_PCS)
+        (TYPE_FIGURED_BASS_PCS, TYPE_FIGURED_BASS_PCS),
     )
 
-    DISTRIBUTION_KEYBOARD = 'keyboard'
-    DISTRIBUTION_CHORALE = 'chorale'
-    DISTRIBUTION_GRANDSTAFF = 'grandStaff'
-    DISTRIBUTION_LH = 'LH'
-    DISTRIBUTION_RH = 'RH'
-    DISTRIBUTION_KEYBOARD_RH_PREFERENCE = 'keyboardPlusRHBias'
-    DISTRIBUTION_KEYBOARD_LH_PREFERENCE = 'keyboardPlusLHBias'
+    DISTRIBUTION_KEYBOARD = "keyboard"
+    DISTRIBUTION_CHORALE = "chorale"
+    DISTRIBUTION_GRANDSTAFF = "grandStaff"
+    DISTRIBUTION_LH = "LH"
+    DISTRIBUTION_RH = "RH"
+    DISTRIBUTION_KEYBOARD_RH_PREFERENCE = "keyboardPlusRHBias"
+    DISTRIBUTION_KEYBOARD_LH_PREFERENCE = "keyboardPlusLHBias"
 
     DISTRIBUTION_CHOICES = (
         (DISTRIBUTION_KEYBOARD, DISTRIBUTION_KEYBOARD),
@@ -166,7 +170,7 @@ class ExerciseForm(forms.ModelForm):
         (DISTRIBUTION_LH, DISTRIBUTION_LH),
         (DISTRIBUTION_RH, DISTRIBUTION_RH),
         (DISTRIBUTION_KEYBOARD_RH_PREFERENCE, DISTRIBUTION_KEYBOARD_RH_PREFERENCE),
-        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, DISTRIBUTION_KEYBOARD_LH_PREFERENCE)
+        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, DISTRIBUTION_KEYBOARD_LH_PREFERENCE),
     )
 
     intro_text = forms.CharField(widget=CKEditorWidget(config_name="limited"), required=False)
@@ -178,25 +182,27 @@ class ExerciseForm(forms.ModelForm):
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
         if self.instance and self.instance.pk:
-            self.fields['intro_text'].initial = self.instance.data.get('introText', None)
+            self.fields["intro_text"].initial = self.instance.data.get("introText", None)
             # self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
-            self.fields['type'].initial = self.instance.data.get('type', self.TYPE_MATCHING)
-            self.fields['staff_distribution'].initial = self.instance.data.get('staffDistribution', self.DISTRIBUTION_KEYBOARD)
-            self.fields['time_signature'].initial = self.instance.data.get('timeSignature', None)
+            self.fields["type"].initial = self.instance.data.get("type", self.TYPE_MATCHING)
+            self.fields["staff_distribution"].initial = self.instance.data.get(
+                "staffDistribution", self.DISTRIBUTION_KEYBOARD
+            )
+            self.fields["time_signature"].initial = self.instance.data.get("timeSignature", None)
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
 
         if instance:
-            instance.data['introText'] = self.cleaned_data['intro_text']
+            instance.data["introText"] = self.cleaned_data["intro_text"]
             # instance.data['reviewText'] = self.cleaned_data['review_text']
-            instance.data['type'] = self.cleaned_data['type']
-            instance.data['staffDistribution'] = self.cleaned_data['staff_distribution']
-            if self.cleaned_data['time_signature']:
-                instance.data['timeSignature'] = self.cleaned_data['time_signature']
+            instance.data["type"] = self.cleaned_data["type"]
+            instance.data["staffDistribution"] = self.cleaned_data["staff_distribution"]
+            if self.cleaned_data["time_signature"]:
+                instance.data["timeSignature"] = self.cleaned_data["time_signature"]
             else:
-                instance.data['timeSignature'] = ''
-            instance.authored_by = self.context.get('user')
+                instance.data["timeSignature"] = ""
+            instance.authored_by = self.context.get("user")
             instance.clean()
             instance.save()
 
@@ -204,21 +210,19 @@ class ExerciseForm(forms.ModelForm):
 
     class Meta:
         model = Exercise
-        fields = '__all__'
+        fields = "__all__"
         widgets = {
-            'data': PrettyJSONWidget(attrs={'initial': 'parsed'}),
+            "data": PrettyJSONWidget(attrs={"initial": "parsed"}),
         }
 
 
 class PlaylistForm(ExpansiveForm):
-    EXPANSIVE_FIELD = 'exercises'
+    EXPANSIVE_FIELD = "exercises"
     EXPANSIVE_FIELD_MODEL = Exercise
-    EXPANSIVE_FIELD_INITIAL = 'E'
+    EXPANSIVE_FIELD_INITIAL = "E"
 
     transposition_type = forms.ChoiceField(
-        choices=Playlist.TRANSPOSE_TYPE_CHOICES,
-        widget=forms.RadioSelect(),
-        required=False
+        choices=Playlist.TRANSPOSE_TYPE_CHOICES, widget=forms.RadioSelect(), required=False
     )
 
     class Meta:
@@ -226,24 +230,21 @@ class PlaylistForm(ExpansiveForm):
         expansive_model = Exercise
         exclude = []
         widgets = {
-            'exercises': forms.Textarea,
-            'id': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'is_auto': forms.CheckboxInput(attrs={'readonly': 'readonly'}),
-            'authored_by': forms.TextInput(attrs={'readonly': 'readonly'}),
+            "id": forms.TextInput(attrs={"readonly": "readonly"}),
+            "is_auto": forms.CheckboxInput(attrs={"readonly": "readonly"}),
+            "authored_by": forms.TextInput(attrs={"readonly": "readonly"}),
         }
 
 
 class CourseForm(ExpansiveForm):
-    EXPANSIVE_FIELD = 'playlists'
+    EXPANSIVE_FIELD = "playlists"
     EXPANSIVE_FIELD_MODEL = Playlist
-    EXPANSIVE_FIELD_INITIAL = 'P'
+    EXPANSIVE_FIELD_INITIAL = "P"
 
     class Meta:
         model = Course
         exclude = []
-        widgets = {
-            'playlists': forms.Textarea,
-        }
+        widgets = {}
 
 
 class PerformanceDataForm(forms.ModelForm):
@@ -251,6 +252,6 @@ class PerformanceDataForm(forms.ModelForm):
         model = PerformanceData
         exclude = []
         widgets = {
-            'data': PrettyJSONWidget(),
-            'playlist_performances': PrettyJSONWidget(),
+            "data": PrettyJSONWidget(),
+            "playlist_performances": PrettyJSONWidget(),
         }
