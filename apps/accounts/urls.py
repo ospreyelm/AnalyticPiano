@@ -20,6 +20,6 @@ urlpatterns = [
         "reset-password-confirm/<str:uidb64>/<str:token>/",
         PasswordResetConfirmView.as_view(),
         # different naming pattern because the email is generated with a URL to this name
-        name="password_reset_confirm",
+        name="password-reset-confirm",
     ),
 ]
