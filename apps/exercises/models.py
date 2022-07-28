@@ -82,41 +82,41 @@ class Course(ClonableModelMixin, BaseContentModel):
         unique=True,
         max_length=64,
     )
-    slug = models.SlugField(
-        "URL slug",
-        unique=True,
-        max_length=64,
-        validators=[
-            RegexValidator(
-                regex="^[a-zA-Z0-9-_]+$",
-                message="Use letters, numbers, underscores, or hyphens",
-            )
-        ],
-    )
-    # playlists = models.CharField(
-    #     "Playlist IDs",
-    #     max_length=1024,
-    #     blank=True,
-    #     # PLEASEFIX make this required=False,
-    #     # help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
+    # slug = models.SlugField(
+    #     "URL slug",
+    #     unique=True,
+    #     max_length=64,
+    #     validators=[
+    #         RegexValidator(
+    #             regex="^[a-zA-Z0-9-_]+$",
+    #             message="Use letters, numbers, underscores, or hyphens",
+    #         )
+    #     ],
     # )
+    playlists = models.CharField(
+        "Playlist IDs",
+        max_length=1024,
+        blank=True,
+        # PLEASEFIX make this required=False,
+        # help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
+    )
 
     authored_by = models.ForeignKey(
         "accounts.User", related_name="courses", on_delete=models.PROTECT, verbose_name="Author"
     )
     is_public = models.BooleanField("Share", default=False)
 
-    # publish_dates = models.CharField(
-    #     "Publish Dates",
-    #     max_length=1024,
-    #     blank=True,
-    #     null=True,
-    #     help_text="Publish date of each playlist, separated by space.",
-    # )
+    publish_dates = models.CharField(
+        "Publish Dates",
+        max_length=1024,
+        blank=True,
+        null=True,
+        help_text="Publish date of each playlist, separated by space.",
+    )
 
-    # due_dates = models.CharField(
-    #     "Due Dates", max_length=1024, blank=True, null=True, help_text="Due date of each playlist, separated by space."
-    # )
+    due_dates = models.CharField(
+        "Due Dates", max_length=1024, blank=True, null=True, help_text="Due date of each playlist, separated by space."
+    )
 
     visible_to = models.ManyToManyField(
         to=Group,
@@ -186,17 +186,17 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         "Name",
         max_length=32,
     )
-    slug = models.CharField(
-        "Slug",
-        unique=True,
-        max_length=32,
-        validators=[
-            RegexValidator(
-                regex="^[a-zA-Z0-9-_]+$",
-                message="Use letters, numbers, underscores, or hyphens",
-            )
-        ],
-    )
+    # slug = models.CharField(
+    #     "Slug",
+    #     unique=True,
+    #     max_length=32,
+    #     validators=[
+    #         RegexValidator(
+    #             regex="^[a-zA-Z0-9-_]+$",
+    #             message="Use letters, numbers, underscores, or hyphens",
+    #         )
+    #     ],
+    # )
     is_public = models.BooleanField("Share", default=False)
     is_auto = models.BooleanField("Is Auto Playlist", default=False)
     authored_by = models.ForeignKey(
@@ -206,12 +206,12 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 
-    # exercises = models.CharField(
-    #     "Exercise IDs",
-    #     max_length=1024,
-    #     blank=True,
-    #     # help_text='Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.'
-    # )
+    exercises = models.CharField(
+        "Exercise IDs",
+        max_length=1024,
+        blank=True,
+        # help_text='Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.'
+    )
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
 
@@ -340,7 +340,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             # print ('playlist changed since this exercise performed', id, self.exercise_list);
             return None
         try:
-            return reverse("lab:playlist-view", kwargs={"playlist_slug": self.slug, "exercise_num": exercise_num})
+            return reverse("lab:playlist-view", kwargs={"playlist_id": self.id, "exercise_num": exercise_num})
         except NoReverseMatch:
             return None
 
@@ -587,8 +587,7 @@ class PerformanceData(models.Model):
         User, related_name="supervisor_performance_data", blank=True, null=True, on_delete=models.PROTECT
     )
     playlist = models.ForeignKey(Playlist, related_name="performance_data", on_delete=models.PROTECT)
-    # course = models.ForeignKey(Course, related_name='performance_data',
-    #                            on_delete=models.PROTECT, blank=True, null=True)
+    course = models.ForeignKey(Course, related_name="performance_data", on_delete=models.PROTECT, blank=True, null=True)
     data = JSONField("Raw Data", default=list)
     playlist_performances = JSONField("Playlist Performances", default=list, blank=True)
 

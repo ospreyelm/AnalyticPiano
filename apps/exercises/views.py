@@ -61,9 +61,9 @@ def playlist_performance_view(request, playlist_id):
 
     table = PlaylistActivityTable(data=data, extra_columns=[(exercise, Column()) for exercise in exercises])
 
-    playlist_slug = Playlist.objects.filter(id=playlist_id).first().slug
+    playlist_id = Playlist.objects.filter(id=playlist_id).first().id
 
-    return render(request, "admin/performances.html", {"table": table, "playlist_slug": playlist_slug})
+    return render(request, "admin/performances.html", {"table": table, "playlist_id": playlist_id})
 
 
 @login_required

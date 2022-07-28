@@ -8,39 +8,58 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0022_course_visible_to'),
+        ("exercises", "0022_course_visible_to"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='playlist',
-            name='slug',
-            field=models.CharField(default=django.utils.timezone.now, max_length=32, unique=True, validators=[django.core.validators.RegexValidator(message='Use letters, numbers, underscores, or hyphens', regex='^[a-zA-Z0-9-_]+$')], verbose_name='Slug'),
+            model_name="playlist",
+            name="slug",
+            field=models.CharField(
+                default=django.utils.timezone.now,
+                max_length=32,
+                unique=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Use letters, numbers, underscores, or hyphens", regex="^[a-zA-Z0-9-_]+$"
+                    )
+                ],
+                verbose_name="Slug",
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='course',
-            name='playlists',
-            field=models.CharField(blank=True, max_length=1024, verbose_name='Playlist IDs'),
+            model_name="course",
+            name="playlists",
+            field=models.CharField(blank=True, max_length=1024, verbose_name="Playlist IDs"),
         ),
         migrations.AlterField(
-            model_name='course',
-            name='slug',
-            field=models.SlugField(max_length=64, unique=True, validators=[django.core.validators.RegexValidator(message='Use letters, numbers, underscores, or hyphens', regex='^[a-zA-Z0-9-_]+$')], verbose_name='URL slug'),
+            model_name="course",
+            name="slug",
+            field=models.SlugField(
+                max_length=64,
+                unique=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Use letters, numbers, underscores, or hyphens", regex="^[a-zA-Z0-9-_]+$"
+                    )
+                ],
+                verbose_name="URL slug",
+            ),
         ),
         migrations.AlterField(
-            model_name='course',
-            name='title',
-            field=models.CharField(max_length=64, unique=True, verbose_name='Title'),
+            model_name="course",
+            name="title",
+            field=models.CharField(max_length=64, unique=True, verbose_name="Title"),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='exercises',
-            field=models.CharField(blank=True, max_length=1024, verbose_name='Exercise IDs'),
+            model_name="playlist",
+            name="exercises",
+            field=models.CharField(blank=True, max_length=1024, verbose_name="Exercise IDs"),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='name',
-            field=models.CharField(max_length=32, verbose_name='Name'),
+            model_name="playlist",
+            name="name",
+            field=models.CharField(max_length=32, verbose_name="Name"),
         ),
     ]

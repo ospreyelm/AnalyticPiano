@@ -146,7 +146,7 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
     def show_on_site(self, obj):
         if not obj.pk:
             return ""
-        link = reverse("lab:playlist-view", kwargs={"playlist_slug": obj.slug})
+        link = reverse("lab:playlist-view", kwargs={"playlist_id": obj.id})
         link = "<a href='%s' target='_blank'>Show On Site</a><br>" % link
         return mark_safe(link)
 
@@ -206,7 +206,7 @@ class CourseAdmin(DynamicArrayMixin, ImportExportModelAdmin):
         (
             "General Info",
             {
-                "fields": (("title", "show_on_site"), "slug", "id", "authored_by", ("created", "updated")),
+                "fields": (("title", "show_on_site"), "id", "authored_by", ("created", "updated")),
             },
         ),
         ("Playlists", {"fields": ("playlists", "playlist_links")}),
@@ -245,7 +245,7 @@ class CourseAdmin(DynamicArrayMixin, ImportExportModelAdmin):
     def show_on_site(self, obj):
         if not obj.pk:
             return ""
-        link = reverse("lab:course-view", kwargs={"course_slug": obj.slug})
+        link = reverse("lab:course-view", kwargs={"course_id": obj.id})
         link = "<a href='%s' target='_blank'>Show On Site</a><br>" % link
         return mark_safe(link)
 

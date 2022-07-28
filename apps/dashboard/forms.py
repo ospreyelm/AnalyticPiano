@@ -189,7 +189,7 @@ class DashboardCourseForm(CourseForm):
     )
 
     class Meta(CourseForm.Meta):
-        fields = ["title", "slug", "playlists", "publish_dates", "due_dates", "visible_to", "is_public"]
+        fields = ["title",  "playlists", "publish_dates", "due_dates", "visible_to", "is_public"]
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")

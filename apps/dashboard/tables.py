@@ -202,7 +202,7 @@ class MyActivityDetailsTable(tables.Table):
     )
     view = tables.columns.LinkColumn(
         "lab:playlist-view",
-        kwargs={"playlist_slug": A("playlist_slug")},
+        kwargs={"playlist_id": A("playlist_id")},
         text="Revisit",
         verbose_name="Load",
         orderable=False,
@@ -311,7 +311,7 @@ class PlaylistsListTable(tables.Table):
     )
     view = tables.columns.LinkColumn(
         "lab:playlist-view",
-        kwargs={"playlist_slug": A("slug")},
+        kwargs={"playlist_id": A("id")},
         text="Load",
         verbose_name="Load",
         orderable=False,
@@ -319,7 +319,7 @@ class PlaylistsListTable(tables.Table):
 
     edit = tables.columns.LinkColumn(
         "dashboard:edit-playlist",
-        kwargs={"playlist_slug": A("slug")},
+        kwargs={"playlist_id": A("id")},
         text="Edit",
         verbose_name="Edit",
         orderable=False,
@@ -327,7 +327,7 @@ class PlaylistsListTable(tables.Table):
 
     delete = tables.columns.LinkColumn(
         "dashboard:delete-playlist",
-        kwargs={"playlist_slug": A("slug")},
+        kwargs={"playlist_id": A("id")},
         text="Delete",
         verbose_name="Delete",
         orderable=False,
@@ -367,16 +367,16 @@ class CoursesListTable(tables.Table):
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     view = tables.columns.LinkColumn(
-        "lab:course-view", kwargs={"course_slug": A("slug")}, text="Load", verbose_name="Load", orderable=False
+        "lab:course-view", kwargs={"course_id": A("id")}, text="Load", verbose_name="Load", orderable=False
     )
 
     edit = tables.columns.LinkColumn(
-        "dashboard:edit-course", kwargs={"course_slug": A("slug")}, text="Edit", verbose_name="Edit", orderable=False
+        "dashboard:edit-course", kwargs={"course_id": A("id")}, text="Edit", verbose_name="Edit", orderable=False
     )
 
     delete = tables.columns.LinkColumn(
         "dashboard:delete-course",
-        kwargs={"course_slug": A("slug")},
+        kwargs={"course_id": A("id")},
         text="Delete",
         verbose_name="Delete",
         orderable=False,
@@ -392,7 +392,7 @@ class CoursesListTable(tables.Table):
     is_public = tables.columns.BooleanColumn()
     activity = tables.columns.LinkColumn(
         "dashboard:course-activity",
-        kwargs={"course_slug": A("slug")},
+        kwargs={"course_id": A("id")},
         text="Activity",
         verbose_name="Activity",
         orderable=False,
@@ -410,7 +410,7 @@ class SupervisorsCoursesListTable(tables.Table):
         verbose_name="Title of Course",
     )
     view = tables.columns.LinkColumn(
-        "lab:course-view", kwargs={"course_slug": A("slug")}, text="Load", verbose_name="Load", orderable=False
+        "lab:course-view", kwargs={"course_id": A("id")}, text="Load", verbose_name="Load", orderable=False
     )
     authored_by = tables.columns.Column()
     id = tables.columns.Column()

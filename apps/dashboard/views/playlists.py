@@ -39,7 +39,7 @@ def playlist_add_view(request):
             playlist.authored_by = request.user
             playlist.save()
             if "save-and-continue" in request.POST:
-                success_url = reverse("dashboard:edit-playlist", kwargs={"playlist_slug": playlist.slug})
+                success_url = reverse("dashboard:edit-playlist", kwargs={"playlist_id": playlist.id})
                 messages.add_message(
                     request, messages.SUCCESS, f"{context['verbose_name']} has been saved successfully."
                 )
@@ -58,8 +58,8 @@ def playlist_add_view(request):
 
 
 @login_required
-def playlist_edit_view(request, playlist_slug):
-    playlist = get_object_or_404(Playlist, slug=playlist_slug)
+def playlist_edit_view(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id)
 
     if request.user != playlist.authored_by:
         raise PermissionDenied
@@ -69,7 +69,7 @@ def playlist_edit_view(request, playlist_slug):
         "verbose_name_plural": playlist._meta.verbose_name_plural,
         "has_been_performed": playlist.has_been_performed,
         "redirect_url": reverse("dashboard:playlists-list"),
-        "delete_url": reverse("dashboard:delete-playlist", kwargs={"playlist_slug": playlist_slug}),
+        "delete_url": reverse("dashboard:delete-playlist", kwargs={"playlist_id": playlist_id}),
     }
 
     PROTECT_PLAYLIST_CONTENT = playlist.has_been_performed
@@ -88,9 +88,7 @@ def playlist_edit_view(request, playlist_slug):
                 return redirect("dashboard:add-playlist")
 
             if PROTECT_PLAYLIST_CONTENT:
-                playlist.slug = (
-                    playlist_slug  ## critical in case user tries to edit playlist name and gets a bad redirect
-                )
+                playlist.id = playlist_id  ## critical in case user tries to edit playlist name and gets a bad redirect
                 ## only alter is_public field
                 ## under no circumstances allow other changes to data
                 playlist.save(update_fields=["is_public"])
@@ -102,7 +100,7 @@ def playlist_edit_view(request, playlist_slug):
                 playlist.save()
 
             if "save-and-continue" in request.POST:
-                success_url = reverse("dashboard:edit-playlist", kwargs={"playlist_slug": playlist.slug})
+                success_url = reverse("dashboard:edit-playlist", kwargs={"playlist_id": playlist.id})
                 messages.add_message(request, messages.SUCCESS, f"{context['verbose_name']} saved")
             else:
                 success_url = reverse("dashboard:playlists-list")
@@ -121,8 +119,8 @@ def playlist_edit_view(request, playlist_slug):
 
 
 @login_required
-def playlist_delete_view(request, playlist_slug):
-    playlist = get_object_or_404(Playlist, slug=playlist_slug)
+def playlist_delete_view(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id)
 
     if request.user != playlist.authored_by:
         raise PermissionDenied

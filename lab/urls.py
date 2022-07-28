@@ -28,12 +28,12 @@ urlpatterns = [
     path("ajax/set-volume/", set_preferred_volume, name="user-preferred-volume"),
     # Exercise Performance History
     path(
-        "ajax/playlists/<str:playlist_slug>/<int:exercise_num>/history/",
+        "ajax/playlists/<str:playlist_id>/<int:exercise_num>/history/",
         exercise_performance_history,
         name="exercise-performance-history",
     ),
     path(
-        "ajax/playlists/<str:playlist_slug>/history/", exercise_performance_history, name="exercise-performance-history"
+        "ajax/playlists/<str:playlist_id>/history/", exercise_performance_history, name="exercise-performance-history"
     ),
     # FIXME should be added to a course: ^courses/(?P<course_id>\d+)/exercises/add/$?
     path("exercises/add/", AddExerciseView.as_view(), name="add-exercise"),
@@ -42,10 +42,10 @@ urlpatterns = [
     path("ajax/playlist-performance/", submit_playlist_performance, name="playlist-performance"),
     # Exercises, Playlists, Courses
     path("exercises/<str:exercise_id>/", ExerciseView.as_view(), name="exercise-view"),
-    path("playlists/<str:playlist_slug>/definition/", RefreshExerciseDefinition.as_view(), name="refresh-definition"),
-    path("playlists/<str:playlist_slug>/<int:exercise_num>/", PlaylistView.as_view(), name="playlist-view"),
-    path("playlists/<str:playlist_slug>/", PlaylistView.as_view(), name="playlist-view"),
-    path("courses/<str:course_slug>/", CourseView.as_view(), name="course-view"),
+    path("playlists/<str:playlist_id>/definition/", RefreshExerciseDefinition.as_view(), name="refresh-definition"),
+    path("playlists/<str:playlist_id>/<int:exercise_num>/", PlaylistView.as_view(), name="playlist-view"),
+    path("playlists/<str:playlist_id>/", PlaylistView.as_view(), name="playlist-view"),
+    path("courses/<str:course_id>/", CourseView.as_view(), name="course-view"),
     path("ajax/exercise-stats/", CourseView.as_view(), name="exercise-stats"),
     re_path(r"^manage$", ManageView.as_view(), name="manage"),
     # API

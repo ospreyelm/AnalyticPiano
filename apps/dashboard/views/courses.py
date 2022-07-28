@@ -17,30 +17,25 @@ from apps.accounts.models import Group
 
 @login_required
 def courses_list_view(request):
-    courses = Course.objects.filter(
-        authored_by=request.user
-    ).select_related('authored_by')
+    courses = Course.objects.filter(authored_by=request.user).select_related("authored_by")
 
     table = CoursesListTable(courses)
     courses_author = request.user
 
     RequestConfig(request, paginate={"per_page": 50}).configure(table)
-    return render(request, "dashboard/courses-list.html", {
-        "table": table,
-        "courses_author": courses_author
-    })
+    return render(request, "dashboard/courses-list.html", {"table": table, "courses_author": courses_author})
 
 
 @login_required
 def course_add_view(request):
     context = {
-        'verbose_name': Course._meta.verbose_name,
-        'verbose_name_plural': Course._meta.verbose_name_plural,
+        "verbose_name": Course._meta.verbose_name,
+        "verbose_name_plural": Course._meta.verbose_name_plural,
     }
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = DashboardCourseForm(data=request.POST, user=request.user)
-        form.context = {'user': request.user}
+        form.context = {"user": request.user}
         if form.is_valid():
             course = form.save(commit=False)
             course.authored_by = request.user
@@ -48,51 +43,51 @@ def course_add_view(request):
 
             form.save_m2m()
 
-            if 'save-and-continue' in request.POST:
-                success_url = reverse('dashboard:edit-course',
-                                      kwargs={'course_slug': course.slug})
-                messages.add_message(request, messages.SUCCESS,
-                                     f"{context['verbose_name']} has been saved successfully.")
+            if "save-and-continue" in request.POST:
+                success_url = reverse("dashboard:edit-course", kwargs={"course_id": course.id})
+                messages.add_message(
+                    request, messages.SUCCESS, f"{context['verbose_name']} has been saved successfully."
+                )
             else:
-                success_url = reverse('dashboard:courses-list')
+                success_url = reverse("dashboard:courses-list")
             return redirect(success_url)
-        context['form'] = form
+        context["form"] = form
         return render(request, "dashboard/content.html", context)
     else:
-        form = DashboardCourseForm(initial=request.session.get('clone_data'), user=request.user)
-        request.session['clone_data'] = None
+        form = DashboardCourseForm(initial=request.session.get("clone_data"), user=request.user)
+        request.session["clone_data"] = None
 
-    context['form'] = form
+    context["form"] = form
     return render(request, "dashboard/content.html", context)
 
 
 @login_required
-def course_edit_view(request, course_slug):
-    course = get_object_or_404(Course, slug=course_slug)
+def course_edit_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
 
     if request.user != course.authored_by:
         raise PermissionDenied
 
     context = {
-        'verbose_name': course._meta.verbose_name,
-        'verbose_name_plural': course._meta.verbose_name_plural,
-        'has_been_performed': course.has_been_performed,
-        'redirect_url': reverse('dashboard:courses-list')
+        "verbose_name": course._meta.verbose_name,
+        "verbose_name_plural": course._meta.verbose_name_plural,
+        "has_been_performed": course.has_been_performed,
+        "redirect_url": reverse("dashboard:courses-list"),
     }
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = DashboardCourseForm(data=request.POST, instance=course, user=request.user)
-        form.context = {'user': request.user}
+        form.context = {"user": request.user}
         if form.is_valid():
-            if 'duplicate' in request.POST:
+            if "duplicate" in request.POST:
                 unique_fields = Course.get_unique_fields()
                 clone_data = copy(form.cleaned_data)
-                clone_data['visible_to'] = list(form.cleaned_data.pop('visible_to').values_list('id', flat=True))
+                clone_data["visible_to"] = list(form.cleaned_data.pop("visible_to").values_list("id", flat=True))
                 for field in clone_data:
                     if field in unique_fields:
                         clone_data[field] = None
-                request.session['clone_data'] = clone_data
-                return redirect('dashboard:add-course')
+                request.session["clone_data"] = clone_data
+                return redirect("dashboard:add-course")
 
             course = form.save(commit=False)
             course.authored_by = request.user
@@ -100,45 +95,48 @@ def course_edit_view(request, course_slug):
 
             form.save_m2m()
 
-            if 'save-and-continue' in request.POST:
-                success_url = reverse('dashboard:edit-course',
-                                      kwargs={'course_slug': course.slug})
-                messages.add_message(request, messages.SUCCESS,
-                                     f"{context['verbose_name']} has been saved successfully.")
+            if "save-and-continue" in request.POST:
+                success_url = reverse("dashboard:edit-course", kwargs={"course_id": course.id})
+                messages.add_message(
+                    request, messages.SUCCESS, f"{context['verbose_name']} has been saved successfully."
+                )
             else:
-                success_url = reverse('dashboard:courses-list')
+                success_url = reverse("dashboard:courses-list")
             return redirect(success_url)
-        context['form'] = form
+        context["form"] = form
         return render(request, "dashboard/content.html", context)
 
     form = DashboardCourseForm(instance=course, user=request.user)
 
-    context['form'] = form
+    context["form"] = form
     return render(request, "dashboard/content.html", context)
 
 
 @login_required
-def course_delete_view(request, course_slug):
-    course = get_object_or_404(Course, slug=course_slug)
+def course_delete_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
 
     if request.user != course.authored_by:
         raise PermissionDenied
 
-    if request.method == 'POST':
+    if request.method == "POST":
         course.delete()
-        return redirect('dashboard:courses-list')
+        return redirect("dashboard:courses-list")
 
-    context = {'obj': course, 'obj_name': course.title,
-               'verbose_name': course._meta.verbose_name,
-               'verbose_name_plural': course._meta.verbose_name_plural,
-               'has_been_performed': course.has_been_performed,
-               'redirect_url': reverse('dashboard:courses-list')}
-    return render(request, 'dashboard/delete-confirmation.html', context)
+    context = {
+        "obj": course,
+        "obj_name": course.title,
+        "verbose_name": course._meta.verbose_name,
+        "verbose_name_plural": course._meta.verbose_name_plural,
+        "has_been_performed": course.has_been_performed,
+        "redirect_url": reverse("dashboard:courses-list"),
+    }
+    return render(request, "dashboard/delete-confirmation.html", context)
 
 
 @login_required
-def course_activity_view(request, course_slug):
-    course = get_object_or_404(Course, slug=course_slug)
+def course_activity_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
 
     if request.user != course.authored_by:
         raise PermissionDenied
@@ -147,15 +145,14 @@ def course_activity_view(request, course_slug):
 
     data = []
 
-    JOIN_STR = ' '
+    JOIN_STR = " "
     PLAYLISTS = course.playlists.split(JOIN_STR)
     course_performances = PerformanceData.objects.filter(
         playlist__id__in=PLAYLISTS, user__in=subscribers
-    ).select_related('user', 'playlist')
+    ).select_related("user", "playlist")
 
     if course.due_dates:
-        due_dates = {playlist: course.get_due_date(playlist)
-                     for playlist in course.playlist_objects}
+        due_dates = {playlist: course.get_due_date(playlist) for playlist in course.playlist_objects}
 
     performance_data = {}
     for performance in course_performances:
@@ -164,7 +161,7 @@ def course_activity_view(request, course_slug):
 
         playlist_num = PLAYLISTS.index(performance.playlist.id)
 
-        pass_mark = f'<span class="true">P</span>' if performance.playlist_passed else '' # Pass
+        pass_mark = f'<span class="true">P</span>' if performance.playlist_passed else ""  # Pass
 
         if course.due_dates and performance.playlist_passed:
             pass_date = performance.get_local_pass_date()
@@ -175,26 +172,20 @@ def course_activity_view(request, course_slug):
                 hours = days * 24 + seconds // 3600
 
                 if hours >= 6:
-                    pass_mark = '<span class="true due-date-hours-exceed">T</span>' # Tardy
+                    pass_mark = '<span class="true due-date-hours-exceed">T</span>'  # Tardy
 
                 if days >= 7:
-                    pass_mark = '<span class="true due-date-days-exceed">L</span>' # Late
+                    pass_mark = '<span class="true due-date-days-exceed">L</span>'  # Late
 
-        performance_data[performer].setdefault(
-            playlist_num, mark_safe(pass_mark)
-        )
+        performance_data[performer].setdefault(playlist_num, mark_safe(pass_mark))
 
     for performer, playlists in performance_data.items():
-        [performance_data[performer].setdefault(idx, '') for idx in range(len(PLAYLISTS))]
-        data.append({'subscriber': performer,
-                     'subscriber_name': performer.get_full_name(),
-                     'groups': [], **playlists})
+        [performance_data[performer].setdefault(idx, "") for idx in range(len(PLAYLISTS))]
+        data.append({"subscriber": performer, "subscriber_name": performer.get_full_name(), "groups": [], **playlists})
 
-    filters = CourseActivityGroupsFilter(
-        queryset=course.visible_to.all(), data=request.GET
-    )
+    filters = CourseActivityGroupsFilter(queryset=course.visible_to.all(), data=request.GET)
     filters.form.is_valid()
-    filtered_groups = filters.form.cleaned_data['groups']
+    filtered_groups = filters.form.cleaned_data["groups"]
 
     if filtered_groups:
         groups = Group.objects.filter(id__in=list(map(int, filtered_groups)))
@@ -202,29 +193,27 @@ def course_activity_view(request, course_slug):
         # separate performers by the filtered groups
         for group in groups:
             for performance in data:
-                if performance['subscriber'].id in group._members:
-                    performance['groups'].append(group.name)
+                if performance["subscriber"].id in group._members:
+                    performance["groups"].append(group.name)
 
         for performance in data:
-            performance['groups'] = ', '.join(performance['groups'])
+            performance["groups"] = ", ".join(performance["groups"])
 
             # remove performers who are not members of the filtered groups
-            if not performance['groups']:
+            if not performance["groups"]:
                 data.pop(data.index(performance))
 
     table = CourseActivityTable(
         data=data,
-        extra_columns=[(str(idx), Column(verbose_name=str(idx + 1),
-                                         orderable=True))
-                       for idx in range(len(course.playlist_objects))]
+        extra_columns=[
+            (str(idx), Column(verbose_name=str(idx + 1), orderable=True)) for idx in range(len(course.playlist_objects))
+        ],
     )
 
     if not filtered_groups:
-        table.exclude = ('groups',)
+        table.exclude = ("groups",)
 
     RequestConfig(request, paginate={"per_page": 35}).configure(table)
-    return render(request, "dashboard/course-activity.html", {
-        "table": table,
-        "course_slug": course_slug,
-        "filters": filters
-    })
+    return render(
+        request, "dashboard/course-activity.html", {"table": table, "course_id": course_id, "filters": filters}
+    )

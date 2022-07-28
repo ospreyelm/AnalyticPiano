@@ -9,7 +9,7 @@ class CoursePageTable(tables.Table):
     name = tables.columns.LinkColumn(
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
         viewname="lab:playlist-view",
-        kwargs={"playlist_slug": A("slug")},
+        kwargs={"playlist_id": A("id")},
         verbose_name="Unit",
     )
     publish_date = tables.columns.DateColumn(

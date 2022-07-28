@@ -523,10 +523,10 @@ class ExerciseFile:
     def url(self):
         """Returns the URL to the exercise."""
         if self.group.course_id is None:
-            return reverse("lab:exercises", kwargs={"playlist_slug": self.group.slug, "exercise_name": self.name})
+            return reverse("lab:exercises", kwargs={"playlist_id": self.group.id, "exercise_name": self.name})
         return reverse(
             "lab:course-exercises",
-            kwargs={"course_id": self.group.course_id, "playlist_slug": self.group.slug, "exercise_name": self.name},
+            kwargs={"course_id": self.group.course_id, "playlist_id": self.group.id, "exercise_name": self.name},
         )
 
     def getName(self):

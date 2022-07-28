@@ -61,14 +61,14 @@ urlpatterns = [
     # Playlists
     path("playlists/", playlists_list_view, name="playlists-list"),
     path("playlists/add/", playlist_add_view, name="add-playlist"),
-    path("playlists/<str:playlist_slug>/", playlist_edit_view, name="edit-playlist"),
-    path("playlists/<str:playlist_slug>/delete/", playlist_delete_view, name="delete-playlist"),
+    path("playlists/<str:playlist_id>/", playlist_edit_view, name="edit-playlist"),
+    path("playlists/<str:playlist_id>/delete/", playlist_delete_view, name="delete-playlist"),
     # Courses
     path("courses/", courses_list_view, name="courses-list"),
     path("courses/add/", course_add_view, name="add-course"),
-    path("courses/<str:course_slug>/", course_edit_view, name="edit-course"),
-    path("courses/<str:course_slug>/delete/", course_delete_view, name="delete-course"),
-    path("courses/<str:course_slug>/activity/", course_activity_view, name="course-activity"),
+    path("courses/<str:course_id>/", course_edit_view, name="edit-course"),
+    path("courses/<str:course_id>/delete/", course_delete_view, name="delete-course"),
+    path("courses/<str:course_id>/activity/", course_activity_view, name="course-activity"),
     # Performances
     path("performances/<int:subscriber_id>/", performance_list_view, name="subscriber-performances"),
     path("performances/", performance_list_view, name="performed-playlists"),
