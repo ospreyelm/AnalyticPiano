@@ -1,5 +1,5 @@
 import re
-
+import datetime
 from ckeditor.widgets import CKEditorWidget
 from django import forms
 from prettyjson import PrettyJSONWidget
@@ -141,6 +141,9 @@ class ExpansiveForm(forms.ModelForm):
         return object_ids
 
 
+CustomDateField = forms.DateField(input_formats=["%Y-%m-%d"], required=False, help_text="Format: YYYY-MM-DD")
+
+
 class ExerciseForm(forms.ModelForm):
     TYPE_MATCHING = "matching"
     TYPE_ANALYTICAL = "analytical"
@@ -216,18 +219,20 @@ class ExerciseForm(forms.ModelForm):
         }
 
 
-class PlaylistForm(ExpansiveForm):
-    EXPANSIVE_FIELD = "exercises"
-    EXPANSIVE_FIELD_MODEL = Exercise
-    EXPANSIVE_FIELD_INITIAL = "E"
+class PlaylistForm(forms.ModelForm):
+    # EXPANSIVE_FIELD = "exercises"
+    # EXPANSIVE_FIELD_MODEL = Exercise
+    # EXPANSIVE_FIELD_INITIAL = "E"
 
     transposition_type = forms.ChoiceField(
         choices=Playlist.TRANSPOSE_TYPE_CHOICES, widget=forms.RadioSelect(), required=False
     )
 
+    due_date = CustomDateField
+    publish_date = CustomDateField
+
     class Meta:
         model = Playlist
-        expansive_model = Exercise
         exclude = []
         widgets = {
             "id": forms.TextInput(attrs={"readonly": "readonly"}),
@@ -236,11 +241,7 @@ class PlaylistForm(ExpansiveForm):
         }
 
 
-class CourseForm(ExpansiveForm):
-    EXPANSIVE_FIELD = "playlists"
-    EXPANSIVE_FIELD_MODEL = Playlist
-    EXPANSIVE_FIELD_INITIAL = "P"
-
+class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
         exclude = []

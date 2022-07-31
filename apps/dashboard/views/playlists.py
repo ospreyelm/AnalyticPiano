@@ -36,6 +36,10 @@ def playlist_add_view(request):
         form.context = {"user": request.user}
         if form.is_valid():
             playlist = form.save(commit=False)
+            for exercise in form.cleaned_data["exercises"]:
+                if exercise not in playlist.exercises.all():
+                    print("adding!")
+                    playlist.exercises.add(exercise, through_defaults={"order": len(playlist.exercises.all())})
             playlist.authored_by = request.user
             playlist.save()
             if "save-and-continue" in request.POST:
@@ -95,6 +99,10 @@ def playlist_edit_view(request, playlist_id):
                 ## ^ is this ok?
             else:
                 playlist = form.save(commit=False)
+                for exercise in form.cleaned_data["exercises"]:
+                    if exercise not in playlist.exercises.all():
+                        print("adding!")
+                        playlist.exercises.add(exercise, through_defaults={"order": len(playlist.exercises.all())})
                 playlist.authored_by = request.user
                 ## ^ original authorship of playlist should not change
                 playlist.save()

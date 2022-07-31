@@ -88,11 +88,9 @@ class CourseResource(BaseContentResource):
             "title",
             "playlists",
             "is_public",
-            "publish_dates",
-            "due_dates",
             "authored_by",
             "created",
             "updated",
         )
         export_order = fields
-        sample_import_file_fields = ("title", "playlists", "is_public", "publish_dates", "due_dates")
+        sample_import_file_fields = ("title", "playlists", "is_public")

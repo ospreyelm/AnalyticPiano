@@ -63,6 +63,10 @@ class ExerciseAdmin(ImportExportModelAdmin):
     show_on_site.short_description = "Link"
 
 
+class PlaylistInlineAdmin(admin.TabularInline):
+    model = Playlist.exercises.through
+
+
 @admin.register(Playlist)
 class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
     form = PlaylistForm
@@ -89,7 +93,7 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
             "Playlist Information",
             {
                 "fields": (
-                    ("name", "exercises", "id", "authored_by", "show_on_site", "performances", "is_public"),
+                    ("name", "id", "authored_by", "show_on_site", "performances", "is_public"),
                     # ('created', 'updated')
                 ),
             },
@@ -113,6 +117,8 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
             },
         ),
     )
+
+    inlines = (PlaylistInlineAdmin,)
     save_on_top = True
     save_as = True
 

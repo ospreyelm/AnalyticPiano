@@ -38,10 +38,10 @@ class CoursePageTable(tables.Table):
         super(CoursePageTable, self).__init__(*args, **kwargs)
 
     def render_publish_date(self, record):
-        return self.course.publish_dates_dict.get(record.id)
+        return Playlist.objects.filter(id=record.id).first().publish_date
 
     def render_due_date(self, record):
-        return self.course.due_dates_dict.get(record.id)
+        return Playlist.objects.filter(id=record.id).first().due_date
 
     def order_publish_date(self, queryset, is_descending):
         return self._order_by_date(queryset, is_descending, self.course.publish_dates_dict)

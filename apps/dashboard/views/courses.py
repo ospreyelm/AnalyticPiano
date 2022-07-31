@@ -152,7 +152,7 @@ def course_activity_view(request, course_id):
     ).select_related("user", "playlist")
 
     if course.due_dates:
-        due_dates = {playlist: course.get_due_date(playlist) for playlist in course.playlist_objects}
+        due_dates = {playlist: course.get_due_date(playlist) for playlist in course.playlists}
 
     performance_data = {}
     for performance in course_performances:
@@ -206,7 +206,7 @@ def course_activity_view(request, course_id):
     table = CourseActivityTable(
         data=data,
         extra_columns=[
-            (str(idx), Column(verbose_name=str(idx + 1), orderable=True)) for idx in range(len(course.playlist_objects))
+            (str(idx), Column(verbose_name=str(idx + 1), orderable=True)) for idx in range(len(course.playlists))
         ],
     )
 

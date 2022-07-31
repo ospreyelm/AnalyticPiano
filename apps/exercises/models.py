@@ -1,7 +1,7 @@
 import datetime
 import re
 from collections import OrderedDict
-from datetime import timedelta
+from datetime import timedelta, date
 from itertools import product
 
 import pytz
@@ -74,345 +74,6 @@ class ClonableModelMixin:
         return fields
 
 
-class Course(ClonableModelMixin, BaseContentModel):
-    id = models.CharField("ID", unique=True, max_length=16)
-
-    title = models.CharField(
-        "Title",
-        unique=True,
-        max_length=64,
-    )
-    # slug = models.SlugField(
-    #     "URL slug",
-    #     unique=True,
-    #     max_length=64,
-    #     validators=[
-    #         RegexValidator(
-    #             regex="^[a-zA-Z0-9-_]+$",
-    #             message="Use letters, numbers, underscores, or hyphens",
-    #         )
-    #     ],
-    # )
-    playlists = models.CharField(
-        "Playlist IDs",
-        max_length=1024,
-        blank=True,
-        # PLEASEFIX make this required=False,
-        # help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
-    )
-
-    authored_by = models.ForeignKey(
-        "accounts.User", related_name="courses", on_delete=models.PROTECT, verbose_name="Author"
-    )
-    is_public = models.BooleanField("Share", default=False)
-
-    publish_dates = models.CharField(
-        "Publish Dates",
-        max_length=1024,
-        blank=True,
-        null=True,
-        help_text="Publish date of each playlist, separated by space.",
-    )
-
-    due_dates = models.CharField(
-        "Due Dates", max_length=1024, blank=True, null=True, help_text="Due date of each playlist, separated by space."
-    )
-
-    visible_to = models.ManyToManyField(
-        to=Group,
-        related_name="visible_courses",
-        blank=True,
-        help_text="If no group is selected, course will be visible to all subscribers.",
-    )
-
-    created = models.DateTimeField("Created", auto_now_add=True)
-    updated = models.DateTimeField("Updated", auto_now=True)
-
-    class Meta:
-        verbose_name = "Course"
-        verbose_name_plural = "Courses"
-
-    def __str__(self):
-        return self.id
-
-    def save(self, *args, **kwargs):
-        if not self._id:
-            super(Course, self).save(*args, **kwargs)
-        self.set_id(initial="C")
-        super(Course, self).save(*args, **kwargs)
-
-    @cached_property
-    def has_been_performed(self):
-        return False
-        # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
-
-    @property
-    def split_playlist_ids(self):
-        return re.split(r"[,; \n]+", self.playlists)
-
-    @cached_property
-    def playlist_objects(self):
-        return Playlist.objects.filter(id__in=self.split_playlist_ids)
-
-    @property
-    def publish_dates_dict(self):
-        return dict(zip(self.playlists.split(" "), self.publish_dates.split(" ")))
-
-    @property
-    def due_dates_dict(self):
-        return dict(zip(self.playlists.split(" "), self.due_dates.split(" ")))
-
-    @cached_property
-    def published_playlists(self):
-        if not self.publish_dates:
-            return self.playlist_objects
-
-        published_playlists = [
-            playlist_id
-            for playlist_id, publish_date in self.publish_dates_dict.items()
-            if now().date() >= datetime.datetime.strptime(publish_date, "%Y-%m-%d").date()
-        ]
-        return self.playlist_objects.filter(id__in=published_playlists)
-
-    def get_due_date(self, playlist):
-        tz_naive = parse_datetime(f"{self.due_dates_dict.get(playlist.id)} 23:59:59")
-        return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)
-
-
-class Playlist(ClonableModelMixin, BaseContentModel):
-    id = models.CharField("ID", unique=True, max_length=16)
-
-    name = models.CharField(
-        "Name",
-        max_length=32,
-    )
-    # slug = models.CharField(
-    #     "Slug",
-    #     unique=True,
-    #     max_length=32,
-    #     validators=[
-    #         RegexValidator(
-    #             regex="^[a-zA-Z0-9-_]+$",
-    #             message="Use letters, numbers, underscores, or hyphens",
-    #         )
-    #     ],
-    # )
-    is_public = models.BooleanField("Share", default=False)
-    is_auto = models.BooleanField("Is Auto Playlist", default=False)
-    authored_by = models.ForeignKey(
-        "accounts.User", related_name="playlists", on_delete=models.PROTECT, verbose_name="Author of Unit"
-    )
-
-    created = models.DateTimeField("Created", auto_now_add=True)
-    updated = models.DateTimeField("Updated", auto_now=True)
-
-    exercises = models.CharField(
-        "Exercise IDs",
-        max_length=1024,
-        blank=True,
-        # help_text='Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.'
-    )
-
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-
-    due_date = models.DateTimeField()
-
-    transpose_requests = ArrayField(
-        base_field=models.CharField(max_length=10, choices=SIGNATURE_CHOICES),
-        default=list,
-        blank=True,
-        null=True,
-        help_text=f'Valid choices are {" ".join(str(x) for x in KEY_SIGNATURES)}',
-        verbose_name="Transpose requests",
-    )
-
-    TRANSPOSE_EXERCISE_LOOP = "Exercise Loop"
-    TRANSPOSE_PLAYLIST_LOOP = "Playlist Loop"
-    TRANSPOSE_EXERCISE_SHUFFLE = "Exercise Shuffle"
-    TRANSPOSE_PLAYLIST_SHUFFLE = "Playlist Shuffle"
-    TRANSPOSE_OFF = None
-    TRANSPOSE_TYPE_CHOICES = (
-        (TRANSPOSE_EXERCISE_LOOP, TRANSPOSE_EXERCISE_LOOP),
-        (TRANSPOSE_PLAYLIST_LOOP, TRANSPOSE_PLAYLIST_LOOP),
-        # (TRANSPOSE_EXERCISE_SHUFFLE, TRANSPOSE_EXERCISE_SHUFFLE),
-        # (TRANSPOSE_PLAYLIST_SHUFFLE, TRANSPOSE_PLAYLIST_SHUFFLE),
-        (TRANSPOSE_OFF, TRANSPOSE_OFF),
-    )
-    transposition_type = models.CharField(
-        "Transposition Types", max_length=32, choices=TRANSPOSE_TYPE_CHOICES, blank=True, null=True
-    )
-    zero_padding = "PA00A0"
-
-    class Meta:
-        verbose_name = "Playlist"
-        verbose_name_plural = "Playlists"
-
-    @cached_property
-    def exercise_list(self):
-        if not self.is_transposed():
-            return re.split(r"[,; \n]+", self.exercises)
-
-        return self.transposed_exercises_ids
-
-    @property
-    def exercise_count(self):
-        if not self.is_transposed():
-            return len(self.exercise_list)
-
-        return len(self.transposed_exercises_ids)
-
-    @cached_property
-    def transposition_matrix(self):
-        if not self.exercises:
-            return []
-
-        if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
-            return list(product(re.split(r"[,; \n]+", self.exercises), self.transpose_requests))
-        elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
-            return [(t[1], t[0]) for t in product(self.transpose_requests, re.split(r"[,; \n]+", self.exercises))]
-
-    @cached_property
-    def transposed_exercises_ids(self):
-        if not self.transposition_matrix:
-            return []
-
-        result = []
-        for transposition in self.transposition_matrix:
-            exercise_id, target_request = transposition
-            exercise = Exercise.objects.get(id=exercise_id)
-            result.append(transpose(exercise, target_request).id)
-        return result
-
-    @property
-    def exercise_objects(self):
-        whens = []
-        for sort_index, value in enumerate(self.exercise_list):
-            whens.append(When(id=value, then=sort_index))
-
-        exercises = (
-            Exercise.objects.filter(id__in=self.exercise_list)
-            .annotate(_sort_index=Case(*whens, output_field=models.CharField()))
-            .order_by("_sort_index")
-        )
-
-        return exercises
-
-    def append_exercise(self, exercise_id):
-        if self.exercises == "":
-            self.exercises = exercise_id
-        elif exercise_id not in self.exercises:
-            self.exercises += f", {exercise_id}"
-        self.save()
-
-    def is_transposed(self):
-        return self.transpose_requests and self.transposition_type
-
-    def get_exercise_obj_by_num(self, num=1):
-        if not self.exercises:
-            return
-
-        try:
-            exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
-        except (IndexError, TypeError):
-            exercise = Exercise.objects.filter(id=self.exercise_list[-1]).first()
-
-        if not self.is_transposed():
-            return exercise
-
-        # print(self.transposed_exercises[num])
-        # import pdb; pdb.set_trace()
-        exercise_id, target_request = self.transposition_matrix[num - 1]
-        exercise = Exercise.objects.get(id=exercise_id)
-        transposed_exercise = transpose(exercise, target_request)
-        # import pdb; pdb.set_trace()
-        return transposed_exercise
-
-    def get_exercise_url_by_num(self, num=1):
-        try:
-            return reverse("lab:playlist-view", kwargs={"playlist_name": self.name, "exercise_num": num})
-        except NoReverseMatch:
-            return None
-
-    def get_exercise_url_by_id(self, id):
-        try:
-            exercise_num = self.exercise_list.index(id) + 1
-        except ValueError:
-            # print ('playlist changed since this exercise performed', id, self.exercise_list);
-            return None
-        try:
-            return reverse("lab:playlist-view", kwargs={"playlist_id": self.id, "exercise_num": exercise_num})
-        except NoReverseMatch:
-            return None
-
-    def first(self):
-        if self.exercise_count > 0:
-            return self.exercise_list[0]
-        return None
-
-    def last(self):
-        if self.exercise_count > 0:
-            return self.exercise_list[-1]
-        return None
-
-    def next_num(self, num=1):
-        if num < self.exercise_count:
-            return num + 1
-        return num
-
-    def prev_num(self, num=1):
-        if 1 < num <= self.exercise_count:
-            return num - 1
-        return 1
-
-    def next(self, num=1):
-        return self.get_exercise_obj_by_num(num + 1)
-
-    def previous(self, num=1):
-        return self.get_exercise_obj_by_num(num - 1)
-
-    def __str__(self):
-        return self.name
-
-    def save(self, *args, **kwargs):
-        if not self._id:
-            super(Playlist, self).save(*args, **kwargs)
-        self.set_id(initial="P")
-        self.set_auto_name()
-        self.clean_exercises()
-        super(Playlist, self).save(*args, **kwargs)
-
-    def clean_exercises(self):
-        self.exercises = re.sub(" +", " ", self.exercises).strip()
-
-    @cached_property
-    def has_been_performed(self):
-        return PerformanceData.objects.filter(playlist=self).exclude(user=self.authored_by).exists()
-
-    @classmethod
-    def create_auto_playlist(cls, initial_exercise_id, authored_by):
-        auto_playlist = Playlist(authored_by=authored_by, exercises=initial_exercise_id, is_auto=True)
-        auto_playlist.save()
-        return auto_playlist
-
-    @classmethod
-    def remove_exercise_from_playlists(cls, exercise_id):
-        playlists = Playlist.objects.filter(exercises__contains=exercise_id)
-        for playlist in playlists:
-            playlist.remove_exercise(exercise_id)
-
-    def remove_exercise(self, exercise_id):
-        self.exercises = self.exercises.replace(exercise_id, "")
-        self.save()
-
-    def set_auto_name(self):
-        if self.is_auto and not self.name:
-            auto_id = list(self.id)
-            auto_id[0] = "U"
-            auto_id = "".join(auto_id)
-            date, time = now().date().strftime("%Y%m%d"), now().time().strftime("%H%M")
-            self.name = f"{auto_id}_{date}_{time}"
-
-
 class Exercise(ClonableModelMixin, BaseContentModel):
     id = models.CharField("ID", unique=True, max_length=16)
     description = models.CharField("Description", max_length=60, blank=True, null=True)
@@ -423,8 +84,6 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     authored_by = models.ForeignKey(
         "accounts.User", related_name="exercises", on_delete=models.PROTECT, verbose_name="Author"
     )
-
-    playlist = models.ForeignKey(Playlist, on_delete="CASCADE")
 
     locked = models.BooleanField("Locked", default=False)
 
@@ -569,16 +228,337 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         self.save()
 
 
-# @receiver(models.signals.post_delete, sender=Exercise)
-# def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
-#     """
-#     Remove the deleted exercise from all playlists that contain it
-#     """
-#     Playlist.remove_exercise_from_playlists(exercise_id=instance.id)
+@receiver(models.signals.post_delete, sender=Exercise)
+def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
+    """
+    Remove the deleted exercise from all playlists that contain it
+    """
+    Playlist.remove_exercise_from_playlists(exercise_id=instance.id)
+
+
+class Playlist(ClonableModelMixin, BaseContentModel):
+    id = models.CharField("ID", unique=True, max_length=16)
+
+    name = models.CharField(
+        "Name",
+        unique=True,
+        max_length=32,
+    )
+    is_public = models.BooleanField("Share", default=False)
+    is_auto = models.BooleanField("Is Auto Playlist", default=False)
+    authored_by = models.ForeignKey(
+        "accounts.User", related_name="playlists", on_delete=models.PROTECT, verbose_name="Author of Unit"
+    )
+
+    created = models.DateTimeField("Created", auto_now_add=True)
+    updated = models.DateTimeField("Updated", auto_now=True)
+
+    due_date = models.DateTimeField("Due Date", blank=True, default=None, null=True, help_text="Format: MM-DD-YYYY")
+    publish_date = models.DateTimeField(
+        "Publish Date", blank=True, default=None, null=True, help_text="Format: MM-DD-YYYY"
+    )
+
+    # exercises = models.CharField(
+    #     "Exercise IDs",
+    #     max_length=1024,
+    #     # help_text='Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.'
+    # )
+
+    exercises = models.ManyToManyField(
+        to=Exercise,
+        related_name="playlists",
+        through="ExercisePlaylistOrdered",
+        help_text="These are the exercises within this playlist.",
+        blank=True,
+    )
+
+    transpose_requests = ArrayField(
+        base_field=models.CharField(max_length=10, choices=SIGNATURE_CHOICES),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=f'Valid choices are {" ".join(str(x) for x in KEY_SIGNATURES)}',
+        verbose_name="Transpose requests",
+    )
+
+    TRANSPOSE_EXERCISE_LOOP = "Exercise Loop"
+    TRANSPOSE_PLAYLIST_LOOP = "Playlist Loop"
+    TRANSPOSE_EXERCISE_SHUFFLE = "Exercise Shuffle"
+    TRANSPOSE_PLAYLIST_SHUFFLE = "Playlist Shuffle"
+    TRANSPOSE_OFF = None
+    TRANSPOSE_TYPE_CHOICES = (
+        (TRANSPOSE_EXERCISE_LOOP, TRANSPOSE_EXERCISE_LOOP),
+        (TRANSPOSE_PLAYLIST_LOOP, TRANSPOSE_PLAYLIST_LOOP),
+        # (TRANSPOSE_EXERCISE_SHUFFLE, TRANSPOSE_EXERCISE_SHUFFLE),
+        # (TRANSPOSE_PLAYLIST_SHUFFLE, TRANSPOSE_PLAYLIST_SHUFFLE),
+        (TRANSPOSE_OFF, TRANSPOSE_OFF),
+    )
+    transposition_type = models.CharField(
+        "Transposition Types", max_length=32, choices=TRANSPOSE_TYPE_CHOICES, blank=True, null=True
+    )
+    zero_padding = "PA00A0"
+
+    class Meta:
+        verbose_name = "Playlist"
+        verbose_name_plural = "Playlists"
+
+    @cached_property
+    def exercise_list(self):
+        if not self.is_transposed():
+            return list(map(lambda e: e.id, self.exercises.all()))
+
+        return self.transposed_exercises_ids
+
+    @property
+    def exercise_count(self):
+        if not self.is_transposed():
+            return len(self.exercises.all())
+
+        return len(self.transposed_exercises_ids)
+
+    @cached_property
+    def transposition_matrix(self):
+        if not self.exercises:
+            return []
+
+        if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
+            return list(product(self.exercise_list, self.transpose_requests))
+        elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
+            return [(t[1], t[0]) for t in product(self.transpose_requests, self.exercise_list)]
+
+    @cached_property
+    def transposed_exercises_ids(self):
+        if not self.transposition_matrix:
+            return []
+
+        result = []
+        for transposition in self.transposition_matrix:
+            exercise_id, target_request = transposition
+            exercise = Exercise.objects.get(id=exercise_id)
+            result.append(transpose(exercise, target_request).id)
+        return result
+
+    @property
+    def exercise_objects(self):
+        whens = []
+        for sort_index, value in enumerate(self.exercise_list):
+            whens.append(When(id=value, then=sort_index))
+
+        exercises = (
+            Exercise.objects.filter(id__in=self.exercise_list)
+            .annotate(_sort_index=Case(*whens, output_field=models.CharField()))
+            .order_by("_sort_index")
+        )
+
+        return exercises
+
+    def append_exercise(self, exercise_id):
+        print("appending", self.exercise)
+        self.exercises.add(Exercise.objects.filter(id=exercise_id).first())
+        self.save()
+
+    def is_transposed(self):
+        return self.transpose_requests and self.transposition_type
+
+    def get_exercise_obj_by_num(self, num=1):
+        if len(self.exercises.all()) is 0:
+            return
+
+        try:
+            exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
+        except (IndexError, TypeError):
+            exercise = Exercise.objects.filter(id=self.exercise_list[-1]).first()
+
+        if not self.is_transposed():
+            return exercise
+
+        # print(self.transposed_exercises[num])
+        # import pdb; pdb.set_trace()
+        exercise_id, target_request = self.transposition_matrix[num - 1]
+        exercise = Exercise.objects.get(id=exercise_id)
+        transposed_exercise = transpose(exercise, target_request)
+        # import pdb; pdb.set_trace()
+        return transposed_exercise
+
+    def get_exercise_url_by_num(self, num=1):
+        try:
+            return reverse("lab:playlist-view", kwargs={"playlist_name": self.name, "exercise_num": num})
+        except NoReverseMatch:
+            return None
+
+    def get_exercise_url_by_id(self, id):
+        try:
+            exercise_num = self.exercise_list.index(id) + 1
+        except ValueError:
+            # print ('playlist changed since this exercise performed', id, self.exercise_list);
+            return None
+        try:
+            return reverse("lab:playlist-view", kwargs={"playlist_name": self.name, "exercise_num": exercise_num})
+        except NoReverseMatch:
+            return None
+
+    def first(self):
+        if self.exercise_count > 0:
+            return self.exercise_list[0]
+        return None
+
+    def last(self):
+        if self.exercise_count > 0:
+            return self.exercise_list[-1]
+        return None
+
+    def next_num(self, num=1):
+        if num < self.exercise_count:
+            return num + 1
+        return num
+
+    def prev_num(self, num=1):
+        if 1 < num <= self.exercise_count:
+            return num - 1
+        return 1
+
+    def next(self, num=1):
+        return self.get_exercise_obj_by_num(num + 1)
+
+    def previous(self, num=1):
+        return self.get_exercise_obj_by_num(num - 1)
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self._id:
+            super(Playlist, self).save(*args, **kwargs)
+        self.set_id(initial="P")
+        self.set_auto_name()
+        # self.clean_exercises()
+        super(Playlist, self).save(*args, **kwargs)
+
+    # def clean_exercises(self):
+    #     self.exercises = re.sub(" +", " ", self.exercises).strip()
+
+    @cached_property
+    def has_been_performed(self):
+        return PerformanceData.objects.filter(playlist=self).exclude(user=self.authored_by).exists()
+
+    @classmethod
+    def create_auto_playlist(cls, initial_exercise_id, authored_by):
+        auto_playlist = Playlist(authored_by=authored_by, exercises=initial_exercise_id, is_auto=True)
+        auto_playlist.save()
+        return auto_playlist
+
+    @classmethod
+    def remove_exercise_from_playlists(cls, exercise_id):
+        playlists = Playlist.objects.filter(exercises__contains=exercise_id)
+        for playlist in playlists:
+            playlist.remove_exercise(exercise_id)
+
+    def remove_exercise(self, exercise_id):
+        self.exercises = self.exercises.remove(Exercise.objects.filter(id=exercise_id).first())
+        self.save()
+
+    def set_auto_name(self):
+        if self.is_auto and not self.name:
+            auto_id = list(self.id)
+            auto_id[0] = "U"
+            auto_id = "".join(auto_id)
+            date, time = now().date().strftime("%Y%m%d"), now().time().strftime("%H%M")
+            self.name = f"{auto_id}_{date}_{time}"
 
 
 def get_default_data():
     return {"exercises": []}
+
+
+class ExercisePlaylistOrdered(ClonableModelMixin, BaseContentModel):
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
+    order = models.IntegerField("Order")
+
+
+class Course(ClonableModelMixin, BaseContentModel):
+    id = models.CharField("ID", unique=True, max_length=16)
+
+    title = models.CharField(
+        "Title",
+        unique=True,
+        max_length=64,
+    )
+    # slug = models.SlugField('URL slug', unique=True, max_length=64)
+    # playlists = models.CharField(
+    #     'Playlist IDs',
+    #     max_length=1024,
+    #     # PLEASEFIX make this required=False,
+    #     # help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
+    # )
+    playlists = models.ManyToManyField(
+        to=Playlist, related_name="courses", blank=True, help_text="These are the exercise playlists within the course."
+    )
+
+    authored_by = models.ForeignKey(
+        "accounts.User", related_name="courses", on_delete=models.PROTECT, verbose_name="Author"
+    )
+    is_public = models.BooleanField("Share", default=False)
+
+    # publish_dates = models.CharField(
+    #     "Publish Dates",
+    #     max_length=1024,
+    #     blank=True,
+    #     null=True,
+    #     help_text="Publish date of each playlist, separated by space.",
+    # )
+
+    # due_dates = models.CharField(
+    #     "Due Dates", max_length=1024, blank=True, null=True, help_text="Due date of each playlist, separated by space."
+    # )
+
+    visible_to = models.ManyToManyField(
+        to=Group,
+        related_name="visible_courses",
+        blank=True,
+        help_text="If no group is selected, course will be visible to all subscribers.",
+    )
+
+    created = models.DateTimeField("Created", auto_now_add=True)
+    updated = models.DateTimeField("Updated", auto_now=True)
+
+    class Meta:
+        verbose_name = "Course"
+        verbose_name_plural = "Courses"
+
+    def __str__(self):
+        return self.id
+
+    def save(self, *args, **kwargs):
+        if not self._id:
+            super(Course, self).save(*args, **kwargs)
+        self.set_id(initial="C")
+        super(Course, self).save(*args, **kwargs)
+
+    @cached_property
+    def has_been_performed(self):
+        return False
+        # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
+
+    @property
+    def split_playlist_ids(self):
+        return list(map(lambda p: p.id, self.playlists.all()))
+
+    # @property
+    # def publish_dates_dict(self):
+    #     return dict(zip(self.playlists.split(" "), self.publish_dates.split(" ")))
+
+    # @property
+    # def due_dates_dict(self):
+    #     return dict(zip(self.playlists.split(" "), self.due_dates.split(" ")))
+
+    @cached_property
+    def published_playlists(self):
+        return self.playlists.all().filter(publish_date__lt=date.today())
+
+    def get_due_date(self, playlist):
+        tz_naive = playlist.due_date
+        return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)
 
 
 class PerformanceData(models.Model):
@@ -587,7 +567,8 @@ class PerformanceData(models.Model):
         User, related_name="supervisor_performance_data", blank=True, null=True, on_delete=models.PROTECT
     )
     playlist = models.ForeignKey(Playlist, related_name="performance_data", on_delete=models.PROTECT)
-    course = models.ForeignKey(Course, related_name="performance_data", on_delete=models.PROTECT, blank=True, null=True)
+    # course = models.ForeignKey(Course, related_name='performance_data',
+    #                            on_delete=models.PROTECT, blank=True, null=True)
     data = JSONField("Raw Data", default=list)
     playlist_performances = JSONField("Playlist Performances", default=list, blank=True)
 
