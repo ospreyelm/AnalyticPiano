@@ -238,6 +238,7 @@ class PlaylistForm(forms.ModelForm):
             "id": forms.TextInput(attrs={"readonly": "readonly"}),
             "is_auto": forms.CheckboxInput(attrs={"readonly": "readonly"}),
             "authored_by": forms.TextInput(attrs={"readonly": "readonly"}),
+            # "exercises": forms.CheckboxSelectMultiple()
         }
 
 
@@ -245,7 +246,10 @@ class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
         exclude = []
-        widgets = {}
+        widgets = {
+            # "playlists": forms.CheckboxSelectMultiple(),
+            # "visible_to":forms.CheckboxSelectMultiple()
+        }
 
 
 class PerformanceDataForm(forms.ModelForm):

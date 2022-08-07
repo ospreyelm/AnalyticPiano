@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.core.validators import RegexValidator
 from django.db import models, connections
-from django.db.models import When, Case
+from django.db.models import When, Case, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse, NoReverseMatch
@@ -137,13 +137,16 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         return Exercise.objects.filter(authored_by=self.authored_by, created__gt=self.created).first()
 
     def save(self, *args, **kwargs):
+        print("saving exercise")
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
             self.set_id(initial="E")
+            self.save()
             self.set_auto_playlist()
 
         # self.validate_unique()
         self.set_id(initial="E")
+        print(self.id)
         self.sort_data()
         self.set_rhythm_values()
 
@@ -353,15 +356,14 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return exercises
 
     def append_exercise(self, exercise_id):
-        print("appending", self.exercise)
-        self.exercises.add(Exercise.objects.filter(id=exercise_id).first())
+        self.exercises.add(Exercise.objects.filter(id=exercise_id).first(), through_defaults={'order':len(self.exercises.all())})
         self.save()
 
     def is_transposed(self):
         return self.transpose_requests and self.transposition_type
 
     def get_exercise_obj_by_num(self, num=1):
-        if len(self.exercises.all()) is 0:
+        if len(self.exercises.all()) == 0:
             return
 
         try:
@@ -443,7 +445,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @classmethod
     def create_auto_playlist(cls, initial_exercise_id, authored_by):
-        auto_playlist = Playlist(authored_by=authored_by, exercises=initial_exercise_id, is_auto=True)
+        auto_playlist = Playlist(authored_by=authored_by, is_auto=True)
+        auto_playlist.save()
+        auto_playlist.exercises.add(Exercise.objects.filter(id=initial_exercise_id).first, through_defaults={'order':1})
         auto_playlist.save()
         return auto_playlist
 
@@ -474,6 +478,13 @@ class ExercisePlaylistOrdered(ClonableModelMixin, BaseContentModel):
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
     order = models.IntegerField("Order")
+
+    def save(self, *args, **kwargs):
+        print("saving epo")
+        print(self, self.order)
+        if(self.order == None):
+            self.order = len(ExercisePlaylistOrdered.objects.filter(Q(exercise=self.exercise) & Q(playlist=self.playlist)))
+        super(ExercisePlaylistOrdered, self).save(*args, **kwargs) 
 
 
 class Course(ClonableModelMixin, BaseContentModel):
