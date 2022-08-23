@@ -11,7 +11,7 @@ from django_tables2 import RequestConfig, Column
 from apps.dashboard.filters import CourseActivityGroupsFilter
 from apps.dashboard.forms import DashboardCourseForm
 from apps.dashboard.tables import CoursesListTable, CourseActivityTable
-from apps.exercises.models import Course, PerformanceData
+from apps.exercises.models import Course, PerformanceData, Playlist
 from apps.accounts.models import Group
 
 
@@ -37,6 +37,7 @@ def course_add_view(request):
         form = DashboardCourseForm(data=request.POST, user=request.user)
         form.context = {"user": request.user}
         if form.is_valid():
+            
             course = form.save(commit=False)
             course.authored_by = request.user
             course.save()
@@ -60,6 +61,8 @@ def course_add_view(request):
     context["form"] = form
     return render(request, "dashboard/content.html", context)
 
+def parse_playlist(playlist):
+    return {'name':playlist.name, 'id':playlist.id}
 
 @login_required
 def course_edit_view(request, course_id):
@@ -68,11 +71,15 @@ def course_edit_view(request, course_id):
     if request.user != course.authored_by:
         raise PermissionDenied
 
+    print(list(map(parse_playlist,course.playlists.all())))
     context = {
         "verbose_name": course._meta.verbose_name,
         "verbose_name_plural": course._meta.verbose_name_plural,
         "has_been_performed": course.has_been_performed,
         "redirect_url": reverse("dashboard:courses-list"),
+        "editing":True,
+        "m2m_added":{'playlists':list(map(parse_playlist,course.playlists.all()))},
+        "m2m_options":{'playlists':filter(lambda p: p not in course.playlists.all(), Playlist.objects.all())},
     }
 
     if request.method == "POST":
@@ -88,12 +95,19 @@ def course_edit_view(request, course_id):
                         clone_data[field] = None
                 request.session["clone_data"] = clone_data
                 return redirect("dashboard:add-course")
-
             course = form.save(commit=False)
+            # TODO: possibly generalize all this m2m stuff (similar between courses and playlists) if it is a common use case
+            added_playlist_id= request.POST['playlists_add']
+            if added_playlist_id!= "":
+                course.playlists.add(Playlist.objects.filter(id=added_playlist_id).first())
+            if 'playlists_delete' in request.POST:
+                playlists_to_delete = request.POST.getlist("playlists_delete")
+                for deleted_playlist_id in playlists_to_delete:
+                    playlist_to_delete = Playlist.objects.filter(id=deleted_playlist_id).first()
+                    if (playlist_to_delete):
+                        course.playlists.remove(playlist_to_delete)
             course.authored_by = request.user
             course.save()
-
-            form.save_m2m()
 
             if "save-and-continue" in request.POST:
                 success_url = reverse("dashboard:edit-course", kwargs={"course_id": course.id})

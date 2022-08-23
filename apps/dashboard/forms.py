@@ -7,7 +7,7 @@ from prettyjson import PrettyJSONWidget
 from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE, Group
 from apps.dashboard.fields import MultiDateField
 from apps.exercises.forms import ExerciseForm, PlaylistForm, CourseForm
-from apps.exercises.models import Exercise
+from apps.exercises.models import Exercise, Playlist
 
 import re
 
@@ -151,6 +151,11 @@ class DashboardPlaylistForm(PlaylistForm):
 
     editable_fields = ["is_public"]
 
+    custom_m2m_fields =["exercises"]
+    custom_m2m_config = {"exercises":{
+        "ordered":True
+    }}
+
     class Meta(PlaylistForm.Meta):
         exclude = ["authored_by"]
         widgets = {
@@ -168,15 +173,14 @@ class DashboardPlaylistForm(PlaylistForm):
 
 
 class DashboardCourseForm(CourseForm):
-    visible_to = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(),
-        required=False,
-        widget=forms.SelectMultiple(attrs={"class": "multiselect"}),
-        help_text="If no group is selected, course will be visible to all subscribers.",
-    )
 
     class Meta(CourseForm.Meta):
         fields = ["title", "playlists", "visible_to", "is_public"]
+
+    custom_m2m_fields =["playlists"]
+    custom_m2m_options = {"playlists":{
+        "ordered":False
+    }}
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")

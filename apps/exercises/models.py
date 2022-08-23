@@ -271,7 +271,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         to=Exercise,
         related_name="playlists",
         through="ExercisePlaylistOrdered",
-        help_text="These are the exercises within this playlist.",
+        help_text="These are the exercises within this playlist. You can add exercises after creating the playlist.",
         blank=True,
     )
 
@@ -308,7 +308,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     @cached_property
     def exercise_list(self):
         if not self.is_transposed():
-            return list(map(lambda e: e.id, self.exercises.all()))
+            epo_list = list(ExercisePlaylistOrdered.objects.filter(playlist_id=self._id))
+            epo_list.sort(key=lambda e: e.order)
+            return list(map(lambda epo: Exercise.objects.filter(_id=epo.exercise_id).first().id,epo_list))
 
         return self.transposed_exercises_ids
 
@@ -363,10 +365,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return self.transpose_requests and self.transposition_type
 
     def get_exercise_obj_by_num(self, num=1):
-        if len(self.exercises.all()) == 0:
+        if len(self.exercise_list) == 0:
             return
 
         try:
+            print("exerciselist", self.exercise_list,num)
             exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
         except (IndexError, TypeError):
             exercise = Exercise.objects.filter(id=self.exercise_list[-1]).first()
@@ -503,7 +506,7 @@ class Course(ClonableModelMixin, BaseContentModel):
     #     # help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
     # )
     playlists = models.ManyToManyField(
-        to=Playlist, related_name="courses", blank=True, help_text="These are the exercise playlists within the course."
+        to=Playlist, related_name="courses", blank=True, help_text="These are the exercise playlists within the course. You can add playlists after creating the course."
     )
 
     authored_by = models.ForeignKey(

@@ -18,9 +18,9 @@
         {% endif %}
     {% endblock %}
     {% if has_been_performed %}
-        <form method="post" class="protected-edit-view" novalidate style="text-align: left; padding: 20px 0px">
+        <form method="post" class="protected-edit-view" novalidate style="text-align: left; padding: 20px 0px; display:flex; flex-direction:column">
     {% else %}
-        <form method="post" novalidate style="text-align: left; padding: 20px 0px">
+        <form method="post" novalidate style="text-align: left; padding: 20px 0px; display:flex; flex-direction:column">
     {% endif %}
     {% csrf_token %}
     {% include 'dashboard/bs4_form_v2.html' with form=form %}

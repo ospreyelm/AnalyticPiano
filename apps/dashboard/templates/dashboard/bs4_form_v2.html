@@ -1,4 +1,5 @@
 {% load widget_tweaks %}
+{% load getattribute %}
 
 {% for hidden_field in form.hidden_fields %}
     {{ hidden_field }}
@@ -16,7 +17,17 @@
     <div style="padding-right:10px" class="{{ field|widget_type }}">
         <div class="form-check form-group form-inline ">
             {{ field.label_tag }}
-            {% if form.is_bound %}
+            {% if field.name in form.custom_m2m_fields %}
+                <select {{editing|yesno:",disabled"}} name="{{field.name}}_add" style="width:150px; padding:3px; margin-right:5px">
+                  {% if editing %}
+                  <option></option>
+                  {%for model in m2m_options|getattribute:field.name%}
+                  <option value={{model.id}}>{{model}}</option>
+                  {%endfor%}
+                  {% endif %}
+                </select>
+                <button {{editing|yesno:",disabled"}} name="save-and-continue" style="width:50px">Add</button>
+            {% elif form.is_bound %}
                 {% if field.errors %}
                     {% render_field field|add_class:'form-control' class="is-invalid" %}
                     {% for error in field.errors %}
@@ -35,5 +46,26 @@
                 <small class="form-text text-muted help-text">{{ field.help_text }}</small>
             {% endif %}
         </div>
+        {% if editing and field.name in form.custom_m2m_fields %}
+        {% with m2m_config=form.custom_m2m_config|getattribute:field.name%}
+        <div class="delete-table-wrapper">
+            <div class="delete-table-inner">
+          <div class="delete-table-row" style="margin-bottom:8px">
+            <span>Added {{field.name}}</span>
+            {% if m2m_config.ordered %} <span> Order </span> {%endif%}
+            <span>Delete</span>
+          </div>
+          {% for model in m2m_added|getattribute:field.name %}
+          <div class="delete-table-row">
+            <span style="max-width:120px">{{model.name}}</span>
+            {% if m2m_config.ordered %}<input name="{{field.name}}_order" value="{{model.order}}" style="width:24px; margin-left:44px"/>{%endif%}
+            <input name="{{field.name}}_delete" type="checkbox" value="{{model.id}}" style="margin-right:16px"/>
+          </div>
+          {% endfor%}
+        </div>
+          <button name="save-and-continue" style="margin-top:8px">Save Changes</button>
+        </div>
+        {%endwith%}
+        {%endif%}
     </div>
 {% endfor %}

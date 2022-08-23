@@ -205,6 +205,7 @@ input[type="checkbox"] {
 .help-text {
   color: var(--primary-color);
   padding-left: 10px;
+  max-width: 360px;
 }
 
 .page-item {
@@ -295,7 +296,7 @@ ul li input {
 .radioselect > div,
 .textarea > div,
 .checkboxselectmultiple > div {
-  align-items: baseline !important;
+  align-items: baseline;
 }
 
 .radioselect ul label,
@@ -393,5 +394,26 @@ table.paleblue > tbody > tr > td > span.true {
   font-size: 16px;
 }
 
-.nav-link > span {
+.delete-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  left: 150px;
+  position: relative;
+  width: 360px;
+  padding-bottom: 24px;
+}
+
+.delete-table-inner {
+  max-height: 256px;
+  overflow: scroll;
+  width: 100%;
+}
+
+.delete-table-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  width: 100%;
 }
