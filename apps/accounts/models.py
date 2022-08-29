@@ -175,12 +175,6 @@ class Group(models.Model):
     name = models.CharField(
         "Name",
         max_length=128,
-        validators=[
-            RegexValidator(
-                regex="^[a-zA-Z0-9-_]+$",
-                message="Use letters, numbers, underscores, or hyphens",
-            )
-        ],
     )
     # members = models.ManyToManyField(to=User, blank=True, verbose_name='Members')
     _members = ArrayField(base_field=models.IntegerField(), default=list, verbose_name="Members", blank=True)

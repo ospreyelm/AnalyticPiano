@@ -13,7 +13,7 @@ from django_tables2 import RequestConfig
 from apps.dashboard.forms import DashboardPlaylistForm
 from apps.dashboard.tables import PlaylistsListTable
 from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
-
+from .m2m_view import handle_m2m
 
 @login_required
 def playlists_list_view(request):
@@ -63,7 +63,7 @@ def playlist_add_view(request):
 
 def parse_epo(epo):
     exercise = Exercise.objects.filter(_id= epo.exercise_id).first()
-    return {'name':exercise.id, 'id':exercise.id, 'order':epo.order}
+    return {'name':exercise.id, 'id':exercise._id, 'order':epo.order}
 
 @login_required
 def playlist_edit_view(request, playlist_id):
@@ -111,42 +111,10 @@ def playlist_edit_view(request, playlist_id):
                 ## ^ is this ok?
             else:
                 playlist = form.save(commit=False)
-                added_exercise_id= request.POST['exercises_add']
+                added_exercise_id= request.POST.get('exercises_add')
                 if added_exercise_id != "":
                     playlist.exercises.add(Exercise.objects.filter(id=added_exercise_id).first(), through_defaults={"order": len(playlist.exercises.all())})
-                if 'exercises_order' in request.POST:
-                    orders_list= request.POST.getlist('exercises_order')
-                    for i in range(0,len(orders_list)):
-                        curr_num = int(orders_list[i])
-                        if i > curr_num:
-                            epos_to_update = ExercisePlaylistOrdered.objects.filter(Q(playlist_id=playlist._id,order__gte=curr_num, order__lt=i))
-                            print(epos_to_update)
-                            for epo in epos_to_update:
-                                epo.order +=1
-                                epo.save()
-                        if i < curr_num:
-                            if curr_num >= len(orders_list):
-                                curr_num = len(orders_list)-1
-                            epos_to_update = ExercisePlaylistOrdered.objects.filter(Q(playlist_id=playlist._id,order__gt=i, order__lte=curr_num))
-                            for epo in epos_to_update:
-                                epo.order -=1
-                                epo.save()
-                        exercise_to_update = Exercise.objects.filter(id=exercises_list[i]["id"]).first()
-                        epo_to_update = ExercisePlaylistOrdered.objects.filter(exercise_id=exercise_to_update._id).first()
-                        epo_to_update.order=curr_num
-                        epo_to_update.save()
-                    exercises_list.sort(key=lambda epo: epo["order"])
-                if 'exercises_delete' in request.POST:
-                    exercises_to_delete = request.POST.getlist("exercises_delete")
-                    for deleted_exercise_id in exercises_to_delete:
-                        exercise_to_delete = Exercise.objects.filter(id=deleted_exercise_id).first()
-                        if (exercise_to_delete):
-                            epo_to_delete = ExercisePlaylistOrdered.objects.filter(Q(playlist_id=playlist._id, exercise_id=exercise_to_delete._id)).first()
-                            playlist.exercises.remove(exercise_to_delete)
-                            epos_to_update= ExercisePlaylistOrdered.objects.filter(Q(playlist_id=playlist._id, order__gte=epo_to_delete.order))
-                            for epo_to_update in epos_to_update:
-                                epo_to_update.order -=1
-                                epo_to_update.save()
+                handle_m2m(request, 'exercises',{'playlist_id':playlist._id}, 'exercise_id', list(map(lambda ex: Exercise.objects.filter(_id = ex['id']).first(),exercises_list)), ThroughModel=ExercisePlaylistOrdered)
                 playlist.authored_by = request.user
                 ## ^ original authorship of playlist should not change
                 playlist.save()

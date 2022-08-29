@@ -58,14 +58,39 @@
           {% for model in m2m_added|getattribute:field.name %}
           <div class="delete-table-row">
             <span style="max-width:120px">{{model.name}}</span>
-            {% if m2m_config.ordered %}<input name="{{field.name}}_order" value="{{model.order}}" style="width:24px; margin-left:44px"/>{%endif%}
+            {% if m2m_config.ordered %}
+            <div style="display:flex; flex-direction:row">
+                <input name="{{field.name}}_order" id="{{model.id}}" value="{{model.order}}" style="width:24px; margin-left:44px" class="m2m-input" type="number" min="0"/>
+                <div style="display:flex; flex-direction:column">
+                    <span class="m2m-order-up m2m-order" name="{{field.name}}">↑</span>
+                    <span class="m2m-order-down m2m-order" name="{{field.name}}">↓</span>
+                </div>
+            </div>
+            {%endif%}
             <input name="{{field.name}}_delete" type="checkbox" value="{{model.id}}" style="margin-right:16px"/>
           </div>
           {% endfor%}
         </div>
-          <button name="save-and-continue" style="margin-top:8px">Save Changes</button>
         </div>
         {%endwith%}
         {%endif%}
     </div>
 {% endfor %}
+<script>
+    $(document).on('click','.m2m-order',function(){
+        const inputElement= $($(this).parent().parent().children().toArray()[0])
+        const arrowClass = $(this).attr('class')
+        if (arrowClass.includes("m2m-order-up")){
+            inputElement.val(Math.max(Number(inputElement.val())-1,0))
+        }
+        else if (arrowClass.includes("m2m-order-down")){
+            inputElement.val(Number(inputElement.val())+1)
+        }
+        $("[name='save-and-continue']").click()
+    })
+    // Automatically updates the models when a m2m field (e.g. order) changes
+    $(document).on('change','.m2m-input', function(){
+        $("[name='save-and-continue']").click()
+    })
+    
+</script>

@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from apps.dashboard.views.m2m_view import handle_m2m
 from django_tables2 import RequestConfig, Column
 
 from apps.dashboard.filters import CourseActivityGroupsFilter
@@ -71,14 +72,14 @@ def course_edit_view(request, course_id):
     if request.user != course.authored_by:
         raise PermissionDenied
 
-    print(list(map(parse_playlist,course.playlists.all())))
+    playlists_list=list(map(parse_playlist,course.playlists.all()))
     context = {
         "verbose_name": course._meta.verbose_name,
         "verbose_name_plural": course._meta.verbose_name_plural,
         "has_been_performed": course.has_been_performed,
         "redirect_url": reverse("dashboard:courses-list"),
         "editing":True,
-        "m2m_added":{'playlists':list(map(parse_playlist,course.playlists.all()))},
+        "m2m_added":{'playlists':playlists_list},
         "m2m_options":{'playlists':filter(lambda p: p not in course.playlists.all(), Playlist.objects.all())},
     }
 
@@ -100,12 +101,7 @@ def course_edit_view(request, course_id):
             added_playlist_id= request.POST['playlists_add']
             if added_playlist_id!= "":
                 course.playlists.add(Playlist.objects.filter(id=added_playlist_id).first())
-            if 'playlists_delete' in request.POST:
-                playlists_to_delete = request.POST.getlist("playlists_delete")
-                for deleted_playlist_id in playlists_to_delete:
-                    playlist_to_delete = Playlist.objects.filter(id=deleted_playlist_id).first()
-                    if (playlist_to_delete):
-                        course.playlists.remove(playlist_to_delete)
+            handle_m2m(request, 'playlists', {'course_id':course._id}, 'playlist_id', list(map(lambda p: Playlist.objects.filter(id=p['id']).first(),playlists_list)), parent_instance=course, ChildModel=Playlist )
             course.authored_by = request.user
             course.save()
 

@@ -417,3 +417,17 @@ table.paleblue > tbody > tr > td > span.true {
   position: relative;
   width: 100%;
 }
+
+.m2m-order {
+  cursor: pointer;
+  padding-left: 8px;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}

@@ -215,7 +215,7 @@ class CourseAdmin(DynamicArrayMixin, ImportExportModelAdmin):
                 "fields": (("title", "show_on_site"), "id", "authored_by", ("created", "updated")),
             },
         ),
-        ("Playlists", {"fields": ("playlists", "playlist_links")}),
+        # ("Playlists", {"fields": ("playlists", "playlist_links")}),
     )
     save_on_top = True
     save_as = True

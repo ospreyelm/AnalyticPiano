@@ -78,12 +78,13 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     id = models.CharField("ID", unique=True, max_length=16)
     description = models.CharField("Description", max_length=60, blank=True, null=True)
     data = RawJSONField("Data")
-    rhythm = models.CharField("Rhythm", max_length=255, blank=True, null=True)
-    time_signature = models.CharField("Meter", max_length=8, blank=True, null=True, default="")
-    is_public = models.BooleanField("Share", default=True)
+    rhythm = models.CharField("Rhythm", max_length=255, blank=True, null=True, help_text="Rhythm for this exercise's notes")
+    time_signature = models.CharField("Meter", max_length=8, blank=True, null=True, default="", help_text="Time signature for this exercise. Ex: 3/4")
     authored_by = models.ForeignKey(
         "accounts.User", related_name="exercises", on_delete=models.PROTECT, verbose_name="Author"
     )
+    is_public = models.BooleanField("Share", default=True)
+
 
     locked = models.BooleanField("Locked", default=False)
 
@@ -241,25 +242,20 @@ def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
 
 class Playlist(ClonableModelMixin, BaseContentModel):
     id = models.CharField("ID", unique=True, max_length=16)
+    is_auto = models.BooleanField("Is Auto Playlist", default=False)
+
 
     name = models.CharField(
         "Name",
         unique=True,
         max_length=32,
     )
-    is_public = models.BooleanField("Share", default=False)
-    is_auto = models.BooleanField("Is Auto Playlist", default=False)
     authored_by = models.ForeignKey(
         "accounts.User", related_name="playlists", on_delete=models.PROTECT, verbose_name="Author of Unit"
     )
 
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
-
-    due_date = models.DateTimeField("Due Date", blank=True, default=None, null=True, help_text="Format: MM-DD-YYYY")
-    publish_date = models.DateTimeField(
-        "Publish Date", blank=True, default=None, null=True, help_text="Format: MM-DD-YYYY"
-    )
 
     # exercises = models.CharField(
     #     "Exercise IDs",
@@ -297,8 +293,10 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         (TRANSPOSE_OFF, TRANSPOSE_OFF),
     )
     transposition_type = models.CharField(
-        "Transposition Types", max_length=32, choices=TRANSPOSE_TYPE_CHOICES, blank=True, null=True
+        "Transposition Types", max_length=32, choices=TRANSPOSE_TYPE_CHOICES, blank=True, null=True, help_text="Determines order of transposed exercises. Exercise Loop means that each exercise will have its transposed versions come after it successively. Playlist Loop means that the entire playlist will come in its original key, followed successively by the playlist's transposed versions."
     )
+    is_public = models.BooleanField("Share", default=False)
+
     zero_padding = "PA00A0"
 
     class Meta:
@@ -506,7 +504,7 @@ class Course(ClonableModelMixin, BaseContentModel):
     #     # help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.'
     # )
     playlists = models.ManyToManyField(
-        to=Playlist, related_name="courses", blank=True, help_text="These are the exercise playlists within the course. You can add playlists after creating the course."
+        to=Playlist, related_name="courses", through="PlaylistCourseOrdered", blank=True, help_text="These are the exercise playlists within the course. You can add playlists after creating the course."
     )
 
     authored_by = models.ForeignKey(
@@ -573,6 +571,15 @@ class Course(ClonableModelMixin, BaseContentModel):
     def get_due_date(self, playlist):
         tz_naive = playlist.due_date
         return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)
+
+class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
+    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    order = models.IntegerField("Order")
+    due_date = models.DateTimeField("Due Date", blank=True, default=None, null=True, help_text="Format: MM-DD-YYYY")
+    publish_date = models.DateTimeField(
+        "Publish Date", blank=True, default=None, null=True, help_text="Format: MM-DD-YYYY"
+    )
 
 
 class PerformanceData(models.Model):
@@ -670,6 +677,9 @@ class PerformanceData(models.Model):
         )
         pass_date = datetime.datetime.strptime(pass_date, "%Y-%m-%d %H:%M:%S")
         return pytz.timezone(settings.TIME_ZONE).localize(pass_date)
+
+
+    
 
 
 @receiver(post_save, sender=Exercise)

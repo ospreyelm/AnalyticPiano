@@ -151,11 +151,11 @@ class ExerciseForm(forms.ModelForm):
     TYPE_FIGURED_BASS = "figured_bass"
     TYPE_FIGURED_BASS_PCS = "figured_bass_pcs"
     TYPE_CHOICES = (
-        (TYPE_MATCHING, TYPE_MATCHING),
-        (TYPE_ANALYTICAL, TYPE_ANALYTICAL),
-        (TYPE_ANALYTICAL_PCS, TYPE_ANALYTICAL_PCS),
-        (TYPE_FIGURED_BASS, TYPE_FIGURED_BASS),
-        (TYPE_FIGURED_BASS_PCS, TYPE_FIGURED_BASS_PCS),
+        (TYPE_MATCHING,"Matching"),
+        (TYPE_ANALYTICAL,"Analytical"),
+        (TYPE_ANALYTICAL_PCS,"Analytical PCS"),
+        ( TYPE_FIGURED_BASS,"Figured Bass"),
+        ( TYPE_FIGURED_BASS_PCS,"Figured Bass PCS"),
     )
 
     DISTRIBUTION_KEYBOARD = "keyboard"
@@ -167,20 +167,23 @@ class ExerciseForm(forms.ModelForm):
     DISTRIBUTION_KEYBOARD_LH_PREFERENCE = "keyboardPlusLHBias"
 
     DISTRIBUTION_CHOICES = (
-        (DISTRIBUTION_KEYBOARD, DISTRIBUTION_KEYBOARD),
-        (DISTRIBUTION_CHORALE, DISTRIBUTION_CHORALE),
-        (DISTRIBUTION_GRANDSTAFF, DISTRIBUTION_GRANDSTAFF),
-        (DISTRIBUTION_LH, DISTRIBUTION_LH),
-        (DISTRIBUTION_RH, DISTRIBUTION_RH),
-        (DISTRIBUTION_KEYBOARD_RH_PREFERENCE, DISTRIBUTION_KEYBOARD_RH_PREFERENCE),
-        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, DISTRIBUTION_KEYBOARD_LH_PREFERENCE),
+        (DISTRIBUTION_KEYBOARD, "Keyboard"),
+        (DISTRIBUTION_CHORALE, "Chorale"),
+        (DISTRIBUTION_GRANDSTAFF, "Grand Staff"),
+        (DISTRIBUTION_LH, "Left Hand"),
+        (DISTRIBUTION_RH, "Right Hand"),
+        (DISTRIBUTION_KEYBOARD_RH_PREFERENCE, "Keyboard with Right Hand Bias"),
+        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, "Keyboard with Left Hand Bias"),
     )
 
-    intro_text = forms.CharField(widget=CKEditorWidget(config_name="limited"), required=False)
+    intro_text = forms.CharField(widget=CKEditorWidget(config_name="limited"), required=False, help_text="Brief description showed to users before beginning.")
     # review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False)
     staff_distribution = forms.ChoiceField(choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False)
-    time_signature = forms.CharField(required=False)
+    time_signature = forms.CharField(required=False, help_text="Time signature for this exercise. Ex: '3/4'")
+
+    field_order = ["id","description","rhythm","time_signature","intro_text","type","staff_distribution","is_public"]
+
 
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
@@ -225,7 +228,7 @@ class PlaylistForm(forms.ModelForm):
     # EXPANSIVE_FIELD_INITIAL = "E"
 
     transposition_type = forms.ChoiceField(
-        choices=Playlist.TRANSPOSE_TYPE_CHOICES, widget=forms.RadioSelect(), required=False
+        choices=Playlist.TRANSPOSE_TYPE_CHOICES, widget=forms.RadioSelect(), required=False, help_text="Determines order of transposed exercises. Exercise Loop means that each exercise will have its transposed versions come after it successively. Playlist Loop means that the entire playlist will come in its original key, followed successively by the playlist's transposed versions."
     )
 
     due_date = CustomDateField
