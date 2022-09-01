@@ -77,7 +77,7 @@ def playlist_add_view(request):
 
 
 def parse_epo(epo):
-    exercise = Exercise.objects.filter(_id=epo.exercise_id).first()
+    exercise = epo.exercise
     return {"name": exercise.id, "id": exercise._id, "order": epo.order}
 
 

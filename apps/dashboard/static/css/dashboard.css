@@ -340,7 +340,6 @@ table.paleblue > tbody > tr > td > span.true {
 }
 
 .alert {
-  // obsolete?
   position: relative;
   padding: 1rem 0.5rem;
   margin-top: 0.3rem;
@@ -350,7 +349,6 @@ table.paleblue > tbody > tr > td > span.true {
 }
 
 .alert-success {
-  // obsolete?
   color: #155724;
   background-color: #d4edda;
   border-color: #c3e6cb;
@@ -399,7 +397,7 @@ table.paleblue > tbody > tr > td > span.true {
   flex-direction: column;
   left: 150px;
   position: relative;
-  width: 360px;
+  width: 60%;
   padding-bottom: 24px;
 }
 
@@ -416,6 +414,7 @@ table.paleblue > tbody > tr > td > span.true {
   align-items: center;
   position: relative;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .m2m-order {

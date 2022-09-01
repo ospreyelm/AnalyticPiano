@@ -670,6 +670,8 @@ class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
         help_text="Format: MM-DD-YYYY",
     )
 
+    displayed_fields = ("due_date", "publish_date")
+
 
 class PerformanceData(models.Model):
     user = models.ForeignKey(

@@ -1,4 +1,5 @@
 from copy import copy
+import datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -80,8 +81,16 @@ def course_add_view(request):
     return render(request, "dashboard/content.html", context)
 
 
-def parse_playlist(playlist):
-    return {"name": playlist.name, "id": playlist.id}
+def parse_pco(pco):
+    playlist = pco.playlist
+    return {
+        "name": playlist.name,
+        "id": playlist._id,
+        "order": pco.order,
+        "through_id": pco._id,
+        "due_date": pco.due_date,
+        "publish_date": pco.publish_date,
+    }
 
 
 @login_required
@@ -91,7 +100,10 @@ def course_edit_view(request, course_id):
     if request.user != course.authored_by:
         raise PermissionDenied
 
-    playlists_list = list(map(parse_playlist, course.playlists.all()))
+    playlists_list = list(
+        map(parse_pco, PlaylistCourseOrdered.objects.filter(course_id=course._id))
+    )
+    playlists_list.sort(key=lambda pco: pco["order"])
     context = {
         "verbose_name": course._meta.verbose_name,
         "verbose_name_plural": course._meta.verbose_name_plural,
@@ -102,7 +114,7 @@ def course_edit_view(request, course_id):
         "m2m_options": {
             "playlists": filter(
                 lambda p: p not in course.playlists.all(), Playlist.objects.all()
-            )
+            ),
         },
     }
 
@@ -111,6 +123,9 @@ def course_edit_view(request, course_id):
             data=request.POST, instance=course, user=request.user
         )
         form.context = {"user": request.user}
+        print(
+            form.custom_m2m_config["playlists"]["extra_fields"][0].get_internal_type()
+        )
         if form.is_valid():
             if "duplicate" in request.POST:
                 unique_fields = Course.get_unique_fields()
@@ -128,8 +143,23 @@ def course_edit_view(request, course_id):
             added_playlist_id = request.POST["playlists_add"]
             if added_playlist_id != "":
                 course.playlists.add(
-                    Playlist.objects.filter(id=added_playlist_id).first()
+                    Playlist.objects.filter(id=added_playlist_id).first(),
+                    through_defaults={"order": len(course.playlists.all())},
                 )
+            due_dates = request.POST.getlist("playlists_due_date")
+            publish_dates = request.POST.getlist("playlists_publish_date")
+            for i in range(0, len(playlists_list)):
+                current_pco = PlaylistCourseOrdered.objects.filter(
+                    _id=playlists_list[i]["through_id"]
+                ).first()
+                print(due_dates)
+                current_pco.due_date = datetime.datetime.strptime(
+                    due_dates[i], "%Y-%m-%d"
+                )
+                current_pco.publish_date = datetime.datetime.strptime(
+                    publish_dates[i], "%Y-%m-%d"
+                )
+                current_pco.save()
             handle_m2m(
                 request,
                 "playlists",
@@ -137,11 +167,10 @@ def course_edit_view(request, course_id):
                 "playlist_id",
                 list(
                     map(
-                        lambda p: Playlist.objects.filter(id=p["id"]).first(),
+                        lambda p: Playlist.objects.filter(_id=p["id"]).first(),
                         playlists_list,
                     )
                 ),
-                parent_instance=course,
                 ThroughModel=PlaylistCourseOrdered,
             )
             course.authored_by = request.user

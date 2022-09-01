@@ -1,5 +1,7 @@
 {% load widget_tweaks %}
 {% load getattribute %}
+{% load stringifydatetime%}
+{% load getfieldtype %}
 
 {% for hidden_field in form.hidden_fields %}
     {{ hidden_field }}
@@ -21,9 +23,9 @@
                 <select {{editing|yesno:",disabled"}} name="{{field.name}}_add" style="width:150px; padding:3px; margin-right:5px">
                   {% if editing %}
                   <option></option>
-                  {%for model in m2m_options|getattribute:field.name%}
+                  {% for model in m2m_options|getattribute:field.name %}
                   <option value={{model.id}}>{{model}}</option>
-                  {%endfor%}
+                  {% endfor %}
                   {% endif %}
                 </select>
                 <button {{editing|yesno:",disabled"}} name="save-and-continue" style="width:50px">Add</button>
@@ -54,6 +56,14 @@
             <span>Added {{field.name}}</span>
             {% if m2m_config.ordered %} <span> Order </span> {%endif%}
             <span>Delete</span>
+            {% if m2m_config.extra_fields%}
+                {% for extra_field in m2m_config.extra_fields %}
+                    <div style="display:flex; flex-direction:column">
+                        <span>{{extra_field.verbose_name}}</span>
+                        <small>{{extra_field.help_text}}</small>
+                    </div>
+                {% endfor %}
+            {% endif%}
           </div>
           {% for model in m2m_added|getattribute:field.name %}
           <div class="delete-table-row">
@@ -66,14 +76,23 @@
                     <span class="m2m-order-down m2m-order" name="{{field.name}}">↓</span>
                 </div>
             </div>
-            {%endif%}
+            {% endif %}
+                
             <input name="{{field.name}}_delete" type="checkbox" value="{{model.id}}" style="margin-right:16px"/>
+            {% if m2m_config.extra_fields%}
+                {% for extra_field in m2m_config.extra_fields %}
+                    {% with field_type=extra_field|getfieldtype %}
+                        {% comment %} This logic currently only works for date and text fields, but more cases could be added to handle other kinds {% endcomment %}
+                        <input name="{{field.name}}_{{extra_field.name}}" class="{{field_type}}" value="{% if  field_type == 'DateTimeField'%}{{model|getattribute:extra_field.name|stringifydatetime}}{% else %}{{model|getattribute:extra_field.name}}{% endif %}" type="{% if  field_type == 'DateTimeField'%}date{% else %}text{% endif %}"/>
+                    {% endwith %}
+                {% endfor %}
+            {% endif %}
           </div>
           {% endfor%}
         </div>
         </div>
-        {%endwith%}
-        {%endif%}
+        {% endwith %}
+        {% endif %}
     </div>
 {% endfor %}
 <script>
