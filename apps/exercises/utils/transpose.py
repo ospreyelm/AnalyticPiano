@@ -27,9 +27,9 @@ from apps.exercises.constants import sig_to_pc, pseudo_key_to_sig, all_sigs, all
 
 def transpose(exercise, target_request):
     exercise = deepcopy(exercise)
-    sig_orig = exercise.data.get('keySignature')
+    sig_orig = exercise.data.get("keySignature")
     pc_ref_orig = sig_to_pc[sig_orig]
-    key_orig = exercise.data.get('key')
+    key_orig = exercise.data.get("key")
     try:
         sig_target = pseudo_key_to_sig[target_request]
     except KeyError:
@@ -51,8 +51,8 @@ def transpose(exercise, target_request):
     pc_vector = (12 + pc_ref_target - pc_ref_orig) % 12
 
     midi_all_ex = []
-    for chord in exercise.data['chord']:
-        midi_all_ex.extend(chord['visible'] + chord['hidden'])
+    for chord in exercise.data["chord"]:
+        midi_all_ex.extend(chord["visible"] + chord["hidden"])
 
     midi_max_ex = max(midi_all_ex)
     midi_min_ex = min(midi_all_ex)
@@ -77,7 +77,9 @@ def transpose(exercise, target_request):
     elif midi_range_ex <= 50:
         # suitable for 61-key controllers, C2 to C7
         midi_mean_floor_target_min = 60
-    midi_mean_floor_target_range = range(midi_mean_floor_target_min, midi_mean_floor_target_min + 12)
+    midi_mean_floor_target_range = range(
+        midi_mean_floor_target_min, midi_mean_floor_target_min + 12
+    )
 
     midi_vector = None
 
@@ -87,7 +89,9 @@ def transpose(exercise, target_request):
         octave_displ = 0
         arbitrary_limit = 7
         while octave_displ < arbitrary_limit and octave_displ > -arbitrary_limit:
-            if (midi_mean_floor_ex + pc_vector + 12 * octave_displ) in midi_mean_floor_target_range:
+            if (
+                midi_mean_floor_ex + pc_vector + 12 * octave_displ
+            ) in midi_mean_floor_target_range:
                 midi_vector = pc_vector + 12 * octave_displ
                 break
             if octave_displ >= 0:
@@ -101,16 +105,16 @@ def transpose(exercise, target_request):
         return exercise
 
     # make the transposition
-    for chord in exercise.data['chord']:
-        transposed = [note + midi_vector for note in chord['visible']]
+    for chord in exercise.data["chord"]:
+        transposed = [note + midi_vector for note in chord["visible"]]
         chord.update(visible=transposed)
 
-        transposed = [note + midi_vector for note in chord['hidden']]
+        transposed = [note + midi_vector for note in chord["hidden"]]
         chord.update(hidden=transposed)
 
-    exercise.data['key'] = key_target
-    exercise.data['keySignature'] = sig_target
+    exercise.data["key"] = key_target
+    exercise.data["keySignature"] = sig_target
 
-    exercise.id = f'{exercise.id}{midi_vector}'
+    exercise.id = f"{exercise.id}{midi_vector}"
 
     return exercise

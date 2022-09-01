@@ -2,15 +2,18 @@ from django.core.exceptions import PermissionDenied
 from django_auth_lti.verification import has_lti_roles
 from django_auth_lti import const
 
+
 def has_instructor_role(request):
-    return has_roles(request, [const.ADMINISTRATOR,const.INSTRUCTOR])
+    return has_roles(request, [const.ADMINISTRATOR, const.INSTRUCTOR])
+
 
 def has_roles(request, roles):
     if request.user.is_superuser:
         return True
-    if hasattr(request, 'LTI'):
+    if hasattr(request, "LTI"):
         return has_lti_roles(request, roles)
     return False
+
 
 def has_course_authorization(request, course_id, raise_exception=False):
     authorized = True

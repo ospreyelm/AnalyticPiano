@@ -12,7 +12,14 @@ from apps.accounts.utils import generate_raw_password
 
 # Possible Keyboard Choices
 DEFAULT_KEYBOARD_SIZE = 49
-KEYBOARD_CHOICES = ((25, _("25")), (32, _("32")), (37, _("37")), (49, _("49")), (61, _("61")), (88, _("88")))
+KEYBOARD_CHOICES = (
+    (25, _("25")),
+    (32, _("32")),
+    (37, _("37")),
+    (49, _("49")),
+    (61, _("61")),
+    (88, _("88")),
+)
 
 DEFAULT_VOLUME = "mf"
 VOLUME_CHOICES = (
@@ -41,12 +48,21 @@ class User(AbstractBaseUser, PermissionsMixin):
     # E-mail
     email = models.EmailField(_("Email"), unique=True)
     # Given name
-    first_name = models.CharField(_("First Name"), max_length=32, unique=False, default="", blank=True)
+    first_name = models.CharField(
+        _("First Name"), max_length=32, unique=False, default="", blank=True
+    )
     # Surname
-    last_name = models.CharField(_("Last Name"), max_length=32, unique=False, default="", blank=True)
+    last_name = models.CharField(
+        _("Last Name"), max_length=32, unique=False, default="", blank=True
+    )
 
     # FIXME remove this field after 0008 migration is applied
-    _supervisors = ArrayField(base_field=models.IntegerField(), default=list, verbose_name="Supervisors", blank=True)
+    _supervisors = ArrayField(
+        base_field=models.IntegerField(),
+        default=list,
+        verbose_name="Supervisors",
+        blank=True,
+    )
 
     SUPERVISOR_STATUS_ACCEPTED = "Accepted"
     SUPERVISOR_STATUS_DECLINED = "Declined"
@@ -61,9 +77,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     auto_repeat_delay = models.PositiveIntegerField(default=6)
 
     # FIXME remove this field after 0008 migration is applied
-    keyboard_size = models.IntegerField(choices=KEYBOARD_CHOICES, default=DEFAULT_KEYBOARD_SIZE)
+    keyboard_size = models.IntegerField(
+        choices=KEYBOARD_CHOICES, default=DEFAULT_KEYBOARD_SIZE
+    )
 
-    preferences = JSONField(default=get_preferences_default, verbose_name="Preferences", blank=True)
+    preferences = JSONField(
+        default=get_preferences_default, verbose_name="Preferences", blank=True
+    )
 
     is_staff = models.BooleanField(
         _("Is Admin"),
@@ -78,7 +98,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         _("Is Active"),
         default=True,
         help_text=_(
-            "Designates whether this user should be treated as active. " "Unselect this instead of deleting accounts."
+            "Designates whether this user should be treated as active. "
+            "Unselect this instead of deleting accounts."
         ),
     )
     date_joined = models.DateTimeField(_("Date Joined"), default=timezone.now)
@@ -146,28 +167,34 @@ class User(AbstractBaseUser, PermissionsMixin):
     def accept_subscription(supervisor, subscriber):
         if str(supervisor.id) not in subscriber._supervisors_dict:
             return
-        subscriber._supervisors_dict[str(supervisor.id)] = User.SUPERVISOR_STATUS_ACCEPTED
+        subscriber._supervisors_dict[
+            str(supervisor.id)
+        ] = User.SUPERVISOR_STATUS_ACCEPTED
         subscriber.save()
 
     @staticmethod
     def decline_subscription(supervisor, subscriber):
         if str(supervisor.id) not in subscriber._supervisors_dict:
             return
-        subscriber._supervisors_dict[str(supervisor.id)] = User.SUPERVISOR_STATUS_DECLINED
+        subscriber._supervisors_dict[
+            str(supervisor.id)
+        ] = User.SUPERVISOR_STATUS_DECLINED
         subscriber.save()
 
     def is_supervisor_to(self, subscriber):
         return (
             self == subscriber
             or str(self.id) in subscriber._supervisors_dict
-            and subscriber._supervisors_dict[str(self.id)] == User.SUPERVISOR_STATUS_ACCEPTED
+            and subscriber._supervisors_dict[str(self.id)]
+            == User.SUPERVISOR_STATUS_ACCEPTED
         )
 
     def is_subscribed_to(self, supervisor):
         return (
             self == supervisor
             or str(supervisor.id) in self._supervisors_dict
-            and self._supervisors_dict[str(supervisor.id)] == User.SUPERVISOR_STATUS_ACCEPTED
+            and self._supervisors_dict[str(supervisor.id)]
+            == User.SUPERVISOR_STATUS_ACCEPTED
         )
 
 
@@ -177,9 +204,17 @@ class Group(models.Model):
         max_length=128,
     )
     # members = models.ManyToManyField(to=User, blank=True, verbose_name='Members')
-    _members = ArrayField(base_field=models.IntegerField(), default=list, verbose_name="Members", blank=True)
+    _members = ArrayField(
+        base_field=models.IntegerField(),
+        default=list,
+        verbose_name="Members",
+        blank=True,
+    )
     manager = models.ForeignKey(
-        to=User, related_name="managed_groups", on_delete=models.PROTECT, verbose_name="Manager"
+        to=User,
+        related_name="managed_groups",
+        on_delete=models.PROTECT,
+        verbose_name="Manager",
     )
 
     created = models.DateTimeField("Created", auto_now_add=True)

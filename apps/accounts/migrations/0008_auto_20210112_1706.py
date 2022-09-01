@@ -9,7 +9,7 @@ def set_keyboard_size(apps, schema_editor):
     User = apps.get_model("accounts", "User")
     db_alias = schema_editor.connection.alias
     for user in User.objects.using(db_alias).all():
-        user.preferences['keyboard_size'] = user.keyboard_size
+        user.preferences["keyboard_size"] = user.keyboard_size
         user.save()
 
 
@@ -18,28 +18,32 @@ def update_subscribers(apps, schema_editor):
     db_alias = schema_editor.connection.alias
     for user in User.objects.using(db_alias).all():
         for supervisor in user._supervisors:
-            user._supervisors_dict[supervisor] = 'Accepted'
+            user._supervisors_dict[supervisor] = "Accepted"
             user.save()
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('accounts', '0007_user_keyboard_size'),
+        ("accounts", "0007_user_keyboard_size"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='_supervisors_dict',
-            field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, default=dict, verbose_name='Supervisors'),
+            model_name="user",
+            name="_supervisors_dict",
+            field=django.contrib.postgres.fields.jsonb.JSONField(
+                blank=True, default=dict, verbose_name="Supervisors"
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='preferences',
-            field=django.contrib.postgres.fields.jsonb.JSONField(blank=True,
-                                                                 default=apps.accounts.models.get_preferences_default,
-                                                                 verbose_name='Preferences'),
+            model_name="user",
+            name="preferences",
+            field=django.contrib.postgres.fields.jsonb.JSONField(
+                blank=True,
+                default=apps.accounts.models.get_preferences_default,
+                verbose_name="Preferences",
+            ),
         ),
         migrations.RunPython(set_keyboard_size),
-        migrations.RunPython(update_subscribers)
+        migrations.RunPython(update_subscribers),
     ]

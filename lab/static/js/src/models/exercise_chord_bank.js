@@ -1,61 +1,55 @@
-define([
-	'lodash',
-	'microevent',
-	'./chord',
-	'./chord_bank'
-], function(
-	_,
-	MicroEvent,
-	Chord,
-	ChordBank
+define(["lodash", "microevent", "./chord", "./chord_bank"], function (
+  _,
+  MicroEvent,
+  Chord,
+  ChordBank
 ) {
+  var ExerciseChordBank = function (settings) {
+    ChordBank.call(this, settings);
+    this._currentIndex = 0;
+    this._enableBanking = false;
+  };
 
-	var ExerciseChordBank = function(settings) {
-		ChordBank.call(this, settings);
-		this._currentIndex = 0;
-		this._enableBanking = false;
-	};
+  ExerciseChordBank.prototype = new ChordBank();
 
-	ExerciseChordBank.prototype = new ChordBank();
+  var proto = ExerciseChordBank.prototype;
+  proto.init = function () {
+    ChordBank.prototype.init.call(this);
+  };
 
-	var proto = ExerciseChordBank.prototype;
-	proto.init = function() {
-		ChordBank.prototype.init.call(this);
-	};
+  proto.current = function () {
+    return this._items[this._currentIndex];
+  };
 
-	proto.current = function() {
-		return this._items[this._currentIndex];
-	};
+  proto.previous = function () {
+    return this._items.length && this._items.length > 1
+      ? this._items[this._currentIndex - 1]
+      : false;
+  };
 
-	proto.previous = function() {
-		return (this._items.length && this._items.length > 1
-			? this._items[this._currentIndex - 1]
-			: false);
-	};
+  // Override superclass method to be a no-op
+  proto.bank = function () {};
 
-	// Override superclass method to be a no-op
-	proto.bank = function() {};
+  // Go to a chord in the bank. Create one at that location if necessary.
+  proto.goTo = function (index) {
+    var current;
+    if (index < 0 || index === this._currentIndex) {
+      return this;
+    }
 
-	// Go to a chord in the bank. Create one at that location if necessary.
-	proto.goTo = function(index) {
-		var current;
-		if(index < 0 || index === this._currentIndex) {
-			return this;
-		}
+    current = this.current();
+    if (current) {
+      this._removeListeners(current);
+    }
 
-		current = this.current();
-		if(current) {
-			this._removeListeners(current);
-		}
+    if (!this._items[index]) {
+      this._items.splice(index, 1, new Chord());
+    }
+    this._addListeners(this._items[index]);
+    this._currentIndex = index;
 
-		if(!this._items[index]) {
-			this._items.splice(index, 1, new Chord());
-		}
-		this._addListeners(this._items[index]);
-		this._currentIndex = index;
+    return this;
+  };
 
-		return this;
-	}
-
-	return ExerciseChordBank;
+  return ExerciseChordBank;
 });

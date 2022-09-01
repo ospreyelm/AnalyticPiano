@@ -26,4 +26,3 @@ class ExerciseAdminInline(nested_admin.NestedTabularInline):
 #     inlines = [ExerciseAdminInline]
 #     readonly_fields = ('created', 'updated')
 #
-

@@ -7,17 +7,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0001_initial'),
+        ("accounts", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='user',
-            options={'ordering': ('-date_joined',), 'verbose_name': 'User', 'verbose_name_plural': 'Users'},
+            name="user",
+            options={
+                "ordering": ("-date_joined",),
+                "verbose_name": "User",
+                "verbose_name_plural": "Users",
+            },
         ),
         migrations.AddField(
-            model_name='user',
-            name='_supervisors',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), default=list, size=None, verbose_name='Supervisors'),
+            model_name="user",
+            name="_supervisors",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.IntegerField(),
+                default=list,
+                size=None,
+                verbose_name="Supervisors",
+            ),
         ),
     ]

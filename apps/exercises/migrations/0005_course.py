@@ -9,25 +9,60 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('exercises', '0004_auto_20200919_1348'),
+        ("exercises", "0004_auto_20200919_1348"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Course',
+            name="Course",
             fields=[
-                ('_id', models.AutoField(primary_key=True, serialize=False, unique=True, verbose_name='_ID')),
-                ('id', models.CharField(max_length=16, unique=True, verbose_name='ID')),
-                ('title', models.CharField(max_length=64, unique=True, verbose_name='Title')),
-                ('slug', models.SlugField(max_length=64, unique=True, verbose_name='Slug')),
-                ('playlists', models.CharField(help_text='Ordered set of playlist names or IDs, separated by comma.', max_length=1024, verbose_name='Playlists')),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='Created at')),
-                ('updated', models.DateTimeField(auto_now=True, verbose_name='Updated at')),
-                ('authored_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='courses', to=settings.AUTH_USER_MODEL, verbose_name='Author')),
+                (
+                    "_id",
+                    models.AutoField(
+                        primary_key=True,
+                        serialize=False,
+                        unique=True,
+                        verbose_name="_ID",
+                    ),
+                ),
+                ("id", models.CharField(max_length=16, unique=True, verbose_name="ID")),
+                (
+                    "title",
+                    models.CharField(max_length=64, unique=True, verbose_name="Title"),
+                ),
+                (
+                    "slug",
+                    models.SlugField(max_length=64, unique=True, verbose_name="Slug"),
+                ),
+                (
+                    "playlists",
+                    models.CharField(
+                        help_text="Ordered set of playlist names or IDs, separated by comma.",
+                        max_length=1024,
+                        verbose_name="Playlists",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Created at"),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(auto_now=True, verbose_name="Updated at"),
+                ),
+                (
+                    "authored_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="courses",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Author",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Course',
-                'verbose_name_plural': 'Courses',
+                "verbose_name": "Course",
+                "verbose_name_plural": "Courses",
             },
         ),
     ]

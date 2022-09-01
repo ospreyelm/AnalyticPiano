@@ -10,8 +10,8 @@ class Command(BaseCommand):
 
         for performance in performances:
             for exercise in performance.data:
-                performed_exercises.setdefault(exercise['id'], [])
-                performed_exercises[exercise['id']].append(performance.user_id)
+                performed_exercises.setdefault(exercise["id"], [])
+                performed_exercises[exercise["id"]].append(performance.user_id)
         performed_exercises = {k: list(set(v)) for k, v in performed_exercises.items()}
 
         """
@@ -32,13 +32,21 @@ class Command(BaseCommand):
                 continue
 
             for key, value in performed_exercises.items():
-                if exercise.id not in key:  # filtering for regular and transposed exercises
+                if (
+                    exercise.id not in key
+                ):  # filtering for regular and transposed exercises
                     continue
 
                 # if more than one users have performed exercise, or if only one user did and it is not the author of exercise
-                if len(value) > 1 or (len(value) == 1 and value != exercise.authored_by_id):
+                if len(value) > 1 or (
+                    len(value) == 1 and value != exercise.authored_by_id
+                ):
                     exercise.locked = True
                     exercise.save()
                     locked_exercises += 1
 
-        self.stdout.write(self.style.SUCCESS(f'{locked_exercises} exercises has been successfully locked.'))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"{locked_exercises} exercises has been successfully locked."
+            )
+        )

@@ -1,35 +1,33 @@
-{% extends "dashboard/base.html" %}
-{% load widget_tweaks %}
-{% load django_tables2 %}
-{% load i18n %}
-
-{% block content %}
-    <form method="post" novalidate style="text-align: left; padding: 20px 0px">
-        {% block content-header %}  {% endblock %}
-        {% csrf_token %}
-        <h4 class="dashboard-page-header">
-            Type the word <strong>"{{ form.CONFIRMATION_PHRASE }}"</strong> or the user's email
-            <strong>{{ email }}</strong> to remove subscription:
-        </h4>
-        <div style="padding-right:10px;" class="textinput">
-            <div class="form-check form-group form-inline ">
-                {% if form.confirmation_text.errors %}
-                    {% render_field form.confirmation_text|add_class:'form-control' class="is-invalid" %}
-                    {% for error in form.confirmation_text.errors %}
-                        <div class="invalid-feedback">
-                            <p>{{ error }}</p>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    {% render_field form.confirmation_text|add_class:'form-control' class="is-valid" %}
-                {% endif %}
-            </div>
-        </div>
-        <div style="display: inline-block; width: 100%;">
-            <button type="submit" class="btn dashboard-btn">Confirm</button>
-            <button type="reset" class="btn dashboard-btn" onclick="location.href='{{ redirect_url }}'">
-                Cancel
-            </button>
-        </div>
-    </form>
+{% extends "dashboard/base.html" %} {% load widget_tweaks %} {% load
+django_tables2 %} {% load i18n %} {% block content %}
+<form method="post" novalidate style="text-align: left; padding: 20px 0px">
+  {% block content-header %} {% endblock %} {% csrf_token %}
+  <h4 class="dashboard-page-header">
+    Type the word <strong>"{{ form.CONFIRMATION_PHRASE }}"</strong> or the
+    user's email <strong>{{ email }}</strong> to remove subscription:
+  </h4>
+  <div style="padding-right: 10px" class="textinput">
+    <div class="form-check form-group form-inline">
+      {% if form.confirmation_text.errors %} {% render_field
+      form.confirmation_text|add_class:'form-control' class="is-invalid" %} {%
+      for error in form.confirmation_text.errors %}
+      <div class="invalid-feedback">
+        <p>{{ error }}</p>
+      </div>
+      {% endfor %} {% else %} {% render_field
+      form.confirmation_text|add_class:'form-control' class="is-valid" %} {%
+      endif %}
+    </div>
+  </div>
+  <div style="display: inline-block; width: 100%">
+    <button type="submit" class="btn dashboard-btn">Confirm</button>
+    <button
+      type="reset"
+      class="btn dashboard-btn"
+      onclick="location.href='{{ redirect_url }}'"
+    >
+      Cancel
+    </button>
+  </div>
+</form>
 {% endblock content %}

@@ -4,7 +4,12 @@ from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.admin.mixins import DynamicArrayMixin
 from import_export.admin import ImportExportModelAdmin
 
-from apps.exercises.forms import ExerciseForm, PlaylistForm, PerformanceDataForm, CourseForm
+from apps.exercises.forms import (
+    ExerciseForm,
+    PlaylistForm,
+    PerformanceDataForm,
+    CourseForm,
+)
 from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
 
 import re
@@ -15,7 +20,14 @@ from apps.exercises.resources import ExerciseResource, PlaylistResource, CourseR
 @admin.register(Exercise)
 class ExerciseAdmin(ImportExportModelAdmin):
     form = ExerciseForm
-    list_display = ("id", "show_on_site", "authored_by", "is_public", "created", "updated")
+    list_display = (
+        "id",
+        "show_on_site",
+        "authored_by",
+        "is_public",
+        "created",
+        "updated",
+    )
     list_filter = ("authored_by__email", "is_public")
     search_fields = ("id",)
     readonly_fields = ("id", "authored_by", "created", "updated", "show_on_site")
@@ -24,7 +36,11 @@ class ExerciseAdmin(ImportExportModelAdmin):
         (
             "Exercise Information",
             {
-                "fields": (("id", "show_on_site", "authored_by", "is_public"), "description", "locked")
+                "fields": (
+                    ("id", "show_on_site", "authored_by", "is_public"),
+                    "description",
+                    "locked",
+                )
                 # ('created', 'updated')
             },
         ),
@@ -45,7 +61,9 @@ class ExerciseAdmin(ImportExportModelAdmin):
     resource_class = ExerciseResource
 
     def get_import_resource_kwargs(self, request, *args, **kwargs):
-        import_kwargs = super(ExerciseAdmin, self).get_import_resource_kwargs(request, *args, **kwargs)
+        import_kwargs = super(ExerciseAdmin, self).get_import_resource_kwargs(
+            request, *args, **kwargs
+        )
         import_kwargs["request"] = request
         return import_kwargs
 
@@ -93,7 +111,14 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
             "Playlist Information",
             {
                 "fields": (
-                    ("name", "id", "authored_by", "show_on_site", "performances", "is_public"),
+                    (
+                        "name",
+                        "id",
+                        "authored_by",
+                        "show_on_site",
+                        "performances",
+                        "is_public",
+                    ),
                     # ('created', 'updated')
                 ),
             },
@@ -125,7 +150,9 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
     resource_class = PlaylistResource
 
     def get_import_resource_kwargs(self, request, *args, **kwargs):
-        import_kwargs = super(PlaylistAdmin, self).get_import_resource_kwargs(request, *args, **kwargs)
+        import_kwargs = super(PlaylistAdmin, self).get_import_resource_kwargs(
+            request, *args, **kwargs
+        )
         import_kwargs["request"] = request
         return import_kwargs
 
@@ -142,7 +169,9 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
     def exercise_links(self, obj):
         links = ""
         for exercise in obj.exercise_objects:
-            link = reverse("admin:%s_%s_change" % ("exercises", "exercise"), args=(exercise._id,))
+            link = reverse(
+                "admin:%s_%s_change" % ("exercises", "exercise"), args=(exercise._id,)
+            )
             links += "<a href='%s'>%s</a><br>" % (link, exercise.id)
         return mark_safe(links)
 
@@ -169,7 +198,11 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
 
     def transposed_exercises_display(self, obj):
         TRANSP_JOIN_STR = " "  # r'[,; \n]+'
-        return TRANSP_JOIN_STR.join(str(id_) for id_ in obj.transposed_exercises_ids) if obj.is_transposed() else ""
+        return (
+            TRANSP_JOIN_STR.join(str(id_) for id_ in obj.transposed_exercises_ids)
+            if obj.is_transposed()
+            else ""
+        )
 
     transposed_exercises_display.short_description = "Exercises Transposed"
 
@@ -206,13 +239,25 @@ class CourseAdmin(DynamicArrayMixin, ImportExportModelAdmin):
         "title",
         "exercises",
     )
-    readonly_fields = ("id", "authored_by", "created", "updated", "playlist_links", "show_on_site")
+    readonly_fields = (
+        "id",
+        "authored_by",
+        "created",
+        "updated",
+        "playlist_links",
+        "show_on_site",
+    )
     raw_id_fields = ("authored_by",)
     fieldsets = (
         (
             "General Info",
             {
-                "fields": (("title", "show_on_site"), "id", "authored_by", ("created", "updated")),
+                "fields": (
+                    ("title", "show_on_site"),
+                    "id",
+                    "authored_by",
+                    ("created", "updated"),
+                ),
             },
         ),
         # ("Playlists", {"fields": ("playlists", "playlist_links")}),
@@ -223,7 +268,9 @@ class CourseAdmin(DynamicArrayMixin, ImportExportModelAdmin):
     resource_class = CourseResource
 
     def get_import_resource_kwargs(self, request, *args, **kwargs):
-        import_kwargs = super(CourseAdmin, self).get_import_resource_kwargs(request, *args, **kwargs)
+        import_kwargs = super(CourseAdmin, self).get_import_resource_kwargs(
+            request, *args, **kwargs
+        )
         import_kwargs["request"] = request
         return import_kwargs
 
@@ -241,7 +288,9 @@ class CourseAdmin(DynamicArrayMixin, ImportExportModelAdmin):
         links = ""
         playlists = Playlist.objects.filter(id__in=re.split(r"[,; \n]+", obj.playlists))
         for playlist in playlists:
-            link = reverse("admin:%s_%s_change" % ("exercises", "playlist"), args=(playlist._id,))
+            link = reverse(
+                "admin:%s_%s_change" % ("exercises", "playlist"), args=(playlist._id,)
+            )
             links += "<a href='%s'>%s</a><br>" % (link, playlist.id)
         return mark_safe(links)
 

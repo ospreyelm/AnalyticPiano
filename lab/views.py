@@ -68,7 +68,9 @@ class RequirejsTemplateView(TemplateView):
 
     def __init__(self, *args, **kwargs):
         super(RequirejsTemplateView, self).__init__(*args, **kwargs)
-        self.requirejs_context = RequirejsContext(settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG)
+        self.requirejs_context = RequirejsContext(
+            settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG
+        )
 
     def get_context_data(self, **kwargs):
         context = super(RequirejsTemplateView, self).get_context_data(**kwargs)
@@ -80,7 +82,9 @@ class RequirejsTemplateView(TemplateView):
 class RequirejsView(View):
     def __init__(self, *args, **kwargs):
         super(RequirejsView, self).__init__(*args, **kwargs)
-        self.requirejs_context = RequirejsContext(settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG)
+        self.requirejs_context = RequirejsContext(
+            settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG
+        )
 
 
 class PlayView(RequirejsTemplateView):
@@ -94,19 +98,23 @@ class PlayView(RequirejsTemplateView):
         context["group_list"] = er.getGroupList()
         # for testing on Windows, use following line
         # context['group_list'] = []
-        context["has_manage_perm"] = has_instructor_role(self.request) and has_course_authorization(
-            self.request, course_id
-        )
+        context["has_manage_perm"] = has_instructor_role(
+            self.request
+        ) and has_course_authorization(self.request, course_id)
         if context["has_manage_perm"]:
             if course_id is None:
                 context["manage_url"] = reverse("lab:manage")
             else:
-                context["manage_url"] = reverse("lab:course-manage", kwargs={"course_id": course_id})
+                context["manage_url"] = reverse(
+                    "lab:course-manage", kwargs={"course_id": course_id}
+                )
 
         if course_id is None:
             context["home_url"] = reverse("lab:index")
         else:
-            context["home_url"] = reverse("lab:course-index", kwargs={"course_id": course_id})
+            context["home_url"] = reverse(
+                "lab:course-index", kwargs={"course_id": course_id}
+            )
 
         return context
 
@@ -117,26 +125,44 @@ class PlaylistView(RequirejsView):
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, playlist_id, exercise_num=1, *args, **kwargs):
-        playlist = Playlist.objects.filter(Q(id=playlist_id) | Q(id=playlist_id)).first()
+        playlist = Playlist.objects.filter(
+            Q(id=playlist_id) | Q(id=playlist_id)
+        ).first()
         if playlist is None:
             raise Http404("Playlist with this name or ID does not exist.")
 
-        if not playlist.is_public and not request.user.is_subscribed_to(playlist.authored_by):
+        if not playlist.is_public and not request.user.is_subscribed_to(
+            playlist.authored_by
+        ):
             raise PermissionDenied
 
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
-        print("ex",exercise)
+        print("ex", exercise)
         if exercise is None:
             raise Http404("This playlist has no exercises.")
 
-        next_exercise_url = playlist.get_exercise_url_by_num(num=playlist.next_num(exercise_num))
-        prev_exercise_url = playlist.get_exercise_url_by_num(num=playlist.prev_num(exercise_num))
-        next_exercise_obj = playlist.get_exercise_obj_by_num(playlist.next_num(exercise_num))
-        next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ""
-        prev_exercise_obj = playlist.get_exercise_obj_by_num(playlist.prev_num(exercise_num))
-        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ""
+        next_exercise_url = playlist.get_exercise_url_by_num(
+            num=playlist.next_num(exercise_num)
+        )
+        prev_exercise_url = playlist.get_exercise_url_by_num(
+            num=playlist.prev_num(exercise_num)
+        )
+        next_exercise_obj = playlist.get_exercise_obj_by_num(
+            playlist.next_num(exercise_num)
+        )
+        next_exercise_id = (
+            next_exercise_obj.id if next_exercise_obj.id != exercise.id else ""
+        )
+        prev_exercise_obj = playlist.get_exercise_obj_by_num(
+            playlist.prev_num(exercise_num)
+        )
+        prev_exercise_id = (
+            prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ""
+        )
         first_exercise_obj = playlist.get_exercise_obj_by_num(1)
-        first_exercise_id = first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
+        first_exercise_id = (
+            first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
+        )
         context = {"group_list": []}
         exercise_context = {}
 
@@ -153,10 +179,16 @@ class PlaylistView(RequirejsView):
 
         exercise_is_performed = False
         exercise_error_count = 0
-        playlist_performance = PerformanceData.objects.filter(playlist=playlist, user=request.user).last()
+        playlist_performance = PerformanceData.objects.filter(
+            playlist=playlist, user=request.user
+        ).last()
         if playlist_performance:
-            exercise_is_performed = playlist_performance.exercise_is_performed(exercise.id)
-            exercise_error_count = playlist_performance.exercise_error_count(exercise.id)
+            exercise_is_performed = playlist_performance.exercise_is_performed(
+                exercise.id
+            )
+            exercise_error_count = playlist_performance.exercise_error_count(
+                exercise.id
+            )
 
         exercise_context.update(exercise.data)
         exercise_context.update(
@@ -177,7 +209,9 @@ class PlaylistView(RequirejsView):
             }
         )
         self.requirejs_context.set_app_module("app/components/app/exercise")
-        self.requirejs_context.set_module_params("app/components/app/exercise", exercise_context)
+        self.requirejs_context.set_module_params(
+            "app/components/app/exercise", exercise_context
+        )
         self.requirejs_context.add_to_view(context)
 
         return render(request, "exercise.html", context)
@@ -191,14 +225,28 @@ class RefreshExerciseDefinition(RequirejsView):
         if exercise is None:
             raise Http404("Exercise not found.")
 
-        next_exercise_url = playlist.get_exercise_url_by_num(num=playlist.next_num(exercise_num))
-        prev_exercise_url = playlist.get_exercise_url_by_num(num=playlist.prev_num(exercise_num))
-        next_exercise_obj = playlist.get_exercise_obj_by_num(playlist.next_num(exercise_num))
-        next_exercise_id = next_exercise_obj.id if next_exercise_obj.id != exercise.id else ""
-        prev_exercise_obj = playlist.get_exercise_obj_by_num(playlist.prev_num(exercise_num))
-        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ""
+        next_exercise_url = playlist.get_exercise_url_by_num(
+            num=playlist.next_num(exercise_num)
+        )
+        prev_exercise_url = playlist.get_exercise_url_by_num(
+            num=playlist.prev_num(exercise_num)
+        )
+        next_exercise_obj = playlist.get_exercise_obj_by_num(
+            playlist.next_num(exercise_num)
+        )
+        next_exercise_id = (
+            next_exercise_obj.id if next_exercise_obj.id != exercise.id else ""
+        )
+        prev_exercise_obj = playlist.get_exercise_obj_by_num(
+            playlist.prev_num(exercise_num)
+        )
+        prev_exercise_id = (
+            prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ""
+        )
         first_exercise_obj = playlist.get_exercise_obj_by_num(1)
-        first_exercise_id = first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
+        first_exercise_id = (
+            first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
+        )
         exercise_context = {}
 
         exercise_list = []
@@ -229,10 +277,12 @@ class RefreshExerciseDefinition(RequirejsView):
             }
         )
 
-        print('excon',exercise_context)
+        print("excon", exercise_context)
 
         self.requirejs_context.set_app_module("app/components/app/exercise")
-        self.requirejs_context.set_module_params("app/components/app/exercise", exercise_context)
+        self.requirejs_context.set_module_params(
+            "app/components/app/exercise", exercise_context
+        )
         # self.requirejs_context.add_to_view(context)
         return JsonResponse(data=exercise_context)
 
@@ -245,11 +295,15 @@ class ExerciseView(RequirejsView):
     def get(self, request, exercise_id, *args, **kwargs):
         exercise = get_object_or_404(Exercise, id=exercise_id)
 
-        if not exercise.is_public and not request.user.is_subscribed_to(exercise.authored_by):
+        if not exercise.is_public and not request.user.is_subscribed_to(
+            exercise.authored_by
+        ):
             raise PermissionDenied
 
         url = reverse("lab:exercise-view", kwargs={"exercise_id": exercise_id})
-        exercise_info = [dict(id=exercise_id, name=f"{exercise._id}", url=url, selected=True)]
+        exercise_info = [
+            dict(id=exercise_id, name=f"{exercise._id}", url=url, selected=True)
+        ]
 
         context = {"group_list": []}
         exercise_context = {}
@@ -257,7 +311,9 @@ class ExerciseView(RequirejsView):
         exercise_context.update(exercise.data)
         exercise_context.update({"exerciseList": [exercise_info]})
         self.requirejs_context.set_app_module("app/components/app/exercise")
-        self.requirejs_context.set_module_params("app/components/app/exercise", exercise_context)
+        self.requirejs_context.set_module_params(
+            "app/components/app/exercise", exercise_context
+        )
         self.requirejs_context.add_to_view(context)
 
         return render(request, "exercise.html", context)
@@ -271,19 +327,31 @@ class CourseView(RequirejsView):
     def get(self, request, course_id, *args, **kwargs):
         course = get_object_or_404(Course, id=course_id)
 
-        if not course.is_public and not request.user.is_subscribed_to(course.authored_by):
+        if not course.is_public and not request.user.is_subscribed_to(
+            course.authored_by
+        ):
             raise PermissionDenied
 
         whens = []
         for sort_index, value in enumerate(course.split_playlist_ids):
             whens.append(When(id=value, then=sort_index))
 
-        qs = course.playlists if course.authored_by == request.user else course.published_playlists
-        playlists = qs.annotate(_sort_index=Case(*whens, output_field=models.CharField())).order_by("_sort_index")
+        qs = (
+            course.playlists
+            if course.authored_by == request.user
+            else course.published_playlists
+        )
+        playlists = qs.annotate(
+            _sort_index=Case(*whens, output_field=models.CharField())
+        ).order_by("_sort_index")
 
         playlists_table = CoursePageTable(playlists, course=course)
         course_author = course.authored_by
-        context = {"course_title": course.title, "playlists_table": playlists_table, "course_author": course_author}
+        context = {
+            "course_title": course.title,
+            "playlists_table": playlists_table,
+            "course_author": course_author,
+        }
 
         # publish date only visible to author, due date to everyone
         exclude_fields = list(playlists_table.exclude)
@@ -301,7 +369,11 @@ class CourseView(RequirejsView):
 class ManageView(RequirejsView, LoginRequiredMixin):
     @method_decorator(course_authorization_required(source="arguments"))
     @method_decorator(
-        role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url="lab:not_authorized", raise_exception=True)
+        role_required(
+            [const.ADMINISTRATOR, const.INSTRUCTOR],
+            redirect_url="lab:not_authorized",
+            raise_exception=True,
+        )
     )
     def get(self, request, course_id=None):
         er = ExerciseRepository.create(course_id=course_id)
@@ -314,16 +386,25 @@ class ManageView(RequirejsView, LoginRequiredMixin):
             manage_params["exercise_api_url"] = reverse("lab:api-exercises")
         else:
             course_names = LTICourse.getCourseNames(course_id)
-            context["course_label"] = "%s (ID: %s)" % (course_names.get("name"), course_id)
-            context["manage_url"] = reverse("lab:course-manage", kwargs={"course_id": course_id})
-            context["home_url"] = reverse("lab:course-index", kwargs={"course_id": course_id})
+            context["course_label"] = "%s (ID: %s)" % (
+                course_names.get("name"),
+                course_id,
+            )
+            context["manage_url"] = reverse(
+                "lab:course-manage", kwargs={"course_id": course_id}
+            )
+            context["home_url"] = reverse(
+                "lab:course-index", kwargs={"course_id": course_id}
+            )
             manage_params["exercise_api_url"] = "%s?%s" % (
                 reverse("lab:api-exercises"),
                 urlencode({"course_id": course_id}),
             )
 
         self.requirejs_context.set_app_module("app/components/app/manage")
-        self.requirejs_context.set_module_params("app/components/app/manage", manage_params)
+        self.requirejs_context.set_module_params(
+            "app/components/app/manage", manage_params
+        )
         self.requirejs_context.add_to_view(context)
 
         return render(request, "manage.html", context)
@@ -333,7 +414,9 @@ class APIView(View):
     api_version = 1
 
     def get(self, request):
-        return HttpResponse(json.dumps({"url": reverse("lab:api"), "version": self.api_version}))
+        return HttpResponse(
+            json.dumps({"url": reverse("lab:api"), "version": self.api_version})
+        )
 
 
 class APIGroupView(CsrfExemptMixin, View):
@@ -368,23 +451,34 @@ class APIExerciseView(CsrfExemptMixin, View):
             data = er.asDict()
 
         return HttpResponse(
-            json.dumps(data, sort_keys=True, indent=4, separators=(",", ": ")), content_type="application/json"
+            json.dumps(data, sort_keys=True, indent=4, separators=(",", ": ")),
+            content_type="application/json",
         )
 
     @method_decorator(course_authorization_required(source="query"))
     @method_decorator(
-        role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url="lab:not_authorized", raise_exception=True)
+        role_required(
+            [const.ADMINISTRATOR, const.INSTRUCTOR],
+            redirect_url="lab:not_authorized",
+            raise_exception=True,
+        )
     )
     def post(self, request):
         course_id = request.GET.get("course_id", None)
         exercise_data = json.loads(request.POST.get("exercise", None))
-        result = ExerciseRepository.create(course_id=course_id).createExercise(exercise_data)
+        result = ExerciseRepository.create(course_id=course_id).createExercise(
+            exercise_data
+        )
 
         return HttpResponse(json.dumps(result), content_type="application/json")
 
     @method_decorator(course_authorization_required(source="query"))
     @method_decorator(
-        role_required([const.ADMINISTRATOR, const.INSTRUCTOR], redirect_url="lab:not_authorized", raise_exception=True)
+        role_required(
+            [const.ADMINISTRATOR, const.INSTRUCTOR],
+            redirect_url="lab:not_authorized",
+            raise_exception=True,
+        )
     )
     def delete(self, request):
         course_id = request.GET.get("course_id", None)
@@ -415,11 +509,17 @@ def not_authorized(request):
 
 def check_course_authorization(request, course_id, raise_exception=False):
     authorized = has_course_authorization(request, course_id, raise_exception)
-    result = {"user_id": request.user.id, "course_id": course_id, "is_authorized": authorized}
+    result = {
+        "user_id": request.user.id,
+        "course_id": course_id,
+        "is_authorized": authorized,
+    }
     status = 200
     if not authorized:
         status = 403  # forbidden
-    return HttpResponse(json.dumps(result), content_type="application/json", status=status)
+    return HttpResponse(
+        json.dumps(result), content_type="application/json", status=status
+    )
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -444,26 +544,38 @@ class AddExerciseView(View):
 
 @login_required()
 @method_decorator(csrf_exempt)
-def exercise_performance_history(request, playlist_name, exercise_num=1, *args, **kwargs):
-    playlist = Playlist.objects.filter(Q(name=playlist_name) | Q(id=playlist_name)).first()
+def exercise_performance_history(
+    request, playlist_name, exercise_num=1, *args, **kwargs
+):
+    playlist = Playlist.objects.filter(
+        Q(name=playlist_name) | Q(id=playlist_name)
+    ).first()
     if playlist is None:
         raise Http404("Playlist with this name or ID does not exist.")
 
-    if not playlist.is_public and not request.user.is_subscribed_to(playlist.authored_by):
+    if not playlist.is_public and not request.user.is_subscribed_to(
+        playlist.authored_by
+    ):
         raise PermissionDenied
 
     exercise = playlist.get_exercise_obj_by_num(exercise_num)
     if exercise is None:
         raise Http404("This playlist has no exercises.")
 
-    playlist_performance = PerformanceData.objects.filter(playlist=playlist, user=request.user).last()
+    playlist_performance = PerformanceData.objects.filter(
+        playlist=playlist, user=request.user
+    ).last()
 
     exercise_data = json.dumps(
         {
-            "exerciseIsPerformed": playlist_performance.exercise_is_performed(exercise.id)
+            "exerciseIsPerformed": playlist_performance.exercise_is_performed(
+                exercise.id
+            )
             if playlist_performance
             else False,
-            "exerciseErrorCount": playlist_performance.exercise_error_count(exercise.id) if playlist_performance else 0,
+            "exerciseErrorCount": playlist_performance.exercise_error_count(exercise.id)
+            if playlist_performance
+            else 0,
         }
     )
     return HttpResponse(exercise_data, status=200)

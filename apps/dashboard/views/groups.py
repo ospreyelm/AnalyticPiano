@@ -47,9 +47,13 @@ def group_add_view(request):
         if form.is_valid():
             group = form.save()
             if "save-and-continue" in request.POST:
-                success_url = reverse("dashboard:edit-group", kwargs={"group_id": group.id})
+                success_url = reverse(
+                    "dashboard:edit-group", kwargs={"group_id": group.id}
+                )
                 messages.add_message(
-                    request, messages.SUCCESS, f"{context['verbose_name']} has been saved successfully."
+                    request,
+                    messages.SUCCESS,
+                    f"{context['verbose_name']} has been saved successfully.",
                 )
             else:
                 success_url = reverse("dashboard:groups-list")
@@ -71,7 +75,9 @@ def group_edit_view(request, group_id):
     if request.user != group.manager:
         raise PermissionDenied
 
-    members_table = GroupMembersTable([{"member": member, "group_id": group_id} for member in group.members])
+    members_table = GroupMembersTable(
+        [{"member": member, "group_id": group_id} for member in group.members]
+    )
     RequestConfig(request).configure(members_table)
 
     context = {
@@ -86,9 +92,13 @@ def group_edit_view(request, group_id):
         if form.is_valid():
             group = form.save()
             if "save-and-continue" in request.POST:
-                success_url = reverse("dashboard:edit-group", kwargs={"group_id": group.id})
+                success_url = reverse(
+                    "dashboard:edit-group", kwargs={"group_id": group.id}
+                )
                 messages.add_message(
-                    request, messages.SUCCESS, f"{context['verbose_name']} has been saved successfully."
+                    request,
+                    messages.SUCCESS,
+                    f"{context['verbose_name']} has been saved successfully.",
                 )
             else:
                 success_url = reverse("dashboard:groups-list")

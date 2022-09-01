@@ -18,13 +18,22 @@ User = get_user_model()
 @staff_member_required
 def playlist_performance_view(request, playlist_id):
     data = []
-    performances = PerformanceData.objects.filter(playlist__id=playlist_id).select_related("user", "playlist")
+    performances = PerformanceData.objects.filter(
+        playlist__id=playlist_id
+    ).select_related("user", "playlist")
     playlist = Playlist.objects.filter(id=playlist_id).first()
     exercises = [exercise for exercise in playlist.exercise_list]
     users = list(set(list(performances.values_list("user__email", flat=True))))
 
     for user in users:
-        name = [n for n in list(Performers.objects.filter(email=user).values_list("first_name", "last_name"))[0]]
+        name = [
+            n
+            for n in list(
+                Performers.objects.filter(email=user).values_list(
+                    "first_name", "last_name"
+                )
+            )[0]
+        ]
         user_data = {
             "email": user,
             "performer": " ".join(
@@ -59,11 +68,15 @@ def playlist_performance_view(request, playlist_id):
             for exercise in exercises_data
         ]
 
-    table = PlaylistActivityTable(data=data, extra_columns=[(exercise, Column()) for exercise in exercises])
+    table = PlaylistActivityTable(
+        data=data, extra_columns=[(exercise, Column()) for exercise in exercises]
+    )
 
     playlist_id = Playlist.objects.filter(id=playlist_id).first().id
 
-    return render(request, "admin/performances.html", {"table": table, "playlist_id": playlist_id})
+    return render(
+        request, "admin/performances.html", {"table": table, "playlist_id": playlist_id}
+    )
 
 
 @login_required
@@ -79,7 +92,12 @@ def submit_exercise_performance(request):
 
     playlist = Playlist.objects.filter(name=playlist_name).first()
     exercise = playlist.get_exercise_obj_by_num(int(exercise_num))
-    PerformanceData.submit(playlist_id=playlist._id, exercise_id=exercise.id, user_id=user.id, data=performance_data)
+    PerformanceData.submit(
+        playlist_id=playlist._id,
+        exercise_id=exercise.id,
+        user_id=user.id,
+        data=performance_data,
+    )
     return HttpResponse(status=201)
 
 
@@ -93,5 +111,7 @@ def submit_playlist_performance(request):
     performance_data.pop("exercise_ID")
 
     playlist = Playlist.objects.filter(name=playlist_name).first()
-    PerformanceData.submit_playlist_performance(playlist_id=playlist._id, user_id=user.id, data=performance_data)
+    PerformanceData.submit_playlist_performance(
+        playlist_id=playlist._id, user_id=user.id, data=performance_data
+    )
     return HttpResponse(status=201)

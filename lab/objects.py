@@ -70,7 +70,10 @@ class ExerciseRepository(object):
     def asDict(self):
         return {
             "course_id": self.course_id,
-            "data": {"exercises": [e.asDict() for e in self.exercises], "groups": [g.asDict() for g in self.groups]},
+            "data": {
+                "exercises": [e.asDict() for e in self.exercises],
+                "groups": [g.asDict() for g in self.groups],
+            },
         }
 
     def asJSON(self):
@@ -196,11 +199,16 @@ class ExerciseFileRepository(ExerciseRepository):
         result = {}
         if exercise_definition.isValid():
             ef = ExerciseFile.create(
-                course_id=self.course_id, group_name=group_name, exercise_definition=exercise_definition
+                course_id=self.course_id,
+                group_name=group_name,
+                exercise_definition=exercise_definition,
             )
             result["status"] = "success"
             result["message"] = "Exercise created successfully!"
-            result["data"] = {"exercise": exercise_definition.getData(), "url": ef.url()}
+            result["data"] = {
+                "exercise": exercise_definition.getData(),
+                "url": ef.url(),
+            }
         else:
             result["status"] = "error"
             result["message"] = "Exercise failed to save."
@@ -274,7 +282,9 @@ class ExerciseDefinition:
         return self.errors
 
     def asJSON(self):
-        return json.dumps(self.getData(), sort_keys=True, indent=4, separators=(",", ": "))
+        return json.dumps(
+            self.getData(), sort_keys=True, indent=4, separators=(",", ": ")
+        )
 
     @classmethod
     def fromJSON(cls, data):
@@ -330,7 +340,15 @@ class ExerciseLilyPond:
         # parsing notes in "absolute" octave mode - each note must be specified absolutely
 
         # constants for parsing
-        note_tuples = [("c", 0), ("d", 2), ("e", 4), ("f", 5), ("g", 7), ("a", 9), ("b", 11)]
+        note_tuples = [
+            ("c", 0),
+            ("d", 2),
+            ("e", 4),
+            ("f", 5),
+            ("g", 7),
+            ("a", 9),
+            ("b", 11),
+        ]
         notes = [n[0] for n in note_tuples]
         note_pitch = dict(note_tuples)
         up, down = ("'", ",")
@@ -338,7 +356,9 @@ class ExerciseLilyPond:
         hidden_note_symbol = r"x"
 
         # normalize the chord string
-        chordstring = re.sub(r"\\xNote\s*", hidden_note_symbol, chordstring)  # replace '\xNote' with just 'x'
+        chordstring = re.sub(
+            r"\\xNote\s*", hidden_note_symbol, chordstring
+        )  # replace '\xNote' with just 'x'
         chordstring = chordstring.lower().strip()  # normalize to lower case
 
         # mutable variables used during parsing
@@ -361,22 +381,29 @@ class ExerciseLilyPond:
             if len(tokens) == 0 or not (tokens[0] in notes):
                 self.is_valid = False
                 self.errors.append(
-                    "Pitch [%s] in chord [%s] is invalid: missing or invalid note name" % (pitch_entry, chordstring)
+                    "Pitch [%s] in chord [%s] is invalid: missing or invalid note name"
+                    % (pitch_entry, chordstring)
                 )
-                raise ExerciseLilyPondError("Error parsing LilyPond chord: %s" % chordstring)
+                raise ExerciseLilyPondError(
+                    "Error parsing LilyPond chord: %s" % chordstring
+                )
 
             note_name = tokens[0]
             tokens = tokens[1:]
 
             # check that all subsequent characters are either octave changing marks, or accidentals
-            check_rest = re.sub(r"|".join([up, down, sharp, flat, r"\d"]), "", "".join(tokens))
+            check_rest = re.sub(
+                r"|".join([up, down, sharp, flat, r"\d"]), "", "".join(tokens)
+            )
             if len(check_rest) > 0:
                 self.is_valid = False
                 self.errors.append(
                     "Pitch entry [%s] in chord [%s] contains unrecognized symbols: %s"
                     % (pitch_entry, chordstring, check_rest)
                 )
-                raise ExerciseLilyPondError("Error parsing LilyPond chord: %s" % chordstring)
+                raise ExerciseLilyPondError(
+                    "Error parsing LilyPond chord: %s" % chordstring
+                )
 
             # look for octave changing marks
             octave_change = 0
@@ -465,7 +492,9 @@ class ExerciseFile:
                 data = f.read().strip()
                 self.exerciseDefinition = ExerciseDefinition.fromJSON(data)
         except IOError as e:
-            raise ExerciseFileError("Error loading exercise file: {0} => {1}".format(e.errno, e.strerror))
+            raise ExerciseFileError(
+                "Error loading exercise file: {0} => {1}".format(e.errno, e.strerror)
+            )
         return True
 
     def save(self, exercise_definition):
@@ -484,7 +513,9 @@ class ExerciseFile:
             with open(self.getPathToFile(), "w") as f:
                 f.write(self.exerciseDefinition.asJSON())
         except IOError as e:
-            raise ExerciseFileError("Error loading exercise file: {0} => {1}".format(e.errno, e.strerror))
+            raise ExerciseFileError(
+                "Error loading exercise file: {0} => {1}".format(e.errno, e.strerror)
+            )
 
         return True
 
@@ -495,7 +526,9 @@ class ExerciseFile:
         os.remove(self.getPathToFile())
         try:
             os.rmdir(self.group_path)
-            log.info("Removed group directory because it was empty: %s" % self.group_path)
+            log.info(
+                "Removed group directory because it was empty: %s" % self.group_path
+            )
         except OSError:
             pass
         return True
@@ -523,10 +556,17 @@ class ExerciseFile:
     def url(self):
         """Returns the URL to the exercise."""
         if self.group.course_id is None:
-            return reverse("lab:exercises", kwargs={"playlist_id": self.group.id, "exercise_name": self.name})
+            return reverse(
+                "lab:exercises",
+                kwargs={"playlist_id": self.group.id, "exercise_name": self.name},
+            )
         return reverse(
             "lab:course-exercises",
-            kwargs={"course_id": self.group.course_id, "playlist_id": self.group.id, "exercise_name": self.name},
+            kwargs={
+                "course_id": self.group.course_id,
+                "playlist_id": self.group.id,
+                "exercise_name": self.name,
+            },
         )
 
     def getName(self):
@@ -582,7 +622,9 @@ class ExerciseFile:
         while os.path.exists(os.path.join(group_path, file_name)):
             n += 1
             if n > max_tries:
-                raise Exception("unable to get next exercise file name after %d tries" % max_tries)
+                raise Exception(
+                    "unable to get next exercise file name after %d tries" % max_tries
+                )
             file_name = "%s.json" % str(n).zfill(2)
 
         return file_name
@@ -598,11 +640,15 @@ class ExerciseFile:
         er = ExerciseFileRepository(course_id=course_id)
         group = er.findGroup(playlist_name)
         if group is None:
-            group_name = re.sub(r"[^a-zA-Z0-9-_]", "", playlist_name)  # scrub group name
+            group_name = re.sub(
+                r"[^a-zA-Z0-9-_]", "", playlist_name
+            )  # scrub group name
             group = ExerciseGroup(group_name, course_id=course_id)
 
         group_size = group.size()
-        group_path = os.path.join(ExerciseFileRepository.getBasePath(course_id), group_name)
+        group_path = os.path.join(
+            ExerciseFileRepository.getBasePath(course_id), group_name
+        )
 
         if file_name is None:
             file_name = ExerciseFile.getNextFileName(group_path, group_size)
@@ -645,7 +691,10 @@ class ExerciseGroup:
     def url(self):
         if self.course_id is None:
             return reverse("lab:playlist-view", kwargs={"playlist_name": self.name})
-        return reverse("lab:course-exercise-groups", kwargs={"playlist_name": self.name, "course_id": self.course_id})
+        return reverse(
+            "lab:course-exercise-groups",
+            kwargs={"playlist_name": self.name, "course_id": self.course_id},
+        )
 
     def first(self):
         if len(self.exercises) > 0:
@@ -681,14 +730,25 @@ class ExerciseGroup:
         exercise_list = []
         for e in self.exercises:
             d = e.asDict()
-            exercise_list.append({"id": d["id"], "name": d["name"], "url": d["url"], "selected": d["selected"]})
+            exercise_list.append(
+                {
+                    "id": d["id"],
+                    "name": d["name"],
+                    "url": d["url"],
+                    "selected": d["selected"],
+                }
+            )
         return exercise_list
 
     def asJSON(self):
         return json.dumps(self.asDict())
 
     def asDict(self):
-        return {"name": self.name, "url": self.url(), "data": {"exercises": [e.asDict() for e in self.exercises]}}
+        return {
+            "name": self.name,
+            "url": self.url(),
+            "data": {"exercises": [e.asDict() for e in self.exercises]},
+        }
 
     def __str__(self):
         return "[" + ", ".join([str(e) for e in self.exercises]) + "]"

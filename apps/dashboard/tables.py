@@ -10,9 +10,13 @@ User = get_user_model()
 
 class SupervisorsTable(tables.Table):
     name = tables.columns.Column(
-        accessor=A("supervisor.get_full_name"), attrs={"td": {"width": "250px"}}, verbose_name="Name of User"
+        accessor=A("supervisor.get_full_name"),
+        attrs={"td": {"width": "250px"}},
+        verbose_name="Name of User",
     )
-    supervisor = tables.columns.Column(attrs={"td": {"width": "250px"}}, verbose_name="Email Address of User")
+    supervisor = tables.columns.Column(
+        attrs={"td": {"width": "250px"}}, verbose_name="Email Address of User"
+    )
     status = tables.columns.Column(empty_values=())
 
     accept = tables.columns.LinkColumn(
@@ -208,7 +212,10 @@ class MyActivityDetailsTable(tables.Table):
         orderable=False,
     )
     id = tables.columns.Column(
-        verbose_name="ID", accessor=("playlist_id"), orderable=False, attrs={"td": {"bgcolor": "lightgray"}}
+        verbose_name="ID",
+        accessor=("playlist_id"),
+        orderable=False,
+        attrs={"td": {"bgcolor": "lightgray"}},
     )
     exercise_count = tables.columns.Column(
         verbose_name="Tally of finished exercises",
@@ -262,11 +269,19 @@ class ExercisesListTable(tables.Table):
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     view = tables.columns.LinkColumn(
-        "lab:exercise-view", kwargs={"exercise_id": A("id")}, text="Load", verbose_name="Load", orderable=False
+        "lab:exercise-view",
+        kwargs={"exercise_id": A("id")},
+        text="Load",
+        verbose_name="Load",
+        orderable=False,
     )
 
     edit = tables.columns.LinkColumn(
-        "dashboard:edit-exercise", kwargs={"exercise_id": A("id")}, text="Edit", verbose_name="Edit", orderable=False
+        "dashboard:edit-exercise",
+        kwargs={"exercise_id": A("id")},
+        text="Edit",
+        verbose_name="Edit",
+        orderable=False,
     )
 
     delete = tables.columns.LinkColumn(
@@ -367,11 +382,19 @@ class CoursesListTable(tables.Table):
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     view = tables.columns.LinkColumn(
-        "lab:course-view", kwargs={"course_id": A("id")}, text="Load", verbose_name="Load", orderable=False
+        "lab:course-view",
+        kwargs={"course_id": A("id")},
+        text="Load",
+        verbose_name="Load",
+        orderable=False,
     )
 
     edit = tables.columns.LinkColumn(
-        "dashboard:edit-course", kwargs={"course_id": A("id")}, text="Edit", verbose_name="Edit", orderable=False
+        "dashboard:edit-course",
+        kwargs={"course_id": A("id")},
+        text="Edit",
+        verbose_name="Edit",
+        orderable=False,
     )
 
     delete = tables.columns.LinkColumn(
@@ -410,7 +433,11 @@ class SupervisorsCoursesListTable(tables.Table):
         verbose_name="Title of Course",
     )
     view = tables.columns.LinkColumn(
-        "lab:course-view", kwargs={"course_id": A("id")}, text="Load", verbose_name="Load", orderable=False
+        "lab:course-view",
+        kwargs={"course_id": A("id")},
+        text="Load",
+        verbose_name="Load",
+        orderable=False,
     )
     authored_by = tables.columns.Column()
     id = tables.columns.Column()
@@ -452,11 +479,19 @@ class GroupsListTable(tables.Table):
     members = tables.columns.Column(accessor=A("members_count"))
 
     edit = tables.columns.LinkColumn(
-        "dashboard:edit-group", kwargs={"group_id": A("id")}, text="Edit", verbose_name="Edit", orderable=False
+        "dashboard:edit-group",
+        kwargs={"group_id": A("id")},
+        text="Edit",
+        verbose_name="Edit",
+        orderable=False,
     )
 
     delete = tables.columns.LinkColumn(
-        "dashboard:delete-group", kwargs={"group_id": A("id")}, text="Delete", verbose_name="Delete", orderable=False
+        "dashboard:delete-group",
+        kwargs={"group_id": A("id")},
+        text="Delete",
+        verbose_name="Delete",
+        orderable=False,
     )
 
     created = tables.columns.DateColumn(
@@ -476,12 +511,18 @@ class GroupsListTable(tables.Table):
 
 class GroupMembersTable(tables.Table):
     member_name = tables.columns.Column(
-        accessor=A("member.get_full_name"), attrs={"td": {"width": "250px"}}, verbose_name="Name of User"
+        accessor=A("member.get_full_name"),
+        attrs={"td": {"width": "250px"}},
+        verbose_name="Name of User",
     )
     member_email = tables.columns.Column(
-        accessor=A("member.email"), attrs={"td": {"width": "250px"}}, verbose_name="Email Address of User"
+        accessor=A("member.email"),
+        attrs={"td": {"width": "250px"}},
+        verbose_name="Email Address of User",
     )
-    subscription_status = tables.columns.Column(empty_values=(), verbose_name="Subscription Status")
+    subscription_status = tables.columns.Column(
+        empty_values=(), verbose_name="Subscription Status"
+    )
 
     remove = tables.columns.LinkColumn(
         "dashboard:remove-group-member",

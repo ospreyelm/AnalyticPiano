@@ -1,20 +1,22 @@
 body {
-  font-family: "Helvetica Neue Light", "Lucida Grande", "Calibri", "Arial", sans-serif;
+  font-family: "Helvetica Neue Light", "Lucida Grande", "Calibri", "Arial",
+    sans-serif;
 }
 
-
-.jasmine_reporter a:visited, .jasmine_reporter a {
-  color: #303; 
+.jasmine_reporter a:visited,
+.jasmine_reporter a {
+  color: #303;
 }
 
-.jasmine_reporter a:hover, .jasmine_reporter a:active {
-  color: blue; 
+.jasmine_reporter a:hover,
+.jasmine_reporter a:active {
+  color: blue;
 }
 
 .run_spec {
-  float:right;
+  float: right;
   padding-right: 5px;
-  font-size: .8em;
+  font-size: 0.8em;
   text-decoration: none;
 }
 
@@ -35,7 +37,7 @@ body {
 }
 
 .logo .version {
-  font-size: .6em;
+  font-size: 0.6em;
   padding-left: 1em;
 }
 
@@ -43,14 +45,10 @@ body {
   background-color: yellow;
 }
 
-
 .options {
   text-align: right;
-  font-size: .8em;
+  font-size: 0.8em;
 }
-
-
-
 
 .suite {
   border: 1px outset gray;
@@ -59,7 +57,7 @@ body {
 }
 
 .suite .suite {
-  margin: 5px; 
+  margin: 5px;
 }
 
 .suite.passed {
@@ -76,7 +74,9 @@ body {
   clear: both;
 }
 
-.spec.failed, .spec.passed, .spec.skipped {
+.spec.failed,
+.spec.passed,
+.spec.skipped {
   padding-bottom: 5px;
   border: 1px solid gray;
 }
@@ -116,9 +116,8 @@ body {
   display: none;
 }
 
-
 /*.resultMessage {*/
-  /*white-space: pre;*/
+/*white-space: pre;*/
 /*}*/
 
 .resultMessage span.result {
@@ -133,7 +132,7 @@ body {
 
 .stackTrace {
   white-space: pre;
-  font-size: .8em;
+  font-size: 0.8em;
   margin-left: 10px;
   max-height: 5em;
   overflow: auto;
@@ -144,7 +143,7 @@ body {
 
 .finished-at {
   padding-left: 1em;
-  font-size: .6em;
+  font-size: 0.6em;
 }
 
 .show-passed .passed,
@@ -152,9 +151,8 @@ body {
   display: block;
 }
 
-
 #jasmine_content {
-  position:fixed;
+  position: fixed;
   right: 100%;
 }
 

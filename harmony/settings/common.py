@@ -201,7 +201,11 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.NullHandler",
         },
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "verbose"},
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
     },
     "root": {
         "handlers": ["console"],
@@ -254,8 +258,32 @@ CKEDITOR_CONFIGS = {
         "height": 200,
         "toolbar_Basic": [["Source", "-", "Bold", "Italic"]],
         "toolbar_YourCustomToolbarConfig": [
-            {"name": "document", "items": ["Source", "-", "Save", "NewPage", "Preview", "Print", "-", "Templates"]},
-            {"name": "clipboard", "items": ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord", "-", "Undo", "Redo"]},
+            {
+                "name": "document",
+                "items": [
+                    "Source",
+                    "-",
+                    "Save",
+                    "NewPage",
+                    "Preview",
+                    "Print",
+                    "-",
+                    "Templates",
+                ],
+            },
+            {
+                "name": "clipboard",
+                "items": [
+                    "Cut",
+                    "Copy",
+                    "Paste",
+                    "PasteText",
+                    "PasteFromWord",
+                    "-",
+                    "Undo",
+                    "Redo",
+                ],
+            },
             {"name": "editing", "items": ["Find", "Replace", "-", "SelectAll"]},
             {
                 "name": "forms",
@@ -273,7 +301,16 @@ CKEDITOR_CONFIGS = {
             },
             {
                 "name": "basicstyles",
-                "items": ["Bold", "Italic", "Underline", "Strike", "Subscript", "Superscript", "-", "RemoveFormat"],
+                "items": [
+                    "Bold",
+                    "Italic",
+                    "Underline",
+                    "Strike",
+                    "Subscript",
+                    "Superscript",
+                    "-",
+                    "RemoveFormat",
+                ],
             },
             {
                 "name": "paragraph",
@@ -300,7 +337,16 @@ CKEDITOR_CONFIGS = {
             {"name": "links", "items": ["Link", "Unlink", "Anchor"]},
             {
                 "name": "insert",
-                "items": ["Image", "Flash", "Table", "HorizontalRule", "Smiley", "SpecialChar", "PageBreak", "Iframe"],
+                "items": [
+                    "Image",
+                    "Flash",
+                    "Table",
+                    "HorizontalRule",
+                    "Smiley",
+                    "SpecialChar",
+                    "PageBreak",
+                    "Iframe",
+                ],
             },
             "/",
             {"name": "styles", "items": ["Styles", "Format", "Font", "FontSize"]},

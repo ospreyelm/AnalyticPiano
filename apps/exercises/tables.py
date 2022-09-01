@@ -7,4 +7,4 @@ class PlaylistActivityTable(tables.Table):
 
     class Meta:
         # order_by = ('-exercise_count')
-        order_by = ('performer')
+        order_by = "performer"

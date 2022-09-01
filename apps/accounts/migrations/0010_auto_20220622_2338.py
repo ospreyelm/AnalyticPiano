@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0009_group'),
+        ("accounts", "0009_group"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='auto_advance',
+            model_name="user",
+            name="auto_advance",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='user',
-            name='auto_advance_delay',
+            model_name="user",
+            name="auto_advance_delay",
             field=models.PositiveIntegerField(default=4),
         ),
         migrations.AddField(
-            model_name='user',
-            name='auto_repeat',
+            model_name="user",
+            name="auto_repeat",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='user',
-            name='auto_repeat_delay',
+            model_name="user",
+            name="auto_repeat_delay",
             field=models.PositiveIntegerField(default=6),
         ),
     ]

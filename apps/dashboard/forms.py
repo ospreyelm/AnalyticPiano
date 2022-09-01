@@ -18,7 +18,10 @@ class BaseSupervisionForm(forms.Form):
     def clean(self):
         email = self.cleaned_data.get("email").lower()
         if email == self.context.get("user").email:
-            self.add_error("email", "This is your own email address! Enter the email of another user.")
+            self.add_error(
+                "email",
+                "This is your own email address! Enter the email of another user.",
+            )
         if not User.objects.filter(email=email).exists():
             self.add_error("email", "No user is registered with this email.")
 
@@ -40,24 +43,33 @@ class RemoveSubscriptionConfirmationForm(forms.Form):
     confirmation_text = forms.CharField(label="")
 
     def clean_confirmation_text(self):
-        if self.cleaned_data["confirmation_text"] not in [self.CONFIRMATION_PHRASE, self.context.get("email")]:
+        if self.cleaned_data["confirmation_text"] not in [
+            self.CONFIRMATION_PHRASE,
+            self.context.get("email"),
+        ]:
             raise forms.ValidationError("Wrong value.")
         return self.cleaned_data["confirmation_text"]
 
 
 class KeyboardForm(forms.Form):
-    keyboard_size = forms.ChoiceField(widget=forms.Select(), choices=KEYBOARD_CHOICES, initial=DEFAULT_KEYBOARD_SIZE)
+    keyboard_size = forms.ChoiceField(
+        widget=forms.Select(), choices=KEYBOARD_CHOICES, initial=DEFAULT_KEYBOARD_SIZE
+    )
 
     auto_advance = forms.BooleanField(required=False, initial=False)
 
     auto_advance_delay = forms.IntegerField(
-        widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}), label_suffix=" (seconds):", initial=4
+        widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
+        label_suffix=" (seconds):",
+        initial=4,
     )
 
     auto_repeat = forms.BooleanField(required=False, initial=False)
 
     auto_repeat_delay = forms.IntegerField(
-        widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}), label_suffix=" (seconds):", initial=6
+        widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
+        label_suffix=" (seconds):",
+        initial=6,
     )
 
     def __init__(self, *args, **kwargs):
@@ -66,7 +78,11 @@ class KeyboardForm(forms.Form):
 
 
 class DashboardExerciseForm(ExerciseForm):
-    id = forms.CharField(widget=forms.TextInput(attrs={"readonly": "readonly"}), required=False, label="ID")
+    id = forms.CharField(
+        widget=forms.TextInput(attrs={"readonly": "readonly"}),
+        required=False,
+        label="ID",
+    )
 
     # analysis_enabled = forms.BooleanField(label='Enable Analysis', required=False)
     # analysis_modes = forms.MultipleChoiceField(
@@ -145,16 +161,20 @@ class TransposeRequestsField(forms.CharField):
 
 
 class DashboardPlaylistForm(PlaylistForm):
-    id = forms.CharField(widget=forms.TextInput(attrs={"readonly": "readonly"}), required=False, label="ID")
+    id = forms.CharField(
+        widget=forms.TextInput(attrs={"readonly": "readonly"}),
+        required=False,
+        label="ID",
+    )
 
-    transpose_requests = TransposeRequestsField(label="Transposition requests", required=False)
+    transpose_requests = TransposeRequestsField(
+        label="Transposition requests", required=False
+    )
 
     editable_fields = ["is_public"]
 
-    custom_m2m_fields =["exercises"]
-    custom_m2m_config = {"exercises":{
-        "ordered":True
-    }}
+    custom_m2m_fields = ["exercises"]
+    custom_m2m_config = {"exercises": {"ordered": True}}
 
     class Meta(PlaylistForm.Meta):
         exclude = ["authored_by"]
@@ -173,14 +193,11 @@ class DashboardPlaylistForm(PlaylistForm):
 
 
 class DashboardCourseForm(CourseForm):
-
     class Meta(CourseForm.Meta):
         fields = ["title", "playlists", "visible_to", "is_public"]
 
-    custom_m2m_fields =["playlists"]
-    custom_m2m_options = {"playlists":{
-        "ordered":False
-    }}
+    custom_m2m_fields = ["playlists"]
+    custom_m2m_options = {"playlists": {"ordered": True}}
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
@@ -206,7 +223,10 @@ class DashboardCourseForm(CourseForm):
 
 class BaseDashboardGroupForm(forms.ModelForm):
     new_members = forms.CharField(
-        widget=forms.Textarea(attrs={"placeholder": "Comma-separated emails of new members"}), required=False
+        widget=forms.Textarea(
+            attrs={"placeholder": "Comma-separated emails of new members"}
+        ),
+        required=False,
     )
 
     class Meta:
@@ -214,9 +234,13 @@ class BaseDashboardGroupForm(forms.ModelForm):
         fields = ("name", "new_members")
 
     def clean_new_members(self):
-        new_members_list = self.cleaned_data["new_members"].rstrip(",").replace(" ", "").split(",")
+        new_members_list = (
+            self.cleaned_data["new_members"].rstrip(",").replace(" ", "").split(",")
+        )
         new_members = list(
-            self.context["user"].subscribers.filter(email__in=new_members_list).values_list("id", flat=True)
+            self.context["user"]
+            .subscribers.filter(email__in=new_members_list)
+            .values_list("id", flat=True)
         )
         return new_members
 
@@ -233,7 +257,9 @@ class DashboardGroupAddForm(BaseDashboardGroupForm):
         self.fields["new_members"].label = "Members"
 
     def clean_name(self):
-        if Group.objects.filter(manager=self.context["user"], name=self.cleaned_data["name"]).exists():
+        if Group.objects.filter(
+            manager=self.context["user"], name=self.cleaned_data["name"]
+        ).exists():
             raise forms.ValidationError("Group with this name already exists.")
         return self.cleaned_data["name"]
 

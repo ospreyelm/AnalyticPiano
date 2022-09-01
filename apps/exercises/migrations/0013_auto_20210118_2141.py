@@ -6,23 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0012_auto_20210115_1608'),
+        ("exercises", "0012_auto_20210115_1608"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='course',
-            name='is_public',
-            field=models.BooleanField(default=False, verbose_name='Share'),
+            model_name="course",
+            name="is_public",
+            field=models.BooleanField(default=False, verbose_name="Share"),
         ),
         migrations.AlterField(
-            model_name='exercise',
-            name='is_public',
-            field=models.BooleanField(default=False, verbose_name='Share'),
+            model_name="exercise",
+            name="is_public",
+            field=models.BooleanField(default=False, verbose_name="Share"),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='is_public',
-            field=models.BooleanField(default=False, verbose_name='Share'),
+            model_name="playlist",
+            name="is_public",
+            field=models.BooleanField(default=False, verbose_name="Share"),
         ),
     ]

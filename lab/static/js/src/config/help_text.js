@@ -3,9 +3,10 @@
 // This defines help text that is displayed in parts of the application.
 //
 define({
-	// Application info modal.
-	'appInfo': {
-		'title': 'Keyboard Shortcuts',
-		'content': '<p>A number of keyboard shorcuts are provided as an alternative to MIDI input.</p><div class="qwerty-keyboard-legend"></div>'
-	}
+  // Application info modal.
+  appInfo: {
+    title: "Keyboard Shortcuts",
+    content:
+      '<p>A number of keyboard shorcuts are provided as an alternative to MIDI input.</p><div class="qwerty-keyboard-legend"></div>',
+  },
 });

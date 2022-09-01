@@ -44,19 +44,28 @@ class CoursePageTable(tables.Table):
         return Playlist.objects.filter(id=record.id).first().due_date
 
     def order_publish_date(self, queryset, is_descending):
-        return self._order_by_date(queryset, is_descending, self.course.publish_dates_dict)
+        return self._order_by_date(
+            queryset, is_descending, self.course.publish_dates_dict
+        )
 
     def order_due_date(self, queryset, is_descending):
         return self._order_by_date(queryset, is_descending, self.course.due_dates_dict)
 
     def _order_by_date(self, queryset, is_descending, dates_dict):
-        sorted_dict = {k: v for k, v in sorted(dates_dict.items(), key=lambda item: item[1], reverse=is_descending)}
+        sorted_dict = {
+            k: v
+            for k, v in sorted(
+                dates_dict.items(), key=lambda item: item[1], reverse=is_descending
+            )
+        }
         playlists = [k for k, v in sorted_dict.items()]
 
         whens = []
         for sort_index, value in enumerate(playlists):
             whens.append(When(id=value, then=sort_index))
 
-        playlists = queryset.annotate(_sort_index=Case(*whens, output_field=models.CharField())).order_by("_sort_index")
+        playlists = queryset.annotate(
+            _sort_index=Case(*whens, output_field=models.CharField())
+        ).order_by("_sort_index")
 
         return (playlists, True)

@@ -8,42 +8,64 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0005_course'),
+        ("exercises", "0005_course"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='performancedata',
-            options={'verbose_name': 'Performance', 'verbose_name_plural': 'Performance Data'},
+            name="performancedata",
+            options={
+                "verbose_name": "Performance",
+                "verbose_name_plural": "Performance Data",
+            },
         ),
         migrations.AddField(
-            model_name='exercise',
-            name='name',
-            field=models.CharField(blank=True, max_length=60, null=True, verbose_name='Name'),
+            model_name="exercise",
+            name="name",
+            field=models.CharField(
+                blank=True, max_length=60, null=True, verbose_name="Name"
+            ),
         ),
         migrations.AlterField(
-            model_name='exercise',
-            name='authored_by',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='exercises', to=settings.AUTH_USER_MODEL, verbose_name='Author'),
+            model_name="exercise",
+            name="authored_by",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="exercises",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Author",
+            ),
         ),
         migrations.AlterField(
-            model_name='exercise',
-            name='created',
-            field=models.DateTimeField(auto_now_add=True, verbose_name='Created'),
+            model_name="exercise",
+            name="created",
+            field=models.DateTimeField(auto_now_add=True, verbose_name="Created"),
         ),
         migrations.AlterField(
-            model_name='exercise',
-            name='rhythm_value',
-            field=models.CharField(blank=True, max_length=64, null=True, verbose_name='Rhythm'),
+            model_name="exercise",
+            name="rhythm_value",
+            field=models.CharField(
+                blank=True, max_length=64, null=True, verbose_name="Rhythm"
+            ),
         ),
         migrations.AlterField(
-            model_name='exercise',
-            name='updated',
-            field=models.DateTimeField(auto_now=True, verbose_name='Updated'),
+            model_name="exercise",
+            name="updated",
+            field=models.DateTimeField(auto_now=True, verbose_name="Updated"),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='transposition_type',
-            field=models.CharField(blank=True, choices=[('Exercise Loop', 'Exercise Loop'), ('Playlist Loop', 'Playlist Loop'), (None, None)], max_length=32, null=True, verbose_name='Transposition Types'),
+            model_name="playlist",
+            name="transposition_type",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("Exercise Loop", "Exercise Loop"),
+                    ("Playlist Loop", "Playlist Loop"),
+                    (None, None),
+                ],
+                max_length=32,
+                null=True,
+                verbose_name="Transposition Types",
+            ),
         ),
     ]

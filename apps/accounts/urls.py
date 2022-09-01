@@ -16,12 +16,20 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="custom-logout"),
     # path("forgot-password/", forgot_password_view, name="forgot-password"),
     path("reset-password/", PasswordResetView.as_view(), name="reset-password"),
-    path("reset-password-done/", PasswordResetDoneView.as_view(), name="password_reset_done"),
+    path(
+        "reset-password-done/",
+        PasswordResetDoneView.as_view(),
+        name="password_reset_done",
+    ),
     path(
         "reset-password-confirm/<str:uidb64>/<str:token>",
         PasswordResetConfirmView.as_view(),
         # different naming pattern because the email is generated with a URL to this name
         name="password_reset_confirm",
     ),
-    path("reset-password-complete/", PasswordResetCompleteView.as_view(), name="password_reset_complete"),
+    path(
+        "reset-password-complete/",
+        PasswordResetCompleteView.as_view(),
+        name="password_reset_complete",
+    ),
 ]

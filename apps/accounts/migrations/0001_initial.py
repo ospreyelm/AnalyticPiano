@@ -11,53 +11,113 @@ def forwards_func(apps, schema_editor):
     # if we directly import it, it'll be the wrong version
     User = apps.get_model("accounts", "User")
     db_alias = schema_editor.connection.alias
-    User.objects.using(db_alias).create(email='guest@analyticpiano.herokuapp.com')  # FIXME remove this in the future
+    User.objects.using(db_alias).create(
+        email="guest@analyticpiano.herokuapp.com"
+    )  # FIXME remove this in the future
 
 
 class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('auth', '0011_update_proxy_permissions'),
+        ("auth", "0011_update_proxy_permissions"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='User',
+            name="User",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('password', models.CharField(max_length=128, verbose_name='password')),
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
-                ('is_superuser', models.BooleanField(default=False,
-                                                     help_text='Designates that this user has all permissions without explicitly assigning them.',
-                                                     verbose_name='superuser status')),
-                ('raw_password', models.CharField(default=apps.accounts.utils.generate_raw_password,
-                                                  help_text="** Temporary field **.\nThe user's password and this field are only the same for frontend users.",
-                                                  max_length=32)),
-                ('email', models.EmailField(max_length=254, unique=True, verbose_name='Email')),
-                ('is_staff', models.BooleanField(default=False,
-                                                 help_text='TEMPORARY IMPORTANT NOTIFICATION:Before designating to Admin status, make sure the password IS NOT THE SAME as the raw password.Designates whether the user can log into this admin site.',
-                                                 verbose_name='Is Admin')),
-                ('is_active', models.BooleanField(default=True,
-                                                  help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.',
-                                                  verbose_name='Is Active')),
-                ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Date Joined')),
-                ('groups', models.ManyToManyField(blank=True,
-                                                  help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
-                                                  related_name='user_set', related_query_name='user', to='auth.Group',
-                                                  verbose_name='groups')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.',
-                                                            related_name='user_set', related_query_name='user',
-                                                            to='auth.Permission', verbose_name='user permissions')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("password", models.CharField(max_length=128, verbose_name="password")),
+                (
+                    "last_login",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="last login"
+                    ),
+                ),
+                (
+                    "is_superuser",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Designates that this user has all permissions without explicitly assigning them.",
+                        verbose_name="superuser status",
+                    ),
+                ),
+                (
+                    "raw_password",
+                    models.CharField(
+                        default=apps.accounts.utils.generate_raw_password,
+                        help_text="** Temporary field **.\nThe user's password and this field are only the same for frontend users.",
+                        max_length=32,
+                    ),
+                ),
+                (
+                    "email",
+                    models.EmailField(
+                        max_length=254, unique=True, verbose_name="Email"
+                    ),
+                ),
+                (
+                    "is_staff",
+                    models.BooleanField(
+                        default=False,
+                        help_text="TEMPORARY IMPORTANT NOTIFICATION:Before designating to Admin status, make sure the password IS NOT THE SAME as the raw password.Designates whether the user can log into this admin site.",
+                        verbose_name="Is Admin",
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Designates whether this user should be treated as active. Unselect this instead of deleting accounts.",
+                        verbose_name="Is Active",
+                    ),
+                ),
+                (
+                    "date_joined",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="Date Joined"
+                    ),
+                ),
+                (
+                    "groups",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="The groups this user belongs to. A user will get all permissions granted to each of their groups.",
+                        related_name="user_set",
+                        related_query_name="user",
+                        to="auth.Group",
+                        verbose_name="groups",
+                    ),
+                ),
+                (
+                    "user_permissions",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Specific permissions for this user.",
+                        related_name="user_set",
+                        related_query_name="user",
+                        to="auth.Permission",
+                        verbose_name="user permissions",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'User',
-                'verbose_name_plural': 'Users',
-                'abstract': False,
+                "verbose_name": "User",
+                "verbose_name_plural": "Users",
+                "abstract": False,
             },
             managers=[
-                ('objects', apps.accounts.managers.UserManager()),
+                ("objects", apps.accounts.managers.UserManager()),
             ],
         ),
-        migrations.RunPython(forwards_func)
+        migrations.RunPython(forwards_func),
     ]

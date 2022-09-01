@@ -6,37 +6,33 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0024_auto_20220728_1626'),
+        ("exercises", "0024_auto_20220728_1626"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='playlist',
-            name='exercises_string',
+            model_name="playlist",
+            name="exercises_string",
         ),
         migrations.AddField(
-            model_name='playlist',
-            name='exercises',
-            field=models.ManyToManyField(blank=True, help_text='These are the exercises within this playlist.', related_name='playlists', through='exercises.ExercisePlaylistOrdered', to='exercises.Exercise'),
+            model_name="playlist",
+            name="exercises",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="These are the exercises within this playlist.",
+                related_name="playlists",
+                through="exercises.ExercisePlaylistOrdered",
+                to="exercises.Exercise",
+            ),
         ),
         migrations.AlterField(
-            model_name='course',
-            name='title',
-            field=models.CharField(max_length=64, unique=True, verbose_name='Title'),
+            model_name="course",
+            name="title",
+            field=models.CharField(max_length=64, unique=True, verbose_name="Title"),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='due_date',
-            field=models.DateTimeField(blank=True, default=None, help_text='Format: MM-DD-YYYY', null=True, verbose_name='Due Date'),
-        ),
-        migrations.AlterField(
-            model_name='playlist',
-            name='name',
-            field=models.CharField(max_length=32, unique=True, verbose_name='Name'),
-        ),
-        migrations.AlterField(
-            model_name='playlist',
-            name='publish_date',
-            field=models.DateTimeField(blank=True, default=None, help_text='Format: MM-DD-YYYY', null=True, verbose_name='Publish Date'),
+            model_name="playlist",
+            name="name",
+            field=models.CharField(max_length=32, unique=True, verbose_name="Name"),
         ),
     ]

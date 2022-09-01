@@ -15,15 +15,22 @@ from apps.dashboard.tables import PlaylistsListTable
 from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
 from .m2m_view import handle_m2m
 
+
 @login_required
 def playlists_list_view(request):
-    playlists = Playlist.objects.filter(authored_by=request.user).select_related("authored_by")
+    playlists = Playlist.objects.filter(authored_by=request.user).select_related(
+        "authored_by"
+    )
 
     table = PlaylistsListTable(playlists)
     playlists_author = request.user
 
     RequestConfig(request, paginate={"per_page": 50}).configure(table)
-    return render(request, "dashboard/playlists-list.html", {"table": table, "playlists_author": playlists_author})
+    return render(
+        request,
+        "dashboard/playlists-list.html",
+        {"table": table, "playlists_author": playlists_author},
+    )
 
 
 @login_required
@@ -40,13 +47,20 @@ def playlist_add_view(request):
             playlist = form.save(commit=False)
             for exercise in form.cleaned_data["exercises"]:
                 if exercise not in playlist.exercises.all():
-                    playlist.exercises.add(exercise, through_defaults={"order": len(playlist.exercises.all())})
+                    playlist.exercises.add(
+                        exercise,
+                        through_defaults={"order": len(playlist.exercises.all())},
+                    )
             playlist.authored_by = request.user
             playlist.save()
             if "save-and-continue" in request.POST:
-                success_url = reverse("dashboard:edit-playlist", kwargs={"playlist_id": playlist.id})
+                success_url = reverse(
+                    "dashboard:edit-playlist", kwargs={"playlist_id": playlist.id}
+                )
                 messages.add_message(
-                    request, messages.SUCCESS, f"{context['verbose_name']} has been saved successfully."
+                    request,
+                    messages.SUCCESS,
+                    f"{context['verbose_name']} has been saved successfully.",
                 )
             else:
                 success_url = reverse("dashboard:playlists-list")
@@ -61,9 +75,11 @@ def playlist_add_view(request):
     context["form"] = form
     return render(request, "dashboard/content.html", context)
 
+
 def parse_epo(epo):
-    exercise = Exercise.objects.filter(_id= epo.exercise_id).first()
-    return {'name':exercise.id, 'id':exercise._id, 'order':epo.order}
+    exercise = Exercise.objects.filter(_id=epo.exercise_id).first()
+    return {"name": exercise.id, "id": exercise._id, "order": epo.order}
+
 
 @login_required
 def playlist_edit_view(request, playlist_id):
@@ -72,8 +88,10 @@ def playlist_edit_view(request, playlist_id):
     if request.user != playlist.authored_by:
         raise PermissionDenied
 
-    exercises_list = list(map(parse_epo,ExercisePlaylistOrdered.objects.filter(playlist_id=playlist._id)))
-    
+    exercises_list = list(
+        map(parse_epo, ExercisePlaylistOrdered.objects.filter(playlist_id=playlist._id))
+    )
+
     exercises_list.sort(key=lambda epo: epo["order"])
 
     context = {
@@ -81,11 +99,16 @@ def playlist_edit_view(request, playlist_id):
         "verbose_name_plural": playlist._meta.verbose_name_plural,
         "has_been_performed": playlist.has_been_performed,
         "redirect_url": reverse("dashboard:playlists-list"),
-        "delete_url": reverse("dashboard:delete-playlist", kwargs={"playlist_id": playlist_id}),
-        "editing":True,
-        "m2m_added":{'exercises':exercises_list},
-        "m2m_options":{'exercises':filter(lambda e: e not in playlist.exercises.all(), Exercise.objects.all())},
-
+        "delete_url": reverse(
+            "dashboard:delete-playlist", kwargs={"playlist_id": playlist_id}
+        ),
+        "editing": True,
+        "m2m_added": {"exercises": exercises_list},
+        "m2m_options": {
+            "exercises": filter(
+                lambda e: e not in playlist.exercises.all(), Exercise.objects.all()
+            )
+        },
     }
 
     PROTECT_PLAYLIST_CONTENT = playlist.has_been_performed
@@ -111,17 +134,36 @@ def playlist_edit_view(request, playlist_id):
                 ## ^ is this ok?
             else:
                 playlist = form.save(commit=False)
-                added_exercise_id= request.POST.get('exercises_add')
+                added_exercise_id = request.POST.get("exercises_add")
                 if added_exercise_id != "":
-                    playlist.exercises.add(Exercise.objects.filter(id=added_exercise_id).first(), through_defaults={"order": len(playlist.exercises.all())})
-                handle_m2m(request, 'exercises',{'playlist_id':playlist._id}, 'exercise_id', list(map(lambda ex: Exercise.objects.filter(_id = ex['id']).first(),exercises_list)), ThroughModel=ExercisePlaylistOrdered)
+                    playlist.exercises.add(
+                        Exercise.objects.filter(id=added_exercise_id).first(),
+                        through_defaults={"order": len(playlist.exercises.all())},
+                    )
+                handle_m2m(
+                    request,
+                    "exercises",
+                    {"playlist_id": playlist._id},
+                    "exercise_id",
+                    list(
+                        map(
+                            lambda ex: Exercise.objects.filter(_id=ex["id"]).first(),
+                            exercises_list,
+                        )
+                    ),
+                    ThroughModel=ExercisePlaylistOrdered,
+                )
                 playlist.authored_by = request.user
                 ## ^ original authorship of playlist should not change
                 playlist.save()
 
             if "save-and-continue" in request.POST:
-                success_url = reverse("dashboard:edit-playlist", kwargs={"playlist_id": playlist.id})
-                messages.add_message(request, messages.SUCCESS, f"{context['verbose_name']} saved")
+                success_url = reverse(
+                    "dashboard:edit-playlist", kwargs={"playlist_id": playlist.id}
+                )
+                messages.add_message(
+                    request, messages.SUCCESS, f"{context['verbose_name']} saved"
+                )
             else:
                 success_url = reverse("dashboard:playlists-list")
             return redirect(success_url)
@@ -147,7 +189,9 @@ def playlist_delete_view(request, playlist_id):
 
     if request.method == "POST":
         if playlist.has_been_performed:
-            raise ValidationError("Playlists that have been performed cannot be deleted.")
+            raise ValidationError(
+                "Playlists that have been performed cannot be deleted."
+            )
         playlist.delete()
         return redirect("dashboard:playlists-list")
 

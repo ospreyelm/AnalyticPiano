@@ -6,23 +6,35 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0020_auto_20210823_0001'),
+        ("exercises", "0020_auto_20210823_0001"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='course',
-            name='due_dates',
-            field=models.CharField(blank=True, help_text='Due date of each playlist, separated by space.', max_length=1024, null=True, verbose_name='Due Dates'),
+            model_name="course",
+            name="due_dates",
+            field=models.CharField(
+                blank=True,
+                help_text="Due date of each playlist, separated by space.",
+                max_length=1024,
+                null=True,
+                verbose_name="Due Dates",
+            ),
         ),
         migrations.AddField(
-            model_name='course',
-            name='publish_dates',
-            field=models.CharField(blank=True, help_text='Publish date of each playlist, separated by space.', max_length=1024, null=True, verbose_name='Publish Dates'),
+            model_name="course",
+            name="publish_dates",
+            field=models.CharField(
+                blank=True,
+                help_text="Publish date of each playlist, separated by space.",
+                max_length=1024,
+                null=True,
+                verbose_name="Publish Dates",
+            ),
         ),
         migrations.AddField(
-            model_name='exercise',
-            name='locked',
-            field=models.BooleanField(default=False, verbose_name='Locked'),
+            model_name="exercise",
+            name="locked",
+            field=models.BooleanField(default=False, verbose_name="Locked"),
         ),
     ]

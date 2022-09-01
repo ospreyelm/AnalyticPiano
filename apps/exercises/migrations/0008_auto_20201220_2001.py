@@ -6,38 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0007_auto_20201220_1421'),
+        ("exercises", "0007_auto_20201220_1421"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='course',
-            name='created',
-            field=models.DateTimeField(auto_now_add=True, verbose_name='Created'),
+            model_name="course",
+            name="created",
+            field=models.DateTimeField(auto_now_add=True, verbose_name="Created"),
         ),
         migrations.AlterField(
-            model_name='course',
-            name='updated',
-            field=models.DateTimeField(auto_now=True, verbose_name='Updated'),
+            model_name="course",
+            name="updated",
+            field=models.DateTimeField(auto_now=True, verbose_name="Updated"),
         ),
         migrations.AlterField(
-            model_name='performancedata',
-            name='created',
-            field=models.DateTimeField(auto_now_add=True, verbose_name='Created'),
+            model_name="performancedata",
+            name="created",
+            field=models.DateTimeField(auto_now_add=True, verbose_name="Created"),
         ),
         migrations.AlterField(
-            model_name='performancedata',
-            name='updated',
-            field=models.DateTimeField(auto_now=True, verbose_name='Updated'),
+            model_name="performancedata",
+            name="updated",
+            field=models.DateTimeField(auto_now=True, verbose_name="Updated"),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='created',
-            field=models.DateTimeField(auto_now_add=True, verbose_name='Created'),
+            model_name="playlist",
+            name="created",
+            field=models.DateTimeField(auto_now_add=True, verbose_name="Created"),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='updated',
-            field=models.DateTimeField(auto_now=True, verbose_name='Updated'),
+            model_name="playlist",
+            name="updated",
+            field=models.DateTimeField(auto_now=True, verbose_name="Updated"),
         ),
     ]

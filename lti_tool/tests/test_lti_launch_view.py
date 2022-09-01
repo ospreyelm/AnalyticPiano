@@ -4,6 +4,7 @@ from django.views.generic import RedirectView
 
 from ..views import LTILaunchView
 
+
 class LTILaunchViewTest(unittest.TestCase):
     longMessage = True
 
@@ -14,4 +15,8 @@ class LTILaunchViewTest(unittest.TestCase):
         """
         Test that the launch view requires users to log in
         """
-        self.assertIsInstance(self.view, LoginRequiredMixin, 'LTI launch view expected to be a subclass of LoginRequiredMixin')
+        self.assertIsInstance(
+            self.view,
+            LoginRequiredMixin,
+            "LTI launch view expected to be a subclass of LoginRequiredMixin",
+        )

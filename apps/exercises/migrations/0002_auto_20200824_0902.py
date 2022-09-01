@@ -7,18 +7,22 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0001_initial'),
+        ("exercises", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='performancedata',
-            name='playlist_performances',
-            field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, default=list, verbose_name='Playlist Performances'),
+            model_name="performancedata",
+            name="playlist_performances",
+            field=django.contrib.postgres.fields.jsonb.JSONField(
+                blank=True, default=list, verbose_name="Playlist Performances"
+            ),
         ),
         migrations.AlterField(
-            model_name='performancedata',
-            name='data',
-            field=django.contrib.postgres.fields.jsonb.JSONField(default=list, verbose_name='Raw Data'),
+            model_name="performancedata",
+            name="data",
+            field=django.contrib.postgres.fields.jsonb.JSONField(
+                default=list, verbose_name="Raw Data"
+            ),
         ),
     ]

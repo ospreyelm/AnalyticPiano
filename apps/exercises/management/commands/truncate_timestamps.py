@@ -7,7 +7,7 @@ from apps.exercises.models import PerformanceData, Exercise, Playlist, Course
 class Command(BaseCommand):
     def handle(self, *args, **options):
         models = [Exercise, Playlist, Course, PerformanceData]
-        with connections['default'].cursor() as cursor:
+        with connections["default"].cursor() as cursor:
             for model in models:
                 cursor.execute(
                     "UPDATE {} "
@@ -16,5 +16,5 @@ class Command(BaseCommand):
                     )
                 )
         self.stdout.write(
-            self.style.SUCCESS('Successfully removed microseconds from timestamps.')
+            self.style.SUCCESS("Successfully removed microseconds from timestamps.")
         )

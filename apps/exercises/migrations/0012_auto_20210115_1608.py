@@ -11,9 +11,9 @@ def modify_performance_data(apps, schema_editor):
         new_raw_data = []
         exercise_data = copy(pd.data)
         for exercise in exercise_data:
-            exercise_error_count = exercise.get('exercise_error_tally')
-            if exercise_error_count and exercise_error_count == 'n/a':
-                exercise['exercise_error_tally'] = -1
+            exercise_error_count = exercise.get("exercise_error_tally")
+            if exercise_error_count and exercise_error_count == "n/a":
+                exercise["exercise_error_tally"] = -1
             new_raw_data.append(exercise)
         pd.data = new_raw_data
         pd.save()
@@ -21,9 +21,7 @@ def modify_performance_data(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('exercises', '0011_auto_20210111_0207'),
+        ("exercises", "0011_auto_20210111_0207"),
     ]
 
-    operations = [
-        migrations.RunPython(modify_performance_data)
-    ]
+    operations = [migrations.RunPython(modify_performance_data)]

@@ -25,7 +25,8 @@ class CustomAuthenticationForm(forms.ModelForm):
     )
 
     error_messages = {
-        "invalid_login": "Please enter a correct email and password. The password " "is case-sensitive.",
+        "invalid_login": "Please enter a correct email and password. The password "
+        "is case-sensitive.",
         "inactive": "This account is inactive.",
     }
 
@@ -73,7 +74,9 @@ class RegistrationForm(forms.ModelForm):
 
     def save(self, commit=True):
         formUser = self.instance
-        user = User.objects.create_user(email=formUser.email, password=formUser.password)
+        user = User.objects.create_user(
+            email=formUser.email, password=formUser.password
+        )
         user.first_name = formUser.first_name
         user.last_name = formUser.last_name
         return user.save()

@@ -33,7 +33,14 @@ class UserAdmin(admin.UserAdmin):
     add_form = UserAdminCreationForm
     change_password_form = AdminPasswordChangeForm
 
-    list_display = ("email", "first_name", "last_name", "is_staff", "is_active", "is_superuser")
+    list_display = (
+        "email",
+        "first_name",
+        "last_name",
+        "is_staff",
+        "is_active",
+        "is_superuser",
+    )
 
     search_fields = ("email",)
     ordering = (

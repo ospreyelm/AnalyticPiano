@@ -23,10 +23,14 @@ class BaseContentResource(resources.ModelResource):
 
     def import_field(self, field, obj, data, is_m2m=False, **kwargs):
         obj.authored_by = self.request.user
-        return super(BaseContentResource, self).import_field(field, obj, data, is_m2m, **kwargs)
+        return super(BaseContentResource, self).import_field(
+            field, obj, data, is_m2m, **kwargs
+        )
 
     def import_row(self, row, instance_loader, **kwargs):
-        import_result = super(BaseContentResource, self).import_row(row, instance_loader, **kwargs)
+        import_result = super(BaseContentResource, self).import_row(
+            row, instance_loader, **kwargs
+        )
         if import_result.import_type in RowResult.IMPORT_TYPE_INVALID:
             # import_result.diff = [row[val] for val in row]
             # import_result.diff.append('Errors: {}'.format(import_result.validation_error.message_dict))
@@ -37,7 +41,9 @@ class BaseContentResource(resources.ModelResource):
         export_fields = super(BaseContentResource, self).get_export_fields()
         if self.is_sample:
             export_fields = [
-                field for field in export_fields if field.attribute in self._meta.sample_import_file_fields
+                field
+                for field in export_fields
+                if field.attribute in self._meta.sample_import_file_fields
             ]
         return export_fields
 
@@ -58,7 +64,14 @@ class ExerciseResource(BaseContentResource):
             "updated",
         )
         export_order = fields
-        sample_import_file_fields = ("description", "data", "rhythm", "time_signature", "is_public", "locked")
+        sample_import_file_fields = (
+            "description",
+            "data",
+            "rhythm",
+            "time_signature",
+            "is_public",
+            "locked",
+        )
 
 
 class PlaylistResource(BaseContentResource):
@@ -77,7 +90,13 @@ class PlaylistResource(BaseContentResource):
             "updated",
         )
         export_order = fields
-        sample_import_file_fields = ("name", "exercises", "transpose_requests", "transposition_type", "is_public")
+        sample_import_file_fields = (
+            "name",
+            "exercises",
+            "transpose_requests",
+            "transposition_type",
+            "is_public",
+        )
 
 
 class CourseResource(BaseContentResource):

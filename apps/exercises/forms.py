@@ -22,12 +22,18 @@ class ExpansiveForm(forms.ModelForm):
         assert self.EXPANSIVE_FIELD_INITIAL is not None
 
         expansive_field_data = re.sub(
-            r"[^a-zA-Z0-9-,; \n]", "", self.cleaned_data.get(self.EXPANSIVE_FIELD, "").rstrip(",")
+            r"[^a-zA-Z0-9-,; \n]",
+            "",
+            self.cleaned_data.get(self.EXPANSIVE_FIELD, "").rstrip(","),
         )
-        parsed_input = [n.upper().strip() for n in re.split("-*[,; \n]+-*", expansive_field_data)]
+        parsed_input = [
+            n.upper().strip() for n in re.split("-*[,; \n]+-*", expansive_field_data)
+        ]
 
         # to test if item exists
-        all_object_ids = list(self.EXPANSIVE_FIELD_MODEL.objects.values_list("id", flat=True))
+        all_object_ids = list(
+            self.EXPANSIVE_FIELD_MODEL.objects.values_list("id", flat=True)
+        )
 
         object_ids = []
         for string in parsed_input:
@@ -50,16 +56,19 @@ class ExpansiveForm(forms.ModelForm):
                     # generate WARNING
                     continue
 
-                item_is_public = self.EXPANSIVE_FIELD_MODEL.objects.filter(id=_id).first().is_public == True
+                item_is_public = (
+                    self.EXPANSIVE_FIELD_MODEL.objects.filter(id=_id).first().is_public
+                    == True
+                )
 
                 if item_is_public:
                     object_ids.append(_id)
                     continue
 
                 user_authored_objects = list(
-                    self.EXPANSIVE_FIELD_MODEL.objects.filter(authored_by_id=self.context.get("user").id).values_list(
-                        "id", flat=True
-                    )
+                    self.EXPANSIVE_FIELD_MODEL.objects.filter(
+                        authored_by_id=self.context.get("user").id
+                    ).values_list("id", flat=True)
                 )
 
                 if _id in user_authored_objects:
@@ -104,7 +113,9 @@ class ExpansiveForm(forms.ModelForm):
 
     def _expand_range(self, id_range, all_object_ids, allowance=100):
         user_authored_objects = list(
-            self.EXPANSIVE_FIELD_MODEL.objects.filter(authored_by_id=self.context.get("user").id)
+            self.EXPANSIVE_FIELD_MODEL.objects.filter(
+                authored_by_id=self.context.get("user").id
+            )
             .values_list("id", flat=True)
             .order_by("id")
         )
@@ -141,7 +152,9 @@ class ExpansiveForm(forms.ModelForm):
         return object_ids
 
 
-CustomDateField = forms.DateField(input_formats=["%Y-%m-%d"], required=False, help_text="Format: YYYY-MM-DD")
+CustomDateField = forms.DateField(
+    input_formats=["%Y-%m-%d"], required=False, help_text="Format: YYYY-MM-DD"
+)
 
 
 class ExerciseForm(forms.ModelForm):
@@ -151,11 +164,11 @@ class ExerciseForm(forms.ModelForm):
     TYPE_FIGURED_BASS = "figured_bass"
     TYPE_FIGURED_BASS_PCS = "figured_bass_pcs"
     TYPE_CHOICES = (
-        (TYPE_MATCHING,"Matching"),
-        (TYPE_ANALYTICAL,"Analytical"),
-        (TYPE_ANALYTICAL_PCS,"Analytical PCS"),
-        ( TYPE_FIGURED_BASS,"Figured Bass"),
-        ( TYPE_FIGURED_BASS_PCS,"Figured Bass PCS"),
+        (TYPE_MATCHING, "Matching"),
+        (TYPE_ANALYTICAL, "Analytical"),
+        (TYPE_ANALYTICAL_PCS, "Analytical PCS"),
+        (TYPE_FIGURED_BASS, "Figured Bass"),
+        (TYPE_FIGURED_BASS_PCS, "Figured Bass PCS"),
     )
 
     DISTRIBUTION_KEYBOARD = "keyboard"
@@ -176,25 +189,49 @@ class ExerciseForm(forms.ModelForm):
         (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, "Keyboard with Left Hand Bias"),
     )
 
-    intro_text = forms.CharField(widget=CKEditorWidget(config_name="limited"), required=False, help_text="Brief description showed to users before beginning.")
+    intro_text = forms.CharField(
+        widget=CKEditorWidget(config_name="limited"),
+        required=False,
+        help_text="Brief description showed to users before beginning.",
+    )
     # review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
-    type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False)
-    staff_distribution = forms.ChoiceField(choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False)
-    time_signature = forms.CharField(required=False, help_text="Time signature for this exercise. Ex: '3/4'")
+    type = forms.ChoiceField(
+        choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False
+    )
+    staff_distribution = forms.ChoiceField(
+        choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False
+    )
+    time_signature = forms.CharField(
+        required=False, help_text="Time signature for this exercise. Ex: '3/4'"
+    )
 
-    field_order = ["id","description","rhythm","time_signature","intro_text","type","staff_distribution","is_public"]
-
+    field_order = [
+        "id",
+        "description",
+        "rhythm",
+        "time_signature",
+        "intro_text",
+        "type",
+        "staff_distribution",
+        "is_public",
+    ]
 
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
         if self.instance and self.instance.pk:
-            self.fields["intro_text"].initial = self.instance.data.get("introText", None)
+            self.fields["intro_text"].initial = self.instance.data.get(
+                "introText", None
+            )
             # self.fields['review_text'].initial = self.instance.data.get('reviewText', None)
-            self.fields["type"].initial = self.instance.data.get("type", self.TYPE_MATCHING)
+            self.fields["type"].initial = self.instance.data.get(
+                "type", self.TYPE_MATCHING
+            )
             self.fields["staff_distribution"].initial = self.instance.data.get(
                 "staffDistribution", self.DISTRIBUTION_KEYBOARD
             )
-            self.fields["time_signature"].initial = self.instance.data.get("timeSignature", None)
+            self.fields["time_signature"].initial = self.instance.data.get(
+                "timeSignature", None
+            )
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
@@ -228,11 +265,11 @@ class PlaylistForm(forms.ModelForm):
     # EXPANSIVE_FIELD_INITIAL = "E"
 
     transposition_type = forms.ChoiceField(
-        choices=Playlist.TRANSPOSE_TYPE_CHOICES, widget=forms.RadioSelect(), required=False, help_text="Determines order of transposed exercises. Exercise Loop means that each exercise will have its transposed versions come after it successively. Playlist Loop means that the entire playlist will come in its original key, followed successively by the playlist's transposed versions."
+        choices=Playlist.TRANSPOSE_TYPE_CHOICES,
+        widget=forms.RadioSelect(),
+        required=False,
+        help_text="Determines order of transposed exercises. Exercise Loop means that each exercise will have its transposed versions come after it successively. Playlist Loop means that the entire playlist will come in its original key, followed successively by the playlist's transposed versions.",
     )
-
-    due_date = CustomDateField
-    publish_date = CustomDateField
 
     class Meta:
         model = Playlist
