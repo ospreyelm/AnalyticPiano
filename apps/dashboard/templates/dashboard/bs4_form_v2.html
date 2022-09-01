@@ -58,9 +58,10 @@
             {% if m2m_config.ordered %} <th width="100px"> Order </th> {%endif%}
             {% if m2m_config.extra_fields%}
                 {% for extra_field in m2m_config.extra_fields %}
-                    <div style="display:flex; flex-direction:column">
-                        <th>{{extra_field.verbose_name}}</th>
-                    </div>
+                    <th style="flex-direction:column">
+                        <div>{{extra_field.verbose_name}}</div>
+                        <div><small>{{extra_field.help_text}}</small></div>
+                    </th>
                 {% endfor %}
             {% endif%}
             <th style="text-align:center; width:80px">Delete</th>
