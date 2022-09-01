@@ -1,7 +1,11 @@
-{% extends 'dashboard/content.html' %} {% load static %} {% block extra_content
-%} {% if members_table %}
-<div class="dashboard-page">
-  <p>Members:</p>
-  {% include 'django_tables2/bootstrap4.html' with table=members_table %}
-</div>
-{% endif %} {% endblock %}
+{% extends 'dashboard/content.html' %}
+{% load static %}
+
+{% block extra_content %}
+    {% if members_table %}
+        <div class="dashboard-page">
+            <p>Members:</p>
+            {% include 'django_tables2/bootstrap4.html' with table=members_table %}
+        </div>
+    {% endif %}
+{% endblock %}

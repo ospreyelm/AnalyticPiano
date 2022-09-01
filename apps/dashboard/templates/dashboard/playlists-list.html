@@ -1,25 +1,17 @@
-{% extends 'dashboard/base-content-list.html' %} {% block add-button %}
-<div style="padding-top: 20px">
-  <button
-    type="submit"
-    class="btn dashboard-btn"
-    onclick="location.href='{% url 'dashboard:add-playlist' %}'"
-  >
-    New Playlist
-  </button>
-  <button
-    type="submit"
-    class="btn dashboard-btn"
-    onclick="location.href='{% url 'dashboard:export-playlists' %}'"
-  >
-    Export
-  </button>
-  <button
-    type="submit"
-    class="btn dashboard-btn"
-    onclick="location.href='{% url 'dashboard:import-playlists' %}'"
-  >
-    Import
-  </button>
-</div>
+{% extends 'dashboard/base-content-list.html' %}
+
+{% block add-button %}
+    <div style="padding-top:20px">
+        <button type="submit" class="btn dashboard-btn" onclick="location.href='{% url 'dashboard:add-playlist' %}'">
+            New Playlist
+        </button>
+        <button type="submit" class="btn dashboard-btn"
+                onclick="location.href='{% url 'dashboard:export-playlists' %}'">
+            Export
+        </button>
+        <button type="submit" class="btn dashboard-btn"
+                onclick="location.href='{% url 'dashboard:import-playlists' %}'">
+            Import
+        </button>
+    </div>
 {% endblock %}
