@@ -1,11 +1,8 @@
-{% extends 'dashboard/base-content-list.html' %} {% block add-button %}
-<div style="padding-top: 20px">
-  <button
-    type="submit"
-    class="btn dashboard-btn"
-    onclick="location.href='{% url 'dashboard:add-group' %}'"
-  >
-    New Group
-  </button>
-</div>
+{% extends 'dashboard/base-content-list.html' %}
+{% block add-button %}
+    <div style="padding-top:20px">
+        <button type="submit" class="btn dashboard-btn" onclick="location.href='{% url 'dashboard:add-group' %}'">
+            New Group
+        </button>
+    </div>
 {% endblock %}

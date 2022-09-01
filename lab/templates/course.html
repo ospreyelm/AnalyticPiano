@@ -1,6 +1,9 @@
-{% extends 'dashboard/base-content-list.html' %} {% block content %}
-<h4 class="dashboard-page-header">{{ course_title }}</h4>
-{% if course_author %}
-<p>Compiled by {{ course_author }}</p>
-{% endif %} {% include 'django_tables2/bootstrap4.html' with
-table=playlists_table %} {% endblock %}
+{% extends 'dashboard/base-content-list.html' %}
+
+{% block content %}
+    <h4 class="dashboard-page-header">{{ course_title }}</h4>
+    {% if course_author %}
+        <p>Compiled by {{ course_author }}</p>
+    {% endif %}
+    {% include 'django_tables2/bootstrap4.html' with table=playlists_table %}
+{% endblock %}

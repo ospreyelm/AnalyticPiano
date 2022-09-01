@@ -1,25 +1,39 @@
-{% load widget_tweaks %} {% for hidden_field in form.hidden_fields %} {{
-hidden_field }} {% endfor %} {% if form.non_field_errors %}
-<div class="alert alert-danger" role="alert">
-  {% for error in form.non_field_errors %}
-  <span>{{ error }}</span>
-  {% endfor %}
-</div>
-{% endif %} {% for field in form.visible_fields %}
-<div style="padding-right: 10px; display: inline-block; vertical-align: top">
-  <div class="form-check form-group form-inline {{ field|widget_type }}">
-    {{ field.label_tag }} {% if form.is_bound %} {% if field.errors %} {%
-    render_field field|add_class:'form-control' class="form-control is-invalid"
-    %} {% for error in field.errors %}
-    <div class="invalid-feedback">
-      <p>{{ error }}</p>
+{% load widget_tweaks %}
+
+{% for hidden_field in form.hidden_fields %}
+    {{ hidden_field }}
+{% endfor %}
+
+{% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+        {% for error in form.non_field_errors %}
+            <span>{{ error }}</span>
+        {% endfor %}
     </div>
-    {% endfor %} {% else %} {% render_field field|add_class:'form-control'
-    class="form-control is-valid" %} {% endif %} {% else %} {% render_field
-    field|add_class:'form-control' class="form-control" %} {% endif %} {% if
-    field.help_text %}
-    <small class="form-text text-muted help-text">{{ field.help_text }}</small>
-    {% endif %}
-  </div>
-</div>
+{% endif %}
+
+{% for field in form.visible_fields %}
+    <div style="padding-right:10px;display:inline-block;vertical-align:top">
+        <div class="form-check form-group form-inline {{ field|widget_type }}">
+            {{ field.label_tag }}
+            {% if form.is_bound %}
+                {% if field.errors %}
+                    {% render_field field|add_class:'form-control' class="form-control is-invalid" %}
+                    {% for error in field.errors %}
+                        <div class="invalid-feedback">
+                            <p>{{ error }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {% render_field field|add_class:'form-control' class="form-control is-valid" %}
+                {% endif %}
+            {% else %}
+                {% render_field field|add_class:'form-control' class="form-control" %}
+            {% endif %}
+
+            {% if field.help_text %}
+                <small class="form-text text-muted help-text">{{ field.help_text }}</small>
+            {% endif %}
+        </div>
+    </div>
 {% endfor %}

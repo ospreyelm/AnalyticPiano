@@ -1,33 +1,33 @@
-{% extends "dashboard/base-content-list.html" %} {% block extrahead %}
-<link
-  href="{{ STATIC_URL }}css/sumoselect.css"
-  type="text/css"
-  rel="stylesheet"
-/>
-<script src="{{ STATIC_URL }}js/lib/jquery.sumoselect.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    $("#id_groups").SumoSelect({
-      placeholder: "Select Group(s)",
-      selectAll: true,
-      search: true,
-      okCancelInMulti: true,
-    });
-  });
-</script>
-{% endblock %} {% block filters %} {% if filters %}
-<div class="container">
-  <div class="row">
-    <form action="" method="get" class="form form-inline">
-      {{ filters.form.as_p }}
-      <button
-        type="submit"
-        class="btn dashboard-btn"
-        style="margin-bottom: 12px !important; margin-left: 10px"
-      >
-        Filter
-      </button>
-    </form>
-  </div>
-</div>
-{% endif %} {% endblock %}
+{% extends "dashboard/base-content-list.html" %}
+
+{% block extrahead %}
+    <link href="{{ STATIC_URL }}css/sumoselect.css" type="text/css" rel="stylesheet"/>
+    <script src="{{ STATIC_URL }}js/lib/jquery.sumoselect.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            $('#id_groups').SumoSelect(
+                {
+                    'placeholder': 'Select Group(s)',
+                    'selectAll': true,
+                    'search': true,
+                    'okCancelInMulti': true
+                });
+        })
+    </script>
+{% endblock %}
+
+{% block filters %}
+    {% if filters %}
+        <div class="container">
+            <div class="row">
+                <form action="" method="get" class="form form-inline">
+                    {{ filters.form.as_p }}
+                    <button type="submit" class="btn dashboard-btn"
+                            style="margin-bottom: 12px !important; margin-left: 10px">
+                        Filter
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
