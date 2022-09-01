@@ -1,6 +1,7 @@
 from copy import copy
 import datetime
 
+from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -93,6 +94,10 @@ def parse_pco(pco):
     }
 
 
+def parse_group(group):
+    return {"name": group.name, "id": group.id}
+
+
 @login_required
 def course_edit_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
@@ -104,17 +109,27 @@ def course_edit_view(request, course_id):
         map(parse_pco, PlaylistCourseOrdered.objects.filter(course_id=course._id))
     )
     playlists_list.sort(key=lambda pco: pco["order"])
+
+    groups_list = list(map(parse_group, course.visible_to.all()))
+
     context = {
         "verbose_name": course._meta.verbose_name,
         "verbose_name_plural": course._meta.verbose_name_plural,
         "has_been_performed": course.has_been_performed,
         "redirect_url": reverse("dashboard:courses-list"),
         "editing": True,
-        "m2m_added": {"playlists": playlists_list},
+        "m2m_added": {
+            "playlists": playlists_list,
+            "visible_to": groups_list,
+        },
         "m2m_options": {
             "playlists": filter(
-                lambda p: p not in course.playlists.all(), Playlist.objects.all()
+                lambda p: p not in course.playlists.all(),
+                Playlist.objects.filter(
+                    Q(authored_by_id=request.user.id) | Q(is_public=True)
+                ),
             ),
+            "visible_to": list(Group.objects.filter(manager_id=course.authored_by_id)),
         },
     }
 
@@ -123,9 +138,6 @@ def course_edit_view(request, course_id):
             data=request.POST, instance=course, user=request.user
         )
         form.context = {"user": request.user}
-        print(
-            form.custom_m2m_config["playlists"]["extra_fields"][0].get_internal_type()
-        )
         if form.is_valid():
             if "duplicate" in request.POST:
                 unique_fields = Course.get_unique_fields()
@@ -139,26 +151,31 @@ def course_edit_view(request, course_id):
                 request.session["clone_data"] = clone_data
                 return redirect("dashboard:add-course")
             course = form.save(commit=False)
+            print(request.POST, course.__dict__)
             # TODO: possibly generalize all this m2m stuff (similar between courses and playlists) if it is a common use case
-            added_playlist_id = request.POST["playlists_add"]
+            added_playlist_id = request.POST.get("playlists_add")
             if added_playlist_id != "":
                 course.playlists.add(
                     Playlist.objects.filter(id=added_playlist_id).first(),
                     through_defaults={"order": len(course.playlists.all())},
                 )
+            added_group_id = request.POST.get("visible_to_add")
+            if added_group_id != "":
+                course.visible_to.add(Group.objects.filter(id=added_group_id).first())
             due_dates = request.POST.getlist("playlists_due_date")
             publish_dates = request.POST.getlist("playlists_publish_date")
             for i in range(0, len(playlists_list)):
                 current_pco = PlaylistCourseOrdered.objects.filter(
                     _id=playlists_list[i]["through_id"]
                 ).first()
-                print(due_dates)
-                current_pco.due_date = datetime.datetime.strptime(
-                    due_dates[i], "%Y-%m-%d"
-                )
-                current_pco.publish_date = datetime.datetime.strptime(
-                    publish_dates[i], "%Y-%m-%d"
-                )
+                if due_dates[i] != "":
+                    current_pco.due_date = datetime.datetime.strptime(
+                        due_dates[i], "%Y-%m-%d"
+                    )
+                if publish_dates[i] != "":
+                    current_pco.publish_date = datetime.datetime.strptime(
+                        publish_dates[i], "%Y-%m-%d"
+                    )
                 current_pco.save()
             handle_m2m(
                 request,
@@ -172,6 +189,20 @@ def course_edit_view(request, course_id):
                     )
                 ),
                 ThroughModel=PlaylistCourseOrdered,
+            )
+            handle_m2m(
+                request,
+                "visible_to",
+                {"course_id": course._id},
+                "group_id",
+                list(
+                    map(
+                        lambda g: Group.objects.filter(id=g["id"]).first(),
+                        groups_list,
+                    )
+                ),
+                parent_instance=course,
+                ChildModel=Group,
             )
             course.authored_by = request.user
             course.save()

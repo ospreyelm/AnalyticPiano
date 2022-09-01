@@ -1,8 +1,9 @@
 from django.db import models
 from django.db.models import When, Case
 from django_tables2 import tables, A
+from django.db.models import Q
 
-from apps.exercises.models import Playlist
+from apps.exercises.models import Playlist, PlaylistCourseOrdered
 
 
 class CoursePageTable(tables.Table):
@@ -10,7 +11,7 @@ class CoursePageTable(tables.Table):
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
         viewname="lab:playlist-view",
         kwargs={"playlist_id": A("id")},
-        verbose_name="Unit",
+        verbose_name="Playlist Name",
     )
     publish_date = tables.columns.DateColumn(
         verbose_name="Publish Date",
@@ -22,6 +23,7 @@ class CoursePageTable(tables.Table):
         format="Y_m_d",
         orderable=True,
     )
+    _id = tables.columns.Column(verbose_name="Unit #", orderable=True)
 
     # num = tables.columns.Column(
     #     verbose_name='#',
@@ -31,17 +33,40 @@ class CoursePageTable(tables.Table):
     class Meta:
         model = Playlist
         attrs = {"class": "paleblue"}
-        fields = ("name", "id", "authored_by", "publish_date", "due_date")
+        fields = ("name", "id", "authored_by")
+        sequence = ("_id", "...")
+        order_by = "_id"
 
     def __init__(self, *args, **kwargs):
         self.course = kwargs.pop("course")
         super(CoursePageTable, self).__init__(*args, **kwargs)
 
+    def render_order(self, record):
+        return (
+            PlaylistCourseOrdered.objects.filter(
+                Q(playlist_id=record._id, course_id=self.course._id)
+            )
+            .first()
+            .order
+        )
+
     def render_publish_date(self, record):
-        return Playlist.objects.filter(id=record.id).first().publish_date
+        return (
+            PlaylistCourseOrdered.objects.filter(
+                Q(playlist_id=record._id, course_id=self.course._id)
+            )
+            .first()
+            .publish_date
+        )
 
     def render_due_date(self, record):
-        return Playlist.objects.filter(id=record.id).first().due_date
+        return (
+            PlaylistCourseOrdered.objects.filter(
+                Q(playlist_id=record._id, course_id=self.course._id)
+            )
+            .first()
+            .due_date
+        )
 
     def order_publish_date(self, queryset, is_descending):
         return self._order_by_date(

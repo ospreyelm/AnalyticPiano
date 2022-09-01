@@ -635,23 +635,39 @@ class Course(ClonableModelMixin, BaseContentModel):
         # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
 
     @property
-    def split_playlist_ids(self):
+    def playlist_id_list(self):
         return list(map(lambda p: p.id, self.playlists.all()))
 
-    # @property
-    # def publish_dates_dict(self):
-    #     return dict(zip(self.playlists.split(" "), self.publish_dates.split(" ")))
+    @property
+    def publish_dates_dict(self):
+        pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
+        return {
+            Playlist.objects.filter(_id=pco.playlist_id).first().id: pco.publish_date
+            for pco in pco_list
+        }
 
-    # @property
-    # def due_dates_dict(self):
-    #     return dict(zip(self.playlists.split(" "), self.due_dates.split(" ")))
+    @property
+    def due_dates_dict(self):
+        pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
+        return {
+            Playlist.objects.filter(_id=pco.playlist_id).first().id: pco.due_date
+            for pco in pco_list
+        }
 
     @cached_property
     def published_playlists(self):
-        return self.playlists.all().filter(publish_date__lt=date.today())
+        return self.playlists.all().filter(
+            playlistcourseordered__publish_date__lt=date.today()
+        )
 
     def get_due_date(self, playlist):
-        tz_naive = playlist.due_date
+        tz_naive = (
+            PlaylistCourseOrdered.objects.filter(
+                Q(playlist_id=playlist._id, course_id=self._id)
+            )
+            .first()
+            .due_date
+        )
         return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)
 
 

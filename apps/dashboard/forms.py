@@ -196,7 +196,7 @@ class DashboardCourseForm(CourseForm):
     class Meta(CourseForm.Meta):
         fields = ["title", "playlists", "visible_to", "is_public"]
 
-    custom_m2m_fields = ["playlists"]
+    custom_m2m_fields = ["playlists", "visible_to"]
     custom_m2m_config = {
         "playlists": {
             "ordered": True,
@@ -207,6 +207,7 @@ class DashboardCourseForm(CourseForm):
                 )
             ),
         },
+        "visible_to": {"ordered": False},
     }
 
     def __init__(self, *args, **kwargs):
@@ -232,39 +233,24 @@ class DashboardCourseForm(CourseForm):
 
 
 class BaseDashboardGroupForm(forms.ModelForm):
-    new_members = forms.CharField(
-        widget=forms.Textarea(
-            attrs={"placeholder": "Comma-separated emails of new members"}
-        ),
-        required=False,
-    )
-
     class Meta:
         model = Group
-        fields = ("name", "new_members")
+        fields = ("name", "members")
 
-    def clean_new_members(self):
-        new_members_list = (
-            self.cleaned_data["new_members"].rstrip(",").replace(" ", "").split(",")
-        )
-        new_members = list(
-            self.context["user"]
-            .subscribers.filter(email__in=new_members_list)
-            .values_list("id", flat=True)
-        )
-        return new_members
+    custom_m2m_fields = ["members"]
+    custom_m2m_config = {
+        "members": {"ordered": False},
+    }
 
     def save(self, commit=True):
         self.instance.manager = self.context["user"]
-        group = super(BaseDashboardGroupForm, self).save(commit=True)
-        group.add_members(self.cleaned_data["new_members"])
+        group = super(BaseDashboardGroupForm, self).save(commit=commit)
         return group
 
 
 class DashboardGroupAddForm(BaseDashboardGroupForm):
     def __init__(self, *args, **kwargs):
         super(DashboardGroupAddForm, self).__init__(*args, **kwargs)
-        self.fields["new_members"].label = "Members"
 
     def clean_name(self):
         if Group.objects.filter(
@@ -275,14 +261,18 @@ class DashboardGroupAddForm(BaseDashboardGroupForm):
 
 
 class DashboardGroupEditForm(BaseDashboardGroupForm):
-    def clean_name(self):
-        if (
-            Group.objects.exclude(id=self.context["group_id"])
-            .filter(manager=self.context["user"], name=self.cleaned_data["name"])
-            .exists()
-        ):
-            raise forms.ValidationError("Group with this name already exists.")
-        return self.cleaned_data["name"]
+    def __init__(self, *args, **kwargs):
+        super(DashboardGroupEditForm, self).__init__(*args, **kwargs)
+
+
+# def clean_name(self):
+#     if (
+#         Group.objects.exclude(id=self.context["group_id"])
+#         .filter(manager=self.context["user"], name=self.cleaned_data["name"])
+#         .exists()
+#     ):
+#         raise forms.ValidationError("Group with this name already exists.")
+#     return self.cleaned_data["name"]
 
 
 class ContentImportForm(forms.Form):

@@ -203,13 +203,13 @@ class Group(models.Model):
         "Name",
         max_length=128,
     )
-    # members = models.ManyToManyField(to=User, blank=True, verbose_name='Members')
-    _members = ArrayField(
-        base_field=models.IntegerField(),
-        default=list,
-        verbose_name="Members",
-        blank=True,
-    )
+    members = models.ManyToManyField(to=User, blank=True, verbose_name="Members")
+    # _members = ArrayField(
+    #     base_field=models.IntegerField(),
+    #     default=list,
+    #     verbose_name="Members",
+    #     blank=True,
+    # )
     manager = models.ForeignKey(
         to=User,
         related_name="managed_groups",
@@ -227,19 +227,19 @@ class Group(models.Model):
     def __str__(self):
         return self.name
 
-    def add_members(self, new_members):
-        for member_id in new_members:
-            if member_id in self._members:
-                continue
-            self._members.append(member_id)
-        self.save()
+    # def add_members(self, new_members):
+    #     for member_id in new_members:
+    #         if member_id in self._members:
+    #             continue
+    #         self._members.append(member_id)
+    #     self.save()
 
-    def remove_member(self, member_id):
-        if member_id not in self._members:
-            return
-        self._members.pop(self._members.index(member_id))
-        self.save()
+    # def remove_member(self, member_id):
+    #     if member_id not in self._members:
+    #         return
+    #     self._members.pop(self._members.index(member_id))
+    #     self.save()
 
-    @property
-    def members(self):
-        return User.objects.filter(id__in=self._members)
+    # @property
+    # def members(self):
+    #     return User.objects.filter(id__in=self._members)

@@ -96,5 +96,5 @@ def handle_delete(
                 through_model_to_delete.delete()
         else:
             getattr(parent_instance, fieldname).remove(
-                ChildModel.objects.filter(id=model_id_to_delete).first()
+                ChildModel.objects.filter(pk=model_id_to_delete).first()
             )

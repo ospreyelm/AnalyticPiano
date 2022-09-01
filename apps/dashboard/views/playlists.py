@@ -106,7 +106,10 @@ def playlist_edit_view(request, playlist_id):
         "m2m_added": {"exercises": exercises_list},
         "m2m_options": {
             "exercises": filter(
-                lambda e: e not in playlist.exercises.all(), Exercise.objects.all()
+                lambda e: e not in playlist.exercises.all(),
+                Exercise.objects.filter(
+                    Q(authored_by_id=request.user.id) | Q(is_public=True)
+                ),
             )
         },
     }

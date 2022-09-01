@@ -48,7 +48,7 @@ def supervisors_view(request):
             {
                 "form": form,
                 "table": supervisors_table,
-                "courses_table": supervisors_courses_table,
+                # "courses_table": supervisors_courses_table,
             },
         )
     else:

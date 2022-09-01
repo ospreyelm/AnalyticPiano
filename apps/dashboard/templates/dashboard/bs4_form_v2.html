@@ -83,7 +83,7 @@
                 {% for extra_field in m2m_config.extra_fields %}
                     {% with field_type=extra_field|getfieldtype %}
                         {% comment %} This logic currently only works for date and text fields, but more cases could be added to handle other kinds {% endcomment %}
-                        <input name="{{field.name}}_{{extra_field.name}}" class="{{field_type}}" value="{% if  field_type == 'DateTimeField'%}{{model|getattribute:extra_field.name|stringifydatetime}}{% else %}{{model|getattribute:extra_field.name}}{% endif %}" type="{% if  field_type == 'DateTimeField'%}date{% else %}text{% endif %}"/>
+                        <input name="{{field.name}}_{{extra_field.name}}" class="{{field_type}}" value="{% if  field_type == 'DateTimeField'%}{{model|getattribute:extra_field.name|stringifydatetime}}{% else %}{{model|getattribute:extra_field.name}}{% endif %}" type="{% if  field_type == 'DateTimeField'%}datetime-local{% else %}text{% endif %}"/>
                     {% endwith %}
                 {% endfor %}
             {% endif %}

@@ -333,7 +333,7 @@ class CourseView(RequirejsView):
             raise PermissionDenied
 
         whens = []
-        for sort_index, value in enumerate(course.split_playlist_ids):
+        for sort_index, value in enumerate(course.playlist_id_list):
             whens.append(When(id=value, then=sort_index))
 
         qs = (

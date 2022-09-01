@@ -1,18 +1,16 @@
+from curses.ascii import US
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db import models
+from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from apps.dashboard.views.m2m_view import handle_m2m
 from django_tables2 import RequestConfig
 
-from apps.accounts.models import Group
+from apps.accounts.models import Group, User
 from apps.dashboard.forms import DashboardGroupEditForm, DashboardGroupAddForm
 from apps.dashboard.tables import GroupsListTable, GroupMembersTable
-
-
-class ArrayLength(models.Func):
-    function = "CARDINALITY"
 
 
 @login_required
@@ -21,7 +19,7 @@ def groups_list_view(request):
     groups = (
         Group.objects.filter(manager=request.user)
         .select_related("manager")
-        .annotate(members_count=ArrayLength("_members"))
+        .annotate(members_count=Count("members"))
     )
 
     table = GroupsListTable(groups)
@@ -68,6 +66,10 @@ def group_add_view(request):
     return render(request, "dashboard/add-group.html", context)
 
 
+def parse_member(user):
+    return {"name": user.email, "id": user.id}
+
+
 @login_required
 def group_edit_view(request, group_id):
     group = get_object_or_404(Group, id=group_id)
@@ -75,22 +77,45 @@ def group_edit_view(request, group_id):
     if request.user != group.manager:
         raise PermissionDenied
 
-    members_table = GroupMembersTable(
-        [{"member": member, "group_id": group_id} for member in group.members]
-    )
-    RequestConfig(request).configure(members_table)
+    members_list = list(map(parse_member, group.members.all()))
 
     context = {
         "verbose_name": Group._meta.verbose_name,
         "verbose_name_plural": Group._meta.verbose_name_plural,
-        "members_table": members_table,
+        "editing": True,
+        "m2m_added": {"members": members_list},
+        "m2m_options": {
+            "members": filter(
+                lambda u: u not in group.members.all(), User.objects.all()
+            ),
+        },
     }
 
     if request.method == "POST":
         form = DashboardGroupEditForm(data=request.POST, instance=group)
-        form.context = {"user": request.user, "group_id": group_id}
+        form.context = {"user": request.user}
         if form.is_valid():
-            group = form.save()
+            print(form.values)
+            group = form.save(commit=False)
+            added_member_id = request.POST.get("members_add")
+
+            if added_member_id != "":
+                group.members.add(User.objects.filter(id=added_member_id).first())
+            handle_m2m(
+                request,
+                "members",
+                {"group_id": group.id},
+                "user_id",
+                list(
+                    map(
+                        lambda u: User.objects.filter(id=u["id"]).first(),
+                        members_list,
+                    )
+                ),
+                parent_instance=group,
+                ChildModel=User,
+            )
+            group.save()
             if "save-and-continue" in request.POST:
                 success_url = reverse(
                     "dashboard:edit-group", kwargs={"group_id": group.id}
