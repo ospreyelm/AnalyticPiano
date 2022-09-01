@@ -512,7 +512,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         auto_playlist = Playlist(authored_by=authored_by, is_auto=True)
         auto_playlist.save()
         auto_playlist.exercises.add(
-            Exercise.objects.filter(id=initial_exercise_id).first,
+            Exercise.objects.filter(id=initial_exercise_id).first(),
             through_defaults={"order": 1},
         )
         auto_playlist.save()
@@ -669,16 +669,13 @@ class Course(ClonableModelMixin, BaseContentModel):
 class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
     playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    order = models.IntegerField("Order")
-    due_date = models.DateTimeField(
-        "Due Date", blank=True, default=None, null=True, help_text="Format: MM-DD-YYYY"
-    )
+    order = models.IntegerField("Order", help_text="Unit #")
+    due_date = models.DateTimeField("Due Date", blank=True, default=None, null=True)
     publish_date = models.DateTimeField(
         "Publish Date",
         blank=True,
         default=None,
         null=True,
-        help_text="Format: MM-DD-YYYY",
     )
 
     displayed_fields = ("due_date", "publish_date")

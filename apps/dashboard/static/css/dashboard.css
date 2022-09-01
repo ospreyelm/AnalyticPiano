@@ -110,7 +110,8 @@ form label {
 }
 
 .main input,
-.main textarea {
+.main textarea,
+.main select {
   background-color: #fff;
   border: 1px solid #ced4da;
   border-radius: 0.25rem;

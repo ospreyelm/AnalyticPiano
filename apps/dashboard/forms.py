@@ -160,6 +160,46 @@ class TransposeRequestsField(forms.CharField):
         return TRANSP_JOIN_STR.join(value)
 
 
+TRANSPOSE_SELECT_CHOICES = (
+    ("", "--"),
+    ("Gb", "7 flats"),
+    ("Cb", "6 flats"),
+    ("Db", "5 flats"),
+    ("Ab", "4 flats"),
+    ("Eb", "3 flats"),
+    ("Bb", "2 flats"),
+    ("F", "1 flat"),
+    ("C", "0 sharps or flats"),
+    ("G", "1 sharp"),
+    ("D", "2 sharps"),
+    ("A", "3 sharps"),
+    ("E", "4 sharps"),
+    ("B", "5 sharps"),
+    ("F#", "6 sharps"),
+    ("C#", "7 sharps"),
+)
+
+
+class CustomTransposeWidget(forms.MultiWidget):
+    def __init__(self, attrs=None):
+        self.attrs = attrs
+        widgets = (
+            forms.TextInput,
+            forms.Select(
+                choices=TRANSPOSE_SELECT_CHOICES, attrs={"style": "margin-left:16px"}
+            ),
+        )
+        super(CustomTransposeWidget, self).__init__(widgets, attrs)
+
+    def decompress(self, value):
+        return [value, ""]
+
+    def value_from_datadict(self, data, files, name):
+        text, added = super().value_from_datadict(data, files, name)
+        print(text, added)
+        return text + " " + added
+
+
 class DashboardPlaylistForm(PlaylistForm):
     id = forms.CharField(
         widget=forms.TextInput(attrs={"readonly": "readonly"}),
@@ -171,6 +211,7 @@ class DashboardPlaylistForm(PlaylistForm):
         label="Transposition requests",
         required=False,
         help_text="A list of keys, separated by spaces, which the playlist will be transposed to. Upper case letters for major, lower case for minor. Only the key signature matters, meaning that 'A f# Db' has the same result as 'f# A bb'.",
+        widget=CustomTransposeWidget,
     )
 
     editable_fields = ["is_public"]

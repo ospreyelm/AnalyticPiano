@@ -432,121 +432,121 @@ define([
         return false;
       }
 
-      if (advanced) {
-        const type_input = prompt(
-          "Enter a number for exercise type: (1) matching (2) analytical (3) analytical_pcs (4) figured_bass (5) figured_bass_pcs"
-        );
-        if (type_input == null) {
-          window.alert("Exercise upload cancelled by user.");
-          return false;
-        }
-        const type_options = {
-          1: "matching",
-          2: "analytical",
-          3: "analytical_pcs",
-          4: "figured_bass",
-          5: "figured_bass_pcs",
-        };
-        const type = type_input
-          ? type_options.hasOwnProperty(type_input)
-            ? type_options[type_input]
-            : false
-          : false;
-        if (type == false) {
-          window.alert("Exercise upload cancelled due to invalid input.");
-          return false;
-        }
+      // if (advanced) {
+      //   const type_input = prompt(
+      //     "Enter a number for exercise type: (1) matching (2) analytical (3) analytical_pcs (4) figured_bass (5) figured_bass_pcs"
+      //   );
+      //   if (type_input == null) {
+      //     window.alert("Exercise upload cancelled by user.");
+      //     return false;
+      //   }
+      //   const type_options = {
+      //     1: "matching",
+      //     2: "analytical",
+      //     3: "analytical_pcs",
+      //     4: "figured_bass",
+      //     5: "figured_bass_pcs",
+      //   };
+      //   const type = type_input
+      //     ? type_options.hasOwnProperty(type_input)
+      //       ? type_options[type_input]
+      //       : false
+      //     : false;
+      //   if (type == false) {
+      //     window.alert("Exercise upload cancelled due to invalid input.");
+      //     return false;
+      //   }
 
-        const user_input = prompt("Enter the Intro Text");
-        if (user_input == null) {
-          window.alert("Exercise upload cancelled by user.");
-          return false;
-        }
-        const intro_text =
-          "<p>" +
-          (!user_input
-            ? ""
-            : user_input
-                .replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, "")
-                .replace(/^\"/g, "“")
-                .replace(/ \"/g, " “")
-                .replace(/^\'/g, "‘")
-                .replace(/ \'/g, " ‘")
-                .replace(/\"$/g, "”")
-                .replace(/\" /g, "” ")
-                .replace(/\'$/g, "’")
-                .replace(/\' /g, "’ ")
-                .replace(/\'(s)\b/g, "’$1")
-                .replace(/-{3}/g, "—")
-                .replace(/-{2}/g, "–")) +
-          "</p>";
-        // do not allow < > until these field is verified as good html
+      //   const user_input = prompt("Enter the Intro Text");
+      //   if (user_input == null) {
+      //     window.alert("Exercise upload cancelled by user.");
+      //     return false;
+      //   }
+      //   const intro_text =
+      //     "<p>" +
+      //     (!user_input
+      //       ? ""
+      //       : user_input
+      //           .replace(/[^-\w\.:;,!?/&*()[\] '"]+/g, "")
+      //           .replace(/^\"/g, "“")
+      //           .replace(/ \"/g, " “")
+      //           .replace(/^\'/g, "‘")
+      //           .replace(/ \'/g, " ‘")
+      //           .replace(/\"$/g, "”")
+      //           .replace(/\" /g, "” ")
+      //           .replace(/\'$/g, "’")
+      //           .replace(/\' /g, "’ ")
+      //           .replace(/\'(s)\b/g, "’$1")
+      //           .replace(/-{3}/g, "—")
+      //           .replace(/-{2}/g, "–")) +
+      //     "</p>";
+      //   // do not allow < > until these field is verified as good html
 
-        if (type == "matching") {
-          const visibility_input = prompt(
-            "Enter a visibility pattern using any combination of: b = bass, f = first, l = last, s = soprano, n = none."
-          );
-          if (visibility_input == null) {
-            window.alert("Exercise upload cancelled by user.");
-            return false;
-          }
-          const visibility_reqs =
-            visibility_input === "n"
-              ? ["none"]
-              : visibility_input
-                  .replace(/[^flsb]/gi, "")
-                  .split("")
-                  .sort();
+      //   if (type == "matching") {
+      //     const visibility_input = prompt(
+      //       "Enter a visibility pattern using any combination of: b = bass, f = first, l = last, s = soprano, n = none."
+      //     );
+      //     if (visibility_input == null) {
+      //       window.alert("Exercise upload cancelled by user.");
+      //       return false;
+      //     }
+      //     const visibility_reqs =
+      //       visibility_input === "n"
+      //         ? ["none"]
+      //         : visibility_input
+      //             .replace(/[^flsb]/gi, "")
+      //             .split("")
+      //             .sort();
 
-          let flsb = json_data.chord;
-          if (visibility_reqs.length >= 1) {
-            var i, len;
-            for (i = 0, len = flsb.length; i < len; i++) {
-              flsb[i].hidden = flsb[i].visible;
-              flsb[i].visible = [];
-            }
-          }
+      //     let flsb = json_data.chord;
+      //     if (visibility_reqs.length >= 1) {
+      //       var i, len;
+      //       for (i = 0, len = flsb.length; i < len; i++) {
+      //         flsb[i].hidden = flsb[i].visible;
+      //         flsb[i].visible = [];
+      //       }
+      //     }
 
-          if (visibility_reqs.indexOf("b") !== -1) {
-            for (i = 0, len = flsb.length; i < len; i++) {
-              flsb[i].visible = []
-                .concat(flsb[i].visible, flsb[i].hidden.shift())
-                .sort();
-            }
-          }
-          if (visibility_reqs.indexOf("s") !== -1) {
-            for (i = 0, len = flsb.length; i < len; i++) {
-              flsb[i].visible = []
-                .concat(flsb[i].visible, flsb[i].hidden.pop())
-                .sort();
-            }
-          }
-          if (visibility_reqs.indexOf("f") !== -1 && flsb.length >= 1) {
-            flsb[0].visible = [].concat(flsb[0].visible, flsb[0].hidden).sort();
-            flsb[0].hidden = [];
-          }
-          if (visibility_reqs.indexOf("l") !== -1 && flsb.length >= 2) {
-            let idx = flsb.length - 1;
-            flsb[idx].visible = []
-              .concat(flsb[idx].visible, flsb[idx].hidden)
-              .sort();
-            flsb[idx].hidden = [];
-          }
+      //     if (visibility_reqs.indexOf("b") !== -1) {
+      //       for (i = 0, len = flsb.length; i < len; i++) {
+      //         flsb[i].visible = []
+      //           .concat(flsb[i].visible, flsb[i].hidden.shift())
+      //           .sort();
+      //       }
+      //     }
+      //     if (visibility_reqs.indexOf("s") !== -1) {
+      //       for (i = 0, len = flsb.length; i < len; i++) {
+      //         flsb[i].visible = []
+      //           .concat(flsb[i].visible, flsb[i].hidden.pop())
+      //           .sort();
+      //       }
+      //     }
+      //     if (visibility_reqs.indexOf("f") !== -1 && flsb.length >= 1) {
+      //       flsb[0].visible = [].concat(flsb[0].visible, flsb[0].hidden).sort();
+      //       flsb[0].hidden = [];
+      //     }
+      //     if (visibility_reqs.indexOf("l") !== -1 && flsb.length >= 2) {
+      //       let idx = flsb.length - 1;
+      //       flsb[idx].visible = []
+      //         .concat(flsb[idx].visible, flsb[idx].hidden)
+      //         .sort();
+      //       flsb[idx].hidden = [];
+      //     }
 
-          if (visibility_reqs.length >= 1) {
-            json_data.chord = flsb;
-          }
-        }
+      //     if (visibility_reqs.length >= 1) {
+      //       json_data.chord = flsb;
+      //     }
+      //   }
 
-        if (intro_text) {
-          json_data.introText = intro_text;
-        }
-        if (type) {
-          json_data.type = type;
-        }
-      }
+      //   if (intro_text) {
+      //     json_data.introText = intro_text;
+      //   }
+      //   if (type) {
+      //     json_data.type = type;
+      //   }
+      // }
 
-      var intro_text = json_data.introText;
+      // var intro_text = json_data.introText;
       json_data = JSON.stringify(json_data, null, 0);
 
       if (destination === "upload") {
@@ -557,7 +557,10 @@ define([
           dataType: "json",
           success: function (data) {
             let exerciseID = data.id;
-            window.alert("Exercise uploaded! Exercise ID: " + exerciseID);
+            window.alert(
+              `Exercise uploaded! Exercise ID: ${exerciseID}. Redirecting you to the new exercise now.`
+            );
+            window.location.href = `/dashboard/exercises/${exerciseID}/`;
           },
           error: function (error) {
             console.log(error);

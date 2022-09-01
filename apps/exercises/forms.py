@@ -152,11 +152,6 @@ class ExpansiveForm(forms.ModelForm):
         return object_ids
 
 
-CustomDateField = forms.DateField(
-    input_formats=["%Y-%m-%d"], required=False, help_text="Format: YYYY-MM-DD"
-)
-
-
 class ExerciseForm(forms.ModelForm):
     TYPE_MATCHING = "matching"
     TYPE_ANALYTICAL = "analytical"
