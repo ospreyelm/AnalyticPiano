@@ -95,7 +95,6 @@ def group_edit_view(request, group_id):
         form = DashboardGroupEditForm(data=request.POST, instance=group)
         form.context = {"user": request.user}
         if form.is_valid():
-            print(form.values)
             group = form.save(commit=False)
             added_member_id = request.POST.get("members_add")
 

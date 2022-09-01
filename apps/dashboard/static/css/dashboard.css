@@ -397,7 +397,9 @@ table.paleblue > tbody > tr > td > span.true {
   flex-direction: column;
   left: 150px;
   position: relative;
-  width: 60%;
+  /* min-width: 360px; */
+  /* width: 55%; */
+  width: fit-content;
   padding-bottom: 24px;
 }
 
@@ -408,13 +410,7 @@ table.paleblue > tbody > tr > td > span.true {
 }
 
 .delete-table-row {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
   width: 100%;
-  flex-wrap: wrap;
 }
 
 .m2m-order {

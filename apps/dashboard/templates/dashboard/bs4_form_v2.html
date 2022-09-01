@@ -2,6 +2,7 @@
 {% load getattribute %}
 {% load stringifydatetime%}
 {% load getfieldtype %}
+{% load length %}
 
 {% for hidden_field in form.hidden_fields %}
     {{ hidden_field }}
@@ -48,48 +49,62 @@
                 <small class="form-text text-muted help-text">{{ field.help_text }}</small>
             {% endif %}
         </div>
-        {% if editing and field.name in form.custom_m2m_fields %}
+        {% if editing and field.name in form.custom_m2m_fields and m2m_added|getattribute:field.name|length != 0 %}
         {% with m2m_config=form.custom_m2m_config|getattribute:field.name%}
         <div class="delete-table-wrapper">
-            <div class="delete-table-inner">
-          <div class="delete-table-row" style="margin-bottom:8px">
-            <span>Added {{field.name}}</span>
-            {% if m2m_config.ordered %} <span> Order </span> {%endif%}
-            <span>Delete</span>
+            <table class="delete-table-inner">
+          <tr class="delete-table-row" style="margin-bottom:8px">
+            <th width="160px">Added {{field.name}}</th>
+            {% if m2m_config.ordered %} <th width="100px"> Order </th> {%endif%}
             {% if m2m_config.extra_fields%}
                 {% for extra_field in m2m_config.extra_fields %}
                     <div style="display:flex; flex-direction:column">
-                        <span>{{extra_field.verbose_name}}</span>
-                        <small>{{extra_field.help_text}}</small>
+                        <th>{{extra_field.verbose_name}}</th>
                     </div>
                 {% endfor %}
             {% endif%}
-          </div>
+            <th style="text-align:center; width:80px">Delete</th>
+
+                </tr>
           {% for model in m2m_added|getattribute:field.name %}
-          <div class="delete-table-row">
-            <span style="max-width:120px">{{model.name}}</span>
+          <tr class="delete-table-row">
+            <td width="160px">
+                {% if m2m_config.url and model.url_id != None %}
+            <a href="{% url m2m_config.url model.url_id %}">{{model.name}}</a>
+            {% else %}
+            <span>{{model.name}}</span>
+            {% endif %}
+            </td >
             {% if m2m_config.ordered %}
+            <td width="100px">
             <div style="display:flex; flex-direction:row">
-                <input name="{{field.name}}_order" id="{{model.id}}" value="{{model.order}}" style="width:24px; margin-left:44px" class="m2m-input" type="number" min="0"/>
+                <input name="{{field.name}}_order" id="{{model.id}}" value="{{model.order}}" style="width:24px" class="m2m-input" type="number" min="0"/>
                 <div style="display:flex; flex-direction:column">
                     <span class="m2m-order-up m2m-order" name="{{field.name}}">↑</span>
                     <span class="m2m-order-down m2m-order" name="{{field.name}}">↓</span>
                 </div>
             </div>
+        </td>
+            
             {% endif %}
-                
-            <input name="{{field.name}}_delete" type="checkbox" value="{{model.id}}" style="margin-right:16px"/>
+            
             {% if m2m_config.extra_fields%}
                 {% for extra_field in m2m_config.extra_fields %}
                     {% with field_type=extra_field|getfieldtype %}
                         {% comment %} This logic currently only works for date and text fields, but more cases could be added to handle other kinds {% endcomment %}
+                        <td>
                         <input name="{{field.name}}_{{extra_field.name}}" class="{{field_type}}" value="{% if  field_type == 'DateTimeField'%}{{model|getattribute:extra_field.name|stringifydatetime}}{% else %}{{model|getattribute:extra_field.name}}{% endif %}" type="{% if  field_type == 'DateTimeField'%}datetime-local{% else %}text{% endif %}"/>
+                        </td>
                     {% endwith %}
                 {% endfor %}
             {% endif %}
+            <td style="text-align:center; width:80px">
+                <input name="{{field.name}}_delete" type="checkbox" value="{{model.id}}"/>
+                </td>
           </div>
+        </tr>
           {% endfor%}
-        </div>
+        </table>
         </div>
         {% endwith %}
         {% endif %}

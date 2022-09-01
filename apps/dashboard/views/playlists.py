@@ -76,13 +76,19 @@ def playlist_add_view(request):
     return render(request, "dashboard/content.html", context)
 
 
-def parse_epo(epo):
-    exercise = epo.exercise
-    return {"name": exercise.id, "id": exercise._id, "order": epo.order}
-
-
 @login_required
 def playlist_edit_view(request, playlist_id):
+    def parse_epo(epo):
+        exercise = epo.exercise
+        return {
+            "name": exercise.id,
+            "id": exercise._id,
+            "order": epo.order,
+            "url_id": exercise.id
+            if exercise.authored_by_id == request.user.id
+            else None,
+        }
+
     playlist = get_object_or_404(Playlist, id=playlist_id)
 
     if request.user != playlist.authored_by:

@@ -85,7 +85,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         max_length=255,
         blank=True,
         null=True,
-        help_text="Rhythm for this exercise's notes",
+        help_text="Rhythm for this exercise's notes. w for a whole note, H for a dotted half note, h for a half note, and q for a quarter note. For example, if your exercise has 5 notes and you want it to span exactly 2 bars, you could input: 'H q h q q'.",
     )
     time_signature = models.CharField(
         "Meter",

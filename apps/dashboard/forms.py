@@ -168,13 +168,20 @@ class DashboardPlaylistForm(PlaylistForm):
     )
 
     transpose_requests = TransposeRequestsField(
-        label="Transposition requests", required=False
+        label="Transposition requests",
+        required=False,
+        help_text="A list of keys, separated by spaces, which the playlist will be transposed to. Upper case letters for major, lower case for minor. Only the key signature matters, meaning that 'A f# Db' has the same result as 'f# A bb'.",
     )
 
     editable_fields = ["is_public"]
 
     custom_m2m_fields = ["exercises"]
-    custom_m2m_config = {"exercises": {"ordered": True}}
+    custom_m2m_config = {
+        "exercises": {
+            "ordered": True,
+            "url": "dashboard:edit-exercise",
+        }
+    }
 
     class Meta(PlaylistForm.Meta):
         exclude = ["authored_by"]
@@ -206,8 +213,12 @@ class DashboardCourseForm(CourseForm):
                     PlaylistCourseOrdered._meta.fields,
                 )
             ),
+            "url": "dashboard:edit-playlist",
         },
-        "visible_to": {"ordered": False},
+        "visible_to": {
+            "ordered": False,
+            "url": "dashboard:edit-group",
+        },
     }
 
     def __init__(self, *args, **kwargs):

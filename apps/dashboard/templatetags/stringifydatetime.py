@@ -6,7 +6,7 @@ register = template.Library()
 
 def stringifydatetime(date):
     if isinstance(date, datetime):
-        return date.strftime("%Y-%m-%d")
+        return date.strftime("%Y-%m-%dT%m:%S")
     return ""
 
 

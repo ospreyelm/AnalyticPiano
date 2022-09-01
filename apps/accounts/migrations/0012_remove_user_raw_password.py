@@ -3,6 +3,18 @@
 from django.db import migrations
 
 
+def forwards(apps, schema_editor):
+    User = apps.get_model("accounts", "User")
+    db_alias = schema_editor.connection.alias
+    for user in User.object.using(db_alias).all():
+        user.set_password(user.raw_password)
+        user.save()
+
+
+def reverse(apps, schema_editor):
+    pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,6 +22,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(forwards, reverse),
         migrations.RemoveField(
             model_name="user",
             name="raw_password",

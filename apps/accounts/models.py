@@ -126,11 +126,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     def email_user(self, subject, message, from_email=None, **kwargs):
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
-    def send_forgotten_password(self):
-        self.email_user(
-            subject="Password Reminder for AnalyticPiano",
-            message=f"Your AnalyticPiano password is: {self.raw_password}",
-        )
+    # def send_forgotten_password(self):
+    #     self.email_user(
+    #         subject="Password Reminder for AnalyticPiano",
+    #         message=f"Your AnalyticPiano password is: {self.raw_password}",
+    #     )
 
     # def send_password(self):
     #     self.email_user(
