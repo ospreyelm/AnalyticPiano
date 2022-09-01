@@ -1,68 +1,74 @@
 {% load render_table from django_tables2 %}
-<!doctype html>
+<!DOCTYPE html>
 
 <html lang="en" xml:lang="en">
-<meta name="google" content="notranslate">
-<meta http-equiv="Content-Language" content="en">
+  <meta name="google" content="notranslate" />
+  <meta http-equiv="Content-Language" content="en" />
 
-<script>
-function downloadCSV(csv, filename) {
-    var csvFile;
-    var downloadLink;
+  <script>
+    function downloadCSV(csv, filename) {
+      var csvFile;
+      var downloadLink;
 
-    // CSV file
-    csvFile = new Blob([csv], {type: "text/csv"});
+      // CSV file
+      csvFile = new Blob([csv], { type: "text/csv" });
 
-    // Download link
-    downloadLink = document.createElement("a");
+      // Download link
+      downloadLink = document.createElement("a");
 
-    // File name
-    downloadLink.download = filename;
+      // File name
+      downloadLink.download = filename;
 
-    // Create a link to the file
-    downloadLink.href = window.URL.createObjectURL(csvFile);
+      // Create a link to the file
+      downloadLink.href = window.URL.createObjectURL(csvFile);
 
-    // Hide download link
-    downloadLink.style.display = "none";
+      // Hide download link
+      downloadLink.style.display = "none";
 
-    // Add the link to DOM
-    document.body.appendChild(downloadLink);
+      // Add the link to DOM
+      document.body.appendChild(downloadLink);
 
-    // Click download link
-    downloadLink.click();
-}
-function exportTableToCSV(filename, colcount=false) {
-    var csv = [];
-    var rows = document.querySelectorAll("table tr");
+      // Click download link
+      downloadLink.click();
+    }
+    function exportTableToCSV(filename, colcount = false) {
+      var csv = [];
+      var rows = document.querySelectorAll("table tr");
 
-    for (var i = 0; i < rows.length; i++) {
-        var row = [], cols = rows[i].querySelectorAll("td, th");
+      for (var i = 0; i < rows.length; i++) {
+        var row = [],
+          cols = rows[i].querySelectorAll("td, th");
 
-        const col_limit = (colcount && colcount <= cols.length ? colcount : cols.length);
+        const col_limit =
+          colcount && colcount <= cols.length ? colcount : cols.length;
         for (var j = 0; j < col_limit; j++) {
-            row.push(cols[j].innerText);
+          row.push(cols[j].innerText);
         }
 
         csv.push(row.join(","));
+      }
+
+      // Download CSV file
+      downloadCSV(csv.join("\n"), filename);
     }
+  </script>
 
-    // Download CSV file
-    downloadCSV(csv.join("\n"), filename);
-}
-</script>
+  <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" /> -->
 
-<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" /> -->
+  <button onclick="exportTableToCSV('analytic_piano_data.csv')">
+    Export HTML Table To CSV File
+  </button>
+  <button onclick="exportTableToCSV('analytic_piano_data-users.csv', 1)">
+    Export List of Users To CSV File
+  </button>
 
-<button onclick="exportTableToCSV('analytic_piano_data.csv')">Export HTML Table To CSV File</button>
-<button onclick="exportTableToCSV('analytic_piano_data-users.csv', 1)">Export List of Users To CSV File</button>
-
-<html>
+  <html>
     <head>
-        <title>Performance Data</title>
+      <title>Performance Data</title>
     </head>
     <body>
-        <h3>{% block playlist_id %}{{ playlist_id }}{% endblock %}</h3>
-        {% render_table table %}
+      <h3>{% block playlist_id %}{{ playlist_id }}{% endblock %}</h3>
+      {% render_table table %}
     </body>
+  </html>
 </html>
-

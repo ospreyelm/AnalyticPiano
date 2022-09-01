@@ -1,14 +1,10 @@
-{% extends "dashboard/base.html" %}
-{% load widget_tweaks %}
-{% load django_tables2 %}
-{% load i18n %}
-{% block content %}
-    <div class="dashboard-page">
-        <h1>Settings</h1>
-        <form method="POST" class="post-form">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn dashboard-btn">Save</button>
-        </form>
-    </div>
+{% extends "dashboard/base.html" %} {% load widget_tweaks %} {% load
+django_tables2 %} {% load i18n %} {% block content %}
+<div class="dashboard-page">
+  <h1>Settings</h1>
+  <form method="POST" class="post-form">
+    {% csrf_token %} {{ form.as_p }}
+    <button type="submit" class="btn dashboard-btn">Save</button>
+  </form>
+</div>
 {% endblock content %}

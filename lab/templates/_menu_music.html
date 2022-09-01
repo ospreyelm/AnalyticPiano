@@ -1,33 +1,27 @@
-{% extends "_menu.html" %}
-{% block music_menu_content %}
+{% extends "_menu.html" %} {% block music_menu_content %}
 <div id="sheet-music-options">
-
-    <!--Notation-->
-    <div class="mainmenu-section">
-        <div class="js-notation-opts-widget"></div>
-    </div>
-
+  <!--Notation-->
+  <div class="mainmenu-section">
+    <div class="js-notation-opts-widget"></div>
+  </div>
 </div>
-{% endblock %}
-{% block piano_menu_content %}
-<div id="piano-options" style="padding-top:1em">
+{% endblock %} {% block piano_menu_content %}
+<div id="piano-options" style="padding-top: 1em">
+  <!--Instrument-->
+  <div class="mainmenu-section">
+    <!-- <div class="js-instrument settings-inline"></div> -->
+    <div class="js-keyboardsize settings-inline"></div>
+    <div class="js-octaveadjustment settings-inline"></div>
+    <div class="js-keyboardshortcuts settings-inline"></div>
+  </div>
 
-    <!--Instrument-->
-    <div class="mainmenu-section">
-        <!-- <div class="js-instrument settings-inline"></div> -->
-        <div class="js-keyboardsize settings-inline"></div>
-        <div class="js-octaveadjustment settings-inline"></div>
-        <div class="js-keyboardshortcuts settings-inline"></div>
-    </div>
-
-    <!--MIDI Source-->
-    <!-- <div class="mainmenu-section">
+  <!--MIDI Source-->
+  <!-- <div class="mainmenu-section">
         <div class="label settings-inline">MIDI in: </div>
         <select class="js-select-midi-input settings-inline" name="select_midi_input"></select>
         <div class="label settings-inline">MIDI out: </div>
         <select class="js-select-midi-output settings-inline" name="select_midi_output"></select>&emsp;
         <button class="js-refresh-midi-devices settings-inline">Refresh MIDI options</button>
     </div> -->
-
 </div>
 {% endblock %}

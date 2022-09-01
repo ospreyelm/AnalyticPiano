@@ -1,10 +1,8 @@
-{% extends 'dashboard/base-content-list.html' %}
-
-{% block content %}
-    <div class="dashboard-page">
-        <!-- {% include 'django_tables2/bootstrap4.html' with table=table %} -->
-        <h1>Available Courses</h1>
-        <p>Once you subscribe to users, you will see their courses here.</p>
-        {% include 'django_tables2/bootstrap4.html' with table=courses_table %}
-    </div>
+{% extends 'dashboard/base-content-list.html' %} {% block content %}
+<div class="dashboard-page">
+  <!-- {% include 'django_tables2/bootstrap4.html' with table=table %} -->
+  <h1>Available Courses</h1>
+  <p>Once you subscribe to users, you will see their courses here.</p>
+  {% include 'django_tables2/bootstrap4.html' with table=courses_table %}
+</div>
 {% endblock content %}

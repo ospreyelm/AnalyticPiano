@@ -1,16 +1,25 @@
-{% extends 'dashboard/base-content-list.html' %}
-{% block add-button %}
-    <div style="padding-top:20px">
-        <button type="submit" class="btn dashboard-btn" onclick="location.href='{% url 'dashboard:add-course' %}'">
-            New Course
-        </button>
-        <button type="submit" class="btn dashboard-btn"
-                onclick="location.href='{% url 'dashboard:export-courses' %}'">
-            Export
-        </button>
-        <button type="submit" class="btn dashboard-btn"
-                onclick="location.href='{% url 'dashboard:import-courses' %}'">
-            Import
-        </button>
-    </div>
+{% extends 'dashboard/base-content-list.html' %} {% block add-button %}
+<div style="padding-top: 20px">
+  <button
+    type="submit"
+    class="btn dashboard-btn"
+    onclick="location.href='{% url 'dashboard:add-course' %}'"
+  >
+    New Course
+  </button>
+  <button
+    type="submit"
+    class="btn dashboard-btn"
+    onclick="location.href='{% url 'dashboard:export-courses' %}'"
+  >
+    Export
+  </button>
+  <button
+    type="submit"
+    class="btn dashboard-btn"
+    onclick="location.href='{% url 'dashboard:import-courses' %}'"
+  >
+    Import
+  </button>
+</div>
 {% endblock %}
