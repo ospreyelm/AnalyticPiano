@@ -137,7 +137,6 @@ class PlaylistView(RequirejsView):
             raise PermissionDenied
 
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
-        print("ex", exercise)
         if exercise is None:
             raise Http404("This playlist has no exercises.")
 
@@ -276,8 +275,6 @@ class RefreshExerciseDefinition(RequirejsView):
                 "playlistName": playlist.name,
             }
         )
-
-        print("excon", exercise_context)
 
         self.requirejs_context.set_app_module("app/components/app/exercise")
         self.requirejs_context.set_module_params(

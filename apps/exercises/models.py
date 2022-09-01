@@ -162,7 +162,6 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         ).first()
 
     def save(self, *args, **kwargs):
-        print("saving exercise")
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
             self.set_id(initial="E")
@@ -171,7 +170,6 @@ class Exercise(ClonableModelMixin, BaseContentModel):
 
         # self.validate_unique()
         self.set_id(initial="E")
-        print(self.id)
         self.sort_data()
         self.set_rhythm_values()
 
@@ -423,7 +421,6 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return
 
         try:
-            print("exerciselist", self.exercise_list, num)
             exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
         except (IndexError, TypeError):
             exercise = Exercise.objects.filter(id=self.exercise_list[-1]).first()
@@ -552,8 +549,6 @@ class ExercisePlaylistOrdered(ClonableModelMixin, BaseContentModel):
     order = models.IntegerField("Order")
 
     def save(self, *args, **kwargs):
-        print("saving epo")
-        print(self, self.order)
         if self.order == None:
             self.order = len(
                 ExercisePlaylistOrdered.objects.filter(

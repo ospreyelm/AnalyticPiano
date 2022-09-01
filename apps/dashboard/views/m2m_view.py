@@ -1,14 +1,24 @@
 from django.db.models import Q
 
+# these methods act as a kind of Mixin to allow for m2m view functionality
+
 
 def handle_m2m(
+    # incoming HTTP request
     request,
+    # name of the M2M field belonging to the targeted model (the "parent")
     fieldname,
+    # a query (in dictionary form) that can be used to get from the through table to the parent
     parent_query,
+    # name of the field on the through table that connects the through table to the child (or the model on the other end of the relation)
     child_field,
+    # list of these child models, in order if their thru table has an order property
     ordered_children,
+    # model class for the through table
     ThroughModel=None,
+    # model instance for the parent. only needed when there's no through table
     parent_instance=None,
+    # model class for the child. only needed when there's no through table.
     ChildModel=None,
 ):
     if f"{fieldname}_order" in request.POST:
@@ -85,7 +95,6 @@ def handle_delete(
                 Q(**{child_field: model_id_to_delete}) & Q(**parent_query)
             ).first()
             if through_model_to_delete:
-                print(through_model_to_delete.order)
                 if hasattr(through_model_to_delete, "order"):
                     through_models_to_update = ThroughModel.objects.filter(
                         Q(order__gte=through_model_to_delete.order) & Q(**parent_query)

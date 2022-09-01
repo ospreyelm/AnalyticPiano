@@ -10,8 +10,8 @@ register = template.Library()
 TEMPLATE_STRING_IF_INVALID = "Invalid"
 
 
+# Gets an attribute of an object dynamically from a string name
 def getattribute(value, arg):
-    """Gets an attribute of an object dynamically from a string name"""
     if hasattr(value, str(arg)):
         return getattr(value, arg)
     elif str(arg) in value:

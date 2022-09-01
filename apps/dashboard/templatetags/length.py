@@ -4,7 +4,6 @@ register = template.Library()
 
 
 def length(iterable):
-    print(iterable)
     return len(iterable)
 
 

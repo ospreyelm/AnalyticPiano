@@ -156,7 +156,6 @@ def course_edit_view(request, course_id):
                 request.session["clone_data"] = clone_data
                 return redirect("dashboard:add-course")
             course = form.save(commit=False)
-            print(request.POST, course.__dict__)
             # TODO: possibly generalize all this m2m stuff (similar between courses and playlists) if it is a common use case
             added_playlist_id = request.POST.get("playlists_add")
             if added_playlist_id != "":
