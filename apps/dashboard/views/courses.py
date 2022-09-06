@@ -175,11 +175,11 @@ def course_edit_view(request, course_id):
                 ).first()
                 if due_dates[i] != "":
                     current_pco.due_date = datetime.datetime.strptime(
-                        due_dates[i], "%Y-%m-%dT%M:%S"
+                        due_dates[i], "%Y-%m-%d"
                     )
                 if publish_dates[i] != "":
                     current_pco.publish_date = datetime.datetime.strptime(
-                        publish_dates[i], "%Y-%m-%dT%M:%S"
+                        publish_dates[i], "%Y-%m-%d"
                     )
                 current_pco.save()
             handle_m2m(

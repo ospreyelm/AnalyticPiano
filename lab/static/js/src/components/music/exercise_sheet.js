@@ -240,7 +240,7 @@ define([
       ) {
         return selected < 0 && current.selected ? index + 1 : selected;
       },
-      -1);
+      1);
 
       html = tpl(tpl_data);
       $infoEl.html(html);

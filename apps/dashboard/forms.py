@@ -182,7 +182,6 @@ TRANSPOSE_SELECT_CHOICES = (
 
 class CustomTransposeWidget(forms.MultiWidget):
     def __init__(self, attrs=None):
-        print(self.__dict__)
         self.attrs = attrs
         widgets = (
             forms.TextInput,

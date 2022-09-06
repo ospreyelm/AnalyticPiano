@@ -83,6 +83,9 @@ def exercise_edit_view(request, exercise_id):
         "verbose_name": exercise._meta.verbose_name,
         "verbose_name_plural": exercise._meta.verbose_name_plural,
         "has_been_performed": exercise.has_been_performed,
+        "preview_url": request.build_absolute_uri(
+            reverse("lab:exercise-view", kwargs={"exercise_id": exercise.id})
+        ),
         "redirect_url": reverse("dashboard:exercises-list"),
         "delete_url": reverse(
             "dashboard:delete-exercise", kwargs={"exercise_id": exercise_id}
