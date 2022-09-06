@@ -95,15 +95,6 @@ def exercise_edit_view(request, exercise_id):
         form = DashboardExerciseForm(data=request.POST, instance=exercise)
         form.context = {"user": request.user}
         if form.is_valid():
-            if "duplicate" in request.POST:
-                unique_fields = Exercise.get_unique_fields()
-                clone_data = copy(form.cleaned_data)
-                for field in clone_data:
-                    if field in unique_fields:
-                        clone_data[field] = None
-                request.session["clone_data"] = clone_data
-                return redirect("dashboard:add-exercise")
-
             if PROTECT_EXERCISE_CONTENT:
                 ## only alter is_public, description fields
                 ## under no circumstances allow other changes to data
@@ -134,6 +125,11 @@ def exercise_edit_view(request, exercise_id):
                     "dashboard:edit-exercise",
                     kwargs={"exercise_id": exercise.get_next_authored_exercise().id},
                 )
+            elif "duplicate" in request.POST:
+                exercise.pk = None
+                exercise.id = None
+                exercise.save()
+                return redirect("dashboard:edit-exercise", exercise.id)
             else:
                 success_url = reverse("dashboard:exercises-list")
             return redirect(success_url)

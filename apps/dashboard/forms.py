@@ -182,6 +182,7 @@ TRANSPOSE_SELECT_CHOICES = (
 
 class CustomTransposeWidget(forms.MultiWidget):
     def __init__(self, attrs=None):
+        print(self.__dict__)
         self.attrs = attrs
         widgets = (
             forms.TextInput,
@@ -196,8 +197,7 @@ class CustomTransposeWidget(forms.MultiWidget):
 
     def value_from_datadict(self, data, files, name):
         text, added = super().value_from_datadict(data, files, name)
-        print(text, added)
-        return text + " " + added
+        return text + (" " + added if not added in text else "")
 
 
 class DashboardPlaylistForm(PlaylistForm):
@@ -210,7 +210,7 @@ class DashboardPlaylistForm(PlaylistForm):
     transpose_requests = TransposeRequestsField(
         label="Transposition requests",
         required=False,
-        help_text="A list of keys, separated by spaces, which the playlist will be transposed to. Upper case letters for major, lower case for minor. Only the key signature matters, meaning that 'A f# Db' has the same result as 'f# A bb'.",
+        help_text="A list of keys, separated by spaces, which the playlist will be transposed to. Upper case letters for major, lower case for minor. Only the key signature matters, meaning that 'A f# Db' has the same result as 'f# A bb'. The key signature in the dropdown will be added to the ones in the text box upon saving.",
         widget=CustomTransposeWidget,
     )
 
@@ -255,6 +255,7 @@ class DashboardCourseForm(CourseForm):
                 )
             ),
             "url": "dashboard:edit-playlist",
+            "author_field_name": "authored_by",
         },
         "visible_to": {
             "ordered": False,
@@ -265,7 +266,6 @@ class DashboardCourseForm(CourseForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super(DashboardCourseForm, self).__init__(*args, **kwargs)
-        self.fields["visible_to"].queryset = user.managed_groups.all()
 
     # def clean_due_dates(self):
     #     if not self.cleaned_data["due_dates"]:

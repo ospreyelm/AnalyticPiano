@@ -3,6 +3,8 @@
 {% load stringifydatetime%}
 {% load getfieldtype %}
 {% load length %}
+{% load getfieldname %}
+{% load getmodelauthor %}
 
 {% for hidden_field in form.hidden_fields %}
     {{ hidden_field }}
@@ -21,15 +23,19 @@
         <div class="form-check form-group form-inline ">
             {{ field.label_tag }}
             {% if field.name in form.custom_m2m_fields %}
+                {% with m2m_config=form.custom_m2m_config|getattribute:field.name%}
                 <select {{editing|yesno:",disabled"}} name="{{field.name}}_add" style="width:150px; padding:3px; margin-right:5px">
                   {% if editing %}
                   <option></option>
                   {% for model in m2m_options|getattribute:field.name %}
-                  <option value={{model.id}}>{{model}}</option>
+                  {% with author_field_name=m2m_config|getattribute:"author_field_name" %}
+                  <option value={{model.id}}>{{model}} {% if author_field_name and model|getattribute:author_field_name != user %} - shared by {{model|getattribute:author_field_name|getattribute:"email"}} {% endif %}</option>
+                  {% endwith %}
                   {% endfor %}
                   {% endif %}
                 </select>
                 <button {{editing|yesno:",disabled"}} name="save-and-continue" style="width:50px">Add</button>
+                {% endwith %}
             {% elif form.is_bound %}
                 {% if field.errors %}
                     {% render_field field|add_class:'form-control' class="is-invalid" %}
@@ -51,11 +57,17 @@
         </div>
         {% if editing and field.name in form.custom_m2m_fields and m2m_added|getattribute:field.name|length != 0 %}
         {% with m2m_config=form.custom_m2m_config|getattribute:field.name%}
+        {% with field_name=field|getfieldname %}
         <div class="delete-table-wrapper">
             <table class="delete-table-inner">
           <tr class="delete-table-row" style="margin-bottom:8px">
-            <th width="160px">Added {{field.name}}</th>
-            {% if m2m_config.ordered %} <th width="100px"> Order </th> {%endif%}
+            <th width="160px">Added {{field_name}}</th>
+            {% if m2m_config.ordered %} 
+            <th width="100px" style="flex-direction:column"> 
+                <div>Order</div> 
+                <div><small></small></div>
+            </th> 
+            {% endif %}
             {% if m2m_config.extra_fields%}
                 {% for extra_field in m2m_config.extra_fields %}
                     <th style="flex-direction:column">
@@ -108,10 +120,12 @@
         </table>
         </div>
         {% endwith %}
+        {% endwith %}
         {% endif %}
     </div>
 {% endfor %}
 <script>
+    // Changes the orders and updates the model when an order arrow is clicked
     $(document).on('click','.m2m-order',function(){
         const inputElement= $($(this).parent().parent().children().toArray()[0])
         const arrowClass = $(this).attr('class')

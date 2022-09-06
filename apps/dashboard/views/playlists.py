@@ -126,15 +126,6 @@ def playlist_edit_view(request, playlist_id):
         form = DashboardPlaylistForm(data=request.POST, instance=playlist)
         form.context = {"user": request.user}
         if form.is_valid():
-            if "duplicate" in request.POST:
-                unique_fields = Playlist.get_unique_fields()
-                clone_data = copy(form.cleaned_data)
-                for field in clone_data:
-                    if field in unique_fields:
-                        clone_data[field] = None
-                request.session["clone_data"] = clone_data
-                return redirect("dashboard:add-playlist")
-
             if PROTECT_PLAYLIST_CONTENT:
                 playlist.id = playlist_id  ## critical in case user tries to edit playlist name and gets a bad redirect
                 ## only alter is_public field
@@ -173,6 +164,23 @@ def playlist_edit_view(request, playlist_id):
                 messages.add_message(
                     request, messages.SUCCESS, f"{context['verbose_name']} saved"
                 )
+            elif "duplicate" in request.POST:
+                epos = ExercisePlaylistOrdered.objects.filter(playlist_id=playlist._id)
+                playlist.pk = None
+                playlist.id = None
+                playlist.name += " (Copy)"
+                playlist.save()
+                for epo in epos:
+                    exercise_to_add = Exercise.objects.filter(
+                        _id=epo.exercise_id
+                    ).first()
+                    playlist.exercises.add(
+                        exercise_to_add,
+                        through_defaults={
+                            "order": epo.order,
+                        },
+                    )
+                return redirect("dashboard:edit-playlist", playlist.id)
             else:
                 success_url = reverse("dashboard:playlists-list")
             return redirect(success_url)

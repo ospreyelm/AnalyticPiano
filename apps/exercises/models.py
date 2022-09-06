@@ -77,15 +77,21 @@ class ClonableModelMixin:
 
 
 class Exercise(ClonableModelMixin, BaseContentModel):
-    id = models.CharField("ID", unique=True, max_length=16)
-    description = models.CharField("Description", max_length=60, blank=True, null=True)
+    id = models.CharField("ID", unique=True, max_length=16, null=True)
+    description = models.CharField(
+        "Description",
+        max_length=60,
+        blank=True,
+        null=True,
+        help_text="Brief description showed to admins in the exercise dashboard table.",
+    )
     data = RawJSONField("Data")
     rhythm = models.CharField(
         "Rhythm",
         max_length=255,
         blank=True,
         null=True,
-        help_text="Rhythm for this exercise's notes. w for a whole note, H for a dotted half note, h for a half note, and q for a quarter note. For example, if your exercise has 5 notes and you want it to span exactly 2 bars, you could input: 'H q h q q'.",
+        help_text="Rhythm for this exercise's notes. w for a whole note, H for a dotted half note, h for a half note, and q for a quarter note. For example, if your exercise has five notes and you want it to span exactly two bars, you could input: 'H q h q q'.",
     )
     time_signature = models.CharField(
         "Meter",
@@ -93,7 +99,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         blank=True,
         null=True,
         default="",
-        help_text="Time signature for this exercise. Ex: 3/4",
+        help_text="Time signature for this exercise. E.g. 3/4",
     )
     authored_by = models.ForeignKey(
         "accounts.User",
@@ -101,7 +107,11 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         on_delete=models.PROTECT,
         verbose_name="Author",
     )
-    is_public = models.BooleanField("Share", default=True)
+    is_public = models.BooleanField(
+        "Share",
+        default=True,
+        help_text="Sharing your exercise will allow other users to include it in their playlists. Doing so will make your email visible to people looking to use this exercise.",
+    )
 
     locked = models.BooleanField("Locked", default=False)
 
@@ -275,12 +285,11 @@ def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
 
 
 class Playlist(ClonableModelMixin, BaseContentModel):
-    id = models.CharField("ID", unique=True, max_length=16)
+    id = models.CharField("ID", unique=True, max_length=16, null=True)
     is_auto = models.BooleanField("Is Auto Playlist", default=False)
 
     name = models.CharField(
         "Name",
-        unique=True,
         max_length=32,
     )
     authored_by = models.ForeignKey(
@@ -303,7 +312,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         to=Exercise,
         related_name="playlists",
         through="ExercisePlaylistOrdered",
-        help_text="These are the exercises within this playlist. You can add exercises after creating the playlist.",
+        help_text="These are the exercises within this playlist. You can add exercises after creating the playlist. Changing the order will automatically save all changes made in the form.",
         blank=True,
     )
 
@@ -336,7 +345,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         null=True,
         help_text="Determines order of transposed exercises. Exercise Loop means that each exercise will have its transposed versions come after it successively. Playlist Loop means that the entire playlist will come in its original key, followed successively by the playlist's transposed versions.",
     )
-    is_public = models.BooleanField("Share", default=False)
+    is_public = models.BooleanField(
+        "Share",
+        default=False,
+        help_text="Sharing your playlist will allow other users to include it in their courses. Doing so will make your email visible to people looking to use this playlist.",
+    )
 
     zero_padding = "PA00A0"
 
@@ -559,11 +572,10 @@ class ExercisePlaylistOrdered(ClonableModelMixin, BaseContentModel):
 
 
 class Course(ClonableModelMixin, BaseContentModel):
-    id = models.CharField("ID", unique=True, max_length=16)
+    id = models.CharField("ID", unique=True, max_length=16, blank=True)
 
     title = models.CharField(
         "Title",
-        unique=True,
         max_length=64,
     )
     # slug = models.SlugField('URL slug', unique=True, max_length=64)
@@ -578,7 +590,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         related_name="courses",
         through="PlaylistCourseOrdered",
         blank=True,
-        help_text="These are the exercise playlists within the course. You can add playlists after creating the course.",
+        help_text="These are the exercise playlists within the course. You can add playlists after creating the course. Changing the order will automatically save all changes made in the form.",
     )
 
     authored_by = models.ForeignKey(
@@ -587,7 +599,11 @@ class Course(ClonableModelMixin, BaseContentModel):
         on_delete=models.PROTECT,
         verbose_name="Author",
     )
-    is_public = models.BooleanField("Share", default=False)
+    is_public = models.BooleanField(
+        "Share",
+        default=False,
+        help_text="Sharing your course will make it available to other users. Doing so will make your email visible to people looking to use your course.",
+    )
 
     # publish_dates = models.CharField(
     #     "Publish Dates",
@@ -606,6 +622,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         related_name="visible_courses",
         blank=True,
         help_text="If no group is selected, course will be visible to all subscribers.",
+        verbose_name="Visible Groups",
     )
 
     created = models.DateTimeField("Created", auto_now_add=True)

@@ -56,30 +56,31 @@ class User(AbstractBaseUser, PermissionsMixin):
         _("Last Name"), max_length=32, unique=False, default="", blank=True
     )
 
-    # FIXME remove this field after 0008 migration is applied
-    _supervisors = ArrayField(
-        base_field=models.IntegerField(),
-        default=list,
-        verbose_name="Supervisors",
-        blank=True,
-    )
+    # # FIXME remove this field after 0008 migration is applied
+    # _supervisors = ArrayField(
+    #     base_field=models.IntegerField(),
+    #     default=list,
+    #     verbose_name="Supervisors",
+    #     blank=True,
+    # )
 
     SUPERVISOR_STATUS_ACCEPTED = "Accepted"
     SUPERVISOR_STATUS_DECLINED = "Declined"
     SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = "Pending"
     SUPERVISOR_STATUS_INVITATION_WAIT = "Pending Invitation"
+    # TODO: change to M2M field
     _supervisors_dict = JSONField(default=dict, verbose_name="Supervisors", blank=True)
 
-    # FIXME remove these fields after 0011 migration is applied
-    auto_advance = models.BooleanField(default=False)
-    auto_repeat = models.BooleanField(default=False)
-    auto_advance_delay = models.PositiveIntegerField(default=4)
-    auto_repeat_delay = models.PositiveIntegerField(default=6)
+    # # FIXME remove these fields after 0011 migration is applied
+    # auto_advance = models.BooleanField(default=False)
+    # auto_repeat = models.BooleanField(default=False)
+    # auto_advance_delay = models.PositiveIntegerField(default=4)
+    # auto_repeat_delay = models.PositiveIntegerField(default=6)
 
-    # FIXME remove this field after 0008 migration is applied
-    keyboard_size = models.IntegerField(
-        choices=KEYBOARD_CHOICES, default=DEFAULT_KEYBOARD_SIZE
-    )
+    # # FIXME remove this field after 0008 migration is applied
+    # keyboard_size = models.IntegerField(
+    #     choices=KEYBOARD_CHOICES, default=DEFAULT_KEYBOARD_SIZE
+    # )
 
     preferences = JSONField(
         default=get_preferences_default, verbose_name="Preferences", blank=True
@@ -203,7 +204,12 @@ class Group(models.Model):
         "Name",
         max_length=128,
     )
-    members = models.ManyToManyField(to=User, blank=True, verbose_name="Members")
+    members = models.ManyToManyField(
+        to=User,
+        blank=True,
+        verbose_name="Members",
+        help_text="The users within your group. You can add users after creating the group.",
+    )
     # _members = ArrayField(
     #     base_field=models.IntegerField(),
     #     default=list,

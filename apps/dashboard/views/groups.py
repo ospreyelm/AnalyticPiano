@@ -86,7 +86,9 @@ def group_edit_view(request, group_id):
         "m2m_added": {"members": members_list},
         "m2m_options": {
             "members": filter(
-                lambda u: u not in group.members.all(), User.objects.all()
+                lambda u: u not in group.members.all()
+                and u in request.user.subscribers,
+                User.objects.all(),
             ),
         },
     }

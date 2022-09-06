@@ -69,7 +69,7 @@ def supervisors_courses_view(request):
     ]
 
     supervisors_courses = Course.objects.filter(
-        Q(visible_to___members__contains=[request.user.id]) | Q(visible_to=None),
+        Q(visible_to__members__id__contains=request.user.id) | Q(visible_to=None),
         authored_by__in=approved_supervisors,
     ).distinct()
     supervisors_courses_table = SupervisorsCoursesListTable(supervisors_courses)

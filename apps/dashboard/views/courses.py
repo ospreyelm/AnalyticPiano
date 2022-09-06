@@ -117,6 +117,19 @@ def course_edit_view(request, course_id):
 
     groups_list = list(map(parse_group, course.visible_to.all()))
 
+    playlists_options = list(
+        filter(
+            lambda p: p not in course.playlists.all(),
+            Playlist.objects.filter(
+                Q(authored_by_id=request.user.id) | Q(is_public=True)
+            ),
+        )
+    )
+
+    playlists_options.sort(
+        key=lambda p: p.authored_by_id if (p.authored_by_id != request.user.id) else -1
+    )
+
     context = {
         "verbose_name": course._meta.verbose_name,
         "verbose_name_plural": course._meta.verbose_name_plural,
@@ -128,35 +141,23 @@ def course_edit_view(request, course_id):
             "visible_to": groups_list,
         },
         "m2m_options": {
-            "playlists": filter(
-                lambda p: p not in course.playlists.all(),
-                Playlist.objects.filter(
-                    Q(authored_by_id=request.user.id) | Q(is_public=True)
+            "playlists": playlists_options,
+            "visible_to": list(
+                filter(
+                    lambda g: g not in course.visible_to.all(),
+                    Group.objects.filter(manager_id=course.authored_by_id),
                 ),
             ),
-            "visible_to": list(Group.objects.filter(manager_id=course.authored_by_id)),
         },
+        "user": request.user,
     }
 
     if request.method == "POST":
         form = DashboardCourseForm(
             data=request.POST, instance=course, user=request.user
         )
-        form.context = {"user": request.user}
         if form.is_valid():
-            if "duplicate" in request.POST:
-                unique_fields = Course.get_unique_fields()
-                clone_data = copy(form.cleaned_data)
-                clone_data["visible_to"] = list(
-                    form.cleaned_data.pop("visible_to").values_list("id", flat=True)
-                )
-                for field in clone_data:
-                    if field in unique_fields:
-                        clone_data[field] = None
-                request.session["clone_data"] = clone_data
-                return redirect("dashboard:add-course")
             course = form.save(commit=False)
-            # TODO: possibly generalize all this m2m stuff (similar between courses and playlists) if it is a common use case
             added_playlist_id = request.POST.get("playlists_add")
             if added_playlist_id != "":
                 course.playlists.add(
@@ -220,8 +221,31 @@ def course_edit_view(request, course_id):
                     messages.SUCCESS,
                     f"{context['verbose_name']} has been saved successfully.",
                 )
+            elif "duplicate" in request.POST:
+                visible_to_groups = course.visible_to.all()
+                pcos = PlaylistCourseOrdered.objects.filter(course_id=course._id)
+                course.pk = None
+                course.id = None
+                course.title += " (Copy)"
+                course.save()
+                for group in visible_to_groups:
+                    course.visible_to.add(group)
+                for pco in pcos:
+                    playlist_to_add = Playlist.objects.filter(
+                        _id=pco.playlist_id
+                    ).first()
+                    course.playlists.add(
+                        playlist_to_add,
+                        through_defaults={
+                            "order": pco.order,
+                            "due_date": pco.due_date,
+                            "publish_date": pco.publish_date,
+                        },
+                    )
+                return redirect("dashboard:edit-course", course.id)
             else:
                 success_url = reverse("dashboard:courses-list")
+
             return redirect(success_url)
         context["form"] = form
         return render(request, "dashboard/content.html", context)
@@ -333,7 +357,7 @@ def course_activity_view(request, course_id):
         # separate performers by the filtered groups
         for group in groups:
             for performance in data:
-                if performance["subscriber"].id in group._members:
+                if performance["subscriber"] in group.members:
                     performance["groups"].append(group.name)
 
         for performance in data:

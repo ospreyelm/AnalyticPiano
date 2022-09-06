@@ -161,9 +161,9 @@ class ExerciseForm(forms.ModelForm):
     TYPE_CHOICES = (
         (TYPE_MATCHING, "Matching"),
         (TYPE_ANALYTICAL, "Analytical"),
-        (TYPE_ANALYTICAL_PCS, "Analytical PCS"),
+        (TYPE_ANALYTICAL_PCS, "Analytical (with pitch class checking)"),
         (TYPE_FIGURED_BASS, "Figured Bass"),
-        (TYPE_FIGURED_BASS_PCS, "Figured Bass PCS"),
+        (TYPE_FIGURED_BASS_PCS, "Figured Bass (with pitch class checking)"),
     )
 
     DISTRIBUTION_KEYBOARD = "keyboard"
@@ -178,26 +178,32 @@ class ExerciseForm(forms.ModelForm):
         (DISTRIBUTION_KEYBOARD, "Keyboard"),
         (DISTRIBUTION_CHORALE, "Chorale"),
         (DISTRIBUTION_GRANDSTAFF, "Grand Staff"),
-        (DISTRIBUTION_LH, "Left Hand"),
-        (DISTRIBUTION_RH, "Right Hand"),
-        (DISTRIBUTION_KEYBOARD_RH_PREFERENCE, "Keyboard with Right Hand Bias"),
-        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, "Keyboard with Left Hand Bias"),
+        (DISTRIBUTION_LH, "Lower staff"),
+        (DISTRIBUTION_RH, "Upper staff"),
+        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, "Keyboard with lower staff bias"),
+        (DISTRIBUTION_KEYBOARD_RH_PREFERENCE, "Keyboard with upper staff bias"),
     )
 
     intro_text = forms.CharField(
         widget=CKEditorWidget(config_name="limited"),
         required=False,
-        help_text="Brief description showed to users before beginning.",
+        help_text="Text showed to users before the exercise.",
     )
     # review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(
-        choices=TYPE_CHOICES, widget=forms.RadioSelect(), required=False
+        choices=TYPE_CHOICES,
+        widget=forms.RadioSelect(),
+        required=False,
+        help_text="The criteria by which the exercise will be graded. Matching means pitches must exactly match, analytical means that the general chords must match, and figured bass means that the chords and their bass voicings must match. Types with pitch class checking give the same score to different performances regardless of which octave the tones are in.",
     )
     staff_distribution = forms.ChoiceField(
-        choices=DISTRIBUTION_CHOICES, widget=forms.RadioSelect(), required=False
+        choices=DISTRIBUTION_CHOICES,
+        widget=forms.RadioSelect(),
+        required=False,
+        help_text="The staff(s) that the exercise will be displayed on. Lower/upper staff bias determines which staff middle tones (e.g. middle C) will be displayed on.",
     )
     time_signature = forms.CharField(
-        required=False, help_text="Time signature for this exercise. Ex: '3/4'"
+        required=False, help_text="Time signature for this exercise. E.g. '3/4'"
     )
 
     field_order = [
