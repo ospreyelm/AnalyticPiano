@@ -42,31 +42,19 @@ class CoursePageTable(tables.Table):
         super(CoursePageTable, self).__init__(*args, **kwargs)
 
     def render_order(self, record):
-        return (
-            PlaylistCourseOrdered.objects.filter(
-                Q(playlist_id=record._id, course_id=self.course._id)
-            )
-            .first()
-            .order
-        )
+        return PlaylistCourseOrdered.objects.get(
+            Q(playlist_id=record._id, course_id=self.course._id)
+        ).order
 
     def render_publish_date(self, record):
-        return (
-            PlaylistCourseOrdered.objects.filter(
-                Q(playlist_id=record._id, course_id=self.course._id)
-            )
-            .first()
-            .publish_date
-        )
+        return PlaylistCourseOrdered.objects.get(
+            Q(playlist_id=record._id, course_id=self.course._id)
+        ).publish_date
 
     def render_due_date(self, record):
-        return (
-            PlaylistCourseOrdered.objects.filter(
-                Q(playlist_id=record._id, course_id=self.course._id)
-            )
-            .first()
-            .due_date
-        )
+        return PlaylistCourseOrdered.objects.get(
+            Q(playlist_id=record._id, course_id=self.course._id)
+        ).due_date
 
     def order_publish_date(self, queryset, is_descending):
         return self._order_by_date(

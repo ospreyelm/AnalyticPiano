@@ -40,9 +40,7 @@ def reverse(apps, schema_editor):
             key=operator.attrgetter("order"),
         )
         playlist_list = map(
-            lambda pco: Playlist.objects.using(db_alias)
-            .filter(_id=pco.playlist_id)
-            .first(),
+            lambda pco: Playlist.objects.using(db_alias).get(_id=pco.playlist_id),
             pco_list,
         )
         for i in range(0, len(playlist_list)):

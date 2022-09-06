@@ -32,9 +32,7 @@ def reverse(apps, schema_editor):
     db_alias = schema_editor.connection.alias
     for playlist in Playlist.objects.all():
         exercise_list = map(
-            lambda epo: Exercise.objects.using(db_alias)
-            .filter(_id=epo.exercise_id)
-            .first(),
+            lambda epo: Exercise.objects.using(db_alias).get(_id=epo.exercise_id),
             sorted(
                 ExercisePlaylistOrdered.objects.using(db_alias).filter(
                     playlist_id=playlist._id

@@ -21,7 +21,7 @@ def playlist_performance_view(request, playlist_id):
     performances = PerformanceData.objects.filter(
         playlist__id=playlist_id
     ).select_related("user", "playlist")
-    playlist = Playlist.objects.filter(id=playlist_id).first()
+    playlist = Playlist.objects.get(id=playlist_id)
     exercises = [exercise for exercise in playlist.exercise_list]
     users = list(set(list(performances.values_list("user__email", flat=True))))
 
@@ -72,8 +72,6 @@ def playlist_performance_view(request, playlist_id):
         data=data, extra_columns=[(exercise, Column()) for exercise in exercises]
     )
 
-    playlist_id = Playlist.objects.filter(id=playlist_id).first().id
-
     return render(
         request, "admin/performances.html", {"table": table, "playlist_id": playlist_id}
     )
@@ -90,6 +88,7 @@ def submit_exercise_performance(request):
     performance_data.pop("exercise_ID")
     # performance_data.pop('performer')
 
+    # TODO: change this
     playlist = Playlist.objects.filter(name=playlist_name).first()
     exercise = playlist.get_exercise_obj_by_num(int(exercise_num))
     PerformanceData.submit(
@@ -110,6 +109,7 @@ def submit_playlist_performance(request):
     playlist_name, _ = performance_data["exercise_ID"].split("/")
     performance_data.pop("exercise_ID")
 
+    # TODO: change this
     playlist = Playlist.objects.filter(name=playlist_name).first()
     PerformanceData.submit_playlist_performance(
         playlist_id=playlist._id, user_id=user.id, data=performance_data

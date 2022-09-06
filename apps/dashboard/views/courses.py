@@ -161,18 +161,18 @@ def course_edit_view(request, course_id):
             added_playlist_id = request.POST.get("playlists_add")
             if added_playlist_id != "":
                 course.playlists.add(
-                    Playlist.objects.filter(id=added_playlist_id).first(),
+                    Playlist.objects.get(id=added_playlist_id),
                     through_defaults={"order": len(course.playlists.all())},
                 )
             added_group_id = request.POST.get("visible_to_add")
             if added_group_id != "":
-                course.visible_to.add(Group.objects.filter(id=added_group_id).first())
+                course.visible_to.add(Group.objects.get(id=added_group_id))
             due_dates = request.POST.getlist("playlists_due_date")
             publish_dates = request.POST.getlist("playlists_publish_date")
             for i in range(0, len(playlists_list)):
-                current_pco = PlaylistCourseOrdered.objects.filter(
+                current_pco = PlaylistCourseOrdered.objects.get(
                     _id=playlists_list[i]["through_id"]
-                ).first()
+                )
                 if due_dates[i] != "":
                     current_pco.due_date = datetime.datetime.strptime(
                         due_dates[i], "%Y-%m-%d"
@@ -189,7 +189,7 @@ def course_edit_view(request, course_id):
                 "playlist_id",
                 list(
                     map(
-                        lambda p: Playlist.objects.filter(_id=p["id"]).first(),
+                        lambda p: Playlist.objects.get(_id=p["id"]),
                         playlists_list,
                     )
                 ),
@@ -202,7 +202,7 @@ def course_edit_view(request, course_id):
                 "group_id",
                 list(
                     map(
-                        lambda g: Group.objects.filter(id=g["id"]).first(),
+                        lambda g: Group.objects.get(id=g["id"]),
                         groups_list,
                     )
                 ),
@@ -231,9 +231,7 @@ def course_edit_view(request, course_id):
                 for group in visible_to_groups:
                     course.visible_to.add(group)
                 for pco in pcos:
-                    playlist_to_add = Playlist.objects.filter(
-                        _id=pco.playlist_id
-                    ).first()
+                    playlist_to_add = Playlist.objects.filter(_id=pco.playlist_id).get()
                     course.playlists.add(
                         playlist_to_add,
                         through_defaults={

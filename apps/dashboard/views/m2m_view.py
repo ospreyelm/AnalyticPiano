@@ -48,9 +48,9 @@ def handle_reorder(
     orders_list = request.POST.getlist(f"{fieldname}_order")
     through_models_list = list(
         map(
-            lambda m: ThroughModel.objects.filter(
+            lambda m: ThroughModel.objects.get(
                 Q(**{child_field: m._id}) & Q(**parent_query)
-            ).first(),
+            ),
             ordered_children,
         )
     )
@@ -91,9 +91,9 @@ def handle_delete(
     models_to_delete = request.POST.getlist(f"{fieldname}_delete")
     for model_id_to_delete in models_to_delete:
         if ThroughModel != None:
-            through_model_to_delete = ThroughModel.objects.filter(
+            through_model_to_delete = ThroughModel.objects.get(
                 Q(**{child_field: model_id_to_delete}) & Q(**parent_query)
-            ).first()
+            )
             if through_model_to_delete:
                 if hasattr(through_model_to_delete, "order"):
                     through_models_to_update = ThroughModel.objects.filter(
@@ -105,5 +105,5 @@ def handle_delete(
                 through_model_to_delete.delete()
         else:
             getattr(parent_instance, fieldname).remove(
-                ChildModel.objects.filter(pk=model_id_to_delete).first()
+                ChildModel.objects.get(pk=model_id_to_delete)
             )

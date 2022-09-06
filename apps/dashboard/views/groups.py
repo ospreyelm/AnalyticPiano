@@ -101,7 +101,7 @@ def group_edit_view(request, group_id):
             added_member_id = request.POST.get("members_add")
 
             if added_member_id != "":
-                group.members.add(User.objects.filter(id=added_member_id).first())
+                group.members.add(User.objects.get(id=added_member_id))
             handle_m2m(
                 request,
                 "members",
@@ -109,7 +109,7 @@ def group_edit_view(request, group_id):
                 "user_id",
                 list(
                     map(
-                        lambda u: User.objects.filter(id=u["id"]).first(),
+                        lambda u: User.objects.get(id=u["id"]),
                         members_list,
                     )
                 ),

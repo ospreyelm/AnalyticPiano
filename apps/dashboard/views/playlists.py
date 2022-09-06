@@ -134,7 +134,7 @@ def playlist_edit_view(request, playlist_id):
                 added_exercise_id = request.POST.get("exercises_add")
                 if added_exercise_id != "":
                     playlist.exercises.add(
-                        Exercise.objects.filter(id=added_exercise_id).first(),
+                        Exercise.objects.get(id=added_exercise_id),
                         through_defaults={"order": len(playlist.exercises.all())},
                     )
                 handle_m2m(
@@ -144,7 +144,7 @@ def playlist_edit_view(request, playlist_id):
                     "exercise_id",
                     list(
                         map(
-                            lambda ex: Exercise.objects.filter(_id=ex["id"]).first(),
+                            lambda ex: Exercise.objects.get(_id=ex["id"]),
                             exercises_list,
                         )
                     ),
@@ -168,9 +168,7 @@ def playlist_edit_view(request, playlist_id):
                 playlist.name += " (Copy)"
                 playlist.save()
                 for epo in epos:
-                    exercise_to_add = Exercise.objects.filter(
-                        _id=epo.exercise_id
-                    ).first()
+                    exercise_to_add = Exercise.objects.get(_id=epo.exercise_id)
                     playlist.exercises.add(
                         exercise_to_add,
                         through_defaults={

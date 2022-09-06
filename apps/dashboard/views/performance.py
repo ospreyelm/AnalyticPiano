@@ -144,7 +144,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
     performances = PerformanceData.objects.filter(
         playlist__id=playlist_id, user_id=subscriber_id
     ).select_related("user", "playlist")
-    playlist = Playlist.objects.filter(id=playlist_id).first()
+    playlist = Playlist.objects.get(id=playlist_id)
     exercises = [exercise for exercise in playlist.exercise_list]
     users_email_list = list(
         set(list(performances.values_list("user__email", flat=True)))

@@ -125,9 +125,7 @@ class PlaylistView(RequirejsView):
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, playlist_id, exercise_num=1, *args, **kwargs):
-        playlist = Playlist.objects.filter(
-            Q(id=playlist_id) | Q(id=playlist_id)
-        ).first()
+        playlist = Playlist.objects.get(Q(id=playlist_id))
         if playlist is None:
             raise Http404("Playlist with this name or ID does not exist.")
 
@@ -544,6 +542,7 @@ class AddExerciseView(View):
 def exercise_performance_history(
     request, playlist_name, exercise_num=1, *args, **kwargs
 ):
+    # TODO: change this
     playlist = Playlist.objects.filter(
         Q(name=playlist_name) | Q(id=playlist_name)
     ).first()

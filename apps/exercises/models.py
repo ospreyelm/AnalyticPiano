@@ -366,7 +366,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             epo_list.sort(key=lambda e: e.order)
             return list(
                 map(
-                    lambda epo: Exercise.objects.filter(_id=epo.exercise_id).first().id,
+                    lambda epo: Exercise.objects.get(_id=epo.exercise_id).id,
                     epo_list,
                 )
             )
@@ -421,7 +421,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     def append_exercise(self, exercise_id):
         self.exercises.add(
-            Exercise.objects.filter(id=exercise_id).first(),
+            Exercise.objects.get(id=exercise_id),
             through_defaults={"order": len(self.exercises.all())},
         )
         self.save()
@@ -434,9 +434,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return
 
         try:
-            exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
+            exercise = Exercise.objects.get(id=self.exercise_list[num - 1])
         except (IndexError, TypeError):
-            exercise = Exercise.objects.filter(id=self.exercise_list[-1]).first()
+            exercise = Exercise.objects.get(id=self.exercise_list[-1])
 
         if not self.is_transposed():
             return exercise
@@ -525,7 +525,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         auto_playlist = Playlist(authored_by=authored_by, is_auto=True)
         auto_playlist.save()
         auto_playlist.exercises.add(
-            Exercise.objects.filter(id=initial_exercise_id).first(),
+            Exercise.objects.get(id=initial_exercise_id),
             through_defaults={"order": 1},
         )
         auto_playlist.save()
@@ -539,7 +539,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     def remove_exercise(self, exercise_id):
         self.exercises = self.exercises.remove(
-            Exercise.objects.filter(id=exercise_id).first()
+            Exercise.objects.get(id=exercise_id)
         )
         self.save()
 
@@ -654,7 +654,7 @@ class Course(ClonableModelMixin, BaseContentModel):
     def publish_dates_dict(self):
         pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
         return {
-            Playlist.objects.filter(_id=pco.playlist_id).first().id: pco.publish_date
+            Playlist.objects.get(_id=pco.playlist_id).id: pco.publish_date
             for pco in pco_list
         }
 
@@ -662,7 +662,7 @@ class Course(ClonableModelMixin, BaseContentModel):
     def due_dates_dict(self):
         pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
         return {
-            Playlist.objects.filter(_id=pco.playlist_id).first().id: pco.due_date
+            Playlist.objects.get(_id=pco.playlist_id).id: pco.due_date
             for pco in pco_list
         }
 
@@ -674,10 +674,9 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     def get_due_date(self, playlist):
         tz_naive = (
-            PlaylistCourseOrdered.objects.filter(
+            PlaylistCourseOrdered.objects.get(
                 Q(playlist_id=playlist._id, course_id=self._id)
             )
-            .first()
             .due_date
         )
         return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)

@@ -57,8 +57,7 @@ class ExpansiveForm(forms.ModelForm):
                     continue
 
                 item_is_public = (
-                    self.EXPANSIVE_FIELD_MODEL.objects.filter(id=_id).first().is_public
-                    == True
+                    self.EXPANSIVE_FIELD_MODEL.objects.get(id=_id).is_public == True
                 )
 
                 if item_is_public:
