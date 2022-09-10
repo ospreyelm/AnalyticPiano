@@ -23,6 +23,10 @@ def rename_course_playlists(apps, schema_editor):
         course.save()
 
 
+def reverse(apps, schema_editor):
+    pass
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("exercises", "0009_auto_20201221_1651"),
@@ -132,5 +136,5 @@ class Migration(migrations.Migration):
                 verbose_name="Transpose requests",
             ),
         ),
-        migrations.RunPython(rename_course_playlists),
+        migrations.RunPython(rename_course_playlists, reverse),
     ]

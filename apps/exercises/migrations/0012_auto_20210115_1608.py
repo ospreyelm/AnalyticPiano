@@ -19,9 +19,13 @@ def modify_performance_data(apps, schema_editor):
         pd.save()
 
 
+def reverse(apps, schema_editor):
+    pass
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("exercises", "0011_auto_20210111_0207"),
     ]
 
-    operations = [migrations.RunPython(modify_performance_data)]
+    operations = [migrations.RunPython(modify_performance_data, reverse)]
