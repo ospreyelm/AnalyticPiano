@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 to="accounts.User",
             ),
         ),
-        migrations.RunPython(forwards, reverse),
+        migrations.RunPython(forwards, reverse_code=reverse),
         migrations.RemoveField(
             model_name="group",
             name="_members",

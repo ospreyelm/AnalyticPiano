@@ -100,7 +100,7 @@ class Migration(migrations.Migration):
                 to="exercises.Exercise",
             ),
         ),
-        migrations.RunPython(forwards, reverse),
+        migrations.RunPython(forwards, reverse_code=reverse),
         migrations.RemoveField(
             model_name="playlist",
             name="exercises",

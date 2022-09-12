@@ -136,5 +136,5 @@ class Migration(migrations.Migration):
                 verbose_name="Transpose requests",
             ),
         ),
-        migrations.RunPython(rename_course_playlists, reverse),
+        migrations.RunPython(rename_course_playlists, reverse_code=reverse),
     ]

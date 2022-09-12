@@ -127,7 +127,7 @@ class Migration(migrations.Migration):
                 to="exercises.Playlist",
             ),
         ),
-        migrations.RunPython(forwards, reverse),
+        migrations.RunPython(forwards, reverse_code=reverse),
         migrations.RemoveField(model_name="course", name="playlists_string"),
         migrations.RemoveField(model_name="course", name="due_dates"),
         migrations.RemoveField(model_name="course", name="publish_dates"),

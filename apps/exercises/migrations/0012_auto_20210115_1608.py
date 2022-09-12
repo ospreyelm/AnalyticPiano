@@ -28,4 +28,4 @@ class Migration(migrations.Migration):
         ("exercises", "0011_auto_20210111_0207"),
     ]
 
-    operations = [migrations.RunPython(modify_performance_data, reverse)]
+    operations = [migrations.RunPython(modify_performance_data, reverse_code=reverse)]
