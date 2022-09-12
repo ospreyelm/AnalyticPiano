@@ -130,6 +130,13 @@ class Migration(migrations.Migration):
                 to="exercises.Playlist",
             ),
         ),
+        migrations.AlterField(
+            model_name="course",
+            name="playlists_string",
+            field=models.CharField(
+                max_length=1024, verbose_name="Playlist IDs", default=""
+            ),
+        ),
         migrations.RunPython(forwards, reverse_code=reverse),
         migrations.RemoveField(model_name="course", name="playlists_string"),
         migrations.RemoveField(model_name="course", name="due_dates"),

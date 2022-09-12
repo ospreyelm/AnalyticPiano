@@ -31,6 +31,7 @@ def reverse(apps, schema_editor):
     ExercisePlaylistOrdered = apps.get_model("exercises", "ExercisePlaylistOrdered")
     db_alias = schema_editor.connection.alias
     for playlist in Playlist.objects.all():
+        playlist.exercises_string = ""
         exercise_list = map(
             lambda epo: Exercise.objects.using(db_alias).get(_id=epo.exercise_id),
             sorted(
@@ -41,7 +42,7 @@ def reverse(apps, schema_editor):
             ),
         )
         for exercise in exercise_list:
-            playlist.exercise_string = playlist.exercise_string + " " + exercise.id
+            playlist.exercises_string = playlist.exercises_string + " " + exercise.id
         playlist.save()
 
 
@@ -98,6 +99,13 @@ class Migration(migrations.Migration):
                 related_name="playlists",
                 through="exercises.ExercisePlaylistOrdered",
                 to="exercises.Exercise",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="playlist",
+            name="exercises_string",
+            field=models.CharField(
+                max_length=1024, verbose_name="Exercise IDs", default=""
             ),
         ),
         migrations.RunPython(forwards, reverse_code=reverse),
