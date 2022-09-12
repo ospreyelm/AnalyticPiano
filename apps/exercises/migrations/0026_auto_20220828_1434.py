@@ -35,6 +35,7 @@ def reverse(apps, schema_editor):
     PlaylistCourseOrdered = apps.get_model("exercises", "PlaylistCourseOrdered")
     db_alias = schema_editor.connection.alias
     for course in Course.objects.using(db_alias).all():
+        course.playlist_string = ""
         pco_list = sorted(
             PlaylistCourseOrdered.objects.using(db_alias).filter(course_id=course._id),
             key=operator.attrgetter("order"),
