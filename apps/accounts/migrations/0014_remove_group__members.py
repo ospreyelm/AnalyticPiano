@@ -11,7 +11,7 @@ def forwards(apps, schema_editor):
     for group in Group.objects.using(db_alias).all():
         member_list = User.objects.using(db_alias).filter(id__in=group._members)
         for user_id in member_list:
-            group.add(User.objects.using(db_alias).get(id=user_id))
+            group.members.add(User.objects.using(db_alias).get(id=user_id))
         group.save()
 
 
