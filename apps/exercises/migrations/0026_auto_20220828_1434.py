@@ -21,8 +21,8 @@ def forwards(apps, schema_editor):
             PlaylistCourseOrdered.objects.using(db_alias).create(
                 course_id=course._id,
                 playlist_id=playlist_list[i]._id,
-                due_date=due_dates[i],
-                publish_date=publish_dates[i],
+                due_date=due_dates[i] if i < len(due_dates) else None,
+                publish_date=publish_dates[i] if i < len(publish_dates) else None,
                 order=i + 1,
             )
 
