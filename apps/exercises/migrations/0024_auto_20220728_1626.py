@@ -17,11 +17,9 @@ def forwards(apps, schema_editor):
         )
         for i in range(0, len(exercise_list)):
             ExercisePlaylistOrdered.objects.using(db_alias).create(
-                {
-                    "exercise_id": exercise_list[i]._id,
-                    "playlist_id": playlist._id,
-                    "order": i + 1,
-                }
+                exercise_id=exercise_list[i]._id,
+                playlist_id=playlist._id,
+                order=i + 1,
             )
 
 
