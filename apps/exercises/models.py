@@ -386,11 +386,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return []
 
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
-            return list(product(self.exercise_list, self.transpose_requests))
+            return list(product(list(self.exercises.all()), self.transpose_requests))
         elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
             return [
                 (t[1], t[0])
-                for t in product(self.transpose_requests, self.exercise_list)
+                for t in product(self.transpose_requests, list(self.exercises.all()))
             ]
 
     @cached_property
@@ -538,9 +538,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             playlist.remove_exercise(exercise_id)
 
     def remove_exercise(self, exercise_id):
-        self.exercises = self.exercises.remove(
-            Exercise.objects.get(id=exercise_id)
-        )
+        self.exercises = self.exercises.remove(Exercise.objects.get(id=exercise_id))
         self.save()
 
     def set_auto_name(self):
@@ -673,12 +671,9 @@ class Course(ClonableModelMixin, BaseContentModel):
         )
 
     def get_due_date(self, playlist):
-        tz_naive = (
-            PlaylistCourseOrdered.objects.get(
-                Q(playlist_id=playlist._id, course_id=self._id)
-            )
-            .due_date
-        )
+        tz_naive = PlaylistCourseOrdered.objects.get(
+            Q(playlist_id=playlist._id, course_id=self._id)
+        ).due_date
         return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)
 
 
