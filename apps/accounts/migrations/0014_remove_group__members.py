@@ -10,8 +10,8 @@ def forwards(apps, schema_editor):
     db_alias = schema_editor.connection.alias
     for group in Group.objects.using(db_alias).all():
         member_list = User.objects.using(db_alias).filter(id__in=group._members)
-        for user_id in member_list:
-            group.members.add(User.objects.using(db_alias).get(id=user_id))
+        for member in member_list:
+            group.members.add(member)
         group.save()
 
 
