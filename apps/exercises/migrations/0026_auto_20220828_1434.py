@@ -15,17 +15,15 @@ def forwards(apps, schema_editor):
         playlist_list = Playlist.objects.using(db_alias).filter(
             id__in=re.split(r"[,; \n]+", course.playlists_string)
         )
-        due_dates = course.due_dates.split(" ")
-        publish_dates = course.publish_dates.split(" ")
+        due_dates = course.due_dates.split(" ") if course.due_dates else []
+        publish_dates = course.publish_dates.split(" ") if course.publish_dates else []
         for i in range(0, len(playlist_list)):
             PlaylistCourseOrdered.objects.using(db_alias).create(
-                {
-                    "course_id": course._id,
-                    "playlist_id": playlist_list[i]._id,
-                    "due_date": due_dates[i],
-                    "publish_date": publish_dates[i],
-                    "order": i + 1,
-                }
+                course_id=course._id,
+                playlist_id=playlist_list[i]._id,
+                due_date=due_dates[i],
+                publish_date=publish_dates[i],
+                order=i + 1,
             )
 
 
