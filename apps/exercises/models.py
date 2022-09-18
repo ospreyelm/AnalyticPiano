@@ -281,7 +281,7 @@ def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
     """
     Remove the deleted exercise from all playlists that contain it
     """
-    Playlist.remove_exercise_from_playlists(exercise_id=instance._id)
+    Playlist.remove_exercise_from_playlists(exercise_id=instance.id)
 
 
 class Playlist(ClonableModelMixin, BaseContentModel):
@@ -514,7 +514,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def has_been_performed(self):
-        return PerformanceData.objects.filter(playlist=self).exists()
+        return (
+            PerformanceData.objects.filter(playlist=self)
+            .exclude(user=self.authored_by)
+            .exists()
+        )
 
     @classmethod
     def create_auto_playlist(cls, initial_exercise_id, authored_by):
@@ -529,7 +533,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @classmethod
     def remove_exercise_from_playlists(cls, exercise_id):
-        ExercisePlaylistOrdered.objects.filter(exercise_id=exercise_id).delete()
+        playlists = Playlist.objects.filter(exercises__contains=exercise_id)
+        for playlist in playlists:
+            playlist.remove_exercise(exercise_id)
 
     def remove_exercise(self, exercise_id):
         self.exercises = self.exercises.remove(Exercise.objects.get(id=exercise_id))
