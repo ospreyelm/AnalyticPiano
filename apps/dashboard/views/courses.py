@@ -1,6 +1,5 @@
 from copy import copy
 import datetime
-import operator
 
 from django.db.models import Q
 from django.contrib import messages
@@ -128,8 +127,9 @@ def course_edit_view(request, course_id):
     )
 
     playlists_options.sort(
-        key=lambda p: operator.itemgetter(
-            p.authored_by_id if (p.authored_by_id != request.user.id) else -1, p.name
+        key=lambda p: (
+            p.authored_by_id if (p.authored_by_id != request.user.id) else -1,
+            p.name,
         )
     )
 
