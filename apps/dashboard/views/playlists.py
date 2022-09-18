@@ -97,9 +97,13 @@ def playlist_edit_view(request, playlist_id):
 
     exercises_list.sort(key=lambda epo: epo["order"])
 
-    exercises_options = filter(
-        lambda e: e not in playlist.exercises.all(),
-        Exercise.objects.filter(Q(authored_by_id=request.user.id) | Q(is_public=True)),
+    exercises_options = list(
+        filter(
+            lambda e: e not in playlist.exercises.all(),
+            Exercise.objects.filter(
+                Q(authored_by_id=request.user.id) | Q(is_public=True)
+            ),
+        )
     )
     exercises_options.sort(
         key=lambda p: p.authored_by_id if (p.authored_by_id != request.user.id) else -1
