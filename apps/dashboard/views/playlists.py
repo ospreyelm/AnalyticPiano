@@ -97,6 +97,14 @@ def playlist_edit_view(request, playlist_id):
 
     exercises_list.sort(key=lambda epo: epo["order"])
 
+    exercises_options = filter(
+        lambda e: e not in playlist.exercises.all(),
+        Exercise.objects.filter(Q(authored_by_id=request.user.id) | Q(is_public=True)),
+    )
+    exercises_options.sort(
+        key=lambda p: p.authored_by_id if (p.authored_by_id != request.user.id) else -1
+    )
+
     context = {
         "verbose_name": playlist._meta.verbose_name,
         "verbose_name_plural": playlist._meta.verbose_name_plural,
@@ -107,14 +115,7 @@ def playlist_edit_view(request, playlist_id):
         ),
         "editing": True,
         "m2m_added": {"exercises": exercises_list},
-        "m2m_options": {
-            "exercises": filter(
-                lambda e: e not in playlist.exercises.all(),
-                Exercise.objects.filter(
-                    Q(authored_by_id=request.user.id) | Q(is_public=True)
-                ),
-            )
-        },
+        "m2m_options": {"exercises": exercises_options},
     }
 
     PROTECT_PLAYLIST_CONTENT = playlist.has_been_performed
