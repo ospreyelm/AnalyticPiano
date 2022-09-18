@@ -220,6 +220,7 @@ class DashboardPlaylistForm(PlaylistForm):
         "exercises": {
             "ordered": True,
             "url": "dashboard:edit-exercise",
+            "author_field_name": "authored_by",
         }
     }
 
