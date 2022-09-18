@@ -1,3 +1,5 @@
+import operator
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, PermissionDenied
@@ -106,7 +108,9 @@ def playlist_edit_view(request, playlist_id):
         )
     )
     exercises_options.sort(
-        key=lambda p: p.authored_by_id if (p.authored_by_id != request.user.id) else -1
+        key=lambda e: operator.itemgetter(
+            e.authored_by_id if (e.authored_by_id != request.user.id) else -1, e.id
+        )
     )
 
     context = {
