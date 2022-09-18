@@ -79,17 +79,22 @@ def group_edit_view(request, group_id):
 
     members_list = list(map(parse_member, group.members.all()))
 
+    members_options = list(
+        filter(
+            lambda u: u not in group.members.all() and u in request.user.subscribers,
+            User.objects.all(),
+        )
+    )
+
+    members_options.sort(key=lambda u: u.email)
+
     context = {
         "verbose_name": Group._meta.verbose_name,
         "verbose_name_plural": Group._meta.verbose_name_plural,
         "editing": True,
         "m2m_added": {"members": members_list},
         "m2m_options": {
-            "members": filter(
-                lambda u: u not in group.members.all()
-                and u in request.user.subscribers,
-                User.objects.all(),
-            ),
+            "members": members_options,
         },
     }
 

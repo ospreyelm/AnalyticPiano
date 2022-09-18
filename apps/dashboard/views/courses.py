@@ -133,6 +133,17 @@ def course_edit_view(request, course_id):
         )
     )
 
+    groups_options = (
+        list(
+            filter(
+                lambda g: g not in course.visible_to.all(),
+                Group.objects.filter(manager_id=course.authored_by_id),
+            ),
+        ),
+    )
+
+    groups_options.sort(key=lambda g: g.name)
+
     context = {
         "verbose_name": course._meta.verbose_name,
         "verbose_name_plural": course._meta.verbose_name_plural,
@@ -143,15 +154,7 @@ def course_edit_view(request, course_id):
             "playlists": playlists_list,
             "visible_to": groups_list,
         },
-        "m2m_options": {
-            "playlists": playlists_options,
-            "visible_to": list(
-                filter(
-                    lambda g: g not in course.visible_to.all(),
-                    Group.objects.filter(manager_id=course.authored_by_id),
-                ),
-            ),
-        },
+        "m2m_options": {"playlists": playlists_options, "visible_to": groups_options},
         "user": request.user,
     }
 
