@@ -109,7 +109,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     )
     is_public = models.BooleanField(
         "Share",
-        default=True,
+        default=False,
         help_text="Sharing your exercise will allow other users to include it in their playlists. Doing so will make your email visible to people looking to use this exercise.",
     )
 
