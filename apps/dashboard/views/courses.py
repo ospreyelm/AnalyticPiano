@@ -142,7 +142,7 @@ def course_edit_view(request, course_id):
         ),
     )
 
-    groups_options.sort(key=lambda g: g.name)
+    list(groups_options).sort(key=lambda g: g.name)
 
     context = {
         "verbose_name": course._meta.verbose_name,
