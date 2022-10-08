@@ -193,7 +193,7 @@ class ExerciseForm(forms.ModelForm):
         choices=TYPE_CHOICES,
         widget=forms.RadioSelect(),
         required=False,
-        help_text="The criteria by which the exercise will be graded. Matching means pitches must exactly match, analytical means that the general chords must match, and figured bass means that the chords and their bass voicings must match. Types with pitch class checking give the same score to different performances regardless of which octave the tones are in.",
+        help_text="The criteria by which the exercise will be graded. Matching means pitches must exactly match, analytical means that chords must satisfy the analysis displayed, with the same bass, and figured bass means the performance must be in the same register. Pitch class checking indicates to the user, upon error, which specific notes of a chord are wrong.",
     )
     staff_distribution = forms.ChoiceField(
         choices=DISTRIBUTION_CHOICES,

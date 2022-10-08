@@ -21,7 +21,13 @@ from .decorators import role_required, course_authorization_required
 from .tables import CoursePageTable
 from .verification import has_instructor_role, has_course_authorization
 from lti_tool.models import LTIConsumer, LTICourse
-from apps.exercises.models import Exercise, Playlist, Course, PerformanceData
+from apps.exercises.models import (
+    Exercise,
+    Playlist,
+    Course,
+    PerformanceData,
+    PlaylistCourseOrdered,
+)
 
 import json
 import copy
@@ -339,8 +345,18 @@ class CourseView(RequirejsView):
         playlists = qs.annotate(
             _sort_index=Case(*whens, output_field=models.CharField())
         ).order_by("_sort_index")
+        print(playlists)
+        augmented_playlists = map(
+            lambda playlist: {
+                **PlaylistCourseOrdered.objects.get(
+                    Q(playlist_id=playlist._id), Q(course_id=course._id)
+                ).__dict__,
+                **playlist.__dict__,
+            },
+            playlists,
+        )
 
-        playlists_table = CoursePageTable(playlists, course=course)
+        playlists_table = CoursePageTable(augmented_playlists, course=course)
         course_author = course.authored_by
         context = {
             "course_title": course.title,

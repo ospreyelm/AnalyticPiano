@@ -233,14 +233,13 @@ define([
       var tpl_data = {};
 
       tpl_data.exercise_list = exc.definition.getExerciseList();
-      tpl_data.exercise_num = tpl_data.exercise_list.reduce(function (
-        selected,
-        current,
-        index
-      ) {
-        return selected < 0 && current.selected ? index + 1 : selected;
-      },
-      1);
+      tpl_data.exercise_num = 1;
+      for (let i = 0; i < tpl_data.exercise_list.length; i++) {
+        if (tpl_data.exercise_list[i].selected) {
+          tpl_data.exercise_num = i + 1;
+          break;
+        }
+      }
 
       html = tpl(tpl_data);
       $infoEl.html(html);

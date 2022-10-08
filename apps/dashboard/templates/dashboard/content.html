@@ -34,6 +34,9 @@
         {% else %}
             <button type="submit" class="btn dashboard-btn limited-save-btn" name="save-and-continue">Limited Save</button>
         {% endif %}
+        {% if preview_url %}
+        <button type="type" name="save-and-continue" class="btn dashboard-btn" onclick="window.open('{{preview_url}}','_blank');">Preview</button>
+        {% endif %}
         <button type="reset" class="btn dashboard-btn"
                 onclick="location.href='{{ redirect_url }}'">
             Close

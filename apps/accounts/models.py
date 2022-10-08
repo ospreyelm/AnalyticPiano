@@ -120,6 +120,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email).lower()
 
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.email}"
+
+    def __repr__(self):
+        return f"{self.first_name} {self.last_name} - {self.email}"
+
     def get_full_name(self):
         name_is_set = self.first_name and self.last_name
         return f"{self.first_name} {self.last_name}" if name_is_set else "NOT SET"

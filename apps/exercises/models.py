@@ -434,9 +434,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return
 
         try:
-            exercise = Exercise.objects.get(id=self.exercise_list[num - 1])
+            exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
         except (IndexError, TypeError):
-            exercise = Exercise.objects.get(id=self.exercise_list[-1])
+            exercise = Exercise.objects.filter(id=self.exercise_list[-1]).first()
 
         if not self.is_transposed():
             return exercise
@@ -652,11 +652,10 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     @property
     def due_dates_dict(self):
-        pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
-        return {
-            Playlist.objects.get(_id=pco.playlist_id).id: pco.due_date
-            for pco in pco_list
-        }
+        pco_list = PlaylistCourseOrdered.objects.filter(
+            course_id=self._id
+        ).select_related("playlist")
+        return {pco.playlist.id: pco.due_date for pco in pco_list}
 
     @cached_property
     def published_playlists(self):

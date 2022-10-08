@@ -6,6 +6,7 @@
 {% load getfieldname %}
 {% load getmodelauthor %}
 
+
 {% for hidden_field in form.hidden_fields %}
     {{ hidden_field }}
 {% endfor %}
@@ -61,7 +62,7 @@
         <div class="delete-table-wrapper">
             <table class="delete-table-inner">
           <tr class="delete-table-row" style="margin-bottom:8px">
-            <th width="160px">Added {{field_name}}</th>
+            <th style="min-width:160px">Added {{field_name}}</th>
             {% if m2m_config.ordered %} 
             <th width="100px" style="flex-direction:column"> 
                 <div>Order</div> 
@@ -81,7 +82,7 @@
                 </tr>
           {% for model in m2m_added|getattribute:field.name %}
           <tr class="delete-table-row">
-            <td width="160px">
+            <td style="min-width:160px">
                 {% if m2m_config.url and model.url_id != None %}
             <a href="{% url m2m_config.url model.url_id %}">{{model.name}}</a>
             {% else %}
@@ -89,7 +90,7 @@
             {% endif %}
             </td >
             {% if m2m_config.ordered %}
-            <td width="100px">
+            <td style="min-width:100px">
             <div style="display:flex; flex-direction:row">
                 <input name="{{field.name}}_order" id="{{model.id}}" value="{{model.order}}" style="width:24px" class="m2m-input" type="number" min="0"/>
                 <div style="display:flex; flex-direction:column">

@@ -462,11 +462,9 @@ class SupervisorsCoursesListTable(tables.Table):
 class CourseActivityTable(tables.Table):
     subscriber_name = tables.columns.Column(verbose_name="Subscriber")
     groups = tables.columns.Column(verbose_name="Group(s)")
-
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
     # )
-
     class Meta:
         attrs = {"class": "paleblue"}
         table_pagination = False

@@ -120,6 +120,9 @@ def playlist_edit_view(request, playlist_id):
         "delete_url": reverse(
             "dashboard:delete-playlist", kwargs={"playlist_id": playlist_id}
         ),
+        "preview_url": request.build_absolute_uri(
+            reverse("lab:playlist-view", kwargs={"playlist_id": playlist.id})
+        ),
         "editing": True,
         "m2m_added": {"exercises": exercises_list},
         "m2m_options": {"exercises": exercises_options},

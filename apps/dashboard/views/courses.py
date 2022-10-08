@@ -133,16 +133,12 @@ def course_edit_view(request, course_id):
         )
     )
 
-    groups_options = (
-        list(
-            filter(
-                lambda g: g not in course.visible_to.all(),
-                Group.objects.filter(manager_id=course.authored_by_id),
-            ),
-        ),
-    )
-
-    list(groups_options).sort(key=lambda g: g.name)
+    groups_options = list(
+        filter(
+            lambda g: g not in course.visible_to.all(),
+            list(Group.objects.filter(manager_id=course.authored_by_id)),
+        )
+    ).sort(key=lambda g: g.name)
 
     context = {
         "verbose_name": course._meta.verbose_name,
@@ -293,32 +289,39 @@ def course_activity_view(request, course_id):
 
     data = []
 
-    JOIN_STR = " "
-    PLAYLISTS = course.playlists.split(JOIN_STR)
+    course_playlists = list(
+        PlaylistCourseOrdered.objects.filter(course=course)
+        .order_by("order")
+        .select_related("playlist")
+    )
+    playlists = list(map(lambda pco: pco.playlist, course_playlists))
     course_performances = PerformanceData.objects.filter(
-        playlist__id__in=PLAYLISTS, user__in=subscribers
+        playlist__in=playlists, user__in=subscribers
     ).select_related("user", "playlist")
 
-    if course.due_dates:
-        due_dates = {
-            playlist: course.get_due_date(playlist) for playlist in course.playlists
-        }
+    print("database queryies done(?)")
+
+    due_dates = {pco.playlist.id: pco.due_date for pco in course_playlists}
 
     performance_data = {}
-    for performance in course_performances:
+    for i, performance in enumerate(course_performances):
         performer = performance.user
         performance_data[performer] = performance_data.get(performer, {})
 
-        playlist_num = PLAYLISTS.index(performance.playlist.id)
+        playlist_num = PlaylistCourseOrdered.objects.get(
+            playlist=performance.playlist, course=course
+        ).order
+
+        print(i)
 
         pass_mark = (
             f'<span class="true">P</span>' if performance.playlist_passed else ""
         )  # Pass
 
-        if course.due_dates and performance.playlist_passed:
+        if performance.playlist_passed:
             pass_date = performance.get_local_pass_date()
-            playlist_due_date = due_dates.get(performance.playlist)
-            if playlist_due_date < pass_date:
+            playlist_due_date = due_dates.get(performance.playlist.id)
+            if playlist_due_date and playlist_due_date < pass_date:
                 diff = pass_date - playlist_due_date
                 days, seconds = diff.days, diff.seconds
                 hours = days * 24 + seconds // 3600
@@ -335,19 +338,23 @@ def course_activity_view(request, course_id):
 
         performance_data[performer].setdefault(playlist_num, mark_safe(pass_mark))
 
-    for performer, playlists in performance_data.items():
+    print("first for loop done")
+
+    for performer, perf_playlists in performance_data.items():
         [
             performance_data[performer].setdefault(idx, "")
-            for idx in range(len(PLAYLISTS))
+            for idx in range(len(perf_playlists))
         ]
         data.append(
             {
                 "subscriber": performer,
                 "subscriber_name": performer.get_full_name(),
                 "groups": [],
-                **playlists,
+                **perf_playlists,
             }
         )
+
+    print("second for loop done")
 
     filters = CourseActivityGroupsFilter(
         queryset=course.visible_to.all(), data=request.GET
@@ -370,12 +377,11 @@ def course_activity_view(request, course_id):
             # remove performers who are not members of the filtered groups
             if not performance["groups"]:
                 data.pop(data.index(performance))
-
     table = CourseActivityTable(
         data=data,
         extra_columns=[
             (str(idx), Column(verbose_name=str(idx + 1), orderable=True))
-            for idx in range(len(course.playlists))
+            for idx in range(len(playlists))
         ],
     )
 

@@ -12,15 +12,20 @@ def forwards(apps, schema_editor):
     ExercisePlaylistOrdered = apps.get_model("exercises", "ExercisePlaylistOrdered")
     db_alias = schema_editor.connection.alias
     for playlist in Playlist.objects.all():
-        exercise_list = Exercise.objects.using(db_alias).filter(
-            id__in=re.split(r"[,; \n]+", playlist.exercises_string)
+        exercise_list = re.split(r"[,; \n]+", playlist.exercises_string)
+        exercise_list = list(
+            map(
+                lambda id: Exercise.objects.get(id=id) if id != "" else None,
+                exercise_list,
+            )
         )
         for i in range(0, len(exercise_list)):
-            ExercisePlaylistOrdered.objects.using(db_alias).create(
-                exercise_id=exercise_list[i]._id,
-                playlist_id=playlist._id,
-                order=i + 1,
-            )
+            if exercise_list[i] != None:
+                ExercisePlaylistOrdered.objects.using(db_alias).create(
+                    exercise_id=exercise_list[i]._id,
+                    playlist_id=playlist._id,
+                    order=i + 1,
+                )
 
 
 def reverse(apps, schema_editor):

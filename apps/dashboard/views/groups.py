@@ -67,7 +67,7 @@ def group_add_view(request):
 
 
 def parse_member(user):
-    return {"name": user.email, "id": user.id}
+    return {"name": str(user), "id": user.id}
 
 
 @login_required

@@ -12,9 +12,8 @@ def forwards(apps, schema_editor):
     PlaylistCourseOrdered = apps.get_model("exercises", "PlaylistCourseOrdered")
     db_alias = schema_editor.connection.alias
     for course in Course.objects.using(db_alias).all():
-        playlist_list = Playlist.objects.using(db_alias).filter(
-            id__in=re.split(r"[,; \n]+", course.playlists_string)
-        )
+        playlist_list = re.split(r"[,; \n]+", course.playlists_string)
+        playlist_list = list(map(lambda id: Playlist.objects.get(id=id), playlist_list))
         due_dates = course.due_dates.split(" ") if course.due_dates else []
         publish_dates = course.publish_dates.split(" ") if course.publish_dates else []
         for i in range(0, len(playlist_list)):
