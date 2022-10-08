@@ -17,12 +17,12 @@ class CoursePageTable(tables.Table):
     )
     publish_date = tables.columns.DateColumn(
         verbose_name="Publish Date",
-        format="Y_m_d",
+        format="Y-m-d",
         orderable=True,
     )
     due_date = tables.columns.DateColumn(
         verbose_name="Due Date",
-        format="Y_m_d",
+        format="Y-m-d",
         orderable=True,
     )
     id = tables.columns.Column(verbose_name="ID", orderable=True)
