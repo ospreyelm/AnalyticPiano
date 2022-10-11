@@ -213,6 +213,7 @@ class Group(models.Model):
     members = models.ManyToManyField(
         to=User,
         blank=True,
+        related_name="participant_groups",
         verbose_name="Members",
         help_text="The users within your group. You can add users after creating the group.",
     )

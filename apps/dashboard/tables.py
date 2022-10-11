@@ -460,8 +460,12 @@ class SupervisorsCoursesListTable(tables.Table):
 
 
 class CourseActivityTable(tables.Table):
-    subscriber_name = tables.columns.Column(verbose_name="Subscriber")
-    groups = tables.columns.Column(verbose_name="Group(s)")
+    # TODO: make everything orderable again
+    subscriber_name = tables.columns.Column(verbose_name="Subscriber", orderable=False)
+    groups = tables.columns.Column(verbose_name="Group(s)", orderable=False)
+    time_elapsed = tables.columns.Column(
+        verbose_name="Cumulative Time", orderable=False
+    )
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
     # )
@@ -469,7 +473,7 @@ class CourseActivityTable(tables.Table):
         attrs = {"class": "paleblue"}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
-        sequence = ["subscriber_name", "groups", "..."]
+        sequence = ["subscriber_name", "groups", "time_elapsed", "..."]
 
 
 class GroupsListTable(tables.Table):

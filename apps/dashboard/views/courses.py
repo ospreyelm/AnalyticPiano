@@ -285,34 +285,59 @@ def course_activity_view(request, course_id):
     if request.user != course.authored_by:
         raise PermissionDenied
 
-    subscribers = request.user.subscribers
+    # Change this to alter the number of displayed subscribers per page. Higher numbers will lead to slower loading times
+    subscribers_per_page = 35
 
-    data = []
+    curr_page = int(request.GET.get("page") or 1) - 1
+    filters = CourseActivityGroupsFilter(
+        queryset=course.visible_to.all(), data=request.GET
+    )
+    filters.form.is_valid()
+    curr_group_ids = [int(g) for g in filters.form.cleaned_data["groups"] or []]
+    curr_groups = Group.objects.filter(id__in=curr_group_ids)
+
+    subscribers = request.user.subscribers
+    if len(curr_group_ids) > 0:
+        subscribers = subscribers.filter(participant_groups__id__in=curr_group_ids)
+    # subscribers = subscribers.order_by("last_name")
+    displayed_subscribers = subscribers[
+        curr_page * subscribers_per_page : (curr_page + 1) * subscribers_per_page
+    ]
+    data = {
+        performer: {
+            "subscriber": performer,
+            "subscriber_name": performer.get_full_name(),
+            "time_elapsed": 0,
+            "groups": ", ".join(
+                [
+                    str(g)
+                    for g in curr_groups.intersection(
+                        performer.participant_groups.all()
+                    )
+                ]
+            ),
+        }
+        for performer in subscribers
+    }
 
     course_playlists = list(
         PlaylistCourseOrdered.objects.filter(course=course)
         .order_by("order")
         .select_related("playlist")
     )
+    playlist_num_dict = {pco.playlist: pco.order for pco in course_playlists}
     playlists = list(map(lambda pco: pco.playlist, course_playlists))
     course_performances = PerformanceData.objects.filter(
-        playlist__in=playlists, user__in=subscribers
+        playlist__in=playlists, user__in=displayed_subscribers
     ).select_related("user", "playlist")
-
-    print("database queryies done(?)")
 
     due_dates = {pco.playlist.id: pco.due_date for pco in course_playlists}
 
-    performance_data = {}
-    for i, performance in enumerate(course_performances):
+    print("done w database")
+
+    for performance in course_performances:
         performer = performance.user
-        performance_data[performer] = performance_data.get(performer, {})
-
-        playlist_num = PlaylistCourseOrdered.objects.get(
-            playlist=performance.playlist, course=course
-        ).order
-
-        print(i)
+        playlist_num = playlist_num_dict[performance.playlist]
 
         pass_mark = (
             f'<span class="true">P</span>' if performance.playlist_passed else ""
@@ -336,59 +361,28 @@ def course_activity_view(request, course_id):
                         '<span class="true due-date-days-exceed">L</span>'  # Late
                     )
 
-        performance_data[performer].setdefault(playlist_num, mark_safe(pass_mark))
+        data[performer].setdefault(playlist_num, mark_safe(pass_mark))
+        time_elapsed = 0
+        for exercise_data in performance.data:
+            time_elapsed += exercise_data["exercise_duration"]
+        data[performer]["time_elapsed"] += int(time_elapsed)
 
-    print("first for loop done")
+    print("done w for loop")
 
-    for performer, perf_playlists in performance_data.items():
-        [
-            performance_data[performer].setdefault(idx, "")
-            for idx in range(len(perf_playlists))
-        ]
-        data.append(
-            {
-                "subscriber": performer,
-                "subscriber_name": performer.get_full_name(),
-                "groups": [],
-                **perf_playlists,
-            }
-        )
-
-    print("second for loop done")
-
-    filters = CourseActivityGroupsFilter(
-        queryset=course.visible_to.all(), data=request.GET
-    )
-    filters.form.is_valid()
-    filtered_groups = filters.form.cleaned_data["groups"]
-
-    if filtered_groups:
-        groups = Group.objects.filter(id__in=list(map(int, filtered_groups)))
-
-        # separate performers by the filtered groups
-        for group in groups:
-            for performance in data:
-                if performance["subscriber"] in group.members:
-                    performance["groups"].append(group.name)
-
-        for performance in data:
-            performance["groups"] = ", ".join(performance["groups"])
-
-            # remove performers who are not members of the filtered groups
-            if not performance["groups"]:
-                data.pop(data.index(performance))
     table = CourseActivityTable(
-        data=data,
+        data=data.values(),
         extra_columns=[
-            (str(idx), Column(verbose_name=str(idx + 1), orderable=True))
+            (str(idx), Column(verbose_name=str(idx + 1), orderable=False))
             for idx in range(len(playlists))
         ],
     )
 
-    if not filtered_groups:
+    if len(curr_group_ids) == 0:
         table.exclude = ("groups",)
 
-    RequestConfig(request, paginate={"per_page": 35}).configure(table)
+    RequestConfig(request, paginate={"per_page": subscribers_per_page}).configure(table)
+
+    print("done w rendering")
     return render(
         request,
         "dashboard/course-activity.html",
