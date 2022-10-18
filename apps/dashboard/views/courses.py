@@ -8,12 +8,17 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.views.decorators.cache import cache_page
 from apps.dashboard.views.m2m_view import handle_m2m
 from django_tables2 import RequestConfig, Column
 
 from apps.dashboard.filters import CourseActivityGroupsFilter
 from apps.dashboard.forms import DashboardCourseForm
-from apps.dashboard.tables import CoursesListTable, CourseActivityTable
+from apps.dashboard.tables import (
+    CoursesListTable,
+    CourseActivityTable,
+    PlaylistActivityColumn,
+)
 from apps.exercises.models import (
     Course,
     PerformanceData,
@@ -138,7 +143,9 @@ def course_edit_view(request, course_id):
             lambda g: g not in course.visible_to.all(),
             list(Group.objects.filter(manager_id=course.authored_by_id)),
         )
-    ).sort(key=lambda g: g.name)
+    )
+
+    groups_options.sort(key=lambda g: g.name)
 
     context = {
         "verbose_name": course._meta.verbose_name,
@@ -279,16 +286,16 @@ def course_delete_view(request, course_id):
 
 
 @login_required
+# @cache_page(60 * 15)
 def course_activity_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
 
     if request.user != course.authored_by:
         raise PermissionDenied
 
-    # Change this to alter the number of displayed subscribers per page. Higher numbers will lead to slower loading times
+    # Change this to alter the number of displayed subscribers per page.
     subscribers_per_page = 35
 
-    curr_page = int(request.GET.get("page") or 1) - 1
     filters = CourseActivityGroupsFilter(
         queryset=course.visible_to.all(), data=request.GET
     )
@@ -299,15 +306,18 @@ def course_activity_view(request, course_id):
     subscribers = request.user.subscribers
     if len(curr_group_ids) > 0:
         subscribers = subscribers.filter(participant_groups__id__in=curr_group_ids)
-    # subscribers = subscribers.order_by("last_name")
-    displayed_subscribers = subscribers[
-        curr_page * subscribers_per_page : (curr_page + 1) * subscribers_per_page
-    ]
+    course_playlists = list(
+        PlaylistCourseOrdered.objects.filter(course=course)
+        .order_by("order")
+        .select_related("playlist")
+    )
+    playlists = list(map(lambda pco: pco.playlist, course_playlists))
+
+    performance_dict = course.performance_dict
     data = {
         performer: {
             "subscriber": performer,
             "subscriber_name": performer.get_full_name(),
-            "time_elapsed": 0,
             "groups": ", ".join(
                 [
                     str(g)
@@ -316,63 +326,18 @@ def course_activity_view(request, course_id):
                     )
                 ]
             ),
+            **performance_dict.get(performer, {}),
         }
         for performer in subscribers
     }
 
-    course_playlists = list(
-        PlaylistCourseOrdered.objects.filter(course=course)
-        .order_by("order")
-        .select_related("playlist")
-    )
-    playlist_num_dict = {pco.playlist: pco.order for pco in course_playlists}
-    playlists = list(map(lambda pco: pco.playlist, course_playlists))
-    course_performances = PerformanceData.objects.filter(
-        playlist__in=playlists, user__in=displayed_subscribers
-    ).select_related("user", "playlist")
-
-    due_dates = {pco.playlist.id: pco.due_date for pco in course_playlists}
-
-    print("done w database")
-
-    for performance in course_performances:
-        performer = performance.user
-        playlist_num = playlist_num_dict[performance.playlist]
-
-        pass_mark = (
-            f'<span class="true">P</span>' if performance.playlist_passed else ""
-        )  # Pass
-
-        if performance.playlist_passed:
-            pass_date = performance.get_local_pass_date()
-            playlist_due_date = due_dates.get(performance.playlist.id)
-            if playlist_due_date and playlist_due_date < pass_date:
-                diff = pass_date - playlist_due_date
-                days, seconds = diff.days, diff.seconds
-                hours = days * 24 + seconds // 3600
-
-                if hours >= 6:
-                    pass_mark = (
-                        '<span class="true due-date-hours-exceed">T</span>'  # Tardy
-                    )
-
-                if days >= 7:
-                    pass_mark = (
-                        '<span class="true due-date-days-exceed">L</span>'  # Late
-                    )
-
-        data[performer].setdefault(playlist_num, mark_safe(pass_mark))
-        time_elapsed = 0
-        for exercise_data in performance.data:
-            time_elapsed += exercise_data["exercise_duration"]
-        data[performer]["time_elapsed"] += int(time_elapsed)
-
-    print("done w for loop")
-
     table = CourseActivityTable(
         data=data.values(),
         extra_columns=[
-            (str(idx), Column(verbose_name=str(idx + 1), orderable=False))
+            (
+                str(idx),
+                PlaylistActivityColumn(verbose_name=str(idx + 1), orderable=False),
+            )
             for idx in range(len(playlists))
         ],
     )

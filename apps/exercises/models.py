@@ -3,6 +3,7 @@ import re
 from collections import OrderedDict
 from datetime import timedelta, date
 from itertools import product
+from tabnanny import verbose
 
 import pytz
 from django.conf import settings
@@ -18,6 +19,7 @@ from django.utils import dateformat
 from django.utils.dateparse import parse_datetime
 from django.utils.functional import cached_property
 from django.utils.timezone import now
+from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.models.fields import ArrayField
 
 from apps.accounts.models import Group
@@ -570,6 +572,12 @@ class Course(ClonableModelMixin, BaseContentModel):
         "Title",
         max_length=64,
     )
+
+    open = models.BooleanField(
+        "Open",
+        default=True,
+        help_text="Open courses can be viewed by your subscribers who have not performed any playlists within it.",
+    )
     # slug = models.SlugField('URL slug', unique=True, max_length=64)
     # playlists = models.CharField(
     #     'Playlist IDs',
@@ -617,6 +625,8 @@ class Course(ClonableModelMixin, BaseContentModel):
         verbose_name="Visible Groups",
     )
 
+    performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)
+
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 
@@ -638,11 +648,11 @@ class Course(ClonableModelMixin, BaseContentModel):
         return False
         # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
 
-    @property
+    @cached_property
     def playlist_id_list(self):
         return list(map(lambda p: p.id, self.playlists.all()))
 
-    @property
+    @cached_property
     def publish_dates_dict(self):
         pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
         return {
@@ -650,7 +660,7 @@ class Course(ClonableModelMixin, BaseContentModel):
             for pco in pco_list
         }
 
-    @property
+    @cached_property
     def due_dates_dict(self):
         pco_list = PlaylistCourseOrdered.objects.filter(
             course_id=self._id
@@ -681,6 +691,52 @@ class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
         default=None,
         null=True,
     )
+
+    performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)
+
+    @cached_property
+    def performance_dict_test(self):
+        print("fetching performances")
+        data = {}
+        course_playlists = list(
+            PlaylistCourseOrdered.objects.filter(course=self)
+            .order_by("order")
+            .select_related("playlist")
+        )
+        playlist_num_dict = {pco.playlist: pco.order for pco in course_playlists}
+        course_performances = PerformanceData.objects.filter(
+            playlist__in=self.playlists.all()
+        ).select_related("user", "playlist")
+
+        due_dates = self.due_dates_dict
+
+        for performance in course_performances:
+            performer = performance.user
+            playlist_num = playlist_num_dict[performance.playlist]
+
+            pass_type = "P" if performance.playlist_passed else ""  # Pass
+
+            if performance.playlist_passed:
+                pass_date = performance.get_local_pass_date
+                playlist_due_date = due_dates.get(performance.playlist.id)
+                if playlist_due_date and playlist_due_date < pass_date:
+                    diff = pass_date - playlist_due_date
+                    days, seconds = diff.days, diff.seconds
+                    hours = days * 24 + seconds // 3600
+
+                    if hours >= 6:
+                        pass_type = "T"
+
+                    if days >= 7:
+                        pass_type = "L"
+            if performer not in data:
+                data[performer] = {"time_elapsed": 0}
+            data[performer].setdefault(playlist_num, mark_safe(pass_type))
+            time_elapsed = 0
+            for exercise_data in performance.data:
+                time_elapsed += exercise_data["exercise_duration"]
+            data[performer]["time_elapsed"] += int(time_elapsed)
+        return data
 
     displayed_fields = ("due_date", "publish_date")
 
@@ -749,7 +805,6 @@ class PerformanceData(models.Model):
         pd.playlist_performances.append(data)
         pd.full_clean()
         pd.save()
-        return pd
 
     def get_exercise_first_pass(self, exercise_id):
         for exercise in self.data:
@@ -793,6 +848,7 @@ class PerformanceData(models.Model):
                 error_count = exercise["exercise_error_tally"]
         return error_count
 
+    @cached_property
     def get_local_pass_date(self):
         from apps.dashboard.views.performance import playlist_pass_date
 

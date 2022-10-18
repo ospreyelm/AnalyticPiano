@@ -407,3 +407,10 @@ ENVIRONMENT_DEV = "dev"
 ENVIRONMENT_PROD = "prod"
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_viewcache",
+    }
+}

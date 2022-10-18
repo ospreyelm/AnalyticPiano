@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
-from django_tables2 import tables, A
+from django_tables2 import tables, A, columns
 from django.db import models
+from django.utils.html import format_html
 
 User = get_user_model()
 
@@ -459,13 +460,23 @@ class SupervisorsCoursesListTable(tables.Table):
         template_name = "django_tables2/bootstrap4.html"
 
 
+class PlaylistActivityColumn(columns.Column):
+    def render(self, value):
+        element = "<span></span"
+        if value == "P":
+            element = '<span class="true">P</span>'
+        elif value == "T":
+            element = '<span class="true due-date-hours-exceed">T</span>'
+        elif value == "L":
+            element = '<span class="true due-date-days-exceed">L</span>'
+        return format_html(element)
+
+
 class CourseActivityTable(tables.Table):
     # TODO: make everything orderable again
-    subscriber_name = tables.columns.Column(verbose_name="Subscriber", orderable=False)
-    groups = tables.columns.Column(verbose_name="Group(s)", orderable=False)
-    time_elapsed = tables.columns.Column(
-        verbose_name="Cumulative Time", orderable=False
-    )
+    subscriber_name = tables.columns.Column(verbose_name="Subscriber")
+    groups = tables.columns.Column(verbose_name="Group(s)")
+    time_elapsed = tables.columns.Column(verbose_name="Cumulative Time")
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
     # )

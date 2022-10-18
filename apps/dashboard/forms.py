@@ -242,7 +242,7 @@ class DashboardPlaylistForm(PlaylistForm):
 
 class DashboardCourseForm(CourseForm):
     class Meta(CourseForm.Meta):
-        fields = ["title", "playlists", "visible_to", "is_public"]
+        fields = ["title", "playlists", "visible_to", "is_public", "open"]
 
     custom_m2m_fields = ["playlists", "visible_to"]
     custom_m2m_config = {
