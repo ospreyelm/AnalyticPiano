@@ -692,51 +692,51 @@ class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
         null=True,
     )
 
-    performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)
+    # performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)
 
-    @cached_property
-    def performance_dict_test(self):
-        print("fetching performances")
-        data = {}
-        course_playlists = list(
-            PlaylistCourseOrdered.objects.filter(course=self)
-            .order_by("order")
-            .select_related("playlist")
-        )
-        playlist_num_dict = {pco.playlist: pco.order for pco in course_playlists}
-        course_performances = PerformanceData.objects.filter(
-            playlist__in=self.playlists.all()
-        ).select_related("user", "playlist")
+    # @cached_property
+    # def performance_dict_test(self):
+    #     print("fetching performances")
+    #     data = {}
+    #     course_playlists = list(
+    #         PlaylistCourseOrdered.objects.filter(course=self)
+    #         .order_by("order")
+    #         .select_related("playlist")
+    #     )
+    #     playlist_num_dict = {pco.playlist: pco.order for pco in course_playlists}
+    #     course_performances = PerformanceData.objects.filter(
+    #         playlist__in=self.playlists.all()
+    #     ).select_related("user", "playlist")
 
-        due_dates = self.due_dates_dict
+    #     due_dates = self.due_dates_dict
 
-        for performance in course_performances:
-            performer = performance.user
-            playlist_num = playlist_num_dict[performance.playlist]
+    #     for performance in course_performances:
+    #         performer = performance.user
+    #         playlist_num = playlist_num_dict[performance.playlist]
 
-            pass_type = "P" if performance.playlist_passed else ""  # Pass
+    #         pass_type = "P" if performance.playlist_passed else ""  # Pass
 
-            if performance.playlist_passed:
-                pass_date = performance.get_local_pass_date
-                playlist_due_date = due_dates.get(performance.playlist.id)
-                if playlist_due_date and playlist_due_date < pass_date:
-                    diff = pass_date - playlist_due_date
-                    days, seconds = diff.days, diff.seconds
-                    hours = days * 24 + seconds // 3600
+    #         if performance.playlist_passed:
+    #             pass_date = performance.get_local_pass_date
+    #             playlist_due_date = due_dates.get(performance.playlist.id)
+    #             if playlist_due_date and playlist_due_date < pass_date:
+    #                 diff = pass_date - playlist_due_date
+    #                 days, seconds = diff.days, diff.seconds
+    #                 hours = days * 24 + seconds // 3600
 
-                    if hours >= 6:
-                        pass_type = "T"
+    #                 if hours >= 6:
+    #                     pass_type = "T"
 
-                    if days >= 7:
-                        pass_type = "L"
-            if performer not in data:
-                data[performer] = {"time_elapsed": 0}
-            data[performer].setdefault(playlist_num, mark_safe(pass_type))
-            time_elapsed = 0
-            for exercise_data in performance.data:
-                time_elapsed += exercise_data["exercise_duration"]
-            data[performer]["time_elapsed"] += int(time_elapsed)
-        return data
+    #                 if days >= 7:
+    #                     pass_type = "L"
+    #         if performer not in data:
+    #             data[performer] = {"time_elapsed": 0}
+    #         data[performer].setdefault(playlist_num, mark_safe(pass_type))
+    #         time_elapsed = 0
+    #         for exercise_data in performance.data:
+    #             time_elapsed += exercise_data["exercise_duration"]
+    #         data[performer]["time_elapsed"] += int(time_elapsed)
+    #     return data
 
     displayed_fields = ("due_date", "publish_date")
 
