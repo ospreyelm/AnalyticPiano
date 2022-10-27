@@ -313,7 +313,7 @@ def course_activity_view(request, course_id):
     )
     playlists = list(map(lambda pco: pco.playlist, course_playlists))
 
-    performance_dict = course.performance_dict
+    # performance_dict = course.performance_dict
     data = {
         performer: {
             "subscriber": performer,
@@ -326,7 +326,7 @@ def course_activity_view(request, course_id):
                     )
                 ]
             ),
-            **performance_dict.get(performer, {}),
+            # **performance_dict.get(performer, {}),
         }
         for performer in subscribers
     }
