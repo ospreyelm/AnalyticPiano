@@ -625,7 +625,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         verbose_name="Visible Groups",
     )
 
-    performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)
+    # performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)
 
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
