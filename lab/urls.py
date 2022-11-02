@@ -61,7 +61,7 @@ urlpatterns = [
     # Exercises, Playlists, Courses
     path("exercises/<str:exercise_id>/", ExerciseView.as_view(), name="exercise-view"),
     path(
-        "playlists/<str:playlist_id>/definition/",
+        "playlists/<str:course_id>/<str:playlist_id>/definition/",
         RefreshExerciseDefinition.as_view(),
         name="refresh-definition",
     ),
@@ -70,7 +70,17 @@ urlpatterns = [
         PlaylistView.as_view(),
         name="playlist-view",
     ),
+    path(
+        "playlists/<str:course_id>/<str:playlist_id>/<int:exercise_num>/",
+        PlaylistView.as_view(),
+        name="playlist-view",
+    ),
     path("playlists/<str:playlist_id>/", PlaylistView.as_view(), name="playlist-view"),
+    path(
+        "playlists/<str:course_id>/<str:playlist_id>/",
+        PlaylistView.as_view(),
+        name="playlist-view",
+    ),
     path("courses/<str:course_id>/", CourseView.as_view(), name="course-view"),
     path("ajax/exercise-stats/", CourseView.as_view(), name="exercise-stats"),
     re_path(r"^manage$", ManageView.as_view(), name="manage"),

@@ -327,6 +327,8 @@ define(["lodash", "app/config"], function (_, Config) {
         exercise.timeSignature = definition.timeSignature;
       }
 
+      exercise.performing_course = definition.courseId;
+
       return exercise;
     },
     /**

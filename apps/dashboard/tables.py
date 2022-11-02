@@ -207,7 +207,7 @@ class MyActivityDetailsTable(tables.Table):
     )
     view = tables.columns.LinkColumn(
         "lab:playlist-view",
-        kwargs={"playlist_id": A("playlist_id")},
+        kwargs={"playlist_id": A("playlist_id"), "course_id": A("course_id")},
         text="Revisit",
         verbose_name="Load",
         orderable=False,

@@ -156,6 +156,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
             "performer": user,
             "subscriber_id": subscriber_id,
             "playlist_id": playlist.id,
+            "course_id": performance_obj.course_id or None,
             "playlist_name": playlist.name,
             "playlist_length": len(playlist.exercise_list),
             "performance_obj": performance_obj,

@@ -755,8 +755,13 @@ class PerformanceData(models.Model):
     playlist = models.ForeignKey(
         Playlist, related_name="performance_data", on_delete=models.PROTECT
     )
-    # course = models.ForeignKey(Course, related_name='performance_data',
-    #                            on_delete=models.PROTECT, blank=True, null=True)
+    course = models.ForeignKey(
+        Course,
+        related_name="performance_data",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
     data = JSONField("Raw Data", default=list)
     playlist_performances = JSONField("Playlist Performances", default=list, blank=True)
 
@@ -766,7 +771,7 @@ class PerformanceData(models.Model):
     class Meta:
         verbose_name = "Performance"
         verbose_name_plural = "Performance Data"
-        unique_together = (("user", "playlist"),)
+        unique_together = (("user", "playlist", "course"),)
 
     def __str__(self):
         return f"Playlist:{self.playlist} - User:{self.user}"
@@ -780,9 +785,19 @@ class PerformanceData(models.Model):
         return cls.objects.filter(playlist_id=playlist_id)
 
     @classmethod
-    def submit(cls, exercise_id: str, playlist_id: int, user_id: int, data: dict):
+    def submit(
+        cls,
+        exercise_id: str,
+        playlist_id: int,
+        user_id: int,
+        course_id: int,
+        data: dict,
+    ):
         pd, _ = cls.objects.get_or_create(
-            playlist_id=playlist_id, user_id=user_id, supervisor_id=user_id
+            course_id=course_id,
+            playlist_id=playlist_id,
+            user_id=user_id,
+            supervisor_id=user_id,
         )
         exercise_data = dict(
             **data, id=exercise_id, performed_at=dateformat.format(now(), "Y-m-d H:i:s")

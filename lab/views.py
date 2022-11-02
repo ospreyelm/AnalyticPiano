@@ -130,7 +130,9 @@ class PlaylistView(RequirejsView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def get(self, request, playlist_id, exercise_num=1, *args, **kwargs):
+    def get(
+        self, request, playlist_id, course_id=None, exercise_num=1, *args, **kwargs
+    ):
         playlist = Playlist.objects.get(Q(id=playlist_id))
         if playlist is None:
             raise Http404("Playlist with this name or ID does not exist.")
@@ -193,6 +195,17 @@ class PlaylistView(RequirejsView):
                 exercise.id
             )
 
+        course_performed = None
+
+        if course_id:
+            course_performed = Course.objects.get(id=course_id)
+            context["course_name"] = course_performed.title
+
+        if playlist.name:
+            context["playlist_name"] = playlist.name
+        else:
+            context["playlist_name"] = playlist.id
+
         exercise_context.update(exercise.data)
         exercise_context.update(
             {
@@ -208,7 +221,8 @@ class PlaylistView(RequirejsView):
                 "exerciseNum": exercise_num,
                 "exerciseIsPerformed": exercise_is_performed,
                 "exerciseErrorCount": exercise_error_count,
-                "playlistName": playlist.name,
+                "playlistName": playlist.id,
+                "courseId": course_performed.id if course_performed else None,
             }
         )
         self.requirejs_context.set_app_module("app/components/app/exercise")
@@ -221,7 +235,7 @@ class PlaylistView(RequirejsView):
 
 
 class RefreshExerciseDefinition(RequirejsView):
-    def get(self, request, playlist_id, *args, **kwargs):
+    def get(self, request, playlist_id, course_id=None, *args, **kwargs):
         playlist = get_object_or_404(Playlist, id=playlist_id)
         exercise_num = int(request.GET.get("exercise_num"))
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
@@ -256,12 +270,17 @@ class RefreshExerciseDefinition(RequirejsView):
         for num, _ in enumerate(playlist.exercise_list, 1):
             exercise_list.append(
                 dict(
-                    id=f"{playlist.name}/{num}",
+                    id=f"{playlist.id}/{num}",
                     name=f"{num}",
                     url=playlist.get_exercise_url_by_num(num),
                     selected=exercise_num == num,
                 )
             )
+
+        course_performed = None
+
+        if course_id:
+            course_performed = Course.objects.get(id=course_id)
 
         exercise_context.update(exercise.data)
         exercise_context.update(
@@ -276,7 +295,8 @@ class RefreshExerciseDefinition(RequirejsView):
                 "exerciseList": exercise_list,
                 "exerciseId": exercise.id,
                 "exerciseNum": exercise_num,
-                "playlistName": playlist.name,
+                "playlistName": playlist.id,
+                "courseId": course_performed.id if course_performed else None,
             }
         )
 
@@ -345,13 +365,13 @@ class CourseView(RequirejsView):
         playlists = qs.annotate(
             _sort_index=Case(*whens, output_field=models.CharField())
         ).order_by("_sort_index")
-        print(playlists)
         augmented_playlists = map(
             lambda playlist: {
                 **PlaylistCourseOrdered.objects.get(
                     Q(playlist_id=playlist._id), Q(course_id=course._id)
                 ).__dict__,
                 **playlist.__dict__,
+                "course_id": course.id,
             },
             playlists,
         )

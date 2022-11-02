@@ -629,6 +629,7 @@ define([
 
       var report = {
         // performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
+        course_ID: this.definition.exercise.performing_course || null,
         exercise_ID: this.definition.getExerciseList()[idx].id || false,
         time: new Date().toJSON().slice(0, 16) || false,
         timezone: timezone_str || false,

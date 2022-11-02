@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django_tables2 import Column
 
-from apps.exercises.models import Playlist, PerformanceData, User as Performers
+from apps.exercises.models import Course, Playlist, PerformanceData, User as Performers
 from apps.exercises.tables import PlaylistActivityTable
 
 User = get_user_model()
@@ -89,9 +89,12 @@ def submit_exercise_performance(request):
     # performance_data.pop('performer')
 
     # TODO: change this
-    playlist = Playlist.objects.filter(name=playlist_name).first()
+    playlist = Playlist.objects.filter(id=playlist_name).first()
     exercise = playlist.get_exercise_obj_by_num(int(exercise_num))
+    course = Course.objects.get(id=performance_data["course_ID"])
+
     PerformanceData.submit(
+        course_id=course._id,
         playlist_id=playlist._id,
         exercise_id=exercise.id,
         user_id=user.id,
