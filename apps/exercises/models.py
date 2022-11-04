@@ -607,7 +607,7 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     # publish_dates = models.CharField(
     #     "Publish Dates",
-    #     max_length=1024,
+    #     max_length=1024, f
     #     blank=True,
     #     null=True,
     #     help_text="Publish date of each playlist, separated by space.",
@@ -805,6 +805,34 @@ class PerformanceData(models.Model):
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
+
+        if course_id:
+            pco = PlaylistCourseOrdered.objects.get(
+                course_id=course_id, playlist_id=playlist_id
+            )
+            course = Course.objects.get(_id=course_id)
+            performer = str(User.objects.get(id=user_id))
+            pass_mark = "X"
+            if pd.playlist_passed:
+                pass_mark = "P"
+                if pco.due_date:
+                    pass_date = pd.get_local_pass_date
+                    if pco.due_date < pass_date:
+                        diff = pass_date - pco.due_date
+                        days, seconds = diff.days, diff.seconds
+                        hours = days * 24 + seconds // 3600
+                        if hours >= 6:
+                            pass_mark = "T"
+                        if days >= 7:
+                            pass_mark = "L"
+            if not (performer in course.performance_dict):
+                course.performance_dict[performer] = {"time_elasped": 0}
+            course.performance_dict[performer][pco.order] = pass_mark
+            for exercise_data in pd.data:
+                course.performance_dict[performer]["time_elapsed"] += int(
+                    exercise_data["exercise_duration"]
+                )
+            course.save()
 
         exercise = Exercise.objects.get(id=exercise_id)
         if exercise.authored_by_id != user_id and not exercise.locked:

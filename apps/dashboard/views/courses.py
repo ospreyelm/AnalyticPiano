@@ -313,7 +313,7 @@ def course_activity_view(request, course_id):
     )
     playlists = list(map(lambda pco: pco.playlist, course_playlists))
 
-    # performance_dict = course.performance_dict
+    performance_dict = course.performance_dict
     data = {
         performer: {
             "subscriber": performer,
@@ -326,7 +326,7 @@ def course_activity_view(request, course_id):
                     )
                 ]
             ),
-            # **performance_dict.get(performer, {}),
+            **performance_dict.get(str(performer), {}),
         }
         for performer in subscribers
     }
@@ -336,7 +336,7 @@ def course_activity_view(request, course_id):
         extra_columns=[
             (
                 str(idx),
-                PlaylistActivityColumn(verbose_name=str(idx + 1), orderable=False),
+                PlaylistActivityColumn(verbose_name=str(idx + 1), orderable=True),
             )
             for idx in range(len(playlists))
         ],
@@ -347,7 +347,6 @@ def course_activity_view(request, course_id):
 
     RequestConfig(request, paginate={"per_page": subscribers_per_page}).configure(table)
 
-    print("done w rendering")
     return render(
         request,
         "dashboard/course-activity.html",

@@ -87,7 +87,7 @@ form label {
 }
 
 .main .form-inline label {
-  width: 140px;
+  min-width: 140px;
   justify-content: flex-start !important;
   padding-right: 10px;
 }

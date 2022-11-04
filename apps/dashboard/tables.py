@@ -460,6 +460,17 @@ class SupervisorsCoursesListTable(tables.Table):
         template_name = "django_tables2/bootstrap4.html"
 
 
+def val_to_order(value):
+    if value == "P":
+        return 0
+    elif value == "T":
+        return 1
+    elif value == "L":
+        return 2
+    elif value == "X":
+        return 3
+
+
 class PlaylistActivityColumn(columns.Column):
     def render(self, value):
         element = "<span></span"
@@ -469,7 +480,16 @@ class PlaylistActivityColumn(columns.Column):
             element = '<span class="true due-date-hours-exceed">T</span>'
         elif value == "L":
             element = '<span class="true due-date-days-exceed">L</span>'
+        elif value == "X":
+            element = '<span class="did-not-finish">DNF</span>'
         return format_html(element)
+
+    # TODO: get this working
+    def order(self, queryset, is_descending):
+        # queryset = queryset.annotate(
+        #     priority=val_to_order()
+        # ).order_by(("-" if is_descending else "") + "amount")
+        return (queryset, True)
 
 
 class CourseActivityTable(tables.Table):
