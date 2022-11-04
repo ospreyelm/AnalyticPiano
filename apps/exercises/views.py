@@ -111,9 +111,9 @@ def submit_playlist_performance(request):
 
     playlist_name, _ = performance_data["exercise_ID"].split("/")
     performance_data.pop("exercise_ID")
-
     # TODO: change this
     playlist = Playlist.objects.filter(name=playlist_name).first()
+    print("psubmit", performance_data)
     PerformanceData.submit_playlist_performance(
         playlist_id=playlist._id, user_id=user.id, data=performance_data
     )

@@ -284,7 +284,7 @@ class PlaylistForm(forms.ModelForm):
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
-        exclude = []
+        exclude = ("performance_dict",)
         widgets = {
             # "visible_to":forms.CheckboxSelectMultiple()
         }
