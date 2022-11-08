@@ -39,7 +39,7 @@ urllib3 = "==1.26.6"
 whitenoise = "==5.1.0"
 
 [requires]
-python_version = "3.6"
+python_version = "3.11"
 
 [pipenv]
 allow_prereleases = true
