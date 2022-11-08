@@ -198,8 +198,9 @@ class PlaylistView(RequirejsView):
         course_performed = None
 
         if course_id:
-            course_performed = Course.objects.get(id=course_id)
-            context["course_name"] = course_performed.title
+            course_performed = Course.objects.filter(id=course_id).first()
+            if course_performed:
+                context["course_name"] = course_performed.title
 
         if playlist.name:
             context["playlist_name"] = playlist.name

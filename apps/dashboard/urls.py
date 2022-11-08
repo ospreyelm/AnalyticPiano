@@ -92,15 +92,20 @@ urlpatterns = [
     ),
     path("performances/", performance_list_view, name="performed-playlists"),
     path(
-        "playlist-performance/<int:subscriber_id>/<str:playlist_id>/",
-        playlist_performance_view,
-        name="subscriber-playlist-performance",
-    ),
-    path(
-        "playlist-performance/<str:playlist_id>/",
+        "playlist-performance/<int:performance_id>",
         playlist_performance_view,
         name="playlist-performance",
     ),
+    # path(
+    #     "playlist-performance/<int:subscriber_id>/<str:playlist_id>/",
+    #     playlist_performance_view,
+    #     name="subscriber-playlist-performance",
+    # ),
+    # path(
+    #     "playlist-performance/<str:playlist_id>/",
+    #     playlist_performance_view,
+    #     name="playlist-performance",
+    # ),
     # Subscriptions / Subscribers
     path("subscriptions/", supervisors_view, name="subscriptions"),
     path(

@@ -8,7 +8,7 @@ from datetime import datetime
 from pytz import timezone
 
 from apps.dashboard.tables import MyActivityTable, MyActivityDetailsTable
-from apps.exercises.models import PerformanceData, Playlist
+from apps.exercises.models import Course, PerformanceData, Playlist
 
 User = get_user_model()
 
@@ -133,38 +133,45 @@ def playing_time(exercises_data):
         return str(seconds) + "s"
 
 
-def playlist_performance_view(request, playlist_id, subscriber_id=None):
-    subscriber_id = subscriber_id or request.user.id
+def playlist_performance_view(request, performance_id):
+    subscriber_id = request.user.id
     subscriber = get_object_or_404(User, id=subscriber_id)
     if not request.user.is_supervisor_to(subscriber):
         raise PermissionDenied
     subscriber_name = subscriber
 
     data = []
-    performances = PerformanceData.objects.filter(
-        playlist__id=playlist_id, user_id=subscriber_id
-    ).select_related("user", "playlist")
-    playlist = Playlist.objects.get(id=playlist_id)
-    exercises = [exercise for exercise in playlist.exercise_list]
-    users_email_list = list(
-        set(list(performances.values_list("user__email", flat=True)))
+    performance = (
+        PerformanceData.objects.filter(id=performance_id)
+        .select_related("user", "playlist", "course")
+        .first()
     )
+    # performances = PerformanceData.objects.filter(
+    #     playlist__id=playlist_id, user_id=subscriber_id
+    # ).select_related("user", "playlist", "course")
+    # playlist = Playlist.objects.get(id=playlist_id)
+    exercises = [exercise for exercise in performance.playlist.exercise_list]
 
-    for user in users_email_list:
-        performance_obj = performances.filter(user__email=user).first()
-        user_data = {
-            "performer": user,
-            "subscriber_id": subscriber_id,
-            "playlist_id": playlist.id,
-            "course_id": performance_obj.course_id or None,
-            "playlist_name": playlist.name,
-            "playlist_length": len(playlist.exercise_list),
-            "performance_obj": performance_obj,
-            "performance_data": performance_obj.data,
-            "performer_obj": subscriber,
-        }
-        user_data.update({"exercise_count": len(user_data["performance_data"])})
-        data.append(user_data)
+    course_id = getattr(performance.course, "id", None)
+
+    # performance_obj = performances.filter(user__email=user).first()
+    # course = None
+    # if performance_obj.course_id:
+    #     course = Course.objects.get(_id=performance_obj.course_id)
+
+    user_data = {
+        "performer": subscriber,
+        "subscriber_id": subscriber_id,
+        "playlist_id": performance.playlist.id,
+        "course_id": course_id,
+        "playlist_name": performance.playlist.name,
+        "playlist_length": len(performance.playlist.exercise_list),
+        "performance_obj": performance,
+        "performance_data": performance.data,
+        "performer_obj": subscriber,
+    }
+    user_data.update({"exercise_count": len(user_data["performance_data"])})
+    data.append(user_data)
 
     for d in data:
         performance_obj = d["performance_obj"]
@@ -189,7 +196,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
                         f'{"Perfect " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == 0) else ""}'
                         f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
                         f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]}'
-                        f'<br><a href="{performance_obj.playlist.get_exercise_url_by_id(exercise["id"])}">Try Again</a>'
+                        f'<br><a href="{performance_obj.playlist.get_exercise_url_by_id(exercise["id"], course_id=course_id)}">Try Again</a>'
                     )
                 }
             )
@@ -205,7 +212,7 @@ def playlist_performance_view(request, playlist_id, subscriber_id=None):
                     verbose_name=str(num + 1),
                     orderable=False,
                     default=mark_safe(
-                        f'<a href="{performance_obj.playlist.get_exercise_url_by_num(num + 1)}">Try</a>'
+                        f'<a href="{performance_obj.playlist.get_exercise_url_by_num(num + 1, course_id=course_id)}">Try</a>'
                     ),
                 ),
             )

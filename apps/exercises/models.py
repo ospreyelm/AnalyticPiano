@@ -451,16 +451,24 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         # import pdb; pdb.set_trace()
         return transposed_exercise
 
-    def get_exercise_url_by_num(self, num=1):
+    def get_exercise_url_by_num(
+        self,
+        num=1,
+        course_id=None,
+    ):
         try:
             return reverse(
                 "lab:playlist-view",
-                kwargs={"playlist_name": self.name, "exercise_num": num},
+                kwargs={
+                    "playlist_id": self.id,
+                    "course_id": course_id,
+                    "exercise_num": num,
+                },
             )
         except NoReverseMatch:
             return None
 
-    def get_exercise_url_by_id(self, id):
+    def get_exercise_url_by_id(self, id, course_id=None):
         try:
             exercise_num = self.exercise_list.index(id) + 1
         except ValueError:
@@ -469,7 +477,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         try:
             return reverse(
                 "lab:playlist-view",
-                kwargs={"playlist_name": self.name, "exercise_num": exercise_num},
+                kwargs={
+                    "playlist_id": self.id,
+                    "course_id": course_id,
+                    "exercise_num": exercise_num,
+                },
             )
         except NoReverseMatch:
             return None
@@ -826,7 +838,7 @@ class PerformanceData(models.Model):
                         if days >= 7:
                             pass_mark = "L"
             if not (performer in course.performance_dict):
-                course.performance_dict[performer] = {"time_elasped": 0}
+                course.performance_dict[performer] = {"time_elapsed": 0}
             course.performance_dict[performer][pco.order] = pass_mark
             for exercise_data in pd.data:
                 course.performance_dict[performer]["time_elapsed"] += int(

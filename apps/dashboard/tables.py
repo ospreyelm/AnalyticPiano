@@ -162,8 +162,8 @@ class MyActivityTable(tables.Table):
         orderable=False,
     )
     view = tables.columns.LinkColumn(
-        "dashboard:subscriber-playlist-performance",
-        kwargs={"playlist_id": A("playlist.id"), "subscriber_id": A("user.id")},
+        "dashboard:playlist-performance",
+        kwargs={"performance_id": A("id")},
         text="Details",
         verbose_name="View Progress",
         orderable=False,
@@ -207,7 +207,7 @@ class MyActivityDetailsTable(tables.Table):
     )
     view = tables.columns.LinkColumn(
         "lab:playlist-view",
-        kwargs={"playlist_id": A("playlist_id"), "course_id": A("course_id")},
+        kwargs={"course_id": A("course_id") or None, "playlist_id": A("playlist_id")},
         text="Revisit",
         verbose_name="Load",
         orderable=False,
@@ -496,7 +496,7 @@ class CourseActivityTable(tables.Table):
     # TODO: make everything orderable again
     subscriber_name = tables.columns.Column(verbose_name="Subscriber")
     groups = tables.columns.Column(verbose_name="Group(s)")
-    time_elapsed = tables.columns.Column(verbose_name="Cumulative Time")
+    time_elapsed = tables.columns.Column(verbose_name="Cumulative Time (minutes)")
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
     # )
@@ -505,6 +505,9 @@ class CourseActivityTable(tables.Table):
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
         sequence = ["subscriber_name", "groups", "time_elapsed", "..."]
+
+    def render_time_elapsed(self, value):
+        return round(value / 60, 2)
 
 
 class GroupsListTable(tables.Table):
