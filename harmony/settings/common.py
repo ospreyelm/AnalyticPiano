@@ -121,7 +121,7 @@ MIDDLEWARE = (
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     # "cached_auth.Middleware",
-    "django_auth_lti.middleware.LTIAuthMiddleware",
+    # "django_auth_lti.middleware.LTIAuthMiddleware",
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -130,7 +130,7 @@ MIDDLEWARE = (
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "apps.accounts.backend.EmailAuthenticationBackend",
-    "django_auth_lti.backends.LTIAuthBackend",
+    # "django_auth_lti.backends.LTIAuthBackend",
 )
 
 ROOT_URLCONF = "harmony.urls"

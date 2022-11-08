@@ -1,6 +1,7 @@
 from django.core.exceptions import PermissionDenied
-from django_auth_lti.verification import has_lti_roles
-from django_auth_lti import const
+
+# from django_auth_lti.verification import has_lti_roles
+# from django_auth_lti import const
 
 
 def has_instructor_role(request):
@@ -10,8 +11,8 @@ def has_instructor_role(request):
 def has_roles(request, roles):
     if request.user.is_superuser:
         return True
-    if hasattr(request, "LTI"):
-        return has_lti_roles(request, roles)
+    # if hasattr(request, "LTI"):
+    #     return has_lti_roles(request, roles)
     return False
 
 

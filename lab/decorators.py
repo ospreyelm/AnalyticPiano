@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 from django.utils.decorators import available_attrs
 from django.shortcuts import redirect
 
-from django_auth_lti import const
+# from django_auth_lti import const
 from .verification import has_roles, has_course_authorization
 
 

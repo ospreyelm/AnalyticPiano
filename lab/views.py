@@ -13,14 +13,16 @@ from django.views.generic import View, TemplateView, RedirectView
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 from braces.views import CsrfExemptMixin, LoginRequiredMixin
-from django_auth_lti import const
+
+# from django_auth_lti import const
 from django_tables2 import RequestConfig
 
 from .objects import ExerciseRepository
 from .decorators import role_required, course_authorization_required
 from .tables import CoursePageTable
 from .verification import has_instructor_role, has_course_authorization
-from lti_tool.models import LTIConsumer, LTICourse
+
+# from lti_tool.models import LTIConsumer, LTICourse
 from apps.exercises.models import (
     Exercise,
     Playlist,
@@ -400,13 +402,13 @@ class CourseView(RequirejsView):
 
 class ManageView(RequirejsView, LoginRequiredMixin):
     @method_decorator(course_authorization_required(source="arguments"))
-    @method_decorator(
-        role_required(
-            [const.ADMINISTRATOR, const.INSTRUCTOR],
-            redirect_url="lab:not_authorized",
-            raise_exception=True,
-        )
-    )
+    # @method_decorator(
+    #     role_required(
+    #         [const.ADMINISTRATOR, const.INSTRUCTOR],
+    #         redirect_url="lab:not_authorized",
+    #         raise_exception=True,
+    #     )
+    # )
     def get(self, request, course_id=None):
         er = ExerciseRepository.create(course_id=course_id)
         context = {"course_label": "", "has_manage_perm": True}
@@ -416,22 +418,22 @@ class ManageView(RequirejsView, LoginRequiredMixin):
             context["manage_url"] = reverse("lab:manage")
             context["home_url"] = reverse("lab:index")
             manage_params["exercise_api_url"] = reverse("lab:api-exercises")
-        else:
-            course_names = LTICourse.getCourseNames(course_id)
-            context["course_label"] = "%s (ID: %s)" % (
-                course_names.get("name"),
-                course_id,
-            )
-            context["manage_url"] = reverse(
-                "lab:course-manage", kwargs={"course_id": course_id}
-            )
-            context["home_url"] = reverse(
-                "lab:course-index", kwargs={"course_id": course_id}
-            )
-            manage_params["exercise_api_url"] = "%s?%s" % (
-                reverse("lab:api-exercises"),
-                urlencode({"course_id": course_id}),
-            )
+        # else:
+        #     course_names = LTICourse.getCourseNames(course_id)
+        #     context["course_label"] = "%s (ID: %s)" % (
+        #         course_names.get("name"),
+        #         course_id,
+        #     )
+        #     context["manage_url"] = reverse(
+        #         "lab:course-manage", kwargs={"course_id": course_id}
+        #     )
+        #     context["home_url"] = reverse(
+        #         "lab:course-index", kwargs={"course_id": course_id}
+        #     )
+        #     manage_params["exercise_api_url"] = "%s?%s" % (
+        #         reverse("lab:api-exercises"),
+        #         urlencode({"course_id": course_id}),
+        #     )
 
         self.requirejs_context.set_app_module("app/components/app/manage")
         self.requirejs_context.set_module_params(
@@ -488,13 +490,13 @@ class APIExerciseView(CsrfExemptMixin, View):
         )
 
     @method_decorator(course_authorization_required(source="query"))
-    @method_decorator(
-        role_required(
-            [const.ADMINISTRATOR, const.INSTRUCTOR],
-            redirect_url="lab:not_authorized",
-            raise_exception=True,
-        )
-    )
+    # @method_decorator(
+    #     role_required(
+    #         [const.ADMINISTRATOR, const.INSTRUCTOR],
+    #         redirect_url="lab:not_authorized",
+    #         raise_exception=True,
+    #     )
+    # )
     def post(self, request):
         course_id = request.GET.get("course_id", None)
         exercise_data = json.loads(request.POST.get("exercise", None))
@@ -505,13 +507,13 @@ class APIExerciseView(CsrfExemptMixin, View):
         return HttpResponse(json.dumps(result), content_type="application/json")
 
     @method_decorator(course_authorization_required(source="query"))
-    @method_decorator(
-        role_required(
-            [const.ADMINISTRATOR, const.INSTRUCTOR],
-            redirect_url="lab:not_authorized",
-            raise_exception=True,
-        )
-    )
+    # @method_decorator(
+    #     role_required(
+    #         [const.ADMINISTRATOR, const.INSTRUCTOR],
+    #         redirect_url="lab:not_authorized",
+    #         raise_exception=True,
+    #     )
+    # )
     def delete(self, request):
         course_id = request.GET.get("course_id", None)
         playlist_name = request.GET.get("playlist_name", None)
