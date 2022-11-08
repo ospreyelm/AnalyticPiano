@@ -44,6 +44,4 @@ python_version = "3.10"
 [pipenv]
 allow_prereleases = true
 
-[packages.django-auth-lti]
-git = "https://github.com/Harvard-University-iCommons/django-auth-lti.git"
-ref = "v2.0.2"
+
