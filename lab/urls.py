@@ -11,7 +11,8 @@ from apps.exercises.views import (
     submit_exercise_performance,
     submit_playlist_performance,
 )
-from lti_tool.views import LTIToolConfigView, LTILaunchView
+
+# from lti_tool.views import LTIToolConfigView, LTILaunchView
 from .views import (
     AddExerciseView,
     PlayView,
@@ -83,14 +84,14 @@ urlpatterns = [
     ),
     path("courses/<str:course_id>/", CourseView.as_view(), name="course-view"),
     path("ajax/exercise-stats/", CourseView.as_view(), name="exercise-stats"),
-    re_path(r"^manage$", ManageView.as_view(), name="manage"),
+    # re_path(r"^manage$", ManageView.as_view(), name="manage"),
     # API
     re_path(r"^api$", APIView.as_view(), name="api"),
     re_path(r"^api/v1/exercises$", APIExerciseView.as_view(), name="api-exercises"),
     # LTI -- deprecated -- moved into separate app named "lti"
-    # Mainting these URLs for backwards compatibility. Remove when possible.
-    re_path(r"^lti-launch$", LTILaunchView.as_view(), name="lti-launch"),
-    re_path(r"^lti-config$", LTIToolConfigView.as_view(), name="lti-config"),
+    # # Mainting these URLs for backwards compatibility. Remove when possible.
+    # re_path(r"^lti-launch$", LTILaunchView.as_view(), name="lti-launch"),
+    # re_path(r"^lti-config$", LTIToolConfigView.as_view(), name="lti-config"),
     # Admin
     path(
         "admin/exercises/playlist/<str:playlist_id>/performances/",

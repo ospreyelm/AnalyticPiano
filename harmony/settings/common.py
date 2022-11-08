@@ -165,7 +165,7 @@ INSTALLED_APPS = (
     "apps.exercises",
     "apps.dashboard",
     "lab",
-    "lti_tool",
+    # "lti_tool",
     "jasmine",
     # Third parties
     "django_extensions",
@@ -222,11 +222,11 @@ LOGGING = {
             "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
-        "lti_tool": {
-            "handlers": ["console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
-            "propagate": False,
-        },
+        # "lti_tool": {
+        #     "handlers": ["console"],
+        #     "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+        #     "propagate": False,
+        # },
     },
 }
 

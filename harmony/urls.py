@@ -8,7 +8,8 @@ admin.autodiscover()
 
 import jasmine.urls
 import lab.urls
-import lti_tool.urls
+
+# import lti_tool.urls
 
 admin.site.site_header = "Analytic Piano • Admin Main Menu"
 admin.site.site_title = "Analytic Piano"
@@ -18,7 +19,7 @@ urlpatterns = [
     path("", include(lab.urls)),
     path("accounts/", include("apps.accounts.urls"), name="accounts"),
     path("dashboard/", include("apps.dashboard.urls")),
-    path("lti/", include(lti_tool.urls)),
+    # path("lti/", include(lti_tool.urls)),
     path("jasmine/", include(jasmine.urls)),
     path("ckeditor/", include("ckeditor_uploader.urls")),
     # Uncomment the admin/doc line below to enable admin documentation:
