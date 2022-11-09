@@ -21,6 +21,11 @@ def push_back_due_dates(apps, schema_editor):
             )
             pco.due_date = pco.due_date.replace(hour=23, minute=59, second=59)
             # pco.due_date = pytz.timezone(settings.TIME_ZONE).localize(pco.due_date)
+        if pco.publish_date:
+            pco.publish_date = pco.publish_date.replace(tzinfo=pytz.utc).astimezone(
+                pytz.timezone(settings.TIME_ZONE)
+            )
+            pco.publish_date = pco.publish_date.replace(hour=0, minute=0, second=0)
         pco.save()
     # PerformanceData = apps.get_model("exercises","PerformanceData")
     PlaylistCourseOrdered = apps.get_model("exercises", "PlaylistCourseOrdered")
@@ -37,12 +42,12 @@ def push_back_due_dates(apps, schema_editor):
             if pd.playlist_passed:
                 pass_mark = "P"
                 if pco.due_date:
-                    due_date = pco.due_date.replace(tzinfo=pytz.utc).astimezone(
+                    pco.due_date = pco.due_date.replace(tzinfo=pytz.utc).astimezone(
                         pytz.timezone(settings.TIME_ZONE)
                     )
                     pass_date = pd.get_local_pass_date
-                    if due_date < pass_date:
-                        diff = pass_date - due_date
+                    if pco.due_date < pass_date:
+                        diff = pass_date - pco.due_date
                         days, seconds = diff.days, diff.seconds
                         hours = days * 24 + seconds // 3600
                         if hours >= 6:
