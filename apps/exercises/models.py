@@ -825,12 +825,16 @@ class PerformanceData(models.Model):
             course = Course.objects.get(_id=course_id)
             performer = str(User.objects.get(id=user_id))
             pass_mark = "X"
+
             if pd.playlist_passed:
                 pass_mark = "P"
-                if pco.due_date:
+                due_date = pco.due_date.replace(tzinfo=pytz.utc).astimezone(
+                    pytz.timezone(settings.TIME_ZONE)
+                )
+                if due_date:
                     pass_date = pd.get_local_pass_date
-                    if pco.due_date < pass_date:
-                        diff = pass_date - pco.due_date
+                    if due_date < pass_date:
+                        diff = pass_date - due_date
                         days, seconds = diff.days, diff.seconds
                         hours = days * 24 + seconds // 3600
                         if hours >= 6:
