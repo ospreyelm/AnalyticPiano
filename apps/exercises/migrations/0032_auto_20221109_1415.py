@@ -3,6 +3,13 @@ import pytz
 from django.db import migrations
 from django.conf import settings
 
+# If the PerformanceData properties are ever significantly changed, this will have to be changed
+from apps.exercises.models import PerformanceData
+
+# This import is used only for the correct string conversion (on line 31), so likely won't need to be changed.
+# If this needs to be changed, it may be a good idea to change the performance_dict keys to be the user ids instead of the stringified user objects
+from apps.accounts.models import User
+
 
 def push_back_due_dates(apps, schema_editor):
     PlaylistCourseOrdered = apps.get_model("exercises", "PlaylistCourseOrdered")
@@ -15,6 +22,35 @@ def push_back_due_dates(apps, schema_editor):
             pco.due_date = pco.due_date.replace(hour=23, minute=59, second=59)
             # pco.due_date = pytz.timezone(settings.TIME_ZONE).localize(pco.due_date)
         pco.save()
+    # PerformanceData = apps.get_model("exercises","PerformanceData")
+    PlaylistCourseOrdered = apps.get_model("exercises", "PlaylistCourseOrdered")
+    Course = apps.get_model("exercises", "Course")
+    # User = apps.get_model("accounts", "User")
+    db_alias = schema_editor.connection.alias
+    for pd in PerformanceData.objects.using(db_alias).all():
+        performer = str(User.objects.using(db_alias).get(id=pd.user_id))
+        for pco in PlaylistCourseOrdered.objects.using(db_alias).filter(
+            playlist_id=pd.playlist_id
+        ):
+            course = Course.objects.using(db_alias).get(_id=pco.course_id)
+            pass_mark = "X"
+            if pd.playlist_passed:
+                pass_mark = "P"
+                if pco.due_date:
+                    due_date = pco.due_date.replace(tzinfo=pytz.utc).astimezone(
+                        pytz.timezone(settings.TIME_ZONE)
+                    )
+                    pass_date = pd.get_local_pass_date
+                    if due_date < pass_date:
+                        diff = pass_date - due_date
+                        days, seconds = diff.days, diff.seconds
+                        hours = days * 24 + seconds // 3600
+                        if hours >= 6:
+                            pass_mark = "T"
+                        if days >= 7:
+                            pass_mark = "L"
+            course.performance_dict[performer][pco.order] = pass_mark
+            course.save()
 
 
 def reverse(apps, schema_editor):
