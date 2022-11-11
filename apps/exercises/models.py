@@ -850,6 +850,7 @@ class PerformanceData(models.Model):
                 )
             course.save()
 
+        print("ex", exercise_id)
         exercise = Exercise.objects.get(id=exercise_id)
         if exercise.authored_by_id != user_id and not exercise.locked:
             exercise.lock()
