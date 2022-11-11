@@ -495,7 +495,7 @@ class PlaylistActivityColumn(columns.Column):
 class CourseActivityTable(tables.Table):
     # TODO: make everything orderable again
     subscriber_name = tables.columns.Column(verbose_name="Subscriber")
-    groups = tables.columns.Column(verbose_name="Group(s)")
+    # groups = tables.columns.Column(verbose_name="Group(s)")
     time_elapsed = tables.columns.Column(verbose_name="Cumulative Time (minutes)")
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
@@ -504,7 +504,7 @@ class CourseActivityTable(tables.Table):
         attrs = {"class": "paleblue"}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
-        sequence = ["subscriber_name", "groups", "time_elapsed", "..."]
+        sequence = ["subscriber_name", "time_elapsed", "..."]
 
     def render_time_elapsed(self, value):
         return round(value / 60, 2)
