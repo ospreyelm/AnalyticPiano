@@ -96,7 +96,8 @@ def submit_exercise_performance(request):
     PerformanceData.submit(
         course_id=course._id,
         playlist_id=playlist._id,
-        exercise_id=exercise.id,
+        # TODO: remove hotfix
+        exercise_id=exercise.id[0:-1],
         user_id=user.id,
         data=performance_data,
     )
