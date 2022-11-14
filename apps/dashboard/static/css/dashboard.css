@@ -335,6 +335,11 @@ ul li input {
   background-size: contain;
 }
 
+.did-not-finish {
+  background-image: url(../img/did-not-finish.png) !important;
+  background-size: contain;
+}
+
 table.paleblue > tbody > tr > td > span.true {
   background-image: url(../img/true.png);
   background-size: contain;

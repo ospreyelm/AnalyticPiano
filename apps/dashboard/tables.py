@@ -471,17 +471,24 @@ def val_to_order(value):
         return 3
 
 
+p_element = '<span class="true" title="Passed on time"></span>'
+t_element = '<span class="true due-date-hours-exceed" title="Passed hours late"></span>'
+l_element = '<span class="true due-date-days-exceed" title="Passed days late"></span>'
+x_element = '<span class="true did-not-finish" title="Did not finish"></span>'
+# n_element = '<span class="true did-not-start" title="Did not start"></span>'
+
+
 class PlaylistActivityColumn(columns.Column):
     def render(self, value):
         element = "<span></span"
         if value == "P":
-            element = '<span class="true">P</span>'
+            element = p_element
         elif value == "T":
-            element = '<span class="true due-date-hours-exceed">T</span>'
+            element = t_element
         elif value == "L":
-            element = '<span class="true due-date-days-exceed">L</span>'
+            element = l_element
         elif value == "X":
-            element = '<span class="did-not-finish">DNF</span>'
+            element = x_element
         return format_html(element)
 
     # TODO: get this working
@@ -497,6 +504,11 @@ class CourseActivityTable(tables.Table):
     subscriber_name = tables.columns.Column(verbose_name="Subscriber")
     # groups = tables.columns.Column(verbose_name="Group(s)")
     time_elapsed = tables.columns.Column(verbose_name="Cumulative Time (minutes)")
+    result_count = tables.columns.Column(
+        verbose_name="Totaled Results",
+        empty_values=(()),
+        attrs={"td": {"style": "min-width:72px"}},
+    )
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
     # )
@@ -508,6 +520,15 @@ class CourseActivityTable(tables.Table):
 
     def render_time_elapsed(self, value):
         return round(value / 60, 2)
+
+    def render_result_count(self, record):
+        result_count = {"P": 0, "T": 0, "L": 0, "X": 0}
+        for (key, value) in record.items():
+            if value in result_count:
+                result_count[value] += 1
+        return format_html(
+            f"{p_element}: {result_count['P']}  {t_element}: {result_count['T']}<br/> {l_element}: {result_count['L']} {x_element}: {result_count['X']}"
+        )
 
 
 class GroupsListTable(tables.Table):
