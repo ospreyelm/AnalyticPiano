@@ -84,6 +84,7 @@ class SubscribersTable(tables.Table):
     subscriber = tables.columns.LinkColumn(
         "dashboard:subscriber-performances",
         kwargs={"subscriber_id": A("subscriber.id")},
+        accessor=A("subscriber.email"),
         attrs={"td": {"width": "250px"}},
         verbose_name="Email Address of User",
     )
