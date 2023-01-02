@@ -157,31 +157,35 @@ def parse_visibility(visibility_pattern, instance):
     visibility_reqs = (
         ["none"]
         if visibility_pattern == "n"
-        else re.sub("/[^flsb]/gi", "", visibility_pattern).split(" ")
+        else re.sub("/[^ansb]/gi", "", visibility_pattern).split(" ")
     )
-    visibility_reqs.sort
     newdata = deepcopy(instance.data)
     flsb = newdata["chord"]
+
     if len(visibility_reqs) >= 1:
         for i in range(len(flsb)):
             flsb[i]["hidden"] += flsb[i]["visible"]
             flsb[i]["hidden"].sort()
             flsb[i]["visible"] = []
 
-    if "b" in visibility_reqs:
-        for i in range(len(flsb)):
+    for i in range(len(visibility_reqs)):
+        viz_label = visibility_reqs[i]
+        if viz_label == "a":
+            flsb[i]["visible"] += flsb[i]["hidden"]
+            flsb[i]["hidden"] = []
+            flsb[i]["visible"].sort()
+        elif viz_label == "n":
+            flsb[i]["hidden"] += flsb[i]["visible"]
+            flsb[i]["visible"] = []
+            flsb[i]["hidden"].sort()
+        elif viz_label == "b":
             flsb[i]["visible"] = (
                 flsb[i]["visible"] + [flsb[i]["hidden"].pop(0)]
                 if len(flsb[i]["hidden"]) > 0
                 else []
             )
-
             flsb[i]["visible"].sort()
-
-    print("after bass", flsb, "\n")
-
-    if "s" in visibility_reqs:
-        for i in range(len(flsb)):
+        elif viz_label == "s":
             flsb[i]["visible"] = (
                 flsb[i]["visible"] + [flsb[i]["hidden"].pop(-1)]
                 if len(flsb[i]["hidden"]) > 0
@@ -189,28 +193,30 @@ def parse_visibility(visibility_pattern, instance):
             )
             flsb[i]["visible"].sort()
 
-    print("after soprano", flsb, "\n")
-
-    if "f" in visibility_reqs and len(flsb) >= 1:
-        flsb[0]["visible"] = flsb[0]["visible"] + flsb[0]["hidden"]
-        flsb[0]["visible"].sort()
-        flsb[0]["hidden"] = []
-
-    print("after first", flsb, "\n")
-
-    if "l" in visibility_reqs and len(flsb) >= 2:
-        idx = len(flsb) - 1
-        flsb[idx]["visible"] = flsb[idx]["visible"] + flsb[idx]["hidden"]
-        flsb[idx]["visible"].sort()
-        flsb[idx]["hidden"] = []
-
-    print("after last", flsb, "\n")
-
     if len(visibility_reqs) >= 0:
         newdata["chord"] = flsb
         return newdata
     else:
         return instance.data
+
+
+def represent_visibility(instance):
+    chord_data = instance.data["chord"]
+    visibility_pattern = ""
+    for chord in chord_data:
+        num_visible = len(chord["visible"])
+        num_hidden = len(chord["hidden"])
+        if num_hidden == 0:
+            visibility_pattern += "a"
+        elif num_visible == 0:
+            visibility_pattern += "n"
+        elif num_visible == 1:
+            if chord["visible"][0] >= chord["hidden"][-1]:
+                visibility_pattern += "s"
+            elif chord["visible"][0] <= chord["hidden"][0]:
+                visibility_pattern += "b"
+        visibility_pattern += " "
+    return visibility_pattern
 
 
 class ExerciseForm(forms.ModelForm):
@@ -268,7 +274,7 @@ class ExerciseForm(forms.ModelForm):
     )
     visibility_pattern = forms.CharField(
         required=False,
-        help_text="Enter a visibility pattern using any combination of: b = bass, f = first, l = last, s = soprano, n = none.",
+        help_text="Visibility for each note of this exercise. a to show all notes of the chord, n to show none, b to only show bass, s to only show soprano. For example, for a four-chord exercise, to show the entire first chord, the bass of the middle two chords, and none of the final chord, you could input 'a b b n'.",
     )
 
     field_order = [
@@ -298,6 +304,9 @@ class ExerciseForm(forms.ModelForm):
             )
             self.fields["time_signature"].initial = self.instance.data.get(
                 "timeSignature", None
+            )
+            self.fields["visibility_pattern"].initial = represent_visibility(
+                self.instance
             )
 
     def save(self, commit=True):
