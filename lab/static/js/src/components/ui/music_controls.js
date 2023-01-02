@@ -560,9 +560,9 @@ define([
           success: function (data) {
             let exerciseID = data.id;
             window.alert(
-              `Exercise uploaded! Exercise ID: ${exerciseID}. Redirecting you to the new exercise now.`
+              `Exercise uploaded! Exercise ID: ${exerciseID}. Taking you to the new exercise now.`
             );
-            window.location.href = `/dashboard/exercises/${exerciseID}/`;
+            window.open(`/dashboard/exercises/${exerciseID}/`, "_blank");
           },
           error: function (error) {
             console.log(error);
