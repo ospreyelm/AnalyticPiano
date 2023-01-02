@@ -162,14 +162,16 @@ def parse_visibility(visibility_pattern, instance):
     newdata = deepcopy(instance.data)
     flsb = newdata["chord"]
 
-    if len(visibility_reqs) >= 1:
-        for i in range(len(flsb)):
-            flsb[i]["hidden"] += flsb[i]["visible"]
-            flsb[i]["hidden"].sort()
-            flsb[i]["visible"] = []
+    # if len(visibility_reqs) >= 1:
+    #     for i in range(len(flsb)):
+    #         flsb[i]["hidden"] += flsb[i]["visible"]
+    #         flsb[i]["hidden"].sort()
+    #         flsb[i]["visible"] = []
 
-    for i in range(len(visibility_reqs)):
-        viz_label = visibility_reqs[i]
+    for i in range(len(flsb)):
+        viz_label = visibility_reqs[i] if i < len(visibility_reqs) else None
+        if not viz_label:
+            break
         if viz_label == "a":
             flsb[i]["visible"] += flsb[i]["hidden"]
             flsb[i]["hidden"] = []
@@ -178,20 +180,24 @@ def parse_visibility(visibility_pattern, instance):
             flsb[i]["hidden"] += flsb[i]["visible"]
             flsb[i]["visible"] = []
             flsb[i]["hidden"].sort()
-        elif viz_label == "b":
-            flsb[i]["visible"] = (
-                flsb[i]["visible"] + [flsb[i]["hidden"].pop(0)]
-                if len(flsb[i]["hidden"]) > 0
-                else []
-            )
-            flsb[i]["visible"].sort()
-        elif viz_label == "s":
-            flsb[i]["visible"] = (
-                flsb[i]["visible"] + [flsb[i]["hidden"].pop(-1)]
-                if len(flsb[i]["hidden"]) > 0
-                else []
-            )
-            flsb[i]["visible"].sort()
+        else:
+            flsb[i]["hidden"] += flsb[i]["visible"]
+            flsb[i]["hidden"].sort()
+            flsb[i]["visible"] = []
+            if viz_label == "b":
+                flsb[i]["visible"] = (
+                    flsb[i]["visible"] + [flsb[i]["hidden"].pop(0)]
+                    if len(flsb[i]["hidden"]) > 0
+                    else []
+                )
+                flsb[i]["visible"].sort()
+            elif viz_label == "s":
+                flsb[i]["visible"] = (
+                    flsb[i]["visible"] + [flsb[i]["hidden"].pop(-1)]
+                    if len(flsb[i]["hidden"]) > 0
+                    else []
+                )
+                flsb[i]["visible"].sort()
 
     if len(visibility_reqs) >= 0:
         newdata["chord"] = flsb
