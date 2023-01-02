@@ -1,5 +1,6 @@
 import re
 import datetime
+from copy import deepcopy
 from ckeditor.widgets import CKEditorWidget
 from django import forms
 from prettyjson import PrettyJSONWidget
@@ -151,6 +152,67 @@ class ExpansiveForm(forms.ModelForm):
         return object_ids
 
 
+# Taken from deprecated music_controls.js prompt form
+def parse_visibility(visibility_pattern, instance):
+    visibility_reqs = (
+        ["none"]
+        if visibility_pattern == "n"
+        else re.sub("/[^flsb]/gi", "", visibility_pattern).split(" ")
+    )
+    visibility_reqs.sort
+    newdata = deepcopy(instance.data)
+    flsb = newdata["chord"]
+    if len(visibility_reqs) >= 1:
+        for i in range(len(flsb)):
+            flsb[i]["hidden"] += flsb[i]["visible"]
+            flsb[i]["hidden"].sort()
+            flsb[i]["visible"] = []
+
+    if "b" in visibility_reqs:
+        for i in range(len(flsb)):
+            flsb[i]["visible"] = (
+                flsb[i]["visible"] + [flsb[i]["hidden"].pop(0)]
+                if len(flsb[i]["hidden"]) > 0
+                else []
+            )
+
+            flsb[i]["visible"].sort()
+
+    print("after bass", flsb, "\n")
+
+    if "s" in visibility_reqs:
+        for i in range(len(flsb)):
+            flsb[i]["visible"] = (
+                flsb[i]["visible"] + [flsb[i]["hidden"].pop(-1)]
+                if len(flsb[i]["hidden"]) > 0
+                else []
+            )
+            flsb[i]["visible"].sort()
+
+    print("after soprano", flsb, "\n")
+
+    if "f" in visibility_reqs and len(flsb) >= 1:
+        flsb[0]["visible"] = flsb[0]["visible"] + flsb[0]["hidden"]
+        flsb[0]["visible"].sort()
+        flsb[0]["hidden"] = []
+
+    print("after first", flsb, "\n")
+
+    if "l" in visibility_reqs and len(flsb) >= 2:
+        idx = len(flsb) - 1
+        flsb[idx]["visible"] = flsb[idx]["visible"] + flsb[idx]["hidden"]
+        flsb[idx]["visible"].sort()
+        flsb[idx]["hidden"] = []
+
+    print("after last", flsb, "\n")
+
+    if len(visibility_reqs) >= 0:
+        newdata["chord"] = flsb
+        return newdata
+    else:
+        return instance.data
+
+
 class ExerciseForm(forms.ModelForm):
     TYPE_MATCHING = "matching"
     TYPE_ANALYTICAL = "analytical"
@@ -204,11 +266,16 @@ class ExerciseForm(forms.ModelForm):
     time_signature = forms.CharField(
         required=False, help_text="Time signature for this exercise. E.g. '3/4'"
     )
+    visibility_pattern = forms.CharField(
+        required=False,
+        help_text="Enter a visibility pattern using any combination of: b = bass, f = first, l = last, s = soprano, n = none.",
+    )
 
     field_order = [
         "id",
         "description",
         "rhythm",
+        "visibility_pattern",
         "time_signature",
         "intro_text",
         "type",
@@ -235,6 +302,7 @@ class ExerciseForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
+        print(self.cleaned_data.get("visibility_pattern"))
 
         if instance:
             instance.data["introText"] = self.cleaned_data["intro_text"]
@@ -245,6 +313,11 @@ class ExerciseForm(forms.ModelForm):
                 instance.data["timeSignature"] = self.cleaned_data["time_signature"]
             else:
                 instance.data["timeSignature"] = ""
+            print(instance.data["chord"])
+            instance.data = parse_visibility(
+                self.cleaned_data.get("visibility_pattern"), instance
+            )
+            print(instance.data["chord"])
             instance.authored_by = self.context.get("user")
             instance.clean()
             instance.save()

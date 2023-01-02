@@ -283,6 +283,7 @@ class ExercisesListTable(tables.Table):
         kwargs={"exercise_id": A("id")},
         text="Edit",
         verbose_name="Edit",
+        attrs={"a": {"target": "_blank"}},
         orderable=False,
     )
 

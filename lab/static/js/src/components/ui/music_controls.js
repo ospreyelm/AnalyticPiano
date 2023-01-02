@@ -432,6 +432,8 @@ define([
         return false;
       }
 
+      // OLD EXERCISE CREATION FLOW, DELETE IF NO LONGER USEFUL BY 2024
+
       // if (advanced) {
       //   const type_input = prompt(
       //     "Enter a number for exercise type: (1) matching (2) analytical (3) analytical_pcs (4) figured_bass (5) figured_bass_pcs"
