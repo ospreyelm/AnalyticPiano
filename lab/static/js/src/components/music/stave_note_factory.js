@@ -455,6 +455,13 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         }
       };
     },
+    setStemDirection: function (style) {
+      return function (staveNote) {
+        if (typeof staveNote.setStemDirection === "function") {
+          staveNote.setStemDirection(style);
+        }
+      };
+    },
     setLedgerLineStyle: function (style) {
       return function (staveNote) {
         if (typeof staveNote.setLedgerLineStyle === "function") {

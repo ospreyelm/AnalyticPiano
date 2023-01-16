@@ -169,6 +169,13 @@ define([
         modifiers.push(this.staveNoteFactory.setLedgerLineStyle(noteStyle));
       }
 
+      if (noteStyle.strokeStyle === "rgb(180,180,180)") {
+        /* Keep stems gray prior to banking */
+        modifiers.push(this.staveNoteFactory.setStemStyle(noteStyle));
+      }
+
+      // modifiers.push(this.staveNoteFactory.setStemDirection(-1)); // JULIAN: use this to change stem direction
+
       return modifiers;
     },
     /**
