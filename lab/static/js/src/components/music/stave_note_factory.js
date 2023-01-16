@@ -495,13 +495,6 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         // type: "r", // make a rest
         dots: dot_count,
         clef: this.clef,
-        /**
-         * Currently, downstemmed chords including seconds are
-         * incorrectly displaced to the right: the primary noteheads
-         * are misaligned with the analysis and the metric grid.
-         * Disable this option to have all up stems (ok-ish for whole
-         * notes).
-         */
         auto_stem: true,
       });
       if (dot_count == 1) {
