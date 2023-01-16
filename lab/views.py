@@ -387,12 +387,10 @@ class CourseView(RequirejsView):
             "course_author": course_author,
         }
 
-        # publish date only visible to author, due date to everyone
         exclude_fields = list(playlists_table.exclude)
-        # if not course.publish_dates or request.user != course_author:
-        #     exclude_fields.append("publish_date")
-        # if not course.due_dates:
-        #     exclude_fields.append("due_date")
+        if request.user != course_author:
+            # publish date only visible to author, due date to everyone
+            exclude_fields.append("publish_date")
         playlists_table.exclude = exclude_fields
 
         RequestConfig(request).configure(playlists_table)
