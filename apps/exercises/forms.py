@@ -156,11 +156,11 @@ class ExpansiveForm(forms.ModelForm):
 def parse_visibility(visibility_pattern, instance):
     visibility_reqs = (
         ["none"]
-        if visibility_pattern == "n"
-        else re.sub("/[^ansb]/gi", "", visibility_pattern).split(" ")
+        if visibility_pattern == "-"
+        else re.sub("/[^satbo*-]/gi", "", visibility_pattern).split(" ")
     )
     newdata = deepcopy(instance.data)
-    flsb = newdata["chord"]
+    flsb = newdata["chord"] # flsb stood for visibility models "first, last, soprano, bass"
 
     # if len(visibility_reqs) >= 1:
     #     for i in range(len(flsb)):
@@ -172,11 +172,11 @@ def parse_visibility(visibility_pattern, instance):
         viz_label = visibility_reqs[i] if i < len(visibility_reqs) else None
         if not viz_label:
             break
-        if viz_label == "a":
+        if viz_label == "*":
             flsb[i]["visible"] += flsb[i]["hidden"]
             flsb[i]["hidden"] = []
             flsb[i]["visible"].sort()
-        elif viz_label == "n":
+        elif viz_label == "-":
             flsb[i]["hidden"] += flsb[i]["visible"]
             flsb[i]["visible"] = []
             flsb[i]["hidden"].sort()
@@ -190,14 +190,31 @@ def parse_visibility(visibility_pattern, instance):
                     if len(flsb[i]["hidden"]) > 0
                     else []
                 )
-                flsb[i]["visible"].sort()
+            elif viz_label == "t":
+                flsb[i]["visible"] = (
+                    flsb[i]["visible"] + [flsb[i]["hidden"].pop(1)]
+                    if len(flsb[i]["hidden"]) > 1
+                    else []
+                )
+            elif viz_label == "a":
+                flsb[i]["visible"] = (
+                    flsb[i]["visible"] + [flsb[i]["hidden"].pop(-2)]
+                    if len(flsb[i]["hidden"]) > 1
+                    else []
+                )
             elif viz_label == "s":
                 flsb[i]["visible"] = (
                     flsb[i]["visible"] + [flsb[i]["hidden"].pop(-1)]
                     if len(flsb[i]["hidden"]) > 0
                     else []
                 )
-                flsb[i]["visible"].sort()
+            elif viz_label == "o":
+                flsb[i]["visible"] = (
+                    flsb[i]["visible"] + [flsb[i]["hidden"].pop(0)] + [flsb[i]["hidden"].pop(-1)]
+                    if len(flsb[i]["hidden"]) > 1
+                    else []
+                )
+            flsb[i]["visible"].sort()
 
     if len(visibility_reqs) >= 0:
         newdata["chord"] = flsb
@@ -206,23 +223,39 @@ def parse_visibility(visibility_pattern, instance):
         return instance.data
 
 
-def represent_visibility(instance):
+def represent_visibility(instance): # Not good. What happens for two-to-one mappings?
     chord_data = instance.data["chord"]
     visibility_pattern = ""
     for chord in chord_data:
         num_visible = len(chord["visible"])
         num_hidden = len(chord["hidden"])
         if num_hidden == 0:
-            visibility_pattern += "a"
+            visibility_pattern += "*"
         elif num_visible == 0:
-            visibility_pattern += "n"
+            visibility_pattern += "-"
         elif num_visible == 1:
-            if chord["visible"][0] >= chord["hidden"][-1]:
+            if len(chord["hidden"]) >= 1 \
+            and chord["visible"][0] >= chord["hidden"][-1]:
                 visibility_pattern += "s"
-            elif chord["visible"][0] <= chord["hidden"][0]:
+            elif len(chord["hidden"]) >= 3 \
+            and chord["visible"][0] >= chord["hidden"][-2]:
+                visibility_pattern += "a"
+            elif len(chord["hidden"]) >= 1 \
+            and chord["visible"][0] <= chord["hidden"][0]:
                 visibility_pattern += "b"
+            elif len(chord["hidden"]) >= 3 \
+            and chord["visible"][0] <= chord["hidden"][1]:
+                visibility_pattern += "t"
+            else: visibility_pattern += "?"
+        elif num_visible == 2:
+            if len(chord["hidden"]) >= 1 \
+            and chord["visible"][-1] >= chord["hidden"][-1] \
+            and chord["visible"][0] <= chord["hidden"][0]:
+                visibility_pattern += "o"
+            else: visibility_pattern += "?"
+        else: visibility_pattern += "?"
         visibility_pattern += " "
-    return visibility_pattern
+    return visibility_pattern.strip()
 
 
 class ExerciseForm(forms.ModelForm):
@@ -280,7 +313,7 @@ class ExerciseForm(forms.ModelForm):
     )
     visibility_pattern = forms.CharField(
         required=False,
-        help_text="Visibility for each note of this exercise. a to show all notes of the chord, n to show none, b to only show bass, s to only show soprano. For example, for a four-chord exercise, to show the entire first chord, the bass of the middle two chords, and none of the final chord, you could input 'a b b n'.",
+        help_text="Visibility for each chord. * for all pitches, - for none, s for soprano, b for bass. For an SATB exercise of five chords, for instance, show the entire first chord but only the bass of the remaining chords via the input '* b b b b'.",
     )
 
     field_order = [

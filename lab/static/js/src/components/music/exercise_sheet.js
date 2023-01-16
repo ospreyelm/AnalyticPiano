@@ -708,12 +708,18 @@ define([
     getVisualWidth: function (rhythm_value) {
       if (rhythm_value === "w") {
         return 1;
+      } else if (rhythm_value === "W") {
+        return 1.25;
       } else if (rhythm_value === "H") {
         return 0.75;
       } else if (rhythm_value === "h") {
         return 0.675;
+      } else if (rhythm_value === "Q") {
+        return 0.5;
       } else if (rhythm_value === "q") {
         return 0.375;
+      // } else if (rhythm_value === "e") {
+      //   return 0.25;
       } else {
         console.log("Unknown rhythm_value passed to getVisualWidth");
         return 1;
@@ -722,12 +728,18 @@ define([
     getWholeNoteCount: function (rhythm_value) {
       if (rhythm_value === "w") {
         return 1;
+      } else if (rhythm_value === "W") {
+        return 1.5;
       } else if (rhythm_value === "H") {
         return 0.75;
       } else if (rhythm_value === "h") {
         return 0.5;
+      } else if (rhythm_value === "Q") {
+        return 0.375;
       } else if (rhythm_value === "q") {
         return 0.25;
+      // } else if (rhythm_value === "e") {
+      //   return 0.125;
       } else {
         console.log("Unknown rhythm_value passed to getWholeNoteCount");
         return 0.1; // this will prevent display of bogus barlines

@@ -360,6 +360,12 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
             beat_value: 4,
             resolution: Vex.Flow.RESOLUTION,
           };
+        } else if (rhythm_value === "W") {
+          time = {
+            num_beats: 6,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
         } else if (rhythm_value === "H") {
           time = {
             num_beats: 3,
@@ -372,12 +378,24 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
             beat_value: 4,
             resolution: Vex.Flow.RESOLUTION,
           };
+        } else if (rhythm_value === "Q") {
+          time = {
+            num_beats: 1.5,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
         } else if (rhythm_value === "q") {
           time = {
             num_beats: 1,
             beat_value: 4,
             resolution: Vex.Flow.RESOLUTION,
           };
+        // } else if (rhythm_value === "e") {
+        //   time = {
+        //     num_beats: 0.5,
+        //     beat_value: 4,
+        //     resolution: Vex.Flow.RESOLUTION,
+        //   };
         } else {
           // should be redundant
           time = {

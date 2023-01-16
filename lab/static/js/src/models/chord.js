@@ -68,7 +68,7 @@ define(["lodash", "microevent", "app/config"], function (
      */
     init: function () {
       /**
-       * Duration for specific note. Value can be "w", "H", "h", or "q"
+       * Duration for specific note. Value can be "w", "W", "H", "h", "Q", or "q"
        * @type {string}
        * @protected
        */

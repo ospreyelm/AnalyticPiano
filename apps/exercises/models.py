@@ -85,7 +85,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         max_length=60,
         blank=True,
         null=True,
-        help_text="Brief description showed to admins in the exercise dashboard table.",
+        help_text="Brief description showed to authors in the exercise dashboard table.",
     )
     data = RawJSONField("Data")
     rhythm = models.CharField(
@@ -200,7 +200,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         if not self.rhythm or not self.data:
             return
 
-        supported_rhythm_values = ["w", "H", "h", "q", "1", "2", "4"]
+        supported_rhythm_values = ["w", "W", "H", "h", "Q", "q", "1", "2", "4"]
         rhythm_values = (
             self.rhythm.replace("1", "w").replace("2", "h").replace("4", "q")
         )
