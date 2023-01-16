@@ -136,9 +136,9 @@ def playlist_edit_view(request, playlist_id):
         if form.is_valid():
             if PROTECT_PLAYLIST_CONTENT:
                 playlist.id = playlist_id  ## critical in case user tries to edit playlist name and gets a bad redirect
-                ## only alter is_public field
+                ## only alter is_public, name fields
                 ## under no circumstances allow other changes to data
-                playlist.save(update_fields=["is_public"])
+                playlist.save(update_fields=["name", "is_public"])
                 ## ^ is this ok?
             else:
                 playlist = form.save(commit=False)

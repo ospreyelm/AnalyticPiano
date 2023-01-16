@@ -309,14 +309,11 @@ ul li input {
   margin-bottom: 1px !important;
 }
 
+.protected-edit-view label[for="id_name"],
 .protected-edit-view label[for="id_description"],
 .protected-edit-view label[for="id_is_public"],
 .protected-edit-view .limited-save-btn {
   background-color: yellow;
-}
-
-.protected-edit-view label[for="id_description"],
-.protected-edit-view label[for="id_is_public"] {
 }
 
 .multiselect {

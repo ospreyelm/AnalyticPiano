@@ -101,7 +101,7 @@ def exercise_edit_view(request, exercise_id):
             if PROTECT_EXERCISE_CONTENT:
                 ## only alter is_public, description fields
                 ## under no circumstances allow other changes to data
-                exercise.save(update_fields=["description", "is_public"])
+                exercise.save(update_fields=["is_public", "description"])
                 ## ^ is this ok?
             else:
                 exercise = form.save(commit=False)
