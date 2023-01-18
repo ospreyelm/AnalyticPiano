@@ -7,7 +7,7 @@ from django.conf import settings
 numeric_test = re.compile("^\d+$")
 register = template.Library()
 
-TEMPLATE_STRING_IF_INVALID = "Invalid"
+TEMPLATE_STRING_IF_INVALID = None
 
 
 # Gets an attribute of an object dynamically from a string name

@@ -29,8 +29,20 @@
                   {% if editing %}
                   <option></option>
                   {% for model in m2m_options|getattribute:field.name %}
+                  {% with appended_fields=m2m_config|getattribute:"appended_fields" %}
                   {% with author_field_name=m2m_config|getattribute:"author_field_name" %}
-                  <option value={{model.id}}>{{model}} {% if author_field_name and model|getattribute:author_field_name != user %} - shared by {{model|getattribute:author_field_name|getattribute:"email"}} {% endif %}</option>
+                  <option value={{model.id}}>{{model}} 
+                    {% if author_field_name and model|getattribute:author_field_name != user %} - by {{model|getattribute:author_field_name|getattribute:"email"}} 
+                    {% endif %} 
+                    {% if appended_fields %}  
+                        {% for appended_field in appended_fields %} 
+                            {% with appended_field_value=model|getattribute:appended_field %}
+                                {% if appended_field_value %} - {{ appended_field_value|truncatechars:40 }} {% endif %} 
+                            {% endwith %}
+                        {% endfor %} 
+                    {% endif %}
+                  </option>
+                  {% endwith %}
                   {% endwith %}
                   {% endfor %}
                   {% endif %}

@@ -50,7 +50,10 @@ def playlist_add_view(request):
                     )
             playlist.authored_by = request.user
             playlist.save()
-            if "save-and-continue" in request.POST:
+            if (
+                "save-and-continue" in request.POST
+                or "save-and-preview" in request.POST
+            ):
                 success_url = reverse(
                     "dashboard:edit-playlist", kwargs={"playlist_id": playlist.id}
                 )
@@ -165,7 +168,10 @@ def playlist_edit_view(request, playlist_id):
                 ## ^ original authorship of playlist should not change
                 playlist.save()
 
-            if "save-and-continue" in request.POST:
+            if (
+                "save-and-continue" in request.POST
+                or "save-and-preview" in request.POST
+            ):
                 success_url = reverse(
                     "dashboard:edit-playlist", kwargs={"playlist_id": playlist.id}
                 )

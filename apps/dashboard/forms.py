@@ -221,6 +221,7 @@ class DashboardPlaylistForm(PlaylistForm):
             "ordered": True,
             "url": "dashboard:edit-exercise",
             "author_field_name": "authored_by",
+            "appended_fields": ["description"],
         }
     }
 

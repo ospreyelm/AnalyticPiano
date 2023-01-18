@@ -62,6 +62,11 @@ urlpatterns = [
     # Exercises, Playlists, Courses
     path("exercises/<str:exercise_id>/", ExerciseView.as_view(), name="exercise-view"),
     path(
+        "playlists/<str:playlist_id>/definition/",
+        RefreshExerciseDefinition.as_view(),
+        name="refresh-definition",
+    ),
+    path(
         "playlists/<str:course_id>/<str:playlist_id>/definition/",
         RefreshExerciseDefinition.as_view(),
         name="refresh-definition",

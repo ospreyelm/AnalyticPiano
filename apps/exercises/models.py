@@ -386,7 +386,6 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     def transposition_matrix(self):
         if not self.exercises:
             return []
-
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
             return list(product(list(self.exercises.all()), self.transpose_requests))
         elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
@@ -443,8 +442,8 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         if not self.is_transposed():
             return exercise
 
-        # print(self.transposed_exercises[num])
         # import pdb; pdb.set_trace()
+        print(self.transposition_matrix)
         exercise_id, target_request = self.transposition_matrix[num - 1]
         exercise = Exercise.objects.get(id=exercise_id)
         transposed_exercise = transpose(exercise, target_request)
