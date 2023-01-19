@@ -143,6 +143,10 @@ class SubscribersTable(tables.Table):
 
 
 class MyActivityTable(tables.Table):
+    course = tables.columns.Column(
+        verbose_name="Course title",
+        accessor=("course.title"),
+    )
     playlist = tables.columns.Column(
         verbose_name="Playlist name",
         # text=lambda record: record.playlist.name,
@@ -160,7 +164,7 @@ class MyActivityTable(tables.Table):
     playlist_pass_date = tables.columns.DateColumn(
         verbose_name="Pass Date",
         format="Y_m_d • D",
-        orderable=False,
+        orderable=False,# ordering fails
     )
     view = tables.columns.LinkColumn(
         "dashboard:playlist-performance",
@@ -203,24 +207,30 @@ class MyActivityTable(tables.Table):
 class MyActivityDetailsTable(tables.Table):
     playlist_name = tables.columns.Column(
         verbose_name="Playlist name",
-        orderable=False,
+        # orderable=False,
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     view = tables.columns.LinkColumn(
         "lab:playlist-view",
         kwargs={"course_id": A("course_id") or None, "playlist_id": A("playlist_id")},
-        text="Revisit",
-        verbose_name="Load",
+        text="Play",
+        verbose_name="Play",
         orderable=False,
     )
     id = tables.columns.Column(
         verbose_name="ID",
         accessor=("playlist_id"),
-        orderable=False,
+        # orderable=False,
+        attrs={"td": {"bgcolor": "lightgray"}},
+    )
+    course_id = tables.columns.Column(
+        verbose_name="ID",
+        accessor=("course_id"),
+        # orderable=False,
         attrs={"td": {"bgcolor": "lightgray"}},
     )
     exercise_count = tables.columns.Column(
-        verbose_name="Tally of finished exercises",
+        verbose_name="Tally of completions (incl. repeats)",
         orderable=False,
     )
     playing_time = tables.columns.Column(
@@ -260,6 +270,7 @@ class MyActivityDetailsTable(tables.Table):
             "view",
             "...",
             "id",
+            "course_id",
             "exercise_count",
         )
 
@@ -273,8 +284,8 @@ class ExercisesListTable(tables.Table):
     view = tables.columns.LinkColumn(
         "lab:exercise-view",
         kwargs={"exercise_id": A("id")},
-        text="Load",
-        verbose_name="Load",
+        text="Preview",
+        verbose_name="Preview",
         orderable=False,
     )
 
@@ -306,7 +317,7 @@ class ExercisesListTable(tables.Table):
     def render_edit(self, record):
         if not record.has_been_performed:
             return "Edit"
-        return "View"
+        return "Edit*"
 
     def render_delete(self, record):
         if not record.has_been_performed:
@@ -329,8 +340,8 @@ class PlaylistsListTable(tables.Table):
     view = tables.columns.LinkColumn(
         "lab:playlist-view",
         kwargs={"playlist_id": A("id")},
-        text="Load",
-        verbose_name="Load",
+        text="Play",
+        verbose_name="Play",
         orderable=False,
     )
 
@@ -358,12 +369,12 @@ class PlaylistsListTable(tables.Table):
         format="Y-m-d • h:i A",
     )
     is_public = tables.columns.BooleanColumn()
-    is_auto = tables.columns.BooleanColumn(verbose_name="Is Auto")
+    is_auto = tables.columns.BooleanColumn(verbose_name="Auto-Generated")
 
     def render_edit(self, record):
         if not record.has_been_performed:
             return "Edit"
-        return "View"
+        return "Edit*"
 
     def render_delete(self, record):
         if not record.has_been_performed:
@@ -383,11 +394,18 @@ class CoursesListTable(tables.Table):
         verbose_name="Title of Course",
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
+    activity = tables.columns.LinkColumn(
+        "dashboard:course-activity",
+        kwargs={"course_id": A("id")},
+        text="Activity",
+        verbose_name="Activity",
+        orderable=False,
+    )
     view = tables.columns.LinkColumn(
         "lab:course-view",
         kwargs={"course_id": A("id")},
-        text="Load",
-        verbose_name="Load",
+        text="List of Playlists",
+        verbose_name="List of Playlists",
         orderable=False,
     )
 
@@ -415,13 +433,6 @@ class CoursesListTable(tables.Table):
         format="Y-m-d • h:i A",
     )
     is_public = tables.columns.BooleanColumn()
-    activity = tables.columns.LinkColumn(
-        "dashboard:course-activity",
-        kwargs={"course_id": A("id")},
-        text="Activity",
-        verbose_name="Activity",
-        orderable=False,
-    )
 
     class Meta:
         attrs = {"class": "paleblue"}
@@ -437,8 +448,8 @@ class SupervisorsCoursesListTable(tables.Table):
     view = tables.columns.LinkColumn(
         "lab:course-view",
         kwargs={"course_id": A("id")},
-        text="Load",
-        verbose_name="Load",
+        text="List of Playlists",
+        verbose_name="List of Playlists",
         orderable=False,
     )
     authored_by = tables.columns.Column()

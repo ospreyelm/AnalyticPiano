@@ -15,19 +15,19 @@ class CoursePageTable(tables.Table):
         kwargs={"playlist_id": A("id"), "course_id": A("course_id")},
         verbose_name="Playlist Name",
     )
-    publish_date = tables.columns.DateColumn(
-        verbose_name="Publish Date",
-        format="Y-m-d",
-        orderable=True,
-    )
     due_date = tables.columns.DateColumn(
         verbose_name="Due Date",
         format="Y-m-d",
         orderable=True,
     )
     id = tables.columns.Column(verbose_name="ID", orderable=True)
+    publish_date = tables.columns.DateColumn(
+        verbose_name="Publish Date",
+        format="Y-m-d",
+        orderable=True,
+    )
     authored_by_id = tables.columns.Column(
-        verbose_name="Author",
+        verbose_name="Playlist Author",
         orderable=True,
     )
 

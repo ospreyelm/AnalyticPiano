@@ -110,7 +110,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         verbose_name="Author",
     )
     is_public = models.BooleanField(
-        "Share",
+        "Commons",
         default=False,
         help_text="Sharing your exercise will allow other users to include it in their playlists. Doing so will make your email visible to people looking to use this exercise.",
     )
@@ -348,7 +348,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         help_text="Determines order of transposed exercises. Exercise Loop means that each exercise will have its transposed versions come after it successively. Playlist Loop means that the entire playlist will come in its original key, followed successively by the playlist's transposed versions.",
     )
     is_public = models.BooleanField(
-        "Share",
+        "Commons",
         default=False,
         help_text="Sharing your playlist will allow other users to include it in their courses. Doing so will make your email visible to people looking to use this playlist.",
     )
@@ -611,7 +611,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         verbose_name="Author",
     )
     is_public = models.BooleanField(
-        "Share",
+        "Commons",
         default=False,
         help_text="Sharing your course will make it available to other users. Doing so will make your email visible to people looking to use your course.",
     )
