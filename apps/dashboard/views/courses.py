@@ -171,7 +171,7 @@ def course_edit_view(request, course_id):
             if added_playlist_id != "":
                 course.playlists.add(
                     Playlist.objects.get(id=added_playlist_id),
-                    through_defaults={"order": len(course.playlists.all())},
+                    through_defaults={"order": len(course.playlists.all()) + 1},
                 )
             added_group_id = request.POST.get("visible_to_add")
             if added_group_id != "":

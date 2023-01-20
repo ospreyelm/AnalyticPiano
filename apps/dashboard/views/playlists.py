@@ -149,7 +149,7 @@ def playlist_edit_view(request, playlist_id):
                 if added_exercise_id != "":
                     playlist.exercises.add(
                         Exercise.objects.get(id=added_exercise_id),
-                        through_defaults={"order": len(playlist.exercises.all())},
+                        through_defaults={"order": len(playlist.exercises.all()) + 1},
                     )
                 handle_m2m(
                     request,
