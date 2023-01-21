@@ -360,18 +360,17 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         verbose_name_plural = "Playlists"
 
     @cached_property
+    def untransposed_exercises_ids(self):
+        related_epos = ExercisePlaylistOrdered.objects.filter(playlist=self).order_by(
+            "order"
+        )
+        sorted_exercise_list = list(map(lambda epo: epo.exercise, related_epos))
+        return sorted_exercise_list
+
+    @cached_property
     def exercise_list(self):
         if not self.is_transposed():
-            epo_list = list(
-                ExercisePlaylistOrdered.objects.filter(playlist_id=self._id)
-            )
-            epo_list.sort(key=lambda e: e.order)
-            return list(
-                map(
-                    lambda epo: Exercise.objects.get(_id=epo.exercise_id).id,
-                    epo_list,
-                )
-            )
+            return self.untransposed_exercises_ids
 
         return self.transposed_exercises_ids
 
@@ -386,12 +385,15 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     def transposition_matrix(self):
         if not self.exercises:
             return []
+
+        sorted_exercise_list = self.untransposed_exercises_ids
+
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
-            return list(product(list(self.exercises.all()), self.transpose_requests))
+            return list(product(sorted_exercise_list, self.transpose_requests))
         elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
             return [
                 (t[1], t[0])
-                for t in product(self.transpose_requests, list(self.exercises.all()))
+                for t in product(self.transpose_requests, sorted_exercise_list)
             ]
 
     @cached_property
@@ -433,7 +435,6 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     def get_exercise_obj_by_num(self, num=1):
         if len(self.exercise_list) == 0:
             return
-
         try:
             exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
         except (IndexError, TypeError):
@@ -443,7 +444,6 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return exercise
 
         # import pdb; pdb.set_trace()
-        print(self.transposition_matrix)
         exercise_id, target_request = self.transposition_matrix[num - 1]
         exercise = Exercise.objects.get(id=exercise_id)
         transposed_exercise = transpose(exercise, target_request)
