@@ -5,6 +5,7 @@ from django_tables2 import tables, A
 from django.db.models import Q
 
 from apps.exercises.models import Playlist, PlaylistCourseOrdered
+from apps.dashboard.tables import PlaylistActivityColumn
 
 
 class CoursePageTable(tables.Table):
@@ -30,6 +31,7 @@ class CoursePageTable(tables.Table):
         verbose_name="Playlist Author",
         orderable=True,
     )
+    completion = PlaylistActivityColumn(verbose_name="Completion", orderable=True)
 
     class Meta:
         attrs = {"class": "paleblue"}

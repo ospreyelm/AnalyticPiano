@@ -379,6 +379,18 @@ class CourseView(RequirejsView):
             playlists,
         )
 
+        user_instance = User.objects.get(pk=request.user.id)
+        user_completion = course.performance_dict.get(str(user_instance), None)
+
+        if user_completion:
+            augmented_playlists = map(
+                lambda aug_playlist: {
+                    **aug_playlist,
+                    "completion": user_completion.get(str(aug_playlist["order"]), None),
+                },
+                augmented_playlists,
+            )
+
         playlists_table = CoursePageTable(augmented_playlists, course=course)
         course_author = course.authored_by
         context = {
