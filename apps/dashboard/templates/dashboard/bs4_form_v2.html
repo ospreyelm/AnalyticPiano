@@ -72,7 +72,7 @@
         {% with m2m_config=form.custom_m2m_config|getattribute:field.name%}
         {% with field_name=field|getfieldname %}
         <div class="delete-table-wrapper">
-            <table class="delete-table-inner" style="max-height:960px; display:block; overflow:scroll">
+            <table class="delete-table-inner" style="max-height:960px; display:block; overflow:auto">
           <tr class="delete-table-row" style="margin-bottom:8px">
             <th style="min-width:160px">Added {{field_name}}</th>
             {% if m2m_config.ordered %} 

@@ -110,9 +110,9 @@ def playlist_edit_view(request, playlist_id):
     )
     exercises_options.sort(
         key=lambda e: (
-            e.authored_by_id if (e.authored_by_id != request.user.id) else -1,
+            "0" + str(e.authored_by_id) if (e.authored_by_id != request.user.id) else "1",
             e.id,
-        )
+        ), reverse=True
     )
 
     context = {
@@ -178,6 +178,18 @@ def playlist_edit_view(request, playlist_id):
                 messages.add_message(
                     request, messages.SUCCESS, f"{context['verbose_name']} saved"
                 )
+            elif "save-and-edit-previous" in request.POST:
+                success_url = reverse(
+                    "dashboard:edit-playlist",
+                    kwargs={
+                        "playlist_id": playlist.get_previous_authored_playlist().id
+                    },
+                )
+            elif "save-and-edit-next" in request.POST:
+                success_url = reverse(
+                    "dashboard:edit-playlist",
+                    kwargs={"playlist_id": playlist.get_next_authored_playlist().id},
+                )
             elif "duplicate" in request.POST:
                 epos = ExercisePlaylistOrdered.objects.filter(playlist_id=playlist._id)
                 playlist.pk = None
@@ -206,7 +218,7 @@ def playlist_edit_view(request, playlist_id):
     #     form = DashboardPlaylistForm(instance=playlist, disable_fields=True)
 
     context["form"] = form
-    return render(request, "dashboard/content.html", context)
+    return render(request, "dashboard/edit-playlist.html", context)
 
 
 @login_required

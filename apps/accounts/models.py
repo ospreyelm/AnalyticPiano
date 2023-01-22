@@ -37,10 +37,10 @@ def get_preferences_default():
         "keyboard_size": DEFAULT_KEYBOARD_SIZE,
         "volume": DEFAULT_VOLUME,
         "mute": False,
-        "auto_advance": False,
-        "auto_advance_delay": 4,
-        "auto_repeat": False,
-        "auto_repeat_delay": 6,
+        "auto_advance": True,
+        "auto_advance_delay": 2,
+        "auto_repeat": True,
+        "auto_repeat_delay": 2,
     }
 
 

@@ -16,7 +16,7 @@ form label {
 
 .sidenav {
   height: 100%;
-  width: 140px;
+  width: 12em;
   position: fixed;
   z-index: 1;
   top: 0;
@@ -67,7 +67,7 @@ form label {
 }
 
 .main {
-  margin-left: 160px;
+  margin-left: 13em;
   padding: 0px 10px;
   font-size: 14px;
   text-align: left;
@@ -87,9 +87,9 @@ form label {
 }
 
 .main .form-inline label {
-  min-width: 140px;
+  min-width: 11em;
   justify-content: flex-start !important;
-  padding-right: 10px;
+  padding-right: 1em;
 }
 
 .main .form-inline {
@@ -97,8 +97,8 @@ form label {
   display: flex;
   -ms-flex-flow: row wrap;
   flex-flow: row wrap;
-  -ms-flex-align: center;
-  align-items: center;
+  -ms-flex-align: top;
+  align-items: top;
 }
 
 .main .form-group {
@@ -205,8 +205,9 @@ input[type="checkbox"] {
 
 .help-text {
   color: var(--primary-color);
-  padding-left: 10px;
-  max-width: 360px;
+  padding-left: 1em;
+  min-width: 12em;
+  max-width: 48em;
 }
 
 .page-item {
@@ -398,7 +399,7 @@ table.paleblue > tbody > tr > td > span.true {
 .delete-table-wrapper {
   display: flex;
   flex-direction: column;
-  left: 150px;
+  left: 12em;
   position: relative;
   /* min-width: 360px; */
   /* width: 55%; */

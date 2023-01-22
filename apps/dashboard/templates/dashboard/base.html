@@ -21,13 +21,14 @@
     <div class="sidenav">
         {% with url_name=request.resolver_match.url_name %}
             <p class="sidenav-header">ANALYTIC PIANO</p>
-            <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">← Play View</a>
+            <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play</a>
             <a {% if url_name == 'index'%}class="sidenav-active"{%endif%} href="{% url 'dashboard:index' %}" >Dashboard Home</a>
+             <a href="{% url 'custom-logout' %}">Log Out</a>
             <p class="sidenav-subhead">PRACTICE</p>
-            <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
             <a {% if url_name == 'subscriptions-courses' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:subscriptions-courses' %}">Available Courses</a>
+            <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
             <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:preferences' %}">Settings</a>
             <p class="sidenav-subhead">CONNECT</p>

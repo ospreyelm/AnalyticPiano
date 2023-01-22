@@ -161,7 +161,7 @@ class TransposeRequestsField(forms.CharField):
 
 
 TRANSPOSE_SELECT_CHOICES = (
-    ("", "--"),
+    ("", "[add by key signature]"),
     ("Gb", "7 flats"),
     ("Cb", "6 flats"),
     ("Db", "5 flats"),
@@ -169,7 +169,7 @@ TRANSPOSE_SELECT_CHOICES = (
     ("Eb", "3 flats"),
     ("Bb", "2 flats"),
     ("F", "1 flat"),
-    ("C", "0 sharps or flats"),
+    ("C", "0 flats or sharps"),# bug
     ("G", "1 sharp"),
     ("D", "2 sharps"),
     ("A", "3 sharps"),
@@ -207,9 +207,10 @@ class DashboardPlaylistForm(PlaylistForm):
     )
 
     transpose_requests = TransposeRequestsField(
-        label="Transposition requests",
+        label="Transpose requests",
         required=False,
-        help_text="A list of keys, separated by spaces, which the playlist will be transposed to. Upper case letters for major, lower case for minor. Only the key signature matters, meaning that 'A f# Db' has the same result as 'f# A bb'. The key signature in the dropdown will be added to the ones in the text box upon saving.",
+        help_text="List of keys (case-sensitive, space separator)",
+        # help_text="A list of keys, separated by spaces, which the playlist will be transposed to. Upper case letters for major, lower case for minor. Only the key signature matters, meaning that 'A f# Db' has the same result as 'f# A bb'. The key signature in the dropdown will be added to the ones in the text box upon saving.",
         widget=CustomTransposeWidget,
     )
 

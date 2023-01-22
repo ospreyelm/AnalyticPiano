@@ -85,7 +85,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         max_length=60,
         blank=True,
         null=True,
-        help_text="Brief description showed to authors in the exercise dashboard table.",
+        help_text="Brief description for your reference only; not seen by others.",
     )
     data = RawJSONField("Data")
     rhythm = models.CharField(
@@ -93,7 +93,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         max_length=255,
         blank=True,
         null=True,
-        help_text="Length of each chord in this exercise. w for a whole note, H for a dotted half note, h for a half note, and q for a quarter note. For example, if your exercise has five chords and you want it to span exactly two bars, you could input: 'H q h q q'.",
+        help_text="Duration of each chord: w h q or 1 2 4 for whole, half, quarter; W H Q for dotted whole, half, quarter respectively.",
     )
     time_signature = models.CharField(
         "Meter",
@@ -101,7 +101,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         blank=True,
         null=True,
         default="",
-        help_text="Time signature for this exercise. E.g. 3/4",
+        help_text="Enter a numerical time signature: two numbers separated by a slash",
     )
     authored_by = models.ForeignKey(
         "accounts.User",
@@ -112,7 +112,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     is_public = models.BooleanField(
         "Commons",
         default=False,
-        help_text="Sharing your exercise will allow other users to include it in their playlists. Doing so will make your email visible to people looking to use this exercise.",
+        help_text="Check to share your exercise with other users of this site: allow them to include the exercise in their playlists and see your email address.",
     )
 
     locked = models.BooleanField("Locked", default=False)
@@ -288,7 +288,7 @@ def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
 
 class Playlist(ClonableModelMixin, BaseContentModel):
     id = models.CharField("ID", unique=True, max_length=16, null=True)
-    is_auto = models.BooleanField("Is Auto Playlist", default=False)
+    is_auto = models.BooleanField("Auto-generated", default=False)
 
     name = models.CharField(
         "Name",
@@ -333,11 +333,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     TRANSPOSE_PLAYLIST_SHUFFLE = "Playlist Shuffle"
     TRANSPOSE_OFF = None
     TRANSPOSE_TYPE_CHOICES = (
+        (TRANSPOSE_OFF, TRANSPOSE_OFF),
         (TRANSPOSE_EXERCISE_LOOP, TRANSPOSE_EXERCISE_LOOP),
         (TRANSPOSE_PLAYLIST_LOOP, TRANSPOSE_PLAYLIST_LOOP),
         # (TRANSPOSE_EXERCISE_SHUFFLE, TRANSPOSE_EXERCISE_SHUFFLE),
         # (TRANSPOSE_PLAYLIST_SHUFFLE, TRANSPOSE_PLAYLIST_SHUFFLE),
-        (TRANSPOSE_OFF, TRANSPOSE_OFF),
     )
     transposition_type = models.CharField(
         "Transposition Types",
@@ -513,6 +513,16 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     def __str__(self):
         return self.name
+
+    def get_previous_authored_playlist(self):
+        return Playlist.objects.filter(
+            authored_by=self.authored_by, created__lt=self.created
+        ).last()
+
+    def get_next_authored_playlist(self):
+        return Playlist.objects.filter(
+            authored_by=self.authored_by, created__gt=self.created
+        ).first()
 
     def save(self, *args, **kwargs):
         if not self._id:

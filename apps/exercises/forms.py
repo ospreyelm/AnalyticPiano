@@ -300,32 +300,33 @@ class ExerciseForm(forms.ModelForm):
         choices=TYPE_CHOICES,
         widget=forms.RadioSelect(),
         required=False,
-        help_text="The criteria by which the exercise will be graded. Matching means pitches must exactly match, analytical means that chords must satisfy the analysis displayed, with the same bass, and figured bass means the performance must be in the same register. Pitch class checking indicates to the user, upon error, which specific notes of a chord are wrong.",
+        help_text="Assessment method for the user input. Matching means pitches must exactly match, analytical means that chords must satisfy the analysis displayed, with the same bass, and figured bass means the performance must be in the same register. Pitch class checking indicates pitch errors to the user via colored noteheads.",
     )
     staff_distribution = forms.ChoiceField(
         choices=DISTRIBUTION_CHOICES,
         widget=forms.RadioSelect(),
         required=False,
-        help_text="The staff(s) that the exercise will be displayed on. Lower/upper staff bias determines which staff middle tones (e.g. middle C) will be displayed on.",
+        help_text="The staff or staves that the notes will be displayed on. Bias affects the break point and the favored staff for single pitches in the mid-range.",
     )
     time_signature = forms.CharField(
-        required=False, help_text="Time signature for this exercise. E.g. '3/4'"
+        required=False,
+        help_text="Enter a numerical time signature: two numbers separated by a slash."
     )
     visibility_pattern = forms.CharField(
         required=False,
-        help_text="Visibility for each chord. * for all pitches, - for none, s for soprano, b for bass. For an SATB exercise of five chords, for instance, show the entire first chord but only the bass of the remaining chords via the input '* b b b b'.",
+        help_text="Visibility pattern of each chord: * for all pitches, - for none, s for soprano, b for bass.",
     )
 
     field_order = [
         "id",
         "description",
+        "is_public",
         "rhythm",
         "visibility_pattern",
         "time_signature",
         "intro_text",
         "type",
         "staff_distribution",
-        "is_public",
     ]
 
     def __init__(self, *arg, **kwargs):
@@ -400,6 +401,16 @@ class PlaylistForm(forms.ModelForm):
             "is_auto": forms.CheckboxInput(attrs={"readonly": "readonly"}),
             "authored_by": forms.TextInput(attrs={"readonly": "readonly"}),
         }
+
+    field_order = [
+        "id",
+        "name",
+        "is_public",
+        "is_auto",
+        "transposition_type",
+        "transpose_requests",
+        "exercises",
+    ]
 
 
 class CourseForm(forms.ModelForm):
