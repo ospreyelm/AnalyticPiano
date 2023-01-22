@@ -154,11 +154,10 @@ class ExpansiveForm(forms.ModelForm):
 
 # Taken from deprecated music_controls.js prompt form
 def parse_visibility(visibility_pattern, instance):
-    visibility_reqs = (
-        ["none"]
-        if visibility_pattern == "-"
-        else re.sub("/[^satbo*-]/gi", "", visibility_pattern).split(" ")
-    )
+    visibility_reqs = [x for x in re.sub("/[^satbo*-]/gi", "", visibility_pattern)]
+    # the permitted characters above must correspond to the logical tests below
+    if len(visibility_reqs) < 1:
+        visibility_reqs = (["none"])
     newdata = deepcopy(instance.data)
     flsb = newdata["chord"] # flsb stood for visibility models "first, last, soprano, bass"
 
@@ -169,9 +168,10 @@ def parse_visibility(visibility_pattern, instance):
     #         flsb[i]["visible"] = []
 
     for i in range(len(flsb)):
-        viz_label = visibility_reqs[i] if i < len(visibility_reqs) else None
+        default_viz_label = "*"
+        viz_label = visibility_reqs[i] if i < len(visibility_reqs) else default_viz_label
         if not viz_label:
-            break
+            viz_label = default_viz_label
         if viz_label == "*":
             flsb[i]["visible"] += flsb[i]["hidden"]
             flsb[i]["hidden"] = []
