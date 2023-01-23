@@ -44,10 +44,7 @@ def playlist_add_view(request):
             playlist = form.save(commit=False)
             for exercise in form.cleaned_data["exercises"]:
                 if exercise not in playlist.exercises.all():
-                    playlist.exercises.add(
-                        exercise,
-                        through_defaults={"order": len(playlist.exercises.all())},
-                    )
+                    playlist.append_exercise(exercise.id)
             playlist.authored_by = request.user
             playlist.save()
             if (
@@ -110,9 +107,12 @@ def playlist_edit_view(request, playlist_id):
     )
     exercises_options.sort(
         key=lambda e: (
-            "0" + str(e.authored_by_id) if (e.authored_by_id != request.user.id) else "1",
+            "0" + str(e.authored_by_id)
+            if (e.authored_by_id != request.user.id)
+            else "1",
             e.id,
-        ), reverse=True
+        ),
+        reverse=True,
     )
 
     context = {
@@ -147,10 +147,8 @@ def playlist_edit_view(request, playlist_id):
                 playlist = form.save(commit=False)
                 added_exercise_id = request.POST.get("exercises_add")
                 if added_exercise_id != "":
-                    playlist.exercises.add(
-                        Exercise.objects.get(id=added_exercise_id),
-                        through_defaults={"order": len(playlist.exercises.all()) + 1},
-                    )
+                    playlist.append_exercise(added_exercise_id)
+
                 handle_m2m(
                     request,
                     "exercises",

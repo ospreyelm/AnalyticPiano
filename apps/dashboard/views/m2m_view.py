@@ -55,15 +55,17 @@ def handle_reorder(
         )
     )
     # this currently assumes only one model's order is changed at any time
+    # TODO: no need to loop thru all orders
     for i in range(0, len(orders_list)):
         prev_order = through_models_list[i].order
-        # this ensures the new order is >= 0 and < the amount of attached models
-        new_order = min(max(int(orders_list[i]), 0), len(orders_list) - 1)
+        # this ensures the new order is >= 1 and <= the amount of attached models
+        new_order = min(max(int(orders_list[i]), 1), len(orders_list))
         if new_order != prev_order:
             if new_order > prev_order:
                 through_models_to_update = ThroughModel.objects.filter(
                     Q(order__lte=new_order, order__gt=prev_order) & Q(**parent_query)
                 )
+                # Possibly roll into previous query to avoid this for loop
                 for through_model in through_models_to_update:
                     through_model.order -= 1
                     through_model.save()
@@ -71,6 +73,7 @@ def handle_reorder(
                 through_models_to_update = ThroughModel.objects.filter(
                     Q(order__lt=prev_order, order__gte=new_order) & Q(**parent_query)
                 )
+                # Possibly roll into previous query to avoid this for loop
                 for through_model in through_models_to_update:
                     through_model.order += 1
                     through_model.save()

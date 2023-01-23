@@ -423,9 +423,10 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return exercises
 
     def append_exercise(self, exercise_id):
+        # TODO: add checks to ensure order integrity
         self.exercises.add(
             Exercise.objects.get(id=exercise_id),
-            through_defaults={"order": len(self.exercises.all())},
+            through_defaults={"order": len(self.exercises.all()) + 1},
         )
         self.save()
 
