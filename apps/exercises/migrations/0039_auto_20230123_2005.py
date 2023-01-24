@@ -60,7 +60,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("exercises", "0030_auto_20221031_2114"),
+        ("exercises", "0038_auto_20230122_0358"),
     ]
 
     operations = [
