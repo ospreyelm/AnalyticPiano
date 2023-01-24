@@ -20,13 +20,14 @@ def forwards(apps, schema_editor):
     Course = apps.get_model("exercises", "Course")
     # User = apps.get_model("accounts", "User")
     db_alias = schema_editor.connection.alias
+    for course in Course.objects.using(db_alias):
+        course.performance_dict = {}
     for pd in PerformanceData.objects.using(db_alias).all():
         performer = str(User.objects.using(db_alias).get(id=pd.user_id))
         for pco in PlaylistCourseOrdered.objects.using(db_alias).filter(
             playlist_id=pd.playlist_id
         ):
             course = Course.objects.using(db_alias).get(_id=pco.course_id)
-            course.performance_dict = {}
             pass_mark = "X"
             if pd.playlist_passed:
                 pass_mark = "P"
