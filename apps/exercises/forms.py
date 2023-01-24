@@ -156,16 +156,14 @@ class ExpansiveForm(forms.ModelForm):
 def parse_visibility(visibility_pattern, instance):
     visibility_reqs = [x for x in re.sub("/[^satbo*-]/gi", "", visibility_pattern)]
     # the permitted characters above must correspond to the logical tests below
-    if len(visibility_reqs) < 1:
-        visibility_reqs = (["none"])
-    newdata = deepcopy(instance.data)
-    flsb = newdata["chord"] # flsb stood for visibility models "first, last, soprano, bass"
 
-    # if len(visibility_reqs) >= 1:
-    #     for i in range(len(flsb)):
-    #         flsb[i]["hidden"] += flsb[i]["visible"]
-    #         flsb[i]["hidden"].sort()
-    #         flsb[i]["visible"] = []
+    if not len(visibility_reqs) >= 0:
+        # necessary as protection against type errors?
+        return instance.data
+
+    newdata = deepcopy(instance.data)
+    flsb = newdata["chord"]
+    # flsb stood for "first, last, soprano, bass"---the originally supported visibility models
 
     for i in range(len(flsb)):
         default_viz_label = "*"
@@ -216,12 +214,8 @@ def parse_visibility(visibility_pattern, instance):
                 )
             flsb[i]["visible"].sort()
 
-    if len(visibility_reqs) >= 0:
-        newdata["chord"] = flsb
-        return newdata
-    else:
-        return instance.data
-
+    newdata["chord"] = flsb
+    return newdata
 
 def represent_visibility(instance): # Not good. What happens for two-to-one mappings?
     chord_data = instance.data["chord"]
@@ -254,7 +248,7 @@ def represent_visibility(instance): # Not good. What happens for two-to-one mapp
                 visibility_pattern += "o"
             else: visibility_pattern += "?"
         else: visibility_pattern += "?"
-        visibility_pattern += " "
+        # visibility_pattern += " "
     return visibility_pattern.strip()
 
 
