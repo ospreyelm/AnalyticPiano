@@ -364,7 +364,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         related_epos = ExercisePlaylistOrdered.objects.filter(playlist=self).order_by(
             "order"
         )
-        sorted_exercise_list = list(map(lambda epo: epo.exercise, related_epos))
+        sorted_exercise_list = list(map(lambda epo: epo.exercise.id, related_epos))
         return sorted_exercise_list
 
     @cached_property
