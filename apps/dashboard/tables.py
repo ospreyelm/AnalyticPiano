@@ -164,7 +164,7 @@ class MyActivityTable(tables.Table):
     playlist_pass_date = tables.columns.DateColumn(
         verbose_name="Pass Date",
         format="Y_m_d • D",
-        orderable=False,# ordering fails
+        orderable=False,  # ordering fails
     )
     view = tables.columns.LinkColumn(
         "dashboard:playlist-performance",
@@ -285,6 +285,7 @@ class ExercisesListTable(tables.Table):
         "lab:exercise-view",
         kwargs={"exercise_id": A("id")},
         text="Preview",
+        attrs={"a": {"target": "_blank"}},
         verbose_name="Preview",
         orderable=False,
     )
