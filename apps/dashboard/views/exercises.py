@@ -109,12 +109,17 @@ def exercise_edit_view(request, exercise_id):
                 ## ^ original authorship of exercise should not change
                 exercise.save()
 
-            if "save-and-continue" in request.POST:
+            if (
+                "save-and-continue" in request.POST
+                or "save-and-preview" in request.POST
+            ):
                 success_url = reverse(
                     "dashboard:edit-exercise", kwargs={"exercise_id": exercise.id}
                 )
                 messages.add_message(
-                    request, messages.SUCCESS, f"{context['verbose_name']} saved"
+                    request,
+                    messages.SUCCESS,
+                    f"{context['verbose_name']} has been saved successfully.",
                 )
             elif "save-and-edit-previous" in request.POST:
                 success_url = reverse(
