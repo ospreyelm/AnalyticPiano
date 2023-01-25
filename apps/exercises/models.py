@@ -697,7 +697,7 @@ class Course(ClonableModelMixin, BaseContentModel):
     @cached_property
     def published_playlists(self):
         return self.playlists.all().filter(
-            playlistcourseordered__publish_date__lt=date.today()
+            playlistcourseordered__publish_date__lte=date.today()
         )
 
     def get_due_date(self, playlist):
