@@ -679,7 +679,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
         return {
             Playlist.objects.get(_id=pco.playlist_id).id: pco.publish_date.astimezone(
-                settings.TIME_ZONE
+                pytz.timezone(settings.TIME_ZONE) # ok?
             )
             for pco in pco_list
         }
@@ -690,7 +690,7 @@ class Course(ClonableModelMixin, BaseContentModel):
             course_id=self._id
         ).select_related("playlist")
         return {
-            pco.playlist.id: pco.due_date.astimezone(settings.TIME_ZONE)
+            pco.playlist.id: pco.due_date.astimezone(pytz.timezone(settings.TIME_ZONE)) # ok?
             for pco in pco_list
         }
 
@@ -929,9 +929,9 @@ class PerformanceData(models.Model):
             playlist_length=len(self.playlist.exercise_list),
             reformat=False,
         )
-        pass_date = datetime.datetime.strptime(pass_date_str, "%Y-%m-%d %H:%M:%S")
+        pass_date = datetime.datetime.strptime(pass_date_str, "%Y-%m-%d %H:%M:%S").astimezone(pytz.timezone('UTC'))
         # for now just localize to time zone setting
-        return pass_date.astimezone(settings.TIME_ZONE)
+        return pass_date.astimezone(pytz.timezone(settings.TIME_ZONE))
 
 
 @receiver(post_save, sender=Exercise)
