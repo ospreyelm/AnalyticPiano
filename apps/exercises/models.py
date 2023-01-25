@@ -679,7 +679,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
         return {
             Playlist.objects.get(_id=pco.playlist_id).id: pco.publish_date.astimezone(
-                pytz.timezone(settings.TIME_ZONE) # ok?
+                settings.TIME_ZONE # ok?
             )
             for pco in pco_list
         }
@@ -690,7 +690,7 @@ class Course(ClonableModelMixin, BaseContentModel):
             course_id=self._id
         ).select_related("playlist")
         return {
-            pco.playlist.id: pco.due_date.astimezone(pytz.timezone(settings.TIME_ZONE)) # ok?
+            pco.playlist.id: pco.due_date.astimezone(settings.TIME_ZONE) # ok?
             for pco in pco_list
         }
 
