@@ -31,7 +31,7 @@ class CoursePageTable(tables.Table):
         verbose_name="Playlist Author",
         orderable=True,
     )
-    completion = PlaylistActivityColumn(verbose_name="Completion", orderable=True)
+    # completion = PlaylistActivityColumn(verbose_name="Completion", orderable=True)
 
     class Meta:
         attrs = {"class": "paleblue"}
