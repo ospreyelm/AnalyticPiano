@@ -923,13 +923,13 @@ class PerformanceData(models.Model):
     def get_local_pass_date(self):
         from apps.dashboard.views.performance import playlist_pass_date
 
-        pass_date = playlist_pass_date(
+        pass_date_str = playlist_pass_date(
             exercise_list=self.playlist.exercise_list,
             exercises_data=self.data,
             playlist_length=len(self.playlist.exercise_list),
             reformat=False,
         )
-        # pass_date = datetime.datetime.strptime(pass_date, "%Y-%m-%d %H:%M:%S")
+        pass_date = datetime.datetime.strptime(pass_date_str, "%Y-%m-%d %H:%M:%S")
         # for now just localize to time zone setting
         return pass_date.astimezone(settings.TIME_ZONE)
 
