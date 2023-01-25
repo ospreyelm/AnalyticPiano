@@ -65,6 +65,7 @@ def playlist_pass_bool(exercise_list, exercises_data, playlist_length):
     return playlist_pass
 
 
+# Reconsider this: doesn't properly utilize timezone data struct or pytz methods
 def localtime(
     timestamp="2000-01-01 13:00:00", format="%Y_%m_%d • %a", locality="US/Eastern"
 ):

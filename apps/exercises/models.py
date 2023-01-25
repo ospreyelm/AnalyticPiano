@@ -678,7 +678,9 @@ class Course(ClonableModelMixin, BaseContentModel):
     def publish_dates_dict(self):
         pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
         return {
-            Playlist.objects.get(_id=pco.playlist_id).id: pco.publish_date
+            Playlist.objects.get(_id=pco.playlist_id).id: pco.publish_date.astimezone(
+                settings.TIME_ZONE
+            )
             for pco in pco_list
         }
 
@@ -687,7 +689,10 @@ class Course(ClonableModelMixin, BaseContentModel):
         pco_list = PlaylistCourseOrdered.objects.filter(
             course_id=self._id
         ).select_related("playlist")
-        return {pco.playlist.id: pco.due_date for pco in pco_list}
+        return {
+            pco.playlist.id: pco.due_date.astimezone(settings.TIME_ZONE)
+            for pco in pco_list
+        }
 
     @cached_property
     def published_playlists(self):
@@ -699,7 +704,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         tz_naive = PlaylistCourseOrdered.objects.get(
             Q(playlist_id=playlist._id, course_id=self._id)
         ).due_date
-        return pytz.timezone(settings.TIME_ZONE).localize(tz_naive)
+        return tz_naive.astimezone(pytz.timezone(settings.TIME_ZONE))
 
 
 class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
@@ -838,11 +843,9 @@ class PerformanceData(models.Model):
 
             if pd.playlist_passed:
                 pass_mark = "P"
-                due_date = pco.due_date.replace(tzinfo=pytz.utc).astimezone(
-                    pytz.timezone(settings.TIME_ZONE)
-                )
+                due_date = pco.due_date.astimezone(pytz.timezone(settings.TIME_ZONE))
                 if due_date:
-                    pass_date = pd.get_local_pass_date
+                    pass_date = pd.get_local_pass_date()
                     if due_date < pass_date:
                         diff = pass_date - due_date
                         days, seconds = diff.days, diff.seconds
@@ -926,8 +929,9 @@ class PerformanceData(models.Model):
             playlist_length=len(self.playlist.exercise_list),
             reformat=False,
         )
-        pass_date = datetime.datetime.strptime(pass_date, "%Y-%m-%d %H:%M:%S")
-        return pytz.timezone(settings.TIME_ZONE).localize(pass_date)
+        # pass_date = datetime.datetime.strptime(pass_date, "%Y-%m-%d %H:%M:%S")
+        # for now just localize to time zone setting
+        return pass_date.astimezone(settings.TIME_ZONE)
 
 
 @receiver(post_save, sender=Exercise)

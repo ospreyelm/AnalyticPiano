@@ -1,7 +1,9 @@
 from copy import copy
 import datetime
+import pytz
 
 from django.db.models import Q
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -185,11 +187,14 @@ def course_edit_view(request, course_id):
                 if due_dates[i] != "":
                     current_pco.due_date = datetime.datetime.strptime(
                         due_dates[i], "%Y-%m-%d"
+                    ).astimezone(pytz.timezone(settings.TIME_ZONE))
+                    current_pco.due_date = current_pco.due_date.replace(
+                        hour=23, minute=59, second=59
                     )
                 if publish_dates[i] != "":
                     current_pco.publish_date = datetime.datetime.strptime(
                         publish_dates[i], "%Y-%m-%d"
-                    )
+                    ).astimezone(pytz.timezone(settings.TIME_ZONE))
                 current_pco.save()
             handle_m2m(
                 request,
