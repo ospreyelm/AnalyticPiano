@@ -221,7 +221,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         auto_playlist = Playlist.objects.filter(
             authored_by=self.authored_by,
             is_auto=True,
-            updated__gt=now() - timedelta(hours=6),
+            updated__gt=now() - timedelta(hours=8), # capture playlists authored in the last eight hours
         ).last()
         if auto_playlist is None:
             auto_playlist = Playlist.create_auto_playlist(
@@ -577,7 +577,7 @@ class ExercisePlaylistOrdered(ClonableModelMixin, BaseContentModel):
     order = models.IntegerField("Order")
 
     def save(self, *args, **kwargs):
-        if self.order == None:
+        if self.order is None:
             self.order = len(
                 ExercisePlaylistOrdered.objects.filter(
                     Q(exercise=self.exercise) & Q(playlist=self.playlist)
@@ -828,6 +828,7 @@ class PerformanceData(models.Model):
         exercise_data = dict(
             **data, id=exercise_id, performed_at=dateformat.format(now(), "Y-m-d H:i:s")
         )
+        # now() gives UTC time, so that the performance data has integrity around UTC
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
@@ -845,14 +846,20 @@ class PerformanceData(models.Model):
                 due_date = pco.due_date.astimezone(pytz.timezone(settings.TIME_ZONE))
                 if due_date:
                     pass_date = pd.get_local_pass_date()
-                    if due_date < pass_date:
+                    try:
+                        pass_date = pd.get_local_pass_date()
+                    except:
+                        logging.error('Failure with local_pass_date: course activity table may not show lateness accurately')
+                    if pass_date and pass_date > due_date:
                         diff = pass_date - due_date
                         days, seconds = diff.days, diff.seconds
-                        hours = days * 24 + seconds // 3600
-                        if hours >= 6:
+                        hours = days * 24 + seconds // 3600 # built-in grace period of up to one hour
+                        if hours > 0: # grace period should be a course property
                             pass_mark = "T"
-                        if days >= 7:
+                            # 0 hrs <= late interval < 1 week
+                        if days >= 5: # tardy-late watershed should also be a course property
                             pass_mark = "L"
+                            # late >= 1 week
             if not (performer in course.performance_dict):
                 course.performance_dict[performer] = {"time_elapsed": 0}
             course.performance_dict[performer][pco.order] = pass_mark
@@ -918,7 +925,7 @@ class PerformanceData(models.Model):
                 error_count = exercise["exercise_error_tally"]
         return error_count
 
-    @cached_property
+    # @cached_property # this being a cached property caused the function call to fail
     def get_local_pass_date(self):
         from apps.dashboard.views.performance import playlist_pass_date
 
@@ -926,8 +933,9 @@ class PerformanceData(models.Model):
             exercise_list=self.playlist.exercise_list,
             exercises_data=self.data,
             playlist_length=len(self.playlist.exercise_list),
-            reformat=False,
+            make_concise_and_localize=False,
         )
+        # UTC is assumed here since the performed_at property is written to the performance database per UTC
         pass_date = datetime.strptime(pass_date_str, "%Y-%m-%d %H:%M:%S").astimezone(pytz.timezone('UTC'))
         # for now just localize to time zone setting
         return pass_date.astimezone(pytz.timezone(settings.TIME_ZONE))

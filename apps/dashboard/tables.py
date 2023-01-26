@@ -214,7 +214,7 @@ class MyActivityDetailsTable(tables.Table):
         "lab:playlist-view",
         kwargs={"course_id": A("course_id") or None, "playlist_id": A("playlist_id")},
         text="Play",
-        verbose_name="Play",
+        verbose_name="Link",
         orderable=False,
     )
     id = tables.columns.Column(
@@ -230,11 +230,11 @@ class MyActivityDetailsTable(tables.Table):
         attrs={"td": {"bgcolor": "lightgray"}},
     )
     exercise_count = tables.columns.Column(
-        verbose_name="Tally of completions (incl. repeats)",
+        verbose_name="Tally", # tally of completions, including repeats
         orderable=False,
     )
     playing_time = tables.columns.Column(
-        verbose_name="Playing time",
+        verbose_name="Time",
         orderable=False,
     )
     playlist_pass_bool = tables.columns.BooleanColumn(
@@ -242,7 +242,7 @@ class MyActivityDetailsTable(tables.Table):
         orderable=False,
     )
     playlist_pass_date = tables.columns.Column(
-        verbose_name="Pass date",
+        verbose_name="... on date",
         orderable=False,
     )
 
@@ -272,6 +272,7 @@ class MyActivityDetailsTable(tables.Table):
             "id",
             "course_id",
             "exercise_count",
+            "playing_time",
         )
 
 
