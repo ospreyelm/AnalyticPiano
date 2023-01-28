@@ -192,7 +192,7 @@ def playlist_edit_view(request, playlist_id):
                 epos = ExercisePlaylistOrdered.objects.filter(playlist_id=playlist._id)
                 playlist.pk = None
                 playlist.id = None
-                playlist.name = playlist.name[0:22] + "... (copy)" # account for max_length of playlist.name
+                playlist.name = playlist.name[0:25] + " (copy)" # account for max_length of playlist.name
                 playlist.save()
                 for epo in epos:
                     exercise_to_add = Exercise.objects.get(_id=epo.exercise_id)

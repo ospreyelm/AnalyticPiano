@@ -384,7 +384,8 @@ class PlaylistForm(forms.ModelForm):
         choices=Playlist.TRANSPOSE_TYPE_CHOICES,
         widget=forms.RadioSelect(),
         required=False,
-        help_text="Determines order of transposed exercises. Exercise Loop means that each exercise will have its transposed versions come after it successively. Playlist Loop means that the entire playlist will come in its original key, followed successively by the playlist's transposed versions.",
+        label="Transposition method",
+        help_text="",
     )
 
     class Meta:

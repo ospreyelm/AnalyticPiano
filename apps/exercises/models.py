@@ -291,7 +291,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     name = models.CharField(
         "Name",
-        max_length=32,
+        max_length=64,
     )
     authored_by = models.ForeignKey(
         "accounts.User",
@@ -326,15 +326,15 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         verbose_name="Transpose requests",
     )
 
+    TRANSPOSE_OFF = None
     TRANSPOSE_EXERCISE_LOOP = "Exercise Loop"
     TRANSPOSE_PLAYLIST_LOOP = "Playlist Loop"
     TRANSPOSE_EXERCISE_SHUFFLE = "Exercise Shuffle"
     TRANSPOSE_PLAYLIST_SHUFFLE = "Playlist Shuffle"
-    TRANSPOSE_OFF = None
     TRANSPOSE_TYPE_CHOICES = (
-        (TRANSPOSE_OFF, TRANSPOSE_OFF),
-        (TRANSPOSE_EXERCISE_LOOP, TRANSPOSE_EXERCISE_LOOP),
-        (TRANSPOSE_PLAYLIST_LOOP, TRANSPOSE_PLAYLIST_LOOP),
+        (TRANSPOSE_OFF, "No transposition"),
+        (TRANSPOSE_EXERCISE_LOOP, "Loop keys for each exercise"),
+        (TRANSPOSE_PLAYLIST_LOOP, "Loop exercises for each key"),
         # (TRANSPOSE_EXERCISE_SHUFFLE, TRANSPOSE_EXERCISE_SHUFFLE),
         # (TRANSPOSE_PLAYLIST_SHUFFLE, TRANSPOSE_PLAYLIST_SHUFFLE),
     )
@@ -344,7 +344,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         choices=TRANSPOSE_TYPE_CHOICES,
         blank=True,
         null=True,
-        help_text="Determines order of transposed exercises. Exercise Loop means that each exercise will have its transposed versions come after it successively. Playlist Loop means that the entire playlist will come in its original key, followed successively by the playlist's transposed versions.",
+        help_text="Apply transposition operations to the list of exercises.",
     )
     is_public = models.BooleanField(
         "Commons",

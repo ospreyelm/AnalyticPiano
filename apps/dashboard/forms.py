@@ -207,9 +207,9 @@ class DashboardPlaylistForm(PlaylistForm):
     )
 
     transpose_requests = TransposeRequestsField(
-        label="Transpose requests",
+        label="Keys for transposition",
         required=False,
-        help_text="List of keys (case-sensitive, space separator)",
+        help_text="List of keys, case-sensitive and space-separated",
         # help_text="A list of keys, separated by spaces, which the playlist will be transposed to. Upper case letters for major, lower case for minor. Only the key signature matters, meaning that 'A f# Db' has the same result as 'f# A bb'. The key signature in the dropdown will be added to the ones in the text box upon saving.",
         widget=CustomTransposeWidget,
     )

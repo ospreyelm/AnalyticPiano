@@ -24,7 +24,7 @@ class LTICourse(models.Model):
 
 
 class Unit(models.Model):
-    name = models.CharField("Name", max_length=32)
+    name = models.CharField("Name", max_length=64)
 
     # TODO this field should be mandatory in the future
     course = models.ForeignKey(

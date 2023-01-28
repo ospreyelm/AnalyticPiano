@@ -136,6 +136,7 @@ def exercise_edit_view(request, exercise_id):
             elif "duplicate" in request.POST:
                 exercise.pk = None
                 exercise.id = None
+                exercise.locked = False
                 exercise.save()
                 return redirect("dashboard:edit-exercise", exercise.id)
             else:

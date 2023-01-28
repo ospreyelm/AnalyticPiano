@@ -241,12 +241,13 @@ def course_edit_view(request, course_id):
                     messages.SUCCESS,
                     f"{context['verbose_name']} has been saved successfully.",
                 )
-            elif "duplicate" in request.POST:
+            elif "duplicate" in request.POST and False:
                 visible_to_groups = course.visible_to.all()
                 pcos = PlaylistCourseOrdered.objects.filter(course_id=course._id)
                 course.pk = None
                 course.id = None
-                course.title = course.title[0:54] + "... (copy)" # account for max_length of course.title
+                course.performance_dict = {}
+                course.title = course.title[0:57] + " (copy)" # account for max_length of course.title
                 course.save()
                 for group in visible_to_groups:
                     course.visible_to.add(group)
