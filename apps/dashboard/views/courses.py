@@ -1,6 +1,7 @@
 from copy import copy
 import datetime
 import pytz
+import re
 
 from django.db.models import Q
 from django.conf import settings
@@ -321,7 +322,7 @@ def course_activity_view(request, course_id):
     performance_dict = course.performance_dict
     data = {
         performer: {
-            "subscriber": performer,
+            "subscriber": performer, # n.b. not a string!
             "subscriber_name": performer.get_full_name(),
             "groups": ", ".join(
                 [
@@ -335,15 +336,32 @@ def course_activity_view(request, course_id):
         }
         for performer in subscribers
     }
+    # performance dictionary must be refactored to use playlist IDs !!
+
+    # omit subscribers who have zero performances for this playlist
+    relevant_data = { key:value for (key,value) in data.items() if len(value.keys()) > 3 }
+
+    # get playlist keys
+    relevant_data_keys_per_performer = [value.keys() for (key,value) in relevant_data.items()]
+    compiled_playlist_keys = []
+    for i in range(0, len(relevant_data_keys_per_performer)):
+        playlist_keys = [key for key in relevant_data_keys_per_performer[i] if re.match('^[0-9]+$', key)]
+        for i in range(0, len(playlist_keys)):
+            if playlist_keys[i] not in compiled_playlist_keys:
+                compiled_playlist_keys += playlist_keys[i]
+
+    # first debug idea, not thorough enough
+    # max_playlists_per_performer = max([0, max([len(value.keys()) for value in data.values()]) - 4])
 
     table = CourseActivityTable(
         data=data.values(),
         extra_columns=[
             (
                 str(idx),
-                PlaylistActivityColumn(verbose_name=str(idx + 1), orderable=True),
+                PlaylistActivityColumn(verbose_name=str(idx), orderable=True),
             )
-            for idx in range(0, len(playlists))
+            for idx in sorted(compiled_playlist_keys)
+            # for idx in range(1, len(playlists) + 1) # <-- correct simple implementation if courses were never edited and the order value began at 1
         ],
     )
 

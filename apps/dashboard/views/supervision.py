@@ -13,7 +13,7 @@ from apps.dashboard.tables import (
     SupervisorsTable,
     SubscribersTable,
     CoursesListTable,
-    SupervisorsCoursesListTable,
+    AvailableCoursesTable,
 )
 from apps.dashboard.views.performance import User
 from apps.exercises.models import Course
@@ -74,7 +74,7 @@ def supervisors_courses_view(request):
         authored_by__in=approved_supervisors,
     ).distinct()
 
-    supervisors_courses_table = SupervisorsCoursesListTable(supervisors_courses)
+    supervisors_courses_table = AvailableCoursesTable(supervisors_courses)
     RequestConfig(request).configure(supervisors_courses_table)
 
     return render(

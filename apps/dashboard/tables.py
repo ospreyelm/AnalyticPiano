@@ -443,7 +443,7 @@ class CoursesListTable(tables.Table):
         template_name = "django_tables2/bootstrap4.html"
 
 
-class SupervisorsCoursesListTable(tables.Table):
+class AvailableCoursesTable(tables.Table):
     title = tables.columns.Column(
         verbose_name="Title of Course",
     )
@@ -517,7 +517,7 @@ class CourseActivityTable(tables.Table):
     # TODO: make everything orderable again
     subscriber_name = tables.columns.Column(verbose_name="Subscriber")
     # groups = tables.columns.Column(verbose_name="Group(s)")
-    time_elapsed = tables.columns.Column(verbose_name="Cumulative Time (minutes)")
+    time_elapsed = tables.columns.Column(verbose_name="Cumulative Time")
     result_count = tables.columns.Column(
         verbose_name="Totaled Results",
         empty_values=(()),
@@ -533,7 +533,13 @@ class CourseActivityTable(tables.Table):
         sequence = ["subscriber_name", "time_elapsed", "..."]
 
     def render_time_elapsed(self, value):
-        return round(value / 60, 2)
+        try:
+            hours_elapsed = value // 3600
+        except:
+            return ""
+        mins_remainder = round((value - 3600 * hours_elapsed) / 60, (1 if hours_elapsed == 0 else 0))
+        readout_of_time_elapsed = (str(hours_elapsed) + "h " if hours_elapsed > 0 else "") + str(mins_remainder) + "m"
+        return readout_of_time_elapsed
 
     def render_result_count(self, record):
         result_count = {"P": 0, "T": 0, "L": 0, "X": 0}
