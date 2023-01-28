@@ -354,7 +354,7 @@ def course_activity_view(request, course_id):
     # max_playlists_per_performer = max([0, max([len(value.keys()) for value in data.values()]) - 4])
 
     table = CourseActivityTable(
-        data=data.values(),
+        data=relevant_data.values(),
         extra_columns=[
             (
                 str(idx),
