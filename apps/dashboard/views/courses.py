@@ -324,6 +324,8 @@ def course_activity_view(request, course_id):
         performer: {
             "subscriber": performer, # n.b. not a string!
             "subscriber_name": performer.get_full_name(),
+            "subscriber_last_name": performer.last_name,
+            "subscriber_first_name": performer.first_name,
             "groups": ", ".join(
                 [
                     str(g)

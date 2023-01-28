@@ -486,8 +486,8 @@ def val_to_order(value):
 
 
 p_element = '<span class="true" title="Passed on time"></span>'
-t_element = '<span class="true due-date-hours-exceed" title="Passed hours late"></span>'
-l_element = '<span class="true due-date-days-exceed" title="Passed days late"></span>'
+t_element = '<span class="true due-date-hours-exceed" title="Late"></span>'
+l_element = '<span class="true due-date-days-exceed" title=">1 Week Late"></span>'
 x_element = '<span class="true did-not-finish" title="Did not finish"></span>'
 # n_element = '<span class="true did-not-start" title="Did not start"></span>'
 
@@ -515,7 +515,9 @@ class PlaylistActivityColumn(columns.Column):
 
 class CourseActivityTable(tables.Table):
     # TODO: make everything orderable again
-    subscriber_name = tables.columns.Column(verbose_name="Subscriber")
+    # subscriber_name = tables.columns.Column(verbose_name="Subscriber")
+    subscriber_first_name = tables.columns.Column(verbose_name="Given name")
+    subscriber_last_name = tables.columns.Column(verbose_name="Surname")
     # groups = tables.columns.Column(verbose_name="Group(s)")
     time_elapsed = tables.columns.Column(verbose_name="Cumulative Time")
     result_count = tables.columns.Column(
@@ -530,7 +532,7 @@ class CourseActivityTable(tables.Table):
         attrs = {"class": "paleblue"}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
-        sequence = ["subscriber_name", "time_elapsed", "..."]
+        sequence = ["subscriber_first_name", "subscriber_last_name", "time_elapsed", "..."]
 
     def render_time_elapsed(self, value):
         try:
@@ -547,7 +549,7 @@ class CourseActivityTable(tables.Table):
             if value in result_count:
                 result_count[value] += 1
         return format_html(
-            f"{p_element}: {result_count['P']}  {t_element}: {result_count['T']}<br/> {l_element}: {result_count['L']} {x_element}: {result_count['X']}"
+            f"{p_element}: {result_count['P']}  {t_element}: {result_count['T']}  {l_element}: {result_count['L']} {x_element}: {result_count['X']}"
         )
 
 

@@ -128,7 +128,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_full_name(self):
         name_is_set = self.first_name and self.last_name
-        return f"{self.first_name} {self.last_name}" if name_is_set else "NOT SET"
+        return f"{self.first_name} {self.last_name}" if name_is_set else "[anonymous]"
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         send_mail(subject, message, from_email, [self.email], **kwargs)
