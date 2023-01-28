@@ -831,48 +831,57 @@ class PerformanceData(models.Model):
         pd.full_clean()
         pd.save()
 
-        if course_id:
-            pco = PlaylistCourseOrdered.objects.get(
-                course_id=course_id, playlist_id=playlist_id
-            )
-            course = Course.objects.get(_id=course_id)
-            performer = str(User.objects.get(id=user_id))
-            pass_mark = "X"
+        try:
+            if course_id:
+                pco = PlaylistCourseOrdered.objects.get(
+                    course_id=course_id, playlist_id=playlist_id
+                )
+                course = Course.objects.get(_id=course_id)
+                performer = str(User.objects.get(id=user_id))
+                pass_mark = "X"
 
-            if pd.playlist_passed:
-                pass_mark = "P"
-                try:
-                    due_date = pco.due_date.astimezone(pytz.timezone(settings.TIME_ZONE))
-                except:
-                    due_date = False
-                if due_date:
-                    pass_date = pd.get_local_pass_date()
+                if pd.playlist_passed:
+                    pass_mark = "C"
+                    try:
+                        due_date = pco.due_date.astimezone(pytz.timezone(settings.TIME_ZONE))
+                    except:
+                        due_date = False
                     try:
                         pass_date = pd.get_local_pass_date()
                     except:
-                        logging.error('Failure with local_pass_date: course activity table may not show lateness accurately')
-                    if pass_date and pass_date > due_date:
-                        diff = pass_date - due_date
-                        days, seconds = diff.days, diff.seconds
-                        hours = days * 24 + seconds // 3600 # built-in grace period of up to one hour
-                        if hours > 0: # grace period should be a course property
-                            pass_mark = "T"
-                            # 0 hrs <= late interval < 1 week
-                        if days >= 5: # tardy-late watershed should also be a course property
+                        pass_date = False
+                        logging.error('Failed to get local_pass_date, so course activity table may not show lateness accurately.')
+                    if due_date and pass_date:
+                        if pass_date <= due_date:
+                            pass_mark = "P"
+                        if pass_date > due_date:
                             pass_mark = "L"
-                            # late >= 1 week
-            if not (performer in course.performance_dict):
-                course.performance_dict[performer] = {"time_elapsed": 0}
-            course.performance_dict[performer][pco.order] = pass_mark
-            for exercise_data in pd.data:
-                course.performance_dict[performer]["time_elapsed"] += int(
-                    exercise_data["exercise_duration"]
-                )
-            course.save()
+                            diff = pass_date - due_date
+                            days, seconds = diff.days, diff.seconds
+                            hours = days * 24 + seconds // 3600
+                            if hours == 0:
+                                pass_mark = "P"
+                                # grace period of up to 59 minutes
+                            elif hours < 5 * 24:
+                                pass_mark = "T"
+                                # tardy category
+                if not (performer in course.performance_dict):
+                    course.performance_dict[performer] = {"time_elapsed": 0}
+                course.performance_dict[performer][pco.order] = pass_mark
+                for exercise_data in pd.data:
+                    course.performance_dict[performer]["time_elapsed"] += int(
+                        exercise_data["exercise_duration"]
+                    )
+                course.save()
+        except:
+            logging.error("Failed to save course performance dictionary but proceeding to return performance data.")
+
+        # the slicing of exercise_id ensures exercises are locked when performed in transposition
         exercise = Exercise.objects.get(id=exercise_id[0:6])
         if exercise.authored_by_id != user_id and not exercise.locked:
             exercise.lock()
         return pd
+
 
     @classmethod
     def submit_playlist_performance(cls, playlist_id: int, user_id: int, data: dict):

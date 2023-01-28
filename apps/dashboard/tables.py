@@ -485,17 +485,20 @@ def val_to_order(value):
         return 3
 
 
-p_element = '<span class="true" title="Passed on time"></span>'
-t_element = '<span class="true due-date-hours-exceed" title="Late"></span>'
-l_element = '<span class="true due-date-days-exceed" title=">1 Week Late"></span>'
-x_element = '<span class="true did-not-finish" title="Did not finish"></span>'
+c_element = '<span class="true no-due-date" title="Complete"></span>'
+p_element = '<span class="true on-time" title="On time"></span>'
+t_element = '<span class="true due-date-tardy" title=">=1 Hour Late"></span>'
+l_element = '<span class="true due-date-late" title=">5 Days Late"></span>'
+x_element = '<span class="true did-not-finish" title="Incomplete"></span>'
 # n_element = '<span class="true did-not-start" title="Did not start"></span>'
 
 
 class PlaylistActivityColumn(columns.Column):
     def render(self, value):
         element = "<span></span"
-        if value == "P":
+        if value == "C":
+            element = c_element
+        elif value == "P":
             element = p_element
         elif value == "T":
             element = t_element
@@ -544,12 +547,12 @@ class CourseActivityTable(tables.Table):
         return readout_of_time_elapsed
 
     def render_result_count(self, record):
-        result_count = {"P": 0, "T": 0, "L": 0, "X": 0}
+        result_count = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
         for (key, value) in record.items():
             if value in result_count:
                 result_count[value] += 1
         return format_html(
-            f"{p_element}: {result_count['P']}  {t_element}: {result_count['T']}  {l_element}: {result_count['L']} {x_element}: {result_count['X']}"
+            f"{x_element}: {result_count['X']}  {p_element}: {result_count['P']}  {t_element}: {result_count['T']}  {l_element}: {result_count['L']}  {c_element}: {result_count['C']}"
         )
 
 

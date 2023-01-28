@@ -208,6 +208,7 @@ class PlaylistView(RequirejsView):
             context["playlist_name"] = playlist.name
         else:
             context["playlist_name"] = playlist.id
+            # ^ misleading name for the url variable
 
         exercise_context.update(exercise.data)
         exercise_context.update(

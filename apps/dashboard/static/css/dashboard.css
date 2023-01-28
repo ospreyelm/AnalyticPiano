@@ -323,13 +323,18 @@ ul li input {
   height: 150px;
 }
 
-.due-date-hours-exceed {
-  background-image: url(../img/hours-exceed.png) !important;
+.no-due-date {
+  background-image: url(../img/complete.png) !important;
   background-size: contain;
 }
 
-.due-date-days-exceed {
-  background-image: url(../img/days-exceed.png) !important;
+.due-date-tardy {
+  background-image: url(../img/tardy.png) !important;
+  background-size: contain;
+}
+
+.due-date-late {
+  background-image: url(../img/late.png) !important;
   background-size: contain;
 }
 
