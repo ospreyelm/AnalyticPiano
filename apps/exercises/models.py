@@ -841,7 +841,10 @@ class PerformanceData(models.Model):
 
             if pd.playlist_passed:
                 pass_mark = "P"
-                due_date = pco.due_date.astimezone(pytz.timezone(settings.TIME_ZONE))
+                try:
+                    due_date = pco.due_date.astimezone(pytz.timezone(settings.TIME_ZONE))
+                except:
+                    due_date = False
                 if due_date:
                     pass_date = pd.get_local_pass_date()
                     try:
@@ -869,7 +872,6 @@ class PerformanceData(models.Model):
         exercise = Exercise.objects.get(id=exercise_id[0:6])
         if exercise.authored_by_id != user_id and not exercise.locked:
             exercise.lock()
-
         return pd
 
     @classmethod
