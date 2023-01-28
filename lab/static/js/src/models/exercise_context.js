@@ -617,6 +617,11 @@ define([
           ? String((offset * -1) / 60)
           : "+" + String((offset * -1) / 60));
 
+      if (this.definition.exercise.performing_course == null) {
+        console.log('No course context found.');
+        return null;
+      }
+
       var idx = this.definition
         .getExerciseList()
         .reduce(function (selected, current, index) {
@@ -624,6 +629,7 @@ define([
         }, -1);
 
       if (!this.definition.getExerciseList()[idx]) {
+        console.log('Error: failed call of getExerciseList in compileExerciseReport');
         return null;
       }
 
@@ -690,7 +696,8 @@ define([
     },
     submitExerciseReport: function () {
       if (this.compileExerciseReport() == null) {
-        console.log("Outside of a playlist. No data submitted.");
+        console.log("Outside the context of a course and playlist. No data performance submitted.");
+        window.alert("Outside the context of a course and playlist. No data performance submitted.");
         return null;
       }
       const json_data = JSON.stringify(this.compileExerciseReport());

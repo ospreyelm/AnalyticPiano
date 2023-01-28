@@ -136,9 +136,14 @@ def course_edit_view(request, course_id):
 
     playlists_options.sort(
         key=lambda p: (
-            p.authored_by_id if (p.authored_by_id != request.user.id) else -1,
-            p.name,
-        )
+            "1" + str(p.authored_by_id)
+            if (p.authored_by_id != request.user.id)
+            else "0",
+            p.name
+            if (p.authored_by_id != request.user.id)
+            else -p._id,
+        ),
+        reverse=False,
     )
 
     groups_options = list(
