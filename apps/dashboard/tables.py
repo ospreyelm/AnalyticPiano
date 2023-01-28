@@ -552,7 +552,7 @@ class CourseActivityTable(tables.Table):
             if value in result_count:
                 result_count[value] += 1
         return format_html(
-            f"{x_element}: {result_count['X']}  {p_element}: {result_count['P']}  {t_element}: {result_count['T']}  {l_element}: {result_count['L']}  {c_element}: {result_count['C']}"
+            f"{result_count['X']} {x_element} / {result_count['P']} {p_element} / {result_count['T']} {t_element} / {result_count['L']} {l_element} / {result_count['C']} {c_element}"
         )
 
 
