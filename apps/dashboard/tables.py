@@ -537,8 +537,8 @@ class CourseActivityTable(tables.Table):
             hours_elapsed = value // 3600
         except:
             return ""
-        mins_remainder = round((value - 3600 * hours_elapsed) / 60, (1 if hours_elapsed == 0 else 0))
-        readout_of_time_elapsed = (str(hours_elapsed) + "h " if hours_elapsed > 0 else "") + str(mins_remainder) + "m"
+        mins_remainder = (value - 3600 * hours_elapsed) // 60
+        readout_of_time_elapsed = (str(hours_elapsed) + "h " if hours_elapsed > 0 else "> ") + str(mins_remainder) + "m"
         return readout_of_time_elapsed
 
     def render_result_count(self, record):
