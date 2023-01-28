@@ -341,7 +341,7 @@ def course_activity_view(request, course_id):
     # performance dictionary must be refactored to use playlist IDs !!
 
     # omit subscribers who have zero performances for this playlist
-    relevant_data = { key:value for (key,value) in data.items() if len(value.keys()) > 3 }
+    relevant_data = { key:value for (key,value) in data.items() if len(value.keys()) > 5 } # <-- this test must correspond to the number of fields above!!
 
     # get playlist keys
     relevant_data_keys_per_performer = [value.keys() for (key,value) in relevant_data.items()]
