@@ -246,7 +246,7 @@ def course_edit_view(request, course_id):
                 pcos = PlaylistCourseOrdered.objects.filter(course_id=course._id)
                 course.pk = None
                 course.id = None
-                course.title += " (Copy)"
+                course.title = course.title[0:54] + "... (copy)" # account for max_length of course.title
                 course.save()
                 for group in visible_to_groups:
                     course.visible_to.add(group)
