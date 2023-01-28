@@ -25,7 +25,7 @@
             {{ field.label_tag }}
             {% if field.name in form.custom_m2m_fields %}
                 {% with m2m_config=form.custom_m2m_config|getattribute:field.name%}
-                <select {{editing|yesno:",disabled"}} name="{{field.name}}_add" style="width:150px; padding:3px; margin-right:5px">
+                <select {{editing|yesno:",disabled"}} name="{{field.name}}_add" style="width:385px; padding:3px; margin-right:5px">
                   {% if editing %}
                   <option></option>
                   {% for model in m2m_options|getattribute:field.name %}
