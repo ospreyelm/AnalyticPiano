@@ -523,7 +523,7 @@ class CourseActivityTable(tables.Table):
     subscriber_last_name = tables.columns.Column(verbose_name="Surname")
     # groups = tables.columns.Column(verbose_name="Group(s)")
     time_elapsed = tables.columns.Column(
-        verbose_name="Cumulative Time",
+        verbose_name="Time",
         orderable=True,
     )
     result_count = tables.columns.Column(
@@ -532,6 +532,11 @@ class CourseActivityTable(tables.Table):
         attrs={"td": {"style": "min-width:72px"}},
         orderable=False,
     )
+    score = tables.columns.Column(
+        verbose_name="Score",
+        empty_values=(()),
+        orderable=False, # does not work as currently configured
+    )
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
     # )
@@ -539,7 +544,7 @@ class CourseActivityTable(tables.Table):
         attrs = {"class": "paleblue"}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
-        sequence = ["subscriber_first_name", "subscriber_last_name", "time_elapsed", "..."]
+        sequence = ["subscriber_first_name", "subscriber_last_name", "score", "result_count", "time_elapsed", "..."]
 
     def render_time_elapsed(self, value):
         try:
@@ -558,6 +563,17 @@ class CourseActivityTable(tables.Table):
         return format_html(
             f"{result_count['X']} {x_element} / {result_count['P']} {p_element} / {result_count['C']} {c_element} / {result_count['T']} {t_element} / {result_count['L']} {l_element}"
         )
+
+    def render_score(self, record):
+        tardy_credit = 0.8 # should be a variable in the course object
+        late_credit = 0.5 # should be a variable in the course object
+        result_count = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
+        for (key, value) in record.items():
+            if value in result_count:
+                result_count[value] += 1
+        score = result_count['P'] * result_count['C'] + result_count['T'] * tardy_credit * result_count['L'] * late_credit
+        # make this column orderable
+        return score
 
 
 class GroupsListTable(tables.Table):
