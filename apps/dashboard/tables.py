@@ -571,9 +571,9 @@ class CourseActivityTable(tables.Table):
         for (key, value) in record.items():
             if value in result_count:
                 result_count[value] += 1
-        score = result_count['P'] * result_count['C'] + result_count['T'] * tardy_credit * result_count['L'] * late_credit
+        score = result_count['P'] + result_count['C'] + result_count['T'] * tardy_credit + result_count['L'] * late_credit
         # make this column orderable
-        return score
+        return round(score, 1)
 
 
 class GroupsListTable(tables.Table):
