@@ -378,16 +378,13 @@ def course_activity_view(request, course_id):
         url_id_to_order[pco[i].playlist.id] = pco[i].order
     compiled_playlist_keys.sort(
         key=lambda p: (
-            int(p)
-            if re.match('^[0-9]+$', p) # order
-            else -1,
-            0 if url_id_to_order[str(p)] else 1,
-            url_id_to_order[str(p)]
-            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) and url_id_to_order[str(p)] # playlist.id of playlists in course
-            else None,
+            int(p) if re.match('^[0-9]+$', p) else -1, # order
+            0 if url_id_to_order.get(str(p)) else 1,
             str(p)
-            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) and not url_id_to_order[str(p)] # playlist.id of playlists not longer in course
-            # show as de-accessioned in the table
+            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) and not url_id_to_order.get(str(p)) # playlist.id of playlists not longer in course
+            else 'O', # show as de-accessioned in the table
+            url_id_to_order[str(p)]
+            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) and url_id_to_order.get(str(p)) # playlist.id of playlists in course
             else None,
         ),
         reverse=False,
