@@ -108,9 +108,7 @@ def course_edit_view(request, course_id):
             "through_id": pco._id,
             "due_date": pco.due_date,
             "publish_date": pco.publish_date,
-            "url_id": playlist.id
-            if playlist.authored_by_id == request.user.id
-            else None,
+            "url_id": playlist.id if playlist.authored_by_id == request.user.id else None,
         }
 
     course = get_object_or_404(Course, id=course_id)
@@ -344,22 +342,51 @@ def course_activity_view(request, course_id):
         }
         for performer in subscribers
     }
-    # performance dictionary must be refactored to use playlist IDs !!
 
-    # omit subscribers who have zero performances for this playlist
-    relevant_data = { key:value for (key,value) in data.items() if len(value.keys()) > 5 } # <-- this test must correspond to the number of fields above!!
+    if len(curr_group_ids) == 0:
+        # omit subscribers who have zero performances for this playlist
+        relevant_data = { key:value for (key,value) in data.items() if len(value.keys()) > 5 }
+        # ^ The test, > 5, must correspond to the number of fields written to data for each performance
+    else:
+        relevant_data = data
+
+    # add creator's own performances
+    for performer in [request.user]:
+        relevant_data[performer] = {
+            "subscriber": performer, # n.b. not a string!
+            "subscriber_name": performer.get_full_name(),
+            "subscriber_last_name": "*" + str(performer.last_name).upper() + "*",
+            "subscriber_first_name": "*" + str(performer.first_name).upper() + "*",
+            "groups": ", ".join([]),
+            **performance_dict.get(str(performer), {}),
+        }
 
     # get playlist keys
     relevant_data_keys_per_performer = [value.keys() for (key,value) in relevant_data.items()]
     compiled_playlist_keys = []
     for i in range(0, len(relevant_data_keys_per_performer)):
-        playlist_keys = [key for key in relevant_data_keys_per_performer[i] if re.match('^[0-9]+$', key)]
-        for i in range(0, len(playlist_keys)):
-            if playlist_keys[i] not in compiled_playlist_keys:
-                compiled_playlist_keys += playlist_keys[i]
+        playlist_keys = [key for key in relevant_data_keys_per_performer[i]\
+            if re.match('^[0-9]+$', key) or re.match('^P[A-Z][0-9]+[A-Z]+$', key)]
+        for j in range(0, len(playlist_keys)):
+            if playlist_keys[j] not in compiled_playlist_keys:
+                compiled_playlist_keys.append(playlist_keys[j])
 
-    # first debug idea, not thorough enough
-    # max_playlists_per_performer = max([0, max([len(value.keys()) for value in data.values()]) - 4])
+    # Sort playlist keys: playlist IDs first, according to their order of presentation in the course, then legacy order values
+    pco = PlaylistCourseOrdered.objects.filter(course_id=course._id)
+    url_id_to_order = {}
+    for i in range(0, len(pco)):
+        url_id_to_order[pco[i].playlist.id] = pco[i].order
+    compiled_playlist_keys.sort(
+        key=lambda p: (
+            int(p)
+            if re.match('^[0-9]+$', p) # order
+            else -1,
+            url_id_to_order[str(p)]
+            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) # playlist.id
+            else None,
+        ),
+        reverse=False,
+    )
 
     table = CourseActivityTable(
         data=relevant_data.values(),
@@ -368,8 +395,7 @@ def course_activity_view(request, course_id):
                 str(idx),
                 PlaylistActivityColumn(verbose_name=str(idx), orderable=True),
             )
-            for idx in sorted(compiled_playlist_keys)
-            # for idx in range(1, len(playlists) + 1) # <-- correct simple implementation if courses were never edited and the order value began at 1
+            for idx in compiled_playlist_keys
         ],
     )
 

@@ -850,7 +850,7 @@ class PerformanceData(models.Model):
                         pass_date = pd.get_local_pass_date()
                     except:
                         pass_date = False
-                        logging.error('Failed to get local_pass_date, so course activity table may not show lateness accurately.')
+                        # ERROR MESSAGE SHOULD READ: 'Failed to get local_pass_date, so course activity table may not show lateness accurately.'
                     if due_date and pass_date:
                         if pass_date <= due_date:
                             pass_mark = "P"
@@ -867,14 +867,16 @@ class PerformanceData(models.Model):
                                 # tardy category
                 if not (performer in course.performance_dict):
                     course.performance_dict[performer] = {"time_elapsed": 0}
-                course.performance_dict[performer][pco.order] = pass_mark
+                course.performance_dict[performer][pco.playlist.id] = pass_mark
+                # ^ REFACTORED TO USE NOT pco.order (as before) NOR pco.playlist_id BUT pco.playlist.id
                 for exercise_data in pd.data:
                     course.performance_dict[performer]["time_elapsed"] += int(
                         exercise_data["exercise_duration"]
                     )
                 course.save()
         except:
-            logging.error("Failed to save course performance dictionary but proceeding to return performance data.")
+            pass
+            # ERROR MESSAGE SHOULD READ: 'Failed to save course performance dictionary but proceeding to return performance data.''
 
         # the slicing of exercise_id ensures exercises are locked when performed in transposition
         exercise = Exercise.objects.get(id=exercise_id[0:6])
