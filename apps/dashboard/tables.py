@@ -529,7 +529,7 @@ class CourseActivityTable(tables.Table):
     result_count = tables.columns.Column(
         verbose_name="Totaled Results",
         empty_values=(()),
-        attrs={"td": {"style": "min-width:72px"}},
+        attrs={"td": {"style": "min-width:200px"}},
         orderable=False,
     )
     score = tables.columns.Column(
