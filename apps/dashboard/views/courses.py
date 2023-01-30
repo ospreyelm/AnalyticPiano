@@ -381,8 +381,13 @@ def course_activity_view(request, course_id):
             int(p)
             if re.match('^[0-9]+$', p) # order
             else -1,
+            0 if url_id_to_order[str(p)] else 1,
             url_id_to_order[str(p)]
-            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) # playlist.id
+            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) and url_id_to_order[str(p)] # playlist.id of playlists in course
+            else None,
+            str(p)
+            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) and not url_id_to_order[str(p)] # playlist.id of playlists not longer in course
+            # show as de-accessioned in the table
             else None,
         ),
         reverse=False,
