@@ -324,27 +324,42 @@ ul li input {
 }
 
 .no-due-date {
-  background-image: url(../img/complete.png) !important;
+  background-image: url(../img_square/complete.png) !important;
+  background-size: contain;
+}
+
+.due-date-on-time {
+  background-image: url(../img_square/on-time.png) !important;
   background-size: contain;
 }
 
 .due-date-tardy {
-  background-image: url(../img/tardy.png) !important;
+  background-image: url(../img_square/tardy.png) !important;
   background-size: contain;
 }
 
 .due-date-late {
-  background-image: url(../img/late.png) !important;
+  background-image: url(../img_square/late.png) !important;
   background-size: contain;
 }
 
 .did-not-finish {
-  background-image: url(../img/did-not-finish.png) !important;
+  background-image: url(../img_square/did-not-finish.png) !important;
+  background-size: contain;
+}
+
+.no-perf-data {
+  background-image: url(../img_square/no-perf-data.png) !important;
   background-size: contain;
 }
 
 table.paleblue > tbody > tr > td > span.true {
   background-image: url(../img/true.png);
+  background-size: contain;
+}
+
+table.paleblue > tbody > tr > td > span.false {
+  background-image: url(../img/false.png);
   background-size: contain;
 }
 

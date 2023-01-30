@@ -393,7 +393,7 @@ def course_activity_view(request, course_id):
         extra_columns=[
             (
                 str(idx),
-                PlaylistActivityColumn(verbose_name=str(idx), orderable=True),
+                PlaylistActivityColumn(verbose_name=str(idx), empty_values=(()), orderable=False),
             )
             for idx in compiled_playlist_keys
         ],

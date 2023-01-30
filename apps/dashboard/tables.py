@@ -486,16 +486,14 @@ def val_to_order(value):
 
 
 c_element = '<span class="true no-due-date" title="Complete"></span>'
-p_element = '<span class="true on-time" title="On time"></span>'
+p_element = '<span class="true due-date-on-time" title="On time"></span>'
 t_element = '<span class="true due-date-tardy" title=">=1 Hour Late"></span>'
 l_element = '<span class="true due-date-late" title=">5 Days Late"></span>'
-x_element = '<span class="true did-not-finish" title="Incomplete"></span>'
-# n_element = '<span class="true did-not-start" title="Did not start"></span>'
-
+x_element = '<span class="false did-not-finish" title="Incomplete"></span>'
+z_element = '<span class="false no-perf-data" title="No exercises played through"></span>'
 
 class PlaylistActivityColumn(columns.Column):
     def render(self, value):
-        element = "<span></span"
         if value == "C":
             element = c_element
         elif value == "P":
@@ -506,6 +504,8 @@ class PlaylistActivityColumn(columns.Column):
             element = l_element
         elif value == "X":
             element = x_element
+        else:
+            element = z_element
         return format_html(element)
 
     # TODO: get this working
@@ -522,11 +522,15 @@ class CourseActivityTable(tables.Table):
     subscriber_first_name = tables.columns.Column(verbose_name="Given name")
     subscriber_last_name = tables.columns.Column(verbose_name="Surname")
     # groups = tables.columns.Column(verbose_name="Group(s)")
-    time_elapsed = tables.columns.Column(verbose_name="Cumulative Time")
+    time_elapsed = tables.columns.Column(
+        verbose_name="Cumulative Time",
+        orderable=True,
+    )
     result_count = tables.columns.Column(
         verbose_name="Totaled Results",
         empty_values=(()),
         attrs={"td": {"style": "min-width:72px"}},
+        orderable=False,
     )
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
@@ -552,7 +556,7 @@ class CourseActivityTable(tables.Table):
             if value in result_count:
                 result_count[value] += 1
         return format_html(
-            f"{result_count['X']} {x_element} / {result_count['P']} {p_element} / {result_count['T']} {t_element} / {result_count['L']} {l_element} / {result_count['C']} {c_element}"
+            f"{result_count['X']} {x_element} / {result_count['P']} {p_element} / {result_count['C']} {c_element} / {result_count['T']} {t_element} / {result_count['L']} {l_element}"
         )
 
 
