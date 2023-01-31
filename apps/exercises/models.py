@@ -430,9 +430,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         self.save()
 
     def is_transposed(self):
-        # TODO: once transposition_type deletion is figured out, restore this
-        # return self.transpose_requests and self.transposition_type
-        return self.transpose_requests
+        return self.transpose_requests and self.transposition_type
 
     def get_exercise_obj_by_num(self, num=1):
         if len(self.exercise_list) == 0:
