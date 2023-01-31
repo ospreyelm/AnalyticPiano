@@ -192,6 +192,8 @@ def course_edit_view(request, course_id):
                     current_pco.due_date = datetime.datetime.strptime(
                         due_dates[i], "%Y-%m-%d"
                     ).astimezone(pytz.timezone(settings.TIME_ZONE))
+                    # due dates are input here by course authors and should be interpreted
+                    # as 23:59:59 in terms of their own or their institution's timezone
                     current_pco.due_date = current_pco.due_date.replace(
                         hour=23, minute=59, second=59
                     )
@@ -199,6 +201,8 @@ def course_edit_view(request, course_id):
                     current_pco.publish_date = datetime.datetime.strptime(
                         publish_dates[i], "%Y-%m-%d"
                     ).astimezone(pytz.timezone(settings.TIME_ZONE))
+                    # publish dates are input here by course authors and should be interpreted
+                    # as 00:00:00 in terms of their own or their institution's timezone
                 current_pco.save()
             handle_m2m(
                 request,
