@@ -14,14 +14,12 @@ from apps.accounts.models import User
 
 
 def forwards(apps, schema_editor):
-    # PerformanceData = apps.get_model("exercises","PerformanceData")
-
     PlaylistCourseOrdered = apps.get_model("exercises", "PlaylistCourseOrdered")
     Course = apps.get_model("exercises", "Course")
-    # User = apps.get_model("accounts", "User")
     db_alias = schema_editor.connection.alias
     for course in Course.objects.using(db_alias):
         course.performance_dict = {}
+        course.save()
     for pd in PerformanceData.objects.using(db_alias).all():
         performer = str(User.objects.using(db_alias).get(id=pd.user_id))
         for pco in PlaylistCourseOrdered.objects.using(db_alias).filter(
@@ -46,7 +44,7 @@ def forwards(apps, schema_editor):
                             pass_mark = "L"
             if not (performer in course.performance_dict):
                 course.performance_dict[performer] = {"time_elapsed": 0}
-            course.performance_dict[performer][pco.order] = pass_mark
+            course.performance_dict[performer][pco.playlist.id] = pass_mark
             for exercise_data in pd.data:
                 course.performance_dict[performer]["time_elapsed"] += int(
                     exercise_data["exercise_duration"]
@@ -61,7 +59,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("exercises", "0038_auto_20230122_0358"),
+        ("exercises", "0041_auto_20230129_2100"),
     ]
 
     operations = [

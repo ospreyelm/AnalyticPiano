@@ -45,7 +45,7 @@ def push_back_due_dates(apps, schema_editor):
                     pco.due_date = pco.due_date.replace(tzinfo=pytz.utc).astimezone(
                         pytz.timezone(settings.TIME_ZONE)
                     )
-                    pass_date = pd.get_local_pass_date
+                    pass_date = pd.get_local_pass_date()
                     if pco.due_date < pass_date:
                         diff = pass_date - pco.due_date
                         days, seconds = diff.days, diff.seconds

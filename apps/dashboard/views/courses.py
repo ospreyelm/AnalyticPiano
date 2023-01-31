@@ -2,6 +2,7 @@ from copy import copy
 import datetime
 import pytz
 import re
+import math
 
 from django.db.models import Q
 from django.conf import settings
@@ -108,7 +109,9 @@ def course_edit_view(request, course_id):
             "through_id": pco._id,
             "due_date": pco.due_date,
             "publish_date": pco.publish_date,
-            "url_id": playlist.id if playlist.authored_by_id == request.user.id else None,
+            "url_id": playlist.id
+            if playlist.authored_by_id == request.user.id
+            else None,
         }
 
     course = get_object_or_404(Course, id=course_id)
@@ -137,9 +140,7 @@ def course_edit_view(request, course_id):
             "1" + str(p.authored_by_id)
             if (p.authored_by_id != request.user.id)
             else "0",
-            p.name
-            if (p.authored_by_id != request.user.id)
-            else -p._id,
+            p.name if (p.authored_by_id != request.user.id) else -p._id,
         ),
         reverse=False,
     )
@@ -249,7 +250,9 @@ def course_edit_view(request, course_id):
                 course.pk = None
                 course.id = None
                 course.performance_dict = {}
-                course.title = course.title[0:57] + " (copy)" # account for max_length of course.title
+                course.title = (
+                    course.title[0:57] + " (copy)"
+                )  # account for max_length of course.title
                 course.save()
                 for group in visible_to_groups:
                     course.visible_to.add(group)
@@ -299,6 +302,29 @@ def course_delete_view(request, course_id):
     return render(request, "dashboard/delete-confirmation.html", context)
 
 
+# Takes our playlist id (playlist.id) and the database course id (course._id)
+def playlist_id_sort(playlist_id, course_id):
+    playlist = Playlist.objects.filter(id=playlist_id).first()
+    if playlist != None:
+        pco = PlaylistCourseOrdered.objects.filter(
+            Q(playlist_id=playlist._id) & Q(course_id=course_id)
+        )
+        if len(pco) > 0:
+            return pco.first().order
+    return math.inf
+
+
+def playlist_column_verbose_name(playlist_id, course):
+    playlist = Playlist.objects.filter(id=playlist_id).first()
+    if playlist != None:
+        pco = PlaylistCourseOrdered.objects.filter(
+            Q(playlist_id=playlist._id) & Q(course_id=course._id)
+        )
+        if len(pco) > 0:
+            return pco.first().order
+    return playlist_id
+
+
 @login_required
 # @cache_page(60 * 15)
 def course_activity_view(request, course_id):
@@ -330,7 +356,7 @@ def course_activity_view(request, course_id):
     performance_dict = course.performance_dict
     data = {
         performer: {
-            "subscriber": performer, # n.b. not a string!
+            "subscriber": performer,  # n.b. not a string!
             "subscriber_name": performer.get_full_name(),
             "subscriber_last_name": performer.last_name,
             "subscriber_first_name": performer.first_name,
@@ -349,7 +375,9 @@ def course_activity_view(request, course_id):
 
     if len(curr_group_ids) == 0:
         # omit subscribers who have zero performances for this playlist
-        relevant_data = { key:value for (key,value) in data.items() if len(value.keys()) > 5 }
+        relevant_data = {
+            key: value for (key, value) in data.items() if len(value.keys()) > 5
+        }
         # ^ The test, > 5, must correspond to the number of fields written to data for each performance
     else:
         relevant_data = data
@@ -357,7 +385,7 @@ def course_activity_view(request, course_id):
     # add creator's own performances
     for performer in [request.user]:
         relevant_data[performer] = {
-            "subscriber": performer, # n.b. not a string!
+            "subscriber": performer,  # n.b. not a string!
             "subscriber_name": performer.get_full_name(),
             "subscriber_last_name": "*" + str(performer.last_name).upper() + "*",
             "subscriber_first_name": "*" + str(performer.first_name).upper() + "*",
@@ -366,11 +394,16 @@ def course_activity_view(request, course_id):
         }
 
     # get playlist keys
-    relevant_data_keys_per_performer = [value.keys() for (key,value) in relevant_data.items()]
+    relevant_data_keys_per_performer = [
+        value.keys() for (key, value) in relevant_data.items()
+    ]
     compiled_playlist_keys = []
     for i in range(0, len(relevant_data_keys_per_performer)):
-        playlist_keys = [key for key in relevant_data_keys_per_performer[i]\
-            if re.match('^[0-9]+$', key) or re.match('^P[A-Z][0-9]+[A-Z]+$', key)]
+        playlist_keys = [
+            key
+            for key in relevant_data_keys_per_performer[i]
+            if re.match("^[0-9]+$", key) or re.match("^P[A-Z][0-9]+[A-Z]+$", key)
+        ]
         for j in range(0, len(playlist_keys)):
             if playlist_keys[j] not in compiled_playlist_keys:
                 compiled_playlist_keys.append(playlist_keys[j])
@@ -382,16 +415,23 @@ def course_activity_view(request, course_id):
         url_id_to_order[pco[i].playlist.id] = pco[i].order
     compiled_playlist_keys.sort(
         key=lambda p: (
-            int(p) if re.match('^[0-9]+$', p) else -1, # order
+            int(p) if re.match("^[0-9]+$", p) else -1,  # order
             0 if url_id_to_order.get(str(p)) else 1,
             str(p)
-            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) and not url_id_to_order.get(str(p)) # playlist.id of playlists not longer in course
-            else 'O', # show as de-accessioned in the table
+            if re.match("^P[A-Z][0-9]+[A-Z]+$", p)
+            and not url_id_to_order.get(
+                str(p)
+            )  # playlist.id of playlists not longer in course
+            else "O",  # show as de-accessioned in the table
             url_id_to_order[str(p)]
-            if re.match('^P[A-Z][0-9]+[A-Z]+$', p) and url_id_to_order.get(str(p)) # playlist.id of playlists in course
+            if re.match("^P[A-Z][0-9]+[A-Z]+$", p)
+            and url_id_to_order.get(str(p))  # playlist.id of playlists in course
             else None,
         ),
         reverse=False,
+    )
+    compiled_playlist_keys.sort(
+        key=lambda playlist_id: playlist_id_sort(playlist_id, course._id)
     )
 
     table = CourseActivityTable(
@@ -399,7 +439,11 @@ def course_activity_view(request, course_id):
         extra_columns=[
             (
                 str(idx),
-                PlaylistActivityColumn(verbose_name=str(idx), empty_values=(()), orderable=False),
+                PlaylistActivityColumn(
+                    verbose_name=playlist_column_verbose_name(str(idx), course),
+                    empty_values=(()),
+                    orderable=False,
+                ),
             )
             for idx in compiled_playlist_keys
         ],

@@ -221,7 +221,8 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         auto_playlist = Playlist.objects.filter(
             authored_by=self.authored_by,
             is_auto=True,
-            updated__gt=now() - timedelta(hours=8), # capture playlists authored in the last eight hours
+            updated__gt=now()
+            - timedelta(hours=8),  # capture playlists authored in the last eight hours
         ).last()
         if auto_playlist is None:
             auto_playlist = Playlist.create_auto_playlist(
@@ -366,11 +367,10 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         sorted_exercise_list = list(map(lambda epo: epo.exercise.id, related_epos))
         return sorted_exercise_list
 
-    @cached_property
+    @property
     def exercise_list(self):
         if not self.is_transposed():
             return self.untransposed_exercises_ids
-
         return self.transposed_exercises_ids
 
     @property
@@ -430,7 +430,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         self.save()
 
     def is_transposed(self):
-        return self.transpose_requests and self.transposition_type
+        # TODO: once transposition_type deletion is figured out, restore this
+        # return self.transpose_requests and self.transposition_type
+        return self.transpose_requests
 
     def get_exercise_obj_by_num(self, num=1):
         if len(self.exercise_list) == 0:
@@ -677,7 +679,9 @@ class Course(ClonableModelMixin, BaseContentModel):
     def publish_dates_dict(self):
         pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
         return {
-            Playlist.objects.get(_id=pco.playlist_id).id: pco.publish_date.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+            Playlist.objects.get(_id=pco.playlist_id).id: pco.publish_date.replace(
+                tzinfo=pytz.timezone(settings.TIME_ZONE)
+            )
             for pco in pco_list
         }
         # publish dates are defined by course authors and should be understood in terms of their own or their institution's timezone
@@ -689,7 +693,9 @@ class Course(ClonableModelMixin, BaseContentModel):
             course_id=self._id
         ).select_related("playlist")
         return {
-            pco.playlist.id: pco.due_date.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+            pco.playlist.id: pco.due_date.replace(
+                tzinfo=pytz.timezone(settings.TIME_ZONE)
+            )
             for pco in pco_list
         }
         # due dates are defined by course authors and should be understood in terms of their own or their institution's timezone
@@ -849,7 +855,9 @@ class PerformanceData(models.Model):
                 if pd.playlist_passed:
                     pass_mark = "C"
                     try:
-                        due_date = pco.due_date.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+                        due_date = pco.due_date.replace(
+                            tzinfo=pytz.timezone(settings.TIME_ZONE)
+                        )
                     except:
                         due_date = False
                     try:
@@ -888,7 +896,6 @@ class PerformanceData(models.Model):
         if exercise.authored_by_id != user_id and not exercise.locked:
             exercise.lock()
         return pd
-
 
     @classmethod
     def submit_playlist_performance(cls, playlist_id: int, user_id: int, data: dict):
@@ -952,7 +959,9 @@ class PerformanceData(models.Model):
             make_concise_and_localize=False,
         )
         # UTC is assumed here since the performed_at property is written to the performance database per UTC
-        pass_date_utc = datetime.strptime(pass_date_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.timezone('UTC'))
+        pass_date_utc = datetime.strptime(pass_date_str, "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=pytz.timezone("UTC")
+        )
         # for the user, interpret the pass_date in terms of the timezone for the course
         return pass_date_utc.astimezone(pytz.timezone(settings.TIME_ZONE))
 
