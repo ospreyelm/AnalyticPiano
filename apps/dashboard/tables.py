@@ -566,8 +566,8 @@ class CourseActivityTable(tables.Table):
 
         rendered_time = ""
         if hours > 0:
-            rendered_time += str(hours) + " hrs "
-        rendered_time += str(minutes) + " mins "
+            rendered_time += str(hours) + " hrs \n"
+        rendered_time += str(minutes) + " min \n"
         if hours == 0:
             rendered_time += str(seconds) + " sec"
         return rendered_time
