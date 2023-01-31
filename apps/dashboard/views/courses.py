@@ -302,18 +302,6 @@ def course_delete_view(request, course_id):
     return render(request, "dashboard/delete-confirmation.html", context)
 
 
-# Takes our playlist id (playlist.id) and the database course id (course._id)
-def playlist_id_sort(playlist_id, course_id):
-    playlist = Playlist.objects.filter(id=playlist_id).first()
-    if playlist != None:
-        pco = PlaylistCourseOrdered.objects.filter(
-            Q(playlist_id=playlist._id) & Q(course_id=course_id)
-        )
-        if len(pco) > 0:
-            return pco.first().order
-    return math.inf
-
-
 def playlist_column_verbose_name(playlist_id, course):
     playlist = Playlist.objects.filter(id=playlist_id).first()
     if playlist != None:
@@ -321,7 +309,7 @@ def playlist_column_verbose_name(playlist_id, course):
             Q(playlist_id=playlist._id) & Q(course_id=course._id)
         )
         if len(pco) > 0:
-            return pco.first().order
+            return "#" + str(pco.first().order)
     return playlist_id
 
 
@@ -429,9 +417,6 @@ def course_activity_view(request, course_id):
             else None,
         ),
         reverse=False,
-    )
-    compiled_playlist_keys.sort(
-        key=lambda playlist_id: playlist_id_sort(playlist_id, course._id)
     )
 
     table = CourseActivityTable(
