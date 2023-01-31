@@ -16,7 +16,11 @@ User = get_user_model()
 
 class BaseSupervisionForm(forms.Form):
     def clean(self):
-        email = self.cleaned_data.get("email").lower()
+        email = self.cleaned_data.get("email")
+        try:
+            email = email.lower()
+        except:
+            self.add_error("email", "The email input could not be parsed as a text string.")
         if email == self.context.get("user").email:
             self.add_error(
                 "email",
