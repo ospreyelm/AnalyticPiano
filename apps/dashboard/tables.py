@@ -163,7 +163,7 @@ class MyActivityTable(tables.Table):
     )
     playlist_pass_date = tables.columns.DateColumn(
         verbose_name="Pass Date",
-        format="Y_m_d (D) H:I", # ineffective
+        format="Y_m_d (D) H:i", # ineffective
         orderable=False,  # ordering fails
     )
     view = tables.columns.LinkColumn(
@@ -175,14 +175,14 @@ class MyActivityTable(tables.Table):
     )
     created = tables.columns.DateColumn(
         verbose_name="First attempt",
-        format="Y_m_d (D) H:I", # "Y_m_d • D"
+        format="Y_m_d (D) H:i", # "Y_m_d • D"
         attrs={
             # "td": {"bgcolor": "white", "width": "auto"}
         },
     )
     updated = tables.columns.DateColumn(
         verbose_name="Latest attempt",
-        format="Y_m_d (D) H:I", # "Y_m_d • D"
+        format="Y_m_d (D) H:i", # "Y_m_d • D"
         attrs={
             # "td": {"bgcolor": "white", "width": "auto"}
         },
