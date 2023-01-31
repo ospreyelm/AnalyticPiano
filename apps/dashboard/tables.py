@@ -163,7 +163,7 @@ class MyActivityTable(tables.Table):
     )
     playlist_pass_date = tables.columns.DateColumn(
         verbose_name="Pass Date",
-        format="Y_m_d (D) H:i", # ineffective
+        format="Y_m_d (D) H:i",  # ineffective
         orderable=False,  # ordering fails
     )
     view = tables.columns.LinkColumn(
@@ -175,14 +175,14 @@ class MyActivityTable(tables.Table):
     )
     created = tables.columns.DateColumn(
         verbose_name="First attempt",
-        format="Y_m_d (D) H:i", # "Y_m_d • D"
+        format="Y_m_d (D) H:i",  # "Y_m_d • D"
         attrs={
             # "td": {"bgcolor": "white", "width": "auto"}
         },
     )
     updated = tables.columns.DateColumn(
         verbose_name="Latest attempt",
-        format="Y_m_d (D) H:i", # "Y_m_d • D"
+        format="Y_m_d (D) H:i",  # "Y_m_d • D"
         attrs={
             # "td": {"bgcolor": "white", "width": "auto"}
         },
@@ -230,7 +230,7 @@ class MyActivityDetailsTable(tables.Table):
         attrs={"td": {"bgcolor": "lightgray"}},
     )
     exercise_count = tables.columns.Column(
-        verbose_name="Tally", # tally of completions, including repeats
+        verbose_name="Tally",  # tally of completions, including repeats
         orderable=False,
     )
     playing_time = tables.columns.Column(
@@ -490,7 +490,10 @@ p_element = '<span class="true due-date-on-time" title="On time"></span>'
 t_element = '<span class="true due-date-tardy" title=">=1 Hour Late"></span>'
 l_element = '<span class="true due-date-late" title=">5 Days Late"></span>'
 x_element = '<span class="false did-not-finish" title="Incomplete"></span>'
-z_element = '<span class="false no-perf-data" title="No exercises played through"></span>'
+z_element = (
+    '<span class="false no-perf-data" title="No exercises played through"></span>'
+)
+
 
 class PlaylistActivityColumn(columns.Column):
     def render(self, value):
@@ -536,7 +539,7 @@ class CourseActivityTable(tables.Table):
     score = tables.columns.Column(
         verbose_name="Score",
         empty_values=(()),
-        orderable=False, # does not work as currently configured
+        orderable=False,  # does not work as currently configured
     )
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
@@ -545,16 +548,29 @@ class CourseActivityTable(tables.Table):
         attrs = {"class": "paleblue"}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
-        sequence = ["subscriber_first_name", "subscriber_last_name", "score", "result_count", "time_elapsed", "..."]
+        sequence = [
+            "subscriber_first_name",
+            "subscriber_last_name",
+            "score",
+            "result_count",
+            "time_elapsed",
+            "...",
+        ]
 
     def render_time_elapsed(self, value):
-        try:
-            hours_elapsed = value // 3600
-        except:
-            return ""
-        mins_remainder = (value - 3600 * hours_elapsed) // 60
-        readout_of_time_elapsed = (str(hours_elapsed) + "h " if hours_elapsed > 0 else "> ") + str(mins_remainder) + "m"
-        return readout_of_time_elapsed
+        seconds = value
+        minutes = value // 60
+        hours = minutes // 60
+        seconds %= 60
+        minutes %= 60
+
+        rendered_time = ""
+        if hours > 0:
+            rendered_time += str(hours) + " hrs "
+        rendered_time += str(minutes) + " mins "
+        if hours == 0:
+            rendered_time += str(seconds) + " sec"
+        return rendered_time
 
     def render_result_count(self, record):
         result_count = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
@@ -566,13 +582,18 @@ class CourseActivityTable(tables.Table):
         )
 
     def render_score(self, record):
-        tardy_credit = 0.8 # should be a variable in the course object
-        late_credit = 0.5 # should be a variable in the course object
+        tardy_credit = 0.8  # should be a variable in the course object
+        late_credit = 0.5  # should be a variable in the course object
         result_count = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
         for (key, value) in record.items():
             if value in result_count:
                 result_count[value] += 1
-        score = result_count['P'] + result_count['C'] + result_count['T'] * tardy_credit + result_count['L'] * late_credit
+        score = (
+            result_count["P"]
+            + result_count["C"]
+            + result_count["T"] * tardy_credit
+            + result_count["L"] * late_credit
+        )
         # make this column orderable
         return round(score, 1)
 
