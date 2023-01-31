@@ -102,7 +102,7 @@ def playlist_pass_date(exercise_list, exercises_data, playlist_length, make_conc
         # UTC is assumed here since the performed_at property is written to the performance database per UTC
         pl_pass_date = datetime.strptime(pl_pass_date_utc_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.timezone("UTC"))
         # for the user, interpret the pass_date in terms of the timezone for the course
-        return datetime.strftime(pl_pass_date.astimezone(pytz.timezone(settings.TIME_ZONE)), "%Y_%m_%d (%a) %H:%m")
+        return datetime.strftime(pl_pass_date.astimezone(pytz.timezone(settings.TIME_ZONE)), "%Y_%m_%d (%a) %H:%M")
     else:
         return pl_pass_date_utc_str
 
@@ -181,7 +181,7 @@ def playlist_performance_view(request, performance_id):
             d.update(
                 **{
                     exercise["id"]: mark_safe(
-                        f'{"PASS " + datetime.strftime(datetime.strptime(performance_obj.get_exercise_first_pass(exercise["id"]), "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone(settings.TIME_ZONE)), "%y_%m_%d %H:%m") + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else "TO DO<br><br>"}'
+                        f'{"PASS " + datetime.strftime(datetime.strptime(performance_obj.get_exercise_first_pass(exercise["id"]), "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone(settings.TIME_ZONE)), "%y_%m_%d %H:%M") + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else "TO DO<br><br>"}'
                         f'{"Latest: errors (" + str(exercise["exercise_error_tally"]) + ")." if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ""}'
                         f'{"Done " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == -1) else ""}' # when is this shown?
                         f'{"Latest: without error." if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == 0) else ""}'
