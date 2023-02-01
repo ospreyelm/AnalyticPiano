@@ -527,13 +527,13 @@ class CourseActivityTable(tables.Table):
     # groups = tables.columns.Column(verbose_name="Group(s)")
     time_elapsed = tables.columns.Column(
         verbose_name="Time",
-        attrs={"td": {"style": "min-width:65px"}},
+        attrs={"td": {"style": "white-space:nowrap"}},
         orderable=True,
     )
     result_count = tables.columns.Column(
         verbose_name="Totaled Results",
         empty_values=(()),
-        attrs={"td": {"style": "min-width:200px"}},
+        attrs={"td": {"style": "white-space:nowrap"}},
         orderable=False,
     )
     score = tables.columns.Column(
