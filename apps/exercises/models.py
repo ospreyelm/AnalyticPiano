@@ -22,7 +22,7 @@ from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.models.fields import ArrayField
 
 from apps.accounts.models import Group
-from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES
+from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES, pseudo_key_to_sig
 from apps.exercises.utils.transpose import transpose
 
 import re
@@ -387,8 +387,21 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
         sorted_exercise_list = self.untransposed_exercises_ids
 
+        parsed_staff_sigs = []
+        for i in range(0, len(self.transpose_requests)):
+            try:
+                staff_sig = pseudo_key_to_sig[self.transpose_requests[i]]
+            except KeyError:
+                staff_sig = False
+            if staff_sig != False:
+                parsed_staff_sigs.append(staff_sig)
+
+        staff_sig_requests = []
+        [staff_sig_requests.append(x) for x in parsed_staff_sigs if x not in staff_sig_requests]
+        # ^ If an exercise is presented more than once in the same key, critical grading errors result
+
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
-            return list(product(sorted_exercise_list, self.transpose_requests))
+            return list(product(sorted_exercise_list, staff_sig_requests))
         elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
             return [
                 (t[1], t[0])
@@ -402,9 +415,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
         result = []
         for transposition in self.transposition_matrix:
-            exercise_id, target_request = transposition
+            exercise_id, staff_sig_request = transposition
             exercise = Exercise.objects.get(id=exercise_id)
-            result.append(transpose(exercise, target_request).id)
+            result.append(transpose(exercise, staff_sig_request).id)
         return result
 
     @property
@@ -444,9 +457,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return exercise
 
         # import pdb; pdb.set_trace()
-        exercise_id, target_request = self.transposition_matrix[num - 1]
+        exercise_id, staff_sig_request = self.transposition_matrix[num - 1]
         exercise = Exercise.objects.get(id=exercise_id)
-        transposed_exercise = transpose(exercise, target_request)
+        transposed_exercise = transpose(exercise, staff_sig_request)
         # import pdb; pdb.set_trace()
         return transposed_exercise
 

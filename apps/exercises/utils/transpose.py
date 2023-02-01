@@ -25,27 +25,29 @@ from copy import deepcopy
 from apps.exercises.constants import sig_to_pc, pseudo_key_to_sig, all_sigs, all_keys
 
 
-def transpose(exercise, target_request):
+def transpose(exercise, staff_sig_request):
     exercise = deepcopy(exercise)
     sig_orig = exercise.data.get("keySignature")
     pc_ref_orig = sig_to_pc[sig_orig]
     key_orig = exercise.data.get("key")
-    try:
-        sig_target = pseudo_key_to_sig[target_request]
-    except KeyError:
+    if staff_sig_request not in all_sigs:
         return exercise
-        # abort this transposition, skip to next item in transpose_requests.split()
+        # Bogus requests should never get this far, due to Django validation
+        # of tranpose_requests and tests in transposition_matrix.
+        # If they did, returning the untransposed exercise more than once
+        # would cause grading problems.
 
-    pc_ref_target = sig_to_pc[sig_target]
+    pc_ref_target = sig_to_pc[staff_sig_request]
 
     if key_orig == "h":
         key_target = key_orig
     else:
         try:
-            fifth_chain_move = all_sigs.index(sig_target) - all_sigs.index(sig_orig)
+            fifth_chain_move = all_sigs.index(staff_sig_request) - all_sigs.index(sig_orig)
             key_target = all_keys[all_keys.index(key_orig) + 2 * fifth_chain_move]
         except IndexError:
             return exercise
+            # ditto comment on return statement above
 
     # 12 + not necessary here but keep it in case this function copied to Javascript
     pc_vector = (12 + pc_ref_target - pc_ref_orig) % 12
@@ -84,6 +86,7 @@ def transpose(exercise, target_request):
     midi_vector = None
 
     if False:
+        # TODO: enable this as an option in the playlist transposition controls
         # algorithm that fits exercise onto smallest standard keyboard
         # that will accommodate all keys
         octave_displ = 0
@@ -100,9 +103,12 @@ def transpose(exercise, target_request):
     else:
         # simply transpose upwards
         midi_vector = pc_vector
+    # TODO: allow additional transpose options (incl. define a lowest pseudo_key, set the lowest tenor note)
 
     if midi_vector == None:
+        # No transposition operation was identified
         return exercise
+        # ditto comment on return statement above
 
     # make the transposition
     for chord in exercise.data["chord"]:
@@ -113,7 +119,7 @@ def transpose(exercise, target_request):
         chord.update(hidden=transposed)
 
     exercise.data["key"] = key_target
-    exercise.data["keySignature"] = sig_target
+    exercise.data["keySignature"] = staff_sig_request
 
     exercise.id = f"{exercise.id}{midi_vector}"
 
