@@ -33,11 +33,11 @@
                href="{% url 'dashboard:preferences' %}">Settings</a>
             <p class="sidenav-subhead">CONNECT</p>
             <a {% if url_name == 'subscriptions' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:subscriptions' %}">Enroll</a>
+               href="{% url 'dashboard:subscriptions' %}">With Creators</a>
             <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:subscribers' %}">Invite</a>
+               href="{% url 'dashboard:subscribers' %}">With Performers</a>
             <a {% if url_name == 'groups-list' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:groups-list' %}">Groups</a>
+               href="{% url 'dashboard:groups-list' %}">Manage Performer Groups</a>
             <p class="sidenav-subhead">CREATE</p>
             <a {% if url_name == 'courses-list' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:courses-list' %}">Courses</a>

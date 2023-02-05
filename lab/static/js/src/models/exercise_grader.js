@@ -78,6 +78,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         "scientific_pitch",
         "solfege",
         "do_based_solfege",
+        "spacing",
         "thoroughbass",
       ];
       if (
@@ -238,6 +239,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         scientific_pitch: "getNoteName",
         solfege: "to_solfege",
         do_based_solfege: "to_do_based_solfege",
+        spacing: "to_spacing",
       };
       var analyze_props = {
         abbrev_thoroughbass: "", // ok
@@ -257,6 +259,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         scientific_pitch: "", // ok
         solfege: "", // ok
         do_based_solfege: "",
+        spacing: "",
       };
       var i, len;
       for (i = 0, len = analysis_types.length; i < len; i++) {

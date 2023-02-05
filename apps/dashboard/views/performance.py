@@ -127,7 +127,7 @@ def playing_time(exercises_data):
     if hours >= 2:
         return str(hours) + "+ hrs"
     elif hours == 1:
-        return str(hours) + " hrs, " + str(minutes) + " mins"
+        return str(hours) + " hr, " + str(minutes) + " mins"
     elif minutes >= 1:
         return str(minutes) + "+ mins"
     else:

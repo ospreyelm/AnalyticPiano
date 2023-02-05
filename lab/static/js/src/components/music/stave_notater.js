@@ -295,7 +295,7 @@ define([
      * @param {number} y
      * @return undefined
      */
-    /* FIX ME: the next three functions are nearly identical; consolidate them */
+    /* FIX ME: the next four functions are nearly identical; consolidate them */
     drawNoteName: function (x, y) {
       var notes = this.chord.getNoteNumbers();
 
@@ -334,6 +334,22 @@ define([
       var ctx = this.getContext();
       var fontArgs = ctx.font.split(" ");
       var newSize = "20px";
+      ctx.font = newSize + " " + fontArgs[fontArgs.length - 1];
+
+      if (note_name !== "" && notes.length >= 1) {
+        ctx.fillText(note_name, x + StaveNotater.prototype.annotateOffsetX, y);
+      }
+    },
+    drawChordSpacing: function (x, y) {
+      var notes = this.chord.getNoteNumbers();
+
+      // copied from drawNoteName except this line
+      // note_name is a misnomer here
+      var note_name = this.getAnalyzer().to_spacing(notes);
+
+      var ctx = this.getContext();
+      var fontArgs = ctx.font.split(" ");
+      var newSize = "16px";
       ctx.font = newSize + " " + fontArgs[fontArgs.length - 1];
 
       if (note_name !== "" && notes.length >= 1) {
@@ -893,6 +909,7 @@ define([
       var note_names = this.analyzeConfig.mode.note_names;
       var roman_numerals = this.analyzeConfig.mode.roman_numerals;
       var chord_labels = this.analyzeConfig.mode.chord_labels;
+      var spacing = this.analyzeConfig.mode.spacing;
 
       var ctx = this.getContext();
       var fontArgs = ctx.font.split(" ");
@@ -902,6 +919,11 @@ define([
         var newSize = "16px";
         ctx.font = newSize + " " + fontArgs[fontArgs.length - 1];
         ctx.fillText("chords", x - 18, 35);
+      }
+      if (spacing && analysis) {
+        var newSize = "16px";
+        ctx.font = newSize + " " + fontArgs[fontArgs.length - 1];
+        ctx.fillText("SAT sp.", x - 18, 60);
       }
       if (note_names && analysis) {
         // ctx.fillText('notes', x - 18, 60);
@@ -1113,7 +1135,9 @@ define([
           ctx.stroke();
         }
 
-        if (mode.note_names) {
+        if (mode.spacing) {
+          this.drawChordSpacing(x, second_row);
+        } else if (mode.note_names) {
           this.drawNoteName(x, second_row);
         } else if (mode.fixed_do) {
           this.drawFixedDo(x, second_row);

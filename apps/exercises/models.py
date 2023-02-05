@@ -127,6 +127,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         ("scientific_pitch", "Scientific Pitch"),
         ("scale_degrees", "Scale Degrees"),
         ("solfege", "Solfege"),
+        ("spacing", "Spacing of Upper Voices"),
         ("roman_numerals", "Roman Numerals"),
         ("intervals", "Intervals"),
     )

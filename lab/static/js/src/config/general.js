@@ -50,6 +50,7 @@ define({
       fixed_do: false,
       scientific_pitch: false,
       pitch_class: false,
+      spacing: false,
 
       /* max one of the following may be true */
       scale_degrees: false,

@@ -56,6 +56,9 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
       '<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony in Roman numerals</label>',
       "</li>",
       "<li>",
+      '<label><input type="checkbox" name="analysis_spacing" value="spacing"> Spacing of upper voices</label>',
+      "</li>",
+      "<li>",
       '<label><input type="checkbox" name="analysis_set_class_set" value="set_class_set"> Set class—set</label>',
       "</li>",
       "<li>",
@@ -134,12 +137,14 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
         this.trigger("changeOption", "analyze", opt, this.state.mode[opt]);
         document.getElementById("staff").focus();
       },
+      // TODO: consolidate duplicate functions but test thoroughly in different browsers
       analysis_note_names: function (e) {
         var opts = [
           "scientific_pitch",
           "fixed_do",
           "note_names",
           "pitch_class",
+          "spacing",
         ];
         this.toggle_exclusive_analysis_option(e, opts);
       },
@@ -149,6 +154,7 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
           "fixed_do",
           "note_names",
           "pitch_class",
+          "spacing",
         ];
         this.toggle_exclusive_analysis_option(e, opts);
       },
@@ -158,6 +164,7 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
           "fixed_do",
           "note_names",
           "pitch_class",
+          "spacing",
         ];
         this.toggle_exclusive_analysis_option(e, opts);
       },
@@ -167,6 +174,17 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
           "fixed_do",
           "note_names",
           "pitch_class",
+          "spacing",
+        ];
+        this.toggle_exclusive_analysis_option(e, opts);
+      },
+      analysis_spacing: function (e) {
+        var opts = [
+          "scientific_pitch",
+          "fixed_do",
+          "note_names",
+          "pitch_class",
+          "spacing",
         ];
         this.toggle_exclusive_analysis_option(e, opts);
       },

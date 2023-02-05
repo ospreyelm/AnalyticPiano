@@ -13,15 +13,15 @@
         <div class="link-container">
             <div class="nav-link">
                 <a href={% url 'dashboard:performed-playlists'%} > My Activity </a>
-                <span>View your recently attempted exercises</span>
+                <span>View your performance history</span>
             </div>
             <div class="nav-link">
                 <a href={% url 'dashboard:subscriptions-courses' %}> Available Courses </a>
-                <span>Browse the courses of instructors you're subscribed to</span>
+                <span>Browse courses by users to whom you are connected</span>
             </div>
             <div class="nav-link">
                 <a href={% url 'dashboard:preferences' %}> Settings </a>
-                <span>Tweak your Play View settings</span>
+                <span>Customize how the app looks and behaves when you perform playlists</span>
             </div>
         </div>
     </div>
@@ -29,16 +29,16 @@
         <h2>Connect</h2>
         <div class="link-container">
             <div class="nav-link">
-                <a href={% url 'dashboard:subscriptions'%} > Enroll </a>
-                <span>Subscribe to instructors to enroll in their courses</span>
+                <a href={% url 'dashboard:subscriptions'%} > Connect with creators </a>
+                <span>Enroll in courses by other users</span>
             </div>
             <div class="nav-link">
-                <a href={% url 'dashboard:subscribers' %}> Invite </a>
-                <span>Invite users to subscribe to you</span>
+                <a href={% url 'dashboard:subscribers' %}> Connect with performers </a>
+                <span>Enroll other users in your courses</span>
             </div>
             <div class="nav-link">
-                <a href={% url 'dashboard:groups-list' %}> Groups </a>
-                <span>Create groups for your courses</span>
+                <a href={% url 'dashboard:groups-list' %}> Manage performer groups </a>
+                <span>Organize your enrollees into groups</span>
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@
         <div class="link-container">
             <div class="nav-link">
                 <a href={% url 'dashboard:courses-list'%} > Courses</a>
-                <span>Create new courses and view your created courses</span>
+                <span>Create or edit courses and see the progress of your enrollees</span>
             </div>
             <div class="nav-link">
                 <a href={% url 'dashboard:playlists-list' %}> Playlists </a>

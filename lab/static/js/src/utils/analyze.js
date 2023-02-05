@@ -513,6 +513,43 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
         return this.ijFindChord(notes);
       }
     },
+    to_spacing: function (notes) {
+      // this function is meant for analyzing spacing in four-part harmony
+      if (notes.length != 4) return "";
+      // notes should already be sorted, but just in case ...
+      notes = notes.sort();
+      // uv denotes upper voices, omitting bass
+      var uv_pcs = [];
+      for (i = 1, len = notes.length; i < len; i++) {
+        var uv_pc = notes[i] % 12
+        if (!_.contains(uv_pcs, uv_pc)) uv_pcs.push(uv_pc);
+      }
+      const uv_midi = notes.slice(1);
+      const uv_span = uv_midi.slice(-1).pop() - uv_midi[0]
+      if (uv_pcs.length == 2 && uv_midi.length == 3) {
+        // triads with a doubling within the SAT parts
+        if (uv_span < 12) {
+          return "U";
+        } else if (uv_span == 12) {
+          return "8";
+        } else if (uv_span < 24 && uv_midi[0] + 12 > uv_midi[1]) {
+          return "8+";
+        } else {
+          return "ERR";
+        }
+      } else if (uv_pcs.length == 3 && uv_midi.length == 3) {
+        // tetrads or triads with the bass doubled
+        if (uv_span < 12) {
+          return "CL";
+        } else if (uv_span < 24 && uv_midi[0] + 12 > uv_midi[1]) {
+          return "OP";
+        } else {
+          return "ERR";
+        }
+      } else {
+        return "";
+      }
+    },
     to_set_class_set: function (notes) {
       return this.to_set_class(notes, "set");
     },

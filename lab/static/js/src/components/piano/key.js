@@ -39,7 +39,7 @@ define(["lodash", "app/components/component"], function (_, Component) {
    * @type {string}
    * @const
    */
-  var COLOR_WHITE_KEYUP = "#fffff0";
+  var COLOR_WHITE_KEYUP = "#FFFFFF";
   /**
    * Key down state.
    * @type {string}
