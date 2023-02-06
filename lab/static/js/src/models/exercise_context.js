@@ -697,7 +697,7 @@ define([
     submitExerciseReport: function () {
       if (this.compileExerciseReport() == null) {
         console.log("Outside the context of a course and playlist. No data performance submitted.");
-        window.alert("Outside the context of a course and playlist. No data performance submitted.");
+        // window.alert("Outside the context of a course and playlist. No data performance submitted.");
         return null;
       }
       const json_data = JSON.stringify(this.compileExerciseReport());

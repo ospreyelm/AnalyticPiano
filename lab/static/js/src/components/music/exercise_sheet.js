@@ -150,10 +150,11 @@ define([
       var tpl = _.template(
         // not called: time_to_complete and more; seriesTimer obsolete
         `<p><span class="exercise-status" style="background-color:<%= status_color %>"><%= status_text %></span></p>
-                <% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined") { %>
-                    <p><a onclick="window.alert('PERFORMANCE DATA: This shows your average (mean) tempo in whole notes per minute, plus a star rating out of five for the consistency of your tempo.')">Tempo&nbsp;<%= Math.round(tempo_mean) %> <%= tempo_rating %></a></p>
+                <% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined" && typeof(tempo_display_factor) !== "undefined") { %>
+                    <p>Tempo&nbsp;<%= ["", "erratic", "unsteady", "steady", "very&nbsp;steady", "perfectly&nbsp;steady"][tempo_rating.length] %> at <%= Math.round(tempo_mean * tempo_display_factor) %> b.p.m.</p>
                 <% } %>`
       );
+      // the tempo verbiage above should match what is separately coded for my activity
       var html = "";
       var tpl_data = {};
 
@@ -199,6 +200,20 @@ define([
             tpl_data.max_tempo = exc.getMaxTempo();
             tpl_data.tempo_mean = exc.getTempoMean();
             tpl_data.tempo_rating = exc.getTempoRating();
+            tpl_data.tempo_display_factor = 1;
+            try {
+              // get beat information from time signature
+              const time_sig = definition.exercise.timeSignature;
+              const time_sig_numerator = Number(time_sig.split("/")[0]);
+              let tempo_display_factor = Number(time_sig.split("/")[1]);
+              if (time_sig_numerator % 3 == 0) {
+                // compound meter
+                tempo_display_factor /= 3;
+              }
+              tpl_data.tempo_display_factor = tempo_display_factor;
+            } catch (error) {
+              console.log("Unable to retrieve beat value from time signature")
+            }
           }
           break;
         case exc.STATE.FINISHED:
@@ -226,19 +241,23 @@ define([
       var $infoEl = $("#exercise-info");
       var tpl = _.template(
         `<% if (typeof(exercise_list) !== "undefined" && exercise_list.length > 0) { %>
-                    <p>Exercise <%= exercise_num %> of <%= exercise_list.length %></p>
-                <% } %>`
+          <p>Exercise <%= exercise_num %> of <%= exercise_list.length %></p>
+        <% } %>`
       );
       var html = "";
       var tpl_data = {};
 
-      tpl_data.exercise_list = exc.definition.getExerciseList();
-      tpl_data.exercise_num = 1;
-      for (let i = 0; i < tpl_data.exercise_list.length; i++) {
-        if (tpl_data.exercise_list[i].selected) {
-          tpl_data.exercise_num = i + 1;
-          break;
+      if (exc.definition.exercise.performing_course) {
+        tpl_data.exercise_list = exc.definition.getExerciseList();
+        tpl_data.exercise_num = 1;
+        for (let i = 0; i < tpl_data.exercise_list.length; i++) {
+          if (tpl_data.exercise_list[i].selected) {
+            tpl_data.exercise_num = i + 1;
+            break;
+          }
         }
+      } else {
+        // get ID?
       }
 
       html = tpl(tpl_data);
