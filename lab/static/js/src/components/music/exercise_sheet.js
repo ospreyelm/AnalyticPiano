@@ -206,7 +206,7 @@ define([
               const time_sig = definition.exercise.timeSignature;
               const time_sig_numerator = Number(time_sig.split("/")[0]);
               let tempo_display_factor = Number(time_sig.split("/")[1]);
-              if (time_sig_numerator % 3 == 0) {
+              if (time_sig_numerator > 3 && time_sig_numerator % 3 == 0) {
                 // compound meter
                 tempo_display_factor /= 3;
               }
