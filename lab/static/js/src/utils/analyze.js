@@ -541,7 +541,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
         // tetrads or triads with the bass doubled
         if (uv_span < 12) {
           return "CL";
-        } else if (uv_span < 24 && uv_midi[0] + 12 > uv_midi[1]) {
+        } else if (uv_span < 24 && uv_midi[0] + 12 > uv_midi[1] && uv_midi[1] + 12 > uv_midi[2]) {
           return "OP";
         } else {
           return "ERR";
