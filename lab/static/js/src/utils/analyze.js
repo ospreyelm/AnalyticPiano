@@ -532,7 +532,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
           return "U";
         } else if (uv_span == 12) {
           return "8";
-        } else if (uv_span < 24 && uv_midi[0] + 12 > uv_midi[1]) {
+        } else if (uv_span < 24) { // redundant: ( && uv_midi[0] + 12 >= uv_midi[1])
           return "8+";
         } else {
           return "ERR";
