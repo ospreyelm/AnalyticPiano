@@ -210,7 +210,9 @@ define([
                 // compound meter
                 tempo_display_factor /= 3;
               }
-              tpl_data.tempo_display_factor = tempo_display_factor;
+              if (!isNaN(tempo_display_factor)) {
+                tpl_data.tempo_display_factor = tempo_display_factor;
+              }
             } catch (error) {
               console.log("Unable to retrieve beat value from time signature")
             }
