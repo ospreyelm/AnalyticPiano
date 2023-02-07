@@ -409,7 +409,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
             return [
                 (t[1], t[0])
-                for t in product(self.transpose_requests, sorted_exercise_list)
+                for t in product(staff_sig_requests, sorted_exercise_list)
             ]
 
     @cached_property
