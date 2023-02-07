@@ -398,7 +398,10 @@ class Playlist(ClonableModelMixin, BaseContentModel):
                 parsed_staff_sigs.append(staff_sig)
 
         staff_sig_requests = []
-        [staff_sig_requests.append(x) for x in parsed_staff_sigs if x not in staff_sig_requests]
+        for i in range(0, len(parsed_staff_sigs)):
+            parsed_staff_sig = parsed_staff_sigs[i]
+            if parsed_staff_sig not in staff_sig_requests:
+                staff_sig_requests.append(parsed_staff_sig)
         # ^ If an exercise is presented more than once in the same key, critical grading errors result
 
         if self.transposition_type == self.TRANSPOSE_EXERCISE_LOOP:
