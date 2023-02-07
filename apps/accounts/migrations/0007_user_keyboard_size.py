@@ -6,13 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0006_auto_20200928_0746'),
+        ("accounts", "0006_auto_20200928_0746"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='keyboard_size',
-            field=models.IntegerField(choices=[(25, '25'), (32, '32'), (37, '37'), (49, '49'), (61, '61'), (88, '88')], default=49),
+            model_name="user",
+            name="keyboard_size",
+            field=models.IntegerField(
+                choices=[
+                    (25, "25"),
+                    (32, "32"),
+                    (37, "37"),
+                    (49, "49"),
+                    (61, "61"),
+                    (88, "88"),
+                ],
+                default=49,
+            ),
         ),
     ]

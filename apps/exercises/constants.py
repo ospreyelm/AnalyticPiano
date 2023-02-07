@@ -13,7 +13,7 @@ sig_to_pc = {
     "####": 4,
     "#####": 11,
     "######": 6,
-    "#######": 1
+    "#######": 1,
 }
 
 pseudo_key_to_sig = {
@@ -46,7 +46,7 @@ pseudo_key_to_sig = {
     "d#": "######",
     "F#": "######",
     "a#": "#######",
-    "C#": "#######"
+    "C#": "#######",
 }
 
 all_sigs = [
@@ -64,26 +64,41 @@ all_sigs = [
     "####",
     "#####",
     "######",
-    "#######"
+    "#######",
 ]
 
 all_keys = [
     # encoding must match keyMap in general.js
-    "iAb", "jCb",
-    "iEb", "jGb",
-    "iBb", "jDb",
-    "iF_", "jAb",
-    "iC_", "jEb",
-    "iG_", "jBb",
-    "iD_", "jF_",
-    "iA_", "jC_",
-    "iE_", "jG_",
-    "iB_", "jD_",
-    "iF#", "jA_",
-    "iC#", "jE_",
-    "iG#", "jB_",
-    "iD#", "jF#",
-    "iA#", "jC#"
+    "iAb",
+    "jCb",
+    "iEb",
+    "jGb",
+    "iBb",
+    "jDb",
+    "iF_",
+    "jAb",
+    "iC_",
+    "jEb",
+    "iG_",
+    "jBb",
+    "iD_",
+    "jF_",
+    "iA_",
+    "jC_",
+    "iE_",
+    "jG_",
+    "iB_",
+    "jD_",
+    "iF#",
+    "jA_",
+    "iC#",
+    "jE_",
+    "iG#",
+    "jB_",
+    "iD#",
+    "jF#",
+    "iA#",
+    "jC#",
 ]
 
 KEY_SIGNATURES = list(pseudo_key_to_sig.keys())

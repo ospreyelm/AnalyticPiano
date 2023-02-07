@@ -1,0 +1,27 @@
+{% extends 'dashboard/content.html' %}
+{% block extra_buttons %}
+    {% with form.instance.get_previous_authored_playlist as previous %}
+        {% if not previous == None %}
+            {% if not has_been_performed %}
+                <button type="submit" class="btn dashboard-btn" name="save-and-edit-previous">← Previous Playlist</button>
+            {% else %}
+                <button type="submit" class="btn dashboard-btn limited-save-btn" name="save-and-edit-previous">← Previous Playlist</button>
+            {% endif %}
+        {% endif %}
+    {% endwith %}
+    {% with form.instance.get_next_authored_playlist as next %}
+        {% if not next == None %}
+            {% if not has_been_performed %}
+                <button type="submit" class="btn dashboard-btn" name="save-and-edit-next">Next Playlist→</button>
+            {% else %}
+                <button type="submit" class="btn dashboard-btn limited-save-btn" name="save-and-edit-next">Next Playlist→</button>
+            {% endif %}
+        {% endif %}
+    {% endwith %}
+{% endblock %}
+
+{% block js_extra %}
+    <script>
+        $('ul > li').css('display', 'table');
+    </script>
+{% endblock %}

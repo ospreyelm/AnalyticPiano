@@ -6,14 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0009_group'),
-        ('exercises', '0021_auto_20210831_0915'),
+        ("accounts", "0009_group"),
+        ("exercises", "0021_auto_20210831_0915"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='course',
-            name='visible_to',
-            field=models.ManyToManyField(blank=True, help_text='If no group is selected, course will be visible to all subscribers.', related_name='visible_courses', to='accounts.Group'),
+            model_name="course",
+            name="visible_to",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="If no group is selected, course will be visible to all subscribers.",
+                related_name="visible_courses",
+                to="accounts.Group",
+            ),
         ),
     ]

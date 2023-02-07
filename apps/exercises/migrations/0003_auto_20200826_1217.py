@@ -7,18 +7,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0002_auto_20200824_0902'),
+        ("exercises", "0002_auto_20200824_0902"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='exercise',
-            name='rhythm_value',
-            field=models.CharField(blank=True, max_length=64, null=True, verbose_name='Rhythm Value'),
+            model_name="exercise",
+            name="rhythm_value",
+            field=models.CharField(
+                blank=True, max_length=64, null=True, verbose_name="Rhythm Value"
+            ),
         ),
         migrations.AlterField(
-            model_name='exercise',
-            name='data',
-            field=apps.exercises.models.RawJSONField(verbose_name='Data'),
+            model_name="exercise",
+            name="data",
+            field=apps.exercises.models.RawJSONField(verbose_name="Data"),
         ),
     ]

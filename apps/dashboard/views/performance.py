@@ -5,10 +5,11 @@ from django.shortcuts import get_object_or_404, render
 from django.utils.safestring import mark_safe
 from django_tables2 import RequestConfig, Column
 from datetime import datetime
-from pytz import timezone
+import pytz
 
 from apps.dashboard.tables import MyActivityTable, MyActivityDetailsTable
-from apps.exercises.models import PerformanceData, Playlist
+from apps.exercises.models import Course, PerformanceData, Playlist
+from django.conf import settings
 
 User = get_user_model()
 
@@ -21,30 +22,32 @@ def performance_list_view(request, subscriber_id=None):
     if not request.user.is_supervisor_to(subscriber):
         raise PermissionDenied
 
-    performances = PerformanceData.objects.filter(
-        user=subscriber
-    ).select_related('user', 'playlist')
-
-    table = MyActivityTable(
-        performances
+    performances = PerformanceData.objects.filter(user=subscriber).select_related(
+        "user", "playlist"
     )
+
+    table = MyActivityTable(performances)
     subscriber_name = subscriber
 
     RequestConfig(request).configure(table)
-    return render(request, "dashboard/performances-list.html", {
-        "table": table,
-        "subscriber_name": subscriber_name,
-    })
+    return render(
+        request,
+        "dashboard/performances-list.html",
+        {
+            "table": table,
+            "subscriber_name": subscriber_name,
+        },
+    )
 
 
 def playlist_pass_bool(exercise_list, exercises_data, playlist_length):
     parsed_data = {}
 
     for completion in exercises_data:
-        c_id = completion['id']
+        c_id = completion["id"]
         if c_id not in parsed_data.keys():
             parsed_data[c_id] = []
-        parsed_data[c_id].append(completion['exercise_error_tally'])
+        parsed_data[c_id].append(completion["exercise_error_tally"])
         del c_id
 
     playlist_pass = True
@@ -63,50 +66,60 @@ def playlist_pass_bool(exercise_list, exercises_data, playlist_length):
     return playlist_pass
 
 
-def localtime(timestamp = "2000-01-01 13:00:00", format = "%Y_%m_%d • %a", locality = 'US/Eastern'):
-    local_timezone = timezone(locality)
-    utc_datetime = timestamp + "+0000"
-    date_obj = datetime.strptime(utc_datetime, "%Y-%m-%d %H:%M:%S%z")
-    localized = datetime.strftime(date_obj.astimezone(local_timezone), format) # (%-I.%M%p).lower()
-    return localized
-
-
-def playlist_pass_date(exercise_list, exercises_data, playlist_length, reformat=True):
+def playlist_pass_date(
+    exercise_list, exercises_data, playlist_length, make_concise_and_localize=True
+):
     if not playlist_pass_bool(exercise_list, exercises_data, playlist_length):
         return None
 
     parsed_data = {}
     for completion in exercises_data:
-        c_id = completion['id']
+        c_id = completion["id"]
         if c_id not in parsed_data.keys():
             parsed_data[c_id] = []
-        parsed_data[c_id].append({
-            'date': completion['performed_at'],
-            'dur': completion['exercise_duration'],
-            'err': completion['exercise_error_tally']
-        })
+        parsed_data[c_id].append(
+            {
+                "date": completion["performed_at"],
+                "dur": completion["exercise_duration"],
+                "err": completion["exercise_error_tally"],
+            }
+        )
         del c_id
 
     ex_pass_dates = []
     for key in parsed_data:
         error_free = []
         for occasion in parsed_data[key]:
-            # print(occasion)
-            if not isinstance(occasion['err'], int) or occasion['err'] < 6:
-                error_free.append(occasion['date'])
+            if (
+                not isinstance(occasion["err"], int) or occasion["err"] < 6
+            ):  # why < 6 ?!
+                error_free.append(occasion["date"])
         if len(error_free) > 0:
             ex_pass_dates.append(sorted(error_free)[0])
 
     if len(ex_pass_dates) < playlist_length:
         return None
     else:
-        return localtime(sorted(ex_pass_dates)[-1]) if reformat else sorted(ex_pass_dates)[-1]
+        pl_pass_date_utc_str = sorted(ex_pass_dates)[-1]
+
+    if make_concise_and_localize:  # for certain Django table renders
+        # UTC is assumed here since the performed_at property is written to the performance database per UTC
+        pl_pass_date = datetime.strptime(
+            pl_pass_date_utc_str, "%Y-%m-%d %H:%M:%S"
+        ).replace(tzinfo=pytz.timezone("UTC"))
+        # for the user, interpret the pass_date in terms of the timezone for the course
+        return datetime.strftime(
+            pl_pass_date.astimezone(pytz.timezone(settings.TIME_ZONE)),
+            "%Y_%m_%d (%a) %H:%M",
+        )
+    else:
+        return pl_pass_date_utc_str
 
 
 def playing_time(exercises_data):
     seconds = 0
     for completion in exercises_data:
-        seconds += completion['exercise_duration']
+        seconds += completion["exercise_duration"]
         # data gives seconds
     hours = int(seconds // 3600)
     minutes = int((seconds // 60) % 60)
@@ -114,73 +127,105 @@ def playing_time(exercises_data):
     if hours >= 2:
         return str(hours) + "+ hrs"
     elif hours == 1:
-        return str(hours) + " hrs, " + str(minutes) + " mins"
+        return str(hours) + " hr, " + str(minutes) + " mins"
     elif minutes >= 1:
         return str(minutes) + "+ mins"
     else:
         return str(seconds) + "s"
 
 
-def playlist_performance_view(request, playlist_id, subscriber_id=None):
-    subscriber_id = subscriber_id or request.user.id
+def playlist_performance_view(request, performance_id):
+    subscriber_id = request.user.id
     subscriber = get_object_or_404(User, id=subscriber_id)
     if not request.user.is_supervisor_to(subscriber):
         raise PermissionDenied
     subscriber_name = subscriber
 
     data = []
-    performances = PerformanceData.objects.filter(
-        playlist__id=playlist_id, user_id=subscriber_id
-    ).select_related('user', 'playlist')
-    playlist = Playlist.objects.filter(id=playlist_id).first()
-    exercises = [exercise for exercise in playlist.exercise_list]
-    users_email_list = list(set(list(performances.values_list('user__email', flat=True))))
+    performance = (
+        PerformanceData.objects.filter(id=performance_id)
+        .select_related("user", "playlist", "course")
+        .first()
+    )
+    # performances = PerformanceData.objects.filter(
+    #     playlist__id=playlist_id, user_id=subscriber_id
+    # ).select_related("user", "playlist", "course")
+    # playlist = Playlist.objects.get(id=playlist_id)
+    exercises = [exercise for exercise in performance.playlist.exercise_list]
 
-    for user in users_email_list:
-        performance_obj = performances.filter(user__email=user).first()
-        user_data = {
-            'performer': user,
-            'subscriber_id': subscriber_id,
-            'playlist_id': playlist.id,
-            'playlist_name': playlist.name,
-            'playlist_length': len(playlist.exercise_list),
-            'performance_obj': performance_obj,
-            'performance_data': performance_obj.data,
-            'performer_obj': subscriber
-        }
-        user_data.update({'exercise_count': len(user_data['performance_data'])})
-        data.append(user_data)
+    course_id = getattr(performance.course, "id", None)
 
+    # performance_obj = performances.filter(user__email=user).first()
+    # course = None
+    # if performance_obj.course_id:
+    #     course = Course.objects.get(_id=performance_obj.course_id)
+
+    user_data = {
+        "performer": subscriber,
+        "subscriber_id": subscriber_id,
+        "playlist_id": performance.playlist.id,
+        "course_id": course_id,
+        "playlist_name": performance.playlist.name,
+        "playlist_length": len(performance.playlist.exercise_list),
+        "performance_obj": performance,
+        "performance_data": performance.data,
+        "performer_obj": subscriber,
+    }
+    user_data.update({"exercise_count": len(user_data["performance_data"])})
+    data.append(user_data)
 
     for d in data:
-        performance_obj = d['performance_obj']
-        exercises_data = d['performance_data']
+        performance_obj = d["performance_obj"]
+        exercises_data = d["performance_data"]
 
-        d['playing_time'] = playing_time(exercises_data)
-        d['playlist_pass_bool'] = playlist_pass_bool(exercises, exercises_data, d['playlist_length']) # or len(exercises)
-        d['playlist_pass_date'] = playlist_pass_date(exercises, exercises_data, d['playlist_length']) # or len(exercises)
+        d["playing_time"] = playing_time(exercises_data)
+        d["playlist_pass_bool"] = playlist_pass_bool(
+            exercises, exercises_data, d["playlist_length"]
+        )  # why not len(exercises) ?!
+        d["playlist_pass_date"] = playlist_pass_date(
+            exercises, exercises_data, d["playlist_length"]
+        )  # why not len(exercises) ?!
 
-        [d.update(**{exercise['id']: mark_safe(
-            f'{"PASS " + localtime(performance_obj.get_exercise_first_pass(exercise["id"]), "%Y_%m_%d") + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else ""}'
-            f'{"Latest: "}'
-            f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ""}'
-            f'{"Done " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == -1) else ""}'
-            f'{"Perfect " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == 0) else ""}'
-            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 or not exercise["exercise_mean_tempo"]) else exercise["exercise_mean_tempo"]}'
-            f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * exercise["exercise_tempo_rating"]}'
-            f'<br><a href="{performance_obj.playlist.get_exercise_url_by_id(exercise["id"])}">Try Again</a>'
-        )}) for exercise in exercises_data]
+        [
+            d.update(
+                **{
+                    exercise["id"]: mark_safe(
+                        f'{"PASS " + datetime.strftime(datetime.strptime(performance_obj.get_exercise_first_pass(exercise["id"]), "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone(settings.TIME_ZONE)), "%y_%m_%d %H:%M") + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else "TO DO<br><br>"}'
+                        f'{"Latest: errors (" + str(exercise["exercise_error_tally"]) + ")." if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ""}'
+                        f'{"Done " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == -1) else ""}'  # when is this shown?
+                        f'{"Latest: without error." if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == 0) else ""}'
+                        f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ["", "<br>Tempo erratic", "<br>Tempo unsteady", "<br>Tempo steady", "<br>Tempo very steady", "<br>Tempo perfectly steady"][exercise["exercise_tempo_rating"]]}'
+                        f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 or not exercise["exercise_mean_tempo"]) else "<br> at " + str(exercise["exercise_mean_tempo"]) + " w.n.p.m.<br>"}'
+                        f'<br><a href="{performance_obj.playlist.get_exercise_url_by_id(exercise["id"], course_id=course_id)}">Play again</a>'
+                    )
+                }
+            )
+            for exercise in exercises_data
+        ]
 
     table = MyActivityDetailsTable(
         data=data,
-        extra_columns=[(exercises[num], Column(verbose_name=str(num + 1),
-                                               orderable=False,
-                                               default=mark_safe(f'<a href="{performance_obj.playlist.get_exercise_url_by_num(num + 1)}">Try</a>')))
-                       for num in range(len(exercises))]
+        extra_columns=[
+            (
+                exercises[num],
+                Column(
+                    verbose_name=str(num + 1),
+                    orderable=False,
+                    default=mark_safe(
+                        f'<a href="{performance_obj.playlist.get_exercise_url_by_num(num + 1, course_id=course_id)}">Try</a>'
+                    ),
+                ),
+            )
+            for num in range(len(exercises))
+        ],
     )
 
     RequestConfig(request).configure(table)
-    return render(request, "dashboard/performance_details.html", {
-        "table": table,
-        "subscriber_name": subscriber_name,
-    })
+    return render(
+        request,
+        "dashboard/performance_details.html",
+        {
+            "table": table,
+            "subscriber_name": subscriber_name,
+        },
+    )

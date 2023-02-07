@@ -12,7 +12,6 @@
     <link rel="stylesheet" type="text/css" href="{% static 'css/dashboard.css' %}"/>
     {% block css_extra %}{% endblock %}
     <script src="{% static 'js/jquery-3.5.1.min.js' %}"></script>
-
     {% block extrahead %}
     {% endblock %}
 </head>
@@ -22,21 +21,23 @@
     <div class="sidenav">
         {% with url_name=request.resolver_match.url_name %}
             <p class="sidenav-header">ANALYTIC PIANO</p>
-            <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Go to Play View</a>
+            <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play</a>
+            <a {% if url_name == 'index'%}class="sidenav-active"{%endif%} href="{% url 'dashboard:index' %}" >Dashboard Home</a>
+             <a href="{% url 'custom-logout' %}">Log Out</a>
             <p class="sidenav-subhead">PRACTICE</p>
-            <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
             <a {% if url_name == 'subscriptions-courses' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:subscriptions-courses' %}">Available Courses</a>
+            <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
             <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:preferences' %}">Settings</a>
             <p class="sidenav-subhead">CONNECT</p>
             <a {% if url_name == 'subscriptions' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:subscriptions' %}">Follow</a>
+               href="{% url 'dashboard:subscriptions' %}">With Creators</a>
             <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:subscribers' %}">Enroll and Invite</a>
+               href="{% url 'dashboard:subscribers' %}">With Performers</a>
             <a {% if url_name == 'groups-list' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:groups-list' %}">Populate Groups</a>
+               href="{% url 'dashboard:groups-list' %}">Manage Performer Groups</a>
             <p class="sidenav-subhead">CREATE</p>
             <a {% if url_name == 'courses-list' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:courses-list' %}">Courses</a>

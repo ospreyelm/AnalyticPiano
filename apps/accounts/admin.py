@@ -12,41 +12,54 @@ User = get_user_model()
 
 class UserAdmin(admin.UserAdmin):
     fieldsets = (
-        ('Account Information', {
-            'fields': (
-                'email',
-                'first_name',
-                'last_name',
-                'password',
-                'preferences',
-
-                # FIXME RAAAAAWW PASSSWORDD!!
-                'raw_password',
-
-                'is_staff',
-                'is_superuser',
-                'is_active',
-                '_supervisors'
-            ),
-        }),
-
+        (
+            "Account Information",
+            {
+                "fields": (
+                    "email",
+                    "first_name",
+                    "last_name",
+                    "password",
+                    "preferences",
+                    "is_staff",
+                    "is_superuser",
+                    "is_active",
+                    "_supervisors",
+                ),
+            },
+        ),
     )
     form = UserChangeForm
     add_form = UserAdminCreationForm
     change_password_form = AdminPasswordChangeForm
 
     list_display = (
-        'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'is_superuser'
+        "email",
+        "first_name",
+        "last_name",
+        "is_staff",
+        "is_active",
+        "is_superuser",
     )
 
-    search_fields = ('email',)
-    ordering = ('-is_active', '-is_superuser', '-is_staff', 'last_name', 'first_name', 'id',)
+    search_fields = ("email",)
+    ordering = (
+        "-is_active",
+        "-is_superuser",
+        "-is_staff",
+        "last_name",
+        "first_name",
+        "id",
+    )
 
     add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2'),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("email", "password1", "password2"),
+            },
+        ),
     )
 
 

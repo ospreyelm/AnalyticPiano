@@ -25,34 +25,36 @@ from copy import deepcopy
 from apps.exercises.constants import sig_to_pc, pseudo_key_to_sig, all_sigs, all_keys
 
 
-def transpose(exercise, target_request):
+def transpose(exercise, staff_sig_request):
     exercise = deepcopy(exercise)
-    sig_orig = exercise.data.get('keySignature')
+    sig_orig = exercise.data.get("keySignature")
     pc_ref_orig = sig_to_pc[sig_orig]
-    key_orig = exercise.data.get('key')
-    try:
-        sig_target = pseudo_key_to_sig[target_request]
-    except KeyError:
+    key_orig = exercise.data.get("key")
+    if staff_sig_request not in all_sigs:
         return exercise
-        # abort this transposition, skip to next item in transpose_requests.split()
+        # Bogus requests should never get this far, due to Django validation
+        # of tranpose_requests and tests in transposition_matrix.
+        # If they did, returning the untransposed exercise more than once
+        # would cause grading problems.
 
-    pc_ref_target = sig_to_pc[sig_target]
+    pc_ref_target = sig_to_pc[staff_sig_request]
 
     if key_orig == "h":
         key_target = key_orig
     else:
         try:
-            fifth_chain_move = all_sigs.index(sig_target) - all_sigs.index(sig_orig)
+            fifth_chain_move = all_sigs.index(staff_sig_request) - all_sigs.index(sig_orig)
             key_target = all_keys[all_keys.index(key_orig) + 2 * fifth_chain_move]
         except IndexError:
             return exercise
+            # ditto comment on return statement above
 
     # 12 + not necessary here but keep it in case this function copied to Javascript
     pc_vector = (12 + pc_ref_target - pc_ref_orig) % 12
 
     midi_all_ex = []
-    for chord in exercise.data['chord']:
-        midi_all_ex.extend(chord['visible'] + chord['hidden'])
+    for chord in exercise.data["chord"]:
+        midi_all_ex.extend(chord["visible"] + chord["hidden"])
 
     midi_max_ex = max(midi_all_ex)
     midi_min_ex = min(midi_all_ex)
@@ -77,17 +79,22 @@ def transpose(exercise, target_request):
     elif midi_range_ex <= 50:
         # suitable for 61-key controllers, C2 to C7
         midi_mean_floor_target_min = 60
-    midi_mean_floor_target_range = range(midi_mean_floor_target_min, midi_mean_floor_target_min + 12)
+    midi_mean_floor_target_range = range(
+        midi_mean_floor_target_min, midi_mean_floor_target_min + 12
+    )
 
     midi_vector = None
 
     if False:
+        # TODO: enable this as an option in the playlist transposition controls
         # algorithm that fits exercise onto smallest standard keyboard
         # that will accommodate all keys
         octave_displ = 0
         arbitrary_limit = 7
         while octave_displ < arbitrary_limit and octave_displ > -arbitrary_limit:
-            if (midi_mean_floor_ex + pc_vector + 12 * octave_displ) in midi_mean_floor_target_range:
+            if (
+                midi_mean_floor_ex + pc_vector + 12 * octave_displ
+            ) in midi_mean_floor_target_range:
                 midi_vector = pc_vector + 12 * octave_displ
                 break
             if octave_displ >= 0:
@@ -96,21 +103,24 @@ def transpose(exercise, target_request):
     else:
         # simply transpose upwards
         midi_vector = pc_vector
+    # TODO: allow additional transpose options (incl. define a lowest pseudo_key, set the lowest tenor note)
 
     if midi_vector == None:
+        # No transposition operation was identified
         return exercise
+        # ditto comment on return statement above
 
     # make the transposition
-    for chord in exercise.data['chord']:
-        transposed = [note + midi_vector for note in chord['visible']]
+    for chord in exercise.data["chord"]:
+        transposed = [note + midi_vector for note in chord["visible"]]
         chord.update(visible=transposed)
 
-        transposed = [note + midi_vector for note in chord['hidden']]
+        transposed = [note + midi_vector for note in chord["hidden"]]
         chord.update(hidden=transposed)
 
-    exercise.data['key'] = key_target
-    exercise.data['keySignature'] = sig_target
+    exercise.data["key"] = key_target
+    exercise.data["keySignature"] = staff_sig_request
 
-    exercise.id = f'{exercise.id}{midi_vector}'
+    exercise.id = f"{exercise.id}{midi_vector}"
 
     return exercise

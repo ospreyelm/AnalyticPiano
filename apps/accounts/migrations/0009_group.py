@@ -10,23 +10,66 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0008_auto_20210112_1706'),
+        ("accounts", "0008_auto_20210112_1706"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Group',
+            name="Group",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=128, validators=[django.core.validators.RegexValidator(message='Use letters, numbers, underscores, or hyphens', regex='^[a-zA-Z0-9-_]+$')], verbose_name='Name')),
-                ('_members', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), blank=True, default=list, size=None, verbose_name='Members')),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='Created')),
-                ('updated', models.DateTimeField(auto_now=True, verbose_name='Updated')),
-                ('manager', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='managed_groups', to=settings.AUTH_USER_MODEL, verbose_name='Manager')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        max_length=128,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                message="Use letters, numbers, underscores, or hyphens",
+                                regex="^[a-zA-Z0-9-_]+$",
+                            )
+                        ],
+                        verbose_name="Name",
+                    ),
+                ),
+                (
+                    "_members",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.IntegerField(),
+                        blank=True,
+                        default=list,
+                        size=None,
+                        verbose_name="Members",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Created"),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(auto_now=True, verbose_name="Updated"),
+                ),
+                (
+                    "manager",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="managed_groups",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Manager",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Group',
-                'verbose_name_plural': 'Groups',
+                "verbose_name": "Group",
+                "verbose_name_plural": "Groups",
             },
         ),
     ]

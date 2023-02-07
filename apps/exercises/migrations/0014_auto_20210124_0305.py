@@ -7,38 +7,66 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0013_auto_20210118_2141'),
+        ("exercises", "0013_auto_20210118_2141"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='course',
-            name='playlists',
-            field=models.CharField(help_text='Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.', max_length=1024, verbose_name='Playlists'),
+            model_name="course",
+            name="playlists",
+            field=models.CharField(
+                help_text="Ordered set of playlist IDs, separated by comma, semicolon, space, or newline.",
+                max_length=1024,
+                verbose_name="Playlists",
+            ),
         ),
         migrations.AlterField(
-            model_name='course',
-            name='slug',
-            field=models.SlugField(max_length=64, unique=True, verbose_name='URL slug'),
+            model_name="course",
+            name="slug",
+            field=models.SlugField(max_length=64, unique=True, verbose_name="URL slug"),
         ),
         migrations.AlterField(
-            model_name='course',
-            name='title',
-            field=models.CharField(max_length=64, unique=True, validators=[django.core.validators.RegexValidator(message='Use letters, numbers, underscores, or hyphens', regex='^[a-zA-Z0-9-_]+$')], verbose_name='Title'),
+            model_name="course",
+            name="title",
+            field=models.CharField(
+                max_length=64,
+                unique=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Use letters, numbers, underscores, or hyphens",
+                        regex="^[a-zA-Z0-9-_]+$",
+                    )
+                ],
+                verbose_name="Title",
+            ),
         ),
         migrations.AlterField(
-            model_name='exercise',
-            name='is_public',
-            field=models.BooleanField(default=True, verbose_name='Share'),
+            model_name="exercise",
+            name="is_public",
+            field=models.BooleanField(default=True, verbose_name="Share"),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='exercises',
-            field=models.CharField(help_text='Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.', max_length=1024, verbose_name='Exercises'),
+            model_name="playlist",
+            name="exercises",
+            field=models.CharField(
+                help_text="Ordered set of exercise IDs, separated by comma, semicolon, space, or newline.",
+                max_length=1024,
+                verbose_name="Exercises",
+            ),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='name',
-            field=models.CharField(max_length=32, unique=True, validators=[django.core.validators.RegexValidator(message='Use letters, numbers, underscores, or hyphens', regex='^[a-zA-Z0-9-_]+$')], verbose_name='Name'),
+            model_name="playlist",
+            name="name",
+            field=models.CharField(
+                max_length=32,
+                unique=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Use letters, numbers, underscores, or hyphens",
+                        regex="^[a-zA-Z0-9-_]+$",
+                    )
+                ],
+                verbose_name="Name",
+            ),
         ),
     ]

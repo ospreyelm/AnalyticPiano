@@ -8,50 +8,98 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='LTICourse',
+            name="LTICourse",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('course_name_short', models.CharField(max_length=1024)),
-                ('course_name', models.CharField(max_length=2048)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("course_name_short", models.CharField(max_length=1024)),
+                ("course_name", models.CharField(max_length=2048)),
             ],
             options={
-                'verbose_name': 'LTI Course',
-                'verbose_name_plural': 'LTI Courses ',
-                'ordering': ['course_name_short', 'course_name'],
+                "verbose_name": "LTI Course",
+                "verbose_name_plural": "LTI Courses ",
+                "ordering": ["course_name_short", "course_name"],
             },
         ),
         migrations.CreateModel(
-            name='Unit',
+            name="Unit",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=32, verbose_name='Name')),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='Created at')),
-                ('updated', models.DateTimeField(auto_now=True, verbose_name='Updated at')),
-                ('course', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='units', to='lti_tool.LTICourse', verbose_name='Course')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=32, verbose_name="Name")),
+                (
+                    "created",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Created at"),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(auto_now=True, verbose_name="Updated at"),
+                ),
+                (
+                    "course",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="units",
+                        to="lti_tool.LTICourse",
+                        verbose_name="Course",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Unit',
-                'verbose_name_plural': 'Units',
+                "verbose_name": "Unit",
+                "verbose_name_plural": "Units",
             },
         ),
         migrations.CreateModel(
-            name='LTIConsumer',
+            name="LTIConsumer",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('consumer_key', models.CharField(max_length=255)),
-                ('resource_link_id', models.CharField(max_length=255)),
-                ('context_id', models.CharField(blank=True, max_length=255, null=True)),
-                ('canvas_course_id', models.CharField(blank=True, max_length=255, null=True)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='lti_tool.LTICourse')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("consumer_key", models.CharField(max_length=255)),
+                ("resource_link_id", models.CharField(max_length=255)),
+                ("context_id", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "canvas_course_id",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="lti_tool.LTICourse",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'LTI Consumer',
-                'ordering': ['consumer_key', 'resource_link_id', 'context_id'],
+                "verbose_name": "LTI Consumer",
+                "ordering": ["consumer_key", "resource_link_id", "context_id"],
             },
         ),
     ]

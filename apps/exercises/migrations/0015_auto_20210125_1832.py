@@ -6,23 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0014_auto_20210124_0305'),
+        ("exercises", "0014_auto_20210124_0305"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='exercise',
-            old_name='name',
-            new_name='description',
+            model_name="exercise",
+            old_name="name",
+            new_name="description",
         ),
         migrations.AlterField(
-            model_name='course',
-            name='playlists',
-            field=models.CharField(max_length=1024, verbose_name='Playlist IDs'),
+            model_name="course",
+            name="playlists",
+            field=models.CharField(max_length=1024, verbose_name="Playlist IDs"),
         ),
         migrations.AlterField(
-            model_name='playlist',
-            name='exercises',
-            field=models.CharField(max_length=1024, verbose_name='Exercise IDs'),
+            model_name="playlist",
+            name="exercises",
+            field=models.CharField(max_length=1024, verbose_name="Exercise IDs"),
         ),
     ]

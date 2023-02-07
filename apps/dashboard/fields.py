@@ -10,10 +10,12 @@ class MultiDateField(forms.CharField):
     def validate(self, value):
         if not value:
             return
-        dates = value.split(' ')
+        dates = value.split(" ")
         for date in dates:
             try:
-                datetime.datetime.strptime(date, '%Y-%m-%d')
+                datetime.datetime.strptime(date, "%Y-%m-%d")
             except ValueError:
-                raise forms.ValidationError('Make sure all dates are correct and in YYYY-MM-DD format.')
+                raise forms.ValidationError(
+                    "Make sure all dates are correct and in YYYY-MM-DD format."
+                )
         return value

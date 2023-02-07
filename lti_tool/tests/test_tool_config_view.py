@@ -5,11 +5,12 @@ from lti import ToolConfig
 from ..views import LTIToolConfigView
 import django
 
+
 class ToolConfigViewTest(TestCase):
     def setUp(self):
         django.setup()
         self.view = LTIToolConfigView()
-        self.view.request = RequestFactory().get('/lti/config')
+        self.view.request = RequestFactory().get("/lti/config")
         self.view.request.session = {}
 
     def test_launch_secure_launch_url(self):
@@ -18,7 +19,7 @@ class ToolConfigViewTest(TestCase):
         self.view.request.is_secure = Mock(return_value=True)
 
         actual = self.view.get_launch_url(self.view.request)
-        expected = 'https://' + host + reverse(self.view.LAUNCH_URL)
+        expected = "https://" + host + reverse(self.view.LAUNCH_URL)
 
         self.assertEqual(actual, expected)
 
@@ -29,7 +30,7 @@ class ToolConfigViewTest(TestCase):
         expected = ToolConfig(
             title=self.view.TOOL_TITLE,
             launch_url=launch_url,
-            secure_launch_url=launch_url
+            secure_launch_url=launch_url,
         )
         actual = self.view.get_tool_config(self.view.request)
 

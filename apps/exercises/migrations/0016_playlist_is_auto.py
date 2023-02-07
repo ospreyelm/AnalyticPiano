@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0015_auto_20210125_1832'),
+        ("exercises", "0015_auto_20210125_1832"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='playlist',
-            name='is_auto',
-            field=models.BooleanField(default=False, verbose_name='Is Automatic Playlist'),
+            model_name="playlist",
+            name="is_auto",
+            field=models.BooleanField(
+                default=False, verbose_name="Is Automatic Playlist"
+            ),
         ),
     ]

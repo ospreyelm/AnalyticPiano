@@ -4,6 +4,7 @@
 {% load i18n %}
 {% block content %}
     <div class="dashboard-page">
+        <h1>Settings</h1>
         <form method="POST" class="post-form">
             {% csrf_token %}
             {{ form.as_p }}

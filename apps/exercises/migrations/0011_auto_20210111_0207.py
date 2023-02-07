@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0010_auto_20201229_1122'),
+        ("exercises", "0010_auto_20201229_1122"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='course',
-            name='is_public',
-            field=models.BooleanField(default=False, verbose_name='Is Public'),
+            model_name="course",
+            name="is_public",
+            field=models.BooleanField(default=False, verbose_name="Is Public"),
         ),
         migrations.AddField(
-            model_name='playlist',
-            name='is_public',
-            field=models.BooleanField(default=False, verbose_name='Is Public'),
+            model_name="playlist",
+            name="is_public",
+            field=models.BooleanField(default=False, verbose_name="Is Public"),
         ),
     ]

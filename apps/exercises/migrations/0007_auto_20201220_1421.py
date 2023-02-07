@@ -6,13 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0006_auto_20201220_1149'),
+        ("exercises", "0006_auto_20201220_1149"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='exercise',
-            name='name',
-            field=models.CharField(blank=True, help_text='Optional name for reminder', max_length=60, null=True, verbose_name='Name'),
+            model_name="exercise",
+            name="name",
+            field=models.CharField(
+                blank=True,
+                help_text="Optional name for reminder",
+                max_length=60,
+                null=True,
+                verbose_name="Name",
+            ),
         ),
     ]

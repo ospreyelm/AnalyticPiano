@@ -8,11 +8,11 @@ As of June 2022, Google Chrome, Microsoft Edge, Opera, and Chromium all include 
 
 # Heroku Deployment
 
-This application can be deployed to any platform that supports python and django. [Heroku](https://heroku.com/) is one such platform, a cloud platform as a service provider (PaaS) that provides for easy deployments from GitHub. 
+This application can be deployed to any platform that supports python and django. [Heroku](https://heroku.com/) is one such platform, a cloud platform as a service provider (PaaS) that provides for easy deployments from GitHub.
 
 Create a Heroku app. Deploy from the desired branch of this Github repository; the Python buildpack and the Heroku Postgres add-on will be supplied on the basis of the Procfile and runtime files.
 
-Add the following  **Config Variables** on the Settings page:
+Add the following **Config Variables** on the Settings page:
 
 ```
 SECRET_KEY = YOUR_RANDOM_LONG_PASSWORD
@@ -33,7 +33,7 @@ $ heroku run python manage.py createsuperuser --app HEROKU_APP_NAME
 
 # Running Locally on Linux
 
-- Requires [Python 3.6.x](http://python.org/downloads/) and [Pip](http://www.pip-installer.org/) to install. 
+- Requires [Python 3.6.x](http://python.org/downloads/) and [Pip](http://www.pip-installer.org/) to install.
 - To install Pip, see [their instructions](http://www.pip-installer.org/en/latest/installing.html).
 
 Run the app locally for the first time as follows:
@@ -55,7 +55,8 @@ $ ./manage.py migrate
 $ ./manage.py createsuperuser   # optional: create admin account
 $ ./manage.py runserver
 ```
-Use app! Open ```http://127.0.0.1:8000``` in a browser, per terminal instructions.
+
+Use app! Open `http://127.0.0.1:8000` in a browser, per terminal instructions.
 
 ```sh
 $ deactivate

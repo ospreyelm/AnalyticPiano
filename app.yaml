@@ -5,15 +5,15 @@ api_version: 1
 threadsafe: true
 
 env_variables:
-    DJANGO_SETTINGS_MODULE: 'harmony.settings.googleappengine'
+  DJANGO_SETTINGS_MODULE: "harmony.settings.googleappengine"
 
 handlers:
-- url: /static
-  static_dir: harmony/static
+  - url: /static
+    static_dir: harmony/static
 
 libraries:
-- name: django
-  version: "1.8"
+  - name: django
+    version: "1.8"
 
 builtins:
-- django_wsgi: on
+  - django_wsgi: on

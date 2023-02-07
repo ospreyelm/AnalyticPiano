@@ -7,18 +7,71 @@ import django_better_admin_arrayfield.models.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exercises', '0003_auto_20200826_1217'),
+        ("exercises", "0003_auto_20200826_1217"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='playlist',
-            name='transpose_requests',
-            field=django_better_admin_arrayfield.models.fields.ArrayField(base_field=models.CharField(choices=[('ab', 'ab'), ('Cb', 'Cb'), ('eb', 'eb'), ('Gb', 'Gb'), ('bb', 'bb'), ('Db', 'Db'), ('f', 'f'), ('Ab', 'Ab'), ('c', 'c'), ('Eb', 'Eb'), ('g', 'g'), ('Bb', 'Bb'), ('d', 'd'), ('F', 'F'), ('a', 'a'), ('C', 'C'), ('e', 'e'), ('G', 'G'), ('b', 'b'), ('D', 'D'), ('f#', 'f#'), ('A', 'A'), ('c#', 'c#'), ('E', 'E'), ('g#', 'g#'), ('B', 'B'), ('d#', 'd#'), ('F#', 'F#'), ('a#', 'a#'), ('C#', 'C#')], max_length=10), blank=True, default=list, help_text='Valid choices are ab Cb eb Gb bb Db f Ab c Eb g Bb d F a C e G b D f# A c# E g# B d# F# a# C#', null=True, size=None, verbose_name='Transpose Requests'),
+            model_name="playlist",
+            name="transpose_requests",
+            field=django_better_admin_arrayfield.models.fields.ArrayField(
+                base_field=models.CharField(
+                    choices=[
+                        ("ab", "ab"),
+                        ("Cb", "Cb"),
+                        ("eb", "eb"),
+                        ("Gb", "Gb"),
+                        ("bb", "bb"),
+                        ("Db", "Db"),
+                        ("f", "f"),
+                        ("Ab", "Ab"),
+                        ("c", "c"),
+                        ("Eb", "Eb"),
+                        ("g", "g"),
+                        ("Bb", "Bb"),
+                        ("d", "d"),
+                        ("F", "F"),
+                        ("a", "a"),
+                        ("C", "C"),
+                        ("e", "e"),
+                        ("G", "G"),
+                        ("b", "b"),
+                        ("D", "D"),
+                        ("f#", "f#"),
+                        ("A", "A"),
+                        ("c#", "c#"),
+                        ("E", "E"),
+                        ("g#", "g#"),
+                        ("B", "B"),
+                        ("d#", "d#"),
+                        ("F#", "F#"),
+                        ("a#", "a#"),
+                        ("C#", "C#"),
+                    ],
+                    max_length=10,
+                ),
+                blank=True,
+                default=list,
+                help_text="Valid choices are ab Cb eb Gb bb Db f Ab c Eb g Bb d F a C e G b D f# A c# E g# B d# F# a# C#",
+                null=True,
+                size=None,
+                verbose_name="Transpose Requests",
+            ),
         ),
         migrations.AddField(
-            model_name='playlist',
-            name='transposition_type',
-            field=models.CharField(blank=True, choices=[('Exercise Loop', 'Exercise Loop'), ('Playlist Loop', 'Playlist Loop'), ('Exercise Shuffle', 'Exercise Shuffle'), ('Playlist Shuffle', 'Playlist Shuffle')], max_length=32, null=True, verbose_name='Transposition Types'),
+            model_name="playlist",
+            name="transposition_type",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("Exercise Loop", "Exercise Loop"),
+                    ("Playlist Loop", "Playlist Loop"),
+                    ("Exercise Shuffle", "Exercise Shuffle"),
+                    ("Playlist Shuffle", "Playlist Shuffle"),
+                ],
+                max_length=32,
+                null=True,
+                verbose_name="Transposition Types",
+            ),
         ),
     ]
