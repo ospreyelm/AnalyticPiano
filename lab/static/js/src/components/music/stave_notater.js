@@ -674,6 +674,10 @@ define([
             ["i{z4}", "V{u}"],
             ["V{z4}", "={Ut3}"],
           ],
+          [
+            ["ii⌀{z5}", "i"],
+            ["iv{d z}", "i"],
+          ],
           // [["vii°{u}", "VI{z}"], ["c.t.°{u}", "VI{z}"]],
         ];
       }
@@ -712,7 +716,9 @@ define([
           if (["V{B z4}", "V{' z4}"].includes(display)) {
             extra_wide_figures = true;
           }
-          resolution_lines = true;
+          if (!["iv{d z}"].includes(display)) {
+            resolution_lines = true;
+          }
         } else if (key !== "" && current.split("/").length == 2) {
           if (current.split("/")[1] == postcursor.split("{")[0]) {
             display = current.split("/")[0]; // + " →"
