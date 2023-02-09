@@ -378,6 +378,15 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return self.untransposed_exercises_ids
         return self.transposed_exercises_ids
 
+    # Returns a dict formatted <exercise_id: exercise instance>
+    @property
+    def exercise_dict(self):
+        ex_dict = {}
+        exercises = self.exercises.all()
+        for exercise in exercises:
+            ex_dict[exercise.id] = exercise
+        return ex_dict
+
     @property
     def exercise_count(self):
         if not self.is_transposed():
@@ -423,9 +432,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         result = []
         for transposition in self.transposition_matrix:
             exercise_id, staff_sig_request = transposition
-            # TODO: try to remove N+1 querying here (may not be possible/practical)
-            exercise = Exercise.objects.get(id=exercise_id)
-            result.append(transpose(exercise, staff_sig_request).id)
+            result.append(
+                transpose(self.exercise_dict[exercise_id], staff_sig_request).id
+            )
         return result
 
     @property
@@ -694,12 +703,13 @@ class Course(ClonableModelMixin, BaseContentModel):
     def playlist_id_list(self):
         return list(map(lambda p: p.id, self.playlists.all()))
 
-    # TODO: fix N+1 querying in both of these functions
     @cached_property
     def publish_dates_dict(self):
-        pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
+        pco_list = PlaylistCourseOrdered.objects.filter(
+            course_id=self._id
+        ).select_related("playlist")
         return {
-            Playlist.objects.get(_id=pco.playlist_id).id: pco.publish_date.replace(
+            pco.playlist.id: pco.publish_date.replace(
                 tzinfo=pytz.timezone(settings.TIME_ZONE)
             )
             for pco in pco_list
