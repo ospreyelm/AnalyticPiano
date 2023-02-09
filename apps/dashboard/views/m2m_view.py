@@ -93,7 +93,7 @@ def handle_delete(
                 if hasattr(through_model_to_delete, "order"):
                     through_models_to_update = ThroughModel.objects.filter(
                         Q(order__gte=through_model_to_delete.order) & Q(**parent_query)
-                    )
+                    ).update(order=F("order") - 1)
                 through_model_to_delete.delete()
         else:
             getattr(parent_instance, fieldname).remove(

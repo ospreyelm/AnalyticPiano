@@ -22,7 +22,11 @@ from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.models.fields import ArrayField
 
 from apps.accounts.models import Group
-from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES, pseudo_key_to_sig
+from apps.exercises.constants import (
+    SIGNATURE_CHOICES,
+    KEY_SIGNATURES,
+    pseudo_key_to_sig,
+)
 from apps.exercises.utils.transpose import transpose
 
 import re
@@ -408,8 +412,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return list(product(sorted_exercise_list, staff_sig_requests))
         elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
             return [
-                (t[1], t[0])
-                for t in product(staff_sig_requests, sorted_exercise_list)
+                (t[1], t[0]) for t in product(staff_sig_requests, sorted_exercise_list)
             ]
 
     @cached_property
@@ -420,6 +423,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         result = []
         for transposition in self.transposition_matrix:
             exercise_id, staff_sig_request = transposition
+            # TODO: try to remove N+1 querying here (may not be possible/practical)
             exercise = Exercise.objects.get(id=exercise_id)
             result.append(transpose(exercise, staff_sig_request).id)
         return result
@@ -690,6 +694,7 @@ class Course(ClonableModelMixin, BaseContentModel):
     def playlist_id_list(self):
         return list(map(lambda p: p.id, self.playlists.all()))
 
+    # TODO: fix N+1 querying in both of these functions
     @cached_property
     def publish_dates_dict(self):
         pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
