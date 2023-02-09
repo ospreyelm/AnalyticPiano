@@ -149,10 +149,14 @@
             inputElement.val(Number(inputElement.val())+1)
         }
         $("[name='save-and-continue']").click()
+        $("[name='save-and-continue']").text("Saving order...")
+        $("[name='save-and-continue']").prop("disabled",true);
     })
     // Automatically updates the models when a m2m field (e.g. order) changes
     $(document).on('change','.m2m-input', function(){
         $("[name='save-and-continue']").click()
+        $("[name='save-and-continue']").text("Saving...")
+        $("[name='save-and-continue']").prop("disabled",true);
     })
     
 </script>

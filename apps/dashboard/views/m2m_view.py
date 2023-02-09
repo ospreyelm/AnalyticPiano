@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, F
 
 # these methods act as a kind of Mixin to allow for m2m view functionality
 
@@ -64,19 +64,11 @@ def handle_reorder(
             if new_order > prev_order:
                 through_models_to_update = ThroughModel.objects.filter(
                     Q(order__lte=new_order, order__gt=prev_order) & Q(**parent_query)
-                )
-                # Possibly roll into previous query to avoid this for loop
-                for through_model in through_models_to_update:
-                    through_model.order -= 1
-                    through_model.save()
+                ).update(order=F("order") - 1)
             elif new_order < prev_order:
                 through_models_to_update = ThroughModel.objects.filter(
                     Q(order__lt=prev_order, order__gte=new_order) & Q(**parent_query)
-                )
-                # Possibly roll into previous query to avoid this for loop
-                for through_model in through_models_to_update:
-                    through_model.order += 1
-                    through_model.save()
+                ).update(order=F("order") + 1)
             through_models_list[i].order = new_order
             through_models_list[i].save()
             break
@@ -102,9 +94,6 @@ def handle_delete(
                     through_models_to_update = ThroughModel.objects.filter(
                         Q(order__gte=through_model_to_delete.order) & Q(**parent_query)
                     )
-                    for through_model in through_models_to_update:
-                        through_model.order -= 1
-                        through_model.save()
                 through_model_to_delete.delete()
         else:
             getattr(parent_instance, fieldname).remove(
