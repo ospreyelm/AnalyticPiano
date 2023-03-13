@@ -853,24 +853,25 @@ class PerformanceData(models.Model):
     @classmethod
     def submit(
         cls,
-        exercise_id: str,
-        playlist_id: int,
         user_id: int,
         course_id: int,
+        playlist_id: int,
+        exercise_id: str,
         data: dict,
     ):
         pd, _ = cls.objects.get_or_create(
-            course_id=course_id,
-            playlist_id=playlist_id,
-            user_id=user_id,
-            supervisor_id=user_id,# what does supervisor mean here? course author? is it needed?
+            user_id = user_id,
+            course_id = course_id,
+            playlist_id = playlist_id,
         )
-        # rename performed_at to server_date
-        # use datetime.isoformat(datetime.now())[:-3]+'Z' in order to match javascript-generated json format
         exercise_data = dict(
-            **data, id=exercise_id, performed_at=dateformat.format(now(), "Y-m-d H:i:s")
+            **data,
+            id = exercise_id, # rename
+            # exercise_ID = exercise_id
+            performed_at = dateformat.format(now(), "Y-m-d H:i:s"), # rename and reformat
+            # server_date = datetime.isoformat(datetime.now())[:-3]+'Z' # UTC
         )
-        # now() gives UTC time, so that the performance data has integrity around UTC
+        # print(exercise_data)
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
@@ -931,8 +932,10 @@ class PerformanceData(models.Model):
 
     @classmethod
     def submit_playlist_performance(cls, playlist_id: int, user_id: int, data: dict):
+        # IS THIS OBSOLETE?
         pd = cls.objects.filter(
-            playlist_id=playlist_id, user_id=user_id, supervisor_id=user_id
+            user_id = user_id,
+            playlist_id = playlist_id,
         ).first()
         pd.playlist_performances.append(data)
         pd.full_clean()

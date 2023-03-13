@@ -80,41 +80,56 @@ def playlist_performance_view(request, playlist_id):
 @login_required
 @method_decorator(csrf_exempt)
 def submit_exercise_performance(request):
+    user_id = request.user.id if request.user.is_authenticated else None
     performance_data = json.loads(request.POST.get("data"))
 
-    user = request.user if request.user.is_authenticated else User.get_guest_user()
+    data_course_id = performance_data["course_ID"]
+    data_playlist_id = performance_data["playlist_ID"]
+    data_exercise_num = performance_data["exercise_num"]
 
-    playlist_name, exercise_num = performance_data["exercise_ID"].split("/")
-    performance_data.pop("exercise_ID")
-    # performance_data.pop('performer')
+    # This shouldn't require a lookup but only a format conversion
+    # between integers (0 thru 1,757,599) and strings (A00AA thru Z99ZZ)
+    course_id = Course.objects.get(id=data_course_id)._id
+    playlist_id = Playlist.objects.get(id=data_playlist_id)._id
 
-    # TODO: change this
-    playlist = Playlist.objects.filter(id=playlist_name).first()
-    exercise = playlist.get_exercise_obj_by_num(int(exercise_num))
-    course = Course.objects.get(id=performance_data["course_ID"])
+    # Convoluted procedure because the Playlist object is not imported to exercise_context.js
+    # so the accuracy of this database write depends on the playlist not having changed since
+    # the call of compileExerciseReport
+    exercise_id = Playlist.objects.filter(id=data_playlist_id).first()\
+        .get_exercise_obj_by_num(int(data_exercise_num)).id
+
+    # Intercept this meaningless prop from being written to the database
+    performance_data.pop("exercise_num")
 
     PerformanceData.submit(
-        course_id=course._id,
-        playlist_id=playlist._id,
-        # TODO: remove hotfix
-        exercise_id=exercise.id,
-        user_id=user.id,
-        data=performance_data,
+        user_id = user_id, # integer
+        course_id = course_id, # integer
+        playlist_id = playlist_id, # integer
+        exercise_id = exercise_id, # string
+        data = performance_data,
     )
     return HttpResponse(status=201)
 
 
+@login_required
 @method_decorator(csrf_exempt)
 def submit_playlist_performance(request):
+    # IS THIS OBSOLETE?
+    user_id = request.user.id if request.user.is_authenticated else None
     performance_data = json.loads(request.POST.get("data"))
 
-    user = request.user if request.user.is_authenticated else User.get_guest_user()
+    data_playlist_id = performance_data["playlist_ID"]
 
-    playlist_name, _ = performance_data["exercise_ID"].split("/")
-    performance_data.pop("exercise_ID")
-    # TODO: change this
-    playlist = Playlist.objects.filter(name=playlist_name).first()
+    # This shouldn't require a lookup but only a format conversion
+    # between integers (0 thru 1,757,599) and strings (A00AA thru Z99ZZ)
+    playlist_id = Playlist.objects.get(name=data_playlist_id)._id
+
+    # Intercept this meaningless prop from being written to the database
+    performance_data.pop("exercise_num")
+
     PerformanceData.submit_playlist_performance(
-        playlist_id=playlist._id, user_id=user.id, data=performance_data
+        user_id = user_id, # integer
+        playlist_id = playlist_id, # integer
+        data = performance_data,
     )
     return HttpResponse(status=201)

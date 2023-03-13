@@ -453,33 +453,19 @@ define([
         return null;
       }
 
-      // TO DO: replace this definition with the following
-      var report = {
-        course_ID: this.definition.exercise.performing_course || null,
-        exercise_ID:
-          /* returns e.g. PA00AA/1 */
-          this.definition.getExerciseList()[idx].id || false,
-        time: new Date().toJSON().slice(0, 16) || false,
-        timezone: timezone_str || false,
-        exercise_error_tally:
-          /* -1 means that errors are not reported (can't recall why not) */
-          ["analytical", "figured_bass"].includes(this.definition.exercise.type) ?
-          -1 : this.errorTally,
-        exercise_duration: /* seconds, sensitive to 1/10 */
-          Math.trunc(this.timer.duration * 10) / 10 || false ,
-        exercise_mean_tempo: Math.round(this.timer.tempoMean) || false,
-        exercise_tempo_rating:
-          /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
-          this.timer.tempoRating ? this.timer.tempoRating : 0,
-      };
-
-      return report;
-
-      var newReport = { // ADOPT THIS INSTEAD AND RENAME EXISTING JSON DATA KEYS ACCORDINGLY
-        course_ID: this.definition.exercise.performing_course || null,
-        exercise_ID:
-          /* returns e.g. PA00AA/1 */
-          this.definition.getExerciseList()[idx].id || null, // any impact to changing false to null?
+      // ADOPT THIS INSTEAD AND RENAME EXISTING JSON DATA KEYS ACCORDINGLY
+      // time --> completion_date
+      // DELETE timezone
+      // exercise_error_tally --> error_tally
+      // exercise_duration --> performance_duration_in_seconds
+      // exercise_mean_tempo --> tempo_mean_semibreves_per_min
+      // ADD tempo_SD_semibreves_per_min (value for existing rows: null)
+      // exercise_tempo_rating --> tempo_rating
+      var report = { // new
+        /* this.definition.getExerciseList()[idx].id returns e.g. PA00AA/1 */
+        course_ID: this.definition.exercise.performing_course || null, // string
+        playlist_ID: this.definition.getExerciseList()[idx].id.split("/")[0] || null, // string
+        exercise_num: parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]) || null,
         completion_date: new Date(this.timer.end * 1000).toJSON() || false,
         error_tally:
           /* -1 means that errors are not reported (can't recall why not) */
@@ -495,7 +481,28 @@ define([
           this.timer.tempoRating ? this.timer.tempoRating : 0,
       };
 
-      console.log(newReport);
+      console.log('new report format', report);
+
+      // DELETE
+      var report = { // old
+        course_ID: this.definition.exercise.performing_course || null, // string
+        playlist_ID: this.definition.getExerciseList()[idx].id.split("/")[0] || null, // string
+        exercise_num: parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]) || null,
+        time: new Date().toJSON().slice(0, 16) || false,
+        timezone: timezone_str || false,
+        exercise_error_tally:
+          /* -1 means that errors are not reported (can't recall why not) */
+          ["analytical", "figured_bass"].includes(this.definition.exercise.type) ?
+          -1 : this.errorTally,
+        exercise_duration: /* seconds, sensitive to 1/10 */
+          Math.trunc(this.timer.duration * 10) / 10 || false ,
+        exercise_mean_tempo: Math.round(this.timer.tempoMean) || false,
+        exercise_tempo_rating:
+          /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
+          this.timer.tempoRating ? this.timer.tempoRating : 0,
+      };
+
+      return report;
     },
     submitExerciseReport: function () {
       const json_data = JSON.stringify(this.compileExerciseReport());

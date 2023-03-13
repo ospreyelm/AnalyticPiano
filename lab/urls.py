@@ -12,7 +12,6 @@ from apps.exercises.views import (
     submit_playlist_performance,
 )
 
-# from lti_tool.views import LTIToolConfigView, LTILaunchView
 from .views import (
     AddExerciseView,
     PlayView,

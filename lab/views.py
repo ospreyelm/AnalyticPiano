@@ -579,9 +579,11 @@ class AddExerciseView(View):
         exercise = Exercise()
         exercise.data = json.loads(data)
 
-        user = request.user if request.user.is_authenticated else User.get_guest_user()
-        exercise.authored_by = user
-        # exercise.is_public = True
+        if request.user.is_authenticated:
+            exercise.authored_by = request.user
+        else:
+            return HttpResponse(status=400)
+
         exercise.save()
 
         return JsonResponse(status=201, data={"id": exercise.id})

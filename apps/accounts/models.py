@@ -145,11 +145,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     #         message=f"Your AnalyticPiano password is: {self.raw_password}",
     #     )
 
-    # TODO remove this in the future
-    @classmethod
-    def get_guest_user(cls):
-        return cls.objects.get(email="guest@analyticpiano.herokuapp.com")
-
     @property
     def supervisors(self):
         return User.objects.filter(id__in=self._supervisors_dict.keys())

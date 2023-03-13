@@ -148,7 +148,7 @@ define([
       var definition = exc.getDefinition();
       var $statusEl = $("#exercise-status-and-tempo");
       var tpl = _.template(
-        // not called: time_to_complete and more; seriesTimer obsolete
+        // not called: time_to_complete and more
         `<p><span class="exercise-status" style="background-color:<%= status_color %>"><%= status_text %></span></p>
                 <% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined" && typeof(tempo_display_factor) !== "undefined") { %>
                     <p>Tempo&nbsp;<%= ["", "erratic", "unsteady", "steady", "very&nbsp;steady", "perfectly&nbsp;steady"][tempo_rating.length] %> at <%= Math.round(tempo_mean * tempo_display_factor) %>&nbsp;b.p.m.</p>
