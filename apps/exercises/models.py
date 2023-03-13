@@ -22,7 +22,11 @@ from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.models.fields import ArrayField
 
 from apps.accounts.models import Group
-from apps.exercises.constants import SIGNATURE_CHOICES, KEY_SIGNATURES, pseudo_key_to_sig
+from apps.exercises.constants import (
+    SIGNATURE_CHOICES,
+    KEY_SIGNATURES,
+    pseudo_key_to_sig,
+)
 from apps.exercises.utils.transpose import transpose
 
 import re
@@ -374,6 +378,15 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return self.untransposed_exercises_ids
         return self.transposed_exercises_ids
 
+    # Returns a dict formatted <exercise_id: exercise instance>
+    @property
+    def exercise_dict(self):
+        ex_dict = {}
+        exercises = self.exercises.all()
+        for exercise in exercises:
+            ex_dict[exercise.id] = exercise
+        return ex_dict
+
     @property
     def exercise_count(self):
         if not self.is_transposed():
@@ -408,8 +421,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             return list(product(sorted_exercise_list, staff_sig_requests))
         elif self.transposition_type == self.TRANSPOSE_PLAYLIST_LOOP:
             return [
-                (t[1], t[0])
-                for t in product(staff_sig_requests, sorted_exercise_list)
+                (t[1], t[0]) for t in product(staff_sig_requests, sorted_exercise_list)
             ]
 
     @cached_property
@@ -420,8 +432,9 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         result = []
         for transposition in self.transposition_matrix:
             exercise_id, staff_sig_request = transposition
-            exercise = Exercise.objects.get(id=exercise_id)
-            result.append(transpose(exercise, staff_sig_request).id)
+            result.append(
+                transpose(self.exercise_dict[exercise_id], staff_sig_request).id
+            )
         return result
 
     @property
@@ -692,9 +705,11 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def publish_dates_dict(self):
-        pco_list = PlaylistCourseOrdered.objects.filter(course_id=self._id)
+        pco_list = PlaylistCourseOrdered.objects.filter(
+            course_id=self._id
+        ).select_related("playlist")
         return {
-            Playlist.objects.get(_id=pco.playlist_id).id: pco.publish_date.replace(
+            pco.playlist.id: pco.publish_date.replace(
                 tzinfo=pytz.timezone(settings.TIME_ZONE)
             )
             for pco in pco_list

@@ -135,7 +135,7 @@ class PlaylistView(RequirejsView):
     def get(
         self, request, playlist_id, course_id=None, exercise_num=1, *args, **kwargs
     ):
-        playlist = Playlist.objects.get(Q(id=playlist_id))
+        playlist = Playlist.objects.filter(Q(id=playlist_id)).first()
         if playlist is None:
             raise Http404("Playlist with this name or ID does not exist.")
 
