@@ -863,8 +863,10 @@ class PerformanceData(models.Model):
             course_id=course_id,
             playlist_id=playlist_id,
             user_id=user_id,
-            supervisor_id=user_id,
+            supervisor_id=user_id,# what does supervisor mean here? course author? is it needed?
         )
+        # rename performed_at to server_date
+        # use datetime.isoformat(datetime.now())[:-3]+'Z' in order to match javascript-generated json format
         exercise_data = dict(
             **data, id=exercise_id, performed_at=dateformat.format(now(), "Y-m-d H:i:s")
         )

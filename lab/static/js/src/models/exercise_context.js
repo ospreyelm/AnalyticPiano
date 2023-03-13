@@ -427,7 +427,7 @@ define([
     compileExerciseReport: function () {
       // not relevant what timezone the user computer thinks it is in
       // we must assume the computer time, accessed by the browser, is accurate
-      // we could compare the completion_time to the server time of the AJAX call
+      // in any case, we save the server time (currently as performed_at)
       let offset = new Date().getTimezoneOffset();
       let timezone_str =
         "UTC" +
@@ -475,12 +475,12 @@ define([
 
       return report;
 
-      var newReport = { // ADOPT THIS INSTEAD
+      var newReport = { // ADOPT THIS INSTEAD AND RENAME EXISTING JSON DATA KEYS ACCORDINGLY
         course_ID: this.definition.exercise.performing_course || null,
         exercise_ID:
           /* returns e.g. PA00AA/1 */
           this.definition.getExerciseList()[idx].id || null, // any impact to changing false to null?
-        completion_time: new Date(this.timer.end * 1000).toJSON() || false,
+        completion_date: new Date(this.timer.end * 1000).toJSON() || false,
         error_tally:
           /* -1 means that errors are not reported (can't recall why not) */
           ["analytical", "figured_bass"].includes(this.definition.exercise.type) ?
