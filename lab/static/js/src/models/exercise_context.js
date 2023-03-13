@@ -89,19 +89,9 @@ define([
     this.exerciseChords = this.createExerciseChords();
     this.timeSignature = this.definition.getTimeSignature();
 
-    // following lines may be obsolete
-    var ex_num_current = this.definition
-      .getExerciseList()
-      .reduce(function (selected, current, index) {
-        return selected < 0 && current.selected ? index + 1 : selected;
-      }, -1);
-    if (true || ex_num_current == 1) {
-      this.seriesTimer = null;
-      this.restarts = null;
-    }
+    // this.playlistRestarts = null; // this obsolete measurement was valuable
 
     this.sealed = false; /* will be used to ignore input post-completion */
-    this.timepoints = [];
 
     _.bindAll(this, ["grade", "triggerTimer"]);
 
@@ -149,13 +139,20 @@ define([
      * For tempo assessment
      */
     makeTimestamp: function () {
+      if (!this.timer.timepoints) {
+        console.log('makeTimestamp failed: no timepoints object found');
+        return null;
+      }
       var timestamp = Math.floor(new Date().getTime()) / 1000;
       var idx = this.graded.activeIndex;
-      if (idx == 0 && this.timepoints.length == 1) {
-        /* updates */
-        this.timepoints = [[idx, timestamp]];
-      } else if (!this.timepoints[idx]) {
-        this.timepoints.push([idx, timestamp]);
+      // console.log(idx);
+      if (idx == undefined && Object.keys(this.timer.timepoints).length == 0) {
+        idx = 0; // necessary for the first exercise of a playlist, unsure why
+      }
+      if (idx != undefined) {
+        // this function will typically be called multiple times per idx
+        // the last update per idx should occur when the pitches are correct and complete
+        this.timer.timepoints[idx] = timestamp;
       }
     },
     /**
@@ -187,13 +184,7 @@ define([
             if (this.sealed != true) {
               // For one-time function calls
               this.submitExerciseReport();
-              // if (!nextUrl) {
-              //     this.endSeriesTimer();
-              //     this.submitPlaylistReport();
-              // }
             }
-
-            // this.recordTempoInformation();
 
             if (this.flawless === true) {
               state = ExerciseContext.STATE.CORRECT;
@@ -248,9 +239,6 @@ define([
      * @return undefined
      */
     triggerTimer: function () {
-      // if (this.seriesTimer == null) {
-      //     this.beginSeriesTimer();
-      // }
       if (this.timer == null) {
         this.beginTimer();
         /**
@@ -276,17 +264,8 @@ define([
       this.timer.maxTempo = null;
       this.timer.tempoSD = null;
       this.timer.tempoRating = null;
-      return this;
-    },
-    resetSeriesTimer: function () {
-      return null; // this function is obsolete
-
-      this.seriesTimer = {};
-      this.seriesTimer.start = null;
-      this.seriesTimer.end = null;
-      this.seriesTimer.duration = null;
-      this.seriesTimer.durationString = "";
-      this.seriesTimer.alternativeDurationString = "";
+      this.timer.timepoints = {};
+      this.timer.timeIntervals = [];
       return this;
     },
     /**
@@ -296,10 +275,6 @@ define([
      */
     hasTimer: function () {
       return this.timer !== null;
-    },
-    hasSeriesTimer: function () {
-      // this function is obsolete
-      return this.seriesTimer !== null;
     },
     /**
      * Returns the duration of the exercise as a string.
@@ -333,51 +308,8 @@ define([
       if (!this.timer.tempoRating) {
         return "";
       }
-      return this.timer.tempoRating;
-    },
-    getGroupMinTempo: function () {
-      return null; // this function is obsolete
-      if (
-        parseInt(sessionStorage.getItem("HarmonyLabPlaylistMinTempo")) == NaN
-      ) {
-        window.console.dir("tempo not integer");
-        return "";
-      }
-      return sessionStorage.getItem("HarmonyLabPlaylistMinTempo");
-    },
-    getGroupMaxTempo: function () {
-      return null; // this function is obsolete
-      if (
-        parseInt(sessionStorage.getItem("HarmonyLabPlaylistMaxTempo")) == NaN
-      ) {
-        window.console.dir("tempo not integer");
-        return "";
-      }
-      return sessionStorage.getItem("HarmonyLabPlaylistMaxTempo");
-    },
-    getGroupTempoRating: function () {
-      return null; // this function is obsolete
-      if (!sessionStorage.getItem("HarmonyLabPlaylistTempoRating")) {
-        return "";
-      }
-      return sessionStorage.getItem("HarmonyLabPlaylistTempoRating");
-    },
-    getExerciseSeriesDuration: function () {
-      return null; // this function is obsolete
-      if (sessionStorage.getItem("HarmonyLabPlaylistTracker") == -1) {
-        return "";
-      }
-      return this.seriesTimer.durationString;
-    },
-    getExerciseGroupRestarts: function () {
-      return null; // this function is obsolete
-      if (sessionStorage.getItem("HarmonyLabPlaylistTracker") == -1) {
-        return "";
-      }
-      if (this.getExerciseSeriesDuration() == "") {
-        return "";
-      }
-      return parseInt(this.restarts);
+      const star_factor = Math.round(this.timer.tempoRating);
+      return '*' * star_factor;
     },
     /**
      * Begins the timer.
@@ -411,21 +343,17 @@ define([
         }
       }
 
-      var time_zero = this.timepoints[0][1];
-      var rel_timepoints = this.timepoints.map(function (tp) {
-        /* sensitive to milliseconds */
-        let time_rel = tp[1] % time_zero;
-        return [tp[0], time_rel];
-      });
-
-      var i, len;
-
-      var time_intervals = [];
-      for (i = 1, len = rel_timepoints.length; i < len; i++) {
-        time_intervals.push(rel_timepoints[i][1] - rel_timepoints[i - 1][1]);
+      var tp = this.timer.timepoints;
+      var tp_indeces = Object.keys(tp).sort(function(a, b){return a-b});
+      for (var i = 1, len = tp_indeces.length; i < len; i++) {
+        this.timer.timeIntervals.push(
+          Math.trunc((tp[tp_indeces[i]] - tp[tp_indeces[i-1]]) * 1000) / 1000
+        );
       }
 
-      var semibreve_fraction = { W: 1.5, w: 1, H: 0.75, h: 0.5, Q: 0.375, q: 0.25 };
+      // console.log(this.timer.timeIntervals);
+
+      var semibreve_fraction = { W: 1.5, w: 1, H: 0.75, h: 0.5, Q: 0.375, q: 0.25, E: 0.1875, e: 0.125 };
 
       var semibreveCount = [];
       len = Math.min(
@@ -443,8 +371,8 @@ define([
       if (semibreveCount.length > 0) semibreveCount.pop();
 
       if (
-        time_intervals.length <= 1 ||
-        time_intervals.length != semibreveCount.length
+        this.timer.timeIntervals.length <= 1 ||
+        this.timer.timeIntervals.length != semibreveCount.length /* guard against miscalculations */
       ) {
         this.timer.minTempo = null;
         this.timer.maxTempo = null;
@@ -452,162 +380,54 @@ define([
         this.timer.tempoRating = null;
       } else {
         var semibrevesPerMin = [];
-        for (i = 0, len = time_intervals.length; i < len; i++) {
+        for (i = 0, len = this.timer.timeIntervals.length; i < len; i++) {
           let spm =
-            Math.round(
-              ((60 / time_intervals[i]) * semibreveCount[i] + Number.EPSILON) *
-                10
-            ) / 10; /* bpm sensitive to 1/10 */
+            Math.round((
+              (60 / this.timer.timeIntervals[i]) * semibreveCount[i] + Number.EPSILON) * 10
+            ) / 10; /* semibreves per minute sensitive to 1/10 */
           semibrevesPerMin.push(spm);
         }
+
+        // console.log(semibrevesPerMin);
+
         this.timer.tempoSD =
-          SimpleStatistics.standardDeviation(semibrevesPerMin);
+          Math.round((
+            SimpleStatistics.standardDeviation(semibrevesPerMin) + Number.EPSILON) * 100
+          ) / 100; /* semibreves per minute sensitive to 1/100 */
         this.timer.tempoMean = SimpleStatistics.mean(semibrevesPerMin);
         this.timer.minTempo = Math.round(Math.min(...semibrevesPerMin));
         this.timer.maxTempo = Math.round(Math.max(...semibrevesPerMin));
 
+        /* Tempo star-rating algorithm */
+        // TO DO: ADD GRADATIONS BECAUSE SD AS 1/8 OF MEAN IS TOO NARROW FOR TWO STARS
         if (isNaN(this.timer.tempoSD) || isNaN(this.timer.tempoMean)) {
           this.timer.tempoRating = null;
         } else {
           this.timer.tempoRating =
-            "*"
-              /* Tempo star-rating algorithm */
-              .repeat(
-                Math.max(
-                  1,
-                  Math.min(
-                    5,
-                    this.timer.tempoSD == 0
-                      ? 5
-                      : Math.floor(
-                          this.timer.tempoMean / this.timer.tempoSD
-                        ).toString(2).length - 1
-                  )
-                )
-              ) || "";
-        }
-      }
-      return this;
-    },
-    /* Assess tempo aspect of exercise completion */
-    recordTempoInformation: function () {
-      return null; // this function is obsolete
-
-      /* Prepares tempo information */
-      var former_min_tempo = null;
-      var former_max_tempo = null;
-      var former_tempo_rating = null;
-      if (
-        sessionStorage.getItem("HarmonyLabPlaylistMinTempo") &&
-        sessionStorage.getItem("HarmonyLabPlaylistMinTempo") != "null"
-      ) {
-        former_min_tempo = parseInt(
-          sessionStorage.getItem("HarmonyLabPlaylistMinTempo")
-        );
-      }
-      if (
-        sessionStorage.getItem("HarmonyLabPlaylistMaxTempo") &&
-        sessionStorage.getItem("HarmonyLabPlaylistMaxTempo") != "null"
-      ) {
-        former_max_tempo = parseInt(
-          sessionStorage.getItem("HarmonyLabPlaylistMaxTempo")
-        );
-      }
-      if (
-        sessionStorage.getItem("HarmonyLabPlaylistTempoRating") &&
-        sessionStorage.getItem("HarmonyLabPlaylistTempoRating") != "null"
-      ) {
-        former_tempo_rating = sessionStorage.getItem(
-          "HarmonyLabPlaylistTempoRating"
-        );
-      }
-
-      /* Updates tempo information in sessionStorage */
-      if (former_min_tempo == null) {
-        sessionStorage.setItem(
-          "HarmonyLabPlaylistMinTempo",
-          this.timer.minTempo
-        );
-      } else {
-        var new_min_tempo = Math.min(this.timer.minTempo, former_min_tempo);
-        sessionStorage.setItem("HarmonyLabPlaylistMinTempo", new_min_tempo);
-      }
-      if (former_max_tempo == null) {
-        sessionStorage.setItem(
-          "HarmonyLabPlaylistMaxTempo",
-          this.timer.maxTempo
-        );
-      } else {
-        var new_max_tempo = Math.max(this.timer.maxTempo, former_max_tempo);
-        sessionStorage.setItem("HarmonyLabPlaylistMaxTempo", new_max_tempo);
-      }
-      if (former_tempo_rating == null) {
-        sessionStorage.setItem(
-          "HarmonyLabPlaylistTempoRating",
-          this.timer.tempoRating
-        );
-      } else {
-        var new_tempo_rating = this.timer.tempoRating;
-        let length = new_tempo_rating ? new_tempo_rating.length : 0;
-        if (length < former_tempo_rating.length && length !== 0) {
-          sessionStorage.setItem(
-            "HarmonyLabPlaylistTempoRating",
-            new_tempo_rating
-          );
-        }
-      }
-    },
-    /**
-     * Begins the timer for whole exercise group.
-     *
-     * @return this
-     */
-    beginSeriesTimer: function () {
-      return null; // this function is obsolete
-
-      if (this.seriesTimer === null) {
-        this.resetSeriesTimer();
-      }
-      sessionStorage.setItem("HarmonyLabPlaylistTracker", 0);
-      this.seriesTimer.start = new Date().getTime() / 1000; /* seconds */
-      sessionStorage.setItem(
-        "HarmonyLabPlaylistStartTime",
-        this.seriesTimer.start
-      );
-      sessionStorage.setItem("HarmonyLabPlaylistRestarts", 0);
-      sessionStorage.setItem("HarmonyLabPlaylistMinTempo", null);
-      sessionStorage.setItem("HarmonyLabPlaylistMaxTempo", null);
-      sessionStorage.setItem("HarmonyLabPlaylistTempoRating", null);
-      return this;
-    },
-    /**
-     * Ends the timer for whole exercise group.
-     *
-     * @return this
-     */
-    endSeriesTimer: function () {
-      return null; // this function is obsolete
-
-      var mins, seconds;
-      if (this.seriesTimer && this.seriesTimer.start && !this.seriesTimer.end) {
-        this.seriesTimer.end = Math.floor(new Date().getTime()) / 1000;
-        this.seriesTimer.duration =
-          this.seriesTimer.end - this.seriesTimer.start;
-        mins = Math.floor(this.seriesTimer.duration / 60);
-        seconds = (this.seriesTimer.duration - mins * 60).toFixed(0);
-        if (mins == 0) {
-          this.seriesTimer.durationString = seconds + "&Prime;";
-          this.seriesTimer.alternativeDurationString = seconds + "s";
-        } else {
-          this.seriesTimer.durationString =
-            mins + "&prime;" + seconds + "&Prime;";
-          this.seriesTimer.alternativeDurationString =
-            mins + "m" + seconds + "s";
+            /* If the SD is equal to or less than 1/(2^n) of the mean
+             * then the star-rating is n-1:
+             *    1/8 or less: two stars
+             *    1/16 or less: three stars
+             *    1/32 or less: four stars
+             *    1/64 or less: five stars */
+            Math.max(
+              1, // at least
+              Math.min(
+                5, // at most
+                this.timer.tempoSD == 0 ? 5 // if there is no tempo variation
+                  : Math.floor(
+                    this.timer.tempoMean / this.timer.tempoSD
+                  ).toString(2).length - 1
+              )
+            ) || 0; // in case calculation fails
         }
       }
       return this;
     },
     compileExerciseReport: function () {
+      // not relevant what timezone the user computer thinks it is in
+      // we must assume the computer time, accessed by the browser, is accurate
+      // we could compare the completion_time to the server time of the AJAX call
       let offset = new Date().getTimezoneOffset();
       let timezone_str =
         "UTC" +
@@ -633,74 +453,57 @@ define([
         return null;
       }
 
+      // TO DO: replace this definition with the following
       var report = {
-        // performer: sessionStorage.getItem('HarmonyLabPerformer') || null,
         course_ID: this.definition.exercise.performing_course || null,
-        exercise_ID: this.definition.getExerciseList()[idx].id || false,
+        exercise_ID:
+          /* returns e.g. PA00AA/1 */
+          this.definition.getExerciseList()[idx].id || false,
         time: new Date().toJSON().slice(0, 16) || false,
         timezone: timezone_str || false,
-        exercise_error_tally: ["analytical", "figured_bass"].includes(
-          this.definition.exercise.type
-        )
-          ? -1
-          : this.errorTally,
-        exercise_tempo_rating: this.timer.tempoRating
-          ? this.timer.tempoRating.length
-          : 0, // 0 means unable to asses
+        exercise_error_tally:
+          /* -1 means that errors are not reported (can't recall why not) */
+          ["analytical", "figured_bass"].includes(this.definition.exercise.type) ?
+          -1 : this.errorTally,
+        exercise_duration: /* seconds, sensitive to 1/10 */
+          Math.trunc(this.timer.duration * 10) / 10 || false ,
         exercise_mean_tempo: Math.round(this.timer.tempoMean) || false,
-        exercise_duration:
-          Math.floor((this.timer.duration + Number.EPSILON) * 10) / 10 ||
-          false /* seconds, sensitive to 1/10 */,
+        exercise_tempo_rating:
+          /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
+          this.timer.tempoRating ? this.timer.tempoRating : 0,
       };
 
       return report;
-    },
-    compilePlaylistReport: function () {
-      return null; // this function is obsolete
 
-      let offset = new Date().getTimezoneOffset();
-      let timezone_str =
-        "UTC" +
-        (offset === 0
-          ? ""
-          : offset > 0
-          ? String((offset * -1) / 60)
-          : "+" + String((offset * -1) / 60));
-
-      if (
-        !this.definition.getExerciseList()[
-          this.definition.getExerciseList().length - 1
-        ]
-      ) {
-        return null;
-      }
-
-      var report = {
-        performer: sessionStorage.getItem("HarmonyLabPerformer") || null,
-        time: new Date().toJSON().slice(0, 16) || "",
-        timezone: timezone_str || "",
-        playlist_restart_tally: this.restarts || 0,
-        playlist_lowest_tempo_rating:
-          // data from final exercise should be factored in already
-          sessionStorage.getItem("HarmonyLabPlaylistTempoRating").length || "",
-        playlist_duration:
-          Math.floor((this.seriesTimer.duration + Number.EPSILON) * 10) / 10 ||
-          "" /* seconds, sensitive to 1/10 */,
+      var newReport = { // ADOPT THIS INSTEAD
+        course_ID: this.definition.exercise.performing_course || null,
         exercise_ID:
-          this.definition.getExerciseList()[
-            this.definition.getExerciseList().length - 1
-          ].id || "",
+          /* returns e.g. PA00AA/1 */
+          this.definition.getExerciseList()[idx].id || null, // any impact to changing false to null?
+        completion_time: new Date(this.timer.end * 1000).toJSON() || false,
+        error_tally:
+          /* -1 means that errors are not reported (can't recall why not) */
+          ["analytical", "figured_bass"].includes(this.definition.exercise.type) ?
+          -1 : this.errorTally,
+        performance_duration_in_seconds: /* seconds, sensitive to 1/10 */
+          Math.trunc(this.timer.duration * 10) / 10 || false ,
+        time_intervals_in_seconds: this.timer.timeIntervals,
+        tempo_mean_semibreves_per_min: Math.round(this.timer.tempoMean) || false,
+        tempo_SD_semibreves_per_min: this.timer.tempoSD,
+        tempo_rating:
+          /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
+          this.timer.tempoRating ? this.timer.tempoRating : 0,
       };
 
-      return report;
+      console.log(newReport);
     },
     submitExerciseReport: function () {
-      if (this.compileExerciseReport() == null) {
-        console.log("Outside the context of a course and playlist. No data performance submitted.");
-        // window.alert("Outside the context of a course and playlist. No data performance submitted.");
+      const json_data = JSON.stringify(this.compileExerciseReport());
+      if (json_data == null) {
+        console.log("Outside the context of a course and playlist. No performance data submitted.");
+        // window.alert("Outside the context of a course and playlist. No performance data submitted.");
         return null;
       }
-      const json_data = JSON.stringify(this.compileExerciseReport());
       $.ajax({
         type: "POST",
         url: "/ajax/exercise-performance/",
@@ -712,28 +515,6 @@ define([
         })
         .fail(function (jqXHR, textStatus, errorThrown) {
           console.log("Possible save failure", textStatus, errorThrown);
-        });
-    },
-    submitPlaylistReport: function () {
-      return null; // this function is obsolete
-
-      console.log("Call of submitPlaylistReport");
-      if (this.compilePlaylistReport() == null) {
-        console.log("Outside of a playlist. No data submitted.");
-        return null;
-      }
-      const json_data = JSON.stringify(this.compilePlaylistReport());
-      $.ajax({
-        type: "POST",
-        url: "/ajax/playlist-performance/",
-        data: { data: json_data },
-        dataType: "text",
-      })
-        .done(function (data) {
-          // console.log('performance saved', data);
-        })
-        .fail(function (jqXHR, textStatus, errorThrown) {
-          // console.log(jqXHR, textStatus, errorThrown);
         });
     },
     /**

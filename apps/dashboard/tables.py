@@ -558,14 +558,14 @@ class CourseActivityTable(tables.Table):
         ]
 
     def render_time_elapsed(self, value):
-        seconds = value
-        minutes = value // 60
-        hours = minutes // 60
-        seconds %= 60
-        minutes %= 60
+        hours = (value // 3600)
+        minutes = (value // 60) % 60
+        seconds = (value // 1) % 60
 
         rendered_time = ""
-        if hours > 0:
+        if hours == 1:
+            rendered_time += str(hours) + " hr "
+        if hours > 1:
             rendered_time += str(hours) + " hrs "
         rendered_time += str(minutes) + " min"
         if hours == 0:

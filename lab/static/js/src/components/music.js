@@ -231,7 +231,7 @@ define([
             dataType: "json",
             success: function (data) {
               if (setdef.settings.definition.nextExerciseId) {
-                console.log(data);
+                // console.log(data);
                 newData = data;
               }
             },
@@ -352,7 +352,7 @@ define([
         scex.sealed = false;
         scex.done = false;
         scex.timer = null;
-        scex.timepoints = [];
+        scex.timepoints = {};
 
         // window.console.dir('send dummy note');
         this.broadcast(EVENTS.BROADCAST.NOTE, "on", 109, 0);

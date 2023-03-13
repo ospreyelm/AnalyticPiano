@@ -91,8 +91,8 @@ def playlist_pass_date(
         error_free = []
         for occasion in parsed_data[key]:
             if (
-                not isinstance(occasion["err"], int) or occasion["err"] < 6
-            ):  # why < 6 ?!
+                not isinstance(occasion["err"], int) or occasion["err"] == 0
+            ):  # why err < 6 previously ?!
                 error_free.append(occasion["date"])
         if len(error_free) > 0:
             ex_pass_dates.append(sorted(error_free)[0])
@@ -117,13 +117,14 @@ def playlist_pass_date(
 
 
 def playing_time(exercises_data):
-    seconds = 0
+    total_seconds = 0
     for completion in exercises_data:
-        seconds += completion["exercise_duration"]
-        # data gives seconds
-    hours = int(seconds // 3600)
-    minutes = int((seconds // 60) % 60)
-    seconds = int((seconds // 1) % 60)
+        total_seconds += completion["exercise_duration"]
+        # data gives seconds down to 1/10 second
+    total_seconds = int(total_seconds * 10) / 10
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds // 60) % 60)
+    seconds = int((total_seconds // 1) % 60)
     if hours >= 2:
         return str(hours) + "+ hrs"
     elif hours == 1:
@@ -194,7 +195,7 @@ def playlist_performance_view(request, performance_id):
                         f'{"Latest: errors (" + str(exercise["exercise_error_tally"]) + ")." if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ""}'
                         f'{"Done " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == -1) else ""}'  # when is this shown?
                         f'{"Latest: without error." if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == 0) else ""}'
-                        f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ["", "<br>Tempo erratic", "<br>Tempo unsteady", "<br>Tempo steady", "<br>Tempo very steady", "<br>Tempo perfectly steady"][exercise["exercise_tempo_rating"]]}'
+                        f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ["", "<br>Tempo erratic", "<br>Tempo unsteady", "<br>Tempo steady", "<br>Tempo very steady", "<br>Tempo perfectly steady"][round(exercise["exercise_tempo_rating"])]}'
                         f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 or not exercise["exercise_mean_tempo"]) else "<br> at " + str(exercise["exercise_mean_tempo"]) + " w.n.p.m.<br>"}'
                         f'<br><a href="{performance_obj.playlist.get_exercise_url_by_id(exercise["id"], course_id=course_id)}">Play again</a>'
                     )
