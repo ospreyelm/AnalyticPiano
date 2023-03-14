@@ -475,7 +475,7 @@ define([
           Math.trunc(this.timer.duration * 10) / 10 || false ,
         time_intervals_in_seconds: this.timer.timeIntervals,
         tempo_mean_semibreves_per_min: Math.round(this.timer.tempoMean) || false,
-        tempo_SD_semibreves_per_min: this.timer.tempoSD,
+        tempo_SD_semibreves_per_min: this.timer.tempoSD || false,
         tempo_rating:
           /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
           this.timer.tempoRating ? this.timer.tempoRating : 0,

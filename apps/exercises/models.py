@@ -811,13 +811,6 @@ class PerformanceData(models.Model):
     user = models.ForeignKey(
         User, related_name="performance_data", on_delete=models.PROTECT
     )
-    supervisor = models.ForeignKey(
-        User,
-        related_name="supervisor_performance_data",
-        blank=True,
-        null=True,
-        on_delete=models.PROTECT,
-    )
     playlist = models.ForeignKey(
         Playlist, related_name="performance_data", on_delete=models.PROTECT
     )
@@ -829,7 +822,6 @@ class PerformanceData(models.Model):
         null=True,
     )
     data = JSONField("Raw Data", default=list)
-    playlist_performances = JSONField("Playlist Performances", default=list, blank=True)
 
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
@@ -929,17 +921,6 @@ class PerformanceData(models.Model):
         if exercise.authored_by_id != user_id and not exercise.locked:
             exercise.lock()
         return pd
-
-    @classmethod
-    def submit_playlist_performance(cls, playlist_id: int, user_id: int, data: dict):
-        # IS THIS OBSOLETE?
-        pd = cls.objects.filter(
-            user_id = user_id,
-            playlist_id = playlist_id,
-        ).first()
-        pd.playlist_performances.append(data)
-        pd.full_clean()
-        pd.save()
 
     def get_exercise_first_pass(self, exercise_id):
         for exercise in self.data:
