@@ -545,7 +545,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return self.get_exercise_obj_by_num(num - 1)
 
     def __str__(self):
-        return self.name
+        return self.id
 
     def get_previous_authored_playlist(self):
         return Playlist.objects.filter(

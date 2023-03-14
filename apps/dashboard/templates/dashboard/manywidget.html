@@ -1,18 +1,30 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <div>
-<select name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
-    {% for option in widget.options %}
-    <option> {{ option }}</option>
-    {% endfor %}
-  </select>
-  <div id="values">
-    {% for value in widget.value %}
-    <div> {{ value }}</div>
-    {% endfor %}
+  <div class="widget-option-wrapper">
+    <select name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
+      {% for value, title in widget.options %}
+      <option value="{{ value }}"> {{ title }}</option>
+      {% endfor %}
+    </select>
+    <button>
+      Add
+    </button>
+  </div>
+  <div class="widget-value-list">
+    <div id="values" class="widget-value-list-inner">
+      {% for value, title in widget.value %}
+      <div class="widget-value-block" value="{{ value }}">
+        <div>{{ title }}</div>
+        <div class="widget-value-block-remove"> x </div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 </div>
 <script>
     var el = document.getElementById('values');
-    var sortable = Sortable.create(el);
+    var sortable = Sortable.create(el, {
+      animation:100
+    });
 </script>

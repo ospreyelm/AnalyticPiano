@@ -205,23 +205,58 @@ class CustomTransposeWidget(forms.MultiWidget):
         return text + (" " + added if not added in text else "")
 
 
+# Widget used to display end edit m2m relations
+# Inputs:
+#   model: the type of model being displayed within the widget
+#   model_format: a function converting a model instance into a string
+#   value_attr: the attribute of the model used as its value within the form
+#   instance_from_value: a function taking the stringified instance from django and getting
+#     the instance itself. TODO: might be redundant
 class ManyWidget(forms.Widget):
     template_name = "../templates/dashboard/manywidget.html"
 
-    def __init__(self, attrs=None, model=None):
+    def __init__(
+        self,
+        attrs=None,
+        model=None,
+        model_format=str,
+        value_attr="_id",
+        instance_from_value=None,
+    ):
         self.attrs = attrs
         self.model = model
+        self.model_format = model_format
+        self.value_attr = value_attr
+        if instance_from_value == None:
+            instance_from_value = lambda inst: model.objects.filter(id=inst).first()
+        self.instance_from_value = instance_from_value
+
         super().__init__(attrs)
 
     def format_value(self, value):
         instances = map(
-            lambda instance: str(instance), self.model.objects.filter(_id__in=value)
+            lambda instance: (
+                getattr(instance, self.value_attr, None),
+                self.model_format(instance),
+            ),
+            self.model.objects.filter(_id__in=value),
         )
 
         return list(instances)
 
+    # TODO: change to not be reliant on stringified instance given by self.choices
     def options(self, name, value, attrs=None):
-        return list(self.choices)
+        for choice in self.choices:
+            print(self.value_attr, choice[1])
+            break
+        choices = map(
+            lambda choice: (
+                getattr(self.instance_from_value(choice[1]), self.value_attr, None),
+                self.model_format(self.instance_from_value(choice[1])),
+            ),
+            self.choices,
+        )
+        return list(choices)
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
@@ -271,7 +306,11 @@ class DashboardPlaylistForm(PlaylistForm):
             "id": forms.TextInput(attrs={"readonly": "readonly"}),
             "is_auto": forms.CheckboxInput(attrs={"disabled": "disabled"}),
             "authored_by": forms.TextInput(attrs={"readonly": "readonly"}),
-            "exercises": ManyWidget(model=Exercise),
+            "exercises": ManyWidget(
+                model=Exercise,
+                model_format=lambda ex: ex.id
+                + (" - " + ex.description if ex.description else ""),
+            ),
         }
 
     def __init__(self, disable_fields=False, *args, **kwargs):
@@ -285,25 +324,30 @@ class DashboardPlaylistForm(PlaylistForm):
 class DashboardCourseForm(CourseForm):
     class Meta(CourseForm.Meta):
         fields = ["title", "playlists", "visible_to", "is_public", "open"]
+        widgets = {
+            "playlists": ManyWidget(
+                model=Playlist, model_format=lambda p: p.id + " - " + p.name
+            )
+        }
 
-    custom_m2m_fields = ["playlists", "visible_to"]
-    custom_m2m_config = {
-        "playlists": {
-            "ordered": True,
-            "extra_fields": list(
-                filter(
-                    lambda f: f.name in PlaylistCourseOrdered.displayed_fields,
-                    PlaylistCourseOrdered._meta.fields,
-                )
-            ),
-            "url": "dashboard:edit-playlist",
-            "author_field_name": "authored_by",
-        },
-        "visible_to": {
-            "ordered": False,
-            "url": "dashboard:edit-group",
-        },
-    }
+    # custom_m2m_fields = ["playlists", "visible_to"]
+    # custom_m2m_config = {
+    #     "playlists": {
+    #         "ordered": True,
+    #         "extra_fields": list(
+    #             filter(
+    #                 lambda f: f.name in PlaylistCourseOrdered.displayed_fields,
+    #                 PlaylistCourseOrdered._meta.fields,
+    #             )
+    #         ),
+    #         "url": "dashboard:edit-playlist",
+    #         "author_field_name": "authored_by",
+    #     },
+    #     "visible_to": {
+    #         "ordered": False,
+    #         "url": "dashboard:edit-group",
+    #     },
+    # }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
