@@ -464,7 +464,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return self.transpose_requests and self.transposition_type
 
     def get_exercise_obj_by_num(self, num=1):
-        if len(self.exercise_list) == 0:
+        if len(self.exercise_list) == 0 or num == None:
             return
         try:
             exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
