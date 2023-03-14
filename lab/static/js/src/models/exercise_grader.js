@@ -66,6 +66,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         "chord_labels",
         "fixed_do",
         "intervals",
+        "generic_intervals",
         "note_names",
         "pci",
         "pitch_class",
@@ -227,6 +228,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         fixed_do: "to_fixed_do",
         full_thoroughbass: "full_thoroughbass_figure_minus_octave",
         intervals: "to_interval",
+        generic_intervals: "to_interval",
         note_names: "to_note_name",
         pci: "to_pci",
         pitch_class: "to_pitch_class",
@@ -247,6 +249,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         fixed_do: "", // ok
         full_thoroughbass: "", // ok
         intervals: ".name", // ok
+        generic_intervals: ".size", // ok
         note_names: "", // ok
         pci: "", // ok
         pitch_class: "",

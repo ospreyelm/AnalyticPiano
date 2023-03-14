@@ -483,7 +483,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
       return (Math.abs(notes[1] - notes[0]) % 12).toString();
     },
     to_interval: function (notes) {
-      var anon = { name: "" };
+      var anon = { name: "", size: "" };
 
       if (notes.length !== 2) return anon;
 
@@ -495,10 +495,17 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
         var all_labels = this.ijIntervals;
       }
 
-      if (!all_labels[profile]) return anon;
-      if (!all_labels[profile]["label"]) return anon;
-
-      return { name: all_labels[profile]["label"] };
+      try {
+        const interval_name = all_labels[profile]["label"]
+        const interval_size = all_labels[profile]["label"].replace(/[dmPMA]/g, "")
+        return {
+          name: interval_name,
+          size: interval_size
+        };
+      }
+      catch {
+        return anon;
+      }
     },
     to_chord: function (notes, type = undefined, relativize_bool = false) {
       if (notes.length < 2) return "";

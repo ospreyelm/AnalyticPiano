@@ -64,6 +64,7 @@ define([
    * - Helmholtz pitch notation
    * - Scale degrees
    * - Intervals
+   * - Generic Intervals
    * - Roman numeral analysis
    *
    * At its simplest, a Stave should configure the notater with the kinds of
@@ -862,7 +863,7 @@ define([
      * @param {number} y
      * @return undefined
      */
-    drawInterval: function (x, y) {
+    drawInterval: function (x, y, prop='name') {
       var midi_nums = this.chord.getNoteNumbers();
       var interval = this.getAnalyzer().to_interval(midi_nums);
 
@@ -871,16 +872,17 @@ define([
       var newSize = "20px";
       ctx.font = newSize + " " + fontArgs[fontArgs.length - 1];
 
-      if (interval && interval.name !== "") {
-        var lines = this.wrapText(interval.name);
+      try {
+        const lines = this.wrapText(interval[prop]);
         this.drawTextLines(
           lines,
           x + StaveNotater.prototype.annotateOffsetX,
           y
         );
       }
-
-      return interval; /* for grading */
+      finally {
+        return interval; /* for grading */
+      }
     },
     /**
      * Draws the metronome mark.
@@ -1297,7 +1299,10 @@ define([
         this.drawThoroughbass(x, y);
       } else if (num_notes == 2) {
         if (mode.intervals) {
-          this.drawInterval(x, y);
+          this.drawInterval(x, y, 'name');
+        }
+        if (mode.generic_intervals) {
+          this.drawInterval(x, y, 'size');
         }
         if (mode.pci) {
           this.drawPci(x, y);
