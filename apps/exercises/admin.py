@@ -212,20 +212,11 @@ class PerformanceDataAdmin(admin.ModelAdmin):
     form = PerformanceDataForm
     list_display = ("user", "playlist", "created", "updated")
     list_filter = ("user__email", "playlist__name")
-    search_fields = (
-        "user__email",
-        "playlist__name",
-    )
+    search_fields = ("user__email", "playlist__name")
     readonly_fields = ("created", "updated")
-    raw_id_fields = ("user", "supervisor", "playlist")
+    raw_id_fields = ("user", "playlist")
     fieldsets = (
-        (
-            "General Info",
-            {
-                "fields": ("user", "supervisor", "playlist"),
-            },
-        ),
-        ("Performance Data", {"fields": ("data", "playlist_performances")}),
+        ("General Info", {"fields": ("user", "playlist")}),
         ("Date Info", {"fields": ("created", "updated")}),
     )
 

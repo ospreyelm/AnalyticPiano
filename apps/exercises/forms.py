@@ -423,5 +423,4 @@ class PerformanceDataForm(forms.ModelForm):
         exclude = []
         widgets = {
             "data": PrettyJSONWidget(),
-            "playlist_performances": PrettyJSONWidget(),
         }

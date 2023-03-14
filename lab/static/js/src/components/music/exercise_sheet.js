@@ -148,7 +148,7 @@ define([
       var definition = exc.getDefinition();
       var $statusEl = $("#exercise-status-and-tempo");
       var tpl = _.template(
-        // not called: time_to_complete and more; seriesTimer obsolete
+        // not called: time_to_complete and more
         `<p><span class="exercise-status" style="background-color:<%= status_color %>"><%= status_text %></span></p>
                 <% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined" && typeof(tempo_display_factor) !== "undefined") { %>
                     <p>Tempo&nbsp;<%= ["", "erratic", "unsteady", "steady", "very&nbsp;steady", "perfectly&nbsp;steady"][tempo_rating.length] %> at <%= Math.round(tempo_mean * tempo_display_factor) %>&nbsp;b.p.m.</p>
@@ -192,6 +192,7 @@ define([
       tpl_data.status_text = status_map[exc.state].text;
       tpl_data.status_color = status_map[exc.state].color;
 
+      $(".playlist-nav-links").css("display", "none");
       switch (exc.state) {
         case exc.STATE.CORRECT:
           if (exc.hasTimer()) {
@@ -214,9 +215,12 @@ define([
                 tpl_data.tempo_display_factor = tempo_display_factor;
               }
             } catch (error) {
-              console.log("Unable to retrieve beat value from time signature")
+              console.log("Unable to retrieve beat value from time signature");
             }
           }
+          // If this is the last exercise, display the nav links
+          if (!this.exerciseContext.definition.exercise.nextExercise)
+            $(".playlist-nav-links").css("display", "inline-flex");
           break;
         case exc.STATE.FINISHED:
           if (exc.hasTimer()) {
@@ -226,6 +230,7 @@ define([
             tpl_data.tempo_mean = exc.getTempoMean();
             tpl_data.tempo_rating = exc.getTempoRating();
           }
+          // $(".playlist-nav-links").css("display", "inline-flex");
           break;
         case exc.STATE.READY:
         default:
@@ -234,7 +239,6 @@ define([
 
       html = tpl(tpl_data);
       $statusEl.html(html);
-
       return this;
     },
     renderExerciseInfo: function () {
@@ -739,8 +743,8 @@ define([
         return 0.5;
       } else if (rhythm_value === "q") {
         return 0.375;
-      // } else if (rhythm_value === "e") {
-      //   return 0.25;
+        // } else if (rhythm_value === "e") {
+        //   return 0.25;
       } else {
         console.log("Unknown rhythm_value passed to getVisualWidth");
         return 1;
@@ -759,8 +763,8 @@ define([
         return 0.375;
       } else if (rhythm_value === "q") {
         return 0.25;
-      // } else if (rhythm_value === "e") {
-      //   return 0.125;
+        // } else if (rhythm_value === "e") {
+        //   return 0.125;
       } else {
         console.log("Unknown rhythm_value passed to getWholeNoteCount");
         return 0.1; // this will prevent display of bogus barlines

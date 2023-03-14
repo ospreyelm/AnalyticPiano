@@ -442,5 +442,10 @@ def course_activity_view(request, course_id):
     return render(
         request,
         "dashboard/course-activity.html",
-        {"table": table, "course_id": course_id, "filters": filters},
+        {
+            "table": table,
+            "course_id": course_id,
+            "title": course.title,
+            "filters": filters,
+        },
     )

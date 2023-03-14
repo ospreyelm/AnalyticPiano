@@ -134,6 +134,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         ("spacing", "Spacing of Upper Voices"),
         ("roman_numerals", "Roman Numerals"),
         ("intervals", "Intervals"),
+        ("generic_intervals", "Generic Intervals"),
     )
 
     HIGHLIGHT_MODE_CHOICES = (
@@ -463,7 +464,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return self.transpose_requests and self.transposition_type
 
     def get_exercise_obj_by_num(self, num=1):
-        if len(self.exercise_list) == 0:
+        if len(self.exercise_list) == 0 or num == None:
             return
         try:
             exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
@@ -485,6 +486,8 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         num=1,
         course_id=None,
     ):
+        if num == None or num > self.exercise_count:
+            return None
         try:
             return reverse(
                 "lab:playlist-view",
@@ -528,12 +531,12 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     def next_num(self, num=1):
         if num < self.exercise_count:
             return num + 1
-        return num
+        return None
 
     def prev_num(self, num=1):
         if 1 < num <= self.exercise_count:
             return num - 1
-        return 1
+        return None
 
     def next(self, num=1):
         return self.get_exercise_obj_by_num(num + 1)
@@ -811,13 +814,6 @@ class PerformanceData(models.Model):
     user = models.ForeignKey(
         User, related_name="performance_data", on_delete=models.PROTECT
     )
-    supervisor = models.ForeignKey(
-        User,
-        related_name="supervisor_performance_data",
-        blank=True,
-        null=True,
-        on_delete=models.PROTECT,
-    )
     playlist = models.ForeignKey(
         Playlist, related_name="performance_data", on_delete=models.PROTECT
     )
@@ -829,7 +825,6 @@ class PerformanceData(models.Model):
         null=True,
     )
     data = JSONField("Raw Data", default=list)
-    playlist_performances = JSONField("Playlist Performances", default=list, blank=True)
 
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
@@ -853,24 +848,25 @@ class PerformanceData(models.Model):
     @classmethod
     def submit(
         cls,
-        exercise_id: str,
-        playlist_id: int,
         user_id: int,
         course_id: int,
+        playlist_id: int,
+        exercise_id: str,
         data: dict,
     ):
         pd, _ = cls.objects.get_or_create(
+            user_id=user_id,
             course_id=course_id,
             playlist_id=playlist_id,
-            user_id=user_id,
-            supervisor_id=user_id,# what does supervisor mean here? course author? is it needed?
         )
-        # rename performed_at to server_date
-        # use datetime.isoformat(datetime.now())[:-3]+'Z' in order to match javascript-generated json format
         exercise_data = dict(
-            **data, id=exercise_id, performed_at=dateformat.format(now(), "Y-m-d H:i:s")
+            **data,
+            id=exercise_id,  # rename
+            # exercise_ID = exercise_id
+            performed_at=dateformat.format(now(), "Y-m-d H:i:s"),  # rename and reformat
+            # server_date = datetime.isoformat(datetime.now())[:-3]+'Z' # UTC
         )
-        # now() gives UTC time, so that the performance data has integrity around UTC
+        # print(exercise_data)
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
@@ -928,15 +924,6 @@ class PerformanceData(models.Model):
         if exercise.authored_by_id != user_id and not exercise.locked:
             exercise.lock()
         return pd
-
-    @classmethod
-    def submit_playlist_performance(cls, playlist_id: int, user_id: int, data: dict):
-        pd = cls.objects.filter(
-            playlist_id=playlist_id, user_id=user_id, supervisor_id=user_id
-        ).first()
-        pd.playlist_performances.append(data)
-        pd.full_clean()
-        pd.save()
 
     def get_exercise_first_pass(self, exercise_id):
         for exercise in self.data:

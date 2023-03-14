@@ -47,6 +47,9 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
       '<label><input type="checkbox" name="analysis_intervals" value="intervals" accesskey="i"> Intervals</label>',
       "</li>",
       "<li>",
+      '<label><input type="checkbox" name="analysis_generic_intervals" value="generic_intervals"> Generic intervals</label>',
+      "</li>",
+      "<li>",
       '<label><input type="checkbox" name="analysis_pci" value="pci"> Pitch-class intervals</label>',
       "</li>",
       "<li>",
@@ -201,11 +204,15 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
         this.toggle_exclusive_analysis_option(e, opts);
       },
       analysis_intervals: function (e) {
-        var opts = ["intervals", "pci"];
+        var opts = ["intervals", "generic_intervals", "pci"];
+        this.toggle_exclusive_analysis_option(e, opts);
+      },
+      analysis_generic_intervals: function (e) {
+        var opts = ["intervals", "generic_intervals", "pci"];
         this.toggle_exclusive_analysis_option(e, opts);
       },
       analysis_pci: function (e) {
-        var opts = ["intervals", "pci"];
+        var opts = ["intervals", "generic_intervals", "pci"];
         this.toggle_exclusive_analysis_option(e, opts);
       },
       analysis_set_class_set: function (e) {

@@ -27,7 +27,7 @@ define({
   15: { label: "m10", stepwise: "9", spellbass: "iE_" },
   16: { label: "M10", stepwise: "9", spellbass: "iC_" },
   17: { label: "P11", stepwise: "10", spellbass: "iD_" },
-  18: { label: "T+8", stepwise: "_", spellbass: "___" },
+  18: { label: "8+T", stepwise: "_", spellbass: "___" },
   19: {
     label: "P12",
     stepwise: "11",
@@ -35,6 +35,10 @@ define({
     root: "0",
     rootstepwise: "0",
   },
+  20: { label: "m13", stepwise: "12", spellbass: "iE_" },
+  21: { label: "M13", stepwise: "12", spellbass: "iG_" },
+  22: { label: "m14", stepwise: "13", spellbass: "iA_" },
+  23: { label: "M14", stepwise: "13", spellbass: "iF_" },
   24: {
     label: "15",
     stepwise: "14",
@@ -42,6 +46,8 @@ define({
     root: "0",
     rootstepwise: "0",
   },
+  25: { label: "m16", stepwise: "15", spellbass: "iE_" },
+  26: { label: "M16", stepwise: "15", spellbass: "iG_" },
   27: { label: "m17", stepwise: "16", spellbass: "iE_" },
   28: {
     label: "M17",
@@ -50,6 +56,8 @@ define({
     root: "0",
     rootstepwise: "0",
   },
+  29: { label: "P18", stepwise: "17", spellbass: "iD_" },
+  30: { label: "15+T", stepwise: "_", spellbass: "___" },
   31: {
     label: "P19",
     stepwise: "18",

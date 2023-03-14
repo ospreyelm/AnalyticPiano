@@ -218,7 +218,10 @@ define([
             console.log("Error reloading exercise data!");
             return null;
           }
-        } else if (exerciseAction === "next") {
+        } else if (
+          exerciseAction === "next" &&
+          setdef.settings.definition.nextExerciseNum
+        ) {
           $.ajax({
             type: "GET",
             url: "definition",
@@ -241,7 +244,10 @@ define([
             console.log("No next exercise; end of playlist");
             return null;
           }
-        } else if (exerciseAction === "previous") {
+        } else if (
+          exerciseAction === "previous" &&
+          setdef.settings.definition.previousExerciseNum
+        ) {
           $.ajax({
             type: "GET",
             url: "definition",
