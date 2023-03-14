@@ -63,7 +63,11 @@ define({
 
       /* max one of the following may be true */
       intervals: false,
+      intervals_wrap_after_octave: false,
+      intervals_wrap_after_octave_plus_ditone: false,
       generic_intervals: false,
+      generic_intervals_wrap_after_octave: false,
+      generic_intervals_wrap_after_octave_plus_ditone: false,
       pci: false,
 
       /* max one of the following may be true */

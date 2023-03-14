@@ -134,7 +134,11 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         ("spacing", "Spacing of Upper Voices"),
         ("roman_numerals", "Roman Numerals"),
         ("intervals", "Intervals"),
+        ("intervals_wrap_after_octave", "Intervals (Wrap After Octave)"),
+        ("intervals_wrap_after_octave_plus_ditone", "Intervals (Wrap After Octave Plus Ditone)"),
         ("generic_intervals", "Generic Intervals"),
+        ("generic_intervals_wrap_after_octave", "Generic Intervals (Wrap After Octave)"),
+        ("generic_intervals_wrap_after_octave_plus_ditone", "Generic Intervals (Wrap After Octave Plus Ditone)"),
     )
 
     HIGHLIGHT_MODE_CHOICES = (

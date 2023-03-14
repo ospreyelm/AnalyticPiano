@@ -63,8 +63,8 @@ define([
    * - Solfege pitch notation
    * - Helmholtz pitch notation
    * - Scale degrees
-   * - Intervals
-   * - Generic Intervals
+   * - Intervals (with wrapping options)
+   * - Generic intervals (with wrapping options)
    * - Roman numeral analysis
    *
    * At its simplest, a Stave should configure the notater with the kinds of
@@ -863,9 +863,9 @@ define([
      * @param {number} y
      * @return undefined
      */
-    drawInterval: function (x, y, prop='name') {
+    drawInterval: function (x, y, prop='name', wrap=false, wrap_mark="") {
       var midi_nums = this.chord.getNoteNumbers();
-      var interval = this.getAnalyzer().to_interval(midi_nums);
+      var interval = this.getAnalyzer().to_interval(midi_nums, wrap, wrap_mark);
 
       var ctx = this.getContext();
       var fontArgs = ctx.font.split(" ");
@@ -1301,8 +1301,20 @@ define([
         if (mode.intervals) {
           this.drawInterval(x, y, 'name');
         }
+        if (mode.intervals_wrap_after_octave) {
+          this.drawInterval(x, y, 'name', 'wrap_after_octave', '*');
+        }
+        if (mode.intervals_wrap_after_octave_plus_ditone) {
+          this.drawInterval(x, y, 'name', 'wrap_after_octave_plus_ditone', '*');
+        }
         if (mode.generic_intervals) {
           this.drawInterval(x, y, 'size');
+        }
+        if (mode.generic_intervals_wrap_after_octave) {
+          this.drawInterval(x, y, 'size', 'wrap_after_octave', '*');
+        }
+        if (mode.generic_intervals_wrap_after_octave_plus_ditone) {
+          this.drawInterval(x, y, 'size', 'wrap_after_octave_plus_ditone', '*');
         }
         if (mode.pci) {
           this.drawPci(x, y);

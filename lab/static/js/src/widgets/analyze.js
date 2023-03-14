@@ -47,7 +47,19 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
       '<label><input type="checkbox" name="analysis_intervals" value="intervals" accesskey="i"> Intervals</label>',
       "</li>",
       "<li>",
+      '<label><input type="checkbox" name="analysis_intervals_wrap_after_octave" value="intervals_wrap_after_octave"> Intervals (wrap after octave)</label>',
+      "</li>",
+      "<li>",
+      '<label><input type="checkbox" name="analysis_intervals_wrap_after_octave_plus_ditone" value="intervals_wrap_after_octave_plus_ditone"> Intervals (wrap after octave plus ditone)</label>',
+      "</li>",
+      "<li>",
       '<label><input type="checkbox" name="analysis_generic_intervals" value="generic_intervals"> Generic intervals</label>',
+      "</li>",
+      "<li>",
+      '<label><input type="checkbox" name="analysis_generic_intervals_wrap_after_octave" value="generic_intervals_wrap_after_octave"> Generic intervals (wrap after octave)</label>',
+      "</li>",
+      "<li>",
+      '<label><input type="checkbox" name="analysis_generic_intervals_wrap_after_octave_plus_ditone" value="generic_intervals_wrap_after_octave_plus_ditone"> Generic intervals (wrap after octave plus ditone)</label>',
       "</li>",
       "<li>",
       '<label><input type="checkbox" name="analysis_pci" value="pci"> Pitch-class intervals</label>',
@@ -204,15 +216,31 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
         this.toggle_exclusive_analysis_option(e, opts);
       },
       analysis_intervals: function (e) {
-        var opts = ["intervals", "generic_intervals", "pci"];
+        var opts = ["intervals", "intervals_wrap_after_octave", "intervals_wrap_after_octave_plus_ditone", "generic_intervals", "generic_intervals_wrap_after_octave", "generic_intervals_wrap_after_octave_plus_ditone", "pci"];
+        this.toggle_exclusive_analysis_option(e, opts);
+      },
+      analysis_intervals_wrap_after_octave: function (e) {
+        var opts = ["intervals", "intervals_wrap_after_octave", "intervals_wrap_after_octave_plus_ditone", "generic_intervals", "generic_intervals_wrap_after_octave", "generic_intervals_wrap_after_octave_plus_ditone", "pci"];
+        this.toggle_exclusive_analysis_option(e, opts);
+      },
+      analysis_intervals_wrap_after_octave_plus_ditone: function (e) {
+        var opts = ["intervals", "intervals_wrap_after_octave", "intervals_wrap_after_octave_plus_ditone", "generic_intervals", "generic_intervals_wrap_after_octave", "generic_intervals_wrap_after_octave_plus_ditone", "pci"];
         this.toggle_exclusive_analysis_option(e, opts);
       },
       analysis_generic_intervals: function (e) {
-        var opts = ["intervals", "generic_intervals", "pci"];
+        var opts = ["intervals", "intervals_wrap_after_octave", "intervals_wrap_after_octave_plus_ditone", "generic_intervals", "generic_intervals_wrap_after_octave", "generic_intervals_wrap_after_octave_plus_ditone", "pci"];
+        this.toggle_exclusive_analysis_option(e, opts);
+      },
+      analysis_generic_intervals_wrap_after_octave: function (e) {
+        var opts = ["intervals", "intervals_wrap_after_octave", "intervals_wrap_after_octave_plus_ditone", "generic_intervals", "generic_intervals_wrap_after_octave", "generic_intervals_wrap_after_octave_plus_ditone", "pci"];
+        this.toggle_exclusive_analysis_option(e, opts);
+      },
+      analysis_generic_intervals_wrap_after_octave_plus_ditone: function (e) {
+        var opts = ["intervals", "intervals_wrap_after_octave", "intervals_wrap_after_octave_plus_ditone", "generic_intervals", "generic_intervals_wrap_after_octave", "generic_intervals_wrap_after_octave_plus_ditone", "pci"];
         this.toggle_exclusive_analysis_option(e, opts);
       },
       analysis_pci: function (e) {
-        var opts = ["intervals", "generic_intervals", "pci"];
+        var opts = ["intervals", "intervals_wrap_after_octave", "intervals_wrap_after_octave_plus_ditone", "generic_intervals", "generic_intervals_wrap_after_octave", "generic_intervals_wrap_after_octave_plus_ditone", "pci"];
         this.toggle_exclusive_analysis_option(e, opts);
       },
       analysis_set_class_set: function (e) {
