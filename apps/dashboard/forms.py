@@ -20,7 +20,9 @@ class BaseSupervisionForm(forms.Form):
         try:
             email = email.lower()
         except:
-            self.add_error("email", "The email input could not be parsed as a text string.")
+            self.add_error(
+                "email", "The email input could not be parsed as a text string."
+            )
         if email == self.context.get("user").email:
             self.add_error(
                 "email",
@@ -173,7 +175,7 @@ TRANSPOSE_SELECT_CHOICES = (
     ("Eb", "3 flats"),
     ("Bb", "2 flats"),
     ("F", "1 flat"),
-    ("C", "0 flats or sharps"),# bug
+    ("C", "0 flats or sharps"),  # bug
     ("G", "1 sharp"),
     ("D", "2 sharps"),
     ("A", "3 sharps"),
@@ -203,6 +205,39 @@ class CustomTransposeWidget(forms.MultiWidget):
         return text + (" " + added if not added in text else "")
 
 
+class ManyWidget(forms.Widget):
+    template_name = "../templates/dashboard/manywidget.html"
+
+    def __init__(self, attrs=None, model=None):
+        self.attrs = attrs
+        self.model = model
+        super().__init__(attrs)
+
+    def format_value(self, value):
+        instances = map(
+            lambda instance: str(instance), self.model.objects.filter(_id__in=value)
+        )
+
+        return list(instances)
+
+    def options(self, name, value, attrs=None):
+        return list(self.choices)
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context["widget"]["options"] = self.options(
+            name, context["widget"]["value"], attrs
+        )
+        return context
+
+    def value_from_datadict(self, data, files, name):
+        try:
+            getter = data.getlist
+        except AttributeError:
+            getter = data.get
+        return getter(name)
+
+
 class DashboardPlaylistForm(PlaylistForm):
     id = forms.CharField(
         widget=forms.TextInput(attrs={"readonly": "readonly"}),
@@ -220,15 +255,15 @@ class DashboardPlaylistForm(PlaylistForm):
 
     editable_fields = ["is_public"]
 
-    custom_m2m_fields = ["exercises"]
-    custom_m2m_config = {
-        "exercises": {
-            "ordered": True,
-            "url": "dashboard:edit-exercise",
-            "author_field_name": "authored_by",
-            "appended_fields": ["description"],
-        }
-    }
+    # custom_m2m_fields = ["exercises"]
+    # custom_m2m_config = {
+    #     "exercises": {
+    #         "ordered": True,
+    #         "url": "dashboard:edit-exercise",
+    #         "author_field_name": "authored_by",
+    #         "appended_fields": ["description"],
+    #     }
+    # }
 
     class Meta(PlaylistForm.Meta):
         exclude = ["authored_by"]
@@ -236,6 +271,7 @@ class DashboardPlaylistForm(PlaylistForm):
             "id": forms.TextInput(attrs={"readonly": "readonly"}),
             "is_auto": forms.CheckboxInput(attrs={"disabled": "disabled"}),
             "authored_by": forms.TextInput(attrs={"readonly": "readonly"}),
+            "exercises": ManyWidget(model=Exercise),
         }
 
     def __init__(self, disable_fields=False, *args, **kwargs):
