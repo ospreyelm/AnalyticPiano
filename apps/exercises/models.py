@@ -134,6 +134,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         ("spacing", "Spacing of Upper Voices"),
         ("roman_numerals", "Roman Numerals"),
         ("intervals", "Intervals"),
+        ("generic_intervals", "Generic Intervals"),
     )
 
     HIGHLIGHT_MODE_CHOICES = (

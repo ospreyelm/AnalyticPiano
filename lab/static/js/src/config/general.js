@@ -63,6 +63,7 @@ define({
 
       /* max one of the following may be true */
       intervals: false,
+      generic_intervals: false,
       pci: false,
 
       /* max one of the following may be true */
