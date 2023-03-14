@@ -468,7 +468,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         return self.transpose_requests and self.transposition_type
 
     def get_exercise_obj_by_num(self, num=1):
-        if len(self.exercise_list) == 0:
+        if len(self.exercise_list) == 0 or num == None:
             return
         try:
             exercise = Exercise.objects.filter(id=self.exercise_list[num - 1]).first()
@@ -490,6 +490,8 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         num=1,
         course_id=None,
     ):
+        if num == None or num > self.exercise_count:
+            return None
         try:
             return reverse(
                 "lab:playlist-view",
@@ -533,12 +535,12 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     def next_num(self, num=1):
         if num < self.exercise_count:
             return num + 1
-        return num
+        return None
 
     def prev_num(self, num=1):
         if 1 < num <= self.exercise_count:
             return num - 1
-        return 1
+        return None
 
     def next(self, num=1):
         return self.get_exercise_obj_by_num(num + 1)
@@ -857,15 +859,15 @@ class PerformanceData(models.Model):
         data: dict,
     ):
         pd, _ = cls.objects.get_or_create(
-            user_id = user_id,
-            course_id = course_id,
-            playlist_id = playlist_id,
+            user_id=user_id,
+            course_id=course_id,
+            playlist_id=playlist_id,
         )
         exercise_data = dict(
             **data,
-            id = exercise_id, # rename
+            id=exercise_id,  # rename
             # exercise_ID = exercise_id
-            performed_at = dateformat.format(now(), "Y-m-d H:i:s"), # rename and reformat
+            performed_at=dateformat.format(now(), "Y-m-d H:i:s"),  # rename and reformat
             # server_date = datetime.isoformat(datetime.now())[:-3]+'Z' # UTC
         )
         # print(exercise_data)

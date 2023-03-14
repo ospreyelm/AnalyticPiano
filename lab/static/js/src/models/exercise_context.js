@@ -140,7 +140,7 @@ define([
      */
     makeTimestamp: function () {
       if (!this.timer.timepoints) {
-        console.log('makeTimestamp failed: no timepoints object found');
+        console.log("makeTimestamp failed: no timepoints object found");
         return null;
       }
       var timestamp = Math.floor(new Date().getTime()) / 1000;
@@ -309,7 +309,7 @@ define([
         return "";
       }
       const star_factor = Math.round(this.timer.tempoRating);
-      return '*' * star_factor;
+      return "*" * star_factor;
     },
     /**
      * Begins the timer.
@@ -344,16 +344,27 @@ define([
       }
 
       var tp = this.timer.timepoints;
-      var tp_indeces = Object.keys(tp).sort(function(a, b){return a-b});
+      var tp_indeces = Object.keys(tp).sort(function (a, b) {
+        return a - b;
+      });
       for (var i = 1, len = tp_indeces.length; i < len; i++) {
         this.timer.timeIntervals.push(
-          Math.trunc((tp[tp_indeces[i]] - tp[tp_indeces[i-1]]) * 1000) / 1000
+          Math.trunc((tp[tp_indeces[i]] - tp[tp_indeces[i - 1]]) * 1000) / 1000
         );
       }
 
       // console.log(this.timer.timeIntervals);
 
-      var semibreve_fraction = { W: 1.5, w: 1, H: 0.75, h: 0.5, Q: 0.375, q: 0.25, E: 0.1875, e: 0.125 };
+      var semibreve_fraction = {
+        W: 1.5,
+        w: 1,
+        H: 0.75,
+        h: 0.5,
+        Q: 0.375,
+        q: 0.25,
+        E: 0.1875,
+        e: 0.125,
+      };
 
       var semibreveCount = [];
       len = Math.min(
@@ -372,7 +383,8 @@ define([
 
       if (
         this.timer.timeIntervals.length <= 1 ||
-        this.timer.timeIntervals.length != semibreveCount.length /* guard against miscalculations */
+        this.timer.timeIntervals.length !=
+          semibreveCount.length /* guard against miscalculations */
       ) {
         this.timer.minTempo = null;
         this.timer.maxTempo = null;
@@ -382,8 +394,10 @@ define([
         var semibrevesPerMin = [];
         for (i = 0, len = this.timer.timeIntervals.length; i < len; i++) {
           let spm =
-            Math.round((
-              (60 / this.timer.timeIntervals[i]) * semibreveCount[i] + Number.EPSILON) * 10
+            Math.round(
+              ((60 / this.timer.timeIntervals[i]) * semibreveCount[i] +
+                Number.EPSILON) *
+                10
             ) / 10; /* semibreves per minute sensitive to 1/10 */
           semibrevesPerMin.push(spm);
         }
@@ -391,8 +405,10 @@ define([
         // console.log(semibrevesPerMin);
 
         this.timer.tempoSD =
-          Math.round((
-            SimpleStatistics.standardDeviation(semibrevesPerMin) + Number.EPSILON) * 100
+          Math.round(
+            (SimpleStatistics.standardDeviation(semibrevesPerMin) +
+              Number.EPSILON) *
+              100
           ) / 100; /* semibreves per minute sensitive to 1/100 */
         this.timer.tempoMean = SimpleStatistics.mean(semibrevesPerMin);
         this.timer.minTempo = Math.round(Math.min(...semibrevesPerMin));
@@ -414,10 +430,11 @@ define([
               1, // at least
               Math.min(
                 5, // at most
-                this.timer.tempoSD == 0 ? 5 // if there is no tempo variation
+                this.timer.tempoSD == 0
+                  ? 5 // if there is no tempo variation
                   : Math.floor(
-                    this.timer.tempoMean / this.timer.tempoSD
-                  ).toString(2).length - 1
+                      this.timer.tempoMean / this.timer.tempoSD
+                    ).toString(2).length - 1
               )
             ) || 0; // in case calculation fails
         }
@@ -438,7 +455,7 @@ define([
           : "+" + String((offset * -1) / 60));
 
       if (this.definition.exercise.performing_course == null) {
-        console.log('No course context found.');
+        console.log("No course context found.");
         return null;
       }
 
@@ -449,7 +466,9 @@ define([
         }, -1);
 
       if (!this.definition.getExerciseList()[idx]) {
-        console.log('Error: failed call of getExerciseList in compileExerciseReport');
+        console.log(
+          "Error: failed call of getExerciseList in compileExerciseReport"
+        );
         return null;
       }
 
@@ -461,41 +480,53 @@ define([
       // exercise_mean_tempo --> tempo_mean_semibreves_per_min
       // ADD tempo_SD_semibreves_per_min (value for existing rows: null)
       // exercise_tempo_rating --> tempo_rating
-      var report = { // new
+      var report = {
+        // new
         /* this.definition.getExerciseList()[idx].id returns e.g. PA00AA/1 */
         course_ID: this.definition.exercise.performing_course || null, // string
-        playlist_ID: this.definition.getExerciseList()[idx].id.split("/")[0] || null, // string
-        exercise_num: parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]) || null,
+        playlist_ID:
+          this.definition.getExerciseList()[idx].id.split("/")[0] || null, // string
+        exercise_num:
+          parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]) ||
+          null,
         completion_date: new Date(this.timer.end * 1000).toJSON() || false,
         error_tally:
           /* -1 means that errors are not reported (can't recall why not) */
-          ["analytical", "figured_bass"].includes(this.definition.exercise.type) ?
-          -1 : this.errorTally,
-        performance_duration_in_seconds: /* seconds, sensitive to 1/10 */
-          Math.trunc(this.timer.duration * 10) / 10 || false ,
+          ["analytical", "figured_bass"].includes(this.definition.exercise.type)
+            ? -1
+            : this.errorTally,
+        /* seconds, sensitive to 1/10 */
+        performance_duration_in_seconds:
+          Math.trunc(this.timer.duration * 10) / 10 || false,
         time_intervals_in_seconds: this.timer.timeIntervals,
-        tempo_mean_semibreves_per_min: Math.round(this.timer.tempoMean) || false,
+        tempo_mean_semibreves_per_min:
+          Math.round(this.timer.tempoMean) || false,
         tempo_SD_semibreves_per_min: this.timer.tempoSD || false,
         tempo_rating:
           /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
           this.timer.tempoRating ? this.timer.tempoRating : 0,
       };
 
-      console.log('new report format', report);
+      console.log("new report format", report);
 
       // DELETE
-      var report = { // old
+      var report = {
+        // old
         course_ID: this.definition.exercise.performing_course || null, // string
-        playlist_ID: this.definition.getExerciseList()[idx].id.split("/")[0] || null, // string
-        exercise_num: parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]) || null,
+        playlist_ID:
+          this.definition.getExerciseList()[idx].id.split("/")[0] || null, // string
+        exercise_num:
+          parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]) ||
+          null,
         time: new Date().toJSON().slice(0, 16) || false,
         timezone: timezone_str || false,
         exercise_error_tally:
           /* -1 means that errors are not reported (can't recall why not) */
-          ["analytical", "figured_bass"].includes(this.definition.exercise.type) ?
-          -1 : this.errorTally,
-        exercise_duration: /* seconds, sensitive to 1/10 */
-          Math.trunc(this.timer.duration * 10) / 10 || false ,
+          ["analytical", "figured_bass"].includes(this.definition.exercise.type)
+            ? -1
+            : this.errorTally,
+        /* seconds, sensitive to 1/10 */
+        exercise_duration: Math.trunc(this.timer.duration * 10) / 10 || false,
         exercise_mean_tempo: Math.round(this.timer.tempoMean) || false,
         exercise_tempo_rating:
           /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
@@ -507,7 +538,9 @@ define([
     submitExerciseReport: function () {
       const json_data = JSON.stringify(this.compileExerciseReport());
       if (json_data == null) {
-        console.log("Outside the context of a course and playlist. No performance data submitted.");
+        console.log(
+          "Outside the context of a course and playlist. No performance data submitted."
+        );
         // window.alert("Outside the context of a course and playlist. No performance data submitted.");
         return null;
       }
@@ -621,7 +654,7 @@ define([
     },
     /**
      * This will trigger the application to automatically advance
-     * to the next exercise in the sequence if the user
+     * to the next exercise (if there is one) in the sequence if the user
      * has played a special combination of keys on the piano.
      *
      * This is intended as a shortcut for hitting the "next"
@@ -630,7 +663,11 @@ define([
      * @return undefined
      */
     triggerNextExercise: async function () {
-      if (this.done === true && AUTO_ADVANCE === true) {
+      if (
+        this.done === true &&
+        AUTO_ADVANCE === true &&
+        this.definition.exercise.nextExercise
+      ) {
         await this.sleep(AUTO_ADVANCE_DELAY * 1000);
         this.goToNextExercise();
       }

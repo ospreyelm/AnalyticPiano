@@ -21,6 +21,10 @@
   src: url("../fonts/Sebastian-FigBass-Modified.woff") format("woff");
 }
 
+:root {
+  --link-color: #ffa00f;
+}
+
 html {
   font-size: 14px;
   /*font-family: 'Alegreya Sans',sans-serif;*/
@@ -395,6 +399,14 @@ fieldset.settings-notation {
   color: #fff;
   border-radius: 6px;
   background-color: black;
+}
+
+.playlist-nav-links {
+  width: 100%;
+  display: inline-flex;
+  gap: 8px;
+  color: var(--link-color);
+  font-weight: bold;
 }
 
 /*--------------------------------------------------*/

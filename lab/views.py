@@ -135,7 +135,7 @@ class PlaylistView(RequirejsView):
     def get(
         self, request, playlist_id, course_id=None, exercise_num=1, *args, **kwargs
     ):
-        playlist = Playlist.objects.filter(Q(id=playlist_id)).first()
+        playlist = Playlist.objects.filter(id=playlist_id).first()
         if playlist is None:
             raise Http404("Playlist with this name or ID does not exist.")
 
@@ -148,24 +148,19 @@ class PlaylistView(RequirejsView):
         if exercise is None:
             raise Http404("This playlist has no exercises.")
 
+        prev_num = playlist.prev_num(exercise_num)
+        next_num = playlist.next_num(exercise_num)
+
         next_exercise_url = playlist.get_exercise_url_by_num(
-            num=playlist.next_num(exercise_num)
+            num=next_num, course_id=course_id
         )
         prev_exercise_url = playlist.get_exercise_url_by_num(
-            num=playlist.prev_num(exercise_num)
+            num=prev_num, course_id=course_id
         )
-        next_exercise_obj = playlist.get_exercise_obj_by_num(
-            playlist.next_num(exercise_num)
-        )
-        next_exercise_id = (
-            next_exercise_obj.id if next_exercise_obj.id != exercise.id else ""
-        )
-        prev_exercise_obj = playlist.get_exercise_obj_by_num(
-            playlist.prev_num(exercise_num)
-        )
-        prev_exercise_id = (
-            prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ""
-        )
+        next_exercise_obj = playlist.get_exercise_obj_by_num(next_num)
+        next_exercise_id = next_exercise_obj.id if next_exercise_obj != None else ""
+        prev_exercise_obj = playlist.get_exercise_obj_by_num(prev_num)
+        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj != None else ""
         first_exercise_obj = playlist.get_exercise_obj_by_num(1)
         first_exercise_id = (
             first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
@@ -198,11 +193,38 @@ class PlaylistView(RequirejsView):
             )
 
         course_performed = None
-
         if course_id:
             course_performed = Course.objects.filter(id=course_id).first()
             if course_performed:
                 context["course_name"] = course_performed.title
+                course_link = reverse(
+                    "lab:course-view", kwargs={"course_id": course_id}
+                )
+                context["course_link"] = course_link
+
+        next_playlist = None
+        # Finding the next playlist in the case that this playlist was accessed from within a course
+        if course_performed != None:
+            playlist_pco = PlaylistCourseOrdered.objects.filter(
+                playlist_id=playlist._id, course_id=course_performed._id
+            ).first()
+            if playlist_pco != None:
+                next_playlist_pco = PlaylistCourseOrdered.objects.filter(
+                    course_id=course_performed._id, order=playlist_pco.order + 1
+                ).first()
+                # If there is a following playlist, get it and add a link to it to the context
+                if next_playlist_pco != None:
+                    next_playlist = Playlist.objects.filter(
+                        _id=next_playlist_pco.playlist_id
+                    ).first()
+                    next_playlist_link = reverse(
+                        "lab:playlist-view",
+                        kwargs={
+                            "playlist_id": next_playlist.id,
+                            "course_id": course_id,
+                        },
+                    )
+                    context["next_playlist_link"] = next_playlist_link
 
         if playlist.name:
             context["playlist_name"] = playlist.name
@@ -215,10 +237,10 @@ class PlaylistView(RequirejsView):
             {
                 "nextExercise": next_exercise_url,
                 "nextExerciseId": next_exercise_id,
-                "nextExerciseNum": playlist.next_num(exercise_num),
+                "nextExerciseNum": next_num,
                 "previousExercise": prev_exercise_url,
                 "previousExerciseId": prev_exercise_id,
-                "previousExerciseNum": playlist.prev_num(exercise_num),
+                "previousExerciseNum": prev_num,
                 "firstExerciseId": first_exercise_id,
                 "exerciseList": exercise_list,
                 "exerciseId": exercise.id,
@@ -241,29 +263,28 @@ class PlaylistView(RequirejsView):
 class RefreshExerciseDefinition(RequirejsView):
     def get(self, request, playlist_id, course_id=None, *args, **kwargs):
         playlist = get_object_or_404(Playlist, id=playlist_id)
-        exercise_num = int(request.GET.get("exercise_num"))
+        exercise_num = request.GET.get("exercise_num")
+        exercise_num = int(exercise_num)
+
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if exercise is None:
             raise Http404("Exercise not found.")
 
+        prev_num = playlist.prev_num(exercise_num)
+        next_num = playlist.next_num(exercise_num)
+
         next_exercise_url = playlist.get_exercise_url_by_num(
-            num=playlist.next_num(exercise_num)
+            num=next_num, course_id=course_id
         )
         prev_exercise_url = playlist.get_exercise_url_by_num(
-            num=playlist.prev_num(exercise_num)
+            num=prev_num, course_id=course_id
         )
-        next_exercise_obj = playlist.get_exercise_obj_by_num(
-            playlist.next_num(exercise_num)
-        )
-        next_exercise_id = (
-            next_exercise_obj.id if next_exercise_obj.id != exercise.id else ""
-        )
-        prev_exercise_obj = playlist.get_exercise_obj_by_num(
-            playlist.prev_num(exercise_num)
-        )
-        prev_exercise_id = (
-            prev_exercise_obj.id if prev_exercise_obj.id != exercise.id else ""
-        )
+        next_exercise_obj = playlist.get_exercise_obj_by_num(next_num)
+        next_exercise_id = next_exercise_obj.id if next_exercise_obj != None else ""
+
+        prev_exercise_obj = playlist.get_exercise_obj_by_num(prev_num)
+        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj != None else ""
+
         first_exercise_obj = playlist.get_exercise_obj_by_num(1)
         first_exercise_id = (
             first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
@@ -291,10 +312,10 @@ class RefreshExerciseDefinition(RequirejsView):
             {
                 "nextExercise": next_exercise_url,
                 "nextExerciseId": next_exercise_id,
-                "nextExerciseNum": playlist.next_num(exercise_num),
+                "nextExerciseNum": next_num,
                 "previousExercise": prev_exercise_url,
                 "previousExerciseId": prev_exercise_id,
-                "previousExerciseNum": playlist.prev_num(exercise_num),
+                "previousExerciseNum": prev_num,
                 "firstExerciseId": first_exercise_id,
                 "exerciseList": exercise_list,
                 "exerciseId": exercise.id,
