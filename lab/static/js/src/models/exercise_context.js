@@ -310,7 +310,7 @@ define([
         return "";
       }
       const star_factor = Math.round(this.timer.tempoRating);
-      return "*" * star_factor;
+      return "*".repeat(star_factor);
     },
     /**
      * Begins the timer.
