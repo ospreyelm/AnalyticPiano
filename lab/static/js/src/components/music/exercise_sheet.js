@@ -345,7 +345,7 @@ define([
      * @return this
      */
     renderStaves: function (exercise_midi_nums = false) {
-      const show_barlines = true; // set to true once spacing, time signatures, and metric notation switch are ready
+      const show_barlines = true;
 
       var i,
         len,
@@ -456,7 +456,7 @@ define([
       let bankSize = CHORD_BANK_SIZE;
       try {
         const custom_chord_bank_size = parseInt(this.getSemibrevesPerLine());
-        if (typeof custom_chord_bank_size === 'number') {
+        if (typeof custom_chord_bank_size === 'number' && custom_chord_bank_size > 0) {
           bankSize = custom_chord_bank_size;
         }
       }
@@ -772,8 +772,10 @@ define([
         return 0.375;
       } else if (rhythm_value === "q") {
         return 0.25;
-        // } else if (rhythm_value === "e") {
-        //   return 0.125;
+      } else if (rhythm_value === "E") {
+        return 0.1875;
+      } else if (rhythm_value === "e") {
+        return 0.125;
       } else {
         console.log("Unknown rhythm_value passed to getWholeNoteCount");
         return 0.1; // this will prevent display of bogus barlines
