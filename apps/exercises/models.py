@@ -163,6 +163,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
             "highlight",
             "chord",
             "timeSignature",
+            "semibrevesPerLine",
         ]
 
     @property

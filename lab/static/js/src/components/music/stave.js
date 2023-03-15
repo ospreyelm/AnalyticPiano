@@ -139,14 +139,17 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      * @return {boolean} True if the position is valid, false otherwise.
      */
     validatePosition: function (position) {
-      var numRe = /^\d+$/;
+      var intRe = /^\d+$/;
+      var numRe = /^[.\d]+$/;
+      /* a decimal has no impact at the moment */
+      /* if it did, the impact might be bad and restoring integer validation may be good */
 
       if (
         !position.hasOwnProperty("index") ||
         !position.hasOwnProperty("count") ||
         !position.hasOwnProperty("maxCount") ||
-        !numRe.test(position.index) ||
-        !numRe.test(position.count) ||
+        !intRe.test(position.index) ||
+        !intRe.test(position.count) ||
         !numRe.test(position.maxCount)
       ) {
         return false;

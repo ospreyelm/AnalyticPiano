@@ -306,6 +306,10 @@ class ExerciseForm(forms.ModelForm):
         required=False,
         help_text="Enter a numerical time signature: two numbers separated by a slash."
     )
+    semibreves_per_line = forms.IntegerField(
+        required=False,
+        help_text="Fit this many semibreves across the page."
+    )
     visibility_pattern = forms.CharField(
         required=False,
         help_text="Visibility pattern of each chord: * for all pitches, - for none, s for soprano, b for bass.",
@@ -318,6 +322,7 @@ class ExerciseForm(forms.ModelForm):
         "rhythm",
         "visibility_pattern",
         "time_signature",
+        "semibreves_per_line",
         "intro_text",
         "type",
         "staff_distribution",
@@ -339,13 +344,15 @@ class ExerciseForm(forms.ModelForm):
             self.fields["time_signature"].initial = self.instance.data.get(
                 "timeSignature", None
             )
+            self.fields["semibreves_per_line"].initial = self.instance.data.get(
+                "semibrevesPerLine", None
+            )
             self.fields["visibility_pattern"].initial = represent_visibility(
                 self.instance
             )
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
-        print(self.cleaned_data.get("visibility_pattern"))
 
         if instance:
             instance.data["introText"] = self.cleaned_data["intro_text"]
@@ -356,11 +363,10 @@ class ExerciseForm(forms.ModelForm):
                 instance.data["timeSignature"] = self.cleaned_data["time_signature"]
             else:
                 instance.data["timeSignature"] = ""
-            print(instance.data["chord"])
+            instance.data["semibrevesPerLine"] = self.cleaned_data["semibreves_per_line"]
             instance.data = parse_visibility(
                 self.cleaned_data.get("visibility_pattern"), instance
             )
-            print(instance.data["chord"])
             instance.authored_by = self.context.get("user")
             instance.clean()
             instance.save()

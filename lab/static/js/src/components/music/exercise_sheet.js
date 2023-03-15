@@ -454,6 +454,15 @@ define([
       var chord, treble, bass;
       var limit = 100; // arbitrary
       let bankSize = CHORD_BANK_SIZE;
+      try {
+        const custom_chord_bank_size = parseInt(this.getSemibrevesPerLine());
+        if (typeof custom_chord_bank_size === 'number') {
+          bankSize = custom_chord_bank_size;
+        }
+      }
+      catch {
+        console.log('Failed to retrieve getSemibrevesPerLine property from Exercise definion.')
+      }
       var display_items = this.getDisplayChords().items({
         limit: limit,
         reverse: false,
@@ -897,6 +906,14 @@ define([
      */
     getTimeSignature: function () {
       return this.exerciseContext.getTimeSignature();
+    },
+    /**
+     * Obtain semibreves per line for horizontal scaling.
+     *
+     * @return {integer}
+     */
+    getSemibrevesPerLine: function () {
+      return this.exerciseContext.getSemibrevesPerLine();
     },
     /**
      * Returns the input chords.

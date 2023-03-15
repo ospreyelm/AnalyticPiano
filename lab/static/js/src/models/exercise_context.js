@@ -88,6 +88,7 @@ define([
     this.displayChords = this.createDisplayChords();
     this.exerciseChords = this.createExerciseChords();
     this.timeSignature = this.definition.getTimeSignature();
+    this.semibrevesPerLine = this.definition.getSemibrevesPerLine();
 
     // this.playlistRestarts = null; // this obsolete measurement was valuable
 
@@ -580,6 +581,14 @@ define([
      */
     getTimeSignature: function () {
       return this.timeSignature;
+    },
+    /**
+     * Obtain semibreves per line for horizontal scaling.
+     *
+     * @return {integer}
+     */
+    getSemibrevesPerLine: function () {
+      return this.semibrevesPerLine;
     },
     /**
      * Returns the chords being used for input to the exercise.

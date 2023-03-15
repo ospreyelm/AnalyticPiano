@@ -372,6 +372,8 @@ define([
       delete data.keySignature;
     }
 
+    console.log('CALLED exercise_form.js / Not obsolete');
+
     return data;
   };
 
