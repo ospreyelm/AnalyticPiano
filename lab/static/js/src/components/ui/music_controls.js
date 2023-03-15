@@ -24,18 +24,6 @@ define([
   StaffDistributionWidget
 ) {
   /**
-   * Defines the title of the app info modal.
-   * @type {string}
-   * @const
-   */
-  var APP_INFO_TITLE = Config.get("helpText.appInfo.title");
-  /**
-   * Defines the content of the app info modal.
-   * @type {string}
-   * @const
-   */
-  var APP_INFO_CONTENT = Config.get("helpText.appInfo.content");
-  /**
    * Defines whether the shortcuts are enabled by default or not.
    * @type {boolean}
    * @const
@@ -101,7 +89,7 @@ define([
     this.headerEl = $(settings.headerEl);
     this.containerEl = $(settings.containerEl);
 
-    _.bindAll(this, ["onClickInfo"]);
+    // _.bindAll(this, []);
   };
 
   MusicControlsComponent.prototype = new Component();
@@ -616,19 +604,6 @@ define([
     onClickFirstExercise: function () {
       this.broadcast(EVENTS.BROADCAST.FIRSTEXERCISE);
       return true;
-    },
-    /**
-     * Handler to shows the info modal.
-     *
-     * @param {object} evt
-     * @return {boolean} false
-     */
-    onClickInfo: function (evt) {
-      this.trigger("modal", {
-        title: APP_INFO_TITLE,
-        content: APP_INFO_CONTENT,
-      });
-      return false;
     },
   });
 

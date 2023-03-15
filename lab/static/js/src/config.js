@@ -5,7 +5,6 @@ define([
   "lodash",
   "app/config/general",
   "app/config/error_text",
-  "app/config/help_text",
   "app/config/highlight",
   "app/config/instruments",
   "app/config/keyboard_shortcuts",
@@ -20,7 +19,6 @@ define([
   _,
   ConfigGeneral,
   ConfigErrorText,
-  ConfigHelpText,
   ConfigHighlight,
   ConfigInstruments,
   ConfigKeyboardShortcuts,
@@ -49,7 +47,6 @@ define([
     __config: {
       general: ConfigGeneral,
       errorText: ConfigErrorText,
-      helpText: ConfigHelpText,
       highlight: ConfigHighlight,
       instruments: ConfigInstruments,
       keyboardShortcuts: ConfigKeyboardShortcuts,
