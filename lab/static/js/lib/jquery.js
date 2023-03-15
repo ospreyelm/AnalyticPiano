@@ -9673,7 +9673,6 @@
   });
 
   function defaultPrefilter(elem, props, opts) {
-    /*jshint validthis:true */
     var prop,
       index,
       length,
