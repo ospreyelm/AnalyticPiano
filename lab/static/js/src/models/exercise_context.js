@@ -537,14 +537,15 @@ define([
       return report;
     },
     submitExerciseReport: function () {
-      const json_data = JSON.stringify(this.compileExerciseReport());
-      if (json_data == null) {
+      const exercise_report = this.compileExerciseReport();
+      if (exercise_report == null) {
         console.log(
-          "Outside the context of a course and playlist. No performance data submitted."
+          "The course-playlist context could not be determined. No performance data submitted."
         );
-        // window.alert("Outside the context of a course and playlist. No performance data submitted.");
+        // window.alert("The course-playlist context could not be determined. No performance data submitted.");
         return null;
       }
+      const json_data = JSON.stringify(exercise_report);
       $.ajax({
         type: "POST",
         url: "/ajax/exercise-performance/",
