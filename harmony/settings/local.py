@@ -1,18 +1,12 @@
 from harmony.settings.common import *  # NOQA
 
 DEBUG = True
-ALLOWED_HOSTS = ["0.0.0.0", "localhost", "127.0.0.1"]
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "harmony",
-        "USER": "postgres",
-        "PASSWORD": "password",
-        "HOST": "localhost",
-        "PORT": "5432",
-    }
-}
+# moved from common.py March 2023
+# this is not the most secure solution
+SECRET_KEY = os.environ.get("SECRET_KEY", "DEFAULT_SECRET_KEY")
+
+ALLOWED_HOSTS = ["0.0.0.0", "localhost", "127.0.0.1"]
 
 if SENTRY_DSN:
     sentry_sdk.init(
@@ -27,3 +21,14 @@ if SENTRY_DSN:
         # django.contrib.auth) you may enable sending PII data.
         send_default_pii=True,
     )
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": "harmony",
+        "USER": "postgres",
+        "PASSWORD": "password",
+        "HOST": "localhost",
+        "PORT": "5432",
+    }
+}

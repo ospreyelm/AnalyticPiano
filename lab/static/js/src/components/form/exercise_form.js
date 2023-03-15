@@ -106,9 +106,9 @@ define([
    *
    * @return string
    */
-  ExerciseFormComponent.prototype.getSubmitUrl = function () {
-    return this.settings.config.exercise_api_url;
-  };
+  // ExerciseFormComponent.prototype.getSubmitUrl = function () {
+  //   return this.settings.config.exercise_api_url;
+  // };
 
   /**
    * Returns an array of groups (names and urls).

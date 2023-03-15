@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.core.management import BaseCommand
 
 from apps.exercises.models import Playlist, Exercise
-from lab.objects import ExerciseRepository
 
 User = get_user_model()
 

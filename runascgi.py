@@ -97,8 +97,9 @@ def run_with_cgi(application):
 
 
 # Change this to the directory above your site code.
-sys.path.append(os.path.expanduser("~/harmonylab"))
+sys.path.append(os.path.expanduser("~/AnalyticPiano"))
 
-# Change mysite to the name of your site package
 os.environ["DJANGO_SETTINGS_MODULE"] = "harmony.settings.sharedhosting"
 run_with_cgi(wsgi.get_wsgi_application())
+
+print('Running runascgi.py')
