@@ -141,19 +141,24 @@ define([
      */
     makeTimestamp: function () {
       if (!this.timer.timepoints) {
-        console.log("makeTimestamp failed: no timepoints object found");
+        console.log("makeTimestamp failed because no timepoints object found");
         return null;
       }
-      var timestamp = Math.floor(new Date().getTime()) / 1000;
-      var idx = this.graded.activeIndex;
-      // console.log(idx);
-      if (idx == undefined && Object.keys(this.timer.timepoints).length == 0) {
-        idx = 0; // necessary for the first exercise of a playlist, unsure why
+      try {
+        var timestamp = new Date().getTime() % this.timer.start; /* milliseconds */
+        var idx = this.graded.activeIndex;
+        if (idx == undefined && Object.keys(this.timer.timepoints).length == 0) {
+          idx = 0; // necessary for the first exercise of a playlist, unsure why
+        }
+        if (idx != undefined) {
+          // this function will typically be called multiple times per idx
+          // the last update per idx should occur when the pitches are correct and complete
+          this.timer.timepoints[idx] = timestamp;
+        }
       }
-      if (idx != undefined) {
-        // this function will typically be called multiple times per idx
-        // the last update per idx should occur when the pitches are correct and complete
-        this.timer.timepoints[idx] = timestamp;
+      catch {
+        console.log("makeTimestamp failed");
+        return null;
       }
     },
     /**
@@ -260,7 +265,6 @@ define([
       this.timer.end = null;
       this.timer.duration = null;
       this.timer.durationString = "";
-      this.timer.alternativeDurationString = "";
       this.timer.minTempo = null;
       this.timer.maxTempo = null;
       this.timer.tempoSD = null;
@@ -319,7 +323,7 @@ define([
      */
     beginTimer: function () {
       if (this.timer === null) this.resetTimer();
-      this.timer.start = Math.floor(new Date().getTime()) / 1000; /* seconds */
+      this.timer.start = new Date().getTime(); /* date in milliseconds */
       return this;
     },
     /**
@@ -331,17 +335,16 @@ define([
       if (!this.timer) return this;
 
       if (this.timer.start && !this.timer.end) {
-        this.timer.end = Math.floor(new Date().getTime()) / 1000;
-        this.timer.duration = this.timer.end - this.timer.start;
-        var mins = Math.floor(this.timer.duration / 60);
-        var seconds = (this.timer.duration - mins * 60).toFixed(1);
-        if (mins == 0) {
-          this.timer.durationString = seconds + "&Prime;";
-          this.timer.alternativeDurationString = seconds + "s";
-        } else {
-          this.timer.durationString = mins + "&prime; " + seconds + "&Prime;";
-          this.timer.alternativeDurationString = mins + "m" + seconds + "s";
+        this.timer.end = new Date().getTime(); /* date in milliseconds */
+        this.timer.duration = this.timer.end - this.timer.start; /* duration in milliseconds */
+        let seconds = Math.round(this.timer.duration / 1000);
+        const minutes = Math.floor(seconds / 60);
+        seconds %= 60;
+        this.timer.durationString = "";
+        if (minutes > 0) {
+          this.timer.durationString += String(minutes) + "&prime;&nbsp;";
         }
+        this.timer.durationString += String(seconds) + "&Prime;";
       }
 
       var tp = this.timer.timepoints;
@@ -350,7 +353,7 @@ define([
       });
       for (var i = 1, len = tp_indeces.length; i < len; i++) {
         this.timer.timeIntervals.push(
-          Math.trunc((tp[tp_indeces[i]] - tp[tp_indeces[i - 1]]) * 1000) / 1000
+          tp[tp_indeces[i]] - tp[tp_indeces[i - 1]]
         );
       }
 
@@ -382,44 +385,38 @@ define([
       }
       if (semibreveCount.length > 0) semibreveCount.pop();
 
+      // necessary?
+      this.timer.minTempo = null;
+      this.timer.maxTempo = null;
+      this.timer.tempoSD = null;
+      this.timer.tempoRating = null;
+
       if (
-        this.timer.timeIntervals.length <= 1 ||
-        this.timer.timeIntervals.length !=
-          semibreveCount.length /* guard against miscalculations */
+        this.timer.timeIntervals.length > 1
+        /* need at least three events to determine tempo consistency */
+        && this.timer.timeIntervals.length == semibreveCount.length
+        /* guard against miscalculations */
       ) {
-        this.timer.minTempo = null;
-        this.timer.maxTempo = null;
-        this.timer.tempoSD = null;
-        this.timer.tempoRating = null;
-      } else {
-        var semibrevesPerMin = [];
+        var centisemibrevesPerMin = [];
         for (i = 0, len = this.timer.timeIntervals.length; i < len; i++) {
-          let spm =
-            Math.round(
-              ((60 / this.timer.timeIntervals[i]) * semibreveCount[i] +
-                Number.EPSILON) *
-                10
-            ) / 10; /* semibreves per minute sensitive to 1/10 */
-          semibrevesPerMin.push(spm);
+          let spm = Math.round(
+            semibreveCount[i] * 6000000 / this.timer.timeIntervals[i]
+          ); /* centi-semibreves per minute ... yup, because integer math is less troublesome */
+          centisemibrevesPerMin.push(spm);
         }
 
-        // console.log(semibrevesPerMin);
-
-        this.timer.tempoSD =
-          Math.round(
-            (SimpleStatistics.standardDeviation(semibrevesPerMin) +
-              Number.EPSILON) *
-              100
-          ) / 100; /* semibreves per minute sensitive to 1/100 */
-        this.timer.tempoMean = SimpleStatistics.mean(semibrevesPerMin);
-        this.timer.minTempo = Math.round(Math.min(...semibrevesPerMin));
-        this.timer.maxTempo = Math.round(Math.max(...semibrevesPerMin));
+        this.timer.tempoSD = (
+          Math.round(SimpleStatistics.standardDeviation(centisemibrevesPerMin)) / 100
+        ); /* semibreves per minute sensitive to two decimal places */
+        this.timer.tempoMean = (
+          Math.round(SimpleStatistics.mean(centisemibrevesPerMin) / 10) / 10
+        ); /* semibreves per minute sensitive to one decimal place */
+        this.timer.minTempo = Math.round(Math.min(...centisemibrevesPerMin)) / 100;
+        this.timer.maxTempo = Math.round(Math.max(...centisemibrevesPerMin)) / 100;
 
         /* Tempo star-rating algorithm */
         // TO DO: ADD GRADATIONS BECAUSE SD AS 1/8 OF MEAN IS TOO NARROW FOR TWO STARS
-        if (isNaN(this.timer.tempoSD) || isNaN(this.timer.tempoMean)) {
-          this.timer.tempoRating = null;
-        } else {
+        try {
           this.timer.tempoRating =
             /* If the SD is equal to or less than 1/(2^n) of the mean
              * then the star-rating is n-1:
@@ -435,9 +432,13 @@ define([
                   ? 5 // if there is no tempo variation
                   : Math.floor(
                       this.timer.tempoMean / this.timer.tempoSD
-                    ).toString(2).length - 1
+                    ).toString(2).length - 1 // toString(2) renders a binary number
               )
             ) || 0; // in case calculation fails
+        }
+        catch {
+          /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
+          this.timer.tempoRating = 0;
         }
       }
       return this;
@@ -474,41 +475,39 @@ define([
       }
 
       // ADOPT THIS INSTEAD AND RENAME EXISTING JSON DATA KEYS ACCORDINGLY
-      // time --> completion_date
+      // time --> client_completion_date
       // DELETE timezone
       // exercise_error_tally --> error_tally
       // exercise_duration --> performance_duration_in_seconds
       // exercise_mean_tempo --> tempo_mean_semibreves_per_min
-      // ADD tempo_SD_semibreves_per_min (value for existing rows: null)
       // exercise_tempo_rating --> tempo_rating
-      var report = {
-        // new
-        /* this.definition.getExerciseList()[idx].id returns e.g. PA00AA/1 */
-        course_ID: this.definition.exercise.performing_course || null, // string
-        playlist_ID:
-          this.definition.getExerciseList()[idx].id.split("/")[0] || null, // string
-        exercise_num:
-          parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]) ||
-          null,
-        completion_date: new Date(this.timer.end * 1000).toJSON() || false,
-        error_tally:
-          /* -1 means that errors are not reported (can't recall why not) */
-          ["analytical", "figured_bass"].includes(this.definition.exercise.type)
-            ? -1
-            : this.errorTally,
-        /* seconds, sensitive to 1/10 */
-        performance_duration_in_seconds:
-          Math.trunc(this.timer.duration * 10) / 10 || false,
-        time_intervals_in_seconds: this.timer.timeIntervals,
-        tempo_mean_semibreves_per_min:
-          Math.round(this.timer.tempoMean) || false,
-        tempo_SD_semibreves_per_min: this.timer.tempoSD || false,
-        tempo_rating:
-          /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
-          this.timer.tempoRating ? this.timer.tempoRating : 0,
-      };
+      // ADD tempo_SD_semibreves_per_min (value for existing rows: null)
+      // ADD time_intervals_in_milliseconds (value for existing rows: null)
+      try {
+        var report = {
+          // new
+          /* this.definition.getExerciseList()[idx].id returns e.g. PA00AA/1 */
+          course_ID: this.definition.exercise.performing_course, // string
+          playlist_ID: this.definition.getExerciseList()[idx].id.split("/")[0], // string
+          exercise_num: parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]),
+          client_completion_date: new Date(this.timer.end).toJSON(),
+          error_tally:
+            /* -1 means that errors are not reported (can't recall why not) */
+            ["analytical", "figured_bass"].includes(this.definition.exercise.type)
+              ? -1
+              : this.errorTally,
+          performance_duration_in_seconds: this.timer.duration / 1000,
+          time_intervals_in_milliseconds: this.timer.timeIntervals,
+          tempo_mean_semibreves_per_min: this.timer.tempoMean,
+          tempo_SD_semibreves_per_min: this.timer.tempoSD,
+          tempo_rating: this.timer.tempoRating,
+        };
+      }
+      catch {
+        return null;
+      }
 
-      console.log("new report format", report);
+      // console.log("new report format", report);
 
       // DELETE
       var report = {
@@ -526,12 +525,9 @@ define([
           ["analytical", "figured_bass"].includes(this.definition.exercise.type)
             ? -1
             : this.errorTally,
-        /* seconds, sensitive to 1/10 */
-        exercise_duration: Math.trunc(this.timer.duration * 10) / 10 || false,
-        exercise_mean_tempo: Math.round(this.timer.tempoMean) || false,
-        exercise_tempo_rating:
-          /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
-          this.timer.tempoRating ? this.timer.tempoRating : 0,
+        exercise_duration: this.timer.duration / 1000,
+        exercise_mean_tempo: this.timer.tempoMean,
+        exercise_tempo_rating: this.timer.tempoRating,
       };
 
       return report;

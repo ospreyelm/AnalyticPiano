@@ -187,7 +187,26 @@ def playlist_performance_view(request, performance_id):
             exercises, exercises_data, d["playlist_length"]
         )  # why not len(exercises) ?!
 
-        [
+        for exercise in exercises_data:
+
+            tempo_display_factor = 1
+            # TODO: include time signature in the performance data for this purpose?
+            # try:
+            #     print(exercise)
+            #     # get beat information from time signature
+            #     time_sig = exercise["time_signature"]
+            #     time_sig_numerator = int(time_sig.split("/")[0])
+            #     tempo_display_factor = int(time_sig.split("/")[1])
+            #     if time_sig_numerator > 3 and time_sig_numerator % 3 == 0:
+            #         # compound meter
+            #         tempo_display_factor /= 3
+            #     try:
+            #         float(tempo_display_factor)
+            #     except ValueError:
+            #         print("Unable to retrieve beat value from time signature")
+            # except:
+            #     print("Unable to retrieve beat value from time signature")
+
             d.update(
                 **{
                     exercise["id"]: mark_safe(
@@ -196,13 +215,11 @@ def playlist_performance_view(request, performance_id):
                         f'{"Done " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == -1) else ""}'  # when is this shown?
                         f'{"Latest: without error." if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == 0) else ""}'
                         f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ["", "<br>Tempo erratic", "<br>Tempo unsteady", "<br>Tempo steady", "<br>Tempo very steady", "<br>Tempo perfectly steady"][round(exercise["exercise_tempo_rating"])]}'
-                        f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 or not exercise["exercise_mean_tempo"]) else "<br> at " + str(exercise["exercise_mean_tempo"]) + " w.n.p.m.<br>"}'
+                        f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 or not exercise["exercise_mean_tempo"]) else "<br> at " + str(round(exercise["exercise_mean_tempo"] * tempo_display_factor)) + " w.n.p.m.<br>"}'
                         f'<br><a href="{performance_obj.playlist.get_exercise_url_by_id(exercise["id"], course_id=course_id)}">Play again</a>'
                     )
                 }
             )
-            for exercise in exercises_data
-        ]
 
     table = MyActivityDetailsTable(
         data=data,
