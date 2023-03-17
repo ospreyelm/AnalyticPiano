@@ -3,11 +3,17 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.forms import JSONField
 from django.core.validators import FileExtensionValidator
 from prettyjson import PrettyJSONWidget
+from django.db.models import Q
 
 from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE, Group
 from apps.dashboard.fields import MultiDateField
 from apps.exercises.forms import ExerciseForm, PlaylistForm, CourseForm
-from apps.exercises.models import Exercise, Playlist, PlaylistCourseOrdered
+from apps.exercises.models import (
+    Exercise,
+    Playlist,
+    PlaylistCourseOrdered,
+    ExercisePlaylistOrdered,
+)
 
 import re
 
@@ -210,9 +216,9 @@ class CustomTransposeWidget(forms.MultiWidget):
 #   model: the type of model being displayed within the widget
 #   model_format: a function converting a model instance into a string
 #   value_attr: the attribute of the model used as its value within the form
-#   instance_from_value: a function taking the stringified instance from django and getting
-#     the instance itself. TODO: might be redundant
-class ManyWidget(forms.Widget):
+
+
+class ManyWidget(forms.widgets.ChoiceWidget):
     template_name = "../templates/dashboard/manywidget.html"
 
     def __init__(
@@ -221,16 +227,15 @@ class ManyWidget(forms.Widget):
         model=None,
         model_format=str,
         value_attr="_id",
-        instance_from_value=None,
+        order_attr="order",
+        choices=[],
     ):
         self.attrs = attrs
         self.model = model
         self.model_format = model_format
         self.value_attr = value_attr
-        if instance_from_value == None:
-            instance_from_value = lambda inst: model.objects.filter(id=inst).first()
-        self.instance_from_value = instance_from_value
-
+        self.order_attr = order_attr
+        self.choices = choices
         super().__init__(attrs)
 
     def format_value(self, value):
@@ -239,24 +244,20 @@ class ManyWidget(forms.Widget):
                 getattr(instance, self.value_attr, None),
                 self.model_format(instance),
             ),
-            self.model.objects.filter(_id__in=value),
+            value,
         )
-
         return list(instances)
 
-    # TODO: change to not be reliant on stringified instance given by self.choices
     def options(self, name, value, attrs=None):
-        for choice in self.choices:
-            print(self.value_attr, choice[1])
-            break
-        choices = map(
-            lambda choice: (
-                getattr(self.instance_from_value(choice[1]), self.value_attr, None),
-                self.model_format(self.instance_from_value(choice[1])),
-            ),
-            self.choices,
-        )
-        return list(choices)
+        # # print(self.iterator, self.choices)
+        # choices = map(
+        #     lambda choice: (
+        #         getattr(self.instance_from_value(choice[1]), self.value_attr, None),
+        #         self.model_format(self.instance_from_value(choice[1])),
+        #     ),
+        #     self.choices,
+        # )
+        return list(self.choices)
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
@@ -273,7 +274,48 @@ class ManyWidget(forms.Widget):
         return getter(name)
 
 
+class ManyField(forms.Field):
+    widget = None
+
+    def __init__(self, widget=ManyWidget, queryset=None, through_vals=None):
+        self.widget = widget
+        self.queryset = queryset
+        self.through_vals = through_vals
+        print(self.queryset, self.through_vals)
+        super(ManyField, self).__init__()
+
+    def prepare_value(self, value):
+        print(self.__dict__)
+        return value
+
+
 class DashboardPlaylistForm(PlaylistForm):
+
+    editable_fields = ["is_public"]
+
+    class Meta(PlaylistForm.Meta):
+        exclude = ["authored_by"]
+        widgets = {
+            "id": forms.TextInput(attrs={"readonly": "readonly"}),
+            "is_auto": forms.CheckboxInput(attrs={"disabled": "disabled"}),
+            "authored_by": forms.TextInput(attrs={"readonly": "readonly"}),
+        }
+
+    def __init__(self, disable_fields=False, *args, **kwargs):
+        user = kwargs.pop("user")
+        super(DashboardPlaylistForm, self).__init__(*args, **kwargs)
+        # Since the queryset and through_vals are dependent on variable user and instance, set them with initialization inputs
+        self.fields["exercises"].queryset = Exercise.objects.filter(
+            Q(authored_by=user) | Q(is_public=True)
+        )
+        self.fields["exercises"].through_vals = ExercisePlaylistOrdered.objects.filter(
+            playlist=self.instance
+        )
+        if disable_fields:
+            for field in self.fields:
+                if field not in self.editable_fields:
+                    self.fields.get(field).disabled = True
+
     id = forms.CharField(
         widget=forms.TextInput(attrs={"readonly": "readonly"}),
         required=False,
@@ -288,86 +330,24 @@ class DashboardPlaylistForm(PlaylistForm):
         widget=CustomTransposeWidget,
     )
 
-    editable_fields = ["is_public"]
-
-    # custom_m2m_fields = ["exercises"]
-    # custom_m2m_config = {
-    #     "exercises": {
-    #         "ordered": True,
-    #         "url": "dashboard:edit-exercise",
-    #         "author_field_name": "authored_by",
-    #         "appended_fields": ["description"],
-    #     }
-    # }
-
-    class Meta(PlaylistForm.Meta):
-        exclude = ["authored_by"]
-        widgets = {
-            "id": forms.TextInput(attrs={"readonly": "readonly"}),
-            "is_auto": forms.CheckboxInput(attrs={"disabled": "disabled"}),
-            "authored_by": forms.TextInput(attrs={"readonly": "readonly"}),
-            "exercises": ManyWidget(
-                model=Exercise,
-                model_format=lambda ex: ex.id
-                + (" - " + ex.description if ex.description else ""),
-            ),
-        }
-
-    def __init__(self, disable_fields=False, *args, **kwargs):
-        super(DashboardPlaylistForm, self).__init__(*args, **kwargs)
-        if disable_fields:
-            for field in self.fields:
-                if field not in self.editable_fields:
-                    self.fields.get(field).disabled = True
+    exercises = ManyField()
 
 
 class DashboardCourseForm(CourseForm):
     class Meta(CourseForm.Meta):
         fields = ["title", "playlists", "visible_to", "is_public", "open"]
-        widgets = {
-            "playlists": ManyWidget(
-                model=Playlist, model_format=lambda p: p.id + " - " + p.name
-            )
-        }
-
-    # custom_m2m_fields = ["playlists", "visible_to"]
-    # custom_m2m_config = {
-    #     "playlists": {
-    #         "ordered": True,
-    #         "extra_fields": list(
-    #             filter(
-    #                 lambda f: f.name in PlaylistCourseOrdered.displayed_fields,
-    #                 PlaylistCourseOrdered._meta.fields,
-    #             )
-    #         ),
-    #         "url": "dashboard:edit-playlist",
-    #         "author_field_name": "authored_by",
-    #     },
-    #     "visible_to": {
-    #         "ordered": False,
-    #         "url": "dashboard:edit-group",
-    #     },
-    # }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super(DashboardCourseForm, self).__init__(*args, **kwargs)
+        self.fields["playlists"].queryset = Playlist.objects.filter(
+            Q(authored_by=user) | Q(is_public=True)
+        )
+        self.fields["playlists"].through_vals = PlaylistCourseOrdered.objects.filter(
+            course=self.instance
+        )
 
-    # def clean_due_dates(self):
-    #     if not self.cleaned_data["due_dates"]:
-    #         return
-    #     self._clean_multi_dates(dates=self.cleaned_data["due_dates"], playlists=self.cleaned_data["playlists"])
-    #     return self.cleaned_data["due_dates"]
-
-    # def clean_publish_dates(self):
-    #     if not self.cleaned_data["publish_dates"]:
-    #         return
-    #     self._clean_multi_dates(dates=self.cleaned_data["publish_dates"], playlists=self.cleaned_data["playlists"])
-    #     return self.cleaned_data["publish_dates"]
-
-    # def _clean_multi_dates(self, dates, playlists):
-    #     if dates and len(dates.split(" ")) != len(playlists.split(" ")):
-    #         raise forms.ValidationError("Make sure the dates are set for either all or none of the playlists.")
+    playlists = ManyField()
 
 
 class BaseDashboardGroupForm(forms.ModelForm):
