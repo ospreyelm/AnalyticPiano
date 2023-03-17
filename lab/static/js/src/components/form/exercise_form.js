@@ -106,9 +106,9 @@ define([
    *
    * @return string
    */
-  ExerciseFormComponent.prototype.getSubmitUrl = function () {
-    return this.settings.config.exercise_api_url;
-  };
+  // ExerciseFormComponent.prototype.getSubmitUrl = function () {
+  //   return this.settings.config.exercise_api_url;
+  // };
 
   /**
    * Returns an array of groups (names and urls).
@@ -371,6 +371,8 @@ define([
     if (this.widgets.keySignature.keySignature.locked()) {
       delete data.keySignature;
     }
+
+    console.log('CALLED exercise_form.js / Not obsolete');
 
     return data;
   };

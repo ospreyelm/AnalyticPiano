@@ -11,9 +11,8 @@
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}django_tables2/themes/paleblue/css/screen.css"/>
     <link rel="stylesheet" type="text/css" href="{% static 'css/dashboard.css' %}"/>
     {% block css_extra %}{% endblock %}
-    <script src="{% static 'js/jquery-3.5.1.min.js' %}"></script>
-    {% block extrahead %}
-    {% endblock %}
+    <script src="{% static 'js/jquery-3.5.1.min.js' %}"></script><!-- apps/dashboard/static -->
+    {% block extrahead %}{% endblock %}
 </head>
 <body>
 
@@ -66,6 +65,5 @@
 
 {% block js_extra %}{% endblock %}
 
-{#<!-- {% include "_googleanalytics.html" %} -->#}
 </body>
 </html>

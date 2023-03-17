@@ -11,8 +11,6 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = json.loads(os.environ.get("ALLOWED_HOSTS", "[]"))
 
-LTI_OAUTH_CREDENTIALS = json.loads(os.environ.get("LTI_OAUTH_CREDENTIALS", "{}"))
-
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,

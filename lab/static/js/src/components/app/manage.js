@@ -124,22 +124,22 @@ define([
     });
   };
 
-  AppManageComponent.prototype.updateExerciseList = function () {
-    var that = this;
-    var config = module.config();
-    var $el = this.$exerciseList;
-    var exercise_api_url = config.exercise_api_url;
+  // AppManageComponent.prototype.updateExerciseList = function () {
+  //   var that = this;
+  //   var config = module.config();
+  //   var $el = this.$exerciseList;
+  //   var exercise_api_url = config.exercise_api_url;
 
-    $.ajax(exercise_api_url, {
-      method: "GET",
-    })
-      .done(function (response, textStatus, jqXHR) {
-        that.renderExerciseList(response.data);
-      })
-      .fail(function (jqXHR, textStatus) {
-        $el.html("").append("Error loading exercise list.");
-      });
-  };
+  //   $.ajax(exercise_api_url, {
+  //     method: "GET",
+  //   })
+  //     .done(function (response, textStatus, jqXHR) {
+  //       that.renderExerciseList(response.data);
+  //     })
+  //     .fail(function (jqXHR, textStatus) {
+  //       $el.html("").append("Error loading exercise list.");
+  //     });
+  // };
 
   AppManageComponent.prototype.renderExerciseList = function (data) {
     var $ul = $('<ul class="exercise-groups"></ul>');
@@ -239,45 +239,45 @@ define([
       [action]({ duration: 400, easing: "easeOutCubic" });
   };
 
-  AppManageComponent.prototype.deleteExerciseItem = function ($el) {
-    var confirmed = confirm(
-      "Are you sure you want to delete this exercise or group of exercises?"
-    );
-    if (!confirmed) {
-      return;
-    }
-    var that = this;
-    var data = {
-      exercise_name: $el.data("exercise-name"),
-      group_name: $el.data("group-name"),
-    };
-    var delete_url = module.config().exercise_api_url;
+  // AppManageComponent.prototype.deleteExerciseItem = function ($el) {
+  //   var confirmed = confirm(
+  //     "Are you sure you want to delete this exercise or group of exercises?"
+  //   );
+  //   if (!confirmed) {
+  //     return;
+  //   }
+  //   var that = this;
+  //   var data = {
+  //     exercise_name: $el.data("exercise-name"),
+  //     group_name: $el.data("group-name"),
+  //   };
+  //   var delete_url = module.config().exercise_api_url;
 
-    delete_url += delete_url.indexOf("?") === -1 ? "?" : "&";
-    delete_url += "group_name=" + data.group_name;
-    if (data.exercise_name) {
-      delete_url += "&exercise_name=" + data.exercise_name;
-    }
+  //   delete_url += delete_url.indexOf("?") === -1 ? "?" : "&";
+  //   delete_url += "group_name=" + data.group_name;
+  //   if (data.exercise_name) {
+  //     delete_url += "&exercise_name=" + data.exercise_name;
+  //   }
 
-    $.ajax({
-      url: delete_url,
-      method: "DELETE",
-      dataType: "json",
-    })
-      .done(function (response, textStatus, jqXHR) {
-        that.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
-          title: response.description,
-          type: "success",
-        });
-        that.updateExerciseList();
-      })
-      .fail(function (jqXHR, textStatus) {
-        that.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
-          title: "Error deleting exercise item (" + textStatus + ")",
-          type: "error",
-        });
-      });
-  };
+  //   $.ajax({
+  //     url: delete_url,
+  //     method: "DELETE",
+  //     dataType: "json",
+  //   })
+  //     .done(function (response, textStatus, jqXHR) {
+  //       that.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
+  //         title: response.description,
+  //         type: "success",
+  //       });
+  //       that.updateExerciseList();
+  //     })
+  //     .fail(function (jqXHR, textStatus) {
+  //       that.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
+  //         title: "Error deleting exercise item (" + textStatus + ")",
+  //         type: "error",
+  //       });
+  //     });
+  // };
 
   return AppManageComponent;
 });

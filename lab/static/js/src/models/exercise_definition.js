@@ -2,6 +2,7 @@ define(["lodash", "app/config"], function (_, Config) {
   var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
+  var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
   /**
    * ExerciseDefinition object is responsible for knowing the definition
@@ -141,6 +142,14 @@ define(["lodash", "app/config"], function (_, Config) {
      */
     getTimeSignature: function () {
       return this.exercise.timeSignature;
+    },
+    /**
+     * Returns the semibreves per line setting.
+     *
+     * @return {integer}
+     */
+    getSemibrevesPerLine: function () {
+      return this.exercise.semibrevesPerLine;
     },
     /**
      * Returns all the problems.
@@ -325,6 +334,11 @@ define(["lodash", "app/config"], function (_, Config) {
       exercise.timeSignature = false;
       if (definition.hasOwnProperty("timeSignature")) {
         exercise.timeSignature = definition.timeSignature;
+      }
+
+      exercise.semibrevesPerLine = CHORD_BANK_SIZE;
+      if (definition.hasOwnProperty("semibrevesPerLine")) {
+        exercise.semibrevesPerLine = definition.semibrevesPerLine;
       }
 
       exercise.performing_course = definition.courseId;

@@ -482,16 +482,31 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
       if (notes.length !== 2) return "";
       return (Math.abs(notes[1] - notes[0]) % 12).toString();
     },
-    to_interval: function (notes) {
+    to_interval: function (notes, wrap=false, wrap_mark="") {
       var anon = { name: "", size: "" };
 
       if (notes.length !== 2) return anon;
 
+      let upper_note = notes[1]
+      const lower_note = notes[0]
+      if (wrap != false) {
+        let wrap_offset = 1
+        if (wrap == 'wrap_after_octave_plus_ditone') {
+          wrap_offset = 5
+        }
+        upper_note = (upper_note - lower_note - wrap_offset) % 12 + lower_note + wrap_offset
+      }
+
+      let label_suffix = ""
+      if (upper_note != notes[1]) {
+        label_suffix = wrap_mark
+      }
+
       if (this.key_is_none()) {
-        var profile = notes[1] - notes[0];
+        var profile = upper_note - lower_note;
         var all_labels = this.hIntervals;
       } else {
-        var profile = this.semitones_steps_str(notes[1], notes[0]);
+        var profile = this.semitones_steps_str(upper_note, lower_note);
         var all_labels = this.ijIntervals;
       }
 
@@ -499,8 +514,8 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
         const interval_name = all_labels[profile]["label"]
         const interval_size = all_labels[profile]["label"].replace(/[dmPMA]/g, "")
         return {
-          name: interval_name,
-          size: interval_size
+          name: interval_name + label_suffix,
+          size: interval_size + label_suffix,
         };
       }
       catch {

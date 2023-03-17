@@ -12,8 +12,6 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
 
   var NO_DOUBLE_VISION = Config.get("general.noDoubleVision");
 
-  var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize");
-
   /**
    * Creates an instance of a chord bank.
    *
