@@ -147,13 +147,15 @@ define([
       var exc = this.exerciseContext;
       var definition = exc.getDefinition();
       var $statusEl = $("#exercise-status-and-tempo");
-      var tpl = _.template(
+      var $passedEl = $("#passed-status");
+      var statusTpl = _.template(
         // not called: time_to_complete and more
         `<p><span id="exercise-status" class="status-pill" style="background-color:<%= status_color %>"><%= status_text %></span></p>
                 <% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined" && typeof(tempo_display_factor) !== "undefined") { %>
                     <p>Tempo&nbsp;<%= ["", "erratic", "unsteady", "steady", "very&nbsp;steady", "perfectly&nbsp;steady"][tempo_rating.length] %> at <%= Math.round(tempo_mean * tempo_display_factor) %>&nbsp;b.p.m.</p>
                 <% } %>`
       );
+      var passedTpl = `<span class="status-pill" id="exercise-passed-status">Exercise Previously Completed</span>`;
       // the tempo verbiage above should match what is separately coded for my activity
       var html = "";
       var tpl_data = {};
@@ -193,6 +195,16 @@ define([
       tpl_data.status_color = status_map[exc.state].color;
 
       $(".playlist-nav-links").css("display", "none");
+      console.log(definition.settings.definition.exerciseIsPerformed);
+      if (
+        $("#playlist-passed-status").length == 0 &&
+        definition.settings.definition.exerciseIsPerformed &&
+        definition.settings.definition.exerciseErrorCount == 0
+      ) {
+        $passedEl.html(passedTpl);
+      } else {
+        $("#exercise-passed-status").hide();
+      }
       switch (exc.state) {
         case exc.STATE.CORRECT:
           if (exc.hasTimer()) {
@@ -237,7 +249,7 @@ define([
           break;
       }
 
-      html = tpl(tpl_data);
+      html = statusTpl(tpl_data);
       $statusEl.html(html);
       return this;
     },

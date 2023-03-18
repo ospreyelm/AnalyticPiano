@@ -205,8 +205,8 @@ class PlaylistView(RequirejsView):
                 context["course_link"] = course_link
                 if (
                     course_performed.performance_dict[str(request.user)][playlist_id]
-                    or None
-                ) == "P":
+                    or "X"
+                ) != "X":
                     playlist_previously_passed = True
 
         context["playlist_previously_passed"] = playlist_previously_passed
@@ -316,6 +316,20 @@ class RefreshExerciseDefinition(RequirejsView):
         if course_id:
             course_performed = Course.objects.get(id=course_id)
 
+        # TODO: what is the current functionality of this?
+        exercise_is_performed = False
+        exercise_error_count = 0
+        playlist_performance = PerformanceData.objects.filter(
+            playlist=playlist, user=request.user
+        ).last()
+        if playlist_performance:
+            exercise_is_performed = playlist_performance.exercise_is_performed(
+                exercise.id
+            )
+            exercise_error_count = playlist_performance.exercise_error_count(
+                exercise.id
+            )
+
         exercise_context.update(exercise.data)
         exercise_context.update(
             {
@@ -329,6 +343,8 @@ class RefreshExerciseDefinition(RequirejsView):
                 "exerciseList": exercise_list,
                 "exerciseId": exercise.id,
                 "exerciseNum": exercise_num,
+                "exerciseIsPerformed": exercise_is_performed,
+                "exerciseErrorCount": exercise_error_count,
                 "playlistName": playlist.id,
                 "courseId": course_performed.id if course_performed else None,
             }

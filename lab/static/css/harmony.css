@@ -411,7 +411,7 @@ fieldset.settings-notation {
   border-radius: 6px;
 }
 
-#passed-status {
+#passed-status > .status-pill {
   background-color: #539f53;
   font-size: 0.75rem;
 }

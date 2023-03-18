@@ -135,10 +135,19 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         ("roman_numerals", "Roman Numerals"),
         ("intervals", "Intervals"),
         ("intervals_wrap_after_octave", "Intervals (Wrap After Octave)"),
-        ("intervals_wrap_after_octave_plus_ditone", "Intervals (Wrap After Octave Plus Ditone)"),
+        (
+            "intervals_wrap_after_octave_plus_ditone",
+            "Intervals (Wrap After Octave Plus Ditone)",
+        ),
         ("generic_intervals", "Generic Intervals"),
-        ("generic_intervals_wrap_after_octave", "Generic Intervals (Wrap After Octave)"),
-        ("generic_intervals_wrap_after_octave_plus_ditone", "Generic Intervals (Wrap After Octave Plus Ditone)"),
+        (
+            "generic_intervals_wrap_after_octave",
+            "Generic Intervals (Wrap After Octave)",
+        ),
+        (
+            "generic_intervals_wrap_after_octave_plus_ditone",
+            "Generic Intervals (Wrap After Octave Plus Ditone)",
+        ),
     )
 
     HIGHLIGHT_MODE_CHOICES = (
@@ -876,6 +885,9 @@ class PerformanceData(models.Model):
         pd.full_clean()
         pd.save()
 
+        # Assigns number to each pass mark to prevent "better" pass marks from being overwritten
+        pass_mark_compare_dict = {"X": 0, "C": 0.5, "L": 1, "T": 2, "P": 3}
+
         try:
             if course_id:
                 pco = PlaylistCourseOrdered.objects.get(
@@ -913,7 +925,14 @@ class PerformanceData(models.Model):
                                 # tardy category
                 if not (performer in course.performance_dict):
                     course.performance_dict[performer] = {"time_elapsed": 0}
-                course.performance_dict[performer][pco.playlist.id] = pass_mark
+                # Only overwriting previous performance if new performance is better
+                if (
+                    pass_mark_compare_dict[
+                        course.performance_dict[performer][pco.playlist.id] or "X"
+                    ]
+                    <= pass_mark
+                ):
+                    course.performance_dict[performer][pco.playlist.id] = pass_mark
                 # ^ REFACTORED TO USE NOT pco.order (as before) NOR pco.playlist_id BUT pco.playlist.id
                 for exercise_data in pd.data:
                     course.performance_dict[performer]["time_elapsed"] += int(
