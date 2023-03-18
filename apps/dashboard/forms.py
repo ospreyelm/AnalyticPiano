@@ -3,7 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.forms import JSONField
 from django.core.validators import FileExtensionValidator
 from prettyjson import PrettyJSONWidget
-from django.db.models import Q
+from django.db.models import Q, Prefetch
+
 
 from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE, Group
 from apps.dashboard.fields import MultiDateField
@@ -227,14 +228,12 @@ class ManyWidget(forms.widgets.ChoiceWidget):
         model=None,
         model_format=str,
         value_attr="_id",
-        order_attr="order",
         choices=[],
     ):
         self.attrs = attrs
         self.model = model
         self.model_format = model_format
         self.value_attr = value_attr
-        self.order_attr = order_attr
         self.choices = choices
         super().__init__(attrs)
 
@@ -249,7 +248,7 @@ class ManyWidget(forms.widgets.ChoiceWidget):
         return list(instances)
 
     def options(self, name, value, attrs=None):
-        # # print(self.iterator, self.choices)
+        print(self.choices)
         # choices = map(
         #     lambda choice: (
         #         getattr(self.instance_from_value(choice[1]), self.value_attr, None),
@@ -275,23 +274,37 @@ class ManyWidget(forms.widgets.ChoiceWidget):
 
 
 class ManyField(forms.Field):
-    widget = None
+    value = None
 
-    def __init__(self, widget=ManyWidget, queryset=None, through_vals=None):
-        self.widget = widget
+    def __init__(
+        self,
+        widget=ManyWidget,
+        queryset=None,
+        through_vals=None,
+        order_attr="order",
+    ):
+        self.widget = widget(choices=queryset)
         self.queryset = queryset
         self.through_vals = through_vals
-        print(self.queryset, self.through_vals)
+        self.order_attr = order_attr
         super(ManyField, self).__init__()
 
     def prepare_value(self, value):
-        print(self.__dict__)
-        return value
+        for instance in self.value:
+            print(list(instance._prefetched_objects_cache.values())[0].first().__dict__)
+            for key, value in (
+                list(instance._prefetched_objects_cache.values())[0].first().__dict__
+            ).items():
+                if not getattr(instance, key, None):
+                    setattr(instance, key, value)
+        return self.value
 
 
 class DashboardPlaylistForm(PlaylistForm):
 
     editable_fields = ["is_public"]
+
+    exercises = ManyField()
 
     class Meta(PlaylistForm.Meta):
         exclude = ["authored_by"]
@@ -308,9 +321,17 @@ class DashboardPlaylistForm(PlaylistForm):
         self.fields["exercises"].queryset = Exercise.objects.filter(
             Q(authored_by=user) | Q(is_public=True)
         )
-        self.fields["exercises"].through_vals = ExercisePlaylistOrdered.objects.filter(
-            playlist=self.instance
-        )
+        # Replace the exercises field value with the exercises combined with the respective EPO
+        self.fields["exercises"].value = self.instance.exercises.prefetch_related(
+            # We use Prefetch and its queryset functionality to only prefetch the EPO for this playlist
+            Prefetch(
+                "exerciseplaylistordered_set",
+                queryset=ExercisePlaylistOrdered.objects.filter(playlist=self.instance),
+            )
+        ).order_by("exerciseplaylistordered__order")
+
+        print(self.fields["exercises"].__dict__)
+
         if disable_fields:
             for field in self.fields:
                 if field not in self.editable_fields:
@@ -329,8 +350,6 @@ class DashboardPlaylistForm(PlaylistForm):
         # help_text="A list of keys, separated by spaces, which the playlist will be transposed to. Upper case letters for major, lower case for minor. Only the key signature matters, meaning that 'A f# Db' has the same result as 'f# A bb'. The key signature in the dropdown will be added to the ones in the text box upon saving.",
         widget=CustomTransposeWidget,
     )
-
-    exercises = ManyField()
 
 
 class DashboardCourseForm(CourseForm):
