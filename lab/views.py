@@ -179,20 +179,6 @@ class PlaylistView(RequirejsView):
                 )
             )
 
-        # TODO: what is the current functionality of this?
-        exercise_is_performed = False
-        exercise_error_count = 0
-        playlist_performance = PerformanceData.objects.filter(
-            playlist=playlist, user=request.user
-        ).last()
-        if playlist_performance:
-            exercise_is_performed = playlist_performance.exercise_is_performed(
-                exercise.id
-            )
-            exercise_error_count = playlist_performance.exercise_error_count(
-                exercise.id
-            )
-
         course_performed = None
         playlist_previously_passed = False
         if course_id:
@@ -210,6 +196,19 @@ class PlaylistView(RequirejsView):
                     playlist_previously_passed = True
 
         context["playlist_previously_passed"] = playlist_previously_passed
+
+        exercise_is_performed = False
+        exercise_error_count = 0
+        playlist_performance = PerformanceData.objects.filter(
+            playlist=playlist, user=request.user, course=course_performed
+        ).last()
+        if playlist_performance:
+            exercise_is_performed = playlist_performance.exercise_is_performed(
+                exercise.id
+            )
+            exercise_error_count = playlist_performance.exercise_error_count(
+                exercise.id
+            )
 
         next_playlist = None
         # Finding the next playlist in the case that this playlist was accessed from within a course
@@ -320,7 +319,7 @@ class RefreshExerciseDefinition(RequirejsView):
         exercise_is_performed = False
         exercise_error_count = 0
         playlist_performance = PerformanceData.objects.filter(
-            playlist=playlist, user=request.user
+            playlist=playlist, user=request.user, course=course_performed
         ).last()
         if playlist_performance:
             exercise_is_performed = playlist_performance.exercise_is_performed(

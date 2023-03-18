@@ -896,8 +896,7 @@ class PerformanceData(models.Model):
                 course = Course.objects.get(_id=course_id)
                 performer = str(User.objects.get(id=user_id))
                 pass_mark = "X"
-
-                if pd.playlist_passed:
+                if pd.playlist_passed():
                     pass_mark = "C"
                     try:
                         due_date = pco.due_date.replace(
@@ -930,7 +929,7 @@ class PerformanceData(models.Model):
                     pass_mark_compare_dict[
                         course.performance_dict[performer][pco.playlist.id] or "X"
                     ]
-                    <= pass_mark
+                    <= pass_mark_compare_dict[pass_mark]
                 ):
                     course.performance_dict[performer][pco.playlist.id] = pass_mark
                 # ^ REFACTORED TO USE NOT pco.order (as before) NOR pco.playlist_id BUT pco.playlist.id
@@ -961,7 +960,6 @@ class PerformanceData(models.Model):
                 continue
         return False
 
-    @cached_property
     def playlist_passed(self):
         from apps.dashboard.views.performance import playlist_pass_bool
 

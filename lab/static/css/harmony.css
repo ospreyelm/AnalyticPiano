@@ -412,8 +412,15 @@ fieldset.settings-notation {
 }
 
 #passed-status > .status-pill {
-  background-color: #539f53;
   font-size: 0.75rem;
+}
+
+#playlist-passed-status {
+  background-color: #539f53;
+}
+
+#exercise-passed-status {
+  background-color: #91c391;
 }
 
 #exercise-status {
