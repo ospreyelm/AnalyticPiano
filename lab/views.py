@@ -190,8 +190,9 @@ class PlaylistView(RequirejsView):
                 )
                 context["course_link"] = course_link
                 if (
-                    course_performed.performance_dict[str(request.user)][playlist_id]
-                    or "X"
+                    course_performed.performance_dict.get(str(request.user), {}).get(
+                        playlist_id, "X"
+                    )
                 ) != "X":
                     playlist_previously_passed = True
 
