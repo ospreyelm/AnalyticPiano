@@ -125,6 +125,8 @@ class PlayView(RequirejsTemplateView):
     #     return context
 
 
+# TODO lots of repeated code between PlaylistView and RefreshExerciseDefinition.
+#   Could be fixed thru some sort of inheritance or thru making the refresh request after rendering PlaylistView
 class PlaylistView(RequirejsView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -177,6 +179,7 @@ class PlaylistView(RequirejsView):
                 )
             )
 
+        # TODO: what is the current functionality of this?
         exercise_is_performed = False
         exercise_error_count = 0
         playlist_performance = PerformanceData.objects.filter(
@@ -191,6 +194,7 @@ class PlaylistView(RequirejsView):
             )
 
         course_performed = None
+        playlist_previously_passed = False
         if course_id:
             course_performed = Course.objects.filter(id=course_id).first()
             if course_performed:
@@ -199,6 +203,13 @@ class PlaylistView(RequirejsView):
                     "lab:course-view", kwargs={"course_id": course_id}
                 )
                 context["course_link"] = course_link
+                if (
+                    course_performed.performance_dict[str(request.user)][playlist_id]
+                    or None
+                ) == "P":
+                    playlist_previously_passed = True
+
+        context["playlist_previously_passed"] = playlist_previously_passed
 
         next_playlist = None
         # Finding the next playlist in the case that this playlist was accessed from within a course

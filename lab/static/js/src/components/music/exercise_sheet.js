@@ -149,7 +149,7 @@ define([
       var $statusEl = $("#exercise-status-and-tempo");
       var tpl = _.template(
         // not called: time_to_complete and more
-        `<p><span class="exercise-status" style="background-color:<%= status_color %>"><%= status_text %></span></p>
+        `<p><span id="exercise-status" class="status-pill" style="background-color:<%= status_color %>"><%= status_text %></span></p>
                 <% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined" && typeof(tempo_display_factor) !== "undefined") { %>
                     <p>Tempo&nbsp;<%= ["", "erratic", "unsteady", "steady", "very&nbsp;steady", "perfectly&nbsp;steady"][tempo_rating.length] %> at <%= Math.round(tempo_mean * tempo_display_factor) %>&nbsp;b.p.m.</p>
                 <% } %>`
@@ -456,12 +456,16 @@ define([
       let bankSize = CHORD_BANK_SIZE;
       try {
         const custom_chord_bank_size = parseInt(this.getSemibrevesPerLine());
-        if (typeof custom_chord_bank_size === 'number' && custom_chord_bank_size > 0) {
+        if (
+          typeof custom_chord_bank_size === "number" &&
+          custom_chord_bank_size > 0
+        ) {
           bankSize = custom_chord_bank_size;
         }
-      }
-      catch {
-        console.log('Failed to retrieve getSemibrevesPerLine property from Exercise definion.')
+      } catch {
+        console.log(
+          "Failed to retrieve getSemibrevesPerLine property from Exercise definion."
+        );
       }
       var display_items = this.getDisplayChords().items({
         limit: limit,

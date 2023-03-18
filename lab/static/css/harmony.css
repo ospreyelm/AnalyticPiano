@@ -134,6 +134,7 @@ body,
     overflow: hidden;
     overflow-y:auto;*/
 }
+
 .content-area,
 button,
 input,
@@ -363,6 +364,14 @@ fieldset.settings-notation {
   border-radius: 6px;
   text-align: left;
 }
+
+.instruction-panel-header {
+  display: inline-flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+}
+
 .instruction-panel-col {
   display: inline-block;
   vertical-align: top;
@@ -391,13 +400,22 @@ fieldset.settings-notation {
 }
 #exercise-status-and-tempo {
 }
-.exercise-status {
+
+.status-pill {
   font-size: 0.9rem;
-  padding: 4px 6px 2px 6px;
+  padding: 4px 6px;
   margin: 0;
   text-transform: uppercase;
   color: #fff;
   border-radius: 6px;
+}
+
+#passed-status {
+  background-color: #539f53;
+  font-size: 0.8rem;
+}
+
+#exercise-status {
   background-color: black;
 }
 
