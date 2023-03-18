@@ -370,6 +370,7 @@ fieldset.settings-notation {
   justify-content: space-between;
   width: 100%;
   align-items: center;
+  margin-bottom: 4px;
 }
 
 .instruction-panel-col {
@@ -412,7 +413,7 @@ fieldset.settings-notation {
 
 #passed-status {
   background-color: #539f53;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 #exercise-status {
