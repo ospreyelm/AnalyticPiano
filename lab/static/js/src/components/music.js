@@ -234,7 +234,6 @@ define([
             dataType: "json",
             success: function (data) {
               if (setdef.settings.definition.nextExerciseId) {
-                // console.log(data);
                 newData = data;
               }
             },
@@ -298,6 +297,12 @@ define([
         scex.inputChords.goTo(0);
         sheetComponent.barlines = [];
         this.settings.sheet.barlines = [];
+        if (!!newData?.exerciseNum) {
+          const newPath = location.pathname.split("/").slice(0, -2);
+          newPath.push(newData.exerciseNum);
+          newPath.push("");
+          window.history.pushState("", "", newPath.join("/"));
+        }
 
         if (Object.keys(newData).length) {
           scex.definition.exercise = scex.definition.parse(newData);
