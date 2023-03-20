@@ -86,7 +86,7 @@ def supervisors_courses_view(request):
 @login_required
 def subscribers_view(request):
     subscribers_table = SubscribersTable(
-        [{"subscriber": x, "user": request.user} for x in request.user.subscribers]
+        [{"subscriber": x, "user": request.user} for x in request.user.subscribers],
     )
     RequestConfig(request).configure(subscribers_table)
 
