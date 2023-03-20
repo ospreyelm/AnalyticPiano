@@ -235,12 +235,14 @@ textarea {
   padding-right: 0rem;
   float: right;
 }
-.header .audio-controls button {
+
+.simple-button {
   border: 1px solid #555;
   /*background-color: #eee;*/
   border-radius: 3px;
   outline: none;
 }
+
 .js-notation-opts-widget .menu-widgets {
   display: inline-block;
   vertical-align: top;
@@ -384,9 +386,21 @@ fieldset.settings-notation {
   margin-right: 1rem;
 }
 .instruction-panel-col2 {
-  width: 29rem;
-  margin-right: 1rem;
+  /* margin-right: 1rem; */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
+#exercise-text {
+  width: 29rem;
+}
+
+.instruction-panel-content {
+  width: 100%;
+  display: inline-flex;
+}
+
 .instruction-panel-col3 {
   width: 5.5rem;
 }
@@ -432,7 +446,14 @@ fieldset.settings-notation {
   display: inline-flex;
   gap: 8px;
   color: var(--link-color);
-  font-weight: bold;
+  /* font-weight: bold; */
+  justify-content: end;
+}
+.playlist-nav-links button {
+  border: none;
+  padding: 4px 6px;
+  background-color: white;
+  box-shadow: 1px 1px 1.5px #999;
 }
 
 /*--------------------------------------------------*/

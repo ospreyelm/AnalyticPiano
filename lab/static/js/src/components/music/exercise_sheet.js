@@ -178,7 +178,7 @@ define([
         color: "#FFB700",
       };
       status_map[exc.STATE.CORRECT] = {
-        text: "Well done",
+        text: "Passed",
         color: "#4C9900",
       };
 
