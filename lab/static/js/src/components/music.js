@@ -5,7 +5,6 @@ define([
   "app/components/events",
   "app/components/component",
   "app/models/key_signature",
-  "./music/play_sheet",
 ], function (
   $,
   _,
@@ -13,7 +12,6 @@ define([
   EVENTS,
   Component,
   KeySignature,
-  PlainSheetComponent
 ) {
   /**
    * This is a map of analysis modes to booleans indicating whether the mode
