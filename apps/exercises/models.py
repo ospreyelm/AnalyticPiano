@@ -927,7 +927,9 @@ class PerformanceData(models.Model):
                 # Only overwriting previous performance if new performance is better
                 if (
                     pass_mark_compare_dict[
-                        course.performance_dict[performer][pco.playlist.id] or "X"
+                        course.performance_dict.get(performer, {}).get(
+                            pco.playlist.id, "X"
+                        )
                     ]
                     <= pass_mark_compare_dict[pass_mark]
                 ):

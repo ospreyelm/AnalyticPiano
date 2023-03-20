@@ -63,6 +63,11 @@ urlpatterns = [
         name="refresh-definition",
     ),
     path(
+        "playlists/<str:playlist_id>/<int:exercise_num>/definition/",
+        RefreshExerciseDefinition.as_view(),
+        name="refresh-definition",
+    ),
+    path(
         "playlists/<str:course_id>/<str:playlist_id>/definition/",
         RefreshExerciseDefinition.as_view(),
         name="refresh-definition",

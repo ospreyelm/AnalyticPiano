@@ -195,7 +195,6 @@ define([
       tpl_data.status_color = status_map[exc.state].color;
 
       $(".playlist-nav-links").css("display", "none");
-      console.log(definition.settings.definition.exerciseIsPerformed);
       if (
         $("#playlist-passed-status").length == 0 &&
         definition.settings.definition.exerciseIsPerformed &&
