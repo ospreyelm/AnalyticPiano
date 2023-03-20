@@ -36,9 +36,12 @@
             <h1>Manage performer groups</h1>
             <p>Groups for user: {{ groups_author }}</p>
         {% endif %}
+        <div>
+            {% block add-button %}
+            {% endblock %}
+        </div>
         {% block filters %}{% endblock %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
     </div>
-    {% block add-button %}
-    {% endblock %}
+    
 {% endblock content %}

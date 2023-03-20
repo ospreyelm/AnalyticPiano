@@ -167,7 +167,7 @@ nav {
   font-size: 15px;
   border: 2px solid var(--primary-color);
   border-radius: 5px;
-  padding: 0.375rem 0.75rem;
+  padding: 0.3rem 0.75rem;
 }
 
 .dashboard-btn:hover {

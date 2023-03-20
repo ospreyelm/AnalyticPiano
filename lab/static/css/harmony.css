@@ -450,10 +450,8 @@ fieldset.settings-notation {
   justify-content: end;
 }
 .playlist-nav-links button {
-  border: none;
   padding: 4px 6px;
   background-color: white;
-  box-shadow: 1px 1px 1.5px #999;
 }
 
 /*--------------------------------------------------*/

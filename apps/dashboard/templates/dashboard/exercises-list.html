@@ -1,11 +1,11 @@
 {% extends 'dashboard/base-content-list.html' %}
 {% block add-button %}
-    <div class="dashboard-page" style="padding-top:20px;max-width:35em;font-size:12px">
+    <div class="dashboard-page" style="padding-bottom:20px;max-width:35em;font-size:12px">
         <p style="padding:0px;margin:0px">Tip: create new exercises from the main interface, then come here to make
             edits. On the main interface, input chords (bank them using sustain pedal, metronome, or my pressing Enter),
             choose your display settings, and press the upload button at the top right of the sheet music.</p>
     </div>
-    <div style="padding-top:20px">
+    <div style="padding-bottom:20px">
         <button type="submit" class="btn dashboard-btn"
                 onclick="location.href='{% url 'dashboard:export-exercises' %}'">
             Export
