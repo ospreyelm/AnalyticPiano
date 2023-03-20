@@ -221,6 +221,7 @@ class CustomTransposeWidget(forms.MultiWidget):
 
 class ManyWidget(forms.widgets.ChoiceWidget):
     template_name = "../templates/dashboard/manywidget.html"
+    option_template_name = "django/forms/widgets/select_option.html"
 
     def __init__(
         self,
@@ -248,7 +249,7 @@ class ManyWidget(forms.widgets.ChoiceWidget):
         return list(instances)
 
     def options(self, name, value, attrs=None):
-        print(self.choices)
+        # print("choices", list(self.choices))
         # choices = map(
         #     lambda choice: (
         #         getattr(self.instance_from_value(choice[1]), self.value_attr, None),
@@ -260,6 +261,7 @@ class ManyWidget(forms.widgets.ChoiceWidget):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
+        print(context["widget"].keys())
         context["widget"]["options"] = self.options(
             name, context["widget"]["value"], attrs
         )
@@ -273,7 +275,7 @@ class ManyWidget(forms.widgets.ChoiceWidget):
         return getter(name)
 
 
-class ManyField(forms.Field):
+class ManyField(forms.ModelMultipleChoiceField):
     value = None
 
     def __init__(
@@ -287,7 +289,8 @@ class ManyField(forms.Field):
         self.queryset = queryset
         self.through_vals = through_vals
         self.order_attr = order_attr
-        super(ManyField, self).__init__()
+        super().__init__(queryset=self.queryset)
+        print("queryset", self.queryset)
 
     def prepare_value(self, value):
         for instance in self.value:
@@ -304,7 +307,7 @@ class DashboardPlaylistForm(PlaylistForm):
 
     editable_fields = ["is_public"]
 
-    exercises = ManyField()
+    exercises = ManyField(queryset=None, widget=ManyWidget)
 
     class Meta(PlaylistForm.Meta):
         exclude = ["authored_by"]
@@ -321,6 +324,9 @@ class DashboardPlaylistForm(PlaylistForm):
         self.fields["exercises"].queryset = Exercise.objects.filter(
             Q(authored_by=user) | Q(is_public=True)
         )
+        self.fields["exercises"].widget.choices = list(
+            map(lambda ex: (ex.id, ex), list(self.fields["exercises"].queryset))
+        )
         # Replace the exercises field value with the exercises combined with the respective EPO
         self.fields["exercises"].value = self.instance.exercises.prefetch_related(
             # We use Prefetch and its queryset functionality to only prefetch the EPO for this playlist
@@ -329,8 +335,6 @@ class DashboardPlaylistForm(PlaylistForm):
                 queryset=ExercisePlaylistOrdered.objects.filter(playlist=self.instance),
             )
         ).order_by("exerciseplaylistordered__order")
-
-        print(self.fields["exercises"].__dict__)
 
         if disable_fields:
             for field in self.fields:
