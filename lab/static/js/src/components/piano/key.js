@@ -124,9 +124,9 @@ define(["lodash", "app/components/component"], function (_, Component) {
     setSustain: function (state) {
       if (state) {
         this.sustain = SUSTAIN_ON;
-        if (this.isPressed()) {
-          this.sustain = SUSTAIN_ON;
-        }
+        // if (this.isPressed()) {
+        //   this.sustain = SUSTAIN_ON;
+        // }
       } else {
         this.sustain = SUSTAIN_OFF;
         if (this.isReleased()) {
@@ -258,9 +258,9 @@ define(["lodash", "app/components/component"], function (_, Component) {
         case 3:
           sustain_cached = this.sustain;
           this.setSustain(false);
-          this.release();
+          this.release(); // no useful impact when using mouse
           this.triggerKey(this.state, this.noteNumber, {
-            overrideSustain: true,
+            cullFromSustain: sustain_cached == SUSTAIN_ON,
           });
           this.setSustain(sustain_cached);
 
@@ -273,9 +273,7 @@ define(["lodash", "app/components/component"], function (_, Component) {
         default:
           if (this.isPressed()) {
             this.release();
-            this.triggerKey(this.state, this.noteNumber, {
-              overrideSustain: false,
-            });
+            this.triggerKey(this.state, this.noteNumber);
           }
           break;
       }
