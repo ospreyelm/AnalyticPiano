@@ -713,8 +713,7 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def has_been_performed(self):
-        return False
-        # return PerformanceData.objects.filter(playlist__name__in = re.split(r'[,; \n]+', self.playlists)).exists()
+        return PerformanceData.objects.filter(course=self).exists()
 
     @cached_property
     def playlist_id_list(self):

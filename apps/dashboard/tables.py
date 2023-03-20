@@ -436,6 +436,16 @@ class CoursesListTable(tables.Table):
     )
     is_public = tables.columns.BooleanColumn()
 
+    def render_edit(self, record):
+        if not record.has_been_performed:
+            return "Edit"
+        return "Edit*"
+
+    def render_delete(self, record):
+        if not record.has_been_performed:
+            return "Delete"
+        return ""
+
     class Meta:
         attrs = {"class": "paleblue"}
         table_pagination = False
@@ -558,7 +568,7 @@ class CourseActivityTable(tables.Table):
         ]
 
     def render_time_elapsed(self, value):
-        hours = (value // 3600)
+        hours = value // 3600
         minutes = (value // 60) % 60
         seconds = (value // 1) % 60
 
