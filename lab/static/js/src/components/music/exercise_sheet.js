@@ -155,7 +155,7 @@ define([
                     <p>Tempo&nbsp;<%= ["", "erratic", "unsteady", "steady", "very&nbsp;steady", "perfectly&nbsp;steady"][tempo_rating.length] %> at <%= Math.round(tempo_mean * tempo_display_factor) %>&nbsp;b.p.m.</p>
                 <% } %>`
       );
-      var passedTpl = `<span class="status-pill" id="exercise-passed-status">Exercise Previously Completed</span>`;
+      var passedTpl = `<span class="status-pill" id="exercise-passed-status">Exercise Passed</span>`;
       // the tempo verbiage above should match what is separately coded for my activity
       var html = "";
       var tpl_data = {};
