@@ -817,7 +817,7 @@ class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
     #         data[performer].setdefault(playlist_num, mark_safe(pass_type))
     #         time_elapsed = 0
     #         for exercise_data in performance.data:
-    #             time_elapsed += exercise_data["exercise_duration"]
+    #             time_elapsed += exercise_data["performance_duration_in_seconds"]
     #         data[performer]["time_elapsed"] += int(time_elapsed)
     #     return data
 
@@ -935,7 +935,7 @@ class PerformanceData(models.Model):
                 # ^ REFACTORED TO USE NOT pco.order (as before) NOR pco.playlist_id BUT pco.playlist.id
                 for exercise_data in pd.data:
                     course.performance_dict[performer]["time_elapsed"] += int(
-                        exercise_data["exercise_duration"]
+                        exercise_data["performance_duration_in_seconds"]
                     )
                 course.save()
         except:
@@ -950,7 +950,7 @@ class PerformanceData(models.Model):
 
     def get_exercise_first_pass(self, exercise_id):
         for exercise in self.data:
-            if exercise["id"] == exercise_id and exercise["exercise_error_tally"] in [
+            if exercise["id"] == exercise_id and exercise["error_tally"] in [
                 0,
                 -1,
                 "n/a",
@@ -981,12 +981,13 @@ class PerformanceData(models.Model):
     def exercise_error_count(self, exercise_id):
         error_count = 0
         for exercise in self.data:
-            if exercise["id"] == exercise_id and exercise["exercise_error_tally"] == 0:
+            if exercise["id"] == exercise_id and exercise["error_tally"] == 0:
                 error_count = 0
-            if exercise["id"] == exercise_id and exercise[
-                "exercise_error_tally"
-            ] not in [0, "n/a"]:
-                error_count = exercise["exercise_error_tally"]
+            if exercise["id"] == exercise_id and exercise["error_tally"] not in [
+                0,
+                "n/a",
+            ]:
+                error_count = exercise["error_tally"]
         return error_count
 
     # @cached_property # this being a cached property caused the function call to fail

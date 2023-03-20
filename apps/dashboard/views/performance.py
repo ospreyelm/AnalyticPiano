@@ -47,7 +47,7 @@ def playlist_pass_bool(exercise_list, exercises_data, playlist_length):
         c_id = completion["id"]
         if c_id not in parsed_data.keys():
             parsed_data[c_id] = []
-        parsed_data[c_id].append(completion["exercise_error_tally"])
+        parsed_data[c_id].append(completion["error_tally"])
         del c_id
 
     playlist_pass = True
@@ -80,8 +80,8 @@ def playlist_pass_date(
         parsed_data[c_id].append(
             {
                 "date": completion["performed_at"],
-                "dur": completion["exercise_duration"],
-                "err": completion["exercise_error_tally"],
+                "dur": completion["performance_duration_in_seconds"],
+                "err": completion["error_tally"],
             }
         )
         del c_id
@@ -119,7 +119,7 @@ def playlist_pass_date(
 def playing_time(exercises_data):
     total_seconds = 0
     for completion in exercises_data:
-        total_seconds += completion["exercise_duration"]
+        total_seconds += completion["performance_duration_in_seconds"]
         # data gives seconds down to 1/10 second
     total_seconds = int(total_seconds * 10) / 10
     hours = int(total_seconds // 3600)
@@ -211,11 +211,11 @@ def playlist_performance_view(request, performance_id):
                 **{
                     exercise["id"]: mark_safe(
                         f'{"PASS " + datetime.strftime(datetime.strptime(performance_obj.get_exercise_first_pass(exercise["id"]), "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone(settings.TIME_ZONE)), "%y_%m_%d %H:%M") + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else "TO DO<br><br>"}'
-                        f'{"Latest: errors (" + str(exercise["exercise_error_tally"]) + ")." if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ""}'
-                        f'{"Done " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == -1) else ""}'  # when is this shown?
-                        f'{"Latest: without error." if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] == 0) else ""}'
-                        f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else ["", "<br>Tempo erratic", "<br>Tempo unsteady", "<br>Tempo steady", "<br>Tempo very steady", "<br>Tempo perfectly steady"][round(exercise["exercise_tempo_rating"])]}'
-                        f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0 or not exercise["exercise_mean_tempo"]) else "<br> at " + str(round(exercise["exercise_mean_tempo"] * tempo_display_factor)) + " w.n.p.m.<br>"}'
+                        f'{"Latest: errors (" + str(exercise["error_tally"]) + ")." if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0) else ""}'
+                        f'{"Done " if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] == -1) else ""}'  # when is this shown?
+                        f'{"Latest: without error." if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] == 0) else ""}'
+                        f'{"" if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0) else ["", "<br>Tempo erratic", "<br>Tempo unsteady", "<br>Tempo steady", "<br>Tempo very steady", "<br>Tempo perfectly steady"][round(exercise["tempo_rating"])]}'
+                        f'{"" if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0 or not exercise["tempo_mean_semibreves_per_min"]) else "<br> at " + str(round(exercise["tempo_mean_semibreves_per_min"] * tempo_display_factor)) + " w.n.p.m.<br>"}'
                         f'<br><a href="{performance_obj.playlist.get_exercise_url_by_id(exercise["id"], course_id=course_id)}">Play again</a>'
                     )
                 }
