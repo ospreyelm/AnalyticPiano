@@ -644,7 +644,7 @@ class Course(ClonableModelMixin, BaseContentModel):
     open = models.BooleanField(
         "Open",
         default=True,
-        help_text="Open courses can be viewed by your subscribers who have not performed any playlists within it.",
+        help_text="Open courses can be viewed by all your subscribers, even those not in Visible Groups.",
     )
     # slug = models.SlugField('URL slug', unique=True, max_length=64)
     # playlists = models.CharField(
@@ -689,7 +689,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         to=Group,
         related_name="visible_courses",
         blank=True,
-        help_text="If no group is selected, course will be visible to all subscribers.",
+        help_text="Subscribers in these groups will be the only ones able to view this course.",
         verbose_name="Visible Groups",
     )
 

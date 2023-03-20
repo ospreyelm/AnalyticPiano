@@ -20,7 +20,9 @@ class BaseSupervisionForm(forms.Form):
         try:
             email = email.lower()
         except:
-            self.add_error("email", "The email input could not be parsed as a text string.")
+            self.add_error(
+                "email", "The email input could not be parsed as a text string."
+            )
         if email == self.context.get("user").email:
             self.add_error(
                 "email",
@@ -173,7 +175,7 @@ TRANSPOSE_SELECT_CHOICES = (
     ("Eb", "3 flats"),
     ("Bb", "2 flats"),
     ("F", "1 flat"),
-    ("C", "0 flats or sharps"),# bug
+    ("C", "0 flats or sharps"),  # bug
     ("G", "1 sharp"),
     ("D", "2 sharps"),
     ("A", "3 sharps"),
@@ -248,7 +250,13 @@ class DashboardPlaylistForm(PlaylistForm):
 
 class DashboardCourseForm(CourseForm):
     class Meta(CourseForm.Meta):
-        fields = ["title", "playlists", "visible_to", "is_public", "open"]
+        fields = [
+            "title",
+            "is_public",
+            "open",
+            "visible_to",
+            "playlists",
+        ]
 
     custom_m2m_fields = ["playlists", "visible_to"]
     custom_m2m_config = {
