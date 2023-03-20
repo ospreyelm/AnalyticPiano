@@ -38,7 +38,7 @@ def playlist_add_view(request):
     }
 
     if request.method == "POST":
-        form = DashboardPlaylistForm(data=request.POST, user=request.user)
+        form = DashboardPlaylistForm(data=request.POST)
         form.context = {"user": request.user}
         if form.is_valid():
             playlist = form.save(commit=False)
@@ -66,9 +66,7 @@ def playlist_add_view(request):
         return render(request, "dashboard/content.html", context)
 
     else:
-        form = DashboardPlaylistForm(
-            initial=request.session.get("clone_data"), user=request.user
-        )
+        form = DashboardPlaylistForm(initial=request.session.get("clone_data"))
         request.session["clone_data"] = None
 
     context["form"] = form
@@ -136,9 +134,7 @@ def playlist_edit_view(request, playlist_id):
     PROTECT_PLAYLIST_CONTENT = playlist.has_been_performed
 
     if request.method == "POST":
-        form = DashboardPlaylistForm(
-            data=request.POST, instance=playlist, user=request.user
-        )
+        form = DashboardPlaylistForm(data=request.POST, instance=playlist)
         form.context = {"user": request.user}
         if form.is_valid():
             if PROTECT_PLAYLIST_CONTENT:
@@ -196,9 +192,7 @@ def playlist_edit_view(request, playlist_id):
                 epos = ExercisePlaylistOrdered.objects.filter(playlist_id=playlist._id)
                 playlist.pk = None
                 playlist.id = None
-                playlist.name = (
-                    playlist.name[0:25] + " (copy)"
-                )  # account for max_length of playlist.name
+                playlist.name = playlist.name[0:25] + " (copy)" # account for max_length of playlist.name
                 playlist.save()
                 for epo in epos:
                     exercise_to_add = Exercise.objects.get(_id=epo.exercise_id)
@@ -215,7 +209,7 @@ def playlist_edit_view(request, playlist_id):
         context["form"] = form
         return render(request, "dashboard/content.html", context)
 
-    form = DashboardPlaylistForm(instance=playlist, user=request.user)
+    form = DashboardPlaylistForm(instance=playlist)
 
     # if playlist.has_been_performed:
     #     ## CAUSES BIG PROBLEMS! DESTROYS FORM VALIDATION
