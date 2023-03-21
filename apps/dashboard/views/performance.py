@@ -23,7 +23,7 @@ def performance_list_view(request, subscriber_id=None):
         raise PermissionDenied
 
     performances = PerformanceData.objects.filter(user=subscriber).select_related(
-        "user", "playlist"
+        "user", "playlist", "course"
     )
 
     table = MyActivityTable(performances)

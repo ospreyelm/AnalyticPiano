@@ -133,7 +133,7 @@ class PlaylistView(RequirejsView):
         return super().dispatch(*args, **kwargs)
 
     def get(
-        self, request, playlist_id, course_id=None, exercise_num=1, *args, **kwargs
+        self, request, playlist_id, course_id=None, exercise_num=None, *args, **kwargs
     ):
         playlist = Playlist.objects.filter(id=playlist_id).first()
         if playlist is None:
@@ -143,6 +143,21 @@ class PlaylistView(RequirejsView):
             playlist.authored_by
         ):
             raise PermissionDenied
+
+        # Prevents "None" in URL by redirecting to view without course_id in URL
+        if type(course_id) == str and course_id == "None":
+            return redirect(
+                "lab:playlist-view", playlist_id=playlist_id, exercise_num=exercise_num
+            )
+
+        # Ensures that exercise-num is always in URL
+        if exercise_num == None:
+            return redirect(
+                "lab:playlist-view",
+                playlist_id=playlist_id,
+                course_id=course_id,
+                exercise_num=1,
+            )
 
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if exercise is None:

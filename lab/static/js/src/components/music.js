@@ -5,14 +5,7 @@ define([
   "app/components/events",
   "app/components/component",
   "app/models/key_signature",
-], function (
-  $,
-  _,
-  Config,
-  EVENTS,
-  Component,
-  KeySignature,
-) {
+], function ($, _, Config, EVENTS, Component, KeySignature) {
   /**
    * This is a map of analysis modes to booleans indicating whether the mode
    * is enabled or disabled by default.
@@ -298,12 +291,12 @@ define([
 
         // TODO: work in progress code to enable URL to change dynamically with exercise without refreshing
         //   postponed because of wide range of intersections/conflicts with Django's view features
-        // if (!!newData?.exerciseNum) {
-        //   const newPath = location.pathname.split("/").slice(0, -2);
-        //   newPath.push(newData.exerciseNum);
-        //   newPath.push("");
-        //   window.history.replaceState("", "", newPath.join("/"));
-        // }
+        if (!!newData?.exerciseNum) {
+          const newPath = location.pathname.split("/").slice(0, -2);
+          newPath.push(newData.exerciseNum);
+          newPath.push("");
+          window.history.replaceState("", "", newPath.join("/"));
+        }
 
         if (Object.keys(newData).length) {
           scex.definition.exercise = scex.definition.parse(newData);

@@ -193,20 +193,16 @@ class SubscribersTable(tables.Table):
 
 
 class MyActivityTable(tables.Table):
-    course_name = tables.columns.Column(
+    course_name = tables.columns.LinkColumn(
+        "lab:course-view",
+        kwargs={"course_id": A("course.id")},
         verbose_name="Course name",
         accessor=("course.title"),
         # attrs={"td": {"style": "white-space:nowrap", "width": "auto"}}
     )
-    # playlist = tables.columns.LinkColumn(
-    #     "lab:playlist-view",
-    #     # Related to the messy naming of both integers and alpanumeric codes as "id"
-    #     # get the alphanumerics in here instead and use this LinkColumn instead of the following
-    #     # kwargs={"course_id": A("course_id") or None, "playlist_id": A("playlist_id")},
-    #     verbose_name="Playlist name",
-    #     # attrs={"td": {"style": "white-space:nowrap", "width": "auto"}}
-    # )
-    playlist = tables.columns.Column(
+    playlist = tables.columns.LinkColumn(
+        "lab:playlist-view",
+        kwargs={"course_id": A("course.id"), "playlist_id": A("playlist.id")},
         verbose_name="Playlist name",
         # attrs={"td": {"style": "white-space:nowrap", "width": "auto"}}
     )
@@ -267,7 +263,7 @@ class MyActivityDetailsTable(tables.Table):
         kwargs={"course_id": A("course_id")},
         verbose_name="Course name",
         accessor=A("course_id"),
-        empty_values=(), # only needed if no reliable accessor
+        empty_values=(),  # only needed if no reliable accessor
         # orderable=False, # keep it orderable in order for seamless viewing with MyActivity
     )
     playlist_name = tables.columns.LinkColumn(
