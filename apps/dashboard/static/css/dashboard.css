@@ -1,7 +1,9 @@
 :root {
   --primary-color: #335271;
   --secondary-color: #00693e;
-  --link-color: #ffa00f;
+  --side-link-color: #ffa00f;
+  --ltd-save-color: #FFCF87;
+  --link-color: #335271;
   --background-color: #e2e2e2;
 }
 
@@ -9,14 +11,38 @@ body {
   background-color: var(--background-color);
 }
 
+.dashboard-page {
+  padding-bottom:20px;
+  font-size:12px;
+}
+
+.dashboard-page h1 {
+  font-size: 20px;
+  font-weight: 500;
+  padding-bottom: 15px;
+}
+
+.dashboard-page h2 {
+  font-size: 18px;
+  font-weight: 500;
+  padding-bottom: 10px;
+}
+
+.dashboard-page .dashboard-tip {
+  padding:0px;
+  max-width:50em;
+  margin: 0 0 15px 0;
+}
+
 .dashboard-page p,
 form label {
-  color: var(--primary-color);
+  color: black;
 }
 
 .sidenav {
   height: 100%;
   width: 12em;
+  padding-top: 1.5em;
   position: fixed;
   z-index: 1;
   top: 0;
@@ -31,8 +57,9 @@ form label {
 
 .sidenav-header {
   margin: 0px;
-  padding: 16px 8px 8px 8px;
-  font-size: 16px;
+  padding: 0px 8px 8px 8px;
+  font-size: 20px;
+  font-weight: 400;
   display: block;
 }
 
@@ -45,8 +72,15 @@ form label {
   display: block;
 }
 
+.sidenav-user-badge {
+  padding: 6px 8px 4px 8px;
+  font-size: 11px;
+  overflow-wrap: normal;
+  overflow-wrap: break-word;
+}
+
 .sidenav a {
-  color: var(--link-color);
+  color: var(--side-link-color);
 }
 
 .sidenav-subhead {
@@ -57,29 +91,32 @@ form label {
 }
 
 .sidenav a:hover {
-  background-color: var(--link-color);
+  background-color: var(--side-link-color);
   color: white;
 }
 
 .sidenav-active {
-  border-left: 6px solid var(--link-color);
+  border-left: 6px solid var(--side-link-color);
   color: white !important;
 }
 
 .main {
-  margin-left: 13em;
-  padding: 0px 10px;
+  margin-left: 12em;
+  padding: 1.5em;
   font-size: 14px;
   text-align: left;
   font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans",
     Verdana, Arial, sans-serif;
   line-height: 1.5;
-  padding-top: 20px;
 }
 
 .main p,
 .main form {
   margin-bottom: 1rem;
+}
+
+.main a {
+
 }
 
 .main :last-child {
@@ -137,15 +174,14 @@ form label {
   border-radius: 0.1rem;
 }
 
-.dashboard-page-header {
-  color: var(--primary-color);
+/*.dashboard-page-header {
   padding-left: 0px;
   font-size: 1.15rem;
   margin-bottom: 0.5rem;
   font-family: inherit;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.2;
-}
+}*/
 
 .paleblue td a:link,
 .paleblue td a:visited {
@@ -161,6 +197,10 @@ nav {
   padding-bottom: 1rem;
 }
 
+.dashboard-btn-bank {
+  padding-bottom: 15px
+}
+
 .dashboard-btn {
   color: var(--primary-color);
   background-color: white;
@@ -171,13 +211,19 @@ nav {
 }
 
 .dashboard-btn:hover {
-  color: var(--link-co llor);
+  color: var(--link-color);
   border-color: var(--link-color);
 }
 
 .dashboard-btn-secondary {
   color: white;
+  border-color: white;
   background-color: darkred;
+}
+
+.dashboard-btn-secondary:hover {
+  color: white;
+  border-color: white;
 }
 
 .form-control.is-invalid {
@@ -191,6 +237,7 @@ nav {
   margin: 0px;
   margin-left: 10px;
   /*color: red;*/
+  background-color: var(--ltd-save-color);
 }
 
 #id_keyboard_size {
@@ -204,10 +251,10 @@ input[type="checkbox"] {
 }
 
 .help-text {
-  color: var(--primary-color);
   padding-left: 1em;
   min-width: 12em;
-  max-width: 48em;
+  max-width: 30em;
+  font-size: 11px;
 }
 
 .page-item {
@@ -310,11 +357,23 @@ ul li input {
   margin-bottom: 1px !important;
 }
 
-.protected-edit-view label[for="id_name"],
-.protected-edit-view label[for="id_description"],
+.protected-edit-view input[id="id_name"],
+.protected-edit-view input[id="id_description"],
 .protected-edit-view label[for="id_is_public"],
-.protected-edit-view .limited-save-btn {
-  background-color: yellow;
+.protected-edit-view .limited-save-btn,
+.protected-edit-view .limited-save-alert,
+.limited-save-alert,
+.delete-confirmation {
+  background-color: var(--ltd-save-color);
+}
+
+.delete-confirmation {
+  padding: 5px;
+  font-size: 15px;
+}
+
+.delete-denial {
+  font-size: 15px;
 }
 
 .multiselect {
@@ -351,6 +410,10 @@ ul li input {
 .no-perf-data {
   background-image: url(../img_square/no-perf-data.png) !important;
   background-size: contain;
+}
+
+table.paleblue td {
+  vertical-align: top;
 }
 
 table.paleblue > tbody > tr > td > span.true {
@@ -390,8 +453,12 @@ table.paleblue > tbody > tr > td > span.false {
 .nav-column {
   display: flex;
   flex-direction: column;
-  width: 30%;
+  width: 20em;
   min-width: 240px;
+  padding-right: 1.5em;
+}
+.nav-column:last-of-type {
+  padding-right: 0em;
 }
 
 .nav-column > h2 {
@@ -402,6 +469,14 @@ table.paleblue > tbody > tr > td > span.false {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.dashboard-page .nav-link:first-of-type {
+  margin-top: 0px;
+}
+
+.dashboard-page .nav-link {
+  margin-top: 33px;
 }
 
 .nav-link {
@@ -449,4 +524,8 @@ input[type="number"] {
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
+}
+
+.customtransposewidget {
+  display: inline-block;
 }

@@ -82,13 +82,13 @@ class ClonableModelMixin:
 
 
 class Exercise(ClonableModelMixin, BaseContentModel):
-    id = models.CharField("ID", unique=True, max_length=16, null=True)
+    id = models.CharField("E-ID", unique=True, max_length=16, null=True)
     description = models.CharField(
         "Description",
         max_length=60,
         blank=True,
         null=True,
-        help_text="Brief description for your reference only; not seen by others.",
+        # help_text="Brief description",
     )
     data = RawJSONField("Data")
     rhythm = models.CharField(
@@ -307,8 +307,8 @@ def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
 
 
 class Playlist(ClonableModelMixin, BaseContentModel):
-    id = models.CharField("ID", unique=True, max_length=16, null=True)
-    is_auto = models.BooleanField("Auto-generated", default=False)
+    id = models.CharField("P-ID", unique=True, max_length=16, null=True)
+    is_auto = models.BooleanField("Auto-generated", default=False, help_text="This box is checked if AnalyticPiano generated the playlist from your newly created exercises and you made no edits.")
 
     name = models.CharField(
         "Name",
@@ -334,7 +334,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         to=Exercise,
         related_name="playlists",
         through="ExercisePlaylistOrdered",
-        help_text="These are the exercises within this playlist. You can add exercises after creating the playlist. Changing the order will automatically save all changes made in the form.",
+        # help_text="The exercises in the playlist.",
         blank=True,
     )
 
@@ -354,8 +354,8 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     TRANSPOSE_PLAYLIST_SHUFFLE = "Playlist Shuffle"
     TRANSPOSE_TYPE_CHOICES = (
         (TRANSPOSE_OFF, "No transposition"),
-        (TRANSPOSE_EXERCISE_LOOP, "Loop keys for each exercise"),
-        (TRANSPOSE_PLAYLIST_LOOP, "Loop exercises for each key"),
+        (TRANSPOSE_EXERCISE_LOOP, "Loop all keys for each exercise"),
+        (TRANSPOSE_PLAYLIST_LOOP, "Loop all exercises for each key"),
         # (TRANSPOSE_EXERCISE_SHUFFLE, TRANSPOSE_EXERCISE_SHUFFLE),
         # (TRANSPOSE_PLAYLIST_SHUFFLE, TRANSPOSE_PLAYLIST_SHUFFLE),
     )
@@ -370,7 +370,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     is_public = models.BooleanField(
         "Commons",
         default=False,
-        help_text="Sharing your playlist will allow other users to include it in their courses. Doing so will make your email visible to people looking to use this playlist.",
+        help_text="Sharing your playlist will allow other users to include it in their courses. Doing so will reveal your email address to all users of the site.",
     )
 
     zero_padding = "PA00A0"
@@ -634,19 +634,18 @@ class ExercisePlaylistOrdered(ClonableModelMixin, BaseContentModel):
 
 
 class Course(ClonableModelMixin, BaseContentModel):
-    id = models.CharField("ID", unique=True, max_length=16, blank=True)
+    id = models.CharField("C-ID", unique=True, max_length=16, blank=True)
 
     title = models.CharField(
-        "Title",
+        "Name",
         max_length=64,
     )
 
     open = models.BooleanField(
-        "Open",
+        "Visible to ALL",
         default=True,
-        help_text="Open courses can be viewed by all your subscribers, even those not in Visible Groups.",
+        help_text="This course will be displayed to ALL your performer connections, whether or not you included them in the groups below.",
     )
-    # slug = models.SlugField('URL slug', unique=True, max_length=64)
     # playlists = models.CharField(
     #     'Playlist IDs',
     #     max_length=1024,
@@ -658,7 +657,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         related_name="courses",
         through="PlaylistCourseOrdered",
         blank=True,
-        help_text="These are the exercise playlists within the course. You can add playlists after creating the course. Changing the order will automatically save all changes made in the form.",
+        # help_text="The playlists in the course.",
     )
 
     authored_by = models.ForeignKey(
@@ -670,7 +669,7 @@ class Course(ClonableModelMixin, BaseContentModel):
     is_public = models.BooleanField(
         "Commons",
         default=False,
-        help_text="Sharing your course will make it available to other users. Doing so will make your email visible to people looking to use your course.",
+        help_text="Sharing your course may, in future, make it available to other users for copying and editing as they wish. If so, your email address will be revealed to all users of the site.",
     )
 
     # publish_dates = models.CharField(
@@ -689,8 +688,8 @@ class Course(ClonableModelMixin, BaseContentModel):
         to=Group,
         related_name="visible_courses",
         blank=True,
-        help_text="Subscribers in these groups will be the only ones able to view this course.",
-        verbose_name="Visible Groups",
+        help_text="This course will always be displayed to performer connections who are members of these groups.",
+        verbose_name="Performer Groups",
     )
 
     performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)

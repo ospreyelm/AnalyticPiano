@@ -2,8 +2,8 @@
 
 {% block content %}
     <div class="dashboard-page">
-        <h1>Connect with performers</h1>
-        <p>Here, you can approve subscription requests from other users or send other users an invitation to subscribe along with pre-approval.<br>Your confirmed subscribers will appear in the table below.</p>
+        <h1>Connect with Performers</h1>
+        <p class="dashboard-tip">Allow other users to access your content and see their progress on that content. Type their email adddress and click Add. You must wait for them to accept the connection; then you can see their activity in your courses.</p>
         <form method="post" novalidate>
             {% csrf_token %}
             {% include 'dashboard/bs4_form.html' with form=form %}

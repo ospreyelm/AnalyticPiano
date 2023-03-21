@@ -47,7 +47,7 @@
                   {% endfor %}
                   {% endif %}
                 </select>
-                <button {{editing|yesno:",disabled"}} name="save-and-continue" style="width:50px">Add</button>
+                <button {{editing|yesno:",disabled"}} name="save-and-continue" style="width:50px;height:35px">Add</button>
                 {% endwith %}
             {% elif form.is_bound %}
                 {% if field.errors %}

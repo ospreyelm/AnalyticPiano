@@ -17,10 +17,11 @@ from apps.dashboard.tables import GroupsListTable, GroupMembersTable
 def groups_list_view(request):
     groups_author = request.user
     groups = (
-        Group.objects.filter(manager=request.user)
+        Group.objects.filter(manager=groups_author)
         .select_related("manager")
         .annotate(members_count=Count("members"))
     )
+    me = request.user
 
     table = GroupsListTable(groups)
 
@@ -28,7 +29,7 @@ def groups_list_view(request):
     return render(
         request,
         "dashboard/groups-list.html",
-        {"table": table, "groups_author": groups_author},
+        {"table": table, "groups_author": groups_author, "me": me},
     )
 
 

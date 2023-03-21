@@ -143,53 +143,60 @@ class SubscribersTable(tables.Table):
 
 
 class MyActivityTable(tables.Table):
-    course = tables.columns.Column(
-        verbose_name="Course title",
+    course_name = tables.columns.Column(
+        verbose_name="Course name",
         accessor=("course.title"),
+        # attrs={"td": {"style": "white-space:nowrap", "width": "auto"}}
     )
+    # playlist = tables.columns.LinkColumn(
+    #     "lab:playlist-view",
+    #     # Related to the messy naming of both integers and alpanumeric codes as "id"
+    #     # get the alphanumerics in here instead and use this LinkColumn instead of the following
+    #     # kwargs={"course_id": A("course_id") or None, "playlist_id": A("playlist_id")},
+    #     verbose_name="Playlist name",
+    #     # attrs={"td": {"style": "white-space:nowrap", "width": "auto"}}
+    # )
     playlist = tables.columns.Column(
         verbose_name="Playlist name",
-        # text=lambda record: record.playlist.name,
-        accessor=("playlist.name"),
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}}
-    )
-    id = tables.columns.Column(
-        verbose_name="ID",
-        accessor=("playlist.id"),
+        # attrs={"td": {"style": "white-space:nowrap", "width": "auto"}}
     )
     playlist_passed = tables.columns.BooleanColumn(
         verbose_name="Passed",
-        orderable=False,
+        orderable=False,  # ordering fails
     )
     playlist_pass_date = tables.columns.DateColumn(
         verbose_name="Pass Date",
         format="Y_m_d (D) H:i",  # ineffective
         orderable=False,  # ordering fails
     )
+    course_id = tables.columns.Column(
+        verbose_name="C-ID",
+        accessor=("course.id"),
+        # attrs={"td": {"bgcolor": "lightgray"}},
+    )
+    playlist_id = tables.columns.Column(
+        verbose_name="P-ID",
+        accessor=("playlist.id"),
+        # attrs={"td": {"bgcolor": "lightgray"}},
+    )
     view = tables.columns.LinkColumn(
         "dashboard:playlist-performance",
         kwargs={"performance_id": A("id")},
-        text="Details",
-        verbose_name="View Progress",
+        text="+ Details",
+        verbose_name="Navigation",
         orderable=False,
     )
-    created = tables.columns.DateColumn(
-        verbose_name="First attempt",
-        format="Y_m_d (D) H:i",  # "Y_m_d • D"
-        attrs={
-            # "td": {"bgcolor": "white", "width": "auto"}
-        },
-    )
     updated = tables.columns.DateColumn(
-        verbose_name="Latest attempt",
+        verbose_name="Latest activity",
         format="Y_m_d (D) H:i",  # "Y_m_d • D"
-        attrs={
-            # "td": {"bgcolor": "white", "width": "auto"}
-        },
     )
-
-    # user
-    # email
+    created = tables.columns.DateColumn(
+        verbose_name="Earliest activity",
+        format="Y_m_d (D) H:i",  # "Y_m_d • D"
+    )
+    # USEFUL FOR INSTRUCTOR VIEWS YET TO BE ADDED
+    # add performer_given_name, performer_surname, performer_email
+    # like in MyActivityTable
 
     def value_playlist_passed(self, record):
         return record.playlist_passed
@@ -205,59 +212,80 @@ class MyActivityTable(tables.Table):
 
 
 class MyActivityDetailsTable(tables.Table):
-    playlist_name = tables.columns.Column(
-        verbose_name="Playlist name",
-        # orderable=False,
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
+    course_name = tables.columns.LinkColumn(
+        "lab:course-view",
+        kwargs={"course_id": A("course_id")},
+        verbose_name="Course name",
+        accessor=A("course_id"),
+        empty_values=(), # only needed if no reliable accessor
+        # orderable=False, # keep it orderable in order for seamless viewing with MyActivity
     )
-    view = tables.columns.LinkColumn(
+    playlist_name = tables.columns.LinkColumn(
         "lab:playlist-view",
         kwargs={"course_id": A("course_id") or None, "playlist_id": A("playlist_id")},
-        text="Play",
-        verbose_name="Link",
-        orderable=False,
-    )
-    id = tables.columns.Column(
-        verbose_name="ID",
-        accessor=("playlist_id"),
-        # orderable=False,
-        attrs={"td": {"bgcolor": "lightgray"}},
-    )
-    course_id = tables.columns.Column(
-        verbose_name="ID",
-        accessor=("course_id"),
-        # orderable=False,
-        attrs={"td": {"bgcolor": "lightgray"}},
-    )
-    exercise_count = tables.columns.Column(
-        verbose_name="Tally",  # tally of completions, including repeats
-        orderable=False,
-    )
-    playing_time = tables.columns.Column(
-        verbose_name="Time",
-        orderable=False,
+        verbose_name="Playlist name",
+        # orderable=False, # keep it orderable in order for seamless viewing with MyActivity
     )
     playlist_pass_bool = tables.columns.BooleanColumn(
         verbose_name="Passed",
         orderable=False,
     )
     playlist_pass_date = tables.columns.Column(
-        verbose_name="... on date",
+        verbose_name="Pass Date",
         orderable=False,
     )
+    view = tables.columns.LinkColumn(
+        "dashboard:performed-playlists",
+        text="- Details",
+        verbose_name="Navigation",
+        orderable=False,
+    )
+    exercise_count = tables.columns.Column(
+        verbose_name="Tally",  # tally of completions, including repeats
+        orderable=False,
+    )
+    playing_time = tables.columns.Column(
+        verbose_name="Clock",
+        orderable=False,
+    )
+    course_id = tables.columns.Column(
+        verbose_name="P-ID",
+        accessor=("course_id"),
+        orderable=False,
+        # attrs={"td": {"bgcolor": "lightgray"}},
+    )
+    playlist_id = tables.columns.Column(
+        verbose_name="C-ID",
+        accessor=("playlist_id"),
+        orderable=False,
+        # attrs={"td": {"bgcolor": "lightgray"}},
+    )
+    # add updated, created
+    # like in MyActivityTable
 
-    # performer_name = tables.columns.LinkColumn(
-    #     'dashboard:subscriber-performances',
-    #     kwargs={'subscriber_id': A('subscriber_id')},
-    #     accessor=A('performer_obj.get_full_name'),
-    #     attrs={"td": {"bgcolor": "white", "width": "auto"}},
-    #     verbose_name='Performer Name'
+    def value_view(self, record):
+        self.text = record.playlist_name
+
+    def render_course_name(self, record):
+        try:
+            return record["course_name"]
+        except:
+            return "ID: " + record["course_id"]
+
+    # USEFUL FOR INSTRUCTOR VIEWS YET TO BE ADDED
+    # performer_given_name = tables.columns.Column(
+    #     accessor=A('performer_obj.first_name'),
+    #     verbose_name='Given name'
     # )
-    # performer = tables.columns.LinkColumn(
+    # performer_surname = tables.columns.Column(
+    #     accessor=A('performer_obj.last_name'),
+    #     verbose_name='Surname'
+    # )
+    # performer_email = tables.columns.LinkColumn(
     #     'dashboard:subscriber-performances',
     #     kwargs={'subscriber_id': A('subscriber_id')},
-    #     attrs={"td": {"bgcolor": "white", "width": "auto"}},
-    #     verbose_name='Performer Email'
+    #     accessor=A('performer_obj.email'),
+    #     verbose_name='User email'
     # )
 
     class Meta:
@@ -265,14 +293,19 @@ class MyActivityDetailsTable(tables.Table):
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
         sequence = (
-            # 'performer_name', 'performer',
+            "course_name",
             "playlist_name",
-            "view",
-            "...",
-            "id",
+            "playlist_pass_bool",
+            "playlist_pass_date",
+            "playlist_id",
             "course_id",
-            "exercise_count",
+            "view",
             "playing_time",
+            "exercise_count",
+            "...",
+            # "performer_given_name",
+            # "performer_surname",
+            # "performer_email",
         )
 
 
@@ -336,14 +369,14 @@ class ExercisesListTable(tables.Table):
 class PlaylistsListTable(tables.Table):
     id = tables.columns.Column()
     name = tables.columns.Column(
-        verbose_name="Name of Playlist",
+        verbose_name="Playlist name",
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     view = tables.columns.LinkColumn(
         "lab:playlist-view",
         kwargs={"playlist_id": A("id")},
-        text="Play",
-        verbose_name="Play",
+        text="Preview",
+        verbose_name="Preview",
         orderable=False,
     )
 
@@ -352,14 +385,6 @@ class PlaylistsListTable(tables.Table):
         kwargs={"playlist_id": A("id")},
         text="Edit",
         verbose_name="Edit",
-        orderable=False,
-    )
-
-    delete = tables.columns.LinkColumn(
-        "dashboard:delete-playlist",
-        kwargs={"playlist_id": A("id")},
-        text="Delete",
-        verbose_name="Delete",
         orderable=False,
     )
     created = tables.columns.DateColumn(
@@ -372,6 +397,13 @@ class PlaylistsListTable(tables.Table):
     )
     is_public = tables.columns.BooleanColumn()
     is_auto = tables.columns.BooleanColumn(verbose_name="Auto-Generated")
+    delete = tables.columns.LinkColumn(
+        "dashboard:delete-playlist",
+        kwargs={"playlist_id": A("id")},
+        text="Delete",
+        verbose_name="Delete",
+        orderable=False,
+    )
 
     def render_edit(self, record):
         if not record.has_been_performed:
@@ -391,23 +423,26 @@ class PlaylistsListTable(tables.Table):
 
 
 class CoursesListTable(tables.Table):
-    id = tables.columns.Column()
-    title = tables.columns.Column(
-        verbose_name="Title of Course",
-        # attrs={"td": {"bgcolor": "white", "width": "auto"}},
+    view = tables.columns.LinkColumn(
+        # text="List of Playlists", # formerly
+        "lab:course-view",
+        kwargs={"course_id": A("id")},
+        accessor=A("id"),
+        verbose_name="C-ID",
+    )
+    # course_id = tables.columns.Column(
+    #     verbose_name="C-ID",
+    #     accessor=A("id"),
+    # )
+    course_name = tables.columns.Column(
+        verbose_name="Course name",
+        accessor=A("title"),
     )
     activity = tables.columns.LinkColumn(
         "dashboard:course-activity",
         kwargs={"course_id": A("id")},
-        text="Activity",
-        verbose_name="Activity",
-        orderable=False,
-    )
-    view = tables.columns.LinkColumn(
-        "lab:course-view",
-        kwargs={"course_id": A("id")},
-        text="List of Playlists",
-        verbose_name="List of Playlists",
+        text="see activity",
+        verbose_name="Performance Activity",
         orderable=False,
     )
 
@@ -416,14 +451,6 @@ class CoursesListTable(tables.Table):
         kwargs={"course_id": A("id")},
         text="Edit",
         verbose_name="Edit",
-        orderable=False,
-    )
-
-    delete = tables.columns.LinkColumn(
-        "dashboard:delete-course",
-        kwargs={"course_id": A("id")},
-        text="Delete",
-        verbose_name="Delete",
         orderable=False,
     )
     created = tables.columns.DateColumn(
@@ -435,6 +462,13 @@ class CoursesListTable(tables.Table):
         format="Y-m-d • h:i A",
     )
     is_public = tables.columns.BooleanColumn()
+    delete = tables.columns.LinkColumn(
+        "dashboard:delete-course",
+        kwargs={"course_id": A("id")},
+        text="Delete",
+        verbose_name="Delete",
+        orderable=False,
+    )
 
     def render_edit(self, record):
         if not record.has_been_performed:

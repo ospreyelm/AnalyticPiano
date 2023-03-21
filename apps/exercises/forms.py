@@ -259,11 +259,11 @@ class ExerciseForm(forms.ModelForm):
     TYPE_FIGURED_BASS = "figured_bass"
     TYPE_FIGURED_BASS_PCS = "figured_bass_pcs"
     TYPE_CHOICES = (
-        (TYPE_MATCHING, "Matching"),
-        (TYPE_ANALYTICAL, "Analytical"),
-        (TYPE_ANALYTICAL_PCS, "Analytical (with pitch class checking)"),
-        (TYPE_FIGURED_BASS, "Figured Bass"),
-        (TYPE_FIGURED_BASS_PCS, "Figured Bass (with pitch class checking)"),
+        (TYPE_MATCHING, "Exact match"),
+        (TYPE_ANALYTICAL, "Analysis match"),
+        (TYPE_ANALYTICAL_PCS, "Analysis match with wrong PCs highlighted"),
+        (TYPE_FIGURED_BASS, "Figured bass"),
+        (TYPE_FIGURED_BASS_PCS, "Figured bass with wrong PCs highlighted"),
     )
 
     DISTRIBUTION_KEYBOARD = "keyboard"
@@ -275,32 +275,34 @@ class ExerciseForm(forms.ModelForm):
     DISTRIBUTION_KEYBOARD_LH_PREFERENCE = "keyboardPlusLHBias"
 
     DISTRIBUTION_CHOICES = (
-        (DISTRIBUTION_KEYBOARD, "Keyboard"),
-        (DISTRIBUTION_CHORALE, "Chorale"),
-        (DISTRIBUTION_GRANDSTAFF, "Grand Staff"),
-        (DISTRIBUTION_LH, "Lower staff"),
-        (DISTRIBUTION_RH, "Upper staff"),
-        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, "Keyboard with lower staff bias"),
-        (DISTRIBUTION_KEYBOARD_RH_PREFERENCE, "Keyboard with upper staff bias"),
+        (DISTRIBUTION_KEYBOARD, "Keyboard* or break solo lines at B4, C4"),
+        (DISTRIBUTION_KEYBOARD_LH_PREFERENCE, "Keyboard* or break solo lines above F4"),
+        (DISTRIBUTION_KEYBOARD_RH_PREFERENCE, "Keyboard* or break solo lines below G3"),
+        (DISTRIBUTION_CHORALE, "Chorale or break solo lines at B4, C4"),
+        (DISTRIBUTION_GRANDSTAFF, "Break at B4, C4"),
+        (DISTRIBUTION_LH, "Lower staff only, legible through G4"),
+        (DISTRIBUTION_RH, "Upper staff only, legible through F3"),
     )
 
     intro_text = forms.CharField(
         widget=CKEditorWidget(config_name="limited"),
         required=False,
-        help_text="Text showed to users before the exercise.",
+        label="Prompt",
+        # help_text="Prompt shown to users until the exercise is complete.",
     )
     # review_text = forms.CharField(widget=CKEditorWidget(config_name="safe"), required=False)
     type = forms.ChoiceField(
         choices=TYPE_CHOICES,
         widget=forms.RadioSelect(),
         required=False,
-        help_text="Assessment method for the user input. Matching means pitches must exactly match, analytical means that chords must satisfy the analysis displayed, with the same bass, and figured bass means the performance must be in the same register. Pitch class checking indicates pitch errors to the user via colored noteheads.",
+        label="Assessment method",
+        # help_text="Assessment method.",
     )
     staff_distribution = forms.ChoiceField(
         choices=DISTRIBUTION_CHOICES,
         widget=forms.RadioSelect(),
         required=False,
-        help_text="The staff or staves that the notes will be displayed on. Bias affects the break point and the favored staff for single pitches in the mid-range.",
+        help_text="*SAT no lower than G3, bass no higher than F3",
     )
     time_signature = forms.CharField(
         required=False,
@@ -308,7 +310,7 @@ class ExerciseForm(forms.ModelForm):
     )
     semibreves_per_line = forms.IntegerField(
         required=False,
-        help_text="Fit this many semibreves across the page."
+        help_text="Fit this many semibreves across the page. Use this setting to avoid visual collisions in the analysis."
     )
     visibility_pattern = forms.CharField(
         required=False,
@@ -419,6 +421,7 @@ class CourseForm(forms.ModelForm):
         model = Course
         exclude = ("performance_dict",)
         widgets = {
+            "id": forms.TextInput(attrs={"readonly": "readonly"}),
             # "visible_to":forms.CheckboxSelectMultiple()
         }
 

@@ -15,18 +15,19 @@ from apps.exercises.models import Exercise
 
 @login_required
 def exercises_list_view(request):
-    exercises = Exercise.objects.filter(authored_by=request.user).select_related(
+    exercises_author = request.user
+    exercises = Exercise.objects.filter(authored_by=exercises_author).select_related(
         "authored_by"
     )
+    me = request.user
 
     table = ExercisesListTable(exercises)
-    exercises_author = request.user
 
     RequestConfig(request, paginate={"per_page": 25}).configure(table)
     return render(
         request,
         "dashboard/exercises-list.html",
-        {"table": table, "exercises_author": exercises_author},
+        {"table": table, "exercises_author": exercises_author, "me": me},
     )
 
 

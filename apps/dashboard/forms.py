@@ -36,7 +36,7 @@ class BaseSupervisionForm(forms.Form):
 
 
 class AddSupervisorForm(BaseSupervisionForm):
-    email = forms.EmailField(label="Subscribe me to:")
+    email = forms.EmailField(label="Email:")
 
 
 class AddSubscriberForm(BaseSupervisionForm):
@@ -251,6 +251,7 @@ class DashboardPlaylistForm(PlaylistForm):
 class DashboardCourseForm(CourseForm):
     class Meta(CourseForm.Meta):
         fields = [
+            "id",
             "title",
             "is_public",
             "open",
