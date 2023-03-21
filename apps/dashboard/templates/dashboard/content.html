@@ -12,7 +12,7 @@
     {% block content-header %}
         {% if form.instance.pk == None %}
             <h1>Add {{ verbose_name }}</h1>
-            <p class="dashboard-tip">First name your {{ verbose_name.lower }} and press Save. Then you will be able to populate the playlist with existing exercises.</p>
+            <p class="dashboard-tip">First name your {{ verbose_name.lower }} and press Save. Then you will be able to build it.</p>
         {% else %}<h1>Edit {{ verbose_name }}</h1>
         {% endif %}
     {% endblock %}
@@ -22,28 +22,27 @@
         <form method="post" novalidate>
     {% endif %}
     {% csrf_token %}
-    <div style="display:inline-block;width:100%;padding-bottom:1em">
+    {% if not has_been_performed %}
+    <div class="dashboard-button-bank">
+    {% else %}
+    <div class="dashboard-button-bank-restricted">
+    {% endif %}
         {% if preview_url %}
-        <button type="submit" name="save-and-preview" class="btn dashboard-btn" onclick="window.open('{{preview_url}}','_blank');">Preview</button>
-        {% endif %}
-        <button type="reset" class="btn dashboard-btn"
-                onclick="location.href='{{ redirect_url }}'">
-            Close
+        <button type="submit" name="save-and-preview" class="btn dashboard-btn" onclick="window.open('{{preview_url}}','_blank');">
+            Save and Preview
         </button>
+        {% endif %}
         {% if not form.instance.pk == None %}
-            <button type="submit" class="btn dashboard-btn" name="duplicate">
-                Duplicate
+            <button type="reset" class="btn dashboard-btn dashboard-btn-cancel" onclick="location.href='{{ redirect_url }}'">
+                Abandon Changes
             </button>
+            <button type="submit" class="btn dashboard-btn" name="duplicate">Save, Duplicate</button>
         {% endif %}
         {% block extra_buttons %}
         {% endblock extra_buttons %}
-        {% if not has_been_performed %}
-            <button type="submit" class="btn dashboard-btn" name="save-and-continue">Save</button>
-        {% else %}
-            <button type="submit" class="btn dashboard-btn limited-save-btn" name="save-and-continue">Limited Save</button>
-        {% endif %}
+        <button type="submit" class="btn dashboard-btn" name="save-and-continue">Save</button>
         {% if not has_been_performed and delete_url %}
-            <button type="reset" class="dashboard-btn dashboard-btn-secondary"
+            <button type="reset" class="dashboard-btn dashboard-btn-delete" 
                     onclick="location.href='{{ delete_url }}'">
                 Delete
             </button>
@@ -54,7 +53,7 @@
             <p><span class="limited-save-alert" style="padding: 5px">Only certain fields may be edited after another user has performed the {{ verbose_name.lower }}.</span></p>
         </div>
     {% endif %}
-    {% if not has_been_performed and verbose_name == "Course" %}
+    {% if not form.instance.pk == None and not has_been_performed and verbose_name == "Course" %}
         <div class="dashboard-tip">
             <p><span class="limited-save-alert" style="padding: 5px">You may delete this {{ verbose_name.lower }} via the Courses table.</span></p>
         </div>

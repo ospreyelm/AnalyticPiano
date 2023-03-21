@@ -66,7 +66,7 @@ class KeyboardForm(forms.Form):
 
     auto_advance_delay = forms.IntegerField(
         widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
-        label_suffix=" (seconds):",
+        label_suffix=" in seconds:",
         initial=4,
     )
 
@@ -74,7 +74,7 @@ class KeyboardForm(forms.Form):
 
     auto_repeat_delay = forms.IntegerField(
         widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
-        label_suffix=" (seconds):",
+        label_suffix=" in seconds:",
         initial=6,
     )
 

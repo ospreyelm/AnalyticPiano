@@ -1,9 +1,9 @@
 :root {
   --primary-color: #335271;
   --secondary-color: #00693e;
-  --side-link-color: #ffa00f;
-  --ltd-save-color: #FFCF87;
-  --link-color: #335271;
+  --bright-link-color: #FFA00F;
+  --bright-highlight-color: #FFCF87;
+  --dark-link-color: #335271;
   --background-color: #e2e2e2;
 }
 
@@ -80,7 +80,7 @@ form label {
 }
 
 .sidenav a {
-  color: var(--side-link-color);
+  color: var(--bright-link-color);
 }
 
 .sidenav-subhead {
@@ -91,12 +91,12 @@ form label {
 }
 
 .sidenav a:hover {
-  background-color: var(--side-link-color);
+  background-color: var(--bright-link-color);
   color: white;
 }
 
 .sidenav-active {
-  border-left: 6px solid var(--side-link-color);
+  border-left: 6px solid var(--bright-link-color);
   color: white !important;
 }
 
@@ -185,7 +185,7 @@ form label {
 
 .paleblue td a:link,
 .paleblue td a:visited {
-  color: var(--link-color) !important;
+  color: var(--dark-link-color) !important;
 }
 
 .paleblue tr.odd td {
@@ -211,33 +211,31 @@ nav {
 }
 
 .dashboard-btn:hover {
-  color: var(--link-color);
-  border-color: var(--link-color);
+  color: var(--dark-link-color);
+  border-color: var(--dark-link-color);
 }
 
-.dashboard-btn-secondary {
-  color: white;
-  border-color: white;
-  background-color: darkred;
+.dashboard-btn-delete {
+  background-color: var(--bright-link-color);
 }
 
-.dashboard-btn-secondary:hover {
+.dashboard-btn-delete:hover {
   color: white;
   border-color: white;
 }
 
 .form-control.is-invalid {
-  border-color: var(--link-color);
+  border-color: var(--dark-link-color);
 }
 
 .invalid-feedback p {
+  font-size: 11px /*0.8rem*/;
   font-weight: bold;
-  font-size: 0.8rem;
-  padding: 0px;
+  padding: 5px;
   margin: 0px;
   margin-left: 10px;
   /*color: red;*/
-  background-color: var(--ltd-save-color);
+  background-color: var(--bright-highlight-color);
 }
 
 #id_keyboard_size {
@@ -272,7 +270,7 @@ input[type="checkbox"] {
 }
 
 .page-item:hover .page-link {
-  color: var(--link-color) !important;
+  color: var(--dark-link-color) !important;
 }
 
 .page-item.active {
@@ -280,7 +278,7 @@ input[type="checkbox"] {
 }
 
 .page-item:hover {
-  border-color: var(--link-color);
+  border-color: var(--dark-link-color);
 }
 
 .column {
@@ -360,11 +358,10 @@ ul li input {
 .protected-edit-view input[id="id_name"],
 .protected-edit-view input[id="id_description"],
 .protected-edit-view label[for="id_is_public"],
-.protected-edit-view .limited-save-btn,
 .protected-edit-view .limited-save-alert,
 .limited-save-alert,
 .delete-confirmation {
-  background-color: var(--ltd-save-color);
+  background-color: var(--bright-highlight-color);
 }
 
 .delete-confirmation {
@@ -487,7 +484,7 @@ table.paleblue > tbody > tr > td > span.false {
 }
 
 .nav-link > a {
-  color: var(--link-color);
+  color: var(--dark-link-color);
   font-size: 16px;
 }
 
@@ -528,4 +525,40 @@ input::-webkit-inner-spin-button {
 
 .customtransposewidget {
   display: inline-block;
+}
+
+input[id="id_email"] {
+  width: 25em;
+}
+
+label[for="id_email"] {
+  min-width: auto !important;
+}
+
+.dashboard-button-bank,
+.dashboard-button-bank-restricted {
+  display:inline-block;width:100%;padding-bottom:1em
+}
+
+.dashboard-button-bank-restricted .dashboard-btn {
+  background-color: var(--bright-highlight-color);
+}
+
+.dashboard-button-bank-restricted .dashboard-btn-cancel {
+  background-color: white;
+}
+
+.post-form label[for="id_keyboard_size"],
+.post-form label[for="id_auto_advance"],
+.post-form label[for="id_auto_advance_delay"],
+.post-form label[for="id_auto_repeat"],
+.post-form label[for="id_auto_repeat_delay"] {
+  min-width: 18em;
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+}
+
+.post-form #id_keyboard_size {
+  margin: 0;
 }

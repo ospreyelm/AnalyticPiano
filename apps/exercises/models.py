@@ -688,7 +688,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         to=Group,
         related_name="visible_courses",
         blank=True,
-        help_text="This course will always be displayed to performer connections who are members of these groups.",
+        help_text="This course will ALWAYS be displayed to performer connections who are members of these groups.",
         verbose_name="Performer Groups",
     )
 
