@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django_tables2 import tables, A, columns
 from django.db import models
 from django.utils.html import format_html
+from django.contrib.postgres.fields.jsonb import KeyTextTransform
 
 User = get_user_model()
 
@@ -10,11 +11,19 @@ User = get_user_model()
 
 
 class SupervisorsTable(tables.Table):
-    name = tables.columns.Column(
-        accessor=A("supervisor.get_full_name"),
-        attrs={"td": {"width": "250px"}},
-        verbose_name="Name of User",
+
+    first_name = tables.columns.Column(
+        accessor=A("supervisor.first_name"), verbose_name="Given name"
     )
+    last_name = tables.columns.Column(
+        accessor=A("supervisor.last_name"), verbose_name="Surname"
+    )
+
+    # name = tables.columns.Column(
+    #     accessor=A("supervisor.get_full_name"),
+    #     attrs={"td": {"width": "250px"}},
+    #     verbose_name="Name of User",
+    # )
     supervisor = tables.columns.Column(
         attrs={"td": {"width": "250px"}}, verbose_name="Email Address of User"
     )
@@ -73,20 +82,42 @@ class SupervisorsTable(tables.Table):
         template_name = "django_tables2/bootstrap4.html"
 
 
+status_order_dict = {
+    User.SUPERVISOR_STATUS_INVITATION_WAIT: 0,
+    User.SUPERVISOR_STATUS_ACCEPTED: 1,
+    User.SUPERVISOR_STATUS_DECLINED: 2,
+}
+
+
 class SubscribersTable(tables.Table):
-    name = tables.columns.LinkColumn(
-        "dashboard:subscriber-performances",
-        kwargs={"subscriber_id": A("subscriber.id")},
-        accessor=A("subscriber.get_full_name"),
-        attrs={"td": {"width": "250px"}},
-        verbose_name="Name of User",
+    class Meta:
+        attrs = {"class": "paleblue"}
+        table_pagination = False
+        template_name = "django_tables2/bootstrap4.html"
+
+    first_name = tables.columns.Column(
+        accessor=A("subscriber.first_name"), verbose_name="Given name"
     )
-    subscriber = tables.columns.LinkColumn(
-        "dashboard:subscriber-performances",
-        kwargs={"subscriber_id": A("subscriber.id")},
+    last_name = tables.columns.Column(
+        accessor=A("subscriber.last_name"), verbose_name="Surname"
+    )
+
+    # name = tables.columns.LinkColumn(
+    #     "dashboard:subscriber-performances",
+    #     kwargs={"subscriber_id": A("subscriber.id")},
+    #     accessor=A("subscriber.get_full_name"),
+    #     attrs={"td": {"width": "250px"}},
+    #     verbose_name="Name of User",
+    # )
+    email = tables.columns.Column(
         accessor=A("subscriber.email"),
         attrs={"td": {"width": "250px"}},
         verbose_name="Email Address of User",
+    )
+    performances = tables.columns.LinkColumn(
+        "dashboard:subscriber-performances",
+        text="View Performances",
+        kwargs={"subscriber_id": A("subscriber.id")},
     )
     status = tables.columns.Column(empty_values=())
     accept = tables.columns.LinkColumn(
@@ -117,6 +148,10 @@ class SubscribersTable(tables.Table):
         orderable=False,
     )
 
+    signup_date = tables.columns.Column(
+        accessor=A("subscriber.date_joined"), verbose_name="Signup Date"
+    )
+
     def render_status(self, record):
         return record["subscriber"]._supervisors_dict[str(self.request.user.id)]
 
@@ -136,10 +171,25 @@ class SubscribersTable(tables.Table):
             return "Decline"
         return ""
 
-    class Meta:
-        attrs = {"class": "paleblue"}
-        table_pagination = False
-        template_name = "django_tables2/bootstrap4.html"
+    def render_performances(self, record):
+        if (
+            record["subscriber"]._supervisors_dict[str(self.request.user.id)]
+            == User.SUPERVISOR_STATUS_ACCEPTED
+        ):
+            return "Performances"
+        return ""
+
+    # TODO: revisit this. ordering based on non-database fields appears impossible
+    #   according to this: https://github.com/jieter/django-tables2/issues/161
+    def order_status(self, queryset, is_descending):
+        queryset = queryset.annotate(
+            # Annotates each subscriber with their subscription status with the current user,
+            #  put into the status_order_dict for custom order instead of alphabetical
+            priority=status_order_dict.get(
+                KeyTextTransform(str(self.request.user.id), "_supervisors_dict"), -1
+            )
+        ).order_by(("-" if is_descending else "") + "priority")
+        return (queryset, True)
 
 
 class MyActivityTable(tables.Table):
