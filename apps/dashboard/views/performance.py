@@ -155,6 +155,9 @@ def playlist_performance_view(request, performance_id):
     exercises = [exercise for exercise in performance.playlist.exercise_list]
 
     course_id = getattr(performance.course, "id", None)
+    course_name = "None"
+    if course_id:
+        course_name = Course.objects.get(id=course_id).title
 
     # performance_obj = performances.filter(user__email=user).first()
     # course = None
@@ -165,6 +168,7 @@ def playlist_performance_view(request, performance_id):
         "performer": subscriber,
         "subscriber_id": subscriber_id,
         "playlist_id": performance.playlist.id,
+        "course_name": course_name,
         "course_id": course_id,
         "playlist_name": performance.playlist.name,
         "playlist_length": len(performance.playlist.exercise_list),

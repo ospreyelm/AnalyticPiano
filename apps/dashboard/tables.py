@@ -262,7 +262,7 @@ class MyActivityDetailsTable(tables.Table):
         "lab:course-view",
         kwargs={"course_id": A("course_id")},
         verbose_name="Course name",
-        accessor=A("course_id"),
+        accessor=A("course_name"),
         empty_values=(),  # only needed if no reliable accessor
         # orderable=False, # keep it orderable in order for seamless viewing with MyActivity
     )
