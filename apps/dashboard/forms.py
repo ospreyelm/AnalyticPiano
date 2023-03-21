@@ -221,58 +221,20 @@ class CustomTransposeWidget(forms.MultiWidget):
 
 class ManyWidget(forms.widgets.ChoiceWidget):
     template_name = "../templates/dashboard/manywidget.html"
-    option_template_name = "django/forms/widgets/select_option.html"
+    option_template_name = "../templates/dashboard/manywidgetoption.html"
 
-    def __init__(
-        self,
-        attrs=None,
-        model=None,
-        model_format=str,
-        value_attr="_id",
-        choices=[],
-    ):
+    def __init__(self, attrs=None, order_input=True):
         self.attrs = attrs
-        self.model = model
-        self.model_format = model_format
-        self.value_attr = value_attr
-        self.choices = choices
+        self.order_input = order_input
         super().__init__(attrs)
 
     def format_value(self, value):
-        instances = map(
-            lambda instance: (
-                getattr(instance, self.value_attr, None),
-                self.model_format(instance),
-            ),
-            value,
-        )
-        return list(instances)
-
-    def options(self, name, value, attrs=None):
-        # print("choices", list(self.choices))
-        # choices = map(
-        #     lambda choice: (
-        #         getattr(self.instance_from_value(choice[1]), self.value_attr, None),
-        #         self.model_format(self.instance_from_value(choice[1])),
-        #     ),
-        #     self.choices,
-        # )
-        return list(self.choices)
+        return value
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        print(context["widget"].keys())
-        context["widget"]["options"] = self.options(
-            name, context["widget"]["value"], attrs
-        )
+        context["widget"]["order_input"] = self.order_input
         return context
-
-    def value_from_datadict(self, data, files, name):
-        try:
-            getter = data.getlist
-        except AttributeError:
-            getter = data.get
-        return getter(name)
 
 
 class ManyField(forms.ModelMultipleChoiceField):
@@ -283,31 +245,50 @@ class ManyField(forms.ModelMultipleChoiceField):
         widget=ManyWidget,
         queryset=None,
         through_vals=None,
+        format_title=str,
         order_attr="order",
     ):
-        self.widget = widget(choices=queryset)
+        self.widget = widget
         self.queryset = queryset
         self.through_vals = through_vals
+        self.format_title = format_title
         self.order_attr = order_attr
         super().__init__(queryset=self.queryset)
-        print("queryset", self.queryset)
 
+    # This function is used for preparing both options and values
     def prepare_value(self, value):
-        for instance in self.value:
-            print(list(instance._prefetched_objects_cache.values())[0].first().__dict__)
-            for key, value in (
-                list(instance._prefetched_objects_cache.values())[0].first().__dict__
-            ).items():
-                if not getattr(instance, key, None):
-                    setattr(instance, key, value)
-        return self.value
+        # this handles list of models for field value
+        if type(value) is list:
+            return list(
+                map(
+                    lambda instance: (
+                        self.prepare_value(instance),
+                        self.label_from_instance(instance),
+                    ),
+                    value,
+                )
+            )
+        # this handles individual models within field options
+        return value._id
+
+    def label_from_instance(self, obj):
+        return self.format_title(obj)
+
+    def clean(self, value):
+        print(value)
+        return super().clean(value)
 
 
 class DashboardPlaylistForm(PlaylistForm):
 
     editable_fields = ["is_public"]
 
-    exercises = ManyField(queryset=None, widget=ManyWidget)
+    exercises = ManyField(
+        queryset=None,
+        widget=ManyWidget,
+        format_title=lambda ex: ex.id
+        + (f"- {ex.description}" if ex.description else ""),
+    )
 
     class Meta(PlaylistForm.Meta):
         exclude = ["authored_by"]
@@ -323,9 +304,6 @@ class DashboardPlaylistForm(PlaylistForm):
         # Since the queryset and through_vals are dependent on variable user and instance, set them with initialization inputs
         self.fields["exercises"].queryset = Exercise.objects.filter(
             Q(authored_by=user) | Q(is_public=True)
-        )
-        self.fields["exercises"].widget.choices = list(
-            map(lambda ex: (ex.id, ex), list(self.fields["exercises"].queryset))
         )
         # Replace the exercises field value with the exercises combined with the respective EPO
         self.fields["exercises"].value = self.instance.exercises.prefetch_related(

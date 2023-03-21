@@ -1,30 +1,103 @@
 
+{% load static %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<div>
+<link rel="stylesheet" type="text/css" href="{% static 'css/manywidget.css' %}"/>
+<div class="widget-container">
+  {% comment %} Use this hidden input so that Django has a form element at which to get the value {% endcomment %}
+  <input name="{{ widget.name }}" style="display:none"/>
   <div class="widget-option-wrapper">
-    <select name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>{% for group_name, group_choices, group_index in widget.optgroups %}{% if group_name %}
+    <div class="widget-select"{% include "django/forms/widgets/attrs.html" %} >{% for group_name, group_choices, group_index in widget.optgroups %}{% if group_name %}
       <optgroup label="{{ group_name }}">{% endif %}{% for option in group_choices %}
       {% include option.template_name with widget=option %}{% endfor %}{% if group_name %}
       </optgroup>{% endif %}{% endfor %}
-    </select>
-    <button>
-      Add
-    </button>
+    </div>
   </div>
   <div class="widget-value-list">
     <div id="values" class="widget-value-list-inner">
-      {% for value, title in widget.value %}
-      <div class="widget-value-block" value="{{ value }}">
-        <div>{{ title }}</div>
-        <div class="widget-value-block-remove"> x </div>
-      </div>
-      {% endfor %}
+     
     </div>
   </div>
 </div>
 <script>
-    var el = document.getElementById('values');
-    var sortable = Sortable.create(el, {
-      animation:100
-    });
+
+  let fieldValue = 
+  [{% for value, title in widget.value %}
+    ["{{value}}","{{title}}"],
+  {% endfor %}]
+
+  const containerElement = $("input[name='{{ widget.name }}']")
+
+  function generateValueBlock(instanceId, instanceTitle, index) {
+    return `<div class="widget-value-block">
+      {% if widget.order_input %}<input type="number" class=widget-value-order value="${index}"></input> {% endif %}
+      <div class="widget-value-data" value="${instanceId}" >${instanceTitle}</div>
+      <div class="widget-value-remove"> x </div>
+    </div>`
+  }
+
+  function onFieldValueChange(){
+    console.log(fieldValue)
+    const updatedComponents = fieldValue.map(([instanceId, instanceTitle], index)=>
+      generateValueBlock(instanceId, instanceTitle, index)
+    )
+    $('.widget-value-list-inner').html(updatedComponents)
+    containerElement.attr("value", JSON.stringify(fieldValue))
+  }
+
+
+  
+
+  onFieldValueChange()
+
+  function addValue(value){
+    fieldValue.push(value)
+    onFieldValueChange()
+  }
+
+  function removeValue(valueId){
+    fieldValue = fieldValue.filter((entry)=>entry[0]!=valueId)
+    onFieldValueChange()
+  }
+
+  // Function from here: https://stackoverflow.com/a/5306832
+  function moveValue(old_index, new_index) {
+    if (new_index < fieldValue.length && new_index >= 0){
+      console.log(new_index)
+      if (new_index >= fieldValue.length) {
+        var k = new_index - fieldValue.length + 1;
+        while (k--) {
+            fieldValue.push(undefined);
+        }
+      }
+      fieldValue.splice(new_index, 0, fieldValue.splice(old_index, 1)[0]);
+    }
+    
+    onFieldValueChange()
+};
+
+
+  const el = document.getElementById('values');
+  const sortable = Sortable.create(el, {
+    animation:100,
+    onEnd:(evt)=>{
+      moveValue(evt.oldDraggableIndex, evt.newDraggableIndex)
+    }
+  })
+
+  $('.widget-option').click((event)=>{
+    const targetElement = $(event.currentTarget)
+    targetElement.hide()
+    addValue([targetElement.attr("value"), targetElement.text()])
+  })
+
+  $(document).on("click",".widget-value-remove",((event)=>{
+    const targetElement = $(event.currentTarget).siblings(".widget-value-data")
+    removeValue(targetElement.attr("value"))
+    $(`.widget-option[value='${targetElement.attr("value")}']`).show()
+  }))
+
+  $(document).on("blur",".widget-value-order",((event)=>{
+    const targetElement = $(event.currentTarget)
+    moveValue(Number(targetElement.attr("value")),Number(targetElement.val()))
+  }))
 </script> 
