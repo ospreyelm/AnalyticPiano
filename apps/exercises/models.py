@@ -8,10 +8,11 @@ import pytz
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from django.db import models, connections
-from django.db.models import When, Case, Q
-from django.db.models.signals import post_save
+from django.db.models import When, Case, Q, F
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.urls import reverse, NoReverseMatch
 from django.utils import dateformat
@@ -308,7 +309,11 @@ def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
 
 class Playlist(ClonableModelMixin, BaseContentModel):
     id = models.CharField("P-ID", unique=True, max_length=16, null=True)
-    is_auto = models.BooleanField("Auto-generated", default=False, help_text="This box is checked if AnalyticPiano generated the playlist from your newly created exercises and you made no edits.")
+    is_auto = models.BooleanField(
+        "Auto-generated",
+        default=False,
+        help_text="This box is checked if AnalyticPiano generated the playlist from your newly created exercises and you made no edits.",
+    )
 
     name = models.CharField(
         "Name",
@@ -697,9 +702,53 @@ class Course(ClonableModelMixin, BaseContentModel):
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 
+    points_per_playlist = models.DecimalField(
+        "Points per playlist",
+        default=1.0,
+        decimal_places=1,
+        max_digits=3,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
+
+    tardy_penalty = models.DecimalField(
+        "Tardy penalty",
+        default=0.1,
+        decimal_places=3,
+        max_digits=3,
+        validators=[MinValueValidator(0)],
+    )
+    late_penalty = models.DecimalField(
+        "Late Penalty",
+        default=0.5,
+        decimal_places=3,
+        max_digits=3,
+        validators=[MinValueValidator(0)],
+    )
+
+    tardy_threshold = models.IntegerField(
+        "Tardiness threshold (hours)",
+        default=5 * 24,
+        help_text="When performances are submitted after the due date, this threshold determines if they're considered tardy or late. Submissions before this threshold are tardy, submissions after are late.",
+    )
+
     class Meta:
         verbose_name = "Course"
         verbose_name_plural = "Courses"
+        constraints = [
+            # TODO: reexamine constraints and if we should enforce similar constraints of models across the project
+            models.CheckConstraint(
+                check=Q(tardy_penalty__lte=F("points_per_playlist")),
+                name="course_tardy_penalty_lte_points_per_playlist",
+            ),
+            models.CheckConstraint(
+                check=Q(tardy_penalty__lte=F("late_penalty")),
+                name="course_tardy_penalty_lte_late_penalty",
+            ),
+            models.CheckConstraint(
+                check=Q(late_penalty__lte=F("points_per_playlist")),
+                name="course_late_penalty_lte_points_per_playlist",
+            ),
+        ]
 
     def __str__(self):
         return self.id
@@ -708,7 +757,27 @@ class Course(ClonableModelMixin, BaseContentModel):
         if not self._id:
             super(Course, self).save(*args, **kwargs)
         self.set_id(initial="C")
+        # Check the database to see if the tardy_threshold has changed,
+        #   database call preferred to some of the other solutions talked about here: https://stackoverflow.com/questions/1355150/
+        prev_course = Course.objects.filter(_id=self._id).first()
+        if prev_course:
+            if prev_course.tardy_threshold != self.tardy_threshold:
+                self.refresh_performance_dict()
         super(Course, self).save(*args, **kwargs)
+
+    def clean(self):
+        if self.tardy_penalty > self.points_per_playlist:
+            raise ValidationError(
+                f"Tardy penalty must not be greater than Points per Playlist"
+            )
+        if self.tardy_penalty > self.late_penalty:
+            raise ValidationError(
+                f"Tardy penalty must not be greater than Late Penalty"
+            )
+        if self.late_penalty > self.points_per_playlist:
+            raise ValidationError(
+                f"Late Penalty must not be greater than Points per Playlist"
+            )
 
     @cached_property
     def has_been_performed(self):
@@ -760,6 +829,70 @@ class Course(ClonableModelMixin, BaseContentModel):
         # due dates are defined by course authors and should be understood in terms of their own or their institution's timezone
         # the due_date is NOT to be read as UTC
 
+    def add_performance_to_dict(self, performance_data):
+
+        # Assigns numerical value to each pass mark to prevent "better" pass marks from being overwritten
+        pass_mark_compare_dict = {"X": 0, "C": 0.5, "L": 1, "T": 2, "P": 3}
+
+        pco = PlaylistCourseOrdered.objects.get(
+            course_id=self._id, playlist_id=performance_data.playlist_id
+        )
+        # TODO: it might be bad to rely upon str, which is liable to change, but then again we could just refresh when that happens
+        performer = str(User.objects.get(id=performance_data.user_id))
+        pass_mark = "X"
+        if performance_data.playlist_passed():
+            pass_mark = "C"
+            try:
+                due_date = pco.due_date.replace(
+                    tzinfo=pytz.timezone(settings.TIME_ZONE)
+                )
+            except:
+                due_date = False
+            try:
+                pass_date = performance_data.get_local_pass_date()
+            except:
+                pass_date = False
+                # ERROR MESSAGE SHOULD READ: 'Failed to get local_pass_date, so course activity table may not show lateness accurately.'
+            if due_date and pass_date:
+                if pass_date <= due_date:
+                    pass_mark = "P"
+                if pass_date > due_date:
+                    pass_mark = "L"
+                    late_diff = pass_date - due_date
+                    hours = late_diff.days * 24 + late_diff.seconds // 3600
+                    if hours == 0:
+                        pass_mark = "P"
+                        # grace period of up to 59 minutes due to // operation above
+
+                    elif hours < self.tardy_threshold:
+                        pass_mark = "T"
+                        # tardy category
+        if not (performer in self.performance_dict):
+            self.performance_dict[performer] = {"time_elapsed": 0}
+        # Only overwriting previous performance if new performance is better
+        if (
+            pass_mark_compare_dict[
+                self.performance_dict.get(performer, {}).get(pco.playlist.id, "X")
+            ]
+            <= pass_mark_compare_dict[pass_mark]
+        ):
+            self.performance_dict[performer][pco.playlist.id] = pass_mark
+        # ^ REFACTORED TO USE NOT pco.order (as before) NOR pco.playlist_id BUT pco.playlist.id
+        for exercise_data in performance_data.data:
+            self.performance_dict[performer]["time_elapsed"] += int(
+                exercise_data["performance_duration_in_seconds"]
+            )
+        # self.save()
+
+    def refresh_performance_dict(self):
+        self.performance_dict = {}
+        course_performances = PerformanceData.objects.filter(
+            Q(course=self) | Q(course=None, playlist__in=self.playlists.all())
+        ).order_by("updated")
+        for pd in course_performances:
+            self.add_performance_to_dict(pd)
+        # self.save()
+
 
 class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
     playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
@@ -772,52 +905,6 @@ class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
         default=None,
         null=True,
     )
-
-    # performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)
-
-    # @cached_property
-    # def performance_dict_test(self):
-    #     print("fetching performances")
-    #     data = {}
-    #     course_playlists = list(
-    #         PlaylistCourseOrdered.objects.filter(course=self)
-    #         .order_by("order")
-    #         .select_related("playlist")
-    #     )
-    #     playlist_num_dict = {pco.playlist: pco.order for pco in course_playlists}
-    #     course_performances = PerformanceData.objects.filter(
-    #         playlist__in=self.playlists.all()
-    #     ).select_related("user", "playlist")
-
-    #     due_dates = self.due_dates_dict
-
-    #     for performance in course_performances:
-    #         performer = performance.user
-    #         playlist_num = playlist_num_dict[performance.playlist]
-
-    #         pass_type = "P" if performance.playlist_passed else ""  # Pass
-
-    #         if performance.playlist_passed:
-    #             pass_date = performance.get_local_pass_date
-    #             playlist_due_date = due_dates.get(performance.playlist.id)
-    #             if playlist_due_date and playlist_due_date < pass_date:
-    #                 diff = pass_date - playlist_due_date
-    #                 days, seconds = diff.days, diff.seconds
-    #                 hours = days * 24 + seconds // 3600
-
-    #                 if hours >= 6:
-    #                     pass_type = "T"
-
-    #                 if days >= 7:
-    #                     pass_type = "L"
-    #         if performer not in data:
-    #             data[performer] = {"time_elapsed": 0}
-    #         data[performer].setdefault(playlist_num, mark_safe(pass_type))
-    #         time_elapsed = 0
-    #         for exercise_data in performance.data:
-    #             time_elapsed += exercise_data["performance_duration_in_seconds"]
-    #         data[performer]["time_elapsed"] += int(time_elapsed)
-    #     return data
 
     displayed_fields = ("due_date", "publish_date")
 
@@ -883,61 +970,11 @@ class PerformanceData(models.Model):
         pd.full_clean()
         pd.save()
 
-        # Assigns number to each pass mark to prevent "better" pass marks from being overwritten
-        pass_mark_compare_dict = {"X": 0, "C": 0.5, "L": 1, "T": 2, "P": 3}
-
         try:
             if course_id:
-                pco = PlaylistCourseOrdered.objects.get(
-                    course_id=course_id, playlist_id=playlist_id
-                )
                 course = Course.objects.get(_id=course_id)
-                performer = str(User.objects.get(id=user_id))
-                pass_mark = "X"
-                if pd.playlist_passed():
-                    pass_mark = "C"
-                    try:
-                        due_date = pco.due_date.replace(
-                            tzinfo=pytz.timezone(settings.TIME_ZONE)
-                        )
-                    except:
-                        due_date = False
-                    try:
-                        pass_date = pd.get_local_pass_date()
-                    except:
-                        pass_date = False
-                        # ERROR MESSAGE SHOULD READ: 'Failed to get local_pass_date, so course activity table may not show lateness accurately.'
-                    if due_date and pass_date:
-                        if pass_date <= due_date:
-                            pass_mark = "P"
-                        if pass_date > due_date:
-                            pass_mark = "L"
-                            late_diff = pass_date - due_date
-                            hours = late_diff.days * 24 + late_diff.seconds // 3600
-                            if hours == 0:
-                                pass_mark = "P"
-                                # grace period of up to 59 minutes due to // operation above
-                            elif hours < 5 * 24:
-                                pass_mark = "T"
-                                # tardy category
-                if not (performer in course.performance_dict):
-                    course.performance_dict[performer] = {"time_elapsed": 0}
-                # Only overwriting previous performance if new performance is better
-                if (
-                    pass_mark_compare_dict[
-                        course.performance_dict.get(performer, {}).get(
-                            pco.playlist.id, "X"
-                        )
-                    ]
-                    <= pass_mark_compare_dict[pass_mark]
-                ):
-                    course.performance_dict[performer][pco.playlist.id] = pass_mark
-                # ^ REFACTORED TO USE NOT pco.order (as before) NOR pco.playlist_id BUT pco.playlist.id
-                for exercise_data in pd.data:
-                    course.performance_dict[performer]["time_elapsed"] += int(
-                        exercise_data["performance_duration_in_seconds"]
-                    )
-                course.save()
+                course.add_performance_to_dict(pd)
+
         except:
             pass
             # ERROR MESSAGE SHOULD READ: 'Failed to save course performance dictionary but proceeding to return performance data.''

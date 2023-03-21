@@ -421,6 +421,7 @@ def course_activity_view(request, course_id):
     )
 
     table = CourseActivityTable(
+        course=course,
         data=relevant_data.values(),
         extra_columns=[
             (
