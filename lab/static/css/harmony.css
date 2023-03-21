@@ -174,10 +174,12 @@ textarea {
 #helpmenu {
   display: none;
   position: absolute;
-  right: 1rem;
+  padding: 1rem auto;
+  width: 100%;
   z-index: 100;
-  margin: 1rem auto;
-  text-align: left;
+  margin: 0;
+  margin-top: 320px;
+  text-align: center;
   padding: 1rem;
   line-height: 1.2rem;
 }
@@ -216,13 +218,19 @@ textarea {
   padding-right: 1.5rem;
 }
 .header .js-keysignature-widget {
-  padding-left: 0rem;
-  padding-right: 2rem;
+  padding-left: 2rem;
+  padding-right: 0rem;
+  float: right;
 }
 .header .js-btn-menu {
   padding-left: 2rem;
   padding-right: 0rem;
   float: right;
+}
+.header-second-row .js-btn-menu {
+  padding-left: 0rem;
+  padding-right: 2rem;
+  float: left;
 }
 .header .js-btn-help,
 .tip {
@@ -260,13 +268,13 @@ textarea {
   height: 6px;
   display: inline-block;
 }
-#email {
+#play-view-user-badge {
   display: inline-block;
-  width: 8rem;
+/*  width: 8rem;*/
   vertical-align: bottom;
   overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
+/*  text-overflow: ellipsis;*/
   padding: 0px;
   margin: 0px;
 }

@@ -31,13 +31,8 @@ define([
   var KEYBOARD_SHORTCUTS_ENABLED = Config.get(
     "general.keyboardShortcutsEnabled"
   );
-  /**
-   * Defines the default keyboard size.
-   * @type {number}
-   * @const
-   */
-  var DEFAULT_KEYBOARD_SIZE = Config.get("general.defaultKeyboardSize");
-  var DEFAULT_OCTAVE_ADJUSTMENT = Config.get("general.defaultOctaveAdjustment");
+  var DESIRED_KEYBOARD_SIZE = Config.get("general.defaultKeyboardSize");
+  var DESIRED_KEYBOARD_OCTAVES_OFFSET = 0;
 
   /**
    * ajax call to GET the keyboard size
@@ -56,7 +51,8 @@ define([
          * console.log(response);
          * console.log(JSON.parse(response.instance)); */
         var sticky_settings = JSON.parse(response.instance);
-        DEFAULT_KEYBOARD_SIZE = sticky_settings.keyboard_size;
+        DESIRED_KEYBOARD_SIZE = sticky_settings.keyboard_size;
+        DESIRED_KEYBOARD_OCTAVES_OFFSET = sticky_settings.keyboard_octaves_offset;
       }
     },
   });
@@ -234,6 +230,10 @@ define([
           .getStaffDistribution();
         /* TO DO: grab additional settings <-- no longer sure which */
       }
+      var staff_distribution_widget = new StaffDistributionWidget(
+        staffDistribution,
+        is_exercise_view
+      );
       var analyze_widget = new AnalyzeWidget(
         analysisSettings,
         is_exercise_view
@@ -242,14 +242,10 @@ define([
         highlightSettings,
         is_exercise_view
       );
-      var staff_distribution_widget = new StaffDistributionWidget(
-        staffDistribution,
-        is_exercise_view
-      );
       var event_for = {
+        distribute: EVENTS.BROADCAST.DISTRIBUTE_NOTES,
         highlight: EVENTS.BROADCAST.HIGHLIGHT_NOTES,
         analyze: EVENTS.BROADCAST.ANALYZE_NOTES,
-        distribute: EVENTS.BROADCAST.DISTRIBUTE_NOTES,
       };
       var onChangeCategory = function (category, enabled) {
         if (event_for[category]) {
@@ -270,22 +266,22 @@ define([
         that.broadcast(event_for[category], value);
       };
 
+      staff_distribution_widget.bind("changeValue", onChangeValue);
+
       highlight_widget.bind("changeCategory", onChangeCategory);
       highlight_widget.bind("changeOption", onChangeOption);
 
       analyze_widget.bind("changeCategory", onChangeCategory);
       analyze_widget.bind("changeOption", onChangeOption);
 
-      staff_distribution_widget.bind("changeValue", onChangeValue);
-
+      staff_distribution_widget.render();
       analyze_widget.render();
       highlight_widget.render();
-      staff_distribution_widget.render();
 
       el.append(
+        staff_distribution_widget.el,
         analyze_widget.el,
         highlight_widget.el,
-        staff_distribution_widget.el
       );
     },
     /**
@@ -325,7 +321,7 @@ define([
         '<% _.forEach(sizes, function(size) { %><option value="<%= size %>"><%- size %></option><% }); %>'
       );
       var options = tpl({ sizes: [25, 32, 37, 49, 61, 88] });
-      var selected = DEFAULT_KEYBOARD_SIZE;
+      var selected = DESIRED_KEYBOARD_SIZE;
 
       selectEl.append(options);
       selectEl.find("[value=" + selected + "]").attr("selected", "selected");
@@ -349,8 +345,8 @@ define([
       var tpl = _.template(
         '<% _.forEach(adjustments, function(adj) { %><option value="<%= adj %>"><%- adj %></option><% }); %>'
       );
-      var options = tpl({ adjustments: [-2, -1, 0, 1, 2] });
-      var selected = DEFAULT_OCTAVE_ADJUSTMENT;
+      var options = tpl({ adjustments: [-1, 0, 1, 2, 3] });
+      var selected = DESIRED_KEYBOARD_OCTAVES_OFFSET;
 
       selectEl.append(options);
       selectEl.find("[value=" + selected + "]").attr("selected", "selected");

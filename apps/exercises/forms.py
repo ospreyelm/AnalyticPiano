@@ -267,12 +267,12 @@ class ExerciseForm(forms.ModelForm):
     )
 
     DISTRIBUTION_KEYBOARD = "keyboard"
+    DISTRIBUTION_KEYBOARD_LH_PREFERENCE = "keyboardPlusLHBias"
+    DISTRIBUTION_KEYBOARD_RH_PREFERENCE = "keyboardPlusRHBias"
     DISTRIBUTION_CHORALE = "chorale"
     DISTRIBUTION_GRANDSTAFF = "grandStaff"
     DISTRIBUTION_LH = "LH"
     DISTRIBUTION_RH = "RH"
-    DISTRIBUTION_KEYBOARD_RH_PREFERENCE = "keyboardPlusRHBias"
-    DISTRIBUTION_KEYBOARD_LH_PREFERENCE = "keyboardPlusLHBias"
 
     DISTRIBUTION_CHOICES = (
         (DISTRIBUTION_KEYBOARD, "Keyboard* or break solo lines at B4, C4"),

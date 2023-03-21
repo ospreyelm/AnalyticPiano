@@ -40,7 +40,7 @@ class AddSupervisorForm(BaseSupervisionForm):
 
 
 class AddSubscriberForm(BaseSupervisionForm):
-    email = forms.EmailField(label="Send invitation to:")
+    email = forms.EmailField(label="Email:")
 
 
 class RemoveSubscriptionConfirmationForm(forms.Form):
@@ -59,23 +59,38 @@ class RemoveSubscriptionConfirmationForm(forms.Form):
 
 class KeyboardForm(forms.Form):
     keyboard_size = forms.ChoiceField(
-        widget=forms.Select(), choices=KEYBOARD_CHOICES, initial=DEFAULT_KEYBOARD_SIZE
+        widget=forms.Select(),
+        choices=KEYBOARD_CHOICES,
+        initial=DEFAULT_KEYBOARD_SIZE, # irrelevant due to default user preferences
     )
 
-    auto_advance = forms.BooleanField(required=False, initial=False)
+    keyboard_octaves_offset = forms.IntegerField(
+        widget=forms.NumberInput(attrs={"step": 1, "max": 3, "min": -1}),
+        initial=0, # irrelevant due to default user preferences
+        # when this value is +3, the top 13 keys of an 88-key piano will not work
+        # minimum is set to -1 because -2 and lower cause a misrendering of the 88-key piano
+    )
+
+    auto_advance = forms.BooleanField(
+        required=False,
+        initial=False,  # irrelevant due to default user preferences
+    )
 
     auto_advance_delay = forms.IntegerField(
         widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
         label_suffix=" in seconds:",
-        initial=4,
+        initial=2, # irrelevant due to default user preferences
     )
 
-    auto_repeat = forms.BooleanField(required=False, initial=False)
+    auto_repeat = forms.BooleanField(
+        required=False,
+        initial=False, # irrelevant due to default user preferences
+    )
 
     auto_repeat_delay = forms.IntegerField(
         widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
         label_suffix=" in seconds:",
-        initial=6,
+        initial=2, # irrelevant due to default user preferences
     )
 
     def __init__(self, *args, **kwargs):

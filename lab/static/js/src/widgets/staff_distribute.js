@@ -37,6 +37,17 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
     this.init();
   };
 
+  var staff_distribution_labels = {
+    // compare dashboard
+    "keyboard": "Keyboard* or break solo lines at B4, C4",
+    "keyboardPlusLHBias": "Keyboard* or break solo lines above F4",
+    "keyboardPlusRHBias": "Keyboard* or break solo lines below G3",
+    "chorale": "Chorale or break solo lines at B4, C4",
+    "grandStaff": "Break at B4, C4",
+    "LH": "Lower staff only, legible through G4",
+    "RH": "Upper staff only, legible through F3",
+  }
+
   _.extend(StaffDistributionWidget.prototype, {
     templateHTML:
       [
@@ -49,11 +60,15 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
           '<li><label><input type="checkbox" name="staff_distribution" value="',
           opt,
           '"> ',
-          opt,
+          staff_distribution_labels[opt],
           "</label></li>",
         ].join("")
       ).join("") +
-      ["</ul>", "</fieldset>"].join(""),
+      [
+        "</ul>",
+        "<p>*SAT no lower than G3, bass no higher than F3</p>",
+        "</fieldset>"
+      ].join(""),
     init: function () {
       this.initListeners();
     },

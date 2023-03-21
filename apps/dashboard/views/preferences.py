@@ -12,6 +12,12 @@ def dashboard_preferences_view(request):
     kbd_size_form.fields["keyboard_size"].initial = request.user.preferences[
         "keyboard_size"
     ]
+    try:
+        kbd_size_form.fields["keyboard_octaves_offset"].initial = request.user.preferences[
+            "keyboard_octaves_offset"
+        ]
+    except:
+        kbd_size_form.fields["keyboard_octaves_offset"].initial = 0
     kbd_size_form.fields["auto_advance"].initial = request.user.preferences[
         "auto_advance"
     ]
@@ -30,6 +36,9 @@ def dashboard_preferences_view(request):
         if kbd_size_form.is_valid():
             request.user.preferences["keyboard_size"] = kbd_size_form.cleaned_data[
                 "keyboard_size"
+            ]
+            request.user.preferences["keyboard_octaves_offset"] = kbd_size_form.cleaned_data[
+                "keyboard_octaves_offset"
             ]
             request.user.preferences["auto_advance"] = kbd_size_form.cleaned_data[
                 "auto_advance"

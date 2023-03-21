@@ -24,8 +24,8 @@ class SupervisorsTable(tables.Table):
     #     attrs={"td": {"width": "250px"}},
     #     verbose_name="Name of User",
     # )
-    supervisor = tables.columns.Column(
-        attrs={"td": {"width": "250px"}}, verbose_name="Email Address of User"
+    email = tables.columns.Column(
+        attrs={"td": {"width": "250px"}}, verbose_name="Email address", accessor=A("supervisor.email")
     )
     status = tables.columns.Column(empty_values=())
 
@@ -52,8 +52,8 @@ class SupervisorsTable(tables.Table):
     remove = tables.columns.LinkColumn(
         "dashboard:unsubscribe-confirmation",
         kwargs={"supervisor_id": A("supervisor.id")},
-        text="Remove",
-        verbose_name="Remove",
+        text="Disconnect",
+        verbose_name="Disconnect",
         orderable=False,
     )
 
@@ -112,13 +112,17 @@ class SubscribersTable(tables.Table):
     email = tables.columns.Column(
         accessor=A("subscriber.email"),
         attrs={"td": {"width": "250px"}},
-        verbose_name="Email Address of User",
+        verbose_name="Email address",
     )
-    performances = tables.columns.LinkColumn(
-        "dashboard:subscriber-performances",
-        text="View Performances",
-        kwargs={"subscriber_id": A("subscriber.id")},
+    signup_date = tables.columns.Column(
+        accessor=A("subscriber.date_joined"), verbose_name="Signup Date"
     )
+    # DO NOT ACTIVATE THIS LINK UNTIL PERMISSIONS PROPERLY WRITTEN
+    # performances = tables.columns.LinkColumn(
+    #     "dashboard:subscriber-performances",
+    #     text="View Performances",
+    #     kwargs={"subscriber_id": A("subscriber.id")},
+    # )
     status = tables.columns.Column(empty_values=())
     accept = tables.columns.LinkColumn(
         "dashboard:accept-subscription",
@@ -143,14 +147,11 @@ class SubscribersTable(tables.Table):
     remove = tables.columns.LinkColumn(
         "dashboard:remove-subscriber-confirmation",
         kwargs={"subscriber_id": A("subscriber.id")},
-        text="Remove",
-        verbose_name="Remove",
+        text="Disconnect",
+        verbose_name="Disconnect",
         orderable=False,
     )
 
-    signup_date = tables.columns.Column(
-        accessor=A("subscriber.date_joined"), verbose_name="Signup Date"
-    )
 
     def render_status(self, record):
         return record["subscriber"]._supervisors_dict[str(self.request.user.id)]
@@ -232,12 +233,12 @@ class MyActivityTable(tables.Table):
         verbose_name="Navigation",
         orderable=False,
     )
-    updated = tables.columns.DateColumn(
-        verbose_name="Latest activity",
-        format="Y_m_d (D) H:i",  # "Y_m_d • D"
-    )
     created = tables.columns.DateColumn(
         verbose_name="Earliest activity",
+        format="Y_m_d (D) H:i",  # "Y_m_d • D"
+    )
+    updated = tables.columns.DateColumn(
+        verbose_name="Latest activity",
         format="Y_m_d (D) H:i",  # "Y_m_d • D"
     )
     # USEFUL FOR INSTRUCTOR VIEWS YET TO BE ADDED
@@ -358,7 +359,7 @@ class MyActivityDetailsTable(tables.Table):
 class ExercisesListTable(tables.Table):
     id = tables.columns.Column()
     description = tables.columns.Column(
-        verbose_name="Description of Exercise",
+        verbose_name="Exercise description",
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
     )
     view = tables.columns.LinkColumn(
@@ -378,13 +379,6 @@ class ExercisesListTable(tables.Table):
         orderable=False,
     )
 
-    delete = tables.columns.LinkColumn(
-        "dashboard:delete-exercise",
-        kwargs={"exercise_id": A("id")},
-        text="Delete",
-        verbose_name="Delete",
-        orderable=False,
-    )
     created = tables.columns.DateColumn(
         verbose_name="Created",
         format="Y-m-d • h:i A",
@@ -394,6 +388,13 @@ class ExercisesListTable(tables.Table):
         format="Y-m-d • h:i A",
     )
     is_public = tables.columns.BooleanColumn()
+    delete = tables.columns.LinkColumn(
+        "dashboard:delete-exercise",
+        kwargs={"exercise_id": A("id")},
+        text="Delete",
+        verbose_name="Delete",
+        orderable=False,
+    )
 
     def render_edit(self, record):
         if not record.has_been_performed:
@@ -469,21 +470,21 @@ class PlaylistsListTable(tables.Table):
 
 
 class CoursesListTable(tables.Table):
+    course_id = tables.columns.Column(
+        verbose_name="C-ID",
+        accessor=A("id"),
+    )
     view = tables.columns.LinkColumn(
         # text="List of Playlists", # formerly
         "lab:course-view",
         kwargs={"course_id": A("id")},
-        accessor=A("id"),
-        verbose_name="C-ID",
-    )
-    # course_id = tables.columns.Column(
-    #     verbose_name="C-ID",
-    #     accessor=A("id"),
-    # )
-    course_name = tables.columns.Column(
         verbose_name="Course name",
         accessor=A("title"),
     )
+    # course_name = tables.columns.Column(
+    #     verbose_name="Course name",
+    #     accessor=A("title"),
+    # )
     activity = tables.columns.LinkColumn(
         "dashboard:course-activity",
         kwargs={"course_id": A("id")},
@@ -529,23 +530,26 @@ class CoursesListTable(tables.Table):
     class Meta:
         attrs = {"class": "paleblue"}
         table_pagination = False
-        order_by = "-id"
+        order_by = "-course_id"
         template_name = "django_tables2/bootstrap4.html"
 
 
 class AvailableCoursesTable(tables.Table):
-    title = tables.columns.Column(
-        verbose_name="Title of Course",
-    )
-    view = tables.columns.LinkColumn(
-        "lab:course-view",
-        kwargs={"course_id": A("id")},
-        text="List of Playlists",
-        verbose_name="List of Playlists",
-        orderable=False,
+    course_id = tables.columns.Column(
+        verbose_name="C-ID",
+        accessor=A("id"),
     )
     authored_by = tables.columns.Column()
-    id = tables.columns.Column()
+    view = tables.columns.LinkColumn(
+        # text="List of Playlists", # formerly
+        "lab:course-view",
+        kwargs={"course_id": A("id")},
+        verbose_name="Course name",
+        accessor=A("title"),
+    )
+    # title = tables.columns.Column(
+    #     verbose_name="Course name",
+    # )
 
     # created = tables.columns.DateColumn(
     #     verbose_name='Created',
@@ -560,7 +564,7 @@ class AvailableCoursesTable(tables.Table):
     class Meta:
         attrs = {"class": "paleblue"}
         table_pagination = False
-        order_by = ("authored_by", "title")
+        order_by = ("authored_by", "view")
         template_name = "django_tables2/bootstrap4.html"
 
 
@@ -690,8 +694,10 @@ class CourseActivityTable(tables.Table):
 
 class GroupsListTable(tables.Table):
     name = tables.columns.Column()
-    members = tables.columns.Column(accessor=A("members_count"))
-
+    members = tables.columns.Column(
+        accessor=A("members_count"),
+        verbose_name="Members",
+    )
     edit = tables.columns.LinkColumn(
         "dashboard:edit-group",
         kwargs={"group_id": A("id")},
@@ -699,15 +705,6 @@ class GroupsListTable(tables.Table):
         verbose_name="Edit",
         orderable=False,
     )
-
-    delete = tables.columns.LinkColumn(
-        "dashboard:delete-group",
-        kwargs={"group_id": A("id")},
-        text="Delete",
-        verbose_name="Delete",
-        orderable=False,
-    )
-
     created = tables.columns.DateColumn(
         verbose_name="Created",
         format="Y-m-d • h:i A",
@@ -715,6 +712,13 @@ class GroupsListTable(tables.Table):
     updated = tables.columns.DateColumn(
         verbose_name="Modified",
         format="Y-m-d • h:i A",
+    )
+    delete = tables.columns.LinkColumn(
+        "dashboard:delete-group",
+        kwargs={"group_id": A("id")},
+        text="Delete",
+        verbose_name="Delete",
+        orderable=False,
     )
 
     class Meta:
@@ -732,7 +736,7 @@ class GroupMembersTable(tables.Table):
     member_email = tables.columns.Column(
         accessor=A("member.email"),
         attrs={"td": {"width": "250px"}},
-        verbose_name="Email Address of User",
+        verbose_name="Email address",
     )
     subscription_status = tables.columns.Column(
         empty_values=(), verbose_name="Subscription Status"
@@ -741,8 +745,8 @@ class GroupMembersTable(tables.Table):
     remove = tables.columns.LinkColumn(
         "dashboard:remove-group-member",
         kwargs={"group_id": A("group_id"), "member_id": A("member.id")},
-        text="Remove",
-        verbose_name="Remove",
+        text="Disconnect",
+        verbose_name="Disconnect",
         orderable=False,
     )
 

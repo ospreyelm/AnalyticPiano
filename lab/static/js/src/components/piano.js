@@ -17,12 +17,8 @@ define([
   PedalsComponent,
   ToolbarComponent
 ) {
-  /**
-   * Defines the default keyboard size.
-   * @type {number}
-   * @const
-   */
   var DESIRED_KEYBOARD_SIZE = Config.get("general.defaultKeyboardSize");
+  var DESIRED_KEYBOARD_OCTAVES_OFFSET = 0;
 
   /**
    * ajax call to GET the keyboard size
@@ -42,11 +38,10 @@ define([
          * console.log(JSON.parse(response.instance)); */
         var sticky_settings = JSON.parse(response.instance);
         DESIRED_KEYBOARD_SIZE = sticky_settings.keyboard_size;
+        DESIRED_KEYBOARD_OCTAVES_OFFSET = sticky_settings.keyboard_octaves_offset;
       }
     },
   });
-
-  var DESIRED_OCTAVE_ADJUSTMENT = Config.get("general.defaultOctaveAdjustment");
 
   /**
    * Creates a PianoComponent
@@ -62,7 +57,7 @@ define([
     var toolbarConfig = { metronome: false };
     var keyboardConfig = {
       numberOfKeys: DESIRED_KEYBOARD_SIZE,
-      octaveAdjustment: DESIRED_OCTAVE_ADJUSTMENT,
+      octaveAdjustment: DESIRED_KEYBOARD_OCTAVES_OFFSET,
     };
     var toolbarEnabled = true;
     var pedalsEnabled = true;

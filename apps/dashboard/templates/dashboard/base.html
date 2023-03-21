@@ -22,6 +22,7 @@
             <p class="sidenav-header">AnalyticPiano</p>
             <p class="sidenav-user-badge">Logged&nbsp;in&nbsp;as&nbsp;{{ user.email }}</p>
             <a {% if url_name == 'index'%}class="sidenav-active"{%endif%} href="{% url 'dashboard:index' %}" >Dashboard Home</a>
+            <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play View</a>
             <a href="{% url 'custom-logout' %}">Log Out</a>
             <p class="sidenav-subhead">CONNECT</p>
             <a {% if url_name == 'subscriptions' %}class="sidenav-active"{% endif %}
@@ -39,7 +40,6 @@
                {% if url_name == 'playlist-performance' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:performed-playlists' %}">My Activity</a>
             <p class="sidenav-subhead">CREATE</p>
-            <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play View (Leave Dashboard)</a>
             <a {% if url_name == 'exercises-list' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:exercises-list' %}">Exercises</a>
             <a {% if url_name == 'playlists-list' %}class="sidenav-active"{% endif %}

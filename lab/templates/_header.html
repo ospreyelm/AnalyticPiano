@@ -3,7 +3,7 @@
     <ul>
         {% if user.is_authenticated %}
             <li>
-                <span id="email">{{ user.email }}</span> • 
+                <span id="play-view-user-badge">{{ user.first_name|slice:1 }}{{ user.last_name|slice:1 }}</span> • 
                 <a href="{% url 'custom-logout' %}">Log Out</a>
             </li>
             <li><a href={% url 'dashboard:index'%}>Dashboard</a></li>
