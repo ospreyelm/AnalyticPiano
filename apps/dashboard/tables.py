@@ -651,6 +651,10 @@ class CourseActivityTable(tables.Table):
             "...",
         ]
 
+    def __init__(self, course, **kwargs):
+        self.course = course
+        super().__init__(**kwargs)
+
     def render_time_elapsed(self, value):
         hours = value // 3600
         minutes = (value // 60) % 60
@@ -676,15 +680,16 @@ class CourseActivityTable(tables.Table):
         )
 
     def render_score(self, record):
-        tardy_credit = 0.8  # should be a variable in the course object
-        late_credit = 0.5  # should be a variable in the course object
+        tardy_credit = self.course.tardy_penalty
+        late_credit = self.course.late_penalty
+        points_per_playlist = self.course.points_per_playlist
         result_count = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
         for (key, value) in record.items():
             if value in result_count:
                 result_count[value] += 1
         score = (
-            result_count["P"]
-            + result_count["C"]
+            result_count["P"] * points_per_playlist
+            + result_count["C"] * points_per_playlist
             + result_count["T"] * tardy_credit
             + result_count["L"] * late_credit
         )

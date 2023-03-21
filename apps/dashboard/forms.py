@@ -271,6 +271,10 @@ class DashboardCourseForm(CourseForm):
             "is_public",
             "open",
             "visible_to",
+            "points_per_playlist",
+            "tardy_penalty",
+            "late_penalty",
+            "tardy_threshold",
             "playlists",
         ]
 
