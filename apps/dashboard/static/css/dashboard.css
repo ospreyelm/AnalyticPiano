@@ -12,8 +12,9 @@ body {
 }
 
 .dashboard-page {
-  padding-bottom:20px;
+  padding-bottom: 20px;
   font-size:12px;
+  max-width: 85em;
 }
 
 .dashboard-page h1 {
