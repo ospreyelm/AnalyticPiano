@@ -1,9 +1,11 @@
 {% extends 'dashboard/base-content-list.html' %}
 
 {% block content %}
+<div class="dashboard-page">
     <h1>{{ course_title }}</h1>
     {% if course_author %}
-        <p>Compiled by {{ course_author }}</p>
+        <p>By {{ course_author }}</p>
     {% endif %}
     {% include 'django_tables2/bootstrap4.html' with table=playlists_table %}
+</div>
 {% endblock %}
