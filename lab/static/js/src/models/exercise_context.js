@@ -176,10 +176,10 @@ define([
       var nextUrl = this.definition.getNextExercise();
 
       graded = this.grader.grade(this.definition, this.inputChords);
-
+      // TODO: What does this do?
       if (this.inputChords._items[0]._notes[109]) {
         // window.console.dir('catch dummy note');
-        state = ExerciseContext.STATE.CORRECT;
+        state = ExerciseContext.STATE.WAITING;
       } else {
         switch (graded.result) {
           case this.grader.STATE.CORRECT:
@@ -234,7 +234,9 @@ define([
         }
       }
 
-      if (this.graded.activeIndex != graded.activeIndex) {
+      // If the activeIndex changes, we have advanced to the next chord
+      //   use || 0 to prevent broadcast when the condition would otherwise be undefined != 0
+      if ((this.graded.activeIndex || 0) != graded.activeIndex) {
         this.exercise.broadcast(EVENTS.BROADCAST.NEXT_CHORD);
       }
       this.graded = graded;

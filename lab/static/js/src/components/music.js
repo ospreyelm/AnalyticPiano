@@ -283,6 +283,8 @@ define([
 
         // rough fix for stuck notes on exercise advance
         this.broadcast(EVENTS.BROADCAST.CLEAR_NOTES);
+        // Prevents issues with chord bank when advancing with sustain on
+        this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "off", "ui");
 
         scex.inputChords.clear();
         scex.inputChords.goTo(0);

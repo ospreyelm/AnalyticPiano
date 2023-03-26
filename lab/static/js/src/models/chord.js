@@ -1,9 +1,9 @@
-define(["lodash", "microevent", "app/config", "app/components/events"], function (
-  _,
-  MicroEvent,
-  Config,
-  EVENTS,
-) {
+define([
+  "lodash",
+  "microevent",
+  "app/config",
+  "app/components/events",
+], function (_, MicroEvent, Config, EVENTS) {
   "use strict";
 
   const VALID_STAFF_DISTRIBUTIONS = Config.get(
@@ -206,8 +206,6 @@ define(["lodash", "microevent", "app/config", "app/components/events"], function
         }
       }
 
-      console.log('cull_from_sustain', cull_from_sustain);
-
       for (i = 0, len = notes.length; i < len; i++) {
         noteNumber = notes[i];
         if (_transpose) {
@@ -364,7 +362,9 @@ define(["lodash", "microevent", "app/config", "app/components/events"], function
       }
 
       try {
-        notes_to_turn_off = notes_to_turn_off.concat(_culled_from_sustain.map(String));
+        notes_to_turn_off = notes_to_turn_off.concat(
+          _culled_from_sustain.map(String)
+        );
       } catch {}
 
       return notes_to_turn_off;

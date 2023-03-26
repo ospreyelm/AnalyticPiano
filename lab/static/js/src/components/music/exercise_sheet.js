@@ -241,7 +241,6 @@ define([
             tpl_data.tempo_mean = exc.getTempoMean();
             tpl_data.tempo_rating = exc.getTempoRating();
           }
-          // $(".playlist-nav-links").css("display", "inline-flex");
           break;
         case exc.STATE.READY:
         default:
