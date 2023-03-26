@@ -12,7 +12,7 @@ define([
   PedalsComponent.prototype = new Component();
 
   PedalsComponent.prototype.initComponent = function () {
-    _.bindAll(this, ["setupPedalEl", "onPedalChange"]);
+    _.bindAll(this, ["setupPedalEl", "onPedalChange", "refreshPedal"]);
 
     this.pedals = {};
     this.pedalNameByIndex = [];
@@ -67,12 +67,30 @@ define([
       pedal.toggle();
       component.broadcast(EVENTS.BROADCAST.PEDAL, name, pedal.state, "ui");
     });
+    if (name == "sustain") {
+      this.subscribe(
+        EVENTS.BROADCAST.NEXT_CHORD,
+        this.refreshPedal.bind(this, name)
+      );
+    }
   };
 
   PedalsComponent.prototype.onPedalChange = function (pedal, state) {
+    console.log("pedalchange");
     var p = this.pedals[pedal];
     if (p) {
       p.toggle(state);
+    }
+  };
+
+  // Toggles off the pedal designated by pedalName, then toggles it back on
+  // Currently just used to maintain sustain after completing a chord
+  PedalsComponent.prototype.refreshPedal = function (pedalName) {
+    if (this.pedals[pedalName].state == "on") {
+      _.delay(() => {
+        this.broadcast(EVENTS.BROADCAST.PEDAL, pedalName, "off", "ui");
+        this.broadcast(EVENTS.BROADCAST.PEDAL, pedalName, "on", "ui");
+      }, 750);
     }
   };
 

@@ -38,7 +38,8 @@ define([
          * console.log(JSON.parse(response.instance)); */
         var sticky_settings = JSON.parse(response.instance);
         DESIRED_KEYBOARD_SIZE = sticky_settings.keyboard_size;
-        DESIRED_KEYBOARD_OCTAVES_OFFSET = sticky_settings.keyboard_octaves_offset;
+        DESIRED_KEYBOARD_OCTAVES_OFFSET =
+          sticky_settings.keyboard_octaves_offset;
       }
     },
   });

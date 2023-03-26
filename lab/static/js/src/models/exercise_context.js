@@ -234,6 +234,9 @@ define([
         }
       }
 
+      if (this.graded.activeIndex != graded.activeIndex) {
+        this.exercise.broadcast(EVENTS.BROADCAST.NEXT_CHORD);
+      }
       this.graded = graded;
       this.state = state;
 
