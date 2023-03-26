@@ -726,7 +726,7 @@ class Course(ClonableModelMixin, BaseContentModel):
     )
 
     tardy_threshold = models.IntegerField(
-        "Late threshold",
+        "Late threshold (hours)",
         default=5 * 24,
         help_text="When performances are submitted after the due date, this threshold determines if they're considered tardy or late. Submissions before this threshold are tardy, submissions after are late.",
         validators=[MinValueValidator(1)],
