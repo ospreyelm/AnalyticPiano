@@ -25,7 +25,9 @@ class SupervisorsTable(tables.Table):
     #     verbose_name="Name of User",
     # )
     email = tables.columns.Column(
-        attrs={"td": {"width": "250px"}}, verbose_name="Email address", accessor=A("supervisor.email")
+        attrs={"td": {"width": "250px"}},
+        verbose_name="Email address",
+        accessor=A("supervisor.email"),
     )
     status = tables.columns.Column(empty_values=())
 
@@ -55,6 +57,9 @@ class SupervisorsTable(tables.Table):
         text="Disconnect",
         verbose_name="Disconnect",
         orderable=False,
+    )
+    signup_date = tables.columns.Column(
+        accessor=A("supervisor.date_joined"), verbose_name="Signup Date"
     )
 
     def render_status(self, record):
@@ -151,7 +156,6 @@ class SubscribersTable(tables.Table):
         verbose_name="Disconnect",
         orderable=False,
     )
-
 
     def render_status(self, record):
         return record["subscriber"]._supervisors_dict[str(self.request.user.id)]
@@ -680,8 +684,8 @@ class CourseActivityTable(tables.Table):
         )
 
     def render_score(self, record):
-        tardy_credit = self.course.tardy_penalty
-        late_credit = self.course.late_penalty
+        tardy_credit = -1 * self.course.tardy_penalty
+        late_credit = -1 * self.course.late_penalty
         points_per_playlist = self.course.points_per_playlist
         result_count = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
         for (key, value) in record.items():

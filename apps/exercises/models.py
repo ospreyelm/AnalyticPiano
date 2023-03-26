@@ -713,22 +713,23 @@ class Course(ClonableModelMixin, BaseContentModel):
     tardy_penalty = models.DecimalField(
         "Tardy penalty",
         default=0.1,
-        decimal_places=3,
-        max_digits=3,
+        decimal_places=1,
+        max_digits=1,
         validators=[MinValueValidator(0)],
     )
     late_penalty = models.DecimalField(
         "Late Penalty",
         default=0.5,
-        decimal_places=3,
-        max_digits=3,
+        decimal_places=1,
+        max_digits=1,
         validators=[MinValueValidator(0)],
     )
 
     tardy_threshold = models.IntegerField(
-        "Tardiness threshold (hours)",
+        "Late threshold",
         default=5 * 24,
         help_text="When performances are submitted after the due date, this threshold determines if they're considered tardy or late. Submissions before this threshold are tardy, submissions after are late.",
+        validators=[MinValueValidator(1)],
     )
 
     class Meta:
