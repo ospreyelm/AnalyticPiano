@@ -9,7 +9,6 @@ from apps.accounts.views import (
 from apps.exercises.views import (
     playlist_performance_view,
     submit_exercise_performance,
-    submit_playlist_performance,
 )
 
 from .views import (
@@ -52,7 +51,6 @@ urlpatterns = [
     ),
     path(
         "ajax/playlist-performance/",
-        submit_playlist_performance,
         name="playlist-performance",
     ),
     # Exercises, Playlists, Courses

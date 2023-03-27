@@ -113,27 +113,3 @@ def submit_exercise_performance(request):
         data=performance_data,
     )
     return HttpResponse(status=201)
-
-
-@login_required
-@method_decorator(csrf_exempt)
-def submit_playlist_performance(request):
-    # IS THIS OBSOLETE?
-    user_id = request.user.id if request.user.is_authenticated else None
-    performance_data = json.loads(request.POST.get("data"))
-
-    data_playlist_id = performance_data["playlist_ID"]
-
-    # This shouldn't require a lookup but only a format conversion
-    # between integers (0 thru 1,757,599) and strings (A00AA thru Z99ZZ)
-    playlist_id = Playlist.objects.get(name=data_playlist_id)._id
-
-    # Intercept this meaningless prop from being written to the database
-    performance_data.pop("exercise_num")
-
-    PerformanceData.submit_playlist_performance(
-        user_id=user_id,  # integer
-        playlist_id=playlist_id,  # integer
-        data=performance_data,
-    )
-    return HttpResponse(status=201)
