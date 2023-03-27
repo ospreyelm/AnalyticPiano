@@ -60,9 +60,9 @@ def playlist_performance_view(request, playlist_id):
                 **{
                     exercise[
                         "id"
-                    ]: f'{"Error(s) " if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "Pass "}'
-                    f'{"" if ((isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) or not exercise["exercise_mean_tempo"]) else round(exercise["exercise_mean_tempo"])}'
-                    f'{"" if (isinstance(exercise["exercise_error_tally"], int) and exercise["exercise_error_tally"] > 0) else "*" * round(exercise["exercise_tempo_rating"])} '
+                    ]: f'{"Error(s) " if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0) else "Pass "}'
+                    f'{"" if ((isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0) or not exercise["tempo_mean_semibreves_per_min"]) else round(exercise["tempo_mean_semibreves_per_min"])}'
+                    f'{"" if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0) else "*" * round(exercise["tempo_rating"])} '
                 }
             )
             for exercise in exercises_data
@@ -95,41 +95,21 @@ def submit_exercise_performance(request):
     # Convoluted procedure because the Playlist object is not imported to exercise_context.js
     # so the accuracy of this database write depends on the playlist not having changed since
     # the call of compileExerciseReport
-    exercise_id = Playlist.objects.filter(id=data_playlist_id).first()\
-        .get_exercise_obj_by_num(int(data_exercise_num)).id
+    exercise_id = (
+        Playlist.objects.filter(id=data_playlist_id)
+        .first()
+        .get_exercise_obj_by_num(int(data_exercise_num))
+        .id
+    )
 
     # Intercept this meaningless prop from being written to the database
     performance_data.pop("exercise_num")
 
     PerformanceData.submit(
-        user_id = user_id, # integer
-        course_id = course_id, # integer
-        playlist_id = playlist_id, # integer
-        exercise_id = exercise_id, # string
-        data = performance_data,
-    )
-    return HttpResponse(status=201)
-
-
-@login_required
-@method_decorator(csrf_exempt)
-def submit_playlist_performance(request):
-    # IS THIS OBSOLETE?
-    user_id = request.user.id if request.user.is_authenticated else None
-    performance_data = json.loads(request.POST.get("data"))
-
-    data_playlist_id = performance_data["playlist_ID"]
-
-    # This shouldn't require a lookup but only a format conversion
-    # between integers (0 thru 1,757,599) and strings (A00AA thru Z99ZZ)
-    playlist_id = Playlist.objects.get(name=data_playlist_id)._id
-
-    # Intercept this meaningless prop from being written to the database
-    performance_data.pop("exercise_num")
-
-    PerformanceData.submit_playlist_performance(
-        user_id = user_id, # integer
-        playlist_id = playlist_id, # integer
-        data = performance_data,
+        user_id=user_id,  # integer
+        course_id=course_id,  # integer
+        playlist_id=playlist_id,  # integer
+        exercise_id=exercise_id,  # string
+        data=performance_data,
     )
     return HttpResponse(status=201)

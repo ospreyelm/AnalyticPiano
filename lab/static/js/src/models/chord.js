@@ -1,8 +1,9 @@
-define(["lodash", "microevent", "app/config"], function (
-  _,
-  MicroEvent,
-  Config
-) {
+define([
+  "lodash",
+  "microevent",
+  "app/config",
+  "app/components/events",
+], function (_, MicroEvent, Config, EVENTS) {
   "use strict";
 
   const VALID_STAFF_DISTRIBUTIONS = Config.get(
@@ -92,6 +93,7 @@ define(["lodash", "microevent", "app/config"], function (
        * @protected
        */
       this._sustained = {};
+      this._culled_from_sustain = [];
       /**
        * Transpose value expressed as the number of semitones.
        * @type {number}
@@ -124,6 +126,7 @@ define(["lodash", "microevent", "app/config"], function (
     clear: function () {
       this._notes = {};
       this._sustained = {};
+      this._culled_from_sustain = [];
       this.trigger("clear");
     },
     /**
@@ -190,6 +193,7 @@ define(["lodash", "microevent", "app/config"], function (
       var changed = false;
       var _transpose = this._transpose;
       var _sustain = this._sustain;
+      var cull_from_sustain = false;
 
       // make sure the argument is an array of note numbers
       if (typeof notes === "number") {
@@ -197,8 +201,8 @@ define(["lodash", "microevent", "app/config"], function (
       } else if (!_.isArray(notes) && typeof notes === "object") {
         noteObj = notes;
         notes = noteObj.notes;
-        if (noteObj.hasOwnProperty("overrideSustain")) {
-          _sustain = noteObj.overrideSustain ? false : _sustain;
+        if (noteObj.hasOwnProperty("cullFromSustain")) {
+          cull_from_sustain = noteObj.cullFromSustain === true;
         }
       }
 
@@ -209,7 +213,13 @@ define(["lodash", "microevent", "app/config"], function (
         }
         if (_sustain) {
           this._sustained[noteNumber] = false;
-        } else {
+          if (cull_from_sustain) {
+            this._culled_from_sustain.push(noteNumber);
+            // TO DO!
+            // Use broadcast / events to relay to Tone.js that midi note [noteNumber] should be turned off
+          }
+        }
+        if (!_sustain || cull_from_sustain) {
           if (!changed) {
             changed = this._notes[noteNumber] === true;
           }
@@ -285,7 +295,8 @@ define(["lodash", "microevent", "app/config"], function (
      */
     syncSustainedNotes: function (prev_notes = false, prev_sustained = false) {
       var _notes = this._notes;
-      var _sustained = this._sustained;
+      let _sustained = this._sustained;
+      let _culled_from_sustain = this._culled_from_sustain;
       var changed = false;
 
       let notes_to_turn_off = [];
@@ -319,35 +330,42 @@ define(["lodash", "microevent", "app/config"], function (
       }
 
       // if (prev_notes && prev_sustained) {
-      // 	_.each(prev_sustained, function(state, noteNumber) {
-      // 		if(prev_notes[noteNumber] !== state) {
-      // 			if(state === false) {
-      // 				notes_to_turn_off.push(noteNumber);
-      // 			}
-      // 			// DO NOT EDIT prev_notes (as _notes above)
-      // 			// Breaks exercise grading
-      // 			changed = true;
-      // 		}
-      // 	}, this);
+      //  _.each(prev_sustained, function(state, noteNumber) {
+      //    if(prev_notes[noteNumber] !== state) {
+      //      if(state === false) {
+      //        notes_to_turn_off.push(noteNumber);
+      //      }
+      //      // DO NOT EDIT prev_notes (as _notes above)
+      //      // Breaks exercise grading
+      //      changed = true;
+      //    }
+      //  }, this);
       // }
 
       // if (prev_notes) {
-      // 	// this is too lenient
-      // 	_.each(prev_notes, function(state, noteNumber) {
-      // 		console.log(state, noteNumber, _sustained[noteNumber]);
-      // 		if(_sustained[noteNumber] !== undefined && _sustained[noteNumber] === false && state === false) {
-      // 			notes_to_turn_off.push(noteNumber);
-      // 			_notes[noteNumber] = false;
-      // 			changed = true;
-      // 		}
-      // 	}, this);
+      //  // this is too lenient
+      //  _.each(prev_notes, function(state, noteNumber) {
+      //    console.log(state, noteNumber, _sustained[noteNumber]);
+      //    if(_sustained[noteNumber] !== undefined && _sustained[noteNumber] === false && state === false) {
+      //      notes_to_turn_off.push(noteNumber);
+      //      _notes[noteNumber] = false;
+      //      changed = true;
+      //    }
+      //  }, this);
       // }
 
       this._sustained = {};
+      this._culled_from_sustain = [];
 
       if (changed) {
         this.trigger("change");
       }
+
+      try {
+        notes_to_turn_off = notes_to_turn_off.concat(
+          _culled_from_sustain.map(String)
+        );
+      } catch {}
 
       return notes_to_turn_off;
     },
@@ -430,6 +448,7 @@ define(["lodash", "microevent", "app/config"], function (
     copyNotes: function (chord) {
       this._notes = _.cloneDeep(chord._notes);
       this._sustained = _.cloneDeep(chord._sustained);
+      this._culled_from_sustain = _.cloneDeep(chord._culled_from_sustain);
     },
     /**
      * Copies the chord.

@@ -147,13 +147,15 @@ define([
       var exc = this.exerciseContext;
       var definition = exc.getDefinition();
       var $statusEl = $("#exercise-status-and-tempo");
-      var tpl = _.template(
+      var $passedEl = $("#passed-status");
+      var statusTpl = _.template(
         // not called: time_to_complete and more
-        `<p><span class="exercise-status" style="background-color:<%= status_color %>"><%= status_text %></span></p>
+        `<p><span id="exercise-status" class="status-pill" style="background-color:<%= status_color %>"><%= status_text %></span></p>
                 <% if (typeof(tempo_mean) !== "undefined" && tempo_mean != "" && typeof(tempo_rating) !== "undefined" && typeof(tempo_display_factor) !== "undefined") { %>
                     <p>Tempo&nbsp;<%= ["", "erratic", "unsteady", "steady", "very&nbsp;steady", "perfectly&nbsp;steady"][tempo_rating.length] %> at <%= Math.round(tempo_mean * tempo_display_factor) %>&nbsp;b.p.m.</p>
                 <% } %>`
       );
+      var passedTpl = `<span class="status-pill" id="exercise-passed-status">Exercise Passed</span>`;
       // the tempo verbiage above should match what is separately coded for my activity
       var html = "";
       var tpl_data = {};
@@ -176,7 +178,7 @@ define([
         color: "#FFB700",
       };
       status_map[exc.STATE.CORRECT] = {
-        text: "Well done",
+        text: "Passed",
         color: "#4C9900",
       };
 
@@ -193,6 +195,15 @@ define([
       tpl_data.status_color = status_map[exc.state].color;
 
       $(".playlist-nav-links").css("display", "none");
+      if (
+        $("#playlist-passed-status").length == 0 &&
+        definition.settings.definition.exerciseIsPerformed &&
+        definition.settings.definition.exerciseErrorCount == 0
+      ) {
+        $passedEl.html(passedTpl);
+      } else {
+        $("#exercise-passed-status").hide();
+      }
       switch (exc.state) {
         case exc.STATE.CORRECT:
           if (exc.hasTimer()) {
@@ -230,14 +241,13 @@ define([
             tpl_data.tempo_mean = exc.getTempoMean();
             tpl_data.tempo_rating = exc.getTempoRating();
           }
-          // $(".playlist-nav-links").css("display", "inline-flex");
           break;
         case exc.STATE.READY:
         default:
           break;
       }
 
-      html = tpl(tpl_data);
+      html = statusTpl(tpl_data);
       $statusEl.html(html);
       return this;
     },
@@ -456,12 +466,16 @@ define([
       let bankSize = CHORD_BANK_SIZE;
       try {
         const custom_chord_bank_size = parseInt(this.getSemibrevesPerLine());
-        if (typeof custom_chord_bank_size === 'number' && custom_chord_bank_size > 0) {
+        if (
+          typeof custom_chord_bank_size === "number" &&
+          custom_chord_bank_size > 0
+        ) {
           bankSize = custom_chord_bank_size;
         }
-      }
-      catch {
-        console.log('Failed to retrieve getSemibrevesPerLine property from Exercise definion.')
+      } catch {
+        console.log(
+          "Failed to retrieve getSemibrevesPerLine property from Exercise definion."
+        );
       }
       var display_items = this.getDisplayChords().items({
         limit: limit,

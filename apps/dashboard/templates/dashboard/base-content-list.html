@@ -13,32 +13,44 @@
     <div class="dashboard-page">
         {% if subscriber_name %}
             <h1>My Activity</h1>
-            <p>Activity report for {{ subscriber_name }} - these are your most recently attempted playlists.</p>
+            <p class="dashboard-tip">Review your most recent activity, organized by playlist.</p>
         {% endif %}
         {% if courses_author %}
-            <h1>My Courses</h1>
-            <p>Courses authored by {{ courses_author }}</p>
+            {% if courses_author == me %}
+                <h1>Create Courses</h1>
+            {% else %}
+                <p>Courses authored by {{ courses_author }}</p>
+            {% endif %}
         {% endif %}
         {% if playlists_author %}
-            <h1>My Playlists</h1>
-            <p>Playlists authored by {{ playlists_author }}</p>
+            {% if playlists_author == me %}
+                <h1>Create Playlists</h1>
+            {% else %}
+                <p>Playlists authored by {{ playlists_author }}</p>
+            {% endif %}
         {% endif %}
         {% if exercises_author %}
-            <h1>My Exercises</h1>
-            <p>Exercises authored by {{ exercises_author }}</p>
+            {% if exercises_author == me %}
+                <h1>Create Exercises</h1>
+            {% else %}
+                <p>Exercises authored by {{ exercises_author }}</p>
+            {% endif %}
         {% endif %}
-        {#% TODO: no longer works because of course_slug use %#}
         {% if course_name %}
             <h1>Course Activity</h1>
             <p>Activity report for course: {{ course_name }}</p>
         {% endif %}
         {% if groups_author %}
-            <h1>Manage performer groups</h1>
-            <p>Groups for user: {{ groups_author }}</p>
+            {% if groups_author == me %}
+                <h1>Manage Performer Groups</h1>
+            {% else %}
+                <p>Groups for user: {{ groups_author }}</p>
+            {% endif %}
         {% endif %}
+        {% block add-button %}
+        {% endblock %}
         {% block filters %}{% endblock %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
     </div>
-    {% block add-button %}
-    {% endblock %}
+    
 {% endblock content %}

@@ -10,6 +10,7 @@ define({
   BROADCAST: {
     PEDAL: "pedal",
     NOTE: "note",
+    NEXT_CHORD: "nextchord",
     CLEAR_NOTES: "clearnotes",
     BANK_NOTES: "banknotes",
     HIGHLIGHT_NOTES: "notation:highlight",

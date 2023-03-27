@@ -10,8 +10,8 @@ from django.utils.translation import gettext_lazy as _
 from apps.accounts.managers import UserManager
 from apps.accounts.utils import generate_raw_password
 
-# Possible Keyboard Choices
 DEFAULT_KEYBOARD_SIZE = 49
+# Supported keyboard choices
 KEYBOARD_CHOICES = (
     (25, _("25")),
     (32, _("32")),
@@ -21,7 +21,10 @@ KEYBOARD_CHOICES = (
     (88, _("88")),
 )
 
+DEFAULT_KEYBOARD_OCTAVES_OFFSET = 0
+
 DEFAULT_VOLUME = "mf"
+# Supported volume choices
 VOLUME_CHOICES = (
     ("pp", _("pp")),
     ("p", _("p")),
@@ -35,6 +38,7 @@ VOLUME_CHOICES = (
 def get_preferences_default():
     return {
         "keyboard_size": DEFAULT_KEYBOARD_SIZE,
+        "keyboard_octaves_offset": DEFAULT_KEYBOARD_OCTAVES_OFFSET,
         "volume": DEFAULT_VOLUME,
         "mute": False,
         "auto_advance": True,
@@ -56,31 +60,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         _("Last Name"), max_length=32, unique=False, default="", blank=True
     )
 
-    # # FIXME remove this field after 0008 migration is applied
-    # _supervisors = ArrayField(
-    #     base_field=models.IntegerField(),
-    #     default=list,
-    #     verbose_name="Supervisors",
-    #     blank=True,
-    # )
-
     SUPERVISOR_STATUS_ACCEPTED = "Accepted"
     SUPERVISOR_STATUS_DECLINED = "Declined"
-    SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = "Pending"
-    SUPERVISOR_STATUS_INVITATION_WAIT = "Pending Invitation"
+    SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = "Waiting"
+    SUPERVISOR_STATUS_INVITATION_WAIT = "Waiting"
     # TODO: change to M2M field
     _supervisors_dict = JSONField(default=dict, verbose_name="Supervisors", blank=True)
-
-    # # FIXME remove these fields after 0011 migration is applied
-    # auto_advance = models.BooleanField(default=False)
-    # auto_repeat = models.BooleanField(default=False)
-    # auto_advance_delay = models.PositiveIntegerField(default=4)
-    # auto_repeat_delay = models.PositiveIntegerField(default=6)
-
-    # # FIXME remove this field after 0008 migration is applied
-    # keyboard_size = models.IntegerField(
-    #     choices=KEYBOARD_CHOICES, default=DEFAULT_KEYBOARD_SIZE
-    # )
 
     preferences = JSONField(
         default=get_preferences_default, verbose_name="Preferences", blank=True
@@ -202,8 +187,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Group(models.Model):
     name = models.CharField(
-        "Name",
+        "Group name",
         max_length=128,
+        # unique?
     )
     members = models.ManyToManyField(
         to=User,

@@ -114,10 +114,10 @@ define([
   AppExerciseComponent.prototype.getComponentMethods = function () {
     var methods = [
       // function () {
-      // 	var c = new NotificationsComponent();
-      // 	c.init(this);
-      // 	c.renderTo("#notifications", "#notificationAlerts");
-      // 	this.addComponent(c);
+      //  var c = new NotificationsComponent();
+      //  c.init(this);
+      //  c.renderTo("#notifications", "#notificationAlerts");
+      //  this.addComponent(c);
       // },
       function () {
         var c = new PianoComponent({

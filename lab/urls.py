@@ -9,7 +9,6 @@ from apps.accounts.views import (
 from apps.exercises.views import (
     playlist_performance_view,
     submit_exercise_performance,
-    submit_playlist_performance,
 )
 
 from .views import (
@@ -50,11 +49,6 @@ urlpatterns = [
         submit_exercise_performance,
         name="exercise-performance",
     ),
-    path(
-        "ajax/playlist-performance/",
-        submit_playlist_performance,
-        name="playlist-performance",
-    ),
     # Exercises, Playlists, Courses
     path("exercises/<str:exercise_id>/", ExerciseView.as_view(), name="exercise-view"),
     path(
@@ -63,7 +57,17 @@ urlpatterns = [
         name="refresh-definition",
     ),
     path(
+        "playlists/<str:playlist_id>/<int:exercise_num>/definition/",
+        RefreshExerciseDefinition.as_view(),
+        name="refresh-definition",
+    ),
+    path(
         "playlists/<str:course_id>/<str:playlist_id>/definition/",
+        RefreshExerciseDefinition.as_view(),
+        name="refresh-definition",
+    ),
+    path(
+        "playlists/<str:course_id>/<str:playlist_id>/<int:exercise_num>/definition/",
         RefreshExerciseDefinition.as_view(),
         name="refresh-definition",
     ),

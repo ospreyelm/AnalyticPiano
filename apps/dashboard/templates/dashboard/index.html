@@ -6,11 +6,33 @@
 {% endblock %}
 
 {% block content %}
-<h1 margin-top="20px">Dashboard</h1>
+<div class="dashboard-page">
+<h1 margin-top="20px">Dashboard Home</h1>
 <div class="column-container">
+    <div class="nav-column">
+        <h2>Connect</h2>
+        <div class="link-container">
+            <div class="nav-link">
+                <a href={% url 'dashboard:subscriptions'%} > Connect with Creators </a>
+                <span>Enroll in courses by other users</span>
+            </div>
+            <div class="nav-link">
+                <a href={% url 'dashboard:subscribers' %}> Connect with Performers </a>
+                <span>Enroll other users in your courses</span>
+            </div>
+            <div class="nav-link">
+                <a href={% url 'dashboard:groups-list' %}> Manage Performer Groups </a>
+                <span>Organize your enrollees into groups</span>
+            </div>
+        </div>
+    </div>
     <div class="nav-column">
         <h2>Practice</h2>
         <div class="link-container">
+            <div class="nav-link">
+                <a href={% url 'dashboard:preferences' %}> Settings </a>
+                <span>Customize how the app looks and behaves when you perform playlists</span>
+            </div>
             <div class="nav-link">
                 <a href={% url 'dashboard:performed-playlists'%} > My Activity </a>
                 <span>View your performance history</span>
@@ -19,45 +41,25 @@
                 <a href={% url 'dashboard:subscriptions-courses' %}> Available Courses </a>
                 <span>Browse courses by users to whom you are connected</span>
             </div>
-            <div class="nav-link">
-                <a href={% url 'dashboard:preferences' %}> Settings </a>
-                <span>Customize how the app looks and behaves when you perform playlists</span>
-            </div>
-        </div>
-    </div>
-    <div class="nav-column">
-        <h2>Connect</h2>
-        <div class="link-container">
-            <div class="nav-link">
-                <a href={% url 'dashboard:subscriptions'%} > Connect with creators </a>
-                <span>Enroll in courses by other users</span>
-            </div>
-            <div class="nav-link">
-                <a href={% url 'dashboard:subscribers' %}> Connect with performers </a>
-                <span>Enroll other users in your courses</span>
-            </div>
-            <div class="nav-link">
-                <a href={% url 'dashboard:groups-list' %}> Manage performer groups </a>
-                <span>Organize your enrollees into groups</span>
-            </div>
         </div>
     </div>
     <div class="nav-column">
         <h2>Create</h2>
         <div class="link-container">
             <div class="nav-link">
-                <a href={% url 'dashboard:courses-list'%} > Courses</a>
-                <span>Create or edit courses and see the progress of your enrollees</span>
+                <a href={% url 'dashboard:exercises-list' %}> Exercises </a>
+                <span>Create and edit exercises</span>
             </div>
             <div class="nav-link">
                 <a href={% url 'dashboard:playlists-list' %}> Playlists </a>
-                <span>Create and manage your playlists</span>
+                <span>Create and edit playlists</span>
             </div>
             <div class="nav-link">
-                <a href={% url 'dashboard:exercises-list' %}> Exercises </a>
-                <span>Create and manage your exercises</span>
+                <a href={% url 'dashboard:courses-list'%} > Courses</a>
+                <span>Create and edit courses, and see the progress of your enrollees</span>
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}

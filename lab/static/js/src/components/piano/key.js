@@ -124,9 +124,9 @@ define(["lodash", "app/components/component"], function (_, Component) {
     setSustain: function (state) {
       if (state) {
         this.sustain = SUSTAIN_ON;
-        if (this.isPressed()) {
-          this.sustain = SUSTAIN_ON;
-        }
+        // if (this.isPressed()) {
+        //   this.sustain = SUSTAIN_ON;
+        // }
       } else {
         this.sustain = SUSTAIN_OFF;
         if (this.isReleased()) {
@@ -225,21 +225,15 @@ define(["lodash", "app/components/component"], function (_, Component) {
      * @return {boolean}
      */
     onPress: function (e) {
-      switch (e.which) {
-        // Handle right click
-        case 3:
-          e.preventDefault();
-          e.stopPropagation();
-          break;
-        // Handle left click and default for others
-        case 2:
-        case 1:
-        default:
-          if (this.isReleased()) {
-            this.press();
-            this.triggerKey(this.state, this.noteNumber);
-          }
-          break;
+      // Handles ctrl-clicking for laptops without right-click option
+      if (e.which == 3 || (e.which == 1 && e.ctrlKey)) {
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (e.which == 1) {
+        if (this.isReleased()) {
+          this.press();
+          this.triggerKey(this.state, this.noteNumber);
+        }
       }
       return false;
     },
@@ -253,31 +247,22 @@ define(["lodash", "app/components/component"], function (_, Component) {
      */
     onRelease: function (e) {
       var sustain_cached;
-      switch (e.which) {
-        // Handle right click
-        case 3:
-          sustain_cached = this.sustain;
-          this.setSustain(false);
-          this.release();
-          this.triggerKey(this.state, this.noteNumber, {
-            overrideSustain: true,
-          });
-          this.setSustain(sustain_cached);
+      if (e.which == 3 || (e.which == 1 && e.ctrlKey)) {
+        sustain_cached = this.sustain;
+        this.setSustain(false);
+        this.release(); // no useful impact when using mouse
+        this.triggerKey(this.state, this.noteNumber, {
+          cullFromSustain: sustain_cached == SUSTAIN_ON,
+        });
+        this.setSustain(sustain_cached);
 
-          e.preventDefault();
-          e.stopPropagation();
-          break;
-        // Handle left click and default for others
-        case 2:
-        case 1:
-        default:
-          if (this.isPressed()) {
-            this.release();
-            this.triggerKey(this.state, this.noteNumber, {
-              overrideSustain: false,
-            });
-          }
-          break;
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (e.which == 1) {
+        if (this.isPressed()) {
+          this.release();
+          this.triggerKey(this.state, this.noteNumber);
+        }
       }
       return false;
     },

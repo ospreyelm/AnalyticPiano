@@ -2,8 +2,8 @@
 
 {% block content %}
     <div class="dashboard-page">
-        <h1>Connect with creators</h1>
-        <p>Subscribe to other users (at no cost) in order to access their content and let them review your progress on content that they created.<br>Your subscription will appear in the table below once approved by the other user.</p>
+        <h1>Connect with Creators</h1>
+        <p class="dashboard-tip">Access other users’ content and allow them to see your progress on that content. Type their email adddress and click Add. You must wait for them to accept the connection; then you can see their courses via Available Courses.</p>
         <form method="post" novalidate>
             {% csrf_token %}
             {% include 'dashboard/bs4_form.html' with form=form %}

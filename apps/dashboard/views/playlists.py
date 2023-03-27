@@ -15,18 +15,19 @@ from .m2m_view import handle_m2m
 
 @login_required
 def playlists_list_view(request):
-    playlists = Playlist.objects.filter(authored_by=request.user).select_related(
+    playlists_author = request.user
+    playlists = Playlist.objects.filter(authored_by=playlists_author).select_related(
         "authored_by"
     )
+    me = request.user
 
     table = PlaylistsListTable(playlists)
-    playlists_author = request.user
 
     RequestConfig(request, paginate={"per_page": 50}).configure(table)
     return render(
         request,
         "dashboard/playlists-list.html",
-        {"table": table, "playlists_author": playlists_author},
+        {"table": table, "playlists_author": playlists_author, "me": me},
     )
 
 

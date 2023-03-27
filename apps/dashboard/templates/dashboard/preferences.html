@@ -5,6 +5,7 @@
 {% block content %}
     <div class="dashboard-page">
         <h1>Settings</h1>
+        <p class="dashboard-tip">You may also adjust the volume (pp through ff) and toggle the mute control in Play View; those settings persist when you navigate away or log out.</p>
         <form method="POST" class="post-form">
             {% csrf_token %}
             {{ form.as_p }}

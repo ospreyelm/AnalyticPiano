@@ -5,16 +5,7 @@ define([
   "app/components/events",
   "app/components/component",
   "app/models/key_signature",
-  "./music/play_sheet",
-], function (
-  $,
-  _,
-  Config,
-  EVENTS,
-  Component,
-  KeySignature,
-  PlainSheetComponent
-) {
+], function ($, _, Config, EVENTS, Component, KeySignature) {
   /**
    * This is a map of analysis modes to booleans indicating whether the mode
    * is enabled or disabled by default.
@@ -234,7 +225,6 @@ define([
             dataType: "json",
             success: function (data) {
               if (setdef.settings.definition.nextExerciseId) {
-                // console.log(data);
                 newData = data;
               }
             },
@@ -293,11 +283,22 @@ define([
 
         // rough fix for stuck notes on exercise advance
         this.broadcast(EVENTS.BROADCAST.CLEAR_NOTES);
+        // Prevents issues with chord bank when advancing with sustain on
+        this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "off", "ui");
 
         scex.inputChords.clear();
         scex.inputChords.goTo(0);
         sheetComponent.barlines = [];
         this.settings.sheet.barlines = [];
+
+        // TODO: work in progress code to enable URL to change dynamically with exercise without refreshing
+        //   postponed because of wide range of intersections/conflicts with Django's view features
+        if (!!newData?.exerciseNum) {
+          const newPath = location.pathname.split("/").slice(0, -2);
+          newPath.push(newData.exerciseNum);
+          newPath.push("");
+          window.history.replaceState("", "", newPath.join("/"));
+        }
 
         if (Object.keys(newData).length) {
           scex.definition.exercise = scex.definition.parse(newData);

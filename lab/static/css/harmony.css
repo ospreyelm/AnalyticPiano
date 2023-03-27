@@ -134,6 +134,7 @@ body,
     overflow: hidden;
     overflow-y:auto;*/
 }
+
 .content-area,
 button,
 input,
@@ -173,10 +174,12 @@ textarea {
 #helpmenu {
   display: none;
   position: absolute;
-  right: 1rem;
+  padding: 1rem auto;
+  width: 100%;
   z-index: 100;
-  margin: 1rem auto;
-  text-align: left;
+  margin: 0;
+  margin-top: 320px;
+  text-align: center;
   padding: 1rem;
   line-height: 1.2rem;
 }
@@ -215,13 +218,19 @@ textarea {
   padding-right: 1.5rem;
 }
 .header .js-keysignature-widget {
-  padding-left: 0rem;
-  padding-right: 2rem;
+  padding-left: 2rem;
+  padding-right: 0rem;
+  float: right;
 }
 .header .js-btn-menu {
   padding-left: 2rem;
   padding-right: 0rem;
   float: right;
+}
+.header-second-row .js-btn-menu {
+  padding-left: 0rem;
+  padding-right: 2rem;
+  float: left;
 }
 .header .js-btn-help,
 .tip {
@@ -234,12 +243,14 @@ textarea {
   padding-right: 0rem;
   float: right;
 }
-.header .audio-controls button {
+
+.simple-button {
   border: 1px solid #555;
   /*background-color: #eee;*/
   border-radius: 3px;
   outline: none;
 }
+
 .js-notation-opts-widget .menu-widgets {
   display: inline-block;
   vertical-align: top;
@@ -257,13 +268,13 @@ textarea {
   height: 6px;
   display: inline-block;
 }
-#email {
+#play-view-user-badge {
   display: inline-block;
-  width: 8rem;
+/*  width: 8rem;*/
   vertical-align: bottom;
   overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
+/*  text-overflow: ellipsis;*/
   padding: 0px;
   margin: 0px;
 }
@@ -363,6 +374,15 @@ fieldset.settings-notation {
   border-radius: 6px;
   text-align: left;
 }
+
+.instruction-panel-header {
+  display: inline-flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
 .instruction-panel-col {
   display: inline-block;
   vertical-align: top;
@@ -374,9 +394,21 @@ fieldset.settings-notation {
   margin-right: 1rem;
 }
 .instruction-panel-col2 {
-  width: 29rem;
-  margin-right: 1rem;
+  /* margin-right: 1rem; */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
+#exercise-text {
+  width: 29rem;
+}
+
+.instruction-panel-content {
+  width: 100%;
+  display: inline-flex;
+}
+
 .instruction-panel-col3 {
   width: 5.5rem;
 }
@@ -391,13 +423,29 @@ fieldset.settings-notation {
 }
 #exercise-status-and-tempo {
 }
-.exercise-status {
+
+.status-pill {
   font-size: 0.9rem;
-  padding: 4px 6px 2px 6px;
+  padding: 4px 6px;
   margin: 0;
   text-transform: uppercase;
   color: #fff;
   border-radius: 6px;
+}
+
+#passed-status > .status-pill {
+  font-size: 0.75rem;
+}
+
+#playlist-passed-status {
+  background-color: #539f53;
+}
+
+#exercise-passed-status {
+  background-color: #91c391;
+}
+
+#exercise-status {
   background-color: black;
 }
 
@@ -406,7 +454,12 @@ fieldset.settings-notation {
   display: inline-flex;
   gap: 8px;
   color: var(--link-color);
-  font-weight: bold;
+  /* font-weight: bold; */
+  justify-content: end;
+}
+.playlist-nav-links button {
+  padding: 4px 6px;
+  background-color: white;
 }
 
 /*--------------------------------------------------*/

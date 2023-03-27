@@ -145,9 +145,13 @@ define([
         return null;
       }
       try {
-        var timestamp = new Date().getTime() % this.timer.start; /* milliseconds */
+        var timestamp =
+          new Date().getTime() % this.timer.start; /* milliseconds */
         var idx = this.graded.activeIndex;
-        if (idx == undefined && Object.keys(this.timer.timepoints).length == 0) {
+        if (
+          idx == undefined &&
+          Object.keys(this.timer.timepoints).length == 0
+        ) {
           idx = 0; // necessary for the first exercise of a playlist, unsure why
         }
         if (idx != undefined) {
@@ -155,8 +159,7 @@ define([
           // the last update per idx should occur when the pitches are correct and complete
           this.timer.timepoints[idx] = timestamp;
         }
-      }
-      catch {
+      } catch {
         console.log("makeTimestamp failed");
         return null;
       }
@@ -173,10 +176,10 @@ define([
       var nextUrl = this.definition.getNextExercise();
 
       graded = this.grader.grade(this.definition, this.inputChords);
-
+      // TODO: What does this do?
       if (this.inputChords._items[0]._notes[109]) {
         // window.console.dir('catch dummy note');
-        state = ExerciseContext.STATE.CORRECT;
+        state = ExerciseContext.STATE.WAITING;
       } else {
         switch (graded.result) {
           case this.grader.STATE.CORRECT:
@@ -231,6 +234,11 @@ define([
         }
       }
 
+      // If the activeIndex changes, we have advanced to the next chord
+      //   use || 0 to prevent broadcast when the condition would otherwise be undefined != 0
+      if ((this.graded.activeIndex || 0) != graded.activeIndex) {
+        this.exercise.broadcast(EVENTS.BROADCAST.NEXT_CHORD);
+      }
       this.graded = graded;
       this.state = state;
 
@@ -336,7 +344,8 @@ define([
 
       if (this.timer.start && !this.timer.end) {
         this.timer.end = new Date().getTime(); /* date in milliseconds */
-        this.timer.duration = this.timer.end - this.timer.start; /* duration in milliseconds */
+        this.timer.duration =
+          this.timer.end - this.timer.start; /* duration in milliseconds */
         let seconds = Math.round(this.timer.duration / 1000);
         const minutes = Math.floor(seconds / 60);
         seconds %= 60;
@@ -392,27 +401,30 @@ define([
       this.timer.tempoRating = null;
 
       if (
-        this.timer.timeIntervals.length > 1
+        this.timer.timeIntervals.length > 1 &&
         /* need at least three events to determine tempo consistency */
-        && this.timer.timeIntervals.length == semibreveCount.length
+        this.timer.timeIntervals.length == semibreveCount.length
         /* guard against miscalculations */
       ) {
         var centisemibrevesPerMin = [];
         for (i = 0, len = this.timer.timeIntervals.length; i < len; i++) {
           let spm = Math.round(
-            semibreveCount[i] * 6000000 / this.timer.timeIntervals[i]
+            (semibreveCount[i] * 6000000) / this.timer.timeIntervals[i]
           ); /* centi-semibreves per minute ... yup, because integer math is less troublesome */
           centisemibrevesPerMin.push(spm);
         }
 
-        this.timer.tempoSD = (
-          Math.round(SimpleStatistics.standardDeviation(centisemibrevesPerMin)) / 100
-        ); /* semibreves per minute sensitive to two decimal places */
-        this.timer.tempoMean = (
-          Math.round(SimpleStatistics.mean(centisemibrevesPerMin) / 10) / 10
-        ); /* semibreves per minute sensitive to one decimal place */
-        this.timer.minTempo = Math.round(Math.min(...centisemibrevesPerMin)) / 100;
-        this.timer.maxTempo = Math.round(Math.max(...centisemibrevesPerMin)) / 100;
+        this.timer.tempoSD =
+          Math.round(
+            SimpleStatistics.standardDeviation(centisemibrevesPerMin)
+          ) / 100; /* semibreves per minute sensitive to two decimal places */
+        this.timer.tempoMean =
+          Math.round(SimpleStatistics.mean(centisemibrevesPerMin) / 10) /
+          10; /* semibreves per minute sensitive to one decimal place */
+        this.timer.minTempo =
+          Math.round(Math.min(...centisemibrevesPerMin)) / 100;
+        this.timer.maxTempo =
+          Math.round(Math.max(...centisemibrevesPerMin)) / 100;
 
         /* Tempo star-rating algorithm */
         // TO DO: ADD GRADATIONS BECAUSE SD AS 1/8 OF MEAN IS TOO NARROW FOR TWO STARS
@@ -435,8 +447,7 @@ define([
                     ).toString(2).length - 1 // toString(2) renders a binary number
               )
             ) || 0; // in case calculation fails
-        }
-        catch {
+        } catch {
           /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
           this.timer.tempoRating = 0;
         }
@@ -489,11 +500,15 @@ define([
           /* this.definition.getExerciseList()[idx].id returns e.g. PA00AA/1 */
           course_ID: this.definition.exercise.performing_course, // string
           playlist_ID: this.definition.getExerciseList()[idx].id.split("/")[0], // string
-          exercise_num: parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]),
+          exercise_num: parseInt(
+            this.definition.getExerciseList()[idx].id.split("/")[1]
+          ),
           client_completion_date: new Date(this.timer.end).toJSON(),
           error_tally:
             /* -1 means that errors are not reported (can't recall why not) */
-            ["analytical", "figured_bass"].includes(this.definition.exercise.type)
+            ["analytical", "figured_bass"].includes(
+              this.definition.exercise.type
+            )
               ? -1
               : this.errorTally,
           performance_duration_in_seconds: this.timer.duration / 1000,
@@ -502,33 +517,9 @@ define([
           tempo_SD_semibreves_per_min: this.timer.tempoSD,
           tempo_rating: this.timer.tempoRating,
         };
-      }
-      catch {
+      } catch {
         return null;
       }
-
-      // console.log("new report format", report);
-
-      // DELETE
-      var report = {
-        // old
-        course_ID: this.definition.exercise.performing_course || null, // string
-        playlist_ID:
-          this.definition.getExerciseList()[idx].id.split("/")[0] || null, // string
-        exercise_num:
-          parseInt(this.definition.getExerciseList()[idx].id.split("/")[1]) ||
-          null,
-        time: new Date().toJSON().slice(0, 16) || false,
-        timezone: timezone_str || false,
-        exercise_error_tally:
-          /* -1 means that errors are not reported (can't recall why not) */
-          ["analytical", "figured_bass"].includes(this.definition.exercise.type)
-            ? -1
-            : this.errorTally,
-        exercise_duration: this.timer.duration / 1000,
-        exercise_mean_tempo: this.timer.tempoMean,
-        exercise_tempo_rating: this.timer.tempoRating,
-      };
 
       return report;
     },

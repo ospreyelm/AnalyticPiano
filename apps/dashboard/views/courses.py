@@ -34,18 +34,19 @@ from apps.accounts.models import Group
 
 @login_required
 def courses_list_view(request):
-    courses = Course.objects.filter(authored_by=request.user).select_related(
+    courses_author = request.user
+    courses = Course.objects.filter(authored_by=courses_author).select_related(
         "authored_by"
     )
+    me = request.user
 
     table = CoursesListTable(courses)
-    courses_author = request.user
 
     RequestConfig(request, paginate={"per_page": 50}).configure(table)
     return render(
         request,
         "dashboard/courses-list.html",
-        {"table": table, "courses_author": courses_author},
+        {"table": table, "courses_author": courses_author, "me": me},
     )
 
 
@@ -420,6 +421,7 @@ def course_activity_view(request, course_id):
     )
 
     table = CourseActivityTable(
+        course=course,
         data=relevant_data.values(),
         extra_columns=[
             (

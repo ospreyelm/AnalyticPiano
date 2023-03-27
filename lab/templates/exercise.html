@@ -38,18 +38,24 @@
 				<div id="instruction-panel">
 					
 					<div class="instruction-panel">
-						<h4 style="margin-bottom:6px">{% if playlist_name %}{{playlist_name}} // {% else %}{% endif %}{% if course_name %}{{course_name}}{% else %}PREVIEW</br><span style="font-weight:normal">No performance data will be saved</span>{% endif %}</h4>
-						<div class="instruction-panel-col instruction-panel-col1">
-							<div id="exercise-info"></div>
-							<div id="exercise-status-and-tempo"></div>
+						<div class="instruction-panel-header">
+							<div><h4>{% if playlist_name %}{{playlist_name}} // {% else %}{% endif %}{% if course_name %}{{course_name}}{% else %}PREVIEW</br><span style="font-weight:normal">No performance data will be saved</span>{% endif %}</h4></div>
+							<div id="passed-status">{% if playlist_previously_passed %}<span class="status-pill" id="playlist-passed-status">Playlist Passed</span>{% endif %}</div>
 						</div>
-						<div class="instruction-panel-col instruction-panel-col2" id="exercise-text">
-						</div>
-						<div class="instruction-panel-col instruction-panel-col3">
-						</div>
-						<div class="playlist-nav-links" style="display:none">
-							<div>{% if course_link %}<a href="{{course_link}}"> Return to Course </a>{% endif %}</div>
-							<div>{% if next_playlist_link %}<a href="{{next_playlist_link}}">Next Playlist</a>{% endif %}</div>
+						<div class="instruction-panel-content">
+							<div class="instruction-panel-col instruction-panel-col1">
+								<div id="exercise-info"></div>
+								<div id="exercise-status-and-tempo"></div>
+							</div>
+							<div class="instruction-panel-col instruction-panel-col2">
+								<div id="exercise-text">
+			
+								</div>
+								<div class="playlist-nav-links" style="display:none">
+									<div>{% if course_link %}<a href="{{course_link}}" ><button class="simple-button"> Return to Course </button></a>{% endif %}</div>
+									<div>{% if next_playlist_link %}<a href="{{next_playlist_link}}"> <button class="simple-button">Next Playlist</button></a>{% endif %}</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>

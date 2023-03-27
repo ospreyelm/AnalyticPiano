@@ -125,13 +125,15 @@ class PlayView(RequirejsTemplateView):
     #     return context
 
 
+# TODO lots of repeated code between PlaylistView and RefreshExerciseDefinition.
+#   Could be fixed thru some sort of inheritance or thru making the refresh request after rendering PlaylistView
 class PlaylistView(RequirejsView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
     def get(
-        self, request, playlist_id, course_id=None, exercise_num=1, *args, **kwargs
+        self, request, playlist_id, course_id=None, exercise_num=None, *args, **kwargs
     ):
         playlist = Playlist.objects.filter(id=playlist_id).first()
         if playlist is None:
@@ -141,6 +143,21 @@ class PlaylistView(RequirejsView):
             playlist.authored_by
         ):
             raise PermissionDenied
+
+        # Prevents "None" in URL by redirecting to view without course_id in URL
+        if type(course_id) == str and course_id == "None":
+            return redirect(
+                "lab:playlist-view", playlist_id=playlist_id, exercise_num=exercise_num
+            )
+
+        # Ensures that exercise-num is always in URL
+        if exercise_num == None:
+            return redirect(
+                "lab:playlist-view",
+                playlist_id=playlist_id,
+                course_id=course_id,
+                exercise_num=1,
+            )
 
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if exercise is None:
@@ -177,20 +194,8 @@ class PlaylistView(RequirejsView):
                 )
             )
 
-        exercise_is_performed = False
-        exercise_error_count = 0
-        playlist_performance = PerformanceData.objects.filter(
-            playlist=playlist, user=request.user
-        ).last()
-        if playlist_performance:
-            exercise_is_performed = playlist_performance.exercise_is_performed(
-                exercise.id
-            )
-            exercise_error_count = playlist_performance.exercise_error_count(
-                exercise.id
-            )
-
         course_performed = None
+        playlist_previously_passed = False
         if course_id:
             course_performed = Course.objects.filter(id=course_id).first()
             if course_performed:
@@ -199,6 +204,27 @@ class PlaylistView(RequirejsView):
                     "lab:course-view", kwargs={"course_id": course_id}
                 )
                 context["course_link"] = course_link
+                if (
+                    course_performed.performance_dict.get(str(request.user), {}).get(
+                        playlist_id, "X"
+                    )
+                ) != "X":
+                    playlist_previously_passed = True
+
+        context["playlist_previously_passed"] = playlist_previously_passed
+
+        exercise_is_performed = False
+        exercise_error_count = 0
+        playlist_performance = PerformanceData.objects.filter(
+            playlist=playlist, user=request.user, course=course_performed
+        ).last()
+        if playlist_performance:
+            exercise_is_performed = playlist_performance.exercise_is_performed(
+                exercise.id
+            )
+            exercise_error_count = playlist_performance.exercise_error_count(
+                exercise.id
+            )
 
         next_playlist = None
         # Finding the next playlist in the case that this playlist was accessed from within a course
@@ -305,6 +331,20 @@ class RefreshExerciseDefinition(RequirejsView):
         if course_id:
             course_performed = Course.objects.get(id=course_id)
 
+        # TODO: what is the current functionality of this?
+        exercise_is_performed = False
+        exercise_error_count = 0
+        playlist_performance = PerformanceData.objects.filter(
+            playlist=playlist, user=request.user, course=course_performed
+        ).last()
+        if playlist_performance:
+            exercise_is_performed = playlist_performance.exercise_is_performed(
+                exercise.id
+            )
+            exercise_error_count = playlist_performance.exercise_error_count(
+                exercise.id
+            )
+
         exercise_context.update(exercise.data)
         exercise_context.update(
             {
@@ -318,6 +358,8 @@ class RefreshExerciseDefinition(RequirejsView):
                 "exerciseList": exercise_list,
                 "exerciseId": exercise.id,
                 "exerciseNum": exercise_num,
+                "exerciseIsPerformed": exercise_is_performed,
+                "exerciseErrorCount": exercise_error_count,
                 "playlistName": playlist.id,
                 "courseId": course_performed.id if course_performed else None,
             }
