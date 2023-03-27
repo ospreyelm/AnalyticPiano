@@ -49,10 +49,6 @@ urlpatterns = [
         submit_exercise_performance,
         name="exercise-performance",
     ),
-    path(
-        "ajax/playlist-performance/",
-        name="playlist-performance",
-    ),
     # Exercises, Playlists, Courses
     path("exercises/<str:exercise_id>/", ExerciseView.as_view(), name="exercise-view"),
     path(
