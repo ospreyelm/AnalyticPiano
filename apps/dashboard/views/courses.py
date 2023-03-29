@@ -120,52 +120,12 @@ def course_edit_view(request, course_id):
     if request.user != course.authored_by:
         raise PermissionDenied
 
-    playlists_list = list(
-        map(parse_pco, PlaylistCourseOrdered.objects.filter(course_id=course._id))
-    )
-    playlists_list.sort(key=lambda pco: pco["order"])
-
-    groups_list = list(map(parse_group, course.visible_to.all()))
-
-    playlists_options = list(
-        filter(
-            lambda p: p not in course.playlists.all(),
-            Playlist.objects.filter(
-                Q(authored_by_id=request.user.id) | Q(is_public=True)
-            ),
-        )
-    )
-
-    playlists_options.sort(
-        key=lambda p: (
-            "1" + str(p.authored_by_id)
-            if (p.authored_by_id != request.user.id)
-            else "0",
-            p.name if (p.authored_by_id != request.user.id) else -p._id,
-        ),
-        reverse=False,
-    )
-
-    groups_options = list(
-        filter(
-            lambda g: g not in course.visible_to.all(),
-            list(Group.objects.filter(manager_id=course.authored_by_id)),
-        )
-    )
-
-    groups_options.sort(key=lambda g: g.name)
-
     context = {
         "verbose_name": course._meta.verbose_name,
         "verbose_name_plural": course._meta.verbose_name_plural,
         "has_been_performed": course.has_been_performed,
         "redirect_url": reverse("dashboard:courses-list"),
         "editing": True,
-        "m2m_added": {
-            "playlists": playlists_list,
-            "visible_to": groups_list,
-        },
-        "m2m_options": {"playlists": playlists_options, "visible_to": groups_options},
         "user": request.user,
     }
 
@@ -175,64 +135,6 @@ def course_edit_view(request, course_id):
         )
         if form.is_valid():
             course = form.save(commit=False)
-            added_playlist_id = request.POST.get("playlists_add")
-            if added_playlist_id != "":
-                course.playlists.add(
-                    Playlist.objects.get(id=added_playlist_id),
-                    through_defaults={"order": len(course.playlists.all()) + 1},
-                )
-            added_group_id = request.POST.get("visible_to_add")
-            if added_group_id != "":
-                course.visible_to.add(Group.objects.get(id=added_group_id))
-            due_dates = request.POST.getlist("playlists_due_date")
-            publish_dates = request.POST.getlist("playlists_publish_date")
-            for i in range(0, len(playlists_list)):
-                current_pco = PlaylistCourseOrdered.objects.get(
-                    _id=playlists_list[i]["through_id"]
-                )
-                if due_dates[i] != "":
-                    current_pco.due_date = datetime.datetime.strptime(
-                        due_dates[i], "%Y-%m-%d"
-                    ).astimezone(pytz.timezone(settings.TIME_ZONE))
-                    # due dates are input here by course authors and should be interpreted
-                    # as 23:59:59 in terms of their own or their institution's timezone
-                    current_pco.due_date = current_pco.due_date.replace(
-                        hour=23, minute=59, second=59
-                    )
-                if publish_dates[i] != "":
-                    current_pco.publish_date = datetime.datetime.strptime(
-                        publish_dates[i], "%Y-%m-%d"
-                    ).astimezone(pytz.timezone(settings.TIME_ZONE))
-                    # publish dates are input here by course authors and should be interpreted
-                    # as 00:00:00 in terms of their own or their institution's timezone
-                current_pco.save()
-            handle_m2m(
-                request,
-                "playlists",
-                {"course_id": course._id},
-                "playlist_id",
-                list(
-                    map(
-                        lambda p: Playlist.objects.get(_id=p["id"]),
-                        playlists_list,
-                    )
-                ),
-                ThroughModel=PlaylistCourseOrdered,
-            )
-            handle_m2m(
-                request,
-                "visible_to",
-                {"course_id": course._id},
-                "group_id",
-                list(
-                    map(
-                        lambda g: Group.objects.get(id=g["id"]),
-                        groups_list,
-                    )
-                ),
-                parent_instance=course,
-                ChildModel=Group,
-            )
             course.authored_by = request.user
             course.save()
 

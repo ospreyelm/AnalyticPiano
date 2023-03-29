@@ -78,25 +78,10 @@ def group_edit_view(request, group_id):
     if request.user != group.manager:
         raise PermissionDenied
 
-    members_list = list(map(parse_member, group.members.all()))
-
-    members_options = list(
-        filter(
-            lambda u: u not in group.members.all() and u in request.user.subscribers,
-            User.objects.all(),
-        )
-    )
-
-    members_options.sort(key=lambda u: u.email)
-
     context = {
         "verbose_name": Group._meta.verbose_name,
         "verbose_name_plural": Group._meta.verbose_name_plural,
         "editing": True,
-        "m2m_added": {"members": members_list},
-        "m2m_options": {
-            "members": members_options,
-        },
     }
 
     if request.method == "POST":
@@ -106,24 +91,6 @@ def group_edit_view(request, group_id):
         form.context = {"user": request.user}
         if form.is_valid():
             group = form.save(commit=False)
-            added_member_id = request.POST.get("members_add")
-
-            if added_member_id != "":
-                group.members.add(User.objects.get(id=added_member_id))
-            handle_m2m(
-                request,
-                "members",
-                {"group_id": group.id},
-                "user_id",
-                list(
-                    map(
-                        lambda u: User.objects.get(id=u["id"]),
-                        members_list,
-                    )
-                ),
-                parent_instance=group,
-                ChildModel=User,
-            )
             group.save()
             if "save-and-continue" in request.POST:
                 success_url = reverse(

@@ -1,9 +1,11 @@
+import json
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.forms import JSONField
 from django.core.validators import FileExtensionValidator
 from prettyjson import PrettyJSONWidget
 from django.db.models import Q, Prefetch
+from django.forms.models import ModelMultipleChoiceField
 
 
 from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE, Group
@@ -234,7 +236,7 @@ class CustomTransposeWidget(forms.MultiWidget):
 #   value_attr: the attribute of the model used as its value within the form
 
 
-class ManyWidget(forms.widgets.ChoiceWidget):
+class ManyWidget(forms.widgets.SelectMultiple):
     template_name = "../templates/dashboard/manywidget.html"
     option_template_name = "../templates/dashboard/manywidgetoption.html"
 
@@ -244,7 +246,6 @@ class ManyWidget(forms.widgets.ChoiceWidget):
         super().__init__(attrs)
 
     def format_value(self, value):
-        print("format", value)
         return value
 
     def get_context(self, name, value, attrs):
@@ -253,7 +254,7 @@ class ManyWidget(forms.widgets.ChoiceWidget):
         return context
 
 
-class ManyField(forms.ModelMultipleChoiceField):
+class ManyField(ModelMultipleChoiceField):
     value = None
 
     def __init__(
@@ -271,8 +272,14 @@ class ManyField(forms.ModelMultipleChoiceField):
         self.order_attr = order_attr
         super().__init__(queryset=self.queryset)
 
-    # This function is used for preparing both options and values
+    # This function is used for preparing both options and values, and for translating widget value into a python dict
+    # TODO: this function should not do all of this!! Although it appears it does do all of this within the ModelMultipleChoiceField.
     def prepare_value(self, value):
+        # If the value is being submitted, meaning it came from the JSONified input value
+        if type(value) is str:
+            value = json.loads(value)
+            value = list(map(lambda valuePair: valuePair[0], value))
+            return value
         # this handles list of models for field value
         if type(value) is list:
             return list(
@@ -285,14 +292,13 @@ class ManyField(forms.ModelMultipleChoiceField):
                 )
             )
         # this handles individual models within field options
-        print(value)
         return value.pk
 
     def label_from_instance(self, obj):
         return self.format_title(obj)
 
     def clean(self, value):
-        return super().clean(value)
+        return self.prepare_value(value[0])
 
 
 class DashboardPlaylistForm(PlaylistForm):
@@ -351,31 +357,49 @@ class DashboardPlaylistForm(PlaylistForm):
 
 
 class DashboardCourseForm(CourseForm):
+
+    visible_to = ManyField(
+        widget=ManyWidget(order_input=False),
+    )
+    # playlists = ManyField()
+
     class Meta(CourseForm.Meta):
         fields = [
             "id",
             "title",
             "is_public",
             "open",
-            "visible_to",
             "points_per_playlist",
             "tardy_penalty",
             "late_penalty",
             "tardy_threshold",
+            "visible_to",
             "playlists",
         ]
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super(DashboardCourseForm, self).__init__(*args, **kwargs)
-        self.fields["playlists"].queryset = Playlist.objects.filter(
-            Q(authored_by=user) | Q(is_public=True)
-        )
-        self.fields["playlists"].through_vals = PlaylistCourseOrdered.objects.filter(
-            course=self.instance
-        )
+        # self.fields["playlists"].queryset = Playlist.objects.filter(
+        #     Q(authored_by=user) | Q(is_public=True)
+        # )
+        # self.fields["playlists"].through_vals = PlaylistCourseOrdered.objects.filter(
+        #     course=self.instance
+        # )
+        self.fields["visible_to"].queryset = Group.objects.filter(
+            manager=user
+        ).difference(self.instance.visible_to.all())
 
-    playlists = ManyField()
+    def clean(self):
+        self.cleaned_data["visible_to"] = Group.objects.filter(
+            pk__in=self.cleaned_data["visible_to"]
+        )
+        return super().clean()
+
+    def save(self, commit=True):
+        self.instance.visible_to.set(self.cleaned_data["visible_to"])
+        course = super().save(commit=commit)
+        return course
 
 
 class BaseDashboardGroupForm(forms.ModelForm):
@@ -393,8 +417,15 @@ class BaseDashboardGroupForm(forms.ModelForm):
             self.instance.members.all()
         )
 
+    def clean(self):
+        self.cleaned_data["members"] = User.objects.filter(
+            pk__in=self.cleaned_data["members"]
+        )
+        return super().clean()
+
     def save(self, commit=True):
         self.instance.manager = self.context["user"]
+        self.instance.members.set(self.cleaned_data["members"])
         group = super(BaseDashboardGroupForm, self).save(commit=commit)
         return group
 

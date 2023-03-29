@@ -28,10 +28,13 @@
   background-color: #ccc;
   padding: 4px 12px;
   border-radius: 1;
-  cursor: grab;
   display: inline-flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.block-draggable {
+  cursor: grab;
 }
 
 .widget-value-new {
