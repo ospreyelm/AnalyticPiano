@@ -41,7 +41,7 @@ def group_add_view(request):
     }
 
     if request.method == "POST":
-        form = DashboardGroupAddForm(request.POST)
+        form = DashboardGroupAddForm(request.POST, user=request.user)
         form.context = {"user": request.user}
         if form.is_valid():
             group = form.save()
@@ -61,7 +61,7 @@ def group_add_view(request):
         context["form"] = form
         return render(request, "dashboard/add-group.html", context)
     else:
-        form = DashboardGroupAddForm()
+        form = DashboardGroupAddForm(user=request.user)
 
     context["form"] = form
     return render(request, "dashboard/add-group.html", context)
@@ -100,7 +100,9 @@ def group_edit_view(request, group_id):
     }
 
     if request.method == "POST":
-        form = DashboardGroupEditForm(data=request.POST, instance=group)
+        form = DashboardGroupEditForm(
+            data=request.POST, instance=group, user=request.user
+        )
         form.context = {"user": request.user}
         if form.is_valid():
             group = form.save(commit=False)
@@ -139,7 +141,7 @@ def group_edit_view(request, group_id):
         context["form"] = form
         return render(request, "dashboard/add-group.html", context)
     else:
-        form = DashboardGroupEditForm(instance=group)
+        form = DashboardGroupEditForm(instance=group, user=request.user)
 
     context["form"] = form
     return render(request, "dashboard/add-group.html", context)

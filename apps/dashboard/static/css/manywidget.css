@@ -34,6 +34,10 @@
   align-items: center;
 }
 
+.widget-value-new {
+  background-color: #eee;
+}
+
 .widget-value-remove {
   cursor: pointer;
   width: 2rem;
@@ -47,9 +51,9 @@
 
 .widget-select {
   overflow: scroll;
-  height: 4em;
+  height: 6em;
   background-color: #fff;
-  width: 128px;
+  width: 256px;
 }
 
 .widget-option {

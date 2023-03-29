@@ -1,16 +1,22 @@
 
 {% load static %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <link rel="stylesheet" type="text/css" href="{% static 'css/manywidget.css' %}"/>
 <div class="widget-container">
   {% comment %} Use this hidden input so that Django has a form element at which to get the value {% endcomment %}
   <input name="{{ widget.name }}" style="display:none"/>
   <div class="widget-option-wrapper">
-    <div class="widget-select"{% include "django/forms/widgets/attrs.html" %} >{% for group_name, group_choices, group_index in widget.optgroups %}{% if group_name %}
-      <optgroup label="{{ group_name }}">{% endif %}{% for option in group_choices %}
-      {% include option.template_name with widget=option %}{% endfor %}{% if group_name %}
-      </optgroup>{% endif %}{% endfor %}
-    </div>
+    <select class="widget-select"{% include "django/forms/widgets/attrs.html" %} >
+      {% for group_name, group_choices, group_index in widget.optgroups %}
+        {% if group_name %}<optgroup label="{{ group_name }}">{% endif %}
+          {% for option in group_choices %}
+            {% include option.template_name with widget=option %}
+          {% endfor %}
+        {% if group_name %}</optgroup>{% endif %}
+      {% endfor %}
+    </select>
   </div>
   <div class="widget-value-list">
     <div id="values" class="widget-value-list-inner">
@@ -19,16 +25,19 @@
   </div>
 </div>
 <script>
+  const widgetName = "{{ widget.name }}";
 
   let fieldValue = 
   [{% for value, title in widget.value %}
     ["{{value}}","{{title}}"],
   {% endfor %}]
 
-  const containerElement = $("input[name='{{ widget.name }}']")
+  const valueElement = $(`input[name='${widgetName}']`)
 
-  function generateValueBlock(instanceId, instanceTitle, index) {
-    return `<div class="widget-value-block">
+  const selectElement = $(`.widget-select#id_${widgetName}`)
+
+  function generateValueBlock(instanceId, instanceTitle, isNew, index) {
+    return `<div class="widget-value-block ${isNew ? "widget-value-new" : ""}">
       {% if widget.order_input %}<input type="number" class=widget-value-order value="${index}"></input> {% endif %}
       <div class="widget-value-data" value="${instanceId}" >${instanceTitle}</div>
       <div class="widget-value-remove"> x </div>
@@ -36,22 +45,33 @@
   }
 
   function onFieldValueChange(){
-    console.log(fieldValue)
-    const updatedComponents = fieldValue.map(([instanceId, instanceTitle], index)=>
-      generateValueBlock(instanceId, instanceTitle, index)
+    const updatedComponents = fieldValue.map(([instanceId, instanceTitle, isNew], index)=>
+      generateValueBlock(instanceId, instanceTitle, isNew, index)
     )
     $('.widget-value-list-inner').html(updatedComponents)
-    containerElement.attr("value", JSON.stringify(fieldValue))
+    valueElement.attr("value", JSON.stringify(fieldValue))
   }
-
-
-  
 
   onFieldValueChange()
 
+  // Given a value pair (array formatted [id, text]), finds its index in fieldValues and returns -1 if it's not there
+  function indexOfValue(value){
+    for (let i = 0; i<fieldValue.length;i++){
+      const currValuePair = fieldValue[i]
+      if (currValuePair[0] == value[0]){
+        return i
+      }
+    }
+    return -1;
+  }
+
   function addValue(value){
-    fieldValue.push(value)
-    onFieldValueChange()
+    if (indexOfValue(value) == -1) {
+      fieldValue.push(value)
+      onFieldValueChange()
+    }
+    selectElement.val(null).trigger('change');
+    // TODO: figure out way to hide value from dropdown upon adding it
   }
 
   function removeValue(valueId){
@@ -62,7 +82,6 @@
   // Function from here: https://stackoverflow.com/a/5306832
   function moveValue(old_index, new_index) {
     if (new_index < fieldValue.length && new_index >= 0){
-      console.log(new_index)
       if (new_index >= fieldValue.length) {
         var k = new_index - fieldValue.length + 1;
         while (k--) {
@@ -77,23 +96,42 @@
 
 
   const el = document.getElementById('values');
+  
+  {% if widget.order_input %}
   const sortable = Sortable.create(el, {
     animation:100,
     onEnd:(evt)=>{
       moveValue(evt.oldDraggableIndex, evt.newDraggableIndex)
     }
+  }) 
+  {% endif %}
+
+  selectElement.select2({
+    placeholder:"Select",
+    closeOnSelect:false
   })
 
-  $('.widget-option').click((event)=>{
-    const targetElement = $(event.currentTarget)
-    targetElement.hide()
-    addValue([targetElement.attr("value"), targetElement.text()])
+  // Called when a value is selected
+  selectElement.on("select2:select",(event)=>{
+    const selectedData = event.params.data
+    const selectedValue = selectedData.id
+    const selectedText = selectedData.text
+    addValue([selectedValue, selectedText])  
   })
+
 
   $(document).on("click",".widget-value-remove",((event)=>{
     const targetElement = $(event.currentTarget).siblings(".widget-value-data")
-    removeValue(targetElement.attr("value"))
-    $(`.widget-option[value='${targetElement.attr("value")}']`).show()
+    const removedValue = targetElement.attr("value")
+    const removedText = targetElement.text()
+    removeValue(removedValue)
+    // Adds the removed value back into the options if it's not already there (ie with pre-existing values)
+    if (selectElement.find(`option[value='${removedValue}']`).length == 0) {
+      const newOption = new Option(removedText, removedValue, false, false);
+      selectElement.append(newOption)
+    }
+    
+  
   }))
 
   $(document).on("blur",".widget-value-order",((event)=>{

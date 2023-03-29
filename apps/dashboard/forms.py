@@ -68,12 +68,12 @@ class KeyboardForm(forms.Form):
     keyboard_size = forms.ChoiceField(
         widget=forms.Select(),
         choices=KEYBOARD_CHOICES,
-        initial=DEFAULT_KEYBOARD_SIZE, # irrelevant due to default user preferences
+        initial=DEFAULT_KEYBOARD_SIZE,  # irrelevant due to default user preferences
     )
 
     keyboard_octaves_offset = forms.IntegerField(
         widget=forms.NumberInput(attrs={"step": 1, "max": 3, "min": -1}),
-        initial=0, # irrelevant due to default user preferences
+        initial=0,  # irrelevant due to default user preferences
         # when this value is +3, the top 13 keys of an 88-key piano will not work
         # minimum is set to -1 because -2 and lower cause a misrendering of the 88-key piano
     )
@@ -86,18 +86,18 @@ class KeyboardForm(forms.Form):
     auto_advance_delay = forms.IntegerField(
         widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
         label_suffix=" in seconds:",
-        initial=2, # irrelevant due to default user preferences
+        initial=2,  # irrelevant due to default user preferences
     )
 
     auto_repeat = forms.BooleanField(
         required=False,
-        initial=False, # irrelevant due to default user preferences
+        initial=False,  # irrelevant due to default user preferences
     )
 
     auto_repeat_delay = forms.IntegerField(
         widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
         label_suffix=" in seconds:",
-        initial=2, # irrelevant due to default user preferences
+        initial=2,  # irrelevant due to default user preferences
     )
 
     def __init__(self, *args, **kwargs):
@@ -244,6 +244,7 @@ class ManyWidget(forms.widgets.ChoiceWidget):
         super().__init__(attrs)
 
     def format_value(self, value):
+        print("format", value)
         return value
 
     def get_context(self, name, value, attrs):
@@ -284,13 +285,13 @@ class ManyField(forms.ModelMultipleChoiceField):
                 )
             )
         # this handles individual models within field options
-        return value._id
+        print(value)
+        return value.pk
 
     def label_from_instance(self, obj):
         return self.format_title(obj)
 
     def clean(self, value):
-        print(value)
         return super().clean(value)
 
 
@@ -378,14 +379,19 @@ class DashboardCourseForm(CourseForm):
 
 
 class BaseDashboardGroupForm(forms.ModelForm):
+
+    members = ManyField(widget=ManyWidget(order_input=False))
+
     class Meta:
         model = Group
         fields = ("name", "members")
 
-    custom_m2m_fields = ["members"]
-    custom_m2m_config = {
-        "members": {"ordered": False},
-    }
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
+        super(forms.ModelForm, self).__init__(*args, **kwargs)
+        self.fields["members"].queryset = user.subscribers.difference(
+            self.instance.members.all()
+        )
 
     def save(self, commit=True):
         self.instance.manager = self.context["user"]
