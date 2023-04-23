@@ -23,33 +23,7 @@
     <div style="padding-right:10px" class="{{ field|widget_type }}">
         <div class="form-check form-group form-inline ">
             {{ field.label_tag }}
-            {% if field.name in form.custom_m2m_fields %}
-                {% with m2m_config=form.custom_m2m_config|getattribute:field.name%}
-                <select {{editing|yesno:",disabled"}} name="{{field.name}}_add" style="width:385px; padding:3px; margin-right:5px">
-                  {% if editing %}
-                  <option></option>
-                  {% for model in m2m_options|getattribute:field.name %}
-                  {% with appended_fields=m2m_config|getattribute:"appended_fields" %}
-                  {% with author_field_name=m2m_config|getattribute:"author_field_name" %}
-                  <option value={{model.id}}>{{model}} 
-                    {% if author_field_name and model|getattribute:author_field_name != user %} - by {{model|getattribute:author_field_name|getattribute:"email"}} 
-                    {% endif %} 
-                    {% if appended_fields %}  
-                        {% for appended_field in appended_fields %} 
-                            {% with appended_field_value=model|getattribute:appended_field %}
-                                {% if appended_field_value %} - {{ appended_field_value|truncatechars:40 }} {% endif %} 
-                            {% endwith %}
-                        {% endfor %} 
-                    {% endif %}
-                  </option>
-                  {% endwith %}
-                  {% endwith %}
-                  {% endfor %}
-                  {% endif %}
-                </select>
-                <button {{editing|yesno:",disabled"}} name="save-and-continue" style="width:50px;height:35px">Add</button>
-                {% endwith %}
-            {% elif form.is_bound %}
+            {% if form.is_bound %}
                 {% if field.errors %}
                     {% render_field field|add_class:'form-control' class="is-invalid" %}
                     {% for error in field.errors %}
@@ -68,95 +42,5 @@
                 <small class="form-text text-muted help-text">{{ field.help_text }}</small>
             {% endif %}
         </div>
-        {% if editing and field.name in form.custom_m2m_fields and m2m_added|getattribute:field.name|length != 0 %}
-        {% with m2m_config=form.custom_m2m_config|getattribute:field.name%}
-        {% with field_name=field|getfieldname %}
-        <div class="delete-table-wrapper">
-            <table class="delete-table-inner" style="max-height:960px; display:block; overflow:auto">
-          <tr class="delete-table-row" style="margin-bottom:8px">
-            <th style="min-width:160px">Added {{field_name}}</th>
-            {% if m2m_config.ordered %} 
-            <th width="100px" style="flex-direction:column"> 
-                <div>Order</div> 
-                <div><small></small></div>
-            </th> 
-            {% endif %}
-            {% if m2m_config.extra_fields%}
-                {% for extra_field in m2m_config.extra_fields %}
-                    <th style="flex-direction:column">
-                        <div>{{extra_field.verbose_name}}</div>
-                        <div><small>{{extra_field.help_text}}</small></div>
-                    </th>
-                {% endfor %}
-            {% endif%}
-            <th style="text-align:center; width:80px">Delete</th>
-
-                </tr>
-          {% for model in m2m_added|getattribute:field.name %}
-          <tr class="delete-table-row">
-            <td style="min-width:160px">
-                {% if m2m_config.url and model.url_id != None %}
-            <a href="{% url m2m_config.url model.url_id %}">{{model.name}}</a>
-            {% else %}
-            <span>{{model.name}}</span>
-            {% endif %}
-            </td >
-            {% if m2m_config.ordered %}
-            <td style="min-width:100px">
-            <div style="display:flex; flex-direction:row">
-                <input name="{{field.name}}_order" id="{{model.id}}" value="{{model.order}}" style="width:24px" class="m2m-input" type="number" min="0"/>
-                <div style="display:flex; flex-direction:column">
-                    <span class="m2m-order-up m2m-order" name="{{field.name}}">↑</span>
-                    <span class="m2m-order-down m2m-order" name="{{field.name}}">↓</span>
-                </div>
-            </div>
-        </td>
-            
-            {% endif %}
-            
-            {% if m2m_config.extra_fields%}
-                {% for extra_field in m2m_config.extra_fields %}
-                    {% with field_type=extra_field|getfieldtype %}
-                        {% comment %} This logic currently only works for date and text fields, but more cases could be added to handle other kinds {% endcomment %}
-                        <td>
-                        <input name="{{field.name}}_{{extra_field.name}}" class="{{field_type}}" value="{% if  field_type == 'DateTimeField'%}{{model|getattribute:extra_field.name|stringifydatetime|default_if_none:'T23:59'}}{% else %}{{model|getattribute:extra_field.name}}{% endif %}" type="{% if  field_type == 'DateTimeField'%}date{% else %}text{% endif %}"/>
-                        </td>
-                    {% endwith %}
-                {% endfor %}
-            {% endif %}
-            <td style="text-align:center; width:80px">
-                <input name="{{field.name}}_delete" type="checkbox" value="{{model.id}}"/>
-                </td>
-          </div>
-        </tr>
-          {% endfor%}
-        </table>
-        </div>
-        {% endwith %}
-        {% endwith %}
-        {% endif %}
     </div>
 {% endfor %}
-<script>
-    // Changes the orders and updates the model when an order arrow is clicked
-    $(document).on('click','.m2m-order',function(){
-        const inputElement= $($(this).parent().parent().children().toArray()[0])
-        const arrowClass = $(this).attr('class')
-        if (arrowClass.includes("m2m-order-up")){
-            inputElement.val(Math.max(Number(inputElement.val())-1,0))
-        }
-        else if (arrowClass.includes("m2m-order-down")){
-            inputElement.val(Number(inputElement.val())+1)
-        }
-        $("[name='save-and-continue']").click()
-        $("[name='save-and-continue']").text("Saving order...")
-        $("[name='save-and-continue']").prop("disabled",true);
-    })
-    // Automatically updates the models when a m2m field (e.g. order) changes
-    $(document).on('change','.m2m-input', function(){
-        $("[name='save-and-continue']").click()
-        $("[name='save-and-continue']").text("Saving...")
-        $("[name='save-and-continue']").prop("disabled",true);
-    })
-    
-</script>

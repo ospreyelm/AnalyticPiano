@@ -61,7 +61,6 @@ def course_add_view(request):
         form = DashboardCourseForm(data=request.POST, user=request.user)
         form.context = {"user": request.user}
         if form.is_valid():
-
             course = form.save(commit=False)
             course.authored_by = request.user
             course.save()
@@ -94,27 +93,6 @@ def course_add_view(request):
 
 @login_required
 def course_edit_view(request, course_id):
-    def parse_group(group):
-        return {
-            "name": group.name,
-            "id": group.id,
-            "url_id": group.id if group.manager_id == request.user.id else None,
-        }
-
-    def parse_pco(pco):
-        playlist = pco.playlist
-        return {
-            "name": playlist.name,
-            "id": playlist._id,
-            "order": pco.order,
-            "through_id": pco._id,
-            "due_date": pco.due_date,
-            "publish_date": pco.publish_date,
-            "url_id": playlist.id
-            if playlist.authored_by_id == request.user.id
-            else None,
-        }
-
     course = get_object_or_404(Course, id=course_id)
 
     if request.user != course.authored_by:

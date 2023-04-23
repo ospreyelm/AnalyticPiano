@@ -1,4 +1,6 @@
 import json
+from dateutil import parser
+from datetime import datetime
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.forms import JSONField
@@ -6,6 +8,7 @@ from django.core.validators import FileExtensionValidator
 from prettyjson import PrettyJSONWidget
 from django.db.models import Q, Prefetch
 from django.forms.models import ModelMultipleChoiceField
+from django.core.serializers.json import DjangoJSONEncoder
 
 
 from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE, Group
@@ -229,19 +232,13 @@ class CustomTransposeWidget(forms.MultiWidget):
         return text + (" " + added if not added in text else "")
 
 
-# Widget used to display end edit m2m relations
-# Inputs:
-#   model: the type of model being displayed within the widget
-#   model_format: a function converting a model instance into a string
-#   value_attr: the attribute of the model used as its value within the form
-
-
 class ManyWidget(forms.widgets.SelectMultiple):
     template_name = "../templates/dashboard/manywidget.html"
     option_template_name = "../templates/dashboard/manywidgetoption.html"
 
-    def __init__(self, attrs=None, order_input=True):
+    def __init__(self, attrs=None, order_input=False, order_attr=None):
         self.attrs = attrs
+        self.order_attr = order_attr
         self.order_input = order_input
         super().__init__(attrs)
 
@@ -250,6 +247,7 @@ class ManyWidget(forms.widgets.SelectMultiple):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
+        context["widget"]["order_attr"] = self.order_attr
         context["widget"]["order_input"] = self.order_input
         return context
 
@@ -263,36 +261,61 @@ class ManyField(ModelMultipleChoiceField):
         queryset=None,
         through_vals=None,
         format_title=str,
-        order_attr="order",
+        order_attr=None,
     ):
         self.widget = widget
+
         self.queryset = queryset
         self.through_vals = through_vals
         self.format_title = format_title
         self.order_attr = order_attr
+        if self.order_attr:
+            self.widget = self.widget(order_attr=self.order_attr, order_input=True)
         super().__init__(queryset=self.queryset)
 
     # This function is used for preparing both options and values, and for translating widget value into a python dict
-    # TODO: this function should not do all of this!! Although it appears it does do all of this within the ModelMultipleChoiceField.
+    # TODO: this function should not do all of this!! Although it appears to be a Django flaw: it DOES do all of this within the exemplar ModelMultipleChoiceField.
     def prepare_value(self, value):
         # If the value is being submitted, meaning it came from the JSONified input value
         if type(value) is str:
             value = json.loads(value)
-            value = list(map(lambda valuePair: valuePair[0], value))
-            return value
+            value = list(map(lambda value_list: (value_list[0], value_list[2]), value))
         # this handles list of models for field value
-        if type(value) is list:
-            return list(
+        elif type(value) is list:
+            value = list(
                 map(
-                    lambda instance: (
+                    lambda instance: [
                         self.prepare_value(instance),
                         self.label_from_instance(instance),
-                    ),
+                        # gets this instance from self.values, pulls the prefetched through-table instance (which only self.values has), and adds its attributes to the tuple
+                        list(
+                            self.value.filter(id=instance.id)
+                            .first()
+                            ._prefetched_objects_cache.values()
+                        )[0].first()
+                        if self.value
+                        else {},
+                    ],
                     value,
                 )
             )
+            if self.order_attr != None:
+                # sorts the values by the through-table's order_attr
+                value = sorted(
+                    value,
+                    key=lambda value_list: getattr(value_list[2], self.order_attr),
+                )
+            for value_list in value:
+                # if there isn't a through table instance associated with this, don't look for its attributes
+                if type(value_list[2]) == dict:
+                    continue
+                value_list[2] = value_list[2].__dict__
+                value_list[2].pop("_state")
+                value_list[2] = json.dumps(value_list[2], cls=DjangoJSONEncoder)
         # this handles individual models within field options
-        return value.pk
+        else:
+            value = value.pk
+        return value
 
     def label_from_instance(self, obj):
         return self.format_title(obj)
@@ -302,12 +325,10 @@ class ManyField(ModelMultipleChoiceField):
 
 
 class DashboardPlaylistForm(PlaylistForm):
-
     editable_fields = ["is_public"]
 
     exercises = ManyField(
-        queryset=None,
-        widget=ManyWidget,
+        order_attr="order",
         format_title=lambda ex: ex.id
         + (f"- {ex.description}" if ex.description else ""),
     )
@@ -355,13 +376,43 @@ class DashboardPlaylistForm(PlaylistForm):
         widget=CustomTransposeWidget,
     )
 
+    def clean(self):
+        self.cleaned_data["exercises"] = [
+            (Exercise.objects.get(pk=value_pair[0]), value_pair[1])
+            for value_pair in self.cleaned_data["exercises"]
+        ]
+        return super().clean()
+
+    def save(self, commit=True):
+        epo_ids = list(
+            map(
+                lambda value_pair: value_pair[1].get("_id", None),
+                self.cleaned_data["exercises"],
+            )
+        )
+        # deleting all EPOs that previously belonged to the playlist, but don't anymore
+        ExercisePlaylistOrdered.objects.filter(
+            Q(playlist=self.instance), ~Q(pk__in=epo_ids)
+        ).delete()
+        # then go through the cleaned_data, updating the EPOs that remain and adding new ones
+        for value_pair in self.cleaned_data["exercises"]:
+            curr_epo = ExercisePlaylistOrdered.objects.filter(
+                playlist=self.instance, exercise=value_pair[0]
+            )
+            if not curr_epo.first():
+                self.instance.exercises.add(
+                    value_pair[0], through_defaults=value_pair[1]
+                )
+            else:
+                curr_epo.update(**value_pair[1])
+                curr_epo.first().save()
+        playlist = super().save(commit=commit)
+        return playlist
+
 
 class DashboardCourseForm(CourseForm):
-
-    visible_to = ManyField(
-        widget=ManyWidget(order_input=False),
-    )
-    # playlists = ManyField()
+    visible_to = ManyField()
+    playlists = ManyField(order_attr="order")
 
     class Meta(CourseForm.Meta):
         fields = [
@@ -380,30 +431,69 @@ class DashboardCourseForm(CourseForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super(DashboardCourseForm, self).__init__(*args, **kwargs)
-        # self.fields["playlists"].queryset = Playlist.objects.filter(
-        #     Q(authored_by=user) | Q(is_public=True)
-        # )
-        # self.fields["playlists"].through_vals = PlaylistCourseOrdered.objects.filter(
-        #     course=self.instance
-        # )
+        self.fields["playlists"].queryset = Playlist.objects.filter(
+            Q(authored_by=user) | Q(is_public=True)
+        )
+        # Replace the exercises field value with the exercises combined with the respective EPO
+        self.fields["playlists"].value = self.instance.playlists.prefetch_related(
+            # We use Prefetch and its queryset functionality to only prefetch the EPO for this playlist
+            Prefetch(
+                "playlistcourseordered_set",
+                queryset=PlaylistCourseOrdered.objects.filter(course=self.instance),
+            )
+        ).order_by("playlistcourseordered__order")
         self.fields["visible_to"].queryset = Group.objects.filter(
             manager=user
         ).difference(self.instance.visible_to.all())
 
     def clean(self):
-        self.cleaned_data["visible_to"] = Group.objects.filter(
-            pk__in=self.cleaned_data["visible_to"]
+        visible_to_ids = list(
+            map(lambda value_pair: value_pair[0], self.cleaned_data["visible_to"])
         )
+        self.cleaned_data["visible_to"] = Group.objects.filter(pk__in=visible_to_ids)
+
+        self.cleaned_data["playlists"] = [
+            (Playlist.objects.get(pk=value_pair[0]), value_pair[1])
+            for value_pair in self.cleaned_data["playlists"]
+        ]
+        for value_pair in self.cleaned_data["playlists"]:
+            if "publish_date" in value_pair[1]:
+                value_pair[1]["publish_date"] = parser.parse(
+                    value_pair[1]["publish_date"]
+                )
+            if "due_date" in value_pair[1]:
+                value_pair[1]["due_date"] = parser.parse(value_pair[1]["due_date"])
         return super().clean()
 
     def save(self, commit=True):
         self.instance.visible_to.set(self.cleaned_data["visible_to"])
+        pco_ids = list(
+            map(
+                lambda value_pair: value_pair[1].get("_id", None),
+                self.cleaned_data["playlists"],
+            )
+        )
+        # deleting all PCOs that previously belonged to the course, but don't anymore
+        PlaylistCourseOrdered.objects.filter(
+            Q(course=self.instance), ~Q(pk__in=pco_ids)
+        ).delete()
+        # then go through the cleaned_data, updating the pcos that remain and adding new ones
+        for value_pair in self.cleaned_data["playlists"]:
+            curr_pco = PlaylistCourseOrdered.objects.filter(
+                course=self.instance, playlist=value_pair[0]
+            )
+            if not curr_pco.first():
+                self.instance.playlists.add(
+                    value_pair[0], through_defaults=value_pair[1]
+                )
+            else:
+                curr_pco.update(**value_pair[1])
+                curr_pco.first().save()
         course = super().save(commit=commit)
         return course
 
 
 class BaseDashboardGroupForm(forms.ModelForm):
-
     members = ManyField(widget=ManyWidget(order_input=False))
 
     class Meta:

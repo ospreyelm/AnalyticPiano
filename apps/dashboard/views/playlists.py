@@ -78,45 +78,10 @@ def playlist_add_view(request):
 
 @login_required
 def playlist_edit_view(request, playlist_id):
-    def parse_epo(epo):
-        exercise = epo.exercise
-        return {
-            "name": exercise.id,
-            "id": exercise._id,
-            "order": epo.order,
-            "url_id": exercise.id
-            if exercise.authored_by_id == request.user.id
-            else None,
-        }
-
     playlist = get_object_or_404(Playlist, id=playlist_id)
 
     if request.user != playlist.authored_by:
         raise PermissionDenied
-
-    exercises_list = list(
-        map(parse_epo, ExercisePlaylistOrdered.objects.filter(playlist_id=playlist._id))
-    )
-
-    exercises_list.sort(key=lambda epo: epo["order"])
-
-    exercises_options = list(
-        filter(
-            lambda e: e not in playlist.exercises.all(),
-            Exercise.objects.filter(
-                Q(authored_by_id=request.user.id) | Q(is_public=True)
-            ),
-        )
-    )
-    exercises_options.sort(
-        key=lambda e: (
-            "0" + str(e.authored_by_id)
-            if (e.authored_by_id != request.user.id)
-            else "1",
-            e.id,
-        ),
-        reverse=True,
-    )
 
     context = {
         "verbose_name": playlist._meta.verbose_name,
@@ -130,8 +95,6 @@ def playlist_edit_view(request, playlist_id):
             reverse("lab:playlist-view", kwargs={"playlist_id": playlist.id})
         ),
         "editing": True,
-        "m2m_added": {"exercises": exercises_list},
-        "m2m_options": {"exercises": exercises_options},
     }
 
     PROTECT_PLAYLIST_CONTENT = playlist.has_been_performed
@@ -150,23 +113,7 @@ def playlist_edit_view(request, playlist_id):
                 ## ^ is this ok?
             else:
                 playlist = form.save(commit=False)
-                added_exercise_id = request.POST.get("exercises_add")
-                if added_exercise_id != "":
-                    playlist.append_exercise(added_exercise_id)
 
-                handle_m2m(
-                    request,
-                    "exercises",
-                    {"playlist_id": playlist._id},
-                    "exercise_id",
-                    list(
-                        map(
-                            lambda ex: Exercise.objects.get(_id=ex["id"]),
-                            exercises_list,
-                        )
-                    ),
-                    ThroughModel=ExercisePlaylistOrdered,
-                )
                 playlist.authored_by = request.user
                 ## ^ original authorship of playlist should not change
                 playlist.save()
@@ -193,7 +140,7 @@ def playlist_edit_view(request, playlist_id):
                     "dashboard:edit-playlist",
                     kwargs={"playlist_id": playlist.get_next_authored_playlist().id},
                 )
-            elif "duplicate" in request.POST:
+            elif "duplicate" in request.POST and None:
                 epos = ExercisePlaylistOrdered.objects.filter(playlist_id=playlist._id)
                 playlist.pk = None
                 playlist.id = None

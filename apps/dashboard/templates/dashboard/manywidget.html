@@ -19,28 +19,32 @@
     </select>
   </div>
   <div class="widget-value-list">
-    <div id="values" class="widget-value-list-inner">
+    <div id="values-{{ widget.name }}" class="widget-value-list-inner">
      
     </div>
   </div>
 </div>
 <script>
-  const widgetName = "{{ widget.name }}";
+  // Wrap each widget's script in a function to prevent scope overlap with other widgets
+  function {{ widget.name }}_render() {
+    const widgetName = "{{ widget.name }}";
+    const orderAttr = "{{ widget.order_attr }}"
 
-  let fieldValue = 
-  [{% for value, title in widget.value %}
-    ["{{value}}","{{title}}"],
+  const initialValue = 
+  [{% for value, title, through_values in widget.value %}
+    ["{{value}}","{{title}}", JSON.parse("{{ through_values }}".replace(/&quot;/ig,'"'))],
   {% endfor %}]
-
+  let fieldValue = initialValue
+  
   const valueElement = $(`input[name='${widgetName}']`)
 
   const selectElement = $(`.widget-select#id_${widgetName}`)
 
   function generateValueBlock(instanceId, instanceTitle, isNew, index) {
     return `<div class="widget-value-block ${isNew ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}">
-      {% if widget.order_input %}<input type="number" class=widget-value-order value="${index}"></input> {% endif %}
-      <div class="widget-value-data" value="${instanceId}" >${instanceTitle}</div>
-      <div class="widget-value-remove"> x </div>
+      {% if widget.order_input %}<input type="number" class="widget-value-order order-${widgetName}" value="${index}"></input> {% endif %}
+      <div class="widget-value-data-${widgetName}" value="${instanceId}" >${instanceTitle}</div>
+      <div class="widget-value-remove-${widgetName}"> x </div>
     </div>`
   }
 
@@ -48,16 +52,16 @@
     const updatedComponents = fieldValue.map(([instanceId, instanceTitle, isNew], index)=>
       generateValueBlock(instanceId, instanceTitle, isNew, index)
     )
-    $('.widget-value-list-inner').html(updatedComponents)
+    $(`#values-${widgetName}`).html(updatedComponents)
     valueElement.attr("value", JSON.stringify(fieldValue))
   }
 
   onFieldValueChange()
 
   // Given a value pair (array formatted [id, text]), finds its index in fieldValues and returns -1 if it's not there
-  function indexOfValue(value){
-    for (let i = 0; i<fieldValue.length;i++){
-      const currValuePair = fieldValue[i]
+  function indexOfValue(value, array=fieldValue){
+    for (let i = 0; i<array.length;i++){
+      const currValuePair = array[i]
       if (currValuePair[0] == value[0]){
         return i
       }
@@ -67,6 +71,17 @@
 
   function addValue(value){
     if (indexOfValue(value) == -1) {
+      const initialIndex =indexOfValue(value, initialValue)
+      // If this instance previously belonged to the model, fetch its previous values instead of creating a new through table instance
+      if (initialIndex != -1) {
+        value = initialValue[initialIndex]
+      } else {
+        // if this value didn't previously belong to the model, it won't have the third entry of the value list containing the through table attributes, so add it
+        value.push({})
+      }
+      if (orderAttr && orderAttr != "None") { 
+        value[2][orderAttr] = fieldValue.length
+      }
       fieldValue.push(value)
       onFieldValueChange()
     }
@@ -91,14 +106,18 @@
       fieldValue.splice(new_index, 0, fieldValue.splice(old_index, 1)[0]);
     }
     
+    if (orderAttr && orderAttr !="None") {
+      fieldValue[new_index][2][orderAttr] = new_index
+    }    
+    
     onFieldValueChange()
 };
 
 
-  const el = document.getElementById('values');
+  const sortElement = document.getElementById(`values-${widgetName}`);
   
   {% if widget.order_input %}
-  const sortable = Sortable.create(el, {
+  const sortable = Sortable.create(sortElement, {
     animation:100,
     onEnd:(evt)=>{
       moveValue(evt.oldDraggableIndex, evt.newDraggableIndex)
@@ -120,8 +139,8 @@
   })
 
 
-  $(document).on("click",".widget-value-remove",((event)=>{
-    const targetElement = $(event.currentTarget).siblings(".widget-value-data")
+  $(document).on("click",`.widget-value-remove-${widgetName}`,((event)=>{
+    const targetElement = $(event.currentTarget).siblings(`.widget-value-data-${widgetName}`)
     const removedValue = targetElement.attr("value")
     const removedText = targetElement.text()
     removeValue(removedValue)
@@ -134,8 +153,13 @@
   
   }))
 
-  $(document).on("blur",".widget-value-order",((event)=>{
+  $(document).on("blur",`.order-${widgetName}`,((event)=>{
     const targetElement = $(event.currentTarget)
+    console.log(targetElement)
     moveValue(Number(targetElement.attr("value")),Number(targetElement.val()))
   }))
+  }
+  {{ widget.name }}_render()
+
+  
 </script> 
