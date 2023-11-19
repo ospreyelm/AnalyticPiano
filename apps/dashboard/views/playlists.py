@@ -43,11 +43,16 @@ def playlist_add_view(request):
         form.context = {"user": request.user}
         if form.is_valid():
             playlist = form.save(commit=False)
-            for exercise in form.cleaned_data["exercises"]:
-                if exercise not in playlist.exercises.all():
-                    playlist.append_exercise(exercise.id)
-            playlist.authored_by = request.user
             playlist.save()
+            exercises = form.cleaned_data["exercises"]
+
+            # create and save new EPOs
+            for exercise, through_data in exercises:
+                print(exercise, through_data)
+                ExercisePlaylistOrdered.objects.create(
+                    playlist=playlist, exercise=exercise, **through_data
+                )
+
             if (
                 "save-and-continue" in request.POST
                 or "save-and-preview" in request.POST
@@ -113,10 +118,25 @@ def playlist_edit_view(request, playlist_id):
                 ## ^ is this ok?
             else:
                 playlist = form.save(commit=False)
-
-                playlist.authored_by = request.user
-                ## ^ original authorship of playlist should not change
                 playlist.save()
+
+                initial_epos = ExercisePlaylistOrdered.objects.filter(playlist=playlist)
+                initial_exercises = [epo.exercise for epo in initial_epos]
+                exercise_pairs = form.cleaned_data["exercises"]
+                new_exercises = [exercise_pair[0] for exercise_pair in exercise_pairs]
+
+                # edit or add new EPOs
+                for exercise, through_data in exercise_pairs:
+                    ExercisePlaylistOrdered.objects.update_or_create(
+                        exercise=exercise, playlist=playlist, defaults=through_data
+                    )
+
+                # delete removed EPOs
+                for exercise in initial_exercises:
+                    if exercise not in new_exercises:
+                        ExercisePlaylistOrdered.objects.filter(
+                            exercise=exercise, playlist=playlist
+                        ).delete()
 
             if (
                 "save-and-continue" in request.POST

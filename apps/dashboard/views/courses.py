@@ -62,10 +62,19 @@ def course_add_view(request):
         form.context = {"user": request.user}
         if form.is_valid():
             course = form.save(commit=False)
-            course.authored_by = request.user
+            course.save()
+            course.visible_to.set(form.cleaned_data["visible_to"])
+            # TODO: a bit wasteful to save twice. however, committing the form gives errors for playlist field,
+            #   so the mix of through-table M2M and normal M2M necessitates this. Revisit later.
             course.save()
 
-            form.save_m2m()
+            playlists = form.cleaned_data["playlists"]
+
+            # create and save new EPOs
+            for playlist, through_data in playlists:
+                PlaylistCourseOrdered.objects.create(
+                    course=course, playlist=playlist, **through_data
+                )
 
             if "save-and-continue" in request.POST:
                 success_url = reverse(
@@ -111,10 +120,30 @@ def course_edit_view(request, course_id):
         form = DashboardCourseForm(
             data=request.POST, instance=course, user=request.user
         )
+        form.context = {"user": request.user}
         if form.is_valid():
             course = form.save(commit=False)
-            course.authored_by = request.user
             course.save()
+            course.visible_to.set(form.cleaned_data["visible_to"])
+            course.save()
+
+            initial_pcos = PlaylistCourseOrdered.objects.filter(course=course)
+            initial_playlists = [pco.playlist for pco in initial_pcos]
+            playlist_pairs = form.cleaned_data["playlists"]
+            new_playlists = [exercise_pair[0] for exercise_pair in playlist_pairs]
+
+            # edit or add new PCOs
+            for playlist, through_data in playlist_pairs:
+                PlaylistCourseOrdered.objects.update_or_create(
+                    playlist=playlist, course=course, defaults=through_data
+                )
+
+            # delete removed PCOs
+            for exercise in initial_playlists:
+                if exercise not in new_playlists:
+                    PlaylistCourseOrdered.objects.filter(
+                        playlist=playlist, course=course
+                    ).delete()
 
             if "save-and-continue" in request.POST:
                 success_url = reverse(

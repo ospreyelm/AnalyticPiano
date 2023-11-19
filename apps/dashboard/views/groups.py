@@ -90,8 +90,7 @@ def group_edit_view(request, group_id):
         )
         form.context = {"user": request.user}
         if form.is_valid():
-            group = form.save(commit=False)
-            group.save()
+            group = form.save()
             if "save-and-continue" in request.POST:
                 success_url = reverse(
                     "dashboard:edit-group", kwargs={"group_id": group.id}

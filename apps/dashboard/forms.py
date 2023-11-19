@@ -303,7 +303,7 @@ class ManyField(ModelMultipleChoiceField):
                 # sorts the values by the through-table's order_attr
                 value = sorted(
                     value,
-                    key=lambda value_list: getattr(value_list[2], self.order_attr),
+                    key=lambda value_list: getattr(value_list[2], self.order_attr, ""),
                 )
             for value_list in value:
                 # if there isn't a through table instance associated with this, don't look for its attributes
@@ -313,8 +313,10 @@ class ManyField(ModelMultipleChoiceField):
                 value_list[2].pop("_state")
                 value_list[2] = json.dumps(value_list[2], cls=DjangoJSONEncoder)
         # this handles individual models within field options
-        else:
+        elif value is not None:
             value = value.pk
+        else:
+            value = list()
         return value
 
     def label_from_instance(self, obj):
@@ -348,14 +350,18 @@ class DashboardPlaylistForm(PlaylistForm):
         self.fields["exercises"].queryset = Exercise.objects.filter(
             Q(authored_by=user) | Q(is_public=True)
         )
-        # Replace the exercises field value with the exercises combined with the respective EPO
-        self.fields["exercises"].value = self.instance.exercises.prefetch_related(
-            # We use Prefetch and its queryset functionality to only prefetch the EPO for this playlist
-            Prefetch(
-                "exerciseplaylistordered_set",
-                queryset=ExercisePlaylistOrdered.objects.filter(playlist=self.instance),
-            )
-        ).order_by("exerciseplaylistordered__order")
+        self.fields["exercises"].value = Exercise.objects.none()
+        if self.instance.pk != None:
+            # Replace the exercises field value with the exercises combined with the respective EPO
+            self.fields["exercises"].value = self.instance.exercises.prefetch_related(
+                # We use Prefetch and its queryset functionality to only prefetch the EPO for this playlist
+                Prefetch(
+                    "exerciseplaylistordered_set",
+                    queryset=ExercisePlaylistOrdered.objects.filter(
+                        playlist=self.instance
+                    ),
+                )
+            ).order_by("exerciseplaylistordered__order")
 
         if disable_fields:
             for field in self.fields:
@@ -384,29 +390,9 @@ class DashboardPlaylistForm(PlaylistForm):
         return super().clean()
 
     def save(self, commit=True):
-        epo_ids = list(
-            map(
-                lambda value_pair: value_pair[1].get("_id", None),
-                self.cleaned_data["exercises"],
-            )
-        )
-        # deleting all EPOs that previously belonged to the playlist, but don't anymore
-        ExercisePlaylistOrdered.objects.filter(
-            Q(playlist=self.instance), ~Q(pk__in=epo_ids)
-        ).delete()
-        # then go through the cleaned_data, updating the EPOs that remain and adding new ones
-        for value_pair in self.cleaned_data["exercises"]:
-            curr_epo = ExercisePlaylistOrdered.objects.filter(
-                playlist=self.instance, exercise=value_pair[0]
-            )
-            if not curr_epo.first():
-                self.instance.exercises.add(
-                    value_pair[0], through_defaults=value_pair[1]
-                )
-            else:
-                curr_epo.update(**value_pair[1])
-                curr_epo.first().save()
-        playlist = super().save(commit=commit)
+        self.instance.authored_by = self.context["user"]
+        playlist = super(DashboardPlaylistForm, self).save(commit=commit)
+
         return playlist
 
 
@@ -434,17 +420,20 @@ class DashboardCourseForm(CourseForm):
         self.fields["playlists"].queryset = Playlist.objects.filter(
             Q(authored_by=user) | Q(is_public=True)
         )
-        # Replace the exercises field value with the exercises combined with the respective EPO
-        self.fields["playlists"].value = self.instance.playlists.prefetch_related(
-            # We use Prefetch and its queryset functionality to only prefetch the EPO for this playlist
-            Prefetch(
-                "playlistcourseordered_set",
-                queryset=PlaylistCourseOrdered.objects.filter(course=self.instance),
-            )
-        ).order_by("playlistcourseordered__order")
-        self.fields["visible_to"].queryset = Group.objects.filter(
-            manager=user
-        ).difference(self.instance.visible_to.all())
+        self.fields["visible_to"].queryset = Group.objects.filter(manager=user)
+
+        if self.instance.pk != None:
+            # Replace the exercises field value with the exercises combined with the respective EPO
+            self.fields["playlists"].value = self.instance.playlists.prefetch_related(
+                # We use Prefetch and its queryset functionality to only prefetch the EPO for this playlist
+                Prefetch(
+                    "playlistcourseordered_set",
+                    queryset=PlaylistCourseOrdered.objects.filter(course=self.instance),
+                )
+            ).order_by("playlistcourseordered__order")
+            self.fields["visible_to"].queryset = self.fields[
+                "visible_to"
+            ].queryset.difference(self.instance.visible_to.all())
 
     def clean(self):
         visible_to_ids = list(
@@ -466,30 +455,8 @@ class DashboardCourseForm(CourseForm):
         return super().clean()
 
     def save(self, commit=True):
-        self.instance.visible_to.set(self.cleaned_data["visible_to"])
-        pco_ids = list(
-            map(
-                lambda value_pair: value_pair[1].get("_id", None),
-                self.cleaned_data["playlists"],
-            )
-        )
-        # deleting all PCOs that previously belonged to the course, but don't anymore
-        PlaylistCourseOrdered.objects.filter(
-            Q(course=self.instance), ~Q(pk__in=pco_ids)
-        ).delete()
-        # then go through the cleaned_data, updating the pcos that remain and adding new ones
-        for value_pair in self.cleaned_data["playlists"]:
-            curr_pco = PlaylistCourseOrdered.objects.filter(
-                course=self.instance, playlist=value_pair[0]
-            )
-            if not curr_pco.first():
-                self.instance.playlists.add(
-                    value_pair[0], through_defaults=value_pair[1]
-                )
-            else:
-                curr_pco.update(**value_pair[1])
-                curr_pco.first().save()
-        course = super().save(commit=commit)
+        self.instance.authored_by = self.context["user"]
+        course = super(CourseForm, self).save(commit=commit)
         return course
 
 
@@ -503,20 +470,22 @@ class BaseDashboardGroupForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super(forms.ModelForm, self).__init__(*args, **kwargs)
-        self.fields["members"].queryset = user.subscribers.difference(
-            self.instance.members.all()
-        )
+        self.fields["members"].queryset = user.subscribers
+        if self.instance.pk != None:
+            self.fields["members"].queryset = self.fields[
+                "members"
+            ].queryset.difference(self.instance.members.all())
 
     def clean(self):
         self.cleaned_data["members"] = User.objects.filter(
-            pk__in=self.cleaned_data["members"]
+            pk__in=[value_pair[0] for value_pair in self.cleaned_data["members"]]
         )
         return super().clean()
 
     def save(self, commit=True):
         self.instance.manager = self.context["user"]
-        self.instance.members.set(self.cleaned_data["members"])
         group = super(BaseDashboardGroupForm, self).save(commit=commit)
+        group.members.set(self.cleaned_data["members"])
         return group
 
 
