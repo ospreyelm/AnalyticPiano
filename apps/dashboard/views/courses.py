@@ -154,26 +154,22 @@ def course_edit_view(request, course_id):
                     messages.SUCCESS,
                     f"{context['verbose_name']} has been saved successfully.",
                 )
-            elif "duplicate" in request.POST and False:
-                visible_to_groups = course.visible_to.all()
-                pcos = PlaylistCourseOrdered.objects.filter(course_id=course._id)
-                course.pk = None
+            elif "duplicate" in request.POST:
+                course._id = None
                 course.id = None
                 course.performance_dict = {}
-                course.title = (
-                    course.title[0:57] + " (copy)"
-                )  # account for max_length of course.title
-                course.save()
-                for group in visible_to_groups:
-                    course.visible_to.add(group)
-                for pco in pcos:
-                    playlist_to_add = Playlist.objects.filter(_id=pco.playlist_id).get()
-                    course.playlists.add(
-                        playlist_to_add,
-                        through_defaults={
-                            "order": pco.order,
-                            "due_date": pco.due_date,
-                            "publish_date": pco.publish_date,
+                course = course.save()
+
+                # edit or add new PCOs
+                for playlist, through_data in playlist_pairs:
+                    # adds PCOs linking playlists to new course, but without publish_date or due_date
+                    PlaylistCourseOrdered.objects.update_or_create(
+                        playlist=playlist,
+                        course=course,
+                        defaults={
+                            k: v
+                            for k, v in through_data.items()
+                            if k not in ["publish_date", "due_date"]
                         },
                     )
                 return redirect("dashboard:edit-course", course.id)

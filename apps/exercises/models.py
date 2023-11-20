@@ -583,6 +583,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         self.set_auto_name()
         # self.clean_exercises()
         super(Playlist, self).save(*args, **kwargs)
+        return self
 
     # def clean_exercises(self):
     #     self.exercises = re.sub(" +", " ", self.exercises).strip()
@@ -639,7 +640,7 @@ class ExercisePlaylistOrdered(ClonableModelMixin, BaseContentModel):
 
 
 class Course(ClonableModelMixin, BaseContentModel):
-    id = models.CharField("C-ID", unique=True, max_length=16, blank=True)
+    id = models.CharField("C-ID", unique=True, max_length=16, blank=True, null=True)
 
     title = models.CharField(
         "Name",
@@ -765,6 +766,7 @@ class Course(ClonableModelMixin, BaseContentModel):
             if prev_course.tardy_threshold != self.tardy_threshold:
                 self.refresh_performance_dict()
         super(Course, self).save(*args, **kwargs)
+        return self
 
     def clean(self):
         if self.tardy_penalty > self.points_per_playlist:
@@ -831,7 +833,6 @@ class Course(ClonableModelMixin, BaseContentModel):
         # the due_date is NOT to be read as UTC
 
     def add_performance_to_dict(self, performance_data):
-
         # Assigns numerical value to each pass mark to prevent "better" pass marks from being overwritten
         pass_mark_compare_dict = {"X": 0, "C": 0.5, "L": 1, "T": 2, "P": 3}
 

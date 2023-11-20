@@ -296,23 +296,28 @@ class ManyField(ModelMultipleChoiceField):
             value = list(map(lambda value_list: (value_list[0], value_list[2]), value))
         # this handles list of models for field value
         elif type(value) is list:
-            value = list(
-                map(
-                    lambda instance: [
-                        self.prepare_value(instance),
-                        self.label_from_instance(instance),
-                        # gets this instance from self.values, pulls the prefetched through-table instance (which only self.values has), and adds its attributes to the tuple
-                        list(
-                            self.value.filter(id=instance.id)
-                            .first()
-                            ._prefetched_objects_cache.values()
-                        )[0].first()
-                        if self.value
-                        else {},
-                    ],
-                    value,
+            # When an error occurs in the form, it returns the JSONified data as the only entry of a list, which we check for here
+            #   instead of passing the JSON right back, we parse and re-dump because we want to use DjangoJSONEncoder
+            if len(value) == 1 and isinstance(value[0], str):
+                value = [json.loads(ele) for ele in value][0]
+            else:
+                value = list(
+                    map(
+                        lambda instance: [
+                            self.prepare_value(instance),
+                            self.label_from_instance(instance),
+                            # gets this instance from self.values, pulls the prefetched through-table instance (which only self.values has), and adds its attributes to the tuple
+                            list(
+                                self.value.filter(id=instance.id)
+                                .first()
+                                ._prefetched_objects_cache.values()
+                            )[0].first()
+                            if self.value
+                            else {},
+                        ],
+                        value,
+                    )
                 )
-            )
             if self.order_attr != None:
                 # sorts the values by the through-table's order_attr
                 value = sorted(
@@ -321,13 +326,23 @@ class ManyField(ModelMultipleChoiceField):
                 )
             for value_list in value:
                 # if there isn't a through table instance associated with this, don't look for its attributes
-                if type(value_list[2]) == dict:
-                    continue
-
-                value_list[2] = value_list[2].__dict__
-                if self.through_prepare:
-                    value_list[2] = self.through_prepare(value_list[2])
-                value_list[2].pop("_state")
+                if type(value_list[2]) != dict:
+                    value_list[2] = value_list[2].__dict__
+                    if self.through_prepare:
+                        value_list[2] = self.through_prepare(value_list[2])
+                    # prevents things like ids from getting through
+                    # TODO: this kind of filtering needs to be done upon form receipt too, to prevent users from editing ids and doing weird stuff
+                    allowed_fields = []
+                    if self.additional_fields:
+                        allowed_fields += [
+                            field["attr_name"] for field in self.additional_fields
+                        ]
+                    if self.order_attr:
+                        allowed_fields += [self.order_attr]
+                    value_list[2] = {
+                        field_name: value_list[2][field_name]
+                        for field_name in allowed_fields
+                    }
                 value_list[2] = json.dumps(value_list[2], cls=DjangoJSONEncoder)
         # this handles individual models within field options
         elif value is not None:
@@ -436,7 +451,7 @@ class DashboardCourseForm(CourseForm):
                 + " (DD/MM/YYYY)",
             },
         ],
-        # this function is passed to ManyField's `prepare_values` to render dates properly
+        # this function is passed to ManyField's `prepare_value` to render dates properly
         through_prepare=lambda through_values: {
             **through_values,
             "publish_date": through_values["publish_date"].strftime(course_date_format)

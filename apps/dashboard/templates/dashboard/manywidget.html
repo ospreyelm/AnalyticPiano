@@ -45,7 +45,7 @@
       {% if widget.order_input %}<input type="number" class="widget-value-order order-${widgetName}" value="${index}"></input> {% endif %}
       <div class="widget-value-data-${widgetName}" value="${instanceId}" >${instanceTitle}</div>
       {% for field in widget.additional_fields %} <input class="widget-value-additional-${widgetName}" id="{{field.attr_name}}-${index}" value='${throughValues['{{field.attr_name}}'] || ""}' placeholder="{{field.placeholder}}"></input> {% endfor %}
-      <div class="widget-value-remove-${widgetName}"> x </div>
+      <div class="widget-value-remove widget-value-remove-${widgetName}"> x </div>
     </div>`
   }
 

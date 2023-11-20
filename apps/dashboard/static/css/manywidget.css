@@ -31,6 +31,7 @@
   display: inline-flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
 .block-draggable {
@@ -45,7 +46,7 @@
   cursor: pointer;
   width: 2rem;
   height: 100%;
-  text-align: right;
+  text-align: center;
 }
 
 .widget-value-order {

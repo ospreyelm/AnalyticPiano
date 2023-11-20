@@ -159,21 +159,17 @@ def playlist_edit_view(request, playlist_id):
                     "dashboard:edit-playlist",
                     kwargs={"playlist_id": playlist.get_next_authored_playlist().id},
                 )
-            elif "duplicate" in request.POST and None:
-                epos = ExercisePlaylistOrdered.objects.filter(playlist_id=playlist._id)
-                playlist.pk = None
+            elif "duplicate" in request.POST:
+                playlist._id = None
                 playlist.id = None
-                playlist.name = (
-                    playlist.name[0:25] + " (copy)"
-                )  # account for max_length of playlist.name
-                playlist.save()
-                for epo in epos:
-                    exercise_to_add = Exercise.objects.get(_id=epo.exercise_id)
-                    playlist.exercises.add(
-                        exercise_to_add,
-                        through_defaults={
-                            "order": epo.order,
-                        },
+                playlist = playlist.save()
+
+                # edit or add new EPOs
+                for exercise, through_data in exercise_pairs:
+                    ExercisePlaylistOrdered.objects.update_or_create(
+                        exercise=exercise,
+                        playlist=playlist,
+                        defaults=through_data,
                     )
                 return redirect("dashboard:edit-playlist", playlist.id)
             else:
