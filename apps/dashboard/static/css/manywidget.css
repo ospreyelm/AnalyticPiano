@@ -68,3 +68,11 @@
 .widget-option:hover {
   background-color: #ddd;
 }
+
+.select2-selection__choice {
+  display: none !important;
+}
+
+.select2-results__option--selected {
+  display: none;
+}

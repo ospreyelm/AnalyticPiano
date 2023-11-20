@@ -8,7 +8,7 @@
   {% comment %} Use this hidden input so that Django has a form element at which to get the value {% endcomment %}
   <input name="{{ widget.name }}" style="display:none"/>
   <div class="widget-option-wrapper">
-    <select class="widget-select"{% include "django/forms/widgets/attrs.html" %} >
+    <select class="widget-select"{% include "django/forms/widgets/attrs.html" %} multiple="multiple">
       {% for group_name, group_choices, group_index in widget.optgroups %}
         {% if group_name %}<optgroup label="{{ group_name }}">{% endif %}
           {% for option in group_choices %}
@@ -55,6 +55,7 @@
     )
     $(`#values-${widgetName}`).html(updatedComponents)
     valueElement.attr("value", JSON.stringify(fieldValue))
+    selectElement.val(fieldValue.map((fVal)=>fVal[0]))
   }
 
   onFieldValueChange()
@@ -86,8 +87,6 @@
       fieldValue.push(value)
       onFieldValueChange()
     }
-    selectElement.val(null).trigger('change');
-    // TODO: figure out way to hide value from dropdown upon adding it
   }
 
   function removeValue(valueId){
@@ -132,7 +131,7 @@
 
   selectElement.select2({
     placeholder:"Type to search",
-    closeOnSelect:false
+    closeOnSelect:false,
   })
 
   // Called when a value is selected
