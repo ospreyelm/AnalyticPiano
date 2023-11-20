@@ -100,6 +100,20 @@ def group_edit_view(request, group_id):
                     messages.SUCCESS,
                     f"{context['verbose_name']} has been saved successfully.",
                 )
+            elif "duplicate" in request.POST:
+                members = group.members.all()
+                group.id = None
+                group = group.save()
+                group.members.set(members)
+                group.save()
+                success_url = reverse(
+                    "dashboard:edit-group", kwargs={"group_id": group.id}
+                )
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    f"{context['verbose_name']} has been duplicated successfully.",
+                )
             else:
                 success_url = reverse("dashboard:groups-list")
             return redirect(success_url)

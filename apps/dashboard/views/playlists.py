@@ -171,6 +171,11 @@ def playlist_edit_view(request, playlist_id):
                         playlist=playlist,
                         defaults=through_data,
                     )
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    f"{context['verbose_name']} successfully duplicated",
+                )
                 return redirect("dashboard:edit-playlist", playlist.id)
             else:
                 success_url = reverse("dashboard:playlists-list")

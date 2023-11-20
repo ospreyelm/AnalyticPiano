@@ -155,10 +155,13 @@ def course_edit_view(request, course_id):
                     f"{context['verbose_name']} has been saved successfully.",
                 )
             elif "duplicate" in request.POST:
+                visible_to = course.visible_to.all()
                 course._id = None
                 course.id = None
                 course.performance_dict = {}
                 course = course.save()
+                course.visible_to.set(visible_to)
+                course.save()
 
                 # edit or add new PCOs
                 for playlist, through_data in playlist_pairs:
@@ -172,6 +175,11 @@ def course_edit_view(request, course_id):
                             if k not in ["publish_date", "due_date"]
                         },
                     )
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    f"{context['verbose_name']} successfully duplicated",
+                )
                 return redirect("dashboard:edit-course", course.id)
             else:
                 success_url = reverse("dashboard:courses-list")

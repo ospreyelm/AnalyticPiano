@@ -221,6 +221,10 @@ class Group(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self):
+        super(Group, self).save()
+        return self
+
     # def add_members(self, new_members):
     #     for member_id in new_members:
     #         if member_id in self._members:
