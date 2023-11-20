@@ -139,8 +139,8 @@ def course_edit_view(request, course_id):
                 )
 
             # delete removed PCOs
-            for exercise in initial_playlists:
-                if exercise not in new_playlists:
+            for playlist in initial_playlists:
+                if playlist not in new_playlists:
                     PlaylistCourseOrdered.objects.filter(
                         playlist=playlist, course=course
                     ).delete()

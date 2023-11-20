@@ -48,7 +48,6 @@ def playlist_add_view(request):
 
             # create and save new EPOs
             for exercise, through_data in exercises:
-                print(exercise, through_data)
                 ExercisePlaylistOrdered.objects.create(
                     playlist=playlist, exercise=exercise, **through_data
                 )

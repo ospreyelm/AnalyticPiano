@@ -40,17 +40,18 @@
 
   const selectElement = $(`.widget-select#id_${widgetName}`)
 
-  function generateValueBlock(instanceId, instanceTitle, isNew, index) {
-    return `<div class="widget-value-block ${isNew ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}">
+  function generateValueBlock(instanceId, instanceTitle, throughValues, index) {
+    return `<div class="widget-value-block ${throughValues ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}">
       {% if widget.order_input %}<input type="number" class="widget-value-order order-${widgetName}" value="${index}"></input> {% endif %}
       <div class="widget-value-data-${widgetName}" value="${instanceId}" >${instanceTitle}</div>
+      {% for field in widget.additional_fields %} <input class="widget-value-additional-${widgetName}" id="{{field.attr_name}}-${index}" value='${throughValues['{{field.attr_name}}'] || ""}' placeholder="{{field.placeholder}}"></input> {% endfor %}
       <div class="widget-value-remove-${widgetName}"> x </div>
     </div>`
   }
 
   function onFieldValueChange(){
-    const updatedComponents = fieldValue.map(([instanceId, instanceTitle, isNew], index)=>
-      generateValueBlock(instanceId, instanceTitle, isNew, index)
+    const updatedComponents = fieldValue.map(([instanceId, instanceTitle, throughValues], index)=>
+      generateValueBlock(instanceId, instanceTitle, throughValues, index)
     )
     $(`#values-${widgetName}`).html(updatedComponents)
     valueElement.attr("value", JSON.stringify(fieldValue))
@@ -111,8 +112,12 @@
     }    
     
     onFieldValueChange()
-};
-
+  };
+  
+  function editAdditional(fieldName, index, newValue) {
+    fieldValue[index][2][fieldName] = newValue
+    onFieldValueChange()
+  }
 
   const sortElement = document.getElementById(`values-${widgetName}`);
   
@@ -138,7 +143,7 @@
     addValue([selectedValue, selectedText])  
   })
 
-
+  // When you click a remove element, remove the according value
   $(document).on("click",`.widget-value-remove-${widgetName}`,((event)=>{
     const targetElement = $(event.currentTarget).siblings(`.widget-value-data-${widgetName}`)
     const removedValue = targetElement.attr("value")
@@ -149,16 +154,20 @@
       const newOption = new Option(removedText, removedValue, false, false);
       selectElement.append(newOption)
     }
-    
-  
   }))
-
-  $(document).on("blur",`.order-${widgetName}`,((event)=>{
+  // Once you're done editing an order input and click off, update the order
+  $(document).on("blur",`.order-${widgetName}`,(event)=>{
     const targetElement = $(event.currentTarget)
-    console.log(targetElement)
     moveValue(Number(targetElement.attr("value")),Number(targetElement.val()))
-  }))
+  })
+  $(document).on("change", `.widget-value-additional-${widgetName}`, (event)=>{
+    const targetElement = $(event.currentTarget)
+    const [additionalField, index] = targetElement.attr("id").split("-")
+    editAdditional(additionalField, index,targetElement.val())
+  })
   }
+
+  
   {{ widget.name }}_render()
 
   

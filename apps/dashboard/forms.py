@@ -236,10 +236,13 @@ class ManyWidget(forms.widgets.SelectMultiple):
     template_name = "../templates/dashboard/manywidget.html"
     option_template_name = "../templates/dashboard/manywidgetoption.html"
 
-    def __init__(self, attrs=None, order_input=False, order_attr=None):
+    def __init__(
+        self, attrs=None, order_input=False, order_attr=None, additional_fields=[]
+    ):
         self.attrs = attrs
         self.order_attr = order_attr
         self.order_input = order_input
+        self.additional_fields = additional_fields
         super().__init__(attrs)
 
     def format_value(self, value):
@@ -249,6 +252,7 @@ class ManyWidget(forms.widgets.SelectMultiple):
         context = super().get_context(name, value, attrs)
         context["widget"]["order_attr"] = self.order_attr
         context["widget"]["order_input"] = self.order_input
+        context["widget"]["additional_fields"] = self.additional_fields
         return context
 
 
@@ -262,15 +266,25 @@ class ManyField(ModelMultipleChoiceField):
         through_vals=None,
         format_title=str,
         order_attr=None,
+        # additional fields in the M2M through table
+        additional_fields=None,
+        # processes the through_table data before rendering
+        through_prepare=None,
     ):
-        self.widget = widget
-
+        widget_inputs = {}
         self.queryset = queryset
         self.through_vals = through_vals
         self.format_title = format_title
         self.order_attr = order_attr
+        self.through_prepare = through_prepare
         if self.order_attr:
-            self.widget = self.widget(order_attr=self.order_attr, order_input=True)
+            widget_inputs["order_attr"] = self.order_attr
+            widget_inputs["order_input"] = True
+        self.additional_fields = additional_fields
+        if self.additional_fields:
+            widget_inputs["additional_fields"] = self.additional_fields
+        self.widget = widget(**widget_inputs)
+
         super().__init__(queryset=self.queryset)
 
     # This function is used for preparing both options and values, and for translating widget value into a python dict
@@ -309,7 +323,10 @@ class ManyField(ModelMultipleChoiceField):
                 # if there isn't a through table instance associated with this, don't look for its attributes
                 if type(value_list[2]) == dict:
                     continue
+
                 value_list[2] = value_list[2].__dict__
+                if self.through_prepare:
+                    value_list[2] = self.through_prepare(value_list[2])
                 value_list[2].pop("_state")
                 value_list[2] = json.dumps(value_list[2], cls=DjangoJSONEncoder)
         # this handles individual models within field options
@@ -396,9 +413,40 @@ class DashboardPlaylistForm(PlaylistForm):
         return playlist
 
 
+course_date_format = "%d/%m/%Y"
+
+
 class DashboardCourseForm(CourseForm):
     visible_to = ManyField()
-    playlists = ManyField(order_attr="order")
+    playlists = ManyField(
+        order_attr="order",
+        additional_fields=[
+            {
+                "attr_name": "publish_date",
+                "placeholder": PlaylistCourseOrdered._meta.get_field(
+                    "publish_date"
+                ).verbose_name
+                + " (DD/MM/YYYY)",
+            },
+            {
+                "attr_name": "due_date",
+                "placeholder": PlaylistCourseOrdered._meta.get_field(
+                    "due_date"
+                ).verbose_name
+                + " (DD/MM/YYYY)",
+            },
+        ],
+        # this function is passed to ManyField's `prepare_values` to render dates properly
+        through_prepare=lambda through_values: {
+            **through_values,
+            "publish_date": through_values["publish_date"].strftime(course_date_format)
+            if through_values["publish_date"]
+            else None,
+            "due_date": through_values["due_date"].strftime(course_date_format)
+            if through_values["due_date"]
+            else None,
+        },
+    )
 
     class Meta(CourseForm.Meta):
         fields = [
@@ -417,12 +465,15 @@ class DashboardCourseForm(CourseForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super(DashboardCourseForm, self).__init__(*args, **kwargs)
+        self.fields["visible_to"].queryset = Group.objects.filter(manager=user)
         self.fields["playlists"].queryset = Playlist.objects.filter(
             Q(authored_by=user) | Q(is_public=True)
         )
-        self.fields["visible_to"].queryset = Group.objects.filter(manager=user)
 
         if self.instance.pk != None:
+            self.fields["visible_to"].queryset = self.fields[
+                "visible_to"
+            ].queryset.difference(self.instance.visible_to.all())
             # Replace the exercises field value with the exercises combined with the respective EPO
             self.fields["playlists"].value = self.instance.playlists.prefetch_related(
                 # We use Prefetch and its queryset functionality to only prefetch the EPO for this playlist
@@ -431,9 +482,6 @@ class DashboardCourseForm(CourseForm):
                     queryset=PlaylistCourseOrdered.objects.filter(course=self.instance),
                 )
             ).order_by("playlistcourseordered__order")
-            self.fields["visible_to"].queryset = self.fields[
-                "visible_to"
-            ].queryset.difference(self.instance.visible_to.all())
 
     def clean(self):
         visible_to_ids = list(
@@ -446,12 +494,30 @@ class DashboardCourseForm(CourseForm):
             for value_pair in self.cleaned_data["playlists"]
         ]
         for value_pair in self.cleaned_data["playlists"]:
-            if "publish_date" in value_pair[1]:
-                value_pair[1]["publish_date"] = parser.parse(
-                    value_pair[1]["publish_date"]
-                )
-            if "due_date" in value_pair[1]:
-                value_pair[1]["due_date"] = parser.parse(value_pair[1]["due_date"])
+            if (
+                "publish_date" in value_pair[1]
+                and value_pair[1]["publish_date"] is not None
+            ):
+                try:
+                    value_pair[1]["publish_date"] = datetime.strptime(
+                        value_pair[1]["publish_date"], course_date_format
+                    )
+                except:
+                    self.add_error(
+                        "playlists",
+                        f"Invalid publish date '{value_pair[1]['publish_date']}'",
+                    )
+                    value_pair[1]["publish_date"] = None
+            if "due_date" in value_pair[1] and value_pair[1]["due_date"] is not None:
+                try:
+                    value_pair[1]["due_date"] = datetime.strptime(
+                        value_pair[1]["due_date"], course_date_format
+                    )
+                except:
+                    self.add_error(
+                        "playlists", f"Invalid due date '{value_pair[1]['due_date']}'"
+                    )
+                    value_pair[1]["due_date"] = None
         return super().clean()
 
     def save(self, commit=True):
@@ -461,7 +527,7 @@ class DashboardCourseForm(CourseForm):
 
 
 class BaseDashboardGroupForm(forms.ModelForm):
-    members = ManyField(widget=ManyWidget(order_input=False))
+    members = ManyField()
 
     class Meta:
         model = Group
