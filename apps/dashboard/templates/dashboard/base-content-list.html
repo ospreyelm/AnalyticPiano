@@ -12,12 +12,17 @@
     
     <div class="dashboard-page">
         {% if subscriber_name %}
-            <h1>My Activity</h1>
-            <p class="dashboard-tip">Review your most recent activity, organized by playlist.</p>
+            {% if subscriber_name == me %}
+                <h1>My Performance History</h1>
+                <p class="dashboard-tip">This table is organized by playlist, starting with the playlist that you practiced most recently.</p>
+            {% else %}
+                <p>Performances by {{ subscriber_name }}</p>
+            {% endif %}
         {% endif %}
         {% if courses_author %}
             {% if courses_author == me %}
                 <h1>Create Courses</h1>
+                {% block add-button-courses %}{% endblock %}
             {% else %}
                 <p>Courses authored by {{ courses_author }}</p>
             {% endif %}
@@ -25,6 +30,7 @@
         {% if playlists_author %}
             {% if playlists_author == me %}
                 <h1>Create Playlists</h1>
+                {% block add-button-playlists %}{% endblock %}
             {% else %}
                 <p>Playlists authored by {{ playlists_author }}</p>
             {% endif %}
@@ -32,6 +38,7 @@
         {% if exercises_author %}
             {% if exercises_author == me %}
                 <h1>Create Exercises</h1>
+                {% block add-button-exercises %}{% endblock %}
             {% else %}
                 <p>Exercises authored by {{ exercises_author }}</p>
             {% endif %}
@@ -42,13 +49,12 @@
         {% endif %}
         {% if groups_author %}
             {% if groups_author == me %}
-                <h1>Manage Performer Groups</h1>
+                <h1>Manage User Groups</h1>
+                {% block add-button-groups %}{% endblock %}
             {% else %}
                 <p>Groups for user: {{ groups_author }}</p>
             {% endif %}
         {% endif %}
-        {% block add-button %}
-        {% endblock %}
         {% block filters %}{% endblock %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
     </div>

@@ -31,26 +31,26 @@ class SupervisorsTable(tables.Table):
     )
     status = tables.columns.Column(empty_values=())
 
-    accept = tables.columns.LinkColumn(
-        "dashboard:accept-subscription",
-        empty_values=(),
-        kwargs={
-            "subscriber_id": A("user.id"),
-            "supervisor_id": A("supervisor.id"),
-        },
-        verbose_name="Accept",
-        orderable=False,
-    )
-    decline = tables.columns.LinkColumn(
-        "dashboard:decline-subscription",
-        empty_values=(),
-        kwargs={
-            "subscriber_id": A("user.id"),
-            "supervisor_id": A("supervisor.id"),
-        },
-        verbose_name="Decline",
-        orderable=False,
-    )
+    # accept = tables.columns.LinkColumn(
+    #     "dashboard:accept-subscription",
+    #     empty_values=(),
+    #     kwargs={
+    #         "subscriber_id": A("user.id"),
+    #         "supervisor_id": A("supervisor.id"),
+    #     },
+    #     verbose_name="Accept",
+    #     orderable=False,
+    # )
+    # decline = tables.columns.LinkColumn(
+    #     "dashboard:decline-subscription",
+    #     empty_values=(),
+    #     kwargs={
+    #         "subscriber_id": A("user.id"),
+    #         "supervisor_id": A("supervisor.id"),
+    #     },
+    #     verbose_name="Decline",
+    #     orderable=False,
+    # )
     remove = tables.columns.LinkColumn(
         "dashboard:unsubscribe-confirmation",
         kwargs={"supervisor_id": A("supervisor.id")},
@@ -161,6 +161,7 @@ class SubscribersTable(tables.Table):
         return record["subscriber"]._supervisors_dict[str(self.request.user.id)]
 
     def render_accept(self, record):
+        print(record["subscriber"].id, self.request.user.id)
         if (
             record["subscriber"]._supervisors_dict[str(self.request.user.id)]
             == User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT
@@ -197,6 +198,130 @@ class SubscribersTable(tables.Table):
         return (queryset, True)
 
 
+class ConnectionsTable(tables.Table):
+    class Meta:
+        attrs = {"class": "paleblue"}
+        table_pagination = False
+        template_name = "django_tables2/bootstrap4.html"
+
+    email = tables.columns.Column(
+        accessor=A("other.email"),
+        attrs={"td": {"width": "250px"}},
+        verbose_name="Email address",
+    )
+    first_name = tables.columns.Column(
+        accessor=A("other.first_name"), verbose_name="Given name"
+    )
+    last_name = tables.columns.Column(
+        accessor=A("other.last_name"), verbose_name="Surname"
+    )
+    signup_date = tables.columns.Column(
+        accessor=A("other.date_joined"), verbose_name="User signup date"
+    )
+    toggle_content_permit = tables.columns.LinkColumn(
+        "dashboard:toggle-content-permit",
+        empty_values=(),
+        kwargs={"other_id": A("other.id")},
+        verbose_name="Content permit",
+        orderable=False,
+    )
+    toggle_performance_permit = tables.columns.LinkColumn(
+        "dashboard:toggle-performance-permit",
+        empty_values=(),
+        kwargs={"other_id": A("other.id")},
+        verbose_name="Performance permit",
+        orderable=False,
+    )
+    content_access = tables.columns.LinkColumn(
+        "dashboard:courses-by-user",
+        kwargs={"courses_author_id": A("other.id")},
+        verbose_name="Access content",
+        text="Courses",
+        orderable=False,
+    )
+    performance_access = tables.columns.LinkColumn(
+        "dashboard:other-performances",
+        kwargs={"other_id": A("other.id")},
+        verbose_name="Access performances",
+        text="Performances",
+        orderable=False,
+    )
+    pinned = tables.columns.LinkColumn(
+        "dashboard:toggle-connection-pin",
+        empty_values=(),
+        kwargs={"other_id": A("other.id")},
+        verbose_name="Pinned",
+        orderable=False,
+    )
+
+    def render_last_name(self, record):
+        if self.request.user.id in record["other"].content_permits \
+        or self.request.user.id in record["other"].performance_permits:
+            return record["other"].last_name
+        else:
+            return ""
+
+    def render_first_name(self, record):
+        if self.request.user.id in record["other"].content_permits \
+        or self.request.user.id in record["other"].performance_permits:
+            return record["other"].first_name
+        else:
+            return ""
+
+    def render_signup_date(self, record):
+        if self.request.user.id in record["other"].content_permits \
+        or self.request.user.id in record["other"].performance_permits:
+            return record["other"].date_joined
+        else:
+            return ""
+
+    def render_toggle_content_permit(self, record):
+        if int(record["other"].id) in self.request.user.content_permits:
+            return "YES"
+        else:
+            return "no"
+        return ""
+
+    def render_toggle_performance_permit(self, record):
+        if int(record["other"].id) in self.request.user.performance_permits:
+            return "YES"
+        else:
+            return "no"
+        return ""
+
+    def render_content_access(self, record):
+        if self.request.user.id in record["other"].content_permits:
+            return "Courses"
+        return ""
+
+    def render_performance_access(self, record):
+        if self.request.user.id in record["other"].performance_permits:
+            print(record["other"].performance_permits)
+            return "Performances"
+        return ""
+
+    def render_pinned(self, record):
+        if int(record["other"].id) in self.request.user.connections_list:
+            return "YES"
+        else:
+            return "no"
+        return ""
+    #     if int(record["other"].id) in self.request.user.content_permits \
+    #     or int(record["other"].id) in self.request.user.performance_permits \
+    #     or self.request.user.id in record["other"].content_permits \
+    #     or self.request.user.id in record["other"].performance_permits:
+    #         return ""
+    #     else:
+    #         return "X"
+
+    # TODO: revisit this. ordering based on non-database fields appears impossible
+    #   according to this: https://github.com/jieter/django-tables2/issues/161
+    # def order_status(self, queryset, is_descending):
+    #     queryset = queryset.annotate(
+    #         priority=
+    #     ).order_by(("-" if is_descending else "") + "priority")
+    #     return (queryset, True)
+
 class MyActivityTable(tables.Table):
     course_name = tables.columns.LinkColumn(
         "lab:course-view",
@@ -207,8 +332,9 @@ class MyActivityTable(tables.Table):
     )
     playlist = tables.columns.LinkColumn(
         "lab:playlist-view",
-        kwargs={"course_id": A("course.id"), "playlist_id": A("playlist.id")},
+        kwargs={"course_id": A("course.id") or None, "playlist_id": A("playlist.id")},
         verbose_name="Playlist name",
+        accessor=("playlist.name"),
         # attrs={"td": {"style": "white-space:nowrap", "width": "auto"}}
     )
     playlist_passed = tables.columns.BooleanColumn(
@@ -302,13 +428,13 @@ class MyActivityDetailsTable(tables.Table):
     course_id = tables.columns.Column(
         verbose_name="P-ID",
         accessor=("course_id"),
-        orderable=False,
+        # orderable=False, # keep it orderable in order for seamless viewing with MyActivity
         # attrs={"td": {"bgcolor": "lightgray"}},
     )
     playlist_id = tables.columns.Column(
         verbose_name="C-ID",
         accessor=("playlist_id"),
-        orderable=False,
+        # orderable=False, # keep it orderable in order for seamless viewing with MyActivity
         # attrs={"td": {"bgcolor": "lightgray"}},
     )
     # add updated, created

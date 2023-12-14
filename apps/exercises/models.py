@@ -695,7 +695,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         related_name="visible_courses",
         blank=True,
         help_text="This course will ALWAYS be displayed to performer connections who are members of these groups.",
-        verbose_name="Performer Groups",
+        verbose_name="User Groups",
     )
 
     performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)

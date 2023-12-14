@@ -1,0 +1,18 @@
+{% extends 'dashboard/base-content-list.html' %}
+
+{% block content %}
+    <div class="dashboard-page">
+        <h1>Connect with Other Users</h1>
+        <p class="dashboard-tip">Allow other users permission to access your content (if you are a teacher) and/or see your performances (if you are a student). Type their email adddress and click Add. The other user must grant reciprocal permissions for you to gain access.</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% include 'dashboard/bs4_form.html' with form=form %}
+            <button type="submit" class="btn dashboard-btn" style="">
+                Add
+            </button>
+        </form>
+    </div>
+    <div class="dashboard-page">
+        {% include 'django_tables2/bootstrap4.html' with table=table %}
+    </div>
+{% endblock content %}

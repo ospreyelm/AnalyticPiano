@@ -1,10 +1,10 @@
 :root {
-  --primary-color: #335271;
+  --primary-color: #12312b;
   --secondary-color: #00693e;
   --bright-link-color: #FFA00F;
   --bright-highlight-color: #FFCF87;
   --dark-link-color: #CC800C;
-  --background-color: #e2e2e2;
+  --background-color: #E2E2E2;
 }
 
 body {
@@ -52,8 +52,7 @@ form label {
   overflow-x: hidden;
   text-align: left;
   color: white;
-  font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans",
-    Verdana, Arial, sans-serif;
+  font-family: inherit;
 }
 
 .sidenav-header {
@@ -86,9 +85,10 @@ form label {
 
 .sidenav-subhead {
   color: white;
-  margin: 30px 6px 0px 0px;
-  border: 2px solid #999;
-  border-radius: 6px;
+  margin: 30px 0px 0px 8px;
+  padding-left: 0px;
+  border-top: 1px solid white;
+  border-radius: 0px;
 }
 
 .sidenav a:hover {
@@ -106,8 +106,7 @@ form label {
   padding: 1.5em;
   font-size: 14px;
   text-align: left;
-  font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans",
-    Verdana, Arial, sans-serif;
+  font-family: inherit;
   line-height: 1.5;
 }
 
@@ -403,6 +402,11 @@ ul li input {
 .no-perf-data {
   background-image: url(../img_square/no-perf-data.png) !important;
   background-size: contain;
+}
+
+table.paleblue {
+  font-family: "Alegreya Sans", sans-serif;
+  font-size: 12px;
 }
 
 table.paleblue td {

@@ -55,8 +55,13 @@ class AddSubscriberForm(BaseSupervisionForm):
     email = forms.EmailField(label="Email:")
 
 
+class AddConnectionForm(BaseSupervisionForm):
+    email = forms.EmailField(label="Email:")
+
+
 class RemoveSubscriptionConfirmationForm(forms.Form):
-    CONFIRMATION_PHRASE = "remove"
+    CONFIRMATION_PHRASE = "remove this subscriber"
+    # do not offer this option on the frontend but leave it here in case of bugs
 
     confirmation_text = forms.CharField(label="")
 
@@ -66,6 +71,21 @@ class RemoveSubscriptionConfirmationForm(forms.Form):
             self.context.get("email"),
         ]:
             raise forms.ValidationError("Wrong value.")
+        return self.cleaned_data["confirmation_text"]
+
+
+class RemoveConnectionConfirmationForm(forms.Form):
+    CONFIRMATION_PHRASE = "remove this connection"
+    # do not offer this option on the frontend but leave it here in case of bugs
+
+    confirmation_text = forms.CharField(label="")
+
+    def clean_confirmation_text(self):
+        if self.cleaned_data["confirmation_text"] not in [
+            self.CONFIRMATION_PHRASE,
+            self.context.get("email"),
+        ]:
+            raise forms.ValidationError("Text does not match. Removal of this contact abandoned.")
         return self.cleaned_data["confirmation_text"]
 
 

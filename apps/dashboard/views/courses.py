@@ -29,12 +29,18 @@ from apps.exercises.models import (
     Playlist,
     PlaylistCourseOrdered,
 )
-from apps.accounts.models import Group
+from apps.accounts.models import (
+    Group,
+    User
+)
 
 
 @login_required
-def courses_list_view(request):
-    courses_author = request.user
+def courses_list_view(request, courses_author_id=None):
+    if courses_author_id == None:
+        courses_author = request.user
+    else:
+        courses_author = get_object_or_404(User, id=courses_author_id)
     courses = Course.objects.filter(authored_by=courses_author).select_related(
         "authored_by"
     )
@@ -48,6 +54,11 @@ def courses_list_view(request):
         "dashboard/courses-list.html",
         {"table": table, "courses_author": courses_author, "me": me},
     )
+
+
+@login_required
+def courses_by_user_view(request, courses_author_id=None):
+    return courses_list_view(request, courses_author_id)
 
 
 @login_required

@@ -22,14 +22,17 @@
 }
 
 :root {
-  --link-color: #ffa00f;
+  --primary-color: #12312b;
+/*  --secondary-color: #00693e;*/
+  --bright-link-color: #FFA00F;
+/*  --bright-highlight-color: #FFCF87;*/
+/*  --dark-link-color: #CC800C;*/
+/*  --background-color: #E2E2E2;*/
 }
 
 html {
   font-size: 14px;
-  /*font-family: 'Alegreya Sans',sans-serif;*/
-  font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans",
-    Verdana, Arial, sans-serif;
+  font-family: "Alegreya Sans",sans-serif;
 }
 
 html,
@@ -74,7 +77,7 @@ body {
 body,
 #mainmenu,
 #helpmenu {
-  background-color: #335271;
+  background-color: var(--primary-color);
 }
 #mainmenu,
 #helpmenu {
@@ -197,8 +200,7 @@ textarea {
   margin: 0 auto;
   margin-bottom: 1.5rem;
   font-size: 14px;
-  font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans",
-    Verdana, Arial, sans-serif;
+  font-family: inherit;
   background: transparent;
   color: white;
   position: relative;
@@ -453,7 +455,7 @@ fieldset.settings-notation {
   width: 100%;
   display: inline-flex;
   gap: 8px;
-  color: var(--link-color);
+  color: var(--bright-link-color);
   /* font-weight: bold; */
   justify-content: end;
 }

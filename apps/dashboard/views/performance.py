@@ -36,6 +36,7 @@ def performance_list_view(request, subscriber_id=None):
         {
             "table": table,
             "subscriber_name": subscriber_name,
+            "me": request.user
         },
     )
 

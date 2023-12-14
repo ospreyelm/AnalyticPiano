@@ -18,6 +18,7 @@ from apps.dashboard.views.import_export import (
 from apps.dashboard.views.index import dashboard_index_view
 from apps.dashboard.views.courses import (
     courses_list_view,
+    courses_by_user_view,
     course_add_view,
     course_edit_view,
     course_delete_view,
@@ -45,11 +46,16 @@ from apps.dashboard.views.supervision import (
     supervisors_courses_view,
     subscribers_view,
     unsubscribe_view,
+    connections_view,
     remove_subscriber_view,
+    toggle_connection_pin_view,
     accept_subscription_view,
     decline_subscription_view,
     unsubscribe_confirmation,
     remove_subscriber_confirmation,
+    toggle_connection_pin_with_confirmation,
+    toggle_content_permit_view,
+    toggle_performance_permit_view,
 )
 
 app_name = "dashboard"
@@ -76,6 +82,7 @@ urlpatterns = [
     ),
     # Courses
     path("courses/", courses_list_view, name="courses-list"),
+    path("courses/<int:courses_author_id>/", courses_by_user_view, name="courses-by-user"),
     path("courses/add/", course_add_view, name="add-course"),
     path("courses/<str:course_id>/", course_edit_view, name="edit-course"),
     path("courses/<str:course_id>/delete/", course_delete_view, name="delete-course"),
@@ -89,6 +96,11 @@ urlpatterns = [
         "performances/<int:subscriber_id>/",
         performance_list_view,
         name="subscriber-performances",
+    ),
+    path(
+        "performances/<int:other_id>/",
+        performance_list_view,
+        name="other-performances",
     ),
     path("performances/", performance_list_view, name="performed-playlists"),
     path(
@@ -118,6 +130,7 @@ urlpatterns = [
     ),
     path("unsubscribe/<int:supervisor_id>/", unsubscribe_view, name="unsubscribe"),
     path("subscribers/", subscribers_view, name="subscribers"),
+    path("connections/", connections_view, name="connections"),
     path(
         "accept-subscriber/<int:supervisor_id>/<int:subscriber_id>/",
         accept_subscription_view,
@@ -137,6 +150,26 @@ urlpatterns = [
         "remove-subscriber/<int:subscriber_id>/",
         remove_subscriber_view,
         name="remove-subscriber",
+    ),
+    path(
+        "toggle-content-permit/<int:other_id>/",
+        toggle_content_permit_view,
+        name="toggle-content-permit",
+    ),
+    path(
+        "toggle-performance-permit/<int:other_id>/",
+        toggle_performance_permit_view,
+        name="toggle-performance-permit",
+    ),
+    path(
+        "toggle-connection-pin/<int:other_id>/",
+        toggle_connection_pin_view,
+        name="toggle-connection-pin",
+    ),
+    path(
+        "toggle-connection-pin/<int:other_id>/confirm/",
+        toggle_connection_pin_with_confirmation,
+        name="toggle-connection-pin-with-confirmation",
     ),
     # Groups
     path("groups/", groups_list_view, name="groups-list"),
