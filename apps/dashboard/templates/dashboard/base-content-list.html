@@ -57,6 +57,9 @@
         {% endif %}
         {% block filters %}{% endblock %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
+        {% if exercises_author and exercises_author == me %}
+            <p class="dashboard-tip">To create a new exercise, start at the Play View. Perform the desired chords and bank them by legato-pedaling the chords on your instrument, setting the metronome, or pressing Enter on your computer keyboard. Set your Display Options via the link in the header. Then press the upload button at the top right of the sheet music and you will be directed to the exercise edit page.</p>
+        {% endif %}
     </div>
     
 {% endblock content %}

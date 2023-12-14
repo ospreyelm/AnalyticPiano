@@ -1,5 +1,5 @@
 :root {
-  --primary-color: #12312b;
+  --primary-color: #2d2d2d;
   --secondary-color: #00693e;
   --bright-link-color: #FFA00F;
   --bright-highlight-color: #FFCF87;
@@ -205,9 +205,10 @@ nav {
   color: var(--primary-color);
   background-color: white;
   font-size: 14px;
-  border: 2px solid var(--primary-color);
+  border: 1.5px solid var(--primary-color);
   border-radius: 5px;
-  padding: 0.3rem 0.75rem;
+/*  padding: 0.3rem 0.75rem;*/
+  padding: 0.2rem 0.5rem;
 }
 
 .dashboard-btn:hover {

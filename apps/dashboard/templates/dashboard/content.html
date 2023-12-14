@@ -23,9 +23,9 @@
     {% endif %}
     {% csrf_token %}
     {% if not has_been_performed %}
-    <div class="dashboard-button-bank">
+        <div class="dashboard-button-bank">
     {% else %}
-    <div class="dashboard-button-bank-restricted">
+        <div class="dashboard-button-bank-restricted">
     {% endif %}
         {% if preview_url %}
         <button type="submit" name="save-and-preview" class="btn dashboard-btn" onclick="window.open('{{preview_url}}','_blank');">

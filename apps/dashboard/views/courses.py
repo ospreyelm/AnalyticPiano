@@ -121,7 +121,7 @@ def course_edit_view(request, course_id):
     context = {
         "verbose_name": course._meta.verbose_name,
         "verbose_name_plural": course._meta.verbose_name_plural,
-        "has_been_performed": course.has_been_performed,
+        "has_been_performed": False, # may not be False but this removes irrelevant styling
         "redirect_url": reverse("dashboard:courses-list"),
         "editing": True,
         "user": request.user,

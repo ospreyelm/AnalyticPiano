@@ -1,7 +1,6 @@
 {% extends 'dashboard/base-content-list.html' %}
 
 {% block add-button-exercises %}
-    <p class="dashboard-tip">To create a new exercise, start at the Play View. Perform the desired chords and bank them by legato-pedaling the chords on your instrument, setting the metronome, or pressing Enter on your computer keyboard. Set your Display Options via the link in the header. Then press the upload button at the top right of the sheet music and you will be directed to the exercise edit page.</p>
     <div class="dashboard-btn-bank">
         <button type="submit" class="btn dashboard-btn"
                 onclick="location.href='{% url 'dashboard:export-exercises' %}'">

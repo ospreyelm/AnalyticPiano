@@ -703,34 +703,35 @@ class Course(ClonableModelMixin, BaseContentModel):
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 
-    points_per_playlist = models.DecimalField(
-        "Points per playlist",
+    timely_credit = models.DecimalField(
+        "Points per playlist if timely",
         default=1.0,
         decimal_places=1,
-        max_digits=3,
+        max_digits=4,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
     )
 
-    tardy_penalty = models.DecimalField(
-        "Tardy penalty",
-        default=0.1,
+    tardy_credit = models.DecimalField(
+        "Points per playlist if tardy",
+        default=0.9,
         decimal_places=1,
-        max_digits=1,
-        validators=[MinValueValidator(0)],
+        max_digits=4,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
     )
-    late_penalty = models.DecimalField(
-        "Late Penalty",
-        default=0.5,
+
+    late_credit = models.DecimalField(
+        "Points per playlist if late",
+        default=0.6,
         decimal_places=1,
-        max_digits=1,
-        validators=[MinValueValidator(0)],
+        max_digits=4,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
     )
 
     tardy_threshold = models.IntegerField(
         "Late threshold (hours)",
         default=5 * 24,
-        help_text="When performances are submitted after the due date, this threshold determines if they're considered tardy or late. Submissions before this threshold are tardy, submissions after are late.",
-        validators=[MinValueValidator(1)],
+        help_text="When performances are submitted after the due date, this threshold determines if they are considered tardy or late. Submissions before this threshold are tardy, submissions after are late.",
+        validators=[MinValueValidator(0), MaxValueValidator(4320)],
     )
 
     class Meta:
@@ -739,16 +740,16 @@ class Course(ClonableModelMixin, BaseContentModel):
         constraints = [
             # TODO: reexamine constraints and if we should enforce similar constraints of models across the project
             models.CheckConstraint(
-                check=Q(tardy_penalty__lte=F("points_per_playlist")),
-                name="course_tardy_penalty_lte_points_per_playlist",
+                check=Q(tardy_credit__lte=F("timely_credit")),
+                name="course_tardy_credit_lte_timely_credit",
             ),
             models.CheckConstraint(
-                check=Q(tardy_penalty__lte=F("late_penalty")),
-                name="course_tardy_penalty_lte_late_penalty",
+                check=Q(late_credit__lte=F("timely_credit")),
+                name="course_late_credit_lte_timely_credit",
             ),
             models.CheckConstraint(
-                check=Q(late_penalty__lte=F("points_per_playlist")),
-                name="course_late_penalty_lte_points_per_playlist",
+                check=Q(late_credit__lte=F("tardy_credit")),
+                name="course_late_credit_lte_tardy_credit",
             ),
         ]
 
@@ -769,17 +770,17 @@ class Course(ClonableModelMixin, BaseContentModel):
         return self
 
     def clean(self):
-        if self.tardy_penalty > self.points_per_playlist:
+        if self.tardy_credit > self.timely_credit:
             raise ValidationError(
-                f"Tardy penalty must not be greater than Points per Playlist"
+                f"Tardy credit must not be greater than the timely credit"
             )
-        if self.tardy_penalty > self.late_penalty:
+        if self.late_credit > self.tardy_credit:
             raise ValidationError(
-                f"Tardy penalty must not be greater than Late Penalty"
+                f"Late credit must not be greater than the tardy credit"
             )
-        if self.late_penalty > self.points_per_playlist:
+        if self.late_credit > self.timely_credit:
             raise ValidationError(
-                f"Late Penalty must not be greater than Points per Playlist"
+                f"Late credit must not be greater than the timely credit"
             )
 
     @cached_property

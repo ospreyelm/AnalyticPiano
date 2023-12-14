@@ -22,7 +22,7 @@
 }
 
 :root {
-  --primary-color: #12312b;
+  --primary-color: #2d2d2d;
 /*  --secondary-color: #00693e;*/
   --bright-link-color: #FFA00F;
 /*  --bright-highlight-color: #FFCF87;*/
@@ -177,13 +177,16 @@ textarea {
 #helpmenu {
   display: none;
   position: absolute;
-  padding: 1rem auto;
-  width: 100%;
+  padding: 1rem 0;
+/*  padding-top: 1rem;
+  padding-bottom: 1rem;
+  padding-left: 0;
+  padding-right: 0;
+*/  width: 100%;
   z-index: 100;
   margin: 0;
   margin-top: 320px;
   text-align: center;
-  padding: 1rem;
   line-height: 1.2rem;
 }
 .mainmenu-links {
