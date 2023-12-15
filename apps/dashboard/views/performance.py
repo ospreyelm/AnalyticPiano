@@ -250,5 +250,6 @@ def playlist_performance_view(request, performance_id):
         {
             "table": table,
             "subscriber_name": subscriber_name,
+            "me": request.user
         },
     )

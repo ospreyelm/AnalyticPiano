@@ -750,7 +750,7 @@ class CourseActivityTable(tables.Table):
     subscriber_last_name = tables.columns.Column(verbose_name="Surname")
     # groups = tables.columns.Column(verbose_name="Group(s)")
     time_elapsed = tables.columns.Column(
-        verbose_name="Time",
+        verbose_name="Time (beta)",
         attrs={"td": {"style": "white-space:nowrap"}},
         orderable=True,
     )
