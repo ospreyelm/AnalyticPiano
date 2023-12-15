@@ -97,7 +97,9 @@ deactivate
 # Reminders for local development
 
 • Certain changes to the app will require makemigrations and migrate to be run (see above).
+
 • Any changes to Pipfile must be followed up with `pipenv lock` and `pipenv install`.
+
 • Otherwise, for general use, the following command will suffice:
 
 ```sh
