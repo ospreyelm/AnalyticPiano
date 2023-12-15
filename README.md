@@ -48,9 +48,13 @@ sudo rm -rf ./Python-3.10.13.tgz
 # optional: run `ls ./Python-3.10.13*` to check removal of installation files
 ```
 
-• Clone the app from Github
+• Make a local directory for the project
 ```bash
 mkdir AnalyticPiano && cd AnalyticPiano
+```
+
+• Clone the app from Github
+```bash
 git clone --single-branch --branch main https://github.com/ospreyelm/HarmonyLab.git clone-of-main
 ```
 
