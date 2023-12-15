@@ -46,11 +46,12 @@ cd ../
 sudo rm -rf ./Python-3.10.13
 sudo rm -rf ./Python-3.10.13.tgz 
 # optional: run `ls ./Python-3.10.13*` to check removal of installation files
+sudo apt-get install python3.10-venv # may not be necessary
 ```
 
 • Make a local directory for the project
 ```bash
-mkdir AnalyticPiano && cd AnalyticPiano
+mkdir ~/AnalyticPiano && cd ~/AnalyticPiano
 ```
 
 • Clone the app from Github
@@ -60,10 +61,10 @@ git clone --single-branch --branch main https://github.com/ospreyelm/HarmonyLab.
 
 • Setup virtual environment, watching out for and resolving any errors with pipenv lock
 ```bash
-sudo apt-get install python3.10-venv # may not be necessary
 python3.10 -m venv apvenv
 source apvenv/bin/activate
 cd clone-of-main
+# optional: run `pip install --upgrade pip`
 pip install pipenv
 pipenv lock
 pipenv install
@@ -81,7 +82,7 @@ CREATE DATABASE analyticpiano;
 
 • Run the app locally as follows
 ```sh
-cd AnalyticPiano/clone-of-main
+cd ~/AnalyticPiano/clone-of-main
 source ../apvenv/bin/activate
 export DJANGO_SETTINGS_MODULE="harmony.settings.local"
 ./manage.py makemigrations
@@ -103,7 +104,7 @@ deactivate
 • Otherwise, for general use, the following command will suffice:
 
 ```sh
-cd AnalyticPiano/clone-of-main && source ../apvenv/bin/activate && export DJANGO_SETTINGS_MODULE="harmony.settings.local" && sudo service postgresql start && ./manage.py runserver
+cd ~/AnalyticPiano/clone-of-main && source ../apvenv/bin/activate && export DJANGO_SETTINGS_MODULE="harmony.settings.local" && sudo service postgresql start && ./manage.py runserver
 ```
 
 # Using a local copy of a production database on WSL2
