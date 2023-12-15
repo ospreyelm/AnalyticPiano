@@ -25,7 +25,7 @@ if SENTRY_DSN:
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "harmony",
+        "NAME": "analyticpiano",
         "USER": "postgres",
         "PASSWORD": "password",
         "HOST": "localhost",
