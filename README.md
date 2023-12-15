@@ -47,6 +47,7 @@ sudo rm -rf ./Python-3.10.13
 sudo rm -rf ./Python-3.10.13.tgz 
 # optional: run `ls ./Python-3.10.13*` to check removal of installation files
 ```
+
 • Clone the app from Github
 ```bash
 mkdir AnalyticPiano && cd AnalyticPiano
@@ -74,7 +75,34 @@ CREATE DATABASE analyticpiano;
 \q
 ```
 
-• For WSL2 users who wish to run a local copy of a production database and access it via pgAdmin on Windows proper, locate and edit the config files:
+• Run the app locally as follows
+```sh
+cd AnalyticPiano/clone-of-main
+source ../apvenv/bin/activate
+export DJANGO_SETTINGS_MODULE="harmony.settings.local"
+./manage.py makemigrations
+./manage.py migrate
+./manage.py createsuperuser # optional: create admin account
+./manage.py runserver
+```
+Open `http://127.0.0.1:8000` in a browser, per terminal instructions (usually the keystroke to terminate the server is Ctrl+C). Remember to deactivate the virtual environment when you are done.
+```sh
+deactivate
+```
+
+# Reminders for local development
+
+• Certain changes to the app will require makemigrations and migrate to be run (see above).
+• Any changes to Pipfile must be followed up with `pipenv lock` and `pipenv install`.
+• Otherwise, for general use, the following command will suffice:
+
+```sh
+cd AnalyticPiano/clone-of-main && source ../apvenv/bin/activate && export DJANGO_SETTINGS_MODULE="harmony.settings.local" && sudo service postgresql start && ./manage.py runserver
+```
+
+# Using a local copy of a production database on WSL2
+
+For WSL2 users who wish to run a local copy of a production database and access it via pgAdmin on Windows proper, locate and edit the config files:
 ```bash
 psql -U postgres -c 'SHOW config_file'
 sudo nano /etc/postgresql/13/main/pg_hba.conf # adapt this line as appropriate
@@ -93,28 +121,3 @@ sudo service postgresql restart
 ```
 
 Now in pgAdmin, add a new server with the name wsl2 (for example) and the host address 127.0.0.1. The default username and password for postgres are postgres and password; enter these or the credentials you have setup via postgresql on WSL2. Create a backup from your production database and restore (in the role of postgres) this to a newly created database called analyticpiano on the wsl2 server. Make sure that the encoding of the backup matches that of the template database on WSL2 (probably SQL_ASCII); include all pre-data, data, and post-data; but omit owner, privilege, tablespace, unlogged table data, and comments.
-
-• Run the app locally as follows
-```sh
-cd AnalyticPiano/clone-of-main
-source ../apvenv/bin/activate
-export DJANGO_SETTINGS_MODULE="harmony.settings.local"
-./manage.py makemigrations
-./manage.py migrate
-./manage.py createsuperuser # optional: create admin account
-./manage.py runserver
-```
-
-• Use the app! Open `http://127.0.0.1:8000` in a browser, per terminal instructions (usually the keystroke to terminate the server is Ctrl+C). Remember to deactivate the virtual environment when you are done.
-
-```sh
-deactivate
-```
-
-• Certain changes to the app will require makemigrations and migrate to be run (see above).
-• Any changes to Pipfile must be followed up with `pipenv lock` and `pipenv install`.
-• Otherwise, for general use, the following command will suffice:
-
-```sh
-cd AnalyticPiano/clone-of-main && source ../apvenv/bin/activate && export DJANGO_SETTINGS_MODULE="harmony.settings.local" && sudo service postgresql start && ./manage.py runserver
-```
