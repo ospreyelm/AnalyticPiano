@@ -323,7 +323,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         "accounts.User",
         related_name="playlists",
         on_delete=models.PROTECT,
-        verbose_name="Author of Unit",
+        verbose_name="Author of Playlist",
     )
 
     created = models.DateTimeField("Created", auto_now_add=True)
@@ -590,7 +590,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def has_been_performed(self):
-        return PerformanceData.objects.filter(playlist=self).exists()
+        return PerformanceData.objects.filter(playlist=self).filter(~Q(user=self.authored_by)).exists()
 
     @classmethod
     def create_auto_playlist(cls, initial_exercise_id, authored_by):
@@ -670,7 +670,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         "accounts.User",
         related_name="courses",
         on_delete=models.PROTECT,
-        verbose_name="Author",
+        verbose_name="Author of Course",
     )
     is_public = models.BooleanField(
         "Commons",
@@ -785,7 +785,7 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def has_been_performed(self):
-        return PerformanceData.objects.filter(course=self).exists()
+        return PerformanceData.objects.filter(course=self).filter(~Q(user=self.authored_by)).exists()
 
     @cached_property
     def playlist_id_list(self):
