@@ -106,6 +106,10 @@ deactivate
 ```sh
 cd ~/AnalyticPiano/clone-of-main && source ../apvenv/bin/activate && export DJANGO_SETTINGS_MODULE="harmony.settings.local" && sudo service postgresql start && ./manage.py runserver
 ```
+or on Ubuntu
+```sh
+cd ~/AnalyticPiano/clone-of-main && source ../apvenv/bin/activate && export DJANGO_SETTINGS_MODULE="harmony.settings.local" && sudo systemctl start postgresql.service && ./manage.py runserver
+```
 
 # Using a local copy of a production database on WSL2
 
