@@ -528,6 +528,12 @@ define([
         i,
         len;
 
+      // PREPARATORY WORK FOR SHOWING UNISONS
+      let unison_idx = 0
+      if (Number.isInteger(unison_idx) && unison_idx < notes.length) {
+        notes.push(notes[unison_idx])
+      }
+
       for (i = 0, len = notes.length; i < len; i++) {
         note_num = parseInt(notes[i], 10);
         if (clef) {
@@ -667,6 +673,7 @@ define([
       } else if (
         STAFF_DISTRIBUTION === "chorale" &&
         this.getSortedNotes().length === 4
+        // EDITS NEEDED HERE TO SHOW ALTO-TENOR UNISON
       ) {
         return (
           clef ==
