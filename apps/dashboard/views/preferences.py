@@ -35,7 +35,7 @@ def dashboard_preferences_view(request):
             "auto_sustain_duration"
         ]
     except:
-        kbd_size_form.fields["auto_sustain_duration"].initial = 2
+        kbd_size_form.fields["auto_sustain_duration"].initial = 20
 
     if request.method == "POST":
         kbd_size_form = KeyboardForm(request.POST)

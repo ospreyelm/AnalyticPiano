@@ -219,8 +219,8 @@ def playlist_performance_view(request, performance_id):
                         f'{"Latest: errors (" + str(exercise["error_tally"]) + ")." if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0) else ""}'
                         f'{"Done " if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] == -1) else ""}'  # when is this shown?
                         f'{"Latest: without error." if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] == 0) else ""}'
-                        f'{"" if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0) else ["", "<br>Tempo erratic", "<br>Tempo unsteady", "<br>Tempo steady", "<br>Tempo very steady", "<br>Tempo perfectly steady"][round(exercise["tempo_rating"])]}'
-                        f'{"" if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0 or not exercise["tempo_mean_semibreves_per_min"]) else "<br> at " + str(round(exercise["tempo_mean_semibreves_per_min"] * tempo_display_factor)) + " w.n.p.m.<br>"}'
+                        f'{"" if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0 or exercise["tempo_rating"] == None) else ["", "<br>Tempo erratic", "<br>Tempo unsteady", "<br>Tempo steady", "<br>Tempo very steady", "<br>Tempo perfectly steady"][round(exercise["tempo_rating"])]}'
+                        f'{"" if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0 or "tempo_mean_semibreves_per_min" not in exercise) else "<br> at " + str(round(exercise["tempo_mean_semibreves_per_min"] * tempo_display_factor)) + " w.n.p.m.<br>"}'
                         f'<br><a href="{performance_obj.playlist.get_exercise_url_by_id(exercise["id"], course_id=course_id)}">Play again</a>'
                     )
                 }
