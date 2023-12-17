@@ -7,11 +7,14 @@
         </button>
         <button type="submit" class="btn dashboard-btn"
                 onclick="location.href='{% url 'dashboard:export-playlists' %}'">
-            Export
+            Export*
         </button>
+<!-- 
         <button type="submit" class="btn dashboard-btn"
                 onclick="location.href='{% url 'dashboard:import-playlists' %}'">
             Import
         </button>
+ -->
+        <p>*Importing of playlist backups is not yet supported. If you want to keep a local backup of your playlists regardless, export your exercises at the same time as you export your playlists.</p>
     </div>
 {% endblock %}

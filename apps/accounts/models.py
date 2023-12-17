@@ -42,8 +42,8 @@ def get_preferences_default():
         "volume": DEFAULT_VOLUME,
         "mute": False,
         "auto_advance": True,
-        "auto_advance_delay": 2,
         "auto_repeat": True,
+        "auto_advance_delay": 2,
         "auto_repeat_delay": 2,
     }
 

@@ -70,7 +70,7 @@ class ExerciseResource(BaseContentResource):
             "rhythm",
             "time_signature",
             "is_public",
-            "locked",
+            # "locked",
         )
 
 

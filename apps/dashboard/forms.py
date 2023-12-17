@@ -90,6 +90,28 @@ class RemoveConnectionConfirmationForm(forms.Form):
 
 
 class KeyboardForm(forms.Form):
+    auto_advance = forms.BooleanField(
+        required=False,
+        initial=False,  # irrelevant due to default user preferences
+    )
+
+    auto_repeat = forms.BooleanField(
+        required=False,
+        initial=False,  # irrelevant due to default user preferences
+    )
+
+    auto_advance_delay = forms.IntegerField(
+        widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
+        label_suffix=" in seconds:",
+        initial=2,  # irrelevant due to default user preferences
+    )
+
+    auto_repeat_delay = forms.IntegerField(
+        widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
+        label_suffix=" in seconds:",
+        initial=2,  # irrelevant due to default user preferences
+    )
+
     keyboard_size = forms.ChoiceField(
         widget=forms.Select(),
         choices=KEYBOARD_CHOICES,
@@ -101,28 +123,6 @@ class KeyboardForm(forms.Form):
         initial=0,  # irrelevant due to default user preferences
         # when this value is +3, the top 13 keys of an 88-key piano will not work
         # minimum is set to -1 because -2 and lower cause a misrendering of the 88-key piano
-    )
-
-    auto_advance = forms.BooleanField(
-        required=False,
-        initial=False,  # irrelevant due to default user preferences
-    )
-
-    auto_advance_delay = forms.IntegerField(
-        widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
-        label_suffix=" in seconds:",
-        initial=2,  # irrelevant due to default user preferences
-    )
-
-    auto_repeat = forms.BooleanField(
-        required=False,
-        initial=False,  # irrelevant due to default user preferences
-    )
-
-    auto_repeat_delay = forms.IntegerField(
-        widget=forms.NumberInput(attrs={"step": 1, "max": 60, "min": 0}),
-        label_suffix=" in seconds:",
-        initial=2,  # irrelevant due to default user preferences
     )
 
     def __init__(self, *args, **kwargs):

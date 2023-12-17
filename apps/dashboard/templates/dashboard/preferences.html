@@ -3,9 +3,9 @@
 {% load django_tables2 %}
 {% load i18n %}
 {% block content %}
-    <div class="dashboard-page">
+    <div class="dashboard-page settings-page">
         <h1>Settings</h1>
-        <p class="dashboard-tip">You may also adjust the volume (pp through ff) and toggle the mute control in Play View; those settings persist when you navigate away or log out.</p>
+        <p class="dashboard-tip">You may adjust the volume (pianissimo through fortissimo) and toggle the mute control at the top-right of the play view; those settings persist when you navigate away or log out.</p>
         <form method="POST" class="post-form">
             {% csrf_token %}
             {{ form.as_p }}

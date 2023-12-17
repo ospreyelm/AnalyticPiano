@@ -182,7 +182,7 @@ urlpatterns = [
         name="remove-group-member",
     ),
     # Preferences
-    path("preferences/", dashboard_preferences_view, name="preferences"),
+    path("settings/", dashboard_preferences_view, name="preferences"),
     # Import/Export
     path("export/exercises/", ExerciseExportView.as_view(), name="export-exercises"),
     path("import/exercises/", ExerciseImportView.as_view(), name="import-exercises"),
