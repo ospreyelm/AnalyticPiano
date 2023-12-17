@@ -45,6 +45,7 @@ def get_preferences_default():
         "auto_repeat": True,
         "auto_advance_delay": 2,
         "auto_repeat_delay": 2,
+        "auto_sustain_duration": 20 # tenths of a second
     }
 
 

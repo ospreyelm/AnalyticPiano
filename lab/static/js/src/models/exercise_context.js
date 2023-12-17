@@ -42,6 +42,7 @@ define([
         AUTO_ADVANCE_DELAY = sticky_settings.auto_advance_delay;
         AUTO_REPEAT = sticky_settings.auto_repeat;
         AUTO_REPEAT_DELAY = sticky_settings.auto_repeat_delay;
+        // AUTO_SUSTAIN_DURATION = sticky_settings.auto_sustain_duration;
       }
     },
   });

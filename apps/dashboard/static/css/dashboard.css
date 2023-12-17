@@ -554,7 +554,8 @@ label[for="id_email"] {
 .post-form label[for="id_auto_advance"],
 .post-form label[for="id_auto_repeat"],
 .post-form label[for="id_auto_advance_delay"],
-.post-form label[for="id_auto_repeat_delay"] {
+.post-form label[for="id_auto_repeat_delay"],
+.post-form label[for="id_auto_sustain_duration"] {
   min-width: 18em;
   display: inline-block;
   padding: 0;
@@ -578,8 +579,4 @@ label[for="id_email"] {
   height: 18px;
   margin: 0.375rem;
   margin-left: 1rem;
-}
-
-label[for="id_auto_advance"], label[for="id_auto_advance"] {
-/*  padding-bottom: 0.75rem !important;*/
 }

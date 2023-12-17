@@ -30,6 +30,12 @@ def dashboard_preferences_view(request):
     kbd_size_form.fields["auto_repeat_delay"].initial = request.user.preferences[
         "auto_repeat_delay"
     ]
+    try:
+        kbd_size_form.fields["auto_sustain_duration"].initial = request.user.preferences[
+            "auto_sustain_duration"
+        ]
+    except:
+        kbd_size_form.fields["auto_sustain_duration"].initial = 2
 
     if request.method == "POST":
         kbd_size_form = KeyboardForm(request.POST)
@@ -51,6 +57,9 @@ def dashboard_preferences_view(request):
             ]
             request.user.preferences["auto_repeat_delay"] = kbd_size_form.cleaned_data[
                 "auto_repeat_delay"
+            ]
+            request.user.preferences["auto_sustain_duration"] = kbd_size_form.cleaned_data[
+                "auto_sustain_duration"
             ]
             request.user.save()
         return HttpResponseRedirect(reverse("dashboard:preferences"))

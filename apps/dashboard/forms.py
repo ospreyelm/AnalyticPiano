@@ -112,6 +112,12 @@ class KeyboardForm(forms.Form):
         initial=2,  # irrelevant due to default user preferences
     )
 
+    auto_sustain_duration = forms.IntegerField(
+        widget=forms.NumberInput(attrs={"step": 1, "max": 300, "min": 5}),
+        label_suffix=" in tenths of a second:",
+        initial=2,  # irrelevant due to default user preferences
+    )
+
     keyboard_size = forms.ChoiceField(
         widget=forms.Select(),
         choices=KEYBOARD_CHOICES,

@@ -70,6 +70,7 @@ define([
     if (name == "sustain") {
       this.subscribe(
         EVENTS.BROADCAST.NEXT_CHORD,
+        // ought to pass slice_duration_factor calibrated to the rhythm duration of the chord
         this.refreshPedal.bind(this, name)
       );
     }
@@ -83,14 +84,46 @@ define([
     }
   };
 
+  /**
+   * ajax call to GET the user preferences
+   */
+
+  $.ajax({
+    type: "GET",
+    url: this.location.origin + "/ajax/preferences/",
+    async: false,
+    success: function (response) {
+      if (!response["valid"]) {
+        /** if the call is successful response.instance will hold the json sent by the server
+         * use the following two lines to log the response to the console
+         * console.log(response);
+         * console.log(JSON.parse(response.instance)); */
+        var sticky_settings = JSON.parse(response.instance);
+        AUTO_SUSTAIN_DURATION = sticky_settings.auto_sustain_duration;
+      }
+    },
+  });
+
   // Toggles off the pedal designated by pedalName, then toggles it back on
   // Currently just used to maintain sustain after completing a chord
-  PedalsComponent.prototype.refreshPedal = function (pedalName) {
+  PedalsComponent.prototype.refreshPedal = function (pedalName, slice_duration_factor = 1) {
+    retake_time = 100 // milliseconds
+    if (pedalName == "sustain") {
+      wait_duration = AUTO_SUSTAIN_DURATION * slice_duration_factor * 100 - retake_time
+      if (wait_duration < 0) {
+        wait_duration = 0
+      }
+      console.log(wait_duration)
+    } else { // no real use case
+      wait_duration = retake_time
+    }
     if (this.pedals[pedalName].state == "on") {
       _.delay(() => {
         this.broadcast(EVENTS.BROADCAST.PEDAL, pedalName, "off", "ui");
-        this.broadcast(EVENTS.BROADCAST.PEDAL, pedalName, "on", "ui");
-      }, 750);
+        _.delay(() => {
+          this.broadcast(EVENTS.BROADCAST.PEDAL, pedalName, "on", "ui");
+        }, retake_time);
+      }, wait_duration);
     }
   };
 
