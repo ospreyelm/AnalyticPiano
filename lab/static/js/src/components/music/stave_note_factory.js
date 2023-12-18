@@ -173,6 +173,21 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
       noteKeys,
       activeAlterations = Object.create(null)
     ) {
+      let note_dict = {}
+      for (var i = 0, len = noteKeys.length; i < len; i++) {
+        let str = noteKeys[i];
+        try {
+          let note_regex = new RegExp('^([a-g])([b#]*)\/([0-9]+)$', 'g');
+          let matches = note_regex.exec(str).slice(1);
+          note_dict[i] = {
+            "alphabet": matches[0],
+            "accidental": matches[1],
+            "register": matches[2]
+          }
+        }
+        catch { console.log('Error parsing note names for getAccidentalsOf', str) }
+      }
+
       let keySignature = this.keySignature;
       let accidentals = [];
       let note,
@@ -199,44 +214,44 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         quality = note_spelling.substr(1); // get qualifier
         natural_note = note.replace(quality + "/", "/");
         natural_found_idx = noteKeys.indexOf(natural_note);
-        is_doubled = natural_found_idx !== -1 && i !== natural_found_idx;
+        is_doubled = natural_found_idx !== -1 && natural_found_idx !== i && natural_note != note_spelling;
 
         // check to see if this note is doubled - that is, the natural version of
         // the note is also active at the same time, in which case it needs to be
         // distinguished with a natural accidental
         if (is_doubled) {
           accidentals[natural_found_idx] = "n";
-        } else {
-          accidentals[i] = quality;
+        }
 
-          // let is_signed_alteration =
-          // 	keySignature.signatureContains(note_spelling);
-          // 	// diatonic and non-natural
-          const staff_line = note[0] + note.split("/")[1];
-          const is_diatonic = keySignature.isDiatonic(note_spelling);
+        accidentals[i] = quality;
 
-          if (is_diatonic) {
-            if (activeAlterations[staff_line] == undefined) {
-              accidentals[i] = "";
-            } else if (activeAlterations[staff_line] != quality) {
-              if (quality == "") {
-                accidentals[i] = "n";
-              } else {
-                accidentals[i] = quality;
-              }
+        // let is_signed_alteration =
+        // 	keySignature.signatureContains(note_spelling);
+        // 	// diatonic and non-natural
+        const staff_line = note[0] + note.split("/")[1];
+        const is_diatonic = keySignature.isDiatonic(note_spelling);
+
+        if (is_diatonic) {
+          if (activeAlterations[staff_line] == undefined) {
+            accidentals[i] = "";
+          } else if (activeAlterations[staff_line] != quality) {
+            if (quality == "") {
+              accidentals[i] = "n";
+            } else {
+              accidentals[i] = quality;
             }
-          } else {
-            // chromatic
-            if (activeAlterations[staff_line] == quality) {
-              accidentals[i] = "";
-            } else if (activeAlterations[staff_line] == undefined) {
-              if (quality == "") {
-                accidentals[i] = "n";
-              }
-            } else if (activeAlterations[staff_line] !== quality) {
-              if (quality == "") {
-                accidentals[i] = "n";
-              }
+          }
+        } else {
+          // chromatic
+          if (activeAlterations[staff_line] == quality) {
+            accidentals[i] = "";
+          } else if (activeAlterations[staff_line] == undefined) {
+            if (quality == "") {
+              accidentals[i] = "n";
+            }
+          } else if (activeAlterations[staff_line] !== quality) {
+            if (quality == "") {
+              accidentals[i] = "n";
             }
           }
         }
