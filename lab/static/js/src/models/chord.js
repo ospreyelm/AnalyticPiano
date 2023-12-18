@@ -14,18 +14,6 @@ define([
   );
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
 
-  if (true) {
-    sessionStorage.removeItem("staffDistribution"); // retire this function
-  } else {
-    var storage_staff_dist = sessionStorage.getItem("staffDistribution");
-    if (
-      storage_staff_dist &&
-      VALID_STAFF_DISTRIBUTIONS.includes(storage_staff_dist)
-    ) {
-      STAFF_DISTRIBUTION = storage_staff_dist;
-    }
-  }
-
   /**
    * Creates an instance of a chord.
    *
@@ -116,6 +104,9 @@ define([
       if ("notes" in this.settings) {
         this.noteOn(this.settings.notes);
       }
+
+      // UNISONS
+      this._unison_idx = false; // only provide for one unison per chord at the moment
     },
     /**
      * Clears all the notes in the chord.
@@ -528,10 +519,12 @@ define([
         i,
         len;
 
-      // PREPARATORY WORK FOR SHOWING UNISONS
-      let unison_idx = 0
-      if (Number.isInteger(unison_idx) && unison_idx < notes.length) {
-        notes.push(notes[unison_idx])
+      // UNISONS
+      if (Number.isInteger(this._unison_idx) && this._unison_idx < notes.length) {
+        if (!(STAFF_DISTRIBUTION == 'chorale' && notes.length === 3 && this._unison_idx === 1)) {
+          notes.push(notes[this._unison_idx])
+          notes.sort()
+        }
       }
 
       for (i = 0, len = notes.length; i < len; i++) {
@@ -673,12 +666,32 @@ define([
       } else if (
         STAFF_DISTRIBUTION === "chorale" &&
         this.getSortedNotes().length === 4
-        // EDITS NEEDED HERE TO SHOW ALTO-TENOR UNISON
       ) {
         return (
           clef ==
           (this.getSortedNotes().slice(0, 2).includes(midi) ? "bass" : "treble")
         );
+      } else if (
+        // UNISONS
+        STAFF_DISTRIBUTION === "chorale" &&
+        this.getSortedNotes().length === 3 &&
+        [0, 1, 2].includes(this._unison_idx)
+      ) {
+        if (this._unison_idx === 0) {
+          return (
+            clef ==
+            (this.getSortedNotes().slice(0, 1).includes(midi) ? "bass" : "treble")
+          );
+        } else if (this._unison_idx === 2) {
+          return (
+            clef ==
+            (this.getSortedNotes().slice(0, 2).includes(midi) ? "bass" : "treble")
+          );
+        } else { // this._unison_ix === 1
+          return (
+            [["bass"], ["bass", "treble"], ["treble"]][this.getSortedNotes().indexOf(midi)].includes(clef)
+          );
+        }
       } else {
         return clef == (midi < mid_threshold ? "bass" : "treble");
       }
