@@ -63,6 +63,11 @@ define([
        */
       this._rhythmValue = null;
       /**
+       * Index of the midi note, in the ordered set of midi notes, that (most recently) was indicated as a unison
+       * @type {integer}
+       */
+      this._unison_idx = null;
+      /**
        * Container for the notes that are active.
        * @type {object}
        * @protected
@@ -106,8 +111,9 @@ define([
       }
 
       // UNISONS
-      // GET IT FROM THE EXERICSE
-      this._unison_idx = false; // only provide for one unison per chord at the moment
+      if ("unison_idx" in this.settings) {
+        this._unison_idx = this.settings.unison_idx;
+      }
     },
     /**
      * Clears all the notes in the chord.
@@ -160,15 +166,28 @@ define([
           changed = this._notes[noteNumber] !== true;
         }
 
+        const currently_on_notes = Object.entries(this._notes).filter(([k, v]) => v === true).map(([k, v]) => parseInt(k));
         if (this._notes[noteNumber] === true) {
-          const currently_on_notes = Object.entries(this._notes).filter(([k, v]) => v === true).map(([k, v]) => parseInt(k));
-          let unison_idx = currently_on_notes.indexOf(noteNumber);
-          if (unison_idx != -1) { // should be unnecessary but just in case
-            if (this._unison_idx == unison_idx) {
-              this._unison_idx = false; // toggle off
-            } else {
-              this._unison_idx = unison_idx;
-            }
+          let latest_double_tap_idx = currently_on_notes.indexOf(noteNumber);
+          if (latest_double_tap_idx == -1) {
+            console.log('unexpected condition [1] in call of chord.noteOn')
+          }
+          if (this._unison_idx === latest_double_tap_idx) { // === is crucial here, to ensure that the test (false === 0) fails
+            this._unison_idx = null; // toggle off
+          } else {
+            this._unison_idx = latest_double_tap_idx;
+          }
+          changed = true;
+        } else {
+          let unison_idx = this._unison_idx;
+          if (unison_idx != null &&
+            Number.isInteger(unison_idx) && // should be redundant
+            currently_on_notes[unison_idx] > noteNumber // i.e. the user is adding a note below the doubled note
+          ) {
+            this._unison_idx += 1;
+          }
+          if (!changed) {
+            console.log('unexpected condition [2] in call of chord.noteOn')
             changed = true;
           }
         }
@@ -219,6 +238,17 @@ define([
         if (_sustain) {
           this._sustained[noteNumber] = false;
           if (cull_from_sustain) {
+            const currently_on_notes = Object.entries(this._notes).filter(([k, v]) => v === true).map(([k, v]) => parseInt(k));
+            const doubled_note_num = currently_on_notes[this._unison_idx] || null;
+            let unison_idx = this._unison_idx;
+
+            if (doubled_note_num !== null) {
+              if (doubled_note_num == noteNumber) {
+                this._unison_idx = null;
+              } else if (doubled_note_num > noteNumber) {
+                this._unison_idx += -1;
+              }
+            }
             this._culled_from_sustain.push(noteNumber);
             // TO DO!
             // Use broadcast / events to relay to Tone.js that midi note [noteNumber] should be turned off
@@ -533,7 +563,6 @@ define([
         i,
         len;
 
-      // UNISONS
       if (Number.isInteger(this._unison_idx) && this._unison_idx < notes.length) {
         if (!(STAFF_DISTRIBUTION == 'chorale' && notes.length === 3 && this._unison_idx === 1)) {
           notes.push(notes[this._unison_idx])

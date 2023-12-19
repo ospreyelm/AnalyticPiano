@@ -707,8 +707,9 @@ define([
       for (var i = 0, len = problems.length; i < len; i++) {
         notes = problems[i].visible;
         full_context = problems[i].notes;
-
         rhythm = problems[i].rhythm;
+        unison_idx = problems[i].unison_idx;
+
         g_problem = false;
         if (this.graded !== false && this.graded.problems[i]) {
           g_problem = this.graded.problems[i];
@@ -723,6 +724,7 @@ define([
           notes: notes,
           full_context: full_context,
           rhythm: rhythm,
+          unison_idx: unison_idx,
         });
 
         if (g_problem) {

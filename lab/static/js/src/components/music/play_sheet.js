@@ -405,7 +405,13 @@ define([
           })
           .map((key) => parseInt(key));
         let hidden = [];
-        chords.unshift({ rhythmValue: "w", visible: visible, hidden: hidden });
+        let unison_idx = null;
+        try {
+          unison_idx = this.chords._items[i]._unison_idx;
+        } catch {
+          console.log('PlaySheetComponent.dataForSave failed to retrieve unison_idx')
+        }
+        chords.unshift({ rhythmValue: "w", visible: visible, hidden: hidden, unison_idx: unison_idx });
       }
 
       /* simplify for testing */

@@ -223,10 +223,11 @@ define(["lodash", "app/config"], function (_, Config) {
       // set of problems to have VISIBLE/HIDDEN parts
       problems = _.map(problems, function (chord, index) {
         // var normalized = {"visible":[], "hidden":[],"notes":[]};
-        var normalized = { visible: [], hidden: [], notes: [], rhythm: null };
+        var normalized = { visible: [], hidden: [], notes: [], unison_idx: null, rhythm: null };
 
         if (_.isArray(chord)) {
           normalized.visible = chord;
+          console.log('chord received as simple array by ExerciseDefinition.parse')
         } else if (_.isObject(chord)) {
           if (
             !chord.hasOwnProperty("visible") ||
@@ -264,6 +265,10 @@ define(["lodash", "app/config"], function (_, Config) {
 
         if (chord.hasOwnProperty("rhythmValue")) {
           normalized.rhythm = chord.rhythmValue;
+        }
+
+        if (chord.hasOwnProperty("unison_idx")) {
+          normalized.unison_idx = chord.unison_idx
         }
 
         return normalized;
