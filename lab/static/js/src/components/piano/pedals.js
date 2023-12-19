@@ -107,7 +107,7 @@ define([
   // Toggles off the pedal designated by pedalName, then toggles it back on
   // Currently just used to maintain sustain after completing a chord
   PedalsComponent.prototype.refreshPedal = function (pedalName, slice_duration_factor = 1) {
-    retake_time = 100 // milliseconds
+    const retake_time = 100 // milliseconds
     if (pedalName == "sustain") {
       wait_duration = AUTO_SUSTAIN_DURATION * slice_duration_factor * 100 - retake_time
       if (wait_duration < 0) {

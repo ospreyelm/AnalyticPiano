@@ -430,9 +430,14 @@ define([
       /* critical side-effect */
       var notes_off = this.chords.bank(request_origin);
       if (request_origin === "ui") {
+        const retake_time = 100 // milliseconds
         // Lift pedal on ui-originating chord bank
         this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "off", "ui");
         this.turnOffSustainedNotesOnPedalLift(notes_off);
+        _.delay(() => {
+          this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "on", "ui");
+        }, retake_time);
+
       }
     },
     turnOffSustainedNotesOnPedalLift: function (notes_off = []) {
