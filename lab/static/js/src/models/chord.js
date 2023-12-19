@@ -106,6 +106,7 @@ define([
       }
 
       // UNISONS
+      // GET IT FROM THE EXERICSE
       this._unison_idx = false; // only provide for one unison per chord at the moment
     },
     /**
@@ -157,6 +158,19 @@ define([
 
         if (!changed) {
           changed = this._notes[noteNumber] !== true;
+        }
+
+        if (this._notes[noteNumber] === true) {
+          const currently_on_notes = Object.entries(this._notes).filter(([k, v]) => v === true).map(([k, v]) => parseInt(k));
+          let unison_idx = currently_on_notes.indexOf(noteNumber);
+          if (unison_idx != -1) { // should be unnecessary but just in case
+            if (this._unison_idx == unison_idx) {
+              this._unison_idx = false; // toggle off
+            } else {
+              this._unison_idx = unison_idx;
+            }
+            changed = true;
+          }
         }
         this._notes[noteNumber] = true;
       }

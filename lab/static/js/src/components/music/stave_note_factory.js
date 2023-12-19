@@ -214,11 +214,12 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         quality = note_spelling.substr(1); // get qualifier
         natural_note = note.replace(quality + "/", "/");
         natural_found_idx = noteKeys.indexOf(natural_note);
-        is_doubled = natural_found_idx !== -1 && natural_found_idx !== i && natural_note != note_spelling;
+        is_doubled = natural_found_idx !== -1 && natural_found_idx !== i && natural_note[0] != note_spelling;
 
         // check to see if this note is doubled - that is, the natural version of
         // the note is also active at the same time, in which case it needs to be
         // distinguished with a natural accidental
+
         if (is_doubled) {
           accidentals[natural_found_idx] = "n";
         }
