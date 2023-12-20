@@ -307,6 +307,9 @@ class ManyField(ModelMultipleChoiceField):
         through_prepare=None,
         # if this field allows CSV import
         csv=False,
+        # if we don't want to use the postgres _ids, we use this.
+        #   Enables use of exercise & playlist ids in csv import
+        id_attr="pk",
     ):
         widget_inputs = {}
         self.queryset = queryset
@@ -322,6 +325,7 @@ class ManyField(ModelMultipleChoiceField):
             widget_inputs["additional_fields"] = self.additional_fields
         widget_inputs["csv"] = csv
         self.widget = widget(**widget_inputs)
+        self.id_attr = id_attr
 
         super().__init__(queryset=self.queryset)
 
@@ -384,7 +388,7 @@ class ManyField(ModelMultipleChoiceField):
                 value_list[2] = json.dumps(value_list[2], cls=DjangoJSONEncoder)
         # this handles individual models within field options
         elif value is not None:
-            value = value.pk
+            value = getattr(value, self.id_attr)
         else:
             value = list()
         return value
@@ -403,6 +407,8 @@ class DashboardPlaylistForm(PlaylistForm):
         order_attr="order",
         format_title=lambda ex: ex.id
         + (f"- {ex.description}" if ex.description else ""),
+        id_attr="id",
+        csv=True,
     )
 
     class Meta(PlaylistForm.Meta):
@@ -454,7 +460,7 @@ class DashboardPlaylistForm(PlaylistForm):
 
     def clean(self):
         self.cleaned_data["exercises"] = [
-            (Exercise.objects.get(pk=value_pair[0]), value_pair[1])
+            (Exercise.objects.get(id=value_pair[0]), value_pair[1])
             for value_pair in self.cleaned_data["exercises"]
         ]
         return super().clean()
@@ -500,6 +506,7 @@ class DashboardCourseForm(CourseForm):
             else None,
         },
         csv=True,
+        id_attr="id",
     )
 
     class Meta(CourseForm.Meta):
@@ -544,7 +551,7 @@ class DashboardCourseForm(CourseForm):
         self.cleaned_data["visible_to"] = Group.objects.filter(pk__in=visible_to_ids)
 
         self.cleaned_data["playlists"] = [
-            (Playlist.objects.get(pk=value_pair[0]), value_pair[1])
+            (Playlist.objects.get(id=value_pair[0]), value_pair[1])
             for value_pair in self.cleaned_data["playlists"]
         ]
         for value_pair in self.cleaned_data["playlists"]:

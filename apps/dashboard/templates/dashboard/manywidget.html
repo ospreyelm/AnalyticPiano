@@ -20,7 +20,7 @@
       {% endfor %}
     </select>
   </div>
-  {% if widget.csv %}<input class="widget-file" {% include "django/forms/widgets/attrs.html" %} type="file" name="filename">{% endif %}
+  {% if widget.csv %}<div class="widget-file-wrapper"><div class="widget-file-label">Import from CSV:</div><input class="widget-file" {% include "django/forms/widgets/attrs.html" %} type="file" name="filename"></div>{% endif %}
   </div>
   <div class="widget-value-list">
     <div id="values-{{ widget.name }}" class="widget-value-list-inner">
@@ -44,7 +44,40 @@
 
   const selectElement = $(`.widget-select#id_${widgetName}`)
 
-  function appendCSV(){
+  function appendCSV(csvObject){
+    let notFoundIds = []
+    for (const row of csvObject){
+      selectElement.val(row[0])
+      const selectedOption = selectElement.find(':selected')
+      
+      if (selectedOption.length>0) {
+        let index= indexOfValue([selectedOption.val(),selectedOption.text()])
+        if (index == -1) {
+          selectElement.trigger({type:"select2:select",params:{data:{id:selectedOption.val(), text:selectedOption.text()}}})
+          index=fieldValue.length-1
+        }
+        // Filling in additional fields
+        // We iterate thru the inputs, pulling field names from them, then editing fieldValue entries accordingly
+        const currValueBlockInputs=$(`#values-${widgetName} > .widget-value-block[value='${selectedOption.val()}']`).find("input")
+        let startingInputIndex = 0
+        // Skip the first input (the order input)
+        {% if widget.order_input %}
+        startingInputIndex = 1
+        {% endif %}
+        for (let inputIdx =startingInputIndex, colIdx = 1;colIdx<row.length && inputIdx<currValueBlockInputs.length;inputIdx++,colIdx++){
+          const fieldName = $(currValueBlockInputs[inputIdx]).attr("id").split("-")[0]
+          editAdditional(fieldName, index, row[colIdx].trim())
+          console.log(index)
+        }
+      }
+      else {
+        if (row[0].trim() !="") notFoundIds.push(row[0])
+      }
+    }
+    if (notFoundIds.length>0) {
+      alert(`The following IDs could not be added: ${notFoundIds.join("\n")}. Please verify that these exist and that they are available to you.`)
+    }
+    fileElement.val(null)
 
   }
 
@@ -57,7 +90,7 @@
       // code from here: https://stackoverflow.com/a/27439524/7385274
       fileReader.onload = (function(f) {
         return function(e) {
-            appendCSV($.csv.toArray(e.target.result))
+            appendCSV($.csv.toArrays(e.target.result))
         };
       })(csvFile)
       fileReader.readAsText(csvFile)
@@ -68,7 +101,7 @@
   })
 
   function generateValueBlock(instanceId, instanceTitle, throughValues, index) {
-    return `<div class="widget-value-block ${throughValues ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}">
+    return `<div class="widget-value-block ${throughValues ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}" value="${instanceId}">
       {% if widget.order_input %}<input type="number" class="widget-value-order order-${widgetName}" value="${index}"></input> {% endif %}
       <div class="widget-value-data-${widgetName}" value="${instanceId}" >${instanceTitle}</div>
       {% for field in widget.additional_fields %} <input class="widget-value-additional-${widgetName}" id="{{field.attr_name}}-${index}" value='${throughValues['{{field.attr_name}}'] || ""}' placeholder="{{field.placeholder}}"></input> {% endfor %}
@@ -141,7 +174,8 @@
   };
   
   function editAdditional(fieldName, index, newValue) {
-    fieldValue[index][2][fieldName] = newValue
+    fieldValue[index][2][fieldName] = newValue.trim() != "" ? newValue : null
+    
     onFieldValueChange()
   }
 
@@ -161,13 +195,15 @@
     closeOnSelect:false,
   })
 
-  // Called when a value is selected
-  selectElement.on("select2:select",(event)=>{
+  function onSelect (event){
     const selectedData = event.params.data
     const selectedValue = selectedData.id
     const selectedText = selectedData.text
     addValue([selectedValue, selectedText])  
-  })
+  }
+
+  // Called when a value is selected
+  selectElement.on("select2:select",onSelect)
 
   // When you click a remove element, remove the according value
   $(document).on("click",`.widget-value-remove-${widgetName}`,((event)=>{

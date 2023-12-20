@@ -3,6 +3,7 @@
 .widget-option-wrapper {
   display: inline-flex;
   gap: 6px;
+  align-items: center;
 }
 
 .widget-value-list {
@@ -55,7 +56,8 @@
 
 .widget-select {
   overflow: scroll;
-  height: 6em;
+  min-height: 6em;
+  max-height: 100%;
   background-color: #fff;
   width: 256px;
 }
@@ -80,4 +82,14 @@
 .widget-head-input {
   display: flex;
   flex-direction: row;
+}
+.widget-file-wrapper {
+  flex-direction: column;
+  padding-left: 6px;
+}
+.widget-file {
+  padding: 0 !important;
+}
+.widget-file-label {
+  line-height: 1;
 }
