@@ -76,3 +76,8 @@
 .select2-results__option--selected {
   display: none;
 }
+
+.widget-head-input {
+  display: flex;
+  flex-direction: row;
+}

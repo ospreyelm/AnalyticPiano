@@ -265,12 +265,18 @@ class ManyWidget(forms.widgets.SelectMultiple):
     option_template_name = "../templates/dashboard/manywidgetoption.html"
 
     def __init__(
-        self, attrs=None, order_input=False, order_attr=None, additional_fields=[]
+        self,
+        attrs=None,
+        order_input=False,
+        order_attr=None,
+        additional_fields=[],
+        csv=False,
     ):
         self.attrs = attrs
         self.order_attr = order_attr
         self.order_input = order_input
         self.additional_fields = additional_fields
+        self.csv = csv
         super().__init__(attrs)
 
     def format_value(self, value):
@@ -281,6 +287,7 @@ class ManyWidget(forms.widgets.SelectMultiple):
         context["widget"]["order_attr"] = self.order_attr
         context["widget"]["order_input"] = self.order_input
         context["widget"]["additional_fields"] = self.additional_fields
+        context["widget"]["csv"] = self.csv
         return context
 
 
@@ -298,6 +305,8 @@ class ManyField(ModelMultipleChoiceField):
         additional_fields=None,
         # processes the through_table data before rendering
         through_prepare=None,
+        # if this field allows CSV import
+        csv=False,
     ):
         widget_inputs = {}
         self.queryset = queryset
@@ -311,6 +320,7 @@ class ManyField(ModelMultipleChoiceField):
         self.additional_fields = additional_fields
         if self.additional_fields:
             widget_inputs["additional_fields"] = self.additional_fields
+        widget_inputs["csv"] = csv
         self.widget = widget(**widget_inputs)
 
         super().__init__(queryset=self.queryset)
@@ -489,6 +499,7 @@ class DashboardCourseForm(CourseForm):
             if through_values["due_date"]
             else None,
         },
+        csv=True,
     )
 
     class Meta(CourseForm.Meta):

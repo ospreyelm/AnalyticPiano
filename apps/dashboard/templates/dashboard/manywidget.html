@@ -1,13 +1,15 @@
 
 {% load static %}
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'js/Sortable.min.js'%}"></script>
+<link href="{% static 'css/select2.min.css'%}" rel="stylesheet" />
+<script src="{% static 'js/select2.min.js'%}"></script>
+<script src="{% static 'js/jquery-csv.min.js' %}"></script>
 <link rel="stylesheet" type="text/css" href="{% static 'css/manywidget.css' %}"/>
 <div class="widget-container">
   {% comment %} Use this hidden input so that Django has a form element at which to get the value {% endcomment %}
   <input name="{{ widget.name }}" style="display:none"/>
-  <div class="widget-option-wrapper">
+  <div class="widget-head-input">
+    <div class="widget-option-wrapper">
     <select class="widget-select"{% include "django/forms/widgets/attrs.html" %} multiple="multiple">
       {% for group_name, group_choices, group_index in widget.optgroups %}
         {% if group_name %}<optgroup label="{{ group_name }}">{% endif %}
@@ -17,6 +19,8 @@
         {% if group_name %}</optgroup>{% endif %}
       {% endfor %}
     </select>
+  </div>
+  {% if widget.csv %}<input class="widget-file" {% include "django/forms/widgets/attrs.html" %} type="file" name="filename">{% endif %}
   </div>
   <div class="widget-value-list">
     <div id="values-{{ widget.name }}" class="widget-value-list-inner">
@@ -39,6 +43,29 @@
   const valueElement = $(`input[name='${widgetName}']`)
 
   const selectElement = $(`.widget-select#id_${widgetName}`)
+
+  function appendCSV(){
+
+  }
+
+  const fileElement = $(`.widget-file#id_${widgetName}`)
+  fileElement.on("change",(event)=>{
+    const confirmed = confirm("New CSV uploaded. Press OK to import its values.")
+    if (confirmed) {
+      const csvFile = event.target.files[0]
+      const fileReader = new FileReader()
+      // code from here: https://stackoverflow.com/a/27439524/7385274
+      fileReader.onload = (function(f) {
+        return function(e) {
+            appendCSV($.csv.toArray(e.target.result))
+        };
+      })(csvFile)
+      fileReader.readAsText(csvFile)
+    }
+    else {
+      fileElement.val("")
+    }
+  })
 
   function generateValueBlock(instanceId, instanceTitle, throughValues, index) {
     return `<div class="widget-value-block ${throughValues ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}">
@@ -166,6 +193,7 @@
   })
   }
 
+  
   
   {{ widget.name }}_render()
 
