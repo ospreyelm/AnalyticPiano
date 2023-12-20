@@ -85,7 +85,9 @@ class RemoveConnectionConfirmationForm(forms.Form):
             self.CONFIRMATION_PHRASE,
             self.context.get("email"),
         ]:
-            raise forms.ValidationError("Text does not match. Removal of this contact abandoned.")
+            raise forms.ValidationError(
+                "Text does not match. Removal of this contact abandoned."
+            )
         return self.cleaned_data["confirmation_text"]
 
 
@@ -577,7 +579,9 @@ class BaseDashboardGroupForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super(forms.ModelForm, self).__init__(*args, **kwargs)
-        self.fields["members"].queryset = user.subscribers
+        self.fields["members"].queryset = User.objects.filter(
+            pk__in=user.performance_permits
+        )
         if self.instance.pk != None:
             self.fields["members"].queryset = self.fields[
                 "members"

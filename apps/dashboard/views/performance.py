@@ -19,7 +19,10 @@ def performance_list_view(request, subscriber_id=None):
     subscriber_id = subscriber_id or request.user.id
     subscriber = get_object_or_404(User, id=subscriber_id)
 
-    if not request.user.is_supervisor_to(subscriber):
+    if (
+        request.user != subscriber
+        and not request.user.pk in subscriber.performance_permits
+    ):
         raise PermissionDenied
 
     performances = PerformanceData.objects.filter(user=subscriber).select_related(
@@ -33,11 +36,7 @@ def performance_list_view(request, subscriber_id=None):
     return render(
         request,
         "dashboard/performances-list.html",
-        {
-            "table": table,
-            "subscriber_name": subscriber_name,
-            "me": request.user
-        },
+        {"table": table, "subscriber_name": subscriber_name, "me": request.user},
     )
 
 
@@ -139,7 +138,7 @@ def playing_time(exercises_data):
 def playlist_performance_view(request, performance_id):
     subscriber_id = request.user.id
     subscriber = get_object_or_404(User, id=subscriber_id)
-    if not request.user.is_supervisor_to(subscriber):
+    if not request.user.pk in subscriber.performance_permits:
         raise PermissionDenied
     subscriber_name = subscriber
 
@@ -193,7 +192,6 @@ def playlist_performance_view(request, performance_id):
         )  # why not len(exercises) ?!
 
         for exercise in exercises_data:
-
             tempo_display_factor = 1
             # TODO: include time signature in the performance data for this purpose?
             # try:
@@ -247,9 +245,5 @@ def playlist_performance_view(request, performance_id):
     return render(
         request,
         "dashboard/performance_details.html",
-        {
-            "table": table,
-            "subscriber_name": subscriber_name,
-            "me": request.user
-        },
+        {"table": table, "subscriber_name": subscriber_name, "me": request.user},
     )

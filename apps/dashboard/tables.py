@@ -11,7 +11,6 @@ User = get_user_model()
 
 
 class SupervisorsTable(tables.Table):
-
     first_name = tables.columns.Column(
         accessor=A("supervisor.first_name"), verbose_name="Given name"
     )
@@ -255,22 +254,28 @@ class ConnectionsTable(tables.Table):
     )
 
     def render_last_name(self, record):
-        if self.request.user.id in record["other"].content_permits \
-        or self.request.user.id in record["other"].performance_permits:
+        if (
+            self.request.user.id in record["other"].content_permits
+            or self.request.user.id in record["other"].performance_permits
+        ):
             return record["other"].last_name
         else:
             return ""
 
     def render_first_name(self, record):
-        if self.request.user.id in record["other"].content_permits \
-        or self.request.user.id in record["other"].performance_permits:
+        if (
+            self.request.user.id in record["other"].content_permits
+            or self.request.user.id in record["other"].performance_permits
+        ):
             return record["other"].first_name
         else:
             return ""
 
     def render_signup_date(self, record):
-        if self.request.user.id in record["other"].content_permits \
-        or self.request.user.id in record["other"].performance_permits:
+        if (
+            self.request.user.id in record["other"].content_permits
+            or self.request.user.id in record["other"].performance_permits
+        ):
             return record["other"].date_joined
         else:
             return ""
@@ -306,6 +311,7 @@ class ConnectionsTable(tables.Table):
         else:
             return "no"
         return ""
+
     #     if int(record["other"].id) in self.request.user.content_permits \
     #     or int(record["other"].id) in self.request.user.performance_permits \
     #     or self.request.user.id in record["other"].content_permits \
@@ -321,6 +327,7 @@ class ConnectionsTable(tables.Table):
     #         priority=
     #     ).order_by(("-" if is_descending else "") + "priority")
     #     return (queryset, True)
+
 
 class MyActivityTable(tables.Table):
     course_name = tables.columns.LinkColumn(
@@ -765,6 +772,7 @@ class CourseActivityTable(tables.Table):
         empty_values=(()),
         orderable=False,  # does not work as currently configured
     )
+
     # subscriber_email = tables.columns.Column(
     #     verbose_name='Subscriber Email',
     # )
@@ -802,7 +810,7 @@ class CourseActivityTable(tables.Table):
 
     def render_result_count(self, record):
         result_count = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
-        for (key, value) in record.items():
+        for key, value in record.items():
             if value in result_count:
                 result_count[value] += 1
         return format_html(
@@ -814,7 +822,7 @@ class CourseActivityTable(tables.Table):
         tardy_credit = self.course.tardy_credit
         late_credit = self.course.late_credit
         result_count = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
-        for (key, value) in record.items():
+        for key, value in record.items():
             if value in result_count:
                 result_count[value] += 1
         score = (

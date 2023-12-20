@@ -42,15 +42,9 @@ from apps.dashboard.views.playlists import (
 )
 from apps.dashboard.views.preferences import dashboard_preferences_view
 from apps.dashboard.views.supervision import (
-    supervisors_view,
     supervisors_courses_view,
-    subscribers_view,
-    unsubscribe_view,
     connections_view,
-    remove_subscriber_view,
     toggle_connection_pin_view,
-    accept_subscription_view,
-    decline_subscription_view,
     unsubscribe_confirmation,
     remove_subscriber_confirmation,
     toggle_connection_pin_with_confirmation,
@@ -82,7 +76,9 @@ urlpatterns = [
     ),
     # Courses
     path("courses/", courses_list_view, name="courses-list"),
-    path("courses/<int:courses_author_id>/", courses_by_user_view, name="courses-by-user"),
+    path(
+        "courses/<int:courses_author_id>/", courses_by_user_view, name="courses-by-user"
+    ),
     path("courses/add/", course_add_view, name="add-course"),
     path("courses/<str:course_id>/", course_edit_view, name="edit-course"),
     path("courses/<str:course_id>/delete/", course_delete_view, name="delete-course"),
@@ -108,18 +104,7 @@ urlpatterns = [
         playlist_performance_view,
         name="playlist-performance",
     ),
-    # path(
-    #     "playlist-performance/<int:subscriber_id>/<str:playlist_id>/",
-    #     playlist_performance_view,
-    #     name="subscriber-playlist-performance",
-    # ),
-    # path(
-    #     "playlist-performance/<str:playlist_id>/",
-    #     playlist_performance_view,
-    #     name="playlist-performance",
-    # ),
     # Subscriptions / Subscribers
-    path("subscriptions/", supervisors_view, name="subscriptions"),
     path(
         "subscriptions-courses/", supervisors_courses_view, name="subscriptions-courses"
     ),
@@ -128,28 +113,11 @@ urlpatterns = [
         unsubscribe_confirmation,
         name="unsubscribe-confirmation",
     ),
-    path("unsubscribe/<int:supervisor_id>/", unsubscribe_view, name="unsubscribe"),
-    path("subscribers/", subscribers_view, name="subscribers"),
     path("connections/", connections_view, name="connections"),
-    path(
-        "accept-subscriber/<int:supervisor_id>/<int:subscriber_id>/",
-        accept_subscription_view,
-        name="accept-subscription",
-    ),
-    path(
-        "decline-subscriber/<int:supervisor_id>/<int:subscriber_id>/",
-        decline_subscription_view,
-        name="decline-subscription",
-    ),
     path(
         "remove-subscriber/<int:subscriber_id>/confirm/",
         remove_subscriber_confirmation,
         name="remove-subscriber-confirmation",
-    ),
-    path(
-        "remove-subscriber/<int:subscriber_id>/",
-        remove_subscriber_view,
-        name="remove-subscriber",
     ),
     path(
         "toggle-content-permit/<int:other_id>/",

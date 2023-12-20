@@ -65,8 +65,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     SUPERVISOR_STATUS_DECLINED = "Declined"
     SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = "Waiting"
     SUPERVISOR_STATUS_INVITATION_WAIT = "Waiting"
-    # TODO: change to M2M field
-    _supervisors_dict = JSONField(default=dict, verbose_name="Supervisors", blank=True)
 
     preferences = JSONField(
         default=get_preferences_default, verbose_name="Preferences", blank=True
@@ -131,6 +129,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     #         message=f"Your AnalyticPiano password is: {self.raw_password}",
     #     )
 
+    # TODO: convert these to One-to-Many fields
+    # sets aren't JSON serializable, but if performance proves too poor and a 1-M field isn't practical,
+    #   revert these fields back to sets and add lots of getters and setters to convert from array -> set and back
+
     content_permits = JSONField(
         default=list, verbose_name="Content Permits", blank=True
     )
@@ -150,8 +152,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         _listed_connections = User.objects.filter(id__in=self.connections_list)
         _permissions = set(
             [
-                # *User.objects.filter(id__in=self._supervisors_dict.keys()),# old model
-                # *User.objects.filter(_supervisors_dict__has_key=str(self.id)),# old model
                 *User.objects.filter(id__in=self.content_permits),
                 *User.objects.filter(id__in=self.performance_permits),
                 *User.objects.filter(content_permits__contains=self.id),
@@ -204,66 +204,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         else:
             self.connections_list.append(second_party)
         self.save()
-
-    @property
-    def supervisors(self):
-        return User.objects.filter(id__in=self._supervisors_dict.keys())
-
-    @property
-    def subscribers(self):
-        return User.objects.filter(_supervisors_dict__has_key=str(self.id))
-
-    def subscribe_to(self, supervisor, status=SUPERVISOR_STATUS_SUBSCRIPTION_WAIT):
-        if str(supervisor.id) in self._supervisors_dict:
-            return
-        self._supervisors_dict[str(supervisor.id)] = status
-        self.save()
-
-    def unsubscribe_from(self, supervisor):
-        if not str(supervisor.id) in self._supervisors_dict:
-            return
-        del self._supervisors_dict[str(supervisor.id)]
-        self.save()
-
-    @staticmethod
-    def accept_subscription(supervisor, subscriber):
-        if str(supervisor.id) not in subscriber._supervisors_dict:
-            return
-        subscriber._supervisors_dict[
-            str(supervisor.id)
-        ] = User.SUPERVISOR_STATUS_ACCEPTED
-        subscriber.save()
-
-    @staticmethod
-    def decline_subscription(supervisor, subscriber):
-        if str(supervisor.id) not in subscriber._supervisors_dict:
-            return
-        subscriber._supervisors_dict[
-            str(supervisor.id)
-        ] = User.SUPERVISOR_STATUS_DECLINED
-        subscriber.save()
-
-    @staticmethod
-    def remove_subscription(supervisor, subscriber):
-        subscriber._supervisors_dict.pop(
-            str(supervisor.id)
-        )  # so that blocks cannot be unilaterally reversed
-
-    def is_supervisor_to(self, subscriber):
-        return (
-            self == subscriber
-            or str(self.id) in subscriber._supervisors_dict
-            and subscriber._supervisors_dict[str(self.id)]
-            == User.SUPERVISOR_STATUS_ACCEPTED
-        )
-
-    def is_subscribed_to(self, supervisor):
-        return (
-            self == supervisor
-            or str(supervisor.id) in self._supervisors_dict
-            and self._supervisors_dict[str(supervisor.id)]
-            == User.SUPERVISOR_STATUS_ACCEPTED
-        )
 
 
 class Group(models.Model):

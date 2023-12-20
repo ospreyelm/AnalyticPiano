@@ -29,10 +29,7 @@ from apps.exercises.models import (
     Playlist,
     PlaylistCourseOrdered,
 )
-from apps.accounts.models import (
-    Group,
-    User
-)
+from apps.accounts.models import Group, User
 
 
 @login_required
@@ -121,7 +118,7 @@ def course_edit_view(request, course_id):
     context = {
         "verbose_name": course._meta.verbose_name,
         "verbose_name_plural": course._meta.verbose_name_plural,
-        "has_been_performed": False, # may not be False but this removes irrelevant styling
+        "has_been_performed": False,  # may not be False but this removes irrelevant styling
         "redirect_url": reverse("dashboard:courses-list"),
         "editing": True,
         "user": request.user,
@@ -256,7 +253,7 @@ def course_activity_view(request, course_id):
     curr_group_ids = [int(g) for g in filters.form.cleaned_data["groups"] or []]
     curr_groups = Group.objects.filter(id__in=curr_group_ids)
 
-    subscribers = request.user.subscribers
+    subscribers = User.objects.filter(pk__in=request.user.content_permits)
     if len(curr_group_ids) > 0:
         subscribers = subscribers.filter(participant_groups__id__in=curr_group_ids)
     course_playlists = list(

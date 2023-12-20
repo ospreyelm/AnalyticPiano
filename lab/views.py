@@ -139,8 +139,9 @@ class PlaylistView(RequirejsView):
         if playlist is None:
             raise Http404("Playlist with this name or ID does not exist.")
 
-        if not playlist.is_public and not request.user.is_subscribed_to(
-            playlist.authored_by
+        if (
+            not playlist.is_public
+            and not request.user.pk in playlist.authored_by.content_permits()
         ):
             raise PermissionDenied
 
@@ -381,8 +382,9 @@ class ExerciseView(RequirejsView):
     def get(self, request, exercise_id, *args, **kwargs):
         exercise = get_object_or_404(Exercise, id=exercise_id)
 
-        if not exercise.is_public and not request.user.is_subscribed_to(
-            exercise.authored_by
+        if (
+            not exercise.is_public
+            and not request.user.pk in exercise.authored_by.content_permits()
         ):
             raise PermissionDenied
 
@@ -413,8 +415,9 @@ class CourseView(RequirejsView):
     def get(self, request, course_id, *args, **kwargs):
         course = get_object_or_404(Course, id=course_id)
 
-        if not course.is_public and not request.user.is_subscribed_to(
-            course.authored_by
+        if (
+            not course.is_public
+            and not request.user.pk in course.authored_by.content_permits()
         ):
             raise PermissionDenied
 
@@ -525,8 +528,9 @@ def exercise_performance_history(
     if playlist is None:
         raise Http404("Playlist with this name or ID does not exist.")
 
-    if not playlist.is_public and not request.user.is_subscribed_to(
-        playlist.authored_by
+    if (
+        not playlist.is_public
+        and not request.user.pk in playlist.authored_by.content_permits()
     ):
         raise PermissionDenied
 
