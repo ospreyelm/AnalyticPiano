@@ -45,7 +45,7 @@ def get_preferences_default():
         "auto_repeat": True,
         "auto_advance_delay": 2,
         "auto_repeat_delay": 2,
-        "auto_sustain_duration": 20 # tenths of a second
+        "auto_sustain_duration": 20,  # tenths of a second
     }
 
 
@@ -131,32 +131,40 @@ class User(AbstractBaseUser, PermissionsMixin):
     #         message=f"Your AnalyticPiano password is: {self.raw_password}",
     #     )
 
-    content_permits = JSONField(default=set, verbose_name="Content Permits", blank=True)
+    content_permits = JSONField(
+        default=list, verbose_name="Content Permits", blank=True
+    )
     # list of users with permission to access the User's content
 
-    performance_permits = JSONField(default=set, verbose_name="Performance Permissions", blank=True)
+    performance_permits = JSONField(
+        default=list, verbose_name="Performance Permissions", blank=True
+    )
     # list of users with permission to access the User's performances
 
-    connections_list = JSONField(default=list, verbose_name="Connections List", blank=True)
+    connections_list = JSONField(
+        default=list, verbose_name="Connections List", blank=True
+    )
 
     @property
     def connections(self):
         _listed_connections = User.objects.filter(id__in=self.connections_list)
-        _permissions = set([
-            # *User.objects.filter(id__in=self._supervisors_dict.keys()),# old model
-            # *User.objects.filter(_supervisors_dict__has_key=str(self.id)),# old model
-            *User.objects.filter(id__in=self.content_permits),
-            *User.objects.filter(id__in=self.performance_permits),
-            *User.objects.filter(content_permits__contains=self.id),
-            *User.objects.filter(performance_permits__contains=self.id),
-        ])
+        _permissions = set(
+            [
+                # *User.objects.filter(id__in=self._supervisors_dict.keys()),# old model
+                # *User.objects.filter(_supervisors_dict__has_key=str(self.id)),# old model
+                *User.objects.filter(id__in=self.content_permits),
+                *User.objects.filter(id__in=self.performance_permits),
+                *User.objects.filter(content_permits__contains=self.id),
+                *User.objects.filter(performance_permits__contains=self.id),
+            ]
+        )
         return [
             *[x for x in _listed_connections if x not in _permissions],
             *[x for x in _listed_connections if x in _permissions],
             *[x for x in _permissions if x not in _listed_connections],
         ]
 
-    def toggle_content_permit(self, other_user): # new
+    def toggle_content_permit(self, other_user):  # new
         if self.id == other_user.id:
             return
         second_party = int(other_user.id)
@@ -166,7 +174,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.content_permits.append(second_party)
         self.save()
 
-    def toggle_performance_permit(self, other_user): # new
+    def toggle_performance_permit(self, other_user):  # new
         if self.id == other_user.id:
             return
         second_party = int(other_user.id)
@@ -176,7 +184,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.performance_permits.append(second_party)
         self.save()
 
-    def pin_connection(self, other_user): # new
+    def pin_connection(self, other_user):  # new
         if self.id == other_user.id:
             return
         second_party = int(other_user.id)
@@ -187,7 +195,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.connections_list.append(second_party)
         self.save()
 
-    def toggle_connection_pin(self, other_user): # new
+    def toggle_connection_pin(self, other_user):  # new
         if self.id == other_user.id:
             return
         second_party = int(other_user.id)
@@ -237,7 +245,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @staticmethod
     def remove_subscription(supervisor, subscriber):
-        subscriber._supervisors_dict.pop(str(supervisor.id))# so that blocks cannot be unilaterally reversed
+        subscriber._supervisors_dict.pop(
+            str(supervisor.id)
+        )  # so that blocks cannot be unilaterally reversed
 
     def is_supervisor_to(self, subscriber):
         return (
