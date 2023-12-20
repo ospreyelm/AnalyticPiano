@@ -565,7 +565,7 @@ define([
 
       if (Number.isInteger(this._unison_idx) && this._unison_idx < notes.length) {
         if (!(STAFF_DISTRIBUTION == 'chorale' && notes.length === 3 && this._unison_idx === 1)) {
-          notes.push(notes[this._unison_idx])
+          notes.push(notes[this._unison_idx]) // length of notes issue with rendering unisons
           notes.sort()
         }
       }

@@ -104,8 +104,10 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
       for (i = 0, len = problems.length; i < len; i++) {
         expected_notes = problems[i].notes;
         actual_notes = [];
+        delivered_unison_idx = null;
         if (chords[i]) {
-          actual_notes = chords[i].getNoteNumbers();
+          actual_notes = [...new Set(chords[i].getNoteNumbers())];
+          delivered_unison_idx = chords[i]._unison_idx;
           const dummy_idx = actual_notes.indexOf(109);
           if (dummy_idx > -1) {
             actual_notes.splice(dummy_idx, 1);
@@ -113,7 +115,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         }
         switch (definition.exercise.type) {
           case "matching":
-            result = this.notesMatch(expected_notes, actual_notes);
+            result = this.notesMatch(expected_notes, actual_notes, problems[i].unison_idx || null, delivered_unison_idx);
             break;
           case "analytical":
             result = this.analysisMatch(
@@ -153,7 +155,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
           // 	result = this.sopranoMatch(expected_notes, actual_notes);
           // 	break;
           default:
-            result = this.notesMatch(expected_notes, actual_notes);
+            result = this.notesMatch(expected_notes, actual_notes, problems[i].unison_idx || null, delivered_unison_idx);
         }
         graded.problems[i] = {
           score: score_map[result.state],
@@ -186,14 +188,15 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
      * @param {array} expected
      * @param {array} delivered
      */
-    notesMatch: function (expected, delivered) {
-      /* parameters are arrays of midi numbers */
+    notesMatch: function (expected, delivered, expected_unison_idx = null, delivered_unison_idx = null) {
+      /* parameters are arrays of midi numbers and indeces */
 
       var result = {
         state: null,
         count: { correct: [], incorrect: [] }, // poorly named
         note: {},
         notes: delivered,
+        unison_idx: { expected: expected_unison_idx, delivered: delivered_unison_idx },
       };
 
       var mistake = false;
@@ -212,12 +215,26 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         }
       }
 
+      var unison_idx_match = result.unison_idx.delivered == result.unison_idx.expected;
+      if (mistake == false &&
+        result.count[CORRECT].length == expected.length &&
+        result.unison_idx.expected !== null &&
+        Number.isInteger(result.unison_idx.expected) &&
+        result.unison_idx.delivered !== null &&
+        Number.isInteger(result.unison_idx.delivered) &&
+        !unison_idx_match
+      ) {
+        mistake = true;
+        console.log('unison error');
+      }
+
       result.state =
-        mistake === true
-          ? INCORRECT
-          : result.count[CORRECT].length < expected.length
-          ? PARTIAL
-          : CORRECT;
+        mistake === true ?
+          INCORRECT :
+          result.count[CORRECT].length < expected.length ?
+            PARTIAL : unison_idx_match ?
+              CORRECT :
+              PARTIAL;
 
       return result;
     },
