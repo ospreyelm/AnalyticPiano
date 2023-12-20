@@ -92,13 +92,38 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         : this.getRhythmValue().toLowerCase();
       let vexflow_dots =
         this.getRhythmValue().toUpperCase() == this.getRhythmValue() ? 1 : 0;
-      var stave_note_1 = this._makeStaveNote(
-        this.getNoteKeys(),
-        this.getNoteModifiers(),
-        vexflow_duration,
-        vexflow_dots
-      );
-      return [stave_note_1];
+      let vexflow_keys = this.getNoteKeys();
+
+      const CHORALE_FORMAT = true;
+
+      if (CHORALE_FORMAT && vexflow_keys.length == 2) {
+        var stave_note_1 = this._makeStaveNote(
+          vexflow_keys.slice(0,1),
+          this.getNoteModifiers(),
+          vexflow_duration,
+          vexflow_dots,
+          -1, // stem_direction
+          'AB' // part is alto or bass
+        );
+        var stave_note_2 = this._makeStaveNote(
+          vexflow_keys.slice(1,2),
+          this.getNoteModifiers(),
+          vexflow_duration,
+          vexflow_dots,
+          1, // stem_direction
+          'ST' // part is soprano or tenor
+        );
+        return [stave_note_1, stave_note_2];
+      } else {
+        var stave_note_1 = this._makeStaveNote(
+          vexflow_keys,
+          this.getNoteModifiers(),
+          vexflow_duration,
+          vexflow_dots,
+          0, // stem_direction
+        );
+        return [stave_note_1];
+      }
     },
     /**
      * Returns true if there are any stave notes to create, false otherwise.
@@ -505,7 +530,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
      * @param {array} modifiers
      * @return {Vex.Flow.StaveNote}
      */
-    _makeStaveNote: function (keys, modifiers, rhythm_value, dot_count = 0) {
+    _makeStaveNote: function (keys, modifiers, rhythm_value, dot_count = 0, stem_direction = 0, part = null) {
       modifiers = modifiers || [];
 
       var stave_note = new Vex.Flow.StaveNote({
@@ -518,14 +543,23 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         // type: "r", // make a rest
         dots: dot_count,
         clef: this.clef,
-        auto_stem: true,
+        auto_stem: stem_direction === 0,
+        stem_direction: stem_direction,
+        // modifiers: modifiers, // why not like this?
       });
       if (dot_count == 1) {
         stave_note = stave_note.addDotToAll();
       }
 
-      for (var i = 0, len = modifiers.length; i < len; i++) {
-        modifiers[i](stave_note);
+      const ENABLE_CHORALE = false; // modifiers are not working yet
+      if (ENABLE_CHORALE && part == 'AB') {
+        modifiers[0](stave_note);
+      } else if (ENABLE_CHORALE && part == 'ST') {
+        modifiers[1](stave_note);
+      } else if (part === null) {
+        for (var i = 0, len = modifiers.length; i < len; i++) {
+          modifiers[i](stave_note);
+        }
       }
 
       return stave_note;

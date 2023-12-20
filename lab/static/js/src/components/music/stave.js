@@ -192,7 +192,9 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
       this.formatStaveVoices();
 
       this.drawStaveVoice();
+      this.drawLowVoice();
       this.doConnected("drawStaveVoice");
+      this.doConnected("drawLowVoice");
       this.drawStaveBar();
       this.doConnected("drawStaveBar");
 
@@ -348,70 +350,86 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      */
     createStaveVoice: function () {
       var voice, formatter, time;
+      if (!this.hasStaveNotes()) {
+        this.staveVoice = voice;
+        return;
+      }
+
       /**
        * Meter defined here on basis of rhythm value.
        * Follows exercise definition.
        */
-      if (this.hasStaveNotes()) {
-        var rhythm_value = this.noteFactory.getRhythmValue();
-        if (rhythm_value == null) {
-          rhythm_value = DEFAULT_RHYTHM_VALUE;
-        }
-        if (rhythm_value === "w") {
-          time = {
-            num_beats: 4,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "W") {
-          time = {
-            num_beats: 6,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "H") {
-          time = {
-            num_beats: 3,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "h") {
-          time = {
-            num_beats: 2,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "Q") {
-          time = {
-            num_beats: 1.5,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "q") {
-          time = {
-            num_beats: 1,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        // } else if (rhythm_value === "e") {
-        //   time = {
-        //     num_beats: 0.5,
-        //     beat_value: 4,
-        //     resolution: Vex.Flow.RESOLUTION,
-        //   };
-        } else {
-          // should be redundant
-          time = {
-            num_beats: 4,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        }
-        voice = new Vex.Flow.Voice(time);
-        voice.addTickables(this.createStaveNotes());
-        // voice.addTickables(this.createStaveNotes("h")); // how to add multiple chords per measure
+      var rhythm_value = this.noteFactory.getRhythmValue();
+      if (rhythm_value == null) {
+        rhythm_value = DEFAULT_RHYTHM_VALUE;
       }
-      this.staveVoice = voice;
+      if (rhythm_value === "w") {
+        time = {
+          num_beats: 4,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "W") {
+        time = {
+          num_beats: 6,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "H") {
+        time = {
+          num_beats: 3,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "h") {
+        time = {
+          num_beats: 2,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "Q") {
+        time = {
+          num_beats: 1.5,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "q") {
+        time = {
+          num_beats: 1,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      // } else if (rhythm_value === "8") {
+      //   time = {
+      //     num_beats: 0.5,
+      //     beat_value: 4,
+      //     resolution: Vex.Flow.RESOLUTION,
+      //   };
+      } else {
+        // should be redundant
+        time = {
+          num_beats: 4,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      }
+
+      const create = this.createStaveNotes();
+
+      if (create.length == 2) { // chorale format
+        var low_voice, high_voice;
+        low_voice = new Vex.Flow.Voice(time);
+        high_voice = new Vex.Flow.Voice(time);
+        low_voice.addTickables([create[0]]);
+        high_voice.addTickables([create[1]]);
+        this.staveVoice = high_voice;
+        this.lowVoice = low_voice;
+      } else {
+        var voice;
+        voice = new Vex.Flow.Voice(time);
+        voice.addTickables(create);
+        this.staveVoice = voice;
+      }
     },
     /**
      * Format the Vex.Flow.Voice.
@@ -421,18 +439,26 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
     formatStaveVoices: function () {
       var voices = [],
         voice,
-        connectedVoice,
+        connectedStaveVoice,
+        connectedLowVoice,
         formatter;
 
       if (this.isConnected()) {
-        connectedVoice = this.getConnected().getStaveVoice();
+        connectedStaveVoice = this.getConnected().getStaveVoice();
+        connectedLowVoice = this.getConnected().getLowVoice();
       }
 
       if (this.staveVoice) {
         voices.push(this.staveVoice);
       }
-      if (connectedVoice) {
-        voices.push(connectedVoice);
+      if (this.lowVoice) {
+        voices.push(this.lowVoice);
+      }
+      if (connectedStaveVoice) {
+        voices.push(connectedStaveVoice);
+      }
+      if (connectedLowVoice) {
+        voices.push(connectedLowVoice);
       }
 
       voice = voices[0];
@@ -450,6 +476,11 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
     drawStaveVoice: function () {
       if (this.staveVoice) {
         this.staveVoice.draw(this.getContext(), this.staffSegment);
+      }
+    },
+    drawLowVoice: function () {
+      if (this.lowVoice) {
+        this.lowVoice.draw(this.getContext(), this.staffSegment);
       }
     },
     /**
@@ -604,6 +635,9 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      */
     getStaveVoice: function () {
       return this.staveVoice;
+    },
+    getLowVoice: function () {
+      return this.lowVoice;
     },
     /**
      * Returns the clef associated with the stave.

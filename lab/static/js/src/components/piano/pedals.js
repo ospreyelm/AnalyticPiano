@@ -77,7 +77,7 @@ define([
   };
 
   PedalsComponent.prototype.onPedalChange = function (pedal, state) {
-    console.log("pedalchange");
+    // console.log("pedalchange");
     var p = this.pedals[pedal];
     if (p) {
       p.toggle(state);
@@ -113,7 +113,6 @@ define([
       if (wait_duration < 0) {
         wait_duration = 0
       }
-      console.log(wait_duration)
     } else { // no real use case
       wait_duration = retake_time
     }
