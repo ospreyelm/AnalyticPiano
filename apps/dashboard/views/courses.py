@@ -13,7 +13,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import cache_page
-from apps.dashboard.views.m2m_view import handle_m2m
 from django_tables2 import RequestConfig, Column
 
 from apps.dashboard.filters import CourseActivityGroupsFilter
