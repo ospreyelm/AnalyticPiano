@@ -456,7 +456,7 @@ class DashboardPlaylistForm(PlaylistForm):
         return playlist
 
 
-course_date_format = "%d/%m/%Y"
+course_date_format = "%Y-%m-%d"
 
 
 class DashboardCourseForm(CourseForm):
@@ -469,14 +469,14 @@ class DashboardCourseForm(CourseForm):
                 "placeholder": PlaylistCourseOrdered._meta.get_field(
                     "publish_date"
                 ).verbose_name
-                + " (DD/MM/YYYY)",
+                + " (YYYY-MM-DD)",
             },
             {
                 "attr_name": "due_date",
                 "placeholder": PlaylistCourseOrdered._meta.get_field(
                     "due_date"
                 ).verbose_name
-                + " (DD/MM/YYYY)",
+                + " (YYYY-MM-DD)",
             },
         ],
         # this function is passed to ManyField's `prepare_value` to render dates properly
