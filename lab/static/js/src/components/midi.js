@@ -480,7 +480,8 @@ define([
             SUSTAINING = true;
           } else if (state === "off") {
             chord._sustain = false;
-            if (request_origin !== "ui") {
+            const PLAY_VIEW = false; // TO DO: UNISON BANKING FEATURE FOR PLAY VIEW ONLY
+            if (PLAY_VIEW && request_origin !== "ui") {
               this.chords.puntUnison();
               chord._unison_idx = null;
             }

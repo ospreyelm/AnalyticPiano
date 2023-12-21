@@ -687,8 +687,9 @@ define([
         /* has precursor */
         let precursor = history[idx - 1];
         let current = history[idx];
-        if (precursor == current) display = "";
-        else {
+        if (precursor == current) {
+          // display = ""; // MAKE THIS A USER PREFERENCE AND EXERCISE PREFERENCE
+        } else {
           let progression = [precursor, current];
           let probe = substitutions
             .map((sub_arr) => sub_arr[0].join(">"))

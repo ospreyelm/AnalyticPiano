@@ -2,7 +2,8 @@ define([
   "lodash",
   "microevent",
   "app/config",
-], function (_, MicroEvent, Config) {
+  "app/components/events",
+], function (_, MicroEvent, Config, EVENTS) {
   "use strict";
 
   const VALID_STAFF_DISTRIBUTIONS = Config.get(
@@ -199,8 +200,8 @@ define([
         _keys_down: this._keys_down
       }
 
+      this.trigger("change", "note:on");
       if (!_.isEqual(as_is, as_was)) {
-        this.trigger("change", "note:on");
         return true;
       } else {
         return false;
@@ -219,14 +220,18 @@ define([
      * @return {boolean} True if the note status changed, false otherwise.
      */
     noteOff: function (notes) {
+      let manually_dampen = false;
       if (_.isArray(notes)) {
-        var incoming = notes; // the midi numbers of notes that must be added
+        var outgoing = notes; // the midi numbers of notes that must be added
       } else if (Number.isInteger(notes)) {
-        var incoming = [notes];
+        var outgoing = [notes];
       } else if (!_.isArray(notes) && typeof notes === "object") {
-        var incoming = notes.notes;
+        var outgoing = notes.notes;
+        if (notes.hasOwnProperty("manuallyDampen")) {
+          manually_dampen = notes.manuallyDampen === true;
+        }
       } else {
-        var incoming = [];
+        var outgoing = [];
         console.log("Warning: Chord.noteOff did not receive midi numbers as expected!")
       }
 
@@ -286,8 +291,8 @@ define([
         _keys_down: this._keys_down
       }
 
+      this.trigger("change", "note:on");
       if (!_.isEqual(as_is, as_was)) {
-        this.trigger("change", "note:on");
         return true;
       } else {
         return false;
