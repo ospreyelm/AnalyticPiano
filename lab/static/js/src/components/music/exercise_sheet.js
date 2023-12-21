@@ -33,8 +33,6 @@ define([
 
   var DEFAULT_RHYTHM_VALUE = Config.get("general.defaultRhythmValue");
 
-  // var AUTO_ADVANCE_ENABLED = Config.get('general.autoAdvance');
-
   var SETTING_HIDE_NEXT = Config.get("general.hideNextForAutoAdvance");
 
   var NUMBERED_EXERCISE_COUNT = Config.get("general.numberedExerciseCount");

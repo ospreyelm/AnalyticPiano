@@ -352,6 +352,7 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
       var voice, formatter, time;
       if (!this.hasStaveNotes()) {
         this.staveVoice = voice;
+        this.lowVoice = voice; // without this, the alto bass notes stuck on the sheet music
         return;
       }
 

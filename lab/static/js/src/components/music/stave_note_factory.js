@@ -98,7 +98,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
 
       if (CHORALE_FORMAT && vexflow_keys.length == 2) {
         var stave_note_1 = this._makeStaveNote(
-          vexflow_keys.slice(0,1),
+          [vexflow_keys[0]],
           this.getNoteModifiers(),
           vexflow_duration,
           vexflow_dots,
@@ -106,7 +106,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
           'AB' // part is alto or bass
         );
         var stave_note_2 = this._makeStaveNote(
-          vexflow_keys.slice(1,2),
+          [vexflow_keys[1]],
           this.getNoteModifiers(),
           vexflow_duration,
           vexflow_dots,
@@ -551,12 +551,11 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         stave_note = stave_note.addDotToAll();
       }
 
-      const ENABLE_CHORALE = false; // modifiers are not working yet
-      if (ENABLE_CHORALE && part == 'AB') {
-        modifiers[0](stave_note);
-      } else if (ENABLE_CHORALE && part == 'ST') {
-        modifiers[1](stave_note);
-      } else if (part === null) {
+      if (part == 'AB') {
+        // not working
+      } else if (part == 'ST') {
+        // not working
+      } else {
         for (var i = 0, len = modifiers.length; i < len; i++) {
           modifiers[i](stave_note);
         }
