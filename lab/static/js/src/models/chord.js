@@ -505,8 +505,18 @@ define([
         len;
 
       if (Number.isInteger(this._unison_idx) && this._unison_idx < notes.length) {
-        if (!(STAFF_DISTRIBUTION == 'chorale' && notes.length === 3 && this._unison_idx === 1)) {
-          notes.push(notes[this._unison_idx]) // length of notes issue with rendering unisons
+        if (
+          STAFF_DISTRIBUTION == 'chorale' &&
+          notes.length === 3 &&
+          this._unison_idx === 1
+        ) {
+        } else if (
+          ["keyboard", "keyboardPlusRHBias", "keyboardPlusLHBias"].includes(STAFF_DISTRIBUTION) &&
+          VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(notes.length) && notes.length != 2 &&
+          this._unison_idx === 0
+        ) {
+        } else {
+          notes.push(notes[this._unison_idx]) // length of notes may become an issue with rendering unisons
           notes.sort()
         }
       }
@@ -616,7 +626,12 @@ define([
         midi == this.getSortedNotes()[0]
       ) {
         // lowest note
-        return clef == (midi <= high_threshold ? "bass" : "treble");
+        // UNISONS
+        if (this._unison_idx === 0) {
+          return [["bass", "treble"], ["treble"]][midi <= high_threshold ? 0 : 1].includes(clef);
+        } else {
+          return clef == (midi <= high_threshold ? "bass" : "treble");
+        }
       } else if (
         ["keyboard", "keyboardPlusRHBias", "keyboardPlusLHBias"].includes(
           STAFF_DISTRIBUTION
