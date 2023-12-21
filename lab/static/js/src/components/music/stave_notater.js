@@ -614,6 +614,7 @@ define([
        */
       var history = this.romanNumeralsHistory;
       var resolution_lines = false;
+      var one_resolution_line = false;
       var applied_arrow = false;
 
       const idx = this.stave.position.index;
@@ -622,10 +623,14 @@ define([
       var extra_wide_figures = false;
       if (keyCategory === "j") {
         var substitutions = [
-          /* cadential six-fours */
+          /* cadential six-fours and five-fours*/
           [
             ["I{z4}", "V"],
             ["V{z4}", "={t3}"],
+          ],
+          [
+            ["V{r}...", "V"],
+            ["V{r}", "={e}"],
           ],
           [
             ["I{z4}", "V{u3}"],
@@ -718,7 +723,10 @@ define([
           if (["V{B z4}", "V{' z4}"].includes(display)) {
             extra_wide_figures = true;
           }
-          if (!["iv{d z}"].includes(display)) {
+          if (["iv{d z}"].includes(display)) {
+          } else if (["V{r}"].includes(display)) {
+            one_resolution_line = true;
+          } else {
             resolution_lines = true;
           }
         } else if (key !== "" && current.split("/").length == 2) {
@@ -775,7 +783,7 @@ define([
         var first_line_width =
           this.getContext().measureText(lines[0]).width + offset;
 
-        if (resolution_lines) {
+        if (resolution_lines || one_resolution_line) {
           let label_width = first_line_width + 15;
           let x_start = this.annotateOffsetX + x + label_width;
           let stroke_length = this.stave.width - label_width;
@@ -784,13 +792,16 @@ define([
             stroke_length += -10;
           }
           ctx.beginPath();
-          ctx.moveTo(x_start, y - 3);
-          ctx.lineTo(x_start + stroke_length, y - 3);
+          if (resolution_lines) {
+            ctx.moveTo(x_start, y - 3);
+            ctx.lineTo(x_start + stroke_length, y - 3);
+          }
           ctx.moveTo(x_start, y - 12);
           ctx.lineTo(x_start + stroke_length, y - 12);
           ctx.stroke();
         }
         resolution_lines = false;
+        one_resolution_line = false;
 
         if (applied_arrow) {
           let width = this.stave.width;
