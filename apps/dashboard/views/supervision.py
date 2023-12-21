@@ -5,25 +5,21 @@ from django.urls import reverse
 from django_tables2 import RequestConfig
 
 from apps.dashboard.forms import (
-    AddSupervisorForm,
-    AddSubscriberForm,
     AddConnectionForm,
     RemoveSubscriptionConfirmationForm,
     RemoveConnectionConfirmationForm,
 )
 from apps.dashboard.tables import (
-    SupervisorsTable,
-    SubscribersTable,
     ConnectionsTable,
     CoursesListTable,
-    AvailableCoursesTable,
+    CoursesByOthersTable,
 )
 from apps.dashboard.views.performance import User
 from apps.exercises.models import Course
 
 
 @login_required
-def supervisors_courses_view(request):
+def courses_by_others_view(request):
     visible_users = request.user.content_permits
 
     visible_courses = Course.objects.filter(
@@ -31,72 +27,18 @@ def supervisors_courses_view(request):
         authored_by__in=visible_users,
     ).distinct()
 
-    visible_course_table = AvailableCoursesTable(visible_courses)
+    visible_course_table = CoursesByOthersTable(visible_courses)
     RequestConfig(request).configure(visible_course_table)
 
     return render(
         request,
-        "dashboard/subscriptions-courses.html",
+        "dashboard/courses-by-others.html",
         {"courses_table": visible_course_table},
     )
 
 
 @login_required
-def unsubscribe_confirmation(request, supervisor_id):
-    supervisor = get_object_or_404(User, id=supervisor_id)
-
-    context = {
-        "email": supervisor.email,
-        "redirect_url": reverse("dashboard:subscriptions"),
-    }
-
-    if request.method == "POST":
-        form = RemoveSubscriptionConfirmationForm(request.POST)
-        form.context = {"email": supervisor.email}
-        if form.is_valid():
-            return redirect("dashboard:unsubscribe", supervisor_id=supervisor_id)
-        return render(
-            request,
-            "dashboard/remove-subscription-confirmation.html",
-            context={"form": form, **context},
-        )
-    form = RemoveSubscriptionConfirmationForm()
-    return render(
-        request,
-        "dashboard/remove-subscription-confirmation.html",
-        context={"form": form, **context},
-    )
-
-
-@login_required
-def remove_subscriber_confirmation(request, subscriber_id):
-    subscriber = get_object_or_404(User, id=subscriber_id)
-
-    context = {
-        "email": subscriber.email,
-        "redirect_url": reverse("dashboard:subscribers"),
-    }
-
-    if request.method == "POST":
-        form = RemoveSubscriptionConfirmationForm(request.POST)
-        form.context = {"email": subscriber.email}
-        if form.is_valid():
-            return redirect("dashboard:remove-subscriber", subscriber_id=subscriber_id)
-        return render(
-            request,
-            "dashboard/remove-subscription-confirmation.html",
-            context={"form": form, **context},
-        )
-    form = RemoveSubscriptionConfirmationForm()
-    return render(
-        request,
-        "dashboard/remove-subscription-confirmation.html",
-        context={"form": form, **context},
-    )
-
-
-@login_required
-def connections_view(request):  # exact copy of subscribers table with renamed variables
+def connections_view(request):  # exact copy of old subscribers table with renamed variables
     connections_table = ConnectionsTable(
         [{"other": x, "user": request.user} for x in request.user.connections],
     )

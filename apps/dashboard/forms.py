@@ -47,14 +47,6 @@ class BaseSupervisionForm(forms.Form):
         return self.cleaned_data
 
 
-class AddSupervisorForm(BaseSupervisionForm):
-    email = forms.EmailField(label="Email:")
-
-
-class AddSubscriberForm(BaseSupervisionForm):
-    email = forms.EmailField(label="Email:")
-
-
 class AddConnectionForm(BaseSupervisionForm):
     email = forms.EmailField(label="Email:")
 

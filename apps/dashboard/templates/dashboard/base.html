@@ -35,9 +35,9 @@
             <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:preferences' %}"
                title="Customize how the app looks and behaves when you perform playlists">Settings</a>
-            <a {% if url_name == 'subscriptions-courses' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:subscriptions-courses' %}"
-               title="Browse courses by users to whom you are connected">Available Courses</a>
+            <a {% if url_name == 'courses-by-others' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:courses-by-others' %}"
+               title="Browse courses by users to whom you are connected">Courses By Other Users</a>
             <a {% if url_name == 'performed-playlists' %}class="sidenav-active"{% endif %}
                {% if url_name == 'playlist-performance' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:performed-playlists' %}"

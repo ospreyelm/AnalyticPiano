@@ -24,7 +24,6 @@ class UserAdmin(admin.UserAdmin):
                     "is_staff",
                     "is_superuser",
                     "is_active",
-                    "_supervisors",
                 ),
             },
         ),

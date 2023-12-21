@@ -10,193 +10,6 @@ User = get_user_model()
 # Possible styling: attrs = {'class': 'table table-primary'}
 
 
-class SupervisorsTable(tables.Table):
-    first_name = tables.columns.Column(
-        accessor=A("supervisor.first_name"), verbose_name="Given name"
-    )
-    last_name = tables.columns.Column(
-        accessor=A("supervisor.last_name"), verbose_name="Surname"
-    )
-
-    # name = tables.columns.Column(
-    #     accessor=A("supervisor.get_full_name"),
-    #     attrs={"td": {"width": "250px"}},
-    #     verbose_name="Name of User",
-    # )
-    email = tables.columns.Column(
-        attrs={"td": {"width": "250px"}},
-        verbose_name="Email address",
-        accessor=A("supervisor.email"),
-    )
-    status = tables.columns.Column(empty_values=())
-
-    # accept = tables.columns.LinkColumn(
-    #     "dashboard:accept-subscription",
-    #     empty_values=(),
-    #     kwargs={
-    #         "subscriber_id": A("user.id"),
-    #         "supervisor_id": A("supervisor.id"),
-    #     },
-    #     verbose_name="Accept",
-    #     orderable=False,
-    # )
-    # decline = tables.columns.LinkColumn(
-    #     "dashboard:decline-subscription",
-    #     empty_values=(),
-    #     kwargs={
-    #         "subscriber_id": A("user.id"),
-    #         "supervisor_id": A("supervisor.id"),
-    #     },
-    #     verbose_name="Decline",
-    #     orderable=False,
-    # )
-    remove = tables.columns.LinkColumn(
-        "dashboard:unsubscribe-confirmation",
-        kwargs={"supervisor_id": A("supervisor.id")},
-        text="Disconnect",
-        verbose_name="Disconnect",
-        orderable=False,
-    )
-    signup_date = tables.columns.Column(
-        accessor=A("supervisor.date_joined"), verbose_name="Signup Date"
-    )
-
-    def render_status(self, record):
-        return self.request.user._supervisors_dict[str(record["supervisor"].id)]
-
-    def render_accept(self, record):
-        if (
-            self.request.user._supervisors_dict.get(str(record["supervisor"].id))
-            == User.SUPERVISOR_STATUS_INVITATION_WAIT
-        ):
-            return "Accept"
-        return ""
-
-    def render_decline(self, record):
-        if (
-            self.request.user._supervisors_dict.get(str(record["supervisor"].id))
-            == User.SUPERVISOR_STATUS_INVITATION_WAIT
-        ):
-            return "Decline"
-        return ""
-
-    class Meta:
-        attrs = {"class": "paleblue"}
-        table_pagination = False
-        template_name = "django_tables2/bootstrap4.html"
-
-
-status_order_dict = {
-    User.SUPERVISOR_STATUS_INVITATION_WAIT: 0,
-    User.SUPERVISOR_STATUS_ACCEPTED: 1,
-    User.SUPERVISOR_STATUS_DECLINED: 2,
-}
-
-
-class SubscribersTable(tables.Table):
-    class Meta:
-        attrs = {"class": "paleblue"}
-        table_pagination = False
-        template_name = "django_tables2/bootstrap4.html"
-
-    first_name = tables.columns.Column(
-        accessor=A("subscriber.first_name"), verbose_name="Given name"
-    )
-    last_name = tables.columns.Column(
-        accessor=A("subscriber.last_name"), verbose_name="Surname"
-    )
-
-    # name = tables.columns.LinkColumn(
-    #     "dashboard:subscriber-performances",
-    #     kwargs={"subscriber_id": A("subscriber.id")},
-    #     accessor=A("subscriber.get_full_name"),
-    #     attrs={"td": {"width": "250px"}},
-    #     verbose_name="Name of User",
-    # )
-    email = tables.columns.Column(
-        accessor=A("subscriber.email"),
-        attrs={"td": {"width": "250px"}},
-        verbose_name="Email address",
-    )
-    signup_date = tables.columns.Column(
-        accessor=A("subscriber.date_joined"), verbose_name="Signup Date"
-    )
-    # DO NOT ACTIVATE THIS LINK UNTIL PERMISSIONS PROPERLY WRITTEN
-    # performances = tables.columns.LinkColumn(
-    #     "dashboard:subscriber-performances",
-    #     text="View Performances",
-    #     kwargs={"subscriber_id": A("subscriber.id")},
-    # )
-    status = tables.columns.Column(empty_values=())
-    accept = tables.columns.LinkColumn(
-        "dashboard:accept-subscription",
-        empty_values=(),
-        kwargs={
-            "subscriber_id": A("subscriber.id"),
-            "supervisor_id": A("user.id"),
-        },
-        verbose_name="Accept",
-        orderable=False,
-    )
-    decline = tables.columns.LinkColumn(
-        "dashboard:decline-subscription",
-        empty_values=(),
-        kwargs={
-            "subscriber_id": A("subscriber.id"),
-            "supervisor_id": A("user.id"),
-        },
-        verbose_name="Decline",
-        orderable=False,
-    )
-    remove = tables.columns.LinkColumn(
-        "dashboard:remove-subscriber-confirmation",
-        kwargs={"subscriber_id": A("subscriber.id")},
-        text="Disconnect",
-        verbose_name="Disconnect",
-        orderable=False,
-    )
-
-    def render_status(self, record):
-        return record["subscriber"]._supervisors_dict[str(self.request.user.id)]
-
-    def render_accept(self, record):
-        print(record["subscriber"].id, self.request.user.id)
-        if (
-            record["subscriber"]._supervisors_dict[str(self.request.user.id)]
-            == User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT
-        ):
-            return "Approve"
-        return ""
-
-    def render_decline(self, record):
-        if (
-            record["subscriber"]._supervisors_dict[str(self.request.user.id)]
-            == User.SUPERVISOR_STATUS_SUBSCRIPTION_WAIT
-        ):
-            return "Decline"
-        return ""
-
-    def render_performances(self, record):
-        if (
-            record["subscriber"]._supervisors_dict[str(self.request.user.id)]
-            == User.SUPERVISOR_STATUS_ACCEPTED
-        ):
-            return "Performances"
-        return ""
-
-    # TODO: revisit this. ordering based on non-database fields appears impossible
-    #   according to this: https://github.com/jieter/django-tables2/issues/161
-    def order_status(self, queryset, is_descending):
-        queryset = queryset.annotate(
-            # Annotates each subscriber with their subscription status with the current user,
-            #  put into the status_order_dict for custom order instead of alphabetical
-            priority=status_order_dict.get(
-                KeyTextTransform(str(self.request.user.id), "_supervisors_dict"), -1
-            )
-        ).order_by(("-" if is_descending else "") + "priority")
-        return (queryset, True)
-
-
 class ConnectionsTable(tables.Table):
     class Meta:
         attrs = {"class": "paleblue"}
@@ -301,7 +114,6 @@ class ConnectionsTable(tables.Table):
 
     def render_performance_access(self, record):
         if self.request.user.id in record["other"].performance_permits:
-            print(record["other"].performance_permits)
             return "Performances"
         return ""
 
@@ -312,16 +124,8 @@ class ConnectionsTable(tables.Table):
             return "no"
         return ""
 
-    #     if int(record["other"].id) in self.request.user.content_permits \
-    #     or int(record["other"].id) in self.request.user.performance_permits \
-    #     or self.request.user.id in record["other"].content_permits \
-    #     or self.request.user.id in record["other"].performance_permits:
-    #         return ""
-    #     else:
-    #         return "X"
-
-    # TODO: revisit this. ordering based on non-database fields appears impossible
-    #   according to this: https://github.com/jieter/django-tables2/issues/161
+    # Note: Ordering based on non-database fields appears impossible
+    # according to this: https://github.com/jieter/django-tables2/issues/161
     # def order_status(self, queryset, is_descending):
     #     queryset = queryset.annotate(
     #         priority=
@@ -671,7 +475,7 @@ class CoursesListTable(tables.Table):
         template_name = "django_tables2/bootstrap4.html"
 
 
-class AvailableCoursesTable(tables.Table):
+class CoursesByOthersTable(tables.Table):
     course_id = tables.columns.Column(
         verbose_name="C-ID",
         accessor=A("id"),
@@ -881,8 +685,8 @@ class GroupMembersTable(tables.Table):
         attrs={"td": {"width": "250px"}},
         verbose_name="Email address",
     )
-    subscription_status = tables.columns.Column(
-        empty_values=(), verbose_name="Subscription Status"
+    performance_access = tables.columns.Column(
+        empty_values=(), verbose_name="Performance Access"
     )
 
     remove = tables.columns.LinkColumn(
@@ -894,7 +698,7 @@ class GroupMembersTable(tables.Table):
     )
 
     def render_subscription_status(self, record):
-        return record["member"]._supervisors_dict[str(self.request.user.id)]
+        return self.request.user.id in record["member"].performance_permits
 
     class Meta:
         attrs = {"class": "paleblue"}

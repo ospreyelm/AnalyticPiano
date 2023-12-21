@@ -42,11 +42,9 @@ from apps.dashboard.views.playlists import (
 )
 from apps.dashboard.views.preferences import dashboard_preferences_view
 from apps.dashboard.views.supervision import (
-    supervisors_courses_view,
+    courses_by_others_view,
     connections_view,
     toggle_connection_pin_view,
-    unsubscribe_confirmation,
-    remove_subscriber_confirmation,
     toggle_connection_pin_with_confirmation,
     toggle_content_permit_view,
     toggle_performance_permit_view,
@@ -106,19 +104,9 @@ urlpatterns = [
     ),
     # Subscriptions / Subscribers
     path(
-        "subscriptions-courses/", supervisors_courses_view, name="subscriptions-courses"
-    ),
-    path(
-        "unsubscribe/<int:supervisor_id>/confirm/",
-        unsubscribe_confirmation,
-        name="unsubscribe-confirmation",
+        "courses-by-others/", courses_by_others_view, name="courses-by-others"
     ),
     path("connections/", connections_view, name="connections"),
-    path(
-        "remove-subscriber/<int:subscriber_id>/confirm/",
-        remove_subscriber_confirmation,
-        name="remove-subscriber-confirmation",
-    ),
     path(
         "toggle-content-permit/<int:other_id>/",
         toggle_content_permit_view,
