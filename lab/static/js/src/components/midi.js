@@ -480,7 +480,10 @@ define([
             SUSTAINING = true;
           } else if (state === "off") {
             chord._sustain = false;
-            chord._unison_idx = null;
+            if (request_origin !== "ui") {
+              this.chords.puntUnison();
+              chord._unison_idx = null;
+            }
             /* prepare to turn off notes in previous bank too */
             var prev_notes = this.chords.previous()._notes || false;
             /* the following line both runs a function and returns a needed variable */

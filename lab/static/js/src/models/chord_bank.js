@@ -131,6 +131,22 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
 
       return;
     },
+    puntUnison: function (request_origin = "unknown") {
+      if (!this._enableBanking || request_origin === "by_metronome" || request_origin === "ui") {
+        return;
+      }
+
+      // punt unison idx if chord otherwise unchanged
+      var current = this.current();
+      var previous = this.previous();
+      if (previous) {
+        if (_.isEqual(previous._notes, current._notes) && previous._unison_idx === null) {
+          this.previous()._unison_idx = current._unison_idx;
+        }
+      }
+
+      return;
+    },
     /**
      * Returns a list of chords in the chord bank.
      *

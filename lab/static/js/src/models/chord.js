@@ -246,32 +246,35 @@ define([
           noteNumber = this.transpose(noteNumber);
         }
 
-        // deal with changes in the one possible unison placement
-        const currently_on_notes = Object.entries(this._notes)
-          .filter(([k, v]) => v === true)
-          .map(([k, v]) => parseInt(k));
-        const doubled_note_num = currently_on_notes[this._unison_idx] || null;
-        let unison_idx = this._unison_idx;
-        if (doubled_note_num !== null) {
-          if (doubled_note_num == noteNumber) {
-            if (!_sustain) {
-              this._unison_idx = null; // toggle off
-            }
-          } else if (doubled_note_num > noteNumber) {
-            this._unison_idx += -1;
-          } else { }
-        }
-
+        let to_be_silenced = false;
         if (_sustain) {
           if (manually_dampen) {
             this._manually_dampened.push(noteNumber);
-            this._notes[noteNumber] = false;
             // this.broadcast(EVENTS.BROADCAST.NOTE, "off", noteNumber); // TO DO VEYSEL
+            to_be_silenced = true;
           }
         }
         if (!_sustain) {
+          to_be_silenced = true;
+        }
+
+        if (to_be_silenced) {
+          // deal with changes in the one possible unison placement
+          const currently_on_notes = Object.entries(this._notes)
+            .filter(([k, v]) => v === true)
+            .map(([k, v]) => parseInt(k));
+          const doubled_note_num = currently_on_notes[this._unison_idx] || null;
+          let unison_idx = this._unison_idx;
+          if (doubled_note_num !== null) {
+            if (doubled_note_num > noteNumber) {
+              this._unison_idx += -1;
+            } else if (doubled_note_num == noteNumber) {
+              this._unison_idx = null; // toggle off
+            } else { }
+          }
           this._notes[noteNumber] = false;
         }
+
         this._keys_down[noteNumber] = false;
       }
 
