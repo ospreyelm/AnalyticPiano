@@ -10,7 +10,6 @@ from django_tables2 import RequestConfig
 from apps.dashboard.forms import DashboardPlaylistForm
 from apps.dashboard.tables import PlaylistsListTable
 from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
-from .m2m_view import handle_m2m
 
 
 @login_required

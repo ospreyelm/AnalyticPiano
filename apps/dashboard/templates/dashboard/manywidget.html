@@ -1,13 +1,15 @@
 
 {% load static %}
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'js/Sortable.min.js'%}"></script>
+<link href="{% static 'css/select2.min.css'%}" rel="stylesheet" />
+<script src="{% static 'js/select2.min.js'%}"></script>
+<script src="{% static 'js/jquery-csv.min.js' %}"></script>
 <link rel="stylesheet" type="text/css" href="{% static 'css/manywidget.css' %}"/>
 <div class="widget-container">
   {% comment %} Use this hidden input so that Django has a form element at which to get the value {% endcomment %}
   <input name="{{ widget.name }}" style="display:none"/>
-  <div class="widget-option-wrapper">
+  <div class="widget-head-input">
+    <div class="widget-option-wrapper">
     <select class="widget-select"{% include "django/forms/widgets/attrs.html" %} multiple="multiple">
       {% for group_name, group_choices, group_index in widget.optgroups %}
         {% if group_name %}<optgroup label="{{ group_name }}">{% endif %}
@@ -17,6 +19,8 @@
         {% if group_name %}</optgroup>{% endif %}
       {% endfor %}
     </select>
+  </div>
+  {% if widget.csv %}<div class="widget-file-wrapper"><div class="widget-file-label">Import from CSV:</div><input class="widget-file" {% include "django/forms/widgets/attrs.html" %} type="file" name="filename"></div>{% endif %}
   </div>
   <div class="widget-value-list">
     <div id="values-{{ widget.name }}" class="widget-value-list-inner">
@@ -40,8 +44,64 @@
 
   const selectElement = $(`.widget-select#id_${widgetName}`)
 
+  function appendCSV(csvObject){
+    let notFoundIds = []
+    for (const row of csvObject){
+      selectElement.val(row[0])
+      const selectedOption = selectElement.find(':selected')
+      
+      if (selectedOption.length>0) {
+        let index= indexOfValue([selectedOption.val(),selectedOption.text()])
+        if (index == -1) {
+          selectElement.trigger({type:"select2:select",params:{data:{id:selectedOption.val(), text:selectedOption.text()}}})
+          index=fieldValue.length-1
+        }
+        // Filling in additional fields
+        // We iterate thru the inputs, pulling field names from them, then editing fieldValue entries accordingly
+        const currValueBlockInputs=$(`#values-${widgetName} > .widget-value-block[value='${selectedOption.val()}']`).find("input")
+        let startingInputIndex = 0
+        // Skip the first input (the order input)
+        {% if widget.order_input %}
+        startingInputIndex = 1
+        {% endif %}
+        for (let inputIdx =startingInputIndex, colIdx = 1;colIdx<row.length && inputIdx<currValueBlockInputs.length;inputIdx++,colIdx++){
+          const fieldName = $(currValueBlockInputs[inputIdx]).attr("id").split("-")[0]
+          editAdditional(fieldName, index, row[colIdx].trim())
+          console.log(index)
+        }
+      }
+      else {
+        if (row[0].trim() !="") notFoundIds.push(row[0])
+      }
+    }
+    if (notFoundIds.length>0) {
+      alert(`The following IDs could not be added: ${notFoundIds.join("\n")}. Please verify that these exist and that they are available to you.`)
+    }
+    fileElement.val(null)
+
+  }
+
+  const fileElement = $(`.widget-file#id_${widgetName}`)
+  fileElement.on("change",(event)=>{
+    const confirmed = confirm("New CSV uploaded. Press OK to import its values.")
+    if (confirmed) {
+      const csvFile = event.target.files[0]
+      const fileReader = new FileReader()
+      // code from here: https://stackoverflow.com/a/27439524/7385274
+      fileReader.onload = (function(f) {
+        return function(e) {
+            appendCSV($.csv.toArrays(e.target.result))
+        };
+      })(csvFile)
+      fileReader.readAsText(csvFile)
+    }
+    else {
+      fileElement.val("")
+    }
+  })
+
   function generateValueBlock(instanceId, instanceTitle, throughValues, index) {
-    return `<div class="widget-value-block ${throughValues ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}">
+    return `<div class="widget-value-block ${throughValues ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}" value="${instanceId}">
       {% if widget.order_input %}<input type="number" class="widget-value-order order-${widgetName}" value="${index}"></input> {% endif %}
       <div class="widget-value-data-${widgetName}" value="${instanceId}" >${instanceTitle}</div>
       {% for field in widget.additional_fields %} <input class="widget-value-additional-${widgetName}" id="{{field.attr_name}}-${index}" value='${throughValues['{{field.attr_name}}'] || ""}' placeholder="{{field.placeholder}}"></input> {% endfor %}
@@ -114,7 +174,8 @@
   };
   
   function editAdditional(fieldName, index, newValue) {
-    fieldValue[index][2][fieldName] = newValue
+    fieldValue[index][2][fieldName] = newValue.trim() != "" ? newValue : null
+    
     onFieldValueChange()
   }
 
@@ -134,13 +195,15 @@
     closeOnSelect:false,
   })
 
-  // Called when a value is selected
-  selectElement.on("select2:select",(event)=>{
+  function onSelect (event){
     const selectedData = event.params.data
     const selectedValue = selectedData.id
     const selectedText = selectedData.text
     addValue([selectedValue, selectedText])  
-  })
+  }
+
+  // Called when a value is selected
+  selectElement.on("select2:select",onSelect)
 
   // When you click a remove element, remove the according value
   $(document).on("click",`.widget-value-remove-${widgetName}`,((event)=>{
@@ -166,6 +229,7 @@
   })
   }
 
+  
   
   {{ widget.name }}_render()
 

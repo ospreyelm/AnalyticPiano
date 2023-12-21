@@ -85,7 +85,9 @@ class RemoveConnectionConfirmationForm(forms.Form):
             self.CONFIRMATION_PHRASE,
             self.context.get("email"),
         ]:
-            raise forms.ValidationError("Text does not match. Removal of this contact abandoned.")
+            raise forms.ValidationError(
+                "Text does not match. Removal of this contact abandoned."
+            )
         return self.cleaned_data["confirmation_text"]
 
 
@@ -263,12 +265,18 @@ class ManyWidget(forms.widgets.SelectMultiple):
     option_template_name = "../templates/dashboard/manywidgetoption.html"
 
     def __init__(
-        self, attrs=None, order_input=False, order_attr=None, additional_fields=[]
+        self,
+        attrs=None,
+        order_input=False,
+        order_attr=None,
+        additional_fields=[],
+        csv=False,
     ):
         self.attrs = attrs
         self.order_attr = order_attr
         self.order_input = order_input
         self.additional_fields = additional_fields
+        self.csv = csv
         super().__init__(attrs)
 
     def format_value(self, value):
@@ -279,6 +287,7 @@ class ManyWidget(forms.widgets.SelectMultiple):
         context["widget"]["order_attr"] = self.order_attr
         context["widget"]["order_input"] = self.order_input
         context["widget"]["additional_fields"] = self.additional_fields
+        context["widget"]["csv"] = self.csv
         return context
 
 
@@ -296,6 +305,11 @@ class ManyField(ModelMultipleChoiceField):
         additional_fields=None,
         # processes the through_table data before rendering
         through_prepare=None,
+        # if this field allows CSV import
+        csv=False,
+        # if we don't want to use the postgres _ids, we use this.
+        #   Enables use of exercise & playlist ids in csv import
+        id_attr="pk",
     ):
         widget_inputs = {}
         self.queryset = queryset
@@ -309,7 +323,9 @@ class ManyField(ModelMultipleChoiceField):
         self.additional_fields = additional_fields
         if self.additional_fields:
             widget_inputs["additional_fields"] = self.additional_fields
+        widget_inputs["csv"] = csv
         self.widget = widget(**widget_inputs)
+        self.id_attr = id_attr
 
         super().__init__(queryset=self.queryset)
 
@@ -372,7 +388,7 @@ class ManyField(ModelMultipleChoiceField):
                 value_list[2] = json.dumps(value_list[2], cls=DjangoJSONEncoder)
         # this handles individual models within field options
         elif value is not None:
-            value = value.pk
+            value = getattr(value, self.id_attr)
         else:
             value = list()
         return value
@@ -391,6 +407,8 @@ class DashboardPlaylistForm(PlaylistForm):
         order_attr="order",
         format_title=lambda ex: ex.id
         + (f"- {ex.description}" if ex.description else ""),
+        id_attr="id",
+        csv=True,
     )
 
     class Meta(PlaylistForm.Meta):
@@ -442,7 +460,7 @@ class DashboardPlaylistForm(PlaylistForm):
 
     def clean(self):
         self.cleaned_data["exercises"] = [
-            (Exercise.objects.get(pk=value_pair[0]), value_pair[1])
+            (Exercise.objects.get(id=value_pair[0]), value_pair[1])
             for value_pair in self.cleaned_data["exercises"]
         ]
         return super().clean()
@@ -454,7 +472,7 @@ class DashboardPlaylistForm(PlaylistForm):
         return playlist
 
 
-course_date_format = "%d/%m/%Y"
+course_date_format = "%Y-%m-%d"
 
 
 class DashboardCourseForm(CourseForm):
@@ -467,14 +485,14 @@ class DashboardCourseForm(CourseForm):
                 "placeholder": PlaylistCourseOrdered._meta.get_field(
                     "publish_date"
                 ).verbose_name
-                + " (DD/MM/YYYY)",
+                + " (YYYY-MM-DD)",
             },
             {
                 "attr_name": "due_date",
                 "placeholder": PlaylistCourseOrdered._meta.get_field(
                     "due_date"
                 ).verbose_name
-                + " (DD/MM/YYYY)",
+                + " (YYYY-MM-DD)",
             },
         ],
         # this function is passed to ManyField's `prepare_value` to render dates properly
@@ -487,6 +505,8 @@ class DashboardCourseForm(CourseForm):
             if through_values["due_date"]
             else None,
         },
+        csv=True,
+        id_attr="id",
     )
 
     class Meta(CourseForm.Meta):
@@ -531,7 +551,7 @@ class DashboardCourseForm(CourseForm):
         self.cleaned_data["visible_to"] = Group.objects.filter(pk__in=visible_to_ids)
 
         self.cleaned_data["playlists"] = [
-            (Playlist.objects.get(pk=value_pair[0]), value_pair[1])
+            (Playlist.objects.get(id=value_pair[0]), value_pair[1])
             for value_pair in self.cleaned_data["playlists"]
         ]
         for value_pair in self.cleaned_data["playlists"]:
@@ -577,7 +597,9 @@ class BaseDashboardGroupForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super(forms.ModelForm, self).__init__(*args, **kwargs)
-        self.fields["members"].queryset = user.subscribers
+        self.fields["members"].queryset = User.objects.filter(
+            pk__in=user.performance_permits
+        )
         if self.instance.pk != None:
             self.fields["members"].queryset = self.fields[
                 "members"

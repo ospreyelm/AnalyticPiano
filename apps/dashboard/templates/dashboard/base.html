@@ -25,12 +25,6 @@
             <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play View</a>
             <a href="{% url 'custom-logout' %}">Log Out</a>
             <p class="sidenav-subhead">CONNECT</p>
-<!--             <a {% if url_name == 'subscriptions' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:subscriptions' %}"
-               title="Enroll in courses by other users">With Creators</a>
-            <a {% if url_name == 'subscribers' %}class="sidenav-active"{% endif %}
-               href="{% url 'dashboard:subscribers' %}"
-               title="Enroll other users in your courses">With Performers</a> -->
             <a {% if url_name == 'connections' or url_name == 'courses-by-user' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:connections' %}"
                title="Content with other users">Connect With Other Users</a>
