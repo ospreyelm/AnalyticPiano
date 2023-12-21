@@ -337,7 +337,7 @@ define([
      *
      * @param {string} noteState on|off
      * @param {number} noteNumber
-     * @param {extra} extra.overrideSustain true|false overrides sustain
+     * @param {extra} extra.cullFromSustain true|false
      * @return undefined
      */
     toggleNote: function (noteState, noteNumber, extra) {
@@ -427,16 +427,16 @@ define([
      * @return undefined
      */
     onBankNotes: function (request_origin = "unknown") {
-      /* critical side-effect */
+      /* the following line both runs a function and returns a needed variable */
       var notes_off = this.chords.bank(request_origin);
       if (request_origin === "ui") {
-        const retake_time = 100 // milliseconds
+        const retake_time = 500 // milliseconds
         // Lift pedal on ui-originating chord bank
         this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "off", "ui");
         this.turnOffSustainedNotesOnPedalLift(notes_off);
-        _.delay(() => {
+        _.delay(() => { // MAKE THIS A USER PREFERENCE
           this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "on", "ui");
-        }, retake_time);
+        }, retake_time); // MAKE THIS A USER PREFERENCE
 
       }
     },
@@ -470,26 +470,20 @@ define([
           break;
         case "sustain":
           if (state === "on") {
-            chord.sustainNotes();
+            chord._sustain = true;
             if (request_origin !== "ui") {
               this.chords.bank();
             }
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = true;
           } else if (state === "off") {
-            try {
-              chord.releaseSustain();
-              /* prepare to turn off notes in previous bank too */
-              var prev_notes = this.chords.previous()._notes || false;
-              var prev_sustained = this.chords.previous()._sustained || false;
-              /* critical side-effect */
-              var notes_off = chord.syncSustainedNotes(
-                prev_notes,
-                prev_sustained
-              );
-              this.turnOffSustainedNotesOnPedalLift(notes_off);
-            } catch { }
-
+            chord._sustain = false;
+            chord._unison_idx = null;
+            /* prepare to turn off notes in previous bank too */
+            var prev_notes = this.chords.previous()._notes || false;
+            /* the following line both runs a function and returns a needed variable */
+            var notes_off = chord.syncSustainedNotes(prev_notes);
+            this.turnOffSustainedNotesOnPedalLift(notes_off);
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = false;
           }

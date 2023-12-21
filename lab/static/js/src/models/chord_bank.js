@@ -108,20 +108,17 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
       }
       var current = this.current();
       if (
-        request_origin === "by_metronome" &&
+        (request_origin === "by_metronome" || this._items.length == 1) && // the first user's bank is _items[1]
         current.getNoteNumbers().length == 0
       ) {
         return;
       }
 
+      // if (NO_DOUBLE_VISION === true) {
+      // } else {
       var chord = new Chord();
-      if (NO_DOUBLE_VISION === true) {
-      } else {
-        // copy the current chord
-        chord.copy(current);
-        /* critical side-effect */
-        var notes_off = chord.syncSustainedNotes();
-      }
+
+      chord.newCopy(current);
 
       if (request_origin !== "redistribute") {
         // re-wires listeners to the current chord
@@ -132,8 +129,7 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
 
       this.trigger("bank");
 
-      return notes_off;
-      // add novelty to false setting for better isNovel performance
+      return;
     },
     /**
      * Returns a list of chords in the chord bank.
@@ -314,9 +310,9 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
       var current = this.current();
       if (current) {
         this._removeListeners(current);
-        chord.copyTranspose(current);
+        chord.setTranspose(current.getTranspose());
         if (current.isSustained()) {
-          chord.sustainNotes();
+          chord._sustain = true;
         }
       }
       this._addListeners(chord);

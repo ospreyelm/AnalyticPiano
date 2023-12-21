@@ -94,7 +94,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         this.getRhythmValue().toUpperCase() == this.getRhythmValue() ? 1 : 0;
       let vexflow_keys = this.getNoteKeys();
 
-      const CHORALE_FORMAT = true;
+      const CHORALE_FORMAT = this.chord.settings.staffDistribution === "chorale";
 
       if (CHORALE_FORMAT && vexflow_keys.length == 2) {
         var stave_note_1 = this._makeStaveNote(
