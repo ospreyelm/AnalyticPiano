@@ -30,13 +30,13 @@ def performance_list_view(request, subscriber_id=None):
     )
 
     table = MyActivityTable(performances)
-    subscriber_name = subscriber
+    performer_name = subscriber
 
     RequestConfig(request).configure(table)
     return render(
         request,
         "dashboard/performances-list.html",
-        {"table": table, "subscriber_name": subscriber_name, "me": request.user},
+        {"table": table, "performer_name": performer_name, "me": request.user},
     )
 
 
@@ -140,7 +140,7 @@ def playlist_performance_view(request, performance_id):
     subscriber = get_object_or_404(User, id=subscriber_id)
     if not request.user.pk in subscriber.performance_permits:
         raise PermissionDenied
-    subscriber_name = subscriber
+    performer_name = subscriber
 
     data = []
     performance = (
@@ -245,5 +245,5 @@ def playlist_performance_view(request, performance_id):
     return render(
         request,
         "dashboard/performance_details.html",
-        {"table": table, "subscriber_name": subscriber_name, "me": request.user},
+        {"table": table, "performer_name": performer_name, "me": request.user},
     )

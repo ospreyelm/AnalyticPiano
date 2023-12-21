@@ -11,12 +11,12 @@
 
     
     <div class="dashboard-page">
-        {% if subscriber_name %}
-            {% if subscriber_name == me %}
+        {% if performer_name %}
+            {% if performer_name == me %}
                 <h1>My Performance History</h1>
                 <p class="dashboard-tip">This table is organized by playlist, starting with the playlist that you practiced most recently.</p>
             {% else %}
-                <p>Performances by {{ subscriber_name }}</p>
+                <p>Performances by {{ performer_name }}</p>
             {% endif %}
         {% endif %}
         {% if courses_author %}

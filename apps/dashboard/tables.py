@@ -14,6 +14,7 @@ class ConnectionsTable(tables.Table):
     class Meta:
         attrs = {"class": "paleblue"}
         table_pagination = False
+        order_by = "-signup_date"
         template_name = "django_tables2/bootstrap4.html"
 
     email = tables.columns.Column(
@@ -555,10 +556,11 @@ class PlaylistActivityColumn(columns.Column):
 
 
 class CourseActivityTable(tables.Table):
-    # TODO: make everything orderable again
-    # subscriber_name = tables.columns.Column(verbose_name="Subscriber")
-    subscriber_first_name = tables.columns.Column(verbose_name="Given name")
-    subscriber_last_name = tables.columns.Column(verbose_name="Surname")
+    # performer_email = tables.columns.Column(
+    #     verbose_name='Subscriber Email',
+    # )
+    performer_first_name = tables.columns.Column(verbose_name="Given name")
+    performer_last_name = tables.columns.Column(verbose_name="Surname")
     # groups = tables.columns.Column(verbose_name="Group(s)")
     time_elapsed = tables.columns.Column(
         verbose_name="Time (beta)",
@@ -576,17 +578,13 @@ class CourseActivityTable(tables.Table):
         empty_values=(()),
         orderable=False,  # does not work as currently configured
     )
-
-    # subscriber_email = tables.columns.Column(
-    #     verbose_name='Subscriber Email',
-    # )
     class Meta:
         attrs = {"class": "paleblue"}
         table_pagination = False
         template_name = "django_tables2/bootstrap4.html"
         sequence = [
-            "subscriber_first_name",
-            "subscriber_last_name",
+            "performer_first_name",
+            "performer_last_name",
             "score",
             "result_count",
             "time_elapsed",

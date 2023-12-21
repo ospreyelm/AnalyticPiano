@@ -266,9 +266,9 @@ def course_activity_view(request, course_id):
     data = {
         performer: {
             "subscriber": performer,  # n.b. not a string!
-            "subscriber_name": performer.get_full_name(),
-            "subscriber_last_name": performer.last_name,
-            "subscriber_first_name": performer.first_name,
+            "performer_name": performer.get_full_name(),
+            "performer_last_name": performer.last_name,
+            "performer_first_name": performer.first_name,
             "groups": ", ".join(
                 [
                     str(g)
@@ -295,9 +295,9 @@ def course_activity_view(request, course_id):
     for performer in [request.user]:
         relevant_data[performer] = {
             "subscriber": performer,  # n.b. not a string!
-            "subscriber_name": performer.get_full_name(),
-            "subscriber_last_name": "*" + str(performer.last_name).upper() + "*",
-            "subscriber_first_name": "*" + str(performer.first_name).upper() + "*",
+            "performer_name": performer.get_full_name(),
+            "performer_last_name": "*" + str(performer.last_name).upper() + "*",
+            "performer_first_name": "*" + str(performer.first_name).upper() + "*",
             "groups": ", ".join([]),
             **performance_dict.get(str(performer), {}),
         }
