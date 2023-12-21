@@ -337,7 +337,7 @@ define([
      *
      * @param {string} noteState on|off
      * @param {number} noteNumber
-     * @param {extra} extra.cullFromSustain true|false
+     * @param {extra} extra.manuallyDampen true|false
      * @return undefined
      */
     toggleNote: function (noteState, noteNumber, extra) {
@@ -414,7 +414,9 @@ define([
     onClearNotes: function () {
       this.sendAllNotesOff();
 
-      if (this.chords.anySustained()) {
+      if (this.chords.dampersEverRaised()) {
+        // is it necessary to condition these calls?
+        // dampersEverRaised() is not used anywhere else and is intuitively dubious
         this.sendMIDIPedalMessage("sustain", "off");
         this.sendMIDIPedalMessage("sustain", "on");
       }
@@ -482,7 +484,7 @@ define([
             /* prepare to turn off notes in previous bank too */
             var prev_notes = this.chords.previous()._notes || false;
             /* the following line both runs a function and returns a needed variable */
-            var notes_off = chord.syncSustainedNotes(prev_notes);
+            var notes_off = chord.dropDampers(prev_notes);
             this.turnOffSustainedNotesOnPedalLift(notes_off);
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = false;

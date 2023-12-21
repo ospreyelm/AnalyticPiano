@@ -67,26 +67,29 @@ define([
        */
       this._unison_idx = null;
       /**
-       * Container for the notes that are active.
+       * Object whose keys are midi numbers and whose values are true or false.
+       * Notes that are sounding or not.
        * @type {object}
        * @protected
        */
       this._notes = {};
       /**
-       * Sustain flag. When true means notes should be sustained.
+       * Sustain flag. When true means the sustain pedal is depressed.
        * @type {boolean}
        * @protected
        */
-      this._sustain = false; // whether the sustain pedal is on or off
+      this._sustain = false;
       /**
-       * Container for the note state changes that occur while notes are
-       * being sustained.
+       * Object whose keys are midi numbers and whose values are true or false.
+       * Notes whose piano keys are depressed or not.
        * @type {object}
        * @protected
        */
-      this._sustained = {}; // strings vibrating or not
-      this._keys_down = {}; // piano keys being depressed or not
-      this._culled_from_sustain = [];
+      this._keys_down = {};
+      /**
+       * Array of midi numbers which have been manually dampened during the current depression of the sustain pedal.
+       */
+      this._manually_dampened = [];
       /**
        * Transpose value expressed as the number of semitones.
        * @type {number}
@@ -123,9 +126,8 @@ define([
      */
     clear: function () {
       this._notes = {};
-      this._sustained = {};
       this._keys_down = {};
-      this._culled_from_sustain = [];
+      this._manually_dampened = [];
       this._unison_idx = {};
       this.trigger("clear");
     },
@@ -155,7 +157,6 @@ define([
       const as_was = {
         _notes: this._notes,
         _unison_idx: this._unison_idx,
-        _sustained: this._sustained,
         _keys_down: this._keys_down
       }
 
@@ -187,15 +188,11 @@ define([
         }
         this._notes[noteNumber] = true;
         this._keys_down[noteNumber] = true;
-        if (_sustain) {
-          this._sustained[noteNumber] = true;
-        }
       }
 
       const as_is = {
         _notes: this._notes,
         _unison_idx: this._unison_idx,
-        _sustained: this._sustained,
         _keys_down: this._keys_down
       }
 
@@ -221,13 +218,13 @@ define([
     noteOff: function (notes) {
       // make sure the argument is an array of note numbers
       let outgoing = []; // the midi numbers of notes that must be added
-      let cull_from_sustain = false;
+      let manually_dampen = false;
       if (typeof notes === "number") {
         outgoing = [notes];
       } else if (!_.isArray(notes) && typeof notes === "object") {
         outgoing = notes.notes;
-        if (notes.hasOwnProperty("cullFromSustain")) {
-          cull_from_sustain = notes.cullFromSustain === true;
+        if (notes.hasOwnProperty("manuallyDampen")) {
+          manually_dampen = notes.manuallyDampen === true;
         }
       } else { }
 
@@ -239,7 +236,6 @@ define([
       const as_was = {
         _notes: this._notes,
         _unison_idx: this._unison_idx,
-        _sustained: this._sustained,
         _keys_down: this._keys_down
       }
 
@@ -267,12 +263,11 @@ define([
         }
 
         if (_sustain) {
-          if (cull_from_sustain) {
-            // this._culled_from_sustain.push(noteNumber); // pianos don't allow this but we do!
+          if (manually_dampen) {
+            this._manually_dampened.push(noteNumber);
             this._notes[noteNumber] = false;
             // this.broadcast(EVENTS.BROADCAST.NOTE, "off", noteNumber); // TO DO VEYSEL
           }
-          this._sustained[noteNumber] = false;
         }
         if (!_sustain) {
           this._notes[noteNumber] = false;
@@ -283,7 +278,6 @@ define([
       const as_is = {
         _notes: this._notes,
         _unison_idx: this._unison_idx,
-        _sustained: this._sustained,
         _keys_down: this._keys_down
       }
 
@@ -334,11 +328,8 @@ define([
      *
      * @returns {boolean}
      */
-    syncSustainedNotes: function (prev_notes = false, prev_sustained = false, prev_keys_down = false) {
-      // called by ChordBank.bank and Midi.onPedalChange when the pedal is lifted
-
-      this._sustained = {};
-      this._culled_from_sustain = [];
+    dropDampers: function (prev_notes = false) {
+      this._manually_dampened = [];
 
       let notes_to_turn_off = [];
 
@@ -370,11 +361,11 @@ define([
       return notes_to_turn_off;
     },
     /**
-     * Returns true if notes are being sustained, false otherwise.
+     * Whether the sustain pedal is depressed or not.
      *
      * @return {boolean}
      */
-    isSustained: function () {
+    dampersRaised: function () {
       return this._sustain ? true : false;
     },
     /**
@@ -420,15 +411,6 @@ define([
      * Copies the notes to another chord.
      * @return undefined
      */
-    copy: function (chord) { // superceded by newCopy
-      this.setTranspose(chord.getTranspose());
-      this._sustain = chord.isSustained();
-      this._notes = _.cloneDeep(chord._notes);
-      this._sustained = _.cloneDeep(chord._sustained);
-      // this._keys_down = _.cloneDeep(chord._keys_down);
-      // this._unison_idx = _.cloneDeep(chord._unison_idx);
-      // this._culled_from_sustain = _.cloneDeep(chord._culled_from_sustain);
-    },
     newCopy: function (chord) {
       const notes_false = Object.entries(chord._notes)
         .filter(([k, v]) => v === false)
@@ -446,12 +428,9 @@ define([
         notes_obj[keys_down_true[i]] = true;
       }
       this.setTranspose(chord.getTranspose());
-      this._sustain = chord.isSustained();
+      this._sustain = chord.dampersRaised();
       this._notes = _.cloneDeep(notes_obj);
-      console.log(this._notes);
       this._keys_down = _.cloneDeep(keys_down_obj);
-      this._sustained = {}; // redundant
-      // this._unison_idx = _.cloneDeep(chord._unison_idx);
       return this;
     },
     /**

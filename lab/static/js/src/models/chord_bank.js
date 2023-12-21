@@ -256,9 +256,9 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
      *
      * @return {boolean} True if any chords are sustained, false otherwise.
      */
-    anySustained: function () {
+    dampersEverRaised: function () {
       return _.any(this._items, function (chord) {
-        return chord.isSustained();
+        return chord.dampersRaised();
       });
     },
 
@@ -311,7 +311,7 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
       if (current) {
         this._removeListeners(current);
         chord.setTranspose(current.getTranspose());
-        if (current.isSustained()) {
+        if (current.dampersRaised()) {
           chord._sustain = true;
         }
       }

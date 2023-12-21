@@ -253,7 +253,7 @@ define(["lodash", "app/components/component"], function (_, Component) {
         this.toggleSustain(false);
         this.release(); // no useful impact when using mouse
         this.triggerKey(this.state, this.noteNumber, {
-          cullFromSustain: sustain_cached == SUSTAIN_ON,
+          manuallyDampen: sustain_cached == SUSTAIN_ON,
         });
         console.log('The note ' + this.noteNumber.toString() + ' is removed from the chord but unfortunately, it still sounds.');
         this.toggleSustain(sustain_cached);
