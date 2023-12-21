@@ -141,13 +141,16 @@ define([
      * @return {boolean} True if the note status changed, false otherwise.
      */
     noteOn: function (notes) {
-      // make sure the argument is an array of note numbers
-      let incoming = []; // the midi numbers of notes that must be added
-      if (typeof notes === "number") {
-        incoming = [notes];
+      if (_.isArray(notes)) {
+        var incoming = notes; // the midi numbers of notes that must be added
+      } else if (Number.isInteger(notes)) {
+        var incoming = [notes];
       } else if (!_.isArray(notes) && typeof notes === "object") {
-        incoming = notes.notes;
-      } else { }
+        var incoming = notes.notes;
+      } else {
+        var incoming = [];
+        console.log("Warning: Chord.noteOn did not receive midi numbers as expected!")
+      }
 
       // circumstances
       let _transpose = this._transpose;
@@ -196,8 +199,8 @@ define([
         _keys_down: this._keys_down
       }
 
-      this.trigger("change", "note:on");
-      if (as_is != as_was) {
+      if (!_.isEqual(as_is, as_was)) {
+        this.trigger("change", "note:on");
         return true;
       } else {
         return false;
@@ -216,17 +219,16 @@ define([
      * @return {boolean} True if the note status changed, false otherwise.
      */
     noteOff: function (notes) {
-      // make sure the argument is an array of note numbers
-      let outgoing = []; // the midi numbers of notes that must be added
-      let manually_dampen = false;
-      if (typeof notes === "number") {
-        outgoing = [notes];
+      if (_.isArray(notes)) {
+        var incoming = notes; // the midi numbers of notes that must be added
+      } else if (Number.isInteger(notes)) {
+        var incoming = [notes];
       } else if (!_.isArray(notes) && typeof notes === "object") {
-        outgoing = notes.notes;
-        if (notes.hasOwnProperty("manuallyDampen")) {
-          manually_dampen = notes.manuallyDampen === true;
-        }
-      } else { }
+        var incoming = notes.notes;
+      } else {
+        var incoming = [];
+        console.log("Warning: Chord.noteOff did not receive midi numbers as expected!")
+      }
 
       // circumstances
       var _transpose = this._transpose;
@@ -284,8 +286,8 @@ define([
         _keys_down: this._keys_down
       }
 
-      this.trigger("change", "note:off");
-      if (as_is != as_was) {
+      if (!_.isEqual(as_is, as_was)) {
+        this.trigger("change", "note:on");
         return true;
       } else {
         return false;
@@ -414,7 +416,7 @@ define([
      * Copies the notes to another chord.
      * @return undefined
      */
-    newCopy: function (chord) {
+    copy: function (chord) {
       const notes_false = Object.entries(chord._notes)
         .filter(([k, v]) => v === false)
         .map(([k, v]) => k);

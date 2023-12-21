@@ -118,7 +118,7 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
       // } else {
       var chord = new Chord();
 
-      chord.newCopy(current);
+      chord.copy(current);
 
       if (request_origin !== "redistribute") {
         // re-wires listeners to the current chord

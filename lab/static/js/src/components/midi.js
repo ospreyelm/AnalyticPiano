@@ -435,14 +435,14 @@ define([
         const retake_time = 500 // milliseconds
         // Lift pedal on ui-originating chord bank
         this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "off", "ui");
-        this.turnOffSustainedNotesOnPedalLift(notes_off);
+        this.dropDampersMidiMessage(notes_off);
         _.delay(() => { // MAKE THIS A USER PREFERENCE
           this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "on", "ui");
         }, retake_time); // MAKE THIS A USER PREFERENCE
 
       }
     },
-    turnOffSustainedNotesOnPedalLift: function (notes_off = []) {
+    dropDampersMidiMessage: function (notes_off = []) {
       var i, len;
       for (i = 0, len = notes_off.length; i < len; i++) {
         let channel_idx = this.midiChannel - 1;
@@ -488,7 +488,7 @@ define([
             var prev_notes = this.chords.previous()._notes || false;
             /* the following line both runs a function and returns a needed variable */
             var notes_off = chord.dropDampers(prev_notes);
-            this.turnOffSustainedNotesOnPedalLift(notes_off);
+            this.dropDampersMidiMessage(notes_off);
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = false;
           }
