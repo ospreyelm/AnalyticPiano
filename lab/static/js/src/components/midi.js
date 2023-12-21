@@ -480,8 +480,9 @@ define([
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = true;
           } else if (state === "off") {
-            chord._sustain = false;
-            console.log(this.chords);
+            try {
+              chord._sustain = false; // was throwing an error with the refresh exercise button
+            } catch { }
             if (!this.EXERCISE_VIEW && request_origin !== "ui") {
               this.chords.puntUnison();
               chord._unison_idx = null;
@@ -489,8 +490,10 @@ define([
             /* prepare to turn off notes in previous bank too */
             var prev_notes = this.chords.previous()._notes || false;
             /* the following line both runs a function and returns a needed variable */
-            var notes_off = chord.dropDampers(prev_notes);
-            this.dropDampersMidiMessage(notes_off);
+            try {
+              var notes_off = chord.dropDampers(prev_notes);
+              this.dropDampersMidiMessage(notes_off); // was throwing an error with the refresh exercise button
+            } catch { }
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = false;
           }

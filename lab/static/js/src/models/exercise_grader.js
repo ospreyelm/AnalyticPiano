@@ -32,6 +32,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
      * Exposes the possible exercise result states.
      */
     STATE: ExerciseGrader.STATE,
+    ASSESS_UNISON_IDX: false,
     /**
      * Grades an exercise and returns a result.
      *
@@ -215,24 +216,29 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         }
       }
 
-      var unison_idx_match = result.unison_idx.delivered == result.unison_idx.expected;
-      if (mistake == false &&
-        result.count[CORRECT].length == expected.length &&
-        result.unison_idx.expected !== null &&
-        Number.isInteger(result.unison_idx.expected) &&
-        result.unison_idx.delivered !== null &&
-        Number.isInteger(result.unison_idx.delivered) &&
-        !unison_idx_match
-      ) {
-        mistake = true;
-        console.log('unison error');
+      if (this.ASSESS_UNISON_IDX) {
+        var unison_idx_ok = result.unison_idx.delivered == result.unison_idx.expected;
+        if (mistake == false &&
+          result.count[CORRECT].length == expected.length &&
+          result.unison_idx.expected !== null &&
+          Number.isInteger(result.unison_idx.expected) &&
+          result.unison_idx.delivered !== null &&
+          Number.isInteger(result.unison_idx.delivered) &&
+          !unison_idx_match
+        ) {
+          mistake = true;
+          console.log('unison error');
+        }
+      } else {
+        expected = [...new Set(expected)];
+        var unison_idx_ok = true;
       }
 
       result.state =
         mistake === true ?
           INCORRECT :
           result.count[CORRECT].length < expected.length ?
-            PARTIAL : unison_idx_match ?
+            PARTIAL : unison_idx_ok ?
               CORRECT :
               PARTIAL;
 
