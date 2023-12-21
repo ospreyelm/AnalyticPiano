@@ -151,6 +151,7 @@ define([
       if (!("midiDevice" in this.settings)) {
         throw new Error("missing settings.midiDevice");
       }
+      var EXERCISE_VIEW = this.settings.chords.hasOwnProperty('_currentIndex');
 
       this.chords = this.settings.chords;
       this.midiDevice = this.settings.midiDevice;
@@ -480,8 +481,8 @@ define([
             SUSTAINING = true;
           } else if (state === "off") {
             chord._sustain = false;
-            const PLAY_VIEW = false; // TO DO: UNISON BANKING FEATURE FOR PLAY VIEW ONLY
-            if (PLAY_VIEW && request_origin !== "ui") {
+            console.log(this.chords);
+            if (!this.EXERCISE_VIEW && request_origin !== "ui") {
               this.chords.puntUnison();
               chord._unison_idx = null;
             }
