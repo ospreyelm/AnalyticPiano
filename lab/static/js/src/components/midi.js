@@ -432,7 +432,8 @@ define([
     onBankNotes: function (request_origin = "unknown") {
       /* the following line both runs a function and returns a needed variable */
       var notes_off = this.chords.bank(request_origin);
-      if (request_origin === "ui") {
+      let sustain_on = this.chords.current()._sustain || false;
+      if (request_origin === "ui" && sustain_on) {
         const retake_time = 500 // milliseconds
         // Lift pedal on ui-originating chord bank
         this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "off", "ui");
