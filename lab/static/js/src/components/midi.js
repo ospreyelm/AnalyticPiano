@@ -472,28 +472,33 @@ define([
           this.noteVelocity =
             state === "off" ? DEFAULT_NOTE_VELOCITY : SOFT_NOTE_VELOCITY;
           break;
+        case "sostenuto":
+          break;
         case "sustain":
           if (state === "on") {
             chord._sustain = true;
             if (request_origin !== "ui") {
-              this.chords.bank();
+              this.chords.bank(); // function appropriately does nothing in the exercise context, see ExerciseChordBank
             }
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = true;
-          } else if (state === "off") {
-            try {
-              chord._sustain = false; // was throwing an error with the refresh exercise button
+          } else if (
+            state === "off"
+            // && request_origin !== "refresh"
+          ) {
+            try { // because sostenuto pedal can be channeled to this case "sustain"!!!
+              chord._sustain = false;
             } catch { }
             if (!this.EXERCISE_VIEW && request_origin !== "ui") {
               this.chords.puntUnison();
               chord._unison_idx = null;
             }
-            /* prepare to turn off notes in previous bank too */
-            var prev_notes = this.chords.previous()._notes || false;
-            /* the following line both runs a function and returns a needed variable */
-            try {
-              var notes_off = chord.dropDampers(prev_notes);
-              this.dropDampersMidiMessage(notes_off); // was throwing an error with the refresh exercise button
+            try { // because sostenuto pedal can be channeled to this case "sustain"!!!
+              /* prepare to turn off notes in previous bank too */
+              var prev_notes = this.chords.previous()._notes || {};
+              /* the following line both runs a function and returns a needed variable */
+              var notes_off = chord.dropDampers(prev_notes, this.EXERCISE_VIEW);
+              this.dropDampersMidiMessage(notes_off);
             } catch { }
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = false;

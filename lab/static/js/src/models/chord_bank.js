@@ -118,7 +118,9 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
       // } else {
       var chord = new Chord();
       chord.copy(current);
-      var notes_off = chord.dropDampers(); // important (see call in MidiComponent.onBankNotes)
+
+      // HARD TO UNDERSTAND WHY, BUT THIS IS IMPORTANT
+      var notes_off = chord.dropDampers();
 
       if (request_origin !== "redistribute") {
         // re-wires listeners to the current chord
