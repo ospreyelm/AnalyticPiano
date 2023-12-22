@@ -947,7 +947,7 @@ define([
       if (spacing && analysis) {
         var newSize = "16px";
         ctx.font = newSize + " " + fontArgs[fontArgs.length - 1];
-        ctx.fillText("SAT sp.", x - 18, 60);
+        ctx.fillText("", x - 18, 60); // SAT sp.
       }
       if (note_names && analysis) {
         // ctx.fillText('notes', x - 18, 60);

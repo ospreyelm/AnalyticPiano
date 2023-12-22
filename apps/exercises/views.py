@@ -15,7 +15,7 @@ from apps.exercises.tables import PlaylistActivityTable
 User = get_user_model()
 
 
-@staff_member_required
+# @staff_member_required
 def playlist_performance_view(request, playlist_id):
     data = []
     performances = PerformanceData.objects.filter(

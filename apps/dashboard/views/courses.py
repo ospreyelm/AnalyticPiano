@@ -242,8 +242,8 @@ def course_activity_view(request, course_id):
     if request.user != course.authored_by:
         raise PermissionDenied
 
-    # Change this to alter the number of displayed subscribers per page.
-    subscribers_per_page = 35
+    # Change this to alter the number of displayed performers per page.
+    performers_per_page = 35
 
     filters = CourseActivityGroupsFilter(
         queryset=course.visible_to.all(), data=request.GET
@@ -252,9 +252,9 @@ def course_activity_view(request, course_id):
     curr_group_ids = [int(g) for g in filters.form.cleaned_data["groups"] or []]
     curr_groups = Group.objects.filter(id__in=curr_group_ids)
 
-    subscribers = User.objects.filter(pk__in=request.user.content_permits)
+    performers = User.objects.filter(pk__in=request.user.content_permits)
     if len(curr_group_ids) > 0:
-        subscribers = subscribers.filter(participant_groups__id__in=curr_group_ids)
+        performers = performers.filter(participant_groups__id__in=curr_group_ids)
     course_playlists = list(
         PlaylistCourseOrdered.objects.filter(course=course)
         .order_by("order")
@@ -265,7 +265,7 @@ def course_activity_view(request, course_id):
     performance_dict = course.performance_dict
     data = {
         performer: {
-            "subscriber": performer,  # n.b. not a string!
+            "performer": performer,  # n.b. not a string!
             "performer_name": performer.get_full_name(),
             "performer_last_name": performer.last_name,
             "performer_first_name": performer.first_name,
@@ -279,11 +279,11 @@ def course_activity_view(request, course_id):
             ),
             **performance_dict.get(str(performer), {}),
         }
-        for performer in subscribers
+        for performer in performers
     }
 
     if len(curr_group_ids) == 0:
-        # omit subscribers who have zero performances for this playlist
+        # omit performers who have zero performances for this playlist
         relevant_data = {
             key: value for (key, value) in data.items() if len(value.keys()) > 5
         }
@@ -294,7 +294,7 @@ def course_activity_view(request, course_id):
     # add creator's own performances
     for performer in [request.user]:
         relevant_data[performer] = {
-            "subscriber": performer,  # n.b. not a string!
+            "performer": performer,  # n.b. not a string!
             "performer_name": performer.get_full_name(),
             "performer_last_name": "*" + str(performer.last_name).upper() + "*",
             "performer_first_name": "*" + str(performer.first_name).upper() + "*",
@@ -359,7 +359,7 @@ def course_activity_view(request, course_id):
     if len(curr_group_ids) == 0:
         table.exclude = ("groups",)
 
-    RequestConfig(request, paginate={"per_page": subscribers_per_page}).configure(table)
+    RequestConfig(request, paginate={"per_page": performers_per_page}).configure(table)
 
     return render(
         request,
