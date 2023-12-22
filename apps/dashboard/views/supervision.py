@@ -6,7 +6,6 @@ from django_tables2 import RequestConfig
 
 from apps.dashboard.forms import (
     AddConnectionForm,
-    RemoveSubscriptionConfirmationForm,
     RemoveConnectionConfirmationForm,
 )
 from apps.dashboard.tables import (
@@ -38,7 +37,7 @@ def courses_by_others_view(request):
 
 
 @login_required
-def connections_view(request):  # exact copy of old subscribers table with renamed variables
+def connections_view(request):
     connections_table = ConnectionsTable(
         [{"other": x, "user": request.user} for x in request.user.connections],
     )

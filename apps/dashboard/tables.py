@@ -53,7 +53,7 @@ class ConnectionsTable(tables.Table):
         orderable=False,
     )
     performance_access = tables.columns.LinkColumn(
-        "dashboard:other-performances",
+        "dashboard:performances-by-user",
         kwargs={"other_id": A("other.id")},
         verbose_name="Access performances",
         text="Performances",
@@ -263,17 +263,17 @@ class MyActivityDetailsTable(tables.Table):
 
     # USEFUL FOR INSTRUCTOR VIEWS YET TO BE ADDED
     # performer_given_name = tables.columns.Column(
-    #     accessor=A('performer_obj.first_name'),
+    #     accessor=A('performer.first_name'),
     #     verbose_name='Given name'
     # )
     # performer_surname = tables.columns.Column(
-    #     accessor=A('performer_obj.last_name'),
+    #     accessor=A('performer.last_name'),
     #     verbose_name='Surname'
     # )
     # performer_email = tables.columns.LinkColumn(
-    #     'dashboard:subscriber-performances',
-    #     kwargs={'subscriber_id': A('subscriber_id')},
-    #     accessor=A('performer_obj.email'),
+    #     'dashboard:performances-by-user',
+    #     kwargs={'other_id': A('other_id')},
+    #     accessor=A('performer.email'),
     #     verbose_name='User email'
     # )
 
@@ -557,7 +557,7 @@ class PlaylistActivityColumn(columns.Column):
 
 class CourseActivityTable(tables.Table):
     # performer_email = tables.columns.Column(
-    #     verbose_name='Subscriber Email',
+    #     verbose_name='Email',
     # )
     performer_first_name = tables.columns.Column(verbose_name="Given name")
     performer_last_name = tables.columns.Column(verbose_name="Surname")
@@ -695,7 +695,7 @@ class GroupMembersTable(tables.Table):
         orderable=False,
     )
 
-    def render_subscription_status(self, record):
+    def render_performance_access(self, record):
         return self.request.user.id in record["member"].performance_permits
 
     class Meta:
