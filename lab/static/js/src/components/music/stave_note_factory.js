@@ -545,19 +545,37 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         clef: this.clef,
         auto_stem: stem_direction === 0,
         stem_direction: stem_direction,
-        // modifiers: modifiers, // why not like this?
       });
       if (dot_count == 1) {
         stave_note = stave_note.addDotToAll();
       }
 
-      if (part == 'AB') {
-        // not working
-      } else if (part == 'ST') {
-        // not working
-      } else {
-        for (var i = 0, len = modifiers.length; i < len; i++) {
+      if (["AB", "ST"].includes(part)) {
+        // circumventing the modifiers callbacks because the index becomes wrong
+
+        const accidental = this.getAccidentalsOf(keys, this.activeAlterations)[0] || false;
+        try {
+          if (accidental) { stave_note.addAccidental(0, new Vex.Flow.Accidental(accidental)); }
+        } catch { console.log('Bad parameters for VexFlow .addAccidental', accidental) }
+        const style = this.getHighlightOf(["AB", "ST"].indexOf(part));
+        try {
+          stave_note.setKeyStyle(0, style);
+        } catch { console.log('Bad parameters for VexFlow .setKeyStyle') }
+        try {
+          stave_note.setStemStyle(style);
+        } catch { console.log('Bad parameters for VexFlow .setStemStyle') }
+        // TO ADD: setStemlet(isStemlet, stemletHeight)
+
+      } else for (var i = 0, len = modifiers.length; i < len; i++) {
+        // as of December 2023, winds up as
+        // staveNote.addAccidental()
+        // staveNote.setKeyStyle() which is applying colors in AnalyticPiano
+        // staveNote.setStemStyle() which is applying colors in AnalyticPiano
+        var function_regex = /(staveNote\.[a-zA-Z]+\()/g; // for console debugging
+        try {
           modifiers[i](stave_note);
+        } catch {
+          console.log("FAILED", this.clef, stave_note.keys, String(i), String(modifiers[i]).match(function_regex)[0]);
         }
       }
 
