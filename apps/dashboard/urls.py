@@ -92,10 +92,10 @@ urlpatterns = [
     # Preferences
     path("preferences/", dashboard_preferences_view, name="preferences"),
     # Import/Export
-    path("exercises/export/", ExerciseExportView.as_view(), name="export-exercises"),
-    path("exercises/import/", ExerciseImportView.as_view(), name="import-exercises"),
-    path("playlists/export/", PlaylistExportView.as_view(), name="export-playlists"),
-    path("playlists/import/", PlaylistImportView.as_view(), name="import-playlists"),
-    path("courses/export/", CourseExportView.as_view(), name="export-courses"),
-    path("courses/import/", CourseImportView.as_view(), name="import-courses"),
+    path("export/exercises/", ExerciseExportView.as_view(), name="export-exercises"),
+    path("import/exercises/", ExerciseImportView.as_view(), name="import-exercises"),
+    path("export/playlists/", PlaylistExportView.as_view(), name="export-playlists"),
+    path("import/playlists/", PlaylistImportView.as_view(), name="import-playlists"),
+    path("export/courses/", CourseExportView.as_view(), name="export-courses"),
+    path("import/courses/", CourseImportView.as_view(), name="import-courses"),
 ]
