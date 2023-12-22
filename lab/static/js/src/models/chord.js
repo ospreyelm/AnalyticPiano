@@ -158,11 +158,11 @@ define([
       let _sustain = this._sustain; // sustain pedal true or false
 
       // store these properties to check if they change
-      const as_was = {
+      const as_was = _.cloneDeep({
         _notes: this._notes,
         _unison_idx: this._unison_idx,
         _keys_down: this._keys_down
-      }
+      });
 
       for (let i = 0, len = incoming.length; i < len; i++) {
         // take each midi number
@@ -201,7 +201,9 @@ define([
       }
 
       this.trigger("change", "note:on");
+
       if (!_.isEqual(as_is, as_was)) {
+        // console.log({is: as_is, was: as_was});
         return true;
       } else {
         return false;
@@ -222,7 +224,7 @@ define([
     noteOff: function (notes) {
       let manually_dampen = false;
       if (_.isArray(notes)) {
-        var outgoing = notes; // the midi numbers of notes that must be added
+        var outgoing = notes; // the midi numbers of notes that must be silenced
       } else if (Number.isInteger(notes)) {
         var outgoing = [notes];
       } else if (!_.isArray(notes) && typeof notes === "object") {
@@ -240,11 +242,11 @@ define([
       var _sustain = this._sustain;
 
       // store these properties to check if they change
-      const as_was = {
+      const as_was = _.cloneDeep({
         _notes: this._notes,
         _unison_idx: this._unison_idx,
         _keys_down: this._keys_down
-      }
+      });
 
       for (let i = 0, len = outgoing.length; i < len; i++) {
         // take each midi number
@@ -289,10 +291,12 @@ define([
         _notes: this._notes,
         _unison_idx: this._unison_idx,
         _keys_down: this._keys_down
-      }
+      };
 
       this.trigger("change", "note:on");
+
       if (!_.isEqual(as_is, as_was)) {
+        // console.log({is: as_is, was: as_was});
         return true;
       } else {
         return false;
