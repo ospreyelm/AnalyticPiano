@@ -41,7 +41,7 @@ from apps.dashboard.views.playlists import (
     playlist_delete_view,
 )
 from apps.dashboard.views.preferences import dashboard_preferences_view
-from apps.dashboard.views.supervision import (
+from apps.dashboard.views.connections import (
     courses_by_others_view,
     connections_view,
     toggle_connection_pin_view,

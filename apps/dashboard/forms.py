@@ -26,7 +26,7 @@ import re
 User = get_user_model()
 
 
-class BaseSupervisionForm(forms.Form):
+class BaseConnectionsForm(forms.Form):
     def clean(self):
         email = self.cleaned_data.get("email")
         try:
@@ -47,7 +47,7 @@ class BaseSupervisionForm(forms.Form):
         return self.cleaned_data
 
 
-class AddConnectionForm(BaseSupervisionForm):
+class AddConnectionForm(BaseConnectionsForm):
     email = forms.EmailField(label="Email:")
 
 

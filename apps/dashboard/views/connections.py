@@ -19,7 +19,9 @@ from apps.exercises.models import Course
 
 @login_required
 def courses_by_others_view(request):
-    visible_users = request.user.content_permits
+    visible_users = User.objects.filter(
+        Q(content_permits__contains= request.user.id)
+    ).distinct()
 
     visible_courses = Course.objects.filter(
         Q(visible_to__members__id__contains=request.user.id) | Q(open=True),
@@ -37,7 +39,7 @@ def courses_by_others_view(request):
 
 
 @login_required
-def connections_view(request):
+def connections_view(request):  # exact copy of old subscribers table with renamed variables
     connections_table = ConnectionsTable(
         [{"other": x, "user": request.user} for x in request.user.connections],
     )
