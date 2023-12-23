@@ -119,8 +119,7 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
       var chord = new Chord();
       chord.copy(current);
 
-      // HARD TO UNDERSTAND WHY, BUT THIS IS IMPORTANT
-      var notes_off = chord.dropDampers();
+      // var notes_off = chord.dropDampers(); // delete safely later
 
       if (request_origin !== "redistribute") {
         // re-wires listeners to the current chord
@@ -131,7 +130,8 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
 
       this.trigger("bank");
 
-      return notes_off; // important (see call in MidiComponent.onBankNotes
+      return null;
+      // return notes_off; // important (see call in MidiComponent.onBankNotes // delete safely later
     },
     puntUnison: function (request_origin = "unknown") {
       if (!this._enableBanking || request_origin === "by_metronome" || request_origin === "ui") {

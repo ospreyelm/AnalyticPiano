@@ -342,7 +342,7 @@ define([
      *
      * @returns {boolean}
      */
-    dropDampers: function (prev_notes=false, exercise_view_bool=false) {
+    dropDampers: function (prev_notes=false, exercise_view_bool=false, all_notes_ever=false) {
       this._manually_dampened = [];
 
       let notes_to_turn_off = [];
@@ -358,7 +358,7 @@ define([
 
       let were_active = [];
       if (exercise_view_bool) {
-        were_active = Object.keys(prev_notes); // possible
+        were_active = all_notes_ever; // has to be very aggressive for some reason
       } else {
         were_active = Object.keys(prev_notes).filter(function(key) {
           return prev_notes[key]

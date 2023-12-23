@@ -151,7 +151,6 @@ define([
       if (!("midiDevice" in this.settings)) {
         throw new Error("missing settings.midiDevice");
       }
-      var EXERCISE_VIEW = this.settings.chords.hasOwnProperty('_currentIndex');
 
       this.chords = this.settings.chords;
       this.midiDevice = this.settings.midiDevice;
@@ -431,13 +430,14 @@ define([
      */
     onBankNotes: function (request_origin = "unknown") {
       /* the following line both runs a function and returns a needed variable */
-      var notes_off = this.chords.bank(request_origin);
+      // var notes_off = this.chords.bank(request_origin); // delete safely later
+      this.chords.bank(request_origin);
       let sustain_on = this.chords.current()._sustain || false;
       if (request_origin === "ui" && sustain_on) {
         const retake_time = 500 // milliseconds
         // Lift pedal on ui-originating chord bank
         this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "off", "ui");
-        this.dropDampersMidiMessage(notes_off);
+        // this.dropDampersMidiMessage(notes_off); // delete safely later
         _.delay(() => { // MAKE THIS A USER PREFERENCE
           this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "on", "ui");
         }, retake_time); // MAKE THIS A USER PREFERENCE
@@ -486,19 +486,23 @@ define([
             state === "off"
             // && request_origin !== "refresh"
           ) {
+            var EXERCISE_VIEW = this.settings.chords._currentIndex != undefined;
             try { // because sostenuto pedal can be channeled to this case "sustain"!!!
               chord._sustain = false;
             } catch { }
-            if (!this.EXERCISE_VIEW && request_origin !== "ui") {
+            if (!EXERCISE_VIEW && request_origin !== "ui") {
               this.chords.puntUnison();
               chord._unison_idx = null;
             }
             try { // because sostenuto pedal can be channeled to this case "sustain"!!!
               /* prepare to turn off notes in previous bank too */
               var prev_notes = this.chords.previous()._notes || {};
+              var all_notes_ever = EXERCISE_VIEW ?
+                [...new Set(this.chords._items.map(x => Object.keys(x._notes)).flat())].sort() || [] :
+                [];
               /* the following line both runs a function and returns a needed variable */
-              var notes_off = chord.dropDampers(prev_notes, this.EXERCISE_VIEW);
-              this.dropDampersMidiMessage(notes_off);
+              var notes_to_turn_off = chord.dropDampers(prev_notes, EXERCISE_VIEW, all_notes_ever);
+              this.dropDampersMidiMessage(notes_to_turn_off);
             } catch { }
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = false;
