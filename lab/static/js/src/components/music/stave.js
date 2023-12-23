@@ -848,10 +848,15 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      * @return {number}
      */
     getYForClef: function (clef) {
+      let chorale_format_bool = true; // pass this in somehow
       /**
-       * Adjust vertical spacing here.
+       * Adjust vertical spacing here. For searching: distance, separation of staves
        */
-      return (clef === "treble" ? 0 : 80) + 55;
+      // Should not be less than 2 in order to honor the promises about legibility
+      // for different staff distributions.
+      // TO DO: MAKE THIS AN OPTION FOR EXERCISES
+      const staff_separation_factor = chorale_format_bool ? 2.4 : 2;
+      return (clef === "treble" ? 0 : 40 * staff_separation_factor) + 55;
     },
     /**
      * Returns true if this stave is the first bar in the sequence, false

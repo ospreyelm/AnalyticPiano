@@ -80,7 +80,7 @@ define([
 
   _.extend(StaveNotater.prototype, {
     /**
-     * Defines the margin for rendering things above and below the stave.
+     * Defines the margin for rendering things above and below the system.
      * @type {object}
      */
     margin: { top: 50, bottom: 25 },

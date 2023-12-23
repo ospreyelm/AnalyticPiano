@@ -546,7 +546,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         auto_stem: stem_direction === 0,
         stem_direction: stem_direction,
       });
-      if (dot_count == 1) {
+      if (dot_count) {
         stave_note = stave_note.addDotToAll();
       }
 
@@ -564,7 +564,16 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         try {
           stave_note.setStemStyle(style);
         } catch { console.log('Bad parameters for VexFlow .setStemStyle') }
-        // TO ADD: setStemlet(isStemlet, stemletHeight)
+
+        let stem_adjustment = 0; // 10 is the height of each space
+        if ( // inner parts
+          part == "AB" && this.clef == "treble" ||
+          part == "ST" && this.clef == "bass"
+        ) {
+          stem_adjustment = -10;
+        }
+        // uses a custom VexFlow function that must be duplicated if VexFlow is updated
+        stave_note.setStemHeightAdjustment(stem_adjustment);
 
       } else for (var i = 0, len = modifiers.length; i < len; i++) {
         // as of December 2023, winds up as
