@@ -535,7 +535,7 @@ define([
           this._unison_idx === 0
         ) {
         } else {
-          notes.push(notes[this._unison_idx]) // length of notes may become an issue with rendering unisons
+          notes.push(notes[this._unison_idx])
           notes.sort()
         }
       }
@@ -699,11 +699,13 @@ define([
           return (
             clef ==
             (this.getSortedNotes().slice(0, 1).includes(midi) ? "bass" : "treble")
+            // TO DO: in this case, we also have to make sure that the tenor notehead is displaced by VexFlow
           );
         } else if (this._unison_idx === 2) {
           return (
             clef ==
             (this.getSortedNotes().slice(0, 2).includes(midi) ? "bass" : "treble")
+            // TO DO: in this case, we also have to make sure that the soprano notehead is displaced by VexFlow
           );
         } else { // this._unison_ix === 1
           return (
