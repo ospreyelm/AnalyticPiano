@@ -281,7 +281,7 @@ define([
           }
         }
 
-        // rough fix for stuck notes on exercise advance
+        // Prevents notes from slipping through the cracks when going between exercises
         this.broadcast(EVENTS.BROADCAST.CLEAR_NOTES);
         // Prevents issues with chord bank when advancing with sustain on
         this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "off", "ui");

@@ -540,16 +540,22 @@ define([
      *
      * @return undefined
      */
+    // sendAllNotesOff: function () {
+    //   var channel_idx = this.midiChannel - 1;
+    //   var notes = this.chords.getAllNotes();
+    //   var noteVelocity = this.noteVelocity;
+    //   for (var i = 0, len = notes.length; i < len; i++) {
+    //     this.sendMIDIMessage(
+    //       MIDI_MSG_MAP.NOTE_OFF[channel_idx],
+    //       notes[i],
+    //       noteVelocity
+    //     );
+    //   }
+    // },
     sendAllNotesOff: function () {
-      var channel_idx = this.midiChannel - 1;
-      var notes = this.chords.getAllNotes();
-      var noteVelocity = this.noteVelocity;
-      for (var i = 0, len = notes.length; i < len; i++) {
-        this.sendMIDIMessage(
-          MIDI_MSG_MAP.NOTE_OFF[channel_idx],
-          notes[i],
-          noteVelocity
-        );
+      const channel_idx = this.midiChannel - 1;
+      for (var i = 21; i <= 108; i++) {
+        this.sendMIDIMessage(MIDI_MSG_MAP.NOTE_OFF[channel_idx], i, 0);
       }
     },
     /**
