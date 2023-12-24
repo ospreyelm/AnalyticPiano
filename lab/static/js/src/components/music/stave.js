@@ -438,35 +438,34 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      * @return undefined
      */
     formatStaveVoices: function () {
-      var voices = [],
-        voice,
-        connectedStaveVoice,
-        connectedLowVoice,
-        formatter;
-
-      if (this.isConnected()) {
-        connectedStaveVoice = this.getConnected().getStaveVoice();
-        connectedLowVoice = this.getConnected().getLowVoice();
+      let top_staff = [];
+      const soprano_or_top_staff = this.staveVoice || false;
+      const alto = this.lowVoice || false;
+      if (soprano_or_top_staff) {
+        top_staff.push(soprano_or_top_staff);
+      }
+      if (alto) {
+        top_staff.push(alto);
       }
 
-      if (this.staveVoice) {
-        voices.push(this.staveVoice);
+      let bottom_staff = [];
+      const tenor_or_bottom_staff = this.getConnected().getStaveVoice() || false;
+      const bass = this.getConnected().getLowVoice() || false;
+      if (tenor_or_bottom_staff) {
+        bottom_staff.push(tenor_or_bottom_staff);
       }
-      if (this.lowVoice) {
-        voices.push(this.lowVoice);
-      }
-      if (connectedStaveVoice) {
-        voices.push(connectedStaveVoice);
-      }
-      if (connectedLowVoice) {
-        voices.push(connectedLowVoice);
+      if (bass) {
+        bottom_staff.push(bass);
       }
 
-      voice = voices[0];
-
-      if (voices.length > 0) {
-        formatter = new Vex.Flow.Formatter();
-        formatter.joinVoices([voice]).formatToStave(voices, this.staffSegment);
+      var formatter = new Vex.Flow.Formatter();
+      if (top_staff.length > 0) {
+        formatter.joinVoices(top_staff); // causes havoc ... why?
+        formatter.formatToStave(top_staff, this.staffSegment);
+      }
+      if (bottom_staff.length > 0) {
+        formatter.joinVoices(bottom_staff); // causes havoc ... why?
+        formatter.formatToStave(bottom_staff, this.staffSegment);
       }
     },
     /**
@@ -639,6 +638,9 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
     },
     getLowVoice: function () {
       return this.lowVoice;
+    },
+    getStaffSegment: function () {
+      return this.staffSegment;
     },
     /**
      * Returns the clef associated with the stave.

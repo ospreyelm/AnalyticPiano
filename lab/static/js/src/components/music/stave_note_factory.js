@@ -97,6 +97,13 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
       const CHORALE_FORMAT = this.chord.settings.staffDistribution === "chorale";
 
       if (CHORALE_FORMAT && vexflow_keys.length == 2) {
+        // not needed once VexFlow voices were properly formatted
+        // const unison_bool =
+        //   vexflow_keys[0][0] == vexflow_keys[1][0] &&
+        //   vexflow_keys[0][vexflow_keys[0].length-1] == vexflow_keys[1][vexflow_keys[1].length-1];
+        // if (unison_bool) {
+        //   console.log('unison on ' + String(this.clef) + ' clef', vexflow_keys);
+        // }
         var stave_note_1 = this._makeStaveNote(
           [vexflow_keys[0]],
           this.getNoteModifiers(),
@@ -530,7 +537,15 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
      * @param {array} modifiers
      * @return {Vex.Flow.StaveNote}
      */
-    _makeStaveNote: function (keys, modifiers, rhythm_value, dot_count = 0, stem_direction = 0, part = null) {
+    _makeStaveNote: function (
+      keys,
+      modifiers,
+      rhythm_value,
+      dot_count = 0,
+      stem_direction = 0,
+      part = null,
+      unison_bool = false,
+    ) {
       modifiers = modifiers || [];
 
       var stave_note = new Vex.Flow.StaveNote({
@@ -545,6 +560,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         clef: this.clef,
         auto_stem: stem_direction === 0,
         stem_direction: stem_direction,
+        // displaced: unison_bool,
       });
       if (dot_count) {
         stave_note = stave_note.addDotToAll();
