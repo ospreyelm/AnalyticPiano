@@ -19,15 +19,7 @@ def performances_list_view(request, other_id=None):
     other_id = other_id or request.user.id
     other = get_object_or_404(User, id=other_id)
 
-    if (
-<<<<<<< HEAD
-        request.user != subscriber
-        and not request.user.pk in subscriber.performance_permits
-=======
-        request.user != other
-        and not request.user.pk in other.performance_permits
->>>>>>> origin/main
-    ):
+    if request.user != other and not request.user.pk in other.performance_permits:
         raise PermissionDenied
 
     performances = PerformanceData.objects.filter(user=other).select_related(
@@ -41,11 +33,7 @@ def performances_list_view(request, other_id=None):
     return render(
         request,
         "dashboard/performances-list.html",
-<<<<<<< HEAD
-        {"table": table, "subscriber_name": subscriber_name, "me": request.user},
-=======
         {"table": table, "performer_name": performer_name, "me": request.user},
->>>>>>> origin/main
     )
 
 
@@ -145,19 +133,9 @@ def playing_time(exercises_data):
 
 
 def playlist_performance_view(request, performance_id):
-<<<<<<< HEAD
-    subscriber_id = request.user.id
-    subscriber = get_object_or_404(User, id=subscriber_id)
-    if not request.user.pk in subscriber.performance_permits:
-        raise PermissionDenied
-    subscriber_name = subscriber
-
-    data = []
-=======
->>>>>>> origin/main
     performance = (
         PerformanceData.objects.filter(id=performance_id)
-        .select_related("user", "playlist", "course") # redundant?
+        .select_related("user", "playlist", "course")  # redundant?
         .first()
     )
 
@@ -262,9 +240,5 @@ def playlist_performance_view(request, performance_id):
     return render(
         request,
         "dashboard/performance_details.html",
-<<<<<<< HEAD
-        {"table": table, "subscriber_name": subscriber_name, "me": request.user},
-=======
         {"table": table, "performer_name": performer, "me": request.user},
->>>>>>> origin/main
     )

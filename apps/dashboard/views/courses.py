@@ -252,11 +252,7 @@ def course_activity_view(request, course_id):
     curr_group_ids = [int(g) for g in filters.form.cleaned_data["groups"] or []]
     curr_groups = Group.objects.filter(id__in=curr_group_ids)
 
-<<<<<<< HEAD
-    subscribers = User.objects.filter(pk__in=request.user.content_permits)
-=======
     performers = User.objects.filter(pk__in=request.user.content_permits)
->>>>>>> origin/main
     if len(curr_group_ids) > 0:
         performers = performers.filter(participant_groups__id__in=curr_group_ids)
     course_playlists = list(
