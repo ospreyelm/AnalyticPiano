@@ -92,13 +92,45 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         : this.getRhythmValue().toLowerCase();
       let vexflow_dots =
         this.getRhythmValue().toUpperCase() == this.getRhythmValue() ? 1 : 0;
-      var stave_note_1 = this._makeStaveNote(
-        this.getNoteKeys(),
-        this.getNoteModifiers(),
-        vexflow_duration,
-        vexflow_dots
-      );
-      return [stave_note_1];
+      let vexflow_keys = this.getNoteKeys();
+
+      const CHORALE_FORMAT = this.chord.settings.staffDistribution === "chorale";
+
+      if (CHORALE_FORMAT && vexflow_keys.length == 2) {
+        // not needed once VexFlow voices were properly formatted
+        // const unison_bool =
+        //   vexflow_keys[0][0] == vexflow_keys[1][0] &&
+        //   vexflow_keys[0][vexflow_keys[0].length-1] == vexflow_keys[1][vexflow_keys[1].length-1];
+        // if (unison_bool) {
+        //   console.log('unison on ' + String(this.clef) + ' clef', vexflow_keys);
+        // }
+        var stave_note_1 = this._makeStaveNote(
+          [vexflow_keys[0]],
+          this.getNoteModifiers(),
+          vexflow_duration,
+          vexflow_dots,
+          -1, // stem_direction
+          'AB' // part is alto or bass
+        );
+        var stave_note_2 = this._makeStaveNote(
+          [vexflow_keys[1]],
+          this.getNoteModifiers(),
+          vexflow_duration,
+          vexflow_dots,
+          1, // stem_direction
+          'ST' // part is soprano or tenor
+        );
+        return [stave_note_1, stave_note_2];
+      } else {
+        var stave_note_1 = this._makeStaveNote(
+          vexflow_keys,
+          this.getNoteModifiers(),
+          vexflow_duration,
+          vexflow_dots,
+          0, // stem_direction
+        );
+        return [stave_note_1];
+      }
     },
     /**
      * Returns true if there are any stave notes to create, false otherwise.
@@ -505,7 +537,15 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
      * @param {array} modifiers
      * @return {Vex.Flow.StaveNote}
      */
-    _makeStaveNote: function (keys, modifiers, rhythm_value, dot_count = 0) {
+    _makeStaveNote: function (
+      keys,
+      modifiers,
+      rhythm_value,
+      dot_count = 0,
+      stem_direction = 0,
+      part = null,
+      unison_bool = false,
+    ) {
       modifiers = modifiers || [];
 
       var stave_note = new Vex.Flow.StaveNote({
@@ -518,14 +558,50 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         // type: "r", // make a rest
         dots: dot_count,
         clef: this.clef,
-        auto_stem: true,
+        auto_stem: stem_direction === 0,
+        stem_direction: stem_direction,
+        // displaced: unison_bool,
       });
-      if (dot_count == 1) {
+      if (dot_count) {
         stave_note = stave_note.addDotToAll();
       }
 
-      for (var i = 0, len = modifiers.length; i < len; i++) {
-        modifiers[i](stave_note);
+      if (["AB", "ST"].includes(part)) {
+        // circumventing the modifiers callbacks because the index becomes wrong
+
+        const accidental = this.getAccidentalsOf(keys, this.activeAlterations)[0] || false;
+        try {
+          if (accidental) { stave_note.addAccidental(0, new Vex.Flow.Accidental(accidental)); }
+        } catch { console.log('Bad parameters for VexFlow .addAccidental', accidental) }
+        const style = this.getHighlightOf(["AB", "ST"].indexOf(part));
+        try {
+          stave_note.setKeyStyle(0, style);
+        } catch { console.log('Bad parameters for VexFlow .setKeyStyle') }
+        try {
+          stave_note.setStemStyle(style);
+        } catch { console.log('Bad parameters for VexFlow .setStemStyle') }
+
+        let stem_adjustment = 0; // 10 is the height of each space
+        if ( // inner parts
+          part == "AB" && this.clef == "treble" ||
+          part == "ST" && this.clef == "bass"
+        ) {
+          stem_adjustment = -10;
+        }
+        // uses a custom VexFlow function that must be duplicated if VexFlow is updated
+        stave_note.setStemHeightAdjustment(stem_adjustment);
+
+      } else for (var i = 0, len = modifiers.length; i < len; i++) {
+        // as of December 2023, winds up as
+        // staveNote.addAccidental()
+        // staveNote.setKeyStyle() which is applying colors in AnalyticPiano
+        // staveNote.setStemStyle() which is applying colors in AnalyticPiano
+        var function_regex = /(staveNote\.[a-zA-Z]+\()/g; // for console debugging
+        try {
+          modifiers[i](stave_note);
+        } catch {
+          console.log("FAILED", this.clef, stave_note.keys, String(i), String(modifiers[i]).match(function_regex)[0]);
+        }
       }
 
       return stave_note;

@@ -108,20 +108,18 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
       }
       var current = this.current();
       if (
-        request_origin === "by_metronome" &&
+        (request_origin === "by_metronome" || this._items.length == 1) && // the first user's bank is _items[1]
         current.getNoteNumbers().length == 0
       ) {
         return;
       }
 
+      // if (NO_DOUBLE_VISION === true) {
+      // } else {
       var chord = new Chord();
-      if (NO_DOUBLE_VISION === true) {
-      } else {
-        // copy the current chord
-        chord.copy(current);
-        /* critical side-effect */
-        var notes_off = chord.syncSustainedNotes();
-      }
+      chord.copy(current);
+
+      // var notes_off = chord.dropDampers(); // delete safely later
 
       if (request_origin !== "redistribute") {
         // re-wires listeners to the current chord
@@ -132,8 +130,24 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
 
       this.trigger("bank");
 
-      return notes_off;
-      // add novelty to false setting for better isNovel performance
+      return null;
+      // return notes_off; // important (see call in MidiComponent.onBankNotes // delete safely later
+    },
+    puntUnison: function (request_origin = "unknown") {
+      if (!this._enableBanking || request_origin === "by_metronome" || request_origin === "ui") {
+        return;
+      }
+
+      // punt unison idx if chord otherwise unchanged
+      var current = this.current();
+      var previous = this.previous();
+      if (previous) {
+        if (_.isEqual(previous._notes, current._notes) && previous._unison_idx === null) {
+          this.previous()._unison_idx = current._unison_idx;
+        }
+      }
+
+      return;
     },
     /**
      * Returns a list of chords in the chord bank.
@@ -260,9 +274,9 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
      *
      * @return {boolean} True if any chords are sustained, false otherwise.
      */
-    anySustained: function () {
+    dampersEverRaised: function () {
       return _.any(this._items, function (chord) {
-        return chord.isSustained();
+        return chord.dampersRaised();
       });
     },
 
@@ -314,9 +328,9 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
       var current = this.current();
       if (current) {
         this._removeListeners(current);
-        chord.copyTranspose(current);
-        if (current.isSustained()) {
-          chord.sustainNotes();
+        chord.setTranspose(current.getTranspose());
+        if (current.dampersRaised()) {
+          chord._sustain = true;
         }
       }
       this._addListeners(chord);

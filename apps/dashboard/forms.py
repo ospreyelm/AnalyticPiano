@@ -26,7 +26,7 @@ import re
 User = get_user_model()
 
 
-class BaseSupervisionForm(forms.Form):
+class BaseConnectionsForm(forms.Form):
     def clean(self):
         email = self.cleaned_data.get("email")
         try:
@@ -47,31 +47,8 @@ class BaseSupervisionForm(forms.Form):
         return self.cleaned_data
 
 
-class AddSupervisorForm(BaseSupervisionForm):
+class AddConnectionForm(BaseConnectionsForm):
     email = forms.EmailField(label="Email:")
-
-
-class AddSubscriberForm(BaseSupervisionForm):
-    email = forms.EmailField(label="Email:")
-
-
-class AddConnectionForm(BaseSupervisionForm):
-    email = forms.EmailField(label="Email:")
-
-
-class RemoveSubscriptionConfirmationForm(forms.Form):
-    CONFIRMATION_PHRASE = "remove this subscriber"
-    # do not offer this option on the frontend but leave it here in case of bugs
-
-    confirmation_text = forms.CharField(label="")
-
-    def clean_confirmation_text(self):
-        if self.cleaned_data["confirmation_text"] not in [
-            self.CONFIRMATION_PHRASE,
-            self.context.get("email"),
-        ]:
-            raise forms.ValidationError("Wrong value.")
-        return self.cleaned_data["confirmation_text"]
 
 
 class RemoveConnectionConfirmationForm(forms.Form):

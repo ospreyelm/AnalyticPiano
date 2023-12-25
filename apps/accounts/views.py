@@ -53,7 +53,7 @@ def login(request):
             password = form.cleaned_data.get("password")
             user = authenticate(username=email, password=password)
             django_login(request, user)
-            return redirect(reverse("dashboard:subscriptions-courses"))
+            return redirect(reverse("dashboard:courses-by-others"))
         else:
             return render(request, "accounts/login.html", {"form": form})
     else:

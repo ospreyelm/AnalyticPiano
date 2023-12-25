@@ -80,7 +80,7 @@ define([
 
   _.extend(StaveNotater.prototype, {
     /**
-     * Defines the margin for rendering things above and below the stave.
+     * Defines the margin for rendering things above and below the system.
      * @type {object}
      */
     margin: { top: 50, bottom: 25 },
@@ -614,6 +614,7 @@ define([
        */
       var history = this.romanNumeralsHistory;
       var resolution_lines = false;
+      var one_resolution_line = false;
       var applied_arrow = false;
 
       const idx = this.stave.position.index;
@@ -622,10 +623,14 @@ define([
       var extra_wide_figures = false;
       if (keyCategory === "j") {
         var substitutions = [
-          /* cadential six-fours */
+          /* cadential six-fours and five-fours*/
           [
             ["I{z4}", "V"],
             ["V{z4}", "={t3}"],
+          ],
+          [
+            ["V{r}...", "V"],
+            ["V{r}", "={e}"],
           ],
           [
             ["I{z4}", "V{u3}"],
@@ -654,6 +659,10 @@ define([
           [
             ["I{z4}", "V"],
             ["V{' z4}", "={t3}"],
+          ],
+          [
+            ["V{r}...", "V"],
+            ["V{r}", "={e}"],
           ],
           [
             ["I{z4}", "V{u3}"],
@@ -687,8 +696,9 @@ define([
         /* has precursor */
         let precursor = history[idx - 1];
         let current = history[idx];
-        if (precursor == current) display = "";
-        else {
+        if (precursor == current) {
+          // display = ""; // MAKE THIS A USER PREFERENCE AND EXERCISE PREFERENCE
+        } else {
           let progression = [precursor, current];
           let probe = substitutions
             .map((sub_arr) => sub_arr[0].join(">"))
@@ -717,7 +727,10 @@ define([
           if (["V{B z4}", "V{' z4}"].includes(display)) {
             extra_wide_figures = true;
           }
-          if (!["iv{d z}"].includes(display)) {
+          if (["iv{d z}"].includes(display)) {
+          } else if (["V{r}"].includes(display)) {
+            one_resolution_line = true;
+          } else {
             resolution_lines = true;
           }
         } else if (key !== "" && current.split("/").length == 2) {
@@ -774,7 +787,7 @@ define([
         var first_line_width =
           this.getContext().measureText(lines[0]).width + offset;
 
-        if (resolution_lines) {
+        if (resolution_lines || one_resolution_line) {
           let label_width = first_line_width + 15;
           let x_start = this.annotateOffsetX + x + label_width;
           let stroke_length = this.stave.width - label_width;
@@ -783,13 +796,16 @@ define([
             stroke_length += -10;
           }
           ctx.beginPath();
-          ctx.moveTo(x_start, y - 3);
-          ctx.lineTo(x_start + stroke_length, y - 3);
+          if (resolution_lines) {
+            ctx.moveTo(x_start, y - 3);
+            ctx.lineTo(x_start + stroke_length, y - 3);
+          }
           ctx.moveTo(x_start, y - 12);
           ctx.lineTo(x_start + stroke_length, y - 12);
           ctx.stroke();
         }
         resolution_lines = false;
+        one_resolution_line = false;
 
         if (applied_arrow) {
           let width = this.stave.width;
@@ -931,7 +947,7 @@ define([
       if (spacing && analysis) {
         var newSize = "16px";
         ctx.font = newSize + " " + fontArgs[fontArgs.length - 1];
-        ctx.fillText("SAT sp.", x - 18, 60);
+        ctx.fillText("", x - 18, 60); // SAT sp.
       }
       if (note_names && analysis) {
         // ctx.fillText('notes', x - 18, 60);

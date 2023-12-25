@@ -302,7 +302,7 @@ class ExerciseForm(forms.ModelForm):
         choices=DISTRIBUTION_CHOICES,
         widget=forms.RadioSelect(),
         required=False,
-        help_text="*SAT no lower than G3, bass no higher than F3",
+        help_text="You may need to refresh the page to edit this field more than once. *SAT no lower than G3, bass no higher than F3.",
     )
     time_signature = forms.CharField(
         required=False,

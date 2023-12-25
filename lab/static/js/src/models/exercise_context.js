@@ -744,7 +744,7 @@ define([
       }
 
       chords = new ExerciseChordBank({
-        // staffDistribution: staffDistribution,
+        staffDistribution: staffDistribution,
         chords: exercise_chords,
       });
 
@@ -766,17 +766,19 @@ define([
       for (var i = 0, len = problems.length; i < len; i++) {
         notes = problems[i].notes;
         rhythm = problems[i].rhythm;
+        unison_idx = problems[i].unison_idx;
         // we can push any notewise features through this entry point!
         chord = new ExerciseChord({
           staffDistribution: staffDistribution,
           notes: notes,
           rhythm: rhythm,
+          unison_idx: unison_idx,
         });
         exercise_chords.push(chord);
       }
 
       chords = new ExerciseChordBank({
-        // staffDistribution: staffDistribution,
+        staffDistribution: staffDistribution,
         chords: exercise_chords,
       });
 

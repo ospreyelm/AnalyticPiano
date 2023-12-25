@@ -337,7 +337,7 @@ define([
      *
      * @param {string} noteState on|off
      * @param {number} noteNumber
-     * @param {extra} extra.overrideSustain true|false overrides sustain
+     * @param {extra} extra.manuallyDampen true|false
      * @return undefined
      */
     toggleNote: function (noteState, noteNumber, extra) {
@@ -414,7 +414,9 @@ define([
     onClearNotes: function () {
       this.sendAllNotesOff();
 
-      if (this.chords.anySustained()) {
+      if (this.chords.dampersEverRaised()) {
+        // is it necessary to condition these calls?
+        // dampersEverRaised() is not used anywhere else and is intuitively dubious
         this.sendMIDIPedalMessage("sustain", "off");
         this.sendMIDIPedalMessage("sustain", "on");
       }
@@ -427,20 +429,22 @@ define([
      * @return undefined
      */
     onBankNotes: function (request_origin = "unknown") {
-      /* critical side-effect */
-      var notes_off = this.chords.bank(request_origin);
-      if (request_origin === "ui") {
-        const retake_time = 100 // milliseconds
+      /* the following line both runs a function and returns a needed variable */
+      // var notes_off = this.chords.bank(request_origin); // delete safely later
+      this.chords.bank(request_origin);
+      let sustain_on = this.chords.current()._sustain || false;
+      if (request_origin === "ui" && sustain_on) {
+        const retake_time = 500 // milliseconds
         // Lift pedal on ui-originating chord bank
         this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "off", "ui");
-        this.turnOffSustainedNotesOnPedalLift(notes_off);
-        _.delay(() => {
+        // this.dropDampersMidiMessage(notes_off); // delete safely later
+        _.delay(() => { // MAKE THIS A USER PREFERENCE
           this.broadcast(EVENTS.BROADCAST.PEDAL, "sustain", "on", "ui");
-        }, retake_time);
+        }, retake_time); // MAKE THIS A USER PREFERENCE
 
       }
     },
-    turnOffSustainedNotesOnPedalLift: function (notes_off = []) {
+    dropDampersMidiMessage: function (notes_off = []) {
       var i, len;
       for (i = 0, len = notes_off.length; i < len; i++) {
         let channel_idx = this.midiChannel - 1;
@@ -468,28 +472,38 @@ define([
           this.noteVelocity =
             state === "off" ? DEFAULT_NOTE_VELOCITY : SOFT_NOTE_VELOCITY;
           break;
+        case "sostenuto":
+          break;
         case "sustain":
           if (state === "on") {
-            chord.sustainNotes();
+            chord._sustain = true;
             if (request_origin !== "ui") {
-              this.chords.bank();
+              this.chords.bank(); // function appropriately does nothing in the exercise context, see ExerciseChordBank
             }
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = true;
-          } else if (state === "off") {
-            try {
-              chord.releaseSustain();
-              /* prepare to turn off notes in previous bank too */
-              var prev_notes = this.chords.previous()._notes || false;
-              var prev_sustained = this.chords.previous()._sustained || false;
-              /* critical side-effect */
-              var notes_off = chord.syncSustainedNotes(
-                prev_notes,
-                prev_sustained
-              );
-              this.turnOffSustainedNotesOnPedalLift(notes_off);
+          } else if (
+            state === "off"
+            // && request_origin !== "refresh"
+          ) {
+            var EXERCISE_VIEW = this.settings.chords._currentIndex != undefined;
+            try { // because sostenuto pedal can be channeled to this case "sustain"!!!
+              chord._sustain = false;
             } catch { }
-
+            if (!EXERCISE_VIEW && request_origin !== "ui") {
+              this.chords.puntUnison();
+              chord._unison_idx = null;
+            }
+            try { // because sostenuto pedal can be channeled to this case "sustain"!!!
+              /* prepare to turn off notes in previous bank too */
+              var prev_notes = this.chords.previous()._notes || {};
+              var all_notes_ever = EXERCISE_VIEW ?
+                [...new Set(this.chords._items.map(x => Object.keys(x._notes)).flat())].sort() || [] :
+                [];
+              /* the following line both runs a function and returns a needed variable */
+              var notes_to_turn_off = chord.dropDampers(prev_notes, EXERCISE_VIEW, all_notes_ever);
+              this.dropDampersMidiMessage(notes_to_turn_off);
+            } catch { }
             this.sendMIDIPedalMessage(pedal, state);
             SUSTAINING = false;
           }
@@ -526,16 +540,22 @@ define([
      *
      * @return undefined
      */
+    // sendAllNotesOff: function () {
+    //   var channel_idx = this.midiChannel - 1;
+    //   var notes = this.chords.getAllNotes();
+    //   var noteVelocity = this.noteVelocity;
+    //   for (var i = 0, len = notes.length; i < len; i++) {
+    //     this.sendMIDIMessage(
+    //       MIDI_MSG_MAP.NOTE_OFF[channel_idx],
+    //       notes[i],
+    //       noteVelocity
+    //     );
+    //   }
+    // },
     sendAllNotesOff: function () {
-      var channel_idx = this.midiChannel - 1;
-      var notes = this.chords.getAllNotes();
-      var noteVelocity = this.noteVelocity;
-      for (var i = 0, len = notes.length; i < len; i++) {
-        this.sendMIDIMessage(
-          MIDI_MSG_MAP.NOTE_OFF[channel_idx],
-          notes[i],
-          noteVelocity
-        );
+      const channel_idx = this.midiChannel - 1;
+      for (var i = 21; i <= 108; i++) {
+        this.sendMIDIMessage(MIDI_MSG_MAP.NOTE_OFF[channel_idx], i, 0);
       }
     },
     /**

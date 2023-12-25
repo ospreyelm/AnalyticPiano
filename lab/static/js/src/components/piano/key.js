@@ -121,7 +121,7 @@ define(["lodash", "app/components/component"], function (_, Component) {
      * @param {boolean} state When true, enable sustain, otherwise disable.
      * @return undefined
      */
-    setSustain: function (state) {
+    toggleSustain: function (state) {
       if (state) {
         this.sustain = SUSTAIN_ON;
         // if (this.isPressed()) {
@@ -246,15 +246,17 @@ define(["lodash", "app/components/component"], function (_, Component) {
      * @return {boolean}
      */
     onRelease: function (e) {
+      // called through UI interaction, not MIDI sustain pedal
       var sustain_cached;
       if (e.which == 3 || (e.which == 1 && e.ctrlKey)) {
         sustain_cached = this.sustain;
-        this.setSustain(false);
+        this.toggleSustain(false);
         this.release(); // no useful impact when using mouse
         this.triggerKey(this.state, this.noteNumber, {
-          cullFromSustain: sustain_cached == SUSTAIN_ON,
+          manuallyDampen: sustain_cached == SUSTAIN_ON,
         });
-        this.setSustain(sustain_cached);
+        console.log('The note ' + this.noteNumber.toString() + ' is removed from the chord but unfortunately, it still sounds.');
+        this.toggleSustain(sustain_cached);
 
         e.preventDefault();
         e.stopPropagation();

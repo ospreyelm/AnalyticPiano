@@ -22,20 +22,6 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
     _.bindAll(this, ["handleMIDIMessage", "update"]);
   };
 
-  /**
-   * Initialize parameters for Tone.js
-   */
-  document.documentElement.addEventListener("mousedown", function () {
-    mouse_IsDown = true;
-    if (Tone.context.state !== "running") {
-      // document.getElementById('midi-switch').innerHTML
-      //     = "Disable MIDI" // Audio Enabled
-      sampler.releaseAll(); // does this prevent brief cacophony?
-      Tone.context.resume();
-      sampler.releaseAll();
-    }
-  });
-
   /* Create Polyphonic Synthesizer */
   // var polySynth = new Tone.PolySynth(Tone.FMSynth);
   // var vol = new Tone.Volume(-6).toDestination();
@@ -111,7 +97,9 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
 
   /* defaults per _header.html */
   sampler.volume.value = volumeOpts["mf"];
-  vol.mute = false;
+  vol.mute = true; // DO NOT CHANGE
+  // unless the app is muted on page load, any MIDI interactions will be cacophonously
+  // rushed through Tone.js after the first user interaction whereby the browser permits audio
 
   /* apply sticky settings */
   if (STICKY_VOLUME != null && volumeOptsKeys.indexOf(STICKY_VOLUME) != -1) {
@@ -119,15 +107,37 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
     let volumeDiv = document.getElementById("volume");
     volumeDiv.innerHTML = STICKY_VOLUME;
   }
-  if (typeof STICKY_MUTE == "boolean") {
-    vol.mute = STICKY_MUTE;
-    let mute = document.getElementById("mute-toggle");
-    if (STICKY_MUTE) {
-      mute.innerHTML = muteToggleText[1];
-    } else {
-      mute.innerHTML = muteToggleText[0];
-    }
-  }
+
+  /**
+   * Initialize parameters for Tone.js
+   */
+  document.documentElement.addEventListener("mousedown", function () {
+    mouse_IsDown = true;
+    try {
+      if (Tone.context.state !== "running") {
+        sampler.releaseAll();
+        Tone.context.resume();
+      } else {
+        console.log('Tone.context.state already === "running"')
+      }
+
+      /* apply sticky settings */
+      if (typeof STICKY_MUTE == "boolean") {
+        // wait to unmute audio until the document.hasFocus()
+        // see comment at the declaration of vol.mute
+        vol.mute = STICKY_MUTE;
+        let mute = document.getElementById("mute-toggle");
+        if (STICKY_MUTE) {
+          mute.innerHTML = muteToggleText[1];
+        } else {
+          mute.innerHTML = muteToggleText[0];
+        }
+      }
+
+      document.getElementById("user-interaction-solicitation").style.display = "none";
+
+    } catch { console.log('Some error occured with initializing audio.') }
+  });
 
   /* All Notes Off button */
   // if ($("all-notes-off")){
@@ -378,8 +388,17 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
    *
    * @return undefined
    */
+  var FOCUS_ALERT_RAISED = false;
   MidiDevice.prototype.handleMIDIMessage = function (msg) {
     if (MIDI_INPUT_ON === false) {
+      return null;
+    }
+    if (!document.hasFocus()) {
+      if (!FOCUS_ALERT_RAISED) {
+        FOCUS_ALERT_RAISED = true;
+        console.log('This browser tab does not have focus, so at least one MIDI message was stopped.')
+        // TO DO: make this visible to the user
+      }
       return null;
     }
     this.trigger("midimessage", msg);

@@ -33,8 +33,6 @@ define([
 
   var DEFAULT_RHYTHM_VALUE = Config.get("general.defaultRhythmValue");
 
-  // var AUTO_ADVANCE_ENABLED = Config.get('general.autoAdvance');
-
   var SETTING_HIDE_NEXT = Config.get("general.hideNextForAutoAdvance");
 
   var NUMBERED_EXERCISE_COUNT = Config.get("general.numberedExerciseCount");
@@ -766,7 +764,7 @@ define([
         return 0.5;
       } else if (rhythm_value === "q") {
         return 0.375;
-        // } else if (rhythm_value === "e") {
+        // } else if (rhythm_value === "8") {
         //   return 0.25;
       } else {
         console.log("Unknown rhythm_value passed to getVisualWidth");
@@ -788,7 +786,7 @@ define([
         return 0.25;
       } else if (rhythm_value === "E") {
         return 0.1875;
-      } else if (rhythm_value === "e") {
+      } else if (rhythm_value === "8") {
         return 0.125;
       } else {
         console.log("Unknown rhythm_value passed to getWholeNoteCount");

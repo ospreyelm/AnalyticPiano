@@ -29942,6 +29942,13 @@
                   },
                 },
                 {
+                  key: "setStemHeightAdjustment",
+                  value: function setStemHeightAdjustment(int) {
+                    var stem = this.getStem();
+                    stem.renderHeightAdjustment = int;
+                  },
+                },
+                {
                   key: "getStemStyle",
                   value: function getStemStyle() {
                     return this.stem.getStyle();

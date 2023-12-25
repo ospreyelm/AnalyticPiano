@@ -192,7 +192,9 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
       this.formatStaveVoices();
 
       this.drawStaveVoice();
+      this.drawLowVoice();
       this.doConnected("drawStaveVoice");
+      this.doConnected("drawLowVoice");
       this.drawStaveBar();
       this.doConnected("drawStaveBar");
 
@@ -348,70 +350,87 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      */
     createStaveVoice: function () {
       var voice, formatter, time;
+      if (!this.hasStaveNotes()) {
+        this.staveVoice = voice;
+        this.lowVoice = voice; // without this, the alto bass notes stuck on the sheet music
+        return;
+      }
+
       /**
        * Meter defined here on basis of rhythm value.
        * Follows exercise definition.
        */
-      if (this.hasStaveNotes()) {
-        var rhythm_value = this.noteFactory.getRhythmValue();
-        if (rhythm_value == null) {
-          rhythm_value = DEFAULT_RHYTHM_VALUE;
-        }
-        if (rhythm_value === "w") {
-          time = {
-            num_beats: 4,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "W") {
-          time = {
-            num_beats: 6,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "H") {
-          time = {
-            num_beats: 3,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "h") {
-          time = {
-            num_beats: 2,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "Q") {
-          time = {
-            num_beats: 1.5,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        } else if (rhythm_value === "q") {
-          time = {
-            num_beats: 1,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        // } else if (rhythm_value === "e") {
-        //   time = {
-        //     num_beats: 0.5,
-        //     beat_value: 4,
-        //     resolution: Vex.Flow.RESOLUTION,
-        //   };
-        } else {
-          // should be redundant
-          time = {
-            num_beats: 4,
-            beat_value: 4,
-            resolution: Vex.Flow.RESOLUTION,
-          };
-        }
-        voice = new Vex.Flow.Voice(time);
-        voice.addTickables(this.createStaveNotes());
-        // voice.addTickables(this.createStaveNotes("h")); // how to add multiple chords per measure
+      var rhythm_value = this.noteFactory.getRhythmValue();
+      if (rhythm_value == null) {
+        rhythm_value = DEFAULT_RHYTHM_VALUE;
       }
-      this.staveVoice = voice;
+      if (rhythm_value === "w") {
+        time = {
+          num_beats: 4,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "W") {
+        time = {
+          num_beats: 6,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "H") {
+        time = {
+          num_beats: 3,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "h") {
+        time = {
+          num_beats: 2,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "Q") {
+        time = {
+          num_beats: 1.5,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      } else if (rhythm_value === "q") {
+        time = {
+          num_beats: 1,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      // } else if (rhythm_value === "8") {
+      //   time = {
+      //     num_beats: 0.5,
+      //     beat_value: 4,
+      //     resolution: Vex.Flow.RESOLUTION,
+      //   };
+      } else {
+        // should be redundant
+        time = {
+          num_beats: 4,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
+      }
+
+      const create = this.createStaveNotes();
+
+      if (create.length == 2) { // chorale format
+        var low_voice, high_voice;
+        low_voice = new Vex.Flow.Voice(time);
+        high_voice = new Vex.Flow.Voice(time);
+        low_voice.addTickables([create[0]]);
+        high_voice.addTickables([create[1]]);
+        this.staveVoice = high_voice;
+        this.lowVoice = low_voice;
+      } else {
+        var voice;
+        voice = new Vex.Flow.Voice(time);
+        voice.addTickables(create);
+        this.staveVoice = voice;
+      }
     },
     /**
      * Format the Vex.Flow.Voice.
@@ -419,27 +438,34 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      * @return undefined
      */
     formatStaveVoices: function () {
-      var voices = [],
-        voice,
-        connectedVoice,
-        formatter;
-
-      if (this.isConnected()) {
-        connectedVoice = this.getConnected().getStaveVoice();
+      let top_staff = [];
+      const soprano_or_top_staff = this.staveVoice || false;
+      const alto = this.lowVoice || false;
+      if (soprano_or_top_staff) {
+        top_staff.push(soprano_or_top_staff);
+      }
+      if (alto) {
+        top_staff.push(alto);
       }
 
-      if (this.staveVoice) {
-        voices.push(this.staveVoice);
+      let bottom_staff = [];
+      const tenor_or_bottom_staff = this.getConnected().getStaveVoice() || false;
+      const bass = this.getConnected().getLowVoice() || false;
+      if (tenor_or_bottom_staff) {
+        bottom_staff.push(tenor_or_bottom_staff);
       }
-      if (connectedVoice) {
-        voices.push(connectedVoice);
+      if (bass) {
+        bottom_staff.push(bass);
       }
 
-      voice = voices[0];
-
-      if (voices.length > 0) {
-        formatter = new Vex.Flow.Formatter();
-        formatter.joinVoices([voice]).formatToStave(voices, this.staffSegment);
+      var formatter = new Vex.Flow.Formatter();
+      if (top_staff.length > 0) {
+        formatter.joinVoices(top_staff); // causes havoc ... why?
+        formatter.formatToStave(top_staff, this.staffSegment);
+      }
+      if (bottom_staff.length > 0) {
+        formatter.joinVoices(bottom_staff); // causes havoc ... why?
+        formatter.formatToStave(bottom_staff, this.staffSegment);
       }
     },
     /**
@@ -450,6 +476,11 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
     drawStaveVoice: function () {
       if (this.staveVoice) {
         this.staveVoice.draw(this.getContext(), this.staffSegment);
+      }
+    },
+    drawLowVoice: function () {
+      if (this.lowVoice) {
+        this.lowVoice.draw(this.getContext(), this.staffSegment);
       }
     },
     /**
@@ -604,6 +635,12 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      */
     getStaveVoice: function () {
       return this.staveVoice;
+    },
+    getLowVoice: function () {
+      return this.lowVoice;
+    },
+    getStaffSegment: function () {
+      return this.staffSegment;
     },
     /**
      * Returns the clef associated with the stave.
@@ -813,10 +850,15 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      * @return {number}
      */
     getYForClef: function (clef) {
+      let chorale_format_bool = true; // pass this in somehow
       /**
-       * Adjust vertical spacing here.
+       * Adjust vertical spacing here. For searching: distance, separation of staves
        */
-      return (clef === "treble" ? 0 : 80) + 55;
+      // Should not be less than 2 in order to honor the promises about legibility
+      // for different staff distributions.
+      // TO DO: MAKE THIS AN OPTION FOR EXERCISES
+      const staff_separation_factor = chorale_format_bool ? 2.4 : 2;
+      return (clef === "treble" ? 0 : 40 * staff_separation_factor) + 55;
     },
     /**
      * Returns true if this stave is the first bar in the sequence, false

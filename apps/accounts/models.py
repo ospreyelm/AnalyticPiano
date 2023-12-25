@@ -61,11 +61,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         _("Last Name"), max_length=32, unique=False, default="", blank=True
     )
 
-    SUPERVISOR_STATUS_ACCEPTED = "Accepted"
-    SUPERVISOR_STATUS_DECLINED = "Declined"
-    SUPERVISOR_STATUS_SUBSCRIPTION_WAIT = "Waiting"
-    SUPERVISOR_STATUS_INVITATION_WAIT = "Waiting"
-
     preferences = JSONField(
         default=get_preferences_default, verbose_name="Preferences", blank=True
     )

@@ -141,7 +141,12 @@ class PlaylistView(RequirejsView):
 
         if (
             not playlist.is_public
+<<<<<<< HEAD
             and not request.user.pk in playlist.authored_by.content_permits()
+=======
+            and not playlist.authored_by == request.user
+            and not request.user.pk in playlist.authored_by.content_permits
+>>>>>>> origin/main
         ):
             raise PermissionDenied
 
@@ -384,7 +389,12 @@ class ExerciseView(RequirejsView):
 
         if (
             not exercise.is_public
+<<<<<<< HEAD
             and not request.user.pk in exercise.authored_by.content_permits()
+=======
+            and not exercise.authored_by == request.user
+            and not request.user.pk in exercise.authored_by.content_permits
+>>>>>>> origin/main
         ):
             raise PermissionDenied
 
@@ -417,7 +427,12 @@ class CourseView(RequirejsView):
 
         if (
             not course.is_public
+<<<<<<< HEAD
             and not request.user.pk in course.authored_by.content_permits()
+=======
+            and not course.authored_by == request.user
+            and not request.user.pk in course.authored_by.content_permits
+>>>>>>> origin/main
         ):
             raise PermissionDenied
 
@@ -522,6 +537,7 @@ def exercise_performance_history(
     request, playlist_name, exercise_num=1, *args, **kwargs
 ):
     # TODO: change this
+    # yes, why is course id not also passed to this function?
     playlist = Playlist.objects.filter(
         Q(name=playlist_name) | Q(id=playlist_name)
     ).first()
@@ -530,7 +546,12 @@ def exercise_performance_history(
 
     if (
         not playlist.is_public
+<<<<<<< HEAD
         and not request.user.pk in playlist.authored_by.content_permits()
+=======
+        and not playlist.authored_by == request.user
+        and not request.user.pk in playlist.authored_by.content_permits
+>>>>>>> origin/main
     ):
         raise PermissionDenied
 

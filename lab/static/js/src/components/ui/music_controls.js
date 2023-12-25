@@ -393,11 +393,10 @@ define([
      * @return {boolean} true
      */
     onClickScreenshot: function (evt) {
-      var $canvas = $("#staff-area canvas");
-      var $target = $(evt.target);
-      var data_url = $canvas[0].toDataURL();
-      $target[0].href = data_url;
-      $target[0].target = "_blank";
+      var canvas = document.getElementById("staff");
+      var dataURL = canvas.toDataURL("image/png");
+      var newTab = window.open('about:blank','image from canvas');
+      newTab.document.write("<img src='" + dataURL + "' alt='from canvas'/>");
       return true;
     },
     /**

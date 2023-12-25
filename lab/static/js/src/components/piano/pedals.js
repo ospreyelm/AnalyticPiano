@@ -67,7 +67,10 @@ define([
       pedal.toggle();
       component.broadcast(EVENTS.BROADCAST.PEDAL, name, pedal.state, "ui");
     });
-    if (name == "sustain") {
+    if (
+      name == "sustain"
+      && false // plays utter havoc with real-piano performance, tag: PEDALING BEHAVIORS
+    ) {
       this.subscribe(
         EVENTS.BROADCAST.NEXT_CHORD,
         // ought to pass slice_duration_factor calibrated to the rhythm duration of the chord
@@ -77,7 +80,7 @@ define([
   };
 
   PedalsComponent.prototype.onPedalChange = function (pedal, state) {
-    console.log("pedalchange");
+    // console.log("pedalchange");
     var p = this.pedals[pedal];
     if (p) {
       p.toggle(state);
@@ -107,13 +110,14 @@ define([
   // Toggles off the pedal designated by pedalName, then toggles it back on
   // Currently just used to maintain sustain after completing a chord
   PedalsComponent.prototype.refreshPedal = function (pedalName, slice_duration_factor = 1) {
+    // ARGH: should only be called when pedal is pressed on UI
+    // make it a user preference instead
     const retake_time = 100 // milliseconds
     if (pedalName == "sustain") {
       wait_duration = AUTO_SUSTAIN_DURATION * slice_duration_factor * 100 - retake_time
       if (wait_duration < 0) {
         wait_duration = 0
       }
-      console.log(wait_duration)
     } else { // no real use case
       wait_duration = retake_time
     }

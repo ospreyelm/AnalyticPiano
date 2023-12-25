@@ -68,25 +68,29 @@ define([
        */
       this._unison_idx = null;
       /**
-       * Container for the notes that are active.
+       * Object whose keys are midi numbers and whose values are true or false.
+       * Notes that are sounding or not.
        * @type {object}
        * @protected
        */
       this._notes = {};
       /**
-       * Sustain flag. When true means notes should be sustained.
+       * Sustain flag. When true means the sustain pedal is depressed.
        * @type {boolean}
        * @protected
        */
       this._sustain = false;
       /**
-       * Container for the note state changes that occur while notes are
-       * being sustained.
+       * Object whose keys are midi numbers and whose values are true or false.
+       * Notes whose piano keys are depressed or not.
        * @type {object}
        * @protected
        */
-      this._sustained = {};
-      this._culled_from_sustain = [];
+      this._keys_down = {};
+      /**
+       * Array of midi numbers which have been manually dampened during the current depression of the sustain pedal.
+       */
+      this._manually_dampened = [];
       /**
        * Transpose value expressed as the number of semitones.
        * @type {number}
@@ -123,8 +127,9 @@ define([
      */
     clear: function () {
       this._notes = {};
-      this._sustained = {};
-      this._culled_from_sustain = [];
+      this._keys_down = {};
+      this._manually_dampened = [];
+      this._unison_idx = {};
       this.trigger("clear");
     },
     /**
@@ -137,68 +142,72 @@ define([
      * @return {boolean} True if the note status changed, false otherwise.
      */
     noteOn: function (notes) {
-      var i, noteObj, len, noteNumber;
-      var changed = false;
-      var _transpose = this._transpose;
-      var _sustain = this._sustain;
-
-      // make sure the argument is an array of note numbers
-      if (typeof notes === "number") {
-        notes = [notes];
+      if (_.isArray(notes)) {
+        var incoming = notes; // the midi numbers of notes that must be added
+      } else if (Number.isInteger(notes)) {
+        var incoming = [notes];
       } else if (!_.isArray(notes) && typeof notes === "object") {
-        noteObj = notes;
-        notes = noteObj.notes;
-        if (noteObj.hasOwnProperty("overrideSustain")) {
-          _sustain = noteObj.overrideSustain ? false : _sustain;
-        }
+        var incoming = notes.notes;
+      } else {
+        var incoming = [];
+        console.log("Warning: Chord.noteOn did not receive midi numbers as expected!")
       }
 
-      for (i = 0, len = notes.length; i < len; i++) {
-        noteNumber = notes[i];
+      // circumstances
+      let _transpose = this._transpose;
+      let _sustain = this._sustain; // sustain pedal true or false
+
+      // store these properties to check if they change
+      const as_was = _.cloneDeep({
+        _notes: this._notes,
+        _unison_idx: this._unison_idx,
+        _keys_down: this._keys_down
+      });
+
+      for (let i = 0, len = incoming.length; i < len; i++) {
+        // take each midi number
+        let noteNumber = incoming[i];
         if (_transpose) {
           noteNumber = this.transpose(noteNumber);
         }
-        if (_sustain) {
-          this._sustained[noteNumber] = true;
-        }
 
-        if (!changed) {
-          changed = this._notes[noteNumber] !== true;
-        }
-
-        const currently_on_notes = Object.entries(this._notes).filter(([k, v]) => v === true).map(([k, v]) => parseInt(k));
+        // deal with changes in the one possible unison placement
+        const currently_on_notes = Object.entries(this._notes)
+          .filter(([k, v]) => v === true)
+          .map(([k, v]) => parseInt(k));
         if (this._notes[noteNumber] === true) {
           let latest_double_tap_idx = currently_on_notes.indexOf(noteNumber);
-          if (latest_double_tap_idx == -1) {
-            console.log('unexpected condition [1] in call of chord.noteOn')
-          }
-          if (this._unison_idx === latest_double_tap_idx) { // === is crucial here, to ensure that the test (false === 0) fails
+          if (this._unison_idx == latest_double_tap_idx) {
             this._unison_idx = null; // toggle off
           } else {
             this._unison_idx = latest_double_tap_idx;
           }
-          changed = true;
+        } else if (this._unison_idx == null) {
         } else {
           let unison_idx = this._unison_idx;
-          if (unison_idx != null &&
-            Number.isInteger(unison_idx) && // should be redundant
-            currently_on_notes[unison_idx] > noteNumber // i.e. the user is adding a note below the doubled note
-          ) {
+          if (noteNumber < currently_on_notes[unison_idx]) {
+            // a note must be added below the doubled note
             this._unison_idx += 1;
-          }
-          if (!changed) {
-            console.log('unexpected condition [2] in call of chord.noteOn')
-            changed = true;
           }
         }
         this._notes[noteNumber] = true;
+        this._keys_down[noteNumber] = true;
       }
 
-      if (changed) {
-        this.trigger("change", "note:on");
+      const as_is = {
+        _notes: this._notes,
+        _unison_idx: this._unison_idx,
+        _keys_down: this._keys_down
       }
 
-      return changed;
+      this.trigger("change", "note:on");
+
+      if (!_.isEqual(as_is, as_was)) {
+        // console.log({is: as_is, was: as_was});
+        return true;
+      } else {
+        return false;
+      }
     },
     /**
      * Command to turn off a note.
@@ -213,60 +222,85 @@ define([
      * @return {boolean} True if the note status changed, false otherwise.
      */
     noteOff: function (notes) {
-      var i, noteObj, len, noteNumber;
-      var changed = false;
-      var _transpose = this._transpose;
-      var _sustain = this._sustain;
-      var cull_from_sustain = false;
-
-      // make sure the argument is an array of note numbers
-      if (typeof notes === "number") {
-        notes = [notes];
+      let manually_dampen = false;
+      if (_.isArray(notes)) {
+        var outgoing = notes; // the midi numbers of notes that must be silenced
+      } else if (Number.isInteger(notes)) {
+        var outgoing = [notes];
       } else if (!_.isArray(notes) && typeof notes === "object") {
-        noteObj = notes;
-        notes = noteObj.notes;
-        if (noteObj.hasOwnProperty("cullFromSustain")) {
-          cull_from_sustain = noteObj.cullFromSustain === true;
+        var outgoing = notes.notes;
+        if (notes.hasOwnProperty("manuallyDampen")) {
+          manually_dampen = notes.manuallyDampen === true;
         }
+      } else {
+        var outgoing = [];
+        console.log("Warning: Chord.noteOff did not receive midi numbers as expected!")
       }
 
-      for (i = 0, len = notes.length; i < len; i++) {
-        noteNumber = notes[i];
+      // circumstances
+      var _transpose = this._transpose;
+      var _sustain = this._sustain;
+
+      // store these properties to check if they change
+      const as_was = _.cloneDeep({
+        _notes: this._notes,
+        _unison_idx: this._unison_idx,
+        _keys_down: this._keys_down
+      });
+
+      for (let i = 0, len = outgoing.length; i < len; i++) {
+        // take each midi number
+        let noteNumber = outgoing[i];
         if (_transpose) {
           noteNumber = this.transpose(noteNumber);
         }
-        if (_sustain) {
-          this._sustained[noteNumber] = false;
-          if (cull_from_sustain) {
-            const currently_on_notes = Object.entries(this._notes).filter(([k, v]) => v === true).map(([k, v]) => parseInt(k));
-            const doubled_note_num = currently_on_notes[this._unison_idx] || null;
-            let unison_idx = this._unison_idx;
 
-            if (doubled_note_num !== null) {
-              if (doubled_note_num == noteNumber) {
-                this._unison_idx = null;
-              } else if (doubled_note_num > noteNumber) {
-                this._unison_idx += -1;
-              }
-            }
-            this._culled_from_sustain.push(noteNumber);
-            // TO DO!
-            // Use broadcast / events to relay to Tone.js that midi note [noteNumber] should be turned off
+        let to_be_silenced = false;
+        if (_sustain) {
+          if (manually_dampen) {
+            this._manually_dampened.push(noteNumber);
+            // this.broadcast(EVENTS.BROADCAST.NOTE, "off", noteNumber); // TO DO VEYSEL
+            to_be_silenced = true;
           }
         }
-        if (!_sustain || cull_from_sustain) {
-          if (!changed) {
-            changed = this._notes[noteNumber] === true;
+        if (!_sustain) {
+          to_be_silenced = true;
+        }
+
+        if (to_be_silenced) {
+          // deal with changes in the one possible unison placement
+          const currently_on_notes = Object.entries(this._notes)
+            .filter(([k, v]) => v === true)
+            .map(([k, v]) => parseInt(k));
+          const doubled_note_num = currently_on_notes[this._unison_idx] || null;
+          let unison_idx = this._unison_idx;
+          if (doubled_note_num !== null) {
+            if (doubled_note_num > noteNumber) {
+              this._unison_idx += -1;
+            } else if (doubled_note_num == noteNumber) {
+              this._unison_idx = null; // toggle off
+            } else { }
           }
           this._notes[noteNumber] = false;
         }
+
+        this._keys_down[noteNumber] = false;
       }
 
-      if (changed) {
-        this.trigger("change", "note:off");
-      }
+      const as_is = {
+        _notes: this._notes,
+        _unison_idx: this._unison_idx,
+        _keys_down: this._keys_down
+      };
 
-      return changed;
+      this.trigger("change", "note:on");
+
+      if (!_.isEqual(as_is, as_was)) {
+        // console.log({is: as_is, was: as_was});
+        return true;
+      } else {
+        return false;
+      }
     },
     /**
      * Sets note properties.
@@ -304,112 +338,58 @@ define([
       return this._noteProps[note];
     },
     /**
-     * Commands the chord to sustain all notes that are turned on (i.e.
-     * ignore "noteOff" messages).
-     *
-     * This should be used in conjunction with the releaseSustain() method.
-     *
-     * @return undefined
-     */
-    sustainNotes: function () {
-      this._sustain = true;
-    },
-    /**
-     * Releases the sustain.
-     *
-     * @fires change
-     * @return undefined
-     */
-    releaseSustain: function () {
-      this._sustain = false;
-    },
-    /**
      * Synchronize the notes playing with those that are being sustained.
      *
      * @returns {boolean}
      */
-    syncSustainedNotes: function (prev_notes = false, prev_sustained = false) {
-      var _notes = this._notes;
-      let _sustained = this._sustained;
-      let _culled_from_sustain = this._culled_from_sustain;
-      var changed = false;
+    dropDampers: function (prev_notes=false, exercise_view_bool=false, all_notes_ever=false) {
+      this._manually_dampened = [];
 
       let notes_to_turn_off = [];
 
-      _.each(
-        _sustained,
-        function (state, noteNumber) {
-          if (_notes[noteNumber] !== state) {
-            if (state === false) {
-              notes_to_turn_off.push(noteNumber);
-            }
-            _notes[noteNumber] = state;
-            changed = true;
-          }
-        },
-        this
-      );
+      const _notes = this._notes;
+      const are_active = Object.keys(_notes).filter(function(key) {
+        return _notes[key] // values are boolean
+      });
+      const _keys_down = this._keys_down;
+      const are_keys_down = Object.keys(_keys_down).filter(function(key) {
+        return _keys_down[key]
+      });
 
-      if (prev_notes) {
-        // needs improvement: too harsh
-        _.each(
-          prev_notes,
-          function (state, noteNumber) {
-            if (_sustained[noteNumber] !== state) {
-              notes_to_turn_off.push(noteNumber);
-              changed = true;
-            }
-          },
-          this
-        );
+      let were_active = [];
+      if (exercise_view_bool) {
+        were_active = all_notes_ever; // has to be very aggressive for some reason
+      } else {
+        were_active = Object.keys(prev_notes).filter(function(key) {
+          return prev_notes[key]
+        });
       }
 
-      // if (prev_notes && prev_sustained) {
-      //  _.each(prev_sustained, function(state, noteNumber) {
-      //    if(prev_notes[noteNumber] !== state) {
-      //      if(state === false) {
-      //        notes_to_turn_off.push(noteNumber);
-      //      }
-      //      // DO NOT EDIT prev_notes (as _notes above)
-      //      // Breaks exercise grading
-      //      changed = true;
-      //    }
-      //  }, this);
-      // }
+      let all_vibrating_strings = new Array(...new Set([
+        are_active,
+        were_active,
+      ].flat()))
 
-      // if (prev_notes) {
-      //  // this is too lenient
-      //  _.each(prev_notes, function(state, noteNumber) {
-      //    console.log(state, noteNumber, _sustained[noteNumber]);
-      //    if(_sustained[noteNumber] !== undefined && _sustained[noteNumber] === false && state === false) {
-      //      notes_to_turn_off.push(noteNumber);
-      //      _notes[noteNumber] = false;
-      //      changed = true;
-      //    }
-      //  }, this);
-      // }
-
-      this._sustained = {};
-      this._culled_from_sustain = [];
-
-      if (changed) {
-        this.trigger("change");
+      for (let i = 0; i < all_vibrating_strings.length; i++) {
+        if (
+          !are_keys_down.includes(all_vibrating_strings[i])
+        ) {
+          notes_to_turn_off.push(all_vibrating_strings[i]);
+          this._notes[all_vibrating_strings[i]] = false;
+        }
       }
+      this.trigger("change");
 
-      try {
-        notes_to_turn_off = notes_to_turn_off.concat(
-          _culled_from_sustain.map(String)
-        );
-      } catch {}
+      // console.log("Silencing " + String(notes_to_turn_off.length) + " of " + String(all_vibrating_strings.length));
 
       return notes_to_turn_off;
     },
     /**
-     * Returns true if notes are being sustained, false otherwise.
+     * Whether the sustain pedal is depressed or not.
      *
      * @return {boolean}
      */
-    isSustained: function () {
+    dampersRaised: function () {
       return this._sustain ? true : false;
     },
     /**
@@ -432,7 +412,7 @@ define([
       var old_transpose = this._transpose;
       var effective_transpose = new_transpose - old_transpose;
 
-      this._notes = _.reduce(
+      this._notes = _.reduce( // TO DO: replicate this for _keys_down
         this._notes,
         function (result, state, noteNumber) {
           var transposition = effective_transpose + parseInt(noteNumber, 10);
@@ -448,53 +428,33 @@ define([
 
       return true;
     },
-    /**
-     * Returns the current transpose value.
-     *
-     * @return {number}
-     */
     getTranspose: function () {
       return this._transpose;
     },
     /**
-     * Copies the transpose to another chord.
-     *
-     * @param {Chord} chord
-     * @return undefined
-     */
-    copyTranspose: function (chord) {
-      this.setTranspose(chord.getTranspose());
-    },
-    /**
-     * Copies the sustain to another chord.
-     *
-     * @param {Chord} chord
-     * @return undefined
-     */
-    copySustain: function (chord) {
-      this._sustain = chord.isSustained();
-    },
-    /**
      * Copies the notes to another chord.
-     *
-     * @param {Chord} chord
      * @return undefined
-     */
-    copyNotes: function (chord) {
-      this._notes = _.cloneDeep(chord._notes);
-      this._sustained = _.cloneDeep(chord._sustained);
-      this._culled_from_sustain = _.cloneDeep(chord._culled_from_sustain);
-    },
-    /**
-     * Copies the chord.
-     *
-     * @param {Chord} chord
-     * @return this
      */
     copy: function (chord) {
-      this.copyTranspose(chord);
-      this.copySustain(chord);
-      this.copyNotes(chord);
+      const notes_false = Object.entries(chord._notes)
+        .filter(([k, v]) => v === false)
+        .map(([k, v]) => k);
+      let notes_obj = {};
+      for (let i = 0; i < notes_false.length; i++) {
+        notes_obj[notes_false[i]] = false;
+      }
+      const keys_down_true = Object.entries(chord._keys_down)
+        .filter(([k, v]) => v === true)
+        .map(([k, v]) => k);
+      let keys_down_obj = {};
+      for (let i = 0; i < keys_down_true.length; i++) {
+        keys_down_obj[keys_down_true[i]] = true;
+        notes_obj[keys_down_true[i]] = true;
+      }
+      this.setTranspose(chord.getTranspose());
+      this._sustain = chord.dampersRaised();
+      this._notes = _.cloneDeep(notes_obj);
+      this._keys_down = _.cloneDeep(keys_down_obj);
       return this;
     },
     /**
@@ -564,7 +524,17 @@ define([
         len;
 
       if (Number.isInteger(this._unison_idx) && this._unison_idx < notes.length) {
-        if (!(STAFF_DISTRIBUTION == 'chorale' && notes.length === 3 && this._unison_idx === 1)) {
+        if (
+          STAFF_DISTRIBUTION == 'chorale' &&
+          notes.length === 3 &&
+          this._unison_idx === 1
+        ) {
+        } else if (
+          ["keyboard", "keyboardPlusRHBias", "keyboardPlusLHBias"].includes(STAFF_DISTRIBUTION) &&
+          VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(notes.length) && notes.length != 2 &&
+          this._unison_idx === 0
+        ) {
+        } else {
           notes.push(notes[this._unison_idx])
           notes.sort()
         }
@@ -675,7 +645,12 @@ define([
         midi == this.getSortedNotes()[0]
       ) {
         // lowest note
-        return clef == (midi <= high_threshold ? "bass" : "treble");
+        // UNISONS
+        if (this._unison_idx === 0) {
+          return [["bass", "treble"], ["treble"]][midi <= high_threshold ? 0 : 1].includes(clef);
+        } else {
+          return clef == (midi <= high_threshold ? "bass" : "treble");
+        }
       } else if (
         ["keyboard", "keyboardPlusRHBias", "keyboardPlusLHBias"].includes(
           STAFF_DISTRIBUTION
@@ -724,11 +699,13 @@ define([
           return (
             clef ==
             (this.getSortedNotes().slice(0, 1).includes(midi) ? "bass" : "treble")
+            // TO DO: in this case, we also have to make sure that the tenor notehead is displaced by VexFlow
           );
         } else if (this._unison_idx === 2) {
           return (
             clef ==
             (this.getSortedNotes().slice(0, 2).includes(midi) ? "bass" : "treble")
+            // TO DO: in this case, we also have to make sure that the soprano notehead is displaced by VexFlow
           );
         } else { // this._unison_ix === 1
           return (

@@ -174,6 +174,10 @@ define({
 
   "7/35z": { root: "7", label: "V{q e}", priority: "95" }, // V13
 
+  // V with suspension
+
+  "7/02": { root: "7", label: "V{r}..."},
+
   // v
 
   "7/2y": { root: "7", label: "v" },

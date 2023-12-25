@@ -184,7 +184,7 @@ define([
     onPedalChange: function (pedal, state) {
       var enabled = state === "on";
       if (pedal === "sustain") {
-        _.invoke(this.keyComponents, "setSustain", enabled);
+        _.invoke(this.keyComponents, "toggleSustain", enabled);
       }
     },
     /**
