@@ -504,6 +504,7 @@ class AddExerciseView(View):
     def post(self, request, *args, **kwargs):
         data = request.POST.get("data")
         if data == "null":
+            # TO DO message for user: 'You tried to create an empty exercise. Add some content!'
             return HttpResponse(status=400)
 
         exercise = Exercise()
@@ -512,6 +513,7 @@ class AddExerciseView(View):
         if request.user.is_authenticated:
             exercise.authored_by = request.user
         else:
+            # TO DO message for user: 'You are not logged in. You must be logged in to create exercises.'
             return HttpResponse(status=400)
 
         exercise.save()
