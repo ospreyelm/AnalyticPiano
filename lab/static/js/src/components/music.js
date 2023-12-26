@@ -174,7 +174,7 @@ define([
       }
       return this;
     },
-    renderPristine: function (exerciseAction = "refresh") {
+    renderPristine: function (exerciseAction = "reload") {
       var sheetComponent = this.getComponent("sheet");
       if (!sheetComponent.hasOwnProperty("exerciseContext")) {
         /* play view */
@@ -187,7 +187,6 @@ define([
         // The following was used to generate newData as we built this function
         // let currentData = JSON.stringify(setdef.settings.definition, null, 0);
         let newData = {};
-
         // var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
         if (exerciseAction === "reload") {
           $.ajax({
@@ -211,24 +210,27 @@ define([
           }
         } else if (
           exerciseAction === "next" &&
-          setdef.settings.definition.nextExerciseNum
+          setdef.settings.definition.nextExerciseId
         ) {
-          $.ajax({
-            type: "GET",
-            url: "definition",
-            async: false,
-            data: {
-              playlist_name: setdef.settings.definition.playlistName,
-              exercise_id: setdef.settings.definition.nextExerciseId,
-              exercise_num: setdef.settings.definition.nextExerciseNum,
-            },
-            dataType: "json",
-            success: function (data) {
-              if (setdef.settings.definition.nextExerciseId) {
-                newData = data;
-              }
-            },
-          });
+          if (setdef.settings.definition.forceRedirect)
+            window.location.href = setdef.settings.definition.nextExercise;
+          else
+            $.ajax({
+              type: "GET",
+              url: "definition",
+              async: false,
+              data: {
+                playlist_name: setdef.settings.definition.playlistName,
+                exercise_id: setdef.settings.definition.nextExerciseId,
+                exercise_num: setdef.settings.definition.nextExerciseNum,
+              },
+              dataType: "json",
+              success: function (data) {
+                if (setdef.settings.definition.nextExerciseId) {
+                  newData = data;
+                }
+              },
+            });
 
           if (!Object.keys(newData).length) {
             console.log("No next exercise; end of playlist");
@@ -236,24 +238,27 @@ define([
           }
         } else if (
           exerciseAction === "previous" &&
-          setdef.settings.definition.previousExerciseNum
+          setdef.settings.definition.previousExerciseId
         ) {
-          $.ajax({
-            type: "GET",
-            url: "definition",
-            async: false,
-            data: {
-              playlist_name: setdef.settings.definition.playlistName,
-              exercise_id: setdef.settings.definition.previousExerciseId,
-              exercise_num: setdef.settings.definition.previousExerciseNum,
-            },
-            dataType: "json",
-            success: function (data) {
-              if (setdef.settings.definition.previousExerciseId) {
-                newData = data;
-              }
-            },
-          });
+          if (setdef.settings.definition.forceRedirect)
+            window.location.href = setdef.settings.definition.previousExercise;
+          else
+            $.ajax({
+              type: "GET",
+              url: "definition",
+              async: false,
+              data: {
+                playlist_name: setdef.settings.definition.playlistName,
+                exercise_id: setdef.settings.definition.previousExerciseId,
+                exercise_num: setdef.settings.definition.previousExerciseNum,
+              },
+              dataType: "json",
+              success: function (data) {
+                if (setdef.settings.definition.previousExerciseId) {
+                  newData = data;
+                }
+              },
+            });
 
           if (!Object.keys(newData).length) {
             console.log("No previous exercise; start of playlist");

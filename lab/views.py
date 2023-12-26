@@ -125,8 +125,115 @@ class PlayView(RequirejsTemplateView):
     #     return context
 
 
-# TODO lots of repeated code between PlaylistView and RefreshExerciseDefinition.
-#   Could be fixed thru some sort of inheritance or thru making the refresh request after rendering PlaylistView
+# Reusable function to generate exercise_context. Accounts for null inputs.
+# Catered to the current desired behavior of the 3 views below. If adding more views or changing desired behavior, changes to this function will be needed
+def generate_exercise_context(
+    exercise_num=None,
+    exercise=None,
+    user=None,
+    playlist=None,
+    course=None,
+):
+    course_id = course.id if course else None
+    playlist_id = playlist.id if playlist else None
+    exercise_context = {}
+    prev_num = playlist.prev_num(exercise_num) if playlist else None
+    next_num = playlist.next_num(exercise_num) if playlist else None
+
+    next_exercise_obj = (
+        playlist.get_exercise_obj_by_num(next_num)
+        if playlist
+        else Exercise.objects.filter(authored_by=user, updated__lt=exercise.updated)
+        .order_by("-updated")
+        .first()
+    )
+    next_exercise_id = next_exercise_obj.id if next_exercise_obj != None else None
+    next_exercise_url = (
+        playlist.get_exercise_url_by_num(num=next_num, course_id=course_id)
+        if playlist
+        else reverse("lab:exercise-view", kwargs={"exercise_id": next_exercise_id})
+        if next_exercise_id
+        else None
+    )
+
+    prev_exercise_obj = (
+        playlist.get_exercise_obj_by_num(prev_num)
+        if playlist
+        else Exercise.objects.filter(authored_by=user, updated__gt=exercise.updated)
+        .order_by("updated")
+        .first()
+    )
+    prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj != None else None
+    prev_exercise_url = (
+        playlist.get_exercise_url_by_num(num=prev_num, course_id=course_id)
+        if playlist
+        else reverse("lab:exercise-view", kwargs={"exercise_id": prev_exercise_id})
+        if prev_exercise_id
+        else None
+    )
+    first_exercise_obj = playlist.get_exercise_obj_by_num(1) if playlist else None
+    first_exercise_id = (
+        first_exercise_obj.id
+        if first_exercise_obj and first_exercise_obj.id != exercise.id
+        else None
+    )
+    force_redirect = False
+    exercise_list = []
+    if playlist:
+        for num, _ in enumerate(playlist.exercise_list, 1):
+            exercise_list.append(
+                dict(
+                    id=f"{playlist_id}/{num}",
+                    name=f"{num}",
+                    url=playlist.get_exercise_url_by_num(num),
+                    selected=exercise_num == num,
+                )
+            )
+    else:
+        force_redirect = True
+        url = reverse("lab:exercise-view", kwargs={"exercise_id": exercise.id})
+        exercise_list.append(
+            dict(
+                id=f"{exercise.id}",
+                name=f"{exercise.id}",
+                url=url,
+                selected=True,
+            )
+        )
+
+    # TODO: what is the current functionality of this?
+    exercise_is_performed = False
+    exercise_error_count = 0
+    playlist_performance = PerformanceData.objects.filter(
+        playlist=playlist, user=user, course=course
+    ).last()
+    if playlist_performance:
+        exercise_is_performed = playlist_performance.exercise_is_performed(exercise.id)
+        exercise_error_count = playlist_performance.exercise_error_count(exercise.id)
+    exercise_context.update(exercise.data)
+    exercise_context.update(
+        {
+            "nextExercise": next_exercise_url,
+            "nextExerciseId": next_exercise_id,
+            "nextExerciseNum": next_num,
+            "previousExercise": prev_exercise_url,
+            "previousExerciseId": prev_exercise_id,
+            "previousExerciseNum": prev_num,
+            "firstExerciseId": first_exercise_id,
+            "exerciseList": exercise_list,
+            "exerciseId": exercise.id,
+            "exerciseNum": exercise_num,
+            "exerciseIsPerformed": exercise_is_performed,
+            "exerciseErrorCount": exercise_error_count,
+            "playlistName": playlist_id,
+            "courseId": course_id,
+            # this variable is used in the exercise preview mode, where the only way to change the displayed exercise is to redirect the URL
+            "forceRedirect": force_redirect,
+        }
+    )
+    return exercise_context
+
+
 class PlaylistView(RequirejsView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -165,68 +272,32 @@ class PlaylistView(RequirejsView):
         if exercise is None:
             raise Http404("This playlist has no exercises.")
 
-        prev_num = playlist.prev_num(exercise_num)
-        next_num = playlist.next_num(exercise_num)
-
-        next_exercise_url = playlist.get_exercise_url_by_num(
-            num=next_num, course_id=course_id
-        )
-        prev_exercise_url = playlist.get_exercise_url_by_num(
-            num=prev_num, course_id=course_id
-        )
-        next_exercise_obj = playlist.get_exercise_obj_by_num(next_num)
-        next_exercise_id = next_exercise_obj.id if next_exercise_obj != None else ""
-        prev_exercise_obj = playlist.get_exercise_obj_by_num(prev_num)
-        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj != None else ""
-        first_exercise_obj = playlist.get_exercise_obj_by_num(1)
-        first_exercise_id = (
-            first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
-        )
         context = {"group_list": []}
-        exercise_context = {}
-
-        exercise_list = []
-        for num, _ in enumerate(playlist.exercise_list, 1):
-            exercise_list.append(
-                dict(
-                    id=f"{playlist_id}/{num}",
-                    name=f"{num}",
-                    url=playlist.get_exercise_url_by_num(num),
-                    selected=exercise_num == num,
-                )
-            )
-
         course_performed = None
-        playlist_previously_passed = False
         if course_id:
             course_performed = Course.objects.filter(id=course_id).first()
-            if course_performed:
-                context["course_name"] = course_performed.title
-                course_link = reverse(
-                    "lab:course-view", kwargs={"course_id": course_id}
+
+        exercise_context = generate_exercise_context(
+            exercise_num,
+            exercise,
+            request.user,
+            playlist,
+            course_performed,
+        )
+
+        playlist_previously_passed = False
+        if course_performed:
+            context["course_name"] = course_performed.title
+            course_link = reverse("lab:course-view", kwargs={"course_id": course_id})
+            context["course_link"] = course_link
+            if (
+                course_performed.performance_dict.get(str(request.user), {}).get(
+                    playlist_id, "X"
                 )
-                context["course_link"] = course_link
-                if (
-                    course_performed.performance_dict.get(str(request.user), {}).get(
-                        playlist_id, "X"
-                    )
-                ) != "X":
-                    playlist_previously_passed = True
+            ) != "X":
+                playlist_previously_passed = True
 
         context["playlist_previously_passed"] = playlist_previously_passed
-
-        exercise_is_performed = False
-        exercise_error_count = 0
-        playlist_performance = PerformanceData.objects.filter(
-            playlist=playlist, user=request.user, course=course_performed
-        ).last()
-        if playlist_performance:
-            exercise_is_performed = playlist_performance.exercise_is_performed(
-                exercise.id
-            )
-            exercise_error_count = playlist_performance.exercise_error_count(
-                exercise.id
-            )
 
         next_playlist = None
         # Finding the next playlist in the case that this playlist was accessed from within a course
@@ -258,113 +329,50 @@ class PlaylistView(RequirejsView):
             context["playlist_name"] = playlist.id
             # ^ misleading name for the url variable
 
-        exercise_context.update(exercise.data)
-        exercise_context.update(
-            {
-                "nextExercise": next_exercise_url,
-                "nextExerciseId": next_exercise_id,
-                "nextExerciseNum": next_num,
-                "previousExercise": prev_exercise_url,
-                "previousExerciseId": prev_exercise_id,
-                "previousExerciseNum": prev_num,
-                "firstExerciseId": first_exercise_id,
-                "exerciseList": exercise_list,
-                "exerciseId": exercise.id,
-                "exerciseNum": exercise_num,
-                "exerciseIsPerformed": exercise_is_performed,
-                "exerciseErrorCount": exercise_error_count,
-                "playlistName": playlist.id,
-                "courseId": course_performed.id if course_performed else None,
-            }
-        )
         self.requirejs_context.set_app_module("app/components/app/exercise")
         self.requirejs_context.set_module_params(
             "app/components/app/exercise", exercise_context
         )
         self.requirejs_context.add_to_view(context)
-
         return render(request, "exercise.html", context)
 
 
 class RefreshExerciseDefinition(RequirejsView):
-    def get(self, request, playlist_id, course_id=None, *args, **kwargs):
-        playlist = get_object_or_404(Playlist, id=playlist_id)
+    def get(
+        self,
+        request,
+        playlist_id=None,
+        course_id=None,
+        exercise_id=None,
+        *args,
+        **kwargs,
+    ):
+        # If playlist_id is None, we are navigating between users' created exercises in Preview mode
+        playlist = get_object_or_404(Playlist, id=playlist_id) if playlist_id else None
+        if not playlist_id:
+            print("Preview")
         exercise_num = request.GET.get("exercise_num")
-        exercise_num = int(exercise_num)
+        exercise_num = int(exercise_num) if exercise_num != "" else None
 
-        exercise = playlist.get_exercise_obj_by_num(exercise_num)
+        exercise = (
+            Exercise.objects.filter(id=exercise_id).first()
+            if exercise_id
+            else playlist.get_exercise_obj_by_num(exercise_num)
+        )
         if exercise is None:
             raise Http404("Exercise not found.")
-
-        prev_num = playlist.prev_num(exercise_num)
-        next_num = playlist.next_num(exercise_num)
-
-        next_exercise_url = playlist.get_exercise_url_by_num(
-            num=next_num, course_id=course_id
-        )
-        prev_exercise_url = playlist.get_exercise_url_by_num(
-            num=prev_num, course_id=course_id
-        )
-        next_exercise_obj = playlist.get_exercise_obj_by_num(next_num)
-        next_exercise_id = next_exercise_obj.id if next_exercise_obj != None else ""
-
-        prev_exercise_obj = playlist.get_exercise_obj_by_num(prev_num)
-        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj != None else ""
-
-        first_exercise_obj = playlist.get_exercise_obj_by_num(1)
-        first_exercise_id = (
-            first_exercise_obj.id if first_exercise_obj.id != exercise.id else ""
-        )
-        exercise_context = {}
-
-        exercise_list = []
-        for num, _ in enumerate(playlist.exercise_list, 1):
-            exercise_list.append(
-                dict(
-                    id=f"{playlist.id}/{num}",
-                    name=f"{num}",
-                    url=playlist.get_exercise_url_by_num(num),
-                    selected=exercise_num == num,
-                )
-            )
 
         course_performed = None
 
         if course_id:
             course_performed = Course.objects.get(id=course_id)
 
-        # TODO: what is the current functionality of this?
-        exercise_is_performed = False
-        exercise_error_count = 0
-        playlist_performance = PerformanceData.objects.filter(
-            playlist=playlist, user=request.user, course=course_performed
-        ).last()
-        if playlist_performance:
-            exercise_is_performed = playlist_performance.exercise_is_performed(
-                exercise.id
-            )
-            exercise_error_count = playlist_performance.exercise_error_count(
-                exercise.id
-            )
-
-        exercise_context.update(exercise.data)
-        exercise_context.update(
-            {
-                "nextExercise": next_exercise_url,
-                "nextExerciseId": next_exercise_id,
-                "nextExerciseNum": next_num,
-                "previousExercise": prev_exercise_url,
-                "previousExerciseId": prev_exercise_id,
-                "previousExerciseNum": prev_num,
-                "firstExerciseId": first_exercise_id,
-                "exerciseList": exercise_list,
-                "exerciseId": exercise.id,
-                "exerciseNum": exercise_num,
-                "exerciseIsPerformed": exercise_is_performed,
-                "exerciseErrorCount": exercise_error_count,
-                "playlistName": playlist.id,
-                "courseId": course_performed.id if course_performed else None,
-            }
+        exercise_context = generate_exercise_context(
+            exercise_num,
+            exercise,
+            request.user,
+            playlist,
+            course_performed,
         )
 
         self.requirejs_context.set_app_module("app/components/app/exercise")
@@ -390,22 +398,20 @@ class ExerciseView(RequirejsView):
         ):
             raise PermissionDenied
 
-        url = reverse("lab:exercise-view", kwargs={"exercise_id": exercise_id})
-        exercise_info = [
-            dict(id=exercise_id, name=f"{exercise._id}", url=url, selected=True)
-        ]
-
         context = {"group_list": []}
         exercise_context = {}
 
-        exercise_context.update(exercise.data)
-        exercise_context.update({"exerciseList": [exercise_info]})
+        exercise_context = generate_exercise_context(
+            None,
+            exercise,
+            request.user,
+        )
+
         self.requirejs_context.set_app_module("app/components/app/exercise")
         self.requirejs_context.set_module_params(
             "app/components/app/exercise", exercise_context
         )
         self.requirejs_context.add_to_view(context)
-
         return render(request, "exercise.html", context)
 
 
