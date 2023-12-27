@@ -1,0 +1,51 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/date-increment-button.css' %}"/>
+<div class="date-increment-button">Increment Dates</div>
+<script>
+// YYYY-MM-DD => js Date()
+function parseDate (dateString){
+    let [year, month, day] = dateString.split("-")
+    year = parseInt(year)
+    month= parseInt(month)
+    day=parseInt(day)
+    if (!year || !month || !day) throw new Error()
+    const date=new Date(`${day} Jan ${year} 00:00:00 GMT`);
+    date.setUTCMonth(month-1)
+    return date
+}
+function addDays(date, numDays){
+    return new Date(date.getTime()+numDays*24*60*60*1000)
+}
+function exportDate(date){
+    return `${date.getUTCFullYear()}-${(date.getUTCMonth()+1).toString().padStart(2,"0")}-${(date.getUTCDate()).toString().padStart(2,"0")}`
+}
+function incrementDateString(date,numDays){
+    return exportDate(addDays(parseDate(date),numDays))
+}
+$('.date-increment-button').on("click",()=>{
+    let addedDays = prompt("How many days would you like to increment?")
+    if (!addedDays || addedDays.trim() == "") return;
+    addedDays = parseInt(addedDays)
+    if (!addedDays) {
+        alert("Unable to parse days. Please input an integer amount"); 
+        return;
+    }
+    const publishInputs = $(".publish_date-input").toArray()
+    const dueInputs = $(".due_date-input").toArray()
+    const initPublishDate=$(publishInputs[0]).val()
+    const initDueDate=$(dueInputs[0]).val()
+    const confirmed = confirm(`Are you sure? This will change the first publish date from ${initPublishDate} to ${incrementDateString(initPublishDate,addedDays)}, and the first due date from ${initDueDate} to ${incrementDateString(initDueDate,addedDays)}`)
+    if (confirmed) {
+        for (const dateInput of publishInputs.concat(dueInputs)){
+            try {
+                const newVal = incrementDateString($(dateInput).val(),addedDays)
+                if (newVal) $(dateInput).val(newVal)
+            }
+            catch (err){
+                console.log("Date increment error")
+            }
+            
+        }
+    }
+})
+</script>

@@ -198,6 +198,7 @@ def course_edit_view(request, course_id):
     form = DashboardCourseForm(instance=course, user=request.user)
 
     context["form"] = form
+
     return render(request, "dashboard/content.html", context)
 
 
