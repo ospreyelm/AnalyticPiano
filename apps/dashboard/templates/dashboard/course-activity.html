@@ -13,6 +13,10 @@
                     'okCancelInMulti': true
                 });
         })
+        $(document).ready(()=>{
+            // This disables the "Select All" button on the filter, remove this code to bring it back
+            $('p.select-all').hide()
+        })
     </script>
 {% endblock %}
 
