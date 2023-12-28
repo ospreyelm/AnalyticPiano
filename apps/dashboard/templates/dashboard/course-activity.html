@@ -16,6 +16,10 @@
         $(document).ready(()=>{
             // This disables the "Select All" button on the filter, remove this code to bring it back
             $('p.select-all').hide()
+            // Prevents need for pressing "OK" then clicking "Submit"
+            $(".MultiControls > p.btnOk").on("click",()=>{
+                $('.dashboard-btn').click()
+            })
         })
     </script>
 {% endblock %}
@@ -23,9 +27,10 @@
 {% block filters %}
     {% if filters %}
     <h1>Performance activity<br>for {{ title }}</h1>
-        <div class="row" style="padding: 0; margin: 0">
-            <form action="" method="get" class="form form-inline">
-                {{ filters.form.as_p }}
+        
+            <form action="" method="get" class="form">
+                {{ filters.group.form.as_p }}
+                {{ filters.playlistnumber.form.as_p }}
                 <button type="submit" class="btn dashboard-btn"
                         style="height: 33px; margin-top: 5.45px; margin-left: 10px">
                     Filter

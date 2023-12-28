@@ -18,3 +18,10 @@ class CourseActivityGroupsFilter(django_filters.FilterSet):
         super(CourseActivityGroupsFilter, self).__init__(*args, **kwargs)
         group_choices = [[group.id, group.name] for group in kwargs.get("queryset", [])]
         self.form.fields["groups"].choices = group_choices
+
+
+class CourseActivityPlaylistNumberFilter(django_filters.FilterSet):
+    range = django_filters.RangeFilter(label="Playlist Number")
+
+    def __init__(self, *args, **kwargs):
+        super(CourseActivityPlaylistNumberFilter, self).__init__(*args, **kwargs)
