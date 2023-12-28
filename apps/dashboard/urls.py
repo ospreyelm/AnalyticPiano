@@ -85,6 +85,7 @@ urlpatterns = [
     path(
         "courses/<int:courses_author_id>/", courses_by_user_view, name="courses-by-user"
     ),
+    path("courses/permitted/", courses_by_others_view, name="courses-by-others"),
     # Performances
     path("performances/", performances_list_view, name="performed-playlists"),
     path(
@@ -100,7 +101,6 @@ urlpatterns = [
     # performance by user of a playlist in the context of a course
     # Connections
     path("connections/", connections_view, name="connections"),
-    path("courses-by-other-users/", courses_by_others_view, name="courses-by-others"),
     path(
         "connections/toggle-content-permit/<int:other_id>/",
         toggle_content_permit_view,
@@ -122,22 +122,26 @@ urlpatterns = [
         name="toggle-connection-pin-with-confirmation",
     ),
     # Groups
-    path("groups/", groups_list_view, name="groups-list"),
-    path("groups/add/", group_add_view, name="add-group"),
-    path("groups/<str:group_id>/", group_edit_view, name="edit-group"),
-    path("groups/<str:group_id>/delete/", group_delete_view, name="delete-group"),
+    path("connections/groups/", groups_list_view, name="groups-list"),
+    path("connections/groups/add/", group_add_view, name="add-group"),
+    path("connections/groups/<str:group_id>/", group_edit_view, name="edit-group"),
     path(
-        "groups/<str:group_id>/remove-member/<int:member_id>/",
+        "connections/groups/<str:group_id>/delete/",
+        group_delete_view,
+        name="delete-group",
+    ),
+    path(
+        "connections/groups/<str:group_id>/remove-member/<int:member_id>/",
         remove_member,
         name="remove-group-member",
     ),
     # Preferences
     path("preferences/", dashboard_preferences_view, name="preferences"),
     # Import/Export
-    path("export/exercises/", ExerciseExportView.as_view(), name="export-exercises"),
-    path("import/exercises/", ExerciseImportView.as_view(), name="import-exercises"),
-    path("export/playlists/", PlaylistExportView.as_view(), name="export-playlists"),
-    path("import/playlists/", PlaylistImportView.as_view(), name="import-playlists"),
-    path("export/courses/", CourseExportView.as_view(), name="export-courses"),
-    path("import/courses/", CourseImportView.as_view(), name="import-courses"),
+    path("exercises/export/", ExerciseExportView.as_view(), name="export-exercises"),
+    path("exercises/import/", ExerciseImportView.as_view(), name="import-exercises"),
+    path("playlists/export/", PlaylistExportView.as_view(), name="export-playlists"),
+    path("playlists/import/", PlaylistImportView.as_view(), name="import-playlists"),
+    path("courses/export/", CourseExportView.as_view(), name="export-courses"),
+    path("courses/import/", CourseImportView.as_view(), name="import-courses"),
 ]
