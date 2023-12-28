@@ -558,6 +558,10 @@ define([
                 `Exercise uploaded! Exercise ID: ${exerciseID}. Taking you to the new exercise now.`
               );
               window.open(`/dashboard/exercises/${exerciseID}/`, "_blank");
+            } else {
+              window.alert(
+                `Exercise uploaded! Exercise ID: ${exerciseID}.`
+              );
             }
           },
           error: function (error) {
