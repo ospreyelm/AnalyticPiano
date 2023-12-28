@@ -17,7 +17,7 @@ from django_tables2 import RequestConfig, Column
 
 from apps.dashboard.filters import (
     CourseActivityGroupsFilter,
-    CourseActivityPlaylistNumberFilter,
+    CourseActivityOrderFilter,
 )
 from apps.dashboard.forms import DashboardCourseForm
 from apps.dashboard.tables import (
@@ -254,7 +254,7 @@ def course_activity_view(request, course_id):
     )
     group_filter.form.is_valid()
 
-    playlistnumber_filter = CourseActivityPlaylistNumberFilter(
+    playlistnumber_filter = CourseActivityOrderFilter(
         queryset=course.visible_to.all(), data=request.GET
     )
     playlistnumber_filter.form.is_valid()
@@ -322,6 +322,13 @@ def course_activity_view(request, course_id):
             if playlist_keys[j] not in compiled_playlist_keys:
                 compiled_playlist_keys.append(playlist_keys[j])
     order_slice = playlistnumber_filter.form.cleaned_data["range"]
+    # If one side of the range input is empty, treat is as though the user only wants to see the single playlist num
+    if order_slice:
+        if not order_slice.start:
+            order_slice = slice(order_slice.stop, order_slice.stop)
+        if not order_slice.stop:
+            order_slice = slice(order_slice.start, order_slice.start)
+    print(order_slice)
     # Sort playlist keys: playlist IDs first, according to their order of presentation in the course, then legacy order values
     course_pcos = PlaylistCourseOrdered.objects.filter(course_id=course._id)
     if order_slice:

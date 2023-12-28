@@ -1,5 +1,4 @@
 import json
-from dateutil import parser
 from datetime import datetime
 from django import forms
 from django.contrib.auth import get_user_model
@@ -12,7 +11,6 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.template.loader import render_to_string
 
 from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE, Group
-from apps.dashboard.fields import MultiDateField
 from apps.exercises.forms import ExerciseForm, PlaylistForm, CourseForm
 from apps.exercises.models import (
     Exercise,
