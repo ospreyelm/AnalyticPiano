@@ -10,6 +10,17 @@
                 onclick="location.href='{% url 'dashboard:import-exercises' %}'">
             Import
         </button>
+        <form action="" method="get" class="form">
+            <div class="filter-container">
+            {{ filters.id.form.as_p }}
+            {{ filters.description.form.as_p }}
+            
+                <button type="submit" class="btn dashboard-btn"
+                        style="height: 33px; margin-top: 5.45px; margin-left: 10px">
+                    Filter
+                </button>
+            </div>
+        </form>
         <p>For guidance on creating a new exercise, see the bottom of this page.</p>
     </div>
 {% endblock %}

@@ -1,6 +1,6 @@
 import django_filters
 from django import forms
-from apps.exercises.models import Course
+from apps.exercises.models import Course, Playlist
 from django.core.exceptions import ValidationError
 
 
@@ -50,3 +50,12 @@ class CourseActivityOrderFilter(django_filters.FilterSet):
 
     class Meta:
         form = CourseActivityOrderFilterForm
+
+
+class ListIDFilter(django_filters.FilterSet):
+    min_id = django_filters.CharFilter(label="Min ID", field_name="id")
+    max_id = django_filters.CharFilter(label="Max ID", field_name="id")
+
+
+class ExerciseListDescriptionFilter(django_filters.FilterSet):
+    description = django_filters.CharFilter(lookup_expr="contains")

@@ -1,6 +1,7 @@
 {% extends "dashboard/base.html" %}
 {% load widget_tweaks %}
 {% load django_tables2 %}
+{% load static %}
 {% load i18n %}
 {% block content %}
     {% if messages %}
@@ -8,6 +9,7 @@
             <div class="alert alert-success" role="alert">{{ message }}</div>
         {% endfor %}
     {% endif %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/base-content-list.css' %}"/>
 
     
     <div class="dashboard-page">

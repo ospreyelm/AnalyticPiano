@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django_tables2 import RequestConfig
 
-
+from apps.dashboard.filters import ListIDFilter, ExerciseListDescriptionFilter
 from apps.dashboard.forms import DashboardExerciseForm
 from apps.dashboard.tables import ExercisesListTable
 from apps.exercises.models import Exercise
@@ -21,13 +21,41 @@ def exercises_list_view(request):
     )
     me = request.user
 
+    exercise_id_filter = ListIDFilter(queryset=exercises, data=request.GET)
+    exercise_id_filter.form.is_valid()
+
+    min_id = exercise_id_filter.form.cleaned_data["min_id"]
+    max_id = exercise_id_filter.form.cleaned_data["max_id"]
+
+    if min_id:
+        exercises = exercises.filter(id__gte=min_id.upper())
+    if max_id:
+        exercises = exercises.filter(id__lte=max_id.upper())
+
+    exercise_description_filter = ExerciseListDescriptionFilter(
+        queryset=exercises, data=request.GET
+    )
+    exercise_description_filter.form.is_valid()
+
+    description_search = exercise_description_filter.form.cleaned_data["description"]
+    if description_search:
+        exercises = exercises.filter(description__icontains=description_search)
+
     table = ExercisesListTable(exercises)
 
     RequestConfig(request, paginate={"per_page": 25}).configure(table)
     return render(
         request,
         "dashboard/exercises-list.html",
-        {"table": table, "exercises_author": exercises_author, "me": me},
+        {
+            "table": table,
+            "exercises_author": exercises_author,
+            "me": me,
+            "filters": {
+                "id": exercise_id_filter,
+                "description": exercise_description_filter,
+            },
+        },
     )
 
 
