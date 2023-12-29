@@ -24,21 +24,21 @@ class CourseActivityGroupsFilter(django_filters.FilterSet):
 class CourseActivityOrderFilterForm(forms.Form):
     def clean(self):
         cleaned_data = super(CourseActivityOrderFilterForm, self).clean()
-        min_order = cleaned_data["min_order"]
-        max_order = cleaned_data["max_order"]
-        if (min_order != None and min_order <= 0) or (
-            max_order != None and max_order <= 0
-        ):
-            raise ValidationError("Order boundaries must be 1 or greater")
-        if min_order and max_order and min_order > max_order:
-            raise ValidationError("Invalid range")
+        min_unit_num = cleaned_data["min_unit_num"]
+        max_unit_num = cleaned_data["max_unit_num"]
+        # if (min_unit_num != None and min_unit_num <= 0) or (
+        #     max_unit_num != None and max_unit_num <= 0
+        # ):
+        #     raise ValidationError("Order boundaries must be 1 or greater")
+        # if min_unit_num and max_unit_num and min_unit_num > max_unit_num:
+        #     raise ValidationError("Invalid range")
 
         return cleaned_data
 
 
 class CourseActivityOrderFilter(django_filters.FilterSet):
-    min_order = django_filters.NumberFilter(label="Min Playlist Order")
-    max_order = django_filters.NumberFilter(label="Max Playlist Order")
+    min_unit_num = django_filters.NumberFilter(label="From Unit #", label_suffix=" ")
+    max_unit_num = django_filters.NumberFilter(label="through Unit #", label_suffix=" ")
 
     def __init__(self, *args, **kwargs):
         super(CourseActivityOrderFilter, self).__init__(*args, **kwargs)
@@ -48,8 +48,8 @@ class CourseActivityOrderFilter(django_filters.FilterSet):
 
 
 class ListIDFilter(django_filters.FilterSet):
-    min_id = django_filters.CharFilter(label="Min ID", field_name="id")
-    max_id = django_filters.CharFilter(label="Max ID", field_name="id")
+    min_id = django_filters.CharFilter(label="From ID", field_name="id", label_suffix=" ")
+    max_id = django_filters.CharFilter(label="through ID", field_name="id", label_suffix=" ")
 
 
 class ExerciseListDescriptionFilter(django_filters.FilterSet):

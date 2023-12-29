@@ -254,10 +254,10 @@ def course_activity_view(request, course_id):
     )
     group_filter.form.is_valid()
 
-    playlistnumber_filter = CourseActivityOrderFilter(
+    unitnumber_filter = CourseActivityOrderFilter(
         queryset=course.visible_to.all(), data=request.GET
     )
-    playlistnumber_filter.form.is_valid()
+    unitnumber_filter.form.is_valid()
 
     curr_group_ids = [int(g) for g in group_filter.form.cleaned_data["groups"] or []]
     curr_groups = Group.objects.filter(id__in=curr_group_ids)
@@ -321,18 +321,18 @@ def course_activity_view(request, course_id):
         for j in range(0, len(playlist_keys)):
             if playlist_keys[j] not in compiled_playlist_keys:
                 compiled_playlist_keys.append(playlist_keys[j])
-    min_order = playlistnumber_filter.form.cleaned_data["min_order"]
-    max_order = playlistnumber_filter.form.cleaned_data["max_order"]
+    min_unit_num = unitnumber_filter.form.cleaned_data["min_unit_num"]
+    max_unit_num = unitnumber_filter.form.cleaned_data["max_unit_num"]
 
     # Sort playlist keys: playlist IDs first, according to their order of presentation in the course, then legacy order values
     course_pcos = PlaylistCourseOrdered.objects.filter(
         course_id=course._id
     ).prefetch_related("playlist")
-    if min_order or max_order:
-        if min_order:
-            course_pcos = course_pcos.filter(order__gte=min_order)
-        if max_order:
-            course_pcos = course_pcos.filter(order__lte=max_order)
+    if min_unit_num or max_unit_num:
+        if min_unit_num:
+            course_pcos = course_pcos.filter(order__gte=min_unit_num)
+        if max_unit_num:
+            course_pcos = course_pcos.filter(order__lte=max_unit_num)
 
         compiled_playlist_keys = [
             pco.playlist.id
@@ -388,6 +388,6 @@ def course_activity_view(request, course_id):
             "table": table,
             "course_id": course_id,
             "title": course.title,
-            "filters": {"group": group_filter, "playlistnumber": playlistnumber_filter},
+            "filters": {"group": group_filter, "unitnumber": unitnumber_filter},
         },
     )
