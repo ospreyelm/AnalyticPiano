@@ -39,7 +39,7 @@ def exercises_list_view(request):
 
     description_search = exercise_description_filter.form.cleaned_data["description"]
     if description_search:
-        exercises = exercises.filter(description__icontains=description_search)
+        exercises = exercises.filter(description__contains=description_search)
 
     table = ExercisesListTable(exercises)
 
