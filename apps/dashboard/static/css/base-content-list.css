@@ -1,9 +1,8 @@
 .filter-container {
   display: inline-flex;
-  max-width: 512px;
   gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
 }
 .filter-container > p {
   margin: 0;
