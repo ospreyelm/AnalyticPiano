@@ -321,20 +321,19 @@ def course_activity_view(request, course_id):
         for j in range(0, len(playlist_keys)):
             if playlist_keys[j] not in compiled_playlist_keys:
                 compiled_playlist_keys.append(playlist_keys[j])
-    order_slice = playlistnumber_filter.form.cleaned_data["range"]
-    # If one side of the range input is empty, treat is as though the user only wants to see the single playlist num
-    if order_slice:
-        if not order_slice.start:
-            order_slice = slice(order_slice.stop, order_slice.stop)
-        if not order_slice.stop:
-            order_slice = slice(order_slice.start, order_slice.start)
-    print(order_slice)
+    min_order = playlistnumber_filter.form.cleaned_data["min_order"]
+    max_order = playlistnumber_filter.form.cleaned_data["max_order"]
+
     # Sort playlist keys: playlist IDs first, according to their order of presentation in the course, then legacy order values
-    course_pcos = PlaylistCourseOrdered.objects.filter(course_id=course._id)
-    if order_slice:
-        course_pcos = course_pcos.filter(
-            order__gte=order_slice.start, order__lte=order_slice.stop
-        ).prefetch_related("playlist")
+    course_pcos = PlaylistCourseOrdered.objects.filter(
+        course_id=course._id
+    ).prefetch_related("playlist")
+    if min_order or max_order:
+        if min_order:
+            course_pcos = course_pcos.filter(order__gte=min_order)
+        if max_order:
+            course_pcos = course_pcos.filter(order__lte=max_order)
+
         compiled_playlist_keys = [
             pco.playlist.id
             for pco in course_pcos

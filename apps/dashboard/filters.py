@@ -24,26 +24,21 @@ class CourseActivityGroupsFilter(django_filters.FilterSet):
 class CourseActivityOrderFilterForm(forms.Form):
     def clean(self):
         cleaned_data = super(CourseActivityOrderFilterForm, self).clean()
-
-        if cleaned_data["range"]:
-            if (
-                cleaned_data["range"].start != None and cleaned_data["range"].start <= 0
-            ) or (
-                cleaned_data["range"].stop != None and cleaned_data["range"].stop <= 0
-            ):
-                raise ValidationError("Order boundaries must be 1 or greater")
-            if (
-                cleaned_data["range"].start
-                and cleaned_data["range"].stop
-                and cleaned_data["range"].start > cleaned_data["range"].stop
-            ):
-                raise ValidationError("Invalid range")
+        min_order = cleaned_data["min_order"]
+        max_order = cleaned_data["max_order"]
+        if (min_order != None and min_order <= 0) or (
+            max_order != None and max_order <= 0
+        ):
+            raise ValidationError("Order boundaries must be 1 or greater")
+        if min_order and max_order and min_order > max_order:
+            raise ValidationError("Invalid range")
 
         return cleaned_data
 
 
 class CourseActivityOrderFilter(django_filters.FilterSet):
-    range = django_filters.RangeFilter(label="Playlist Number")
+    min_order = django_filters.NumberFilter(label="Min Playlist Order")
+    max_order = django_filters.NumberFilter(label="Max Playlist Order")
 
     def __init__(self, *args, **kwargs):
         super(CourseActivityOrderFilter, self).__init__(*args, **kwargs)
