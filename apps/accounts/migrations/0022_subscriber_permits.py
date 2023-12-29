@@ -7,12 +7,14 @@ def forwards(apps, schema_editor):
     User = apps.get_model("accounts", "User")
     db_alias = schema_editor.connection.alias
     for user in User.objects.using(db_alias).all():
-        for user_id, accepted_status in user._supervisors_dict.items():
+        for supervisor_id, accepted_status in user._supervisors_dict.items():
             if accepted_status == "Accepted":
-                supervisor = User.objects.using(db_alias).get(pk=user_id)
+                user = User.objects.using(db_alias).get(pk=user.pk)
+                supervisor = User.objects.using(db_alias).get(pk=supervisor_id)
+                # Might be a better way to do this: fetches fresh version of user since it could've been a supervisor that's been .save()'d in the meantime
                 user.performance_permits.append(supervisor.pk)
-                user.save()
                 supervisor.content_permits.append(user.pk)
+                user.save()
                 supervisor.save()
 
 
