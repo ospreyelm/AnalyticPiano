@@ -1,3 +1,9 @@
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .filter-container {
   display: inline-flex;
   gap: 8px;
@@ -7,4 +13,8 @@
 .filter-container > p {
   margin: 0;
   padding: 0;
+}
+
+.filter-short-numbers-container > p > input {
+  width: 2.5em;
 }

@@ -9,8 +9,8 @@ from django_tables2 import RequestConfig
 
 from apps.dashboard.forms import DashboardPlaylistForm
 from apps.dashboard.tables import PlaylistsListTable
-from apps.dashboard.filters import ListIDFilter
-from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
+from apps.dashboard.filters import ListIDFilter, PlaylistListNameFilter
+from apps.exercises.models import ExercisePlaylistOrdered, Playlist
 
 
 @login_required
@@ -19,6 +19,14 @@ def playlists_list_view(request):
     playlists = Playlist.objects.filter(authored_by=playlists_author).select_related(
         "authored_by"
     )
+
+    playlist_name_filter = PlaylistListNameFilter(queryset=playlists, data=request.GET)
+    playlist_name_filter.form.is_valid()
+    name = playlist_name_filter.form.cleaned_data["name"]
+
+    if name:
+        playlists = playlists.filter(name__icontains=name)
+
     playlist_id_filter = ListIDFilter(queryset=playlists, data=request.GET)
     playlist_id_filter.form.is_valid()
     min_id = playlist_id_filter.form.cleaned_data["min_id"]
@@ -40,7 +48,7 @@ def playlists_list_view(request):
             "table": table,
             "playlists_author": playlists_author,
             "me": me,
-            "filters": {"id": playlist_id_filter},
+            "filters": {"name": playlist_name_filter, "id": playlist_id_filter},
         },
     )
 

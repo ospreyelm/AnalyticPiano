@@ -195,6 +195,7 @@
   selectElement.select2({
     placeholder:"Type to search",
     closeOnSelect:false,
+    // For large amounts of options, this could become slow
     sorter: data => data.sort((a, b) => a.text.localeCompare(b.text))
   })
 

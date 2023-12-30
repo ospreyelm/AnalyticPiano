@@ -1,6 +1,7 @@
 {% extends "dashboard/base-content-list.html" %}
-
+{% load static %}
 {% block extrahead %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/base-content-list.css' %}"/>
     <link href="{{ STATIC_URL }}css/sumoselect.css" type="text/css" rel="stylesheet"/>
     <script src="{{ STATIC_URL }}js/lib/jquery.sumoselect.js"></script>
     <script>
@@ -30,9 +31,11 @@
         <form action="" method="get" class="form">
             <div class="filter-container">
                 {{ filters.group.form.as_p }}
+            </div>
+            <div class="filter-container filter-short-numbers-container">
+                
                 {{ filters.unitnumber.form.as_p }}
-                <button type="submit" class="btn dashboard-btn"
-                        style="height: 33px; margin-top: 5.45px; margin-left: 10px">
+                <button type="submit" class="btn dashboard-btn">
                     Filter
                 </button>
             </div>

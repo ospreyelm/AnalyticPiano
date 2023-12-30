@@ -56,11 +56,15 @@ class ListIDFilter(django_filters.FilterSet):
     )
 
 
+class PlaylistListNameFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(label="Title contains", lookup_expr="icontains")
+
+
 class ExerciseListDescriptionFilter(django_filters.FilterSet):
-    description = django_filters.CharFilter(lookup_expr="contains")
+    description = django_filters.CharFilter(lookup_expr="icontains")
 
 
 class ConnectionCombinedInfoFilter(django_filters.FilterSet):
     combined_info = django_filters.CharFilter(
-        label="Filter by name or email", lookup_expr="contains"
+        label="Filter by name or email", lookup_expr="icontains"
     )
