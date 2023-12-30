@@ -195,6 +195,7 @@
   selectElement.select2({
     placeholder:"Type to search",
     closeOnSelect:false,
+    sorter: data => data.sort((a, b) => a.text.localeCompare(b.text))
   })
 
   function onSelect (event){
