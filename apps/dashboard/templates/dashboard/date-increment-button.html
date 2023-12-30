@@ -42,7 +42,7 @@ $('.date-increment-button').on("click",()=>{
                 if (newVal) $(dateInput).val(newVal)
             }
             catch (err){
-                console.log("Date increment error")
+                alert(`Date increment error for date ${$(dateInput).val()}`)
             }
             
         }

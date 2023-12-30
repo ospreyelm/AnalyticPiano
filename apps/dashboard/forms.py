@@ -288,6 +288,7 @@ class ManyField(ModelMultipleChoiceField):
         # if we don't want to use the postgres _ids, we use this.
         #   Enables use of exercise & playlist ids in csv import
         id_attr="pk",
+        # HTML string to be rendered at the end of the field
         additional_html=None,
     ):
         widget_inputs = {}
@@ -308,7 +309,6 @@ class ManyField(ModelMultipleChoiceField):
         widget_inputs["csv"] = csv
         self.widget = widget(**widget_inputs)
         self.id_attr = id_attr
-
         super().__init__(queryset=self.queryset)
 
     # This function is used for preparing both options and values, and for translating widget value into a python dict
@@ -318,10 +318,10 @@ class ManyField(ModelMultipleChoiceField):
         if type(value) is str:
             value = json.loads(value)
             value = list(map(lambda value_list: (value_list[0], value_list[2]), value))
-        # this handles list of models for field value
+        # This handles list of models for field value
         elif type(value) is list:
-            # When an error occurs in the form, Django returns the JSONified data as the only entry of a list, which we check for here
-            #   instead of passing the JSON right back, we parse and re-dump because we want to use DjangoJSONEncoder
+            # When an error occurs in the form, Django returns the JSONified data as the only entry of a list, which we check for here.
+            #   Instead of passing the JSON right back, we parse and re-dump because we want to use DjangoJSONEncoder
             if len(value) == 1 and isinstance(value[0], str):
                 value = [json.loads(ele) for ele in value][0]
             else:
@@ -461,6 +461,7 @@ class DashboardCourseForm(CourseForm):
     visible_to = ManyField()
     playlists = ManyField(
         order_attr="order",
+        format_title=lambda p: p.id + (f" - {p.name}" if p.name else ""),
         additional_fields=[
             {
                 "attr_name": "publish_date",
