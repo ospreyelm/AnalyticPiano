@@ -18,3 +18,7 @@ form {
 .filter-short-numbers-container > p > input {
   width: 2.5em;
 }
+
+.form-group {
+  margin-bottom: 0 !important;
+}
