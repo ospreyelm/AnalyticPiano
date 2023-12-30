@@ -11,6 +11,14 @@
                 Add
             </button>
         </form>
+        <form action="" method="get" class="form">
+            <div class="filter-container">
+            {{filters.combined_info.form.as_p}}
+            <button type="submit" class="btn dashboard-btn">
+                Filter
+            </button>
+        </div>
+        </form>
     </div>
     <div class="dashboard-page">
         {% include 'django_tables2/bootstrap4.html' with table=table %}

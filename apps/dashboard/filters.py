@@ -48,9 +48,19 @@ class CourseActivityOrderFilter(django_filters.FilterSet):
 
 
 class ListIDFilter(django_filters.FilterSet):
-    min_id = django_filters.CharFilter(label="From ID", field_name="id", label_suffix=" ")
-    max_id = django_filters.CharFilter(label="through ID", field_name="id", label_suffix=" ")
+    min_id = django_filters.CharFilter(
+        label="From ID", field_name="id", label_suffix=" "
+    )
+    max_id = django_filters.CharFilter(
+        label="through ID", field_name="id", label_suffix=" "
+    )
 
 
 class ExerciseListDescriptionFilter(django_filters.FilterSet):
     description = django_filters.CharFilter(lookup_expr="contains")
+
+
+class ConnectionCombinedInfoFilter(django_filters.FilterSet):
+    combined_info = django_filters.CharFilter(
+        label="Filter by name or email", lookup_expr="contains"
+    )
