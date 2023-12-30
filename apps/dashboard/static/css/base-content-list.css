@@ -4,13 +4,13 @@ form {
   gap: 12px;
 }
 
-.filter-container {
+.filter-container-row {
   display: inline-flex;
   gap: 8px;
   align-items: center;
   /* flex-wrap: wrap; */
 }
-.filter-container > p {
+.filter-container-row > p {
   margin: 0;
   padding: 0;
 }
