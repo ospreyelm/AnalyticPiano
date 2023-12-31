@@ -55,7 +55,7 @@
     {% endif %}
     {% if not form.instance.pk == None and not has_been_performed and verbose_name == "Course" %}
         <div class="dashboard-tip">
-            <p><span class="limited-save-alert" style="padding: 5px">You may delete this {{ verbose_name.lower }} via the Courses table.</span></p>
+            <p><span>You may delete this {{ verbose_name.lower }} via the Courses table.</span></p>
         </div>
     {% endif %}
     {% include 'dashboard/bs4_form_v2.html' with form=form %}
