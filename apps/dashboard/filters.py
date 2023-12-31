@@ -66,5 +66,5 @@ class ExerciseListDescriptionFilter(django_filters.FilterSet):
 
 class ConnectionCombinedInfoFilter(django_filters.FilterSet):
     combined_info = django_filters.CharFilter(
-        label="Filter table—name or email contains", label_suffix=" ", lookup_expr="icontains"
+        label="Search table—name or email contains", label_suffix=" ", lookup_expr="icontains"
     )

@@ -588,6 +588,10 @@ label[for="id_email"] {
   margin-left: 1rem;
 }
 
-input #id_combined_info {
-  min-width: 85rem !important;
+#id_combined_info {
+  width: 300px;
 }
+
+label[for="id_combined_info"] {
+  display: none;
+]
