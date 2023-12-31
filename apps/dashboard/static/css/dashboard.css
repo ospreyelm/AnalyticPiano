@@ -1,10 +1,10 @@
 :root {
   --primary-color: #2d2d2d;
   --secondary-color: #00693e;
-  --bright-link-color: #FFA00F;
-  --bright-highlight-color: #FFCF87;
-  --dark-link-color: #CC800C;
-  --background-color: #E2E2E2;
+  --bright-link-color: #ffa00f;
+  --bright-highlight-color: #ffcf87;
+  --dark-link-color: #cc800c;
+  --background-color: #e2e2e2;
 }
 
 body {
@@ -12,9 +12,10 @@ body {
 }
 
 .dashboard-page {
-  padding-bottom: 20px;
-  font-size:12px;
+  /* padding-bottom: 20px; */
+  font-size: 12px;
   max-width: 85em;
+  margin-bottom: 12px;
 }
 
 .dashboard-page h1 {
@@ -30,8 +31,8 @@ body {
 }
 
 .dashboard-page .dashboard-tip {
-  padding:0px;
-  max-width:50em;
+  padding: 0px;
+  max-width: 50em;
   margin: 0 0 15px 0;
 }
 
@@ -116,7 +117,6 @@ form label {
 }
 
 .main a {
-
 }
 
 .main :last-child {
@@ -198,7 +198,11 @@ nav {
 }
 
 .dashboard-btn-bank {
-  padding-bottom: 15px
+  padding-bottom: 15px;
+}
+
+.dashboard-btn-bank-bottom {
+  padding-top: 15px;
 }
 
 .dashboard-btn {
@@ -207,7 +211,7 @@ nav {
   font-size: 14px;
   border: 1.5px solid var(--primary-color);
   border-radius: 5px;
-/*  padding: 0.3rem 0.75rem;*/
+  /*  padding: 0.3rem 0.75rem;*/
   padding: 0.2rem 0.5rem;
 }
 
@@ -534,11 +538,14 @@ input[id="id_email"] {
 
 label[for="id_email"] {
   min-width: auto !important;
+  display: none;
 }
 
 .dashboard-button-bank,
 .dashboard-button-bank-restricted {
-  display:inline-block;width:100%;padding-bottom:1em
+  display: inline-block;
+  width: 100%;
+  padding-bottom: 1em;
 }
 
 .dashboard-button-bank-restricted .dashboard-btn {
@@ -580,3 +587,11 @@ label[for="id_email"] {
   margin: 0.375rem;
   margin-left: 1rem;
 }
+
+#id_combined_info {
+  width: 300px;
+}
+
+label[for="id_combined_info"] {
+  display: none;
+]

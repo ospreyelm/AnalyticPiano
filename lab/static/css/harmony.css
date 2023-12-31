@@ -862,3 +862,11 @@ ul.pagination li {
   padding-left: 12px;
   padding-right: 12px;
 }
+
+#id_min_id, #id_max_id {
+  max-width: 8ch;
+}
+
+.emailinput input {
+  max-width: 85rem !important;
+}

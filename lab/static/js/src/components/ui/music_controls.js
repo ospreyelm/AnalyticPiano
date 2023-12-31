@@ -52,7 +52,8 @@ define([
          * console.log(JSON.parse(response.instance)); */
         var sticky_settings = JSON.parse(response.instance);
         DESIRED_KEYBOARD_SIZE = sticky_settings.keyboard_size;
-        DESIRED_KEYBOARD_OCTAVES_OFFSET = sticky_settings.keyboard_octaves_offset;
+        DESIRED_KEYBOARD_OCTAVES_OFFSET =
+          sticky_settings.keyboard_octaves_offset;
       }
     },
   });
@@ -99,9 +100,19 @@ define([
     initComponent: function () {
       $(".js-btn-help", this.headerEl).on("click", this.onClickInfo);
       $(".js-btn-screenshot").on("mousedown", this.onClickScreenshot);
-      $(".js-btn-upload-json").on("mousedown", () =>
-        this.onClickSaveJSON("upload")
-      );
+      $(".js-btn-upload-json").on("mousedown", (e) => {
+        switch (e.which) {
+          case 1:
+            this.onClickSaveJSON("upload");
+            break;
+          // on right click
+          case 3:
+            this.onClickSaveJSON("upload", true);
+            break;
+        }
+      });
+      // returns false to prevent context menu from popping up
+      $(".js-btn-upload-json").on("contextmenu", () => false);
       $(".js-btn-download-json").on("mousedown", () => this.onClickSaveJSON());
       $(".js-btn-pristine").on("mousedown", () => this.onClickPristine());
       $(".js-btn-nextexercise").on("mousedown", () =>
@@ -281,7 +292,7 @@ define([
       el.append(
         staff_distribution_widget.el,
         analyze_widget.el,
-        highlight_widget.el,
+        highlight_widget.el
       );
     },
     /**
@@ -395,7 +406,7 @@ define([
     onClickScreenshot: function (evt) {
       var canvas = document.getElementById("staff");
       var dataURL = canvas.toDataURL("image/png");
-      var newTab = window.open('about:blank','image from canvas');
+      var newTab = window.open("about:blank", "image from canvas");
       newTab.document.write("<img src='" + dataURL + "' alt='from canvas'/>");
       return true;
     },
@@ -405,7 +416,7 @@ define([
      * @param {string} destination
      * @return {boolean} true
      */
-    onClickSaveJSON: function (destination = "download") {
+    onClickSaveJSON: function (destination = "download", quiet = false) {
       advanced = true;
 
       var json_data =
@@ -542,10 +553,16 @@ define([
           dataType: "json",
           success: function (data) {
             let exerciseID = data.id;
-            window.alert(
-              `Exercise uploaded! Exercise ID: ${exerciseID}. Taking you to the new exercise now.`
-            );
-            window.open(`/dashboard/exercises/${exerciseID}/`, "_blank");
+            if (!quiet) {
+              window.alert(
+                `Exercise uploaded! Exercise ID: ${exerciseID}. Taking you to the new exercise now.`
+              );
+              window.open(`/dashboard/exercises/${exerciseID}/`, "_blank");
+            } else {
+              window.alert(
+                `Exercise uploaded! Exercise ID: ${exerciseID}.`
+              );
+            }
           },
           error: function (error) {
             console.log(error);

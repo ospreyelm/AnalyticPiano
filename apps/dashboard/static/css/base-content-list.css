@@ -1,0 +1,24 @@
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-container-row {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  /* flex-wrap: wrap; */
+}
+.filter-container-row > p {
+  margin: 0;
+  padding: 0;
+}
+
+.filter-short-numbers-container > p > input {
+  width: 2.5em;
+}
+
+.form-group {
+  margin-bottom: 0 !important;
+}

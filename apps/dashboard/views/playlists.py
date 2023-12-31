@@ -6,11 +6,12 @@ from django.db.models import Q
 from django.urls import reverse
 from django_tables2 import RequestConfig
 
-
 from apps.dashboard.forms import DashboardPlaylistForm
 from apps.dashboard.tables import PlaylistsListTable
-from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
+from apps.dashboard.filters import ListIDFilter, PlaylistListNameFilter
+from apps.exercises.models import ExercisePlaylistOrdered, Playlist
 
+import re
 
 @login_required
 def playlists_list_view(request):
@@ -18,6 +19,29 @@ def playlists_list_view(request):
     playlists = Playlist.objects.filter(authored_by=playlists_author).select_related(
         "authored_by"
     )
+
+    playlist_name_filter = PlaylistListNameFilter(queryset=playlists, data=request.GET)
+    playlist_name_filter.form.is_valid()
+    name = playlist_name_filter.form.cleaned_data["name"]
+
+    if name:
+        playlists = playlists.filter(name__contains=name) # __icontains to ignore case
+
+    playlist_id_filter = ListIDFilter(queryset=playlists, data=request.GET)
+    playlist_id_filter.form.is_valid()
+    min_id = playlist_id_filter.form.cleaned_data["min_id"]
+    max_id = playlist_id_filter.form.cleaned_data["max_id"]
+
+    pid_regex = re.compile(r'^P[A-Z][0-9]{2}[A-Z]{2}$')
+    if min_id:
+        min_id = 'PA00AA'[:max(0,6-len(min_id)):] + min_id.upper()[:6]
+        if pid_regex.match(min_id):
+            playlists = playlists.filter(id__gte=min_id.upper())
+    if max_id and len(max_id) > 0: # should be redundant
+        max_id = 'PA00AA'[:max(0,6-len(max_id)):] + max_id.upper()[:6]
+        if pid_regex.match(max_id):
+            playlists = playlists.filter(id__lte=max_id.upper())
+
     me = request.user
 
     table = PlaylistsListTable(playlists)
@@ -26,7 +50,12 @@ def playlists_list_view(request):
     return render(
         request,
         "dashboard/playlists-list.html",
-        {"table": table, "playlists_author": playlists_author, "me": me},
+        {
+            "table": table,
+            "playlists_author": playlists_author,
+            "me": me,
+            "filters": {"name": playlist_name_filter, "id": playlist_id_filter},
+        },
     )
 
 

@@ -19,10 +19,7 @@ def performances_list_view(request, other_id=None):
     other_id = other_id or request.user.id
     other = get_object_or_404(User, id=other_id)
 
-    if (
-        request.user != other
-        and not request.user.pk in other.performance_permits
-    ):
+    if request.user != other and not request.user.pk in other.performance_permits:
         raise PermissionDenied
 
     performances = PerformanceData.objects.filter(user=other).select_related(
@@ -138,7 +135,7 @@ def playing_time(exercises_data):
 def playlist_performance_view(request, performance_id):
     performance = (
         PerformanceData.objects.filter(id=performance_id)
-        .select_related("user", "playlist", "course") # redundant?
+        .select_related("user", "playlist", "course")  # redundant?
         .first()
     )
 

@@ -2,6 +2,22 @@
 
 {% block add-button-exercises %}
     <div class="dashboard-btn-bank">
+        <form action="" method="get" class="form">
+            <div class="filter-container-row">
+            {{ filters.id.form.as_p }}
+            {{ filters.description.form.as_p }}
+            
+                <button type="submit" class="btn dashboard-btn">
+                    Filter
+                </button>
+            </div>
+        </form>
+        <p class="dashboard-tip">For guidance on creating a new exercise, see the bottom of this page.</p>
+    </div>
+{% endblock %}
+
+{% block export-exercises %}
+    <div class="dashboard-btn-bank-bottom">
         <button type="submit" class="btn dashboard-btn"
                 onclick="location.href='{% url 'dashboard:export-exercises' %}'">
             Export
@@ -10,6 +26,5 @@
                 onclick="location.href='{% url 'dashboard:import-exercises' %}'">
             Import
         </button>
-        <p>For guidance on creating a new exercise, see the bottom of this page.</p>
     </div>
 {% endblock %}

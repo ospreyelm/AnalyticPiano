@@ -1,14 +1,13 @@
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import JSONField
 from django.core.mail import send_mail
-from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Q
 
 from apps.accounts.managers import UserManager
-from apps.accounts.utils import generate_raw_password
 
 DEFAULT_KEYBOARD_SIZE = 49
 # Supported keyboard choices
@@ -144,20 +143,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def connections(self):
-        _listed_connections = User.objects.filter(id__in=self.connections_list)
-        _permissions = set(
-            [
-                *User.objects.filter(id__in=self.content_permits),
-                *User.objects.filter(id__in=self.performance_permits),
-                *User.objects.filter(content_permits__contains=self.id),
-                *User.objects.filter(performance_permits__contains=self.id),
-            ]
+        _listed_connections = User.objects.filter(
+            Q(id__in=self.connections_list)
+            | Q(id__in=self.content_permits)
+            | Q(id__in=self.performance_permits)
+            | Q(content_permits__contains=self.id)
+            | Q(performance_permits__contains=self.id)
         )
-        return [
-            *[x for x in _listed_connections if x not in _permissions],
-            *[x for x in _listed_connections if x in _permissions],
-            *[x for x in _permissions if x not in _listed_connections],
-        ]
+        return _listed_connections
 
     def toggle_content_permit(self, other_user):  # new
         if self.id == other_user.id:

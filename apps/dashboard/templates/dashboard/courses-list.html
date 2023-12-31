@@ -3,18 +3,17 @@
 {% block add-button-courses %}
     <div class="dashboard-btn-bank">
         <button type="submit" class="btn dashboard-btn" onclick="location.href='{% url 'dashboard:add-course' %}'">
-            New Course
+            New
         </button>
+    </div>
+{% endblock %}
+
+{% block export-courses %}
+    <div class="dashboard-btn-bank-bottom">
         <button type="submit" class="btn dashboard-btn"
                 onclick="location.href='{% url 'dashboard:export-courses' %}'">
             Export*
         </button>
-<!-- 
-        <button type="submit" class="btn dashboard-btn"
-                onclick="location.href='{% url 'dashboard:import-courses' %}'">
-            Import
-        </button>
- -->
         <p>*Importing of course backups is not yet supported. If you want to keep a local backup of your playlists regardless, export your exercises and playlists at the same time as you export your courses.</p>
     </div>
 {% endblock %}

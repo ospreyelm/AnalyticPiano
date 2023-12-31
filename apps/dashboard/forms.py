@@ -1,5 +1,4 @@
 import json
-from dateutil import parser
 from datetime import datetime
 from django import forms
 from django.contrib.auth import get_user_model
@@ -9,10 +8,9 @@ from prettyjson import PrettyJSONWidget
 from django.db.models import Q, Prefetch
 from django.forms.models import ModelMultipleChoiceField
 from django.core.serializers.json import DjangoJSONEncoder
-
+from django.template.loader import render_to_string
 
 from apps.accounts.models import KEYBOARD_CHOICES, DEFAULT_KEYBOARD_SIZE, Group
-from apps.dashboard.fields import MultiDateField
 from apps.exercises.forms import ExerciseForm, PlaylistForm, CourseForm
 from apps.exercises.models import (
     Exercise,
@@ -248,12 +246,14 @@ class ManyWidget(forms.widgets.SelectMultiple):
         order_attr=None,
         additional_fields=[],
         csv=False,
+        additional_html="",
     ):
         self.attrs = attrs
         self.order_attr = order_attr
         self.order_input = order_input
         self.additional_fields = additional_fields
         self.csv = csv
+        self.additional_html = additional_html
         super().__init__(attrs)
 
     def format_value(self, value):
@@ -265,6 +265,7 @@ class ManyWidget(forms.widgets.SelectMultiple):
         context["widget"]["order_input"] = self.order_input
         context["widget"]["additional_fields"] = self.additional_fields
         context["widget"]["csv"] = self.csv
+        context["widget"]["additional_html"] = self.additional_html
         return context
 
 
@@ -287,6 +288,8 @@ class ManyField(ModelMultipleChoiceField):
         # if we don't want to use the postgres _ids, we use this.
         #   Enables use of exercise & playlist ids in csv import
         id_attr="pk",
+        # HTML string to be rendered at the end of the field
+        additional_html=None,
     ):
         widget_inputs = {}
         self.queryset = queryset
@@ -294,6 +297,9 @@ class ManyField(ModelMultipleChoiceField):
         self.format_title = format_title
         self.order_attr = order_attr
         self.through_prepare = through_prepare
+        self.additional_html = additional_html
+        if self.additional_html:
+            widget_inputs["additional_html"] = self.additional_html
         if self.order_attr:
             widget_inputs["order_attr"] = self.order_attr
             widget_inputs["order_input"] = True
@@ -303,7 +309,6 @@ class ManyField(ModelMultipleChoiceField):
         widget_inputs["csv"] = csv
         self.widget = widget(**widget_inputs)
         self.id_attr = id_attr
-
         super().__init__(queryset=self.queryset)
 
     # This function is used for preparing both options and values, and for translating widget value into a python dict
@@ -313,10 +318,10 @@ class ManyField(ModelMultipleChoiceField):
         if type(value) is str:
             value = json.loads(value)
             value = list(map(lambda value_list: (value_list[0], value_list[2]), value))
-        # this handles list of models for field value
+        # This handles list of models for field value
         elif type(value) is list:
-            # When an error occurs in the form, it returns the JSONified data as the only entry of a list, which we check for here
-            #   instead of passing the JSON right back, we parse and re-dump because we want to use DjangoJSONEncoder
+            # When an error occurs in the form, Django returns the JSONified data as the only entry of a list, which we check for here.
+            #   Instead of passing the JSON right back, we parse and re-dump because we want to use DjangoJSONEncoder
             if len(value) == 1 and isinstance(value[0], str):
                 value = [json.loads(ele) for ele in value][0]
             else:
@@ -383,7 +388,7 @@ class DashboardPlaylistForm(PlaylistForm):
     exercises = ManyField(
         order_attr="order",
         format_title=lambda ex: ex.id
-        + (f"- {ex.description}" if ex.description else ""),
+        + (f" • {ex.description}" if ex.description else ""),
         id_attr="id",
         csv=True,
     )
@@ -456,6 +461,7 @@ class DashboardCourseForm(CourseForm):
     visible_to = ManyField()
     playlists = ManyField(
         order_attr="order",
+        format_title=lambda p: p.id + (f" • {p.name}" if p.name else ""),
         additional_fields=[
             {
                 "attr_name": "publish_date",
@@ -484,6 +490,7 @@ class DashboardCourseForm(CourseForm):
         },
         csv=True,
         id_attr="id",
+        additional_html=render_to_string("dashboard/date-increment-button.html"),
     )
 
     class Meta(CourseForm.Meta):

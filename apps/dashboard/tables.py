@@ -14,7 +14,6 @@ class ConnectionsTable(tables.Table):
     class Meta:
         attrs = {"class": "paleblue"}
         table_pagination = False
-        order_by = "-signup_date"
         template_name = "django_tables2/bootstrap4.html"
 
     email = tables.columns.Column(
@@ -578,6 +577,7 @@ class CourseActivityTable(tables.Table):
         empty_values=(()),
         orderable=False,  # does not work as currently configured
     )
+
     class Meta:
         attrs = {"class": "paleblue"}
         table_pagination = False

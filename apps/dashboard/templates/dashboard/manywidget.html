@@ -22,11 +22,13 @@
   </div>
   {% if widget.csv %}<div class="widget-file-wrapper"><div class="widget-file-label">Import from CSV:</div><input class="widget-file" {% include "django/forms/widgets/attrs.html" %} type="file" name="filename"></div>{% endif %}
   </div>
+  
   <div class="widget-value-list">
     <div id="values-{{ widget.name }}" class="widget-value-list-inner">
      
     </div>
   </div>
+  <div>{% if widget.additional_html %}{{ widget.additional_html }} {% endif %}</div>
 </div>
 <script>
   // Wrap each widget's script in a function to prevent scope overlap with other widgets
@@ -104,7 +106,7 @@
     return `<div class="widget-value-block ${throughValues ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}" value="${instanceId}">
       {% if widget.order_input %}<input type="number" class="widget-value-order order-${widgetName}" value="${index}"></input> {% endif %}
       <div class="widget-value-data-${widgetName}" value="${instanceId}" >${instanceTitle}</div>
-      {% for field in widget.additional_fields %} <input class="widget-value-additional-${widgetName}" id="{{field.attr_name}}-${index}" value='${throughValues['{{field.attr_name}}'] || ""}' placeholder="{{field.placeholder}}"></input> {% endfor %}
+      {% for field in widget.additional_fields %} <input class="widget-value-additional-${widgetName} {{field.attr_name}}-input" id="{{field.attr_name}}-${index}" value='${throughValues['{{field.attr_name}}'] || ""}' placeholder="{{field.placeholder}}"></input> {% endfor %}
       <div class="widget-value-remove widget-value-remove-${widgetName}"> x </div>
     </div>`
   }
@@ -193,6 +195,8 @@
   selectElement.select2({
     placeholder:"Type to search",
     closeOnSelect:false,
+    // For large amounts of options, this could become slow
+    sorter: data => data.sort((a, b) => b.text.localeCompare(a.text))
   })
 
   function onSelect (event){

@@ -1,6 +1,7 @@
 {% extends "dashboard/base-content-list.html" %}
-
+{% load static %}
 {% block extrahead %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/base-content-list.css' %}"/>
     <link href="{{ STATIC_URL }}css/sumoselect.css" type="text/css" rel="stylesheet"/>
     <script src="{{ STATIC_URL }}js/lib/jquery.sumoselect.js"></script>
     <script>
@@ -13,20 +14,31 @@
                     'okCancelInMulti': true
                 });
         })
+        $(document).ready(()=>{
+            // This disables the "Select All" button on the filter, remove this code to bring it back
+            $('p.select-all').hide()
+            // Prevents need for pressing "OK" then clicking "Submit"
+            $(".MultiControls > p.btnOk").on("click",()=>{
+                $('.dashboard-btn').click()
+            })
+        })
     </script>
 {% endblock %}
 
 {% block filters %}
     {% if filters %}
-    <h1>Performance activity<br>for {{ title }}</h1>
-        <div class="row" style="padding: 0; margin: 0">
-            <form action="" method="get" class="form form-inline">
-                {{ filters.form.as_p }}
-                <button type="submit" class="btn dashboard-btn"
-                        style="height: 33px; margin-top: 5.45px; margin-left: 10px">
+        <h1>Performance activity for {{ title }}</h1>
+        <form action="" method="get" class="form">
+            <div class="filter-container-row">
+                {{ filters.group.form.as_p }}
+            </div>
+            <div class="filter-container-row filter-short-numbers-container">
+                
+                {{ filters.unitnumber.form.as_p }}
+                <button type="submit" class="btn dashboard-btn">
                     Filter
                 </button>
-            </form>
-        </div>
+            </div>
+        </form>
     {% endif %}
 {% endblock %}
