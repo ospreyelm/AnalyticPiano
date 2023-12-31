@@ -13,7 +13,7 @@
 {% endif %}
 
 {% for field in form.visible_fields %}
-    <div style="padding-right:10px;display:inline-block;vertical-align:top">
+    <div>
         <div class="form-check form-group form-inline {{ field|widget_type }}">
             {{ field.label_tag }}
             {% if form.is_bound %}

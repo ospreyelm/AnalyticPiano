@@ -143,8 +143,8 @@ def generate_exercise_context(
     next_exercise_obj = (
         playlist.get_exercise_obj_by_num(next_num)
         if playlist
-        else Exercise.objects.filter(authored_by=user, updated__gt=exercise.updated)
-        .order_by("updated")
+        else Exercise.objects.filter(authored_by=user, id__gt=exercise.id)
+        .order_by("id")
         .first()
     )
     next_exercise_id = next_exercise_obj.id if next_exercise_obj != None else None
@@ -159,8 +159,8 @@ def generate_exercise_context(
     prev_exercise_obj = (
         playlist.get_exercise_obj_by_num(prev_num)
         if playlist
-        else Exercise.objects.filter(authored_by=user, updated__lt=exercise.updated)
-        .order_by("-updated")
+        else Exercise.objects.filter(authored_by=user, id__lt=exercise.id)
+        .order_by("-id")
         .first()
     )
     prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj != None else None

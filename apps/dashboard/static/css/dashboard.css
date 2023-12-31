@@ -538,6 +538,7 @@ input[id="id_email"] {
 
 label[for="id_email"] {
   min-width: auto !important;
+  display: none;
 }
 
 .dashboard-button-bank,
@@ -585,4 +586,8 @@ label[for="id_email"] {
   height: 18px;
   margin: 0.375rem;
   margin-left: 1rem;
+}
+
+input #id_combined_info {
+  min-width: 85rem !important;
 }

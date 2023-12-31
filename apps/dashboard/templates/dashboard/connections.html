@@ -3,7 +3,6 @@
 {% block content %}
     <div class="dashboard-page">
         <h1>Connect with Other Users</h1>
-        <p class="dashboard-tip">Allow other users permission to access your content (if you are a teacher) and/or see your performances (if you are a student). Type their email adddress and click Add. The other user must grant reciprocal permissions for you to gain access.</p>
         <form method="post" novalidate>
             <div class="filter-container-row">
                 {% csrf_token %}
@@ -13,6 +12,7 @@
                 </button>
             </div>
         </form>
+        <p class="dashboard-tip">Allow other users permission to access your content (if you are a teacher) and/or see your performances (if you are a student). Type their email adddress and click Add. The other user must give permissions in the same way.</p>
         <form action="" method="get" class="form">
             <div class="filter-container-row">
                 {{filters.combined_info.form.as_p}}

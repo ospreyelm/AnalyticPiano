@@ -12,6 +12,7 @@ from apps.dashboard.forms import DashboardExerciseForm
 from apps.dashboard.tables import ExercisesListTable
 from apps.exercises.models import Exercise
 
+import re
 
 @login_required
 def exercises_list_view(request):
@@ -27,10 +28,15 @@ def exercises_list_view(request):
     min_id = exercise_id_filter.form.cleaned_data["min_id"]
     max_id = exercise_id_filter.form.cleaned_data["max_id"]
 
+    eid_regex = re.compile(r'^E[A-Z][0-9]{2}[A-Z]{2}$')
     if min_id:
-        exercises = exercises.filter(id__gte=min_id.upper())
-    if max_id:
-        exercises = exercises.filter(id__lte=max_id.upper())
+        min_id = 'EA00AA'[:max(0,6-len(min_id)):] + min_id.upper()[:6]
+        if eid_regex.match(min_id):
+            exercises = exercises.filter(id__gte=min_id.upper())
+    if max_id and len(max_id) > 0: # should be redundant
+        max_id = 'EA00AA'[:max(0,6-len(max_id)):] + max_id.upper()[:6]
+        if eid_regex.match(max_id):
+            exercises = exercises.filter(id__lte=max_id.upper())
 
     exercise_description_filter = ExerciseListDescriptionFilter(
         queryset=exercises, data=request.GET
@@ -39,7 +45,7 @@ def exercises_list_view(request):
 
     description_search = exercise_description_filter.form.cleaned_data["description"]
     if description_search:
-        exercises = exercises.filter(description__contains=description_search)
+        exercises = exercises.filter(description__contains=description_search) # __icontains to ignore case
 
     table = ExercisesListTable(exercises)
 

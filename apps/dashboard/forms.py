@@ -388,7 +388,7 @@ class DashboardPlaylistForm(PlaylistForm):
     exercises = ManyField(
         order_attr="order",
         format_title=lambda ex: ex.id
-        + (f"- {ex.description}" if ex.description else ""),
+        + (f" • {ex.description}" if ex.description else ""),
         id_attr="id",
         csv=True,
     )
@@ -461,7 +461,7 @@ class DashboardCourseForm(CourseForm):
     visible_to = ManyField()
     playlists = ManyField(
         order_attr="order",
-        format_title=lambda p: p.id + (f" - {p.name}" if p.name else ""),
+        format_title=lambda p: p.id + (f" • {p.name}" if p.name else ""),
         additional_fields=[
             {
                 "attr_name": "publish_date",
