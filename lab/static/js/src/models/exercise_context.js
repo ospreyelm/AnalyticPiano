@@ -744,7 +744,7 @@ define([
       }
 
       chords = new ExerciseChordBank({
-        // staffDistribution: staffDistribution,
+        staffDistribution: staffDistribution,
         chords: exercise_chords,
       });
 
@@ -778,7 +778,7 @@ define([
       }
 
       chords = new ExerciseChordBank({
-        // staffDistribution: staffDistribution,
+        staffDistribution: staffDistribution,
         chords: exercise_chords,
       });
 

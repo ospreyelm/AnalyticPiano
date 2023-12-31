@@ -1,0 +1,8 @@
+.date-increment-button {
+  background-color: lightgray;
+  cursor: pointer;
+  width: 96px;
+  text-align: center;
+  border-radius: 2px;
+  margin-top: 4px;
+}

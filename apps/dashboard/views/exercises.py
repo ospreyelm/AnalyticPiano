@@ -7,11 +7,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django_tables2 import RequestConfig
 
-
+from apps.dashboard.filters import ListIDFilter, ExerciseListDescriptionFilter
 from apps.dashboard.forms import DashboardExerciseForm
 from apps.dashboard.tables import ExercisesListTable
 from apps.exercises.models import Exercise
 
+import re
 
 @login_required
 def exercises_list_view(request):
@@ -21,13 +22,46 @@ def exercises_list_view(request):
     )
     me = request.user
 
+    exercise_id_filter = ListIDFilter(queryset=exercises, data=request.GET)
+    exercise_id_filter.form.is_valid()
+
+    min_id = exercise_id_filter.form.cleaned_data["min_id"]
+    max_id = exercise_id_filter.form.cleaned_data["max_id"]
+
+    eid_regex = re.compile(r'^E[A-Z][0-9]{2}[A-Z]{2}$')
+    if min_id:
+        min_id = 'EA00AA'[:max(0,6-len(min_id)):] + min_id.upper()[:6]
+        if eid_regex.match(min_id):
+            exercises = exercises.filter(id__gte=min_id.upper())
+    if max_id and len(max_id) > 0: # should be redundant
+        max_id = 'EA00AA'[:max(0,6-len(max_id)):] + max_id.upper()[:6]
+        if eid_regex.match(max_id):
+            exercises = exercises.filter(id__lte=max_id.upper())
+
+    exercise_description_filter = ExerciseListDescriptionFilter(
+        queryset=exercises, data=request.GET
+    )
+    exercise_description_filter.form.is_valid()
+
+    description_search = exercise_description_filter.form.cleaned_data["description"]
+    if description_search:
+        exercises = exercises.filter(description__contains=description_search) # __icontains to ignore case
+
     table = ExercisesListTable(exercises)
 
     RequestConfig(request, paginate={"per_page": 25}).configure(table)
     return render(
         request,
         "dashboard/exercises-list.html",
-        {"table": table, "exercises_author": exercises_author, "me": me},
+        {
+            "table": table,
+            "exercises_author": exercises_author,
+            "me": me,
+            "filters": {
+                "id": exercise_id_filter,
+                "description": exercise_description_filter,
+            },
+        },
     )
 
 

@@ -1,7 +1,12 @@
 {% extends "dashboard/base.html" %}
 {% load widget_tweaks %}
 {% load django_tables2 %}
+{% load static %}
 {% load i18n %}
+{% block extrahead %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/base-content-list.css' %}"/>
+{% endblock %}
+
 {% block content %}
     {% if messages %}
         {% for message in messages %}
@@ -9,7 +14,7 @@
         {% endfor %}
     {% endif %}
 
-    
+
     <div class="dashboard-page">
         {% if performer_name %}
             {% if performer_name == me %}
@@ -57,9 +62,16 @@
         {% endif %}
         {% block filters %}{% endblock %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
+        {% if courses_author and courses_author == me %}
+            {% block export-courses %}{% endblock %}
+        {% endif %}
+        {% if playlists_author and playlists_author == me %}
+            {% block export-playlists %}{% endblock %}
+        {% endif %}
         {% if exercises_author and exercises_author == me %}
-            <p class="dashboard-tip">To create a new exercise, start at the Play View. Perform the desired chords and bank them by legato-pedaling the chords on your instrument, setting the metronome, or pressing Enter on your computer keyboard. Set your Display Options via the link in the header. Then press the upload button at the top right of the sheet music and you will be directed to the exercise edit page.</p>
+            {% block export-exercises %}{% endblock %}
+            <p class="dashboard-tip" style="padding-top:15px">To create a new exercise, start at the Play View. Perform the desired chords and bank them by legato-pedaling the chords on your instrument, setting the metronome, or pressing Enter on your computer keyboard. Set your Display Options via the link in the header. Then press the upload button at the top right of the sheet music and you will be directed to the exercise edit page.</p>
         {% endif %}
     </div>
-    
+
 {% endblock content %}

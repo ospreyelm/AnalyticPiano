@@ -2,19 +2,27 @@
 
 {% block add-button-playlists %}
     <div class="dashboard-btn-bank">
+        <form action="" method="get" class="form">
+            <div class="filter-container-row">
+            {{ filters.id.form.as_p }}
+            {{ filters.name.form.as_p }}
+                <button type="submit" class="btn dashboard-btn">
+                    Filter
+                </button>
+            </div>
+        </form>
         <button type="submit" class="btn dashboard-btn" onclick="location.href='{% url 'dashboard:add-playlist' %}'">
-            New Playlist
+            New
         </button>
+    </div>
+{% endblock %}
+
+{% block export-playlists %}
+    <div class="dashboard-btn-bank-bottom">
         <button type="submit" class="btn dashboard-btn"
                 onclick="location.href='{% url 'dashboard:export-playlists' %}'">
             Export*
         </button>
-<!-- 
-        <button type="submit" class="btn dashboard-btn"
-                onclick="location.href='{% url 'dashboard:import-playlists' %}'">
-            Import
-        </button>
- -->
         <p>*Importing of playlist backups is not yet supported. If you want to keep a local backup of your playlists regardless, export your exercises at the same time as you export your playlists.</p>
     </div>
 {% endblock %}

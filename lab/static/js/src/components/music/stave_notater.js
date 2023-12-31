@@ -80,7 +80,7 @@ define([
 
   _.extend(StaveNotater.prototype, {
     /**
-     * Defines the margin for rendering things above and below the stave.
+     * Defines the margin for rendering things above and below the system.
      * @type {object}
      */
     margin: { top: 50, bottom: 25 },
@@ -947,7 +947,7 @@ define([
       if (spacing && analysis) {
         var newSize = "16px";
         ctx.font = newSize + " " + fontArgs[fontArgs.length - 1];
-        ctx.fillText("SAT sp.", x - 18, 60);
+        ctx.fillText("", x - 18, 60); // SAT sp.
       }
       if (note_names && analysis) {
         // ctx.fillText('notes', x - 18, 60);

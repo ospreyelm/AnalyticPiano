@@ -553,18 +553,18 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
         if (uv_span < 12) {
           return "U";
         } else if (uv_span == 12) {
-          return "8";
+          return "8[";
         } else if (uv_span < 24) { // redundant: ( && uv_midi[0] + 12 >= uv_midi[1])
-          return "8+";
+          return "8";
         } else {
           return "ERR";
         }
       } else if (uv_pcs.length == 3 && uv_midi.length == 3) {
         // tetrads or triads with the bass doubled
         if (uv_span < 12) {
-          return "CL";
+          return "+"; // close spacing
         } else if (uv_span < 24 && uv_midi[0] + 12 > uv_midi[1] && uv_midi[1] + 12 > uv_midi[2]) {
-          return "OP";
+          return "°"; // open spacing
         } else {
           return "ERR";
         }

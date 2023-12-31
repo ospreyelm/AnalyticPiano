@@ -158,11 +158,11 @@ define([
       let _sustain = this._sustain; // sustain pedal true or false
 
       // store these properties to check if they change
-      const as_was = {
+      const as_was = _.cloneDeep({
         _notes: this._notes,
         _unison_idx: this._unison_idx,
         _keys_down: this._keys_down
-      }
+      });
 
       for (let i = 0, len = incoming.length; i < len; i++) {
         // take each midi number
@@ -201,7 +201,9 @@ define([
       }
 
       this.trigger("change", "note:on");
+
       if (!_.isEqual(as_is, as_was)) {
+        // console.log({is: as_is, was: as_was});
         return true;
       } else {
         return false;
@@ -222,7 +224,7 @@ define([
     noteOff: function (notes) {
       let manually_dampen = false;
       if (_.isArray(notes)) {
-        var outgoing = notes; // the midi numbers of notes that must be added
+        var outgoing = notes; // the midi numbers of notes that must be silenced
       } else if (Number.isInteger(notes)) {
         var outgoing = [notes];
       } else if (!_.isArray(notes) && typeof notes === "object") {
@@ -240,11 +242,11 @@ define([
       var _sustain = this._sustain;
 
       // store these properties to check if they change
-      const as_was = {
+      const as_was = _.cloneDeep({
         _notes: this._notes,
         _unison_idx: this._unison_idx,
         _keys_down: this._keys_down
-      }
+      });
 
       for (let i = 0, len = outgoing.length; i < len; i++) {
         // take each midi number
@@ -289,10 +291,12 @@ define([
         _notes: this._notes,
         _unison_idx: this._unison_idx,
         _keys_down: this._keys_down
-      }
+      };
 
       this.trigger("change", "note:on");
+
       if (!_.isEqual(as_is, as_was)) {
+        // console.log({is: as_is, was: as_was});
         return true;
       } else {
         return false;
@@ -338,35 +342,45 @@ define([
      *
      * @returns {boolean}
      */
-    dropDampers: function (prev_notes = false) {
+    dropDampers: function (prev_notes=false, exercise_view_bool=false, all_notes_ever=false) {
       this._manually_dampened = [];
 
       let notes_to_turn_off = [];
 
-      const were_active = Object.keys(prev_notes).filter(function(key) {
-        return prev_notes[key] // values are boolean
-      });
       const _notes = this._notes;
       const are_active = Object.keys(_notes).filter(function(key) {
-        return _notes[key]
+        return _notes[key] // values are boolean
       });
       const _keys_down = this._keys_down;
       const are_keys_down = Object.keys(_keys_down).filter(function(key) {
-        return _keys_down[key] // does this actually mean that the keys are depressed?
+        return _keys_down[key]
       });
 
-      let all_notes_on_radar = new Array(...new Set([
+      let were_active = [];
+      if (exercise_view_bool) {
+        were_active = all_notes_ever; // has to be very aggressive for some reason
+      } else {
+        were_active = Object.keys(prev_notes).filter(function(key) {
+          return prev_notes[key]
+        });
+      }
+
+      let all_vibrating_strings = new Array(...new Set([
+        are_active,
         were_active,
-        are_active
       ].flat()))
 
-      for (let i = 0; i < all_notes_on_radar.length; i++) {
-        if (!are_keys_down.includes(all_notes_on_radar[i])) {
-          notes_to_turn_off.push(all_notes_on_radar[i]);
-          this._notes[all_notes_on_radar[i]] = false;
+      for (let i = 0; i < all_vibrating_strings.length; i++) {
+        if (
+          !are_keys_down.includes(all_vibrating_strings[i])
+        ) {
+          notes_to_turn_off.push(all_vibrating_strings[i]);
+          this._notes[all_vibrating_strings[i]] = false;
         }
       }
       this.trigger("change");
+
+      // console.log("Silencing " + String(notes_to_turn_off.length) + " of " + String(all_vibrating_strings.length));
 
       return notes_to_turn_off;
     },
@@ -521,7 +535,7 @@ define([
           this._unison_idx === 0
         ) {
         } else {
-          notes.push(notes[this._unison_idx]) // length of notes may become an issue with rendering unisons
+          notes.push(notes[this._unison_idx])
           notes.sort()
         }
       }
@@ -685,11 +699,13 @@ define([
           return (
             clef ==
             (this.getSortedNotes().slice(0, 1).includes(midi) ? "bass" : "treble")
+            // TO DO: in this case, we also have to make sure that the tenor notehead is displaced by VexFlow
           );
         } else if (this._unison_idx === 2) {
           return (
             clef ==
             (this.getSortedNotes().slice(0, 2).includes(midi) ? "bass" : "treble")
+            // TO DO: in this case, we also have to make sure that the soprano notehead is displaced by VexFlow
           );
         } else { // this._unison_ix === 1
           return (

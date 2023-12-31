@@ -15,7 +15,10 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.cache import cache_page
 from django_tables2 import RequestConfig, Column
 
-from apps.dashboard.filters import CourseActivityGroupsFilter
+from apps.dashboard.filters import (
+    CourseActivityGroupsFilter,
+    CourseActivityOrderFilter,
+)
 from apps.dashboard.forms import DashboardCourseForm
 from apps.dashboard.tables import (
     CoursesListTable,
@@ -198,6 +201,7 @@ def course_edit_view(request, course_id):
     form = DashboardCourseForm(instance=course, user=request.user)
 
     context["form"] = form
+
     return render(request, "dashboard/content.html", context)
 
 
@@ -242,30 +246,30 @@ def course_activity_view(request, course_id):
     if request.user != course.authored_by:
         raise PermissionDenied
 
-    # Change this to alter the number of displayed subscribers per page.
-    subscribers_per_page = 35
+    # Change this to alter the number of displayed performers per page.
+    performers_per_page = 35
 
-    filters = CourseActivityGroupsFilter(
+    group_filter = CourseActivityGroupsFilter(
         queryset=course.visible_to.all(), data=request.GET
     )
-    filters.form.is_valid()
-    curr_group_ids = [int(g) for g in filters.form.cleaned_data["groups"] or []]
+    group_filter.form.is_valid()
+
+    unitnumber_filter = CourseActivityOrderFilter(
+        queryset=course.visible_to.all(), data=request.GET
+    )
+    unitnumber_filter.form.is_valid()
+
+    curr_group_ids = [int(g) for g in group_filter.form.cleaned_data["groups"] or []]
     curr_groups = Group.objects.filter(id__in=curr_group_ids)
 
-    subscribers = User.objects.filter(pk__in=request.user.content_permits)
+    performers = User.objects.filter(pk__in=request.user.content_permits)
     if len(curr_group_ids) > 0:
-        subscribers = subscribers.filter(participant_groups__id__in=curr_group_ids)
-    course_playlists = list(
-        PlaylistCourseOrdered.objects.filter(course=course)
-        .order_by("order")
-        .select_related("playlist")
-    )
-    playlists = list(map(lambda pco: pco.playlist, course_playlists))
+        performers = performers.filter(participant_groups__id__in=curr_group_ids)
 
     performance_dict = course.performance_dict
     data = {
         performer: {
-            "subscriber": performer,  # n.b. not a string!
+            "performer": performer,  # n.b. not a string!
             "performer_name": performer.get_full_name(),
             "performer_last_name": performer.last_name,
             "performer_first_name": performer.first_name,
@@ -279,11 +283,11 @@ def course_activity_view(request, course_id):
             ),
             **performance_dict.get(str(performer), {}),
         }
-        for performer in subscribers
+        for performer in performers
     }
 
     if len(curr_group_ids) == 0:
-        # omit subscribers who have zero performances for this playlist
+        # omit performers who have zero performances for this playlist
         relevant_data = {
             key: value for (key, value) in data.items() if len(value.keys()) > 5
         }
@@ -294,7 +298,7 @@ def course_activity_view(request, course_id):
     # add creator's own performances
     for performer in [request.user]:
         relevant_data[performer] = {
-            "subscriber": performer,  # n.b. not a string!
+            "performer": performer,  # n.b. not a string!
             "performer_name": performer.get_full_name(),
             "performer_last_name": "*" + str(performer.last_name).upper() + "*",
             "performer_first_name": "*" + str(performer.first_name).upper() + "*",
@@ -306,6 +310,7 @@ def course_activity_view(request, course_id):
     relevant_data_keys_per_performer = [
         value.keys() for (key, value) in relevant_data.items()
     ]
+
     compiled_playlist_keys = []
     for i in range(0, len(relevant_data_keys_per_performer)):
         playlist_keys = [
@@ -316,12 +321,27 @@ def course_activity_view(request, course_id):
         for j in range(0, len(playlist_keys)):
             if playlist_keys[j] not in compiled_playlist_keys:
                 compiled_playlist_keys.append(playlist_keys[j])
+    min_unit_num = unitnumber_filter.form.cleaned_data["min_unit_num"]
+    max_unit_num = unitnumber_filter.form.cleaned_data["max_unit_num"]
 
     # Sort playlist keys: playlist IDs first, according to their order of presentation in the course, then legacy order values
-    pco = PlaylistCourseOrdered.objects.filter(course_id=course._id)
+    course_pcos = PlaylistCourseOrdered.objects.filter(
+        course_id=course._id
+    ).prefetch_related("playlist")
+    if min_unit_num or max_unit_num:
+        if min_unit_num:
+            course_pcos = course_pcos.filter(order__gte=min_unit_num)
+        if max_unit_num:
+            course_pcos = course_pcos.filter(order__lte=max_unit_num)
+
+        compiled_playlist_keys = [
+            pco.playlist.id
+            for pco in course_pcos
+            if pco.playlist.id in compiled_playlist_keys
+        ]
     url_id_to_order = {}
-    for i in range(0, len(pco)):
-        url_id_to_order[pco[i].playlist.id] = pco[i].order
+    for i in range(0, len(course_pcos)):
+        url_id_to_order[course_pcos[i].playlist.id] = course_pcos[i].order
     compiled_playlist_keys.sort(
         key=lambda p: (
             int(p) if re.match("^[0-9]+$", p) else -1,  # order
@@ -359,7 +379,7 @@ def course_activity_view(request, course_id):
     if len(curr_group_ids) == 0:
         table.exclude = ("groups",)
 
-    RequestConfig(request, paginate={"per_page": subscribers_per_page}).configure(table)
+    RequestConfig(request, paginate={"per_page": performers_per_page}).configure(table)
 
     return render(
         request,
@@ -368,6 +388,6 @@ def course_activity_view(request, course_id):
             "table": table,
             "course_id": course_id,
             "title": course.title,
-            "filters": filters,
+            "filters": {"group": group_filter, "unitnumber": unitnumber_filter},
         },
     )

@@ -95,6 +95,20 @@ body,
 #footer {
   min-height: 1rem;
 }
+#user-interaction-solicitation {
+  position: relative;
+  width: 700px;
+  height: 0px;
+  overflow: visible;
+  z-index: -1;
+  font-size: 5rem;
+  font-family: inherit;
+  font-weight: bold;
+  text-align: right;
+  color: lightgrey;
+  margin: 0px auto;
+  padding: 0px;
+}
 #staff-area {
   /*width: 888px;*/
   width: 100%;
@@ -740,7 +754,7 @@ ul.menu-group-list li {
   background-color: red;
 }
 #metronome-audio {
-  display: hidden;
+  display: none;
 }
 .keyboard-area {
   margin: 0 10px;
@@ -847,4 +861,12 @@ ul.pagination li {
   color: white;
   padding-left: 12px;
   padding-right: 12px;
+}
+
+#id_min_id, #id_max_id {
+  max-width: 8ch;
+}
+
+.emailinput input {
+  max-width: 85rem !important;
 }

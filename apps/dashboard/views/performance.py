@@ -15,22 +15,19 @@ User = get_user_model()
 
 
 @login_required
-def performance_list_view(request, subscriber_id=None):
-    subscriber_id = subscriber_id or request.user.id
-    subscriber = get_object_or_404(User, id=subscriber_id)
+def performances_list_view(request, other_id=None):
+    other_id = other_id or request.user.id
+    other = get_object_or_404(User, id=other_id)
 
-    if (
-        request.user != subscriber
-        and not request.user.pk in subscriber.performance_permits
-    ):
+    if request.user != other and not request.user.pk in other.performance_permits:
         raise PermissionDenied
 
-    performances = PerformanceData.objects.filter(user=subscriber).select_related(
+    performances = PerformanceData.objects.filter(user=other).select_related(
         "user", "playlist", "course"
     )
 
     table = MyActivityTable(performances)
-    performer_name = subscriber
+    performer_name = other
 
     RequestConfig(request).configure(table)
     return render(
@@ -136,64 +133,62 @@ def playing_time(exercises_data):
 
 
 def playlist_performance_view(request, performance_id):
-    subscriber_id = request.user.id
-    subscriber = get_object_or_404(User, id=subscriber_id)
-    if not request.user.pk in subscriber.performance_permits:
-        raise PermissionDenied
-    performer_name = subscriber
-
-    data = []
     performance = (
         PerformanceData.objects.filter(id=performance_id)
-        .select_related("user", "playlist", "course")
+        .select_related("user", "playlist", "course")  # redundant?
         .first()
     )
-    # performances = PerformanceData.objects.filter(
-    #     playlist__id=playlist_id, user_id=subscriber_id
-    # ).select_related("user", "playlist", "course")
-    # playlist = Playlist.objects.get(id=playlist_id)
-    exercises = [exercise for exercise in performance.playlist.exercise_list]
 
+    performer_id = performance.user.id
+    performer = get_object_or_404(User, id=performer_id)
+
+    if (
+        not request.user.pk in performer.performance_permits
+        and not performer == request.user
+    ):
+        raise PermissionDenied
+
+    # coded more cautiously because some of our performance data did not yet
+    # insist on playlists occuring in a course
     course_id = getattr(performance.course, "id", None)
     course_name = "None"
     if course_id:
         course_name = Course.objects.get(id=course_id).title
 
-    # performance_obj = performances.filter(user__email=user).first()
-    # course = None
-    # if performance_obj.course_id:
-    #     course = Course.objects.get(_id=performance_obj.course_id)
-
     user_data = {
-        "performer": subscriber,
-        "subscriber_id": subscriber_id,
-        "playlist_id": performance.playlist.id,
-        "course_name": course_name,
+        "performance_obj": performance,
+        "performer_id": performer.id,
+        "performer": performer,
         "course_id": course_id,
+        "course_name": course_name,
+        "playlist_id": performance.playlist.id,
         "playlist_name": performance.playlist.name,
         "playlist_length": len(performance.playlist.exercise_list),
-        "performance_obj": performance,
         "performance_data": performance.data,
-        "performer_obj": subscriber,
+        # "exercise_count": len(performance.data), # replace line below?
     }
     user_data.update({"exercise_count": len(user_data["performance_data"])})
+
+    data = []
     data.append(user_data)
 
-    for d in data:
+    exercises = [exercise for exercise in performance.playlist.exercise_list]
+
+    for d in data:  # is not len(data) == 1?
         performance_obj = d["performance_obj"]
         exercises_data = d["performance_data"]
 
         d["playing_time"] = playing_time(exercises_data)
         d["playlist_pass_bool"] = playlist_pass_bool(
             exercises, exercises_data, d["playlist_length"]
-        )  # why not len(exercises) ?!
+        )  # why not len(exercise_list) ?!
         d["playlist_pass_date"] = playlist_pass_date(
             exercises, exercises_data, d["playlist_length"]
-        )  # why not len(exercises) ?!
+        )  # why not len(exercise_list) ?!
 
         for exercise in exercises_data:
             tempo_display_factor = 1
-            # TODO: include time signature in the performance data for this purpose?
+            # TO DO: include time signature in the performance data for this purpose?
             # try:
             #     print(exercise)
             #     # get beat information from time signature
@@ -245,5 +240,5 @@ def playlist_performance_view(request, performance_id):
     return render(
         request,
         "dashboard/performance_details.html",
-        {"table": table, "performer_name": performer_name, "me": request.user},
+        {"table": table, "performer_name": performer, "me": request.user},
     )

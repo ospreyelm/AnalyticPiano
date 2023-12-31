@@ -41,7 +41,6 @@ urlpatterns = [
         exercise_performance_history,
         name="exercise-performance-history",
     ),
-    # FIXME should be added to a course: ^courses/(?P<course_id>\d+)/exercises/add/$?
     path("exercises/add/", AddExerciseView.as_view(), name="add-exercise"),
     # Performance
     path(
