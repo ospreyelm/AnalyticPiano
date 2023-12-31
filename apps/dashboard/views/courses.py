@@ -182,7 +182,7 @@ def course_edit_view(request, course_id):
                         defaults={
                             k: v
                             for k, v in through_data.items()
-                            if k not in ["publish_date", "due_date"]
+                            # if k not in ["publish_date", "due_date"]
                         },
                     )
                 messages.add_message(
