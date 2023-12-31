@@ -111,40 +111,37 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
   /**
    * Initialize parameters for Tone.js
    */
+  var MESSAGE_DISMISSED = false;
+
   document.documentElement.addEventListener("mousedown", function () {
-    mouse_IsDown = true;
-    try {
-      if (Tone.context.state !== "running") {
-        sampler.releaseAll();
-        Tone.context.resume();
-      } else {
-        console.log('Tone.context.state already === "running"')
-      }
-
-      /* apply sticky settings */
-      if (typeof STICKY_MUTE == "boolean") {
-        // wait to unmute audio until the document.hasFocus()
-        // see comment at the declaration of vol.mute
-        vol.mute = STICKY_MUTE;
-        let mute = document.getElementById("mute-toggle");
-        if (STICKY_MUTE) {
-          mute.innerHTML = muteToggleText[1];
+    if (!MESSAGE_DISMISSED) {
+      try {
+        if (Tone.context.state !== "running") {
+          sampler.releaseAll();
+          Tone.context.resume();
         } else {
-          mute.innerHTML = muteToggleText[0];
+          console.log('Tone.context.state already === "running"')
         }
-      }
 
-      document.getElementById("user-interaction-solicitation").style.display = "none";
+        /* apply sticky settings */
+        if (typeof STICKY_MUTE == "boolean") {
+          // wait to unmute audio until the document.hasFocus()
+          // see comment at the declaration of vol.mute
+          vol.mute = STICKY_MUTE;
+          let mute = document.getElementById("mute-toggle");
+          if (STICKY_MUTE) { // set to muted
+            mute.innerHTML = muteToggleText[1];
+          } else { // set to unmuted
+            mute.innerHTML = muteToggleText[0];
+          }
+        }
 
-    } catch { console.log('Some error occured with initializing audio.') }
+        document.getElementById("user-interaction-solicitation").style.display = "none";
+
+        MESSAGE_DISMISSED = true; // only run this code once
+      } catch { console.log('Some error occured with initializing audio.') }
+    }
   });
-
-  /* All Notes Off button */
-  // if ($("all-notes-off")){
-  // 	$("all-notes-off").click( function () {
-  // 		sampler.releaseAll();
-  // 	});
-  // }
 
   /* Mute button */
   if ($("#mute-toggle").length > 0) {
@@ -153,7 +150,6 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
       if (mute.innerHTML == muteToggleText[0]) {
         /* all notes off */
         sampler.releaseAll();
-
         $.ajax({
           type: "POST",
           url: "/ajax/set-mute/",
