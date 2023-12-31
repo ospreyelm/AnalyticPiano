@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django_tables2 import RequestConfig
 from django.db.models.functions import Concat
-from django.db.models import F, Value, CharField
+from django.db.models import F, Value, CharField, Case, Value, When, BooleanField
 
 from apps.dashboard.forms import (
     AddConnectionForm,
@@ -43,16 +43,44 @@ def courses_by_others_view(request):
 
 @login_required
 def connections_view(request):
+    # initial solution for desired ordering of connections table
+    q1 = Q(id__in=request.user.connections_list)
+    q2 = Q(id__in=request.user.content_permits)
+    q3 = Q(id__in=request.user.performance_permits)
+    q4 = Q(content_permits__contains=request.user.id)
+    q5 = Q(performance_permits__contains=request.user.id)
+
     connections = User.objects.filter(id__in=request.user.connections).annotate(
         combined_info=Concat(
-            F("first_name"),
-            Value(" "),
-            F("last_name"),
-            Value(" "),
+            F("last_name"), # TO DO: do not expose this information to search unless q4 or q5
+            Value(", "),
+            F("first_name"), # TO DO: do not expose this information to search unless q4 or q5
+            Value(" • "),
             F("email"),
             output_field=CharField(),
+        ),
+        pinned=Case(
+            When(q1, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        no_access=Case(
+            When(q4, then=Value(False)),
+            When(q5, then=Value(False)),
+            default=Value(True),
+            output_field=BooleanField(),
+        ),
+        performance_permit=Case(
+            When(q3, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        content_access=Case(
+            When(q4, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
         )
-    )
+    ).order_by("-pinned", "-no_access", "-performance_permit", "-content_access", "-date_joined")
 
     combined_info_filter = ConnectionCombinedInfoFilter(
         queryset=connections.all(), data=request.GET
