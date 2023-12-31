@@ -104,7 +104,7 @@
 
   function generateValueBlock(instanceId, instanceTitle, throughValues, index) {
     return `<div class="widget-value-block ${throughValues ? "widget-value-new" : ""} {% if widget.order_input %} block-draggable {% endif %}" value="${instanceId}">
-      {% if widget.order_input %}<input type="number" class="widget-value-order order-${widgetName}" value="${index}"></input> {% endif %}
+      {% if widget.order_input %}<input type="number" class="widget-value-order order-${widgetName}" value="${index+1}"></input> {% endif %}
       <div class="widget-value-data-${widgetName}" value="${instanceId}" >${instanceTitle}</div>
       {% for field in widget.additional_fields %} <input class="widget-value-additional-${widgetName} {{field.attr_name}}-input" id="{{field.attr_name}}-${index}" value='${throughValues['{{field.attr_name}}'] || ""}' placeholder="{{field.placeholder}}"></input> {% endfor %}
       <div class="widget-value-remove widget-value-remove-${widgetName}"> x </div>
@@ -144,7 +144,7 @@
         value.push({})
       }
       if (orderAttr && orderAttr != "None") { 
-        value[2][orderAttr] = fieldValue.length
+        value[2][orderAttr] = fieldValue.length+1
       }
       fieldValue.push(value)
       onFieldValueChange()
