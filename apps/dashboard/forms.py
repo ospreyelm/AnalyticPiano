@@ -582,7 +582,7 @@ class BaseDashboardGroupForm(forms.ModelForm):
         user = kwargs.pop("user")
         super(forms.ModelForm, self).__init__(*args, **kwargs)
         self.fields["members"].queryset = User.objects.filter(
-            pk__in=user.performance_permits
+            performance_permits__contains=user.pk
         )
         if self.instance.pk != None:
             self.fields["members"].queryset = self.fields[
