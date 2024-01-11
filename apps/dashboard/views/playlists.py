@@ -191,6 +191,7 @@ def playlist_edit_view(request, playlist_id):
                 playlist._id = None
                 playlist.id = None
                 playlist = playlist.save()
+                exercise_pairs = form.cleaned_data["exercises"]
 
                 # edit or add new EPOs
                 for exercise, through_data in exercise_pairs:
