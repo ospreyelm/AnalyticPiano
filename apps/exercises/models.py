@@ -590,7 +590,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def has_been_performed(self):
-        return PerformanceData.objects.filter(playlist=self).filter(~Q(user=self.authored_by)).exists()
+        return (
+            PerformanceData.objects.filter(playlist=self)
+            .filter(~Q(user=self.authored_by))
+            .exists()
+        )
 
     @classmethod
     def create_auto_playlist(cls, initial_exercise_id, authored_by):
@@ -765,7 +769,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         prev_course = Course.objects.filter(_id=self._id).first()
         if prev_course:
             if prev_course.tardy_threshold != self.tardy_threshold:
-                self.refresh_performance_dict()
+                self.refresh_performance_dict(commit=False)
         super(Course, self).save(*args, **kwargs)
         return self
 
@@ -785,7 +789,11 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def has_been_performed(self):
-        return PerformanceData.objects.filter(course=self).filter(~Q(user=self.authored_by)).exists()
+        return (
+            PerformanceData.objects.filter(course=self)
+            .filter(~Q(user=self.authored_by))
+            .exists()
+        )
 
     @cached_property
     def playlist_id_list(self):
@@ -833,7 +841,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         # due dates are defined by course authors and should be understood in terms of their own or their institution's timezone
         # the due_date is NOT to be read as UTC
 
-    def add_performance_to_dict(self, performance_data):
+    def add_performance_to_dict(self, performance_data, commit=True):
         # Assigns numerical value to each pass mark to prevent "better" pass marks from being overwritten
         pass_mark_compare_dict = {"X": 0, "C": 0.5, "L": 1, "T": 2, "P": 3}
 
@@ -885,16 +893,18 @@ class Course(ClonableModelMixin, BaseContentModel):
             self.performance_dict[performer]["time_elapsed"] += int(
                 exercise_data["performance_duration_in_seconds"]
             )
-        # self.save()
+        if commit:
+            self.save()
 
-    def refresh_performance_dict(self):
+    def refresh_performance_dict(self, commit=True):
         self.performance_dict = {}
         course_performances = PerformanceData.objects.filter(
             Q(course=self) | Q(course=None, playlist__in=self.playlists.all())
         ).order_by("updated")
         for pd in course_performances:
-            self.add_performance_to_dict(pd)
-        # self.save()
+            self.add_performance_to_dict(pd, commit=False)
+        if commit:
+            self.save()
 
 
 class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
@@ -937,7 +947,7 @@ class PerformanceData(models.Model):
         unique_together = (("user", "playlist", "course"),)
 
     def __str__(self):
-        return f"Playlist:{self.playlist} - User:{self.user}"
+        return f"Playlist:{self.playlist}, Course:{self.course} - User:{self.user}"
 
     @classmethod
     def get_by_user(cls, user_id: int):
@@ -968,14 +978,16 @@ class PerformanceData(models.Model):
             performed_at=dateformat.format(now(), "Y-m-d H:i:s"),  # rename and reformat
             # server_date = datetime.isoformat(datetime.now())[:-3]+'Z' # UTC
         )
-        # print(exercise_data)
+
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
-
+        print("submit")
+        print(course_id)
         try:
             if course_id:
                 course = Course.objects.get(_id=course_id)
+                print(course)
                 course.add_performance_to_dict(pd)
 
         except:
