@@ -111,6 +111,7 @@
     </div>`
   }
 
+  // O(n) function that re-renders all the entry components
   function onFieldValueChange(){
     const updatedComponents = fieldValue.map(([instanceId, instanceTitle, throughValues], index)=>
       generateValueBlock(instanceId, instanceTitle, throughValues, index)
@@ -153,7 +154,19 @@
 
   function removeValue(valueId){
     fieldValue = fieldValue.filter((entry)=>entry[0]!=valueId)
+    updateOrders()
     onFieldValueChange()
+  }
+
+  // Generic O(n) function to sync position in fieldValue with actual order
+  // Could be replaced with O(1) operation in removeValue() and moveValue(),
+  //   but this function works for both and lacks edge cases.
+  function updateOrders() {
+    if (orderAttr && orderAttr != "None") {
+      for (let i = 0;i< fieldValue.length;i++){
+        fieldValue[i][2][orderAttr] = i+1
+      }
+    }
   }
 
   // Function from here: https://stackoverflow.com/a/5306832
@@ -167,11 +180,7 @@
       }
       fieldValue.splice(new_index, 0, fieldValue.splice(old_index, 1)[0]);
     }
-    
-    if (orderAttr && orderAttr !="None") {
-      fieldValue[new_index][2][orderAttr] = new_index
-    }    
-    
+    updateOrders()
     onFieldValueChange()
   };
   
