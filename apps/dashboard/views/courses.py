@@ -330,6 +330,8 @@ def course_activity_view(request, course_id):
     compiled_playlist_keys = set()
     for i in range(0, len(relevant_data_keys_per_performer)):
         # Combining existing playlist keys with any new keys from this performer
+        # We iterate through each performer instead of relying on course_pcos because
+        #    performers' performed playlists may have since been removed from the course (and therefore no longer have a PCO)
         compiled_playlist_keys = compiled_playlist_keys.union(
             set(
                 [
