@@ -307,7 +307,7 @@ def course_activity_view(request, course_id):
     else:
         relevant_data = data
 
-    # add creator's own performances
+    # add creator, with special name formatting to bring it to the top/bottom when sorting
     for performer in [request.user]:
         relevant_data[performer] = {
             "performer": performer,  # n.b. not a string!
