@@ -238,6 +238,17 @@ def playlist_column_verbose_name(playlist_id, course):
     return playlist_id
 
 
+# Keys within a course's performance_dict that don't correspond with a playlist
+reserved_dict_keys = {
+    "performer",
+    "performer_name",
+    "performer_last_name",
+    "performer_first_name",
+    "groups",
+    "time_elapsed",
+}
+
+
 @login_required
 # @cache_page(60 * 15)
 def course_activity_view(request, course_id):
@@ -283,7 +294,8 @@ def course_activity_view(request, course_id):
             ),
             **performance_dict.get(str(performer), {}),
         }
-        for performer in performers
+        # course's performers + author
+        for performer in list(performers) + [request.user]
     }
 
     if len(curr_group_ids) == 0:
@@ -295,50 +307,53 @@ def course_activity_view(request, course_id):
     else:
         relevant_data = data
 
-    # add creator's own performances
-    for performer in [request.user]:
-        relevant_data[performer] = {
-            "performer": performer,  # n.b. not a string!
-            "performer_name": performer.get_full_name(),
-            "performer_last_name": "*" + str(performer.last_name).upper() + "*",
-            "performer_first_name": "*" + str(performer.first_name).upper() + "*",
-            "groups": ", ".join([]),
-            **performance_dict.get(str(performer), {}),
-        }
-
     # get playlist keys
     relevant_data_keys_per_performer = [
         value.keys() for (key, value) in relevant_data.items()
     ]
 
-    compiled_playlist_keys = []
-    for i in range(0, len(relevant_data_keys_per_performer)):
-        playlist_keys = [
-            key
-            for key in relevant_data_keys_per_performer[i]
-            if re.match("^[0-9]+$", key) or re.match("^P[A-Z][0-9]+[A-Z]+$", key)
-        ]
-        for j in range(0, len(playlist_keys)):
-            if playlist_keys[j] not in compiled_playlist_keys:
-                compiled_playlist_keys.append(playlist_keys[j])
-    min_unit_num = unitnumber_filter.form.cleaned_data["min_unit_num"]
-    max_unit_num = unitnumber_filter.form.cleaned_data["max_unit_num"]
-
-    # Sort playlist keys: playlist IDs first, according to their order of presentation in the course, then legacy order values
     course_pcos = PlaylistCourseOrdered.objects.filter(
         course_id=course._id
     ).prefetch_related("playlist")
+
+    min_unit_num = unitnumber_filter.form.cleaned_data["min_unit_num"]
+    max_unit_num = unitnumber_filter.form.cleaned_data["max_unit_num"]
+    filtered_unit_num = False
     if min_unit_num or max_unit_num:
+        filtered_unit_num = True
         if min_unit_num:
             course_pcos = course_pcos.filter(order__gte=min_unit_num)
         if max_unit_num:
             course_pcos = course_pcos.filter(order__lte=max_unit_num)
+    filtered_pco_ids = set([pco.playlist.id for pco in course_pcos])
 
-        compiled_playlist_keys = [
-            pco.playlist.id
-            for pco in course_pcos
-            if pco.playlist.id in compiled_playlist_keys
-        ]
+    compiled_playlist_keys = set()
+    for i in range(0, len(relevant_data_keys_per_performer)):
+        # Combining existing playlist keys with any new keys from this performer
+        compiled_playlist_keys = compiled_playlist_keys.union(
+            set(
+                [
+                    key
+                    for key in relevant_data_keys_per_performer[i]
+                    if
+                    # if this key corresponds to a playlist (order or id)
+                    not key in reserved_dict_keys
+                    # if this key should be filtered out based on the unit filter
+                    and (not filtered_unit_num or key in filtered_pco_ids)
+                ]
+            )
+        )
+
+    for performer, performance_data in relevant_data.items():
+        relevant_data[performer] = {
+            k: v
+            for k, v in performance_data.items()
+            if k in compiled_playlist_keys or k in reserved_dict_keys
+        }
+
+    compiled_playlist_keys = list(compiled_playlist_keys)
+
+    # Sort playlist keys: playlist IDs first, according to their order of presentation in the course, then legacy order values
     url_id_to_order = {}
     for i in range(0, len(course_pcos)):
         url_id_to_order[course_pcos[i].playlist.id] = course_pcos[i].order
