@@ -307,6 +307,17 @@ def course_activity_view(request, course_id):
     else:
         relevant_data = data
 
+    # add creator's own performances
+    for performer in [request.user]:
+        relevant_data[performer] = {
+            "performer": performer,  # n.b. not a string!
+            "performer_name": performer.get_full_name(),
+            "performer_last_name": "*" + str(performer.last_name).upper() + "*",
+            "performer_first_name": "*" + str(performer.first_name).upper() + "*",
+            "groups": ", ".join([]),
+            **performance_dict.get(str(performer), {}),
+        }
+
     # get playlist keys
     relevant_data_keys_per_performer = [
         value.keys() for (key, value) in relevant_data.items()
