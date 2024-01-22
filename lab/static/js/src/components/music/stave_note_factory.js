@@ -93,6 +93,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
       let vexflow_dots =
         this.getRhythmValue().toUpperCase() == this.getRhythmValue() ? 1 : 0;
       let vexflow_keys = this.getNoteKeys();
+      let full_context = this.chord.settings.full_context || false;
 
       const CHORALE_FORMAT = this.chord.settings.staffDistribution === "chorale";
 
@@ -121,6 +122,37 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
           'ST' // part is soprano or tenor
         );
         return [stave_note_1, stave_note_2];
+      } else if (CHORALE_FORMAT && vexflow_keys.length == 1
+        && full_context && full_context.length == 4) {
+        let note_num = this.chord.getNoteNumbers(this.clef)[0];
+        if (note_num == full_context[0] || note_num == full_context[2]) {
+          var stave_note_1 = this._makeStaveNote(
+            [vexflow_keys[0]],
+            this.getNoteModifiers(),
+            vexflow_duration,
+            vexflow_dots,
+            -1, // stem_direction
+            'AB' // part is alto or bass
+          );
+        } else if (note_num == full_context[1] || note_num == full_context[3]) {
+          var stave_note_1 = this._makeStaveNote(
+            [vexflow_keys[0]],
+            this.getNoteModifiers(),
+            vexflow_duration,
+            vexflow_dots,
+            1, // stem_direction
+            'ST' // part is soprano or tenor
+          );
+        } else {
+          var stave_note_1 = this._makeStaveNote(
+            vexflow_keys,
+            this.getNoteModifiers(),
+            vexflow_duration,
+            vexflow_dots,
+            0, // stem_direction
+          );
+        }
+        return [stave_note_1];
       } else {
         var stave_note_1 = this._makeStaveNote(
           vexflow_keys,

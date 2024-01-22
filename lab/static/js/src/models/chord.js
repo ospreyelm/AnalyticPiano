@@ -637,12 +637,20 @@ define([
       const mid_threshold = 60;
       const low_threshold = 55;
 
+      let _sorted_notes = this.getSortedNotes();
+      let full_context = this.settings.full_context || false;
+      console.log(Object.keys(this._noteProps), full_context);
+      if (full_context && full_context.length > 0
+        && Object.keys(this._noteProps).every(val => full_context.includes(parseInt(val)))) {
+        // distribute the chord according to the expected result
+        _sorted_notes = this.settings.full_context;
+      }
       if (
         ["keyboard", "keyboardPlusRHBias", "keyboardPlusLHBias"].includes(
           STAFF_DISTRIBUTION
         ) &&
-        VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) &&
-        midi == this.getSortedNotes()[0]
+        VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(_sorted_notes.length) &&
+        midi == _sorted_notes[0]
       ) {
         // lowest note
         // UNISONS
@@ -655,8 +663,8 @@ define([
         ["keyboard", "keyboardPlusRHBias", "keyboardPlusLHBias"].includes(
           STAFF_DISTRIBUTION
         ) &&
-        VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length) &&
-        this.getSortedNotes().slice(1).includes(midi)
+        VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(_sorted_notes.length) &&
+        _sorted_notes.slice(1).includes(midi)
       ) {
         // not lowest note
         return clef == (midi < low_threshold ? "bass" : "treble");
@@ -664,17 +672,17 @@ define([
         return clef == (midi < mid_threshold ? "bass" : "treble");
       } else if (
         STAFF_DISTRIBUTION === "keyboard" &&
-        !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)
+        !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(_sorted_notes.length)
       ) {
         return clef == (midi < mid_threshold ? "bass" : "treble");
       } else if (
         STAFF_DISTRIBUTION === "keyboardPlusRHBias" &&
-        !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)
+        !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(_sorted_notes.length)
       ) {
         return clef == (midi < low_threshold ? "bass" : "treble");
       } else if (
         STAFF_DISTRIBUTION === "keyboardPlusLHBias" &&
-        !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(this.getSortedNotes().length)
+        !VOICE_COUNT_FOR_KEYBOARD_STYLE.includes(_sorted_notes.length)
       ) {
         return clef == (midi <= high_threshold ? "bass" : "treble");
       } else if (STAFF_DISTRIBUTION === "LH") {
@@ -683,33 +691,33 @@ define([
         return clef == "treble";
       } else if (
         STAFF_DISTRIBUTION === "chorale" &&
-        this.getSortedNotes().length === 4
+        _sorted_notes.length === 4
       ) {
         return (
           clef ==
-          (this.getSortedNotes().slice(0, 2).includes(midi) ? "bass" : "treble")
+          (_sorted_notes.slice(0, 2).includes(midi) ? "bass" : "treble")
         );
       } else if (
         // UNISONS
         STAFF_DISTRIBUTION === "chorale" &&
-        this.getSortedNotes().length === 3 &&
+        _sorted_notes.length === 3 &&
         [0, 1, 2].includes(this._unison_idx)
       ) {
         if (this._unison_idx === 0) {
           return (
             clef ==
-            (this.getSortedNotes().slice(0, 1).includes(midi) ? "bass" : "treble")
+            (_sorted_notes.slice(0, 1).includes(midi) ? "bass" : "treble")
             // TO DO: in this case, we also have to make sure that the tenor notehead is displaced by VexFlow
           );
         } else if (this._unison_idx === 2) {
           return (
             clef ==
-            (this.getSortedNotes().slice(0, 2).includes(midi) ? "bass" : "treble")
+            (_sorted_notes.slice(0, 2).includes(midi) ? "bass" : "treble")
             // TO DO: in this case, we also have to make sure that the soprano notehead is displaced by VexFlow
           );
         } else { // this._unison_ix === 1
           return (
-            [["bass"], ["bass", "treble"], ["treble"]][this.getSortedNotes().indexOf(midi)].includes(clef)
+            [["bass"], ["bass", "treble"], ["treble"]][_sorted_notes.indexOf(midi)].includes(clef)
           );
         }
       } else {
