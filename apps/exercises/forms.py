@@ -212,6 +212,12 @@ def parse_visibility(visibility_pattern, instance):
                     if len(flsb[i]["hidden"]) > 1
                     else []
                 )
+            elif viz_label == "u":
+                if len(flsb[i]["hidden"]) > 1:
+                    flsb[i]["visible"] = flsb[i]["visible"] + flsb[i]["hidden"][1:]
+                    flsb[i]["hidden"] = flsb[i]["hidden"][0:1]
+                else:
+                    pass
             flsb[i]["visible"].sort()
 
     newdata["chord"] = flsb
@@ -246,6 +252,9 @@ def represent_visibility(instance): # Not good. What happens for two-to-one mapp
             and chord["visible"][-1] >= chord["hidden"][-1] \
             and chord["visible"][0] <= chord["hidden"][0]:
                 visibility_pattern += "o"
+            elif len(chord["hidden"]) == 1 \
+            and chord["hidden"][0] <= chord["visible"][0]:
+                visibility_pattern += "u"
             else: visibility_pattern += "?"
         else: visibility_pattern += "?"
         # visibility_pattern += " "
