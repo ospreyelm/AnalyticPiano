@@ -21,7 +21,7 @@ define({
   // i
 
   "0/37": { root: "0", label: "i" },
-  "0/3": { root: "0", label: "i{e}" },
+  "0/3": { root: "0", label: "i{i3}" },
   "3/07": { root: "0", label: "i{z}" },
   "7/03": { root: "7", label: "i{z4}" },
 
@@ -35,7 +35,7 @@ define({
   // i#
 
   "0/47": { root: "0", label: "I" },
-  "0/4": { root: "0", label: "I{e}" },
+  "0/4": { root: "0", label: "I{u3}" },
 
   // V/iv
 
@@ -161,7 +161,7 @@ define({
   // V
 
   "7/2z": { root: "7", label: "V" },
-  "7/z": { root: "7", label: "V{e}" },
+  "7/z": { root: "7", label: "V{u3}" },
   "z/27": { root: "7", label: "V{z}" },
   "2/7z": { root: "7", label: "V{z4}" },
 

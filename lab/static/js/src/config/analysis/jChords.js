@@ -21,7 +21,7 @@ define({
   // I
 
   "0/47": { root: "0", label: "I", priority: "1" },
-  "0/4": { root: "0", label: "I{e}", priority: "6" },
+  "0/4": { root: "0", label: "I{i3}", priority: "6" },
   "4/07": { root: "0", label: "I{z}", priority: "4" },
   "7/04": { root: "7", label: "I{z4}", priority: "70" },
 
@@ -126,7 +126,7 @@ define({
   // V
 
   "7/2z": { root: "7", label: "V", priority: "1" },
-  "7/z": { root: "7", label: "V{e}", priority: "11" },
+  "7/z": { root: "7", label: "V{u3}", priority: "11" },
   "z/27": { root: "7", label: "V{z}", priority: "4" },
   "2/7z": { root: "7", label: "V{z4}", priority: "70" },
 
@@ -215,7 +215,7 @@ define({
   // i
 
   "0/37": { root: "0", label: "i", priority: "85" },
-  "0/3": { root: "0", label: "i{e}", priority: "85" },
+  "0/3": { root: "0", label: "i{u3}", priority: "85" },
   "3/07": { root: "0", label: "i{z}", priority: "85" },
   "7/03": { root: "7", label: "i{z4}", priority: "85" },
 
