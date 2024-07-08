@@ -379,7 +379,9 @@ class ManyField(ModelMultipleChoiceField):
         return self.format_title(obj)
 
     def clean(self, value):
-        return self.prepare_value(value[0])
+        parsed_value = self.prepare_value(value[0])
+        # TODO: validation here, on order and other things
+        return parsed_value
 
 
 class DashboardPlaylistForm(PlaylistForm):
