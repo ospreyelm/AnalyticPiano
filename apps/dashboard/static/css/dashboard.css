@@ -356,7 +356,6 @@ ul li input {
 }
 
 .protected-edit-view input[id="id_name"],
-.protected-edit-view input[id="id_description"],
 .protected-edit-view label[for="id_is_public"],
 .protected-edit-view .limited-save-alert,
 .limited-save-alert,
