@@ -246,6 +246,7 @@ reserved_dict_keys = {
     "performer_first_name",
     "groups",
     "time_elapsed",
+    "reset",
 }
 
 

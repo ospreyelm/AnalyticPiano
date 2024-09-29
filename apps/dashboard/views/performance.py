@@ -117,7 +117,7 @@ def playing_time(exercises_data):
     total_seconds = 0
     for completion in exercises_data:
         total_seconds += completion["performance_duration_in_seconds"]
-        # data gives seconds down to 1/10 second
+        # data gives seconds down to milliseconds
     total_seconds = int(total_seconds * 10) / 10
     hours = int(total_seconds // 3600)
     minutes = int((total_seconds // 60) % 60)

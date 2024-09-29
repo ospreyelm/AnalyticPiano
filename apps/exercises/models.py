@@ -843,13 +843,13 @@ class Course(ClonableModelMixin, BaseContentModel):
 
     def add_performance_to_dict(self, performance_data, commit=True):
         # Assigns numerical value to each pass mark to prevent "better" pass marks from being overwritten
-        pass_mark_compare_dict = {"X": 0, "C": 0.5, "L": 1, "T": 2, "P": 3}
+        pass_marks_worst_to_best = ["X", "C", "L", "T", "P"]
 
         pco = PlaylistCourseOrdered.objects.get(
             course_id=self._id, playlist_id=performance_data.playlist_id
         )
         # TODO: it might be bad to rely upon str, which is liable to change, but then again we could just refresh when that happens
-        performer = str(User.objects.get(id=performance_data.user_id))
+        performer = str(User.objects.get(id=performance_data.user_id)) # looks like e.g. "Joe Student - student@college.edu"
         pass_mark = "X"
         if performance_data.playlist_passed():
             pass_mark = "C"
@@ -873,26 +873,40 @@ class Course(ClonableModelMixin, BaseContentModel):
                     hours = late_diff.days * 24 + late_diff.seconds // 3600
                     if hours == 0:
                         pass_mark = "P"
-                        # grace period of up to 59 minutes due to // operation above
-
+                        # grace period of up to one hour due to // operation above
                     elif hours < self.tardy_threshold:
                         pass_mark = "T"
                         # tardy category
         if not (performer in self.performance_dict):
-            self.performance_dict[performer] = {"time_elapsed": 0}
-        # Only overwriting previous performance if new performance is better
+            self.performance_dict[performer] = {}
+        # Only overwrite previous performance if new performance is better
         if (
-            pass_mark_compare_dict[
+            pass_marks_worst_to_best.index(
                 self.performance_dict.get(performer, {}).get(pco.playlist.id, "X")
-            ]
-            <= pass_mark_compare_dict[pass_mark]
-        ):
-            self.performance_dict[performer][pco.playlist.id] = pass_mark
-        # ^ REFACTORED TO USE NOT pco.order (as before) NOR pco.playlist_id BUT pco.playlist.id
-        for exercise_data in performance_data.data:
-            self.performance_dict[performer]["time_elapsed"] += int(
-                exercise_data["performance_duration_in_seconds"]
             )
+            <= pass_marks_worst_to_best.index(pass_mark)
+        ):
+            # important that the dictionary key is pco.playlist.id, not pco.order nor pco.playlist_id
+            self.performance_dict[performer][pco.playlist.id] = pass_mark
+        # self.performance_dict[performer].pop("reset") # UNCOMMENT TO MAINTAIN PREVIOUS INEFFICIENT LOGIC
+        try:
+            if not "reset" in self.performance_dict[performer]:
+                self.performance_dict[performer]["reset"] = True # bug fix for pre-2024-10 data
+                self.performance_dict[performer]["time_elapsed"] = 0
+                for exercise_data in performance_data.data:
+                    self.performance_dict[performer]["time_elapsed"] += \
+                        exercise_data["performance_duration_in_seconds"]
+                    print(exercise_data["performance_duration_in_seconds"])
+            else:
+                # self.performance_dict[performer] is the record used for the course activity table
+                # it keeps track of whether each playlist has been passed and how long has been spent on each course
+                # performance_data.data is the complete array of performances for the individual user
+                exercise_data = performance_data.data[-1:][0]
+                self.performance_dict[performer]["time_elapsed"] += \
+                    exercise_data["performance_duration_in_seconds"]
+                print(exercise_data["performance_duration_in_seconds"])
+        except:
+            pass
         if commit:
             self.save()
 
@@ -982,14 +996,12 @@ class PerformanceData(models.Model):
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
-        print("submit")
-        print(course_id)
         try:
             if course_id:
                 course = Course.objects.get(_id=course_id)
-                print(course)
+                print("\n")
+                print(course, "len(pd.data):", len(pd.data))
                 course.add_performance_to_dict(pd)
-
         except:
             pass
             # ERROR MESSAGE SHOULD READ: 'Failed to save course performance dictionary but proceeding to return performance data.''
