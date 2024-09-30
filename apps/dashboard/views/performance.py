@@ -118,16 +118,16 @@ def playing_time(exercises_data):
     for completion in exercises_data:
         total_seconds += completion["performance_duration_in_seconds"]
         # data gives seconds down to milliseconds
-    total_seconds = int(total_seconds * 10) / 10
+    # total_seconds = int(total_seconds * 10) / 10 # gives seconds down to one decimal place
     hours = int(total_seconds // 3600)
     minutes = int((total_seconds // 60) % 60)
     seconds = int((total_seconds // 1) % 60)
     if hours >= 2:
-        return str(hours) + "+ hrs"
+        return str(hours) + " hrs"
     elif hours == 1:
         return str(hours) + " hr, " + str(minutes) + " mins"
     elif minutes >= 1:
-        return str(minutes) + "+ mins"
+        return str(minutes) + " mins"
     else:
         return str(seconds) + "s"
 

@@ -512,7 +512,7 @@ define([
             )
               ? -1
               : this.errorTally,
-          performance_duration_in_seconds: this.timer.duration / 1000,
+          performance_duration_in_seconds: this.timer.duration / 1000, // includes time before the user starts playing
           time_intervals_in_milliseconds: this.timer.timeIntervals,
           tempo_mean_semibreves_per_min: this.timer.tempoMean,
           tempo_SD_semibreves_per_min: this.timer.tempoSD,

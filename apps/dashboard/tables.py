@@ -596,18 +596,27 @@ class CourseActivityTable(tables.Table):
         super().__init__(**kwargs)
 
     def render_time_elapsed(self, value):
-        hours = value // 3600
-        minutes = (value // 60) % 60
-        seconds = (value // 1) % 60
+        total_seconds = value
+        hours = int(total_seconds // 3600)
+        minutes = int((total_seconds // 60) % 60)
+        seconds = int((total_seconds // 1) % 60)
 
         rendered_time = ""
-        if hours == 1:
-            rendered_time += str(hours) + " hr "
-        if hours > 1:
-            rendered_time += str(hours) + " hrs "
-        rendered_time += str(minutes) + " min"
+        if hours >= 1:
+            rendered_time += str(hours) + " hr"
+            if hours != 1:
+                rendered_time += "s"
+            rendered_time += " "
+        if hours == 0 and minutes == 0:
+            pass
+        else:
+            rendered_time += str(minutes) + " min"
+            if minutes != 1:
+                rendered_time += "s"
         if hours == 0:
             rendered_time += " " + str(seconds) + " sec"
+            if seconds != 1:
+                rendered_time += "s"
         return rendered_time
 
     def render_result_count(self, record):
