@@ -22,6 +22,21 @@ function exportDate(date){
 function incrementDateString(date,numDays){
     return exportDate(addDays(parseDate(date),numDays))
 }
+
+// Helper function to update ManyWidget's internal data structure
+function updateManyWidgetData(dateInput, newValue) {
+    const [fieldName, index] = dateInput.id.split("-");
+    const valueElement = $(`input[name='playlists']`);
+    
+    if (valueElement.length > 0) {
+        const currentFieldValue = JSON.parse(valueElement.attr("value") || "[]");
+        if (currentFieldValue[parseInt(index)]) {
+            currentFieldValue[parseInt(index)][2][fieldName] = newValue;
+            valueElement.attr("value", JSON.stringify(currentFieldValue));
+        }
+    }
+}
+
 $('.date-increment-button').on("click",()=>{
     let addedDays = prompt("How many days would you like to increment?")
     if (!addedDays || addedDays.trim() == "") return;
@@ -38,13 +53,18 @@ $('.date-increment-button').on("click",()=>{
     if (confirmed) {
         for (const dateInput of publishInputs.concat(dueInputs)){
             try {
-                const newVal = incrementDateString($(dateInput).val(),addedDays)
-                if (newVal) $(dateInput).val(newVal)
+                const newVal = incrementDateString($(dateInput).val(), addedDays);
+                if (newVal) {
+                    // Update the input value
+                    $(dateInput).val(newVal);
+                    
+                    // Update the underlying ManyWidget data structure
+                    updateManyWidgetData(dateInput, newVal);
+                }
             }
             catch (err){
                 alert(`Date increment error for date ${$(dateInput).val()}`)
             }
-            
         }
     }
 })
