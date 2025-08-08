@@ -33,19 +33,19 @@ $ heroku run python manage.py createsuperuser --app HEROKU_APP_NAME
 
 # Running Locally on Linux or WSL2
 
-• Get [Python 3.10.13](http://python.org/downloads/) and [Pip](http://www.pip-installer.org/). Typical setup commands:
+• Get [Python 3.10.18](https://python.org/downloads/) and [Pip](https://www.pip-installer.org/). Typical setup commands:
 ```bash
-wget https://www.python.org/ftp/python/3.10.13/Python-3.10.13.tgz
-tar -xzf Python-3.10.13.tgz 
-cd Python-3.10.13
+wget https://www.python.org/ftp/python/3.10.18/Python-3.10.18.tgz
+tar -xzf Python-3.10.18.tgz
+cd Python-3.10.18
 ./configure --enable-optimizations # ~1 minute
 make -j 2 # ~5 minutes
 sudo make install # ~1 minutes
-# optional: run `python3.10` to check installation (should show "Python 3.10.13") then `exit()`
+# optional: run `python3.10` to check installation (should show "Python 3.10.18") then `exit()`
 cd ../
-sudo rm -rf ./Python-3.10.13
-sudo rm -rf ./Python-3.10.13.tgz 
-# optional: run `ls ./Python-3.10.13*` to check removal of installation files
+sudo rm -rf ./Python-3.10.18
+sudo rm -rf ./Python-3.10.18.tgz
+# optional: run `ls ./Python-3.10.18*` to check removal of installation files
 sudo apt-get install python3.10-venv # may not be necessary
 ```
 
