@@ -79,13 +79,36 @@ define([
         var winIdx = relIdx + 8;
         var tl = this.timeline;
         var onset = tl[idxs[0]].onset;
-        var details = idxs.map(function(i) { 
-          return "midi=" + tl[i].midi + " staff=" + tl[i].staff + " voice=" + tl[i].voiceIndex; 
+        var details = idxs.map(function(i) {
+          return "midi=" + tl[i].midi + " staff=" + tl[i].staff + " voice=" + tl[i].voiceIndex;
         });
         var measure = tl[idxs[0]].measureIndex;
         return "Window " + winIdx + " (measure=" + measure + ", onset=" + onset + "): [" + details.join("; ") + "]";
       }.bind(this)));
-      
+
+      // Enhanced logging for last measure tracking
+      if (score.measures && score.measures.length > 0) {
+        var lastMeasureIdx = score.measures.length - 1;
+        var lastMeasureEvents = this.timeline.filter(function(ev) {
+          return ev.measureIndex === lastMeasureIdx;
+        });
+        console.log("[INIT] Last measure (index=" + lastMeasureIdx + ") has " +
+                    lastMeasureEvents.length + " events");
+
+        // Find windows containing last measure
+        var lastMeasureWindows = [];
+        for (var w = 0; w < this.windowGroups.length; w++) {
+          var idxs = this.windowGroups[w];
+          for (var i = 0; i < idxs.length; i++) {
+            if (this.timeline[idxs[i]].measureIndex === lastMeasureIdx) {
+              lastMeasureWindows.push(w);
+              break;
+            }
+          }
+        }
+        console.log("[INIT] Last measure appears in windows:", lastMeasureWindows);
+      }
+
       return this;
     },
 
@@ -139,7 +162,12 @@ define([
       // Find held notes: look back for the most recent event per voice that's still sounding
       var heldNotes = this._getHeldNotesAtOnset(windowOnset);
       var allExpected = windowMidis.concat(heldNotes.map(function(ev) { return ev.midi; }));
-      console.log("[2. GRADE] Current window onset=" + windowOnset + ", new attacks:", windowMidis, ", held notes:", heldNotes.map(function(e) { return e.midi; }), ", all expected:", allExpected);
+      console.log("[2. GRADE] Current window onset=" + windowOnset +
+                  ", new attacks:", windowMidis,
+                  ", held notes:", heldNotes.map(function(e) {
+                    return "midi=" + e.midi + " (onset=" + e.onset + ", dur=" + e.duration + ")";
+                  }),
+                  ", all expected:", allExpected);
 
       // Attempt to match any unplayed event in window by MIDI
       var matched = false;
@@ -197,10 +225,11 @@ define([
         // Check if this note is still sounding at the target onset
         if (ev.onset + ev.duration > onset) {
           held.push(ev);
-          voiceSeen[key] = true;
         }
+        // ALWAYS mark voice as seen after checking first occurrence before onset
+        voiceSeen[key] = true;
       }
-      
+
       return held;
     },
 
