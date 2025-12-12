@@ -52,10 +52,22 @@ define([
       this.reset();
       var score = definition.getScore ? definition.getScore() : null;
       if (!score) return this;
-      
+
       console.log("[INIT] Score has " + (score.measures ? score.measures.length : 0) + " measures");
-      
+
       this.timeline = ScoreTimeline.buildTimeline(score);
+
+      // Filter to beat-aligned onsets (multiples of 1024 ticks = quarter note boundaries)
+      // This removes syncopated sub-beat notes that would create incomplete windows
+      var beatAlignedTimeline = this.timeline.filter(function(ev) {
+        return ev.onset % 1024 === 0;
+      });
+      var filteredCount = this.timeline.length - beatAlignedTimeline.length;
+      if (filteredCount > 0) {
+        console.log("[INIT] Filtered out " + filteredCount + " syncopated notes, keeping " + beatAlignedTimeline.length + " beat-aligned notes");
+        this.timeline = beatAlignedTimeline;
+      }
+
       var g = groupByOnset(this.timeline);
       this.windowGroups = g.groups;
       this.pointer = 0;
