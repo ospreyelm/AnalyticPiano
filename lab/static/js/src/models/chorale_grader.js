@@ -56,20 +56,24 @@ define([
       console.log("[INIT] Score has " + (score.measures ? score.measures.length : 0) + " measures");
 
       this.timeline = ScoreTimeline.buildTimeline(score);
-
-      // Filter to beat-aligned onsets (multiples of 1024 ticks = quarter note boundaries)
-      // This removes syncopated sub-beat notes that would create incomplete windows
-      var beatAlignedTimeline = this.timeline.filter(function(ev) {
-        return ev.onset % 1024 === 0;
-      });
-      var filteredCount = this.timeline.length - beatAlignedTimeline.length;
-      if (filteredCount > 0) {
-        console.log("[INIT] Filtered out " + filteredCount + " syncopated notes, keeping " + beatAlignedTimeline.length + " beat-aligned notes");
-        this.timeline = beatAlignedTimeline;
-      }
-
       var g = groupByOnset(this.timeline);
       this.windowGroups = g.groups;
+
+      // Merge small windows (1-2 notes) with the next window to avoid incomplete windows
+      // that can't be satisfied with standard MIDI input
+      var mergedGroups = [];
+      for (var w = 0; w < this.windowGroups.length; w++) {
+        var currentGroup = this.windowGroups[w];
+        // If this window has only 1-2 notes and isn't the last window, merge it forward
+        if (currentGroup.length <= 2 && w + 1 < this.windowGroups.length) {
+          console.log("[INIT] Merging small window " + w + " (" + currentGroup.length + " notes) into window " + (w + 1));
+          // Add current window's indices to next window
+          this.windowGroups[w + 1] = currentGroup.concat(this.windowGroups[w + 1]);
+        } else {
+          mergedGroups.push(currentGroup);
+        }
+      }
+      this.windowGroups = mergedGroups;
       this.pointer = 0;
       this.finished = this.windowGroups.length === 0;
       
