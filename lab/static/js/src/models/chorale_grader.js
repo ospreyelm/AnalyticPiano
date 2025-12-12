@@ -58,22 +58,6 @@ define([
       this.timeline = ScoreTimeline.buildTimeline(score);
       var g = groupByOnset(this.timeline);
       this.windowGroups = g.groups;
-
-      // Merge small windows (1-2 notes) with the next window to avoid incomplete windows
-      // that can't be satisfied with standard MIDI input
-      var mergedGroups = [];
-      for (var w = 0; w < this.windowGroups.length; w++) {
-        var currentGroup = this.windowGroups[w];
-        // If this window has only 1-2 notes and isn't the last window, merge it forward
-        if (currentGroup.length <= 2 && w + 1 < this.windowGroups.length) {
-          console.log("[INIT] Merging small window " + w + " (" + currentGroup.length + " notes) into window " + (w + 1));
-          // Add current window's indices to next window
-          this.windowGroups[w + 1] = currentGroup.concat(this.windowGroups[w + 1]);
-        } else {
-          mergedGroups.push(currentGroup);
-        }
-      }
-      this.windowGroups = mergedGroups;
       this.pointer = 0;
       this.finished = this.windowGroups.length === 0;
       
@@ -196,7 +180,7 @@ define([
           break;
         }
       }
-      
+
       // Also check held notes
       if (!matched) {
         for (var j = 0; j < heldNotes.length; j++) {
@@ -206,6 +190,23 @@ define([
             console.log("[2. GRADE] ✓ Matched held note " + midi + " (id=" + heldNotes[j].id + ")");
             break;
           }
+        }
+      }
+
+      // If still no match, check nearby windows for passing tones (within next 2 windows)
+      if (!matched) {
+        for (var w = this.pointer + 1; w <= Math.min(this.pointer + 2, this.windowGroups.length - 1); w++) {
+          var nearbyIdxs = this.windowGroups[w];
+          for (var k = 0; k < nearbyIdxs.length; k++) {
+            var ev = tl[nearbyIdxs[k]];
+            if (!this.playedNoteIds.has(ev.id) && ev.midi === midi) {
+              this.playedNoteIds.add(ev.id);
+              matched = true;
+              console.log("[2. GRADE] ✓ Matched passing tone " + midi + " in nearby window " + w + " (id=" + ev.id + ")");
+              break;
+            }
+          }
+          if (matched) break;
         }
       }
 
