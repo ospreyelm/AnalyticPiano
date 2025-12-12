@@ -57,7 +57,36 @@ define([
 
       this.timeline = ScoreTimeline.buildTimeline(score);
       var g = groupByOnset(this.timeline);
-      this.windowGroups = g.groups;
+      var rawGroups = g.groups;
+
+      // Merge windows that are close together (within 1024 ticks = 1 beat)
+      // This groups passing tones with their beat-aligned chords
+      this.windowGroups = [];
+      var mergedGroup = [];
+      var lastOnset = null;
+
+      for (var w = 0; w < rawGroups.length; w++) {
+        var groupIndices = rawGroups[w];
+        var onset = this.timeline[groupIndices[0]].onset;
+
+        // If this is the first group or onset is close to last (within 1 beat), merge
+        if (lastOnset === null || (onset - lastOnset <= 1024)) {
+          mergedGroup = mergedGroup.concat(groupIndices);
+          lastOnset = onset;
+        } else {
+          // Save the merged group and start a new one
+          this.windowGroups.push(mergedGroup);
+          mergedGroup = groupIndices.slice();
+          lastOnset = onset;
+        }
+      }
+      // Don't forget the last group
+      if (mergedGroup.length > 0) {
+        this.windowGroups.push(mergedGroup);
+      }
+
+      console.log("[INIT] Merged " + rawGroups.length + " onset groups into " + this.windowGroups.length + " windows");
+
       this.pointer = 0;
       this.finished = this.windowGroups.length === 0;
       
@@ -193,22 +222,6 @@ define([
         }
       }
 
-      // If still no match, check nearby windows for passing tones (within next 2 windows)
-      if (!matched) {
-        for (var w = this.pointer + 1; w <= Math.min(this.pointer + 2, this.windowGroups.length - 1); w++) {
-          var nearbyIdxs = this.windowGroups[w];
-          for (var k = 0; k < nearbyIdxs.length; k++) {
-            var ev = tl[nearbyIdxs[k]];
-            if (!this.playedNoteIds.has(ev.id) && ev.midi === midi) {
-              this.playedNoteIds.add(ev.id);
-              matched = true;
-              console.log("[2. GRADE] ✓ Matched passing tone " + midi + " in nearby window " + w + " (id=" + ev.id + ")");
-              break;
-            }
-          }
-          if (matched) break;
-        }
-      }
 
       if (!matched) {
         // Wrong note for this window
