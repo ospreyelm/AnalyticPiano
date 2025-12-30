@@ -1,38 +1,69 @@
 # HarmonyLab Chorale Exercise System - Implementation Guide
 
-**Status: FIXED** ✓ All issues resolved. See resolution summary below.
+**Status: ENHANCED** ✓ Core issues fixed + features 1 & 3 implemented. See updates below.
 
 ## Overview
 
 The Chorale exercise type is a specialized grading system for teaching Bach chorales using MIDI input. Unlike traditional chord-based exercises, chorales use an **onset-based window system** that requires students to play notes in order as they appear in the score.
 
-## Resolution Summary
+## Summary of Improvements
+
+### Core Fixes (Commits 1ba3d59, 96e52c7, 0cdff11, 5fcb4d2)
 
 **Three critical bugs were fixed in chorale_grader.js:**
 
-### 1. Held Notes Algorithm Bug (Lines 201-202)
-**Problem:** Voice tracking only marked voices as "seen" when notes were held, not after checking. This caused the algorithm to search backwards through voice history multiple times, incorrectly missing held notes.
+#### 1. Held Notes Algorithm Bug
+**Problem:** Voice tracking only marked voices as "seen" when notes were held.
+**Fix:** Mark voices as seen after checking (line 202).
+**Impact:** Bass notes correctly detected as held.
 
-**Fix:** Move `voiceSeen[key] = true` outside the held-note conditional to always mark a voice as seen after checking its most recent event.
+#### 2. Passing Tones in Separate Windows
+**Problem:** Inner voice notes at non-beat-aligned onsets created orphaned windows.
+**Fix:** Merge onset groups within 1024 ticks into single windows (lines 62-88).
+**Impact:** All notes can be played together.
 
-**Impact:** Bass notes with sustained durations now correctly detected as "held" and turn black when played.
+#### 3. Enhanced Diagnostics
+Added detailed console logging for debugging (lines 89-110).
 
-### 2. Passing Tones in Separate Windows (Lines 62-88)
-**Problem:** Inner voice passing tones appear at non-beat-aligned onsets (e.g., 2560 ticks instead of 2048). These created separate windows containing only 1-2 notes that couldn't be satisfied by beat-aligned MIDI input from students.
+### New Features (Commit d52a75e)
 
-**Example:** Measure 4 has soprano at beat 2 (onset 2048), but alto has a passing tone at offset 2560 (mid-beat). These were in separate windows, blocking window completion.
+#### Feature 1: Enhanced Instructional Text ✅
+**File:** `apps/exercises/management/commands/import_chorale.py` (lines 89-90)
 
-**Fix:** During initialization, merge all onset groups that are within 1024 ticks (1 beat) of each other into single windows. This groups passing tones with their beat-aligned chords.
+Students now see clear, actionable instructions:
+- "Play all four voices of BWV1.6, measures 1–4"
+- "Use the keyboard or MIDI controller to play each note as it appears"
+- "Notes turn black when played correctly"
 
-**Impact:** All notes (passing tones and main voices) are now in the same window and can be played together. Passing tones turn black when played.
+Plus specific completion feedback mentioning the chorale and measure range.
 
-### 3. Enhanced Diagnostics (Lines 89-110)
-Added detailed logging:
-- Report how many onset groups were merged into windows
-- Track which windows contain the last measure
-- Show onset + duration for held notes in grading logs
+**Benefit:** Better onboarding and clearer pedagogical guidance.
 
-**Impact:** Enables debugging of timing issues and window progression problems.
+#### Feature 3: Detailed Grading Feedback ✅
+**File:** `lab/static/js/src/models/chorale_grader.js` (75 new lines)
+
+The grader now tracks per-window statistics:
+- Window status (`not_started`, `complete`)
+- Correct notes played in each window
+- Incorrect notes attempted in each window
+- Completion timestamp
+
+Returns detailed `problems` array with per-window data:
+```javascript
+problems: [
+  {
+    windowIndex: 0,
+    status: "complete",
+    score: 0,  // 0=no errors, 1=incomplete, 2=has errors
+    count: { correct: [60, 52, 43, 33], incorrect: [] },
+    note: { 60: "correct", 52: "correct", ... },
+    notes: [60, 52, 43, 33]
+  },
+  // ... one object per window
+]
+```
+
+**Benefit:** Enables analytics, error tracking, and future visual feedback.
 
 ## Architecture
 
@@ -152,7 +183,17 @@ Returns:
 {
   result: "correct|partial|incorrect",
   score: 0|1|2,           // 0=correct, 1=partial, 2=incorrect
-  problems: [],
+  problems: [             // Detailed per-window feedback
+    {
+      windowIndex: 0,
+      status: "complete",
+      score: 0,
+      count: { correct: [...], incorrect: [...] },
+      note: { 60: "correct", 61: "incorrect", ... },
+      notes: [60, 52, 43, 33]
+    },
+    // ... one per window
+  ],
   activeIndex: windowIndex
 }
 ```
@@ -161,6 +202,11 @@ Returns:
 - If `_lastIncorrect` was set (wrong note just played): return **INCORRECT** (score=2)
 - If `finished` is true (all windows complete): return **CORRECT** (score=0)
 - Otherwise: return **PARTIAL** (score=1)
+
+**Problems array (NEW):**
+- Built from `windowStats` tracking per-window data
+- Enables analytics of which windows/notes students struggle with
+- Foundation for future visual feedback (red coloring for incorrect notes)
 
 Note: `_lastIncorrect` is a **one-shot flag** consumed after grading to allow partial correction.
 
@@ -443,13 +489,41 @@ Dots multiply: `base + base/2 + base/4 + ...`
 
 ---
 
-## Recent Changes (Last 5 Commits)
+## Recent Changes (Last 7 Commits)
 
-1. **ef762a4** - Visual improvements chorales
-2. **f0fae8c** - Figured bass applied
-3. **71289c2** - RNs fixed
-4. **0497cf2** - Improvements to chorale analysis
-5. **b7a3a24** - Improvements to analysis and dashboard
+1. **1bcd281** - Add comprehensive roadmap for future chorale improvements
+2. **d52a75e** - Add instructional text and detailed grading feedback to chorales
+3. **ff58760** - Enable performance data saving for chorale exercises
+4. **cd72f3a** - Update claude.md with final resolution summary
+5. **5fcb4d2** - Merge nearby onsets into single windows during initialization
+6. **ab9d54c** - Allow matching passing tones in nearby windows
+7. **96e52c7** - Replace beat filter with window merging for inner voice notes
+
+---
+
+## Future Enhancements
+
+Five additional features are documented in [docs/chorale_future_improvements.md](docs/chorale_future_improvements.md) with detailed implementation plans:
+
+### Phase 1 (High Priority)
+- **Feature 2:** Visual feedback for incorrect notes (red coloring in VexFlow)
+- **Feature 4:** Mode variations (play-outer, play-soprano, play-inner, play-bass-figures)
+
+### Phase 2 (Medium Priority)
+- **Feature 5:** Grading configuration functionality (octaveFlexible, releaseTolerancePct)
+- **Feature 6:** Mode-specific visual enhancements
+
+### Phase 3 (Lower Priority)
+- **Feature 7:** Hint system for stuck students
+- **Feature 8:** Performance metrics dashboard
+
+Each feature includes:
+- Detailed objective and current state
+- Step-by-step implementation guide with code examples
+- Testing strategy
+- Technical debt notes
+
+See [chorale_future_improvements.md](docs/chorale_future_improvements.md) for the complete roadmap.
 
 ---
 
@@ -469,5 +543,6 @@ Dots multiply: `base + base/2 + base/4 + ...`
 - Bach Chorale Data: `data/corpus/bach/` (JSON files like `bwv1.6.json`)
 - Django Model: `apps/exercises/models.py` (Exercise model with JSON data field)
 - Planning Doc: [docs/chorale_exercises_plan.md](docs/chorale_exercises_plan.md)
+- Future Improvements: [docs/chorale_future_improvements.md](docs/chorale_future_improvements.md) (roadmap with 5 pending features)
 - Import Script: [apps/exercises/management/commands/import_chorale.py](apps/exercises/management/commands/import_chorale.py)
 
