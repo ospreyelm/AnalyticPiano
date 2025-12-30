@@ -516,6 +516,7 @@ define([
           client_completion_date: new Date(this.timer.end).toJSON(),
           error_tally:
             /* -1 means that errors are not reported (can't recall why not) */
+            /* Analytical and figured_bass don't track errors; chorale does */
             ["analytical", "figured_bass"].includes(
               this.definition.exercise.type
             )
