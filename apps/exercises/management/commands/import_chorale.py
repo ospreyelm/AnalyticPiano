@@ -86,8 +86,8 @@ class Command(BaseCommand):
                 "startMeasure": start_measure,
                 "endMeasure": end_measure
             },
-            "introText": f"Play all voices of {bwv}, measures {start_measure+1}–{end_measure}.",
-            "reviewText": "Good work!",
+            "introText": f"Play all four voices of {bwv}, measures {start_measure+1}–{end_measure}. Use the keyboard or MIDI controller to play each note as it appears. Notes turn black when played correctly.",
+            "reviewText": f"Well done! You completed {bwv}, measures {start_measure+1}–{end_measure}.",
             # Legacy fields for compatibility
             "key": meta.get("key", "C"),
             "keySignature": meta.get("key", "C"),

@@ -46,6 +46,10 @@ define([
       this.mistakeMade = false; // sticky overall flag
       this._lastIncorrect = false; // one-shot flag for grading INCORRECT
       this.finished = false;
+
+      // Track per-window details
+      this.windowStats = [];      // Array of {status, correct, incorrect, completedAt}
+      this.incorrectNotes = {};   // Map: windowIndex -> [midi numbers that were wrong]
     },
 
     initFromDefinition: function (definition) {
@@ -89,7 +93,18 @@ define([
 
       this.pointer = 0;
       this.finished = this.windowGroups.length === 0;
-      
+
+      // Initialize window stats tracking
+      this.windowStats = [];
+      for (var w = 0; w < this.windowGroups.length; w++) {
+        this.windowStats.push({
+          status: 'not_started',
+          correct: [],
+          incorrect: [],
+          completedAt: null
+        });
+      }
+
       // Log timeline summary with measure coverage
       var measureCounts = {};
       for (var i = 0; i < this.timeline.length; i++) {
@@ -227,6 +242,15 @@ define([
         // Wrong note for this window
         this.mistakeMade = true;
         this._lastIncorrect = true; // one-shot INCORRECT
+
+        // Track which note was incorrect and in which window
+        if (!this.incorrectNotes[this.pointer]) {
+          this.incorrectNotes[this.pointer] = [];
+        }
+        if (this.incorrectNotes[this.pointer].indexOf(midi) === -1) {
+          this.incorrectNotes[this.pointer].push(midi);
+        }
+
         console.log("[2. GRADE] ✗ Wrong note " + midi + " for current window");
       }
 
@@ -303,6 +327,28 @@ define([
         
         if (!windowDone) break;
 
+        // Mark window as complete and track notes
+        var windowIdx = this.pointer;
+        this.windowStats[windowIdx].status = 'complete';
+        this.windowStats[windowIdx].completedAt = Date.now();
+
+        // Record correct notes (all notes in this window that were played)
+        var correctMidis = [];
+        for (var n = 0; n < idxs.length; n++) {
+          if (this.playedNoteIds.has(tl[idxs[n]].id)) {
+            correctMidis.push(tl[idxs[n]].midi);
+          }
+        }
+        for (var h = 0; h < heldNotes.length; h++) {
+          if (this.playedNoteIds.has(heldNotes[h].id)) {
+            correctMidis.push(heldNotes[h].midi);
+          }
+        }
+        this.windowStats[windowIdx].correct = correctMidis;
+
+        // Record incorrect notes for this window
+        this.windowStats[windowIdx].incorrect = this.incorrectNotes[windowIdx] || [];
+
         // Move to next window
         var oldPointer = this.pointer;
         this.pointer += 1;
@@ -328,6 +374,32 @@ define([
         problems: [],
         activeIndex: Math.min(this.pointer, Math.max(0, this.windowGroups.length - 1)),
       };
+
+      // Build problems array from windowStats
+      for (var w = 0; w < this.windowGroups.length; w++) {
+        var stats = this.windowStats[w];
+        var problem = {
+          windowIndex: w,
+          status: stats.status,
+          score: stats.incorrect.length > 0 ? 2 : (stats.status === 'complete' ? 0 : 1),
+          count: {
+            correct: stats.correct,
+            incorrect: stats.incorrect
+          },
+          note: {},     // Map each MIDI to correctness
+          notes: stats.correct.concat(stats.incorrect)
+        };
+
+        // Build note map
+        for (var c = 0; c < stats.correct.length; c++) {
+          problem.note[stats.correct[c]] = 'correct';
+        }
+        for (var i = 0; i < stats.incorrect.length; i++) {
+          problem.note[stats.incorrect[i]] = 'incorrect';
+        }
+
+        graded.problems.push(problem);
+      }
 
       if (this._lastIncorrect) {
         graded.result = INCORRECT;
