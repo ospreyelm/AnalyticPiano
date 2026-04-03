@@ -28,5 +28,6 @@ define({
     PREVIOUSEXERCISE: "previousexercise",
     NEXTEXERCISE: "nextexercise",
     FIRSTEXERCISE: "firstexercise",
+    INPUT_MODE: "inputmode",
   },
 });

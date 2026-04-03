@@ -11,6 +11,7 @@ define([
   "app/components/midi",
   // 'app/components/notifications',
   "app/components/input/shortcuts",
+  "app/components/input/note_name",
   "app/components/ui/main_menu",
   "app/components/ui/music_controls",
   "app/models/key_signature",
@@ -33,6 +34,7 @@ define([
   MidiComponent,
   // NotificationsComponent,
   KeyboardShortcutsComponent,
+  NoteNameInputComponent,
   MainMenuComponent,
   MusicControlsComponent,
   KeySignature,
@@ -150,6 +152,12 @@ define([
           keySignature: this.models.keySignature,
         });
         c.init(this);
+        this.addComponent(c);
+      },
+      function () {
+        var c = new NoteNameInputComponent();
+        c.init(this);
+        c.renderTo("#piano");
         this.addComponent(c);
       },
       function () {

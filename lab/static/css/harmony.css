@@ -809,6 +809,147 @@ ul.menu-group-list li {
 }
 
 /*--------------------------------------------------*/
+/* Input mode selector (QWERTY / Note Name toggle)  */
+
+.keyboard-input-mode {
+  width: 888px;
+  margin: 0 auto;
+  padding: 4px 6px 2px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.input-mode-toggle {
+  display: inline-flex;
+  gap: 0;
+  background: #3a3a3a;
+  border-radius: 4px;
+  padding: 2px;
+  margin-bottom: 4px;
+}
+
+.input-mode-btn {
+  background: transparent;
+  color: #888;
+  border: none;
+  padding: 3px 12px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.12s, color 0.12s;
+  line-height: 1.5;
+}
+.input-mode-btn:hover {
+  color: #ccc;
+}
+.input-mode-btn-active {
+  background: #5c5c5c;
+  color: #fff;
+}
+.input-mode-btn-inactive {
+  background: transparent;
+  color: #777;
+}
+
+/* QWERTY key guide */
+.qwerty-help-toggle {
+  background: transparent;
+  border: none;
+  color: #666;
+  font-size: 0.68rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  display: block;
+  margin: 0 auto 2px;
+}
+.qwerty-help-toggle:hover {
+  color: #999;
+}
+
+.qwerty-help-content {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.qwerty-key-row {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 1px;
+  margin: 1px 0;
+}
+
+.qk {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 3px;
+  min-width: 30px;
+  font-size: 0.58rem;
+  text-align: center;
+  border: 1px solid #444;
+  border-radius: 2px;
+  line-height: 1.3;
+}
+.qk kbd {
+  font-family: monospace;
+  font-size: 0.68rem;
+  color: #ccc;
+  display: block;
+}
+.qk-note {
+  color: #888;
+  white-space: nowrap;
+}
+.qk-white {
+  background: #383838;
+}
+.qk-black {
+  background: #1e1e1e;
+}
+.qk-white kbd { color: #ddd; }
+.qk-black kbd { color: #aaa; }
+
+.qwerty-help-caption {
+  font-size: 0.6rem;
+  color: #555;
+  text-align: center;
+  margin-top: 3px;
+}
+
+/* Note-name entry status panel */
+.notename-panel {
+  padding: 4px 0 2px;
+  text-align: center;
+  color: #ccc;
+  font-size: 0.78rem;
+}
+.notename-label {
+  color: #777;
+  font-size: 0.72rem;
+  margin-right: 4px;
+}
+.notename-pending {
+  display: inline-block;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #fff;
+  min-width: 46px;
+  text-align: center;
+  background: #2e4e2e;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-right: 14px;
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+}
+.notename-instr {
+  color: #555;
+  font-size: 0.62rem;
+  vertical-align: middle;
+}
+
+/*--------------------------------------------------*/
 /* Utilities */
 
 .hide {
