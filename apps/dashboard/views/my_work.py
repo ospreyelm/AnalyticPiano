@@ -10,9 +10,16 @@ def my_work_view(request):
     enrolled_courses = (
         Course.objects.filter(visible_to__members=request.user)
         .select_related("authored_by")
-        .prefetch_related("playlists")
         .distinct()
     )
+
+    # Fetch all performance data for this user across enrolled courses in one query
+    perf_map = {
+        (pd.course_id, pd.playlist_id): pd
+        for pd in PerformanceData.objects.filter(
+            user=request.user, course__in=enrolled_courses
+        ).select_related("playlist")
+    }
 
     # Build per-course data: playlists with completion status and due dates
     courses_data = []
@@ -26,13 +33,11 @@ def my_work_view(request):
             playlist = pco.playlist
             due_date = pco.due_date
 
-            try:
-                perf = PerformanceData.objects.get(
-                    user=request.user, playlist=playlist, course=course
-                )
+            perf = perf_map.get((course.pk, playlist.pk))
+            if perf is not None:
                 passed = perf.playlist_passed()
                 pass_date = perf.playlist_pass_date if passed else None
-            except PerformanceData.DoesNotExist:
+            else:
                 passed = False
                 pass_date = None
 
