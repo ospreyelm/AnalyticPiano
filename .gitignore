@@ -24,3 +24,4 @@ venv/
 /data/exercises/
 .env
 .prettierignore
+.venv/

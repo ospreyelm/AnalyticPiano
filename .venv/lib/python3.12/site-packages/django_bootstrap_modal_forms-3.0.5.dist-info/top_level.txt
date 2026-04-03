@@ -1,4 +1,0 @@
-bootstrap_modal_forms
-examples
-setup
-tests
