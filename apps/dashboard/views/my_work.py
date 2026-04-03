@@ -1,0 +1,69 @@
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+from apps.exercises.models import Course, PerformanceData, PlaylistCourseOrdered
+
+
+@login_required
+def my_work_view(request):
+    """Show only courses the logged-in student is enrolled in via Group membership."""
+    enrolled_courses = (
+        Course.objects.filter(visible_to__members=request.user)
+        .select_related("authored_by")
+        .distinct()
+    )
+
+    # Fetch all performance data for this user across enrolled courses in one query
+    perf_map = {
+        (pd.course_id, pd.playlist_id): pd
+        for pd in PerformanceData.objects.filter(
+            user=request.user, course__in=enrolled_courses
+        ).select_related("playlist")
+    }
+
+    # Build per-course data: playlists with completion status and due dates
+    courses_data = []
+    for course in enrolled_courses:
+        playlists_data = []
+        pcos = PlaylistCourseOrdered.objects.filter(
+            course=course
+        ).select_related("playlist").order_by("order")
+
+        for pco in pcos:
+            playlist = pco.playlist
+            due_date = pco.due_date
+
+            perf = perf_map.get((course.pk, playlist.pk))
+            if perf is not None:
+                passed = perf.playlist_passed()
+                pass_date = perf.playlist_pass_date if passed else None
+            else:
+                passed = False
+                pass_date = None
+
+            playlists_data.append(
+                {
+                    "playlist": playlist,
+                    "due_date": due_date,
+                    "passed": passed,
+                    "pass_date": pass_date,
+                    "course_id": course.id,
+                }
+            )
+
+        total = len(playlists_data)
+        completed = sum(1 for p in playlists_data if p["passed"])
+        courses_data.append(
+            {
+                "course": course,
+                "playlists": playlists_data,
+                "total": total,
+                "completed": completed,
+            }
+        )
+
+    return render(
+        request,
+        "dashboard/my-work.html",
+        {"courses_data": courses_data},
+    )
