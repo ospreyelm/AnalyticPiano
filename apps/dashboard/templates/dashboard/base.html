@@ -38,6 +38,9 @@
             <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:preferences' %}"
                title="Customize how the app looks and behaves when you perform playlists">Settings</a>
+            <a {% if request.resolver_match.view_name == 'library' %}class="sidenav-active"{% endif %}
+               href="{% url 'library' %}"
+               title="Browse all public courses, playlists, and exercises">Content Library</a>
             <a {% if url_name == 'courses-by-others' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:courses-by-others' %}"
                title="Browse courses by users to whom you are connected">Courses By Other Users</a>
