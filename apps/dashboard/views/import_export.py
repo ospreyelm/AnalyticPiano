@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import connection
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -87,7 +87,7 @@ class BaseImportView(FormView):
                 for error in result.row_errors()
             ]
             form.add_error("file", errors)
-            return render_to_response("dashboard/import.html", {"form": form})
+            return render(self.request, "dashboard/import.html", {"form": form})
 
         resource.import_data(data, dry_run=False, raise_errors=True)
         messages.success(

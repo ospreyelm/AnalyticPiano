@@ -1,6 +1,5 @@
 from copy import copy
 import datetime
-import pytz
 import re
 import math
 

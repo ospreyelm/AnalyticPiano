@@ -6,6 +6,7 @@ import time
 
 import dj_database_url
 import psycopg2
+import psycopg2.extras
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -149,7 +150,7 @@ INSTALLED_APPS = (
 # DATABASE_URL = os.environ.get('DATABASE_URL')
 # conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
-DATABASES = {"default": dj_database_url.config(conn_max_age=600, ssl_require=True)}
+DATABASES = {"default": dj_database_url.config(conn_max_age=600)}
 
 LOGGING = {
     "version": 1,
@@ -361,6 +362,8 @@ EMAIL_HOST_PASSWORD = os.environ.get(
 EMAIL_USE_TLS = True
 
 APPEND_SLASH = True
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 ENVIRONMENT_LOCAL = "local"
 ENVIRONMENT_DEV = "dev"

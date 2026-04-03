@@ -4,8 +4,8 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, render
 from django.utils.safestring import mark_safe
 from django_tables2 import RequestConfig, Column
-from datetime import datetime
-import pytz
+from datetime import datetime, timezone as dt_timezone
+from zoneinfo import ZoneInfo
 
 from apps.dashboard.tables import MyActivityTable, MyActivityDetailsTable
 from apps.exercises.models import Course, PerformanceData, Playlist
@@ -103,10 +103,10 @@ def playlist_pass_date(
         # UTC is assumed here since the performed_at property is written to the performance database per UTC
         pl_pass_date = datetime.strptime(
             pl_pass_date_utc_str, "%Y-%m-%d %H:%M:%S"
-        ).replace(tzinfo=pytz.timezone("UTC"))
+        ).replace(tzinfo=dt_timezone.utc)
         # for the user, interpret the pass_date in terms of the timezone for the course
         return datetime.strftime(
-            pl_pass_date.astimezone(pytz.timezone(settings.TIME_ZONE)),
+            pl_pass_date.astimezone(ZoneInfo(settings.TIME_ZONE)),
             "%Y_%m_%d (%a) %H:%M",
         )
     else:
@@ -208,7 +208,7 @@ def playlist_performance_view(request, performance_id):
             d.update(
                 **{
                     exercise["id"]: mark_safe(
-                        f'{"PASS " + datetime.strftime(datetime.strptime(performance_obj.get_exercise_first_pass(exercise["id"]), "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone(settings.TIME_ZONE)), "%y_%m_%d %H:%M") + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else "TO DO<br><br>"}'
+                        f'{"PASS " + datetime.strftime(datetime.strptime(performance_obj.get_exercise_first_pass(exercise["id"]), "%Y-%m-%d %H:%M:%S").replace(tzinfo=dt_timezone.utc).astimezone(ZoneInfo(settings.TIME_ZONE)), "%y_%m_%d %H:%M") + "<br><br>" if (performance_obj.get_exercise_first_pass(exercise["id"]) != False) else "TO DO<br><br>"}'
                         f'{"Latest: errors (" + str(exercise["error_tally"]) + ")." if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] > 0) else ""}'
                         f'{"Done " if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] == -1) else ""}'  # when is this shown?
                         f'{"Latest: without error." if (isinstance(exercise["error_tally"], int) and exercise["error_tally"] == 0) else ""}'

@@ -23,7 +23,7 @@
             <p class="sidenav-user-badge">Logged&nbsp;in&nbsp;as&nbsp;{{ user.email }}</p>
             <a {% if url_name == 'index'%}class="sidenav-active"{%endif%} href="{% url 'dashboard:index' %}" >Dashboard Home</a>
             <a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">Play View</a>
-            <a href="{% url 'custom-logout' %}">Log Out</a>
+            <form method="post" action="{% url 'custom-logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="link-button">Log Out</button></form>
             <p class="sidenav-subhead">CONNECT</p>
             <a {% if url_name == 'connections' or url_name == 'courses-by-user' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:connections' %}"

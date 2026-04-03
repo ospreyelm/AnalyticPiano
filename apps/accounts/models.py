@@ -1,6 +1,6 @@
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 from django.core.mail import send_mail
 from django.db import models
 from django.utils import timezone

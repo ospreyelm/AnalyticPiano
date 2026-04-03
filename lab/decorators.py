@@ -1,7 +1,6 @@
 from functools import wraps
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
-from django.utils.decorators import available_attrs
 from django.shortcuts import redirect
 
 # from django_auth_lti import const
@@ -12,7 +11,7 @@ def role_required(
     allowed_roles, redirect_url=reverse_lazy("not_authorized"), raise_exception=False
 ):
     def decorator(view):
-        @wraps(view, assigned=available_attrs(view))
+        @wraps(view)
         def _wrapper(request, *args, **kwargs):
             if has_roles(request, allowed_roles):
                 return view(request, *args, **kwargs)
@@ -32,7 +31,7 @@ def course_authorization_required(**decorator_kwargs):
         if not (source in valid_sources):
             raise Exception("invalid source: %s" % source)
 
-        @wraps(view, assigned=available_attrs(view))
+        @wraps(view)
         def _wrapper(request, *args, **kwargs):
             course_id = None
             if source == valid_sources[0]:

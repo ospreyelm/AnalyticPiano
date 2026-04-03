@@ -4,7 +4,7 @@
         {% if user.is_authenticated %}
             <li>
                 <span id="play-view-user-badge">{{ user.first_name|slice:1 }}{{ user.last_name|slice:1 }}</span> • 
-                <a href="{% url 'custom-logout' %}">Log Out</a>
+                <form method="post" action="{% url 'custom-logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="link-button">Log Out</button></form>
             </li>
             <li><a href={% url 'dashboard:index'%}>Dashboard</a></li>
         {% else %}

@@ -267,6 +267,16 @@ textarea {
   float: right;
 }
 
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .simple-button {
   border: 1px solid #555;
   /*background-color: #eee;*/

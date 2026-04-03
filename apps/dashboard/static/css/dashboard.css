@@ -65,12 +65,23 @@ form label {
 }
 
 .sidenav-subhead,
-.sidenav a {
+.sidenav a,
+.sidenav .link-button {
   margin-top: 6px;
   padding: 6px 8px 4px 8px;
   font-size: 14px;
   text-decoration: none;
   display: block;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  text-align: left;
 }
 
 .sidenav-user-badge {

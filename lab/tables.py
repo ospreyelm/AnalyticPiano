@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import When, Case
 from apps.accounts.admin import User
-from django_tables2 import tables, A
+from django_tables2 import tables, A, columns
 from django.db.models import Q
 
 from apps.exercises.models import Playlist, PlaylistCourseOrdered
@@ -9,28 +9,28 @@ from apps.dashboard.tables import PlaylistActivityColumn
 
 
 class CoursePageTable(tables.Table):
-    order = tables.columns.Column(verbose_name="Unit #", orderable=True)
-    name = tables.columns.LinkColumn(
+    order = columns.Column(verbose_name="Unit #", orderable=True)
+    name = columns.LinkColumn(
         # attrs={"td": {"bgcolor": "white", "width": "auto"}},
         viewname="lab:playlist-view",
         kwargs={"playlist_id": A("id"), "course_id": A("course_id")},
         verbose_name="Playlist Name",
     )
-    publish_date = tables.columns.DateColumn(
+    publish_date = columns.DateColumn(
         verbose_name="Publish Date",
         format="Y-m-d",
         orderable=True,
     )
-    due_date = tables.columns.DateColumn(
+    due_date = columns.DateColumn(
         verbose_name="Due Date",
         format="Y-m-d",
         orderable=True,
     )
-    id = tables.columns.Column(
+    id = columns.Column(
         verbose_name="P-ID",
         orderable=True
     )
-    authored_by_id = tables.columns.Column(
+    authored_by_id = columns.Column(
         verbose_name="Email of playlist author",
         orderable=True,
     )

@@ -4,10 +4,11 @@ from datetime import timedelta, date, datetime
 from itertools import product
 from tabnanny import verbose
 
-import pytz
+from datetime import timezone as dt_timezone
+from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.db import models, connections
@@ -806,7 +807,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         ).select_related("playlist")
         return {
             pco.playlist.id: pco.publish_date.replace(
-                tzinfo=pytz.timezone(settings.TIME_ZONE)
+                tzinfo=ZoneInfo(settings.TIME_ZONE)
             )
             for pco in pco_list
         }
@@ -820,7 +821,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         ).select_related("playlist")
         return {
             pco.playlist.id: pco.due_date.replace(
-                tzinfo=pytz.timezone(settings.TIME_ZONE)
+                tzinfo=ZoneInfo(settings.TIME_ZONE)
             )
             for pco in pco_list
         }
@@ -837,7 +838,7 @@ class Course(ClonableModelMixin, BaseContentModel):
         due_date_of_playlist = PlaylistCourseOrdered.objects.get(
             Q(playlist_id=playlist._id, course_id=self._id)
         ).due_date
-        return due_date_of_playlist.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+        return due_date_of_playlist.replace(tzinfo=ZoneInfo(settings.TIME_ZONE))
         # due dates are defined by course authors and should be understood in terms of their own or their institution's timezone
         # the due_date is NOT to be read as UTC
 
@@ -855,7 +856,7 @@ class Course(ClonableModelMixin, BaseContentModel):
             pass_mark = "C"
             try:
                 due_date = pco.due_date.replace(
-                    tzinfo=pytz.timezone(settings.TIME_ZONE)
+                    tzinfo=ZoneInfo(settings.TIME_ZONE)
                 )
             except:
                 due_date = False
@@ -1066,10 +1067,10 @@ class PerformanceData(models.Model):
         )
         # UTC is assumed here since the performed_at property is written to the performance database per UTC
         pass_date_utc = datetime.strptime(pass_date_str, "%Y-%m-%d %H:%M:%S").replace(
-            tzinfo=pytz.timezone("UTC")
+            tzinfo=dt_timezone.utc
         )
         # for the user, interpret the pass_date in terms of the timezone for the course
-        return pass_date_utc.astimezone(pytz.timezone(settings.TIME_ZONE))
+        return pass_date_utc.astimezone(ZoneInfo(settings.TIME_ZONE))
 
 
 @receiver(post_save, sender=Exercise)

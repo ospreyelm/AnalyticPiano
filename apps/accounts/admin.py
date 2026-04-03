@@ -1,7 +1,8 @@
 from django.contrib import admin as django_admin
 from django.contrib.admin import ModelAdmin
 from django.contrib.auth import admin, get_user_model
-from django.contrib.auth.admin import UserChangeForm, UserCreationForm
+from django.contrib.auth.admin import UserChangeForm
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import AdminPasswordChangeForm
 
 from apps.accounts.forms import UserAdminCreationForm

@@ -271,7 +271,15 @@ class PlaylistView(RequirejsView):
 
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if exercise is None:
-            raise Http404("This playlist has no exercises.")
+            if len(playlist.exercise_list) == 0:
+                raise Http404(
+                    f"Playlist '{playlist.name}' (ID: {playlist.id}) has no exercises. "
+                    "Please edit the playlist to add exercises, or delete it."
+                )
+            raise Http404(
+                f"Exercise #{exercise_num} in playlist '{playlist.name}' could not be found. "
+                "It may have been deleted. Please edit the playlist to remove missing exercises."
+            )
 
         context = {"group_list": []}
         course_performed = None
@@ -594,7 +602,12 @@ def exercise_performance_history(
 
     exercise = playlist.get_exercise_obj_by_num(exercise_num)
     if exercise is None:
-        raise Http404("This playlist has no exercises.")
+        if len(playlist.exercise_list) == 0:
+            raise Http404("This playlist has no exercises.")
+        raise Http404(
+            f"Exercise #{exercise_num} in playlist '{playlist.name}' could not be found. "
+            "It may have been deleted. Please edit the playlist to remove missing exercises."
+        )
 
     playlist_performance = PerformanceData.objects.filter(
         playlist=playlist, user=request.user

@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.forms import JSONField
+from django.forms import JSONField
 from django.core.validators import FileExtensionValidator
 from prettyjson import PrettyJSONWidget
 from django.db.models import Q, Prefetch
