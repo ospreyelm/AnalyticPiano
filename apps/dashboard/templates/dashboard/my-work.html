@@ -1,0 +1,67 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-page">
+    <h1>My Work</h1>
+    <p class="dashboard-tip">Courses you are enrolled in via your group membership.</p>
+
+    {% if courses_data %}
+        {% for entry in courses_data %}
+        <div style="margin-bottom: 2rem;">
+            <h2>{{ entry.course.title }}</h2>
+            <p>
+                By {{ entry.course.authored_by }} &mdash;
+                <strong>{{ entry.completed }}/{{ entry.total }}</strong> playlist{{ entry.total|pluralize }} complete
+            </p>
+            {% if entry.playlists %}
+            <table class="table table-bordered table-sm">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Playlist</th>
+                        <th>Status</th>
+                        <th>Completed</th>
+                        <th>Due Date</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in entry.playlists %}
+                    <tr>
+                        <td>{{ item.playlist.name }}</td>
+                        <td>
+                            {% if item.passed %}
+                                <span class="badge badge-success">Complete</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Not complete</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.pass_date %}
+                                {{ item.pass_date }}
+                            {% else %}
+                                &mdash;
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.due_date %}
+                                {{ item.due_date|date:"Y-m-d" }}
+                            {% else %}
+                                &mdash;
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'lab:playlist-view' item.course_id item.playlist.id 1 %}">Play</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>You are not currently enrolled in any courses. Ask your teacher for a join code and use <a href="{% url 'dashboard:join-group' %}">Join a Group</a> to enroll.</p>
+    {% endif %}
+</div>
+{% endblock %}

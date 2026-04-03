@@ -51,6 +51,7 @@ from apps.dashboard.views.connections import (
     toggle_content_permit_view,
     toggle_performance_permit_view,
 )
+from apps.dashboard.views.my_work import my_work_view
 
 app_name = "dashboard"
 
@@ -78,6 +79,8 @@ urlpatterns = [
     path("performances/<int:other_id>/", performances_list_view, name="performances-by-user"),
     path("playlist-performance/<int:performance_id>", playlist_performance_view, name="playlist-performance"),
         # performance by user of a playlist in the context of a course
+    # My Work (student view)
+    path("my-work/", my_work_view, name="my-work"),
     # Connections
     path("connections/", connections_view, name="connections"),
     path("courses-by-other-users/", courses_by_others_view, name="courses-by-others"),
