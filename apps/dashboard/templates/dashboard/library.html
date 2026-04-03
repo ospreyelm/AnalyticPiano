@@ -1,0 +1,136 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-page">
+    <h1>Content Library</h1>
+    <p class="dashboard-tip">Browse all publicly available courses, playlists, and exercises.</p>
+
+    {# Type filter #}
+    <div style="margin-bottom: 1.5rem;">
+        <strong>Filter by type:</strong>&nbsp;
+        <a href="?type=all"
+           class="btn btn-sm {% if type_filter == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            All
+        </a>
+        <a href="?type=course"
+           class="btn btn-sm {% if type_filter == 'course' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            Courses
+        </a>
+        <a href="?type=playlist"
+           class="btn btn-sm {% if type_filter == 'playlist' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            Playlists
+        </a>
+        <a href="?type=exercise"
+           class="btn btn-sm {% if type_filter == 'exercise' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            Exercises
+        </a>
+
+        {# Tag filter — stubbed out; tags are added in step 2.5 #}
+        &nbsp;&nbsp;<span class="text-muted" title="Tag filtering will be available once content tagging is implemented (step 2.5)">Topic ▾ <em>(coming soon)</em></span>
+    </div>
+
+    {# Courses section #}
+    {% if type_filter == 'all' or type_filter == 'course' %}
+    <h2>Courses ({{ courses|length }})</h2>
+    {% if courses %}
+    <table class="table table-bordered table-sm" style="margin-bottom: 2rem;">
+        <thead class="thead-light">
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Playlists</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for course in courses %}
+            <tr>
+                <td>{{ course.title }}</td>
+                <td>{{ course.authored_by }}</td>
+                <td>{{ course.playlist_count }}</td>
+                <td>
+                    <a href="{% url 'lab:course-view' course.id %}"
+                       class="btn btn-sm btn-outline-primary">
+                        Preview
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No public courses yet.</p>
+    {% endif %}
+    {% endif %}
+
+    {# Playlists section #}
+    {% if type_filter == 'all' or type_filter == 'playlist' %}
+    <h2>Playlists ({{ playlists|length }})</h2>
+    {% if playlists %}
+    <table class="table table-bordered table-sm" style="margin-bottom: 2rem;">
+        <thead class="thead-light">
+            <tr>
+                <th>Name</th>
+                <th>Author</th>
+                <th>Exercises</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for playlist in playlists %}
+            <tr>
+                <td>{{ playlist.name }}</td>
+                <td>{{ playlist.authored_by }}</td>
+                <td>{{ playlist.exercise_count }}</td>
+                <td>
+                    <a href="{% url 'lab:playlist-view' playlist.id %}"
+                       class="btn btn-sm btn-outline-primary">
+                        Preview
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No public playlists yet.</p>
+    {% endif %}
+    {% endif %}
+
+    {# Exercises section #}
+    {% if type_filter == 'all' or type_filter == 'exercise' %}
+    <h2>Exercises ({{ exercises|length }})</h2>
+    {% if exercises %}
+    <table class="table table-bordered table-sm" style="margin-bottom: 2rem;">
+        <thead class="thead-light">
+            <tr>
+                <th>Description</th>
+                <th>Author</th>
+                <th>ID</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exercise in exercises %}
+            <tr>
+                <td>{{ exercise.description }}</td>
+                <td>{{ exercise.authored_by }}</td>
+                <td><code>{{ exercise.id }}</code></td>
+                <td>
+                    <a href="{% url 'lab:exercise-view' exercise.id %}"
+                       class="btn btn-sm btn-outline-primary">
+                        Open
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No public exercises yet.</p>
+    {% endif %}
+    {% endif %}
+
+</div>
+{% endblock %}
