@@ -122,6 +122,13 @@ class Exercise(ClonableModelMixin, BaseContentModel):
 
     locked = models.BooleanField("Locked", default=False)
 
+    tags = ArrayField(
+        base_field=models.CharField(max_length=32),
+        default=list,
+        blank=True,
+        verbose_name="Tags",
+    )
+
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 
@@ -377,6 +384,13 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         "Commons",
         default=False,
         help_text="Sharing your playlist will allow other users to include it in their courses. Doing so will reveal your email address to all users of the site.",
+    )
+
+    tags = ArrayField(
+        base_field=models.CharField(max_length=32),
+        default=list,
+        blank=True,
+        verbose_name="Tags",
     )
 
     zero_padding = "PA00A0"

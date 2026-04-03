@@ -49,10 +49,26 @@ Add a `due_date` DateTimeField to PlaylistCourseOrdered if not already present. 
 Read PlaylistCourseOrdered, the course edit form, and the Course model before building.
 2.8 Mouse & keyboard input
 
-Please read `docs/plan.md` and `docs/spec.md` (section 2.8), then add non-MIDI input methods.
+Please read `docs/plan.md` and `docs/spec.md` (section 2.8), then audit and extend the existing non-MIDI input systems.
 
-Two inputs needed:
-1. An on-screen SVG/HTML piano keyboard that fires noteOn/noteOff events identical to MIDI input — show it when no MIDI device is detected
-2. Computer keyboard note entry: letter keys A–G for pitch, number keys for octave (like Sibelius), modifier keys for accidentals
+**What already exists — do not rebuild:**
 
-The grader already listens to noteOn(midi)/noteOff(midi) — these inputs just need to fire those same events. Read lab/static/js/src/ to understand the existing MIDI input handling before building.
+1. **On-screen piano keyboard** — `lab/static/js/src/components/piano/keyboard.js` renders a Raphael SVG piano keyboard and is already wired into both `play.js` and `exercise.js` (renders to `#piano`). It fires note on/off events through the same EVENTS bus as MIDI. No rebuild needed.
+
+2. **QWERTY piano-layout keyboard** — `lab/static/js/src/config/keyboard_shortcuts.js` maps the physical keyboard like a two-octave piano layout: the `z/x/c/v/b/n/m` row and `q/w/e/r/t/y/u/i/o/p/[/]` row are white keys across two octaves; number keys and letters like `s/d/h/j` are the black keys. These are wired via `KeyboardShortcutsComponent` in both play and exercise apps. No rebuild needed.
+
+**What to audit and fix:**
+
+- The on-screen piano always shows and mouse-click input already works — no changes needed there.
+- Confirm the QWERTY piano layout works in exercise mode (not just play mode). Document which keys are active via a visible help label or tooltip near the keyboard so students can discover it.
+
+**New input mode to consider adding:**
+
+A note-name entry mode as an alternative to the piano-layout QWERTY map, where:
+- Letter keys `a`–`g` set the pitch name (matching the note names, not a piano spatial layout)
+- Number keys `1`–`8` set the octave
+- `UP` / `DOWN` arrow keys apply accidentals (up = sharp, down = flat; press again to return to natural)
+- Pressing a letter + number together (or in sequence) immediately fires `noteOn(midi)` / `noteOff(midi)` identical to MIDI input
+
+This is a separate mode from the existing piano-layout QWERTY map — both should be selectable. Read `lab/static/js/src/` carefully to understand the event flow before adding the new mode, so it slots into the existing architecture without disruption.
+

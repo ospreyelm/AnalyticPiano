@@ -561,7 +561,7 @@ class CourseActivityTable(tables.Table):
     # )
     performer_first_name = columns.Column(verbose_name="Given name")
     performer_last_name = columns.Column(verbose_name="Surname")
-    # groups = columns.Column(verbose_name="Group(s)")
+    groups = columns.Column(verbose_name="Group(s)", orderable=False)
     time_elapsed = columns.Column(
         verbose_name="Time (beta)",
         attrs={"td": {"style": "white-space:nowrap"}},
@@ -586,6 +586,7 @@ class CourseActivityTable(tables.Table):
         sequence = [
             "performer_first_name",
             "performer_last_name",
+            "groups",
             "score",
             "result_count",
             "time_elapsed",

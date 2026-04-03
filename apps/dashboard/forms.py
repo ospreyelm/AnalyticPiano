@@ -236,8 +236,8 @@ class CustomTransposeWidget(forms.MultiWidget):
 
 
 class ManyWidget(forms.widgets.SelectMultiple):
-    template_name = "../templates/dashboard/manywidget.html"
-    option_template_name = "../templates/dashboard/manywidgetoption.html"
+    template_name = "dashboard/manywidget.html"
+    option_template_name = "dashboard/manywidgetoption.html"
 
     def __init__(
         self,

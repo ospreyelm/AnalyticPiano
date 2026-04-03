@@ -1,4 +1,5 @@
 from copy import copy
+import csv
 import datetime
 import re
 import math
@@ -8,6 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -408,6 +410,66 @@ def course_activity_view(request, course_id):
         table.exclude = ("groups",)
 
     RequestConfig(request, paginate={"per_page": performers_per_page}).configure(table)
+
+    # --- CSV export ---
+    if request.GET.get("format") == "csv":
+        pass_mark_labels = {
+            "P": "On time",
+            "T": "Tardy",
+            "L": "Late",
+            "C": "Complete (no due date)",
+            "X": "Incomplete",
+        }
+        playlist_headers = [
+            playlist_column_verbose_name(str(k), course)
+            for k in compiled_playlist_keys
+        ]
+        response = HttpResponse(content_type="text/csv")
+        safe_title = re.sub(r"[^\w\- ]", "", course.title).strip().replace(" ", "_")
+        response["Content-Disposition"] = (
+            f'attachment; filename="gradebook_{safe_title}.csv"'
+        )
+        writer = csv.writer(response)
+        writer.writerow(
+            ["Last Name", "First Name"]
+            + playlist_headers
+            + ["Score", "Completed", "On Time", "Tardy", "Late", "Incomplete"]
+        )
+        timely_credit = course.timely_credit
+        tardy_credit = course.tardy_credit
+        late_credit = course.late_credit
+        for row in relevant_data.values():
+            mark_counts = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
+            playlist_cells = []
+            for k in compiled_playlist_keys:
+                mark = row.get(str(k), "")
+                playlist_cells.append(pass_mark_labels.get(mark, ""))
+                if mark in mark_counts:
+                    mark_counts[mark] += 1
+            score = round(
+                mark_counts["P"] * float(timely_credit)
+                + mark_counts["C"] * float(timely_credit)
+                + mark_counts["T"] * float(tardy_credit)
+                + mark_counts["L"] * float(late_credit),
+                1,
+            )
+            writer.writerow(
+                [
+                    row.get("performer_last_name", ""),
+                    row.get("performer_first_name", ""),
+                ]
+                + playlist_cells
+                + [
+                    score,
+                    mark_counts["P"] + mark_counts["C"],
+                    mark_counts["P"],
+                    mark_counts["T"],
+                    mark_counts["L"],
+                    mark_counts["X"],
+                ]
+            )
+        return response
+    # --- end CSV export ---
 
     return render(
         request,

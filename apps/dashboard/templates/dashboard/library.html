@@ -7,27 +7,39 @@
     <p class="dashboard-tip">Browse all publicly available courses, playlists, and exercises.</p>
 
     {# Type filter #}
-    <div style="margin-bottom: 1.5rem;">
-        <strong>Filter by type:</strong>&nbsp;
-        <a href="?type=all"
+    <div style="margin-bottom: 0.75rem;">
+        <strong>Type:</strong>&nbsp;
+        <a href="?type=all{% if tag_filter %}&tag={{ tag_filter }}{% endif %}"
            class="btn btn-sm {% if type_filter == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
             All
         </a>
-        <a href="?type=course"
+        <a href="?type=course{% if tag_filter %}&tag={{ tag_filter }}{% endif %}"
            class="btn btn-sm {% if type_filter == 'course' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
             Courses
         </a>
-        <a href="?type=playlist"
+        <a href="?type=playlist{% if tag_filter %}&tag={{ tag_filter }}{% endif %}"
            class="btn btn-sm {% if type_filter == 'playlist' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
             Playlists
         </a>
-        <a href="?type=exercise"
+        <a href="?type=exercise{% if tag_filter %}&tag={{ tag_filter }}{% endif %}"
            class="btn btn-sm {% if type_filter == 'exercise' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
             Exercises
         </a>
+    </div>
 
-        {# Tag filter — stubbed out; tags are added in step 2.5 #}
-        &nbsp;&nbsp;<span class="text-muted" title="Tag filtering will be available once content tagging is implemented (step 2.5)">Topic ▾ <em>(coming soon)</em></span>
+    {# Tag filter #}
+    <div style="margin-bottom: 1.5rem;">
+        <strong>Topic:</strong>&nbsp;
+        <a href="?type={{ type_filter }}"
+           class="btn btn-sm {% if not tag_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            All Topics
+        </a>
+        {% for tag_value, tag_label in all_tags %}
+        <a href="?type={{ type_filter }}&tag={{ tag_value }}"
+           class="btn btn-sm {% if tag_filter == tag_value %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            {{ tag_label }}
+        </a>
+        {% endfor %}
     </div>
 
     {# Courses section #}
@@ -54,6 +66,14 @@
                        class="btn btn-sm btn-outline-primary">
                         Preview
                     </a>
+                    <form method="post" action="{% url 'clone-course' course.id %}"
+                          style="display:inline;"
+                          onsubmit="return confirm('Copy \u201c{{ course.title }}\u201d to your courses?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-success">
+                            Copy to My Courses
+                        </button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
@@ -80,7 +100,12 @@
         <tbody>
             {% for playlist in playlists %}
             <tr>
-                <td>{{ playlist.name }}</td>
+                <td>
+                    {{ playlist.name }}
+                    {% for tag in playlist.tags %}
+                    <span class="badge badge-secondary" style="font-size:0.7em;">{{ tag }}</span>
+                    {% endfor %}
+                </td>
                 <td>{{ playlist.authored_by }}</td>
                 <td>{{ playlist.exercise_count }}</td>
                 <td>
@@ -114,7 +139,12 @@
         <tbody>
             {% for exercise in exercises %}
             <tr>
-                <td>{{ exercise.description }}</td>
+                <td>
+                    {{ exercise.description }}
+                    {% for tag in exercise.tags %}
+                    <span class="badge badge-secondary" style="font-size:0.7em;">{{ tag }}</span>
+                    {% endfor %}
+                </td>
                 <td>{{ exercise.authored_by }}</td>
                 <td><code>{{ exercise.id }}</code></td>
                 <td>

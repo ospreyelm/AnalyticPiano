@@ -40,5 +40,11 @@
                 </button>
             </div>
         </form>
+        <div style="margin-bottom: 1rem;">
+            <a href="?{{ request.GET.urlencode }}&format=csv"
+               class="btn btn-sm btn-outline-secondary">
+                &#x2B73; Export CSV
+            </a>
+        </div>
     {% endif %}
 {% endblock %}

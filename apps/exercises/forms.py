@@ -8,6 +8,21 @@ from prettyjson import PrettyJSONWidget
 from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
 from django.utils.html import conditional_escape, format_html
 
+CONTENT_TAGS = [
+    ("intervals", "Intervals"),
+    ("scales", "Scales"),
+    ("triads", "Triads"),
+    ("seventh-chords", "Seventh Chords"),
+    ("voice-leading", "Voice Leading"),
+    ("roman-numerals", "Roman Numerals"),
+    ("secondary-dominants", "Secondary Dominants"),
+    ("counterpoint", "Counterpoint"),
+    ("harmonic-dictation", "Harmonic Dictation"),
+    ("melodic-dictation", "Melodic Dictation"),
+    ("rhythm", "Rhythm"),
+    ("sight-singing", "Sight Singing"),
+]
+
 
 class ExpansiveForm(forms.ModelForm):
     EXPANSIVE_FIELD = None
@@ -449,10 +464,18 @@ class ExerciseForm(forms.ModelForm):
         min_value=0,
     )
 
+    tags = forms.MultipleChoiceField(
+        choices=CONTENT_TAGS,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Tags",
+    )
+
     field_order = [
         "id",
         "description",
         "is_public",
+        "tags",
         "rhythm",
         "visibility_pattern",
         "time_signature",
@@ -482,6 +505,7 @@ class ExerciseForm(forms.ModelForm):
         self._chorale_voice_choices = []
         self._configure_type_field()
         if self.instance and self.instance.pk:
+            self.fields["tags"].initial = list(self.instance.tags or [])
             self.fields["intro_text"].initial = self.instance.data.get(
                 "introText", None
             )
@@ -863,6 +887,13 @@ class PlaylistForm(forms.ModelForm):
         help_text="",
     )
 
+    tags = forms.MultipleChoiceField(
+        choices=CONTENT_TAGS,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Tags",
+    )
+
     class Meta:
         model = Playlist
         exclude = []
@@ -876,11 +907,17 @@ class PlaylistForm(forms.ModelForm):
         "id",
         "name",
         "is_public",
+        "tags",
         "is_auto",
         "transposition_type",
         "transpose_requests",
         "exercises",
     ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields["tags"].initial = list(self.instance.tags or [])
 
 
 class CourseForm(forms.ModelForm):

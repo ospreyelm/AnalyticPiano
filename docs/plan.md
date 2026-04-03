@@ -1,6 +1,6 @@
 # HarmonyLab Development Plan
 
-_Last updated: 2026-04-02_
+_Last updated: 2026-04-03_
 
 Actionable steps in order. Check off as completed.
 
@@ -73,36 +73,40 @@ Actionable steps in order. Check off as completed.
 
 ### 2.4 Course clone / copy
 
-- [ ] Create `POST /library/clone-course/<course_id>/` view
-- [ ] Deep-clone Course + PlaylistCourseOrdered entries
-- [ ] Set `authored_by = request.user`, `is_public = False` on clone
-- [ ] Exercises referenced (not cloned)
-- [ ] Redirect to cloned course edit page
+- [x] Create `POST /library/clone-course/<course_id>/` view
+- [x] Deep-clone Course + PlaylistCourseOrdered entries
+- [x] Set `authored_by = request.user`, `is_public = False` on clone
+- [x] Exercises referenced (not cloned)
+- [x] Redirect to cloned course edit page
 
 ### 2.5 Content tagging
 
-- [ ] Add `tags = ArrayField(...)` to `Exercise` and `Playlist` models
-- [ ] Add tag selector to exercise and playlist edit forms
-- [ ] Wire tags to library filter
+- [x] Add `tags = ArrayField(...)` to `Exercise` and `Playlist` models
+- [x] Add tag selector to exercise and playlist edit forms
+- [x] Wire tags to library filter
 
 ### 2.6 Teacher gradebook polish
 
-- [ ] Add score/grade column alongside completion in `course_activity_view`
-- [ ] Show on-time / tardy / late status using existing `timely_credit` fields
-- [ ] Add CSV export
+- [x] Add score/grade column alongside completion in `course_activity_view`
+- [x] Show on-time / tardy / late status using existing `timely_credit` fields
+- [x] Add CSV export
 
 ### 2.7 Due date UI
 
-- [ ] Add `due_date` field to `PlaylistCourseOrdered` if not present
-- [ ] Add date picker to course edit form (one per playlist)
-- [ ] Show due dates on student "My Work" view
-- [ ] Show timely/tardy/late status in gradebook
+- [x] Add `due_date` field to `PlaylistCourseOrdered` if not present
+- [x] Add date picker to course edit form (one per playlist)
+- [x] Show due dates on student "My Work" view
+- [x] Show timely/tardy/late status in gradebook
 
 ### 2.8 Mouse & keyboard input
 
-- [ ] **On-screen piano keyboard** — SVG/HTML piano, fires `noteOn`/`noteOff` identical to MIDI
-- [ ] **Computer keyboard note entry** — letter keys for pitch (A–G), number for octave
-- [ ] Show on-screen keyboard when no MIDI device detected (or as permanent toggle)
+_Existing systems (no changes needed):_
+- [x] **On-screen piano** — Raphael SVG piano always visible; mouse-click fires `noteOn`/`noteOff` via EVENTS bus
+- [x] **QWERTY piano-layout** — `keyboard_shortcuts.js` maps QWERTY rows to octaves; wired in `exercise.js` and `play.js`
+
+_Remaining work:_
+- [ ] **QWERTY discoverability** — add visible help label / tooltip near keyboard so users know the layout exists
+- [ ] **Note-name entry mode** — letter keys `a`–`g` = pitch name, `1`–`8` = octave, `UP`/`DOWN` arrows = sharp/flat; fires same `noteOn`/`noteOff` events; selectable alongside existing QWERTY mode
 
 ### 2.9 Build content library (content task)
 
@@ -115,6 +119,16 @@ Actionable steps in order. Check off as completed.
 - [ ] Roman numeral analysis (4 playlists)
 - [ ] Voice leading — SATB basics (3 playlists)
 - [ ] Tag all content, mark as `is_public`
+
+### 2.10 MusicXML import for teachers
+
+Currently `import_musicxml` is only accessible via the Django admin panel (`/analytic-piano-app-admin/exercises/exercise/`). Needs a dashboard UI for teachers once a teacher/student role distinction exists (see 3.1).
+
+- [ ] Add `POST /dashboard/exercises/import-musicxml/` view (teacher-only once roles exist)
+- [ ] Upload form: file field + title + measure range (start/end) + public checkbox
+- [ ] Wire to existing `import_musicxml` management command logic (extract into a reusable function in `apps/exercises/utils/`)
+- [ ] Add "Import MusicXML" button to exercises list page
+- [ ] Guard with role check once 3.1 is complete; for now, any logged-in user can use it
 
 ---
 

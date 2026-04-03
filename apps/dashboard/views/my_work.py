@@ -3,6 +3,15 @@ from django.shortcuts import render
 
 from apps.exercises.models import Course, PerformanceData, PlaylistCourseOrdered
 
+# Maps performance_dict mark codes to student-facing labels and badge classes
+MARK_DISPLAY = {
+    "P": ("On Time", "badge-success"),
+    "T": ("Tardy", "badge-warning"),
+    "L": ("Late", "badge-danger"),
+    "C": ("Complete", "badge-success"),
+    "X": ("Incomplete", "badge-secondary"),
+}
+
 
 @login_required
 def my_work_view(request):
@@ -29,6 +38,9 @@ def my_work_view(request):
             course=course
         ).select_related("playlist").order_by("order")
 
+        # Look up this student's marks from the cached performance_dict
+        student_marks = course.performance_dict.get(str(request.user), {})
+
         for pco in pcos:
             playlist = pco.playlist
             due_date = pco.due_date
@@ -41,12 +53,19 @@ def my_work_view(request):
                 passed = False
                 pass_date = None
 
+            # Get mark code (P/T/L/C/X) from performance_dict if the student has passed
+            mark_code = student_marks.get(playlist.id) if passed else None
+            mark_label, mark_class = MARK_DISPLAY.get(mark_code, ("Complete", "badge-success")) if mark_code else (None, None)
+
             playlists_data.append(
                 {
                     "playlist": playlist,
                     "due_date": due_date,
                     "passed": passed,
                     "pass_date": pass_date,
+                    "mark_code": mark_code,
+                    "mark_label": mark_label,
+                    "mark_class": mark_class,
                     "course_id": course.id,
                 }
             )
