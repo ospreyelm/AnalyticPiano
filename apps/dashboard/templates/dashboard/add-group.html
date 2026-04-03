@@ -2,10 +2,74 @@
 {% load static %}
 
 {% block extra_content %}
+    {% if join_code %}
+        <div class="dashboard-page" style="margin-top: 24px;">
+            <h2 style="margin-bottom: 8px;">Group Join Code</h2>
+            <p style="margin-bottom: 12px;">
+                Share this code with your students. They enter it at
+                <strong>Dashboard → Join a Group</strong> to self-enrol.
+            </p>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <code id="join-code-display"
+                      style="font-size: 2rem; font-weight: bold; letter-spacing: 0.15em;
+                             padding: 10px 20px; background: #f0f4ff; border: 2px solid #4a6fa5;
+                             border-radius: 6px; user-select: all;">
+                    {{ join_code }}
+                </code>
+                <button id="copy-join-code-btn"
+                        type="button"
+                        class="btn dashboard-btn"
+                        onclick="copyJoinCode()"
+                        title="Copy code to clipboard">
+                    Copy Code
+                </button>
+                <form method="post"
+                      action="{% url 'dashboard:regenerate-join-code' group_id=form.instance.pk %}"
+                      style="display:inline;"
+                      onsubmit="return confirm('Regenerate the join code? The old code will stop working immediately.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn dashboard-btn dashboard-btn-delete"
+                            title="Generate a new code (old code becomes invalid)">
+                        Regenerate Code
+                    </button>
+                </form>
+            </div>
+            <span id="copy-confirmation"
+                  style="display:none; color: #2a7a2a; font-weight: 600; margin-top: 8px;">
+                ✓ Copied!
+            </span>
+        </div>
+    {% endif %}
+
     {% if members_table %}
-        <div class="dashboard-page">
-            <p>Members:</p>
+        <div class="dashboard-page" style="margin-top: 24px;">
+            <p><strong>Current Members:</strong></p>
             {% include 'django_tables2/bootstrap4.html' with table=members_table %}
         </div>
     {% endif %}
+
+    <script>
+    function copyJoinCode() {
+        var code = document.getElementById('join-code-display').innerText.trim();
+        navigator.clipboard.writeText(code).then(function() {
+            var btn = document.getElementById('copy-join-code-btn');
+            var conf = document.getElementById('copy-confirmation');
+            btn.textContent = 'Copied!';
+            conf.style.display = 'block';
+            setTimeout(function() {
+                btn.textContent = 'Copy Code';
+                conf.style.display = 'none';
+            }, 2000);
+        }).catch(function() {
+            /* fallback for browsers without clipboard API */
+            var el = document.getElementById('join-code-display');
+            var range = document.createRange();
+            range.selectNode(el);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+        });
+    }
+    </script>
 {% endblock %}

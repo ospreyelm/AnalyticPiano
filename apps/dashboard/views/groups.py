@@ -1,4 +1,3 @@
-from curses.ascii import US
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -81,6 +80,8 @@ def group_edit_view(request, group_id):
         "verbose_name": Group._meta.verbose_name,
         "verbose_name_plural": Group._meta.verbose_name_plural,
         "editing": True,
+        "join_code": group.join_code,
+        "join_url": request.build_absolute_uri(reverse("dashboard:join-group")),
     }
 
     if request.method == "POST":
@@ -102,6 +103,7 @@ def group_edit_view(request, group_id):
             elif "duplicate" in request.POST:
                 members = group.members.all()
                 group.id = None
+                group.join_code = None  # force new unique code on duplicate
                 group = group.save()
                 group.members.set(members)
                 group.save()
@@ -123,6 +125,15 @@ def group_edit_view(request, group_id):
         form = DashboardGroupEditForm(instance=group, user=request.user)
 
     context["form"] = form
+
+    # Build members table for display
+    members_qs = group.members.all()
+    members_table = GroupMembersTable(
+        [{"name": str(m), "id": m.id, "group_id": group.id} for m in members_qs]
+    )
+    RequestConfig(request).configure(members_table)
+    context["members_table"] = members_table
+
     return render(request, "dashboard/add-group.html", context)
 
 
@@ -154,5 +165,56 @@ def remove_member(request, group_id, member_id):
     if request.user != group.manager:
         raise PermissionDenied
 
-    group.remove_member(member_id)
+    member = get_object_or_404(User, id=member_id)
+    group.members.remove(member)
     return redirect(reverse("dashboard:edit-group", kwargs={"group_id": group.id}))
+
+
+@login_required
+def regenerate_join_code_view(request, group_id):
+    """Teacher-only POST: regenerate the join code for their group."""
+    group = get_object_or_404(Group, id=group_id)
+
+    if request.user != group.manager:
+        raise PermissionDenied
+
+    if request.method == "POST":
+        group.join_code = None  # triggers auto-generation in save()
+        group.save()
+        messages.success(request, "Join code regenerated successfully.")
+
+    return redirect(reverse("dashboard:edit-group", kwargs={"group_id": group.id}))
+
+
+@login_required
+def join_group_view(request):
+    """Student view: enter a join code to self-enrol in a group."""
+    if request.method == "POST":
+        code = request.POST.get("join_code", "").strip().upper()
+        if not code:
+            messages.error(request, "Please enter a join code.")
+            return render(request, "dashboard/join-group.html", {"join_code": ""})
+
+        try:
+            group = Group.objects.get(join_code=code)
+        except Group.DoesNotExist:
+            messages.error(
+                request, f"No group found with code \"{code}\". Please check the code and try again."
+            )
+            return render(request, "dashboard/join-group.html", {"join_code": code})
+
+        if request.user == group.manager:
+            messages.info(request, f"You are the teacher of \"{group.name}\" — you cannot join your own group as a student.")
+            return render(request, "dashboard/join-group.html", {"join_code": code})
+
+        if group.members.filter(pk=request.user.pk).exists():
+            messages.info(request, f"You are already a member of \"{group.name}\".")
+        else:
+            group.members.add(request.user)
+            messages.success(request, f"You have joined the group \"{group.name}\".")
+
+        return redirect(reverse("dashboard:index"))
+
+    # GET
+    prefill = request.GET.get("code", "").upper()
+    return render(request, "dashboard/join-group.html", {"join_code": prefill})

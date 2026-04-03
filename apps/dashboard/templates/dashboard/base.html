@@ -31,6 +31,9 @@
             <a {% if url_name == 'groups-list' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:groups-list' %}"
                title="Organize other users into groups">Manage User Groups</a>
+            <a {% if url_name == 'join-group' %}class="sidenav-active"{% endif %}
+               href="{% url 'dashboard:join-group' %}"
+               title="Enter a teacher's join code to enrol in their group">Join a Group</a>
             <p class="sidenav-subhead">PERFORM</p>
             <a {% if url_name == 'preferences' %}class="sidenav-active"{% endif %}
                href="{% url 'dashboard:preferences' %}"

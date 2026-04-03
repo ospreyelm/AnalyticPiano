@@ -6,6 +6,8 @@ from apps.dashboard.views.groups import (
     group_edit_view,
     group_delete_view,
     remove_member,
+    join_group_view,
+    regenerate_join_code_view,
 )
 from apps.dashboard.views.import_export import (
     ExerciseExportView,
@@ -85,10 +87,12 @@ urlpatterns = [
     path("connections/toggle-connection-pin/<int:other_id>/confirm/", toggle_connection_pin_with_confirmation, name="toggle-connection-pin-with-confirmation"),
     # Groups
     path("groups/", groups_list_view, name="groups-list"),
+    path("groups/join/", join_group_view, name="join-group"),
     path("groups/add/", group_add_view, name="add-group"),
     path("groups/<str:group_id>/", group_edit_view, name="edit-group"),
     path("groups/<str:group_id>/delete/", group_delete_view, name="delete-group"),
     path("groups/<str:group_id>/remove-member/<int:member_id>/", remove_member, name="remove-group-member"),
+    path("groups/<str:group_id>/regenerate-code/", regenerate_join_code_view, name="regenerate-join-code"),
     # Preferences
     path("preferences/", dashboard_preferences_view, name="preferences"),
     # Import/Export

@@ -1,0 +1,60 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-page">
+    <h1>Join a Group</h1>
+    <p class="dashboard-tip">
+        Enter the join code your teacher shared with you (e.g. in your syllabus).
+        You will be added to the group immediately.
+    </p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}" role="alert" style="margin-bottom: 16px;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" novalidate style="max-width: 420px;">
+        {% csrf_token %}
+        <div style="margin-bottom: 16px;">
+            <label for="join_code_input" style="display: block; font-weight: 600; margin-bottom: 6px;">
+                Join Code
+            </label>
+            <input
+                id="join_code_input"
+                type="text"
+                name="join_code"
+                value="{{ join_code }}"
+                placeholder="e.g. AB3KF2XY"
+                maxlength="16"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                style="font-size: 1.4rem; letter-spacing: 0.12em; text-transform: uppercase;
+                       padding: 10px 14px; border: 2px solid #4a6fa5; border-radius: 6px;
+                       width: 100%; box-sizing: border-box; font-family: monospace;"
+            />
+        </div>
+        <button type="submit" class="btn dashboard-btn" style="font-size: 1rem; padding: 10px 28px;">
+            Join Group
+        </button>
+        <a href="{% url 'dashboard:index' %}"
+           class="btn dashboard-btn dashboard-btn-cancel"
+           style="font-size: 1rem; padding: 10px 20px; margin-left: 8px;">
+            Cancel
+        </a>
+    </form>
+</div>
+
+<script>
+/* Auto-uppercase as the user types */
+document.getElementById('join_code_input').addEventListener('input', function() {
+    var pos = this.selectionStart;
+    this.value = this.value.toUpperCase();
+    this.setSelectionRange(pos, pos);
+});
+</script>
+{% endblock %}

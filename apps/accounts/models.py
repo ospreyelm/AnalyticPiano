@@ -1,3 +1,6 @@
+import secrets
+import string
+
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.db.models import JSONField
@@ -8,6 +11,12 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
 from apps.accounts.managers import UserManager
+
+
+def _generate_join_code(length=8):
+    """Return a random uppercase alphanumeric join code of `length` characters."""
+    alphabet = string.ascii_uppercase + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 DEFAULT_KEYBOARD_SIZE = 49
 # Supported keyboard choices
@@ -220,6 +229,15 @@ class Group(models.Model):
         verbose_name="Manager",
     )
 
+    join_code = models.CharField(
+        "Join code",
+        max_length=16,
+        unique=True,
+        blank=True,
+        null=True,
+        help_text="Short code students enter to self-enrol in this group.",
+    )
+
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 
@@ -230,8 +248,17 @@ class Group(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self):
-        super(Group, self).save()
+    def _unique_join_code(self):
+        """Generate a join code that isn't already used by another group."""
+        while True:
+            code = _generate_join_code()
+            if not Group.objects.filter(join_code=code).exists():
+                return code
+
+    def save(self, *args, **kwargs):
+        if not self.join_code:
+            self.join_code = self._unique_join_code()
+        super(Group, self).save(*args, **kwargs)
         return self
 
     # def add_members(self, new_members):
