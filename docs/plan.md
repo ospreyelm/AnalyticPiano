@@ -58,18 +58,18 @@ Actionable steps in order. Check off as completed.
 
 ### 2.2 Student "My Work" view
 
-- [ ] Create new view showing only courses student is enrolled in via Group membership
-- [ ] Show completion status per playlist (not started / in progress / complete)
-- [ ] Show due dates if set
-- [ ] Link directly to playlist player
-- [ ] Set as default post-login destination for students (replace "Courses By Other Users")
+- [x] Create new view showing only courses student is enrolled in via Group membership
+- [x] Show completion status per playlist (not started / in progress / complete)
+- [x] Show due dates if set
+- [x] Link directly to playlist player
+- [x] Set as default post-login destination for students (replace "Courses By Other Users")
 
 ### 2.3 Public content library
 
-- [ ] Create `/library/` page listing all `is_public` courses, playlists, exercises
-- [ ] Add topic filter (uses tags from 2.5)
-- [ ] Add type filter (course / playlist / exercise)
-- [ ] Make browsable without needing to be connected to the author
+- [x] Create `/library/` page listing all `is_public` courses, playlists, exercises
+- [x] Add topic filter (uses tags from 2.5)
+- [x] Add type filter (course / playlist / exercise)
+- [x] Make browsable without needing to be connected to the author
 
 ### 2.4 Course clone / copy
 
