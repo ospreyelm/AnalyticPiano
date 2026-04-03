@@ -93,7 +93,7 @@ def register(request):
 
 
 def preferences_view(request):
-    if request.is_ajax and request.method == "GET":
+    if request.method == "GET":
         cur_user = request.user
         if cur_user.is_anonymous:
             json_dump = json.dumps(get_preferences_default())

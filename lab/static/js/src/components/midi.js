@@ -564,12 +564,7 @@ define([
      * @return undefined
      */
     sendMIDIMessage: function () {
-      var msg = null,
-        midiAccess = this.midiAccess,
-        midiDevice = this.midiDevice;
-      if (midiAccess) {
-        midiDevice.sendMIDIMessage(Object.values(arguments));
-      }
+      this.midiDevice.sendMIDIMessage(Object.values(arguments));
     },
     /**
      * Output a MIDI message to turn a pedal on/off.
