@@ -20,7 +20,6 @@ define([
 
   var KEY_UP   = 38;
   var KEY_DOWN = 40;
-  var NOTE_OFF_DELAY_MS = 120;
 
   /**
    * NoteNameInputComponent — an alternative keyboard-input mode.
@@ -49,6 +48,7 @@ define([
     this.pendingStep   = null;  // null or 'a'–'g'
     this.pendingOctave = 4;     // sensible default; survives between notes
     this.pendingAlter  = 0;     // -1 = flat, 0 = natural, +1 = sharp
+    this._heldNotes    = {};    // keyCode → midi number currently sounding
   };
 
   NoteNameInputComponent.prototype = new Component();
@@ -56,7 +56,7 @@ define([
   _.extend(NoteNameInputComponent.prototype, {
 
     initComponent: function () {
-      _.bindAll(this, ["_onKeyCapture", "_onModeChange"]);
+      _.bindAll(this, ["_onKeyCapture", "_onKeyUpCapture", "_onModeChange"]);
       this.el = this._buildEl();
       this.subscribe(EVENTS.BROADCAST.INPUT_MODE, this._onModeChange);
     },
@@ -68,6 +68,7 @@ define([
       if (this.enabled) { return; }
       this.enabled = true;
       document.addEventListener("keydown", this._onKeyCapture, true);
+      document.addEventListener("keyup",   this._onKeyUpCapture, true);
       this._syncPanels();
     },
 
@@ -75,6 +76,13 @@ define([
       if (!this.enabled) { return; }
       this.enabled = false;
       document.removeEventListener("keydown", this._onKeyCapture, true);
+      document.removeEventListener("keyup",   this._onKeyUpCapture, true);
+      // Release any notes still sounding
+      var self = this;
+      Object.keys(this._heldNotes).forEach(function (code) {
+        self.broadcast(EVENTS.BROADCAST.NOTE, "off", self._heldNotes[code]);
+      });
+      this._heldNotes = {};
       this._syncPanels();
     },
 
@@ -111,10 +119,12 @@ define([
       if (STEP_FOR_CODE.hasOwnProperty(code)) {
         e.preventDefault();
         e.stopImmediatePropagation();
+        // Skip auto-repeat if this key is already holding a note
+        if (this._heldNotes[code] !== undefined) { return; }
         this.pendingStep = STEP_FOR_CODE[code];
         // do NOT reset pendingAlter here — accidental set before the letter must survive into _fireNote
         if (this.pendingOctave !== null) {
-          this._fireNote();
+          this._fireNote(code);
         } else {
           this._syncStatus();
         }
@@ -125,9 +135,11 @@ define([
       if (OCTAVE_FOR_CODE.hasOwnProperty(code)) {
         e.preventDefault();
         e.stopImmediatePropagation();
+        // Skip auto-repeat if this key is already holding a note
+        if (this._heldNotes[code] !== undefined) { return; }
         this.pendingOctave = OCTAVE_FOR_CODE[code];
         if (this.pendingStep !== null) {
-          this._fireNote();
+          this._fireNote(code);
         } else {
           this._syncStatus();
         }
@@ -156,7 +168,7 @@ define([
     // ------------------------------------------------------------------
     // Note firing
 
-    _fireNote: function () {
+    _fireNote: function (triggerCode) {
       var step   = this.pendingStep;
       var octave = this.pendingOctave;
       var alter  = this.pendingAlter;
@@ -170,17 +182,27 @@ define([
         return;
       }
 
+      // Track which key is holding this note; release on keyup
+      this._heldNotes[triggerCode] = midi;
       this.broadcast(EVENTS.BROADCAST.NOTE, "on", midi);
-      var self = this;
-      setTimeout(function () {
-        self.broadcast(EVENTS.BROADCAST.NOTE, "off", midi);
-      }, NOTE_OFF_DELAY_MS);
 
       // Keep octave (convenience — next letter re-uses last octave).
       // Reset step and accidental.
       this.pendingStep  = null;
       this.pendingAlter = 0;
       this._syncStatus();
+    },
+
+    // ------------------------------------------------------------------
+    // Keyup — release the note that was triggered by this key
+
+    _onKeyUpCapture: function (e) {
+      if (!this.enabled) { return; }
+      var code = e.which || e.keyCode;
+      if (this._heldNotes[code] !== undefined) {
+        this.broadcast(EVENTS.BROADCAST.NOTE, "off", this._heldNotes[code]);
+        delete this._heldNotes[code];
+      }
     },
 
     // ------------------------------------------------------------------
