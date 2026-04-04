@@ -120,6 +120,53 @@ _Remaining work:_
 - [ ] Voice leading — SATB basics (3 playlists)
 - [ ] Tag all content, mark as `is_public`
 
+### 2.11 Identification exercise type
+
+A new exercise type where **notes are shown on the staff and the student selects the correct analytical label** from a set of buttons — the reverse of `analytical`. No MIDI grading; the answer mechanism is a multiple-choice UI.
+
+- [ ] Add `identification` to `ExerciseDefinition.TYPES` in `exercise_definition.js`; parse `answer` and `choices` per problem; all notes go to `visible`, nothing to `hidden`; analysis overlays off
+- [ ] Create `lab/static/js/src/models/identification_grader.js` — tracks pointer, student selections, correct/incorrect state; `selectLabel(label)` advances through problems; `grade()` returns same shape as `ExerciseGrader.grade()`
+- [ ] Create `lab/static/js/src/components/input/label_input.js` — renders per-problem choice buttons; dispatches `EVENTS.BROADCAST.LABEL_SELECTED`; shows correct (green) / incorrect (red flash) feedback
+- [ ] Wire into `exercise_sheet.js`: new `initIdentificationMode()` renders notes fully visible, mounts `LabelInputComponent` below canvas, suppresses MIDI grading
+- [ ] Wire into `exercise_context.js`: branch on `isIdentification()` to use `IdentificationGrader`; listen for `LABEL_SELECTED`
+- [ ] Wire into `exercise.js`: instantiate `IdentificationGrader` in `getModels()` when type is `identification`
+- [ ] Add `<div id="label-input"></div>` mount point to `exercise.html`; CSS for button states
+
+**Exercise JSON shape:**
+```json
+{
+  "type": "identification",
+  "key": "jC_",
+  "chord": [
+    { "visible": [60,64,67], "hidden": [], "answer": "I",  "choices": ["I","ii","IV","V"] },
+    { "visible": [62,65,69], "hidden": [], "answer": "ii", "choices": ["I","ii","IV","V"] }
+  ]
+}
+```
+
+### 2.12 Curriculum generation system
+
+Template-based and MusicXML-based batch generation of exercises and playlists. Full spec in [docs/curriculum_generation_spec.md](curriculum_generation_spec.md).
+
+**Path A — template-based management command:**
+- [ ] Create `apps/exercises/generation/analysis_presets.py` — expand shorthand analysis dicts (e.g., `{roman_numerals: true}`) to full Exercise JSON `analysis.mode` objects
+- [ ] Create `apps/exercises/generation/voicing.py` — voicing strategy functions (close, open, close_4voice, keyboard_4voice) that compute MIDI note lists from root + quality + inversion
+- [ ] Create `apps/exercises/generation/templates.py` — template functions: `single_note`, `interval`, `diatonic_intervals`, `triad`, `diatonic_triads`, `seventh_chord`, `diatonic_sevenths`, `scale`, `roto`, `progression`, `chorale_excerpt`
+- [ ] Create `apps/exercises/generation/spec_loader.py` — YAML spec parser and validator; expands key shorthands (`all_major`, `all_minor`, `all_12`, `common_major`, `common_minor`)
+- [ ] Create `apps/exercises/management/commands/generate_curriculum.py` — drives spec_loader + templates, creates Exercise/Playlist/Course records, supports `--dry-run` and `--overwrite`
+- [ ] Create `data/curriculum/theory1.yaml` — first real spec covering intervals, triads, 7th chords, ROTO, basic progressions; validate output matches CSV conventions
+
+**Path B — MusicXML web import (batch):**
+- [ ] Extract `import_musicxml` core logic into `apps/exercises/utils/musicxml.py`
+- [ ] Add batch slicing: upload one file, specify measure ranges, generate multiple exercises
+- [ ] Add playlist creation option to web import form
+- [ ] Add analysis preset selector to web import form
+
+**Path C — word question type:**
+- [ ] Add `"question"` to `ExerciseDefinition.TYPES`; parse `question`, `choices`, `answer` fields; skip staff rendering
+- [ ] Show question text + multiple-choice buttons (reuse `LabelInputComponent` from identification type); no VexFlow, no MIDI
+- [ ] Hook into `IdentificationGrader` (one problem, no notes)
+
 ### 2.10 MusicXML import for teachers
 
 Currently `import_musicxml` is only accessible via the Django admin panel (`/analytic-piano-app-admin/exercises/exercise/`). Needs a dashboard UI for teachers once a teacher/student role distinction exists (see 3.1).

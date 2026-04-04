@@ -32,6 +32,7 @@ define(["lodash", "app/config"], function (_, Config) {
     figured_bass: "figured_bass",
     figured_bass_pcs: "figured_bass_pcs",
     chorale: "chorale",
+    identification: "identification",
   };
 
   /**
@@ -173,6 +174,14 @@ define(["lodash", "app/config"], function (_, Config) {
      */
     isChorale: function () {
       return this.exercise.type === "chorale";
+    },
+    /**
+     * Returns true if this is an identification exercise.
+     *
+     * @return {boolean}
+     */
+    isIdentification: function () {
+      return this.exercise.type === "identification";
     },
     /**
      * Returns the score for chorale exercises.
@@ -337,18 +346,26 @@ define(["lodash", "app/config"], function (_, Config) {
           normalized.visible = chord;
           console.log('chord received as simple array by ExerciseDefinition.parse')
         } else if (_.isObject(chord)) {
-          if (
-            !chord.hasOwnProperty("visible") ||
-            !chord.hasOwnProperty("hidden")
-          ) {
-            throw new Error(
-              "invalid chord at index: " +
-                index +
-                "; chord must have 'visible' and 'hidden' properties"
-            );
+          if (exercise.type === "identification") {
+            var rawNotes = chord.notes || [];
+            if (chord.visible) rawNotes = rawNotes.concat(chord.visible);
+            if (chord.hidden) rawNotes = rawNotes.concat(chord.hidden);
+            normalized.visible = ExerciseDefinition.sortNotes(rawNotes);
+            normalized.hidden = [];
+          } else {
+            if (
+              !chord.hasOwnProperty("visible") ||
+              !chord.hasOwnProperty("hidden")
+            ) {
+              throw new Error(
+                "invalid chord at index: " +
+                  index +
+                  "; chord must have 'visible' and 'hidden' properties"
+              );
+            }
+            normalized.visible = ExerciseDefinition.sortNotes(chord.visible);
+            normalized.hidden = ExerciseDefinition.sortNotes(chord.hidden);
           }
-          normalized.visible = ExerciseDefinition.sortNotes(chord.visible);
-          normalized.hidden = ExerciseDefinition.sortNotes(chord.hidden);
         } else {
           throw new Error("invalid chord at index: " + index);
         }
@@ -369,6 +386,13 @@ define(["lodash", "app/config"], function (_, Config) {
         ) {
           normalized.visible = normalized.notes.slice(0, 1);
           normalized.hidden = normalized.notes.slice(1);
+        } else if (exercise.type === "identification") {
+          normalized.visible = normalized.notes.slice();
+          normalized.hidden = [];
+          if (_.isObject(chord)) {
+            normalized.answer = chord.answer || "";
+            normalized.choices = chord.choices || [];
+          }
         }
 
         if (chord.hasOwnProperty("rhythmValue")) {
@@ -429,6 +453,15 @@ define(["lodash", "app/config"], function (_, Config) {
       exercise.analysis = _.cloneDeep(ANALYSIS_SETTINGS);
       if (definition.hasOwnProperty("analysis") && definition.analysis) {
         Object.assign(exercise.analysis, definition.analysis);
+      }
+      // Force all analysis overlays off for identification — must run after the
+      // Object.assign above so a definition-level "analysis" key can't re-enable them.
+      if (exercise.type === "identification") {
+        for (var modeKey in exercise.analysis.mode) {
+          if (exercise.analysis.mode.hasOwnProperty(modeKey)) {
+            exercise.analysis.mode[modeKey] = false;
+          }
+        }
       }
 
       exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
