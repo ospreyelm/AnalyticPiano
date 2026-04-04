@@ -238,25 +238,8 @@ define([
             this.makeTimestamp();
             this.flawless = false;
             this.errorTally += 1;
-            if (isIdentificationExercise) {
-              this.done = true;
-              this.endTimer();
-              if (this.sealed != true) {
-                this.submitExerciseReport();
-              }
-              state = ExerciseContext.STATE.FINISHED;
-              if (this.sealed != true) {
-                if (IGNORE_MISTAKES_ON_AUTO_ADVANCE === true) {
-                  this.triggerNextExercise();
-                } else {
-                  this.triggerRepeatExercise();
-                }
-              }
-              this.sealed = true;
-            } else {
-              state = ExerciseContext.STATE.INCORRECT;
-              this.done = false;
-            }
+            state = ExerciseContext.STATE.INCORRECT;
+            this.done = false;
             break;
           case this.grader.STATE.PARTIAL:
             this.makeTimestamp();
@@ -749,7 +732,7 @@ define([
           g_problem = this.graded.problems[i];
         }
 
-        if (g_problem) {
+        if (g_problem && g_problem.notes) {
           notes = notes.concat(g_problem.notes);
           notes = _.uniq(notes);
         }

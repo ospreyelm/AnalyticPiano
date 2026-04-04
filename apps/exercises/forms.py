@@ -311,6 +311,7 @@ CHORALE_ANALYSIS_KEYS = [
 
 class ExerciseForm(forms.ModelForm):
     TYPE_CHORALE = "chorale"
+    TYPE_IDENTIFICATION = "identification"
     TYPE_MATCHING = "matching"
     TYPE_ANALYTICAL = "analytical"
     TYPE_ANALYTICAL_PCS = "analytical_pcs"
@@ -322,6 +323,12 @@ class ExerciseForm(forms.ModelForm):
         (TYPE_ANALYTICAL_PCS, "Analysis match with wrong PCs highlighted"),
         (TYPE_FIGURED_BASS, "Figured bass"),
         (TYPE_FIGURED_BASS_PCS, "Figured bass with wrong PCs highlighted"),
+    )
+
+    IDENT_MODE_CHOICES = (
+        ("submit", "Submit mode — student chooses all answers, then presses Submit to see results"),
+        ("practice", "Practice mode — correct/incorrect shown immediately after each choice"),
+        ("test", "Test mode — answers locked after choosing, no feedback shown"),
     )
 
     CHORALE_MODE_CHOICES = (
@@ -464,6 +471,16 @@ class ExerciseForm(forms.ModelForm):
         min_value=0,
     )
 
+    # ---- Identification-only fields ----
+    ident_mode = forms.ChoiceField(
+        choices=IDENT_MODE_CHOICES,
+        widget=forms.RadioSelect(),
+        required=False,
+        label="Feedback mode",
+        initial="submit",
+        help_text="Controls when and whether the student sees correct/incorrect feedback.",
+    )
+
     tags = forms.MultipleChoiceField(
         choices=CONTENT_TAGS,
         widget=forms.CheckboxSelectMultiple,
@@ -497,11 +514,13 @@ class ExerciseForm(forms.ModelForm):
         "chorale_chord_member_min",
         "chorale_excerpt_start",
         "chorale_excerpt_end",
+        "ident_mode",
     ]
 
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
         self._is_chorale = self._detect_chorale()
+        self._is_identification = self._detect_identification()
         self._chorale_voice_choices = []
         self._configure_type_field()
         if self.instance and self.instance.pk:
@@ -526,6 +545,7 @@ class ExerciseForm(forms.ModelForm):
                 self.instance
             )
         self._configure_chorale_fields()
+        self._configure_identification_fields()
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
@@ -548,6 +568,8 @@ class ExerciseForm(forms.ModelForm):
             instance.clean()
             if self._is_chorale:
                 self._store_chorale_settings(instance)
+            if self._is_identification:
+                self._store_identification_settings(instance)
             instance.save()
 
         return instance
@@ -608,16 +630,23 @@ class ExerciseForm(forms.ModelForm):
             return
         if self._is_chorale:
             choices = list(self.fields["type"].choices)
-            if (
-                self.TYPE_CHORALE,
-                "Chorale score",
-            ) not in choices:
+            if (self.TYPE_CHORALE, "Chorale score") not in choices:
                 choices.append((self.TYPE_CHORALE, "Chorale score"))
             self.fields["type"].choices = choices
             self.fields["type"].initial = self.TYPE_CHORALE
             self.fields["type"].widget = forms.HiddenInput()
+        elif self._is_identification:
+            choices = list(self.fields["type"].choices)
+            if (self.TYPE_IDENTIFICATION, "Identification") not in choices:
+                choices.append((self.TYPE_IDENTIFICATION, "Identification"))
+            self.fields["type"].choices = choices
+            self.fields["type"].initial = self.TYPE_IDENTIFICATION
+            self.fields["type"].widget = forms.HiddenInput()
         else:
-            filtered = [c for c in self.fields["type"].choices if c[0] != self.TYPE_CHORALE]
+            filtered = [
+                c for c in self.fields["type"].choices
+                if c[0] not in (self.TYPE_CHORALE, self.TYPE_IDENTIFICATION)
+            ]
             self.fields["type"].choices = tuple(filtered)
 
     def _configure_chorale_fields(self):
@@ -872,6 +901,52 @@ class ExerciseForm(forms.ModelForm):
             'data-tooltip="{0}"></span>',
             text,
         )
+
+    # --------------------
+    # Identification helpers
+    # --------------------
+
+    IDENT_ONLY_FIELDS = ["ident_mode"]
+
+    IDENT_SUPPRESSED_FIELDS = [
+        "rhythm",
+        "visibility_pattern",
+        "time_signature",
+        "semibreves_per_line",
+        "staff_distribution",
+    ]
+
+    def _detect_identification(self):
+        data = {}
+        if self.instance and getattr(self.instance, "data", None):
+            data = self.instance.data
+        form_type = data.get("type")
+        bound_data = getattr(self, "data", None)
+        if not form_type and bound_data and "type" in bound_data:
+            form_type = bound_data.get("type")
+        return form_type == self.TYPE_IDENTIFICATION
+
+    def _configure_identification_fields(self):
+        if not self._is_identification:
+            for field in self.IDENT_ONLY_FIELDS:
+                if field in self.fields:
+                    self.fields[field].widget = forms.HiddenInput()
+            return
+
+        # Hide fields that don't apply to identification
+        for field in self.IDENT_SUPPRESSED_FIELDS:
+            if field in self.fields:
+                self.fields[field].widget = forms.HiddenInput()
+
+        # Populate initial values from existing data
+        if self.instance and getattr(self.instance, "data", None):
+            ident_mode = self.instance.data.get("identMode", "submit")
+            if "ident_mode" in self.fields:
+                self.fields["ident_mode"].initial = ident_mode
+
+    def _store_identification_settings(self, instance):
+        ident_mode = self.cleaned_data.get("ident_mode") or "submit"
+        instance.data["identMode"] = ident_mode
 
 
 class PlaylistForm(forms.ModelForm):

@@ -23,90 +23,42 @@ define([
     STATE: IdentificationGrader.STATE,
 
     reset: function () {
-      this.pointer = 0;
-      this.selections = [];
-      this.mistakes = [];
-      this.finished = false;
+      this.answers = {};  // { problemIndex: label }
     },
 
     initFromDefinition: function (definition) {
       this.reset();
-      var problems = definition.getProblems() || [];
-      if (problems.length === 0) {
-        this.finished = true;
-      }
       return this;
     },
 
-    selectLabel: function (label, definition) {
-      if (this.finished) {
-        return { correct: false, pointer: this.pointer, finished: true };
-      }
-
-      var problems = definition.getProblems();
-      var currentProblem = problems[this.pointer];
-      var isCorrect = (label === currentProblem.answer);
-
-      this.selections[this.pointer] = label;
-      this.mistakes[this.pointer] = !isCorrect;
-
-      this.pointer += 1;
-
-      if (this.pointer >= problems.length) {
-        this.finished = true;
-      }
-
-      return {
-        correct: isCorrect,
-        pointer: this.pointer,
-        finished: this.finished
-      };
+    setAnswer: function (problemIndex, label) {
+      this.answers[problemIndex] = label;
     },
 
     grade: function (definition) {
       var problems = definition.getProblems();
       var gradedProblems = [];
-      var hasMistake = false;
+      var allAnswered = true;
+      var allCorrect = true;
 
       for (var i = 0; i < problems.length; i++) {
         var answer = problems[i].answer;
-        var chosen = this.selections[i] !== undefined ? this.selections[i] : null;
-        var correct = null;
+        var chosen = this.answers.hasOwnProperty(i) ? this.answers[i] : null;
+        var correct = (chosen !== null && chosen !== '') ? (chosen === answer) : null;
 
-        if (chosen !== null) {
-          correct = !this.mistakes[i];
-          if (!correct) {
-            hasMistake = true;
-          }
-        }
+        if (!chosen) { allAnswered = false; }
+        if (correct !== true) { allCorrect = false; }
 
-        gradedProblems.push({
-          answer: answer,
-          chosen: chosen,
-          correct: correct
-        });
+        gradedProblems.push({ answer: answer, chosen: chosen, correct: correct });
       }
 
-      var resultState = PARTIAL;
-      var score = 1;
-
-      if (this.finished) {
-        if (hasMistake) {
-          resultState = INCORRECT;
-          score = 2;
-        } else {
-          resultState = CORRECT;
-          score = 0;
-        }
-      } else {
-        resultState = PARTIAL;
-        score = 1;
-      }
+      var resultState = (allAnswered && allCorrect) ? CORRECT : (allAnswered ? INCORRECT : PARTIAL);
+      var score = (allAnswered && allCorrect) ? 0 : (allAnswered ? 2 : 1);
 
       return {
         result: resultState,
         score: score,
-        activeIndex: this.pointer,
+        activeIndex: null,
         problems: gradedProblems
       };
     }

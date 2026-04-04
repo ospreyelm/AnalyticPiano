@@ -82,7 +82,7 @@ define([
       throw new Error("Missing parameter property: .timeSignature");
     }
 
-    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onLabelSelected"]);
+    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onSubmitIdentification"]);
   };
 
   ExerciseSheetComponent.prototype = new Component();
@@ -144,13 +144,16 @@ define([
       this.subscribe(EVENTS.BROADCAST.NOTE, this.onMidiNote);
       // Listen for pristine/refresh button
       this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onClickPristine);
-      
-      if (this.exerciseContext.getDefinition().isIdentification()) {
-        this.subscribe(EVENTS.BROADCAST.LABEL_SELECTED, this.onLabelSelected);
-      }
     },
     /**
-     * Set up identification mode and the label input component.
+     * Set up identification mode.  No DOM selects are created here —
+     * answers are drawn on the canvas and editing happens via a position:fixed
+     * popup that appears at the cursor when the student clicks near a label.
+     *
+     * Three modes (set via exercise data.identMode):
+     *   "submit"   — pick all answers, press Submit, then see results (default)
+     *   "practice" — correct/incorrect shown immediately after each selection
+     *   "test"     — answers locked after choosing, no feedback ever shown
      */
     initIdentificationMode: function () {
       var self = this;
@@ -159,49 +162,233 @@ define([
       if (grader && grader.initFromDefinition) {
         grader.initFromDefinition(definition);
       }
-      
-      var problems = definition.getProblems();
-      var firstChoices = problems && problems.length > 0 ? problems[0].choices : [];
-      
-      this.labelInput = new LabelInput({
-        el: $('#label-input'),
-        choices: firstChoices,
-        onSelect: function (label) {
-          self.broadcast(EVENTS.BROADCAST.LABEL_SELECTED, label);
-        }
-      });
-      // Component init is omitted due to `render` being enough, but just in case:
-      // (The instructions said "Calls render(currentProblemChoices())")
-      this.labelInput.render(firstChoices);
-    },
-    /**
-     * Callback for when a label is selected in identification mode.
-     */
-    onLabelSelected: function (label) {
-      if (!this.labelInput) return;
-      var self = this;
-      var definition = this.exerciseContext.getDefinition();
-      var grader = this.exerciseContext.grader;
-      var oldPointer = grader ? grader.pointer : 0;
-      
-      var result = grader.selectLabel(label, definition);
-      var wasCorrect = result.correct;
-      
-      this.labelInput.showResult(label, wasCorrect);
-      
-      if (result.pointer > oldPointer && !result.finished) {
-        var problems = definition.getProblems();
-        var nextChoices = problems[result.pointer] ? problems[result.pointer].choices : [];
-        // Delay advance so the correct/incorrect visual feedback is visible before wiping buttons.
-        setTimeout(function () {
-          self.labelInput.advance(nextChoices);
-        }, 600);
+
+      this._identActiveIndex = null;
+      this._identPopupEl = null;
+      var identMode = definition.getIdentMode ? definition.getIdentMode() : 'submit';
+
+      // Show Submit button only in submit mode
+      if (identMode === 'submit') {
+        $('#identification-actions').show();
+        $('#identification-submit').off('click').on('click', this.onSubmitIdentification);
+      } else {
+        $('#identification-actions').hide();
       }
-      
-      if (result.finished) {
-        setTimeout(function () {
-          self.exerciseContext.grade();
-        }, 600);
+
+      // Canvas click: open popup only inside the label hit zone below bass staff
+      this.el.off('click.identification').on('click.identification', function (e) {
+        if (!self.exerciseContext.getDefinition().isIdentification()) { return; }
+
+        var currentMode = self.exerciseContext.getDefinition().getIdentMode
+          ? self.exerciseContext.getDefinition().getIdentMode() : 'submit';
+
+        // Lock after grading in submit mode
+        if (self.exerciseContext.graded && currentMode !== 'practice') { return; }
+
+        var offset = self.el.offset();
+        var clickX = e.pageX - offset.left;
+        var clickY = e.pageY - offset.top;
+
+        var noteStaves = self.staves.slice(1);
+        var hitIndex = -1;
+        for (var i = 0; i < noteStaves.length; i++) {
+          var s = noteStaves[i];
+          var bass = s.connectedStave;
+          if (!bass || !bass.staffSegment) { continue; }
+          var bBottom = bass.getBottomY();
+          // Hit zone: x within column, y in the 60px below bottom of bass staff
+          if (clickX >= s.start_x && clickX <= s.start_x + s.width &&
+              clickY >= bBottom - 4 && clickY <= bBottom + 60) {
+            hitIndex = i;
+            break;
+          }
+        }
+        if (hitIndex === -1) { return; }
+
+        // In test mode, lock slots that already have an answer
+        var grdr = self.exerciseContext.grader;
+        if (currentMode === 'test' && grdr && grdr.answers && grdr.answers.hasOwnProperty(hitIndex)) {
+          return;
+        }
+
+        var problems = definition.getProblems();
+        var problem = problems[hitIndex];
+        if (!problem) { return; }
+
+        self._showIdentPopup(hitIndex, problem.choices, e.clientX, e.clientY);
+      });
+
+      // Change cursor to pointer when hovering over a label zone
+      this.el.off('mousemove.identification').on('mousemove.identification', function (e) {
+        if (!self.exerciseContext.getDefinition().isIdentification()) { return; }
+        var offset = self.el.offset();
+        var cx = e.pageX - offset.left;
+        var cy = e.pageY - offset.top;
+        var noteStaves = self.staves.slice(1);
+        var over = false;
+        for (var i = 0; i < noteStaves.length; i++) {
+          var s = noteStaves[i];
+          var bass = s.connectedStave;
+          if (!bass || !bass.staffSegment) { continue; }
+          var bBottom = bass.getBottomY();
+          if (cx >= s.start_x && cx <= s.start_x + s.width &&
+              cy >= bBottom - 4 && cy <= bBottom + 60) {
+            over = true;
+            break;
+          }
+        }
+        self.el.css('cursor', over ? 'pointer' : '');
+      });
+    },
+
+    /**
+     * Shows a position:fixed popup list of choices at the cursor.
+     */
+    _showIdentPopup: function (problemIndex, choices, clientX, clientY) {
+      var self = this;
+      this._closeIdentPopup();
+
+      var popup = $('<div id="ident-popup"></div>');
+      _.each(choices, function (choice) {
+        var btn = $('<button></button>').addClass('ident-popup-btn').text(choice);
+        btn.on('click', function (e) {
+          e.stopPropagation();
+          var grdr = self.exerciseContext.grader;
+          grdr.setAnswer(problemIndex, choice);
+          self._closeIdentPopup();
+
+          var currentMode = self.exerciseContext.getDefinition().getIdentMode
+            ? self.exerciseContext.getDefinition().getIdentMode() : 'submit';
+
+          if (currentMode === 'practice') {
+            // Show colour feedback immediately
+            var graded = grdr.grade(self.exerciseContext.getDefinition());
+            self.exerciseContext.graded = graded;
+            self.render();
+            if (graded.result === 'correct') {
+              setTimeout(function () { self.exerciseContext.grade(); }, 500);
+            }
+          } else if (currentMode === 'test') {
+            // No colour feedback; auto-submit silently when all slots answered
+            self.exerciseContext.graded = null;
+            self.render();
+            var allProblems = self.exerciseContext.getDefinition().getProblems();
+            var allAnswered = true;
+            for (var i = 0; i < allProblems.length; i++) {
+              if (!grdr.answers || !grdr.answers.hasOwnProperty(i)) {
+                allAnswered = false;
+                break;
+              }
+            }
+            if (allAnswered) {
+              var silentGrade = grdr.grade(self.exerciseContext.getDefinition());
+              setTimeout(function () { self.exerciseContext.grade(); }, 500);
+            }
+          } else {
+            // submit mode: label goes dark, awaiting Submit click
+            self.render();
+          }
+        });
+        popup.append(btn);
+      });
+
+      // Position popup to the right of cursor; shift left if near viewport edge
+      var winW = $(window).width();
+      var left = clientX + 8;
+      popup.css({ top: clientY - 10, left: left });
+      $('body').append(popup);
+      var popupW = popup.outerWidth();
+      if (left + popupW > winW - 10) {
+        popup.css('left', clientX - popupW - 8);
+      }
+
+      this._identPopupEl = popup;
+
+      // Close on any outside click
+      setTimeout(function () {
+        $(document).one('click.identpopup', function () {
+          self._closeIdentPopup();
+        });
+      }, 0);
+    },
+
+    _closeIdentPopup: function () {
+      if (this._identPopupEl) {
+        this._identPopupEl.remove();
+        this._identPopupEl = null;
+      }
+      $(document).off('click.identpopup');
+    },
+
+    /**
+     * Draws the current answer (or a "?" placeholder) below the bass staff,
+     * plus a ✓ or ✗ symbol when graded.
+     * Called from renderStaves() after all staves are drawn.
+     */
+    drawIdentificationLabels: function () {
+      var noteStaves = this.staves.slice(1);
+      if (!noteStaves.length) { return; }
+
+      var grader = this.exerciseContext.grader;
+      var definition = this.exerciseContext.getDefinition();
+      var identMode = definition.getIdentMode ? definition.getIdentMode() : 'submit';
+      var ctx = this.vexRenderer.getContext();
+      var lastGraded = this.exerciseContext.graded;
+
+      var origFont = ctx.font;
+      var origFillStyle = ctx.fillStyle;
+
+      for (var i = 0; i < noteStaves.length; i++) {
+        var treble = noteStaves[i];
+        var bass = treble.connectedStave;
+        if (!bass || !bass.staffSegment) { continue; }
+
+        // Match BassStaveNotater: x = getStartX() + annotateOffsetX(8)
+        // y = getBottomY() + margin.bottom(10) + font ascender offset(8) = +18 total
+        var lx = bass.getStartX() + 8;
+        var ly = bass.getBottomY() + 18;
+
+        var chosen = grader && grader.answers && grader.answers.hasOwnProperty(i)
+          ? grader.answers[i] : null;
+        var label = chosen || '?';
+
+        var fillStyle = '#888888'; // unanswered
+        if (chosen) { fillStyle = '#444444'; } // answered
+        var showCheck = false;
+        var showCross = false;
+
+        // Show colour feedback when graded (never in test mode)
+        if (lastGraded && lastGraded.problems && lastGraded.problems[i] && identMode !== 'test') {
+          var gp = lastGraded.problems[i];
+          if (gp.correct === true)  { fillStyle = '#28a745'; showCheck = true; }
+          if (gp.correct === false) { fillStyle = '#dc3545'; showCross = true; }
+        }
+
+        ctx.font = '18px JazzSerifs';
+        ctx.fillStyle = fillStyle;
+        ctx.fillText(label, lx, ly);
+
+        // ✓ or ✗ drawn below the label text
+        if (showCheck || showCross) {
+          ctx.font = 'bold 14px sans-serif';
+          ctx.fillText(showCheck ? '✓' : '✗', lx, ly + 18);
+        }
+      }
+
+      ctx.font = origFont;
+      ctx.fillStyle = origFillStyle;
+    },
+
+    /**
+     * Called when the student clicks Submit (submit mode only).
+     */
+    onSubmitIdentification: function () {
+      var self = this;
+      var graded = this.exerciseContext.grader.grade(this.exerciseContext.getDefinition());
+      this.exerciseContext.graded = graded;
+      this.render();
+      if (graded.result === 'correct') {
+        setTimeout(function () { self.exerciseContext.grade(); }, 500);
       }
     },
     /**
@@ -284,7 +471,6 @@ define([
         return selected < 0 && current.selected ? index + 1 : selected;
       },
       -1);
-      console.log("renderExerciseStatus: exc.state=" + exc.state + ", CORRECT=" + exc.STATE.CORRECT + ", status_map[exc.state]=" + JSON.stringify(status_map[exc.state]));
       tpl_data.status_text = status_map[exc.state].text;
       tpl_data.status_color = status_map[exc.state].color;
 
@@ -525,6 +711,11 @@ define([
         const append_barline = _barlines.indexOf(i) != -1 && show_barlines;
         stave.render(exercise_midi_nums, exercise_view_bool, append_barline);
       }
+
+      if (this.exerciseContext.getDefinition().isIdentification()) {
+        this.drawIdentificationLabels();
+      }
+
       return this;
     },
     /**

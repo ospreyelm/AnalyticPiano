@@ -192,6 +192,20 @@ class ExerciseAdmin(ImportExportModelAdmin):
                     {"fields": tuple(ExerciseForm.CHORALE_ONLY_FIELDS)},
                 )
             )
+
+        identification = False
+        if obj and isinstance(getattr(obj, "data", None), dict):
+            identification = obj.data.get("type") == ExerciseForm.TYPE_IDENTIFICATION
+        elif request.method == "POST":
+            identification = request.POST.get("type") == ExerciseForm.TYPE_IDENTIFICATION
+        if identification:
+            base_fieldsets.append(
+                (
+                    "Identification settings",
+                    {"fields": tuple(ExerciseForm.IDENT_ONLY_FIELDS)},
+                )
+            )
+
         return base_fieldsets
 
     def show_on_site(self, obj):

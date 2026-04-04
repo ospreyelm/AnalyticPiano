@@ -8,104 +8,125 @@ define([
   /**
    * LabelInputComponent
    *
+   * Renders one <select> dropdown per problem, positioned under each chord
+   * on the staff.  The caller is responsible for calling updatePositions()
+   * after VexFlow has drawn the staves so each select can be centred under
+   * its corresponding chord.
+   *
    * @constructor
-   * @param {object} settings
-   * @param {jQuery} settings.el - The container element.
-   * @param {array} settings.choices - Initial array of label strings.
-   * @param {function} settings.onSelect - Callback fn(label).
+   * @param {object}   settings
+   * @param {jQuery}   settings.containerEl - Absolutely-positioned container div.
+   * @param {array}    settings.problems    - Array of problem objects with .choices.
+   * @param {function} settings.onAnswer    - Callback fn(problemIndex, label).
    */
   var LabelInputComponent = function (settings) {
     this.settings = settings || {};
-    this.el = this.settings.el;
-    this.choices = this.settings.choices || [];
-    this.onSelect = this.settings.onSelect || function () {};
-
-    this.buttons = {};
-    this.isWait = false;
+    this.containerEl = this.settings.containerEl;
+    this.problems = this.settings.problems || [];
+    this.onAnswer = this.settings.onAnswer || function () {};
+    this.selects = [];
   };
 
   LabelInputComponent.prototype = new Component();
 
   _.extend(LabelInputComponent.prototype, {
     initComponent: function () {
-      // render() is called explicitly by exercise_sheet.js after construction.
-      // initComponent() is a no-op here; it exists only to satisfy the Component contract.
+      // no-op — render() is called explicitly from exercise_sheet.js
     },
 
     /**
-     * Clears the container and renders a button for each choice string.
-     *
-     * @param {array} choices
+     * Creates one <select> per problem and appends them to containerEl.
      */
-    render: function (choices) {
-      if (typeof choices !== "undefined") {
-        this.choices = choices;
-      }
-      
-      this.el.empty();
-      this.el.css("display", "flex");
-      this.buttons = {};
-      this.isWait = false;
-
+    render: function () {
       var self = this;
-      _.each(this.choices, function (label) {
-        var btn = $("<button></button>")
-          .addClass("label-choice-btn")
-          .text(label);
+      this.containerEl.empty();
+      this.selects = [];
 
-        btn.on("click", function (e) {
-          e.preventDefault();
-          if (self.isWait) {
-            return;
-          }
-
-          btn.addClass("selected");
-          self.isWait = true;
-          self.onSelect(label);
+      _.each(this.problems, function (problem, i) {
+        var sel = $("<select></select>").addClass("chord-id-select");
+        sel.append($("<option></option>").val("").text("—"));
+        _.each(problem.choices, function (choice) {
+          sel.append($("<option></option>").val(choice).text(choice));
         });
-
-        self.buttons[label] = btn;
-        self.el.append(btn);
+        sel.on("change", function () {
+          self.onAnswer(i, $(this).val());
+        });
+        self.selects.push(sel);
+        self.containerEl.append(sel);
       });
 
       return this;
     },
 
     /**
-     * Shows the result of the selection.
+     * Positions each select under the centre of its chord stave.
      *
-     * @param {string} label 
-     * @param {boolean} correct 
+     * stave.start_x / stave.width are in canvas pixel coordinates.
+     * #chord-dropdowns overlays #staffwrapper, not the canvas itself, so we
+     * must add the canvas's offset within staffwrapper to translate.
+     *
+     * @param {array}  staves   - exercise_sheet.staves (treble staves; staves[0] is display stave)
+     * @param {jQuery} canvasEl - The <canvas id="staff"> element
      */
-    showResult: function (label, correct) {
-      var btn = this.buttons[label];
-      if (!btn) {
+    updatePositions: function (staves, canvasEl) {
+      var noteStaves = staves.slice(1); // skip the clef/key-signature display stave
+      if (noteStaves.length !== this.selects.length) {
         return;
       }
 
-      var self = this;
-      btn.removeClass("selected");
+      // canvas offset relative to #staffwrapper (its offsetParent)
+      var canvasOffsetLeft = canvasEl[0].offsetLeft || 0;
+      var canvasOffsetTop  = canvasEl[0].offsetTop  || 0;
 
-      if (correct) {
-        btn.addClass("correct");
-        // Exercise will advance via advance() manually, leaving the button in the correct state
-        // until then. No timeout needed to re-enable them.
-      } else {
-        btn.addClass("incorrect");
-        setTimeout(function () {
-          btn.removeClass("incorrect");
-          self.isWait = false;
-        }, 800);
+      for (var i = 0; i < noteStaves.length; i++) {
+        var treble = noteStaves[i];
+        var center = Math.round(canvasOffsetLeft + treble.start_x + treble.width / 2);
+
+        var top = canvasOffsetTop + 10; // fallback
+        try {
+          var bassStave = treble.connectedStave;
+          if (bassStave && bassStave.staffSegment) {
+            top = Math.round(canvasOffsetTop + bassStave.staffSegment.getBottomY()) + 8;
+          }
+        } catch (e) { /* ignore */ }
+
+        this.selects[i].css({ left: center + "px", top: top + "px" });
       }
     },
 
     /**
-     * Resets for the next problem.
+     * Marks each select correct/incorrect after a Submit.
      *
-     * @param {array} newChoices 
+     * @param {array} gradedProblems - Array of {answer, chosen, correct} objects.
      */
-    advance: function (newChoices) {
-      this.render(newChoices);
+    showResults: function (gradedProblems) {
+      for (var i = 0; i < gradedProblems.length; i++) {
+        var sel = this.selects[i];
+        if (!sel) { continue; }
+        var p = gradedProblems[i];
+        sel.removeClass("id-correct id-incorrect id-unanswered");
+        if (!p.chosen) {
+          sel.addClass("id-unanswered");
+        } else if (p.correct) {
+          sel.addClass("id-correct");
+        } else {
+          sel.addClass("id-incorrect");
+        }
+      }
+    },
+
+    /**
+     * Disables the selects for problems that are already correct so the
+     * student only has to fix the wrong ones.
+     *
+     * @param {array} gradedProblems
+     */
+    lockCorrect: function (gradedProblems) {
+      for (var i = 0; i < gradedProblems.length; i++) {
+        if (gradedProblems[i] && gradedProblems[i].correct && this.selects[i]) {
+          this.selects[i].prop("disabled", true);
+        }
+      }
     }
   });
 

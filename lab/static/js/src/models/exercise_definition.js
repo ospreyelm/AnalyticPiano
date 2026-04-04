@@ -184,6 +184,17 @@ define(["lodash", "app/config"], function (_, Config) {
       return this.exercise.type === "identification";
     },
     /**
+     * Returns the feedback mode for identification exercises.
+     * "submit"   — student picks all, presses Submit, then sees results (default)
+     * "practice" — correct/incorrect shown immediately after each selection
+     * "test"     — answers locked after choosing, no feedback ever shown
+     *
+     * @return {string}
+     */
+    getIdentMode: function () {
+      return this.exercise.identMode || "submit";
+    },
+    /**
      * Returns the score for chorale exercises.
      *
      * @return {object}
@@ -462,6 +473,7 @@ define(["lodash", "app/config"], function (_, Config) {
             exercise.analysis.mode[modeKey] = false;
           }
         }
+        exercise.identMode = definition.identMode || "submit";
       }
 
       exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
