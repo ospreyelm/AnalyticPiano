@@ -178,8 +178,15 @@ define([
       var isChoraleExercise =
         typeof this.definition.isChorale === "function" &&
         this.definition.isChorale();
+      var isIdentificationExercise = 
+        typeof this.definition.isIdentification === "function" &&
+        this.definition.isIdentification();
 
-      graded = this.grader.grade(this.definition, this.inputChords);
+      if (isIdentificationExercise) {
+        graded = this.grader.grade(this.definition);
+      } else {
+        graded = this.grader.grade(this.definition, this.inputChords);
+      }
       // TODO: What does this do?
       if (this.inputChords._items[0]._notes[109]) {
         // window.console.dir('catch dummy note');
@@ -199,9 +206,9 @@ define([
               this.submitExerciseReport();
             }
 
-            var treatAsFlawless = this.flawless === true || isChoraleExercise;
+            var treatAsFlawless = this.flawless === true || isChoraleExercise || isIdentificationExercise;
             var treatAsFinishedWithErrors =
-              this.flawless === false && !isChoraleExercise;
+              this.flawless === false && !isChoraleExercise && !isIdentificationExercise;
 
             if (treatAsFlawless) {
               state = ExerciseContext.STATE.CORRECT;
@@ -229,10 +236,27 @@ define([
             break;
           case this.grader.STATE.INCORRECT:
             this.makeTimestamp();
-            state = ExerciseContext.STATE.INCORRECT;
-            this.done = false;
             this.flawless = false;
             this.errorTally += 1;
+            if (isIdentificationExercise) {
+              this.done = true;
+              this.endTimer();
+              if (this.sealed != true) {
+                this.submitExerciseReport();
+              }
+              state = ExerciseContext.STATE.FINISHED;
+              if (this.sealed != true) {
+                if (IGNORE_MISTAKES_ON_AUTO_ADVANCE === true) {
+                  this.triggerNextExercise();
+                } else {
+                  this.triggerRepeatExercise();
+                }
+              }
+              this.sealed = true;
+            } else {
+              state = ExerciseContext.STATE.INCORRECT;
+              this.done = false;
+            }
             break;
           case this.grader.STATE.PARTIAL:
             this.makeTimestamp();
@@ -251,7 +275,7 @@ define([
       this.state = state;
 
       this.updateDisplayChords();
-      if (!isChoraleExercise) {
+      if (!isChoraleExercise && !isIdentificationExercise) {
         this.inputChords.goTo(graded.activeIndex);
       }
 

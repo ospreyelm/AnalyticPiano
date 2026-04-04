@@ -14,6 +14,7 @@ define([
   "./exercise_note_factory",
   "./rendering/vexflow_adapter",
   "./score_timeline",
+  "app/components/input/label_input",
 ], function (
   $,
   $UI,
@@ -28,7 +29,8 @@ define([
   StaveNotater,
   ExerciseNoteFactory,
   VexFlowAdapter,
-  ScoreTimeline
+  ScoreTimeline,
+  LabelInput
 ) {
   "use strict";
 
@@ -80,7 +82,7 @@ define([
       throw new Error("Missing parameter property: .timeSignature");
     }
 
-    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine"]);
+    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onLabelSelected"]);
   };
 
   ExerciseSheetComponent.prototype = new Component();
@@ -102,6 +104,9 @@ define([
       // Chorale-specific init
       if (this.exerciseContext.getDefinition().isChorale()) {
         this.initChoraleMode();
+      }
+      if (this.exerciseContext.getDefinition().isIdentification()) {
+        this.initIdentificationMode();
       }
     },
     /**
@@ -139,6 +144,65 @@ define([
       this.subscribe(EVENTS.BROADCAST.NOTE, this.onMidiNote);
       // Listen for pristine/refresh button
       this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onClickPristine);
+      
+      if (this.exerciseContext.getDefinition().isIdentification()) {
+        this.subscribe(EVENTS.BROADCAST.LABEL_SELECTED, this.onLabelSelected);
+      }
+    },
+    /**
+     * Set up identification mode and the label input component.
+     */
+    initIdentificationMode: function () {
+      var self = this;
+      var definition = this.exerciseContext.getDefinition();
+      var grader = this.exerciseContext.grader;
+      if (grader && grader.initFromDefinition) {
+        grader.initFromDefinition(definition);
+      }
+      
+      var problems = definition.getProblems();
+      var firstChoices = problems && problems.length > 0 ? problems[0].choices : [];
+      
+      this.labelInput = new LabelInput({
+        el: $('#label-input'),
+        choices: firstChoices,
+        onSelect: function (label) {
+          self.broadcast(EVENTS.BROADCAST.LABEL_SELECTED, label);
+        }
+      });
+      // Component init is omitted due to `render` being enough, but just in case:
+      // (The instructions said "Calls render(currentProblemChoices())")
+      this.labelInput.render(firstChoices);
+    },
+    /**
+     * Callback for when a label is selected in identification mode.
+     */
+    onLabelSelected: function (label) {
+      if (!this.labelInput) return;
+      var self = this;
+      var definition = this.exerciseContext.getDefinition();
+      var grader = this.exerciseContext.grader;
+      var oldPointer = grader ? grader.pointer : 0;
+      
+      var result = grader.selectLabel(label, definition);
+      var wasCorrect = result.correct;
+      
+      this.labelInput.showResult(label, wasCorrect);
+      
+      if (result.pointer > oldPointer && !result.finished) {
+        var problems = definition.getProblems();
+        var nextChoices = problems[result.pointer] ? problems[result.pointer].choices : [];
+        // Delay advance so the correct/incorrect visual feedback is visible before wiping buttons.
+        setTimeout(function () {
+          self.labelInput.advance(nextChoices);
+        }, 600);
+      }
+      
+      if (result.finished) {
+        setTimeout(function () {
+          self.exerciseContext.grade();
+        }, 600);
+      }
     },
     /**
      * Chorale mode setup: ensure grader is initialized; keep display settings

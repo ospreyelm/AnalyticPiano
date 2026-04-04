@@ -1025,3 +1025,22 @@ ul.pagination li {
 .emailinput input {
   max-width: 85rem !important;
 }
+
+#label-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: center;
+}
+.label-choice-btn {
+  padding: 8px 20px;
+  font-size: 1rem;
+  border: 2px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.label-choice-btn.selected { border-color: #555; }
+.label-choice-btn.correct { background: #d4edda; border-color: #28a745; }
+.label-choice-btn.incorrect { background: #f8d7da; border-color: #dc3545; }

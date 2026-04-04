@@ -29,5 +29,6 @@ define({
     NEXTEXERCISE: "nextexercise",
     FIRSTEXERCISE: "firstexercise",
     INPUT_MODE: "inputmode",
+    LABEL_SELECTED: "labelselected",
   },
 });

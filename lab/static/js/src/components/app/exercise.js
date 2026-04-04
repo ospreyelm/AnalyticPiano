@@ -20,6 +20,7 @@ define([
   "app/models/exercise_definition",
   "app/models/exercise_grader",
   "app/models/chorale_grader",
+  "app/models/identification_grader",
   "app/models/exercise_context",
 ], function (
   module,
@@ -43,6 +44,7 @@ define([
   ExerciseDefinition,
   ExerciseGrader,
   ChoraleGrader,
+  IdentificationGrader,
   ExerciseContext
 ) {
   /**
@@ -81,6 +83,9 @@ define([
     if (models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale()) {
       models.exerciseGrader = new ChoraleGrader({});
       // Initialize from definition so it has the timeline ready
+      models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
+    } else if (models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) {
+      models.exerciseGrader = new IdentificationGrader({});
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else {
       models.exerciseGrader = new ExerciseGrader({
