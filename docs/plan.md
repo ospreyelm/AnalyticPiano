@@ -167,6 +167,41 @@ Template-based and MusicXML-based batch generation of exercises and playlists. F
 - [ ] Show question text + multiple-choice buttons (reuse `LabelInputComponent` from identification type); no VexFlow, no MIDI
 - [ ] Hook into `IdentificationGrader` (one problem, no notes)
 
+**Explanation logic generation (new — tied to 2.13):**
+- [ ] Each generated exercise spec should include an `explanation` block alongside the exercise JSON containing: `summary` (one-sentence string), `steps` (ordered array of strings), and optional `highlights` (MIDI note lists or staff note IDs to emphasize)
+- [ ] Add an optional explanation template / DSL field to YAML curriculum specs so authors can define explanation patterns (e.g., `interval_quality_steps`, `triad_inversion_steps`) that the generator expands per-problem — this ensures explanations scale with generated content without hand-authoring each one
+- [ ] `generate_curriculum` command writes explanation blocks into Exercise JSON when a template is defined in the spec
+
+### 2.13 "Explain this" button (student rationale panel)
+
+After a student attempts an exercise problem (correct or incorrect), they can tap/click **"Explain this"** to see a step-by-step rationale for why the answer is correct, using the same vocabulary the app uses elsewhere (semitone counts, scale degrees, chord quality/inversion logic, set-class normal form, figured-bass realization steps, etc.).
+
+**UI:**
+- [ ] Add "Explain this" button near the correctness feedback area in `exercise.html` / exercise player; hidden until at least one attempt has been made on the current problem
+- [ ] Optionally show a small `?` icon beside the displayed correct answer as a secondary affordance
+- [ ] Render explanation in a lightweight popover / expandable panel (not a blocking modal) containing: `summary` (one sentence), `steps` (bullet list), and optional note/chord highlights on the staff or piano
+
+**Explanation data contract:**
+- [ ] Define a shared `ExplanationBlock` shape: `{ summary: string, steps: string[], highlights?: number[] }` used by all exercise types
+- [ ] Create `lab/static/js/src/utils/explanation_renderer.js` — takes an `ExplanationBlock` and mounts the popover/panel UI; handles show/hide/animation
+- [ ] Create `lab/static/js/src/explanations/` directory with one module per exercise type (below); each exports a `buildExplanation(problem, answer) → ExplanationBlock` function
+
+**Explanation logic — incremental rollout:**
+- [ ] `explanations/interval.js` — spell note names, compute generic interval number (staff distance), count semitones, determine quality (major/minor/perfect/aug/dim)
+- [ ] `explanations/triad.js` — identify root via stacking thirds, determine quality from interval pattern, determine inversion from bass note
+- [ ] `explanations/seventh_chord.js` — extend triad logic to four-note stacks, add seventh quality
+- [ ] `explanations/pc_set.js` — show normal form / prime form derivation steps; include interval-class vector if curriculum uses it
+- [ ] `explanations/figured_bass.js` — show chord tones implied by figures, key context, and why a given realization matches
+- [ ] `explanations/identification.js` — wrap the above per problem type for the `identification` exercise type (2.11)
+
+**Wiring:**
+- [ ] Wire `explanation_renderer.js` into `exercise_context.js`: after `grade()` resolves, read `problem.explanation` (static, from exercise JSON) or call the appropriate `buildExplanation()` function (dynamic); expose result to the renderer
+- [ ] Support both static (explanation baked into exercise JSON by the curriculum generator — see 2.12) and dynamic (computed client-side) explanation sources; static takes precedence when present
+
+**Telemetry (optional but recommended for pilot):**
+- [ ] Log `explanation_opened` event with: exercise type, problem index, whether the student's answer was correct, attempt count at time of open
+- [ ] Use event data to evaluate whether explanation usage correlates with improved second-attempt accuracy
+
 ### 2.10 MusicXML import for teachers
 
 Currently `import_musicxml` is only accessible via the Django admin panel (`/analytic-piano-app-admin/exercises/exercise/`). Needs a dashboard UI for teachers once a teacher/student role distinction exists (see 3.1).
