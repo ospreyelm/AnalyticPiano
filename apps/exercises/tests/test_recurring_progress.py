@@ -2,16 +2,26 @@ from datetime import datetime, timezone as dt_timezone
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from django.test import SimpleTestCase
+from django.contrib.auth import get_user_model
+from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 from zoneinfo import ZoneInfo
 
-from apps.exercises.models import PlaylistCourseOrdered
+from apps.exercises.models import (
+    Course,
+    Exercise,
+    PerformanceData,
+    Playlist,
+    PlaylistCourseOrdered,
+    RecurringPlaylistPeriodProgress,
+)
 from apps.exercises.utils.recurrence import (
     count_playlist_cycles,
     get_assignment_period_bounds,
     rebuild_period_progress,
 )
+
+User = get_user_model()
 
 
 class RecurringAssignmentPeriodBoundsTests(SimpleTestCase):
@@ -394,3 +404,199 @@ class RecurringProgressRebuildTests(SimpleTestCase):
         defaults = update_or_create_mock.call_args.kwargs["defaults"]
         self.assertEqual(defaults["counted_passes"], 1)
         self.assertEqual(defaults["first_pass_at"], valid_performed_at)
+
+
+class RecurringSubmitFlowTests(TestCase):
+    def _build_assignment(self, is_recurring, required_passes_per_period=1):
+        author = User.objects.create_user(
+            email="author@example.com",
+            password="test-pass-123",
+        )
+        performer = User.objects.create_user(
+            email="performer@example.com",
+            password="test-pass-123",
+        )
+        exercise = Exercise(
+            authored_by=author,
+            data={},
+        )
+        exercise.save()
+        playlist = Playlist(
+            authored_by=author,
+            name="Recurring Playlist",
+        )
+        playlist.save()
+        playlist.exercises.add(exercise, through_defaults={"order": 1})
+        course = Course(
+            authored_by=author,
+            title="Recurring Course",
+        )
+        course.save()
+        assignment = PlaylistCourseOrdered.objects.create(
+            playlist=playlist,
+            course=course,
+            order=1,
+            is_recurring=is_recurring,
+            recurrence_unit=PlaylistCourseOrdered.RECURRENCE_UNIT_DAY if is_recurring else "",
+            required_passes_per_period=required_passes_per_period,
+            recurrence_starts_on=timezone.make_aware(datetime(2026, 4, 9, 0, 0)) if is_recurring else None,
+        )
+        return performer, exercise, playlist, course, assignment
+
+    @patch("apps.exercises.models.Course.add_performance_to_dict")
+    def test_submit_uses_single_timestamp_for_payload_and_rebuild_boundary(
+        self,
+        _add_performance_to_dict_mock,
+    ):
+        before_boundary = timezone.make_aware(datetime(2026, 4, 9, 23, 59, 59))
+        after_boundary = timezone.make_aware(datetime(2026, 4, 10, 0, 0, 0))
+
+        performer, exercise, playlist, course, _assignment = self._build_assignment(
+            is_recurring=True,
+            required_passes_per_period=1,
+        )
+
+        with patch("apps.exercises.models.now") as now_mock:
+            now_mock.side_effect = [before_boundary, after_boundary]
+            PerformanceData.submit(
+                user_id=performer.id,
+                course_id=course._id,
+                playlist_id=playlist._id,
+                exercise_id=exercise.id,
+                data={"error_tally": 0},
+            )
+
+        progress = RecurringPlaylistPeriodProgress.objects.get(
+            user=performer,
+            course=course,
+            playlist=playlist,
+        )
+        progress_period_start_local = timezone.localtime(progress.period_start)
+        progress_period_end_local = timezone.localtime(progress.period_end)
+        self.assertEqual(
+            progress_period_start_local,
+            timezone.make_aware(datetime(2026, 4, 9, 0, 0, 0)),
+        )
+        self.assertEqual(
+            progress_period_end_local,
+            timezone.make_aware(datetime(2026, 4, 10, 0, 0, 0)),
+        )
+        self.assertEqual(progress.counted_passes, 1)
+
+        pd = PerformanceData.objects.get(
+            user=performer,
+            playlist=playlist,
+            course=course,
+        )
+        self.assertEqual(pd.data[-1]["performed_at"], "2026-04-09 23:59:59")
+
+    @patch("apps.exercises.models.Course.add_performance_to_dict")
+    @patch("apps.exercises.models.now")
+    def test_submit_refreshes_recurring_progress_for_recurring_assignments(
+        self,
+        now_mock,
+        _add_performance_to_dict_mock,
+    ):
+        now_mock.return_value = timezone.make_aware(datetime(2026, 4, 9, 9, 0))
+        performer, exercise, playlist, course, _assignment = self._build_assignment(
+            is_recurring=True,
+            required_passes_per_period=2,
+        )
+
+        PerformanceData.submit(
+            user_id=performer.id,
+            course_id=course._id,
+            playlist_id=playlist._id,
+            exercise_id=exercise.id,
+            data={"error_tally": 0},
+        )
+
+        self.assertEqual(RecurringPlaylistPeriodProgress.objects.count(), 1)
+        progress = RecurringPlaylistPeriodProgress.objects.get(
+            user=performer,
+            course=course,
+            playlist=playlist,
+        )
+        self.assertEqual(progress.counted_passes, 1)
+        self.assertFalse(progress.target_met)
+
+        now_mock.return_value = timezone.make_aware(datetime(2026, 4, 9, 9, 5))
+        PerformanceData.submit(
+            user_id=performer.id,
+            course_id=course._id,
+            playlist_id=playlist._id,
+            exercise_id=exercise.id,
+            data={"error_tally": 0},
+        )
+
+        self.assertEqual(RecurringPlaylistPeriodProgress.objects.count(), 1)
+        progress.refresh_from_db()
+        self.assertEqual(progress.counted_passes, 2)
+        self.assertTrue(progress.target_met)
+
+    @patch("apps.exercises.models.Course.add_performance_to_dict")
+    @patch("apps.exercises.models.now")
+    def test_submit_leaves_non_recurring_assignments_without_progress_rows(
+        self,
+        now_mock,
+        _add_performance_to_dict_mock,
+    ):
+        now_mock.return_value = timezone.make_aware(datetime(2026, 4, 9, 10, 0))
+        performer, exercise, playlist, course, _assignment = self._build_assignment(
+            is_recurring=False,
+        )
+
+        PerformanceData.submit(
+            user_id=performer.id,
+            course_id=course._id,
+            playlist_id=playlist._id,
+            exercise_id=exercise.id,
+            data={"error_tally": 0},
+        )
+
+        self.assertEqual(RecurringPlaylistPeriodProgress.objects.count(), 0)
+
+    @patch("apps.exercises.models.Course.add_performance_to_dict")
+    @patch("apps.exercises.models.now")
+    def test_submit_uses_deterministic_assignment_order_when_duplicates_exist(
+        self,
+        now_mock,
+        _add_performance_to_dict_mock,
+    ):
+        now_mock.return_value = timezone.make_aware(datetime(2026, 4, 9, 11, 0))
+        performer, exercise, playlist, course, assignment = self._build_assignment(
+            is_recurring=True,
+            required_passes_per_period=1,
+        )
+        assignment.order = 2
+        assignment.required_passes_per_period = 1
+        assignment.save()
+
+        # Duplicate assignment rows can exist historically; submit() should pick the
+        # deterministic first row by (order, pk), i.e. this one with order=1.
+        PlaylistCourseOrdered.objects.create(
+            playlist=playlist,
+            course=course,
+            order=1,
+            is_recurring=True,
+            recurrence_unit=PlaylistCourseOrdered.RECURRENCE_UNIT_DAY,
+            required_passes_per_period=2,
+            recurrence_starts_on=timezone.make_aware(datetime(2026, 4, 9, 0, 0)),
+        )
+
+        PerformanceData.submit(
+            user_id=performer.id,
+            course_id=course._id,
+            playlist_id=playlist._id,
+            exercise_id=exercise.id,
+            data={"error_tally": 0},
+        )
+
+        progress = RecurringPlaylistPeriodProgress.objects.get(
+            user=performer,
+            course=course,
+            playlist=playlist,
+        )
+        self.assertEqual(progress.required_passes, 2)
+        self.assertEqual(progress.counted_passes, 1)
+        self.assertFalse(progress.target_met)

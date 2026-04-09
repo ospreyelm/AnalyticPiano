@@ -28,6 +28,7 @@ from apps.exercises.constants import (
     KEY_SIGNATURES,
     pseudo_key_to_sig,
 )
+from apps.exercises.utils.recurrence import rebuild_period_progress
 from apps.exercises.utils.transpose import transpose
 
 User = get_user_model()
@@ -1053,17 +1054,34 @@ class PerformanceData(models.Model):
             course_id=course_id,
             playlist_id=playlist_id,
         )
+        submitted_at = now()
         exercise_data = dict(
             **data,
             id=exercise_id,  # rename
             # exercise_ID = exercise_id
-            performed_at=dateformat.format(now(), "Y-m-d H:i:s"),  # rename and reformat
+            performed_at=dateformat.format(submitted_at, "Y-m-d H:i:s"),  # rename and reformat
             # server_date = datetime.isoformat(datetime.now())[:-3]+'Z' # UTC
         )
 
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
+
+        if course_id:
+            # Defensive ordering keeps .first() deterministic if duplicate rows exist.
+            recurring_assignment = PlaylistCourseOrdered.objects.filter(
+                course_id=course_id,
+                playlist_id=playlist_id,
+                is_recurring=True,
+            ).order_by("order", "pk").first()
+            if recurring_assignment is not None:
+                rebuild_period_progress(
+                    assignment=recurring_assignment,
+                    performance_data=pd,
+                    # Reuse the same captured submit timestamp to avoid boundary drift.
+                    occurred_at=submitted_at,
+                )
+
         try:
             if course_id:
                 course = Course.objects.get(_id=course_id)
