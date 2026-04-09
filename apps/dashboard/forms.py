@@ -479,6 +479,22 @@ class DashboardCourseForm(CourseForm):
                 ).verbose_name
                 + " (YYYY-MM-DD)",
             },
+            {
+                "attr_name": "is_recurring",
+                "placeholder": "Recurring (true/false)",
+            },
+            {
+                "attr_name": "recurrence_unit",
+                "placeholder": "Recurrence unit (day|week)",
+            },
+            {
+                "attr_name": "required_passes_per_period",
+                "placeholder": "Required passes per period",
+            },
+            {
+                "attr_name": "recurrence_starts_on",
+                "placeholder": "Recurrence start (YYYY-MM-DD)",
+            },
         ],
         # this function is passed to ManyField's `prepare_value` to render dates properly
         through_prepare=lambda through_values: {
@@ -488,6 +504,9 @@ class DashboardCourseForm(CourseForm):
             else None,
             "due_date": through_values["due_date"].strftime(course_date_format)
             if through_values["due_date"]
+            else None,
+            "recurrence_starts_on": through_values["recurrence_starts_on"].strftime(course_date_format)
+            if through_values["recurrence_starts_on"]
             else None,
         },
         csv=True,
@@ -565,6 +584,41 @@ class DashboardCourseForm(CourseForm):
                         "playlists", f"Invalid due date '{value_pair[1]['due_date']}'"
                     )
                     value_pair[1]["due_date"] = None
+            is_rec = value_pair[1].get("is_recurring", "")
+            if isinstance(is_rec, str):
+                value_pair[1]["is_recurring"] = is_rec.strip().lower() in (
+                    "1",
+                    "true",
+                    "yes",
+                    "on",
+                )
+            else:
+                value_pair[1]["is_recurring"] = bool(is_rec)
+            ppp = value_pair[1].get("required_passes_per_period", "")
+            if isinstance(ppp, int):
+                value_pair[1]["required_passes_per_period"] = max(1, ppp)
+            elif ppp and isinstance(ppp, str) and ppp.strip():
+                try:
+                    value_pair[1]["required_passes_per_period"] = max(1, int(ppp))
+                except (ValueError, TypeError):
+                    value_pair[1]["required_passes_per_period"] = 1
+            else:
+                value_pair[1]["required_passes_per_period"] = 1
+            rst = value_pair[1].get("recurrence_starts_on", None)
+            rst = rst.strip() if isinstance(rst, str) else rst
+            if rst:
+                try:
+                    value_pair[1]["recurrence_starts_on"] = datetime.strptime(
+                        rst, course_date_format
+                    )
+                except:
+                    self.add_error(
+                        "playlists",
+                        f"Invalid recurrence start '{rst}'",
+                    )
+                    value_pair[1]["recurrence_starts_on"] = None
+            else:
+                value_pair[1]["recurrence_starts_on"] = None
         return super().clean()
 
     def save(self, commit=True):
