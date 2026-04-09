@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from apps.exercises.models import Course, PerformanceData, PlaylistCourseOrdered
+from apps.exercises.utils.recurrence import get_recurring_assignment_snapshot
 
 # Maps performance_dict mark codes to student-facing labels and badge classes
 MARK_DISPLAY = {
@@ -45,6 +46,29 @@ def my_work_view(request):
             playlist = pco.playlist
             due_date = pco.due_date
 
+            if pco.is_recurring:
+                recurring = get_recurring_assignment_snapshot(request.user, pco)
+                playlists_data.append(
+                    {
+                        "playlist": playlist,
+                        "due_date": due_date,
+                        "passed": recurring["target_met"],
+                        "pass_date": None,
+                        "mark_code": None,
+                        "mark_label": recurring["progress_label"],
+                        "mark_class": (
+                            "badge-success"
+                            if recurring["target_met"]
+                            else "badge-warning"
+                        ),
+                        "course_id": course.id,
+                        "is_recurring": True,
+                        "completed_periods": recurring["completed_periods"],
+                        "next_reset_at": recurring["next_reset_at"],
+                    }
+                )
+                continue
+
             perf = perf_map.get((course.pk, playlist.pk))
             if perf is not None:
                 passed = perf.playlist_passed()
@@ -67,6 +91,7 @@ def my_work_view(request):
                     "mark_label": mark_label,
                     "mark_class": mark_class,
                     "course_id": course.id,
+                    "is_recurring": False,
                 }
             )
 

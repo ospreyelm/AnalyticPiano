@@ -174,3 +174,43 @@ def rebuild_period_progress(assignment, performance_data, occurred_at):
         },
     )
     return progress
+
+
+def get_recurring_assignment_snapshot(user, assignment, occurred_at=None):
+    from apps.exercises.models import RecurringPlaylistPeriodProgress
+
+    occurred_at = occurred_at or timezone.now()
+    period_start, period_end = get_assignment_period_bounds(assignment, occurred_at)
+
+    current_progress = RecurringPlaylistPeriodProgress.objects.filter(
+        user=user,
+        course=assignment.course,
+        playlist=assignment.playlist,
+        period_start=period_start,
+    ).first()
+
+    completed_periods = RecurringPlaylistPeriodProgress.objects.filter(
+        user=user,
+        course=assignment.course,
+        playlist=assignment.playlist,
+        target_met=True,
+    ).count()
+
+    counted_passes = current_progress.counted_passes if current_progress else 0
+    required_passes = assignment.required_passes_per_period
+    period_label = (
+        "today"
+        if assignment.recurrence_unit == assignment.RECURRENCE_UNIT_DAY
+        else "this week"
+    )
+    target_met = counted_passes >= required_passes
+
+    return {
+        "is_recurring": True,
+        "counted_passes": counted_passes,
+        "required_passes": required_passes,
+        "progress_label": f"{counted_passes} of {required_passes} {period_label}",
+        "target_met": target_met,
+        "completed_periods": completed_periods,
+        "next_reset_at": period_end,
+    }
