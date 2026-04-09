@@ -1,9 +1,10 @@
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 
 def _to_project_timezone(value):
@@ -58,3 +59,118 @@ def get_assignment_period_bounds(assignment, occurred_at):
         raise ValueError("Unsupported recurrence unit")
 
     return period_start.astimezone(project_tz), period_end.astimezone(project_tz)
+
+
+def _is_error_free_attempt(attempt):
+    error_tally = attempt.get("error_tally")
+    if error_tally is None:
+        return True
+    try:
+        return int(error_tally) == 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _normalize_attempt_exercise_id(attempt):
+    attempt_id = attempt.get("id")
+    if attempt_id is None:
+        return None
+    return str(attempt_id)[:6]
+
+
+def _build_remaining_requirements(exercise_ids):
+    return set(exercise_ids)
+
+
+def _parse_attempt_performed_at(value):
+    if isinstance(value, datetime):
+        return value
+    return parse_datetime(str(value))
+
+
+def count_playlist_cycles(exercise_ids, attempts, cap):
+    if not exercise_ids or cap <= 0:
+        return 0, None, None
+
+    counted_passes = 0
+    first_pass_at = None
+    last_counted_pass_at = None
+    remaining = _build_remaining_requirements(exercise_ids)
+
+    for attempt in attempts:
+        if counted_passes >= cap:
+            break
+        if not isinstance(attempt, dict):
+            continue
+        if not _is_error_free_attempt(attempt):
+            continue
+
+        completed_at = _parse_attempt_performed_at(attempt.get("performed_at"))
+        if completed_at is None:
+            continue
+
+        normalized_exercise_id = _normalize_attempt_exercise_id(attempt)
+        if normalized_exercise_id not in remaining:
+            continue
+
+        remaining.remove(normalized_exercise_id)
+
+        if not remaining:
+            counted_passes += 1
+            if first_pass_at is None:
+                first_pass_at = completed_at
+            last_counted_pass_at = completed_at
+            if counted_passes >= cap:
+                break
+            remaining = _build_remaining_requirements(exercise_ids)
+
+    return counted_passes, first_pass_at, last_counted_pass_at
+
+
+def rebuild_period_progress(assignment, performance_data, occurred_at):
+    from apps.exercises.models import RecurringPlaylistPeriodProgress
+
+    period_start, period_end = get_assignment_period_bounds(assignment, occurred_at)
+    attempts_in_period = []
+    for attempt in performance_data.data:
+        if not isinstance(attempt, dict):
+            continue
+
+        parsed_performed_at = _parse_attempt_performed_at(attempt.get("performed_at"))
+        if parsed_performed_at is None:
+            continue
+
+        # Historical performance payloads store naive timestamp strings that are
+        # intended as UTC wall-clock values (e.g. "2026-04-09T04:00:00").
+        if timezone.is_naive(parsed_performed_at):
+            parsed_performed_at = timezone.make_aware(parsed_performed_at, dt_timezone.utc)
+
+        performed_at_local = _to_project_timezone(parsed_performed_at)
+        if period_start <= performed_at_local < period_end:
+            attempt_for_counting = dict(attempt)
+            attempt_for_counting["performed_at"] = performed_at_local
+            attempts_in_period.append(attempt_for_counting)
+
+    attempts_in_period.sort(key=lambda attempt: attempt["performed_at"])
+
+    counted_passes, first_pass_at, last_counted_pass_at = count_playlist_cycles(
+        performance_data.playlist.exercise_list,
+        attempts_in_period,
+        cap=assignment.required_passes_per_period,
+    )
+
+    progress, _ = RecurringPlaylistPeriodProgress.objects.update_or_create(
+        user=performance_data.user,
+        course=assignment.course,
+        playlist=assignment.playlist,
+        period_start=period_start,
+        defaults={
+            "period_end": period_end,
+            "counted_passes": counted_passes,
+            "required_passes": assignment.required_passes_per_period,
+            "target_met": counted_passes >= assignment.required_passes_per_period,
+            "first_pass_at": first_pass_at,
+            "last_counted_pass_at": last_counted_pass_at,
+        },
+    )
+    return progress

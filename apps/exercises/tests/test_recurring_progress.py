@@ -1,11 +1,17 @@
 from datetime import datetime, timezone as dt_timezone
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from django.test import SimpleTestCase
 from django.utils import timezone
 from zoneinfo import ZoneInfo
 
 from apps.exercises.models import PlaylistCourseOrdered
-from apps.exercises.utils.recurrence import get_assignment_period_bounds
+from apps.exercises.utils.recurrence import (
+    count_playlist_cycles,
+    get_assignment_period_bounds,
+    rebuild_period_progress,
+)
 
 
 class RecurringAssignmentPeriodBoundsTests(SimpleTestCase):
@@ -167,3 +173,224 @@ class RecurringAssignmentPeriodBoundsTests(SimpleTestCase):
         # Both boundaries must be at 00:00 (not 01:00) on the expected dates
         self.assertEqual(local_start, datetime(2026, 3, 9, 0, 0))
         self.assertEqual(local_end, datetime(2026, 3, 10, 0, 0))
+
+
+class RecurringCycleCountingTests(SimpleTestCase):
+    def test_count_playlist_cycles_uses_set_semantics_for_cycle_requirements(self):
+        exercise_ids = ["EA0001", "EA0001", "EA0002"]
+        attempts = [
+            {
+                "id": "EA0001-A",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 9, 0)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0002-A",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 9, 1)),
+                "error_tally": 0,
+            },
+        ]
+
+        counted_passes, first_pass_at, last_counted_pass_at = count_playlist_cycles(
+            exercise_ids,
+            attempts,
+            cap=99,
+        )
+
+        self.assertEqual(counted_passes, 1)
+        self.assertEqual(first_pass_at, attempts[1]["performed_at"])
+        self.assertEqual(last_counted_pass_at, attempts[1]["performed_at"])
+
+    def test_count_playlist_cycles_consumes_error_free_attempts_greedily(self):
+        exercise_ids = ["EA0001", "EA0002", "EA0003"]
+        attempts = [
+            {
+                "id": "EA0001-T1",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 10, 0)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0002-X",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 10, 1)),
+                "error_tally": None,
+            },
+            {
+                "id": "EA0001-Y",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 10, 2)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0003-Z",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 10, 3)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0002-A",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 10, 4)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0001-B",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 10, 5)),
+                "error_tally": 2,
+            },
+            {
+                "id": "EA0003-C",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 10, 6)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0001-D",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 10, 7)),
+                "error_tally": 0,
+            },
+        ]
+
+        counted_passes, first_pass_at, last_counted_pass_at = count_playlist_cycles(
+            exercise_ids,
+            attempts,
+            cap=99,
+        )
+
+        self.assertEqual(counted_passes, 2)
+        self.assertEqual(first_pass_at, attempts[3]["performed_at"])
+        self.assertEqual(last_counted_pass_at, attempts[7]["performed_at"])
+
+    def test_count_playlist_cycles_caps_the_result(self):
+        exercise_ids = ["EA0001", "EA0002"]
+        attempts = [
+            {
+                "id": "EA0001-1",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 11, 0)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0002-1",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 11, 1)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0001-2",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 11, 2)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0002-2",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 11, 3)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0001-3",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 11, 4)),
+                "error_tally": 0,
+            },
+            {
+                "id": "EA0002-3",
+                "performed_at": timezone.make_aware(datetime(2026, 4, 9, 11, 5)),
+                "error_tally": 0,
+            },
+        ]
+
+        counted_passes, first_pass_at, last_counted_pass_at = count_playlist_cycles(
+            exercise_ids,
+            attempts,
+            cap=2,
+        )
+
+        self.assertEqual(counted_passes, 2)
+        self.assertEqual(first_pass_at, attempts[1]["performed_at"])
+        self.assertEqual(last_counted_pass_at, attempts[3]["performed_at"])
+
+    def test_count_playlist_cycles_skips_malformed_attempt_entries(self):
+        valid_performed_at = timezone.make_aware(datetime(2026, 4, 9, 12, 0))
+        attempts = [
+            None,
+            "not-a-dict",
+            ["also", "not", "a", "dict"],
+            {"performed_at": valid_performed_at, "error_tally": 0},
+            {"id": "EA0001-A", "performed_at": valid_performed_at, "error_tally": 0},
+        ]
+
+        counted_passes, first_pass_at, last_counted_pass_at = count_playlist_cycles(
+            ["EA0001"],
+            attempts,
+            cap=1,
+        )
+
+        self.assertEqual(counted_passes, 1)
+        self.assertEqual(first_pass_at, valid_performed_at)
+        self.assertEqual(last_counted_pass_at, valid_performed_at)
+
+
+class RecurringProgressRebuildTests(SimpleTestCase):
+    @patch("apps.exercises.models.RecurringPlaylistPeriodProgress.objects.update_or_create")
+    def test_rebuild_period_progress_treats_naive_performed_at_as_utc(self, update_or_create_mock):
+        ny_tz = ZoneInfo("America/New_York")
+        update_or_create_mock.return_value = (SimpleNamespace(), True)
+
+        assignment = SimpleNamespace(
+            RECURRENCE_UNIT_DAY=PlaylistCourseOrdered.RECURRENCE_UNIT_DAY,
+            RECURRENCE_UNIT_WEEK=PlaylistCourseOrdered.RECURRENCE_UNIT_WEEK,
+            recurrence_unit=PlaylistCourseOrdered.RECURRENCE_UNIT_DAY,
+            recurrence_starts_on=None,
+            publish_date=None,
+            required_passes_per_period=1,
+            course=SimpleNamespace(id=123),
+            playlist=SimpleNamespace(exercise_list=["EA0001"]),
+        )
+
+        performance_data = SimpleNamespace(
+            user=SimpleNamespace(id=456),
+            playlist=assignment.playlist,
+            data=[
+                # Naive string interpreted as UTC => 2026-04-08 23:59:59 NY (outside period)
+                {"id": "EA0001-OLD", "performed_at": "2026-04-09T03:59:59", "error_tally": 0},
+                # Naive string interpreted as UTC => 2026-04-09 00:00:00 NY (period start)
+                {"id": "EA0001-NEW", "performed_at": "2026-04-09T04:00:00", "error_tally": 0},
+            ],
+        )
+
+        with timezone.override("America/New_York"):
+            occurred_at = datetime(2026, 4, 9, 12, 0, tzinfo=ny_tz)
+            rebuild_period_progress(assignment, performance_data, occurred_at)
+
+        defaults = update_or_create_mock.call_args.kwargs["defaults"]
+        expected_first_pass = datetime(2026, 4, 9, 0, 0, tzinfo=ny_tz)
+        self.assertEqual(defaults["counted_passes"], 1)
+        self.assertEqual(defaults["first_pass_at"], expected_first_pass)
+
+    @patch("apps.exercises.models.RecurringPlaylistPeriodProgress.objects.update_or_create")
+    def test_rebuild_period_progress_skips_malformed_attempt_entries(self, update_or_create_mock):
+        update_or_create_mock.return_value = (SimpleNamespace(), True)
+
+        assignment = SimpleNamespace(
+            RECURRENCE_UNIT_DAY=PlaylistCourseOrdered.RECURRENCE_UNIT_DAY,
+            RECURRENCE_UNIT_WEEK=PlaylistCourseOrdered.RECURRENCE_UNIT_WEEK,
+            recurrence_unit=PlaylistCourseOrdered.RECURRENCE_UNIT_DAY,
+            recurrence_starts_on=None,
+            publish_date=None,
+            required_passes_per_period=1,
+            course=SimpleNamespace(id=321),
+            playlist=SimpleNamespace(exercise_list=["EA0001"]),
+        )
+
+        valid_performed_at = timezone.make_aware(datetime(2026, 4, 9, 13, 0))
+        performance_data = SimpleNamespace(
+            user=SimpleNamespace(id=654),
+            playlist=assignment.playlist,
+            data=[
+                None,
+                "not-a-dict",
+                42,
+                {"id": "EA0001-A", "performed_at": "not-a-datetime", "error_tally": 0},
+                {"id": "EA0001-B", "error_tally": 0},
+                {"id": "EA0001-C", "performed_at": valid_performed_at, "error_tally": 0},
+            ],
+        )
+
+        occurred_at = timezone.make_aware(datetime(2026, 4, 9, 14, 0))
+        rebuild_period_progress(assignment, performance_data, occurred_at)
+
+        defaults = update_or_create_mock.call_args.kwargs["defaults"]
+        self.assertEqual(defaults["counted_passes"], 1)
+        self.assertEqual(defaults["first_pass_at"], valid_performed_at)
