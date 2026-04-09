@@ -1,11 +1,14 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
 
 from apps.dashboard.forms import DashboardCourseForm
-from apps.exercises.models import Course, Playlist
+from apps.exercises.models import Course, Playlist, PlaylistCourseOrdered, RecurringPlaylistPeriodProgress
+from apps.accounts.models import Group
 
 User = get_user_model()
 
@@ -206,3 +209,106 @@ class DashboardCourseFormRecurringTests(TestCase):
         self.assertEqual(len(cleaned_playlists), 1)
         _, through = cleaned_playlists[0]
         self.assertEqual(through["required_passes_per_period"], 1)
+
+
+class RecurringPlaylistDashboardViewTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user("teacher@example.com", "secret")
+        self.student = User.objects.create_user(
+            "student@example.com", "secret", first_name="Student", last_name="One"
+        )
+        self.teacher.content_permits = [self.student.id]
+        self.teacher.save()
+        self.group = Group.objects.create(name="Section A", manager=self.teacher)
+        self.group.members.add(self.student)
+        self.playlist = Playlist(name="Recurring Drill", authored_by=self.teacher)
+        self.playlist.save()
+        self.course = Course(title="Theory I", authored_by=self.teacher)
+        self.course.save()
+        self.course.visible_to.add(self.group)
+        self.assignment = PlaylistCourseOrdered.objects.create(
+            playlist=self.playlist,
+            course=self.course,
+            order=1,
+            is_recurring=True,
+            recurrence_unit="week",
+            required_passes_per_period=3,
+            recurrence_starts_on=timezone.now().replace(hour=0, minute=0, second=0, microsecond=0),
+        )
+        period_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        RecurringPlaylistPeriodProgress.objects.create(
+            user=self.student,
+            course=self.course,
+            playlist=self.playlist,
+            period_start=period_start,
+            period_end=period_start + timedelta(days=7),
+            counted_passes=2,
+            required_passes=3,
+            target_met=False,
+        )
+        RecurringPlaylistPeriodProgress.objects.create(
+            user=self.student,
+            course=self.course,
+            playlist=self.playlist,
+            period_start=period_start - timedelta(days=7),
+            period_end=period_start,
+            counted_passes=3,
+            required_passes=3,
+            target_met=True,
+        )
+
+    def test_my_work_shows_current_progress_and_completed_periods(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("dashboard:my-work"))
+        self.assertContains(response, "2 of 3 this week")
+        self.assertContains(response, "1 periods completed")
+
+    def test_course_activity_csv_includes_recurring_status_text(self):
+        self.client.force_login(self.teacher)
+        response = self.client.get(
+            reverse("dashboard:course-activity", args=[self.course.id]) + "?format=csv"
+        )
+        self.assertContains(response, "2 of 3 this week")
+        self.assertContains(response, "1 periods met")
+
+
+class LegacyPlaylistRegressionTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user("teacher@example.com", "secret")
+        self.student = User.objects.create_user(
+            "student@example.com", "secret", first_name="Student", last_name="One"
+        )
+        self.teacher.content_permits = [self.student.id]
+        self.teacher.save()
+        self.group = Group.objects.create(name="Section A", manager=self.teacher)
+        self.group.members.add(self.student)
+        self.playlist = Playlist(name="One-Time Drill", authored_by=self.teacher)
+        self.playlist.save()
+        self.course = Course(title="Theory I", authored_by=self.teacher)
+        self.course.save()
+        self.course.visible_to.add(self.group)
+        PlaylistCourseOrdered.objects.create(
+            playlist=self.playlist,
+            course=self.course,
+            order=1,
+            is_recurring=False,
+        )
+        self.course.performance_dict = {
+            str(self.student): {
+                self.playlist.id: "P",
+                "time_elapsed": 10,
+                "reset": True,
+            },
+            str(self.teacher): {},
+        }
+        self.course.save()
+
+    def test_non_recurring_my_work_still_shows_no_periods_label(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("dashboard:my-work"))
+        self.assertNotContains(response, "periods completed")
+
+    def test_non_recurring_rows_still_use_mark_codes_in_gradebook(self):
+        self.client.force_login(self.teacher)
+        response = self.client.get(reverse("dashboard:course-activity", args=[self.course.id]))
+        self.assertContains(response, 'title="On time"')
