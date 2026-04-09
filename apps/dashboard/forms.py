@@ -586,7 +586,12 @@ class DashboardCourseForm(CourseForm):
                     value_pair[1]["due_date"] = None
             is_rec = value_pair[1].get("is_recurring", "")
             if isinstance(is_rec, str):
-                value_pair[1]["is_recurring"] = is_rec.lower() in ("1", "true", "yes", "on")
+                value_pair[1]["is_recurring"] = is_rec.strip().lower() in (
+                    "1",
+                    "true",
+                    "yes",
+                    "on",
+                )
             else:
                 value_pair[1]["is_recurring"] = bool(is_rec)
             ppp = value_pair[1].get("required_passes_per_period", "")
@@ -600,7 +605,8 @@ class DashboardCourseForm(CourseForm):
             else:
                 value_pair[1]["required_passes_per_period"] = 1
             rst = value_pair[1].get("recurrence_starts_on", None)
-            if rst is not None:
+            rst = rst.strip() if isinstance(rst, str) else rst
+            if rst:
                 try:
                     value_pair[1]["recurrence_starts_on"] = datetime.strptime(
                         rst, course_date_format
@@ -611,6 +617,8 @@ class DashboardCourseForm(CourseForm):
                         f"Invalid recurrence start '{rst}'",
                     )
                     value_pair[1]["recurrence_starts_on"] = None
+            else:
+                value_pair[1]["recurrence_starts_on"] = None
         return super().clean()
 
     def save(self, commit=True):
