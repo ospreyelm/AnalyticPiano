@@ -2,7 +2,6 @@ import re
 from collections import OrderedDict
 from datetime import timedelta, date, datetime
 from itertools import product
-from tabnanny import verbose
 
 from datetime import timezone as dt_timezone
 from zoneinfo import ZoneInfo
@@ -30,8 +29,6 @@ from apps.exercises.constants import (
     pseudo_key_to_sig,
 )
 from apps.exercises.utils.transpose import transpose
-
-import re
 
 User = get_user_model()
 
@@ -937,6 +934,13 @@ class Course(ClonableModelMixin, BaseContentModel):
 
 
 class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
+    RECURRENCE_UNIT_DAY = "day"
+    RECURRENCE_UNIT_WEEK = "week"
+    RECURRENCE_UNIT_CHOICES = (
+        (RECURRENCE_UNIT_DAY, "Day"),
+        (RECURRENCE_UNIT_WEEK, "Week"),
+    )
+
     playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     order = models.IntegerField("Order", help_text="Unit #")
@@ -947,8 +951,57 @@ class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
         default=None,
         null=True,
     )
+    is_recurring = models.BooleanField(default=False)
+    recurrence_unit = models.CharField(
+        max_length=8,
+        choices=RECURRENCE_UNIT_CHOICES,
+        blank=True,
+        default="",
+    )
+    required_passes_per_period = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+    )
+    recurrence_starts_on = models.DateTimeField(blank=True, default=None, null=True)
 
     displayed_fields = ("due_date", "publish_date")
+
+    def clean(self):
+        super().clean()
+        if self.is_recurring and not self.recurrence_unit:
+            raise ValidationError(
+                {"recurrence_unit": "A recurrence unit is required for recurring assignments."}
+            )
+
+
+class RecurringPlaylistPeriodProgress(models.Model):
+    user = models.ForeignKey(
+        User,
+        related_name="recurring_playlist_progress",
+        on_delete=models.CASCADE,
+    )
+    course = models.ForeignKey(
+        Course,
+        related_name="recurring_playlist_progress",
+        on_delete=models.CASCADE,
+    )
+    playlist = models.ForeignKey(
+        Playlist,
+        related_name="recurring_playlist_progress",
+        on_delete=models.CASCADE,
+    )
+    period_start = models.DateTimeField()
+    period_end = models.DateTimeField()
+    counted_passes = models.PositiveIntegerField(default=0)
+    required_passes = models.PositiveIntegerField(default=1)
+    target_met = models.BooleanField(default=False)
+    first_pass_at = models.DateTimeField(blank=True, default=None, null=True)
+    last_counted_pass_at = models.DateTimeField(blank=True, default=None, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = (("user", "course", "playlist", "period_start"),)
 
 
 class PerformanceData(models.Model):
