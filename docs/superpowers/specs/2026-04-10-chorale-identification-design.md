@@ -215,6 +215,14 @@ The Django admin exercise change form detects `data.type === "chorale_identifica
 
 ---
 
+## Constraints
+
+- **Do not modify `analyze.js`** — it is a large, shared analysis library used across the entire app. Consume it read-only via `Analyze.to_chord(midiArray)` (initialized with the key signature). No extensions or changes to that file.
+- **Do not modify `identification_grader.js`** — it is used directly without subclassing or alteration.
+- **Do not modify `score_timeline.js`** — reuse `ScoreTimeline.buildTimeline()` as-is from `exercise_definition.js`.
+
+---
+
 ## Out of Scope (Phase 1)
 
 - `interval`, `note_name`, `pc_set` analysis types — format reserved, import not implemented
