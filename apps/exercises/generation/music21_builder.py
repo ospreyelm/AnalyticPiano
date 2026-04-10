@@ -11,6 +11,45 @@ KEY_MAP = {
 }
 
 # ---------------------------------------------------------------------------
+# KEY_SPELLING: Python mirror of general.js keyMap spelling arrays.
+# Each entry maps pitch class (0–11) → note name string as HarmonyLab renders it.
+# Used by spelling_key_for_pitches() to find the right exercise 'key' so that
+# enharmonically-sensitive notes (e.g. A# vs Bb) display correctly on the staff.
+# ---------------------------------------------------------------------------
+KEY_SPELLING = {
+    # -- flat keys --
+    "jDb": ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","Cb"],
+    "jAb": ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"],
+    "jEb": ["C","Db","D","Eb","E","F","F#","G","Ab","A","Bb","B"],
+    "jBb": ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"],
+    "jF_": ["C","C#","D","Eb","E","F","F#","G","G#","A","Bb","B"],
+    # -- natural / no sharps or flats --
+    "jC_": ["C","C#","D","D#","E","F","F#","G","G#","A","Bb","B"],
+    # -- sharp keys --
+    "jG_": ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"],
+    "jD_": ["C","C#","D","D#","E","E#","F#","G","G#","A","A#","B"],
+    "jA_": ["B#","C#","D","D#","E","E#","F#","G","G#","A","A#","B"],
+    "jE_": ["B#","C#","D","D#","E","E#","F#","F##","G#","A","A#","B"],
+    "jB_": ["B#","C#","C##","D#","E","E#","F#","F##","G#","A","A#","B"],
+    "jF#": ["B#","C#","C##","D#","E","E#","F#","F##","G#","G##","A#","B"],
+    # -- minor flat keys --
+    "iEb": ["C","Db","D","Eb","Fb","F","Gb","G","Ab","A","Bb","Cb"],
+    "iBb": ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","Cb"],
+    "iF_": ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"],
+    "iC_": ["C","Db","D","Eb","E","F","F#","G","Ab","A","Bb","B"],
+    "iG_": ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"],
+    "iD_": ["C","C#","D","Eb","E","F","F#","G","G#","A","Bb","B"],
+    # -- minor natural / no accidentals --
+    "iA_": ["C","C#","D","D#","E","F","F#","G","G#","A","Bb","B"],
+    # -- minor sharp keys --
+    "iE_": ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"],
+    "iB_": ["C","C#","D","D#","E","E#","F#","G","G#","A","A#","B"],
+    "iF#": ["B#","C#","D","D#","E","E#","F#","G","G#","A","A#","B"],
+    "iC#": ["B#","C#","D","D#","E","E#","F#","F##","G#","A","A#","B"],
+    "iG#": ["B#","C#","C##","D#","E","E#","F#","F##","G#","A","A#","B"],
+}
+
+# ---------------------------------------------------------------------------
 # Chord quality → list of interval strings above root
 # ---------------------------------------------------------------------------
 QUALITY_INTERVALS = {
@@ -103,6 +142,61 @@ ROTO_MINOR_DESC_RN = ["i",    "V7",   "i6",   "iv6",  "V",    "iv",   "V6",   "i
 def _m21_key(key_str: str):
     """Return a music21 Key object for the given HarmonyLab key string."""
     return m21_key.Key(KEY_MAP[key_str])
+
+
+def spelling_key_for_pitches(m21_pitches, prefer_major: bool = True) -> str:
+    """
+    Given a list of music21 Pitch objects (with enharmonic spelling already set
+    by music21 interval/roman logic), return the HarmonyLab key string whose
+    keyMap spelling array renders all those pitches with the SAME note names.
+
+    This lets you set exercise 'key' so notes display correctly regardless of
+    whether the nominal key of the exercise would give the right spelling.
+    Particularly useful for interval exercises with augmented/diminished intervals,
+    or for any exercise where you want explicit control over accidentals.
+
+    Usage in the management command:
+        chords = mb.interval("jC_", "A6", "matching")
+        pitches = mb._get_interval_pitches("jC_", "A6")   # helper below
+        ex_key = mb.spelling_key_for_pitches(pitches)      # e.g. "jB_"
+        exercise_json["key"] = ex_key
+        exercise_json["keySignature"] = ""   # don't show a key signature
+
+    Returns the first key (from a preference-ordered list) where all pitches
+    match. Falls back to "jC_" if no perfect match is found.
+    """
+    # Convert pitch names: music21 uses '-' for flat (e.g. "D-"), keyMap uses 'b'
+    def normalize(name: str) -> str:
+        return name.replace("-", "b")
+
+    target_spellings = {p.pitchClass: normalize(p.name) for p in m21_pitches}
+
+    # Preference order: fewer accidentals first, major before minor
+    preference = [
+        "jC_", "jG_", "jF_", "jD_", "jBb", "jA_", "jEb", "jE_", "jAb",
+        "jB_", "jDb", "jF#",
+        "iA_", "iE_", "iD_", "iG_", "iB_", "iC_", "iF_", "iF#", "iBb",
+        "iC#", "iG#", "iEb",
+    ]
+
+    for key_str in preference:
+        spellings = KEY_SPELLING.get(key_str, [])
+        if all(spellings[pc] == name for pc, name in target_spellings.items()):
+            return key_str
+
+    return "jC_"   # fallback
+
+
+def _get_interval_pitches(key_str: str, interval_name: str):
+    """
+    Return the two music21 Pitch objects for an interval exercise (root + top).
+    Exposed so the management command can call spelling_key_for_pitches() on them.
+    """
+    k = _m21_key(key_str)
+    root = k.tonic
+    m21_name = "d5" if interval_name == "TT" else interval_name
+    top = m21_interval.Interval(m21_name).transposePitch(root)
+    return [root, top]
 
 
 def _pitch_in_range(p: pitch.Pitch, midi_low: int, midi_high: int) -> pitch.Pitch:
