@@ -4,6 +4,11 @@ This directory contains comprehensive documentation for the HarmonyLab system, i
 
 ## Core Documentation
 
+### **[architecture.md](architecture.md)** - How the App Works
+- **Start here** for a complete mental model of the system
+- **Covers:** Exercise/Playlist/Course data model, how exercises are served, exercise types, key encoding, staff distribution, curriculum generation workflow, grading systems, non-obvious patterns
+- **Audience:** Agents and developers making changes to the app
+
 ### **[claude.md](../claude.md)** - Main Implementation Guide
 - **Status:** ENHANCED ✓ Core issues fixed + features 1 & 3 implemented
 - **Focus:** Chorale exercise system architecture and troubleshooting
