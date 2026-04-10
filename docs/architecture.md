@@ -8,7 +8,7 @@ This document explains how HarmonyLab actually works — the mental models agent
 
 ## What the App Does
 
-HarmonyLab is a music theory practice platform. Students are presented with staff notation and must play the correct notes on a MIDI keyboard (or QWERTY keyboard / on-screen piano). The app grades each attempt in real time and records performance.
+HarmonyLab is a music theory practice platform. Students are presented with staff notation and must either play the correct notes on a MIDI keyboard (or QWERTY keyboard / on-screen piano), or identify what they see by selecting from a multiple-choice list. The app grades each attempt in real time and records performance.
 
 The three core objects are **Exercise**, **Playlist**, and **Course**. Courses are shown to students. Playlists are the unit of assignment. Exercises are the individual problems.
 
@@ -158,55 +158,6 @@ The JS app never makes its own Django API calls to load exercise data — everyt
 
 ---
 
-## Curriculum Generation: How Exercises Are Created in Bulk
-
-Exercises are created either:
-1. **Manually** — through the Django admin or the in-app editor. Each exercise is in one specific key.
-2. **Via `generate_curriculum` management command** — reads a YAML spec, calls template functions, creates Exercise + Playlist + Course records.
-
-In the YAML-based workflow, **exercises are always single-key**. The `keys` field in a YAML playlist entry expands into multiple separate Exercise objects (one per key):
-
-```yaml
-- template: triad
-  quality: major
-  inversion: 0
-  keys: all_major       # → 12 Exercise objects, one per major key
-  voicing: keyboard_4voice
-  type: matching
-```
-
-`keys` accepts: a shorthand string (`all_major`, `common_major`, `common_minor`, `all_minor`) or a literal list (`[jC_, jG_, jD_]`). These are defined in `apps/exercises/generation/spec_loader.py`.
-
-The generation pipeline:
-
-```
-data/curriculum/theory1.yaml
-  ↓
-spec_loader.load_spec() — expands key shorthands
-  ↓
-For each exercise entry × each key:
-  templates.triad() / seventh_chord() / interval() / etc.
-    → voicing.keyboard_4voice() / close() → list of MIDI note numbers
-    → build_chord_dict() → {"visible": [...], "hidden": [...], "rhythmValue": "w"}
-  analysis_presets.expand_analysis() → full analysis JSON object
-  ↓
-Exercise.objects.create(data=...) — one Exercise per key
-  ↓
-Playlist.objects.create() → ExercisePlaylistOrdered links
-  ↓
-Course.objects.create() → PlaylistCourseOrdered links
-```
-
-Files:
-- `apps/exercises/generation/templates.py` — one function per exercise template type
-- `apps/exercises/generation/voicing.py` — MIDI note placement functions
-- `apps/exercises/generation/analysis_presets.py` — shorthand → full analysis JSON
-- `apps/exercises/generation/spec_loader.py` — YAML parsing + key expansion
-- `apps/exercises/management/commands/generate_curriculum.py` — the command
-- `data/curriculum/theory1.yaml` — the full semester Music Theory I spec
-
----
-
 ## Frontend Architecture
 
 The frontend uses RequireJS (AMD modules). There is no bundler in dev mode — each module loads individually. An optional build at `data/requirejs/build.json` can point to a compiled bundle.
@@ -256,9 +207,7 @@ The frontend uses RequireJS (AMD modules). There is no bundler in dev mode — e
 
 **Exercise keys are baked in.** An Exercise object has a specific `key` in its `data`. The key controls both note spelling on the staff and the analytical overlay (Roman numerals, figured bass). You cannot display the same Exercise in a different key without either transposing it or generating a new Exercise.
 
-**Two ways to do multi-key content:**
-1. **Playlist transposition** — one Exercise, playlist expands it. Transposed copies get virtual IDs. Good for ad-hoc reuse.
-2. **Curriculum generation** — `keys: all_major` creates 12 separate Exercise objects. Good for a structured curriculum. These are real DB rows, not virtual.
+**Multi-key content via playlist transposition.** One Exercise can be presented in multiple keys by adding `transpose_requests` to the playlist. Transposed copies get virtual IDs and are generated on the fly — no duplicate Exercise rows.
 
 **Auto-playlists.** Every time a teacher creates an exercise through the editor, `Exercise.set_auto_playlist()` adds it to an auto-generated playlist (`is_auto=True`). This is a convenience feature so newly-created exercises are immediately playable. Auto-playlists are created per session (within the last 8 hours).
 
