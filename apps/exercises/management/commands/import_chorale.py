@@ -24,6 +24,8 @@ class Command(BaseCommand):
         parser.add_argument('--author', type=str, required=True, help='Email of the exercise author')
         parser.add_argument('--start', type=int, default=0, help='Start measure (0-indexed)')
         parser.add_argument('--end', type=int, default=4, help='End measure (exclusive)')
+        parser.add_argument('--mode', choices=['play', 'identify'], default='play', help='Exercise creation mode')
+        parser.add_argument('--analysis', choices=['roman', 'figured_bass'], default='roman', help='Analysis label type for identify mode')
         parser.add_argument('--public', action='store_true', help='Make the exercise public')
 
     def handle(self, *args, **options):
@@ -31,6 +33,8 @@ class Command(BaseCommand):
         author_email = options['author']
         start_measure = options['start']
         end_measure = options['end']
+        mode = options['mode']
+        analysis_type = options['analysis']
         is_public = options['public']
 
         # Find the author
@@ -63,36 +67,53 @@ class Command(BaseCommand):
         bwv = corpus_file.replace('.json', '').upper()
         title = f"{bwv} (mm. {start_measure+1}–{end_measure})"
 
-        exercise_data = {
-            "type": "chorale",
-            "mode": "play-all-voices",
-            "score": {
-                "meta": meta,
-                "measures": excerpt_measures
-            },
-            "targetVoices": "all",
-            "display": {
-                "showFigures": False,
-                "showRomans": False,
-                "transpose": 0,
-                "tempo": 60
-            },
-            "grading": {
-                "onsetWindowMs": 150,
-                "releaseTolerancePct": 40,
-                "octaveFlexible": False
-            },
-            "excerpt": {
-                "startMeasure": start_measure,
-                "endMeasure": end_measure
-            },
-            "introText": f"Play all four voices of {bwv}, measures {start_measure+1}–{end_measure}. Use the keyboard or MIDI controller to play each note as it appears. Notes turn black when played correctly.",
-            "reviewText": f"Well done! You completed {bwv}, measures {start_measure+1}–{end_measure}.",
-            # Legacy fields for compatibility
-            "key": meta.get("key", "C"),
-            "keySignature": meta.get("key", "C"),
-            "staffDistribution": "chorale"
-        }
+        if mode == 'identify':
+            analysis_label = 'Roman numerals' if analysis_type == 'roman' else 'figured bass'
+            exercise_data = {
+                "type": "chorale_identification",
+                "identMode": "submit",
+                "analysisType": analysis_type,
+                "score": {
+                    "meta": meta,
+                    "measures": excerpt_measures
+                },
+                "introText": f"Label the {analysis_label} for {bwv}, measures {start_measure+1}–{end_measure}.",
+                "reviewText": f"Well done! You labeled all chords for {bwv}, measures {start_measure+1}–{end_measure}.",
+                "key": meta.get("key", "C"),
+                "staffDistribution": "chorale"
+            }
+            title = f"{bwv} identification ({analysis_type}, mm. {start_measure+1}–{end_measure})"
+        else:
+            exercise_data = {
+                "type": "chorale",
+                "mode": "play-all-voices",
+                "score": {
+                    "meta": meta,
+                    "measures": excerpt_measures
+                },
+                "targetVoices": "all",
+                "display": {
+                    "showFigures": False,
+                    "showRomans": False,
+                    "transpose": 0,
+                    "tempo": 60
+                },
+                "grading": {
+                    "onsetWindowMs": 150,
+                    "releaseTolerancePct": 40,
+                    "octaveFlexible": False
+                },
+                "excerpt": {
+                    "startMeasure": start_measure,
+                    "endMeasure": end_measure
+                },
+                "introText": f"Play all four voices of {bwv}, measures {start_measure+1}–{end_measure}. Use the keyboard or MIDI controller to play each note as it appears. Notes turn black when played correctly.",
+                "reviewText": f"Well done! You completed {bwv}, measures {start_measure+1}–{end_measure}.",
+                # Legacy fields for compatibility
+                "key": meta.get("key", "C"),
+                "keySignature": meta.get("key", "C"),
+                "staffDistribution": "chorale"
+            }
 
         # Create the Exercise
         exercise = Exercise(

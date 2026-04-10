@@ -181,8 +181,13 @@ define([
       var isIdentificationExercise = 
         typeof this.definition.isIdentification === "function" &&
         this.definition.isIdentification();
+      var isChoraleIdentificationExercise =
+        typeof this.definition.isChoraleIdentification === "function" &&
+        this.definition.isChoraleIdentification();
+      var isAnyIdentificationExercise =
+        isIdentificationExercise || isChoraleIdentificationExercise;
 
-      if (isIdentificationExercise) {
+      if (isAnyIdentificationExercise) {
         graded = this.grader.grade(this.definition);
       } else {
         graded = this.grader.grade(this.definition, this.inputChords);
@@ -206,9 +211,9 @@ define([
               this.submitExerciseReport();
             }
 
-            var treatAsFlawless = this.flawless === true || isChoraleExercise || isIdentificationExercise;
+            var treatAsFlawless = this.flawless === true || isChoraleExercise || isAnyIdentificationExercise;
             var treatAsFinishedWithErrors =
-              this.flawless === false && !isChoraleExercise && !isIdentificationExercise;
+              this.flawless === false && !isChoraleExercise && !isAnyIdentificationExercise;
 
             if (treatAsFlawless) {
               state = ExerciseContext.STATE.CORRECT;
@@ -258,7 +263,7 @@ define([
       this.state = state;
 
       this.updateDisplayChords();
-      if (!isChoraleExercise && !isIdentificationExercise) {
+      if (!isChoraleExercise && !isAnyIdentificationExercise) {
         this.inputChords.goTo(graded.activeIndex);
       }
 

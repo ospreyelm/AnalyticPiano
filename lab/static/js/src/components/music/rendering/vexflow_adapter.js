@@ -873,7 +873,8 @@ define([
 
         // Analysis annotations using Notater bridge (maximum reuse)
         try {
-          if (analyzeConfig && analyzeConfig.enabled && analysisRenderer !== "none" && keySignatureModel) {
+            if ((analyzeConfig && analyzeConfig.enabled && analysisRenderer !== "none" && keySignatureModel) ||
+              (opts && typeof opts.onWindowPosition === "function")) {
             // Collect all tickables in this measure after formatting to get absolute X positions
             var allTickables = [];
             function addVoiceTickables(arr) {
@@ -967,6 +968,16 @@ define([
                   midi = matchedWindow.midiStack.slice();
                   analysisWindowIdx = matchedIndex + 1;
                 }
+              }
+
+              var columnCenterX = getColumnCenterX(col);
+              if (opts && typeof opts.onWindowPosition === "function" && typeof matchedIndex === "number" && columnCenterX !== null) {
+                opts.onWindowPosition({
+                  windowIndex: matchedIndex,
+                  onset: matchedWindow ? matchedWindow.onset : null,
+                  x: columnCenterX,
+                  y: bassStave.getBottomY() + 18,
+                });
               }
 
               if (renderRomans) {

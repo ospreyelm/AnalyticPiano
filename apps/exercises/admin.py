@@ -195,9 +195,15 @@ class ExerciseAdmin(ImportExportModelAdmin):
 
         identification = False
         if obj and isinstance(getattr(obj, "data", None), dict):
-            identification = obj.data.get("type") == ExerciseForm.TYPE_IDENTIFICATION
+            identification = obj.data.get("type") in (
+                ExerciseForm.TYPE_IDENTIFICATION,
+                ExerciseForm.TYPE_CHORALE_IDENTIFICATION,
+            )
         elif request.method == "POST":
-            identification = request.POST.get("type") == ExerciseForm.TYPE_IDENTIFICATION
+            identification = request.POST.get("type") in (
+                ExerciseForm.TYPE_IDENTIFICATION,
+                ExerciseForm.TYPE_CHORALE_IDENTIFICATION,
+            )
         if identification:
             base_fieldsets.append(
                 (

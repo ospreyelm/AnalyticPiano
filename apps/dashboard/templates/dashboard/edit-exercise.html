@@ -1,5 +1,8 @@
 {% extends 'dashboard/content.html' %}
 {% block extra_buttons %}
+    {% if is_chorale %}
+        <button type="submit" class="btn dashboard-btn" name="duplicate-as-identification">Save, Duplicate as Identification</button>
+    {% endif %}
     {% with form.instance.get_previous_authored_exercise as previous %}
         {% if not previous == None %}
             <button type="submit" class="btn dashboard-btn" name="save-and-edit-previous">← Save, Previous</button>
