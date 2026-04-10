@@ -276,6 +276,19 @@ def interval(key_str, interval_name, exercise_type, identification_label=None):
     """
     Single harmonic interval from the tonic.
     Returns [{"visible": [bottom_midi, top_midi], "hidden": [], "rhythmValue": "h"}].
+
+    Accepts any music21 interval name: "m2","M2","m3","M3","P4","d5"/"TT","P5",
+    "m6","M6","m7","M7","P8", and augmented/diminished variants like "A2","A3",
+    "A4","A5","A6","d3","d4","d7" etc.
+
+    NOTE — enharmonic display constraint: HarmonyLab's frontend uses a 12-element
+    keyMap (general.js) that assigns ONE spelling per pitch class per key. MIDI
+    numbers carry no spelling information. So augmented intervals will only display
+    with the expected accidental if the active key's keyMap happens to spell that
+    pitch class accordingly. For example, a C→A# (A6) in key jC_ will render as
+    C→Bb (m7) because jC_ spells PC 10 as "Bb". Augmented intervals intended to
+    display correctly should be used only in keys where the target pitch class is
+    spelled as desired, or paired with a custom key context that spells it that way.
     """
     k = _m21_key(key_str)
     root = k.tonic
