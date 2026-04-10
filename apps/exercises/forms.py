@@ -311,6 +311,7 @@ CHORALE_ANALYSIS_KEYS = [
 
 class ExerciseForm(forms.ModelForm):
     TYPE_CHORALE = "chorale"
+    TYPE_CHORALE_IDENTIFICATION = "chorale_identification"
     TYPE_IDENTIFICATION = "identification"
     TYPE_MATCHING = "matching"
     TYPE_ANALYTICAL = "analytical"
@@ -520,6 +521,7 @@ class ExerciseForm(forms.ModelForm):
     def __init__(self, *arg, **kwargs):
         super(ExerciseForm, self).__init__(*arg, **kwargs)
         self._is_chorale = self._detect_chorale()
+        self._is_chorale_identification = self._detect_chorale_identification()
         self._is_identification = self._detect_identification()
         self._chorale_voice_choices = []
         self._configure_type_field()
@@ -635,6 +637,13 @@ class ExerciseForm(forms.ModelForm):
             self.fields["type"].choices = choices
             self.fields["type"].initial = self.TYPE_CHORALE
             self.fields["type"].widget = forms.HiddenInput()
+        elif self._is_chorale_identification:
+            choices = list(self.fields["type"].choices)
+            if (self.TYPE_CHORALE_IDENTIFICATION, "Chorale identification") not in choices:
+                choices.append((self.TYPE_CHORALE_IDENTIFICATION, "Chorale identification"))
+            self.fields["type"].choices = choices
+            self.fields["type"].initial = self.TYPE_CHORALE_IDENTIFICATION
+            self.fields["type"].widget = forms.HiddenInput()
         elif self._is_identification:
             choices = list(self.fields["type"].choices)
             if (self.TYPE_IDENTIFICATION, "Identification") not in choices:
@@ -645,7 +654,7 @@ class ExerciseForm(forms.ModelForm):
         else:
             filtered = [
                 c for c in self.fields["type"].choices
-                if c[0] not in (self.TYPE_CHORALE, self.TYPE_IDENTIFICATION)
+                if c[0] not in (self.TYPE_CHORALE, self.TYPE_IDENTIFICATION, self.TYPE_CHORALE_IDENTIFICATION)
             ]
             self.fields["type"].choices = tuple(filtered)
 
@@ -924,7 +933,17 @@ class ExerciseForm(forms.ModelForm):
         bound_data = getattr(self, "data", None)
         if not form_type and bound_data and "type" in bound_data:
             form_type = bound_data.get("type")
-        return form_type == self.TYPE_IDENTIFICATION
+        return form_type in (self.TYPE_IDENTIFICATION, self.TYPE_CHORALE_IDENTIFICATION)
+
+    def _detect_chorale_identification(self):
+        data = {}
+        if self.instance and getattr(self.instance, "data", None):
+            data = self.instance.data
+        form_type = data.get("type")
+        bound_data = getattr(self, "data", None)
+        if not form_type and bound_data and "type" in bound_data:
+            form_type = bound_data.get("type")
+        return form_type == self.TYPE_CHORALE_IDENTIFICATION
 
     def _configure_identification_fields(self):
         if not self._is_identification:

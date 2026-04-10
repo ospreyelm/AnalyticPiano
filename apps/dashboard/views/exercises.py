@@ -1,3 +1,4 @@
+import copy as _copy
 from copy import copy
 
 from django.contrib import messages
@@ -125,6 +126,7 @@ def exercise_edit_view(request, exercise_id):
         "delete_url": reverse(
             "dashboard:delete-exercise", kwargs={"exercise_id": exercise_id}
         ),
+        "is_chorale": (exercise.data or {}).get("type") == "chorale",
     }
 
     PROTECT_EXERCISE_CONTENT = exercise.has_been_performed
@@ -173,6 +175,27 @@ def exercise_edit_view(request, exercise_id):
                 exercise.locked = False
                 exercise.save()
                 return redirect("dashboard:edit-exercise", exercise.id)
+            elif "duplicate-as-identification" in request.POST:
+                source_data = exercise.data or {}
+                score = _copy.deepcopy(source_data.get("score", {}))
+                new_data = {
+                    "type": "chorale_identification",
+                    "identMode": "submit",
+                    "analysisType": "roman",
+                    "score": score,
+                    "key": source_data.get("key") or score.get("meta", {}).get("key", "C"),
+                    "staffDistribution": "chorale",
+                    "introText": source_data.get("introText") or "Label the harmony for each onset.",
+                    "reviewText": source_data.get("reviewText") or "Well done!",
+                }
+                new_exercise = Exercise(
+                    description=f"{exercise.description or exercise.id} (identification)",
+                    data=new_data,
+                    authored_by=request.user,
+                    is_public=exercise.is_public,
+                )
+                new_exercise.save()
+                return redirect("dashboard:edit-exercise", new_exercise.id)
             else:
                 success_url = reverse("dashboard:exercises-list")
             return redirect(success_url)

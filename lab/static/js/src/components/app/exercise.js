@@ -84,7 +84,10 @@ define([
       models.exerciseGrader = new ChoraleGrader({});
       // Initialize from definition so it has the timeline ready
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
-    } else if (models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) {
+    } else if (
+      (models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) ||
+      (models.exerciseDefinition.isChoraleIdentification && models.exerciseDefinition.isChoraleIdentification())
+    ) {
       models.exerciseGrader = new IdentificationGrader({});
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else {

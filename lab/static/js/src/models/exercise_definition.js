@@ -1,4 +1,10 @@
-define(["lodash", "app/config"], function (_, Config) {
+define([
+  "lodash",
+  "app/config",
+  "app/components/music/score_timeline",
+  "app/utils/analyze",
+  "app/models/key_signature",
+], function (_, Config, ScoreTimeline, Analyze, KeySignature) {
   var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
@@ -32,8 +38,174 @@ define(["lodash", "app/config"], function (_, Config) {
     figured_bass: "figured_bass",
     figured_bass_pcs: "figured_bass_pcs",
     chorale: "chorale",
+    chorale_identification: "chorale_identification",
     identification: "identification",
   };
+
+  function normalizeAnalysisLabel(label) {
+    if (label === null || label === undefined) {
+      return "";
+    }
+    var result = String(label).trim();
+    // Remove trailing/leading punctuation that shouldn't be in chord labels
+    result = result.replace(/^[\s,;:\-()]+|[\s,;:\-()]+$/g, '');
+    return result;
+  }
+
+  // Token map for converting abbreviated figured bass codes to display symbols
+  var FIGURE_TOKEN_MAP = {
+    "z": "6",
+    "z4": "6/4",
+    "z5": "6/5",
+    "u": "7",
+    "u3": "6/5",
+    "u5": "7/5",
+    "r": "4",
+    "r2": "4/2",
+    "r3": "4/3",
+    "i3": "3",
+    "q e": "13",
+  };
+
+  function expandFiguredBassToken(abbrev) {
+    // Try exact match first, then try partial matches
+    if (FIGURE_TOKEN_MAP[abbrev]) {
+      return FIGURE_TOKEN_MAP[abbrev];
+    }
+    // Check if it starts with a token key
+    for (var key in FIGURE_TOKEN_MAP) {
+      if (FIGURE_TOKEN_MAP.hasOwnProperty(key) && abbrev.indexOf(key) === 0) {
+        return FIGURE_TOKEN_MAP[key];
+      }
+    }
+    return abbrev; // return unchanged if no match
+  }
+
+  function stripFiguredBassTokens(label) {
+    // For Roman numeral labels, expand {z}, {u}, etc. to their figured bass equivalents
+    // e.g., "V{z}" becomes "V6", "I{z4}" becomes "I6/4"
+    if (!label) return label;
+    var result = String(label);
+    // Replace {token} patterns with their expanded forms
+    result = result.replace(/\{([a-z0-9]+)\}/g, function (match, token) {
+      return FIGURE_TOKEN_MAP[token] || '';
+    });
+    return result.trim();
+  }
+
+  function computeWindowLabel(midiStack, analysisType, analyzer) {
+    if (!midiStack || midiStack.length < 2 || !analyzer) {
+      return "";
+    }
+    try {
+      if (analysisType === "figured_bass") {
+        var abbrevFigure = analyzer.abbrev_thoroughbass_figure(midiStack);
+        var expanded = expandFiguredBassToken(abbrevFigure);
+        return normalizeAnalysisLabel(expanded);
+      }
+      var chord = analyzer.to_chord(midiStack, "roman only");
+      if (chord && chord.label) {
+        // Strip any embedded tokens from Roman numeral labels
+        var cleanLabel = stripFiguredBassTokens(chord.label);
+        return normalizeAnalysisLabel(cleanLabel);
+      }
+      return normalizeAnalysisLabel(chord);
+    } catch (_err) {
+      return "";
+    }
+  }
+
+  function buildAnalysisWindows(timeline) {
+    var grouped = [];
+    var onsetIndex = Object.create(null);
+    var activeNotes = [];
+
+    _.each(timeline || [], function (ev) {
+      if (!Object.prototype.hasOwnProperty.call(onsetIndex, ev.onset)) {
+        onsetIndex[ev.onset] = {
+          onset: ev.onset,
+          events: [],
+        };
+        grouped.push(onsetIndex[ev.onset]);
+      }
+      onsetIndex[ev.onset].events.push(ev);
+    });
+
+    grouped.sort(function (a, b) {
+      return a.onset - b.onset;
+    });
+
+    _.each(grouped, function (window) {
+      activeNotes = _.filter(activeNotes, function (n) {
+        return n.end > window.onset;
+      });
+      _.each(window.events, function (ev) {
+        activeNotes.push({ midi: ev.midi, end: ev.onset + ev.duration });
+      });
+      var midiMap = Object.create(null);
+      _.each(activeNotes, function (n) {
+        midiMap[n.midi] = true;
+      });
+      window.midiStack = _.sortBy(
+        _.map(Object.keys(midiMap), function (k) {
+          return parseInt(k, 10);
+        }),
+        function (m) { return m; }
+      );
+    });
+
+    return grouped;
+  }
+
+  function buildChoices(correctLabel, allLabels, analysisType) {
+    var pool = _.uniq(_.filter(allLabels, function (l) {
+      return !!l && l !== correctLabel;
+    }));
+    var fallbacks = analysisType === "figured_bass"
+      ? ["5/3", "6", "6/4", "6/5", "7"]
+      : ["I", "ii", "IV", "V", "vi"];
+    _.each(fallbacks, function (item) {
+      if (item !== correctLabel && pool.indexOf(item) === -1) {
+        pool.push(item);
+      }
+    });
+    var distractors = _.shuffle(pool).slice(0, 4);
+    var choices = _.shuffle([correctLabel].concat(distractors));
+    while (choices.length < 5) {
+      choices.push(correctLabel);
+    }
+    return choices.slice(0, 5);
+  }
+
+  function buildChoraleIdentificationProblems(exercise) {
+    var score = exercise.score || {};
+    var timeline = ScoreTimeline && ScoreTimeline.buildTimeline
+      ? ScoreTimeline.buildTimeline(score)
+      : [];
+    var windows = buildAnalysisWindows(timeline);
+    if (!windows.length) {
+      return [];
+    }
+
+    var hlKey = exercise.key;
+    var keySignature = new KeySignature(hlKey, exercise.keySignature);
+    var analyzer = new Analyze(keySignature);
+    var analysisType = exercise.analysisType || "roman";
+
+    var labels = _.map(windows, function (window) {
+      return computeWindowLabel(window.midiStack, analysisType, analyzer);
+    });
+
+    return _.map(windows, function (window, idx) {
+      var answer = labels[idx] || "";
+      return {
+        windowIndex: idx,
+        onset: window.onset,
+        answer: answer,
+        choices: buildChoices(answer, labels, analysisType),
+      };
+    });
+  }
 
   /**
    * Converts a CIR-style key (e.g., "F", "Fm", "Bb", "C#m") to HarmonyLab key format (e.g., "jF_", "iF_", "jBb", "iC#").
@@ -174,6 +346,14 @@ define(["lodash", "app/config"], function (_, Config) {
      */
     isChorale: function () {
       return this.exercise.type === "chorale";
+    },
+    /**
+     * Returns true if this is a chorale identification exercise.
+     *
+     * @return {boolean}
+     */
+    isChoraleIdentification: function () {
+      return this.exercise.type === "chorale_identification";
     },
     /**
      * Returns true if this is an identification exercise.
@@ -317,6 +497,41 @@ define(["lodash", "app/config"], function (_, Config) {
         exercise.nextExercise = definition.nextExercise || false;
         exercise.staffDistribution = definition.staffDistribution || "chorale";
         exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
+        return exercise;
+      }
+
+      if (definition.type === "chorale_identification") {
+        exercise.type = "chorale_identification";
+        exercise.score = definition.score || {};
+        exercise.analysisType = definition.analysisType || "roman";
+        exercise.identMode = definition.identMode || "submit";
+        exercise.display = definition.display || {};
+
+        var choraleIdentCIRKey =
+          (definition.score && definition.score.meta && definition.score.meta.key) ||
+          definition.key ||
+          "C";
+        exercise.key = convertCIRKeyToHarmonyLabKey(definition.key || choraleIdentCIRKey);
+        exercise.keySignature = false;
+
+        exercise.introText = definition.introText || false;
+        exercise.reviewText = definition.reviewText || false;
+        exercise.nextExercise = definition.nextExercise || false;
+        exercise.exerciseList = definition.exerciseList || [];
+        exercise.staffDistribution = definition.staffDistribution || "chorale";
+        exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
+
+        exercise.analysis = _.cloneDeep(ANALYSIS_SETTINGS);
+        if (exercise.analysis && exercise.analysis.mode) {
+          for (var modeKey in exercise.analysis.mode) {
+            if (exercise.analysis.mode.hasOwnProperty(modeKey)) {
+              exercise.analysis.mode[modeKey] = false;
+            }
+          }
+        }
+        exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
+        exercise.problems = buildChoraleIdentificationProblems(exercise);
+
         return exercise;
       }
 

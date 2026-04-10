@@ -101,11 +101,12 @@ define([
       this.initRenderer();
       this.initStaves();
       this.initListeners();
+      var definition = this.exerciseContext.getDefinition();
       // Chorale-specific init
-      if (this.exerciseContext.getDefinition().isChorale()) {
+      if (definition.isChorale() || (definition.isChoraleIdentification && definition.isChoraleIdentification())) {
         this.initChoraleMode();
       }
-      if (this.exerciseContext.getDefinition().isIdentification()) {
+      if (this._isIdentificationLikeExercise()) {
         this.initIdentificationMode();
       }
     },
@@ -145,6 +146,17 @@ define([
       // Listen for pristine/refresh button
       this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onClickPristine);
     },
+    _isIdentificationLikeExercise: function () {
+      var definition = this.exerciseContext.getDefinition();
+      return (
+        (definition.isIdentification && definition.isIdentification()) ||
+        (definition.isChoraleIdentification && definition.isChoraleIdentification())
+      );
+    },
+    _isChoraleIdentificationExercise: function () {
+      var definition = this.exerciseContext.getDefinition();
+      return !!(definition.isChoraleIdentification && definition.isChoraleIdentification());
+    },
     /**
      * Set up identification mode.  No DOM selects are created here —
      * answers are drawn on the canvas and editing happens via a position:fixed
@@ -177,7 +189,7 @@ define([
 
       // Canvas click: open popup only inside the label hit zone below bass staff
       this.el.off('click.identification').on('click.identification', function (e) {
-        if (!self.exerciseContext.getDefinition().isIdentification()) { return; }
+        if (!self._isIdentificationLikeExercise()) { return; }
 
         var currentMode = self.exerciseContext.getDefinition().getIdentMode
           ? self.exerciseContext.getDefinition().getIdentMode() : 'submit';
@@ -189,17 +201,16 @@ define([
         var clickX = e.pageX - offset.left;
         var clickY = e.pageY - offset.top;
 
-        var noteStaves = self.staves.slice(1);
         var hitIndex = -1;
-        for (var i = 0; i < noteStaves.length; i++) {
-          var s = noteStaves[i];
-          var bass = s.connectedStave;
-          if (!bass || !bass.staffSegment) { continue; }
-          var bBottom = bass.getBottomY();
-          // Hit zone: x within column, y in the 60px below bottom of bass staff
-          if (clickX >= s.start_x && clickX <= s.start_x + s.width &&
-              clickY >= bBottom - 4 && clickY <= bBottom + 60) {
-            hitIndex = i;
+        var slots = self._getIdentificationSlots();
+        for (var i = 0; i < slots.length; i++) {
+          var slot = slots[i];
+          if (!slot) { continue; }
+          if (
+            clickX >= slot.x - 20 && clickX <= slot.x + 20 &&
+            clickY >= slot.y - 20 && clickY <= slot.y + 46
+          ) {
+            hitIndex = slot.index;
             break;
           }
         }
@@ -220,19 +231,19 @@ define([
 
       // Change cursor to pointer when hovering over a label zone
       this.el.off('mousemove.identification').on('mousemove.identification', function (e) {
-        if (!self.exerciseContext.getDefinition().isIdentification()) { return; }
+        if (!self._isIdentificationLikeExercise()) { return; }
         var offset = self.el.offset();
         var cx = e.pageX - offset.left;
         var cy = e.pageY - offset.top;
-        var noteStaves = self.staves.slice(1);
+        var slots = self._getIdentificationSlots();
         var over = false;
-        for (var i = 0; i < noteStaves.length; i++) {
-          var s = noteStaves[i];
-          var bass = s.connectedStave;
-          if (!bass || !bass.staffSegment) { continue; }
-          var bBottom = bass.getBottomY();
-          if (cx >= s.start_x && cx <= s.start_x + s.width &&
-              cy >= bBottom - 4 && cy <= bBottom + 60) {
+        for (var i = 0; i < slots.length; i++) {
+          var slot = slots[i];
+          if (!slot) { continue; }
+          if (
+            cx >= slot.x - 20 && cx <= slot.x + 20 &&
+            cy >= slot.y - 20 && cy <= slot.y + 46
+          ) {
             over = true;
             break;
           }
@@ -325,9 +336,35 @@ define([
      * plus a ✓ or ✗ symbol when graded.
      * Called from renderStaves() after all staves are drawn.
      */
-    drawIdentificationLabels: function () {
+    _getIdentificationSlots: function () {
+      var definition = this.exerciseContext.getDefinition();
+      var problems = definition.getProblems ? definition.getProblems() : [];
+      if (definition.isChoraleIdentification && definition.isChoraleIdentification()) {
+        var layout = this._identWindowLayout || {};
+        return _.map(problems, function (_problem, idx) {
+          var slot = layout[idx];
+          if (!slot) { return null; }
+          return { index: idx, x: slot.x, y: slot.y };
+        }).filter(Boolean);
+      }
+
       var noteStaves = this.staves.slice(1);
-      if (!noteStaves.length) { return; }
+      return _.map(noteStaves, function (treble, idx) {
+        var bass = treble.connectedStave;
+        if (!bass || !bass.staffSegment) {
+          return null;
+        }
+        return {
+          index: idx,
+          x: bass.getStartX() + 8,
+          y: bass.getBottomY() + 18,
+        };
+      }).filter(Boolean);
+    },
+
+    drawIdentificationLabels: function () {
+      var slots = this._getIdentificationSlots();
+      if (!slots.length) { return; }
 
       var grader = this.exerciseContext.grader;
       var definition = this.exerciseContext.getDefinition();
@@ -337,19 +374,21 @@ define([
 
       var origFont = ctx.font;
       var origFillStyle = ctx.fillStyle;
+      var origTextAlign = ctx.textAlign;
+      var origTextBaseline = ctx.textBaseline;
 
-      for (var i = 0; i < noteStaves.length; i++) {
-        var treble = noteStaves[i];
-        var bass = treble.connectedStave;
-        if (!bass || !bass.staffSegment) { continue; }
+      // Center labels on slot.x so visual position and click target match.
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
 
-        // Match BassStaveNotater: x = getStartX() + annotateOffsetX(8)
-        // y = getBottomY() + margin.bottom(10) + font ascender offset(8) = +18 total
-        var lx = bass.getStartX() + 8;
-        var ly = bass.getBottomY() + 18;
+      for (var i = 0; i < slots.length; i++) {
+        var slot = slots[i];
+        var lx = slot.x;
+        var ly = slot.y;
 
-        var chosen = grader && grader.answers && grader.answers.hasOwnProperty(i)
-          ? grader.answers[i] : null;
+        var problemIndex = slot.index;
+        var chosen = grader && grader.answers && grader.answers.hasOwnProperty(problemIndex)
+          ? grader.answers[problemIndex] : null;
         var label = chosen || '?';
 
         var fillStyle = '#888888'; // unanswered
@@ -358,25 +397,38 @@ define([
         var showCross = false;
 
         // Show colour feedback when graded (never in test mode)
-        if (lastGraded && lastGraded.problems && lastGraded.problems[i] && identMode !== 'test') {
-          var gp = lastGraded.problems[i];
+        if (lastGraded && lastGraded.problems && lastGraded.problems[problemIndex] && identMode !== 'test') {
+          var gp = lastGraded.problems[problemIndex];
           if (gp.correct === true)  { fillStyle = '#28a745'; showCheck = true; }
           if (gp.correct === false) { fillStyle = '#dc3545'; showCross = true; }
         }
 
+        var labelY = ly;
+        var markerY = ly + 18;
+        if (ctx.canvas && typeof ctx.canvas.height === 'number') {
+          var maxMarkerY = ctx.canvas.height - 6;
+          if (markerY > maxMarkerY) {
+            var delta = markerY - maxMarkerY;
+            labelY -= delta;
+            markerY -= delta;
+          }
+        }
+
         ctx.font = '18px JazzSerifs';
         ctx.fillStyle = fillStyle;
-        ctx.fillText(label, lx, ly);
+        ctx.fillText(label, lx, labelY);
 
         // ✓ or ✗ drawn below the label text
         if (showCheck || showCross) {
           ctx.font = 'bold 14px sans-serif';
-          ctx.fillText(showCheck ? '✓' : '✗', lx, ly + 18);
+          ctx.fillText(showCheck ? '✓' : '✗', lx, markerY);
         }
       }
 
       ctx.font = origFont;
       ctx.fillStyle = origFillStyle;
+      ctx.textAlign = origTextAlign;
+      ctx.textBaseline = origTextBaseline;
     },
 
     /**
@@ -636,11 +688,16 @@ define([
      */
     renderStaves: function (exercise_midi_nums = false) {
       var definition = this.exerciseContext.getDefinition();
+      var isChoraleLike =
+        definition.isChorale() ||
+        (definition.isChoraleIdentification && definition.isChoraleIdentification());
       
       // Use VexFlow adapter for chorale exercises
-      if (definition.isChorale()) {
+      if (isChoraleLike) {
         var score = definition.getScore();
         if (score && score.measures && score.measures.length > 0) {
+          var self = this;
+          this._identWindowLayout = {};
           this._updateChoraleViewport(score);
           var canvas = this.el[0];
           var display = definition.getDisplay() || {};
@@ -649,9 +706,9 @@ define([
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
           var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels;
-          // Force-enable roman numerals in chorale mode if not explicitly requested
-          // User requested: "just show the roman numerals" regardless of prior display flags.
-          if (!wantsRomans) {
+          // Preserve legacy chorale behavior that force-enables roman numerals,
+          // but do not force overlays for chorale_identification.
+          if (!wantsRomans && definition.isChorale && definition.isChorale()) {
             wantsRomans = true;
           }
           // Ensure analysis renderer is not suppressed
@@ -679,20 +736,43 @@ define([
               ? this._chorale.startMeasure
               : 0);
           var staffYOffset = 20;
+          var playedNoteIdsForRender =
+            (this.exerciseContext && this.exerciseContext.grader && this.exerciseContext.grader.getPlayedNoteIds)
+              ? this.exerciseContext.grader.getPlayedNoteIds()
+              : null;
+
+          // In chorale-identification mode we want notation rendered in black from the start.
+          if (this._isChoraleIdentificationExercise()) {
+            playedNoteIdsForRender = new Set();
+            _.each(ScoreTimeline.buildTimeline(score) || [], function (ev) {
+              if (ev && typeof ev.id === 'number') {
+                playedNoteIdsForRender.add(ev.id);
+              }
+            });
+          }
+
           VexFlowAdapter.render(score, this.vexRenderer, {
             width: canvas.width,
             height: canvas.height,
             maxMeasures: (this._chorale && this._chorale.maxMeasures) || 4,
             startMeasure: startMeasure,
-            playedNoteIds: (this.exerciseContext && this.exerciseContext.grader && this.exerciseContext.grader.getPlayedNoteIds)
-              ? this.exerciseContext.grader.getPlayedNoteIds()
-              : null,
+            playedNoteIds: playedNoteIdsForRender,
             // Analysis wiring for chorale path (Notater bridge inside adapter)
             analyzeConfig: analyzeConfig,
             keySignature: this.keySignature,
             analysisRenderer: display.analysisRenderer || "notater", // notater|adapter|none
-            staffYOffset: staffYOffset
+            staffYOffset: staffYOffset,
+            onWindowPosition: function (slot) {
+              if (!slot || typeof slot.windowIndex !== "number") {
+                return;
+              }
+              self._identWindowLayout[slot.windowIndex] = slot;
+            },
           });
+
+          if (this._isIdentificationLikeExercise()) {
+            this.drawIdentificationLabels();
+          }
         }
         return this;
       }
@@ -712,7 +792,7 @@ define([
         stave.render(exercise_midi_nums, exercise_view_bool, append_barline);
       }
 
-      if (this.exerciseContext.getDefinition().isIdentification()) {
+      if (this._isIdentificationLikeExercise()) {
         this.drawIdentificationLabels();
       }
 
