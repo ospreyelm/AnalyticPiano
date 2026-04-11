@@ -6,6 +6,22 @@ Actionable steps in order. Check off as completed.
 
 ---
 
+## Current state (2026-04-10)
+
+- App runs locally. Hosting not yet deployed (Phase 1 still pending).
+- Pilot with college approaching — teacher onboarding is the critical path.
+- **The real blocker is content.** A starter curriculum needs to exist in the public library before teachers can onboard. But creating content is painful because the tooling is missing — exercises are hard to browse, creation takes 3 pages, and transposition is broken. Fix the tools first (2.19–2.21), then create content (2.12).
+- Recurring assignments (2.14) is fully implemented and merged.
+- Chorale identification is fully implemented and merged: a chorale can now be turned into a guided Roman numeral or figured-bass identification exercise from import flow or dashboard duplication.
+- The `curriculum-generation` branch (programmatic exercise generation) was attempted and abandoned — do not revisit.
+
+**Next session priorities (in order):**
+1. ~~**2.21** — Smart transposition~~ ✅ done
+2. **2.19** — Exercise audit view (can't manage what you can't see)
+3. **2.20** — Streamlined creation flow (reduce 3 pages → 1)
+4. **2.12** — Start building content once tools are in place
+
+---
 ## Phase 1 — Get Running
 
 > **Sequencing note:** Upgrade Django locally first, then deploy the upgraded version
@@ -222,6 +238,87 @@ Currently `import_musicxml` is only accessible via the Django admin panel (`/ana
 - [ ] Wire to existing `import_musicxml` management command logic (extract into a reusable function in `apps/exercises/utils/`)
 - [ ] Add "Import MusicXML" button to exercises list page
 - [ ] Guard with role check once 3.1 is complete; for now, any logged-in user can use it
+
+### 2.14 Recurring assignments ✅ IMPLEMENTED
+
+Full recurring playlist system with per-period progress tracking, student My Work view, and teacher gradebook columns. All done.
+
+### 2.15 UI/UX polish
+
+- [ ] Audit dashboard pages for highest-impact visual pain points
+- [ ] Update global styles: typography, colour, spacing, card/table treatments
+- [ ] Polish student My Work and teacher gradebook views
+- [ ] Verify responsive on tablet (likely in-class device)
+
+### 2.16 LTI integration (Moodle)
+
+_Requirements TBD — confirm with college May 2026._
+
+- [ ] Confirm scope (SSO only vs. grade passback vs. roster sync)
+- [ ] Choose LTI version (1.1 vs. 1.3) based on college Moodle version
+- [ ] Spec and implement once confirmed
+
+### 2.17 Course scheduling wizard
+
+_Depends on 2.12 (content) and 2.14 (recurring). Needs spec session._
+
+A wizard that takes a course and distributes its exercises into scheduled sessions: teacher picks weekday pattern + max exercises/session + start date; wizard creates `PlaylistCourseOrdered` entries with due dates.
+
+- [ ] Spec wizard flow
+- [ ] Auto-split logic: divide exercises into sessions in curriculum order
+- [ ] Wizard UI: course → schedule → exercises/session → preview → confirm
+- [ ] Allow preview and adjustment before committing
+
+### 2.18 Counterpoint checking
+
+Alerting and grading parallel fifths, parallel octaves, and doubled leading tones.
+
+- [ ] Spec detection rules and grading behaviour
+- [ ] Implement
+
+### 2.19 Exercise audit view ⚠️ DO THIS BEFORE MORE CONTENT CREATION
+
+Teachers cannot manage 400+ exercises — the current list shows ~50 at a time with no filtering.
+
+- [ ] Add `/dashboard/exercises/audit/` — paginated table of all exercises by current user
+- [ ] Columns: ID, description, key, type, tags, playlist count, locked, created date
+- [ ] Filter by type, tag, key; full-text search on description
+- [ ] Inline quick-edit for description and tags (no page reload)
+- [ ] Bulk-tag action
+- [ ] Links to exercise editor and preview from each row
+- [ ] find a way to allow a teacher to work on a single course or single playlist not seeing all the exercises but only the ones that already belong to those courses or playlists.
+
+### 2.20 Streamlined exercise creation flow
+
+Currently 3 pages: (1) MIDI input, (2) save/type form, (3) preview. Friction kills content velocity.
+
+- [ ] After saving from play/MIDI page, land on exercise editor with notes pre-populated — skip the middle confirm page
+- [ ] Type, analysis settings, description all editable on the same page as the staff preview
+- [ ] "Save and create another" action that resets input without navigating away
+- [ ] Side-by-side layout: staff preview left, settings panel right
+
+### 2.21 Smart playlist transposition ✅ DONE
+
+Transposition always goes up — C→Bb shifts up a major 7th instead of down a major 2nd. Exercises end up in wrong registers.
+
+- [x] Find where transposition interval is computed (`apps/exercises/utils/transpose.py`)
+- [x] For each target key, pick the direction that results in the smaller interval (≤ 6 semitones)
+- [x] Tritone (exactly 6 semitones): prefer down
+- [x] Tests: C→F = +5 (up P4), C→Bb = −2 (down M2), C→F# = −6 (down tritone), C→G = −5 (down P4)
+- [x] All 12×12 key pairs verified: no vector exceeds 6 semitones
+
+### 2.22 Curriculum assembly tool
+
+_Needs spec session before implementation._
+
+No bird's-eye view of a course under construction. Everything is separate edit pages.
+
+- [ ] Spec the UI
+- [ ] Course outline page: available playlists/exercises left, course structure right
+- [ ] Drag-and-drop reordering of playlists in course and exercises in playlist
+- [ ] Inline new-playlist creation
+- [ ] Transposition settings visible + editable per playlist inline
+- [ ] Publish/unpublish from this view
 
 ---
 
