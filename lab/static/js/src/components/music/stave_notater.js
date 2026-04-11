@@ -107,6 +107,7 @@ define([
      * Remembers prior Roman numerals
      */
     romanNumeralsHistory: Object.create(null),
+    romanNumeralsExpHistory: Object.create(null),
     /**
      * Initializes the notater.
      *
@@ -901,6 +902,170 @@ define([
 
       return chord_entry; /* for grading */
     },
+    normalizeAnalyticalText: function (text) {
+      return String(text || "")
+        .replace(/bb/g, "𝄫")
+        .replace(/b/g, "♭")
+        .replace(/##/g, "𝄪")
+        .replace(/#/g, "♯")
+        .replace(/n/g, "♮")
+        .trim();
+    },
+    getFigurePattern: function (figure) {
+      return String(figure || "")
+        .split("/")
+        .map(function (line) {
+          return line.replace(/[^0-9]+/g, "");
+        })
+        .filter(function (line) {
+          return line.length > 0;
+        })
+        .join("/");
+    },
+    getRomanExpDisplayFigureLines: function (current, previous) {
+      if (!current) return [];
+
+      var preserveSuspensionContext = !!(
+      previous &&
+      previous.base === current.base &&
+      previous.fullFigureLines &&
+      previous.fullFigureLines.length >= 3
+    );
+
+      return preserveSuspensionContext
+        ? current.fullFigureLines
+        : current.abbrevFigureLines;
+    },
+    getRomanExpParts: function (midi_nums) {
+      if (!midi_nums || midi_nums.length < 2) return null;
+
+      var keyCategory = this.keySignature.getKey()[0] || false;
+      if (!["i", "j"].includes(keyCategory)) return null;
+
+      var chord_entry = this.getAnalyzer().to_chord(midi_nums, "roman only");
+      if (!chord_entry || !chord_entry.label) return null;
+
+      var base = this.normalizeAnalyticalText(
+        chord_entry.label.replace(/\{[^}]*\}/g, "")
+      );
+      if (!base) return null;
+
+      var figure = "";
+      var abbrevFigure = "";
+      try {
+        figure = this.getAnalyzer().full_thoroughbass_figure(midi_nums) || "";
+        abbrevFigure =
+          this.getAnalyzer().abbrev_thoroughbass_figure(midi_nums) || "";
+      } catch (err) {
+        figure = "";
+        abbrevFigure = "";
+      }
+
+      var fullFigureLines = figure
+        ? figure
+            .split("/")
+            .map(
+              function (line) {
+                return this.normalizeAnalyticalText(line);
+              }.bind(this)
+            )
+            .filter(function (line) {
+              return line.length > 0;
+            })
+        : [];
+
+      var abbrevFigureLines = abbrevFigure
+        ? abbrevFigure
+            .split("/")
+            .map(
+              function (line) {
+                return this.normalizeAnalyticalText(line);
+              }.bind(this)
+            )
+            .filter(function (line) {
+              return line.length > 0;
+            })
+        : [];
+
+      return {
+        base: base,
+        fullFigure: figure,
+        fullFigurePattern: this.getFigurePattern(figure),
+        fullFigureLines: fullFigureLines,
+        abbrevFigure: abbrevFigure,
+        abbrevFigurePattern: this.getFigurePattern(abbrevFigure),
+        abbrevFigureLines: abbrevFigureLines,
+      };
+    },
+    drawRomanExp: function (x, y) {
+      var midi_nums = this.chord.getNoteNumbers();
+      var current = this.getRomanExpParts(midi_nums);
+      if (!current) return "";
+
+      var idx = this.stave.position.index;
+      var previous = this.romanNumeralsExpHistory[idx - 1] || null;
+      var previousPrevious = this.romanNumeralsExpHistory[idx - 2] || null;
+      var continuingRun = !!(
+        previous &&
+        previous.base &&
+        previous.base === current.base
+      );
+      var currentFigureLines = this.getRomanExpDisplayFigureLines(
+        current,
+        previous
+      );
+      var previousFigureLines = this.getRomanExpDisplayFigureLines(
+        previous,
+        previousPrevious
+      );
+
+      var ctx = this.getContext();
+      var fontArgs = ctx.font.split(" ");
+      var originalFont = ctx.font;
+      var columnCenterX = x + StaveNotater.prototype.annotateOffsetX + 6;
+      var baseFont = "20px " + fontArgs[fontArgs.length - 1];
+      ctx.font = baseFont;
+      if (!continuingRun) {
+        var baseWidth = ctx.measureText(current.base).width;
+        var baseX = columnCenterX - baseWidth - 10;
+        var slashIdx = current.base.indexOf("/");
+        if (slashIdx >= 0) {
+          var topPart = current.base.slice(0, slashIdx);
+          var bottomPart = current.base.slice(slashIdx + 1);
+          var topWidth = ctx.measureText(topPart).width;
+          var topPartX = Math.round(columnCenterX - topWidth / 2) - 10;
+          ctx.fillText(topPart, topPartX, y);
+          ctx.fillText("/", topPartX + topWidth - 3, y + 9);
+          ctx.fillText(bottomPart, topPartX + topWidth + 3, y + 14);
+        } else {
+          ctx.fillText(current.base, baseX, y);
+        }
+      }
+
+      if (currentFigureLines.length) {
+        var figureLineHeight = 12;
+        var figureStartY = y - 12;
+        ctx.font = "14px " + fontArgs[fontArgs.length - 1];
+        currentFigureLines.forEach(function (line, index) {
+          var lineY = figureStartY + index * figureLineHeight;
+          var lineWidth = ctx.measureText(line).width;
+
+          if (
+            continuingRun &&
+            previousFigureLines &&
+            previousFigureLines[index]
+          ) {
+            ctx.fillText("-", columnCenterX - lineWidth / 2 - 10, lineY);
+          }
+
+          ctx.fillText(line, columnCenterX - lineWidth / 2, lineY);
+        });
+      }
+
+      ctx.font = originalFont;
+
+      return current.base;
+    },
     drawPci: function (x, y) {
       var midi_nums = this.chord.getNoteNumbers();
       var interval = this.getAnalyzer().to_pci(midi_nums);
@@ -1378,6 +1543,25 @@ define([
           this.getAnalyzer().to_chord(midi_nums).label || "";
       }
 
+      if (
+        exercise_midi_nums &&
+        typeof this.romanNumeralsExpHistory[this.stave.position.index] ===
+          "undefined"
+      ) {
+        let romanExpParts = exercise_midi_nums.map(
+          function (midi_arr) {
+            return this.getRomanExpParts(midi_arr);
+          }.bind(this)
+        );
+        var expIdx, expLen;
+        for (expIdx = 0, expLen = romanExpParts.length; expIdx < expLen; expIdx += 1) {
+          this.romanNumeralsExpHistory[expIdx + 1] = romanExpParts[expIdx];
+        }
+      } else if (!exercise_midi_nums) {
+        this.romanNumeralsExpHistory[this.stave.position.index] =
+          this.getRomanExpParts(midi_nums);
+      }
+
       if (mode.thoroughbass) {
         if (num_notes >= 2) {
           this.drawThoroughbass(x, y);
@@ -1386,7 +1570,7 @@ define([
           this.drawBassFigureDegree(x, y);
         }
         // when thoroughbass is active we skip the other label types
-        if (mode.chord_labels || mode.roman_numerals || mode.bass_scale_degrees || mode.bass_solfege || mode.bass_do_based_solfege) {
+        if (mode.chord_labels || mode.roman_numerals || mode.roman_numerals_exp || mode.bass_scale_degrees || mode.bass_solfege || mode.bass_do_based_solfege) {
           // fall through so roman numerals/chords can still draw if desired
         } else {
           return;
@@ -1416,6 +1600,9 @@ define([
       } else if (num_notes > 2) {
         if (mode.roman_numerals) {
           this.drawRoman(x, y);
+        }
+        if (mode.roman_numerals_exp) {
+          this.drawRomanExp(x, y);
         }
         if (mode.chord_labels) {
           this.drawChordLabel(x);
