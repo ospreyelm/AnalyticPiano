@@ -58,6 +58,7 @@ define({
 
       thoroughbass: false,
       roman_numerals: true,
+      roman_numerals_exp: false,
       chord_labels: true,
 
       /* max one of the following may be true */

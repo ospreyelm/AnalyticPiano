@@ -50,6 +50,35 @@ define([
     ctx.restore();
   }
 
+  function drawInlineRomanExp(ctx, parts, columnX, stave, opts) {
+    if (!ctx || !parts || !parts.base) return;
+
+    var yBase = (stave && stave.getBottomY) ? stave.getBottomY() : 0;
+    var y = yBase + ((opts && opts.yShift) || 30);
+    var figureLines = parts.figureLines || [];
+
+    ctx.save();
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "left";
+
+    ctx.font = "18px JazzSerifs";
+    var baseWidth = ctx.measureText(parts.base).width;
+    var baseX = Math.round(columnX - baseWidth / 2);
+    ctx.fillText(parts.base, baseX, y);
+
+    if (figureLines.length) {
+      var figureX = baseX + baseWidth + 3;
+      var figureLineHeight = (opts && opts.lineHeight) || 12;
+      var figureStartY = y - 12;
+      ctx.font = "13px MainSerifs";
+      figureLines.forEach(function (line, index) {
+        ctx.fillText(line, figureX, figureStartY + index * figureLineHeight);
+      });
+    }
+
+    ctx.restore();
+  }
+
   var FIGURE_TOKEN_MAP = {
     "z": "6",
     "z4": "6/4",
@@ -222,6 +251,52 @@ define([
       (analyzeConfig.mode.thoroughbass ||
         analyzeConfig.mode.abbreviate_thoroughbass)
     );
+  }
+
+  function shouldRenderRomanExp(analyzeConfig) {
+    return (
+      analyzeConfig &&
+      analyzeConfig.mode &&
+      analyzeConfig.mode.roman_numerals_exp
+    );
+  }
+
+  function computeRomanExpLabel(midi, analyzer) {
+    if (!analyzer || !midi || !midi.length) return null;
+    try {
+      var chordInfo = analyzer.to_chord(midi, "roman only");
+      if (!chordInfo || !chordInfo.label) return null;
+      var base = chordInfo.label
+        .replace(/\{[^}]*\}/g, "")
+        .trim()
+        .replace(/bb/g, "𝄫")
+        .replace(/b/g, "♭")
+        .replace(/##/g, "𝄪")
+        .replace(/#/g, "♯");
+      if (!base) return null;
+      var figure = analyzer.abbrev_thoroughbass_figure(midi) || "";
+      var figureLines = figure
+        ? figure
+            .split("/")
+            .map(function (line) {
+              return line
+                .replace(/bb/g, "𝄫")
+                .replace(/b/g, "♭")
+                .replace(/##/g, "𝄪")
+                .replace(/#/g, "♯")
+                .trim();
+            })
+            .filter(function (line) {
+              return line.length > 0;
+            })
+        : [];
+      return {
+        base: base,
+        figureLines: figureLines,
+      };
+    } catch (err) {
+      return null;
+    }
   }
 
   function attachInlineRomanAnnotation(
@@ -479,9 +554,11 @@ define([
       }
       var renderRomans = shouldRenderRoman(analyzeConfig);
       var renderFigured = !renderRomans && shouldRenderFigured(analyzeConfig);
+      var renderRomanExp = !renderRomans && !renderFigured && shouldRenderRomanExp(analyzeConfig);
       if (!inlineAnalyzer) {
         renderRomans = false;
         renderFigured = false;
+        renderRomanExp = false;
       }
       var systemGap = (opts && opts.systemGap) || 120; // Increased vertical spacing between staves
       var staffYOffset = (opts && opts.staffYOffset) || 0;
@@ -1009,6 +1086,20 @@ define([
                     { yShift: figuredYOffset, lineHeight: 12 },
                     figureLabel
                   );
+                }
+              } else if (renderRomanExp) {
+                var expLabel = computeRomanExpLabel(midi, inlineAnalyzer);
+                if (expLabel) {
+                  var expX = getColumnCenterX(col);
+                  if (expX !== null) {
+                    drawInlineRomanExp(
+                      ctx,
+                      expLabel,
+                      expX,
+                      bassStave,
+                      { yShift: romanYOffset, lineHeight: 11 }
+                    );
+                  }
                 }
               }
 

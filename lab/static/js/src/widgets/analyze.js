@@ -74,6 +74,9 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
       '<label><input type="checkbox" name="analysis_harmony" value="roman_numerals" accesskey="h"> Harmony in Roman numerals</label>',
       "</li>",
       "<li>",
+      '<label><input type="checkbox" name="analysis_roman_numerals_exp" value="roman_numerals_exp"> Roman Numeral experimental</label>',
+      "</li>",
+      "<li>",
       '<label><input type="checkbox" name="analysis_spacing" value="spacing"> Spacing of upper voices</label>',
       "</li>",
       "<li>",
@@ -283,6 +286,9 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
         this.toggle_exclusive_analysis_option(e, opts);
       },
       analysis_harmony: function (e) {
+        this.toggle_analysis_option(e);
+      },
+      analysis_roman_numerals_exp: function (e) {
         this.toggle_analysis_option(e);
       },
       analysis_chords: function (e) {

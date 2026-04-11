@@ -294,6 +294,7 @@ CHORALE_ANALYSIS_KEYS = [
     "do_based_solfege",
     "thoroughbass",
     "roman_numerals",
+    "roman_numerals_exp",
     "chord_labels",
     "intervals",
     "intervals_wrap_after_octave",
@@ -413,6 +414,7 @@ class ExerciseForm(forms.ModelForm):
             ("figures", "Figured bass (full)"),
             ("figures_abbrev", "Figured bass (abbreviated)"),
             ("romans", "Roman numerals"),
+            ("romans_exp", "Roman numerals (experimental)"),
         ),
         required=False,
         label="Analysis labels",
@@ -718,7 +720,9 @@ class ExerciseForm(forms.ModelForm):
         if label_mode.startswith("figures") and not display.get("showFigures"):
             label_mode = "none"
         if label_mode == "none":
-            if display.get("showRomans"):
+            if display.get("showRomansExp"):
+                label_mode = "romans_exp"
+            elif display.get("showRomans"):
                 label_mode = "romans"
             elif display.get("showFigures"):
                 label_mode = (
@@ -823,6 +827,7 @@ class ExerciseForm(forms.ModelForm):
             display.pop("figureStyle", None)
         display["showFigures"] = raw_label_mode in ("figures", "figures_abbrev")
         display["showRomans"] = label_mode == "romans"
+        display["showRomansExp"] = label_mode == "romans_exp"
         display["showChordLabels"] = self.cleaned_data.get(
             "chorale_show_chord_labels", False
         )
@@ -835,6 +840,7 @@ class ExerciseForm(forms.ModelForm):
             "notater"
             if display["showFigures"]
             or display["showRomans"]
+            or display["showRomansExp"]
             or display["showChordLabels"]
             else "none"
         )
@@ -876,6 +882,7 @@ class ExerciseForm(forms.ModelForm):
         mode["thoroughbass"] = label_mode in ("figures", "figures_abbrev")
         mode["abbreviate_thoroughbass"] = label_mode == "figures_abbrev"
         mode["roman_numerals"] = label_mode == "romans"
+        mode["roman_numerals_exp"] = label_mode == "romans_exp"
         mode["chord_labels"] = bool(show_chords)
 
         analysis["mode"] = mode
