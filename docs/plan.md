@@ -1,6 +1,6 @@
 # HarmonyLab Development Plan
 
-_Last updated: 2026-04-03_
+_Last updated: 2026-04-10_
 
 Actionable steps in order. Check off as completed.
 
@@ -143,6 +143,17 @@ A new exercise type where **notes are shown on the staff and the student selects
   ]
 }
 ```
+
+### 2.11a Chorale identification exercise flow ✅ IMPLEMENTED (2026-04-10)
+
+A companion to the chorale-play type: the score is fully displayed and the student identifies each onset-window chord by selecting the correct Roman numeral or figured-bass label.
+
+- [x] Add `chorale_identification` as a first-class exercise type; reuse `IdentificationGrader` without modifying `analyze.js`, `identification_grader.js`, or `score_timeline.js`
+- [x] Client-side problem generation: extract onset windows from the chorale score and compute Roman numeral / figured-bass labels via the existing `Analyze` utility
+- [x] Render the full chorale score with all notes black; overlay clickable label slots aligned to onset columns
+- [x] Support creation via `import_chorale --mode identify` and via a dashboard "Save, Duplicate as Identification" button on any chorale exercise
+- [x] Wire backend: new exercise type recognised in `forms.py`, `admin.py`, and `exercise_definition.js`
+- [x] Django test for the duplication command; cherry-picked into `master` as commit `896114de`
 
 ### 2.12 Curriculum generation system
 
