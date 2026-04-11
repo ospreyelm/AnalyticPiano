@@ -65,7 +65,18 @@ define([
     ctx.font = "18px JazzSerifs";
     var baseWidth = ctx.measureText(parts.base).width;
     var baseX = Math.round(figureCenterX - baseWidth - 10);
-    ctx.fillText(parts.base, baseX, y);
+    var slashIdx = parts.base.indexOf("/");
+    if (slashIdx >= 0) {
+      var topPart = parts.base.slice(0, slashIdx);
+      var bottomPart = parts.base.slice(slashIdx + 1);
+      var topWidth = ctx.measureText(topPart).width;
+      var topPartX = Math.round(figureCenterX - topWidth / 2) - 10;
+      ctx.fillText(topPart, topPartX, y);
+      ctx.fillText("/", topPartX + topWidth - 3, y + 9);
+      ctx.fillText(bottomPart, topPartX + topWidth + 3, y + 14);
+    } else {
+      ctx.fillText(parts.base, baseX, y);
+    }
 
     if (figureLines.length) {
       var figureLineHeight = (opts && opts.lineHeight) || 12;
@@ -102,7 +113,19 @@ define([
 
     ctx.font = "18px JazzSerifs";
     var baseWidth = ctx.measureText(run.base).width;
-    ctx.fillText(run.base, Math.round(firstX - baseWidth - 10), y);
+    var runBaseX = Math.round(firstX - baseWidth - 10);
+    var slashIdxRun = run.base.indexOf("/");
+    if (slashIdxRun >= 0) {
+      var topPartRun = run.base.slice(0, slashIdxRun);
+      var bottomPartRun = run.base.slice(slashIdxRun + 1);
+      var topWidthRun = ctx.measureText(topPartRun).width;
+      var topPartRunX = Math.round(firstX - topWidthRun / 2) - 10;
+      ctx.fillText(topPartRun, topPartRunX, y);
+      ctx.fillText("/", topPartRunX + topWidthRun - 3, y + 9);
+      ctx.fillText(bottomPartRun, topPartRunX + topWidthRun + 3, y + 14);
+    } else {
+      ctx.fillText(run.base, runBaseX, y);
+    }
 
     if (maxRows > 0) {
       ctx.font = "13px MainSerifs";
