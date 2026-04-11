@@ -56,6 +56,7 @@ define([
     var yBase = (stave && stave.getBottomY) ? stave.getBottomY() : 0;
     var y = yBase + ((opts && opts.yShift) || 30);
     var figureLines = parts.figureLines || [];
+    var figureCenterX = columnX + 6;
 
     ctx.save();
     ctx.fillStyle = "#000";
@@ -63,20 +64,100 @@ define([
 
     ctx.font = "18px JazzSerifs";
     var baseWidth = ctx.measureText(parts.base).width;
-    var baseX = Math.round(columnX - baseWidth / 2);
+    var baseX = Math.round(figureCenterX - baseWidth - 10);
     ctx.fillText(parts.base, baseX, y);
 
     if (figureLines.length) {
-      var figureX = baseX + baseWidth + 3;
       var figureLineHeight = (opts && opts.lineHeight) || 12;
       var figureStartY = y - 12;
       ctx.font = "13px MainSerifs";
       figureLines.forEach(function (line, index) {
-        ctx.fillText(line, figureX, figureStartY + index * figureLineHeight);
+        var lineWidth = ctx.measureText(line).width;
+        ctx.fillText(
+          line,
+          Math.round(figureCenterX - lineWidth / 2),
+          figureStartY + index * figureLineHeight
+        );
       });
     }
 
     ctx.restore();
+  }
+
+  function drawInlineRomanExpRun(ctx, run, stave, opts) {
+    if (!ctx || !run || !run.base || !run.columns || !run.columns.length) return;
+
+    var yBase = (stave && stave.getBottomY) ? stave.getBottomY() : 0;
+    var y = yBase + ((opts && opts.yShift) || 30);
+    var lineHeight = (opts && opts.lineHeight) || 12;
+    var figureStartY = y - 12;
+    var firstX = run.columns[0].x + 6;
+    var maxRows = run.columns.reduce(function (count, column) {
+      return Math.max(count, (column.figureLines || []).length);
+    }, 0);
+
+    ctx.save();
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "left";
+
+    ctx.font = "18px JazzSerifs";
+    var baseWidth = ctx.measureText(run.base).width;
+    ctx.fillText(run.base, Math.round(firstX - baseWidth - 10), y);
+
+    if (maxRows > 0) {
+      ctx.font = "13px MainSerifs";
+      for (var rowIdx = 0; rowIdx < maxRows; rowIdx++) {
+        var rowY = figureStartY + rowIdx * lineHeight;
+        for (var colIdx = 0; colIdx < run.columns.length; colIdx++) {
+          var column = run.columns[colIdx];
+          var columnX = column.x + 6;
+          var currentLine = (column.figureLines || [])[rowIdx] || "";
+          if (colIdx > 0) {
+            var previousColumn = run.columns[colIdx - 1];
+            var previousLine = (previousColumn.figureLines || [])[rowIdx] || "";
+            if (previousLine && currentLine) {
+              var dashX = (previousColumn.x + column.x) / 2 + 6;
+              var dashWidth = ctx.measureText("-").width;
+              ctx.fillText("-", Math.round(dashX - dashWidth / 2), rowY);
+            }
+          }
+          if (!currentLine) {
+            continue;
+          }
+          var lineWidth = ctx.measureText(currentLine).width;
+          ctx.fillText(currentLine, Math.round(columnX - lineWidth / 2), rowY);
+        }
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function getFigurePattern(figure) {
+    return String(figure || "")
+      .split("/")
+      .map(function (line) {
+        return line.replace(/[^0-9]+/g, "");
+      })
+      .filter(function (line) {
+        return line.length > 0;
+      })
+      .join("/");
+  }
+
+  function getRomanExpDisplayFigureLines(current, previous) {
+    if (!current) return [];
+
+    var preserveSuspensionContext = !!(
+      previous &&
+      previous.base === current.base &&
+      previous.fullFigureLines &&
+      previous.fullFigureLines.length >= 3
+    );
+
+    return preserveSuspensionContext
+      ? current.fullFigureLines
+      : current.abbrevFigureLines;
   }
 
   var FIGURE_TOKEN_MAP = {
@@ -274,8 +355,9 @@ define([
         .replace(/##/g, "𝄪")
         .replace(/#/g, "♯");
       if (!base) return null;
-      var figure = analyzer.abbrev_thoroughbass_figure(midi) || "";
-      var figureLines = figure
+      var figure = analyzer.full_thoroughbass_figure(midi) || "";
+      var abbrevFigure = analyzer.abbrev_thoroughbass_figure(midi) || "";
+      var fullFigureLines = figure
         ? figure
             .split("/")
             .map(function (line) {
@@ -284,6 +366,23 @@ define([
                 .replace(/b/g, "♭")
                 .replace(/##/g, "𝄪")
                 .replace(/#/g, "♯")
+                .replace(/n/g, "♮")
+                .trim();
+            })
+            .filter(function (line) {
+              return line.length > 0;
+            })
+        : [];
+      var abbrevFigureLines = abbrevFigure
+        ? abbrevFigure
+            .split("/")
+            .map(function (line) {
+              return line
+                .replace(/bb/g, "𝄫")
+                .replace(/b/g, "♭")
+                .replace(/##/g, "𝄪")
+                .replace(/#/g, "♯")
+                .replace(/n/g, "♮")
                 .trim();
             })
             .filter(function (line) {
@@ -292,7 +391,12 @@ define([
         : [];
       return {
         base: base,
-        figureLines: figureLines,
+        fullFigure: figure,
+        fullFigurePattern: getFigurePattern(figure),
+        fullFigureLines: fullFigureLines,
+        abbrevFigure: abbrevFigure,
+        abbrevFigurePattern: getFigurePattern(abbrevFigure),
+        abbrevFigureLines: abbrevFigureLines,
       };
     } catch (err) {
       return null;
@@ -868,6 +972,58 @@ define([
       var globalIdState = { nextId: startNoteOffset, playedNoteIds: (opts && opts.playedNoteIds) || null };
       var lastTrebleStave = null;
       var lastBassStave = null;
+      var pendingRomanExpRun = null;
+
+      function flushRomanExpRun() {
+        if (!pendingRomanExpRun || !pendingRomanExpRun.columns.length) {
+          pendingRomanExpRun = null;
+          return;
+        }
+        drawInlineRomanExpRun(
+          ctx,
+          pendingRomanExpRun,
+          pendingRomanExpRun.stave || lastBassStave,
+          { yShift: romanYOffset, lineHeight: 11 }
+        );
+        pendingRomanExpRun = null;
+      }
+
+      function queueRomanExpColumn(col, expLabel, stave) {
+        if (!expLabel || !expLabel.base) {
+          flushRomanExpRun();
+          return;
+        }
+
+        var expX = getColumnCenterX(col);
+        if (expX === null) {
+          flushRomanExpRun();
+          return;
+        }
+
+        var column = {
+          x: expX,
+          figureLines: getRomanExpDisplayFigureLines(
+            expLabel,
+            pendingRomanExpRun ? pendingRomanExpRun.lastLabel : null
+          ).slice(),
+        };
+
+        if (pendingRomanExpRun && pendingRomanExpRun.base === expLabel.base) {
+          pendingRomanExpRun.columns.push(column);
+          pendingRomanExpRun.stave = stave || pendingRomanExpRun.stave;
+          pendingRomanExpRun.lastLabel = expLabel;
+          return;
+        }
+
+        flushRomanExpRun();
+        pendingRomanExpRun = {
+          base: expLabel.base,
+          columns: [column],
+          lastLabel: expLabel,
+          stave: stave || lastBassStave,
+        };
+      }
+
       for (var measIdx = 0; measIdx < numMeasures; measIdx++) {
         var meas = measuresToRender[measIdx];
         var treble = meas.staves.treble;
@@ -1089,18 +1245,7 @@ define([
                 }
               } else if (renderRomanExp) {
                 var expLabel = computeRomanExpLabel(midi, inlineAnalyzer);
-                if (expLabel) {
-                  var expX = getColumnCenterX(col);
-                  if (expX !== null) {
-                    drawInlineRomanExp(
-                      ctx,
-                      expLabel,
-                      expX,
-                      bassStave,
-                      { yShift: romanYOffset, lineHeight: 11 }
-                    );
-                  }
-                }
+                queueRomanExpColumn(col, expLabel, bassStave);
               }
 
             });
@@ -1113,6 +1258,8 @@ define([
         // Move X position for next measure
         currentX += measureWidth;
       }
+
+      flushRomanExpRun();
 
         // Wrong note rendering removed - will be implemented via exercise grading system
     } finally {

@@ -107,6 +107,7 @@ define([
      * Remembers prior Roman numerals
      */
     romanNumeralsHistory: Object.create(null),
+    romanNumeralsExpHistory: Object.create(null),
     /**
      * Initializes the notater.
      *
@@ -901,68 +902,158 @@ define([
 
       return chord_entry; /* for grading */
     },
-    drawRomanExp: function (x, y) {
-      var midi_nums = this.chord.getNoteNumbers();
-      if (midi_nums.length < 2) return "";
-      var keyCategory = this.keySignature.getKey()[0] || false;
-      if (!["i", "j"].includes(keyCategory)) return "";
-      var chord_entry = this.getAnalyzer().to_chord(midi_nums, "roman only");
-      if (!chord_entry || !chord_entry.label) return "";
-
-      var base = chord_entry.label.replace(/\{[^}]*\}/g, "").trim();
-      if (!base) return "";
-
-      var figure = "";
-      try {
-        figure = this.getAnalyzer().abbrev_thoroughbass_figure(midi_nums) || "";
-      } catch (err) {
-        figure = "";
-      }
-
-      var display = (figure ? base + figure : base)
+    normalizeAnalyticalText: function (text) {
+      return String(text || "")
         .replace(/bb/g, "𝄫")
         .replace(/b/g, "♭")
         .replace(/##/g, "𝄪")
-        .replace(/#/g, "♯");
+        .replace(/#/g, "♯")
+        .replace(/n/g, "♮")
+        .trim();
+    },
+    getFigurePattern: function (figure) {
+      return String(figure || "")
+        .split("/")
+        .map(function (line) {
+          return line.replace(/[^0-9]+/g, "");
+        })
+        .filter(function (line) {
+          return line.length > 0;
+        })
+        .join("/");
+    },
+    getRomanExpDisplayFigureLines: function (current, previous) {
+      if (!current) return [];
 
-      var figureLines = figure
+      var preserveSuspensionContext = !!(
+      previous &&
+      previous.base === current.base &&
+      previous.fullFigureLines &&
+      previous.fullFigureLines.length >= 3
+    );
+
+      return preserveSuspensionContext
+        ? current.fullFigureLines
+        : current.abbrevFigureLines;
+    },
+    getRomanExpParts: function (midi_nums) {
+      if (!midi_nums || midi_nums.length < 2) return null;
+
+      var keyCategory = this.keySignature.getKey()[0] || false;
+      if (!["i", "j"].includes(keyCategory)) return null;
+
+      var chord_entry = this.getAnalyzer().to_chord(midi_nums, "roman only");
+      if (!chord_entry || !chord_entry.label) return null;
+
+      var base = this.normalizeAnalyticalText(
+        chord_entry.label.replace(/\{[^}]*\}/g, "")
+      );
+      if (!base) return null;
+
+      var figure = "";
+      var abbrevFigure = "";
+      try {
+        figure = this.getAnalyzer().full_thoroughbass_figure(midi_nums) || "";
+        abbrevFigure =
+          this.getAnalyzer().abbrev_thoroughbass_figure(midi_nums) || "";
+      } catch (err) {
+        figure = "";
+        abbrevFigure = "";
+      }
+
+      var fullFigureLines = figure
         ? figure
             .split("/")
-            .map(function (line) {
-              return line
-                .replace(/bb/g, "𝄫")
-                .replace(/b/g, "♭")
-                .replace(/##/g, "𝄪")
-                .replace(/#/g, "♯")
-                .trim();
-            })
+            .map(
+              function (line) {
+                return this.normalizeAnalyticalText(line);
+              }.bind(this)
+            )
             .filter(function (line) {
               return line.length > 0;
             })
         : [];
 
+      var abbrevFigureLines = abbrevFigure
+        ? abbrevFigure
+            .split("/")
+            .map(
+              function (line) {
+                return this.normalizeAnalyticalText(line);
+              }.bind(this)
+            )
+            .filter(function (line) {
+              return line.length > 0;
+            })
+        : [];
+
+      return {
+        base: base,
+        fullFigure: figure,
+        fullFigurePattern: this.getFigurePattern(figure),
+        fullFigureLines: fullFigureLines,
+        abbrevFigure: abbrevFigure,
+        abbrevFigurePattern: this.getFigurePattern(abbrevFigure),
+        abbrevFigureLines: abbrevFigureLines,
+      };
+    },
+    drawRomanExp: function (x, y) {
+      var midi_nums = this.chord.getNoteNumbers();
+      var current = this.getRomanExpParts(midi_nums);
+      if (!current) return "";
+
+      var idx = this.stave.position.index;
+      var previous = this.romanNumeralsExpHistory[idx - 1] || null;
+      var previousPrevious = this.romanNumeralsExpHistory[idx - 2] || null;
+      var continuingRun = !!(
+        previous &&
+        previous.base &&
+        previous.base === current.base
+      );
+      var currentFigureLines = this.getRomanExpDisplayFigureLines(
+        current,
+        previous
+      );
+      var previousFigureLines = this.getRomanExpDisplayFigureLines(
+        previous,
+        previousPrevious
+      );
+
       var ctx = this.getContext();
       var fontArgs = ctx.font.split(" ");
       var originalFont = ctx.font;
-      var baseX = x + StaveNotater.prototype.annotateOffsetX;
+      var columnCenterX = x + StaveNotater.prototype.annotateOffsetX + 6;
       var baseFont = "20px " + fontArgs[fontArgs.length - 1];
       ctx.font = baseFont;
-      ctx.fillText(base, baseX, y);
+      if (!continuingRun) {
+        var baseWidth = ctx.measureText(current.base).width;
+        var baseX = columnCenterX - baseWidth - 10;
+        ctx.fillText(current.base, baseX, y);
+      }
 
-      if (figureLines.length) {
-        var numeralWidth = ctx.measureText(base).width;
-        var figureX = baseX + numeralWidth + 3;
+      if (currentFigureLines.length) {
         var figureLineHeight = 12;
         var figureStartY = y - 12;
         ctx.font = "14px " + fontArgs[fontArgs.length - 1];
-        figureLines.forEach(function (line, index) {
-          ctx.fillText(line, figureX, figureStartY + index * figureLineHeight);
+        currentFigureLines.forEach(function (line, index) {
+          var lineY = figureStartY + index * figureLineHeight;
+          var lineWidth = ctx.measureText(line).width;
+
+          if (
+            continuingRun &&
+            previousFigureLines &&
+            previousFigureLines[index]
+          ) {
+            ctx.fillText("-", columnCenterX - lineWidth / 2 - 10, lineY);
+          }
+
+          ctx.fillText(line, columnCenterX - lineWidth / 2, lineY);
         });
       }
 
       ctx.font = originalFont;
 
-      return display;
+      return current.base;
     },
     drawPci: function (x, y) {
       var midi_nums = this.chord.getNoteNumbers();
@@ -1439,6 +1530,25 @@ define([
       } else if (!exercise_midi_nums) {
         this.romanNumeralsHistory[this.stave.position.index] =
           this.getAnalyzer().to_chord(midi_nums).label || "";
+      }
+
+      if (
+        exercise_midi_nums &&
+        typeof this.romanNumeralsExpHistory[this.stave.position.index] ===
+          "undefined"
+      ) {
+        let romanExpParts = exercise_midi_nums.map(
+          function (midi_arr) {
+            return this.getRomanExpParts(midi_arr);
+          }.bind(this)
+        );
+        var expIdx, expLen;
+        for (expIdx = 0, expLen = romanExpParts.length; expIdx < expLen; expIdx += 1) {
+          this.romanNumeralsExpHistory[expIdx + 1] = romanExpParts[expIdx];
+        }
+      } else if (!exercise_midi_nums) {
+        this.romanNumeralsExpHistory[this.stave.position.index] =
+          this.getRomanExpParts(midi_nums);
       }
 
       if (mode.thoroughbass) {
