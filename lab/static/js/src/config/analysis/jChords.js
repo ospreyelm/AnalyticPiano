@@ -188,6 +188,7 @@ define({
   "2/59z": { root: "z", label: "vii⌀{z5}", priority: "90" },
   "5/29z": { root: "z", label: "vii⌀{r3}", priority: "90" },
   "9/25z": { root: "z", label: "vii⌀{r2}", priority: "90" },
+  "4/25z": { root: "z", label: "vii°{z}", priority: "80" },
 
   // NOTE: the following chords through the end of the table will be
   // respelled. See relevant code. Further examples of modal mixture cannot

@@ -901,6 +901,69 @@ define([
 
       return chord_entry; /* for grading */
     },
+    drawRomanExp: function (x, y) {
+      var midi_nums = this.chord.getNoteNumbers();
+      if (midi_nums.length < 2) return "";
+      var keyCategory = this.keySignature.getKey()[0] || false;
+      if (!["i", "j"].includes(keyCategory)) return "";
+      var chord_entry = this.getAnalyzer().to_chord(midi_nums, "roman only");
+      if (!chord_entry || !chord_entry.label) return "";
+
+      var base = chord_entry.label.replace(/\{[^}]*\}/g, "").trim();
+      if (!base) return "";
+
+      var figure = "";
+      try {
+        figure = this.getAnalyzer().abbrev_thoroughbass_figure(midi_nums) || "";
+      } catch (err) {
+        figure = "";
+      }
+
+      var display = (figure ? base + figure : base)
+        .replace(/bb/g, "𝄫")
+        .replace(/b/g, "♭")
+        .replace(/##/g, "𝄪")
+        .replace(/#/g, "♯");
+
+      var figureLines = figure
+        ? figure
+            .split("/")
+            .map(function (line) {
+              return line
+                .replace(/bb/g, "𝄫")
+                .replace(/b/g, "♭")
+                .replace(/##/g, "𝄪")
+                .replace(/#/g, "♯")
+                .trim();
+            })
+            .filter(function (line) {
+              return line.length > 0;
+            })
+        : [];
+
+      var ctx = this.getContext();
+      var fontArgs = ctx.font.split(" ");
+      var originalFont = ctx.font;
+      var baseX = x + StaveNotater.prototype.annotateOffsetX;
+      var baseFont = "20px " + fontArgs[fontArgs.length - 1];
+      ctx.font = baseFont;
+      ctx.fillText(base, baseX, y);
+
+      if (figureLines.length) {
+        var numeralWidth = ctx.measureText(base).width;
+        var figureX = baseX + numeralWidth + 3;
+        var figureLineHeight = 12;
+        var figureStartY = y - 12;
+        ctx.font = "14px " + fontArgs[fontArgs.length - 1];
+        figureLines.forEach(function (line, index) {
+          ctx.fillText(line, figureX, figureStartY + index * figureLineHeight);
+        });
+      }
+
+      ctx.font = originalFont;
+
+      return display;
+    },
     drawPci: function (x, y) {
       var midi_nums = this.chord.getNoteNumbers();
       var interval = this.getAnalyzer().to_pci(midi_nums);
@@ -1386,7 +1449,7 @@ define([
           this.drawBassFigureDegree(x, y);
         }
         // when thoroughbass is active we skip the other label types
-        if (mode.chord_labels || mode.roman_numerals || mode.bass_scale_degrees || mode.bass_solfege || mode.bass_do_based_solfege) {
+        if (mode.chord_labels || mode.roman_numerals || mode.roman_numerals_exp || mode.bass_scale_degrees || mode.bass_solfege || mode.bass_do_based_solfege) {
           // fall through so roman numerals/chords can still draw if desired
         } else {
           return;
@@ -1416,6 +1479,9 @@ define([
       } else if (num_notes > 2) {
         if (mode.roman_numerals) {
           this.drawRoman(x, y);
+        }
+        if (mode.roman_numerals_exp) {
+          this.drawRomanExp(x, y);
         }
         if (mode.chord_labels) {
           this.drawChordLabel(x);
