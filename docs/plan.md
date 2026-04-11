@@ -1,17 +1,18 @@
 # HarmonyLab Development Plan
 
-_Last updated: 2026-04-09_
+_Last updated: 2026-04-10_
 
 Actionable steps in order. Check off as completed.
 
 ---
 
-## Current state (2026-04-09)
+## Current state (2026-04-10)
 
 - App runs locally. Hosting not yet deployed (Phase 1 still pending).
 - Pilot with college approaching — teacher onboarding is the critical path.
 - **The real blocker is content.** A starter curriculum needs to exist in the public library before teachers can onboard. But creating content is painful because the tooling is missing — exercises are hard to browse, creation takes 3 pages, and transposition is broken. Fix the tools first (2.19–2.21), then create content (2.12).
 - Recurring assignments (2.14) is fully implemented and merged.
+- Chorale identification is fully implemented and merged: a chorale can now be turned into a guided Roman numeral or figured-bass identification exercise from import flow or dashboard duplication.
 - The `curriculum-generation` branch (programmatic exercise generation) was attempted and abandoned — do not revisit.
 
 **Next session priorities (in order):**
@@ -57,6 +58,15 @@ Group join codes, student My Work view, public library, course clone, content ta
 
 - [x] `identification` type, `IdentificationGrader`, `LabelInputComponent`, wired into exercise context
 - [ ] Add `<div id="label-input"></div>` mount point to `exercise.html` + CSS for button states
+
+### 2.11a Chorale identification exercise flow ✅ IMPLEMENTED
+
+- [x] Add `chorale_identification` as a first-class exercise type built on chorale onset windows
+- [x] Generate Roman numeral or figured-bass prompts directly from the chorale score data
+- [x] Reuse the identification grading flow without changing `analyze.js`, `identification_grader.js`, or `score_timeline.js`
+- [x] Support creation through both `import_chorale` and a dashboard “Save, Duplicate as Identification” action on chorale exercises
+- [x] Align score rendering, label hit zones, and feedback markers so the exercise is usable in the browser
+- [x] Cover the duplication path with a Django test and verify the merged feature locally
 
 ### 2.12 Curriculum content ⚠️ KEY BLOCKER
 
@@ -141,6 +151,7 @@ Teachers cannot manage 400+ exercises — the current list shows ~50 at a time w
 - [ ] Inline quick-edit for description and tags (no page reload)
 - [ ] Bulk-tag action
 - [ ] Links to exercise editor and preview from each row
+- [ ] find a way to allow a teacher to work on a single course or single playlist not seeing all the exercises but only the ones that already belong to those courses or playlists. 
 
 ### 2.20 Streamlined exercise creation flow
 
