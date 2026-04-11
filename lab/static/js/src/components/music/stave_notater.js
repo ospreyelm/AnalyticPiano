@@ -1028,7 +1028,18 @@ define([
       if (!continuingRun) {
         var baseWidth = ctx.measureText(current.base).width;
         var baseX = columnCenterX - baseWidth - 10;
-        ctx.fillText(current.base, baseX, y);
+        var slashIdx = current.base.indexOf("/");
+        if (slashIdx >= 0) {
+          var topPart = current.base.slice(0, slashIdx);
+          var bottomPart = current.base.slice(slashIdx + 1);
+          var topWidth = ctx.measureText(topPart).width;
+          var topPartX = Math.round(columnCenterX - topWidth / 2) - 10;
+          ctx.fillText(topPart, topPartX, y);
+          ctx.fillText("/", topPartX + topWidth - 3, y + 9);
+          ctx.fillText(bottomPart, topPartX + topWidth + 3, y + 14);
+        } else {
+          ctx.fillText(current.base, baseX, y);
+        }
       }
 
       if (currentFigureLines.length) {
