@@ -58,7 +58,21 @@ Answers remain keyed by **absolute problem index** in `grader.answers` (e.g. pro
 
 ### Layer 3: Rendering — `ExerciseSheet`
 
-`_getIdentificationSlots()` and `drawIdentificationLabels()` already derive their slots from rendered staves. Because Layer 1 now renders only page-visible chords, these methods need no structural change — slot indices naturally correspond to the visible problems.
+`_getIdentificationSlots()` and `drawIdentificationLabels()` derive slots from rendered staves, so they remain page-local by default (`0..visibleProblems.length-1`).
+
+**Required mapping rule:**
+
+```
+localIndex = slot.index
+absoluteIndex = exerciseContext.getIdentPageOffset() + localIndex
+```
+
+All answer reads/writes and grading lookups must use `absoluteIndex`:
+- Popup click handler (`setAnswer`) stores by absolute index
+- Label text (`chosen`) reads from `grader.answers[absoluteIndex]`
+- Correct/incorrect colour lookup maps page-local graded result to local slot index
+
+This preserves cross-page answers while keeping rendered slots page-local.
 
 `drawIdentificationLabels()` adds a page indicator on the canvas (e.g. "Page 2 of 5") when `getTotalIdentPages() > 1`.
 
@@ -111,6 +125,11 @@ If no → propagate `NEXTEXERCISE` / `PREVIOUSEXERCISE` to `MusicComponent` as t
 
 **Moving forward via Next** behaves identically to Submit — grades the page first. Only advances if the page is correct. If incomplete or incorrect, stays put (same as clicking Submit with wrong answers).
 
+**Deterministic rule for the last page:** Next never bypasses grading.
+- If current page is not valid/correct: remain on current page.
+- If current page is valid/correct and this is not the last page: go to next page.
+- If current page is valid/correct and this is the last page: run the normal exercise-complete path, then propagate playlist next.
+
 **Moving backward** does not re-submit. It simply navigates to the previous page, which already has answers preserved in `grader.answers`.
 
 ---
@@ -119,11 +138,16 @@ If no → propagate `NEXTEXERCISE` / `PREVIOUSEXERCISE` to `MusicComponent` as t
 
 Each page submission calls `submitExerciseReport()`. The current report payload does not carry per-problem answers or a page number. Two options:
 
-**Option A (simpler):** Submit as-is — each page generates a performance record. Pages are distinguishable by `exercise_num` + submission order in the database. No backend schema change required. Analytics are coarse but complete pages are saved.
+**Option A (recommended now):** Keep the existing endpoint/model, but include lightweight page metadata in the existing JSON payload:
+- `page_num` (1-indexed)
+- `page_total`
+- `is_final_page` (boolean)
+
+`PerformanceData.data` is already a JSON blob, so this does **not** require a Django schema migration. It removes ambiguity in submission order and prevents page attempts from being indistinguishable.
 
 **Option B (richer):** Add `page_num` and `page_answers` fields to the report payload, and a corresponding field to the `PerformanceData` Django model. Enables per-page analytics.
 
-**Recommendation: Option A for now.** It avoids backend changes and still solves the core problem (completed pages are persisted). Option B is a future enhancement.
+**Recommendation: Option A now.** It avoids schema changes while making page-level records explicit. Option B is a future enhancement for deep analytics.
 
 ---
 
@@ -131,14 +155,14 @@ Each page submission calls `submitExerciseReport()`. The current report payload 
 
 | File | Change |
 |------|--------|
-| `lab/static/js/src/models/exercise_context.js` | Add `_identPage`, `_identPageSize`, `getIdentPage/Size/Offset()`, `getTotalIdentPages()`, `getVisibleProblems()`, `goToIdentPage()`, `goToPreviousExercise()`, page-complete logic in grade path, intercept logic in `goToNextExercise()`, page-scoped reset |
+| `lab/static/js/src/models/exercise_context.js` | Add `_identPage`, `_identPageSize`, `getIdentPage/Size/Offset()`, `getTotalIdentPages()`, `getVisibleProblems()`, `goToIdentPage()`, `goToPreviousExercise()`, page-complete logic in grade path, intercept logic in `goToNextExercise()`, page-scoped reset, and page metadata in `compileExerciseReport()` payload |
 | `lab/static/js/src/models/identification_grader.js` | Accept `visibleProblems` array in `grade()`; map absolute answer indices to page-local result positions |
-| `lab/static/js/src/components/music/exercise_sheet.js` | `createDisplayChords()` uses `getVisibleProblems()`; `drawIdentificationLabels()` adds page indicator; `onSubmitIdentification()` calls page-complete path |
+| `lab/static/js/src/components/music/exercise_sheet.js` | Use local↔absolute index mapping for identification labels/popups, add page indicator in `drawIdentificationLabels()`, and ensure `onSubmitIdentification()` calls page-complete path |
 
 No changes needed to:
 - `music_controls.js` (buttons already broadcast correct events)
 - `events.js` (no new events needed)
-- Django backend (Option A)
+- Django schema/migrations (Option A)
 
 ---
 
@@ -151,7 +175,7 @@ No changes needed to:
 | Multi-page, submit correct last page | Normal exercise-complete path (auto-advance, report) |
 | Multi-page, submit incorrect page | Show results, stay on page |
 | Multi-page Next button (not last page) | Same as submit + advance |
-| Multi-page on last page, click Next | Playlist next exercise (or no-op) |
+| Multi-page on last page, click Next | First validate/grade last page; only then run complete path + playlist next |
 | Multi-page on page > 0, click Prev | Retreat to previous page, answers preserved |
 | Multi-page on page 0, click Prev | Playlist previous exercise (or no-op) |
 | Student navigates away mid-page | Current page in-progress answers lost; completed pages already saved |
@@ -164,7 +188,7 @@ No changes needed to:
 The existing `_updateChoraleViewport` in `exercise_sheet.js` may already handle measure-block scrolling for chorales. Needs hands-on testing before adding code. Recorded as a TODO in plan.md.
 
 ### Per-page analytics (Option B persistence)
-Add `page_num` and `page_answers` to the report payload and `PerformanceData` model to enable per-page performance tracking and analytics.
+Add `page_answers` (and optionally richer per-problem timing) to the report payload for deep per-page analytics. Keep `page_num/page_total/is_final_page` from Option A as the baseline contract.
 
 ### Mid-page persistence across sessions
 Current in-progress answers (not yet submitted on the current page) are lost if the browser closes. Full mid-page persistence would require saving partial answers to the server as the student selects each answer. Out of scope — completed pages are already persisted.
