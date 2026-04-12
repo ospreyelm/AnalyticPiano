@@ -1,7 +1,7 @@
 # Identification Exercise Paging Design
 
 **Date:** 2026-04-12
-**Status:** Approved
+**Status:** Revised after code review
 **Branch:** feature/music21_builder
 
 ---
@@ -14,73 +14,116 @@ Feature A (chorale MIDI page advance) is deferred — needs hands-on testing to 
 
 ---
 
+## Key Design Principle: One Shared Visible Window
+
+The first version of this spec proposed slicing problems locally inside the label-drawing layer. A code review identified this as incorrect: stave layout, chord generation, grading, and label placement are all coupled — they all derive from `getProblems()`. If only the label layer is page-aware, the rendered staves and the displayed labels fall out of sync.
+
+The fix: **`ExerciseContext` owns a single authoritative visible window** — `[pageOffset, pageOffset + pageSize]` — and every layer reads from it. `createDisplayChords()`, `IdentificationGrader.grade()`, and `ExerciseSheet` label/slot rendering all consume the same slice.
+
+---
+
 ## Architecture
 
 ### Page state — `ExerciseContext`
 
-`ExerciseContext` owns page state for identification exercises:
+`ExerciseContext` owns:
 
 - `_identPage` — integer, 0-indexed, current page (initialised to 0)
-- `_identPageSize` — integer, default 4 (matches chorale maxMeasures)
+- `_identPageSize` — integer, default 4
 
 New methods:
 
 ```
-getIdentPage()         → current page index
-getIdentPageSize()     → page size (default 4)
-getTotalIdentPages()   → Math.ceil(allProblems.length / pageSize)
-goToIdentPage(n)       → set _identPage, reset grader page state, trigger re-render
+getIdentPage()            → current page index
+getIdentPageSize()        → page size (default 4)
+getIdentPageOffset()      → _identPage * _identPageSize
+getTotalIdentPages()      → Math.ceil(allProblems.length / pageSize)
+getVisibleProblems()      → definition.getProblems().slice(offset, offset + pageSize)
+goToIdentPage(n)          → set _identPage, reset page-level state, trigger re-render
 ```
 
-### Navigation interception
+`getVisibleProblems()` is the single source of truth consumed by all three layers below.
 
-`goToNextExercise()` and a new `goToPreviousExercise()` in `ExerciseContext` check before propagating:
+### Layer 1: Chord generation — `ExerciseContext.createDisplayChords()`
 
-- Is this an identification exercise?
-- Are there multiple pages?
-- Is there a next/previous page available?
+Currently iterates `definition.getProblems()`. Change to iterate `this.getVisibleProblems()` when this is an identification exercise. This ensures the staves render only the current page's problems.
 
-If yes → **submit the current page** (call `submitExerciseReport()` for the current page), then call `goToIdentPage(n ± 1)` and return. Do NOT broadcast `NEXTEXERCISE` / `PREVIOUSEXERCISE`.
-If no (already on last/first page) → propagate the event to `MusicComponent` as today.
+Note: `graded.problems` is indexed by **position within the current page** (0 to pageSize-1), not absolute index. The grader returns results in page-local order.
 
-This means "Next page" = "Submit and advance" — each page is saved as performance data when the student moves on. Persistence across sessions comes for free via the existing report mechanism.
+### Layer 2: Grading — `IdentificationGrader`
 
-`MusicComponent` subscribes to `PREVIOUSEXERCISE`. `ExerciseContext` currently only has `goToNextExercise`. A `goToPreviousExercise` method needs to be added that mirrors it.
+`grade(definition, visibleProblems)` — receives the already-sliced array from `ExerciseContext`. Evaluates only those problems.
 
-### Grading — `IdentificationGrader`
+Answers remain keyed by **absolute problem index** in `grader.answers` (e.g. problem index 5 on page 2 stored as `answers[5]`). This preserves answers across page navigation within a session. The grader maps absolute indices to page-local positions when building the `gradedProblems` result array.
 
-`grade(definition, pageOffset, pageSize)` — evaluates only the slice `problems[pageOffset ... pageOffset + pageSize]`.
+### Layer 3: Rendering — `ExerciseSheet`
 
-Answers are keyed by **absolute** problem index (e.g. problem 5 on page 2 is stored as `answers[5]`). This means:
-- Answers on earlier pages survive forward navigation
-- Answers survive backward navigation within the same session
+`_getIdentificationSlots()` and `drawIdentificationLabels()` already derive their slots from rendered staves. Because Layer 1 now renders only page-visible chords, these methods need no structural change — slot indices naturally correspond to the visible problems.
 
-In "submit" mode, the Submit button grades only the **current page's** problems. Students complete and submit each page independently.
-
-### Rendering — `ExerciseSheet`
-
-`ExerciseSheet` reads `exerciseContext.getIdentPage()` and `getIdentPageSize()` to determine which problems to render and which label slots to draw. `ExerciseDefinition.getProblems()` is unchanged — always returns all problems. The sheet slices the display locally.
-
-`drawIdentificationLabels()` adds a page indicator drawn on the canvas (e.g. "Page 2 of 5") below the staff.
+`drawIdentificationLabels()` adds a page indicator on the canvas (e.g. "Page 2 of 5") when `getTotalIdentPages() > 1`.
 
 ---
 
-## Data Flow
+## Page Completion vs Exercise Completion
+
+This is a critical distinction. Currently a `CORRECT` grade result in `ExerciseContext.grade()` seals the exercise, fires the timer, submits the report, and triggers auto-advance. We need to separate **page complete** from **exercise complete**.
+
+### New state: page-complete
+
+When the student submits page N and it grades as correct:
+- Mark page N as complete (internal flag, e.g. `_completedPages` Set)
+- Submit performance report for this page (see Persistence below)
+- Reset `sealed`, `done`, `flawless`, `errorTally`, and the timer for the next page
+- Call `goToIdentPage(N + 1)` — or, if on the last page, mark the whole exercise complete and run the normal exercise-completion path (auto-advance, next exercise, etc.)
+
+The existing CORRECT branch in `ExerciseContext.grade()` is only reached for the **final page**. Earlier pages intercept before that point.
+
+### Submit mode flow
 
 ```
-Student clicks Next
+Student answers all problems on current page
     ↓
-music_controls.js broadcasts NEXTEXERCISE
+Clicks Submit (or Next)
     ↓
-ExerciseContext.goToNextExercise() intercepts
+ExerciseSheet.onSubmitIdentification() calls grader.grade(definition, visibleProblems)
     ↓
-Is identification exercise with more pages?
-    YES → submitExerciseReport() for current page
-           goToIdentPage(current + 1)
-           reset sealed/done state for new page
-           trigger "graded" re-render
-    NO  → broadcast NEXTEXERCISE to MusicComponent (playlist advance)
+If correct AND not last page:
+    submitExerciseReport() for this page
+    reset page-level state
+    goToIdentPage(current + 1)
+If correct AND last page:
+    normal exercise-complete path (timer end, report, auto-advance)
+If incorrect:
+    show results on current page, do not advance
 ```
+
+---
+
+## Navigation Interception (Next/Previous buttons)
+
+`goToNextExercise()` and a new `goToPreviousExercise()` in `ExerciseContext` intercept before propagating:
+
+- Is this an identification exercise with multiple pages?
+- Is there a next/previous page?
+
+If yes → page turn (submit current page if moving forward, just navigate if moving backward).
+If no → propagate `NEXTEXERCISE` / `PREVIOUSEXERCISE` to `MusicComponent` as today.
+
+**Moving forward via Next** behaves identically to Submit — grades the page first. Only advances if the page is correct. If incomplete or incorrect, stays put (same as clicking Submit with wrong answers).
+
+**Moving backward** does not re-submit. It simply navigates to the previous page, which already has answers preserved in `grader.answers`.
+
+---
+
+## Persistence
+
+Each page submission calls `submitExerciseReport()`. The current report payload does not carry per-problem answers or a page number. Two options:
+
+**Option A (simpler):** Submit as-is — each page generates a performance record. Pages are distinguishable by `exercise_num` + submission order in the database. No backend schema change required. Analytics are coarse but complete pages are saved.
+
+**Option B (richer):** Add `page_num` and `page_answers` fields to the report payload, and a corresponding field to the `PerformanceData` Django model. Enables per-page analytics.
+
+**Recommendation: Option A for now.** It avoids backend changes and still solves the core problem (completed pages are persisted). Option B is a future enhancement.
 
 ---
 
@@ -88,14 +131,14 @@ Is identification exercise with more pages?
 
 | File | Change |
 |------|--------|
-| `lab/static/js/src/models/exercise_context.js` | Add `_identPage`, `_identPageSize`, `getIdentPage()`, `getTotalIdentPages()`, `goToIdentPage()`, `goToPreviousExercise()`, interception logic in `goToNextExercise()` |
-| `lab/static/js/src/models/identification_grader.js` | Accept `pageOffset` and `pageSize` in `grade()` |
-| `lab/static/js/src/components/music/exercise_sheet.js` | Slice problems by page for rendering; add page indicator to `drawIdentificationLabels()` |
+| `lab/static/js/src/models/exercise_context.js` | Add `_identPage`, `_identPageSize`, `getIdentPage/Size/Offset()`, `getTotalIdentPages()`, `getVisibleProblems()`, `goToIdentPage()`, `goToPreviousExercise()`, page-complete logic in grade path, intercept logic in `goToNextExercise()`, page-scoped reset |
+| `lab/static/js/src/models/identification_grader.js` | Accept `visibleProblems` array in `grade()`; map absolute answer indices to page-local result positions |
+| `lab/static/js/src/components/music/exercise_sheet.js` | `createDisplayChords()` uses `getVisibleProblems()`; `drawIdentificationLabels()` adds page indicator; `onSubmitIdentification()` calls page-complete path |
 
 No changes needed to:
 - `music_controls.js` (buttons already broadcast correct events)
 - `events.js` (no new events needed)
-- Django backend (performance data already saves per submission; page number is implicit in the problem indices included in the report)
+- Django backend (Option A)
 
 ---
 
@@ -104,11 +147,14 @@ No changes needed to:
 | Scenario | Result |
 |----------|--------|
 | Single page exercise | No change — Next/Prev go to playlist neighbours as today |
-| Multi-page, not on last page | Next → advance page |
-| Multi-page, on last page | Next → playlist next exercise (or no-op if end of playlist) |
-| Multi-page, not on page 0 | Prev → retreat page |
-| Multi-page, on page 0 | Prev → playlist previous exercise (or no-op if start of playlist) |
-| Student answers page 1, goes to page 2, returns to page 1 | Page 1 answers preserved in session |
+| Multi-page, submit correct page, not last | Save report, advance to next page, reset page state |
+| Multi-page, submit correct last page | Normal exercise-complete path (auto-advance, report) |
+| Multi-page, submit incorrect page | Show results, stay on page |
+| Multi-page Next button (not last page) | Same as submit + advance |
+| Multi-page on last page, click Next | Playlist next exercise (or no-op) |
+| Multi-page on page > 0, click Prev | Retreat to previous page, answers preserved |
+| Multi-page on page 0, click Prev | Playlist previous exercise (or no-op) |
+| Student navigates away mid-page | Current page in-progress answers lost; completed pages already saved |
 
 ---
 
@@ -117,21 +163,23 @@ No changes needed to:
 ### Chorale MIDI page advance (Feature A)
 The existing `_updateChoraleViewport` in `exercise_sheet.js` may already handle measure-block scrolling for chorales. Needs hands-on testing before adding code. Recorded as a TODO in plan.md.
 
-### Cross-session answer persistence (partially addressed)
-Each page submission saves performance data via the existing `submitExerciseReport()` mechanism. This means completed pages are persisted. However, **the current page's in-progress answers** (not yet submitted) are lost if the student closes the browser. Full mid-page persistence would require:
-- Saving partial answers to the server as the student selects each answer
-- Loading them back on exercise init
+### Per-page analytics (Option B persistence)
+Add `page_num` and `page_answers` to the report payload and `PerformanceData` model to enable per-page performance tracking and analytics.
 
-This is a future enhancement. The "submit on page turn" approach already covers the most important case — completed pages are never lost.
+### Mid-page persistence across sessions
+Current in-progress answers (not yet submitted on the current page) are lost if the browser closes. Full mid-page persistence would require saving partial answers to the server as the student selects each answer. Out of scope — completed pages are already persisted.
 
 ---
 
 ## Testing
 
 1. Import an interval identification exercise with more than 4 problems
-2. Verify page 1 shows problems 1–4, page indicator shows "Page 1 of N"
-3. Click Next — verify page 2 renders problems 5–8, page indicator updates
-4. Answer some problems on page 2, click Prev — verify page 1 answers still present
-5. Navigate to last page, click Next — verify playlist advance (or no-op if no next exercise)
-6. On page 1, click Prev — verify playlist previous (or no-op if no previous exercise)
-7. Single-page exercise: verify Next/Prev go directly to playlist neighbours unchanged
+2. Verify page 1 shows problems 1–4 on the staves; page indicator shows "Page 1 of N"
+3. Answer all problems on page 1, click Submit — verify correct/incorrect feedback shown
+4. Click Next — verify page 2 staves render problems 5–8, page indicator updates, page 1 report submitted
+5. Navigate back (Prev) — verify page 1 answers still shown, no re-submission
+6. Navigate to last page, submit correctly — verify exercise-complete path fires (auto-advance or next exercise)
+7. Navigate to last page, click Next — verify playlist advance (or no-op)
+8. On page 0, click Prev — verify playlist previous (or no-op)
+9. Single-page exercise — verify Next/Prev go directly to playlist neighbours unchanged
+10. Submit incorrect answers on a page — verify no page advance, error feedback shown
