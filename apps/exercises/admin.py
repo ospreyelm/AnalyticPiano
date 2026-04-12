@@ -126,22 +126,21 @@ class ExerciseAdmin(ImportExportModelAdmin):
                     for event in events
                 ]
                 
-                # Create Exercise
-                # Create exercise with CIR format
-                # Note: type "chorale" tells frontend this is a polyphonic score-based exercise
-                exercise = Exercise.objects.create(
+                # Create exercise with CIR format.
+                # Use explicit instance.save() to avoid force_insert interactions with Exercise.save().
+                exercise_data = {
+                    'type': 'chorale',
+                    'score': cir,
+                    'events': events_json,
+                }
+                if title:
+                    exercise_data['metadata'] = {'title': title}
+
+                exercise = Exercise(
                     authored_by=request.user,
                     is_public=is_public,
-                    data={
-                        'type': 'chorale',
-                        'score': cir,
-                        'events': events_json,
-                    }
+                    data=exercise_data,
                 )
-                
-                if title:
-                    exercise.data['metadata'] = {'title': title}
-                
                 exercise.save()
                 
                 messages.success(
