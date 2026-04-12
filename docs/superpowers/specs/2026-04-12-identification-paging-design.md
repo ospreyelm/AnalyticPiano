@@ -40,8 +40,10 @@ goToIdentPage(n)       → set _identPage, reset grader page state, trigger re-r
 - Are there multiple pages?
 - Is there a next/previous page available?
 
-If yes → call `goToIdentPage(n ± 1)` and return. Do NOT broadcast `NEXTEXERCISE` / `PREVIOUSEXERCISE`.
+If yes → **submit the current page** (call `submitExerciseReport()` for the current page), then call `goToIdentPage(n ± 1)` and return. Do NOT broadcast `NEXTEXERCISE` / `PREVIOUSEXERCISE`.
 If no (already on last/first page) → propagate the event to `MusicComponent` as today.
+
+This means "Next page" = "Submit and advance" — each page is saved as performance data when the student moves on. Persistence across sessions comes for free via the existing report mechanism.
 
 `MusicComponent` subscribes to `PREVIOUSEXERCISE`. `ExerciseContext` currently only has `goToNextExercise`. A `goToPreviousExercise` method needs to be added that mirrors it.
 
@@ -73,8 +75,9 @@ music_controls.js broadcasts NEXTEXERCISE
 ExerciseContext.goToNextExercise() intercepts
     ↓
 Is identification exercise with more pages?
-    YES → goToIdentPage(current + 1)
-           reset grader answers for new page? No — preserve all answers
+    YES → submitExerciseReport() for current page
+           goToIdentPage(current + 1)
+           reset sealed/done state for new page
            trigger "graded" re-render
     NO  → broadcast NEXTEXERCISE to MusicComponent (playlist advance)
 ```
@@ -92,7 +95,7 @@ Is identification exercise with more pages?
 No changes needed to:
 - `music_controls.js` (buttons already broadcast correct events)
 - `events.js` (no new events needed)
-- Django backend
+- Django backend (performance data already saves per submission; page number is implicit in the problem indices included in the report)
 
 ---
 
@@ -114,13 +117,12 @@ No changes needed to:
 ### Chorale MIDI page advance (Feature A)
 The existing `_updateChoraleViewport` in `exercise_sheet.js` may already handle measure-block scrolling for chorales. Needs hands-on testing before adding code. Recorded as a TODO in plan.md.
 
-### Cross-session answer persistence
-Currently, in-progress answers are held in memory only (`IdentificationGrader.answers`). If a student closes the browser mid-exercise, their page 1–3 answers are lost on next visit. Supporting persistence would require:
-- Saving partial answers to the server as the student works (new Django endpoint)
-- Loading partial answers on exercise init
-- A partial-completion state in the Exercise/PerformanceData model
+### Cross-session answer persistence (partially addressed)
+Each page submission saves performance data via the existing `submitExerciseReport()` mechanism. This means completed pages are persisted. However, **the current page's in-progress answers** (not yet submitted) are lost if the student closes the browser. Full mid-page persistence would require:
+- Saving partial answers to the server as the student selects each answer
+- Loading them back on exercise init
 
-This is a meaningful feature but out of scope for this change. Behaviour matches all other exercise types — exercises are completed in one sitting.
+This is a future enhancement. The "submit on page turn" approach already covers the most important case — completed pages are never lost.
 
 ---
 
