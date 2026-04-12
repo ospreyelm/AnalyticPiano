@@ -212,6 +212,20 @@ class ExerciseAdmin(ImportExportModelAdmin):
                 )
             )
 
+        interval = False
+        if obj and isinstance(getattr(obj, "data", None), dict):
+            interval = obj.data.get("analysisType") in ("interval_generic", "interval_specific")
+        elif request.method == "POST":
+            # POST data doesn't carry analysisType directly; rely on obj for existing records
+            pass
+        if interval:
+            base_fieldsets.append(
+                (
+                    "Interval settings",
+                    {"fields": tuple(ExerciseForm.INTERVAL_ONLY_FIELDS)},
+                )
+            )
+
         return base_fieldsets
 
     def show_on_site(self, obj):
