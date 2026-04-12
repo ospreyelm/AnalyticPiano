@@ -32,6 +32,10 @@ def configure(ROOT_DIR, STATIC_URL):
         "baseUrl": os.path.join(STATIC_URL, "js", "lib"),
         "paths": {
             "app": os.path.join(STATIC_URL, "js", "src"),
+            "tonal": os.path.join(STATIC_URL, "js", "lib", "tonal.min"),
+        },
+        "shim": {
+            "tonal": {"exports": "Tonal"},
         },
         "config": {},
     }
