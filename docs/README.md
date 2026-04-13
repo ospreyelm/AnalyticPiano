@@ -2,6 +2,15 @@
 
 This directory contains comprehensive documentation for the HarmonyLab system, including implementation guides, roadmaps, and assessments.
 
+## Exercise Type Reference
+
+### **[exercise_types.md](exercise_types.md)** - All Exercise Types
+- **Start here** to understand what exercise types exist and how they differ
+- **Covers:** All 8 types (`matching`, `analytical`, `figured_bass`, `chorale`, `identification`, `chorale_identification`, and variants), interaction mode (play vs. identify), grader used, paging support, `analysisType` variants for `chorale_identification`, shared `IdentificationGrader` and paging infrastructure
+- **Audience:** Anyone building new exercises or extending existing types
+
+---
+
 ## Core Documentation
 
 ### **[architecture.md](architecture.md)** - How the App Works
@@ -148,26 +157,23 @@ docs/
 
 ## Recent Changes
 
-### Latest Commits (Last 5)
+### What's New (April 2026)
 
-1. **6d4bd33** - Add comprehensive LMS student experience assessment
-2. **f219bec** - Update claude.md with completed features and future roadmap
-3. **1bcd281** - Add comprehensive roadmap for future chorale improvements
-4. **d52a75e** - Add instructional text and detailed grading feedback to chorales
-5. **ff58760** - Enable performance data saving for chorale exercises
+**Interval Identification (`chorale_identification`):**
+- ✅ `analysisType: "interval_specific"` — labels intervals by quality + size (m3, M6, P5…)
+- ✅ `analysisType: "interval_generic"` — labels intervals by size only (3, 6, 8…)
+- ✅ `compoundIntervals` flag — reduce to within octave (default) or keep compound
+- ✅ Tonal.js as authoritative interval source with `analyze.js` cross-check
+- ✅ Identification paging (4 problems/page) with slide animation, page indicator, color feedback across pages
+- ✅ Navigate back to answered pages with colors preserved
 
-### What's New in This Release
-
-**Chorale Exercise System:**
+**Chorale Exercise System (earlier):**
 - ✅ Enhanced student instructions (Feature 1)
 - ✅ Detailed per-window grading feedback (Feature 3)
-- ✅ Comprehensive feature roadmap for Features 2, 4, 5, 6
+- ✅ `roman_numeral` and `figured_bass` analysisType identification
 
-**LMS Student Experience:**
-- ✅ Complete assessment of student-facing features
-- ✅ Comparison to industry standards
-- ✅ Prioritized 50-hour improvement roadmap
-- ✅ Code locations for each feature
+**Documentation:**
+- ✅ New `exercise_types.md` — complete map of all 8 exercise types
 
 ---
 
@@ -224,4 +230,4 @@ When updating these documents:
 - **Student UX questions:** See [lms_student_ux_assessment.md](lms_student_ux_assessment.md) relevant section
 - **Feature planning:** See corresponding roadmap document
 
-Last updated: 2025-12-30
+Last updated: 2026-04-13
