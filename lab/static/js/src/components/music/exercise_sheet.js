@@ -218,15 +218,20 @@ define([
 
         // In test mode, lock slots that already have an answer
         var grdr = self.exerciseContext.grader;
-        if (currentMode === 'test' && grdr && grdr.answers && grdr.answers.hasOwnProperty(hitIndex)) {
+        var pageOffset = self.exerciseContext.getIdentPageOffset
+          ? self.exerciseContext.getIdentPageOffset() : 0;
+        var absoluteHitIndex = pageOffset + hitIndex;
+        if (currentMode === 'test' && grdr && grdr.answers && grdr.answers.hasOwnProperty(absoluteHitIndex)) {
           return;
         }
 
-        var problems = definition.getProblems();
+        var problems = self.exerciseContext.getVisibleProblems
+          ? self.exerciseContext.getVisibleProblems()
+          : definition.getProblems();
         var problem = problems[hitIndex];
         if (!problem) { return; }
 
-        self._showIdentPopup(hitIndex, problem.choices, e.clientX, e.clientY);
+        self._showIdentPopup(absoluteHitIndex, problem.choices, e.clientX, e.clientY);
       });
 
       // Change cursor to pointer when hovering over a label zone
@@ -338,7 +343,9 @@ define([
      */
     _getIdentificationSlots: function () {
       var definition = this.exerciseContext.getDefinition();
-      var problems = definition.getProblems ? definition.getProblems() : [];
+      var problems = this.exerciseContext.getVisibleProblems
+        ? this.exerciseContext.getVisibleProblems()
+        : (definition.getProblems ? definition.getProblems() : []);
       if (definition.isChoraleIdentification && definition.isChoraleIdentification()) {
         var layout = this._identWindowLayout || {};
         return _.map(problems, function (_problem, idx) {
@@ -386,9 +393,12 @@ define([
         var lx = slot.x;
         var ly = slot.y;
 
-        var problemIndex = slot.index;
-        var chosen = grader && grader.answers && grader.answers.hasOwnProperty(problemIndex)
-          ? grader.answers[problemIndex] : null;
+        var localIndex = slot.index;
+        var pageOffset = this.exerciseContext && this.exerciseContext.getIdentPageOffset
+          ? this.exerciseContext.getIdentPageOffset() : 0;
+        var absoluteIndex = pageOffset + localIndex;
+        var chosen = grader && grader.answers && grader.answers.hasOwnProperty(absoluteIndex)
+          ? grader.answers[absoluteIndex] : null;
         var label = chosen || '?';
 
         var fillStyle = '#888888'; // unanswered
@@ -397,8 +407,8 @@ define([
         var showCross = false;
 
         // Show colour feedback when graded (never in test mode)
-        if (lastGraded && lastGraded.problems && lastGraded.problems[problemIndex] && identMode !== 'test') {
-          var gp = lastGraded.problems[problemIndex];
+        if (lastGraded && lastGraded.problems && lastGraded.problems[localIndex] && identMode !== 'test') {
+          var gp = lastGraded.problems[localIndex];
           if (gp.correct === true)  { fillStyle = '#28a745'; showCheck = true; }
           if (gp.correct === false) { fillStyle = '#dc3545'; showCross = true; }
         }
@@ -425,6 +435,20 @@ define([
         }
       }
 
+      var totalPages = this.exerciseContext.getTotalIdentPages
+        ? this.exerciseContext.getTotalIdentPages()
+        : 1;
+      if (totalPages > 1) {
+        var currentPage = this.exerciseContext.getIdentPage
+          ? this.exerciseContext.getIdentPage() : 0;
+        var pageText = 'Page ' + (currentPage + 1) + ' of ' + totalPages;
+        ctx.font = '13px sans-serif';
+        ctx.fillStyle = '#888888';
+        ctx.textAlign = 'right';
+        var canvasWidth = ctx.canvas ? ctx.canvas.width : 600;
+        ctx.fillText(pageText, canvasWidth - 12, 20);
+      }
+
       ctx.font = origFont;
       ctx.fillStyle = origFillStyle;
       ctx.textAlign = origTextAlign;
@@ -435,13 +459,7 @@ define([
      * Called when the student clicks Submit (submit mode only).
      */
     onSubmitIdentification: function () {
-      var self = this;
-      var graded = this.exerciseContext.grader.grade(this.exerciseContext.getDefinition());
-      this.exerciseContext.graded = graded;
-      this.render();
-      if (graded.result === 'correct') {
-        setTimeout(function () { self.exerciseContext.grade(); }, 500);
-      }
+      this.exerciseContext.submitIdentPage({ fromUI: true });
     },
     /**
      * Chorale mode setup: ensure grader is initialized; keep display settings
@@ -816,12 +834,22 @@ define([
         this._chorale.startMeasure = 0;
         return;
       }
-      var grader = this.exerciseContext && this.exerciseContext.grader;
       var activeMeasure = 0;
-      if (grader && typeof grader.getActiveMeasureIndex === "function") {
-        var idx = grader.getActiveMeasureIndex();
-        if (typeof idx === "number" && !isNaN(idx)) {
-          activeMeasure = Math.max(0, Math.min(idx, totalMeasures - 1));
+      // For chorale_identification, page index comes from exerciseContext directly.
+      // For chorale (play-through), it comes from the grader.
+      var context = this.exerciseContext;
+      if (context && typeof context.getIdentPageOffset === "function" && this._isChoraleIdentificationExercise()) {
+        var offset = context.getIdentPageOffset();
+        if (typeof offset === "number" && !isNaN(offset)) {
+          activeMeasure = Math.max(0, Math.min(offset, totalMeasures - 1));
+        }
+      } else {
+        var grader = context && context.grader;
+        if (grader && typeof grader.getActiveMeasureIndex === "function") {
+          var idx = grader.getActiveMeasureIndex();
+          if (typeof idx === "number" && !isNaN(idx)) {
+            activeMeasure = Math.max(0, Math.min(idx, totalMeasures - 1));
+          }
         }
       }
       var block = Math.floor(activeMeasure / maxMeasures);
