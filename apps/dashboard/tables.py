@@ -533,6 +533,16 @@ z_element = (
 
 class PlaylistActivityColumn(columns.Column):
     def render(self, value):
+        if isinstance(value, dict) and value.get("kind") == "recurring":
+            element = (
+                p_element if value.get("target_met") else x_element
+            )
+            return format_html(
+                "{} {}<br><small>{} periods met</small>",
+                mark_safe(element),
+                value.get("progress_label", ""),
+                value.get("completed_periods", 0),
+            )
         if value == "C":
             element = c_element
         elif value == "P":
@@ -635,14 +645,18 @@ class CourseActivityTable(tables.Table):
         tardy_credit = self.course.tardy_credit
         late_credit = self.course.late_credit
         result_count = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
+        recurring_points = 0
         for key, value in record.items():
-            if value in result_count:
+            if isinstance(value, dict) and value.get("kind") == "recurring":
+                recurring_points += value.get("completed_periods", 0) * timely_credit
+            elif value in result_count:
                 result_count[value] += 1
         score = (
             result_count["P"] * timely_credit
             + result_count["C"] * timely_credit
             + result_count["T"] * tardy_credit
             + result_count["L"] * late_credit
+            + recurring_points
         )
         # make this column orderable
         return round(score, 1)

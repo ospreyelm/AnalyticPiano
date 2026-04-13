@@ -21,6 +21,21 @@ This directory contains comprehensive documentation for the HarmonyLab system, i
 
 ---
 
+## Chorale Analysis
+
+### **[chorale_analysis.md](chorale_analysis.md)** - Harmonic Analysis Pipeline
+- **Focus:** How Roman numeral and figured-bass annotations are generated
+- **Key finding:** Analysis is computed on the fly from pitch content + key signature — no pre-computed labels are stored in CIR JSON files
+- **Content:**
+  - What the CIR source files do (and don't) contain
+  - `buildAnalysisWindows` in `vexflow_adapter.js` — constructing harmonic stacks
+  - `Analyze` class in `utils/analyze.js` — chord identification via lookup tables and interval arithmetic
+  - How `display.showRomans` / `display.showFigures` work as render toggles only
+  - Full pipeline diagram and key source file index
+- **Audience:** Developers working on notation rendering or analysis overlays
+
+---
+
 ## Feature Development Documentation
 
 ### **[chorale_future_improvements.md](chorale_future_improvements.md)** - Chorale System Roadmap
@@ -103,6 +118,7 @@ This directory contains comprehensive documentation for the HarmonyLab system, i
 docs/
 ├── README.md                              (this file)
 ├── claude.md                              (main implementation guide)
+├── chorale_analysis.md                    (harmonic analysis pipeline — computed on the fly)
 ├── chorale_future_improvements.md         (chorale feature roadmap)
 └── lms_student_ux_assessment.md          (LMS/student experience evaluation)
 ```
@@ -113,8 +129,9 @@ docs/
 
 ### For Developers Working on Chorales
 1. Read [claude.md](../claude.md) - Architecture and grading system
-2. Check [chorale_future_improvements.md](chorale_future_improvements.md) - Planned features with implementation steps
-3. See `docs/chorale_exercises_plan.md` - Curriculum specification
+2. Check [chorale_analysis.md](chorale_analysis.md) - How harmonic analysis is computed
+3. Check [chorale_future_improvements.md](chorale_future_improvements.md) - Planned features with implementation steps
+4. See `docs/chorale_exercises_plan.md` - Curriculum specification
 
 ### For Product Managers / Instructors
 1. Read [lms_student_ux_assessment.md](lms_student_ux_assessment.md) - Student experience evaluation

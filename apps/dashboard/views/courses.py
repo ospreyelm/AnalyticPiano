@@ -32,6 +32,7 @@ from apps.exercises.models import (
     Playlist,
     PlaylistCourseOrdered,
 )
+from apps.exercises.utils.recurrence import get_recurring_assignment_snapshot
 from apps.accounts.models import Group, User
 
 
@@ -300,6 +301,23 @@ def course_activity_view(request, course_id):
         for performer in list(performers) + [request.user]
     }
 
+    course_pcos = PlaylistCourseOrdered.objects.filter(
+        course_id=course._id
+    ).prefetch_related("playlist")
+    recurring_assignments = {
+        pco.playlist.id: pco for pco in course_pcos if pco.is_recurring
+    }
+
+    for performer, performer_data in data.items():
+        for playlist_id, assignment in recurring_assignments.items():
+            snapshot = get_recurring_assignment_snapshot(performer, assignment)
+            performer_data[str(playlist_id)] = {
+                "kind": "recurring",
+                "progress_label": snapshot["progress_label"],
+                "completed_periods": snapshot["completed_periods"],
+                "target_met": snapshot["target_met"],
+            }
+
     if len(curr_group_ids) == 0:
         # omit performers who have zero performances for this playlist
         relevant_data = {
@@ -324,10 +342,6 @@ def course_activity_view(request, course_id):
     relevant_data_keys_per_performer = [
         value.keys() for (key, value) in relevant_data.items()
     ]
-
-    course_pcos = PlaylistCourseOrdered.objects.filter(
-        course_id=course._id
-    ).prefetch_related("playlist")
 
     min_unit_num = unitnumber_filter.form.cleaned_data["min_unit_num"]
     max_unit_num = unitnumber_filter.form.cleaned_data["max_unit_num"]
@@ -440,17 +454,26 @@ def course_activity_view(request, course_id):
         late_credit = course.late_credit
         for row in relevant_data.values():
             mark_counts = {"P": 0, "C": 0, "T": 0, "L": 0, "X": 0}
+            recurring_periods_met = 0
             playlist_cells = []
             for k in compiled_playlist_keys:
                 mark = row.get(str(k), "")
-                playlist_cells.append(pass_mark_labels.get(mark, ""))
-                if mark in mark_counts:
-                    mark_counts[mark] += 1
+                if isinstance(mark, dict) and mark.get("kind") == "recurring":
+                    recurring_periods = mark.get("completed_periods", 0)
+                    recurring_periods_met += recurring_periods
+                    playlist_cells.append(
+                        f"{mark.get('progress_label', '')} ({recurring_periods} periods met)"
+                    )
+                else:
+                    playlist_cells.append(pass_mark_labels.get(mark, ""))
+                    if mark in mark_counts:
+                        mark_counts[mark] += 1
             score = round(
                 mark_counts["P"] * float(timely_credit)
                 + mark_counts["C"] * float(timely_credit)
                 + mark_counts["T"] * float(tardy_credit)
-                + mark_counts["L"] * float(late_credit),
+                + mark_counts["L"] * float(late_credit)
+                + recurring_periods_met * float(timely_credit),
                 1,
             )
             writer.writerow(

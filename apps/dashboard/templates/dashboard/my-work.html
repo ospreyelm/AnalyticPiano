@@ -30,7 +30,10 @@
                     <tr>
                         <td>{{ item.playlist.name }}</td>
                         <td>
-                            {% if item.passed %}
+                            {% if item.is_recurring %}
+                                <span class="badge {{ item.mark_class }}">{{ item.mark_label }}</span>
+                                <div><small>{{ item.completed_periods }} periods completed</small></div>
+                            {% elif item.passed %}
                                 {% if item.mark_label %}
                                     <span class="badge {{ item.mark_class }}">{{ item.mark_label }}</span>
                                 {% else %}

@@ -2,7 +2,6 @@ import re
 from collections import OrderedDict
 from datetime import timedelta, date, datetime
 from itertools import product
-from tabnanny import verbose
 
 from datetime import timezone as dt_timezone
 from zoneinfo import ZoneInfo
@@ -29,9 +28,8 @@ from apps.exercises.constants import (
     KEY_SIGNATURES,
     pseudo_key_to_sig,
 )
+from apps.exercises.utils.recurrence import rebuild_period_progress
 from apps.exercises.utils.transpose import transpose
-
-import re
 
 User = get_user_model()
 
@@ -937,6 +935,13 @@ class Course(ClonableModelMixin, BaseContentModel):
 
 
 class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
+    RECURRENCE_UNIT_DAY = "day"
+    RECURRENCE_UNIT_WEEK = "week"
+    RECURRENCE_UNIT_CHOICES = (
+        (RECURRENCE_UNIT_DAY, "Day"),
+        (RECURRENCE_UNIT_WEEK, "Week"),
+    )
+
     playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     order = models.IntegerField("Order", help_text="Unit #")
@@ -947,8 +952,57 @@ class PlaylistCourseOrdered(ClonableModelMixin, BaseContentModel):
         default=None,
         null=True,
     )
+    is_recurring = models.BooleanField(default=False)
+    recurrence_unit = models.CharField(
+        max_length=8,
+        choices=RECURRENCE_UNIT_CHOICES,
+        blank=True,
+        default="",
+    )
+    required_passes_per_period = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+    )
+    recurrence_starts_on = models.DateTimeField(blank=True, default=None, null=True)
 
     displayed_fields = ("due_date", "publish_date")
+
+    def clean(self):
+        super().clean()
+        if self.is_recurring and not self.recurrence_unit:
+            raise ValidationError(
+                {"recurrence_unit": "A recurrence unit is required for recurring assignments."}
+            )
+
+
+class RecurringPlaylistPeriodProgress(models.Model):
+    user = models.ForeignKey(
+        User,
+        related_name="recurring_playlist_progress",
+        on_delete=models.CASCADE,
+    )
+    course = models.ForeignKey(
+        Course,
+        related_name="recurring_playlist_progress",
+        on_delete=models.CASCADE,
+    )
+    playlist = models.ForeignKey(
+        Playlist,
+        related_name="recurring_playlist_progress",
+        on_delete=models.CASCADE,
+    )
+    period_start = models.DateTimeField()
+    period_end = models.DateTimeField()
+    counted_passes = models.PositiveIntegerField(default=0)
+    required_passes = models.PositiveIntegerField(default=1)
+    target_met = models.BooleanField(default=False)
+    first_pass_at = models.DateTimeField(blank=True, default=None, null=True)
+    last_counted_pass_at = models.DateTimeField(blank=True, default=None, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = (("user", "course", "playlist", "period_start"),)
 
 
 class PerformanceData(models.Model):
@@ -1000,17 +1054,34 @@ class PerformanceData(models.Model):
             course_id=course_id,
             playlist_id=playlist_id,
         )
+        submitted_at = now()
         exercise_data = dict(
             **data,
             id=exercise_id,  # rename
             # exercise_ID = exercise_id
-            performed_at=dateformat.format(now(), "Y-m-d H:i:s"),  # rename and reformat
+            performed_at=dateformat.format(submitted_at, "Y-m-d H:i:s"),  # rename and reformat
             # server_date = datetime.isoformat(datetime.now())[:-3]+'Z' # UTC
         )
 
         pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
+
+        if course_id:
+            # Defensive ordering keeps .first() deterministic if duplicate rows exist.
+            recurring_assignment = PlaylistCourseOrdered.objects.filter(
+                course_id=course_id,
+                playlist_id=playlist_id,
+                is_recurring=True,
+            ).order_by("order", "pk").first()
+            if recurring_assignment is not None:
+                rebuild_period_progress(
+                    assignment=recurring_assignment,
+                    performance_data=pd,
+                    # Reuse the same captured submit timestamp to avoid boundary drift.
+                    occurred_at=submitted_at,
+                )
+
         try:
             if course_id:
                 course = Course.objects.get(_id=course_id)
