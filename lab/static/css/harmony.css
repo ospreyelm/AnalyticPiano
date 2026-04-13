@@ -1050,3 +1050,23 @@ ul.pagination li {
 }
 .ident-popup-btn:last-child { border-bottom: none; }
 .ident-popup-btn:hover { background: #f0f0f0; }
+
+/* Page-turn animation for identification exercises */
+@keyframes ident-page-turn-next {
+  0%   { opacity: 1; transform: translateX(0); }
+  40%  { opacity: 0; transform: translateX(-32px); }
+  60%  { opacity: 0; transform: translateX(32px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes ident-page-turn-prev {
+  0%   { opacity: 1; transform: translateX(0); }
+  40%  { opacity: 0; transform: translateX(32px); }
+  60%  { opacity: 0; transform: translateX(-32px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+#staffwrapper.ident-page-turn-next {
+  animation: ident-page-turn-next 0.35s ease-in-out;
+}
+#staffwrapper.ident-page-turn-prev {
+  animation: ident-page-turn-prev 0.35s ease-in-out;
+}

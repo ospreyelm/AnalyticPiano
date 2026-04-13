@@ -141,6 +141,8 @@ define([
       this.getInputChords().bind("change", this.onChordsUpdate);
       this.getInputChords().bind("clear", this.onChordsUpdate);
       this.exerciseContext.bind("goto", this.onGoToExercise);
+      // Re-render when ident page changes (goToIdentPage fires "graded")
+      this.exerciseContext.bind("graded", this.render);
       // Listen for MIDI notes globally
       this.subscribe(EVENTS.BROADCAST.NOTE, this.onMidiNote);
       // Listen for pristine/refresh button
@@ -278,7 +280,13 @@ define([
 
           if (currentMode === 'practice') {
             // Show colour feedback immediately
-            var graded = grdr.grade(self.exerciseContext.getDefinition());
+            var visibleProblems = self.exerciseContext.getVisibleProblems
+              ? self.exerciseContext.getVisibleProblems()
+              : null;
+            var practicePageOffset = self.exerciseContext.getIdentPageOffset
+              ? self.exerciseContext.getIdentPageOffset()
+              : 0;
+            var graded = grdr.grade(self.exerciseContext.getDefinition(), visibleProblems, practicePageOffset);
             self.exerciseContext.graded = graded;
             self.render();
             if (graded.result === 'correct') {
@@ -435,20 +443,6 @@ define([
         }
       }
 
-      var totalPages = this.exerciseContext.getTotalIdentPages
-        ? this.exerciseContext.getTotalIdentPages()
-        : 1;
-      if (totalPages > 1) {
-        var currentPage = this.exerciseContext.getIdentPage
-          ? this.exerciseContext.getIdentPage() : 0;
-        var pageText = 'Page ' + (currentPage + 1) + ' of ' + totalPages;
-        ctx.font = '13px sans-serif';
-        ctx.fillStyle = '#888888';
-        ctx.textAlign = 'right';
-        var canvasWidth = ctx.canvas ? ctx.canvas.width : 600;
-        ctx.fillText(pageText, canvasWidth - 12, 20);
-      }
-
       ctx.font = origFont;
       ctx.fillStyle = origFillStyle;
       ctx.textAlign = origTextAlign;
@@ -485,6 +479,9 @@ define([
       this.clear();
       this.renderStaves(exercise_midi_nums);
       this.renderExerciseStatus();
+      if (this._isIdentificationLikeExercise()) {
+        this.renderExerciseText();
+      }
 
       return this;
     },
@@ -649,6 +646,16 @@ define([
       );
 
       html = tpl(tpl_data);
+
+      // Append page indicator for paged identification exercises
+      if (this._isIdentificationLikeExercise && this._isIdentificationLikeExercise()) {
+        var totalPages = exc.getTotalIdentPages ? exc.getTotalIdentPages() : 1;
+        if (totalPages > 1) {
+          var currentPage = exc.getIdentPage ? exc.getIdentPage() : 0;
+          html += '<span class="page-indicator" style="margin-left:1em;color:#888;font-size:0.9em;">Page ' + (currentPage + 1) + ' of ' + totalPages + '</span>';
+        }
+      }
+
       $textEl.html(html);
 
       return this;

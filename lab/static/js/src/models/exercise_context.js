@@ -711,19 +711,47 @@ define([
       if (n < 0 || n >= total) {
         return false;
       }
-      this._identPage = n;
-      this.sealed = false;
-      this.done = false;
-      this.graded = false;
-      this.flawless = true;
-      this.errorTally = 0;
-      this.timer = null;
-      this.state = ExerciseContext.STATE.READY;
-      this.updateDisplayChords();
-      if (this.exercise && typeof this.exercise.trigger === "function") {
-        this.exercise.trigger("change");
+      var self = this;
+      var direction = n > this._identPage ? 'next' : 'prev';
+      var wrapper = document.getElementById('staffwrapper');
+      var renderDelay = 0;
+
+      if (wrapper) {
+        wrapper.classList.remove('ident-page-turn-next', 'ident-page-turn-prev');
+        void wrapper.offsetWidth; // force reflow so re-adding triggers animation
+        wrapper.classList.add('ident-page-turn-' + direction);
+        renderDelay = 140; // wait until opacity=0 at 40% of 350ms animation
+        setTimeout(function () {
+          wrapper.classList.remove('ident-page-turn-next', 'ident-page-turn-prev');
+        }, 400);
       }
-      this.trigger("graded");
+
+      setTimeout(function () {
+        self._identPage = n;
+        self.sealed = false;
+        self.done = false;
+        self.flawless = true;
+        self.errorTally = 0;
+        self.timer = null;
+        self.state = ExerciseContext.STATE.READY;
+        self.updateDisplayChords();
+        // Re-grade the new page so colour feedback is visible immediately
+        // (e.g. when navigating back to an already-answered page).
+        var visibleProblems = self.getVisibleProblems();
+        var hasAnyAnswer = visibleProblems.some(function (_, i) {
+          return self.grader.answers && self.grader.answers.hasOwnProperty(n * self._identPageSize + i);
+        });
+        if (hasAnyAnswer) {
+          self.graded = self.grader.grade(self.definition, visibleProblems, self.getIdentPageOffset());
+        } else {
+          self.graded = false;
+        }
+        if (self.exercise && typeof self.exercise.trigger === "function") {
+          self.exercise.trigger("change");
+        }
+        self.trigger("graded");
+      }, renderDelay);
+
       return true;
     },
     /**
@@ -744,7 +772,7 @@ define([
         return null;
       }
 
-      graded = this.grader.grade(this.definition, visibleProblems);
+      graded = this.grader.grade(this.definition, visibleProblems, this.getIdentPageOffset());
       this.graded = graded;
       this.updateDisplayChords();
       graded.handled = true;

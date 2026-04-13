@@ -380,9 +380,36 @@ define([
       return this;
     },
     renderNextExercise: function () {
+      var sheetComponent = this.getComponent("sheet");
+      var context = sheetComponent && sheetComponent.exerciseContext;
+      if (
+        context &&
+        typeof context.goToNextExercise === "function" &&
+        context.sealed !== true
+      ) {
+        var handled = context.goToNextExercise({ fromUI: true });
+        if (handled) {
+          if (handled.completedExercise) {
+            this.renderPristine("next");
+          }
+          return this;
+        }
+      }
       this.renderPristine("next");
     },
     renderPreviousExercise: function () {
+      var sheetComponent = this.getComponent("sheet");
+      var context = sheetComponent && sheetComponent.exerciseContext;
+      if (
+        context &&
+        typeof context.goToPreviousExercise === "function" &&
+        context.sealed !== true
+      ) {
+        var handled = context.goToPreviousExercise({ fromUI: true });
+        if (handled) {
+          return this;
+        }
+      }
       this.renderPristine("previous");
     },
     renderFirstExercise: function () {

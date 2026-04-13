@@ -27,6 +27,7 @@ define([
     },
 
     initFromDefinition: function (definition) {
+      this.definition = definition;
       this.reset();
       return this;
     },
@@ -35,15 +36,34 @@ define([
       this.answers[problemIndex] = label;
     },
 
-    grade: function (definition) {
-      var problems = definition.getProblems();
+    getActiveMeasureIndex: function () {
+      if (
+        this.definition &&
+        typeof this.definition.getIdentPageOffset === "function"
+      ) {
+        return this.definition.getIdentPageOffset();
+      }
+      return 0;
+    },
+
+    grade: function (definition, visibleProblems, pageOffset) {
+      var problems = visibleProblems || definition.getProblems();
+      if (typeof pageOffset !== "number") {
+        pageOffset =
+          definition && typeof definition.getIdentPageOffset === "function"
+            ? definition.getIdentPageOffset()
+            : 0;
+      }
       var gradedProblems = [];
       var allAnswered = true;
       var allCorrect = true;
 
       for (var i = 0; i < problems.length; i++) {
+        var absoluteIndex = pageOffset + i;
         var answer = problems[i].answer;
-        var chosen = this.answers.hasOwnProperty(i) ? this.answers[i] : null;
+        var chosen = this.answers.hasOwnProperty(absoluteIndex)
+          ? this.answers[absoluteIndex]
+          : null;
         var correct = (chosen !== null && chosen !== '') ? (chosen === answer) : null;
 
         if (!chosen) { allAnswered = false; }
