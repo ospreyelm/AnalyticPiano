@@ -86,6 +86,8 @@ define([
     this.state = ExerciseContext.STATE.READY;
     this.graded = false;
     this.timer = null;
+    this._identPage = 0;
+    this._identPageSize = 4;
     this.displayChords = this.createDisplayChords();
     this.exerciseChords = this.createExerciseChords();
     this.timeSignature = this.definition.getTimeSignature();
@@ -188,7 +190,8 @@ define([
         isIdentificationExercise || isChoraleIdentificationExercise;
 
       if (isAnyIdentificationExercise) {
-        graded = this.grader.grade(this.definition);
+        this.submitIdentPage({ fromGrade: true });
+        return;
       } else {
         graded = this.grader.grade(this.definition, this.inputChords);
       }
@@ -539,6 +542,13 @@ define([
           tempo_mean_semibreves_per_min: this.timer.tempoMean,
           tempo_SD_semibreves_per_min: this.timer.tempoSD,
           tempo_rating: this.timer.tempoRating,
+          page_num: this._isIdentificationExercise() ? this._identPage + 1 : null,
+          page_total: this._isIdentificationExercise()
+            ? this.getTotalIdentPages()
+            : null,
+          is_final_page: this._isIdentificationExercise()
+            ? this._identPage >= this.getTotalIdentPages() - 1
+            : null,
         };
       } catch {
         return null;
@@ -635,12 +645,246 @@ define([
       return this.definition;
     },
     /**
+     * Returns true when the active exercise is identification-like.
+     *
+     * @return {boolean}
+     */
+    _isIdentificationExercise: function () {
+      return (
+        (typeof this.definition.isIdentification === "function" &&
+          this.definition.isIdentification()) ||
+        (typeof this.definition.isChoraleIdentification === "function" &&
+          this.definition.isChoraleIdentification())
+      );
+    },
+    /**
+     * Returns the current identification page index.
+     *
+     * @return {number}
+     */
+    getIdentPage: function () {
+      return this._identPage;
+    },
+    /**
+     * Returns the configured identification page size.
+     *
+     * @return {number}
+     */
+    getIdentPageSize: function () {
+      return this._identPageSize;
+    },
+    /**
+     * Returns the absolute index of the first problem on the active page.
+     *
+     * @return {number}
+     */
+    getIdentPageOffset: function () {
+      return this._identPage * this._identPageSize;
+    },
+    /**
+     * Returns the total number of identification pages.
+     *
+     * @return {number}
+     */
+    getTotalIdentPages: function () {
+      var allProblems = this.definition.getProblems();
+      return Math.ceil(allProblems.length / this._identPageSize);
+    },
+    /**
+     * Returns the identification problems visible on the active page.
+     *
+     * @return {Array}
+     */
+    getVisibleProblems: function () {
+      var offset = this.getIdentPageOffset();
+      var allProblems = this.definition.getProblems();
+      return allProblems.slice(offset, offset + this._identPageSize);
+    },
+    /**
+     * Navigates to a specific identification page.
+     *
+     * @param {number} n
+     * @return {boolean}
+     */
+    goToIdentPage: function (n) {
+      var total = this.getTotalIdentPages();
+      if (n < 0 || n >= total) {
+        return false;
+      }
+      var self = this;
+      var direction = n > this._identPage ? 'next' : 'prev';
+      var wrapper = document.getElementById('staffwrapper');
+      var renderDelay = 0;
+
+      if (wrapper) {
+        wrapper.classList.remove('ident-page-turn-next', 'ident-page-turn-prev');
+        void wrapper.offsetWidth; // force reflow so re-adding triggers animation
+        wrapper.classList.add('ident-page-turn-' + direction);
+        renderDelay = 140; // wait until opacity=0 at 40% of 350ms animation
+        setTimeout(function () {
+          wrapper.classList.remove('ident-page-turn-next', 'ident-page-turn-prev');
+        }, 400);
+      }
+
+      setTimeout(function () {
+        self._identPage = n;
+        self.sealed = false;
+        self.done = false;
+        self.flawless = true;
+        self.errorTally = 0;
+        self.timer = null;
+        self.state = ExerciseContext.STATE.READY;
+        self.updateDisplayChords();
+        // Re-grade the new page so colour feedback is visible immediately
+        // (e.g. when navigating back to an already-answered page).
+        var visibleProblems = self.getVisibleProblems();
+        var hasAnyAnswer = visibleProblems.some(function (_, i) {
+          return self.grader.answers && self.grader.answers.hasOwnProperty(n * self._identPageSize + i);
+        });
+        if (hasAnyAnswer) {
+          self.graded = self.grader.grade(self.definition, visibleProblems, self.getIdentPageOffset());
+        } else {
+          self.graded = false;
+        }
+        if (self.exercise && typeof self.exercise.trigger === "function") {
+          self.exercise.trigger("change");
+        }
+        self.trigger("graded");
+      }, renderDelay);
+
+      return true;
+    },
+    /**
+     * Submits the active identification page.
+     *
+     * @param {object=} options
+     * @param {boolean=} options.fromGrade
+     * @param {boolean=} options.fromUI
+     * @param {boolean=} options.triggerPlaylistAdvance
+     * @return {object|null}
+     */
+    submitIdentPage: function (options) {
+      var graded, isLastPage, shouldAdvancePlaylist;
+      var visibleProblems = this.getVisibleProblems();
+      var totalPages = this.getTotalIdentPages();
+
+      if (!visibleProblems.length) {
+        return null;
+      }
+
+      graded = this.grader.grade(this.definition, visibleProblems, this.getIdentPageOffset());
+      this.graded = graded;
+      this.updateDisplayChords();
+      graded.handled = true;
+      graded.advancedPage = false;
+      graded.completedExercise = false;
+
+      shouldAdvancePlaylist = true;
+      if (options && options.triggerPlaylistAdvance === false) {
+        shouldAdvancePlaylist = false;
+      }
+
+      var fromUI = options && options.fromUI === true;
+      isLastPage = this._identPage >= totalPages - 1;
+
+      // When called from UI (Next button), always advance the page regardless
+      // of correctness — only the last page completing correctly finishes the exercise.
+      if (fromUI && !isLastPage) {
+        graded.advancedPage = true;
+        this.goToIdentPage(this._identPage + 1);
+        return graded;
+      }
+
+      if (graded.result === this.grader.STATE.CORRECT) {
+        if (this.sealed != true) {
+          this.makeTimestamp();
+        }
+
+        if (!isLastPage) {
+          this.done = false;
+          this.endTimer();
+          if (this.sealed != true) {
+            this.submitExerciseReport();
+          }
+          graded.advancedPage = true;
+          this.goToIdentPage(this._identPage + 1);
+        } else {
+          this.done = true;
+          this.endTimer();
+          if (this.sealed != true) {
+            this.submitExerciseReport();
+          }
+          this.state = ExerciseContext.STATE.CORRECT;
+          this.sealed = true;
+          graded.completedExercise = true;
+          if (this.exercise && typeof this.exercise.trigger === "function") {
+            this.exercise.trigger("change");
+          }
+          this.trigger("graded");
+          if (shouldAdvancePlaylist) {
+            this.triggerNextExercise();
+          }
+        }
+      } else {
+        this.done = false;
+        this.sealed = false;
+        this.state =
+          graded.result === this.grader.STATE.INCORRECT
+            ? ExerciseContext.STATE.INCORRECT
+            : ExerciseContext.STATE.WAITING;
+        if (graded.result === this.grader.STATE.INCORRECT) {
+          this.flawless = false;
+          this.errorTally += 1;
+        }
+        if (this.exercise && typeof this.exercise.trigger === "function") {
+          this.exercise.trigger("change");
+        }
+        this.trigger("graded");
+      }
+
+      return graded;
+    },
+    /**
      * Advances to the next exercise.
      *
      * @return undefined
      */
-    goToNextExercise: function () {
+    goToNextExercise: function (options) {
+      var fromUI = options && options.fromUI === true;
+      if (
+        this._isIdentificationExercise() &&
+        this.getTotalIdentPages() > 1 &&
+        this.sealed !== true
+      ) {
+        return this.submitIdentPage({
+          fromUI: fromUI,
+          triggerPlaylistAdvance: !fromUI,
+        });
+      }
       this.exercise.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
+      return null;
+    },
+    /**
+     * Advances to the previous exercise or page.
+     *
+     * @return undefined
+     */
+    goToPreviousExercise: function (options) {
+      var fromUI = options && options.fromUI === true;
+      if (
+        this._isIdentificationExercise() &&
+        this.getTotalIdentPages() > 1 &&
+        this._identPage > 0 &&
+        this.sealed !== true
+      ) {
+        this.goToIdentPage(this._identPage - 1);
+        return { handled: true, completedExercise: false };
+      }
+      if (fromUI) {
+        return null;
+      }
+      this.exercise.broadcast(EVENTS.BROADCAST.PREVIOUSEXERCISE);
+      return null;
     },
     reloadExercise: function () {
       this.exercise.broadcast(EVENTS.BROADCAST.PRISTINE);
@@ -722,7 +966,9 @@ define([
       var notes = [];
       var exercise_chords = [];
       var staffDistribution = this.definition.getStaffDistribution();
-      var problems = this.definition.getProblems();
+      var problems = this._isIdentificationExercise()
+        ? this.getVisibleProblems()
+        : this.definition.getProblems();
       var CORRECT = this.grader.STATE.CORRECT;
       var g_problem, chord, chords, rhythm;
 
@@ -779,7 +1025,9 @@ define([
      */
     createExerciseChords: function () {
       var staffDistribution = this.definition.getStaffDistribution();
-      var problems = this.definition.getProblems();
+      var problems = this._isIdentificationExercise()
+        ? this.getVisibleProblems()
+        : this.definition.getProblems();
       var notes = [];
       var exercise_chords = [];
       var chords;

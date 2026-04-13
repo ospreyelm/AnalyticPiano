@@ -484,6 +484,14 @@ class ExerciseForm(forms.ModelForm):
         help_text="Controls when and whether the student sees correct/incorrect feedback.",
     )
 
+    # ---- Interval-only fields ----
+    compound_intervals = forms.BooleanField(
+        required=False,
+        label="Allow compound intervals",
+        help_text="When checked, intervals larger than an octave are labeled as compound (10th, 12th, etc.). Default: reduce to within the octave.",
+        initial=False,
+    )
+
     tags = forms.MultipleChoiceField(
         choices=CONTENT_TAGS,
         widget=forms.CheckboxSelectMultiple,
@@ -518,6 +526,7 @@ class ExerciseForm(forms.ModelForm):
         "chorale_excerpt_start",
         "chorale_excerpt_end",
         "ident_mode",
+        "compound_intervals",
     ]
 
     def __init__(self, *arg, **kwargs):
@@ -550,6 +559,7 @@ class ExerciseForm(forms.ModelForm):
             )
         self._configure_chorale_fields()
         self._configure_identification_fields()
+        self._configure_interval_fields()
 
     def save(self, commit=True):
         instance = super(ExerciseForm, self).save(commit)
@@ -574,6 +584,8 @@ class ExerciseForm(forms.ModelForm):
                 self._store_chorale_settings(instance)
             if self._is_identification:
                 self._store_identification_settings(instance)
+            if self._detect_interval():
+                self._store_interval_settings(instance)
             instance.save()
 
         return instance
@@ -924,6 +936,10 @@ class ExerciseForm(forms.ModelForm):
 
     IDENT_ONLY_FIELDS = ["ident_mode"]
 
+    INTERVAL_ANALYSIS_TYPES = ("interval_generic", "interval_specific")
+
+    INTERVAL_ONLY_FIELDS = ["compound_intervals"]
+
     IDENT_SUPPRESSED_FIELDS = [
         "rhythm",
         "visibility_pattern",
@@ -973,6 +989,26 @@ class ExerciseForm(forms.ModelForm):
     def _store_identification_settings(self, instance):
         ident_mode = self.cleaned_data.get("ident_mode") or "submit"
         instance.data["identMode"] = ident_mode
+
+    def _detect_interval(self):
+        data = {}
+        if self.instance and getattr(self.instance, "data", None):
+            data = self.instance.data
+        return data.get("analysisType") in self.INTERVAL_ANALYSIS_TYPES
+
+    def _configure_interval_fields(self):
+        if not self._detect_interval():
+            for field in self.INTERVAL_ONLY_FIELDS:
+                if field in self.fields:
+                    self.fields[field].widget = forms.HiddenInput()
+            return
+        if self.instance and getattr(self.instance, "data", None):
+            compound = self.instance.data.get("compoundIntervals", False)
+            if "compound_intervals" in self.fields:
+                self.fields["compound_intervals"].initial = compound
+
+    def _store_interval_settings(self, instance):
+        instance.data["compoundIntervals"] = bool(self.cleaned_data.get("compound_intervals", False))
 
 
 class PlaylistForm(forms.ModelForm):

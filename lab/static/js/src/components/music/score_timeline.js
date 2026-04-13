@@ -99,10 +99,10 @@ define([], function () {
             }
             var globalOnset = measureStartTick + localOnset;
             if (item.kind === 'note') {
-              timeline.push({ id: id++, onset: globalOnset, duration: durToTicks(item.duration), midi: pitchToMidi(item.pitch), staff: staffName, voiceIndex: vIdx, measureIndex: m, itemIndex: it, headIndex: 0 });
+              timeline.push({ id: id++, onset: globalOnset, duration: durToTicks(item.duration), midi: pitchToMidi(item.pitch), step: item.pitch.step, alter: item.pitch.alter || 0, staff: staffName, voiceIndex: vIdx, measureIndex: m, itemIndex: it, headIndex: 0 });
             } else if (item.kind === 'chord') {
               for (var h = 0; h < item.notes.length; h++) {
-                timeline.push({ id: id++, onset: globalOnset, duration: durToTicks(item.duration), midi: pitchToMidi(item.notes[h].pitch), staff: staffName, voiceIndex: vIdx, measureIndex: m, itemIndex: it, headIndex: h });
+                timeline.push({ id: id++, onset: globalOnset, duration: durToTicks(item.duration), midi: pitchToMidi(item.notes[h].pitch), step: item.notes[h].pitch.step, alter: item.notes[h].pitch.alter || 0, staff: staffName, voiceIndex: vIdx, measureIndex: m, itemIndex: it, headIndex: h });
               }
             }
             localOnset += durToTicks(item.duration);
