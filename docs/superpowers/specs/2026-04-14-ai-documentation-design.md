@@ -23,7 +23,7 @@ The exercise type confusion is the highest-risk failure: `identification`, `chor
 | `docs/architecture.md` | On master | Strong — data model, request flow, key encoding |
 | `docs/exercise_types.md` | On master | Strong — all 8 types, graders, paging, analysisType variants |
 | `docs/README.md` | On master | Good index |
-| `CLAUDE.md` | On master | Deep but chorale-focused and stale |
+| `CLAUDE.md` | On master | Deep but chorale-focused and stale — updated 2026-04-14 |
 | `docs/plan.md` | On master | Has ✅/[ ] status but buried in implementation detail |
 
 ## What's Missing
@@ -116,9 +116,20 @@ The 10 files Claude most often needs to touch, with one-line purpose each.
 
 ## Implementation
 
-1. Create `docs/feature-status.md` on master
-2. Edit `CLAUDE.md` — add "Read These First" block at top
-3. Commit both as one doc commit on master
+1. Create `docs/feature-status.md` on master ✅ done — commit `2f5a6e82`
+2. Edit `CLAUDE.md` — add "Read These First" block at top ✅ done — commit `2f5a6e82`
+3. Commit both as one doc commit on master ✅ done — pushed to origin
+
+## What Was Built
+
+**`docs/feature-status.md`** — three sections:
+- Feature status table (done / not yet on master / planned / abandoned) covering ~25 features
+- "Don't Get This Wrong" — 10 common AI mistakes with correct facts
+- Key files quick reference — 10 most-touched files with one-line purpose each
+
+**`CLAUDE.md`** — "Before You Start — Read These First" block added at the very top, pointing to `architecture.md`, `exercise_types.md`, and `feature-status.md`. Header updated from chorale-only title to general implementation guide.
+
+**Note on identification paging:** At time of implementation, `identification` paging was on `feature/music21_builder` but not yet on master. The feature-status.md reflects this. Once that branch is fully merged, update the row in feature-status.md to "Done".
 
 ## Success Criteria
 
@@ -127,4 +138,4 @@ In a fresh conversation with no prior context, Claude should:
 - Not suggest implementing anything in the "Done" list
 - Not suggest revisiting curriculum generation
 - Correctly distinguish `chorale` from `chorale_identification`
-- Know that both identification types have paging
+- Know that `chorale_identification` has paging on master; `identification` paging is not yet merged
