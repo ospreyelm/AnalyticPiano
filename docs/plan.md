@@ -22,222 +22,87 @@ Actionable steps in order. Check off as completed.
 4. **2.12** — Start building content once tools are in place
 
 ---
+
 ## Phase 1 — Get Running
 
-> **Sequencing note:** Upgrade Django locally first, then deploy the upgraded version
-> once to new hosting. One migration instead of two.
-
-### 1.1 Upgrade Django + Python (locally)
+### 1.1 Upgrade Django + Python ✅ (locally done)
 
 - [x] Upgrade Python 3.10 → 3.12
-- [x] Upgrade dependencies with breaking changes:
-  - [x] `whitenoise` 5.1.0 → 6.x
-  - [x] `dj-database-url` 0.5.0 → 2.x
-  - [x] `psycopg2-binary` 2.8.6 → 2.9.x
-  - [x] Replace `pytz` with `zoneinfo` (built into Python 3.9+)
-  - [x] Update `chardet`
-- [x] Upgrade Django 2.2 → 3.2 (step 1), verify locally, fix breakage
-- [x] Upgrade Django 3.2 → 4.2 (step 2), verify locally, fix breakage
-- [x] Upgrade Django 4.2 → 5.2 LTS (step 3), verify locally, fix breakage
+- [x] Upgrade Django 2.2 → 5.2 LTS (step-by-step: 2.2 → 3.2 → 4.2 → 5.2)
+- [x] Upgrade all breaking dependencies (whitenoise, dj-database-url, psycopg2, pytz → zoneinfo, chardet)
 - [ ] Verify all pages work end-to-end locally
 
-### 1.2 Deploy upgraded version to new hosting
+### 1.2 Deploy to hosting
 
-- [ ] Choose hosting: Heroku (fastest) or Fly.io (cheaper, ~$5–8/mo vs ~$12–16/mo)
-- [ ] **If Heroku:**
-  - [ ] Create new Heroku app
-  - [ ] Add Postgres addon
-  - [ ] Set env vars: `SECRET_KEY`, `DJANGO_SETTINGS_MODULE=harmony.settings.heroku`, `ALLOWED_HOSTS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `SENTRY_DSN`
-  - [ ] `git push heroku master`
-- [ ] **If Fly.io:**
-  - [ ] Write `Dockerfile`
-  - [ ] Write `fly.toml` (include `[deploy] release_command` for migrations + createcachetable)
-  - [ ] `fly postgres create`
-  - [ ] Set same env vars
-  - [ ] `fly deploy`
+- [ ] Choose hosting: Heroku (fastest) or Fly.io (~$5–8/mo)
+- [ ] **If Heroku:** create app, add Postgres addon, set env vars (`SECRET_KEY`, `DJANGO_SETTINGS_MODULE=harmony.settings.heroku`, `ALLOWED_HOSTS`, `EMAIL_HOST_*`, `SENTRY_DSN`), `git push heroku master`
+- [ ] **If Fly.io:** write `Dockerfile` + `fly.toml`, `fly postgres create`, set same env vars, `fly deploy`
 - [ ] Transfer existing database: `pg_dump` old host → `pg_restore` new host
-- [ ] Update DNS to new host
-- [ ] Verify password reset email works
-- [ ] Verify MIDI input works in Chrome/Edge
+- [ ] Update DNS, verify password reset email, verify MIDI in Chrome/Edge
 
 ---
 
 ## Phase 2 — College Pilot
 
-### 2.1 Group join codes
+### 2.1–2.7 ✅ Core pilot features (all complete)
 
-- [x] Add `join_code` field to `Group` model
-- [x] Auto-generate code on Group creation
-- [x] Add join code display to group edit page (teacher sees/copies code)
-- [x] Add `POST /groups/join/` view (student submits code → added to group)
-- [x] Add join code entry UI for students (on dashboard or registration flow)
-
-### 2.2 Student "My Work" view
-
-- [x] Create new view showing only courses student is enrolled in via Group membership
-- [x] Show completion status per playlist (not started / in progress / complete)
-- [x] Show due dates if set
-- [x] Link directly to playlist player
-- [x] Set as default post-login destination for students (replace "Courses By Other Users")
-
-### 2.3 Public content library
-
-- [x] Create `/library/` page listing all `is_public` courses, playlists, exercises
-- [x] Add topic filter (uses tags from 2.5)
-- [x] Add type filter (course / playlist / exercise)
-- [x] Make browsable without needing to be connected to the author
-
-### 2.4 Course clone / copy
-
-- [x] Create `POST /library/clone-course/<course_id>/` view
-- [x] Deep-clone Course + PlaylistCourseOrdered entries
-- [x] Set `authored_by = request.user`, `is_public = False` on clone
-- [x] Exercises referenced (not cloned)
-- [x] Redirect to cloned course edit page
-
-### 2.5 Content tagging
-
-- [x] Add `tags = ArrayField(...)` to `Exercise` and `Playlist` models
-- [x] Add tag selector to exercise and playlist edit forms
-- [x] Wire tags to library filter
-
-### 2.6 Teacher gradebook polish
-
-- [x] Add score/grade column alongside completion in `course_activity_view`
-- [x] Show on-time / tardy / late status using existing `timely_credit` fields
-- [x] Add CSV export
-
-### 2.7 Due date UI
-
-- [x] Add `due_date` field to `PlaylistCourseOrdered` if not present
-- [x] Add date picker to course edit form (one per playlist)
-- [x] Show due dates on student "My Work" view
-- [x] Show timely/tardy/late status in gradebook
+Group join codes, student My Work view, public library, course clone, content tagging, gradebook polish, due date UI — all implemented.
 
 ### 2.8 Mouse & keyboard input
 
-_Existing systems (no changes needed):_
-- [x] **On-screen piano** — Raphael SVG piano always visible; mouse-click fires `noteOn`/`noteOff` via EVENTS bus
-- [x] **QWERTY piano-layout** — `keyboard_shortcuts.js` maps QWERTY rows to octaves; wired in `exercise.js` and `play.js`
+- [x] On-screen piano (mouse), QWERTY keyboard layout — both exist
+- [ ] QWERTY discoverability — add visible help label/tooltip so users know the layout exists
+- [ ] Note-name entry mode — letter keys `a`–`g` = pitch, `1`–`8` = octave, arrows = sharp/flat; same `noteOn`/`noteOff` events
 
-_Remaining work:_
-- [ ] **QWERTY discoverability** — add visible help label / tooltip near keyboard so users know the layout exists
-- [ ] **Note-name entry mode** — letter keys `a`–`g` = pitch name, `1`–`8` = octave, `UP`/`DOWN` arrows = sharp/flat; fires same `noteOn`/`noteOff` events; selectable alongside existing QWERTY mode
+### 2.11 Identification exercise type ✅ (almost — one task remaining)
 
-### 2.9 Build content library (content task)
+- [x] `identification` type, `IdentificationGrader`, `LabelInputComponent`, wired into exercise context
+- [ ] Add `<div id="label-input"></div>` mount point to `exercise.html` + CSS for button states
 
-- [ ] Intervals — identification (3 playlists, ~20 exercises each)
-- [ ] Intervals — notation (2 playlists)
-- [ ] Triads — identification (4 playlists)
-- [ ] Triads — notation (2 playlists)
-- [ ] Seventh chords — identification (3 playlists)
-- [ ] Seventh chords — notation (2 playlists)
-- [ ] Roman numeral analysis (4 playlists)
-- [ ] Voice leading — SATB basics (3 playlists)
-- [ ] Tag all content, mark as `is_public`
+### 2.11a Chorale identification exercise flow ✅ IMPLEMENTED
 
-### 2.11 Identification exercise type
+- [x] Add `chorale_identification` as a first-class exercise type built on chorale onset windows
+- [x] Generate Roman numeral or figured-bass prompts directly from the chorale score data
+- [x] Reuse the identification grading flow without changing `analyze.js`, `identification_grader.js`, or `score_timeline.js`
+- [x] Support creation through both `import_chorale` and a dashboard “Save, Duplicate as Identification” action on chorale exercises
+- [x] Align score rendering, label hit zones, and feedback markers so the exercise is usable in the browser
+- [x] Cover the duplication path with a Django test and verify the merged feature locally
 
-A new exercise type where **notes are shown on the staff and the student selects the correct analytical label** from a set of buttons — the reverse of `analytical`. No MIDI grading; the answer mechanism is a multiple-choice UI.
+### 2.12 Curriculum content ⚠️ KEY BLOCKER
 
-- [ ] Add `identification` to `ExerciseDefinition.TYPES` in `exercise_definition.js`; parse `answer` and `choices` per problem; all notes go to `visible`, nothing to `hidden`; analysis overlays off
-- [ ] Create `lab/static/js/src/models/identification_grader.js` — tracks pointer, student selections, correct/incorrect state; `selectLabel(label)` advances through problems; `grade()` returns same shape as `ExerciseGrader.grade()`
-- [ ] Create `lab/static/js/src/components/input/label_input.js` — renders per-problem choice buttons; dispatches `EVENTS.BROADCAST.LABEL_SELECTED`; shows correct (green) / incorrect (red flash) feedback
-- [ ] Wire into `exercise_sheet.js`: new `initIdentificationMode()` renders notes fully visible, mounts `LabelInputComponent` below canvas, suppresses MIDI grading
-- [ ] Wire into `exercise_context.js`: branch on `isIdentification()` to use `IdentificationGrader`; listen for `LABEL_SELECTED`
-- [ ] Wire into `exercise.js`: instantiate `IdentificationGrader` in `getModels()` when type is `identification`
-- [ ] Add `<div id="label-input"></div>` mount point to `exercise.html`; CSS for button states
+**Blocker for teacher onboarding.** Until a starter curriculum exists in the public library, teachers cannot browse-and-clone a ready-made course.
 
-**Exercise JSON shape:**
-```json
-{
-  "type": "identification",
-  "key": "jC_",
-  "chord": [
-    { "visible": [60,64,67], "hidden": [], "answer": "I",  "choices": ["I","ii","IV","V"] },
-    { "visible": [62,65,69], "hidden": [], "answer": "ii", "choices": ["I","ii","IV","V"] }
-  ]
-}
-```
+> ❌ **Programmatic generation is off the table.** Attempts with voicing.py, templates.py, and music21_builder all produced unusable output (wrong spellings, wrong registers). The `curriculum-generation` branch is abandoned.
 
-### 2.11a Chorale identification exercise flow ✅ IMPLEMENTED (2026-04-10)
+**Content will be created by:** hand-authoring in the exercise editor, MusicXML import, or manual curation. Fix the tools (2.19–2.21) before attempting this at scale.
 
-A companion to the chorale-play type: the score is fully displayed and the student identifies each onset-window chord by selecting the correct Roman numeral or figured-bass label.
-
-- [x] Add `chorale_identification` as a first-class exercise type; reuse `IdentificationGrader` without modifying `analyze.js`, `identification_grader.js`, or `score_timeline.js`
-- [x] Client-side problem generation: extract onset windows from the chorale score and compute Roman numeral / figured-bass labels via the existing `Analyze` utility
-- [x] Render the full chorale score with all notes black; overlay clickable label slots aligned to onset columns
-- [x] Support creation via `import_chorale --mode identify` and via a dashboard "Save, Duplicate as Identification" button on any chorale exercise
-- [x] Wire backend: new exercise type recognised in `forms.py`, `admin.py`, and `exercise_definition.js`
-- [x] Django test for the duplication command; cherry-picked into `master` as commit `896114de`
-
-### 2.12 Curriculum generation system
-
-Template-based and MusicXML-based batch generation of exercises and playlists. Full spec in [docs/curriculum_generation_spec.md](curriculum_generation_spec.md).
-
-**Path A — template-based management command:**
-- [ ] Create `apps/exercises/generation/analysis_presets.py` — expand shorthand analysis dicts (e.g., `{roman_numerals: true}`) to full Exercise JSON `analysis.mode` objects
-- [ ] Create `apps/exercises/generation/voicing.py` — voicing strategy functions (close, open, close_4voice, keyboard_4voice) that compute MIDI note lists from root + quality + inversion
-- [ ] Create `apps/exercises/generation/templates.py` — template functions: `single_note`, `interval`, `diatonic_intervals`, `triad`, `diatonic_triads`, `seventh_chord`, `diatonic_sevenths`, `scale`, `roto`, `progression`, `chorale_excerpt`
-- [ ] Create `apps/exercises/generation/spec_loader.py` — YAML spec parser and validator; expands key shorthands (`all_major`, `all_minor`, `all_12`, `common_major`, `common_minor`)
-- [ ] Create `apps/exercises/management/commands/generate_curriculum.py` — drives spec_loader + templates, creates Exercise/Playlist/Course records, supports `--dry-run` and `--overwrite`
-- [ ] Create `data/curriculum/theory1.yaml` — first real spec covering intervals, triads, 7th chords, ROTO, basic progressions; validate output matches CSV conventions
+**Content needed:**
+- [ ] Intervals — matching + identification (common major keys)
+- [ ] Triads — root position, inversions — matching + identification (all 12 keys via transposition)
+- [ ] Seventh chords — dominant, major, minor, half-dim — matching + identification
+- [ ] Diatonic triads + seventh chords in major keys — matching + analytical
+- [ ] Scales — major, natural minor
+- [ ] Rule of the Octave — ascending + descending
+- [ ] ii–V–I progressions
+- [ ] Tag all content, mark as `is_public`, assemble into one public course
 
 **Path B — MusicXML web import (batch):**
 - [ ] Extract `import_musicxml` core logic into `apps/exercises/utils/musicxml.py`
 - [ ] Add batch slicing: upload one file, specify measure ranges, generate multiple exercises
-- [ ] Add playlist creation option to web import form
-- [ ] Add analysis preset selector to web import form
+- [ ] Add playlist creation option + analysis preset selector to web import form
 
 **Path C — word question type:**
-- [ ] Add `"question"` to `ExerciseDefinition.TYPES`; parse `question`, `choices`, `answer` fields; skip staff rendering
-- [ ] Show question text + multiple-choice buttons (reuse `LabelInputComponent` from identification type); no VexFlow, no MIDI
-- [ ] Hook into `IdentificationGrader` (one problem, no notes)
+- [ ] Add `"question"` type: text prompt + multiple-choice buttons, no staff, no MIDI
+- [ ] Reuse `LabelInputComponent`; hook into `IdentificationGrader`
 
-**Explanation logic generation (new — tied to 2.13):**
-- [ ] Each generated exercise spec should include an `explanation` block alongside the exercise JSON containing: `summary` (one-sentence string), `steps` (ordered array of strings), and optional `highlights` (MIDI note lists or staff note IDs to emphasize)
-- [ ] Add an optional explanation template / DSL field to YAML curriculum specs so authors can define explanation patterns (e.g., `interval_quality_steps`, `triad_inversion_steps`) that the generator expands per-problem — this ensures explanations scale with generated content without hand-authoring each one
-- [ ] `generate_curriculum` command writes explanation blocks into Exercise JSON when a template is defined in the spec
+### 2.13 MusicXML import for teachers
 
-### 2.13 "Explain this" button (student rationale panel)
+Currently only accessible via Django admin. Needs a dashboard UI.
 
-After a student attempts an exercise problem (correct or incorrect), they can tap/click **"Explain this"** to see a step-by-step rationale for why the answer is correct, using the same vocabulary the app uses elsewhere (semitone counts, scale degrees, chord quality/inversion logic, set-class normal form, figured-bass realization steps, etc.).
-
-**UI:**
-- [ ] Add "Explain this" button near the correctness feedback area in `exercise.html` / exercise player; hidden until at least one attempt has been made on the current problem
-- [ ] Optionally show a small `?` icon beside the displayed correct answer as a secondary affordance
-- [ ] Render explanation in a lightweight popover / expandable panel (not a blocking modal) containing: `summary` (one sentence), `steps` (bullet list), and optional note/chord highlights on the staff or piano
-
-**Explanation data contract:**
-- [ ] Define a shared `ExplanationBlock` shape: `{ summary: string, steps: string[], highlights?: number[] }` used by all exercise types
-- [ ] Create `lab/static/js/src/utils/explanation_renderer.js` — takes an `ExplanationBlock` and mounts the popover/panel UI; handles show/hide/animation
-- [ ] Create `lab/static/js/src/explanations/` directory with one module per exercise type (below); each exports a `buildExplanation(problem, answer) → ExplanationBlock` function
-
-**Explanation logic — incremental rollout:**
-- [ ] `explanations/interval.js` — spell note names, compute generic interval number (staff distance), count semitones, determine quality (major/minor/perfect/aug/dim)
-- [ ] `explanations/triad.js` — identify root via stacking thirds, determine quality from interval pattern, determine inversion from bass note
-- [ ] `explanations/seventh_chord.js` — extend triad logic to four-note stacks, add seventh quality
-- [ ] `explanations/pc_set.js` — show normal form / prime form derivation steps; include interval-class vector if curriculum uses it
-- [ ] `explanations/figured_bass.js` — show chord tones implied by figures, key context, and why a given realization matches
-- [ ] `explanations/identification.js` — wrap the above per problem type for the `identification` exercise type (2.11)
-
-**Wiring:**
-- [ ] Wire `explanation_renderer.js` into `exercise_context.js`: after `grade()` resolves, read `problem.explanation` (static, from exercise JSON) or call the appropriate `buildExplanation()` function (dynamic); expose result to the renderer
-- [ ] Support both static (explanation baked into exercise JSON by the curriculum generator — see 2.12) and dynamic (computed client-side) explanation sources; static takes precedence when present
-
-**Telemetry (optional but recommended for pilot):**
-- [ ] Log `explanation_opened` event with: exercise type, problem index, whether the student's answer was correct, attempt count at time of open
-- [ ] Use event data to evaluate whether explanation usage correlates with improved second-attempt accuracy
-
-### 2.10 MusicXML import for teachers
-
-Currently `import_musicxml` is only accessible via the Django admin panel (`/analytic-piano-app-admin/exercises/exercise/`). Needs a dashboard UI for teachers once a teacher/student role distinction exists (see 3.1).
-
-- [ ] Add `POST /dashboard/exercises/import-musicxml/` view (teacher-only once roles exist)
-- [ ] Upload form: file field + title + measure range (start/end) + public checkbox
-- [ ] Wire to existing `import_musicxml` management command logic (extract into a reusable function in `apps/exercises/utils/`)
+- [ ] Add `POST /dashboard/exercises/import-musicxml/` view
+- [ ] Upload form: file + title + measure range + public checkbox
+- [ ] Extract management command logic into `apps/exercises/utils/musicxml.py`
 - [ ] Add "Import MusicXML" button to exercises list page
-- [ ] Guard with role check once 3.1 is complete; for now, any logged-in user can use it
 
 ### 2.14 Recurring assignments ✅ IMPLEMENTED
 
@@ -286,7 +151,7 @@ Teachers cannot manage 400+ exercises — the current list shows ~50 at a time w
 - [ ] Inline quick-edit for description and tags (no page reload)
 - [ ] Bulk-tag action
 - [ ] Links to exercise editor and preview from each row
-- [ ] find a way to allow a teacher to work on a single course or single playlist not seeing all the exercises but only the ones that already belong to those courses or playlists.
+- [ ] find a way to allow a teacher to work on a single course or single playlist not seeing all the exercises but only the ones that already belong to those courses or playlists. 
 
 ### 2.20 Streamlined exercise creation flow
 
@@ -327,37 +192,22 @@ No bird's-eye view of a course under construction. Everything is separate edit p
 _Start after pilot validates the product._
 
 ### 3.1 Role field + teacher verification
-
-- [ ] Add `role` field to `User` model (`TextChoices`: `student` / `teacher`)
-- [ ] Add role selector to registration form
-- [ ] Require `.edu` email for teacher registration
-- [ ] Add manual approval path for non-.edu teacher requests
+- [ ] Add `role` field (`student` / `teacher`), role selector on registration, `.edu` gate + manual approval path
 
 ### 3.2 Email verification
-
-- [ ] New accounts create with `is_active=False`
-- [ ] Send verification email with signed token on registration
-- [ ] Verification link sets `is_active=True`
+- [ ] New accounts `is_active=False`; send signed verification link on registration; link sets `is_active=True`
 
 ### 3.3 Stripe integration
-
-- [ ] Add `stripe_subscription_id` and `subscription_status` to `User`
-- [ ] Wire Stripe Checkout into the group join flow (student pays before enrolling)
-- [ ] Handle payment success webhook → enroll student
-- [ ] Add subscription management page (cancel, update card)
-- [ ] Teachers bypass payment check entirely
+- [ ] `stripe_subscription_id` + `subscription_status` on User; Checkout in group join flow; payment success webhook → enroll; subscription management page
 
 ### 3.4 Access control
-
-- [ ] Add subscription check decorator/mixin
-- [ ] Gate: joining a group, submitting performance in course context, gradebook access
-- [ ] Free (no gate): library browsing, solo practice, creating own content
+- [ ] Subscription check decorator; gate: group join, performance submission in course context, gradebook; free: library, solo practice, own content
 
 ---
 
 ## Phase 4 — Growth
 
-_Prioritize based on pilot feedback._
+_Prioritise based on pilot feedback._
 
 - [ ] Species counterpoint exercise type
 - [ ] Harmonic dictation exercise type
@@ -365,11 +215,11 @@ _Prioritize based on pilot feedback._
 - [ ] Frontend: replace RequireJS with Vite
 - [ ] Frontend: Bootstrap 4 → 5 (or Tailwind)
 - [ ] Frontend: add htmx for partial-page updates
-- [ ] React/Vue SPA rewrite (only if mobile or richer UI is required)
 
 ---
 
 ## Reference
 
+- [architecture.md](architecture.md) — How the app works (data model, request flow, frontend, grading)
 - [spec.md](spec.md) — Full feature specifications with acceptance criteria
 - [hosting_and_roadmap.md](hosting_and_roadmap.md) — Strategic rationale and background

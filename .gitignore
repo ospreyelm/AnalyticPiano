@@ -25,3 +25,4 @@ venv/
 .env
 .prettierignore
 .venv/
+.worktrees/

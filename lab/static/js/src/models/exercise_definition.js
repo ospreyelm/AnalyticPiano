@@ -4,7 +4,8 @@ define([
   "app/components/music/score_timeline",
   "app/utils/analyze",
   "app/models/key_signature",
-], function (_, Config, ScoreTimeline, Analyze, KeySignature) {
+  "tonal",
+], function (_, Config, ScoreTimeline, Analyze, KeySignature, Tonal) {
   var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
@@ -81,6 +82,42 @@ define([
     return abbrev; // return unchanged if no match
   }
 
+  function midiEventToTonalName(event) {
+    var alterStr = "";
+    if (event.alter > 0) {
+      alterStr = new Array(event.alter + 1).join("#");
+    } else if (event.alter < 0) {
+      alterStr = new Array(-event.alter + 1).join("b");
+    }
+    var octave = Math.floor(event.midi / 12) - 1;
+    return event.step.toUpperCase() + alterStr + octave;
+    // e.g. { step: "F", alter: 1, midi: 66 } -> "F#4"
+  }
+
+  function tonalIntervalToHarmonyLabFormat(itvl) {
+    // Tonal returns number-first: "3m", "5P", "4A". HarmonyLab uses quality-first: "m3", "P5", "A4".
+    var num = String(Tonal.Interval.num(itvl));
+    var quality = Tonal.Interval.quality(itvl);
+    return quality + num;
+  }
+
+  function computeIntervalViaTonal(lowerEvent, upperEvent, analysisType, compoundIntervals) {
+    if (!lowerEvent || !upperEvent) return "";
+    try {
+      var lowerName = midiEventToTonalName(lowerEvent);
+      var upperName = midiEventToTonalName(upperEvent);
+      var raw = Tonal.Interval.distance(lowerName, upperName);
+      if (!raw) return "";
+      var itvl = compoundIntervals ? raw : Tonal.Interval.simplify(raw);
+      if (analysisType === "interval_generic") {
+        return String(Math.abs(Tonal.Interval.num(itvl)));
+      }
+      return tonalIntervalToHarmonyLabFormat(itvl);
+    } catch (_err) {
+      return "";
+    }
+  }
+
   function stripFiguredBassTokens(label) {
     // For Roman numeral labels, expand {z}, {u}, etc. to their figured bass equivalents
     // e.g., "V{z}" becomes "V6", "I{z4}" becomes "I6/4"
@@ -93,11 +130,37 @@ define([
     return result.trim();
   }
 
-  function computeWindowLabel(midiStack, analysisType, analyzer) {
+  function computeWindowLabel(midiStack, analysisType, analyzer, compoundIntervals, windowEvents) {
     if (!midiStack || midiStack.length < 2 || !analyzer) {
       return "";
     }
     try {
+      if (analysisType === "interval_generic" || analysisType === "interval_specific") {
+        var lowerMidi = midiStack[0];
+        var upperMidi = midiStack[midiStack.length - 1];
+        // Find matching events for lower and upper notes (by midi value)
+        var lowerEvent = _.find(windowEvents || [], function (e) { return e.midi === lowerMidi; });
+        var upperEvent = _.find(windowEvents || [], function (e) { return e.midi === upperMidi; });
+
+        // analyze.js path
+        var analyzeLabel = "";
+        try {
+          var result = analyzer.to_interval([lowerMidi, upperMidi]);
+          if (result && result.name) {
+            analyzeLabel = analysisType === "interval_generic" ? result.size : result.name;
+            analyzeLabel = normalizeAnalysisLabel(analyzeLabel);
+          }
+        } catch (_e) { analyzeLabel = ""; }
+
+        // Tonal.js path (authoritative)
+        var tonalLabel = computeIntervalViaTonal(lowerEvent, upperEvent, analysisType, compoundIntervals);
+        tonalLabel = normalizeAnalysisLabel(tonalLabel);
+
+        if (analyzeLabel && analyzeLabel !== tonalLabel) {
+          console.warn("[interval] analyze/tonal mismatch:", analyzeLabel, "vs", tonalLabel, "midi:", lowerMidi, upperMidi);
+        }
+        return tonalLabel || analyzeLabel;
+      }
       if (analysisType === "figured_bass") {
         var abbrevFigure = analyzer.abbrev_thoroughbass_figure(midiStack);
         var expanded = expandFiguredBassToken(abbrevFigure);
@@ -157,12 +220,20 @@ define([
     return grouped;
   }
 
-  function buildChoices(correctLabel, allLabels, analysisType) {
+  function buildChoices(correctLabel, allLabels, analysisType, compoundIntervals) {
     var pool = _.uniq(_.filter(allLabels, function (l) {
       return !!l && l !== correctLabel;
     }));
     var fallbacks = analysisType === "figured_bass"
       ? ["5/3", "6", "6/4", "6/5", "7"]
+      : analysisType === "interval_generic"
+      ? (compoundIntervals
+        ? ["2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]
+        : ["2", "3", "4", "5", "6", "7", "8"])
+      : analysisType === "interval_specific"
+      ? (compoundIntervals
+        ? ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "m9", "M9", "m10", "M10", "P11", "P12", "m13", "M13", "m14", "M14"]
+        : ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8"])
       : ["I", "ii", "IV", "V", "vi"];
     _.each(fallbacks, function (item) {
       if (item !== correctLabel && pool.indexOf(item) === -1) {
@@ -191,9 +262,10 @@ define([
     var keySignature = new KeySignature(hlKey, exercise.keySignature);
     var analyzer = new Analyze(keySignature);
     var analysisType = exercise.analysisType || "roman";
+    var compoundIntervals = exercise.compoundIntervals || false;
 
     var labels = _.map(windows, function (window) {
-      return computeWindowLabel(window.midiStack, analysisType, analyzer);
+      return computeWindowLabel(window.midiStack, analysisType, analyzer, compoundIntervals, window.events);
     });
 
     return _.map(windows, function (window, idx) {
@@ -202,7 +274,7 @@ define([
         windowIndex: idx,
         onset: window.onset,
         answer: answer,
-        choices: buildChoices(answer, labels, analysisType),
+        choices: buildChoices(answer, labels, analysisType, compoundIntervals),
       };
     });
   }
@@ -504,6 +576,7 @@ define([
         exercise.type = "chorale_identification";
         exercise.score = definition.score || {};
         exercise.analysisType = definition.analysisType || "roman";
+        exercise.compoundIntervals = definition.compoundIntervals || false;
         exercise.identMode = definition.identMode || "submit";
         exercise.display = definition.display || {};
 

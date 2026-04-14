@@ -101,8 +101,12 @@ def transpose(exercise, staff_sig_request):
                 octave_displ += 1
             octave_displ *= -1
     else:
-        # simply transpose upwards
-        midi_vector = pc_vector
+        # Pick the direction that results in the smaller interval (≤ 6 semitones).
+        # For exactly 6 semitones (tritone), prefer going down.
+        if pc_vector >= 6:
+            midi_vector = pc_vector - 12  # go down instead
+        else:
+            midi_vector = pc_vector
     # TODO: allow additional transpose options (incl. define a lowest pseudo_key, set the lowest tenor note)
 
     if midi_vector == None:

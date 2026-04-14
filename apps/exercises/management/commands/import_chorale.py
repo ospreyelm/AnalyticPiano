@@ -25,7 +25,8 @@ class Command(BaseCommand):
         parser.add_argument('--start', type=int, default=0, help='Start measure (0-indexed)')
         parser.add_argument('--end', type=int, default=4, help='End measure (exclusive)')
         parser.add_argument('--mode', choices=['play', 'identify'], default='play', help='Exercise creation mode')
-        parser.add_argument('--analysis', choices=['roman', 'figured_bass'], default='roman', help='Analysis label type for identify mode')
+        parser.add_argument('--analysis', choices=['roman', 'figured_bass', 'interval_generic', 'interval_specific'], default='roman', help='Analysis label type for identify mode')
+        parser.add_argument('--compound', action='store_true', default=False, help='Allow compound intervals (default: reduce to within octave). Only applies to interval analysis types.')
         parser.add_argument('--public', action='store_true', help='Make the exercise public')
 
     def handle(self, *args, **options):
@@ -35,6 +36,7 @@ class Command(BaseCommand):
         end_measure = options['end']
         mode = options['mode']
         analysis_type = options['analysis']
+        compound = options['compound']
         is_public = options['public']
 
         # Find the author
@@ -63,22 +65,50 @@ class Command(BaseCommand):
         if not excerpt_measures:
             raise CommandError(f'No measures in range [{start_measure}:{end_measure}]')
 
+        def count_voices(selected_measures):
+            if not selected_measures:
+                return 0
+            first = selected_measures[0].get('staves', {})
+            return sum(len(stave.get('voices', [])) for stave in first.values())
+
+        if analysis_type in ('interval_generic', 'interval_specific'):
+            voice_count = count_voices(excerpt_measures)
+            if voice_count != 2:
+                raise CommandError(
+                    f'Interval identification requires exactly 2 voices; '
+                    f'found {voice_count} in {corpus_file}.'
+                )
+
         # Build exercise data
         bwv = corpus_file.replace('.json', '').upper()
         title = f"{bwv} (mm. {start_measure+1}–{end_measure})"
 
         if mode == 'identify':
-            analysis_label = 'Roman numerals' if analysis_type == 'roman' else 'figured bass'
+            if analysis_type == 'roman':
+                analysis_label = 'Roman numerals'
+            elif analysis_type == 'figured_bass':
+                analysis_label = 'figured bass'
+            elif analysis_type == 'interval_generic':
+                analysis_label = 'generic intervals'
+            else:
+                analysis_label = 'specific intervals'
+
+            if analysis_type in ('interval_generic', 'interval_specific'):
+                intro = f"Identify the {analysis_label} in this two-voice excerpt of {bwv}, measures {start_measure+1}–{end_measure}."
+            else:
+                intro = f"Label the {analysis_label} for {bwv}, measures {start_measure+1}–{end_measure}."
+
             exercise_data = {
                 "type": "chorale_identification",
                 "identMode": "submit",
                 "analysisType": analysis_type,
+                "compoundIntervals": compound,
                 "score": {
                     "meta": meta,
                     "measures": excerpt_measures
                 },
-                "introText": f"Label the {analysis_label} for {bwv}, measures {start_measure+1}–{end_measure}.",
-                "reviewText": f"Well done! You labeled all chords for {bwv}, measures {start_measure+1}–{end_measure}.",
+                "introText": intro,
+                "reviewText": f"Well done! You completed {bwv}, measures {start_measure+1}–{end_measure}.",
                 "key": meta.get("key", "C"),
                 "staffDistribution": "chorale"
             }
