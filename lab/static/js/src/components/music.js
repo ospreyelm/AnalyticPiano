@@ -397,11 +397,12 @@ define([
       if (
         context &&
         typeof context.goToNextExercise === "function" &&
-        context.sealed !== true
+        context.sealed !== true &&
+        !(context._isIdentificationExercise && context._isIdentificationExercise())
       ) {
         var handled = context.goToNextExercise({ fromUI: true });
         if (handled) {
-          if (handled.completedExercise || !handled.advancedPage) {
+          if (handled.completedExercise) {
             this.renderPristine("next");
           }
           return this;
