@@ -795,6 +795,16 @@ define([
             },
           });
 
+          // For chorale_identification, sync page size to the number of note
+          // columns actually rendered — _identPageSize=4 (the legacy default)
+          // is too small when a single voice has more than 4 notes per screen.
+          if (this._isChoraleIdentificationExercise()) {
+            var layoutCount = Object.keys(this._identWindowLayout).length;
+            if (layoutCount > 0) {
+              this.exerciseContext._identPageSize = layoutCount;
+            }
+          }
+
           if (this._isIdentificationLikeExercise()) {
             this.drawIdentificationLabels();
           }

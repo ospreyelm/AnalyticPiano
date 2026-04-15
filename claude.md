@@ -1,6 +1,6 @@
 # HarmonyLab Chorale Exercise System - Implementation Guide
 
-**Status: ENHANCED** ✓ Core issues fixed + features 1 & 3 implemented. See updates below.
+**Status: ENHANCED** ✓ Core issues fixed + features 1 & 3 implemented + pitch identification exercise type implemented. See updates below.
 
 ## Overview
 
@@ -65,6 +65,24 @@ problems: [
 
 **Benefit:** Enables analytics, error tracking, and future visual feedback.
 
+### Pitch Identification Exercise Type ✅
+
+**Spec:** [docs/superpowers/specs/2026-04-14-pitch-identification-design.md](docs/superpowers/specs/2026-04-14-pitch-identification-design.md)
+
+Six pitch-oriented `analysisType` values (`note_name`, `solfege`, `do_based_solfege`, `scale_degree`, `fixed_do`, `pitch_class`) extend `chorale_identification` for pitch identification exercises. The student sees a single-voice score and names each note by clicking a `?` slot and choosing from a popup of 5 options.
+
+**Files changed:**
+- `apps/exercises/pitch_voice_utils.py` — new shared `strip_to_voice()` + `validate_pitch_voice()` helpers
+- `apps/exercises/management/commands/import_chorale.py` — 6 new `--analysis` choices + `--voice` arg
+- `apps/dashboard/views/exercises.py` — `duplicate-as-pitch-identification` POST action
+- `apps/dashboard/templates/dashboard/edit-exercise.html` — "Duplicate as Pitch Identification" button + modal
+- `lab/static/js/src/models/exercise_definition.js` — `isPitchAnalysisType()`, label/choice logic
+- `lab/static/js/src/components/music/exercise_sheet.js` — `_identPageSize` synced to rendered column count (bug fix: was hardcoded to 4, causing only 4 `?` slots per screen regardless of note count)
+
+**Dashboard flow:** Open a chorale exercise → click "Duplicate as Pitch Identification" → select voices, analysis type, and identification mode → one new `chorale_identification` exercise is created per selected voice.
+
+**CLI flow:** `python manage.py import_chorale bwv1.6.json --mode identify --analysis note_name --voice soprano --start 0 --end 4`
+
 ## Architecture
 
 ### Key Files
@@ -76,6 +94,7 @@ problems: [
 - **[exercise_definition.js](lab/static/js/src/models/exercise_definition.js)** - Exercise type definition
 - **[vexflow_adapter.js](lab/static/js/src/components/music/vexflow_adapter.js)** - Rendering with analysis overlays
 - **[import_chorale.py](apps/exercises/management/commands/import_chorale.py)** - Django management command for importing chorales
+- **[pitch_voice_utils.py](apps/exercises/pitch_voice_utils.py)** - Shared voice stripping and validation for pitch identification
 - **[chorale_exercises_plan.md](docs/chorale_exercises_plan.md)** - Curriculum and design specification
 
 ### Data Flow

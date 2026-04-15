@@ -2,6 +2,46 @@
 {% block extra_buttons %}
     {% if is_chorale %}
         <button type="submit" class="btn dashboard-btn" name="duplicate-as-identification">Save, Duplicate as Identification</button>
+        <button type="button" class="btn dashboard-btn" id="open-pitch-duplicate-modal">Duplicate as Pitch Identification</button>
+        <dialog id="pitch-duplicate-modal">
+            <div style="min-width: 320px; padding: 6px 4px;">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">Duplicate as pitch identification</h4>
+
+                <div style="margin-bottom: 8px;">
+                    <label for="pitch-analysis-type" style="margin-right: 6px;">Analysis type:</label>
+                    <select id="pitch-analysis-type" name="analysisType">
+                        <option value="note_name">Note name</option>
+                        <option value="solfege">Solfege</option>
+                        <option value="do_based_solfege">Do-based solfege</option>
+                        <option value="scale_degree">Scale degree</option>
+                        <option value="fixed_do">Fixed do</option>
+                        <option value="pitch_class">Pitch class</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label for="pitch-ident-mode" style="margin-right: 6px;">Identification mode:</label>
+                    <select id="pitch-ident-mode" name="identMode">
+                        <option value="practice">Practice</option>
+                        <option value="submit">Submit</option>
+                        <option value="test">Test</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <strong style="font-size: 0.95em;">Voices</strong><br>
+                    <label style="margin-right: 8px;"><input type="checkbox" name="voices" value="soprano" checked> Soprano</label>
+                    <label style="margin-right: 8px;"><input type="checkbox" name="voices" value="alto" checked> Alto</label>
+                    <label style="margin-right: 8px;"><input type="checkbox" name="voices" value="tenor" checked> Tenor</label>
+                    <label style="margin-right: 8px;"><input type="checkbox" name="voices" value="bass" checked> Bass</label>
+                </div>
+
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button type="button" class="btn dashboard-btn" id="cancel-pitch-duplicate-modal">Cancel</button>
+                    <button type="submit" class="btn dashboard-btn" name="duplicate-as-pitch-identification" value="1">Create</button>
+                </div>
+            </div>
+        </dialog>
     {% endif %}
     {% with form.instance.get_previous_authored_exercise as previous %}
         {% if not previous == None %}
@@ -18,5 +58,24 @@
 {% block js_extra %}
     <script>
         $('ul > li').css('display', 'table');
+        (function () {
+            var openBtn = document.getElementById('open-pitch-duplicate-modal');
+            var cancelBtn = document.getElementById('cancel-pitch-duplicate-modal');
+            var modal = document.getElementById('pitch-duplicate-modal');
+
+            if (!openBtn || !cancelBtn || !modal) {
+                return;
+            }
+
+            openBtn.addEventListener('click', function () {
+                if (typeof modal.showModal === 'function') {
+                    modal.showModal();
+                }
+            });
+
+            cancelBtn.addEventListener('click', function () {
+                modal.close();
+            });
+        })();
     </script>
 {% endblock %}

@@ -1,7 +1,9 @@
 # Pitch Identification Exercise Type — Design Spec
 
 _Date: 2026-04-14_
-_Status: Approved_
+_Status: Implemented_
+
+_Implemented: 2026-04-14_
 
 ---
 
@@ -123,7 +125,7 @@ The SATB → staff/voice mapping assumes standard ordering, which holds for all 
 Given a CIR score and a voice name, `strip_to_voice()`:
 1. Identifies the target staff name and voice index from `VOICE_MAP`
 2. Builds a new score preserving all measure-level fields (e.g. `number`) and replacing only the `staves` slice with the single extracted voice
-3. Calls `validate_pitch_voice()` on the result — raises `ValueError` if any window has zero notes or more than one note
+3. Calls `validate_pitch_voice()` on the result — raises `ValueError` for unsupported multi-note voice content (e.g. chord items)
 
 ```python
 VOICE_MAP = {
@@ -158,7 +160,7 @@ def strip_to_voice(score, voice_name):
 
 
 def validate_pitch_voice(score, voice_name):
-    """Raise ValueError if any window has zero or more than one note."""
+    """Raise ValueError when unsupported multi-note voice content is found."""
     for measure in score.get("measures", []):
         for staff_name, stave in measure.get("staves", {}).items():
             for v_idx, voice in enumerate(stave.get("voices", [])):

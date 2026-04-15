@@ -130,11 +130,53 @@ define([
     return result.trim();
   }
 
+  function isPitchAnalysisType(analysisType) {
+    return [
+      "note_name",
+      "solfege",
+      "do_based_solfege",
+      "scale_degree",
+      "fixed_do",
+      "pitch_class",
+    ].indexOf(analysisType) !== -1;
+  }
+
   function computeWindowLabel(midiStack, analysisType, analyzer, compoundIntervals, windowEvents) {
-    if (!midiStack || midiStack.length < 2 || !analyzer) {
+    if (!midiStack || !midiStack.length || !analyzer) {
       return "";
     }
     try {
+      if (isPitchAnalysisType(analysisType)) {
+        if (midiStack.length !== 1) {
+          console.warn("[chorale_identification] expected a single MIDI note for pitch analysis type", analysisType, "but got", midiStack);
+          return "";
+        }
+
+        var midi = midiStack[0];
+        if (analysisType === "note_name") {
+          return normalizeAnalysisLabel(analyzer.to_note_name([midi]));
+        }
+        if (analysisType === "solfege") {
+          return normalizeAnalysisLabel(analyzer.to_solfege([midi]));
+        }
+        if (analysisType === "do_based_solfege") {
+          return normalizeAnalysisLabel(analyzer.to_do_based_solfege([midi]));
+        }
+        if (analysisType === "scale_degree") {
+          return normalizeAnalysisLabel(analyzer.to_scale_degree([midi]));
+        }
+        if (analysisType === "fixed_do") {
+          return normalizeAnalysisLabel(analyzer.to_fixed_do([midi]));
+        }
+        if (analysisType === "pitch_class") {
+          return analyzer.to_pitch_class([midi]).toString();
+        }
+      }
+
+      if (midiStack.length < 2) {
+        return "";
+      }
+
       if (analysisType === "interval_generic" || analysisType === "interval_specific") {
         var lowerMidi = midiStack[0];
         var upperMidi = midiStack[midiStack.length - 1];
@@ -226,6 +268,14 @@ define([
     }));
     var fallbacks = analysisType === "figured_bass"
       ? ["5/3", "6", "6/4", "6/5", "7"]
+      : analysisType === "note_name"
+      ? ["C", "D", "E", "F", "G", "A", "B"]
+      : (analysisType === "solfege" || analysisType === "do_based_solfege" || analysisType === "fixed_do")
+      ? ["Do", "Re", "Mi", "Fa", "So", "La", "Ti"]
+      : analysisType === "scale_degree"
+      ? ["1", "2", "3", "4", "5", "6", "7"]
+      : analysisType === "pitch_class"
+      ? ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
       : analysisType === "interval_generic"
       ? (compoundIntervals
         ? ["2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]

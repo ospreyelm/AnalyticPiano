@@ -12,8 +12,19 @@ import os
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 from apps.exercises.models import Exercise
+from apps.exercises.pitch_voice_utils import strip_to_voice
 
 User = get_user_model()
+
+
+PITCH_ANALYSIS_TYPES = (
+    'note_name',
+    'solfege',
+    'do_based_solfege',
+    'scale_degree',
+    'fixed_do',
+    'pitch_class',
+)
 
 
 class Command(BaseCommand):
@@ -25,7 +36,13 @@ class Command(BaseCommand):
         parser.add_argument('--start', type=int, default=0, help='Start measure (0-indexed)')
         parser.add_argument('--end', type=int, default=4, help='End measure (exclusive)')
         parser.add_argument('--mode', choices=['play', 'identify'], default='play', help='Exercise creation mode')
-        parser.add_argument('--analysis', choices=['roman', 'figured_bass', 'interval_generic', 'interval_specific'], default='roman', help='Analysis label type for identify mode')
+        parser.add_argument(
+            '--analysis',
+            choices=['roman', 'figured_bass', 'interval_generic', 'interval_specific', *PITCH_ANALYSIS_TYPES],
+            default='roman',
+            help='Analysis label type for identify mode',
+        )
+        parser.add_argument('--voice', choices=['soprano', 'alto', 'tenor', 'bass'], help='Voice to isolate for pitch-based identify mode')
         parser.add_argument('--compound', action='store_true', default=False, help='Allow compound intervals (default: reduce to within octave). Only applies to interval analysis types.')
         parser.add_argument('--public', action='store_true', help='Make the exercise public')
 
@@ -36,6 +53,7 @@ class Command(BaseCommand):
         end_measure = options['end']
         mode = options['mode']
         analysis_type = options['analysis']
+        voice_name = options.get('voice')
         compound = options['compound']
         is_public = options['public']
 
@@ -84,14 +102,39 @@ class Command(BaseCommand):
         title = f"{bwv} (mm. {start_measure+1}–{end_measure})"
 
         if mode == 'identify':
+            score_for_ident = {
+                'meta': meta,
+                'measures': excerpt_measures,
+            }
+
+            if analysis_type in PITCH_ANALYSIS_TYPES:
+                if not voice_name:
+                    raise CommandError('--voice is required for pitch analysis types in identify mode')
+                try:
+                    score_for_ident = strip_to_voice(score_for_ident, voice_name)
+                except ValueError as exc:
+                    raise CommandError(str(exc))
+
             if analysis_type == 'roman':
                 analysis_label = 'Roman numerals'
             elif analysis_type == 'figured_bass':
                 analysis_label = 'figured bass'
             elif analysis_type == 'interval_generic':
                 analysis_label = 'generic intervals'
-            else:
+            elif analysis_type == 'interval_specific':
                 analysis_label = 'specific intervals'
+            elif analysis_type == 'note_name':
+                analysis_label = 'note names'
+            elif analysis_type == 'solfege':
+                analysis_label = 'solfege syllables'
+            elif analysis_type == 'do_based_solfege':
+                analysis_label = 'do-based solfege syllables'
+            elif analysis_type == 'scale_degree':
+                analysis_label = 'scale degrees'
+            elif analysis_type == 'fixed_do':
+                analysis_label = 'fixed-do syllables'
+            else:
+                analysis_label = 'pitch classes'
 
             if analysis_type in ('interval_generic', 'interval_specific'):
                 intro = f"Identify the {analysis_label} in this two-voice excerpt of {bwv}, measures {start_measure+1}–{end_measure}."
@@ -103,10 +146,7 @@ class Command(BaseCommand):
                 "identMode": "submit",
                 "analysisType": analysis_type,
                 "compoundIntervals": compound,
-                "score": {
-                    "meta": meta,
-                    "measures": excerpt_measures
-                },
+                "score": score_for_ident,
                 "introText": intro,
                 "reviewText": f"Well done! You completed {bwv}, measures {start_measure+1}–{end_measure}.",
                 "key": meta.get("key", "C"),
