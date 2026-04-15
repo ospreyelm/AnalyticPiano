@@ -136,8 +136,10 @@ define([
         $(".js-play-view-controls").hide();
         $("#mainmenu").hide();
       }
-      this.inputChords.bind("change", this.triggerTimer);
-      this.inputChords.bind("change", this.grade);
+      if (!this._isIdentificationExercise()) {
+        this.inputChords.bind("change", this.triggerTimer);
+        this.inputChords.bind("change", this.grade);
+      }
     },
     /**
      * For tempo assessment
