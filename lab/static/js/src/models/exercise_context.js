@@ -581,6 +581,58 @@ define([
           console.log("Possible save failure", textStatus, errorThrown);
         });
     },
+    saveIdentState: function () {
+      if (!this._isIdentificationExercise()) return;
+      var exerciseId = this.definition.exercise.exerciseId;
+      if (!exerciseId) return;
+      if (!this._identStateCache) this._identStateCache = {};
+      this._identStateCache[exerciseId] = {
+        answers: _.clone(this.grader.answers),
+        identPage: this._identPage
+      };
+    },
+
+    restoreIdentState: function (exerciseId) {
+      if (!this._isIdentificationExercise()) return;
+      var cached = this._identStateCache && this._identStateCache[exerciseId];
+      if (cached) {
+        this.grader.answers = _.clone(cached.answers);
+        this._identPage = cached.identPage;
+      } else {
+        // Try server fallback (async, fires after render)
+        this._restoreIdentStateFromServer(exerciseId);
+        // Reset immediately so the page shows clean while the fetch runs
+        this.grader.reset();
+        this._identPage = 0;
+      }
+    },
+
+    _restoreIdentStateFromServer: function (exerciseId) {
+      var self = this;
+      // Set a restoring flag so any input that arrives before the response
+      // is ignored rather than graded against a blank state.
+      this.grader._restoring = true;
+      $.ajax({
+        type: "GET",
+        url: "/ajax/identification-answers/",
+        data: { exercise_id: exerciseId },
+        dataType: "json",
+        timeout: 5000,
+        success: function (data) {
+          self.grader._restoring = false;
+          if (data && data.answers && Object.keys(data.answers).length > 0) {
+            self.grader.answers = data.answers;
+            self._identPage = data.page_num || 0;
+            self.updateDisplayChords();
+            self.trigger("graded");
+          }
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          self.grader._restoring = false;
+          console.log("Identification state restore failed:", textStatus, errorThrown);
+        }
+      });
+    },
     /**
      * Returns chords for display on screen.
      *
