@@ -401,7 +401,7 @@ define([
       ) {
         var handled = context.goToNextExercise({ fromUI: true });
         if (handled) {
-          if (handled.completedExercise) {
+          if (handled.completedExercise || !handled.advancedPage) {
             this.renderPristine("next");
           }
           return this;
