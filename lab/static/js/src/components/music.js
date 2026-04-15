@@ -184,6 +184,12 @@ define([
         let scex = sheetComponent.exerciseContext;
         let setdef = scex.settings.definition;
 
+        // Save current identification state before navigating away
+        if (scex._isIdentificationExercise && scex._isIdentificationExercise()) {
+          scex.saveIdentState();
+          scex.submitIdentificationAnswers({ is_page_submit: false });
+        }
+
         // The following was used to generate newData as we built this function
         // let currentData = JSON.stringify(setdef.settings.definition, null, 0);
         let newData = {};
@@ -357,6 +363,12 @@ define([
           scex.exerciseChords = scex.createExerciseChords();
 
           this.trigger("change");
+        }
+
+        // Restore identification state for new exercise (from cache or server)
+        if (scex._isIdentificationExercise && scex._isIdentificationExercise()) {
+          var newExerciseId = newData.exerciseId;
+          scex.restoreIdentState(newExerciseId);
         }
 
         sheetComponent.renderExerciseInfo();
