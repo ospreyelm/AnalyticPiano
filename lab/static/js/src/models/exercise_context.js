@@ -633,6 +633,65 @@ define([
         }
       });
     },
+    submitIdentificationAnswers: function (options) {
+      var isPageSubmit = options && options.is_page_submit === true;
+      if (!this._isIdentificationExercise()) return;
+      if (!this.definition.exercise.performing_course) return;
+
+      var grader = this.grader;
+      if (!grader.answers || Object.keys(grader.answers).length === 0) return;
+
+      // Compute correctness and score from current grader state
+      var allProblems = this.definition.getProblems();
+      var answers = grader.answers;
+      var correctness = {};
+      var correct = 0, incorrect = 0, unanswered = 0;
+
+      for (var i = 0; i < allProblems.length; i++) {
+        if (answers.hasOwnProperty(String(i))) {
+          var isCorrect = answers[String(i)] === allProblems[i].answer;
+          correctness[String(i)] = isCorrect;
+          if (isCorrect) { correct++; } else { incorrect++; }
+        } else {
+          unanswered++;
+        }
+      }
+
+      var idx = this.definition.getExerciseList().reduce(function (sel, cur, index) {
+        return sel < 0 && cur.selected ? index : sel;
+      }, -1);
+      if (idx < 0) return;
+      var listEntry = this.definition.getExerciseList()[idx];
+
+      // Build correct_answers snapshot from problem definitions
+      var correct_answers = {};
+      for (var j = 0; j < allProblems.length; j++) {
+        correct_answers[String(j)] = allProblems[j].answer;
+      }
+
+      var payload = {
+        course_ID: this.definition.exercise.performing_course,
+        playlist_ID: listEntry.id.split("/")[0],
+        exercise_num: parseInt(listEntry.id.split("/")[1], 10),
+        answers: answers,
+        correctness: correctness,
+        score: { correct: correct, incorrect: incorrect, unanswered: unanswered },
+        correct_answers: correct_answers,
+        page_num: this._identPage,
+        is_page_submit: isPageSubmit
+      };
+
+      $.ajax({
+        type: "POST",
+        url: "/ajax/identification-answers/",
+        data: { data: JSON.stringify(payload) },
+        dataType: "text"
+      }).done(function () {
+        console.log("Identification answers saved");
+      }).fail(function (jqXHR, textStatus, errorThrown) {
+        console.log("Identification answers save failed", textStatus, errorThrown);
+      });
+    },
     /**
      * Returns chords for display on screen.
      *
