@@ -62,6 +62,7 @@
         {% endif %}
         {% block filters %}{% endblock %}
         {% include 'django_tables2/bootstrap4.html' with table=table %}
+        {% block after_table %}{% endblock %}
         {% if courses_author and courses_author == me %}
             {% block export-courses %}{% endblock %}
         {% endif %}
