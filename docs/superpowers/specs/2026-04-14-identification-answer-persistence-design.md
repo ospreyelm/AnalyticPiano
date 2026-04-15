@@ -92,18 +92,27 @@ restoreIdentState: function (exerciseId) {
 
 _restoreIdentStateFromServer: function (exerciseId) {
   var self = this;
+  // Set a restoring flag so any input that arrives before the response
+  // is ignored rather than graded against a blank state.
+  this.grader._restoring = true;
   $.ajax({
     type: "GET",
     url: "/ajax/identification-answers/",
     data: { exercise_id: exerciseId },
     dataType: "json",
+    timeout: 5000,
     success: function (data) {
+      self.grader._restoring = false;
       if (data && data.answers && Object.keys(data.answers).length > 0) {
         self.grader.answers = data.answers;
         self._identPage = data.page_num || 0;
         self.updateDisplayChords();
         self.trigger("graded");
       }
+    },
+    error: function (jqXHR, textStatus, errorThrown) {
+      self.grader._restoring = false;
+      console.log("Identification state restore failed:", textStatus, errorThrown);
     }
   });
 },
@@ -206,7 +215,9 @@ Creates one `IdentificationAttempt` row. Only fires when `performing_course` is 
 }
 ```
 
-**Response:** HTTP 201 on success.
+**Response:** HTTP 201 on success. HTTP 400 with a JSON error message if `course_ID`, `playlist_ID`, or `exercise_num` are invalid.
+
+**CSRF:** The endpoint uses `@csrf_exempt` (same pattern as `submit_exercise_performance`). Authentication is enforced via `@login_required`.
 
 **Lookup logic** (same as `submit_exercise_performance`):
 ```python
@@ -309,7 +320,15 @@ submitIdentificationAnswers: function (options) {
 
 **Trigger points:**
 
-1. **Submit button / auto-advance on page completion** — in `submitIdentPage`, after `submitExerciseReport()` is called and `graded.result === CORRECT`, call `this.submitIdentificationAnswers({ is_page_submit: true })`.
+1. **Submit button / auto-advance on page completion** — in `ExerciseContext.submitIdentPage()`, immediately after `this.submitExerciseReport()` and before `this.goToIdentPage()` or `this.triggerNextExercise()`. This ensures answers are saved before any navigation occurs:
+
+```javascript
+// Inside submitIdentPage, in the graded.result === CORRECT branch:
+if (this.sealed != true) {
+  this.submitExerciseReport();
+  this.submitIdentificationAnswers({ is_page_submit: true });  // NEW — after report, before navigation
+}
+```
 
 2. **Navigate away** — in `renderPristine` (music.js), as described in Bug Fix 2 above, before loading new data.
 
@@ -368,7 +387,23 @@ def identification_answers_view(request, course_id, student_id):
 
 For each exercise: a table with columns **#**, **Correct Answer**, **Student Answer**, **Result** (✓/✗/–). Above the table: exercise title, score summary (e.g. "8 / 12 correct"), timestamp of latest attempt. Below the table: a `<details>` element containing the full attempt history (same table format, one per attempt).
 
-A link to this view is added per student row in `course_activity_view` — only rendered when the course contains at least one identification exercise (checked via `exercise.data.get("type") == "chorale_identification"` or `exercise.data.get("analysisType")`).
+A link to this view is added per student row in `course_activity_view` — only rendered when the course contains at least one identification exercise. Detection logic:
+
+```python
+PITCH_ANALYSIS_TYPES = {
+    "note_name", "solfege", "do_based_solfege",
+    "scale_degree", "fixed_do", "pitch_class",
+    "interval_generic", "interval_specific",
+    "roman", "figured_bass",  # all chorale_identification types
+}
+
+def course_has_identification_exercises(course):
+    return course.exercise_set.filter(
+        data__type="chorale_identification"
+    ).exists()
+```
+
+This is a single DB query using the JSONField lookup `data__type`. If `data__type` is not indexed, it falls back to a Python-level check — acceptable for the teacher view which is not performance-critical.
 
 ---
 
@@ -419,7 +454,7 @@ Teacher opens identification-answers view
 ### Files NOT touched
 
 - `apps/exercises/models.py` (`PerformanceData`) — no changes
-- `lab/static/js/src/models/identification_grader.js` — used as-is
+- `lab/static/js/src/models/identification_grader.js` — used as-is; the `_restoring` flag is set externally on the grader instance by `_restoreIdentStateFromServer`, no changes to the grader class itself
 - `lab/static/js/src/models/exercise_definition.js` — no changes
 
 ---
@@ -429,6 +464,8 @@ Teacher opens identification-answers view
 - The server-fallback restore (`_restoreIdentStateFromServer`) is async: the page renders blank for a brief moment before answers appear. This is acceptable since it only occurs after a hard page reload, not normal navigation.
 - `IdentificationAttempt` has no unique constraint — multiple rows can exist for the same (user, exercise, course, page_num). This is intentional: all attempts are preserved. The teacher view always shows the latest by `submitted_at`.
 - Correct answers are snapshotted at submission time in `correct_answers`. If an exercise is edited after attempts are saved, the teacher view will show the original correct answers that the student was tested against, not the new ones. This is the correct behaviour.
+- The teacher view loads all attempts for a student in a course in a single query. For courses with many identification exercises, consider adding pagination or a date-range filter in a future version.
+- The `_restoring` flag on the grader instance blocks input during async server restore. Any MIDI input during this window (unlikely but possible) is silently dropped. This is acceptable since identification exercises don't respond to MIDI anyway (Bug Fix 1).
 
 ---
 
