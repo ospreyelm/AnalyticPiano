@@ -397,8 +397,7 @@ define([
       if (
         context &&
         typeof context.goToNextExercise === "function" &&
-        context.sealed !== true &&
-        !(context._isIdentificationExercise && context._isIdentificationExercise())
+        context.sealed !== true
       ) {
         var handled = context.goToNextExercise({ fromUI: true });
         if (handled) {

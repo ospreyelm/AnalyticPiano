@@ -1011,6 +1011,12 @@ define([
           triggerPlaylistAdvance: !fromUI,
         });
       }
+      // When called from the UI Next button, return null so the caller
+      // (renderNextExercise) handles renderPristine — avoids re-broadcasting
+      // NEXTEXERCISE which would recurse back into renderNextExercise.
+      if (fromUI) {
+        return null;
+      }
       this.exercise.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
       return null;
     },
