@@ -9,6 +9,7 @@ from apps.accounts.views import (
 from apps.exercises.views import (
     playlist_performance_view,
     submit_exercise_performance,
+    identification_answers_view,
 )
 
 from .views import (
@@ -49,6 +50,11 @@ urlpatterns = [
         "ajax/exercise-performance/",
         submit_exercise_performance,
         name="exercise-performance",
+    ),
+    path(
+        "ajax/identification-answers/",
+        identification_answers_view,
+        name="identification-answers",
     ),
     # Exercises, Playlists, Courses
     path("exercises/<str:exercise_id>/", ExerciseView.as_view(), name="exercise-view"),

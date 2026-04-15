@@ -3,13 +3,13 @@ import json
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django_tables2 import Column
 
-from apps.exercises.models import Course, Playlist, PerformanceData, User as Performers
+from apps.exercises.models import Course, Playlist, PerformanceData, User as Performers, IdentificationAttempt
 from apps.exercises.tables import PlaylistActivityTable
 
 User = get_user_model()
@@ -113,3 +113,58 @@ def submit_exercise_performance(request):
         data=performance_data,
     )
     return HttpResponse(status=201)
+
+
+@login_required
+@csrf_exempt
+def identification_answers_view(request):
+    if request.method == "POST":
+        data = json.loads(request.POST.get("data"))
+        data_course_id = data["course_ID"]
+        data_playlist_id = data["playlist_ID"]
+        data_exercise_num = data["exercise_num"]
+
+        try:
+            course = Course.objects.get(id=data_course_id)
+            playlist = Playlist.objects.get(id=data_playlist_id)
+            exercise = playlist.get_exercise_obj_by_num(int(data_exercise_num))
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+        IdentificationAttempt.objects.create(
+            user=request.user,
+            exercise=exercise,
+            course=course,
+            playlist=playlist,
+            answers=data.get("answers", {}),
+            correctness=data.get("correctness", {}),
+            score=data.get("score", {}),
+            correct_answers=data.get("correct_answers", {}),
+            page_num=data.get("page_num"),
+            is_page_submit=data.get("is_page_submit", False),
+        )
+        return HttpResponse(status=201)
+
+    elif request.method == "GET":
+        exercise_id = request.GET.get("exercise_id")
+        if not exercise_id:
+            return JsonResponse({})
+        attempt = (
+            IdentificationAttempt.objects.filter(
+                user=request.user,
+                exercise_id=exercise_id,
+            )
+            .order_by("-submitted_at")
+            .first()
+        )
+        if not attempt:
+            return JsonResponse({})
+        return JsonResponse({
+            "answers": attempt.answers,
+            "correctness": attempt.correctness,
+            "score": attempt.score,
+            "page_num": attempt.page_num,
+            "submitted_at": attempt.submitted_at.strftime("%Y-%m-%d %H:%M:%S"),
+        })
+
+    return HttpResponse(status=405)
