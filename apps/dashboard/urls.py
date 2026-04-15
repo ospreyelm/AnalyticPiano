@@ -25,6 +25,7 @@ from apps.dashboard.views.courses import (
     course_edit_view,
     course_delete_view,
     course_activity_view,
+    identification_answers_view,
 )
 from apps.dashboard.views.exercises import (
     exercises_list_view,
@@ -73,6 +74,11 @@ urlpatterns = [
     path("courses/<str:course_id>/", course_edit_view, name="edit-course"),
     path("courses/<str:course_id>/delete/", course_delete_view, name="delete-course"),
     path("courses/<str:course_id>/activity/", course_activity_view, name="course-activity"),
+    path(
+        "courses/<str:course_id>/identification-answers/<int:student_id>/",
+        identification_answers_view,
+        name="course-identification-answers",
+    ),
     path("courses/<int:courses_author_id>/", courses_by_user_view, name="courses-by-user"),
     # Performances
     path("performances/", performances_list_view, name="performed-playlists"),
