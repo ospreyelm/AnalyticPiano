@@ -586,10 +586,20 @@ define([
       var exerciseId = this.definition.exercise.exerciseId;
       if (!exerciseId) return;
       if (!this._identStateCache) this._identStateCache = {};
-      this._identStateCache[exerciseId] = {
+      var state = {
         answers: _.clone(this.grader.answers),
         identPage: this._identPage
       };
+      this._identStateCache[exerciseId] = state;
+      try {
+        localStorage.setItem("identAnswers:" + exerciseId, JSON.stringify({
+          answers: state.answers,
+          identPage: state.identPage,
+          savedAt: Date.now()
+        }));
+      } catch (e) {
+        // localStorage unavailable — ignore
+      }
     },
 
     restoreIdentState: function (exerciseId) {
@@ -599,11 +609,19 @@ define([
         this.grader.answers = _.clone(cached.answers);
         this._identPage = cached.identPage;
       } else {
-        // Try server fallback (async, fires after render)
-        this._restoreIdentStateFromServer(exerciseId);
-        // Reset immediately so the page shows clean while the fetch runs
-        this.grader.reset();
-        this._identPage = 0;
+        var local = this._readLocalIdentState(exerciseId);
+        if (local) {
+          this.grader.answers = local.answers;
+          this._identPage = local.identPage || 0;
+          if (!this._identStateCache) this._identStateCache = {};
+          this._identStateCache[exerciseId] = local;
+        } else {
+          // Try server fallback (async, fires after render)
+          this._restoreIdentStateFromServer(exerciseId);
+          // Reset immediately so the page shows clean while the fetch runs
+          this.grader.reset();
+          this._identPage = 0;
+        }
       }
     },
 
@@ -632,6 +650,21 @@ define([
           console.log("Identification state restore failed:", textStatus, errorThrown);
         }
       });
+    },
+    _readLocalIdentState: function (exerciseId) {
+      try {
+        var raw = localStorage.getItem("identAnswers:" + exerciseId);
+        if (!raw) return null;
+        var data = JSON.parse(raw);
+        var sevenDays = 7 * 24 * 60 * 60 * 1000;
+        if (!data.savedAt || Date.now() - data.savedAt > sevenDays) {
+          localStorage.removeItem("identAnswers:" + exerciseId);
+          return null;
+        }
+        return data;
+      } catch (e) {
+        return null;
+      }
     },
     submitIdentificationAnswers: function (options) {
       var isPageSubmit = options && options.is_page_submit === true;
@@ -681,6 +714,7 @@ define([
         is_page_submit: isPageSubmit
       };
 
+      var selfExerciseId = this.definition.exercise.exerciseId;
       $.ajax({
         type: "POST",
         url: "/ajax/identification-answers/",
@@ -688,6 +722,7 @@ define([
         dataType: "text"
       }).done(function () {
         console.log("Identification answers saved");
+        try { localStorage.removeItem("identAnswers:" + selfExerciseId); } catch (e) {}
       }).fail(function (jqXHR, textStatus, errorThrown) {
         console.log("Identification answers save failed", textStatus, errorThrown);
       });
