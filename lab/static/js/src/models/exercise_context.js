@@ -918,6 +918,7 @@ define([
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
+            this.submitIdentificationAnswers({ is_page_submit: true });
           }
           graded.advancedPage = true;
           this.goToIdentPage(this._identPage + 1);
@@ -926,6 +927,7 @@ define([
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
+            this.submitIdentificationAnswers({ is_page_submit: true });
           }
           this.state = ExerciseContext.STATE.CORRECT;
           this.sealed = true;
