@@ -1,0 +1,95 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Identification Answers</h1>
+  <p>
+    Student: <strong>{{ student.get_full_name }}</strong> &mdash;
+    Course: <strong>{{ course.title }}</strong>
+  </p>
+  <a href="{% url 'course-activity' course.id %}" class="btn btn-sm btn-outline-secondary mb-3">
+    &larr; Back to Course Activity
+  </a>
+
+  {% if not exercises_data %}
+    <p>No identification answers recorded for this student in this course.</p>
+  {% endif %}
+
+  {% for item in exercises_data %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <strong>{{ item.exercise.name }}</strong>
+      &mdash;
+      Score: {{ item.latest.score.correct }} correct
+      &mdash;
+      Submitted: {{ item.latest.submitted_at|date:"Y-m-d H:i" }}
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Correct Answer</th>
+            <th>Student Answer</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in item.latest_rows %}
+          <tr>
+            <td>{{ row.key }}</td>
+            <td>{{ row.correct }}</td>
+            <td>{% if row.student %}{{ row.student }}{% else %}&ndash;{% endif %}</td>
+            <td>
+              {% if row.is_correct is None %}
+                <span class="text-muted">&ndash;</span>
+              {% elif row.is_correct %}
+                <span class="text-success">&#10003;</span>
+              {% else %}
+                <span class="text-danger">&#10007;</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if item.history %}
+    <div class="card-footer">
+      <details>
+        <summary>History ({{ item.history|length }} earlier attempt{{ item.history|length|pluralize }})</summary>
+        {% for h in item.history %}
+        <h6 class="mt-3">{{ h.attempt.submitted_at|date:"Y-m-d H:i" }} &mdash; {{ h.attempt.score.correct }} correct</h6>
+        <table class="table table-sm">
+          <thead>
+            <tr><th>#</th><th>Correct</th><th>Student</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            {% for row in h.rows %}
+            <tr>
+              <td>{{ row.key }}</td>
+              <td>{{ row.correct }}</td>
+              <td>{% if row.student %}{{ row.student }}{% else %}&ndash;{% endif %}</td>
+              <td>
+                {% if row.is_correct is None %}
+                  <span class="text-muted">&ndash;</span>
+                {% elif row.is_correct %}
+                  <span class="text-success">&#10003;</span>
+                {% else %}
+                  <span class="text-danger">&#10007;</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endfor %}
+      </details>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

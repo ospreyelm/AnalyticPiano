@@ -28,12 +28,33 @@ from apps.dashboard.tables import (
 )
 from apps.exercises.models import (
     Course,
+    IdentificationAttempt,
     PerformanceData,
     Playlist,
     PlaylistCourseOrdered,
 )
 from apps.exercises.utils.recurrence import get_recurring_assignment_snapshot
 from apps.accounts.models import Group, User
+
+
+def course_has_identification_exercises(course):
+    return course.exercise_set.filter(
+        data__type="chorale_identification"
+    ).exists()
+
+
+def _build_rows(attempt):
+    rows = []
+    for key in sorted(attempt.correct_answers.keys(), key=lambda k: int(k)):
+        correct = attempt.correct_answers[key]
+        student = attempt.answers.get(key)
+        rows.append({
+            "key": key,
+            "correct": correct,
+            "student": student,
+            "is_correct": student == correct if student is not None else None,
+        })
+    return rows
 
 
 @login_required
@@ -502,5 +523,45 @@ def course_activity_view(request, course_id):
             "course_id": course_id,
             "title": course.title,
             "filters": {"group": group_filter, "unitnumber": unitnumber_filter},
+            "has_identification_exercises": course_has_identification_exercises(course),
         },
     )
+
+
+def identification_answers_view(request, course_id, student_id):
+    from collections import defaultdict
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    course = get_object_or_404(Course, id=course_id)
+    if request.user != course.authored_by:
+        raise PermissionDenied
+
+    student = get_object_or_404(User, id=student_id)
+
+    attempts = IdentificationAttempt.objects.filter(
+        user=student, course=course
+    ).select_related("exercise").order_by("submitted_at")
+
+    by_exercise = defaultdict(list)
+    for attempt in attempts:
+        by_exercise[attempt.exercise_id].append(attempt)
+
+    exercises_data = []
+    for exercise_id, exercise_attempts in by_exercise.items():
+        latest = exercise_attempts[-1]
+        exercises_data.append({
+            "exercise": latest.exercise,
+            "latest": latest,
+            "latest_rows": _build_rows(latest),
+            "history": [
+                {"attempt": a, "rows": _build_rows(a)}
+                for a in exercise_attempts[:-1]
+            ],
+        })
+
+    return render(request, "dashboard/identification-answers.html", {
+        "course": course,
+        "student": student,
+        "exercises_data": exercises_data,
+    })

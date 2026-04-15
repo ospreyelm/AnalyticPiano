@@ -25,6 +25,16 @@
     </script>
 {% endblock %}
 
+{% block after_table %}
+{% if has_identification_exercises %}
+<div class="mt-4">
+  <h5>Identification Answer Details</h5>
+  <p class="text-muted">To view a student's identification answers, go to their detail page via the links in the activity table, or navigate directly:</p>
+  <p><small>URL pattern: <code>/dashboard/courses/{{ course.id }}/identification-answers/&lt;student_id&gt;/</code></small></p>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block filters %}
     {% if filters %}
         <h1>Performance activity for {{ title }}</h1>

@@ -136,8 +136,10 @@ define([
         $(".js-play-view-controls").hide();
         $("#mainmenu").hide();
       }
-      this.inputChords.bind("change", this.triggerTimer);
-      this.inputChords.bind("change", this.grade);
+      if (!this._isIdentificationExercise()) {
+        this.inputChords.bind("change", this.triggerTimer);
+        this.inputChords.bind("change", this.grade);
+      }
     },
     /**
      * For tempo assessment
@@ -579,6 +581,152 @@ define([
           console.log("Possible save failure", textStatus, errorThrown);
         });
     },
+    saveIdentState: function () {
+      if (!this._isIdentificationExercise()) return;
+      var exerciseId = this.definition.exercise.exerciseId;
+      if (!exerciseId) return;
+      if (!this._identStateCache) this._identStateCache = {};
+      var state = {
+        answers: _.clone(this.grader.answers),
+        identPage: this._identPage
+      };
+      this._identStateCache[exerciseId] = state;
+      try {
+        localStorage.setItem("identAnswers:" + exerciseId, JSON.stringify({
+          answers: state.answers,
+          identPage: state.identPage,
+          savedAt: Date.now()
+        }));
+      } catch (e) {
+        // localStorage unavailable — ignore
+      }
+    },
+
+    restoreIdentState: function (exerciseId) {
+      if (!this._isIdentificationExercise()) return;
+      var cached = this._identStateCache && this._identStateCache[exerciseId];
+      if (cached) {
+        this.grader.answers = _.clone(cached.answers);
+        this._identPage = cached.identPage;
+      } else {
+        var local = this._readLocalIdentState(exerciseId);
+        if (local) {
+          this.grader.answers = local.answers;
+          this._identPage = local.identPage || 0;
+          if (!this._identStateCache) this._identStateCache = {};
+          this._identStateCache[exerciseId] = local;
+        } else {
+          // Try server fallback (async, fires after render)
+          this._restoreIdentStateFromServer(exerciseId);
+          // Reset immediately so the page shows clean while the fetch runs
+          this.grader.reset();
+          this._identPage = 0;
+        }
+      }
+    },
+
+    _restoreIdentStateFromServer: function (exerciseId) {
+      var self = this;
+      // Set a restoring flag so any input that arrives before the response
+      // is ignored rather than graded against a blank state.
+      this.grader._restoring = true;
+      $.ajax({
+        type: "GET",
+        url: "/ajax/identification-answers/",
+        data: { exercise_id: exerciseId },
+        dataType: "json",
+        timeout: 5000,
+        success: function (data) {
+          self.grader._restoring = false;
+          if (data && data.answers && Object.keys(data.answers).length > 0) {
+            self.grader.answers = data.answers;
+            self._identPage = data.page_num || 0;
+            self.updateDisplayChords();
+            self.trigger("graded");
+          }
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          self.grader._restoring = false;
+          console.log("Identification state restore failed:", textStatus, errorThrown);
+        }
+      });
+    },
+    _readLocalIdentState: function (exerciseId) {
+      try {
+        var raw = localStorage.getItem("identAnswers:" + exerciseId);
+        if (!raw) return null;
+        var data = JSON.parse(raw);
+        var sevenDays = 7 * 24 * 60 * 60 * 1000;
+        if (!data.savedAt || Date.now() - data.savedAt > sevenDays) {
+          localStorage.removeItem("identAnswers:" + exerciseId);
+          return null;
+        }
+        return data;
+      } catch (e) {
+        return null;
+      }
+    },
+    submitIdentificationAnswers: function (options) {
+      var isPageSubmit = options && options.is_page_submit === true;
+      if (!this._isIdentificationExercise()) return;
+      if (!this.definition.exercise.performing_course) return;
+
+      var grader = this.grader;
+      if (!grader.answers || Object.keys(grader.answers).length === 0) return;
+
+      // Compute correctness and score from current grader state
+      var allProblems = this.definition.getProblems();
+      var answers = grader.answers;
+      var correctness = {};
+      var correct = 0, incorrect = 0, unanswered = 0;
+
+      for (var i = 0; i < allProblems.length; i++) {
+        if (answers.hasOwnProperty(String(i))) {
+          var isCorrect = answers[String(i)] === allProblems[i].answer;
+          correctness[String(i)] = isCorrect;
+          if (isCorrect) { correct++; } else { incorrect++; }
+        } else {
+          unanswered++;
+        }
+      }
+
+      var idx = this.definition.getExerciseList().reduce(function (sel, cur, index) {
+        return sel < 0 && cur.selected ? index : sel;
+      }, -1);
+      if (idx < 0) return;
+      var listEntry = this.definition.getExerciseList()[idx];
+
+      // Build correct_answers snapshot from problem definitions
+      var correct_answers = {};
+      for (var j = 0; j < allProblems.length; j++) {
+        correct_answers[String(j)] = allProblems[j].answer;
+      }
+
+      var payload = {
+        course_ID: this.definition.exercise.performing_course,
+        playlist_ID: listEntry.id.split("/")[0],
+        exercise_num: parseInt(listEntry.id.split("/")[1], 10),
+        answers: answers,
+        correctness: correctness,
+        score: { correct: correct, incorrect: incorrect, unanswered: unanswered },
+        correct_answers: correct_answers,
+        page_num: this._identPage,
+        is_page_submit: isPageSubmit
+      };
+
+      var selfExerciseId = this.definition.exercise.exerciseId;
+      $.ajax({
+        type: "POST",
+        url: "/ajax/identification-answers/",
+        data: { data: JSON.stringify(payload) },
+        dataType: "text"
+      }).done(function () {
+        console.log("Identification answers saved");
+        try { localStorage.removeItem("identAnswers:" + selfExerciseId); } catch (e) {}
+      }).fail(function (jqXHR, textStatus, errorThrown) {
+        console.log("Identification answers save failed", textStatus, errorThrown);
+      });
+    },
     /**
      * Returns chords for display on screen.
      *
@@ -805,6 +953,7 @@ define([
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
+            this.submitIdentificationAnswers({ is_page_submit: true });
           }
           graded.advancedPage = true;
           this.goToIdentPage(this._identPage + 1);
@@ -813,6 +962,7 @@ define([
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
+            this.submitIdentificationAnswers({ is_page_submit: true });
           }
           this.state = ExerciseContext.STATE.CORRECT;
           this.sealed = true;
@@ -860,6 +1010,12 @@ define([
           fromUI: fromUI,
           triggerPlaylistAdvance: !fromUI,
         });
+      }
+      // When called from the UI Next button, return null so the caller
+      // (renderNextExercise) handles renderPristine — avoids re-broadcasting
+      // NEXTEXERCISE which would recurse back into renderNextExercise.
+      if (fromUI) {
+        return null;
       }
       this.exercise.broadcast(EVENTS.BROADCAST.NEXTEXERCISE);
       return null;

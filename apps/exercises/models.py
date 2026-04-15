@@ -1172,3 +1172,35 @@ def truncate_timestamps(sender, instance, *args, **kwargs):
                 instance._meta.db_table, instance._meta.pk.name, instance.pk
             )
         )
+
+
+class IdentificationAttempt(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="identification_attempts"
+    )
+    exercise = models.ForeignKey(
+        Exercise, on_delete=models.CASCADE, related_name="identification_attempts"
+    )
+    course = models.ForeignKey(
+        Course, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="identification_attempts"
+    )
+    playlist = models.ForeignKey(
+        Playlist, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="identification_attempts"
+    )
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    answers = JSONField(default=dict)
+    correctness = JSONField(default=dict)
+    score = JSONField(default=dict)
+    correct_answers = JSONField(default=dict)
+    is_page_submit = models.BooleanField(default=False)
+    page_num = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Identification Attempt"
+        verbose_name_plural = "Identification Attempts"
+        ordering = ["submitted_at"]
+
+    def __str__(self):
+        return f"User:{self.user} Exercise:{self.exercise_id} at {self.submitted_at}"
