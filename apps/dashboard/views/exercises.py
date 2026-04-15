@@ -4,6 +4,7 @@ from copy import copy
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, PermissionDenied
+from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django_tables2 import RequestConfig
@@ -11,9 +12,19 @@ from django_tables2 import RequestConfig
 from apps.dashboard.filters import ListIDFilter, ExerciseListDescriptionFilter
 from apps.dashboard.forms import DashboardExerciseForm
 from apps.dashboard.tables import ExercisesListTable
+from apps.exercises.pitch_voice_utils import strip_to_voice
 from apps.exercises.models import Exercise
 
 import re
+
+PITCH_ANALYSIS_TYPES = {
+    "note_name",
+    "solfege",
+    "do_based_solfege",
+    "scale_degree",
+    "fixed_do",
+    "pitch_class",
+}
 
 @login_required
 def exercises_list_view(request):
@@ -196,6 +207,46 @@ def exercise_edit_view(request, exercise_id):
                 )
                 new_exercise.save()
                 return redirect("dashboard:edit-exercise", new_exercise.id)
+            elif "duplicate-as-pitch-identification" in request.POST:
+                source_data = exercise.data or {}
+                source_score = _copy.deepcopy(source_data.get("score", {}))
+                analysis_type = request.POST.get("analysisType", "")
+                ident_mode = request.POST.get("identMode") or "submit"
+                voices = request.POST.getlist("voices[]") or request.POST.getlist("voices")
+
+                if analysis_type not in PITCH_ANALYSIS_TYPES:
+                    messages.error(request, "Invalid pitch analysis type.")
+                    return redirect("dashboard:edit-exercise", exercise.id)
+
+                try:
+                    with transaction.atomic():
+                        if not voices:
+                            raise ValueError("Select at least one voice for pitch identification duplication.")
+
+                        for voice in voices:
+                            stripped_score = strip_to_voice(source_score, voice)
+                            new_data = {
+                                "type": "chorale_identification",
+                                "identMode": ident_mode,
+                                "analysisType": analysis_type,
+                                "score": stripped_score,
+                                "key": source_data.get("key") or source_score.get("meta", {}).get("key", "C"),
+                                "staffDistribution": "chorale",
+                                "introText": source_data.get("introText") or f"Name each note in the {voice} voice.",
+                                "reviewText": source_data.get("reviewText") or "Well done!",
+                            }
+                            new_exercise = Exercise(
+                                description=f"{exercise.description or exercise.id} ({voice} pitch identification)",
+                                data=new_data,
+                                authored_by=request.user,
+                                is_public=exercise.is_public,
+                            )
+                            new_exercise.save()
+                except ValueError as exc:
+                    messages.error(request, str(exc))
+                    return redirect("dashboard:edit-exercise", exercise.id)
+
+                return redirect("dashboard:exercises-list")
             else:
                 success_url = reverse("dashboard:exercises-list")
             return redirect(success_url)
