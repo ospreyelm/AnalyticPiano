@@ -21,6 +21,7 @@ from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.models.fields import ArrayField
+from django.contrib.postgres.indexes import GinIndex
 
 from apps.accounts.models import Group
 from apps.exercises.constants import (
@@ -127,6 +128,19 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         verbose_name="Tags",
     )
 
+    skill_tags = ArrayField(
+        base_field=models.CharField(max_length=64),
+        default=list,
+        blank=True,
+        verbose_name="Skill Tags",
+        help_text="Knowledge Graph skills detected in the chunk (e.g. Secondary_Dominant)"
+    )
+
+    complexity = models.PositiveSmallIntegerField(
+        default=1,
+        help_text="Calculated integer 1-10 representing harmony complexity"
+    )
+
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 
@@ -165,6 +179,10 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     class Meta:
         verbose_name = "Exercise"
         verbose_name_plural = "Exercises"
+        indexes = [
+            GinIndex(fields=['skill_tags']),
+            models.Index(fields=['complexity']),
+        ]
 
     @classmethod
     def get_data_order_list(cls):

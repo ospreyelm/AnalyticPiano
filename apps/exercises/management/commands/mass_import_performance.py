@@ -175,11 +175,20 @@ class Command(BaseCommand):
             # Create Database Record
             description = f"Auto-Import: {os.path.basename(file_path)} (Chunk {idx+1}, mm.{m_start}-{m_end})"
             
+            from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
+            try:
+                detected_skills, detected_complexity = analyze_chunk_skills(chunk, chunk_key)
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"  Warning: Skills analysis failed for chunk {idx+1}: {e}"))
+                detected_skills, detected_complexity = [], 1
+
             ex = Exercise(
                 description=description,
                 data=exercise_data,
                 authored_by=author,
-                is_public=False
+                is_public=False,
+                skill_tags=detected_skills,
+                complexity=detected_complexity
             )
             ex.save()
             
