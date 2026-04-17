@@ -53,6 +53,15 @@
                     <span class="status-label">Selected</span>
                 </div>
 
+                <div class="global-setting">
+                    <label for="global-mode">Default Mode for All:</label>
+                    <select id="global-mode" class="mode-select large">
+                        <option value="submit">Submit (Graded)</option>
+                        <option value="practice">Practice (Immediate Feedback)</option>
+                        <option value="test">Test (Silent Submission)</option>
+                    </select>
+                </div>
+
                 <hr class="divider">
 
                 <div class="action-grid">
@@ -216,6 +225,50 @@
     }
     .alert-box.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .alert-box.error { background-color: #f8dbdf; color: #721c24; border: 1px solid #f5c6cb; }
+
+    /* Mode Selectors */
+    .global-setting {
+        margin: 20px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .global-setting label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #4a5568;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .mode-select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        font-size: 13px;
+        background-color: #f8fafc;
+        color: #2d3748;
+        cursor: pointer;
+        outline: none;
+    }
+    .mode-select:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+    }
+    .mode-select.large {
+        padding: 10px 12px;
+        font-size: 14px;
+        font-weight: 500;
+        background-color: white;
+    }
+    .item-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .import-item {
+        cursor: default; /* Items are no longer just big labels */
+    }
+    .import-item:hover { background-color: #f8f9fa; }
 </style>
 
 <script>
@@ -248,10 +301,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function renderImports(items) {
         importsList.innerHTML = '';
+        const globalMode = document.getElementById('global-mode').value;
         items.forEach(item => {
             const isChecked = selectedIds.has(item.id.toString()) ? 'checked' : '';
             const html = `
-                <label class="import-item">
+                <div class="import-item">
                     <div class="item-left">
                         <input type="checkbox" class="item-checkbox" value="${item.id}" onchange="toggleSelection(this)" ${isChecked}>
                         <div class="item-meta">
@@ -259,8 +313,16 @@ document.addEventListener("DOMContentLoaded", function() {
                             <p><i class="fas fa-key"></i> Key: ${item.key} &nbsp;|&nbsp; <i class="fas fa-file-alt"></i> ${item.measureRange}</p>
                         </div>
                     </div>
-                    <span class="badge-pill">${item.type}</span>
-                </label>
+                    <div class="item-right">
+                        <select class="mode-select item-mode-override" data-id="${item.id}" title="Override mode for this item">
+                            <option value="">(Default)</option>
+                            <option value="submit">Submit</option>
+                            <option value="practice">Practice</option>
+                            <option value="test">Test</option>
+                        </select>
+                        <span class="badge-pill">${item.type}</span>
+                    </div>
+                </div>
             `;
             importsList.insertAdjacentHTML('beforeend', html);
         });
@@ -304,9 +366,22 @@ document.addEventListener("DOMContentLoaded", function() {
     window.projectItems = function(targetType) {
         if(selectedIds.size === 0) return;
         
+        const globalMode = document.getElementById('global-mode').value;
+        const perItemModes = {};
+        
+        // Collect overrides
+        document.querySelectorAll('.item-mode-override').forEach(select => {
+            const id = select.getAttribute('data-id');
+            if (selectedIds.has(id.toString()) && select.value) {
+                perItemModes[id] = select.value;
+            }
+        });
+
         const payload = {
             source_ids: Array.from(selectedIds),
-            target_type: targetType
+            target_type: targetType,
+            ident_mode: globalMode,
+            per_item_modes: perItemModes
         };
         
         actionBtns.forEach(btn => btn.disabled = true);

@@ -95,6 +95,8 @@ def api_multiply_projection(request):
         payload = json.loads(request.body)
         source_ids = payload.get("source_ids", [])
         target_type = payload.get("target_type")
+        global_ident_mode = payload.get("ident_mode", "submit")
+        per_item_modes = payload.get("per_item_modes", {}) # { "id": "mode" }
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
@@ -110,6 +112,11 @@ def api_multiply_projection(request):
             except Exercise.DoesNotExist:
                 continue
 
+            # Determine the identMode for this specific item
+            ident_mode = per_item_modes.get(str(e_id)) or global_ident_mode
+            if ident_mode not in ["submit", "practice", "test"]:
+                ident_mode = "submit"
+
             source_data = base_ex.data or {}
             score_data = _copy.deepcopy(source_data.get("score", {}))
             
@@ -119,13 +126,13 @@ def api_multiply_projection(request):
             ANALYSIS_TYPE_MAP = {
                 "roman_numeral":         "roman",
                 "figured_bass":          "figured_bass",
-                "chorale_identification": "roman",
+                "identification":        "roman", # 'identification' from UI maps to 'roman' analysisType
             }
             analysis_type = ANALYSIS_TYPE_MAP.get(target_type, "roman")
 
             new_data = {
                 "type": "chorale_identification",
-                "identMode": "submit",
+                "identMode": ident_mode,
                 "analysisType": analysis_type,
                 "score": score_data,
                 "key": source_data.get("key") or score_data.get("meta", {}).get("key", "C"),
