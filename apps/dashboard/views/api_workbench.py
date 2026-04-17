@@ -155,12 +155,17 @@ def api_multiply_projection(request):
             max_base_len = 60 - len(target_suffix)
             safe_desc = f"{base_ex.description[:max_base_len]}{target_suffix}"
 
+            source_skill_tags = base_ex.skill_tags
+            source_complexity = base_ex.complexity
+
             base_ex.pk = None
             base_ex.id = None
             base_ex.locked = False
             base_ex.description = safe_desc
             base_ex.data = new_data
             base_ex.is_public = False
+            base_ex.skill_tags = source_skill_tags
+            base_ex.complexity = source_complexity
             base_ex.save()
             
             created_ids.append(base_ex.id)

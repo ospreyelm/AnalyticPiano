@@ -612,6 +612,7 @@ class SkillMapView(RequirejsView):
             "course": course,
             "course_id": course_id,
         }
+        self.requirejs_context.add_to_view(context)
         return render(request, "skill_map.html", context)
 
 

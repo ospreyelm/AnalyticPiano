@@ -44,10 +44,15 @@ define(["jquery", "lodash"], function ($, _) {
     render: function (elements) {
       var self = this;
       
-      // Ensure Cytoscape and Dagre are available (loaded via CDN tags in template)
+      // Ensure Cytoscape and extensions are available
       if (typeof cytoscape === 'undefined') {
-          console.error("Cytoscape.js not found. Ensure it is loaded via script tag.");
+          console.error("Cytoscape.js not found.");
           return;
+      }
+
+      // Register dagre layout extension if available globally
+      if (typeof window.cytoscapeDagre !== 'undefined' && typeof window.dagre !== 'undefined') {
+          cytoscape.use(window.cytoscapeDagre);
       }
 
       this.cy = cytoscape({
