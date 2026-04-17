@@ -28,6 +28,9 @@ from apps.exercises.models import (
     PerformanceData,
     PlaylistCourseOrdered,
 )
+from apps.exercises.mastery import get_next_exercise
+from apps.exercises.utils.transpose import transpose as transpose_exercise
+
 
 import json
 import copy
@@ -128,6 +131,27 @@ class PlayView(RequirejsTemplateView):
 
 # Reusable function to generate exercise_context. Accounts for null inputs.
 # Catered to the current desired behavior of the 3 views below. If adding more views or changing desired behavior, changes to this function will be needed
+def get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id=None):
+    """Helper to consistently fetch an adaptive exercise for a specific step."""
+    seed = f"{request.user.id}-{playlist.id}-{exercise_num}"
+    course_obj = None
+    if course_id:
+        course_obj = Course.objects.filter(id=course_id).first()
+    
+    exercise_obj, target_key = get_next_exercise(
+        request.user.id, playlist=playlist, course=course_obj, seed=seed
+    )
+    
+    if exercise_obj:
+        if target_key:
+            from apps.exercises.constants import pseudo_key_to_sig
+            staff_sig = pseudo_key_to_sig.get(target_key)
+            if staff_sig:
+                return transpose_exercise(exercise_obj, staff_sig)
+        return exercise_obj
+    return None
+
+
 def generate_exercise_context(
     exercise_num=None,
     exercise=None,
@@ -138,40 +162,56 @@ def generate_exercise_context(
     course_id = course.id if course else None
     playlist_id = playlist.id if playlist else None
     exercise_context = {}
-    prev_num = playlist.prev_num(exercise_num) if playlist else None
-    next_num = playlist.next_num(exercise_num) if playlist else None
+    # Adaptive handling for sequence navigation
+    if playlist and playlist.is_adaptive:
+        # In adaptive mode, the next number just goes to the next step.
+        # The view for that step will call get_next_exercise() for a fresh task.
+        next_num = exercise_num + 1
+        prev_num = exercise_num - 1 if exercise_num > 1 else None
+        
+        next_exercise_url = playlist.get_exercise_url_by_num(num=next_num, course_id=course_id)
+        prev_exercise_url = playlist.get_exercise_url_by_num(num=prev_num, course_id=course_id) if prev_num else None
+        
+        # We don't know the ID of the next exercise yet without calling the engine, 
+        # but the URL pointing to num+1 is sufficient for the frontend.
+        next_exercise_id = f"adaptive-{next_num}" 
+        prev_exercise_id = f"adaptive-{prev_num}" if prev_num else None
+    else:
+        prev_num = playlist.prev_num(exercise_num) if playlist else None
+        next_num = playlist.next_num(exercise_num) if playlist else None
 
-    next_exercise_obj = (
-        playlist.get_exercise_obj_by_num(next_num)
-        if playlist
-        else Exercise.objects.filter(authored_by=user, id__gt=exercise.id)
-        .order_by("id")
-        .first()
-    )
-    next_exercise_id = next_exercise_obj.id if next_exercise_obj != None else None
-    next_exercise_url = (
-        playlist.get_exercise_url_by_num(num=next_num, course_id=course_id)
-        if playlist
-        else reverse("lab:exercise-view", kwargs={"exercise_id": next_exercise_id})
-        if next_exercise_id
-        else None
-    )
+        next_exercise_obj = (
+            playlist.get_exercise_obj_by_num(next_num)
+            if playlist
+            else Exercise.objects.filter(authored_by=user, id__gt=exercise.id)
+            .order_by("id")
+            .first()
+        )
+        next_exercise_id = next_exercise_obj.id if next_exercise_obj != None else None
+        next_exercise_url = (
+            playlist.get_exercise_url_by_num(num=next_num, course_id=course_id)
+            if playlist
+            else reverse("lab:exercise-view", kwargs={"exercise_id": next_exercise_id})
+            if next_exercise_id
+            else None
+        )
 
-    prev_exercise_obj = (
-        playlist.get_exercise_obj_by_num(prev_num)
-        if playlist
-        else Exercise.objects.filter(authored_by=user, id__lt=exercise.id)
-        .order_by("-id")
-        .first()
-    )
-    prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj != None else None
-    prev_exercise_url = (
-        playlist.get_exercise_url_by_num(num=prev_num, course_id=course_id)
-        if playlist
-        else reverse("lab:exercise-view", kwargs={"exercise_id": prev_exercise_id})
-        if prev_exercise_id
-        else None
-    )
+        prev_exercise_obj = (
+            playlist.get_exercise_obj_by_num(prev_num)
+            if playlist
+            else Exercise.objects.filter(authored_by=user, id__lt=exercise.id)
+            .order_by("-id")
+            .first()
+        )
+        prev_exercise_id = prev_exercise_obj.id if prev_exercise_obj != None else None
+        prev_exercise_url = (
+            playlist.get_exercise_url_by_num(num=prev_num, course_id=course_id)
+            if playlist
+            else reverse("lab:exercise-view", kwargs={"exercise_id": prev_exercise_id})
+            if prev_exercise_id
+            else None
+        )
+
     first_exercise_obj = playlist.get_exercise_obj_by_num(1) if playlist else None
     first_exercise_id = (
         first_exercise_obj.id
@@ -181,15 +221,29 @@ def generate_exercise_context(
     force_redirect = False
     exercise_list = []
     if playlist:
-        for num, _ in enumerate(playlist.exercise_list, 1):
-            exercise_list.append(
-                dict(
-                    id=f"{playlist_id}/{num}",
-                    name=f"{num}",
-                    url=playlist.get_exercise_url_by_num(num),
-                    selected=exercise_num == num,
+        if playlist.is_adaptive:
+            # Show a few steps in the 'dots' list for adaptive playlists
+            # We don't want to show the full pool (could be 1000s).
+            # Show current, and maybe a few around it.
+            for num in range(max(1, exercise_num - 2), exercise_num + 3):
+                exercise_list.append(
+                    dict(
+                        id=f"{playlist_id}/{num}",
+                        name=f"{num}",
+                        url=playlist.get_exercise_url_by_num(num),
+                        selected=exercise_num == num,
+                    )
                 )
-            )
+        else:
+            for num, _ in enumerate(playlist.exercise_list, 1):
+                exercise_list.append(
+                    dict(
+                        id=f"{playlist_id}/{num}",
+                        name=f"{num}",
+                        url=playlist.get_exercise_url_by_num(num),
+                        selected=exercise_num == num,
+                    )
+                )
     else:
         force_redirect = True
         url = reverse("lab:exercise-view", kwargs={"exercise_id": exercise.id})
@@ -209,8 +263,10 @@ def generate_exercise_context(
         playlist=playlist, user=user, course=course
     ).last()
     if playlist_performance:
+        # In adaptive mode, the exercise ID in performance data doesn't map 1:1 to exercise_num
         exercise_is_performed = playlist_performance.exercise_is_performed(exercise.id)
         exercise_error_count = playlist_performance.exercise_error_count(exercise.id)
+    
     exercise_context.update(exercise.data)
     exercise_context.update(
         {
@@ -224,6 +280,7 @@ def generate_exercise_context(
             "exerciseList": exercise_list,
             "exerciseId": exercise.id,
             "exerciseNum": exercise_num,
+            "isAdaptive": getattr(playlist, "is_adaptive", False),
             "exerciseIsPerformed": exercise_is_performed,
             "exerciseErrorCount": exercise_error_count,
             "playlistName": playlist_id,
@@ -269,17 +326,23 @@ class PlaylistView(RequirejsView):
                 exercise_num=1,
             )
 
-        exercise = playlist.get_exercise_obj_by_num(exercise_num)
-        if exercise is None:
-            if len(playlist.exercise_list) == 0:
+        # Adaptive logic: override exercise selection if playlist is adaptive
+        if playlist.is_adaptive:
+            exercise = get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id)
+            if not exercise:
+                raise Http404("Could not find a suitable exercise in this adaptive playlist.")
+        else:
+            exercise = playlist.get_exercise_obj_by_num(exercise_num)
+            if exercise is None:
+                if len(playlist.exercise_list) == 0:
+                    raise Http404(
+                        f"Playlist '{playlist.name}' (ID: {playlist.id}) has no exercises. "
+                        "Please edit the playlist to add exercises, or delete it."
+                    )
                 raise Http404(
-                    f"Playlist '{playlist.name}' (ID: {playlist.id}) has no exercises. "
-                    "Please edit the playlist to add exercises, or delete it."
+                    f"Exercise #{exercise_num} in playlist '{playlist.name}' could not be found. "
+                    "It may have been deleted. Please edit the playlist to remove missing exercises."
                 )
-            raise Http404(
-                f"Exercise #{exercise_num} in playlist '{playlist.name}' could not be found. "
-                "It may have been deleted. Please edit the playlist to remove missing exercises."
-            )
 
         context = {"group_list": []}
         course_performed = None
@@ -366,7 +429,11 @@ class RefreshExerciseDefinition(RequirejsView):
         exercise = (
             Exercise.objects.filter(id=exercise_id).first()
             if exercise_id
-            else playlist.get_exercise_obj_by_num(exercise_num)
+            else (
+                get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id)
+                if playlist and playlist.is_adaptive
+                else playlist.get_exercise_obj_by_num(exercise_num)
+            )
         )
         if exercise is None:
             raise Http404("Exercise not found.")

@@ -9,8 +9,9 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django_tables2 import Column
 
-from apps.exercises.models import Course, Playlist, PerformanceData, User as Performers, IdentificationAttempt
+from apps.exercises.models import Course, Playlist, PerformanceData, User as Performers, IdentificationAttempt, Exercise
 from apps.exercises.tables import PlaylistActivityTable
+from apps.exercises.mastery import record_attempt
 
 User = get_user_model()
 
@@ -112,6 +113,13 @@ def submit_exercise_performance(request):
         exercise_id=exercise_id,  # string
         data=performance_data,
     )
+
+    # Record mastery attempt
+    exercise_obj = Exercise.objects.get(id=exercise_id[:6])
+    correct = performance_data.get('error_tally') in (0, -1, 'n/a')
+    if exercise_obj.skill_tags:
+        record_attempt(user_id=user_id, exercise=exercise_obj, correct=correct)
+
     return HttpResponse(status=201)
 
 
@@ -143,6 +151,14 @@ def identification_answers_view(request):
             page_num=data.get("page_num"),
             is_page_submit=data.get("is_page_submit", False),
         )
+
+        # Record mastery attempt
+        # score structure: {"correct": N, "incorrect": N, "unanswered": N}
+        score_data = data.get('score', {})
+        correct = (score_data.get('incorrect', 1) == 0 and score_data.get('unanswered', 1) == 0)
+        if exercise.skill_tags:
+            record_attempt(user_id=request.user.id, exercise=exercise, correct=correct)
+
         return HttpResponse(status=201)
 
     elif request.method == "GET":
