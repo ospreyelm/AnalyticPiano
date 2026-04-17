@@ -18,6 +18,9 @@
 
 {% block export-exercises %}
     <div class="dashboard-btn-bank-bottom">
+        <button type="submit" class="btn dashboard-btn" style="background-color: #dc3545; color: white;" onclick="deleteSelected()">
+            Delete Selected
+        </button>
         <button type="submit" class="btn dashboard-btn"
                 onclick="location.href='{% url 'dashboard:export-exercises' %}'">
             Export
@@ -27,4 +30,58 @@
             Import
         </button>
     </div>
+
+<script>
+    function toggleSelectAll(source) {
+        let checkboxes = document.querySelectorAll('input[name="selection"]');
+        for(let i=0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = source.checked;
+        }
+    }
+    
+    function deleteSelected() {
+        const selected = Array.from(document.querySelectorAll('input[name="selection"]:checked')).map(cb => cb.value);
+        if (selected.length === 0) {
+            alert('Please select at least one exercise to delete.');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to permanently delete the ' + selected.length + ' selected exercises?')) {
+            fetch("{% url 'dashboard:api-bulk-delete-exercises' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ids: selected})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Failed to delete exercises.');
+                }
+            })
+            .catch(err => {
+                alert('Network or server error during bulk delete.');
+            });
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
 {% endblock %}

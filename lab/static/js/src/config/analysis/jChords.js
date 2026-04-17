@@ -21,9 +21,9 @@ define({
   // I
 
   "0/47": { root: "0", label: "I", priority: "1" },
-  "0/4": { root: "0", label: "I{i3}", priority: "6" },
+  "0/4": { root: "0", label: "I", priority: "6" },
   "4/07": { root: "0", label: "I{z}", priority: "4" },
-  "7/04": { root: "7", label: "I{z4}", priority: "70" },
+  "7/04": { root: "7", label: "Cad{z4}", priority: "70" },
 
   "0/47z": { root: "0", label: "I{u}", priority: "10" },
   "4/07z": { root: "0", label: "I{z5}", priority: "90" },

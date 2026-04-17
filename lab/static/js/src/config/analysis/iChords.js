@@ -21,9 +21,9 @@ define({
   // i
 
   "0/37": { root: "0", label: "i" },
-  "0/3": { root: "0", label: "i{i3}" },
+  "0/3": { root: "0", label: "i" },
   "3/07": { root: "0", label: "i{z}" },
-  "7/03": { root: "7", label: "i{z4}" },
+  "7/03": { root: "7", label: "Cad{Cz4}" },
 
   "0/37y": { root: "0", label: "i{u}" },
   "3/07y": { root: "0", label: "i{z5}" },

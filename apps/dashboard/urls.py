@@ -32,6 +32,7 @@ from apps.dashboard.views.exercises import (
     exercise_edit_view,
     exercise_delete_view,
     exercise_add_view,
+    api_bulk_delete_exercises,
 )
 from apps.dashboard.views.performance import (
     performances_list_view,
@@ -125,4 +126,5 @@ urlpatterns = [
     # Teacher Dashboard Workbench APIs
     path("api/recent-imports/", api_recent_imports, name="api-recent-imports"),
     path("api/multiply-projection/", api_multiply_projection, name="api-multiply-projection"),
+    path("api/exercises/bulk-delete/", api_bulk_delete_exercises, name="api-bulk-delete-exercises"),
 ]
