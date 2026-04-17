@@ -1,4 +1,6 @@
 # Knowledge Graph Tagging Design Document
+**Status:** IMPLEMENTED (Phase 1)
+**Date:** 2026-04-17
 
 ## Objective
 Convert HarmonyLab's un-categorized exercise curriculum into an Adaptive Knowledge Graph, categorized dynamically via `music21` analysis during the mass import process. This allows the app to serve exercises dynamically based on a student's proficiency in specific skills.

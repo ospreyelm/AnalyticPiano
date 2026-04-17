@@ -111,6 +111,8 @@ A `Playlist` is an ordered sequence of exercises. Key fields:
 - `transpose_requests` — list of key signature strings (e.g. `["C", "G", "D"]`)
 - `transposition_type` — `"Exercise Loop"` or `"Playlist Loop"` (or null = no transposition)
 - `is_auto` — True if auto-generated when exercises were saved (not manually curated)
+- `is_adaptive` — If True, exercises in the playlist are served via the Mastery Engine ranking algorithm rather than in sequential order.
+- `is_adaptive_entry` — (on ExercisePlaylistOrdered) if True, this exercise is an entry point for students with no prior mastery in an adaptive playlist.
 
 **Transposition** is the primary mechanism for presenting the same exercise in multiple keys without duplicating Exercise objects. If a playlist has 3 exercises and `transpose_requests: ["C", "G", "D"]` with `transposition_type: "Exercise Loop"`, the playlist virtually expands to 9 exercises: A+C, A+G, A+D, B+C, B+G, B+D, C+C, C+G, C+D. Transposed exercises get dynamically generated IDs like `EA00DD+16`.
 
@@ -121,6 +123,8 @@ A `Course` is an ordered collection of playlists assigned to students. Key field
 - `open` — if True, visible to all the teacher's student connections; if False, only to specified groups
 - `timely_credit / tardy_credit / late_credit / tardy_threshold` — due-date grading weights
 - `authored_by` — the teacher who owns the course
+- `adaptive_mode` — Choice toggle to enable adaptive logic for all playlists in the course.
+- `mastery_threshold` — (familiar, proficient, mastered) Defines the competency level required to "close" a skill in this course.
 
 ---
 
@@ -129,7 +133,13 @@ A `Course` is an ordered collection of playlists assigned to students. Key field
 ```
 Student hits URL
   ↓
+  ↓
 Django view (lab/views.py: PlaylistView / ExerciseView / CourseView)
+  ↓
+[If Adaptive] get_next_exercise() (apps/exercises/mastery.py)
+  - Rank pool by: lowest_mastery_level -> complexity -> random
+  - Apply session-stable seed for consistency
+  - Fetch target_key for transposition variety
   ↓
 generate_exercise_context() assembles:
   - exercise.data (all the music content)
@@ -216,3 +226,22 @@ The frontend uses RequireJS (AMD modules). There is no bundler in dev mode — e
 **RequireJS paths are the source of truth for the frontend.** If a JS file moves, update `harmony/settings/requirejs.py` or the module will 404 silently.
 
 **`keySignature` vs `key`.** `key` is the HarmonyLab key string (`jC_`). `keySignature` is the staff key signature string used by VexFlow (empty string for C major, `"F"` for one flat, etc.). Both are typically set; `keySignature` can be derived from `key` but they are stored separately.
+
+---
+
+## Mastery & Adaptive System
+
+For a deep dive into the pedagogical algorithms, see [Adaptive Learning Guide](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/docs/adaptive_learning.md).
+
+### Skill Graph (`apps/exercises/skill_graph.py`)
+Defines the `ALL_SKILL_TAGS` taxonomy and the `DEFAULT_PREREQUISITES` DAG. This module is pure Python and acts as the source of truth for the curriculum structure.
+
+### Mastery Engine (`apps/exercises/mastery.py`)
+Computes current student competency based on `PerformanceData` and `StudentSkillMastery` records. 
+- **Decay Logic**: Skills lose "freshness" over time based on an exponential decay formula (halflife).
+- **Adaptive Selection**: `get_next_exercise` finds the "edge of knowledge" for a user by identifying the weakest unlocked skill that hasn't reached the `mastery_threshold`.
+
+### Visual Skill Map
+A Cytoscape.js directed-acyclic-graph implementation that renders the Knowledge Graph for students.
+- **Backend**: `get_skill_map_elements` formats nodes/edges with live mastery color-coding.
+- **Frontend**: `lab/static/js/src/components/skill_map.js` manages the interactive graph rendering.

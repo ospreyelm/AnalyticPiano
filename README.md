@@ -2,6 +2,12 @@
 
 ANALYTIC PIANO (formerly HarmonyLab) is an open-source application for the study of music theory and keyboard skills that takes input from a MIDI keyboard and outputs staff notation. Various analytical vocabularies of melody and harmony are represented. As a practice aid and exercise platform that operates across aural, visual, and tactile domains, this tool accelerates the acquisition of fluency in certain fundamentals of tonal music.
 
+### Key Features
+*   **Aural & Visual Piano Training**: Real-time staff notation feedback from MIDI input.
+*   **Analytical Overlays**: Integrated Roman Numeral and Figured Bass analysis for Classical repertoire.
+*   **Adaptive Learning System**: An intelligent engine that tracks student mastery across a tiered knowledge graph and serves personalized exercises to target specific areas of weakness.
+*   **Visual Skill Map**: A dynamic student dashboard visualizing progress through music theory fundamentals using directed acyclic graphs.
+
 # Supported Web Browsers
 
 As of December 2023, Google Chrome, Microsoft Edge, Opera, and Chromium all include the WebMIDI support on which this app depends. There is cross-platform support for WebMIDI on desktop and laptop computers (Apple desktop OS, Windows, Linux) but iPads unfortunately lack this support.
