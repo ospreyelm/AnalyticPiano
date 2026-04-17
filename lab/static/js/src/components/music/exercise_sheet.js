@@ -184,7 +184,15 @@ define([
       // Show Submit button only in submit mode
       if (identMode === 'submit') {
         $('#identification-actions').show();
-        $('#identification-submit').off('click').on('click', this.onSubmitIdentification);
+        var $submitBtn = $('#identification-submit');
+        $submitBtn.attr('type', 'button');
+        // Use direct DOM property to ensure the handler cannot be removed by
+        // subsequent .off('click') calls or overridden by other jQuery bindings.
+        var submitBtnEl = $submitBtn[0];
+        if (submitBtnEl) {
+          submitBtnEl.onclick = null; // clear any prior handler
+          submitBtnEl.onclick = _.bind(this.onSubmitIdentification, this);
+        }
       } else {
         $('#identification-actions').hide();
       }
@@ -470,9 +478,36 @@ define([
           ctx.font = 'bold 18px sans-serif';
           ctx.fillText(label, lx, labelY);
         } else {
-          ctx.font = '18px JazzSerifs';
-          ctx.fillStyle = fillStyle;
-          ctx.fillText(label, lx, labelY);
+          // Answered slot — render properly based on analysis type
+          var analysisType = definition.getAnalysisType ? definition.getAnalysisType() : 'roman';
+          if (analysisType === 'figured_bass') {
+            // Convert to Sebastian font display format (mirrors stave_notater.drawThoroughbass)
+            var lines = label.split('/').map(function(line) {
+              if (line === '\u00b07') return '/';
+              if (line === '6+') return '&';
+              if (line === '5+') return '%';
+              if (line === '4+') return '$';
+              if (line === '2+') return '"';
+              if (line.slice(0, 2) === '##') return ('x ' + line.slice(2)).trim();
+              if (line.slice(0, 1) === '#') return ('# ' + line.slice(1)).trim();
+              if (line.slice(0, 2) === 'bb') return ('a ' + line.slice(2)).trim();
+              if (line.slice(0, 1) === 'b') return ('b ' + line.slice(1)).trim();
+              if (line.slice(0, 1) === 'n') return ('n ' + line.slice(1)).trim();
+              return line;
+            });
+            ctx.font = '28px Sebastian';
+            ctx.fillStyle = fillStyle;
+            ctx.textAlign = 'center';
+            var skip = 14;
+            var topY = labelY - (lines.length - 1) * skip;
+            for (var li = 0; li < lines.length; li++) {
+              ctx.fillText(lines[li], lx, topY + li * skip);
+            }
+          } else {
+            ctx.font = '18px JazzSerifs';
+            ctx.fillStyle = fillStyle;
+            ctx.fillText(label, lx, labelY);
+          }
         }
 
         if (showCheck || showCross) {
@@ -516,12 +551,10 @@ define([
                 '  cursor: default;' +
                 '  transition: all 0.2s ease-in-out;' +
                 '  opacity: 0.5;' +
-                '  pointer-events: none;' +
                 '} ' +
                 '#identification-submit.ready {' +
                 '  cursor: pointer;' +
                 '  opacity: 1;' +
-                '  pointer-events: auto;' +
                 '  box-shadow: 0 4px 10px rgba(0, 198, 255, 0.4);' +
                 '} ' +
                 '#identification-submit.ready:hover {' +
@@ -532,10 +565,10 @@ define([
           }
       }
 
-      // Hide progress bar if no problems or if graded (feedback mode)
-      if (totalCount === 0 || this.exerciseContext.graded) {
+      // Hide progress bar only after the exercise is fully completed (sealed)
+      if (totalCount === 0 || this.exerciseContext.sealed) {
           $progContainer.hide();
-          $btn.show().addClass('ready');
+          $btn.show().addClass('ready').text('Submit');
           return;
       }
 
@@ -847,6 +880,16 @@ define([
           var wantsRomans = !!display.showRomans;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
+
+          // In chorale identification mode the figures/Romans ARE the student's
+          // answers — rendering them via VexFlow would spoil the exercise.
+          // The identification overlay draws "?" slots instead.
+          if (this._isChoraleIdentificationExercise()) {
+            wantsRomans = false;
+            wantsFigures = false;
+            wantsChordLabels = false;
+          }
+
           var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels;
           // Preserve legacy chorale behavior that force-enables roman numerals,
           // but do not force overlays for chorale_identification.

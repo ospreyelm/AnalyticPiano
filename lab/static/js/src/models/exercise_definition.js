@@ -206,6 +206,13 @@ define([
       }
       if (analysisType === "figured_bass") {
         var abbrevFigure = analyzer.abbrev_thoroughbass_figure(midiStack);
+        // Root-position triads conventionally have no figure (""),
+        // but identification exercises need an explicit label — use the full figure.
+        if (!abbrevFigure) {
+          abbrevFigure = analyzer.full_thoroughbass_figure_minus_octave
+            ? analyzer.full_thoroughbass_figure_minus_octave(midiStack)
+            : "5/3";
+        }
         var expanded = expandFiguredBassToken(abbrevFigure);
         return normalizeAnalysisLabel(expanded);
       }
@@ -502,6 +509,15 @@ define([
      */
     getIdentMode: function () {
       return this.exercise.identMode || "submit";
+    },
+    /**
+     * Returns the analysis type for identification exercises
+     * (e.g. "roman", "figured_bass", "interval_specific").
+     *
+     * @return {string}
+     */
+    getAnalysisType: function () {
+      return this.exercise.analysisType || "roman";
     },
     /**
      * Returns the score for chorale exercises.

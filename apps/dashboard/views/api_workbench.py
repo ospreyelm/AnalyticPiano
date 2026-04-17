@@ -113,20 +113,28 @@ def api_multiply_projection(request):
             source_data = base_ex.data or {}
             score_data = _copy.deepcopy(source_data.get("score", {}))
             
-            # The structure to scaffold into based on target type
-            is_ident = "identification" in target_type or "roman_numeral" in target_type
+            # Map target_type to the correct exercise type and analysisType
+            # All projection types produce chorale_identification exercises;
+            # the analysisType field drives what the student labels.
+            ANALYSIS_TYPE_MAP = {
+                "roman_numeral":         "roman",
+                "figured_bass":          "figured_bass",
+                "chorale_identification": "roman",
+            }
+            analysis_type = ANALYSIS_TYPE_MAP.get(target_type, "roman")
+
             new_data = {
-                "type": "chorale_identification" if is_ident else "musicxml",
-                "identMode": "submit" if is_ident else None,
-                "analysisType": "roman" if target_type == "roman_numeral" else None,
+                "type": "chorale_identification",
+                "identMode": "submit",
+                "analysisType": analysis_type,
                 "score": score_data,
                 "key": source_data.get("key") or score_data.get("meta", {}).get("key", "C"),
                 "staffDistribution": "chorale",
-                "introText": f"Provide the {target_type} analysis below.",
+                "introText": f"Provide the {target_type.replace('_', ' ')} analysis below.",
                 "reviewText": "Well done!",
                 "display": {
                     "showFigures": target_type == "figured_bass",
-                    "showRomans": False,
+                    "showRomans": target_type == "roman_numeral",
                     "transpose": 0,
                     "tempo": 60
                 }

@@ -1722,20 +1722,20 @@
         <stem>up</stem>
         <staff>1</staff>
         </note>
-      <note default-x="164.87" default-y="-30">
+      <note default-x="164.87" default-y="-40">
         <pitch>
-          <step>G</step>
-          <alter>-2</alter>
+          <step>E</step>
+          <alter>1</alter>
           <octave>4</octave>
           </pitch>
         <duration>1</duration>
         <voice>1</voice>
         <type>quarter</type>
-        <accidental>flat-flat</accidental>
+        <accidental>sharp</accidental>
         <stem>up</stem>
         <staff>1</staff>
         </note>
-      <note default-x="176.73" default-y="-25">
+      <note default-x="164.87" default-y="-25">
         <chord/>
         <pitch>
           <step>A</step>

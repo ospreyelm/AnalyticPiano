@@ -145,8 +145,7 @@ define([
      * For tempo assessment
      */
     makeTimestamp: function () {
-      if (!this.timer.timepoints) {
-        console.log("makeTimestamp failed because no timepoints object found");
+      if (!this.timer || !this.timer.timepoints) {
         return null;
       }
       try {
