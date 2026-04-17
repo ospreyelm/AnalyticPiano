@@ -54,10 +54,20 @@ from apps.dashboard.views.connections import (
 )
 from apps.dashboard.views.my_work import my_work_view
 
+from apps.dashboard.views.api_workbench import (
+    api_recent_imports,
+    api_multiply_projection,
+    workbench_view,
+    workbench_upload_view,
+)
+
 app_name = "dashboard"
 
 urlpatterns = [
     path("", dashboard_index_view, name="index"),
+    # Teacher Workbench
+    path("workbench/", workbench_view, name="workbench"),
+    path("workbench/upload/", workbench_upload_view, name="workbench-upload"),
     # Exercises
     path("exercises/", exercises_list_view, name="exercises-list"),
     path("exercises/add/", exercise_add_view, name="add-exercise"),
@@ -111,4 +121,8 @@ urlpatterns = [
     path("import/playlists/", PlaylistImportView.as_view(), name="import-playlists"),
     path("export/courses/", CourseExportView.as_view(), name="export-courses"),
     path("import/courses/", CourseImportView.as_view(), name="import-courses"),
+    
+    # Teacher Dashboard Workbench APIs
+    path("api/recent-imports/", api_recent_imports, name="api-recent-imports"),
+    path("api/multiply-projection/", api_multiply_projection, name="api-multiply-projection"),
 ]

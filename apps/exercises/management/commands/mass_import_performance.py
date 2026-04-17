@@ -129,12 +129,13 @@ class Command(BaseCommand):
             m_end = measures[-1].number
             self.stdout.write(f"  Processing Chunk {idx + 1}: mm. {m_start}-{m_end}")
 
-            # Extract key signature if possible, or analyze
-            key_sig = chunk.flatten().getElementsByClass(music21.key.KeySignature)
-            if key_sig:
-                chunk_key = key_sig[0].asKey().name
-            else:
-                chunk_key = chunk.analyze('key').name
+            # Algorithmically determine the true tonal center and mode (e.g. "a" minor vs "C" major)
+            # using music21's Krumhansl-Schmuckler analysis rather than blindly trusting the key signature.
+            try:
+                chunk_key = chunk.analyze('key').tonicPitchNameWithCase
+            except Exception:
+                # Absolute fallback if it's completely empty
+                chunk_key = "C"
             
             # Convert to our CIR representation
             try:
@@ -143,12 +144,16 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"  Error converting to CIR: {e}"))
                 continue
             
+            meta_data = cir_data.get('meta', {})
+            meta_data['key'] = chunk_key
+
             # Build base exercise JSON payload
             exercise_data = {
+                "key": chunk_key,
                 "type": "musicxml",  # Use the generic CIR-capable type
                 "mode": "play-all-voices",
                 "score": {
-                    "meta": cir_data.get('meta', {}),
+                    "meta": meta_data,
                     "measures": cir_data.get('measures', [])
                 },
                 "source": {
