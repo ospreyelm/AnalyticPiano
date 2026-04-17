@@ -185,12 +185,32 @@ class Command(BaseCommand):
                 "staffDistribution": "chorale"
             }
 
+        # Detect skill tags via music21 analysis
+        from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
+        from apps.exercises.utils.music21_builder import build_score_from_data
+
+        detected_skills = []
+        detected_complexity = 1
+        try:
+            # Build music21 score from the chorale data
+            chunk_score = build_score_from_data({
+                'score': {
+                    'meta': meta,
+                    'measures': excerpt_measures
+                }
+            })
+            detected_skills, detected_complexity = analyze_chunk_skills(chunk_score, meta.get("key", "C"))
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f'  Warning: Skills analysis failed: {e}'))
+
         # Create the Exercise
         exercise = Exercise(
             description=title,
             data=exercise_data,
             authored_by=author,
-            is_public=is_public
+            is_public=is_public,
+            skill_tags=detected_skills,
+            complexity=detected_complexity
         )
         exercise.save()
 
