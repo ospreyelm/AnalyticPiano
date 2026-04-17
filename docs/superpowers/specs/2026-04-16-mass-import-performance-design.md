@@ -44,18 +44,16 @@ For each segment generated:
 2. Create the `Exercise` record.
 3. If a `--course` flag was used, append the `Exercise` ID to a new `Playlist` mapped to that course called "Recent Imports [Date]".
 
-## Future-Proofing for the Workbench & UI Integrations
-The UI mockup created during brainstorming established the direction for the frontend integration. This ensures the CLI script's output seamlessly supports the UI goals.
+## UI Integration & Workbench (Completed)
+The UI mockup created during brainstorming established the direction, and the frontend integration is now **complete**.
 
-**The "Course Editor" UI Features:**
-1. **Scope:** The workspace is entirely scoped to a single course (e.g., "Harmony I - Fundamentals").
-2. **Library Toggle:** A clear visualization split between the "Course Library" (content assigned) and the "Global Library".
-3. **Import Trigger:** Prominent "Import from Performance" flow.
-4. **The "Workbench" (Mass Actions):** This is the key feature that relies on this CLI script. The teacher can multi-select any imported "raw performance" segments and use "Multiply Projections" side-panel buttons.
-   - Example UI Action: Select 5 matching segments -> Click "To Figured Bass" -> System automatically creates 5 new figured bass configurations from the roots.
-5. **Instruction Templates:** The UI will read from Teacher-level DB defaults for instructions to inject into duplicated exercises.
+**The "Teacher Workbench" Features:**
+1. **Workbench View:** A global ingestion zone (`/dashboard/workbench`) where teachers can trigger imports natively via file upload and manage them.
+2. **Import Trigger:** The UI passes uploads directly to the `mass_import_performance` management command.
+3. **The "Projection Engine" (Mass Actions):** Teachers can multi-select raw imported segments and use "Projection" actions (e.g. Roman Numeral, Figured Bass, Pitch Identification).
+4. **Dynamic modes:** Supports global and per-item `identMode` selection (Submit/Practice/Test) at batch creation time.
 
-By creating the split logic autonomously in the CLI now, and divorcing ingestion from projection, we lay the exact data framework needed to build this UI dashboard in the future phases.
+By creating the split logic autonomously in the CLI and separating ingestion from projection in the data models, the system seamlessly enables this standalone Workbench.
 
 ## Execution Plan
 1. Create `mass_import_performance.py`.
