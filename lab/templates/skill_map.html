@@ -1,0 +1,139 @@
+{% extends '__base.html' %}
+
+{% block css_extra %}
+<style>
+    .skill-map-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 80px); /* Adjust based on header height */
+        padding: 20px 40px;
+        background: #fdfdfd;
+    }
+    .skill-map-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .skill-map-title h1 {
+        margin: 0;
+        font-size: 1.8em;
+        color: #2c3e50;
+    }
+    .skill-map-title p {
+        margin: 5px 0 0;
+        color: #7f8c8d;
+    }
+    #skill-map-container {
+        flex-grow: 1;
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        position: relative;
+    }
+    .skill-map-legend {
+        display: flex;
+        gap: 20px;
+        background: white;
+        padding: 10px 20px;
+        border-radius: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85em;
+        font-weight: 500;
+        color: #34495e;
+    }
+    .swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+    }
+    /* Info Panel style */
+    #skill-info-panel {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 300px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        display: none;
+        z-index: 100;
+        backdrop-filter: blur(4px);
+    }
+    #skill-info-panel h3 { margin-top: 0; margin-bottom: 10px; }
+    #skill-info-panel .mastery-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        margin-bottom: 10px;
+        text-transform: capitalize;
+    }
+    .btn-practice {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background: #2ecc71;
+        color: white;
+        text-align: center;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background 0.2s;
+    }
+    .btn-practice:hover { background: #27ae60; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="skill-map-wrapper">
+    <div class="skill-map-header">
+        <div class="skill-map-title">
+            <h1>Music Theory Skill Map</h1>
+            {% if course %}
+                <p>Course: {{ course.title }}</p>
+            {% endif %}
+        </div>
+        <div class="skill-map-legend">
+            <div class="legend-item"><div class="swatch" style="background: #27ae60;"></div> Mastered</div>
+            <div class="legend-item"><div class="swatch" style="background: #2980b9;"></div> Proficient</div>
+            <div class="legend-item"><div class="swatch" style="background: #f1c40f;"></div> Familiar</div>
+            <div class="legend-item"><div class="swatch" style="background: #ecf0f1; border: 1px solid #bdc3c7;"></div> Not Started</div>
+            <div class="legend-item"><div class="swatch" style="background: #e74c3c;"></div> Review Due</div>
+        </div>
+    </div>
+
+    <div id="skill-map-container">
+        <div id="skill-info-panel">
+            <h3 id="panel-skill-name">Skill Name</h3>
+            <div id="panel-mastery-level" class="mastery-badge">Level</div>
+            <p id="panel-description" style="font-size: 0.9em; color: #555;">Select a skill to see details and start practicing.</p>
+            <a href="#" id="panel-practice-link" class="btn-practice">Practice This Skill</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js_extra %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+<script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+<script>
+    // Initialize the skill map
+    require(['app/components/skill_map'], function(SkillMap) {
+        SkillMap.init({
+            container: document.getElementById('skill-map-container'),
+            dataUrl: "{% if course_id %}{% url 'lab:skill-map-data' course_id %}{% else %}{% url 'lab:skill-map-data' %}{% endif %}",
+            courseId: "{{ course_id|default:'' }}"
+        });
+    });
+</script>
+{% endblock %}

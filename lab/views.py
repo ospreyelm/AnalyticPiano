@@ -28,7 +28,7 @@ from apps.exercises.models import (
     PerformanceData,
     PlaylistCourseOrdered,
 )
-from apps.exercises.mastery import get_next_exercise
+from apps.exercises.mastery import get_next_exercise, get_skill_map_elements
 from apps.exercises.utils.transpose import transpose as transpose_exercise
 
 
@@ -598,6 +598,33 @@ class CourseView(RequirejsView):
 
 def not_authorized(request):
     return HttpResponse("Unauthorized", status=401)
+
+
+class SkillMapView(RequirejsView):
+    """Page view to render the visual Knowledge Graph / Skill Map."""
+    @method_decorator(login_required)
+    def get(self, request, course_id=None, *args, **kwargs):
+        course = None
+        if course_id:
+            course = get_object_or_404(Course, id=course_id)
+        
+        context = {
+            "course": course,
+            "course_id": course_id,
+        }
+        return render(request, "skill_map.html", context)
+
+
+class SkillMapDataView(View):
+    """JSON API to serve graph data for the Skill Map."""
+    @method_decorator(login_required)
+    def get(self, request, course_id=None, *args, **kwargs):
+        course = None
+        if course_id:
+            course = Course.objects.filter(id=course_id).first()
+        
+        elements = get_skill_map_elements(request.user.id, course=course)
+        return JsonResponse({"elements": elements})
 
 
 def check_course_authorization(request, course_id, raise_exception=False):

@@ -19,6 +19,8 @@ from .views import (
     ExerciseView,
     RefreshExerciseDefinition,
     CourseView,
+    SkillMapView,
+    SkillMapDataView,
     exercise_performance_history,
     dev_corpus_bach_json,
     ChoraleAnalysisDebugView,
@@ -114,4 +116,9 @@ urlpatterns = [
         ChoraleAnalysisDebugView.as_view(),
         name="debug-analysis",
     ),
+    # Skill Map
+    path("skill-map/", SkillMapView.as_view(), name="skill-map"),
+    path("skill-map/<str:course_id>/", SkillMapView.as_view(), name="skill-map"),
+    path("ajax/skill-map/", SkillMapDataView.as_view(), name="skill-map-data"),
+    path("ajax/skill-map/<str:course_id>/", SkillMapDataView.as_view(), name="skill-map-data"),
 ]

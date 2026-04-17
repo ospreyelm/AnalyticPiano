@@ -296,3 +296,105 @@ def get_next_exercise(user_id: int, playlist=None, course=None, seed=None):
 
     return best_ex, target_key
 
+
+# ---------------------------------------------------------------------------
+# Skill Map Data Generation
+# ---------------------------------------------------------------------------
+
+def get_skill_map_elements(user_id: int, course=None):
+    """
+    Generate graph elements (nodes and edges) for the Student Skill Map.
+    Formatted for Cytoscape.js.
+    """
+    from apps.exercises.models import StudentSkillMastery, SkillPrerequisite
+    from apps.exercises.skill_graph import (
+        ALL_SKILL_TAGS, 
+        DEFAULT_PREREQUISITES, 
+        MASTERY_LEVELS,
+        UNLOCK_THRESHOLD
+    )
+    from django.db.models import Q
+
+    # 1. Fetch user mastery data
+    mastery_qs = StudentSkillMastery.objects.filter(user_id=user_id).values(
+        "skill_tag", "level", "last_practiced"
+    )
+    mastery_map = {m["skill_tag"]: m for m in mastery_qs}
+
+    # 2. Build prerequisite map (including course overrides)
+    prereq_qs = SkillPrerequisite.objects.filter(
+        Q(course__isnull=True) | Q(course=course)
+    ).values("skill_tag", "requires_tag")
+    
+    # Map to help check unlock status
+    prereq_graph: dict[str, list[str]] = {}
+    for row in prereq_qs:
+        prereq_graph.setdefault(row["skill_tag"], []).append(row["requires_tag"])
+
+    # 3. Determine acquired skills for unlock logic
+    threshold_idx = MASTERY_LEVELS.index(UNLOCK_THRESHOLD)
+    acquired_levels = MASTERY_LEVELS[threshold_idx:]
+    acquired_skills = {
+        m["skill_tag"] for m in mastery_map.values() 
+        if m["level"] in acquired_levels
+    }
+
+    elements = []
+
+    # 4. Create Nodes
+    for skill in ALL_SKILL_TAGS:
+        m_data = mastery_map.get(skill, {})
+        level = m_data.get("level", "not_started")
+        
+        # Check if decayed
+        is_decayed = False
+        if m_data.get("last_practiced"):
+            decayed_level = compute_decay(level, m_data["last_practiced"])
+            if decayed_level != level:
+                is_decayed = True
+
+        # Unlock logic: all prerequisites must be acquired
+        reqs = prereq_graph.get(skill, [])
+        unlocked = all(r in acquired_skills for r in reqs)
+
+        # Human friendly label (replace underscores with spaces)
+        label = skill.replace("_", " ")
+
+        elements.append({
+            "data": {
+                "id": skill,
+                "label": label,
+                "level": level,
+                "unlocked": unlocked,
+                "is_decayed": is_decayed,
+                "tier": get_tier(skill)  # Optional helper for layout
+            }
+        })
+
+    # 5. Create Edges
+    for skill, reqs in prereq_graph.items():
+        if skill not in ALL_SKILL_TAGS: continue
+        for r in reqs:
+            if r not in ALL_SKILL_TAGS: continue
+            elements.append({
+                "data": {
+                    "id": f"edge-{r}-{skill}",
+                    "source": r,
+                    "target": skill
+                }
+            })
+
+    return elements
+
+def get_tier(skill_tag: str) -> int:
+    """Helper to group skills by tier based on position in ALL_SKILL_TAGS (MVP logic)."""
+    from apps.exercises.skill_graph import ALL_SKILL_TAGS
+    try:
+        idx = ALL_SKILL_TAGS.index(skill_tag)
+        if idx < 11: return 0  # pre-theory
+        if idx < 26: return 1  # foundation
+        return 2 # chromatic
+    except ValueError:
+        return 0
+
+
