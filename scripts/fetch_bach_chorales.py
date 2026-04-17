@@ -262,9 +262,9 @@ def m21_to_cir(s: stream.Score) -> Dict:
     def role_from_name(p: stream.Part) -> Optional[str]:
         """Infer SATB role from part/long name when available."""
         try:
-            name = (p.partName or p.partAbbreviation or p.id or "").lower()
+            name = str(p.partName or p.partAbbreviation or p.id or "").lower()
         except Exception:
-            name = (getattr(p, 'id', '') or '').lower()
+            name = str(getattr(p, 'id', '') or '').lower()
         # common variants
         if any(k in name for k in ["sopr", "sopran", "cantus", "discant"]):
             return 'S'

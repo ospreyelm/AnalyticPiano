@@ -1,0 +1,40 @@
+<h2>Voice selection at import time</h2>
+<p class="subtitle">When duplicating a chorale as a pitch identification exercise, how should the teacher specify which voice to use?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Dropdown in the duplicate dialog</h3>
+      <p>A "Duplicate as pitch identification" button opens a small dialog with a dropdown: <strong>Voice: Soprano / Alto / Tenor / Bass</strong>. One click → one exercise for that voice.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Simple, one action per voice</li><li>Matches existing duplicate-as-identification pattern</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Teacher must press the button 4× to generate all 4 voices</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Multi-select — generate all voices at once</h3>
+      <p>A dialog lets the teacher check which voices to generate (S / A / T / B). Creates one exercise per checked voice in a single action.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>One action to create a full set</li><li>Consistent naming (e.g. "BWV1.6 – Soprano")</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More complex dialog UI</li><li>Generates multiple exercises — may feel like too much at once</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Field on the exercise edit form</h3>
+      <p>The duplicate creates a <code>chorale_identification</code> exercise with <code>analysisType: "note_name"</code>. A <strong>Voice</strong> dropdown field on the edit form lets the teacher switch which voice is extracted, updating the exercise in place.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Editable after creation</li><li>No dialog needed</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More complex — voice selection must be re-applied on every save</li><li>Requires storing both the full score and the selected voice</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

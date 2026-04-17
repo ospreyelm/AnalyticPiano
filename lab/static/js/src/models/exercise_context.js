@@ -145,8 +145,7 @@ define([
      * For tempo assessment
      */
     makeTimestamp: function () {
-      if (!this.timer.timepoints) {
-        console.log("makeTimestamp failed because no timepoints object found");
+      if (!this.timer || !this.timer.timepoints) {
         return null;
       }
       try {
@@ -827,6 +826,18 @@ define([
      * @return {number}
      */
     getIdentPageOffset: function () {
+      if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
+         var maxMeasures = 4; // Matches chorale maxMeasures default
+         var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;
+         var targetMeasure = this._identPage * maxMeasures;
+         var lastPossibleStart = Math.max(0, totalMeasures - maxMeasures);
+         if (targetMeasure > lastPossibleStart) targetMeasure = lastPossibleStart;
+         var problems = this.definition.getProblems();
+         for (var i = 0; i < problems.length; i++) {
+            if (problems[i].measureIndex >= targetMeasure) return i;
+         }
+         return problems.length;
+      }
       return this._identPage * this._identPageSize;
     },
     /**
@@ -836,6 +847,12 @@ define([
      */
     getTotalIdentPages: function () {
       var allProblems = this.definition.getProblems();
+      if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
+          if (!allProblems || !allProblems.length) return 1;
+          var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;
+          var maxMeasures = 4;
+          return Math.ceil(totalMeasures / maxMeasures);
+      }
       return Math.ceil(allProblems.length / this._identPageSize);
     },
     /**
@@ -844,8 +861,19 @@ define([
      * @return {Array}
      */
     getVisibleProblems: function () {
+      var allProblems = this.definition.getProblems() || [];
+      if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
+          var maxMeasures = 4;
+          var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;
+          var startMeasure = this._identPage * maxMeasures;
+          var lastPossibleStart = Math.max(0, totalMeasures - maxMeasures);
+          if (startMeasure > lastPossibleStart) startMeasure = lastPossibleStart;
+          var endMeasure = startMeasure + maxMeasures;
+          return allProblems.filter(function(p) {
+             return p.measureIndex >= startMeasure && p.measureIndex < endMeasure;
+          });
+      }
       var offset = this.getIdentPageOffset();
-      var allProblems = this.definition.getProblems();
       return allProblems.slice(offset, offset + this._identPageSize);
     },
     /**
@@ -886,11 +914,12 @@ define([
         // Re-grade the new page so colour feedback is visible immediately
         // (e.g. when navigating back to an already-answered page).
         var visibleProblems = self.getVisibleProblems();
+        var pageOffset = self.getIdentPageOffset();
         var hasAnyAnswer = visibleProblems.some(function (_, i) {
-          return self.grader.answers && self.grader.answers.hasOwnProperty(n * self._identPageSize + i);
+          return self.grader.answers && self.grader.answers.hasOwnProperty(pageOffset + i);
         });
         if (hasAnyAnswer) {
-          self.graded = self.grader.grade(self.definition, visibleProblems, self.getIdentPageOffset());
+          self.graded = self.grader.grade(self.definition, visibleProblems, pageOffset);
         } else {
           self.graded = false;
         }

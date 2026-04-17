@@ -278,12 +278,49 @@ def exercise_delete_view(request, exercise_id):
         exercise.delete()
         return redirect("dashboard:exercises-list")
 
+        redirect_url = reverse("dashboard:exercises-list")
+    
     context = {
         "obj": exercise,
         "obj_name": exercise.id,
         "verbose_name": exercise._meta.verbose_name,
         "verbose_name_plural": exercise._meta.verbose_name_plural,
         "has_been_performed": exercise.has_been_performed,
-        "redirect_url": reverse("dashboard:exercises-list"),
+        "redirect_url": redirect_url,
     }
     return render(request, "dashboard/delete-confirmation.html", context)
+
+import json
+from django.http import JsonResponse
+
+@login_required
+def api_bulk_delete_exercises(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST requests are allowed"}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        ids = data.get("ids", [])
+        if not ids:
+            return JsonResponse({"error": "No exercise IDs provided."}, status=400)
+            
+        deleted_count = 0
+        from django.db import transaction
+        
+        with transaction.atomic():
+            exercises = Exercise.objects.filter(pk__in=ids)
+            for ex in exercises:
+                # Security: Only owner can delete
+                if ex.authored_by != request.user:
+                    continue
+                # Protection: Don't delete if performed
+                if ex.has_been_performed:
+                    continue
+                
+                ex.delete()
+                deleted_count += 1
+                
+        return JsonResponse({"status": "success", "deleted": deleted_count})
+        
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

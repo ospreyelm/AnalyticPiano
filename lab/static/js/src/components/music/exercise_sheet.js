@@ -184,7 +184,15 @@ define([
       // Show Submit button only in submit mode
       if (identMode === 'submit') {
         $('#identification-actions').show();
-        $('#identification-submit').off('click').on('click', this.onSubmitIdentification);
+        var $submitBtn = $('#identification-submit');
+        $submitBtn.attr('type', 'button');
+        // Use direct DOM property to ensure the handler cannot be removed by
+        // subsequent .off('click') calls or overridden by other jQuery bindings.
+        var submitBtnEl = $submitBtn[0];
+        if (submitBtnEl) {
+          submitBtnEl.onclick = null; // clear any prior handler
+          submitBtnEl.onclick = _.bind(this.onSubmitIdentification, this);
+        }
       } else {
         $('#identification-actions').hide();
       }
@@ -193,11 +201,9 @@ define([
       this.el.off('click.identification').on('click.identification', function (e) {
         if (!self._isIdentificationLikeExercise()) { return; }
 
+        // Lock individual correct items so users can still modify incorrect choices or finish a new page
         var currentMode = self.exerciseContext.getDefinition().getIdentMode
           ? self.exerciseContext.getDefinition().getIdentMode() : 'submit';
-
-        // Lock after grading in submit mode
-        if (self.exerciseContext.graded && currentMode !== 'practice') { return; }
 
         var offset = self.el.offset();
         var clickX = e.pageX - offset.left;
@@ -216,15 +222,21 @@ define([
             break;
           }
         }
-        if (hitIndex === -1) { return; }
-
-        // In test mode, lock slots that already have an answer
+        // Lock slots that already have an answer in test mode, or are already graded correct in submit mode.
         var grdr = self.exerciseContext.grader;
         var pageOffset = self.exerciseContext.getIdentPageOffset
           ? self.exerciseContext.getIdentPageOffset() : 0;
         var absoluteHitIndex = pageOffset + hitIndex;
+        
         if (currentMode === 'test' && grdr && grdr.answers && grdr.answers.hasOwnProperty(absoluteHitIndex)) {
           return;
+        }
+
+        if (self.exerciseContext.graded && currentMode !== 'practice') {
+            var gp = self.exerciseContext.graded.problems ? self.exerciseContext.graded.problems[hitIndex] : null;
+            if (gp && gp.correct) {
+                return; // Lock only correctly graded items so users can still modify mistakes
+            }
         }
 
         var problems = self.exerciseContext.getVisibleProblems
@@ -391,10 +403,12 @@ define([
       var origFillStyle = ctx.fillStyle;
       var origTextAlign = ctx.textAlign;
       var origTextBaseline = ctx.textBaseline;
+      var origLineWidth = ctx.lineWidth;
 
       // Center labels on slot.x so visual position and click target match.
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
+      var answeredCount = 0;
 
       for (var i = 0; i < slots.length; i++) {
         var slot = slots[i];
@@ -410,7 +424,7 @@ define([
         var label = chosen || '?';
 
         var fillStyle = '#888888'; // unanswered
-        if (chosen) { fillStyle = '#444444'; } // answered
+        if (chosen) { fillStyle = '#444444'; answeredCount++; } // answered
         var showCheck = false;
         var showCross = false;
 
@@ -432,21 +446,156 @@ define([
           }
         }
 
-        ctx.font = '18px JazzSerifs';
-        ctx.fillStyle = fillStyle;
-        ctx.fillText(label, lx, labelY);
-
         // ✓ or ✗ drawn below the label text
+        var markerYOffset = showCheck || showCross ? 22 : 0;
+        
+        if (!chosen) {
+          // Draw a clear, clickable pill background for unanswered items
+          ctx.beginPath();
+          var w = 32;
+          var h = 28;
+          var rx = lx - w/2;
+          var ry = labelY - 20;
+          var rConfig = 6;
+          ctx.moveTo(rx + rConfig, ry);
+          ctx.lineTo(rx + w - rConfig, ry);
+          ctx.quadraticCurveTo(rx + w, ry, rx + w, ry + rConfig);
+          ctx.lineTo(rx + w, ry + h - rConfig);
+          ctx.quadraticCurveTo(rx + w, ry + h, rx + w - rConfig, ry + h);
+          ctx.lineTo(rx + rConfig, ry + h);
+          ctx.quadraticCurveTo(rx, ry + h, rx, ry + h - rConfig);
+          ctx.lineTo(rx, ry + rConfig);
+          ctx.quadraticCurveTo(rx, ry, rx + rConfig, ry);
+          ctx.closePath();
+          
+          ctx.fillStyle = '#fefce8';
+          ctx.fill();
+          ctx.strokeStyle = '#facc15';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.fillStyle = '#ca8a04';
+          ctx.font = 'bold 18px sans-serif';
+          ctx.fillText(label, lx, labelY);
+        } else {
+          // Answered slot — render properly based on analysis type
+          var analysisType = definition.getAnalysisType ? definition.getAnalysisType() : 'roman';
+          if (analysisType === 'figured_bass') {
+            // Convert to Sebastian font display format (mirrors stave_notater.drawThoroughbass)
+            var lines = label.split('/').map(function(line) {
+              if (line === '\u00b07') return '/';
+              if (line === '6+') return '&';
+              if (line === '5+') return '%';
+              if (line === '4+') return '$';
+              if (line === '2+') return '"';
+              if (line.slice(0, 2) === '##') return ('x ' + line.slice(2)).trim();
+              if (line.slice(0, 1) === '#') return ('# ' + line.slice(1)).trim();
+              if (line.slice(0, 2) === 'bb') return ('a ' + line.slice(2)).trim();
+              if (line.slice(0, 1) === 'b') return ('b ' + line.slice(1)).trim();
+              if (line.slice(0, 1) === 'n') return ('n ' + line.slice(1)).trim();
+              return line;
+            });
+            ctx.font = '28px Sebastian';
+            ctx.fillStyle = fillStyle;
+            ctx.textAlign = 'center';
+            var skip = 14;
+            var topY = labelY - (lines.length - 1) * skip;
+            for (var li = 0; li < lines.length; li++) {
+              ctx.fillText(lines[li], lx, topY + li * skip);
+            }
+          } else {
+            ctx.font = '18px JazzSerifs';
+            ctx.fillStyle = fillStyle;
+            ctx.fillText(label, lx, labelY);
+          }
+        }
+
         if (showCheck || showCross) {
-          ctx.font = 'bold 14px sans-serif';
+          ctx.font = 'bold 15px sans-serif';
           ctx.fillText(showCheck ? '✓' : '✗', lx, markerY);
         }
+      }
+
+      if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
+         this._updateIdentificationProgressUI(answeredCount, slots.length);
       }
 
       ctx.font = origFont;
       ctx.fillStyle = origFillStyle;
       ctx.textAlign = origTextAlign;
       ctx.textBaseline = origTextBaseline;
+      ctx.lineWidth = origLineWidth;
+    },
+
+    _updateIdentificationProgressUI: function(answeredCount, totalCount) {
+      var $btn = $('#identification-submit');
+      if ($btn.length === 0) return;
+
+      var $progContainer = $('#ident-progress-container');
+      if ($progContainer.length === 0) {
+          $progContainer = $('<div id="ident-progress-container" style="width: 250px; margin: 0 auto 15px; background: #e2e8f0; border-radius: 9999px; height: 6px; overflow: hidden; display: none;">' +
+                           '<div id="ident-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); transition: width 0.3s ease;"></div>' +
+                           '</div>');
+          $('#identification-actions').prepend($progContainer);
+          
+          if ($('#ident-premium-css').length === 0) {
+              $('<style id="ident-premium-css">' +
+                '#identification-submit {' +
+                '  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);' +
+                '  color: white;' +
+                '  border: none;' +
+                '  border-radius: 20px;' +
+                '  padding: 8px 30px;' +
+                '  font-size: 15px;' +
+                '  font-weight: 600;' +
+                '  cursor: default;' +
+                '  transition: all 0.2s ease-in-out;' +
+                '  opacity: 0.5;' +
+                '} ' +
+                '#identification-submit.ready {' +
+                '  cursor: pointer;' +
+                '  opacity: 1;' +
+                '  box-shadow: 0 4px 10px rgba(0, 198, 255, 0.4);' +
+                '} ' +
+                '#identification-submit.ready:hover {' +
+                '  transform: translateY(-1px);' +
+                '  box-shadow: 0 6px 14px rgba(0, 198, 255, 0.5);' +
+                '}' +
+                '</style>').appendTo('head');
+          }
+      }
+
+      // Hide progress bar only after the exercise is fully completed (sealed)
+      if (totalCount === 0 || this.exerciseContext.sealed) {
+          $progContainer.hide();
+          $btn.show().addClass('ready').text('Submit');
+          return;
+      }
+
+      var allProblems = this.exerciseContext.getDefinition().getProblems() || [];
+      var globalTotal = allProblems.length;
+      var answers = this.exerciseContext.grader ? this.exerciseContext.grader.answers : {};
+      var globalAnswered = 0;
+      for (var i = 0; i < globalTotal; i++) {
+          if (answers.hasOwnProperty(i) && answers[i] !== null && answers[i] !== '') {
+              globalAnswered++;
+          }
+      }
+
+      $progContainer.show();
+      var progressPct = globalTotal > 0 ? (globalAnswered / globalTotal) * 100 : 0;
+      $('#ident-progress-bar').css('width', progressPct + '%');
+
+      var isLastPage = this.exerciseContext.getIdentPage && this.exerciseContext.getTotalIdentPages
+         ? (this.exerciseContext.getIdentPage() >= this.exerciseContext.getTotalIdentPages() - 1)
+         : true;
+
+      // The button only cares if the CURRENT page is complete
+      if (answeredCount >= totalCount) {
+          $btn.addClass('ready').text(isLastPage ? 'Submit' : 'Next Page');
+      } else {
+          $btn.removeClass('ready').text('Complete Analysis');
+      }
     },
 
     /**
@@ -640,9 +789,10 @@ define([
       var html = "";
       var tpl_data = {};
 
-      // Parse the text for tokens that should use the figured bass font
       tpl_data.prompt_text = FontParser.parseHTMLFiguredBass(
-        exc.definition.getIntro()
+        exc.definition.getExerciseText
+          ? exc.definition.getExerciseText()
+          : (exc.definition.getIntro ? exc.definition.getIntro() : "")
       );
 
       html = tpl(tpl_data);
@@ -730,6 +880,16 @@ define([
           var wantsRomans = !!display.showRomans;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
+
+          // In chorale identification mode the figures/Romans ARE the student's
+          // answers — rendering them via VexFlow would spoil the exercise.
+          // The identification overlay draws "?" slots instead.
+          if (this._isChoraleIdentificationExercise()) {
+            wantsRomans = false;
+            wantsFigures = false;
+            wantsChordLabels = false;
+          }
+
           var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels;
           // Preserve legacy chorale behavior that force-enables roman numerals,
           // but do not force overlays for chorale_identification.
@@ -795,15 +955,7 @@ define([
             },
           });
 
-          // For chorale_identification, sync page size to the number of note
-          // columns actually rendered — _identPageSize=4 (the legacy default)
-          // is too small when a single voice has more than 4 notes per screen.
-          if (this._isChoraleIdentificationExercise()) {
-            var layoutCount = Object.keys(this._identWindowLayout).length;
-            if (layoutCount > 0) {
-              this.exerciseContext._identPageSize = layoutCount;
-            }
-          }
+
 
           if (this._isIdentificationLikeExercise()) {
             this.drawIdentificationLabels();
@@ -856,9 +1008,9 @@ define([
       // For chorale (play-through), it comes from the grader.
       var context = this.exerciseContext;
       if (context && typeof context.getIdentPageOffset === "function" && this._isChoraleIdentificationExercise()) {
-        var offset = context.getIdentPageOffset();
-        if (typeof offset === "number" && !isNaN(offset)) {
-          activeMeasure = Math.max(0, Math.min(offset, totalMeasures - 1));
+        if (typeof context.getIdentPage === "function") {
+          var page = context.getIdentPage();
+          activeMeasure = Math.max(0, Math.min(page * maxMeasures, totalMeasures - 1));
         }
       } else {
         var grader = context && context.grader;

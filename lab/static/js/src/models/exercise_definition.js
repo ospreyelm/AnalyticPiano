@@ -57,6 +57,7 @@ define([
   var FIGURE_TOKEN_MAP = {
     "z": "6",
     "z4": "6/4",
+    "Cz4": "b6/4",
     "z5": "6/5",
     "u": "7",
     "u3": "6/5",
@@ -124,7 +125,7 @@ define([
     if (!label) return label;
     var result = String(label);
     // Replace {token} patterns with their expanded forms
-    result = result.replace(/\{([a-z0-9]+)\}/g, function (match, token) {
+    result = result.replace(/\{([A-Za-z0-9]+)\}/g, function (match, token) {
       return FIGURE_TOKEN_MAP[token] || '';
     });
     return result.trim();
@@ -205,6 +206,13 @@ define([
       }
       if (analysisType === "figured_bass") {
         var abbrevFigure = analyzer.abbrev_thoroughbass_figure(midiStack);
+        // Root-position triads conventionally have no figure (""),
+        // but identification exercises need an explicit label — use the full figure.
+        if (!abbrevFigure) {
+          abbrevFigure = analyzer.full_thoroughbass_figure_minus_octave
+            ? analyzer.full_thoroughbass_figure_minus_octave(midiStack)
+            : "5/3";
+        }
         var expanded = expandFiguredBassToken(abbrevFigure);
         return normalizeAnalysisLabel(expanded);
       }
@@ -284,7 +292,7 @@ define([
       ? (compoundIntervals
         ? ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "m9", "M9", "m10", "M10", "P11", "P12", "m13", "M13", "m14", "M14"]
         : ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8"])
-      : ["I", "ii", "IV", "V", "vi"];
+      : ["I", "ii", "IV", "V", "vi", "I6/4", "i6/4", "V6/4", "Cad6/4", "Cadb6/4"];
     _.each(fallbacks, function (item) {
       if (item !== correctLabel && pool.indexOf(item) === -1) {
         pool.push(item);
@@ -320,8 +328,10 @@ define([
 
     return _.map(windows, function (window, idx) {
       var answer = labels[idx] || "";
+      var measureIndex = window.events && window.events.length ? window.events[0].measureIndex : 0;
       return {
         windowIndex: idx,
+        measureIndex: measureIndex,
         onset: window.onset,
         answer: answer,
         choices: buildChoices(answer, labels, analysisType, compoundIntervals),
@@ -377,12 +387,16 @@ define([
       return this.exercise.problems.length > 0;
     },
     /**
-     * Returns the introductory text.
+     * Returns the exercise description or instructions.
      *
      * @return {string}
      */
-    getIntro: function () {
-      return this.exercise.introText;
+    getExerciseText: function () {
+      var text = this.exercise.introText || "";
+      if (typeof this.isChoraleIdentification === "function" && this.isChoraleIdentification() && text.indexOf("Provide the") > -1) {
+          text = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct harmonic analysis.";
+      }
+      return text;
     },
     /**
      * Returns the key for the exercise (i.e. C major, A minor, etc).
@@ -495,6 +509,15 @@ define([
      */
     getIdentMode: function () {
       return this.exercise.identMode || "submit";
+    },
+    /**
+     * Returns the analysis type for identification exercises
+     * (e.g. "roman", "figured_bass", "interval_specific").
+     *
+     * @return {string}
+     */
+    getAnalysisType: function () {
+      return this.exercise.analysisType || "roman";
     },
     /**
      * Returns the score for chorale exercises.

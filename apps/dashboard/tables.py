@@ -299,6 +299,7 @@ class MyActivityDetailsTable(tables.Table):
 
 
 class ExercisesListTable(tables.Table):
+    selection = columns.CheckBoxColumn(accessor="pk", attrs={"th__input": {"onclick": "toggleSelectAll(this)"}}, orderable=False)
     id = columns.Column()
     description = columns.Column(
         verbose_name="Exercise description",
@@ -353,6 +354,7 @@ class ExercisesListTable(tables.Table):
         table_pagination = False
         order_by = "-id"
         template_name = "django_tables2/bootstrap4.html"
+        sequence = ("selection", "id", "description", "view", "edit", "created", "updated", "is_public", "delete")
 
 
 class PlaylistsListTable(tables.Table):
