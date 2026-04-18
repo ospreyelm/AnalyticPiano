@@ -10,7 +10,7 @@ if not os.environ.get("DJANGO_SETTINGS_MODULE"):
     django.setup()
 
 from apps.exercises.mastery import compute_mastery_level, compute_decay
-from apps.exercises.skill_graph import MASTERY_LEVELS
+from apps.exercises.skill_graph import MASTERY_LEVELS, MASTERY_TAGS, LITERACY_TAGS
 from django.utils import timezone
 
 class TestMasteryLogic(unittest.TestCase):
@@ -79,6 +79,42 @@ class TestMasteryLogic(unittest.TestCase):
         last_practiced = now - timedelta(days=100)
         self.assertEqual(compute_decay("attempted", last_practiced), "attempted")
         self.assertEqual(compute_decay("not_started", last_practiced), "not_started")
+
+class TestMasteryTagsConstant(unittest.TestCase):
+    def test_includes_all_canonical_harmony_tags(self):
+        canonical = {
+            "Diatonic_Triads", "Inversions_First", "Inversions_Second",
+            "Dominant_Seventh", "Diminished_Seventh", "Half_Diminished_Seventh",
+            "Cadence_Half", "Cadence_Perfect_Authentic", "Cadence_Deceptive", "Cadence_Plagal",
+            "Secondary_Dominant", "Secondary_Leading_Tone",
+            "Neapolitan_Sixth", "Augmented_Sixth",
+            "Picardy_Third", "Modulation_Diatonic_Pivot",
+        }
+        self.assertTrue(canonical.issubset(MASTERY_TAGS))
+
+    def test_includes_all_literacy_tags(self):
+        self.assertTrue(set(LITERACY_TAGS).issubset(MASTERY_TAGS))
+
+    def test_includes_unit_number_tags(self):
+        self.assertIn("unit:1", MASTERY_TAGS)
+        self.assertIn("unit:9", MASTERY_TAGS)
+        self.assertIn("unit:51", MASTERY_TAGS)
+
+    def test_includes_branch_unit_tags(self):
+        self.assertIn("unit:A1", MASTERY_TAGS)
+        self.assertIn("unit:A15", MASTERY_TAGS)
+        self.assertIn("unit:B1", MASTERY_TAGS)
+        self.assertIn("unit:B15", MASTERY_TAGS)
+        self.assertIn("unit:C1", MASTERY_TAGS)
+        self.assertIn("unit:C8", MASTERY_TAGS)
+        self.assertIn("unit:D1", MASTERY_TAGS)
+        self.assertIn("unit:D8", MASTERY_TAGS)
+
+    def test_excludes_unit_prefixed_long_form_tags(self):
+        self.assertNotIn("unit:9_Dominant_Seventh", MASTERY_TAGS)
+        self.assertNotIn("unit:10_inversions_first", MASTERY_TAGS)
+        self.assertNotIn("unit:16_Secondary_Dominant", MASTERY_TAGS)
+
 
 if __name__ == "__main__":
     unittest.main()

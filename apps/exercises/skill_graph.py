@@ -150,6 +150,30 @@ ALL_SKILL_TAGS = LITERACY_TAGS + [
     "unit:D8", "unit:D8_nr_posttonal", "unit:D8_triadic_posttonal",
 ]
 
+# MASTERY_TAGS — canonical set of skill tags eligible for StudentSkillMastery rows.
+# Filters out unit-prefixed long forms (unit:9_Dominant_Seventh etc.) that duplicate
+# canonical tags (Dominant_Seventh). Used by apps.exercises.mastery.record_attempt.
+MASTERY_TAGS = (
+    # Canonical Knowledge Graph tags (16 harmonic skills)
+    {
+        "Diatonic_Triads", "Inversions_First", "Inversions_Second",
+        "Dominant_Seventh", "Diminished_Seventh", "Half_Diminished_Seventh",
+        "Cadence_Half", "Cadence_Perfect_Authentic", "Cadence_Deceptive", "Cadence_Plagal",
+        "Secondary_Dominant", "Secondary_Leading_Tone",
+        "Neapolitan_Sixth", "Augmented_Sixth",
+        "Picardy_Third", "Modulation_Diatonic_Pivot",
+    }
+    # Literacy tags (emitted by analyzer for all valid exercises)
+    | set(LITERACY_TAGS)
+    # Core unit-number tags (unit:1..unit:51)
+    | {f"unit:{n}" for n in range(1, 52)}
+    # Branch unit-number tags (Figured Bass A, Partimenti B, Interval Cycles C, Neo-Riemannian D)
+    | {f"unit:A{n}" for n in range(1, 16)}
+    | {f"unit:B{n}" for n in range(1, 16)}
+    | {f"unit:C{n}" for n in range(1, 9)}
+    | {f"unit:D{n}" for n in range(1, 9)}
+)
+
 # Default prerequisite DAG.
 # key   = skill tag
 # value = list of skill tags that must be at 'familiar' or above before this skill unlocks.
