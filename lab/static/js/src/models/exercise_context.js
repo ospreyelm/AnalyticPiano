@@ -123,6 +123,34 @@ define([
     STATE: ExerciseContext.STATE,
     init: function () {
       this.initListeners();
+      this._skipIfTooFewProblemsOnFirstPage();
+    },
+
+    /**
+     * For chorale_identification exercises: if the first page (first 4 measures)
+     * has fewer than 4 visible problems, skip to the next exercise immediately.
+     * Prevents sparse exercises from being served to students.
+     */
+    _skipIfTooFewProblemsOnFirstPage: function () {
+      if (!this.definition || typeof this.definition.isChoraleIdentification !== "function") return;
+      if (!this.definition.isChoraleIdentification()) return;
+
+      var nextUrl = this.definition.exercise.nextExercise;
+      if (!nextUrl) return;
+
+      var allProblems = this.definition.getProblems ? this.definition.getProblems() : [];
+      var score = this.definition.getScore ? this.definition.getScore() : null;
+      var totalMeasures = score && score.measures ? score.measures.length : 0;
+      var lastPossibleStart = Math.max(0, totalMeasures - 4);
+      var endMeasure = Math.min(4, lastPossibleStart + 4);
+
+      var visibleOnFirstPage = allProblems.filter(function (p) {
+        return !p.hidden && p.measureIndex >= 0 && p.measureIndex < endMeasure;
+      }).length;
+
+      if (visibleOnFirstPage < 4) {
+        window.location.replace(nextUrl);
+      }
     },
     /**
      * Initializes listeners.
