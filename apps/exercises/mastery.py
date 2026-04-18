@@ -10,6 +10,7 @@ from apps.exercises.skill_graph import (
     ALL_SKILL_TAGS,
     DEFAULT_PREREQUISITES,
     MASTERY_LEVELS,
+    MASTERY_TAGS,
     UNLOCK_THRESHOLD,
 )
 
@@ -108,6 +109,8 @@ def record_attempt(user_id: int, exercise, correct: bool) -> None:
     today = date.today().isoformat()
 
     for skill_tag in exercise.skill_tags:
+        if skill_tag not in MASTERY_TAGS:
+            continue
         mastery, _ = StudentSkillMastery.objects.get_or_create(
             user_id=user_id,
             skill_tag=skill_tag,

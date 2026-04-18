@@ -118,5 +118,73 @@ class TestMasteryTagsConstant(unittest.TestCase):
         self.assertNotIn("unit:16_Secondary_Dominant", MASTERY_TAGS)
 
 
+class TestRecordAttemptCanonicalFilter(unittest.TestCase):
+    """Verify record_attempt only updates StudentSkillMastery for MASTERY_TAGS."""
+
+    def _make_exercise(self, tags):
+        ex = MagicMock()
+        ex.skill_tags = tags
+        return ex
+
+    def _make_mock_mastery_module(self):
+        """Return a fake apps.exercises.models module with a mock StudentSkillMastery."""
+        mock_mastery_cls = MagicMock()
+        mock_models_module = MagicMock()
+        mock_models_module.StudentSkillMastery = mock_mastery_cls
+        return mock_models_module, mock_mastery_cls
+
+    def _record_attempt_with_mock(self, exercise, correct):
+        """Run record_attempt with apps.exercises.models replaced by a mock."""
+        import sys
+        mock_models_module, mock_mastery_cls = self._make_mock_mastery_module()
+
+        mock_row = MagicMock()
+        mock_row.level = "not_started"
+        mock_row.last_practiced = None
+        mock_row.recent_history = []
+        mock_row.practice_days = []
+        mock_row.total_attempts = 0
+        mock_row.total_correct = 0
+        mock_row.first_attempted = None
+        mock_mastery_cls.objects.get_or_create.return_value = (mock_row, True)
+
+        with patch.dict(sys.modules, {"apps.exercises.models": mock_models_module}):
+            from apps.exercises.mastery import record_attempt
+            record_attempt(user_id=1, exercise=exercise, correct=correct)
+
+        return mock_mastery_cls
+
+    def test_only_canonical_tags_trigger_mastery_updates(self):
+        ex = self._make_exercise([
+            "Dominant_Seventh",           # canonical — should update
+            "unit:9_Dominant_Seventh",    # long-form duplicate — filtered out
+            "unit:9",                     # unit-number — should update
+            "bach",                       # free-form — filtered out
+            "Read_Treble_Clef",           # literacy — should update
+        ])
+
+        mock_mastery_cls = self._record_attempt_with_mock(ex, correct=True)
+
+        called_tags = [
+            call.kwargs["skill_tag"]
+            for call in mock_mastery_cls.objects.get_or_create.call_args_list
+        ]
+        self.assertIn("Dominant_Seventh", called_tags)
+        self.assertIn("unit:9", called_tags)
+        self.assertIn("Read_Treble_Clef", called_tags)
+        self.assertNotIn("unit:9_Dominant_Seventh", called_tags)
+        self.assertNotIn("bach", called_tags)
+
+    def test_no_mastery_tags_triggers_no_updates(self):
+        ex = self._make_exercise(["bach", "random_tag"])
+        mock_mastery_cls = self._record_attempt_with_mock(ex, correct=True)
+        mock_mastery_cls.objects.get_or_create.assert_not_called()
+
+    def test_empty_skill_tags_triggers_no_updates(self):
+        ex = self._make_exercise([])
+        mock_mastery_cls = self._record_attempt_with_mock(ex, correct=True)
+        mock_mastery_cls.objects.get_or_create.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
