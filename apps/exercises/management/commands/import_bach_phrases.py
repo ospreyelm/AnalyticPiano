@@ -140,8 +140,14 @@ class Command(BaseCommand):
                 continue
 
             # Extract measure range
-            # Note: music21.measures(start, end) is inclusive
+            # Note: music21.measures(start, end) is inclusive but also returns
+            # the following measure for tie/slur resolution. Remove any measures
+            # with number > end_m to avoid leaking the pickup to the next phrase.
             phrase_score = score.measures(start_m, end_m)
+            for part in phrase_score.parts:
+                for m in list(part.getElementsByClass(stream.Measure)):
+                    if m.number > end_m:
+                        part.remove(m)
 
             # GAP FILTER: Check for internal silence (full measures of rests)
             # We check the soprano part (part 0) for note presence in each measure
