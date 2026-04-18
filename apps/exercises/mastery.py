@@ -278,9 +278,12 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
     # 4. Fetch the exercise pool
     pool = Exercise.objects.all()
     if playlist:
-        if getattr(playlist, "is_dynamic", False) and playlist.tags:
-            # DYNAMIC POOL: Pull from global database based on tags
-            pool = pool.filter(tags__overlap=playlist.tags)
+        filter_tags = list(playlist.tags or []) + list(getattr(playlist, "skill_tags", []) or [])
+        if getattr(playlist, "is_dynamic", False) and filter_tags:
+            # DYNAMIC POOL: match exercises whose skill_tags overlap with
+            # playlist.tags (unit:9, bach) or playlist.skill_tags (Dominant_Seventh).
+            # Exercise.tags is unused — all tag data lives in skill_tags.
+            pool = pool.filter(skill_tags__overlap=filter_tags)
             # Apply complexity gating from the playlist settings
             pool = pool.filter(
                 complexity__gte=playlist.min_complexity,
