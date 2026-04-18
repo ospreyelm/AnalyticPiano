@@ -207,8 +207,7 @@ define([
         if (!self._isIdentificationLikeExercise()) { return; }
 
         // Lock individual correct items so users can still modify incorrect choices or finish a new page
-        var currentMode = self.exerciseContext.getDefinition().getIdentMode
-          ? self.exerciseContext.getDefinition().getIdentMode() : 'submit';
+        var currentMode = self._currentMode;
 
         var offset = self.el.offset();
         var clickX = e.pageX - offset.left;
@@ -315,8 +314,7 @@ define([
           grdr.setAnswer(problemIndex, choice);
           self._closeIdentPopup();
 
-          var currentMode = self.exerciseContext.getDefinition().getIdentMode
-            ? self.exerciseContext.getDefinition().getIdentMode() : 'submit';
+          var currentMode = self._currentMode;
 
           if (currentMode === 'practice') {
             // Show colour feedback immediately
