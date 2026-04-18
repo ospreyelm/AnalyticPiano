@@ -12,7 +12,17 @@ define([
   var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
   var SKILL_CHORD_PATTERNS = {
-    "Diatonic_Triads":         /^(I|ii|iii|IV|V|vi|vii°)$/,
+    // Unit-level tags (from playlist.tags / CONTENT_TAGS)
+    "unit:9":  /^(I|V|V7)$/,
+    "unit:10": /^(I|ii|iii|IV|V|vi|vii°)(6)$/,
+    "unit:11": /^(IV|ii|ii6|vi)$/,
+    "unit:12": /^(I|ii|iii|IV|V|vi|vii°)(64)$/,
+    "unit:16": /^V7?\//,
+    "unit:18": /^(N6?|(It|Ger|Fr)\+?6)/,
+
+    // Granular skill tags (from playlist.skill_tags)
+    "tonic_dominant_exclusively": /^(I|V|V7)$/,
+    "Diatonic_Triads":            /^(I|ii|iii|IV|V|vi|vii°)$/,
     "Inversions_First":        /^(I|ii|iii|IV|V|vi|vii°)(6)$/,
     "Inversions_Second":       /^(I|ii|iii|IV|V|vi|vii°)(64)$/,
     "Dominant_Seventh":        /^V7$/,
@@ -718,9 +728,11 @@ define([
           }
         }
         exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
+        exercise.playlistSkillTags = definition.playlistSkillTags || [];
+        exercise.playlistTags = definition.playlistTags || [];
         exercise.problems = applySkillFilter(
             buildChoraleIdentificationProblems(exercise),
-            exercise.playlistSkillTags || []
+            (exercise.playlistSkillTags).concat(exercise.playlistTags)
         );
 
         return exercise;
@@ -908,6 +920,7 @@ define([
       exercise.performing_course = definition.courseId;
       exercise.skillTags = definition.skillTags || [];
       exercise.playlistSkillTags = definition.playlistSkillTags || [];
+      exercise.playlistTags = definition.playlistTags || [];
 
       return exercise;
     },
