@@ -539,6 +539,15 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         verbose_name="Tags",
     )
 
+    skill_tags = ArrayField(
+        base_field=models.CharField(max_length=64),
+        default=list,
+        blank=True,
+        verbose_name="Skill Tags",
+        help_text="Harmonic skills this playlist targets (e.g. Dominant_Seventh). "
+                  "Used to filter identification slots in chorale exercises."
+    )
+
     zero_padding = "PA00A0"
 
     class Meta:

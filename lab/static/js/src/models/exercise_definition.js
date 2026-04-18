@@ -11,6 +11,43 @@ define([
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
   var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
+  var SKILL_CHORD_PATTERNS = {
+    "Diatonic_Triads":         /^(I|ii|iii|IV|V|vi|vii°)$/,
+    "Inversions_First":        /^(I|ii|iii|IV|V|vi|vii°)(6)$/,
+    "Inversions_Second":       /^(I|ii|iii|IV|V|vi|vii°)(64)$/,
+    "Dominant_Seventh":        /^V7$/,
+    "Diminished_Seventh":      /^vii°7/,
+    "Half_Diminished_Seventh": /^viiø7/,
+    "Secondary_Dominant":      /^V7?\//,
+    "Secondary_Leading_Tone":  /^vii°(7)?\//,
+    "Neapolitan_Sixth":        /^N6?$/,
+    "Augmented_Sixth":         /^(It|Ger|Fr)\+?6/,
+  };
+
+  function applySkillFilter(problems, skillTags) {
+    if (!skillTags || skillTags.length === 0) {
+      return problems;
+    }
+    var patterns = [];
+    _.each(skillTags, function (tag) {
+      if (SKILL_CHORD_PATTERNS[tag]) {
+        patterns.push(SKILL_CHORD_PATTERNS[tag]);
+      }
+    });
+    if (patterns.length === 0) {
+      return problems;
+    }
+    return _.map(problems, function (p) {
+      var matches = _.some(patterns, function (rx) {
+        return rx.test(p.answer);
+      });
+      if (matches) {
+        return p;
+      }
+      return _.extend({}, p, { hidden: true });
+    });
+  }
+
   /**
    * ExerciseDefinition object is responsible for knowing the definition
    * or description of an exercise.
@@ -681,7 +718,10 @@ define([
           }
         }
         exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
-        exercise.problems = buildChoraleIdentificationProblems(exercise);
+        exercise.problems = applySkillFilter(
+            buildChoraleIdentificationProblems(exercise),
+            exercise.playlistSkillTags || []
+        );
 
         return exercise;
       }
@@ -866,6 +906,8 @@ define([
       }
 
       exercise.performing_course = definition.courseId;
+      exercise.skillTags = definition.skillTags || [];
+      exercise.playlistSkillTags = definition.playlistSkillTags || [];
 
       return exercise;
     },

@@ -284,6 +284,8 @@ def generate_exercise_context(
             "isAdaptive": getattr(playlist, "is_adaptive", False),
             "isDynamic": getattr(playlist, "is_dynamic", False),
             "playlistTags": getattr(playlist, "tags", []),
+            "skillTags": getattr(exercise, "skill_tags", []),
+            "playlistSkillTags": getattr(playlist, "skill_tags", []),
             "minComplexity": getattr(playlist, "min_complexity", 1),
             "maxComplexity": getattr(playlist, "max_complexity", 10),
             "exerciseIsPerformed": exercise_is_performed,
