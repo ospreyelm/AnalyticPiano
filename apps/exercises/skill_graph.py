@@ -169,7 +169,7 @@ MASTERY_TAGS = (
     | {f"unit:{n}" for n in range(1, 52)}
     # Branch unit-number tags (Figured Bass A, Partimenti B, Interval Cycles C, Neo-Riemannian D)
     | {f"unit:A{n}" for n in range(1, 16)}
-    | {f"unit:B{n}" for n in range(1, 16)}
+    | {f"unit:B{n}" for n in range(1, 31)}
     | {f"unit:C{n}" for n in range(1, 9)}
     | {f"unit:D{n}" for n in range(1, 9)}
 )

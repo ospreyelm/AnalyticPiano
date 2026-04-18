@@ -105,6 +105,8 @@ class TestMasteryTagsConstant(unittest.TestCase):
         self.assertIn("unit:A15", MASTERY_TAGS)
         self.assertIn("unit:B1", MASTERY_TAGS)
         self.assertIn("unit:B15", MASTERY_TAGS)
+        self.assertIn("unit:B16", MASTERY_TAGS)
+        self.assertIn("unit:B30", MASTERY_TAGS)
         self.assertIn("unit:C1", MASTERY_TAGS)
         self.assertIn("unit:C8", MASTERY_TAGS)
         self.assertIn("unit:D1", MASTERY_TAGS)
