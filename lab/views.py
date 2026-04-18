@@ -143,6 +143,7 @@ def get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id=No
     )
     
     if exercise_obj:
+        # Only invoke transposition if a target_key is explicitly requested (not None)
         if target_key:
             from apps.exercises.constants import pseudo_key_to_sig
             staff_sig = pseudo_key_to_sig.get(target_key)
@@ -281,6 +282,10 @@ def generate_exercise_context(
             "exerciseId": exercise.id,
             "exerciseNum": exercise_num,
             "isAdaptive": getattr(playlist, "is_adaptive", False),
+            "isDynamic": getattr(playlist, "is_dynamic", False),
+            "playlistTags": getattr(playlist, "tags", []),
+            "minComplexity": getattr(playlist, "min_complexity", 1),
+            "maxComplexity": getattr(playlist, "max_complexity", 10),
             "exerciseIsPerformed": exercise_is_performed,
             "exerciseErrorCount": exercise_error_count,
             "playlistName": playlist_id,
@@ -326,8 +331,8 @@ class PlaylistView(RequirejsView):
                 exercise_num=1,
             )
 
-        # Adaptive logic: override exercise selection if playlist is adaptive
-        if playlist.is_adaptive:
+        # Adaptive or Smart Assignment logic: override exercise selection if playlist targets a dynamic pool
+        if playlist.is_adaptive or playlist.is_dynamic:
             exercise = get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id)
             if not exercise:
                 raise Http404("Could not find a suitable exercise in this adaptive playlist.")

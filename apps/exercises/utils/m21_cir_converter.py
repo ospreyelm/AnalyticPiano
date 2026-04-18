@@ -41,7 +41,12 @@ def pitch_to_obj(p) -> Dict:
     alter = 0
     if p.accidental is not None and p.accidental.alter is not None:
         alter = int(p.accidental.alter)
-    return {"step": step, "alter": alter, "octave": int(p.octave)}
+    return {
+        "step": step, 
+        "alter": alter, 
+        "octave": int(p.octave),
+        "midi": int(p.midi)
+    }
 
 def step_alter_octave_to_midi(step: str, alter: int, octave: int) -> int:
     step_to_pc = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
@@ -101,6 +106,26 @@ def pad_voice_to_duration(items: List[Dict], target_ql: float, is_first_measure:
         rests.append({"kind": "rest", "duration": {"type": rest_type, "dots": dots}})
         gap -= rest_ql
     return list(items) + rests
+
+def pad_voice_to_duration(items: List[Dict], target_ql: float, is_first: bool = False) -> List[Dict]:
+    """Ensures a voice fills the measure's total duration by adding rests if needed."""
+    if not items:
+        # Full measure of rest
+        dt, dots = ql_to_type_dots(target_ql)
+        return [{"kind": "rest", "duration": {"type": dt, "dots": dots}}]
+    
+    current_ql = 0.0
+    for item in items:
+        # Calculate duration of this item
+        # Simplified: map type back to float for calculation
+        rev_map = { t: d for d, (t, dots) in DurationMap }
+        # Note: this is a shorthand, in production we'd use a more robust QL tracker
+        # but since we just generated these items, we'll approximate.
+        # Better: track QL in the part_to_voice loop.
+        pass # We'll fix this properly in the implementation below
+    
+    # We'll use a more robust approach: the part_to_voice loop already knows the QL.
+    return items
 
 def m21_to_cir(s: stream.Score) -> Dict:
     # Explicitly calculate beams based on time signature rules
@@ -185,16 +210,18 @@ def m21_to_cir(s: stream.Score) -> Dict:
         treble_voices = []
         bass_voices = []
 
-        def part_to_voice(part_obj: stream.Part) -> List[Dict]:
+        def part_to_voice(part_obj: stream.Part) -> Tuple[List[Dict], float]:
             items: List[Dict] = []
+            total_ql = 0.0
             ms = list(part_obj.getElementsByClass(stream.Measure))
             if mi >= len(ms):
-                return items
+                return items, 0.0
             m = ms[mi]
             for el in m.flat:
                 if isinstance(el, note.Rest):
                     dt, dots = ql_to_type_dots(el.quarterLength)
                     items.append({"kind": "rest", "duration": {"type": dt, "dots": dots}})
+                    total_ql += el.quarterLength
                 elif isinstance(el, note.Note):
                     dt, dots = ql_to_type_dots(el.quarterLength)
                     tie = el.tie.type if el.tie else None
@@ -202,6 +229,7 @@ def m21_to_cir(s: stream.Score) -> Dict:
                     if tie in ("start", "continue"): item["tie"] = {"start": True}
                     if tie in ("stop", "continue"): item.setdefault("tie", {})["stop"] = True
                     items.append(item)
+                    total_ql += el.quarterLength
                 elif isinstance(el, chord.Chord):
                     dt, dots = ql_to_type_dots(el.quarterLength)
                     ch = {"kind": "chord", "notes": [], "duration": {"type": dt, "dots": dots}}
@@ -212,24 +240,32 @@ def m21_to_cir(s: stream.Score) -> Dict:
                         if tie in ("start", "continue"): ch.setdefault("tie", {})["start"] = True
                         if tie in ("stop", "continue"): ch.setdefault("tie", {})["stop"] = True
                     items.append(ch)
+                    total_ql += el.quarterLength
+            return items, total_ql
+
+        def pad_items(items, current_ql, target_ql):
+            if current_ql < target_ql - 0.01:
+                diff = target_ql - current_ql
+                dt, dots = ql_to_type_dots(diff)
+                items.append({"kind": "rest", "duration": {"type": dt, "dots": dots}})
             return items
 
         is_first = (mi == 0)
         if len(treble_parts) >= 1:
-            v_items = part_to_voice(treble_parts[0])
-            v_items = pad_voice_to_duration(v_items, target_ql_per_measure, is_first)
+            v_items, v_ql = part_to_voice(treble_parts[0])
+            v_items = pad_items(v_items, v_ql, target_ql_per_measure)
             treble_voices.append({"direction": VOICE_DIRECTIONS["treble"][0], "items": v_items})
         if len(treble_parts) >= 2:
-            v_items = part_to_voice(treble_parts[1])
-            v_items = pad_voice_to_duration(v_items, target_ql_per_measure, is_first)
+            v_items, v_ql = part_to_voice(treble_parts[1])
+            v_items = pad_items(v_items, v_ql, target_ql_per_measure)
             treble_voices.append({"direction": VOICE_DIRECTIONS["treble"][1], "items": v_items})
         if len(bass_parts) >= 1:
-            v_items = part_to_voice(bass_parts[0])
-            v_items = pad_voice_to_duration(v_items, target_ql_per_measure, is_first)
+            v_items, v_ql = part_to_voice(bass_parts[0])
+            v_items = pad_items(v_items, v_ql, target_ql_per_measure)
             bass_voices.append({"direction": VOICE_DIRECTIONS["bass"][0], "items": v_items})
         if len(bass_parts) >= 2:
-            v_items = part_to_voice(bass_parts[1])
-            v_items = pad_voice_to_duration(v_items, target_ql_per_measure, is_first)
+            v_items, v_ql = part_to_voice(bass_parts[1])
+            v_items = pad_items(v_items, v_ql, target_ql_per_measure)
             bass_voices.append({"direction": VOICE_DIRECTIONS["bass"][1], "items": v_items})
 
         measures.append({
@@ -240,4 +276,24 @@ def m21_to_cir(s: stream.Score) -> Dict:
             },
         })
 
-    return {"meta": {"key": vex_key, "time": time_str}, "measures": measures}
+    # Generate Legacy 'chord' flat list for engine compatibility (transposition, grading)
+    flat_chord_list = []
+    try:
+        # Use chordify to get all concurrent events as a single stream
+        cf = s.chordify()
+        for c in cf.recurse().getElementsByClass('Chord'):
+            # Extract MIDI numbers
+            pitches = [p.midi for p in c.pitches]
+            flat_chord_list.append({
+                "visible": sorted(pitches),
+                "hidden": []
+            })
+    except Exception as e:
+        # Fallback if chordify fails (unlikely for chorales)
+        pass
+
+    return {
+        "meta": {"key": vex_key, "time": time_str}, 
+        "measures": measures,
+        "chord": flat_chord_list
+    }

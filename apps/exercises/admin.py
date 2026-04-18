@@ -285,6 +285,10 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
                         "performances",
                         "is_public",
                         "is_adaptive",
+                        "is_dynamic",
+                        "tags",
+                        "min_complexity",
+                        "max_complexity",
                     ),
                     # ('created', 'updated')
                 ),

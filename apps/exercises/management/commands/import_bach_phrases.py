@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
-import music21
+from music21 import corpus, stream, note, chord, meter, key
 from music21.expressions import Fermata
 
 from apps.exercises.models import Exercise
@@ -14,25 +14,39 @@ class Command(BaseCommand):
     help = 'Import a Bach chorale and split it into phrases based on fermatas.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--bwv', type=str, required=True, help='BWV number (e.g. 1, 363, bwv1)')
+        parser.add_argument('--bwv', type=int, help='BWV number (e.g. 1)')
+        parser.add_argument('--movement', type=int, help='Movement number (e.g. 6)')
+        parser.add_argument('--riemenschneider', type=int, help='Riemenschneider number (e.g. 1-371)')
         parser.add_argument('--author', type=str, required=True, help='Email of the exercise author')
         parser.add_argument('--mode', type=str, choices=['play', 'roman', 'figures', 'matching'], default='play', help='Exercise mode')
         parser.add_argument('--min-measures', type=int, default=3, help='Minimum measures per phrase')
         parser.add_argument('--dry-run', action='store_true', help='Show phrase ranges without creating exercises')
 
     def handle(self, *args, **options):
-        bwv_input = options['bwv'].lower()
+        bwv_num = options.get('bwv')
+        movement_num = options.get('movement')
+        riem_num = options.get('riemenschneider')
         author_email = options['author']
         mode = options['mode']
         min_measures = options['min_measures']
         dry_run = options['dry_run']
 
-        # Clean BWV string
-        bwv_num = bwv_input.replace('bwv', '').strip()
-        try:
-            bwv_int = int(bwv_num)
-        except ValueError:
-            raise CommandError(f"Invalid BWV number: {bwv_input}")
+        # 1. Load the score
+        from music21 import corpus
+        if riem_num:
+            self.stdout.write(f"Loading Riemenschneider Chorale #{riem_num}...")
+            # Use the Iterator to get the stream for the specific number
+            from music21.corpus import chorales
+            iterator = chorales.Iterator(riem_num, riem_num, numberingSystem='riemenschneider')
+            # The iterator behaves like a list where you might need to convert to list or iterate
+            score = list(iterator)[0]
+            bwv_display = f"R{riem_num}"
+        elif bwv_num and movement_num:
+            self.stdout.write(f"Loading BWV {bwv_num}.{movement_num}...")
+            score = corpus.parse('bach/bwv' + str(bwv_num) + '.' + str(movement_num))
+            bwv_display = str(bwv_num)
+        else:
+            raise CommandError("Must provide either --riemenschneider OR both --bwv and --movement")
 
         # 1. Validate Author
         User = get_user_model()
@@ -41,30 +55,8 @@ class Command(BaseCommand):
         except User.DoesNotExist:
             raise CommandError(f'User with email "{author_email}" not found')
 
-        self.stdout.write(f"Searching for BWV {bwv_int} in music21 corpus...")
-        score = None
-        
-        # Try direct path variations
-        for path_fmt in [f'bach/bwv{bwv_int}', f'bach/bwv{bwv_int:03d}']:
-            try:
-                score = music21.corpus.parse(path_fmt)
-                self.stdout.write(f"  Found via path: {path_fmt}")
-                break
-            except:
-                continue
-
-        # Try search if path fails
         if not score:
-            self.stdout.write(f"  Path lookup failed, trying corpus search...")
-            search_results = music21.corpus.search(f'bwv{bwv_int}', 'bach')
-            if not search_results:
-                search_results = music21.corpus.search(f'bwv{bwv_int}')
-            
-            if search_results:
-                score = search_results[0].parse()
-                self.stdout.write(f"  Found via search: {search_results[0]}")
-            else:
-                raise CommandError(f"Could not find BWV {bwv_int} in the music21 corpus.")
+            raise CommandError("Could not load score")
 
         # 2. Cadence Detection (Harmonic + Rhythmic Heuristic)
         self.stdout.write("Analyzing harmonic arrivals and rhythmic cadences...")
@@ -85,7 +77,7 @@ class Command(BaseCommand):
                 continue
                 
             last_chord = m_notes[-1]
-            if not isinstance(last_chord, music21.chord.Chord):
+            if not isinstance(last_chord, chord.Chord):
                 continue
 
             # How long since the last split?
@@ -98,34 +90,34 @@ class Command(BaseCommand):
             
             # Secondary Dominant Check: V/V -> V
             is_v_of_v = False
-            if i > 0:
+            if i > 0 and len(measures[i-1].flat.notes) > 0:
                 prev_chord = measures[i-1].flat.notes[-1]
-                if isinstance(prev_chord, music21.chord.Chord):
+                if isinstance(prev_chord, chord.Chord):
                     # Simple check: Is previous chord a Major triad on the 2nd degree?
                     prev_rn = romanNumeralFromChord(prev_chord, global_key)
                     if prev_rn.figure.startswith('II') or prev_rn.figure.startswith('V/V'):
                         if chord_type in ['V', 'v']:
                             is_v_of_v = True
 
-            # Refined Slicing Rule:
-            # 1. Standard Fermata/Long arrival (Always split)
-            # 2. Intermediate Arrival: I or V if at least 2 bars have passed
+            # Split Logic:
+            # 1. Must have passed min_measures
+            # 2. Must hit a harmonic arrival (I/V) OR a fermata
+            
+            has_fermata = len(m.flat.getElementsByClass(Fermata)) > 0
             is_long = last_chord.quarterLength >= 2.0
             is_harmonic_arrival = chord_type in ['I', 'V', 'i', 'v'] or is_v_of_v
             
             should_split = False
-            if is_long and is_harmonic_arrival:
-                should_split = True
-            elif measures_since_split >= min_measures and is_harmonic_arrival:
-                # Prioritize splitting at the min_measures threshold if we hit a cadence
-                should_split = True
+            if measures_since_split >= min_measures:
+                if has_fermata:
+                    should_split = True
+                elif is_harmonic_arrival and is_long:
+                    should_split = True
+                elif measures_since_split >= (min_measures + 2) and is_harmonic_arrival:
+                    # Don't let phrases get TOO long without an arrival
+                    should_split = True
 
             if should_split:
-                fermata_measures.append(m.number)
-                last_split_m = m.number
-            
-            # Explicit Fermata Check (Safety)
-            elif len(m.flat.getElementsByClass(music21.expressions.Fermata)) > 0:
                 fermata_measures.append(m.number)
                 last_split_m = m.number
 
@@ -143,17 +135,37 @@ class Command(BaseCommand):
             # Extract measure range
             # Note: music21.measures(start, end) is inclusive
             phrase_score = score.measures(start_m, end_m)
+
+            # GAP FILTER: Check for internal silence (full measures of rests)
+            # We check the soprano part (part 0) for note presence in each measure
+            has_silent_measure = False
+            for m_test in phrase_score.parts[0].getElementsByClass(stream.Measure):
+                # We flatten to find notes (including notes in voices if any)
+                if len(m_test.flatten().notes) == 0:
+                    has_silent_measure = True
+                    break
             
-            # Analyze skills for this phrase
+            if has_silent_measure:
+                self.stdout.write(self.style.WARNING(f"  Skipping Phrase {idx+1} (mm. {start_m}-{end_m}): Contains silent measures (Gap Filter)."))
+                start_m = end_m + 1
+                continue
+            
+            # 3. Detect Key and Mode for the phrase
             try:
-                # Key analysis for the whole piece or just the phrase? 
-                # Better to analyze the chunk key for modulation awareness
-                chunk_key = phrase_score.analyze('key').tonicPitchNameWithCase
-            except:
-                chunk_key = "C"
+                m21_key = phrase_score.analyze('key')
+                # Store "Clean" key name (e.g. 'D', 'Bb', 'F#m') 
+                # This satisfies the frontend's convertCIRKeyToHarmonyLabKey logic
+                # and is safe for backend transposition thanks to pseudo_key_to_sig lookup.
+                harmony_sig = m21_key.tonic.name.replace("-", "b")
+                if m21_key.mode == "minor":
+                    harmony_sig += "m"
+                harmony_key = harmony_sig
+            except Exception:
+                harmony_sig = "C"
+                harmony_key = "C"
 
             try:
-                detected_skills, detected_complexity = analyze_chunk_skills(phrase_score, chunk_key)
+                detected_skills, detected_complexity = analyze_chunk_skills(phrase_score, m21_key.tonicPitchNameWithCase)
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f"  Skills analysis failed: {e}"))
                 detected_skills, detected_complexity = [], 1
@@ -166,16 +178,18 @@ class Command(BaseCommand):
                 if mode == 'figures':
                     analysis_type = "figured_bass"
                 
-                intro_text = f"Provide a Roman Numeral analysis for this phrase from BWV {bwv_num} (mm. {start_m}-{end_m})."
+                intro_text = f"Provide a Roman Numeral analysis for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
                 if mode == 'figures':
-                    intro_text = f"Provide the Figured Bass for this phrase from BWV {bwv_num} (mm. {start_m}-{end_m})."
+                    intro_text = f"Provide the Figured Bass for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
                 elif mode == 'matching':
-                    intro_text = f"Match the Roman Numerals to the notes in this phrase from BWV {bwv_num} (mm. {start_m}-{end_m})."
+                    intro_text = f"Match the Roman Numerals to the notes in this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
 
                 exercise_data = {
-                    "key": chunk_key,
+                    "key": harmony_key,
+                    "keySignature": harmony_sig,
                     "type": "chorale_identification",
                     "analysisType": analysis_type,
+                    "chord": cir_data.get("chord", []),
                     "score": cir_data,
                     "source": {
                         "type": "bach_corpus",
@@ -194,9 +208,11 @@ class Command(BaseCommand):
                 }
             else:
                 exercise_data = {
-                    "key": chunk_key,
+                    "key": harmony_key,
+                    "keySignature": harmony_sig,
                     "type": "chorale",
                     "mode": "play-all-voices",
+                    "chord": cir_data.get("chord", []),
                     "score": cir_data,
                     "source": {
                         "type": "bach_corpus",
@@ -214,7 +230,7 @@ class Command(BaseCommand):
                     "staffDistribution": "keyboard"
                 }
 
-            description = f"Bach BWV {bwv_num} - Phrase {idx+1} (mm.{start_m}-{end_m})"
+            description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m})"
             
             ex = Exercise(
                 description=description[:60], # Max length

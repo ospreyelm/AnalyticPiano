@@ -9,6 +9,9 @@ ANALYTIC PIANO (formerly HarmonyLab) is an open-source application for the study
 *   **Visual Skill Map**: A dynamic student dashboard visualizing progress through music theory fundamentals using directed acyclic graphs.
 *   **Bach Curriculum Factory**: An automated pipeline that slices the Bach chorale corpus into pedagogically sound phrases based on harmonic and rhythmic cadences, automatically generating Roman Numeral, Figured Bass, and Matching exercises.
 
+### References
+*   [Music21 Module Reference](https://music21.org/music21docs/moduleReference/index.html) - Official documentation for Bach corpus analysis and stream processing.
+
 # Supported Web Browsers
 
 As of December 2023, Google Chrome, Microsoft Edge, Opera, and Chromium all include the WebMIDI support on which this app depends. There is cross-platform support for WebMIDI on desktop and laptop computers (Apple desktop OS, Windows, Linux) but iPads unfortunately lack this support.

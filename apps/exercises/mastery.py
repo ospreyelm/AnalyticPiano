@@ -200,32 +200,57 @@ def get_unlocked_skills(user_id: int, course=None) -> list:
 # Adaptive Serving
 # ---------------------------------------------------------------------------
 
-def get_next_exercise(user_id: int, playlist=None, course=None, seed=None):
+def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=None):
     """
-    The heart of the adaptive engine. Selects the ideal next exercise for a student.
+    Selects the next exercise for a user based on their skill mastery levels.
+    Implements 'Navigation Pinning': if the user has already seen/started 
+    this slot in a playlist, return the identical exercise.
 
-    If a seed is provided, the selection (tie-breaking and transposition)
-    will be deterministic for that seed.
-
-    Returns:
-        (Exercise instance, transpose_to_key string) or (None, None)
+    Arguments supports both user object and user_id for backward compatibility.
     """
-    from apps.exercises.models import Exercise, StudentSkillMastery, ExercisePlaylistOrdered
+    from apps.exercises.models import Exercise, StudentSkillMastery, ExercisePlaylistOrdered, PerformanceData
+    from django.db import models
+    from django.contrib.auth import get_user_model
     from django.db.models import Min, Q
     import random
 
-    # Use a local random instance to avoid side-effects on other threads
-    rng = random.Random(seed) if seed is not None else random.Random()
+    User = get_user_model()
+    # Handle user/user_id duality
+    user_obj = user if isinstance(user, User) else User.objects.filter(id=user).first()
+    user_id = user_obj.id if user_obj else 0
 
-    # 1. Determine thresholds
+    # 1. Navigation Pinning Check
+    # If this is part of a playlist journey, check history first.
+    if playlist and user_obj and user_obj.is_authenticated:
+        try:
+            perf = PerformanceData.objects.get(user=user_obj, playlist=playlist)
+            # If the user has a record for this slot (exercise_num), use it.
+            if len(perf.data) >= exercise_num:
+                exercise_data = perf.data[exercise_num - 1]
+                pinned_id = exercise_data.get('id')
+                if pinned_id:
+                    # Return the pinned exercise and its original transposition
+                    # (In the legacy format, ID might include transposition suffix)
+                    # Return None instead of "" if no suffix is present to avoid redundant transposition calls.
+                    pinned_key = pinned_id[6:] if len(pinned_id) > 6 else None
+                    return pinned_id, pinned_key
+        except PerformanceData.DoesNotExist:
+            pass
+
+    # 2. Setup Deterministic RNG for this slot
+    seed_payload = f"{user_id}:{playlist.id if playlist else 'none'}:{exercise_num}:{seed or ''}"
+    rng = random.Random(seed_payload)
+
+    # 3. Determine thresholds
     mastery_threshold = "mastered"
     if course:
         mastery_threshold = getattr(course, "mastery_threshold", "mastered")
     
+    from apps.exercises.skill_graph import MASTERY_LEVELS
     threshold_idx = MASTERY_LEVELS.index(mastery_threshold)
-    target_levels = MASTERY_LEVELS[:threshold_idx] # e.g. anything not yet 'mastered'
+    target_levels = MASTERY_LEVELS[:threshold_idx] 
 
-    # 2. Get unlocked and targeted skills
+    # 4. Get unlocked and targeted skills
     unlocked = get_unlocked_skills(user_id, course=course)
     
     # Map unlocked skills to their current level for this user
@@ -265,20 +290,30 @@ def get_next_exercise(user_id: int, playlist=None, course=None, seed=None):
             # STATIC POOL: Only pull from exercises manually linked to the playlist
             pool = pool.filter(playlists=playlist)
     
+    # 5. Determine the 'Eligible' Pool
+    # We prioritize: 
+    #   1. Exercises targeting weaknesses (target_skills)
+    #   2. Designated entry points (starters)
+    #   3. The general pool fallback
+    eligible = None
     if target_skills:
-        # Exercises targeting our current weaknesses
-        eligible = pool.filter(skill_tags__overlap=target_skills)
-    elif starters:
-        # Fallback to entry points if everything is mastered or nothing unlocked
-        eligible = pool.filter(id__in=starters)
-    else:
-        # Last resort: anything in the pool
+        qs = pool.filter(skill_tags__overlap=target_skills)
+        if qs.exists():
+            eligible = qs
+
+    if not eligible:
+        if starters:
+            qs = pool.filter(id__in=starters)
+            if qs.exists():
+                eligible = qs
+    
+    if not eligible:
         eligible = pool
-        
+
     if not eligible.exists():
         return None, None
 
-    # 5. Ranking Logic
+    # 6. Ranking Logic
     # We want to pick the exercise that targets the "weakest" skill 
     # (lowest mastery index) with the lowest complexity.
     candidates = list(eligible.only("id", "skill_tags", "complexity"))
@@ -294,15 +329,23 @@ def get_next_exercise(user_id: int, playlist=None, course=None, seed=None):
     candidates.sort(key=score_exercise)
     best_ex = candidates[0]
 
-    # 6. Transposition Variety
-    # Spec: randomized among common keys or playlist requests
-    common_keys = ["C", "G", "F", "D", "Bb", "A", "Eb"]
-    if playlist and playlist.transpose_requests:
-        keys_to_pick = playlist.transpose_requests
+    # 7. Transposition Variety
+    # Spec: randomized among common keys or playlist requests.
+    # User Request: Don't transpose Bach chorale pieces at all. Use None to bypass.
+    if best_ex.data.get("type") == "chorale" or "bach" in best_ex.tags:
+        target_key = None
     else:
-        keys_to_pick = common_keys
-    
-    target_key = rng.choice(keys_to_pick)
+        common_keys = ["C", "G", "F", "D", "Bb", "A", "Eb"]
+        if playlist and playlist.transpose_requests:
+            keys_to_pick = playlist.transpose_requests
+        else:
+            keys_to_pick = common_keys
+        
+        raw_choice = rng.choice(keys_to_pick)
+        
+        # Convert pseudo-key from choice (e.g. 'C', 'G') to signature code
+        from apps.exercises.constants import pseudo_key_to_sig
+        target_key = pseudo_key_to_sig.get(raw_choice, raw_choice)
 
     return best_ex, target_key
 

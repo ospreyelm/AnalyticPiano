@@ -1,0 +1,350 @@
+[
+  {
+    "id": "core",
+    "label": "Core Sequence",
+    "desc": "The universal trunk: Fundamentals → Common Practice → Chromaticism → Post-Tonal.",
+    "tiers": [
+      {
+        "label": "Tier 1 — Fundamentals & pitch reading",
+        "badge": "T1",
+        "desc": "Staff literacy, rhythm, intervals, basic voice leading. Pre-tonal.",
+        "units": [
+          {
+            "n": "1",
+            "title": "Pitch & staff notation",
+            "feat": "Clefs, ledger lines, enharmonics",
+            "tags": ["pitch_reading", "clefs", "enharmonic", "Note_Names", "Ledger_Lines"]
+          },
+          {
+            "n": "2",
+            "title": "Rhythm & meter",
+            "feat": "Simple & compound, ties, dots",
+            "tags": ["rhythm", "meter_simple", "meter_compound"]
+          },
+          {
+            "n": "3",
+            "title": "Scales & key signatures",
+            "feat": "Major, minor forms, circle of fifths",
+            "tags": ["major_scale", "minor_scale", "key_signature", "Scale_Degrees", "Pitch_Class"]
+          },
+          {
+            "n": "4",
+            "title": "Intervals",
+            "feat": "Quality, inversion, consonance/dissonance",
+            "tags": ["interval_quality", "interval_inversion", "Interval_Generic", "Interval_Specific", "Interval_Compound"]
+          },
+          {
+            "n": "5",
+            "title": "Triads & seventh chords",
+            "feat": "Quality, figured bass symbols",
+            "tags": ["triad_quality", "seventh_chord_quality", "figured_bass_intro", "Diatonic_Sevenths"]
+          },
+          {
+            "n": "6",
+            "title": "Voice leading fundamentals",
+            "feat": "SATB spacing, doubling, parallel 5ths/8ths",
+            "tags": ["voice_leading", "satb_spacing", "parallel_motion"]
+          },
+          {
+            "n": "7",
+            "title": "Cadences",
+            "feat": "AC, HC, DC, PC — harmonic goals",
+            "tags": ["cadence_authentic", "cadence_half", "cadence_deceptive", "cadence_plagal", "Cadence_Half", "Cadence_Perfect_Authentic", "Cadence_Imperfect_Authentic", "Cadence_Deceptive", "Cadence_Plagal"]
+          },
+          {
+            "n": "8",
+            "title": "Non-harmonic tones",
+            "feat": "PT, NT, SUS, APP, ET, ANT, PED",
+            "tags": ["nhts_passing", "nhts_suspension", "nhts_appoggiatura"]
+          }
+        ]
+      },
+      {
+        "label": "Tier 2 — Common practice harmony",
+        "badge": "T2",
+        "desc": "Core diatonic → early chromatic. Backbone of the two-year Theory I–II sequence.",
+        "units": [
+          {
+            "n": "9",
+            "title": "Tonic & dominant",
+            "feat": "I, V, V⁷ root position",
+            "tags": ["diatonic_triads", "tonic_dominant_exclusively", "Diatonic_Triads", "Dominant_Seventh"]
+          },
+          {
+            "n": "10",
+            "title": "First inversions",
+            "feat": "I⁶, V⁶, vii°⁶",
+            "tags": ["inversions_first", "Inversions_First"]
+          },
+          {
+            "n": "11",
+            "title": "Pre-dominants",
+            "feat": "IV, ii, ii⁶, vi",
+            "tags": ["diatonic_predominant"]
+          },
+          {
+            "n": "12",
+            "title": "Second inversions",
+            "feat": "Cadential, passing, pedal 6/4",
+            "tags": ["cadential_64", "inversions_second", "Inversions_Second"]
+          },
+          {
+            "n": "13",
+            "title": "Rule of the octave",
+            "feat": "Scalar bass + period harmony",
+            "tags": ["rule_of_the_octave"]
+          },
+          {
+            "n": "14",
+            "title": "Diatonic seventh chords",
+            "feat": "ii⁷, IV⁷, vi⁷, iii⁷",
+            "tags": ["diatonic_sevenths", "Diatonic_Sevenths"]
+          },
+          {
+            "n": "15",
+            "title": "Sequences",
+            "feat": "Descending 5ths, ascending 5–6, parallel 6ths",
+            "tags": ["sequence_descending_5ths", "sequence_ascending_56", "sequence_parallel_6ths"]
+          },
+          {
+            "n": "16",
+            "title": "Applied chords",
+            "feat": "V⁷/x, vii°⁷/x",
+            "tags": ["secondary_dominant", "secondary_leading_tone", "Secondary_Dominant", "Secondary_Leading_Tone"]
+          },
+          {
+            "n": "17",
+            "title": "Modal mixture",
+            "feat": "iv, ♭VI, ♭VII, Picardy third",
+            "tags": ["modal_mixture", "picardy_third", "Picardy_Third", "Modal_Mixture"]
+          },
+          {
+            "n": "18",
+            "title": "Neapolitan & aug. sixths",
+            "feat": "♭II⁶, It⁺⁶, Fr⁺⁶, Ger⁺⁶",
+            "tags": ["neapolitan_sixth", "augmented_sixth", "Neapolitan_Sixth", "Augmented_Sixth"]
+          },
+          {
+            "n": "19",
+            "title": "Modulation I",
+            "feat": "Diatonic pivot, direct",
+            "tags": ["modulation_diatonic_pivot", "Modulation_Diatonic_Pivot"]
+          },
+          {
+            "n": "20",
+            "title": "Modulation II",
+            "feat": "Chromatic pivot, common-chord",
+            "tags": ["modulation_chromatic_pivot", "modulation_common_chord", "Modulation_Chromatic"]
+          },
+          {
+            "n": "21",
+            "title": "Formal structures",
+            "feat": "Period, sentence, binary, ternary",
+            "tags": ["form_period", "form_sentence", "form_binary", "form_ternary"]
+          },
+          {
+            "n": "22",
+            "title": "Sonata & rondo forms",
+            "feat": "Exposition, development, recapitulation",
+            "tags": ["form_sonata", "form_rondo"]
+          }
+        ]
+      },
+      {
+        "label": "Tier 3 — Late romanticism & extended chromaticism",
+        "badge": "T3",
+        "desc": "Chromatic saturation, enharmonic reinterpretation, tonal ambiguity.",
+        "units": [
+          {
+            "n": "23",
+            "title": "Enharmonic reinterpretation",
+            "feat": "Ger⁺⁶ ↔ V⁷, dim7 pivots",
+            "tags": ["enharmonic_reinterpretation", "augmented_sixth_pivot", "dim7_pivot"]
+          },
+          {
+            "n": "24",
+            "title": "Chromatic mediants",
+            "feat": "Third-related, chromatic 3rd",
+            "tags": ["chromatic_mediant", "chromatic_third_relation"]
+          },
+          {
+            "n": "25",
+            "title": "Omnibus progressions",
+            "feat": "Chromatic voice-leading cycles",
+            "tags": ["omnibus_progression", "chromatic_voice_leading"]
+          },
+          {
+            "n": "26",
+            "title": "Extended tertian harmony",
+            "feat": "9ths, 11ths, 13ths",
+            "tags": ["ninth_chord", "eleventh_chord", "thirteenth_chord"]
+          },
+          {
+            "n": "27",
+            "title": "Tonal paraphrase & dissolution",
+            "feat": "Wandering tonality, Tristan, late Liszt",
+            "tags": ["tonal_dissolution", "harmonic_suspension_prog"]
+          },
+          {
+            "n": "28",
+            "title": "Modal borrowing & exoticism",
+            "feat": "Modal scales, pentatonic, whole-tone",
+            "tags": ["modal_borrowing_advanced", "pentatonic_harmony", "whole_tone_harmony"]
+          }
+        ]
+      },
+      {
+        "label": "Tier 4 — Post-tonal theory",
+        "badge": "T4",
+        "desc": "Early 20th century through serialism, spectralism, and beyond.",
+        "units": [
+          {
+            "n": "29",
+            "title": "Pitch-class sets I",
+            "feat": "PC sets, normal/prime form, Forte labels",
+            "tags": ["pc_set", "normal_form", "prime_form", "forte_label"]
+          },
+          {
+            "n": "30",
+            "title": "Pitch-class sets II",
+            "feat": "IC vector, Z-relation, set families",
+            "tags": ["ic_vector", "z_relation", "set_family"]
+          },
+          {
+            "n": "31",
+            "title": "Symmetry & inversional axes",
+            "feat": "Inversional symmetry, axes of symmetry",
+            "tags": ["inversional_symmetry", "axis_of_symmetry"]
+          },
+          {
+            "n": "32",
+            "title": "Twelve-tone serialism I",
+            "feat": "Row forms: P, I, R, RI; matrix",
+            "tags": ["twelve_tone_row", "row_matrix", "row_forms"]
+          },
+          {
+            "n": "33",
+            "title": "Twelve-tone serialism II",
+            "feat": "Combinatoriality, hexachordal I-combinatoriality",
+            "tags": ["combinatoriality", "hexachordal_combinatoriality"]
+          },
+          {
+            "n": "34",
+            "title": "Diatonic modes",
+            "feat": "Dorian, Phrygian, Lydian, etc.; modal harmony",
+            "tags": ["mode_dorian", "mode_phrygian", "mode_lydian", "modal_harmony"]
+          },
+          {
+            "n": "35",
+            "title": "Non-diatonic scales",
+            "feat": "Octatonic, hexatonic, acoustic, Hungarian",
+            "tags": ["octatonic_scale", "hexatonic_scale", "acoustic_scale"]
+          },
+          {
+            "n": "36",
+            "title": "Rhythm & meter (post-tonal)",
+            "feat": "Additive meter, polymeter, metric modulation",
+            "tags": ["additive_meter", "polymeter", "metric_modulation"]
+          },
+          {
+            "n": "37",
+            "title": "Neo-Riemannian Theory",
+            "feat": "PLR transforms, Tonnetz, triadic post-tonal",
+            "tags": ["neo_riemannian", "plr_transforms", "tonnetz"]
+          },
+          {
+            "n": "38",
+            "title": "Spectralism & microtonality",
+            "feat": "Harmonic series, spectral chord, microtones",
+            "tags": ["spectralism", "harmonic_series_harmony", "microtonality"]
+          },
+          {
+            "n": "39",
+            "title": "Minimalism & process music",
+            "feat": "Phase, additive process, drone",
+            "tags": ["minimalism", "phase_process", "additive_process"]
+          },
+          {
+            "n": "40",
+            "title": "Textural analysis",
+            "feat": "Density, register, noise vs. pitch",
+            "tags": ["texture_density", "register_analysis", "spectral_texture"]
+          }
+        ]
+      },
+      {
+        "label": "Tier 5 — Jazz & contemporary tonal",
+        "badge": "T5",
+        "desc": "Jazz harmony, improvisation theory, pop/film, and analysis of vernacular styles.",
+        "units": [
+          {
+            "n": "41",
+            "title": "Jazz chord symbols & voicings",
+            "feat": "Lead sheet symbols, drop-2, shell voicings",
+            "tags": ["jazz_chord_symbol", "jazz_voicing", "shell_voicing"]
+          },
+          {
+            "n": "42",
+            "title": "ii–V–I & cadential patterns",
+            "feat": "ii⁷–V⁷–I in maj/min, tritone sub",
+            "tags": ["ii_v_i", "tritone_substitution", "cadential_jazz"]
+          },
+          {
+            "n": "43",
+            "title": "Blues harmony",
+            "feat": "12-bar blues, altered dominant, blue notes",
+            "tags": ["blues_12bar", "blues_harmony", "altered_dominant"]
+          },
+          {
+            "n": "44",
+            "title": "Jazz scales & modes",
+            "feat": "Mixolydian ♭7, Dorian, Lydian ♭7, alt scale",
+            "tags": ["jazz_scale_mixolydian", "lydian_dominant", "altered_scale"]
+          },
+          {
+            "n": "45",
+            "title": "Chord-scale theory",
+            "feat": "Mapping scales to chord functions",
+            "tags": ["chord_scale", "available_tensions", "avoid_notes"]
+          },
+          {
+            "n": "46",
+            "title": "Reharmonization",
+            "feat": "Tritone subs, passing chords, coltrane changes",
+            "tags": ["reharmonization", "coltrane_changes", "passing_chord"]
+          },
+          {
+            "n": "47",
+            "title": "Jazz form & improvisation",
+            "feat": "AABA, rhythm changes, contrafact",
+            "tags": ["form_aaba", "rhythm_changes", "improvisation_structure"]
+          },
+          {
+            "n": "48",
+            "title": "Modal jazz",
+            "feat": "So what voicings, quartal harmony, suspended dom",
+            "tags": ["modal_jazz", "quartal_harmony", "suspended_dominant"]
+          },
+          {
+            "n": "49",
+            "title": "Post-Bop & free jazz",
+            "feat": "Upper structures, outside playing, free rhythm",
+            "tags": ["upper_structure_triad", "outside_playing", "free_rhythm"]
+          },
+          {
+            "n": "50",
+            "title": "Pop & rock harmony",
+            "feat": "IV–I loop, ♭VII, ♭VI–♭VII–I, Nashville numbers",
+            "tags": ["pop_harmony", "rock_flat_vii", "nashville_number"]
+          },
+          {
+            "n": "51",
+            "title": "Film & functional harmony",
+            "feat": "Leitmotif, chromatic mediants, neo-romantic",
+            "tags": ["film_harmony", "leitmotif", "neo_romantic"]
+          }
+        ]
+      }
+    ]
+  }
+]
