@@ -49,10 +49,9 @@ define([
       
       var matches = false;
       if (isUnit9) {
-        // We only want I and V chords (Major or Minor)
-        var figure = (p.answer || "").replace(/[0-9\/]/g, ''); // Strip figures like 6/4, 7
-        var upper = figure.toUpperCase();
-        matches = (upper === 'I' || upper === 'V');
+        // Root position only: I, i, V, V7 — no inversions
+        var answer = (p.answer || "").trim();
+        matches = (answer === 'I' || answer === 'i' || answer === 'V' || answer === 'V7');
       } else {
         matches = _.some(skillTags, function (tag) {
           var cleanTag = tag.replace(/^unit:\d+_/, '');
@@ -762,7 +761,7 @@ define([
         exercise.playlistTags = definition.playlistTags || [];
         exercise.problems = applySkillFilter(
             buildChoraleIdentificationProblems(exercise),
-            (exercise.playlistSkillTags).concat(exercise.playlistTags).concat(exercise.skill_tags)
+            (exercise.playlistSkillTags).concat(exercise.playlistTags)
         );
 
         return exercise;
