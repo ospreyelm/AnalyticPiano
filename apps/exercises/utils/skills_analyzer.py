@@ -1,6 +1,26 @@
 from music21 import roman, key
 import re
 
+# Maps internal unit-prefixed tags → canonical skill tag vocabulary.
+# Canonical tags are used by adaptive pool queries and SKILL_CHORD_PATTERNS.
+# Both forms are emitted so legacy unit:X queries still work.
+_CANONICAL_MAP = {
+    "unit:9_diatonic_triads":             "Diatonic_Triads",
+    "unit:10_inversions_first":           "Inversions_First",
+    "unit:12_inversions_second":          "Inversions_Second",
+    "unit:9_Dominant_Seventh":            "Dominant_Seventh",
+    "unit:16_diminished_seventh":         "Diminished_Seventh",
+    "unit:16_half_diminished_seventh":    "Half_Diminished_Seventh",
+    "unit:7_cadence_half":                "Cadence_Half",
+    "unit:7_Cadence_Perfect_Authentic":   "Cadence_Perfect_Authentic",
+    "unit:7_cadence_deceptive":           "Cadence_Deceptive",
+    "unit:7_cadence_plagal":              "Cadence_Plagal",
+    "unit:16_secondary_dominant":         "Secondary_Dominant",
+    "unit:16_secondary_leading_tone":     "Secondary_Leading_Tone",
+    "unit:18_neapolitan_sixth":           "Neapolitan_Sixth",
+    "unit:18_augmented_sixth":            "Augmented_Sixth",
+}
+
 def analyze_chunk_skills(chunk, chunk_key):
     """
     Analyzes a music chunk and returns a list of pedagogical tags (unit:X_...)
@@ -55,7 +75,11 @@ def analyze_chunk_skills(chunk, chunk_key):
         if not is_diatonic:
             if rn.isDominantSeventh() or (rn.isMajorTriad() and deg not in [1, 4, 5]):
                 skills.add("unit:16_secondary_dominant")
-            elif rn.isDiminishedSeventh() or rn.isHalfDiminishedSeventh():
+            if rn.isDiminishedSeventh():
+                skills.add("unit:16_diminished_seventh")
+                skills.add("unit:16_secondary_leading_tone")
+            elif rn.isHalfDiminishedSeventh():
+                skills.add("unit:16_half_diminished_seventh")
                 skills.add("unit:16_secondary_leading_tone")
             
             if rn.isAugmentedSixth():
@@ -125,6 +149,11 @@ def analyze_chunk_skills(chunk, chunk_key):
         match = re.search(r'unit:(\w?\d+)', s)
         if match:
             skills.add(f"unit:{match.group(1)}")
+
+    # Emit canonical tags alongside unit-prefixed forms
+    for internal, canonical in _CANONICAL_MAP.items():
+        if internal in skills:
+            skills.add(canonical)
 
     return sorted(list(skills)), complexity
 

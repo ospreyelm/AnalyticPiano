@@ -592,11 +592,12 @@ define([
       }
 
       var allProblems = this.exerciseContext.getDefinition().getProblems() || [];
-      var globalTotal = allProblems.length;
+      var visibleProblems = _.filter(allProblems, function(p) { return !p.hidden; });
+      var globalTotal = visibleProblems.length;
       var answers = this.exerciseContext.grader ? this.exerciseContext.grader.answers : {};
       var globalAnswered = 0;
-      for (var i = 0; i < globalTotal; i++) {
-          if (answers.hasOwnProperty(i) && answers[i] !== null && answers[i] !== '') {
+      for (var i = 0; i < allProblems.length; i++) {
+          if (!allProblems[i].hidden && answers.hasOwnProperty(i) && answers[i] !== null && answers[i] !== '') {
               globalAnswered++;
           }
       }
