@@ -221,6 +221,7 @@ class Command(BaseCommand):
                 data=exercise_data,
                 authored_by=author,
                 is_public=False,
+                tags=['bach'],
                 skill_tags=detected_skills,
                 complexity=detected_complexity
             )

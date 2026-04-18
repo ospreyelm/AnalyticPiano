@@ -50,6 +50,12 @@ When a student practices an **Adaptive Playlist**, the engine selects the "best 
 ### Transposition Variety
 In adaptive mode, the engine automatically chooses a transposition for every exercise to ensure students aren't just memorizing fingerings. It prioritizes the `transpose_requests` set on the Playlist.
 
+### Smart Assignments (Tag-Based Pooling)
+To support massive repertoires like the Bach Chorale corpus, Playlists can be configured as **Smart Assignments** (`is_dynamic = True`):
+- **Dynamic Pool**: The system ignores the manual exercise list and instead builds a pool from all exercises in the database matching the Playlist's `tags`.
+- **Complexity Gating**: Instructors can set a `min_complexity` and `max_complexity` range, ensuring that even within a huge library like Bach, students only see phrases appropriate for their level (e.g. Theory I vs. Graduate Theory).
+- **Infinite Homework**: This allows for "evergreen" assignments that automatically incorporate new imports.
+
 ---
 
 ## 4. Visual Skill Map

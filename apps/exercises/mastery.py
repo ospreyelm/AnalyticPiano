@@ -253,7 +253,17 @@ def get_next_exercise(user_id: int, playlist=None, course=None, seed=None):
     # 4. Fetch the exercise pool
     pool = Exercise.objects.all()
     if playlist:
-        pool = pool.filter(playlists=playlist)
+        if getattr(playlist, "is_dynamic", False) and playlist.tags:
+            # DYNAMIC POOL: Pull from global database based on tags
+            pool = pool.filter(tags__overlap=playlist.tags)
+            # Apply complexity gating from the playlist settings
+            pool = pool.filter(
+                complexity__gte=playlist.min_complexity,
+                complexity__lte=playlist.max_complexity
+            )
+        else:
+            # STATIC POOL: Only pull from exercises manually linked to the playlist
+            pool = pool.filter(playlists=playlist)
     
     if target_skills:
         # Exercises targeting our current weaknesses

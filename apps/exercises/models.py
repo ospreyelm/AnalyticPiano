@@ -514,6 +514,23 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         default=False,
         help_text="In adaptive mode, the next exercise is chosen dynamically based on student mastery.",
     )
+    is_dynamic = models.BooleanField(
+        "Smart Assignment",
+        default=False,
+        help_text="If checked, this playlist will automatically pull exercises from the global library based on targeted tags and complexity, rather than a manual list.",
+    )
+    min_complexity = models.PositiveSmallIntegerField(
+        "Min Complexity",
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Filter the pool to exercises with complexity at or above this value (1-10)."
+    )
+    max_complexity = models.PositiveSmallIntegerField(
+        "Max Complexity",
+        default=10,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Filter the pool to exercises with complexity at or below this value (1-10)."
+    )
 
     tags = ArrayField(
         base_field=models.CharField(max_length=32),
