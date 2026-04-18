@@ -67,3 +67,25 @@ The **Skill Map** is the student's primary progress dashboard.
 Teachers can control the behavior of the adaptive engine via the **Course Admin**:
 - **`mastery_threshold`**: Set this to `familiar` for a fast-paced survey course, or `mastered` for a foundational course requiring high fluency.
 - **Entry Points**: Specific exercises in a playlist can be marked as `is_adaptive_entry` to give new students a place to start before any mastery is recorded.
+
+---
+
+## 6. Bach Curriculum Factory
+
+The **Bach Curriculum Factory** (`import_bach_phrases.py`) is an automated pipeline that transforms the Bach chorale corpus into a comprehensive library of pedagogical exercises.
+
+### Automated Slicing Logic
+The engine uses a sophisticated harmonic-rhythmic heuristic to find logical phrase boundaries (slices):
+1.  **Metric Slicing**: Phrases have a controllable "grain size" (minimum of 3 bars by default).
+2.  **Harmonic Arrivals**: Slicing occurs at clear cadential targets (I, V, or V/V → V).
+3.  **Rhythmic Breathing**: Arrivals on long rhythmic durations (half notes or longer) are prioritized.
+
+### Multi-Mode Generation
+From a single chorale, the factory can generate multiple distinct curriculum tracks:
+- **Performance (`play`)**: Traditional chorale performance tasks.
+- **Roman Numeral (`roman`)**: Identification of harmonic functions.
+- **Figured Bass (`figures`)**: Identification of inversions and chord types.
+- **Matching (`matching`)**: Specialized challenges linking notation to harmonic symbols.
+
+### Skill Integration
+Every slice is automatically processed by the `analyze_chunk_skills` engine. This ensures that every Bach phrase is immediately "plugged in" to the student's Adaptive Skill Map, allowing the software to recommend specific Bach slices that target a student's personal areas of weakness.

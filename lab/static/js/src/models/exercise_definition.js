@@ -326,17 +326,22 @@ define([
       return computeWindowLabel(window.midiStack, analysisType, analyzer, compoundIntervals, window.events);
     });
 
-    return _.map(windows, function (window, idx) {
+    var problems = [];
+    _.each(windows, function (window, idx) {
       var answer = labels[idx] || "";
       var measureIndex = window.events && window.events.length ? window.events[0].measureIndex : 0;
-      return {
+      
+      problems.push({
         windowIndex: idx,
         measureIndex: measureIndex,
         onset: window.onset,
         answer: answer,
         choices: buildChoices(answer, labels, analysisType, compoundIntervals),
-      };
+        hidden: (answer === "") // Mark as hidden if no harmonic answer
+      });
     });
+
+    return problems;
   }
 
   /**

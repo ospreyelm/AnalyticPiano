@@ -214,6 +214,13 @@ define([
         for (var i = 0; i < slots.length; i++) {
           var slot = slots[i];
           if (!slot) { continue; }
+          
+          var problems = self.exerciseContext.getVisibleProblems
+            ? self.exerciseContext.getVisibleProblems()
+            : definition.getProblems();
+          var problem = problems[slot.index];
+          if (problem && problem.hidden) { continue; } // Skip hidden slots
+
           if (
             clickX >= slot.x - 20 && clickX <= slot.x + 20 &&
             clickY >= slot.y - 20 && clickY <= slot.y + 46
@@ -259,6 +266,13 @@ define([
         for (var i = 0; i < slots.length; i++) {
           var slot = slots[i];
           if (!slot) { continue; }
+
+          var problems = self.exerciseContext.getVisibleProblems
+            ? self.exerciseContext.getVisibleProblems()
+            : definition.getProblems();
+          var problem = problems[slot.index];
+          if (problem && problem.hidden) { continue; } // Skip hidden slots
+
           if (
             cx >= slot.x - 20 && cx <= slot.x + 20 &&
             cy >= slot.y - 20 && cy <= slot.y + 46
@@ -419,6 +433,11 @@ define([
         var pageOffset = this.exerciseContext && this.exerciseContext.getIdentPageOffset
           ? this.exerciseContext.getIdentPageOffset() : 0;
         var absoluteIndex = pageOffset + localIndex;
+
+        var problems = definition.getProblems ? definition.getProblems() : [];
+        var problem = problems[absoluteIndex];
+        if (problem && problem.hidden) { continue; } // LEAVE A SPACE
+
         var chosen = grader && grader.answers && grader.answers.hasOwnProperty(absoluteIndex)
           ? grader.answers[absoluteIndex] : null;
         var label = chosen || '?';

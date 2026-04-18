@@ -7,6 +7,7 @@ ANALYTIC PIANO (formerly HarmonyLab) is an open-source application for the study
 *   **Analytical Overlays**: Integrated Roman Numeral and Figured Bass analysis for Classical repertoire.
 *   **Adaptive Learning System**: An intelligent engine that tracks student mastery across a tiered knowledge graph and serves personalized exercises to target specific areas of weakness.
 *   **Visual Skill Map**: A dynamic student dashboard visualizing progress through music theory fundamentals using directed acyclic graphs.
+*   **Bach Curriculum Factory**: An automated pipeline that slices the Bach chorale corpus into pedagogically sound phrases based on harmonic and rhythmic cadences, automatically generating Roman Numeral, Figured Bass, and Matching exercises.
 
 # Supported Web Browsers
 
