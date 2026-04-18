@@ -92,6 +92,7 @@ define([
     this.exerciseChords = this.createExerciseChords();
     this.timeSignature = this.definition.getTimeSignature();
     this.semibrevesPerLine = this.definition.getSemibrevesPerLine();
+    this.sessionMode = this.settings.identMode || "submit";
 
     // this.playlistRestarts = null; // this obsolete measurement was valuable
 
@@ -710,7 +711,8 @@ define([
         score: { correct: correct, incorrect: incorrect, unanswered: unanswered },
         correct_answers: correct_answers,
         page_num: this._identPage,
-        is_page_submit: isPageSubmit
+        is_page_submit: isPageSubmit,
+        mode: options && options.mode ? options.mode : this.sessionMode,
       };
 
       var selfExerciseId = this.definition.exercise.exerciseId;
@@ -982,7 +984,10 @@ define([
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
-            this.submitIdentificationAnswers({ is_page_submit: true });
+            this.submitIdentificationAnswers({
+              is_page_submit: true,
+              mode: options && options.mode
+            });
           }
           graded.advancedPage = true;
           this.goToIdentPage(this._identPage + 1);
@@ -991,7 +996,10 @@ define([
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
-            this.submitIdentificationAnswers({ is_page_submit: true });
+            this.submitIdentificationAnswers({
+              is_page_submit: true,
+              mode: options && options.mode
+            });
           }
           this.state = ExerciseContext.STATE.CORRECT;
           this.sealed = true;

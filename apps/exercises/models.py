@@ -35,6 +35,13 @@ from apps.exercises.utils.transpose import transpose
 User = get_user_model()
 
 
+FEEDBACK_MODE_CHOICES = [
+    ("submit", "Submit — see results after submitting"),
+    ("practice", "Practice — immediate feedback per slot"),
+    ("test", "Test — no feedback, answers locked"),
+]
+
+
 class RawJSONField(JSONField):
     """To preserve the data order."""
 
@@ -421,6 +428,15 @@ class IdentificationAttempt(models.Model):
     correct_answers = JSONField(default=dict)
     is_page_submit = models.BooleanField(default=False)
     page_num = models.IntegerField(null=True, blank=True)
+    mode = models.CharField(
+        "Feedback Mode",
+        max_length=16,
+        choices=FEEDBACK_MODE_CHOICES,
+        blank=True,
+        default="",
+        help_text="Mode in effect when this attempt was submitted. "
+                  "Empty = pre-migration attempt (mode unknown).",
+    )
 
     class Meta:
         verbose_name = "Identification Attempt"
@@ -546,6 +562,16 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         verbose_name="Skill Tags",
         help_text="Harmonic skills this playlist targets (e.g. Dominant_Seventh). "
                   "Used to filter identification slots in chorale exercises."
+    )
+
+    feedback_mode = models.CharField(
+        "Feedback Mode Override",
+        max_length=16,
+        choices=FEEDBACK_MODE_CHOICES,
+        blank=True,
+        default="",
+        help_text="Overrides exercise identMode for all exercises in this playlist. "
+                  "Leave blank to use each exercise's own setting.",
     )
 
     zero_padding = "PA00A0"

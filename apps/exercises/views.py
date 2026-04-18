@@ -150,6 +150,7 @@ def identification_answers_view(request):
             correct_answers=data.get("correct_answers", {}),
             page_num=data.get("page_num"),
             is_page_submit=data.get("is_page_submit", False),
+            mode=data.get("mode", ""),
         )
 
         # Record mastery attempt

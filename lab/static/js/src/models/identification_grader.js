@@ -24,6 +24,7 @@ define([
 
     reset: function () {
       this.answers = {};  // { problemIndex: label }
+      this.attemptCounts = {}; // { problemIndex: count }
     },
 
     initFromDefinition: function (definition) {
@@ -34,6 +35,7 @@ define([
 
     setAnswer: function (problemIndex, label) {
       this.answers[problemIndex] = label;
+      this.attemptCounts[problemIndex] = (this.attemptCounts[problemIndex] || 0) + 1;
     },
 
     getActiveMeasureIndex: function () {

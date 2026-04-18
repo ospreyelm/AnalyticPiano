@@ -294,6 +294,8 @@ def generate_exercise_context(
             "courseId": course_id,
             # this variable is used in the exercise preview mode, where the only way to change the displayed exercise is to redirect the URL
             "forceRedirect": force_redirect,
+            "identMode": getattr(playlist, "feedback_mode", "") or exercise.data.get("identMode", "submit"),
+            "modeLocked": bool(getattr(playlist, "feedback_mode", "")),
         }
     )
     return exercise_context

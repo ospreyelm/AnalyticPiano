@@ -1193,6 +1193,7 @@ class PlaylistForm(forms.ModelForm):
         "is_public",
         "is_dynamic",
         "is_adaptive",
+        "feedback_mode",
         "tags",
         "min_complexity",
         "max_complexity",

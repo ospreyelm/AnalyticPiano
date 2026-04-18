@@ -82,7 +82,7 @@ define([
       throw new Error("Missing parameter property: .timeSignature");
     }
 
-    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onSubmitIdentification"]);
+    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onSubmitIdentification", "onToggleMode"]);
   };
 
   ExerciseSheetComponent.prototype = new Component();
@@ -179,7 +179,12 @@ define([
 
       this._identActiveIndex = null;
       this._identPopupEl = null;
-      var identMode = definition.getIdentMode ? definition.getIdentMode() : 'submit';
+      this._currentMode = this.exerciseContext.settings.identMode || "submit";
+      this._modeLocked = this.exerciseContext.settings.modeLocked || false;
+
+      this.renderModeToggle();
+
+      var identMode = this._currentMode;
 
       // Show Submit button only in submit mode
       if (identMode === 'submit') {
@@ -235,6 +240,15 @@ define([
           ? self.exerciseContext.getIdentPageOffset() : 0;
         var absoluteHitIndex = pageOffset + hitIndex;
         
+        var limits = { practice: 3, submit: 2, test: 1 };
+        var limit = limits[self._currentMode] || 3;
+        var graderCounts = (self.exerciseContext.grader && self.exerciseContext.grader.attemptCounts) || {};
+        var count = graderCounts[absoluteHitIndex] || 0;
+
+        if (count >= limit) {
+          return;
+        }
+
         if (currentMode === 'test' && grdr && grdr.answers && grdr.answers.hasOwnProperty(absoluteHitIndex)) {
           return;
         }
@@ -409,7 +423,7 @@ define([
 
       var grader = this.exerciseContext.grader;
       var definition = this.exerciseContext.getDefinition();
-      var identMode = definition.getIdentMode ? definition.getIdentMode() : 'submit';
+      var identMode = this._currentMode;
       var ctx = this.vexRenderer.getContext();
       var lastGraded = this.exerciseContext.graded;
 
@@ -587,7 +601,7 @@ define([
       // Hide progress bar only after the exercise is fully completed (sealed)
       if (totalCount === 0 || this.exerciseContext.sealed) {
           $progContainer.hide();
-          $btn.show().addClass('ready').text('Submit');
+          $btn.hide(); // Hide button when completed/sealed
           return;
       }
 
@@ -622,7 +636,71 @@ define([
      * Called when the student clicks Submit (submit mode only).
      */
     onSubmitIdentification: function () {
-      this.exerciseContext.submitIdentPage({ fromUI: true });
+      this.exerciseContext.submitIdentPage({ fromUI: true, mode: this._currentMode });
+    },
+
+    renderModeToggle: function () {
+      if (this._modeLocked || this._currentMode === "test") {
+        $("#ident-mode-container").remove();
+        return;
+      }
+
+      var $container = $("#ident-mode-container");
+      if ($container.length === 0) {
+        $container = $('<div id="ident-mode-container" class="ident-mode-toggle"></div>');
+        $("#identification-actions").append($container);
+
+        if ($("#ident-toggle-css").length === 0) {
+          $("<style id='ident-toggle-css'>" +
+            ".ident-mode-toggle { display: flex; justify-content: center; margin-top: 15px; font-family: sans-serif; }" +
+            ".mode-switch { position: relative; display: inline-flex; background: #f1f5f9; border-radius: 999px; padding: 4px; border: 1px solid #e2e8f0; }" +
+            ".mode-option { padding: 6px 16px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; transition: all 0.2s; border-radius: 999px; z-index: 1; }" +
+            ".mode-option.active { color: #0f172a; background: white; shadow: 0 1px 3px rgba(0,0,0,0.1); }" +
+            ".mode-option:hover:not(.active) { color: #475569; }" +
+            "</style>").appendTo("head");
+        }
+      }
+
+      var self = this;
+      $container.empty();
+      var $switch = $('<div class="mode-switch"></div>');
+      
+      var modes = [
+        { id: "practice", label: "Practice" },
+        { id: "submit", label: "Submit" }
+      ];
+
+      _.each(modes, function (m) {
+        var $opt = $('<div class="mode-option"></div>').text(m.label).data("mode", m.id);
+        if (self._currentMode === m.id) {
+          $opt.addClass("active");
+        }
+        $opt.on("click", function () {
+          self.onToggleMode(m.id);
+        });
+        $switch.append($opt);
+      });
+
+      $container.append($switch);
+    },
+
+    onToggleMode: function (newMode) {
+      if (this._modeLocked || this._currentMode === "test" || this._currentMode === newMode) {
+        return;
+      }
+      this._currentMode = newMode;
+      this.exerciseContext.sessionMode = newMode;
+      
+      // Toggle Submit button visibility
+      if (newMode === 'submit') {
+        $('#identification-submit').show();
+      } else {
+        $('#identification-submit').hide();
+        $('#ident-progress-container').hide();
+      }
+
+      this.renderModeToggle();
+      this.render(); // Re-render to update UI elements
     },
     /**
      * Chorale mode setup: ensure grader is initialized; keep display settings
