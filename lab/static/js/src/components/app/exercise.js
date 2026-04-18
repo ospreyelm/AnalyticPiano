@@ -76,6 +76,27 @@ define([
     models.exerciseDefinition = new ExerciseDefinition({
       definition: definition,
     });
+
+    // Skip sparse chorale_identification exercises before any rendering occurs.
+    // If first page (first 4 measures) has fewer than 4 visible problems, redirect now.
+    if (
+      models.exerciseDefinition.isChoraleIdentification &&
+      models.exerciseDefinition.isChoraleIdentification() &&
+      definition.nextExercise
+    ) {
+      var allProblems = models.exerciseDefinition.getProblems ? models.exerciseDefinition.getProblems() : [];
+      var score = models.exerciseDefinition.getScore ? models.exerciseDefinition.getScore() : null;
+      var totalMeasures = score && score.measures ? score.measures.length : 0;
+      var endMeasure = Math.min(4, totalMeasures);
+      var visibleOnFirstPage = allProblems.filter(function (p) {
+        return !p.hidden && p.measureIndex >= 0 && p.measureIndex < endMeasure;
+      }).length;
+      if (visibleOnFirstPage < 4) {
+        window.location.replace(definition.nextExercise);
+        return models; // abort further setup
+      }
+    }
+
     models.inputChords = new ExerciseChordBank({
       staffDistribution: definition.staffDistribution,
     });
