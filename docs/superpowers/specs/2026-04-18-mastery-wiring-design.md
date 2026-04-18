@@ -29,73 +29,59 @@ Mastery = did the student demonstrate the skill, yes/no. Mode affects UX and fut
 
 **File:** `apps/exercises/skill_graph.py`
 
-Strict canonical set — only tags that map to meaningful mastery rows. Filters out unit-prefixed long forms.
+Strict canonical set — only tags that map to meaningful mastery rows. Filters out unit-prefixed long forms (`unit:9_Dominant_Seventh`, `unit:10_inversions_first`, etc.).
 
 ```python
-MASTERY_TAGS = {
-    # Canonical Knowledge Graph tags
-    "Diatonic_Triads", "Inversions_First", "Inversions_Second",
-    "Dominant_Seventh", "Diminished_Seventh", "Half_Diminished_Seventh",
-    "Cadence_Half", "Cadence_Perfect_Authentic", "Cadence_Deceptive", "Cadence_Plagal",
-    "Secondary_Dominant", "Secondary_Leading_Tone",
-    "Neapolitan_Sixth", "Augmented_Sixth",
-    "Picardy_Third", "Modulation_Diatonic_Pivot",
-    # Unit-number tags (without suffix) — used by adaptive pool queries
-    *[f"unit:{n}" for n in range(1, 52)],
-}
+MASTERY_TAGS = (
+    # Canonical Knowledge Graph tags (16 harmonic skills)
+    {
+        "Diatonic_Triads", "Inversions_First", "Inversions_Second",
+        "Dominant_Seventh", "Diminished_Seventh", "Half_Diminished_Seventh",
+        "Cadence_Half", "Cadence_Perfect_Authentic", "Cadence_Deceptive", "Cadence_Plagal",
+        "Secondary_Dominant", "Secondary_Leading_Tone",
+        "Neapolitan_Sixth", "Augmented_Sixth",
+        "Picardy_Third", "Modulation_Diatonic_Pivot",
+    }
+    # Literacy tags (emitted by analyzer for all valid exercises)
+    | set(LITERACY_TAGS)
+    # Unit-number-only tags — used by adaptive pool queries
+    | {f"unit:{n}" for n in range(1, 52)}
+    # Branch unit-number tags (Figured Bass A, Counterpoint B, Post-tonal C, Neo-Riemannian D)
+    | {f"unit:A{n}" for n in range(1, 16)}
+    | {f"unit:B{n}" for n in range(1, 16)}
+    | {f"unit:C{n}" for n in range(1, 9)}
+    | {f"unit:D{n}" for n in range(1, 9)}
+)
 ```
+
+Branch tag counts derived from `skill_graph.py` ALL_SKILL_TAGS: A1–A15, B1–B10+, C1–C8, D1–D8. Use generous upper bounds — extra tags in set cost nothing.
 
 ---
 
-### 2. `record_attempt` gains `tested_tags` param (MODIFIED)
+### 2. `record_attempt` canonical filter (MODIFIED)
 
 **File:** `apps/exercises/mastery.py`
 
-```python
-def record_attempt(user_id: int, exercise, correct: bool, tested_tags=None) -> None:
-```
+Add import and filter at top of loop:
 
-- `tested_tags=None` → use `exercise.skill_tags` filtered by `MASTERY_TAGS`
-- `tested_tags=[...]` → use caller-supplied list (already filtered to visible skills)
-
-Internal filter applied regardless:
 ```python
 from apps.exercises.skill_graph import MASTERY_TAGS
-tags_to_update = [t for t in (tested_tags or exercise.skill_tags) if t in MASTERY_TAGS]
+
+def record_attempt(user_id: int, exercise, correct: bool) -> None:
+    tags_to_update = [t for t in exercise.skill_tags if t in MASTERY_TAGS]
+    for skill_tag in tags_to_update:
+        ...  # existing logic unchanged
 ```
 
-This deduplicates: one mastery row per canonical skill, no `unit:9_Dominant_Seventh` rows.
+No `tested_tags` param — YAGNI. Per-problem attribution (mapping each visible slot to its specific skill tag) requires richer problem metadata not yet present. Deferred. Canonical filter eliminates duplicate rows — the primary value here.
 
 ---
 
-### 3. Identification view derives `tested_tags` from visible problems (MODIFIED)
+### 3. Identification view: no change to `record_attempt` call
 
-**File:** `apps/exercises/views.py`, `identification_answers_view`
+**File:** `apps/exercises/views.py`
 
-After saving `IdentificationAttempt`, before calling `record_attempt`:
-
-```python
-# Derive skill_tags for only the skills actually tested (non-hidden problems)
-# exercise.data["problems"] contains the full problem list including hidden ones.
-# The submitted answers dict only has keys for visible problems.
-answered_indices = set(data.get("answers", {}).keys())
-all_problems = exercise.data.get("problems", [])
-tested_skills = set()
-for idx, prob in enumerate(all_problems):
-    if not prob.get("hidden") and str(idx) in answered_indices:
-        # Each problem has an 'answer' field with the roman numeral label.
-        # Map back to skill_tags via exercise.skill_tags (coarse — use exercise tags).
-        pass
-
-# Simpler: use exercise.skill_tags filtered by MASTERY_TAGS.
-# Tested-only filtering is enforced by the hidden problem mechanism —
-# students cannot answer hidden slots, so exercise.skill_tags is correct
-# IF the exercise was generated from a skill-filtered playlist.
-# For now: pass exercise.skill_tags; tested_tags refinement deferred.
-record_attempt(user_id=request.user.id, exercise=exercise, correct=correct)
-```
-
-**Note:** Full per-problem skill attribution (mapping each roman numeral slot to a specific canonical tag) requires richer problem metadata. Deferred. The canonical filter in `record_attempt` already prevents duplicate rows — this is the higher-value fix.
+`record_attempt` called as today. Canonical filter inside `record_attempt` handles deduplication. Visible-only skill attribution deferred (see Deferred section).
 
 ---
 
@@ -121,8 +107,6 @@ feedback_mode = models.CharField(
 )
 ```
 
-**Migration:** Single `AddField`.
-
 **Admin:** Add `feedback_mode` to `PlaylistAdmin` fieldsets.
 
 ---
@@ -136,19 +120,24 @@ mode = models.CharField(
     "Feedback Mode",
     max_length=16,
     choices=FEEDBACK_MODE_CHOICES,
-    default="submit",
+    blank=True,
+    default="",
+    help_text="Mode in effect when this attempt was submitted. "
+              "Empty = pre-migration attempt (mode unknown).",
 )
 ```
 
-**Migration:** Single `AddField` with default `submit` (backward compatible with existing attempts).
+`default=""` — pre-migration rows marked unknown, not retroactively assigned `submit`. Cleaner audit trail.
 
-View saves mode from POST data:
+View saves mode from POST:
 ```python
 IdentificationAttempt.objects.create(
     ...
-    mode=data.get("mode", "submit"),
+    mode=data.get("mode", ""),
 )
 ```
+
+**Migration:** Both `Playlist.feedback_mode` and `IdentificationAttempt.mode` in a single migration file — one deploy step.
 
 ---
 
@@ -162,7 +151,7 @@ playlist_mode = getattr(playlist, "feedback_mode", "") or ""
 effective_mode = playlist_mode or exercise_mode
 
 context["identMode"] = effective_mode
-context["playlistLockMode"] = bool(playlist_mode)  # frontend disables toggle if True
+context["modeLocked"] = bool(playlist_mode)  # frontend disables toggle if True
 ```
 
 ---
@@ -172,20 +161,21 @@ context["playlistLockMode"] = bool(playlist_mode)  # frontend disables toggle if
 **Files:** `lab/static/js/src/components/music/exercise_sheet.js`
 
 - On load: read `identMode` from exercise context. Set session mode.
-- If `playlistLockMode=true` OR `identMode="test"`: hide toggle, mode locked.
+- If `modeLocked=true` OR `identMode="test"`: hide toggle, mode locked.
 - Otherwise: show toggle button `Practice ↔ Submit` with nudge copy:
   `"Switch to Submit mode to earn full mastery credit"`
-- Per-slot attempt counter:
+
+**Per-slot attempt limits:**
 
 ```
-practice → 3 attempts
-submit   → 2 attempts
-test     → 1 attempt
+practice → 3 attempts per slot
+submit   → 2 attempts per slot
+test     → 1 attempt per slot
 ```
 
-After limit: popup closes, slot rendered as "unanswered" (neutral). Student moves on.
+After limit reached: popup closes. Slot treated as **incorrect** for mastery (unanswered = miss). Student sees neutral indicator (no red/green). `record_attempt` called with `correct=False` for that exercise when final submit fires.
 
-- Mode sent with POST on submit:
+**Mode sent with POST on submit:**
 ```javascript
 data.mode = currentMode;  // "practice" | "submit" | "test"
 ```
@@ -197,17 +187,18 @@ data.mode = currentMode;  // "practice" | "submit" | "test"
 ```
 generate_exercise_context()
   → identMode = playlist.feedback_mode OR exercise.data["identMode"]
-  → playlistLockMode = bool(playlist.feedback_mode)
+  → modeLocked = bool(playlist.feedback_mode)
 
 ExerciseSheet (frontend)
   → reads identMode, sets session mode
-  → toggle shown if !playlistLockMode && mode != "test"
+  → toggle shown if !modeLocked && mode != "test"
   → enforces per-slot attempt limits (3/2/1)
+  → exhausted slot = neutral UI, counts as incorrect on submit
   → sends mode with submission POST
 
 identification_answers_view (backend)
   → saves IdentificationAttempt with mode
-  → calls record_attempt(exercise, correct, tested_tags=None)
+  → calls record_attempt(exercise, correct)
 
 record_attempt (mastery.py)
   → filters skill_tags to MASTERY_TAGS (canonical only, no duplicates)
@@ -221,9 +212,10 @@ record_attempt (mastery.py)
 | Component | Reason |
 |-----------|--------|
 | `compute_mastery_level` | Thresholds unchanged — history stays boolean |
-| `exercise.data["identMode"]` | Existing field, read-only by new logic |
-| Chorale play path | `record_attempt` called with `tested_tags=None` — full exercise tags, canonical-filtered |
+| `exercise.data["identMode"]` | Existing field, read as fallback |
+| Chorale play path | `record_attempt` unchanged — canonical filter applies automatically |
 | Mastery gating / unlock logic | Out of scope — separate task (seed DAG cross-unit edges) |
+| Mode weight in adaptive ranker | Deferred until ranker built |
 
 ---
 
@@ -232,11 +224,11 @@ record_attempt (mastery.py)
 | File | Change |
 |------|--------|
 | `apps/exercises/skill_graph.py` | Add `MASTERY_TAGS` constant |
-| `apps/exercises/mastery.py` | `record_attempt` gains `tested_tags`, filters to `MASTERY_TAGS` |
+| `apps/exercises/mastery.py` | Filter `exercise.skill_tags` to `MASTERY_TAGS` before loop |
 | `apps/exercises/models.py` | `Playlist.feedback_mode`, `IdentificationAttempt.mode` |
 | `apps/exercises/admin.py` | Expose `feedback_mode` in PlaylistAdmin |
-| `apps/exercises/migrations/XXXX_*` | Two new migrations |
-| `lab/views.py` | `generate_exercise_context` sends `identMode` + `playlistLockMode` |
+| `apps/exercises/migrations/XXXX_feedback_mode_and_attempt_mode.py` | Single migration, both fields |
+| `lab/views.py` | `generate_exercise_context` sends `identMode` + `modeLocked` |
 | `lab/static/js/src/components/music/exercise_sheet.js` | Mode toggle UI, attempt limits, send mode with POST |
 
 ---
@@ -245,6 +237,6 @@ record_attempt (mastery.py)
 
 | Item | Reason |
 |------|--------|
-| Per-problem skill attribution (map each roman numeral slot → canonical tag) | Requires richer problem metadata; canonical filter in `record_attempt` solves the duplicate row problem adequately |
+| Per-problem skill attribution (map each visible slot → specific canonical tag) | Requires richer problem metadata in exercise.data; canonical filter in `record_attempt` solves duplicate row problem adequately for now |
 | Mode weight in adaptive ranker | Deferred until ranker built |
 | Cross-unit DAG edges (unit:10→unit:9) | Separate task |
