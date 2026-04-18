@@ -38,23 +38,32 @@ define([
     if (!skillTags || skillTags.length === 0) {
       return problems;
     }
-    var patterns = [];
-    _.each(skillTags, function (tag) {
-      if (SKILL_CHORD_PATTERNS[tag]) {
-        patterns.push(SKILL_CHORD_PATTERNS[tag]);
-      }
+    
+    // Identify Unit 9 specifically (Tonic/Dominant only)
+    var isUnit9 = _.some(skillTags, function(t) { 
+      return t === 'unit:9' || t === 'unit:9_diatonic_triads' || t === 'unit:9_Dominant_Seventh'; 
     });
-    if (patterns.length === 0) {
-      return problems;
-    }
+
     return _.map(problems, function (p) {
-      var matches = _.some(patterns, function (rx) {
-        return rx.test(p.answer);
-      });
-      if (matches) {
-        return p;
+      if (p.hidden) return p;
+      
+      var matches = false;
+      if (isUnit9) {
+        // We only want I and V chords (Major or Minor)
+        var figure = (p.answer || "").replace(/[0-9\/]/g, ''); // Strip figures like 6/4, 7
+        var upper = figure.toUpperCase();
+        matches = (upper === 'I' || upper === 'V');
+      } else {
+        matches = _.some(skillTags, function (tag) {
+          var cleanTag = tag.replace(/^unit:\d+_/, '');
+          return p.answer.startsWith(cleanTag);
+        });
       }
-      return _.extend({}, p, { hidden: true });
+      
+      if (!matches) {
+        p.hidden = true;
+      }
+      return p;
     });
   }
 
@@ -88,6 +97,7 @@ define([
     chorale: "chorale",
     chorale_identification: "chorale_identification",
     identification: "identification",
+    musicxml: "musicxml",
   };
 
   function normalizeAnalysisLabel(label) {
@@ -374,14 +384,19 @@ define([
     });
 
     var problems = [];
+    var firstOnset = windows.length > 0 ? windows[0].onset : 0;
+    
     _.each(windows, function (window, idx) {
       var answer = labels[idx] || "";
       var measureIndex = window.events && window.events.length ? window.events[0].measureIndex : 0;
       
+      // ALIGNMENT FIX: Normalize onset relative to the first window of the exercise
+      var relativeOnset = window.onset - firstOnset;
+
       problems.push({
         windowIndex: idx,
         measureIndex: measureIndex,
-        onset: window.onset,
+        onset: relativeOnset,
         answer: answer,
         choices: buildChoices(answer, labels, analysisType, compoundIntervals),
         hidden: (answer === "") // Mark as hidden if no harmonic answer
@@ -400,6 +415,12 @@ define([
   function convertCIRKeyToHarmonyLabKey(cirKey) {
     if (!cirKey || typeof cirKey !== 'string') {
       return 'jC_'; // default to C major
+    }
+    
+    // Idempotency check: If it already looks like a HarmonyLab key (starts with i/j followed by A-G), return as is.
+    // HL keys are normally 3 chars (e.g. 'jC_', 'iF#'), but we'll accept anything that starts with the mode prefix.
+    if ((cirKey.startsWith('i') || cirKey.startsWith('j')) && cirKey.length >= 2 && /^[A-G]/.test(cirKey[1])) {
+        return cirKey;
     }
     
     // Check if minor (ends with 'm')
@@ -544,6 +565,14 @@ define([
       return this.exercise.type === "chorale_identification";
     },
     /**
+     * Returns true if this is a musicxml exercise.
+     *
+     * @return {boolean}
+     */
+    isMusicXML: function () {
+      return this.exercise.type === "musicxml";
+    },
+    /**
      * Returns true if this is an identification exercise.
      *
      * @return {boolean}
@@ -660,9 +689,9 @@ define([
       var exercise = {};
       var problems = [];
 
-      // Special handling for chorale exercises
-      if (definition.type === "chorale") {
-        exercise.type = "chorale";
+      // Special handling for chorale and musicxml exercises
+      if (definition.type === "chorale" || definition.type === "musicxml") {
+        exercise.type = definition.type;
         exercise.score = definition.score || {};
         exercise.mode = definition.mode || "play-all-voices";
         exercise.targetVoices = definition.targetVoices || "all";
@@ -729,10 +758,11 @@ define([
         }
         exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
         exercise.playlistSkillTags = definition.playlistSkillTags || [];
+        exercise.skill_tags = definition.skillTags || [];
         exercise.playlistTags = definition.playlistTags || [];
         exercise.problems = applySkillFilter(
             buildChoraleIdentificationProblems(exercise),
-            (exercise.playlistSkillTags).concat(exercise.playlistTags)
+            (exercise.playlistSkillTags).concat(exercise.playlistTags).concat(exercise.skill_tags)
         );
 
         return exercise;

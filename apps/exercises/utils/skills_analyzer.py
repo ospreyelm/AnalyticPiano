@@ -50,11 +50,14 @@ def analyze_chunk_skills(chunk, chunk_key):
         deg = rn.scaleDegree
         unique_degrees.add(deg)
         
-        # Diatonic Foundation
+        # Diatonic Foundation (Triads/Sevenths)
         key_pcs = {kp.pitchClass for kp in tonal_key.pitches}
         is_diatonic = all(p.pitchClass in key_pcs for p in rn.pitches)
         
-        if is_diatonic:
+        # Only treat as a harmonic 'triad' skill if there are 3+ distinct notes.
+        # This prevents simple pitch-reading (Unit 1) or intervals (Unit 4) 
+        # from polluting higher-tier harmonic analysis playlists.
+        if is_diatonic and len(rn.pitches) >= 3:
             skills.add("unit:5_triad_quality")
             skills.add("unit:9_diatonic_triads")
             

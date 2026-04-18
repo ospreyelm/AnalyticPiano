@@ -150,6 +150,12 @@ def m21_to_cir(s: stream.Score) -> Dict:
         except Exception:
             pass
 
+    # ALIGNMENT FIX: Shift ALL offsets so the exercise starts at global offset 0.
+    lowest = s.lowestOffset
+    if lowest != 0:
+        for el in s.elements:
+            el.offset -= lowest
+    
     parts = list(s.parts)
 
     def role_from_name(p: stream.Part) -> Optional[str]:
@@ -243,29 +249,32 @@ def m21_to_cir(s: stream.Score) -> Dict:
                     total_ql += el.quarterLength
             return items, total_ql
 
-        def pad_items(items, current_ql, target_ql):
+        def pad_items(items, current_ql, target_ql, is_first_m=False):
+            # NO PADDING ON FIRST MEASURE: Avoid "padded rests" after the music in upbeat/anacrusis starts.
+            if is_first_m:
+                return items
             if current_ql < target_ql - 0.01:
                 diff = target_ql - current_ql
                 dt, dots = ql_to_type_dots(diff)
                 items.append({"kind": "rest", "duration": {"type": dt, "dots": dots}})
             return items
 
-        is_first = (mi == 0)
+        is_first_m = (mi == 0)
         if len(treble_parts) >= 1:
             v_items, v_ql = part_to_voice(treble_parts[0])
-            v_items = pad_items(v_items, v_ql, target_ql_per_measure)
+            v_items = pad_items(v_items, v_ql, target_ql_per_measure, is_first_m)
             treble_voices.append({"direction": VOICE_DIRECTIONS["treble"][0], "items": v_items})
         if len(treble_parts) >= 2:
             v_items, v_ql = part_to_voice(treble_parts[1])
-            v_items = pad_items(v_items, v_ql, target_ql_per_measure)
+            v_items = pad_items(v_items, v_ql, target_ql_per_measure, is_first_m)
             treble_voices.append({"direction": VOICE_DIRECTIONS["treble"][1], "items": v_items})
         if len(bass_parts) >= 1:
             v_items, v_ql = part_to_voice(bass_parts[0])
-            v_items = pad_items(v_items, v_ql, target_ql_per_measure)
+            v_items = pad_items(v_items, v_ql, target_ql_per_measure, is_first_m)
             bass_voices.append({"direction": VOICE_DIRECTIONS["bass"][0], "items": v_items})
         if len(bass_parts) >= 2:
             v_items, v_ql = part_to_voice(bass_parts[1])
-            v_items = pad_items(v_items, v_ql, target_ql_per_measure)
+            v_items = pad_items(v_items, v_ql, target_ql_per_measure, is_first_m)
             bass_voices.append({"direction": VOICE_DIRECTIONS["bass"][1], "items": v_items})
 
         measures.append({

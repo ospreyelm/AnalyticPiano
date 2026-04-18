@@ -41,6 +41,13 @@ class Command(BaseCommand):
             # The iterator behaves like a list where you might need to convert to list or iterate
             score = list(iterator)[0]
             bwv_display = f"R{riem_num}"
+            # Extract actual BWV number if available in metadata
+            try:
+                actual_bwv = score.metadata.number if hasattr(score.metadata, 'number') else None
+                if actual_bwv:
+                    bwv_num = int(actual_bwv)
+            except:
+                pass
         elif bwv_num and movement_num:
             self.stdout.write(f"Loading BWV {bwv_num}.{movement_num}...")
             score = corpus.parse('bach/bwv' + str(bwv_num) + '.' + str(movement_num))
@@ -150,12 +157,15 @@ class Command(BaseCommand):
                 start_m = end_m + 1
                 continue
             
-            # 3. Detect Key and Mode for the phrase
+            # 3. Detect Key and Mode
             try:
-                m21_key = phrase_score.analyze('key')
+                # FORCE GLOBAL KEY FOR PHRASE 1
+                if idx == 0:
+                    m21_key = global_key
+                else:
+                    m21_key = phrase_score.analyze('key')
+                
                 # Store "Clean" key name (e.g. 'D', 'Bb', 'F#m') 
-                # This satisfies the frontend's convertCIRKeyToHarmonyLabKey logic
-                # and is safe for backend transposition thanks to pseudo_key_to_sig lookup.
                 harmony_sig = m21_key.tonic.name.replace("-", "b")
                 if m21_key.mode == "minor":
                     harmony_sig += "m"

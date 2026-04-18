@@ -1059,6 +1059,30 @@ define([
         var trebleStave = makeStave(ctx, currentX, trebleY, measureWidth, "treble", isFirstMeasure ? meta : {}, isFirstMeasure);
         var bassStave = makeStave(ctx, currentX, bassY, measureWidth, "bass", isFirstMeasure ? meta : {}, isFirstMeasure);
 
+        // Draw explicit key label beneath the bass clef (e.g., "Am:", "C:")
+        function formatKeyForDisplay(k) {
+          if (!k || typeof k !== 'string' || k.length < 2) return k;
+          var mode = k.charAt(0);
+          var tonic = k.slice(1).replace(/_/g, "");
+          return tonic + (mode === 'i' ? 'm' : '');
+        }
+
+        var displayKey = (opts && opts.keySignature && typeof opts.keySignature.getKey === 'function') 
+          ? formatKeyForDisplay(opts.keySignature.getKey())
+          : (meta && meta.key);
+
+        if (isFirstMeasure && displayKey) {
+          ctx.save();
+          ctx.font = "bold 18px JazzSerifs";
+          ctx.fillStyle = "#000";
+          ctx.textAlign = "center";
+          // Center under the bass clef (clef is ~28px wide, so offset by 14px)
+          var labelX = currentX + 16; 
+          var labelY = bassStave.getBottomY() + 22; 
+          ctx.fillText(displayKey + ":", labelX, labelY);
+          ctx.restore();
+        }
+
         // Draw system connector only on first measure
         if (isFirstMeasure) {
           var connector = new Vex.Flow.StaveConnector(trebleStave, bassStave);
