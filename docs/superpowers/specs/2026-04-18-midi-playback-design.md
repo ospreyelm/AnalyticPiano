@@ -17,7 +17,7 @@ Add audio playback of the notated score to both the exercise and play views. Stu
 - Student can hear the full score as a reference before/while practicing
 - Play/Stop toggle in toolbar, tempo slider (60–160 BPM)
 - Column highlight shows current beat window while playing
-- Works in both exercise view and play view
+- Works in exercise view and in play view corpus mode (`?newvf&loadCorpus=...`); hidden in standard play-view chord-entry mode
 - No playback on exercise advance / corpus reload
 
 ---
@@ -62,6 +62,10 @@ player.on('stopped', fn);       // called when playback ends or is cancelled
 - `stop()` calls `Tone.Transport.stop()` + `Tone.Transport.cancel()` + releases all notes via `midiDevice.releaseAllNotes()`
 - No looping — single playthrough only
 
+**Transport reset on play():** `Tone.Transport.stop()` halts but does not reset the cursor. `play()` must always call `Tone.Transport.stop()`, `Tone.Transport.cancel()`, and `Tone.Transport.position = 0` before scheduling and starting — even on first play. This ensures repeated play calls always start from the beginning.
+
+**AudioContext resume race:** `play()` must wrap scheduling inside `Tone.start().then(function() { ... })`. `Tone.start()` returns a Promise that resolves once the AudioContext is running. Without this, clicking Play immediately after page load (before any MIDI/keyboard interaction) will silently no-op in Chrome because the AudioContext hasn't been resumed yet. `Tone.start()` is safe to call multiple times.
+
 **Tone.js notes:**
 - `Tone.Transport` is global — ScorePlayer starts and stops it. No conflict expected since nothing else uses Transport currently.
 - Sampler is already loaded and warm (30 piano samples, A0–C8)
@@ -70,7 +74,11 @@ player.on('stopped', fn);       // called when playback ends or is cancelled
 
 ## Playback Controls Mixin (`components/music/playback_controls.js`)
 
-Returns a single function: `renderPlaybackControls(container, scorePlayer)`.
+Returns a single function: `renderPlaybackControls(container, scorePlayer, getTimeline)`.
+
+- `container` — DOM element or jQuery selector for toolbar
+- `scorePlayer` — ScorePlayer instance
+- `getTimeline` — zero-argument function called at play-time to retrieve the current timeline; sheet component passes a closure returning its cached timeline. This defers timeline access to click time so the mixin doesn't need to hold a stale reference.
 
 Injects into the toolbar DOM between nav buttons and existing exercise controls:
 
@@ -82,10 +90,10 @@ Injects into the toolbar DOM between nav buttons and existing exercise controls:
 - Play button text toggles: `▶ Play` ↔ `■ Stop`
 - Tempo slider: range 60–160, default 100 (or last stored value from `sessionStorage`)
 - BPM label updates live as slider moves
-- On play: calls `scorePlayer.play(timeline, tempo)`
+- On play: calls `scorePlayer.play(getTimeline(), tempo)`
 - On stop: calls `scorePlayer.stop()`
 - Listens for `stopped` event to reset button state when playback ends naturally
-- **Idempotency:** `renderPlaybackControls()` checks for existing `#playback-controls` in container before injecting; if found, updates ScorePlayer reference and returns. This prevents DOM duplication on repeated `render()` calls.
+- **Idempotency:** `renderPlaybackControls()` checks for existing `#playback-controls` in container before injecting; if found, updates `scorePlayer` and `getTimeline` references on the existing element and returns. This prevents DOM duplication on repeated `render()` calls.
 
 **Tempo persistence:** reads/writes `harmonylab.playback.tempo` in `sessionStorage` on slider change.
 
@@ -134,9 +142,10 @@ The VexFlow adapter emits `onWindowPosition({windowIndex, onset, x, y})` where `
 
 ### PlaySheetComponent
 
+- **Scope:** Play sheet playback is only active in corpus mode (`?newvf` + `?loadCorpus` in URL). In standard chord-entry mode there is no CIR score/timeline — the Play button is hidden (not just disabled) when `corpusFile` is absent.
 - `ScorePlayer` instantiated in play sheet's `initComponent()`
-- `renderPlaybackControls()` called from `render()` (idempotent)
-- `scorePlayer.stop()` called before corpus reload
+- `renderPlaybackControls()` called from `render()` (idempotent); passes `getTimeline` closure returning `ScoreTimeline.buildTimeline(self._corpusPayload.score)` — rebuilt from the cached payload each time play is clicked
+- **Stop on corpus reload:** Corpus loading happens inside `renderWithState()` in `play_sheet.js:render()`. Call `scorePlayer.stop()` at the top of `renderWithState()` before re-rendering — this covers both first load and subsequent re-renders triggered by UI changes (voice filter, key signature)
 - Playback plays full score regardless of active voice filters (voices, octave-shift) — always uses raw timeline from full CIR score
 
 ### Sampler Access
