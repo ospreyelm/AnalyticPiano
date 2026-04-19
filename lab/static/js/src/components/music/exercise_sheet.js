@@ -833,7 +833,24 @@ define([
           renderPlaybackControls($toolbar, this.scorePlayer, function () {
             var score = definition.getScore ? definition.getScore() : null;
             if (!score) return null;
-            return ScoreTimeline.buildTimeline(score);
+            var tl = ScoreTimeline.buildTimeline(score);
+            // Build window-index → {onset, measureIndex} map for playhead page navigation.
+            // Group by onset (same as ScorePlayer.groupByOnset).
+            var onsetSeen = {};
+            var order = [];
+            for (var i = 0; i < tl.length; i++) {
+              var ev = tl[i];
+              if (!onsetSeen[ev.onset]) {
+                onsetSeen[ev.onset] = ev.measureIndex;
+                order.push(ev.onset);
+              }
+            }
+            order.sort(function (a, b) { return a - b; });
+            // _playbackWindowOnsets[globalWindowIdx] = onset value
+            self._playbackWindowOnsets = order.slice();
+            // _playbackWindowMeasures[globalWindowIdx] = measureIndex
+            self._playbackWindowMeasures = order.map(function (onset) { return onsetSeen[onset]; });
+            return tl;
           });
         }
       }
@@ -1079,6 +1096,7 @@ define([
         if (score && score.measures && score.measures.length > 0) {
           var self = this;
           this._identWindowLayout = {};
+          this._identWindowLayoutByOnset = {};
           this._updateChoraleViewport(score);
           var canvas = this.el[0];
           var display = definition.getDisplay() || {};
@@ -1158,6 +1176,10 @@ define([
                 return;
               }
               self._identWindowLayout[slot.windowIndex] = slot;
+              // Also index by onset for playback highlight cross-page lookup
+              if (slot.onset !== null && slot.onset !== undefined) {
+                self._identWindowLayoutByOnset[slot.onset] = slot;
+              }
             },
           });
 
@@ -1887,7 +1909,25 @@ define([
     _drawPlaybackHighlight: function () {
       var idx = this._playbackWindowIndex;
       if (idx === null || idx === undefined) return;
-      var slot = this._identWindowLayout && this._identWindowLayout[idx];
+      if (!this._playbackWindowOnsets) return;
+
+      var onset = this._playbackWindowOnsets[idx];
+      if (onset === undefined) return;
+
+      // Navigate to the correct page if this onset is not on the current rendered page.
+      var slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[onset];
+      if (!slot && this._playbackWindowMeasures && this._chorale) {
+        var measureIdx = this._playbackWindowMeasures[idx];
+        if (typeof measureIdx === "number") {
+          var maxMeasures = this._chorale.maxMeasures || 4;
+          var targetStart = Math.floor(measureIdx / maxMeasures) * maxMeasures;
+          if (targetStart !== this._chorale.startMeasure) {
+            this._chorale.startMeasure = targetStart;
+            this.render(); // synchronously repopulates _identWindowLayoutByOnset
+            slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[onset];
+          }
+        }
+      }
       if (!slot) return;
 
       var canvas = this.el[0];
