@@ -438,6 +438,7 @@ define([
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
       var answeredCount = 0;
+      var visibleSlotCount = 0;
 
       for (var i = 0; i < slots.length; i++) {
         var slot = slots[i];
@@ -452,6 +453,7 @@ define([
         var problems = definition.getProblems ? definition.getProblems() : [];
         var problem = problems[absoluteIndex];
         if (problem && problem.hidden) { continue; } // LEAVE A SPACE
+        visibleSlotCount++;
 
         var chosen = grader && grader.answers && grader.answers.hasOwnProperty(absoluteIndex)
           ? grader.answers[absoluteIndex] : null;
@@ -551,7 +553,7 @@ define([
       }
 
       if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
-         this._updateIdentificationProgressUI(answeredCount, slots.length);
+         this._updateIdentificationProgressUI(answeredCount, visibleSlotCount);
       }
 
       ctx.font = origFont;

@@ -61,6 +61,10 @@ define([
       var allCorrect = true;
 
       for (var i = 0; i < problems.length; i++) {
+        if (problems[i].hidden) {
+          gradedProblems.push({ answer: problems[i].answer, chosen: null, correct: null, hidden: true });
+          continue;
+        }
         var absoluteIndex = pageOffset + i;
         var answer = problems[i].answer;
         var chosen = this.answers.hasOwnProperty(absoluteIndex)
