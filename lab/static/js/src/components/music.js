@@ -176,6 +176,9 @@ define([
     },
     renderPristine: function (exerciseAction = "reload") {
       var sheetComponent = this.getComponent("sheet");
+      if (sheetComponent.scorePlayer && sheetComponent.scorePlayer.isPlaying()) {
+        sheetComponent.scorePlayer.stop();
+      }
       if (!sheetComponent.hasOwnProperty("exerciseContext")) {
         /* play view */
         sheetComponent.chords.clear();
