@@ -1242,6 +1242,7 @@ define([
                 opts.onWindowPosition({
                   windowIndex: matchedIndex,
                   onset: matchedWindow ? matchedWindow.onset : null,
+                  measureIndex: matchedWindow ? matchedWindow.measureIndex : null,
                   x: columnCenterX,
                   y: bassStave.getBottomY() + 18,
                 });

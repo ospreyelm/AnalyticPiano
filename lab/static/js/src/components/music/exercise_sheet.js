@@ -834,22 +834,30 @@ define([
             var score = definition.getScore ? definition.getScore() : null;
             if (!score) return null;
             var tl = ScoreTimeline.buildTimeline(score);
-            // Build window-index → {onset, measureIndex} map for playhead page navigation.
-            // Group by onset (same as ScorePlayer.groupByOnset).
+            // Group by onset (same as ScorePlayer.groupByOnset) to build per-window maps.
             var onsetSeen = {};
             var order = [];
             for (var i = 0; i < tl.length; i++) {
               var ev = tl[i];
               if (!onsetSeen[ev.onset]) {
-                onsetSeen[ev.onset] = ev.measureIndex;
+                onsetSeen[ev.onset] = { measureIndex: ev.measureIndex };
                 order.push(ev.onset);
               }
             }
             order.sort(function (a, b) { return a - b; });
-            // _playbackWindowOnsets[globalWindowIdx] = onset value
             self._playbackWindowOnsets = order.slice();
-            // _playbackWindowMeasures[globalWindowIdx] = measureIndex
-            self._playbackWindowMeasures = order.map(function (onset) { return onsetSeen[onset]; });
+            self._playbackWindowMeasures = order.map(function (onset) { return onsetSeen[onset].measureIndex; });
+
+            // Build measure → tick-offset map so we can convert global onset to page-local onset.
+            // _playbackMeasureTickOffset[measureIndex] = cumulative global tick at start of that measure.
+            var measureOffset = {};
+            for (var j = 0; j < tl.length; j++) {
+              var e = tl[j];
+              if (!(e.measureIndex in measureOffset)) {
+                measureOffset[e.measureIndex] = e.onset;
+              }
+            }
+            self._playbackMeasureTickOffset = measureOffset;
             return tl;
           });
         }
@@ -1176,9 +1184,10 @@ define([
                 return;
               }
               self._identWindowLayout[slot.windowIndex] = slot;
-              // Also index by onset for playback highlight cross-page lookup
-              if (slot.onset !== null && slot.onset !== undefined) {
-                self._identWindowLayoutByOnset[slot.onset] = slot;
+              // Index by "measureIndex:pageLocalOnset" for cross-page playback highlight lookup.
+              // The adapter emits absolute measureIndex and page-local onset.
+              if (slot.measureIndex !== null && slot.measureIndex !== undefined && slot.onset !== null && slot.onset !== undefined) {
+                self._identWindowLayoutByOnset[slot.measureIndex + ":" + slot.onset] = slot;
               }
             },
           });
@@ -1911,21 +1920,27 @@ define([
       if (idx === null || idx === undefined) return;
       if (!this._playbackWindowOnsets) return;
 
-      var onset = this._playbackWindowOnsets[idx];
-      if (onset === undefined) return;
+      var globalOnset = this._playbackWindowOnsets && this._playbackWindowOnsets[idx];
+      if (globalOnset === undefined) return;
+      var measureIdx = this._playbackWindowMeasures && this._playbackWindowMeasures[idx];
+      if (measureIdx === undefined) return;
 
-      // Navigate to the correct page if this onset is not on the current rendered page.
-      var slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[onset];
-      if (!slot && this._playbackWindowMeasures && this._chorale) {
-        var measureIdx = this._playbackWindowMeasures[idx];
-        if (typeof measureIdx === "number") {
-          var maxMeasures = this._chorale.maxMeasures || 4;
-          var targetStart = Math.floor(measureIdx / maxMeasures) * maxMeasures;
-          if (targetStart !== this._chorale.startMeasure) {
-            this._chorale.startMeasure = targetStart;
-            this.render(); // synchronously repopulates _identWindowLayoutByOnset
-            slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[onset];
-          }
+      var maxMeasures = (this._chorale && this._chorale.maxMeasures) || 4;
+      var targetStart = Math.floor(measureIdx / maxMeasures) * maxMeasures;
+
+      // Convert global onset → page-local onset by subtracting the tick at page start.
+      var pageStartTick = this._playbackMeasureTickOffset && this._playbackMeasureTickOffset[targetStart];
+      if (pageStartTick === undefined) return;
+      var pageLocalOnset = globalOnset - pageStartTick;
+      var cacheKey = measureIdx + ":" + pageLocalOnset;
+
+      // Navigate to the correct page if this window is not on the current rendered page.
+      var slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[cacheKey];
+      if (!slot && this._chorale) {
+        if (targetStart !== this._chorale.startMeasure) {
+          this._chorale.startMeasure = targetStart;
+          this.render(); // synchronously repopulates _identWindowLayoutByOnset
+          slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[cacheKey];
         }
       }
       if (!slot) return;
