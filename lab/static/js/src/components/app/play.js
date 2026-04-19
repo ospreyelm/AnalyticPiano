@@ -127,6 +127,7 @@ define([
           sheet: new PlaySheetComponent({
             chords: this.models.chords,
             keySignature: this.models.keySignature,
+            midiDevice: this.models.midiDevice,
           }),
         });
         c.init(this);
