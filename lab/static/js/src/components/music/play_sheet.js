@@ -194,7 +194,7 @@ define([
           
           // Cache payload to avoid re-fetching on every UI change
           var renderWithState = function(payload){
-            self.scorePlayer.stop();
+            if (self.scorePlayer) { self.scorePlayer.stop(); }
             self._cachedTimeline = null;
             self._windowPositionCache = {};
             try {
