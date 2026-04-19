@@ -1234,6 +1234,11 @@ define([
       ) {
         return;
       }
+      // During playback page turns, honour the override and skip grader-based calculation.
+      if (this._playbackOverridePage !== null && this._playbackOverridePage !== undefined) {
+        this._chorale.startMeasure = this._playbackOverridePage;
+        return;
+      }
       var totalMeasures = score.measures.length;
       var maxMeasures = this._chorale.maxMeasures || 4;
       if (totalMeasures <= maxMeasures) {
@@ -1938,8 +1943,11 @@ define([
       var slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[cacheKey];
       if (!slot && this._chorale) {
         if (targetStart !== this._chorale.startMeasure) {
+          // Set flag so _updateChoraleViewport doesn't clobber our target page.
+          this._playbackOverridePage = targetStart;
           this._chorale.startMeasure = targetStart;
           this.render(); // synchronously repopulates _identWindowLayoutByOnset
+          this._playbackOverridePage = null;
           slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[cacheKey];
         }
       }
