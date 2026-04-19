@@ -21,6 +21,7 @@ from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.safestring import mark_safe
 from django_better_admin_arrayfield.models.fields import ArrayField
+from django.contrib.postgres.indexes import GinIndex
 
 from apps.accounts.models import Group
 from apps.exercises.constants import (
@@ -32,6 +33,13 @@ from apps.exercises.utils.recurrence import rebuild_period_progress
 from apps.exercises.utils.transpose import transpose
 
 User = get_user_model()
+
+
+FEEDBACK_MODE_CHOICES = [
+    ("submit", "Submit — see results after submitting"),
+    ("practice", "Practice — immediate feedback per slot"),
+    ("test", "Test — no feedback, answers locked"),
+]
 
 
 class RawJSONField(JSONField):
@@ -127,6 +135,19 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         verbose_name="Tags",
     )
 
+    skill_tags = ArrayField(
+        base_field=models.CharField(max_length=64),
+        default=list,
+        blank=True,
+        verbose_name="Skill Tags",
+        help_text="Knowledge Graph skills detected in the chunk (e.g. Secondary_Dominant)"
+    )
+
+    complexity = models.PositiveSmallIntegerField(
+        default=1,
+        help_text="Calculated integer 1-10 representing harmony complexity"
+    )
+
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 
@@ -165,6 +186,10 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     class Meta:
         verbose_name = "Exercise"
         verbose_name_plural = "Exercises"
+        indexes = [
+            GinIndex(fields=['skill_tags']),
+            models.Index(fields=['complexity']),
+        ]
 
     @classmethod
     def get_data_order_list(cls):
@@ -305,6 +330,123 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         self.save()
 
 
+class StudentSkillMastery(models.Model):
+    """
+    Tracks a single student's mastery level for a single skill tag.
+    One row per (user, skill_tag) pair.
+    """
+    LEVEL_NOT_STARTED = "not_started"
+    LEVEL_ATTEMPTED   = "attempted"
+    LEVEL_FAMILIAR    = "familiar"
+    LEVEL_PROFICIENT  = "proficient"
+    LEVEL_MASTERED    = "mastered"
+    LEVEL_CHOICES = [
+        (LEVEL_NOT_STARTED, "Not Started"),
+        (LEVEL_ATTEMPTED,   "Attempted"),
+        (LEVEL_FAMILIAR,    "Familiar"),
+        (LEVEL_PROFICIENT,  "Proficient"),
+        (LEVEL_MASTERED,    "Mastered"),
+    ]
+
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name="skill_masteries")
+    skill_tag  = models.CharField("Skill Tag", max_length=64)
+
+    # Mastery state
+    level           = models.CharField(max_length=16, choices=LEVEL_CHOICES, default=LEVEL_NOT_STARTED)
+    # Rolling boolean list of last 10 attempts (True = correct)
+    recent_history  = JSONField(default=list)
+    # Unique calendar date strings (YYYY-MM-DD) when the skill was practiced, capped at 30
+    practice_days   = JSONField(default=list)
+    total_correct   = models.PositiveIntegerField(default=0)
+    total_attempts  = models.PositiveIntegerField(default=0)
+
+    # Timestamps
+    last_practiced  = models.DateTimeField(null=True, blank=True)
+    mastered_at     = models.DateTimeField(null=True, blank=True)
+    first_attempted = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Student Skill Mastery"
+        verbose_name_plural = "Student Skill Masteries"
+        unique_together = ("user", "skill_tag")
+        indexes = [
+            models.Index(fields=["user", "level"]),
+            models.Index(fields=["user", "last_practiced"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user} — {self.skill_tag}: {self.level}"
+
+
+class SkillPrerequisite(models.Model):
+    """
+    A directed edge in the skill prerequisite DAG.
+    course=None means a global default; a course FK means a teacher override for that course.
+    """
+    course       = models.ForeignKey(
+        "Course",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="skill_prerequisites",
+        help_text="Leave blank for global default DAG. Set to a course for course-specific overrides.",
+    )
+    skill_tag    = models.CharField("Skill Tag", max_length=64,
+                                    help_text="The skill that requires the prerequisite.")
+    requires_tag = models.CharField("Requires Tag", max_length=64,
+                                    help_text="The skill that must be acquired first.")
+
+    class Meta:
+        verbose_name = "Skill Prerequisite"
+        verbose_name_plural = "Skill Prerequisites"
+        unique_together = ("course", "skill_tag", "requires_tag")
+
+    def __str__(self):
+        course_label = self.course.id if self.course else "global"
+        return f"[{course_label}] {self.skill_tag} ← {self.requires_tag}"
+
+
+class IdentificationAttempt(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="identification_attempts"
+    )
+    exercise = models.ForeignKey(
+        Exercise, on_delete=models.CASCADE, related_name="identification_attempts"
+    )
+    course = models.ForeignKey(
+        "Course", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="identification_attempts"
+    )
+    playlist = models.ForeignKey(
+        "Playlist", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="identification_attempts"
+    )
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    answers = JSONField(default=dict)
+    correctness = JSONField(default=dict)
+    score = JSONField(default=dict)
+    correct_answers = JSONField(default=dict)
+    is_page_submit = models.BooleanField(default=False)
+    page_num = models.IntegerField(null=True, blank=True)
+    mode = models.CharField(
+        "Feedback Mode",
+        max_length=16,
+        choices=FEEDBACK_MODE_CHOICES,
+        blank=True,
+        default="",
+        help_text="Mode in effect when this attempt was submitted. "
+                  "Empty = pre-migration attempt (mode unknown).",
+    )
+
+    class Meta:
+        verbose_name = "Identification Attempt"
+        verbose_name_plural = "Identification Attempts"
+        ordering = ["submitted_at"]
+
+    def __str__(self):
+        return f"User:{self.user} Exercise:{self.exercise_id} at {self.submitted_at}"
+
+
 @receiver(models.signals.post_delete, sender=Exercise)
 def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
     """
@@ -383,12 +525,53 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         default=False,
         help_text="Sharing your playlist will allow other users to include it in their courses. Doing so will reveal your email address to all users of the site.",
     )
+    is_adaptive = models.BooleanField(
+        "Adaptive Mode",
+        default=False,
+        help_text="In adaptive mode, the next exercise is chosen dynamically based on student mastery.",
+    )
+    is_dynamic = models.BooleanField(
+        "Smart Assignment",
+        default=False,
+        help_text="If checked, this playlist will automatically pull exercises from the global library based on targeted tags and complexity, rather than a manual list.",
+    )
+    min_complexity = models.PositiveSmallIntegerField(
+        "Min Complexity",
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Filter the pool to exercises with complexity at or above this value (1-10)."
+    )
+    max_complexity = models.PositiveSmallIntegerField(
+        "Max Complexity",
+        default=10,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Filter the pool to exercises with complexity at or below this value (1-10)."
+    )
 
     tags = ArrayField(
         base_field=models.CharField(max_length=32),
         default=list,
         blank=True,
         verbose_name="Tags",
+    )
+
+    skill_tags = ArrayField(
+        base_field=models.CharField(max_length=64),
+        default=list,
+        blank=True,
+        verbose_name="Skill Tags",
+        help_text="Harmonic skills this playlist targets (e.g. Dominant_Seventh). "
+                  "Used to filter identification slots in chorale exercises."
+    )
+
+    feedback_mode = models.CharField(
+        "Feedback Mode Override",
+        max_length=16,
+        choices=FEEDBACK_MODE_CHOICES,
+        blank=True,
+        default="",
+        help_text="Overrides exercise identMode for all exercises in this playlist. "
+                  "Leave blank to use each exercise's own setting.",
     )
 
     zero_padding = "PA00A0"
@@ -645,6 +828,11 @@ class ExercisePlaylistOrdered(ClonableModelMixin, BaseContentModel):
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
     order = models.IntegerField("Order")
+    is_adaptive_entry = models.BooleanField(
+        "Adaptive Entry Point",
+        default=False,
+        help_text="Mark as a starting exercise for students with no mastery in this adaptive playlist.",
+    )
 
     def save(self, *args, **kwargs):
         if self.order is None:
@@ -716,6 +904,26 @@ class Course(ClonableModelMixin, BaseContentModel):
     )
 
     performance_dict = JSONField(default=dict, verbose_name="Performances", blank=True)
+
+    # Adaptive Learning settings
+    adaptive_mode = models.BooleanField(
+        "Adaptive Learning",
+        default=False,
+        help_text="Enable mastery-based adaptive engine for this course.",
+    )
+    required_skills = ArrayField(
+        models.CharField(max_length=64),
+        default=list,
+        blank=True,
+        verbose_name="Required Skills",
+        help_text="Override the global prerequisite DAG with specific skills for this course.",
+    )
+    mastery_threshold = models.CharField(
+        max_length=16,
+        choices=StudentSkillMastery.LEVEL_CHOICES,
+        default=StudentSkillMastery.LEVEL_MASTERED,
+        help_text="Students must reach this level to 'complete' a skill in this course.",
+    )
 
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
@@ -1173,34 +1381,6 @@ def truncate_timestamps(sender, instance, *args, **kwargs):
             )
         )
 
-
-class IdentificationAttempt(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="identification_attempts"
-    )
-    exercise = models.ForeignKey(
-        Exercise, on_delete=models.CASCADE, related_name="identification_attempts"
-    )
-    course = models.ForeignKey(
-        Course, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="identification_attempts"
-    )
-    playlist = models.ForeignKey(
-        Playlist, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="identification_attempts"
-    )
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    answers = JSONField(default=dict)
-    correctness = JSONField(default=dict)
-    score = JSONField(default=dict)
-    correct_answers = JSONField(default=dict)
-    is_page_submit = models.BooleanField(default=False)
-    page_num = models.IntegerField(null=True, blank=True)
-
-    class Meta:
-        verbose_name = "Identification Attempt"
-        verbose_name_plural = "Identification Attempts"
-        ordering = ["submitted_at"]
 
     def __str__(self):
         return f"User:{self.user} Exercise:{self.exercise_id} at {self.submitted_at}"

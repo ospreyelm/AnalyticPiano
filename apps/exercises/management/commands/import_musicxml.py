@@ -1,18 +1,10 @@
-"""
-Management command to import a MusicXML file as an exercise.
-
-Usage:
-  python manage.py import_musicxml <path_to_file.xml> --author=<email>
-
-Example:
-  python manage.py import_musicxml ~/Desktop/mypiece.musicxml --author=admin@example.com
-"""
 import json
 import os
+import glob
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 
-# Import the converter from the fetch_bach_chorales script
+# Import analysis and conversion utilities
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../../scripts'))
 try:
@@ -22,42 +14,29 @@ except ImportError:
     build_events = None
 
 from apps.exercises.models import Exercise
+from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
 
 User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = 'Import a MusicXML file as an Exercise using music21 → CIR pipeline'
+    help = 'Import MusicXML files/directories as Exercises using music21 → CIR pipeline with Auto-Tagging'
 
     def add_arguments(self, parser):
-        parser.add_argument('file_path', type=str, help='Path to MusicXML file (.xml or .musicxml)')
+        parser.add_argument('path', type=str, help='Path to MusicXML file or directory')
         parser.add_argument('--author', type=str, required=True, help='Email of the exercise author')
-        parser.add_argument('--title', type=str, help='Exercise title (defaults to filename)')
-        parser.add_argument('--public', action='store_true', help='Make the exercise public')
+        parser.add_argument('--public', action='store_true', help='Make the exercises public')
         parser.add_argument('--start', type=int, default=0, help='Start measure (0-indexed, default: 0)')
         parser.add_argument('--end', type=int, default=None, help='End measure (exclusive, default: all)')
 
     def handle(self, *args, **options):
-        file_path = options['file_path']
+        path = options['path']
         author_email = options['author']
-        title = options.get('title')
         is_public = options['public']
-        start_measure = options['start']
-        end_measure = options['end']
 
         # Check dependencies
         if m21_to_cir is None or build_events is None:
-            raise CommandError(
-                'Could not import converter functions. Make sure music21 is installed: '
-                'pip install music21'
-            )
-
-        try:
-            from music21 import converter
-        except ImportError:
-            raise CommandError(
-                'music21 is not installed. Install it with: pip install music21'
-            )
+            raise CommandError('Could not import converter functions. Ensure scripts/fetch_bach_chorales.py exists.')
 
         # Find the author
         try:
@@ -65,120 +44,111 @@ class Command(BaseCommand):
         except User.DoesNotExist:
             raise CommandError(f'User with email "{author_email}" not found')
 
-        # Check file exists
-        if not os.path.exists(file_path):
-            raise CommandError(f'File not found: {file_path}')
+        # Determine file list
+        if os.path.isfile(path):
+            files = [path]
+        elif os.path.isdir(path):
+            files = []
+            for ext in ('*.xml', '*.musicxml', '*.mxl'):
+                files.extend(glob.glob(os.path.join(path, '**', ext), recursive=True))
+        else:
+            raise CommandError(f'Path not found: {path}')
 
-        # Check file extension
-        ext = os.path.splitext(file_path)[1].lower()
-        if ext not in ['.xml', '.musicxml', '.mxl']:
-            raise CommandError(f'File must be a MusicXML file (.xml, .musicxml, or .mxl)')
+        if not files:
+            self.stdout.write(self.style.WARNING(f'No MusicXML files found in {path}'))
+            return
 
-        # Load MusicXML with music21
-        self.stdout.write(f'Loading MusicXML file: {file_path}')
+        self.stdout.write(f'Integrating {len(files)} files into Knowledge Graph...')
+        
+        success_count = 0
+        for f in files:
+            try:
+                exercise = self.process_file(f, author, is_public, options)
+                success_count += 1
+                self.stdout.write(self.style.SUCCESS(f'  [SUCCESS] {os.path.basename(f)} -> ID: {exercise.id}'))
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f'  [FAILED] {os.path.basename(f)}: {str(e)}'))
+
+        self.stdout.write(self.style.SUCCESS(f'\nBulk Ingestion Complete: {success_count}/{len(files)} exercises imported.'))
+
+    def process_file(self, file_path, author, is_public, options):
+        from music21 import converter
+        
+        start_measure = options['start']
+        end_measure = options['end']
+
+        # Load MusicXML
+        score = converter.parse(file_path)
+
+        # Detect Key
         try:
-            score = converter.parse(file_path)
-        except Exception as e:
-            raise CommandError(f'Failed to parse MusicXML: {str(e)}')
+            m21_key = score.analyze('key')
+            tonic = m21_key.tonic.name
+            if "-" in tonic:
+                hl_tonic = tonic[0] + "b"
+            elif "#" in tonic:
+                hl_tonic = tonic
+            else:
+                hl_tonic = tonic + "_"
+            mode_prefix = "j" if m21_key.mode == "major" else "i"
+            harmony_key = mode_prefix + hl_tonic
+        except Exception:
+            harmony_key = "jC_"
 
-        # Convert to CIR (Canonical Internal Representation)
-        self.stdout.write('Converting to internal format...')
-        try:
-            cir = m21_to_cir(score)
-        except Exception as e:
-            raise CommandError(f'Failed to convert to CIR: {str(e)}')
-
-        # Get metadata
+        # Convert to CIR
+        cir = m21_to_cir(score, key_override=harmony_key)
         meta = cir.get('meta', {})
         measures = cir.get('measures', [])
 
         if not measures:
-            raise CommandError('No measures found in MusicXML file')
+            raise Exception('No measures found')
 
-        # Extract excerpt if specified
-        if end_measure is not None:
-            excerpt_measures = measures[start_measure:end_measure]
-            measure_range = f"mm. {start_measure+1}–{end_measure}"
-        else:
-            excerpt_measures = measures[start_measure:]
-            measure_range = f"mm. {start_measure+1}–{len(measures)}" if start_measure > 0 else f"complete ({len(measures)} measures)"
+        # Extract excerpt
+        excerpt_measures = measures[start_measure:end_measure] if end_measure else measures[start_measure:]
+        measure_range = f"mm. {start_measure+1}–{end_measure}" if end_measure else f"complete"
 
-        if not excerpt_measures:
-            raise CommandError(f'No measures in range [{start_measure}:{end_measure}]')
+        basename = os.path.basename(file_path)
+        title = os.path.splitext(basename)[0]
 
-        # Generate title from filename if not provided
-        if not title:
-            basename = os.path.basename(file_path)
-            name_without_ext = os.path.splitext(basename)[0]
-            title = f"{name_without_ext} ({measure_range})" if start_measure > 0 or end_measure else name_without_ext
+        # AUTO-ANALysis for Knowledge Graph
+        # We analyze the score to get Unit tags and complexity
+        detected_tags, complexity = analyze_chunk_skills(score, harmony_key)
 
-        # Build exercise data structure
+        # Build exercise data
         exercise_data = {
             "type": "musicxml",
             "mode": "play-all-voices",
-            "score": {
-                "meta": meta,
-                "measures": excerpt_measures
-            },
+            "score": {"meta": meta, "measures": excerpt_measures},
             "source": {
                 "type": "musicxml",
-                "filename": os.path.basename(file_path),
+                "filename": basename,
                 "originalPath": file_path,
                 "imported": True
             },
-            "targetVoices": "all",
-            "display": {
-                "showFigures": False,
-                "showRomans": False,
-                "transpose": 0,
-                "tempo": 60
-            },
-            "grading": {
-                "onsetWindowMs": 150,
-                "releaseTolerancePct": 40,
-                "octaveFlexible": False
-            },
-            "excerpt": {
-                "startMeasure": start_measure,
-                "endMeasure": end_measure if end_measure else len(measures)
-            },
+            "display": {"showFigures": False, "showRomans": False, "transpose": 0, "tempo": 60},
+            "grading": {"onsetWindowMs": 150, "releaseTolerancePct": 40, "octaveFlexible": False},
+            "excerpt": {"startMeasure": start_measure, "endMeasure": end_measure if end_measure else len(measures)},
             "introText": f"Play {title}.",
             "reviewText": "Good work!",
-            # Legacy fields for compatibility
-            "key": meta.get("key", "C"),
-            "keySignature": meta.get("key", "C"),
+            "key": harmony_key,
             "staffDistribution": "chorale"
         }
 
-        # Optionally build events timeline for grading
-        try:
-            events = build_events(cir)
-            if events:
-                exercise_data["events"] = [
-                    {
-                        "start": e.start,
-                        "perStaff": e.perStaff
-                    }
-                    for e in events
-                ]
-                self.stdout.write(f'  Generated {len(events)} grading events')
-        except Exception as e:
-            self.stdout.write(self.style.WARNING(f'  Could not generate events: {str(e)}'))
+        # Build events
+        events = build_events(cir)
+        if events:
+            exercise_data["events"] = [{"start": e.start, "perStaff": e.perStaff} for e in events]
 
         # Create the Exercise
         exercise = Exercise(
             description=title,
             data=exercise_data,
             authored_by=author,
-            is_public=is_public
+            is_public=is_public,
+            complexity=complexity,  # Assign complexity from analyzer
+            skill_tags=list(detected_tags) # Correctly assign to ArrayField
         )
         exercise.save()
 
-        self.stdout.write(self.style.SUCCESS(
-            f'\nSuccessfully created exercise {exercise.id}: {title}'
-        ))
-        self.stdout.write(f'  Measures: {len(excerpt_measures)}')
-        self.stdout.write(f'  Key: {meta.get("key", "?")}')
-        self.stdout.write(f'  Time: {meta.get("time", "?")}')
-        self.stdout.write(f'  Public: {is_public}')
-        self.stdout.write(f'\n  View at: /lab/exercise/{exercise.id}')
+        return exercise
+

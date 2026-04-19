@@ -331,6 +331,14 @@ class ExercisesListTable(tables.Table):
         format="Y-m-d • h:i A",
     )
     is_public = columns.BooleanColumn()
+    skill_tags = columns.Column(
+        verbose_name="Skills",
+        orderable=False,
+    )
+    complexity = columns.Column(
+        verbose_name="Complexity",
+        orderable=True,
+    )
     delete = columns.LinkColumn(
         "dashboard:delete-exercise",
         kwargs={"exercise_id": A("id")},
@@ -349,12 +357,21 @@ class ExercisesListTable(tables.Table):
             return "Delete"
         return ""
 
+    def render_skill_tags(self, record):
+        if not record.skill_tags:
+            return "—"
+        # Show comma-separated tags, truncate long lists
+        tags = ", ".join(record.skill_tags[:3])
+        if len(record.skill_tags) > 3:
+            tags += f", +{len(record.skill_tags) - 3}"
+        return format_html('<span title="{}">{}</span>', ", ".join(record.skill_tags), tags)
+
     class Meta:
         attrs = {"class": "paleblue"}
         table_pagination = False
         order_by = "-id"
         template_name = "django_tables2/bootstrap4.html"
-        sequence = ("selection", "id", "description", "view", "edit", "created", "updated", "is_public", "delete")
+        sequence = ("selection", "id", "description", "skill_tags", "complexity", "view", "edit", "created", "updated", "is_public", "delete")
 
 
 class PlaylistsListTable(tables.Table):

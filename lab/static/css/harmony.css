@@ -126,7 +126,7 @@ body,
   z-index: 1;
 }
 #staffwrapper {
-  height: 360px;
+  height: 400px;
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -140,7 +140,7 @@ body,
 }
 #staff {
   min-width: 52rem;
-  height: 350px;
+  height: 390px;
   position: static;
   z-index: 1;
   margin: 0 auto;

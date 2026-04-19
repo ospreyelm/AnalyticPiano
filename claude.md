@@ -83,6 +83,40 @@ Six pitch-oriented `analysisType` values (`note_name`, `solfege`, `do_based_solf
 
 **CLI flow:** `python manage.py import_chorale bwv1.6.json --mode identify --analysis note_name --voice soprano --start 0 --end 4`
 
+### Knowledge Graph Tagging System ✅
+
+**Spec:** [docs/superpowers/specs/knowledge-graph-tagging-design.md](docs/superpowers/specs/knowledge-graph-tagging-design.md)
+
+Automated harmonic analysis via `music21` detects 16 pedagogical skills during import. Enables adaptive exercise selection based on student proficiency.
+
+**16 Skill Tags:**
+Diatonic_Triads, Inversions_First, Inversions_Second, Dominant_Seventh, Cadence_Half, Cadence_Perfect_Authentic, Cadence_Deceptive, Cadence_Plagal, Secondary_Dominant, Secondary_Leading_Tone, Diminished_Seventh, Half_Diminished_Seventh, Neapolitan_Sixth, Augmented_Sixth, Picardy_Third, Modulation_Diatonic_Pivot
+
+**Implementation (Commit 97e71557):**
+- **Exercise model** — `skill_tags` ArrayField + `complexity` integer with GIN/B-tree indexes
+- **[skills_analyzer.py](apps/exercises/utils/skills_analyzer.py)** — Detect harmony skills via roman numeral analysis (107 lines)
+- **[music21_builder.py](apps/exercises/utils/music21_builder.py)** — Convert exercise JSON to music21 Score for analysis
+- **[mass_import_performance.py](apps/exercises/management/commands/mass_import_performance.py)** — Inject skill detection at import time
+- **[backfill_skill_tags.py](apps/exercises/management/commands/backfill_skill_tags.py)** — Backfill existing exercises (supports `--all` flag for overwrite)
+- **[test_skills_analyzer.py](apps/exercises/tests/test_skills_analyzer.py)** — 11 unit tests covering all skill detectors
+
+**Usage:**
+```bash
+# Backfill existing exercises (default: only empty tags)
+python manage.py backfill_skill_tags
+
+# Overwrite all exercise tags (rebuild from scratch)
+python manage.py backfill_skill_tags --all
+
+# Query exercises by skill
+Exercise.objects.filter(skill_tags__contains=['Secondary_Dominant'])
+Exercise.objects.filter(skill_tags__contains=['Cadence_Perfect_Authentic'], complexity__lte=3)
+```
+
+**Backfill Results:** 42/45 exercises tagged successfully. 3 legacy data errors (no-measures, bad pitch) expected.
+
+**Future:** Adaptive engine uses tagged exercises + transposition layer to serve diverse key practice without DB duplication.
+
 ## Architecture
 
 ### Key Files
@@ -95,6 +129,9 @@ Six pitch-oriented `analysisType` values (`note_name`, `solfege`, `do_based_solf
 - **[vexflow_adapter.js](lab/static/js/src/components/music/vexflow_adapter.js)** - Rendering with analysis overlays
 - **[import_chorale.py](apps/exercises/management/commands/import_chorale.py)** - Django management command for importing chorales
 - **[pitch_voice_utils.py](apps/exercises/pitch_voice_utils.py)** - Shared voice stripping and validation for pitch identification
+- **[skills_analyzer.py](apps/exercises/utils/skills_analyzer.py)** - Harmonic skill detection via music21 roman numeral analysis
+- **[music21_builder.py](apps/exercises/utils/music21_builder.py)** - Convert exercise JSON to music21 Score
+- **[backfill_skill_tags.py](apps/exercises/management/commands/backfill_skill_tags.py)** - Backfill skill tags on existing exercises
 - **[chorale_exercises_plan.md](docs/chorale_exercises_plan.md)** - Curriculum and design specification
 
 ### Data Flow

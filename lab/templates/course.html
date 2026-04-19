@@ -2,7 +2,12 @@
 
 {% block content %}
 <div class="dashboard-page">
-    <h1>{{ course_title }}</h1>
+    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <h1>{{ course_title }}</h1>
+        <a href="{% url 'lab:skill-map' course_id %}" class="btn btn-outline-primary" style="font-weight: bold; border-radius: 20px; padding: 5px 20px;">
+            <i class="ion-map"></i> Visualize Progress
+        </a>
+    </div>
     {% if course_author %}
         <p>By {{ course_author }}</p>
     {% endif %}

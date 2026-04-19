@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Music Theory Curriculum Taxonomy</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #fff; color: #1a1a1a; padding: 1.5rem; }
+@media (prefers-color-scheme: dark) { body { background: #1a1a1a; color: #e0e0e0; } }
+
+.branch-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.branch-btn {
+  font-size: 12px; font-weight: 500; padding: 5px 14px;
+  border-radius: 99px; border: 1.5px solid #ccc;
+  cursor: pointer; background: #f5f5f5; color: #555; transition: all .15s;
+}
+@media (prefers-color-scheme: dark) { .branch-btn { background: #2a2a2a; color: #aaa; border-color: #444; } }
+.branch-btn.active-core    { background:#E6F1FB; color:#0C447C; border-color:#378ADD; }
+.branch-btn.active-a       { background:#EEEDFE; color:#3C3489; border-color:#7F77DD; }
+.branch-btn.active-b       { background:#E1F5EE; color:#085041; border-color:#1D9E75; }
+.branch-btn.active-c       { background:#FAECE7; color:#712B13; border-color:#D85A30; }
+.branch-btn.active-d       { background:#FAEEDA; color:#633806; border-color:#BA7517; }
+
+.branch-panel { display: none; }
+.branch-panel.visible { display: block; }
+.branch-desc { font-size: 12px; color: #666; margin-bottom: 4px; }
+@media (prefers-color-scheme: dark) { .branch-desc { color: #999; } }
+.branch-prereq { font-size: 11px; color: #888; margin-bottom: 14px; font-style: italic; }
+
+.tier-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-radius: 8px;
+  margin-bottom: 4px; cursor: pointer; user-select: none;
+}
+.tier-badge { font-size: 10px; font-weight: 600; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
+.tier-title { font-size: 13px; font-weight: 500; }
+.tier-toggle { margin-left: auto; font-size: 11px; }
+.tier-desc { font-size: 11px; color: #777; margin: 0 0 8px 2px; }
+
+.unit-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 18px; }
+.unit-table th { text-align: left; padding: 5px 8px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #888; border-bottom: 1px solid #e5e5e5; }
+@media (prefers-color-scheme: dark) { .unit-table th { color: #666; border-color: #333; } }
+.unit-table td { padding: 6px 8px; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+@media (prefers-color-scheme: dark) { .unit-table td { border-color: #2a2a2a; } }
+.unit-table tr:last-child td { border-bottom: none; }
+.unit-table tr:hover td { background: #f8f8f8; }
+@media (prefers-color-scheme: dark) { .unit-table tr:hover td { background: #222; } }
+.num { font-weight: 600; font-size: 11px; color: #999; }
+.feat { color: #666; font-size: 11px; }
+@media (prefers-color-scheme: dark) { .feat { color: #999; } }
+.tag { font-family: monospace; font-size: 9px; padding: 1px 5px; border-radius: 3px;
+  background: #f0f0f0; color: #666; display: inline-block; margin: 1px 2px 1px 0; }
+@media (prefers-color-scheme: dark) { .tag { background: #2a2a2a; color: #888; } }
+
+/* Tier colors */
+.hdr-core { background: #E6F1FB; }
+.hdr-core .tier-title { color: #0C447C; }
+.hdr-core .tier-badge { background: #B5D4F4; color: #0C447C; }
+.hdr-core .tier-toggle { color: #378ADD; }
+.hdr-a { background: #EEEDFE; }
+.hdr-a .tier-title { color: #3C3489; }
+.hdr-a .tier-badge { background: #CECBF6; color: #3C3489; }
+.hdr-a .tier-toggle { color: #7F77DD; }
+.hdr-b { background: #E1F5EE; }
+.hdr-b .tier-title { color: #085041; }
+.hdr-b .tier-badge { background: #9FE1CB; color: #085041; }
+.hdr-b .tier-toggle { color: #1D9E75; }
+.hdr-c { background: #FAECE7; }
+.hdr-c .tier-title { color: #712B13; }
+.hdr-c .tier-badge { background: #F5C4B3; color: #712B13; }
+.hdr-c .tier-toggle { color: #D85A30; }
+.hdr-d { background: #FAEEDA; }
+.hdr-d .tier-title { color: #633806; }
+.hdr-d .tier-badge { background: #FAC775; color: #633806; }
+.hdr-d .tier-toggle { color: #BA7517; }
+@media (prefers-color-scheme: dark) {
+  .hdr-core{background:#0C447C}.hdr-core .tier-title{color:#B5D4F4}.hdr-core .tier-badge{background:#185FA5;color:#E6F1FB}.hdr-core .tier-toggle{color:#B5D4F4}
+  .hdr-a{background:#3C3489}.hdr-a .tier-title{color:#CECBF6}.hdr-a .tier-badge{background:#534AB7;color:#EEEDFE}.hdr-a .tier-toggle{color:#CECBF6}
+  .hdr-b{background:#085041}.hdr-b .tier-title{color:#9FE1CB}.hdr-b .tier-badge{background:#0F6E56;color:#E1F5EE}.hdr-b .tier-toggle{color:#9FE1CB}
+  .hdr-c{background:#712B13}.hdr-c .tier-title{color:#F5C4B3}.hdr-c .tier-badge{background:#993C1D;color:#FAECE7}.hdr-c .tier-toggle{color:#F5C4B3}
+  .hdr-d{background:#633806}.hdr-d .tier-title{color:#FAC775}.hdr-d .tier-badge{background:#854F0B;color:#FAEEDA}.hdr-d .tier-toggle{color:#FAC775}
+}
+</style>
+</head>
+<body>
+
+<h1 style="font-size:18px;font-weight:500;margin-bottom:6px;">Music Theory Curriculum Taxonomy</h1>
+<p style="font-size:12px;color:#888;margin-bottom:16px;">Multi-year curriculum — 5 branches, 60+ units. Click tabs to switch branches.</p>
+
+<div class="branch-nav" id="nav"></div>
+<div id="panels"></div>
+
+<script>
+const branches = [
+  {
+    id:"core", label:"Core Sequence", hdrClass:"hdr-core", activeClass:"active-core",
+    desc:"The universal trunk: Fundamentals → Common Practice → Chromaticism → Post-Tonal. All students follow this spine.",
+    tiers:[
+      { label:"Tier 1 — Fundamentals & pitch reading", badge:"T1", hdr:"hdr-core",
+        desc:"Staff literacy, rhythm, intervals, basic voice leading. Pre-tonal.",
+        units:[
+          {n:"1",  title:"Pitch & staff notation",      feat:"Clefs, ledger lines, enharmonics",               tags:["pitch_reading","clefs","enharmonic"]},
+          {n:"2",  title:"Rhythm & meter",              feat:"Simple & compound, ties, dots",                  tags:["rhythm","meter_simple","meter_compound"]},
+          {n:"3",  title:"Scales & key signatures",    feat:"Major, minor forms, circle of 5ths",             tags:["major_scale","minor_scale","key_signature"]},
+          {n:"4",  title:"Intervals",                  feat:"Quality, inversion, consonance/dissonance",       tags:["interval_quality","interval_inversion"]},
+          {n:"5",  title:"Triads & seventh chords",    feat:"Quality, intro to figured bass symbols",         tags:["triad_quality","seventh_chord_quality","figured_bass_intro"]},
+          {n:"6",  title:"Voice leading fundamentals", feat:"SATB spacing, doubling, parallel 5ths/8ths",     tags:["voice_leading","satb_spacing","parallel_motion"]},
+          {n:"7",  title:"Cadences",                   feat:"AC, HC, DC, PC — harmonic goals",                tags:["cadence_authentic","cadence_half","cadence_deceptive","cadence_plagal"]},
+          {n:"8",  title:"Non-harmonic tones",         feat:"PT, NT, SUS, APP, ET, ANT, PED",                 tags:["nhts_passing","nhts_suspension","nhts_appoggiatura"]},
+        ]
+      },
+      { label:"Tier 2 — Common practice harmony", badge:"T2", hdr:"hdr-core",
+        desc:"Core diatonic → early chromatic. Backbone of the two-year Theory I–II sequence.",
+        units:[
+          {n:"9",  title:"Tonic & dominant",           feat:"I, V, V⁷ root position",                        tags:["diatonic_triads","tonic_dominant_exclusively"]},
+          {n:"10", title:"First inversions",           feat:"I⁶, V⁶, vii°⁶",                               tags:["inversions_first"]},
+          {n:"11", title:"Pre-dominants",              feat:"IV, ii, ii⁶, vi",                              tags:["diatonic_predominant"]},
+          {n:"12", title:"Second inversions",          feat:"Cadential, passing, pedal 6/4",                 tags:["cadential_64","inversions_second"]},
+          {n:"13", title:"Rule of the octave",         feat:"Scalar bass + period harmony",                  tags:["rule_of_the_octave"]},
+          {n:"14", title:"Diatonic seventh chords",    feat:"ii⁷, IV⁷, vi⁷, iii⁷",                        tags:["diatonic_sevenths"]},
+          {n:"15", title:"Sequences",                  feat:"Desc. 5ths, asc. 5–6, parallel 6ths",          tags:["sequence_descending_5ths","sequence_ascending_56"]},
+          {n:"16", title:"Applied chords",             feat:"V⁷/x, vii°⁷/x",                               tags:["secondary_dominant","secondary_leading_tone"]},
+          {n:"17", title:"Modal mixture",              feat:"iv, ♭VI, ♭VII, Picardy third",                 tags:["modal_mixture","picardy_third"]},
+          {n:"18", title:"Neapolitan & aug. sixths",   feat:"♭II⁶, It⁺⁶, Fr⁺⁶, Ger⁺⁶",                  tags:["neapolitan_sixth","augmented_sixth"]},
+          {n:"19", title:"Modulation I",               feat:"Diatonic pivot, direct",                        tags:["modulation_diatonic_pivot"]},
+          {n:"20", title:"Modulation II",              feat:"Chromatic pivot, common-chord",                 tags:["modulation_chromatic_pivot","modulation_common_chord"]},
+          {n:"21", title:"Formal structures",          feat:"Period, sentence, binary, ternary",             tags:["form_period","form_sentence","form_binary","form_ternary"]},
+          {n:"22", title:"Sonata & rondo forms",       feat:"Exposition, development, recapitulation",       tags:["form_sonata","form_rondo"]},
+        ]
+      },
+      { label:"Tier 3 — Late romantic chromaticism", badge:"T3", hdr:"hdr-core",
+        desc:"Chromatic saturation, enharmonic reinterpretation, tonal ambiguity.",
+        units:[
+          {n:"23", title:"Enharmonic reinterpretation",feat:"Ger⁺⁶ ↔ V⁷, dim7 pivots",                   tags:["enharmonic_reinterpretation","augmented_sixth_pivot","dim7_pivot"]},
+          {n:"24", title:"Chromatic mediants",         feat:"Third-related chords",                         tags:["chromatic_mediant","chromatic_third_relation"]},
+          {n:"25", title:"Omnibus progressions",       feat:"Chromatic voice-leading cycles",               tags:["omnibus_progression","chromatic_voice_leading"]},
+          {n:"26", title:"Extended tertian harmony",   feat:"9ths, 11ths, 13ths",                          tags:["ninth_chord","eleventh_chord","thirteenth_chord"]},
+          {n:"27", title:"Tonal dissolution",          feat:"Wandering tonality, Tristan, late Liszt",      tags:["tonal_dissolution","harmonic_suspension_prog"]},
+          {n:"28", title:"Modal borrowing & exoticism",feat:"Modal scales, pentatonic, whole-tone",         tags:["modal_borrowing_advanced","pentatonic_harmony","whole_tone_harmony"]},
+        ]
+      },
+      { label:"Tier 4 — Post-tonal theory", badge:"T4", hdr:"hdr-core",
+        desc:"Early 20th century through serialism, spectralism, and beyond.",
+        units:[
+          {n:"29", title:"Pitch-class sets I",         feat:"PC sets, normal/prime form, Forte labels",     tags:["pc_set","normal_form","prime_form","forte_label"]},
+          {n:"30", title:"Pitch-class sets II",        feat:"IC vector, Z-relation, set families",          tags:["ic_vector","z_relation","set_family"]},
+          {n:"31", title:"Symmetry & inversional axes",feat:"Inversional symmetry, axes",                  tags:["inversional_symmetry","axis_of_symmetry"]},
+          {n:"32", title:"Twelve-tone serialism I",    feat:"Row forms P/I/R/RI, matrix",                  tags:["twelve_tone_row","row_matrix","row_forms"]},
+          {n:"33", title:"Twelve-tone serialism II",   feat:"Combinatoriality, hexachordal",                tags:["combinatoriality","hexachordal_combinatoriality"]},
+          {n:"34", title:"Diatonic modes",             feat:"Dorian, Phrygian, Lydian, etc.",               tags:["mode_dorian","mode_phrygian","mode_lydian","modal_harmony"]},
+          {n:"35", title:"Non-diatonic scales",        feat:"Octatonic, hexatonic, acoustic",               tags:["octatonic_scale","hexatonic_scale","acoustic_scale"]},
+          {n:"36", title:"Rhythm & meter (post-tonal)",feat:"Additive, polymeter, metric modulation",       tags:["additive_meter","polymeter","metric_modulation"]},
+          {n:"37", title:"Minimalism & process music", feat:"Phase, additive process, drone",               tags:["minimalism","phase_process","additive_process"]},
+          {n:"38", title:"Textural analysis",          feat:"Density, register, noise vs. pitch",           tags:["texture_density","register_analysis","spectral_texture"]},
+        ]
+      },
+      { label:"Tier 5 — Jazz & contemporary tonal", badge:"T5", hdr:"hdr-core",
+        desc:"Jazz harmony, improvisation theory, pop/film. Parallel track after Tier 2.",
+        units:[
+          {n:"39", title:"Jazz chord symbols & voicings",feat:"Lead sheet symbols, drop-2, shell voicings", tags:["jazz_chord_symbol","jazz_voicing","shell_voicing"]},
+          {n:"40", title:"ii–V–I & cadential patterns", feat:"ii⁷–V⁷–I maj/min, tritone sub",             tags:["ii_v_i","tritone_substitution","cadential_jazz"]},
+          {n:"41", title:"Blues harmony",              feat:"12-bar blues, altered dominant, blue notes",    tags:["blues_12bar","blues_harmony","altered_dominant"]},
+          {n:"42", title:"Jazz scales & modes",        feat:"Mixolydian, Dorian, Lydian ♭7, alt scale",    tags:["jazz_scale_mixolydian","lydian_dominant","altered_scale"]},
+          {n:"43", title:"Chord-scale theory",         feat:"Mapping scales to chord functions",             tags:["chord_scale","available_tensions","avoid_notes"]},
+          {n:"44", title:"Reharmonization",            feat:"Tritone subs, passing chords, Coltrane changes",tags:["reharmonization","coltrane_changes","passing_chord"]},
+          {n:"45", title:"Jazz form & improvisation",  feat:"AABA, rhythm changes, contrafact",              tags:["form_aaba","rhythm_changes","improvisation_structure"]},
+          {n:"46", title:"Modal jazz",                 feat:"So what voicings, quartal harmony, sus. dom.",  tags:["modal_jazz","quartal_harmony","suspended_dominant"]},
+          {n:"47", title:"Post-bop & free jazz",       feat:"Upper structures, outside playing, free rhythm",tags:["upper_structure_triad","outside_playing","free_rhythm"]},
+          {n:"48", title:"Pop & rock harmony",         feat:"IV–I loop, ♭VII, ♭VI–♭VII–I, Nashville numbers",tags:["pop_harmony","rock_flat_vii","nashville_number"]},
+          {n:"49", title:"Film & functional harmony",  feat:"Leitmotif, chromatic mediants, neo-romantic",   tags:["film_harmony","leitmotif","neo_romantic"]},
+        ]
+      },
+    ]
+  },
+  {
+    id:"a", label:"Branch A — Figured Bass", hdrClass:"hdr-a", activeClass:"active-a",
+    desc:"Optional parallel track preceding Roman numerals. Progressive introduction of figures following Handel's exercises (Ledbetter ed., nos. 1–24). Teaches the same harmony as Tier 2 but from the thoroughbass side.",
+    prereq:"Prereq: Tier 1 complete. Bridge unit A15 connects back to Tier 2 Roman numeral notation.",
+    tiers:[
+      { label:"FB-1 — Foundations", badge:"FB1", hdr:"hdr-a",
+        desc:"5/3 chords, shorthand figures, basic intervallic logic above the bass.",
+        units:[
+          {n:"A1", title:"Intro to thoroughbass",      feat:"Intervals above bass, key sig., shorthand 5/3",  tags:["fb_intro","fb_5_3","fb_shorthand"]},
+          {n:"A2", title:"6/3 chords (first inv.)",    feat:"6 figure, doubling rules",                       tags:["fb_6_3","fb_first_inv"]},
+          {n:"A3", title:"6/4 chords (second inv.)",   feat:"6/4 figure, cadential & passing 6/4",            tags:["fb_6_4","fb_second_inv"]},
+          {n:"A4", title:"7–6 suspensions",            feat:"7–6 figure, resolution, chains",                 tags:["fb_7_6","fb_suspension_chain"]},
+          {n:"A5", title:"4–3 suspensions",            feat:"4–3 figure, compound cadence",                   tags:["fb_4_3","fb_compound_cadence"]},
+          {n:"A6", title:"2–3 bass suspensions",       feat:"2–3 figure, retardations",                       tags:["fb_2_3","fb_bass_suspension"]},
+        ]
+      },
+      { label:"FB-2 — Seventh chords & dissonance", badge:"FB2", hdr:"hdr-a",
+        desc:"Progressive introduction of dissonant figures (Handel nos. 1–21): 7, 6/5, 4/2, 9.",
+        units:[
+          {n:"A7",  title:"Dominant seventh (7 figure)",feat:"V⁷ realization & resolution",                  tags:["fb_dominant_7","fb_7_figure"]},
+          {n:"A8",  title:"6/5 chords",                feat:"6/5 figure, voice leading specifics",            tags:["fb_6_5"]},
+          {n:"A9",  title:"4/2 chords",                feat:"4/2 figure, step-descending bass sequences",     tags:["fb_4_2","fb_stepwise_bass"]},
+          {n:"A10", title:"Ninths (9/8, 9/7, 9/4)",   feat:"9 figures; Handel nos. 19–20",                  tags:["fb_9th","fb_ninth_figure"]},
+          {n:"A11", title:"Double suspensions",        feat:"6/4, 9/4, 9/7 simultaneously",                  tags:["fb_double_suspension","fb_complex_figure"]},
+          {n:"A12", title:"Chromatic figures",         feat:"♯ ♭ modifiers, tonicization via figures",        tags:["fb_chromatic","fb_tonicization"]},
+        ]
+      },
+      { label:"FB-3 — Realization as composition", badge:"FB3", hdr:"hdr-a",
+        desc:"From figures to improvisation, stylistic realization, and bridge to Roman numerals.",
+        units:[
+          {n:"A13", title:"Partial figuring",          feat:"Implied figures, performer's judgment",          tags:["fb_partial_figuring","fb_implied"]},
+          {n:"A14", title:"Keyboard realization",      feat:"Two-hand realization, spacing, voice exchange",  tags:["fb_keyboard_realization","fb_voice_exchange"]},
+          {n:"A15", title:"Figured bass → Roman numerals",feat:"Retrospective RN labeling; bridge to T2",    tags:["fb_to_roman_numerals","fb_analysis_bridge"]},
+        ]
+      },
+    ]
+  },
+  {
+    id:"b", label:"Branch B — Clausulae & Partimenti", hdrClass:"hdr-b", activeClass:"active-b",
+    desc:"Historical contrapuntal approach à la Fenaroli. Based on your Gettysburg counterpoint site. Uses partimento terminology throughout; runs parallel to or before Tier 2.",
+    prereq:"Prereq: Tier 1 complete. Can run concurrently with early Tier 2. P-4 aligns with T2 Units 13–15.",
+    tiers:[
+      { label:"P-1 — Clausulae & simple cadences", badge:"P1", hdr:"hdr-b",
+        desc:"Voice-by-voice construction of cadences. Discant, tenor, bass, alto clausulae.",
+        units:[
+          {n:"B1", title:"Formal clausulae",           feat:"Discant (7-8 / 2-1), tenor, bass (1-5-1)",      tags:["clausula_discant","clausula_tenor","clausula_bass"]},
+          {n:"B2", title:"Simple cadence (2 parts)",   feat:"Discant + tenor; position variants",             tags:["cadence_simple_2pt","clausula_combination"]},
+          {n:"B3", title:"Bass clausula & 3-part cad.",feat:"Bass 1-5-1 added; three-part cadences",          tags:["cadence_simple_3pt","clausula_bass"]},
+          {n:"B4", title:"Alto clausula & 4-part cad.",feat:"Alto 5-5-5 filler; four-voice cadences",        tags:["clausula_alto","cadence_4pt"]},
+          {n:"B5", title:"Shorthand figures for 5/3",  feat:"Figured bass as clausula shorthand",             tags:["fb_5_3","clausula_figured"]},
+        ]
+      },
+      { label:"P-2 — Diminution & sequences", badge:"P2", hdr:"hdr-b",
+        desc:"Diminution techniques, ascending/descending sequences, folia bass.",
+        units:[
+          {n:"B6",  title:"Diminution fundamentals",   feat:"4:1, 8:1, repeated notes, goal-oriented",       tags:["diminution_basic","diminution_goal"]},
+          {n:"B7",  title:"Ascending parallel tenths", feat:"Scale in 10ths, 5-6 ascending (fauxbourdon)",   tags:["sequence_parallel_10ths","sequence_5_6_asc"]},
+          {n:"B8",  title:"Descending parallel tenths",feat:"7-6 chains, 2-3 bass suspensions",              tags:["sequence_parallel_10ths_desc","sequence_7_6_desc","sequence_2_3_bass"]},
+          {n:"B9",  title:"Folia bass & variations",   feat:"Vivaldi var. analysis; writing bass variations", tags:["ground_bass_folia","variation_technique"]},
+          {n:"B10", title:"Syncopated diminution",     feat:"Syncopation, arpeggiation, compound melody",     tags:["diminution_syncopated","diminution_arpeggiation"]},
+        ]
+      },
+      { label:"P-3 — Compound cadences & schemas", badge:"P3", hdr:"hdr-b",
+        desc:"Double cadences, quiescenza, opening formulae, hexachordal system.",
+        units:[
+          {n:"B11", title:"Compound cadence (2 parts)",feat:"Simple + compound; 7-6 delayed discant",        tags:["cadence_compound_2pt"]},
+          {n:"B12", title:"Compound cadence (3–4 pts)",feat:"Bass + upper voices; 3rd position variant",     tags:["cadence_compound_3pt","cadence_compound_4pt"]},
+          {n:"B13", title:"Double cadence",            feat:"Simple + compound; bass & tenor variants",       tags:["cadence_double","clausula_altered_tenor"]},
+          {n:"B14", title:"Opening formulae",          feat:"Discant-in-bass; quiescenza (♭7–♮7–8)",        tags:["schema_opening_formula","schema_quiescenza"]},
+          {n:"B15", title:"Hexachordal system",        feat:"Guido, mi-fa, modulation as hexachord shift",    tags:["hexachordal_system","mutation","modulation_hexachordal"]},
+          {n:"B16", title:"Half-step motion in bass",  feat:"Chromatic bass; tonicization via semitone",      tags:["bass_halfstep","chromatic_bass"]},
+        ]
+      },
+      { label:"P-4 — Rule of the octave & partimenti", badge:"P4", hdr:"hdr-b",
+        desc:"The Fenaroli model: RO as harmonic grammar, partimento realization.",
+        units:[
+          {n:"B17", title:"Rule of the octave (major)",feat:"Scale degrees 1–8 asc./desc., 3-part",          tags:["rule_of_the_octave","roto_major"]},
+          {n:"B18", title:"Rule of the octave (minor)",feat:"Raised 6 & 7 ascending; aug. 6th descending",   tags:["roto_minor","augmented_sixth_roto"]},
+          {n:"B19", title:"Advanced rule of the octave",feat:"4-voice RO; Fenaroli 4-note chords",           tags:["roto_advanced","roto_4voice"]},
+          {n:"B20", title:"Partimenti I — stepwise bass",feat:"4/2→6 sequences; descending seq. w/ figures", tags:["partimento_stepwise","partimento_4_2_6"]},
+          {n:"B21", title:"Partimenti II — leaping bass",feat:"↓3↑2 with 6/3 & 6/5; ↓5↑4 circle of 5ths",  tags:["partimento_leaping","partimento_falling_3rds","partimento_falling_5ths"]},
+          {n:"B22", title:"Evaded & deceptive cadences",feat:"8 evasion techniques, motivo di cadenza",       tags:["cadence_evaded","cadence_deceptive_partimento","motivo_di_cadenza"]},
+        ]
+      },
+      { label:"P-5 — Counterpoint, imitation & fugue", badge:"P5", hdr:"hdr-b",
+        desc:"Three constraint systems, double counterpoint, imitation, fugue from partimento.",
+        units:[
+          {n:"B23", title:"Three constraint systems",  feat:"Harmonic / melodic / rhythmic constraints",      tags:["constraint_harmonic","constraint_melodic","constraint_rhythmic"]},
+          {n:"B24", title:"Lament bass & omnibus",     feat:"Descending 4th ground; small omnibus (chrom.)",  tags:["lament_bass","small_omnibus","voice_exchange_chromatic"]},
+          {n:"B25", title:"Bariolage & arpeggiation",  feat:"Bariolage, compound melody, rest-on-1st-16th",   tags:["bariolage","arpeggiation","compound_melody"]},
+          {n:"B26", title:"Double counterpoint",       feat:"Invertible ctpt. at octave; over partimento",    tags:["double_counterpoint","invertible_counterpoint"]},
+          {n:"B27", title:"Imitation & sequences",     feat:"Imitative diminution; sequence as imitation",    tags:["imitation","imitative_diminution","sequence_imitation"]},
+          {n:"B28", title:"Introduction to fugue",     feat:"Subject/answer (real/tonal), countersubject",    tags:["fugue_subject","fugue_answer","fugue_countersubject"]},
+          {n:"B29", title:"Fugue from partimento",     feat:"Exposition, episode, stretto, double fugue",     tags:["fugue_exposition","fugue_episode","fugue_stretto"]},
+          {n:"B30", title:"Partimento as concerto",    feat:"Ritornello, tutti/solo; Vivaldi RV 152 model",   tags:["partimento_concerto","ritornello","tutti_solo"]},
+        ]
+      },
+    ]
+  },
+  {
+    id:"c", label:"Branch C — Interval Cycles & Slonimsky", hdrClass:"hdr-c", activeClass:"active-c",
+    desc:"Post-tonal optional branch. Interval cycles, combination cycles, and Slonimsky's Thesaurus as compositional and analytical resource.",
+    prereq:"Prereq: T4 Units 29–31 (PC sets, inversional symmetry). Extends into serialism and spectralism.",
+    tiers:[
+      { label:"IC-1 — Interval cycles", badge:"IC1", hdr:"hdr-c",
+        desc:"Single-interval cycles: generating collections, symmetry, and cyclic pitch fields.",
+        units:[
+          {n:"C1", title:"Interval cycles 1–6",        feat:"IC1 (chromatic) through IC6 (tritone)",         tags:["interval_cycle_ic1","interval_cycle_ic2","interval_cycle_ic3","interval_cycle_ic6"]},
+          {n:"C2", title:"Cyclic collections",         feat:"Whole-tone, octatonic, hexatonic as IC cycles",  tags:["cyclic_collection","ic_whole_tone","ic_octatonic"]},
+          {n:"C3", title:"Transpositional symmetry",   feat:"T-symmetry, cyclic Tn invariance",              tags:["transpositional_symmetry","tn_invariance"]},
+        ]
+      },
+      { label:"IC-2 — Combination cycles (Slonimsky)", badge:"IC2", hdr:"hdr-c",
+        desc:"Slonimsky's Thesaurus: interpolation, ultrapolation, infrapolation; analytical applications.",
+        units:[
+          {n:"C4", title:"Slonimsky's Thesaurus overview",feat:"Organizing principles; the 1300+ patterns",  tags:["slonimsky_overview","thesaurus_organization"]},
+          {n:"C5", title:"Interpolation",              feat:"Single/double/multiple interpolation patterns",  tags:["slonimsky_interpolation","combination_cycle_interp"]},
+          {n:"C6", title:"Ultrapolation & infrapolation",feat:"Outer/inner extensions of cyclic patterns",   tags:["slonimsky_ultrapolation","slonimsky_infrapolation"]},
+          {n:"C7", title:"Combination cycles in analysis",feat:"Messiaen modes, Ligeti, Coltrane changes",   tags:["combination_cycle_analysis","messiaen_modes","coltrane_changes_ic"]},
+          {n:"C8", title:"Composition with IC/CC",     feat:"Writing etudes using interval & combo cycles",   tags:["ic_composition","slonimsky_etude"]},
+        ]
+      },
+    ]
+  },
+  {
+    id:"d", label:"Branch D — Neo-Riemannian Theory", hdrClass:"hdr-d", activeClass:"active-d",
+    desc:"Triadic transformations, Tonnetz, and voice-leading geometry. Can follow Tier 3 or run parallel to Tier 4. Strong connection to late Romantic repertoire and triadic post-tonalism.",
+    prereq:"Prereq: Tier 2 complete. Pairs well with Tier 3 chromaticism and T4 PC-set work.",
+    tiers:[
+      { label:"NR-1 — Transformations & Tonnetz", badge:"NR1", hdr:"hdr-d",
+        desc:"PLR operations, Tonnetz lattice, hexatonic cycles.",
+        units:[
+          {n:"D1", title:"P, L, R transformations",   feat:"Parallel, Leading-tone, Relative operations",     tags:["plr_parallel","plr_leadingtone","plr_relative"]},
+          {n:"D2", title:"The Tonnetz",               feat:"Toroidal pitch space, lattice navigation",         tags:["tonnetz","tonnetz_navigation","tonnetz_torus"]},
+          {n:"D3", title:"Compound transformations",  feat:"PL, PR, LR, PLPR chains; Cohn's cycles",          tags:["plr_compound","cohn_cycles","hexatonic_cycle"]},
+          {n:"D4", title:"Hexatonic & octatonic poles",feat:"Hexatonic systems, maximally smooth voice leading",tags:["hexatonic_systems","hexatonic_poles","maximally_smooth"]},
+        ]
+      },
+      { label:"NR-2 — Analysis & extension", badge:"NR2", hdr:"hdr-d",
+        desc:"Analytical application and geometric voice-leading spaces.",
+        units:[
+          {n:"D5", title:"NR analysis — 19th-c. rep.", feat:"Schubert, Brahms, Wagner; chromatic mediant lens",tags:["nr_analysis_19c","chromatic_mediant_nr"]},
+          {n:"D6", title:"Voice-leading geometry",     feat:"Callender/Quinn/Tymoczko orbifolds",              tags:["vl_geometry","orbifold","tymoczko"]},
+          {n:"D7", title:"NR and jazz",               feat:"Parsimonious voice leading in jazz harmony",       tags:["nr_jazz","parsimonious_vl_jazz"]},
+          {n:"D8", title:"NR and post-tonal music",   feat:"Triadic post-tonalism; Adams, Pärt, Tavener",     tags:["nr_posttonal","triadic_posttonal"]},
+        ]
+      },
+    ]
+  },
+];
+
+const nav = document.getElementById('nav');
+const panels = document.getElementById('panels');
+
+branches.forEach((branch, bi) => {
+  const btn = document.createElement('button');
+  btn.className = 'branch-btn' + (bi===0 ? ' ' + branch.activeClass : '');
+  btn.id = 'btn-' + branch.id;
+  btn.textContent = branch.label;
+  btn.onclick = () => switchBranch(branch.id, branch.activeClass);
+  nav.appendChild(btn);
+
+  const panel = document.createElement('div');
+  panel.className = 'branch-panel' + (bi===0 ? ' visible' : '');
+  panel.id = 'panel-' + branch.id;
+
+  let html = `<p class="branch-desc">${branch.desc}</p>`;
+  if (branch.prereq) html += `<p class="branch-prereq">${branch.prereq}</p>`;
+
+  branch.tiers.forEach((tier, ti) => {
+    const tid = branch.id + '_t' + ti;
+    html += `
+    <div class="tier-header ${tier.hdr}" onclick="toggleTier('${tid}')">
+      <span class="tier-badge">${tier.badge}</span>
+      <span class="tier-title">${tier.label}</span>
+      <span class="tier-toggle" id="tog-${tid}">▾</span>
+    </div>
+    <p class="tier-desc" id="desc-${tid}">${tier.desc}</p>
+    <div id="body-${tid}">
+    <table class="unit-table">
+      <thead><tr>
+        <th style="width:44px">#</th>
+        <th style="width:190px">Unit title</th>
+        <th style="width:210px">Key features</th>
+        <th>Tags (slug format)</th>
+      </tr></thead>
+      <tbody>
+      ${tier.units.map(u=>`<tr>
+        <td><span class="num">${u.n}</span></td>
+        <td>${u.title}</td>
+        <td class="feat">${u.feat}</td>
+        <td>${u.tags.map(t=>`<span class="tag">unit:${u.n}_${t}</span>`).join('')}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>`;
+  });
+
+  panel.innerHTML = html;
+  panels.appendChild(panel);
+});
+
+const collapsed = {};
+function toggleTier(id) {
+  collapsed[id] = !collapsed[id];
+  document.getElementById('body-' + id).style.display = collapsed[id] ? 'none' : '';
+  document.getElementById('desc-' + id).style.display = collapsed[id] ? 'none' : '';
+  document.getElementById('tog-' + id).textContent = collapsed[id] ? '▸' : '▾';
+}
+
+let currentActive = 'active-core';
+function switchBranch(id, activeClass) {
+  document.querySelectorAll('.branch-panel').forEach(p => p.classList.remove('visible'));
+  document.querySelectorAll('.branch-btn').forEach(b => {
+    branches.forEach(br => b.classList.remove(br.activeClass));
+  });
+  document.getElementById('panel-' + id).classList.add('visible');
+  document.getElementById('btn-' + id).classList.add(activeClass);
+}
+</script>
+</body>
+</html>

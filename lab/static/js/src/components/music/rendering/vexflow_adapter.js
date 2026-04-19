@@ -547,8 +547,9 @@ define([
   function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations) {
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
-      var rest = new Vex.Flow.StaveNote({ clef: clef, keys: ["b/4"], duration: dur, dots: item.duration.dots || 0 });
-      // VexFlow 4.x automatically adds dots when specified in constructor
+      var numDots = item.duration.dots || 0;
+      var rest = new Vex.Flow.StaveNote({ clef: clef, keys: ["b/4"], duration: dur, dots: numDots });
+      if (numDots > 0) Vex.Flow.Dot.buildAndAttach([rest], { all: true });
       return rest;
     }
     if (item.kind === "note") {
@@ -556,8 +557,10 @@ define([
       var acc = alter === 1 ? "#" : alter === -1 ? "b" : alter === 2 ? "##" : alter === -2 ? "bb" : "";
       var oshift = octaveShift || 0;
       var key = item.pitch.step.toLowerCase() + acc + "/" + (item.pitch.octave + oshift);
-      var note = new Vex.Flow.StaveNote({ clef: clef, keys: [key], duration: durToVF(item.duration), dots: item.duration.dots || 0 });
-      
+      var numDots = item.duration.dots || 0;
+      var note = new Vex.Flow.StaveNote({ clef: clef, keys: [key], duration: durToVF(item.duration), dots: numDots });
+      if (numDots > 0) Vex.Flow.Dot.buildAndAttach([note], { all: true });
+
       // Only show accidental if it contradicts the key signature
       var keyAlters = keySignatureAlterations || {};
       var step = item.pitch.step.toUpperCase();
@@ -582,8 +585,10 @@ define([
         var acc = alter === 1 ? "#" : alter === -1 ? "b" : alter === 2 ? "##" : alter === -2 ? "bb" : "";
         return n.pitch.step.toLowerCase() + acc + "/" + (n.pitch.octave + oshift);
       });
-      var chord = new Vex.Flow.StaveNote({ clef: clef, keys: keys, duration: durToVF(item.duration), dots: item.duration.dots || 0 });
-      
+      var numDots = item.duration.dots || 0;
+      var chord = new Vex.Flow.StaveNote({ clef: clef, keys: keys, duration: durToVF(item.duration), dots: numDots });
+      if (numDots > 0) Vex.Flow.Dot.buildAndAttach([chord], { all: true });
+
       // Only show accidentals that contradict the key signature
       var keyAlters = keySignatureAlterations || {};
       for (var i = 0; i < item.notes.length; i++) {
@@ -687,7 +692,7 @@ define([
         renderFigured = false;
         renderRomanExp = false;
       }
-      var systemGap = (opts && opts.systemGap) || 120; // Increased vertical spacing between staves
+      var systemGap = (opts && opts.systemGap) || 150; // vertical spacing between treble and bass staves
       var staffYOffset = (opts && opts.staffYOffset) || 0;
       var baseRomanYOffset = 32;
       var baseFiguredYOffset = 18;
@@ -740,36 +745,15 @@ define([
         return { num_beats: 4, beat_value: 4, resolution: Vex.Flow.RESOLUTION };
       })();
 
-      // Auto-beam eighth notes and smaller
-      function autoBeam(tickables) {
-        var beamable = [];
-        var beamGroups = [];
-        
-        tickables.forEach(function(note) {
-          // Check if note can be beamed (8th, 16th, etc.) and is not a rest
-          var duration = note.duration;
-          var canBeam = duration && (duration.indexOf('8') === 0 || duration.indexOf('16') === 0) && duration.indexOf('r') === -1;
-          
-          if (canBeam) {
-            beamable.push(note);
-          } else {
-            // End of beam group
-            if (beamable.length >= 2) {
-              beamGroups.push(beamable);
-            }
-            beamable = [];
-          }
-        });
-        
-        // Don't forget trailing beamable notes
-        if (beamable.length >= 2) {
-          beamGroups.push(beamable);
+      function autoBeam(tickables, stemDirection) {
+        try {
+          return Vex.Flow.Beam.generateBeams(tickables, {
+            beam_rests: false,
+            stem_direction: stemDirection || 1,
+          });
+        } catch(e) {
+          return [];
         }
-        
-        // Create beams
-        return beamGroups.map(function(group) {
-          return new Vex.Flow.Beam(group);
-        });
       }
 
       function staffVoices(staffId, staff, clef, idState, keySignatureAlterations) {
@@ -783,11 +767,14 @@ define([
           .map(function (v, idx) {
             if (select && select.indexOf(idx) === -1) return null; // filter out
             var tickables = v.items.map(function (it) { return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations); }).filter(Boolean);
+            var stemDir = v.direction === "up" ? 1 : v.direction === "down" ? -1 : 1;
             if (v.direction === "up") tickables.forEach(function (t) { if (t.setStemDirection) t.setStemDirection(1); });
             if (v.direction === "down") tickables.forEach(function (t) { if (t.setStemDirection) t.setStemDirection(-1); });
-            
-            // Auto-beam the notes
-            var beams = autoBeam(tickables);
+
+            // Only beam outer voices (S=treble idx0 stems-up, B=bass idx1 stems-down).
+            // Inner voices (A=treble idx1, T=bass idx0) beam toward the opposing staff — skip.
+            var isOuterVoice = (stemDir === 1 && idx === 0) || (stemDir === -1 && idx === 1);
+            var beams = isOuterVoice ? autoBeam(tickables, stemDir) : [];
             
             var voice = buildVoice(time, tickables);
             voice.beams = beams; // Store beams for later drawing
@@ -1059,6 +1046,30 @@ define([
         var trebleStave = makeStave(ctx, currentX, trebleY, measureWidth, "treble", isFirstMeasure ? meta : {}, isFirstMeasure);
         var bassStave = makeStave(ctx, currentX, bassY, measureWidth, "bass", isFirstMeasure ? meta : {}, isFirstMeasure);
 
+        // Draw explicit key label beneath the bass clef (e.g., "Am:", "C:")
+        function formatKeyForDisplay(k) {
+          if (!k || typeof k !== 'string' || k.length < 2) return k;
+          var mode = k.charAt(0);
+          var tonic = k.slice(1).replace(/_/g, "");
+          return tonic + (mode === 'i' ? 'm' : '');
+        }
+
+        var displayKey = (opts && opts.keySignature && typeof opts.keySignature.getKey === 'function') 
+          ? formatKeyForDisplay(opts.keySignature.getKey())
+          : (meta && meta.key);
+
+        if (isFirstMeasure && displayKey) {
+          ctx.save();
+          ctx.font = "bold 18px JazzSerifs";
+          ctx.fillStyle = "#000";
+          ctx.textAlign = "center";
+          // Center under the bass clef (clef is ~28px wide, so offset by 14px)
+          var labelX = currentX + 16; 
+          var labelY = bassStave.getBottomY() + 22; 
+          ctx.fillText(displayKey + ":", labelX, labelY);
+          ctx.restore();
+        }
+
         // Draw system connector only on first measure
         if (isFirstMeasure) {
           var connector = new Vex.Flow.StaveConnector(trebleStave, bassStave);
@@ -1231,6 +1242,7 @@ define([
                 opts.onWindowPosition({
                   windowIndex: matchedIndex,
                   onset: matchedWindow ? matchedWindow.onset : null,
+                  measureIndex: matchedWindow ? matchedWindow.measureIndex : null,
                   x: columnCenterX,
                   y: bassStave.getBottomY() + 18,
                 });

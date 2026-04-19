@@ -24,6 +24,7 @@ define([
 
     reset: function () {
       this.answers = {};  // { problemIndex: label }
+      this.attemptCounts = {}; // { problemIndex: count }
     },
 
     initFromDefinition: function (definition) {
@@ -34,6 +35,7 @@ define([
 
     setAnswer: function (problemIndex, label) {
       this.answers[problemIndex] = label;
+      this.attemptCounts[problemIndex] = (this.attemptCounts[problemIndex] || 0) + 1;
     },
 
     getActiveMeasureIndex: function () {
@@ -59,6 +61,10 @@ define([
       var allCorrect = true;
 
       for (var i = 0; i < problems.length; i++) {
+        if (problems[i].hidden) {
+          gradedProblems.push({ answer: problems[i].answer, chosen: null, correct: null, hidden: true });
+          continue;
+        }
         var absoluteIndex = pageOffset + i;
         var answer = problems[i].answer;
         var chosen = this.answers.hasOwnProperty(absoluteIndex)

@@ -19,11 +19,11 @@ class DisableCSPMiddleware:
         # This is needed for RequireJS config injection and Tone.js
         csp_policy = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: cdnjs.cloudflare.com unpkg.com cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob:; "
             "font-src 'self' data:; "
-            "connect-src 'self'; "
+            "connect-src 'self' cdnjs.cloudflare.com unpkg.com cdn.jsdelivr.net; "
             "media-src 'self' blob:; "
             "worker-src 'self' blob:;"
         )

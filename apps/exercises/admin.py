@@ -12,7 +12,15 @@ from apps.exercises.forms import (
     PerformanceDataForm,
     CourseForm,
 )
-from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
+from apps.exercises.models import (
+    Exercise, 
+    Playlist, 
+    PerformanceData, 
+    Course,
+    StudentSkillMastery,
+    SkillPrerequisite,
+    IdentificationAttempt
+)
 
 import re
 import sys
@@ -238,6 +246,9 @@ class ExerciseAdmin(ImportExportModelAdmin):
 
 class PlaylistInlineAdmin(admin.TabularInline):
     model = Playlist.exercises.through
+    fields = ("exercise", "order", "is_adaptive_entry")
+    extra = 1
+
 
 
 @admin.register(Playlist)
@@ -273,6 +284,13 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
                         "show_on_site",
                         "performances",
                         "is_public",
+                        "is_adaptive",
+                        "is_dynamic",
+                        "feedback_mode",
+                        "tags",
+                        "skill_tags",
+                        "min_complexity",
+                        "max_complexity",
                     ),
                     # ('created', 'updated')
                 ),
@@ -403,11 +421,14 @@ class CourseAdmin(DynamicArrayMixin, ImportExportModelAdmin):
                     "id",
                     "authored_by",
                     ("created", "updated"),
+                    ("adaptive_mode", "mastery_threshold"),
+                    "required_skills",
                 ),
             },
         ),
-        # ("Playlists", {"fields": ("playlists", "playlist_links")}),
+        ("Playlists", {"fields": ("playlist_links",)}),
     )
+
     save_on_top = True
     save_as = True
 
@@ -451,3 +472,27 @@ class CourseAdmin(DynamicArrayMixin, ImportExportModelAdmin):
         return mark_safe(link)
 
     show_on_site.short_description = "Link"
+
+
+@admin.register(StudentSkillMastery)
+class StudentSkillMasteryAdmin(admin.ModelAdmin):
+    list_display = ("user", "skill_tag", "level", "total_attempts", "last_practiced")
+    list_filter = ("level", "skill_tag", "user__email")
+    search_fields = ("user__email", "skill_tag")
+    readonly_fields = ("first_attempted", "last_practiced", "mastered_at")
+
+
+@admin.register(SkillPrerequisite)
+class SkillPrerequisiteAdmin(admin.ModelAdmin):
+    list_display = ("skill_tag", "requires_tag", "course")
+    list_filter = ("course", "skill_tag")
+    search_fields = ("skill_tag", "requires_tag")
+
+
+@admin.register(IdentificationAttempt)
+class IdentificationAttemptAdmin(admin.ModelAdmin):
+    list_display = ("user", "exercise", "submitted_at")
+    list_filter = ("user__email", "exercise__id")
+    search_fields = ("user__email", "exercise__id")
+    readonly_fields = ("submitted_at",)
+

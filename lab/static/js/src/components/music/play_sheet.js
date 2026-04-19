@@ -11,6 +11,9 @@ define([
   "./play_note_factory",
   "./score_model",
   "./rendering/vexflow_adapter",
+  "app/components/music/score_timeline",
+  "app/models/score_player",
+  "app/components/music/playback_controls",
 ], function (
   $,
   _,
@@ -22,7 +25,10 @@ define([
   StaveNotater,
   PlayNoteFactory,
   ScoreModel,
-  VexflowAdapter
+  VexflowAdapter,
+  ScoreTimeline,
+  ScorePlayer,
+  renderPlaybackControls
 ) {
   "use strict";
 
@@ -55,6 +61,9 @@ define([
       selectVoices: null,
       octaveShift: null,
     };
+    this._cachedTimeline = null;
+    this._windowPositionCache = {};
+    this._playbackWindowIndex = null;
 
     if ("chords" in this.settings) {
       this.chords = this.settings.chords;
@@ -117,6 +126,17 @@ define([
       this.initRenderer();
       this.initStaves();
       this.initListeners();
+
+      var self = this;
+      this.scorePlayer = new ScorePlayer(this.settings.midiDevice);
+      this.scorePlayer.bind("tick", function (windowIndex) {
+        self._playbackWindowIndex = windowIndex;
+        self._drawPlaybackHighlight();
+      });
+      this.scorePlayer.bind("stopped", function () {
+        self._playbackWindowIndex = null;
+        self._clearPlaybackHighlight();
+      });
     },
     /**
      * Initializes the canvas renderer and dom element.
@@ -173,6 +193,9 @@ define([
           
           // Cache payload to avoid re-fetching on every UI change
           var renderWithState = function(payload){
+            if (self.scorePlayer) { self.scorePlayer.stop(); }
+            self._cachedTimeline = null;
+            self._windowPositionCache = {};
             try {
               if (payload && payload.score) {
                 // If corpus provides a key, sync the KeySignature model and header widget
@@ -203,7 +226,29 @@ define([
                 self._corpusPayload = payload;
                 self._corpusFile = corpusFile;
 
-                VexflowAdapter.render(payload.score, self.vexRenderer, { width: width, height: height, maxMeasures: 4, selectVoices: selectVoices, octaveShift: octaveShift });
+                self._cachedTimeline = ScoreTimeline.buildTimeline(payload.score);
+
+                VexflowAdapter.render(payload.score, self.vexRenderer, {
+                  width: width,
+                  height: height,
+                  maxMeasures: 4,
+                  selectVoices: selectVoices,
+                  octaveShift: octaveShift,
+                  onWindowPosition: function (slot) {
+                    if (slot && typeof slot.windowIndex === "number") {
+                      self._windowPositionCache[slot.windowIndex] = slot;
+                    }
+                  },
+                });
+
+                // Playback controls (corpus mode only, idempotent)
+                var $toolbar = $("#staff-toolbar");
+                if ($toolbar.length) {
+                  renderPlaybackControls($toolbar, self.scorePlayer, function () {
+                    return self._cachedTimeline;
+                  });
+                  $("#playback-controls").show();
+                }
               } else {
                 alert('Corpus file loaded but missing .score');
               }
@@ -227,6 +272,7 @@ define([
               });
           }
         } else {
+          $("#playback-controls").hide();
           try {
             var sample = this.samplePolyphonicScore();
             VexflowAdapter.render(sample, this.vexRenderer, { width: width, height: height, maxMeasures: 4 });
@@ -590,6 +636,39 @@ define([
       var meas2 = ScoreModel.measure(2, { treble: treble2, bass: bass2 });
 
       return ScoreModel.score(meta, [meas1, meas2]);
+    },
+
+    _drawPlaybackHighlight: function () {
+      var idx = this._playbackWindowIndex;
+      if (idx === null || idx === undefined) return;
+      var slot = this._windowPositionCache[idx];
+      if (!slot) return;
+
+      var canvas = this.el[0];
+      var canvasOffset = $(canvas).offset();
+      var w = 30;
+      var h = slot.y;
+      var left = canvasOffset.left + slot.x - w / 2;
+      var top = canvasOffset.top;
+
+      var $hl = $("#playback-highlight");
+      if (!$hl.length) {
+        $hl = $('<div id="playback-highlight">').css({
+          position: "fixed",
+          pointerEvents: "none",
+          background: "rgba(79, 172, 254, 0.15)",
+          border: "1px solid rgba(79, 172, 254, 0.35)",
+          boxSizing: "border-box",
+          zIndex: 10,
+        });
+        $("body").append($hl);
+      }
+
+      $hl.css({ left: left, top: top, width: w, height: h }).show();
+    },
+
+    _clearPlaybackHighlight: function () {
+      $("#playback-highlight").hide();
     },
 
     /* solution for saving data as exercise; called by render() and saved to sessionStorage */

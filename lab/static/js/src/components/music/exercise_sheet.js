@@ -15,6 +15,8 @@ define([
   "./rendering/vexflow_adapter",
   "./score_timeline",
   "app/components/input/label_input",
+  "app/models/score_player",
+  "app/components/music/playback_controls",
 ], function (
   $,
   $UI,
@@ -30,7 +32,9 @@ define([
   ExerciseNoteFactory,
   VexFlowAdapter,
   ScoreTimeline,
-  LabelInput
+  LabelInput,
+  ScorePlayer,
+  renderPlaybackControls
 ) {
   "use strict";
 
@@ -82,7 +86,7 @@ define([
       throw new Error("Missing parameter property: .timeSignature");
     }
 
-    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onSubmitIdentification"]);
+    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onSubmitIdentification", "onToggleMode", "_onIdentKeyDown"]);
   };
 
   ExerciseSheetComponent.prototype = new Component();
@@ -109,6 +113,19 @@ define([
       if (this._isIdentificationLikeExercise()) {
         this.initIdentificationMode();
       }
+
+      // Playback
+      var self = this;
+      this.scorePlayer = new ScorePlayer(this.settings.midiDevice);
+      this.scorePlayer.bind("tick", function (windowIndex) {
+        self._playbackWindowIndex = windowIndex;
+        self._drawPlaybackHighlight();
+      });
+      this.scorePlayer.bind("stopped", function () {
+        self._playbackWindowIndex = null;
+        self._clearPlaybackHighlight();
+      });
+      this._playbackWindowIndex = null;
     },
     /**
      * Initializes the canvas renderer and dom element.
@@ -147,6 +164,9 @@ define([
       this.subscribe(EVENTS.BROADCAST.NOTE, this.onMidiNote);
       // Listen for pristine/refresh button
       this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onClickPristine);
+      // Arrow key page navigation for identification exercises
+      window.removeEventListener("keydown", this._onIdentKeyDown, true);
+      window.addEventListener("keydown", this._onIdentKeyDown, true);
     },
     _isIdentificationLikeExercise: function () {
       var definition = this.exerciseContext.getDefinition();
@@ -179,7 +199,12 @@ define([
 
       this._identActiveIndex = null;
       this._identPopupEl = null;
-      var identMode = definition.getIdentMode ? definition.getIdentMode() : 'submit';
+      this._currentMode = this.exerciseContext.settings.identMode || "submit";
+      this._modeLocked = this.exerciseContext.settings.modeLocked || false;
+
+      this.renderModeToggle();
+
+      var identMode = this._currentMode;
 
       // Show Submit button only in submit mode
       if (identMode === 'submit') {
@@ -202,8 +227,7 @@ define([
         if (!self._isIdentificationLikeExercise()) { return; }
 
         // Lock individual correct items so users can still modify incorrect choices or finish a new page
-        var currentMode = self.exerciseContext.getDefinition().getIdentMode
-          ? self.exerciseContext.getDefinition().getIdentMode() : 'submit';
+        var currentMode = self._currentMode;
 
         var offset = self.el.offset();
         var clickX = e.pageX - offset.left;
@@ -214,6 +238,13 @@ define([
         for (var i = 0; i < slots.length; i++) {
           var slot = slots[i];
           if (!slot) { continue; }
+          
+          var problems = self.exerciseContext.getVisibleProblems
+            ? self.exerciseContext.getVisibleProblems()
+            : definition.getProblems();
+          var problem = problems[slot.index];
+          if (problem && problem.hidden) { continue; } // Skip hidden slots
+
           if (
             clickX >= slot.x - 20 && clickX <= slot.x + 20 &&
             clickY >= slot.y - 20 && clickY <= slot.y + 46
@@ -228,6 +259,15 @@ define([
           ? self.exerciseContext.getIdentPageOffset() : 0;
         var absoluteHitIndex = pageOffset + hitIndex;
         
+        var limits = { practice: 3, submit: 2, test: 1 };
+        var limit = limits[self._currentMode] || 3;
+        var graderCounts = (self.exerciseContext.grader && self.exerciseContext.grader.attemptCounts) || {};
+        var count = graderCounts[absoluteHitIndex] || 0;
+
+        if (count >= limit) {
+          return;
+        }
+
         if (currentMode === 'test' && grdr && grdr.answers && grdr.answers.hasOwnProperty(absoluteHitIndex)) {
           return;
         }
@@ -259,6 +299,13 @@ define([
         for (var i = 0; i < slots.length; i++) {
           var slot = slots[i];
           if (!slot) { continue; }
+
+          var problems = self.exerciseContext.getVisibleProblems
+            ? self.exerciseContext.getVisibleProblems()
+            : definition.getProblems();
+          var problem = problems[slot.index];
+          if (problem && problem.hidden) { continue; } // Skip hidden slots
+
           if (
             cx >= slot.x - 20 && cx <= slot.x + 20 &&
             cy >= slot.y - 20 && cy <= slot.y + 46
@@ -287,8 +334,7 @@ define([
           grdr.setAnswer(problemIndex, choice);
           self._closeIdentPopup();
 
-          var currentMode = self.exerciseContext.getDefinition().getIdentMode
-            ? self.exerciseContext.getDefinition().getIdentMode() : 'submit';
+          var currentMode = self._currentMode;
 
           if (currentMode === 'practice') {
             // Show colour feedback immediately
@@ -395,7 +441,7 @@ define([
 
       var grader = this.exerciseContext.grader;
       var definition = this.exerciseContext.getDefinition();
-      var identMode = definition.getIdentMode ? definition.getIdentMode() : 'submit';
+      var identMode = this._currentMode;
       var ctx = this.vexRenderer.getContext();
       var lastGraded = this.exerciseContext.graded;
 
@@ -409,6 +455,7 @@ define([
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
       var answeredCount = 0;
+      var visibleSlotCount = 0;
 
       for (var i = 0; i < slots.length; i++) {
         var slot = slots[i];
@@ -419,6 +466,12 @@ define([
         var pageOffset = this.exerciseContext && this.exerciseContext.getIdentPageOffset
           ? this.exerciseContext.getIdentPageOffset() : 0;
         var absoluteIndex = pageOffset + localIndex;
+
+        var problems = definition.getProblems ? definition.getProblems() : [];
+        var problem = problems[absoluteIndex];
+        if (problem && problem.hidden) { continue; } // LEAVE A SPACE
+        visibleSlotCount++;
+
         var chosen = grader && grader.answers && grader.answers.hasOwnProperty(absoluteIndex)
           ? grader.answers[absoluteIndex] : null;
         var label = chosen || '?';
@@ -517,7 +570,7 @@ define([
       }
 
       if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
-         this._updateIdentificationProgressUI(answeredCount, slots.length);
+         this._updateIdentificationProgressUI(answeredCount, visibleSlotCount);
       }
 
       ctx.font = origFont;
@@ -544,22 +597,30 @@ define([
                 '  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);' +
                 '  color: white;' +
                 '  border: none;' +
-                '  border-radius: 20px;' +
-                '  padding: 8px 30px;' +
-                '  font-size: 15px;' +
+                '  border-radius: 22px;' +
+                '  padding: 10px 36px;' +
+                '  font-size: 16px;' +
                 '  font-weight: 600;' +
                 '  cursor: default;' +
-                '  transition: all 0.2s ease-in-out;' +
-                '  opacity: 0.5;' +
+                '  opacity: 0.45;' +
+                '  letter-spacing: 0.02em;' +
                 '} ' +
                 '#identification-submit.ready {' +
                 '  cursor: pointer;' +
                 '  opacity: 1;' +
-                '  box-shadow: 0 4px 10px rgba(0, 198, 255, 0.4);' +
+                '  box-shadow: 0 4px 12px rgba(0, 198, 255, 0.45);' +
+                '  transition: box-shadow 0.2s, opacity 0.2s;' +
                 '} ' +
-                '#identification-submit.ready:hover {' +
-                '  transform: translateY(-1px);' +
-                '  box-shadow: 0 6px 14px rgba(0, 198, 255, 0.5);' +
+                '#identification-submit.ready:not(.hint-pulse):hover {' +
+                '  box-shadow: 0 6px 18px rgba(0, 198, 255, 0.65);' +
+                '}' +
+                '#identification-submit.hint-pulse {' +
+                '  animation: ident-hint-pulse 1.4s ease-in-out infinite !important;' +
+                '  transition: none !important;' +
+                '}' +
+                '@keyframes ident-hint-pulse {' +
+                '  0%,100% { box-shadow: 0 4px 12px rgba(0,198,255,0.45); opacity:1; }' +
+                '  50% { box-shadow: 0 0 28px 6px rgba(0,198,255,0.85); opacity:1; }' +
                 '}' +
                 '</style>').appendTo('head');
           }
@@ -568,16 +629,17 @@ define([
       // Hide progress bar only after the exercise is fully completed (sealed)
       if (totalCount === 0 || this.exerciseContext.sealed) {
           $progContainer.hide();
-          $btn.show().addClass('ready').text('Submit');
+          $btn.hide(); // Hide button when completed/sealed
           return;
       }
 
       var allProblems = this.exerciseContext.getDefinition().getProblems() || [];
-      var globalTotal = allProblems.length;
+      var visibleProblems = _.filter(allProblems, function(p) { return !p.hidden; });
+      var globalTotal = visibleProblems.length;
       var answers = this.exerciseContext.grader ? this.exerciseContext.grader.answers : {};
       var globalAnswered = 0;
-      for (var i = 0; i < globalTotal; i++) {
-          if (answers.hasOwnProperty(i) && answers[i] !== null && answers[i] !== '') {
+      for (var i = 0; i < allProblems.length; i++) {
+          if (!allProblems[i].hidden && answers.hasOwnProperty(i) && answers[i] !== null && answers[i] !== '') {
               globalAnswered++;
           }
       }
@@ -592,9 +654,14 @@ define([
 
       // The button only cares if the CURRENT page is complete
       if (answeredCount >= totalCount) {
-          $btn.addClass('ready').text(isLastPage ? 'Submit' : 'Next Page');
+          $btn.addClass('ready').text(isLastPage ? 'Check' : 'Next Page');
+          if (!isLastPage) {
+            $btn.addClass('hint-pulse');
+          } else {
+            $btn.removeClass('hint-pulse');
+          }
       } else {
-          $btn.removeClass('ready').text('Complete Analysis');
+          $btn.removeClass('ready hint-pulse').text('Complete Analysis');
       }
     },
 
@@ -602,7 +669,132 @@ define([
      * Called when the student clicks Submit (submit mode only).
      */
     onSubmitIdentification: function () {
-      this.exerciseContext.submitIdentPage({ fromUI: true });
+      var graded = this.exerciseContext.submitIdentPage({ fromUI: true, mode: this._currentMode });
+      if (graded && graded.completedExercise && graded.result === 'correct') {
+        this._launchConfetti();
+      }
+    },
+
+    _launchConfetti: function () {
+      var canvas = document.createElement('canvas');
+      canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+      document.body.appendChild(canvas);
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      var ctx = canvas.getContext('2d');
+      var particles = [];
+      var colors = ['#4facfe','#00f2fe','#f6d365','#fda085','#84fab0','#8fd3f4','#a18cd1','#fbc2eb'];
+      for (var i = 0; i < 120; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height * 0.4,
+          r: Math.random() * 7 + 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 4,
+          vy: Math.random() * 3 + 2,
+          alpha: 1,
+          rot: Math.random() * 360,
+          rotV: (Math.random() - 0.5) * 6,
+        });
+      }
+      var startTime = Date.now();
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        var elapsed = Date.now() - startTime;
+        particles.forEach(function(p) {
+          p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.rot += p.rotV;
+          p.alpha = Math.max(0, 1 - elapsed / 2000);
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot * Math.PI / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.5);
+          ctx.restore();
+        });
+        if (elapsed < 2200) {
+          requestAnimationFrame(draw);
+        } else {
+          document.body.removeChild(canvas);
+        }
+      }
+      draw();
+    },
+
+    _onIdentKeyDown: function (e) {
+      if (!this._isIdentificationLikeExercise()) return;
+      if ($(e.target).is("input, textarea, select") || e.target.isContentEditable) return;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        this.exerciseContext.goToIdentPage(this.exerciseContext.getIdentPage() + 1);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        this.exerciseContext.goToIdentPage(this.exerciseContext.getIdentPage() - 1);
+      }
+    },
+
+    renderModeToggle: function () {
+      if (this._modeLocked || this._currentMode === "test") {
+        $("#ident-mode-container").remove();
+        return;
+      }
+
+      var $container = $("#ident-mode-container");
+      if ($container.length === 0) {
+        $container = $('<div id="ident-mode-container" class="ident-mode-toggle"></div>');
+        $("#identification-actions").append($container);
+
+        if ($("#ident-toggle-css").length === 0) {
+          $("<style id='ident-toggle-css'>" +
+            ".ident-mode-toggle { display: flex; justify-content: center; margin-top: 15px; font-family: sans-serif; }" +
+            ".mode-switch { position: relative; display: inline-flex; background: #f1f5f9; border-radius: 999px; padding: 4px; border: 1px solid #e2e8f0; }" +
+            ".mode-option { padding: 6px 16px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; transition: all 0.2s; border-radius: 999px; z-index: 1; }" +
+            ".mode-option.active { color: #0f172a; background: white; shadow: 0 1px 3px rgba(0,0,0,0.1); }" +
+            ".mode-option:hover:not(.active) { color: #475569; }" +
+            "</style>").appendTo("head");
+        }
+      }
+
+      var self = this;
+      $container.empty();
+      var $switch = $('<div class="mode-switch"></div>');
+      
+      var modes = [
+        { id: "practice", label: "Practice" },
+        { id: "submit", label: "Submit" }
+      ];
+
+      _.each(modes, function (m) {
+        var $opt = $('<div class="mode-option"></div>').text(m.label).data("mode", m.id);
+        if (self._currentMode === m.id) {
+          $opt.addClass("active");
+        }
+        $opt.on("click", function () {
+          self.onToggleMode(m.id);
+        });
+        $switch.append($opt);
+      });
+
+      $container.append($switch);
+    },
+
+    onToggleMode: function (newMode) {
+      if (this._modeLocked || this._currentMode === "test" || this._currentMode === newMode) {
+        return;
+      }
+      this._currentMode = newMode;
+      this.exerciseContext.sessionMode = newMode;
+      
+      // Toggle Submit button visibility
+      if (newMode === 'submit') {
+        $('#identification-submit').show();
+      } else {
+        $('#identification-submit').hide();
+        $('#ident-progress-container').hide();
+      }
+
+      this.renderModeToggle();
+      this.render(); // Re-render to update UI elements
     },
     /**
      * Chorale mode setup: ensure grader is initialized; keep display settings
@@ -630,6 +822,45 @@ define([
       this.renderExerciseStatus();
       if (this._isIdentificationLikeExercise()) {
         this.renderExerciseText();
+      }
+
+      // Playback controls — only for chorale exercise types (idempotent)
+      var definition = this.exerciseContext.getDefinition();
+      if (definition.isChorale() || (definition.isChoraleIdentification && definition.isChoraleIdentification())) {
+        var $toolbar = $("#staff-toolbar");
+        if ($toolbar.length) {
+          var self = this;
+          renderPlaybackControls($toolbar, this.scorePlayer, function () {
+            var score = definition.getScore ? definition.getScore() : null;
+            if (!score) return null;
+            var tl = ScoreTimeline.buildTimeline(score);
+            // Group by onset (same as ScorePlayer.groupByOnset) to build per-window maps.
+            var onsetSeen = {};
+            var order = [];
+            for (var i = 0; i < tl.length; i++) {
+              var ev = tl[i];
+              if (!onsetSeen[ev.onset]) {
+                onsetSeen[ev.onset] = { measureIndex: ev.measureIndex };
+                order.push(ev.onset);
+              }
+            }
+            order.sort(function (a, b) { return a - b; });
+            self._playbackWindowOnsets = order.slice();
+            self._playbackWindowMeasures = order.map(function (onset) { return onsetSeen[onset].measureIndex; });
+
+            // Build measure → tick-offset map so we can convert global onset to page-local onset.
+            // _playbackMeasureTickOffset[measureIndex] = cumulative global tick at start of that measure.
+            var measureOffset = {};
+            for (var j = 0; j < tl.length; j++) {
+              var e = tl[j];
+              if (!(e.measureIndex in measureOffset)) {
+                measureOffset[e.measureIndex] = e.onset;
+              }
+            }
+            self._playbackMeasureTickOffset = measureOffset;
+            return tl;
+          });
+        }
       }
 
       return this;
@@ -873,6 +1104,7 @@ define([
         if (score && score.measures && score.measures.length > 0) {
           var self = this;
           this._identWindowLayout = {};
+          this._identWindowLayoutByOnset = {};
           this._updateChoraleViewport(score);
           var canvas = this.el[0];
           var display = definition.getDisplay() || {};
@@ -952,6 +1184,11 @@ define([
                 return;
               }
               self._identWindowLayout[slot.windowIndex] = slot;
+              // Index by "measureIndex:pageLocalOnset" for cross-page playback highlight lookup.
+              // The adapter emits absolute measureIndex and page-local onset.
+              if (slot.measureIndex !== null && slot.measureIndex !== undefined && slot.onset !== null && slot.onset !== undefined) {
+                self._identWindowLayoutByOnset[slot.measureIndex + ":" + slot.onset] = slot;
+              }
             },
           });
 
@@ -995,6 +1232,11 @@ define([
         !score.measures ||
         !score.measures.length
       ) {
+        return;
+      }
+      // During playback page turns, honour the override and skip grader-based calculation.
+      if (this._playbackOverridePage !== null && this._playbackOverridePage !== undefined) {
+        this._chorale.startMeasure = this._playbackOverridePage;
         return;
       }
       var totalMeasures = score.measures.length;
@@ -1662,20 +1904,80 @@ define([
      */
     onClickPristine: function () {
       var definition = this.exerciseContext.getDefinition();
-      
+
       // Reset chorale state if in chorale mode
       if (definition.isChorale()) {
         this.initChoraleMode();
       }
-      
+
       // Reset exercise context state
       this.exerciseContext.done = false;
       this.exerciseContext.sealed = false;
       this.exerciseContext.state = this.exerciseContext.STATE.READY;
-      
+
       // Re-render
       this.render();
       this.renderExerciseStatus();
+    },
+
+    _drawPlaybackHighlight: function () {
+      var idx = this._playbackWindowIndex;
+      if (idx === null || idx === undefined) return;
+      if (!this._playbackWindowOnsets) return;
+
+      var globalOnset = this._playbackWindowOnsets && this._playbackWindowOnsets[idx];
+      if (globalOnset === undefined) return;
+      var measureIdx = this._playbackWindowMeasures && this._playbackWindowMeasures[idx];
+      if (measureIdx === undefined) return;
+
+      var maxMeasures = (this._chorale && this._chorale.maxMeasures) || 4;
+      var targetStart = Math.floor(measureIdx / maxMeasures) * maxMeasures;
+
+      // Convert global onset → page-local onset by subtracting the tick at page start.
+      var pageStartTick = this._playbackMeasureTickOffset && this._playbackMeasureTickOffset[targetStart];
+      if (pageStartTick === undefined) return;
+      var pageLocalOnset = globalOnset - pageStartTick;
+      var cacheKey = measureIdx + ":" + pageLocalOnset;
+
+      // Navigate to the correct page if this window is not on the current rendered page.
+      var slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[cacheKey];
+      if (!slot && this._chorale) {
+        if (targetStart !== this._chorale.startMeasure) {
+          // Set flag so _updateChoraleViewport doesn't clobber our target page.
+          this._playbackOverridePage = targetStart;
+          this._chorale.startMeasure = targetStart;
+          this.render(); // synchronously repopulates _identWindowLayoutByOnset
+          this._playbackOverridePage = null;
+          slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[cacheKey];
+        }
+      }
+      if (!slot) return;
+
+      var canvas = this.el[0];
+      var canvasOffset = $(canvas).offset();
+      var w = 30;
+      var h = slot.y;  // bassStave.getBottomY() + 18
+      var left = canvasOffset.left + slot.x - w / 2;
+      var top = canvasOffset.top;
+
+      var $hl = $("#playback-highlight");
+      if (!$hl.length) {
+        $hl = $('<div id="playback-highlight">').css({
+          position: "fixed",
+          pointerEvents: "none",
+          background: "rgba(79, 172, 254, 0.15)",
+          border: "1px solid rgba(79, 172, 254, 0.35)",
+          boxSizing: "border-box",
+          zIndex: 10,
+        });
+        $("body").append($hl);
+      }
+
+      $hl.css({ left: left, top: top, width: w, height: h }).show();
+    },
+
+    _clearPlaybackHighlight: function () {
+      $("#playback-highlight").hide();
     },
   });
 

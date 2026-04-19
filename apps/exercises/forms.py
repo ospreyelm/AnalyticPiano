@@ -8,20 +8,161 @@ from prettyjson import PrettyJSONWidget
 from apps.exercises.models import Exercise, Playlist, PerformanceData, Course
 from django.utils.html import conditional_escape, format_html
 
+
+class CollapsibleCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
+    template_name = "dashboard/widgets/collapsible_checkbox_select.html"
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        # We ensure the template knows how to handle the grouped structure
+        return context
+
 CONTENT_TAGS = [
-    ("intervals", "Intervals"),
-    ("scales", "Scales"),
-    ("triads", "Triads"),
-    ("seventh-chords", "Seventh Chords"),
-    ("voice-leading", "Voice Leading"),
-    ("roman-numerals", "Roman Numerals"),
-    ("secondary-dominants", "Secondary Dominants"),
-    ("counterpoint", "Counterpoint"),
-    ("harmonic-dictation", "Harmonic Dictation"),
-    ("melodic-dictation", "Melodic Dictation"),
-    ("rhythm", "Rhythm"),
-    ("sight-singing", "Sight Singing"),
+    ("General Concepts", [
+        ("intervals", "Intervals"),
+        ("scales", "Scales"),
+        ("triads", "Triads"),
+        ("seventh-chords", "Seventh Chords"),
+        ("voice-leading", "Voice Leading"),
+        ("roman-numerals", "Roman Numerals"),
+        ("secondary-dominants", "Secondary Dominants"),
+        ("counterpoint", "Counterpoint"),
+        ("harmonic-dictation", "Harmonic Dictation"),
+        ("melodic-dictation", "Melodic Dictation"),
+        ("sight-singing", "Sight Singing"),
+        ("rhythm", "Rhythm"),
+        ("bach", "Bach Chorales"),
+    ]),
+    
+    ("Core Sequence (Tiers 1-5)", [
+        ("unit:1", "Unit 1: Pitch & staff notation"),
+        ("unit:2", "Unit 2: Rhythm & meter"),
+        ("unit:3", "Unit 3: Scales & key signatures"),
+        ("unit:4", "Unit 4: Intervals"),
+        ("unit:5", "Unit 5: Triads & seventh chords"),
+        ("unit:6", "Unit 6: Voice leading fundamentals"),
+        ("unit:7", "Unit 7: Cadences"),
+        ("unit:8", "Unit 8: Non-harmonic tones"),
+        ("unit:9", "Unit 9: Tonic & dominant"),
+        ("unit:10", "Unit 10: First inversions"),
+        ("unit:11", "Unit 11: Pre-dominants"),
+        ("unit:12", "Unit 12: Second inversions"),
+        ("unit:13", "Unit 13: Rule of the octave"),
+        ("unit:14", "Unit 14: Diatonic seventh chords"),
+        ("unit:15", "Unit 15: Sequences"),
+        ("unit:16", "Unit 16: Applied chords"),
+        ("unit:17", "Unit 17: Modal mixture"),
+        ("unit:18", "Unit 18: Neapolitan & aug. sixths"),
+        ("unit:19", "Unit 19: Modulation I"),
+        ("unit:20", "Unit 20: Modulation II"),
+        ("unit:21", "Unit 21: Formal structures"),
+        ("unit:22", "Unit 22: Sonata & rondo forms"),
+        ("unit:23", "Unit 23: Enharmonic reinterpretation"),
+        ("unit:24", "Unit 24: Chromatic mediants"),
+        ("unit:25", "Unit 25: Omnibus progressions"),
+        ("unit:26", "Unit 26: Extended tertian harmony"),
+        ("unit:27", "Unit 27: Tonal paraphrase & dissolution"),
+        ("unit:28", "Unit 28: Modal borrowing & exoticism"),
+        ("unit:29", "Unit 29: Pitch-class sets I"),
+        ("unit:30", "Unit 30: Pitch-class sets II"),
+        ("unit:31", "Unit 31: Symmetry & inversional axes"),
+        ("unit:32", "Unit 32: Twelve-tone serialism I"),
+        ("unit:33", "Unit 33: Twelve-tone serialism II"),
+        ("unit:34", "Unit 34: Diatonic modes"),
+        ("unit:35", "Unit 35: Non-diatonic scales"),
+        ("unit:36", "Unit 36: Rhythm & meter (post-tonal)"),
+        ("unit:37", "Unit 37: Neo-Riemannian theory"),
+        ("unit:38", "Unit 38: Spectralism & microtonality"),
+        ("unit:39", "Unit 39: Minimalism & process music"),
+        ("unit:40", "Unit 40: Textural analysis"),
+        ("unit:41", "Unit 41: Jazz chord symbols & voicings"),
+        ("unit:42", "Unit 42: ii–V–I & cadential patterns"),
+        ("unit:43", "Unit 43: Blues harmony"),
+        ("unit:44", "Unit 44: Jazz scales & modes"),
+        ("unit:45", "Unit 45: Chord-scale theory"),
+        ("unit:46", "Unit 46: Reharmonization"),
+        ("unit:47", "Unit 47: Jazz form & improvisation"),
+        ("unit:48", "Unit 48: Modal jazz"),
+        ("unit:49", "Unit 49: Post-bop & free jazz"),
+        ("unit:50", "Unit 50: Pop & rock harmony"),
+        ("unit:51", "Unit 51: Film & functional harmony"),
+    ]),
+    
+    ("Branch A: Figured Bass", [
+        ("unit:A1", "Unit A1: Intro to thoroughbass"),
+        ("unit:A2", "Unit A2: 6/3 chords (first inversion)"),
+        ("unit:A3", "Unit A3: 6/4 chords (second inversion)"),
+        ("unit:A4", "Unit A4: 7–6 suspensions"),
+        ("unit:A5", "Unit A5: 4–3 suspensions"),
+        ("unit:A6", "Unit A6: 2–3 bass suspensions"),
+        ("unit:A7", "Unit A7: Dominant seventh (7 figure)"),
+        ("unit:A8", "Unit A8: 6/5 chords"),
+        ("unit:A9", "Unit A9: 4/2 chords"),
+        ("unit:A10", "Unit A10: Ninths (9/8, 9/7, 9/4)"),
+        ("unit:A11", "Unit A11: Double suspensions"),
+        ("unit:A12", "Unit A12: Chromatic figures"),
+        ("unit:A13", "Unit A13: Partial figuring"),
+        ("unit:A14", "Unit A14: Keyboard realization"),
+        ("unit:A15", "Unit A15: Figured bass → Roman numerals"),
+    ]),
+
+    ("Branch B: Partimenti", [
+        ("unit:B1", "Unit B1: Formal clausulae"),
+        ("unit:B2", "Unit B2: Simple cadence (2 parts)"),
+        ("unit:B3", "Unit B3: Bass clausula & 3-part cadence"),
+        ("unit:B4", "Unit B4: Alto clausula & 4-part cadence"),
+        ("unit:B5", "Unit B5: Shorthand figures for 5/3"),
+        ("unit:B6", "Unit B6: Diminution fundamentals"),
+        ("unit:B7", "Unit B7: Ascending parallel tenths"),
+        ("unit:B8", "Unit B8: Descending parallel tenths"),
+        ("unit:B9", "Unit B9: Folia bass & variations"),
+        ("unit:B10", "Unit B10: Syncopated diminution"),
+        ("unit:B11", "Unit B11: Compound cadence (2 parts)"),
+        ("unit:B12", "Unit B12: Compound cadence (3–4 parts)"),
+        ("unit:B13", "Unit B13: Double cadence"),
+        ("unit:B14", "Unit B14: Opening formulae"),
+        ("unit:B15", "Unit B15: Hexachordal system"),
+        ("unit:B16", "Unit B16: Half-step motion in bass"),
+        ("unit:B17", "Unit B17: Rule of the octave (major)"),
+        ("unit:B18", "Unit B18: Rule of the octave (minor)"),
+        ("unit:B19", "Unit B19: Advanced rule of the octave"),
+        ("unit:B20", "Unit B20: Partimenti I — stepwise bass"),
+        ("unit:B21", "Unit B21: Partimenti II — leaping bass"),
+        ("unit:B22", "Unit B22: Evaded & deceptive cadences"),
+        ("unit:B23", "Unit B23: Three constraint systems"),
+        ("unit:B24", "Unit B24: Lament bass & omnibus"),
+        ("unit:B25", "Unit B25: Bariolage & arpeggiation"),
+        ("unit:B26", "Unit B26: Double counterpoint"),
+        ("unit:B27", "Unit B27: Imitation & sequences"),
+        ("unit:B28", "Unit B28: Introduction to fugue"),
+        ("unit:B29", "Unit B29: Fugue from partimento"),
+        ("unit:B30", "Unit B30: Partimento as concerto"),
+    ]),
+
+    ("Branch C: Interval Cycles", [
+        ("unit:C1", "Unit C1: Interval cycles 1–6"),
+        ("unit:C2", "Unit C2: Cyclic collections"),
+        ("unit:C3", "Unit C3: Transpositional symmetry"),
+        ("unit:C4", "Unit C4: Slonimsky's Thesaurus overview"),
+        ("unit:C5", "Unit C5: Interpolation"),
+        ("unit:C6", "Unit C6: Ultrapolation & infrapolation"),
+        ("unit:C7", "Unit C7: Combination cycles in analysis"),
+        ("unit:C8", "Unit C8: Composition with interval & combination cycles"),
+    ]),
+
+    ("Branch D: Neo-Riemannian", [
+        ("unit:D1", "Unit D1: P, L, R transformations"),
+        ("unit:D2", "Unit D2: The Tonnetz"),
+        ("unit:D3", "Unit D3: Compound transformations"),
+        ("unit:D4", "Unit D4: Hexatonic & octatonic poles"),
+        ("unit:D5", "Unit D5: NR analysis — 19th-century repertoire"),
+        ("unit:D6", "Unit D6: Voice-leading geometry"),
+        ("unit:D7", "Unit D7: NR and jazz"),
+        ("unit:D8", "Unit D8: NR and post-tonal music"),
+    ]),
 ]
+
+
 
 
 class ExpansiveForm(forms.ModelForm):
@@ -494,7 +635,7 @@ class ExerciseForm(forms.ModelForm):
 
     tags = forms.MultipleChoiceField(
         choices=CONTENT_TAGS,
-        widget=forms.CheckboxSelectMultiple,
+        widget=CollapsibleCheckboxSelectMultiple,
         required=False,
         label="Tags",
     )
@@ -747,7 +888,12 @@ class ExerciseForm(forms.ModelForm):
             "chorale_mode": data.get("mode") or "play-all-voices",
             "chorale_label_mode": label_mode,
             "chorale_show_chord_labels": display.get("showChordLabels", False),
-            "chorale_transpose": display.get("transpose", 0),
+            "isAdaptive": getattr(playlist, "is_adaptive", False),
+            "isDynamic": getattr(playlist, "is_dynamic", False),
+            "playlistTags": getattr(playlist, "tags", []),
+            "minComplexity": getattr(playlist, "min_complexity", 1),
+            "maxComplexity": getattr(playlist, "max_complexity", 10),
+            "exerciseIsPerformed": exercise_is_performed,
             "chorale_tempo": display.get("tempo", 60),
             "chorale_wait_mode": display.get("waitMode", False),
             "chorale_onset_window_ms": grading.get("onsetWindowMs", 150),
@@ -1011,6 +1157,7 @@ class ExerciseForm(forms.ModelForm):
         instance.data["compoundIntervals"] = bool(self.cleaned_data.get("compound_intervals", False))
 
 
+
 class PlaylistForm(forms.ModelForm):
     # EXPANSIVE_FIELD = "exercises"
     # EXPANSIVE_FIELD_MODEL = Exercise
@@ -1026,7 +1173,7 @@ class PlaylistForm(forms.ModelForm):
 
     tags = forms.MultipleChoiceField(
         choices=CONTENT_TAGS,
-        widget=forms.CheckboxSelectMultiple,
+        widget=CollapsibleCheckboxSelectMultiple,
         required=False,
         label="Tags",
     )
@@ -1044,7 +1191,12 @@ class PlaylistForm(forms.ModelForm):
         "id",
         "name",
         "is_public",
+        "is_dynamic",
+        "is_adaptive",
+        "feedback_mode",
         "tags",
+        "min_complexity",
+        "max_complexity",
         "is_auto",
         "transposition_type",
         "transpose_requests",

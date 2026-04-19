@@ -11,6 +11,61 @@ define([
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
   var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
+  var SKILL_CHORD_PATTERNS = {
+    // Unit-level tags (from playlist.tags / CONTENT_TAGS)
+    "unit:9":  /^(I|V|V7)$/,
+    "unit:10": /^(I|ii|iii|IV|V|vi|vii°)(6)$/,
+    "unit:11": /^(IV|ii|ii6|vi)$/,
+    "unit:12": /^(I|ii|iii|IV|V|vi|vii°)(64)$/,
+    "unit:16": /^V7?\//,
+    "unit:18": /^(N6?|(It|Ger|Fr)\+?6)/,
+
+    // Granular skill tags (from playlist.skill_tags)
+    "tonic_dominant_exclusively": /^(I|V|V7)$/,
+    "Diatonic_Triads":            /^(I|ii|iii|IV|V|vi|vii°)$/,
+    "Inversions_First":        /^(I|ii|iii|IV|V|vi|vii°)(6)$/,
+    "Inversions_Second":       /^(I|ii|iii|IV|V|vi|vii°)(64)$/,
+    "Dominant_Seventh":        /^V7$/,
+    "Diminished_Seventh":      /^vii°7/,
+    "Half_Diminished_Seventh": /^viiø7/,
+    "Secondary_Dominant":      /^V7?\//,
+    "Secondary_Leading_Tone":  /^vii°(7)?\//,
+    "Neapolitan_Sixth":        /^N6?$/,
+    "Augmented_Sixth":         /^(It|Ger|Fr)\+?6/,
+  };
+
+  function applySkillFilter(problems, skillTags) {
+    if (!skillTags || skillTags.length === 0) {
+      return problems;
+    }
+    
+    // Identify Unit 9 specifically (Tonic/Dominant only)
+    var isUnit9 = _.some(skillTags, function(t) { 
+      return t === 'unit:9' || t === 'unit:9_diatonic_triads' || t === 'unit:9_Dominant_Seventh'; 
+    });
+
+    return _.map(problems, function (p) {
+      if (p.hidden) return p;
+      
+      var matches = false;
+      if (isUnit9) {
+        // Root position only: I, i, V, V7 — no inversions
+        var answer = (p.answer || "").trim();
+        matches = (answer === 'I' || answer === 'i' || answer === 'V' || answer === 'V7');
+      } else {
+        matches = _.some(skillTags, function (tag) {
+          var cleanTag = tag.replace(/^unit:\d+_/, '');
+          return p.answer.startsWith(cleanTag);
+        });
+      }
+      
+      if (!matches) {
+        p.hidden = true;
+      }
+      return p;
+    });
+  }
+
   /**
    * ExerciseDefinition object is responsible for knowing the definition
    * or description of an exercise.
@@ -41,6 +96,7 @@ define([
     chorale: "chorale",
     chorale_identification: "chorale_identification",
     identification: "identification",
+    musicxml: "musicxml",
   };
 
   function normalizeAnalysisLabel(label) {
@@ -326,17 +382,27 @@ define([
       return computeWindowLabel(window.midiStack, analysisType, analyzer, compoundIntervals, window.events);
     });
 
-    return _.map(windows, function (window, idx) {
+    var problems = [];
+    var firstOnset = windows.length > 0 ? windows[0].onset : 0;
+    
+    _.each(windows, function (window, idx) {
       var answer = labels[idx] || "";
       var measureIndex = window.events && window.events.length ? window.events[0].measureIndex : 0;
-      return {
+      
+      // ALIGNMENT FIX: Normalize onset relative to the first window of the exercise
+      var relativeOnset = window.onset - firstOnset;
+
+      problems.push({
         windowIndex: idx,
         measureIndex: measureIndex,
-        onset: window.onset,
+        onset: relativeOnset,
         answer: answer,
         choices: buildChoices(answer, labels, analysisType, compoundIntervals),
-      };
+        hidden: (answer === "") // Mark as hidden if no harmonic answer
+      });
     });
+
+    return problems;
   }
 
   /**
@@ -348,6 +414,12 @@ define([
   function convertCIRKeyToHarmonyLabKey(cirKey) {
     if (!cirKey || typeof cirKey !== 'string') {
       return 'jC_'; // default to C major
+    }
+    
+    // Idempotency check: If it already looks like a HarmonyLab key (starts with i/j followed by A-G), return as is.
+    // HL keys are normally 3 chars (e.g. 'jC_', 'iF#'), but we'll accept anything that starts with the mode prefix.
+    if ((cirKey.startsWith('i') || cirKey.startsWith('j')) && cirKey.length >= 2 && /^[A-G]/.test(cirKey[1])) {
+        return cirKey;
     }
     
     // Check if minor (ends with 'm')
@@ -492,6 +564,14 @@ define([
       return this.exercise.type === "chorale_identification";
     },
     /**
+     * Returns true if this is a musicxml exercise.
+     *
+     * @return {boolean}
+     */
+    isMusicXML: function () {
+      return this.exercise.type === "musicxml";
+    },
+    /**
      * Returns true if this is an identification exercise.
      *
      * @return {boolean}
@@ -608,9 +688,9 @@ define([
       var exercise = {};
       var problems = [];
 
-      // Special handling for chorale exercises
-      if (definition.type === "chorale") {
-        exercise.type = "chorale";
+      // Special handling for chorale and musicxml exercises
+      if (definition.type === "chorale" || definition.type === "musicxml") {
+        exercise.type = definition.type;
         exercise.score = definition.score || {};
         exercise.mode = definition.mode || "play-all-voices";
         exercise.targetVoices = definition.targetVoices || "all";
@@ -676,7 +756,13 @@ define([
           }
         }
         exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
-        exercise.problems = buildChoraleIdentificationProblems(exercise);
+        exercise.playlistSkillTags = definition.playlistSkillTags || [];
+        exercise.skill_tags = definition.skillTags || [];
+        exercise.playlistTags = definition.playlistTags || [];
+        exercise.problems = applySkillFilter(
+            buildChoraleIdentificationProblems(exercise),
+            (exercise.playlistSkillTags).concat(exercise.playlistTags)
+        );
 
         return exercise;
       }
@@ -861,6 +947,9 @@ define([
       }
 
       exercise.performing_course = definition.courseId;
+      exercise.skillTags = definition.skillTags || [];
+      exercise.playlistSkillTags = definition.playlistSkillTags || [];
+      exercise.playlistTags = definition.playlistTags || [];
 
       return exercise;
     },
