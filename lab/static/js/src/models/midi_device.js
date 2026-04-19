@@ -66,6 +66,12 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
     baseUrl: "/static/audio/",
   }).connect(vol);
 
+  /* Helper function to convert MIDI note number to Tone.js note name */
+  var PITCH_NAMES = ["c","c#","d","eb","e","f","f#","g","g#","a","bb","b"];
+  function _midiToToneName(midi) {
+    return PITCH_NAMES[(midi + 12) % 12] + (Math.floor(midi / 12) - 1).toString();
+  }
+
   /* load sticky settings */
   var STICKY_VOLUME = null;
   var STICKY_MUTE = null;
@@ -417,23 +423,7 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
     } else {
       /* Tone.js output */
       /* convert MIDI number to pitch name */
-      const pitchNames = [
-        "c",
-        "c#",
-        "d",
-        "eb",
-        "e",
-        "f",
-        "f#",
-        "g",
-        "g#",
-        "a",
-        "bb",
-        "b",
-      ];
-      let toneJsNoteName =
-        pitchNames[(msg[1] + 12) % 12] +
-        (Math.floor(msg[1] / 12) - 1).toString();
+      var toneJsNoteName = _midiToToneName(msg[1]);
 
       if (msg[0] == 144) {
         /* note on, channel 1 */
@@ -457,6 +447,35 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
     this.inputs = [];
     this.outputs = [];
     this.trigger("clear");
+  };
+
+  /**
+   * Plays a note via the sampler.
+   *
+   * @param {number} midi - MIDI note number
+   * @return undefined
+   */
+  MidiDevice.prototype.playNote = function (midi) {
+    sampler.triggerAttack(_midiToToneName(midi));
+  };
+
+  /**
+   * Releases a note via the sampler.
+   *
+   * @param {number} midi - MIDI note number
+   * @return undefined
+   */
+  MidiDevice.prototype.releaseNote = function (midi) {
+    sampler.triggerRelease(_midiToToneName(midi));
+  };
+
+  /**
+   * Releases all notes via the sampler.
+   *
+   * @return undefined
+   */
+  MidiDevice.prototype.releaseAllNotes = function () {
+    sampler.releaseAll();
   };
 
   MicroEvent.mixin(MidiDevice);
