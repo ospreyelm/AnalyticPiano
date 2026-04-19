@@ -144,7 +144,7 @@ The VexFlow adapter emits `onWindowPosition({windowIndex, onset, x, y})` where `
 
 - **Scope:** Play sheet playback is only active in corpus mode (`?newvf` + `?loadCorpus` in URL). In standard chord-entry mode there is no CIR score/timeline — the Play button is hidden (not just disabled) when `corpusFile` is absent.
 - `ScorePlayer` instantiated in play sheet's `initComponent()`
-- `renderPlaybackControls()` called from `render()` (idempotent); passes `getTimeline` closure returning `ScoreTimeline.buildTimeline(self._corpusPayload.score)` — rebuilt from the cached payload each time play is clicked
+- `renderPlaybackControls()` called from `render()` (idempotent); passes `getTimeline` closure that returns `self._cachedTimeline` — a timeline built once in `renderWithState()` via `ScoreTimeline.buildTimeline(payload.score)` and stored on the sheet component. Invalidated (set to null) when `_corpusPayload` changes. This avoids rebuilding O(measures × voices × notes) on every Play click.
 - **Stop on corpus reload:** Corpus loading happens inside `renderWithState()` in `play_sheet.js:render()`. Call `scorePlayer.stop()` at the top of `renderWithState()` before re-rendering — this covers both first load and subsequent re-renders triggered by UI changes (voice filter, key signature)
 - Playback plays full score regardless of active voice filters (voices, octave-shift) — always uses raw timeline from full CIR score
 
@@ -169,7 +169,7 @@ Benefit: volume and mute state are respected automatically — if student mutes 
 |----------|----------|
 | Play clicked, no score loaded | Button disabled until timeline available |
 | Exercise advances during playback | `renderPristine` in music.js calls `stop()` first |
-| Key signature change or other re-render | `renderPristine` path covers this; no additional stop needed |
+| Key signature change triggers re-render | `keySignature.bind("change", render)` calls `render()` directly, not `renderPristine`. Highlight clears on re-render; position cache rebuilds from new `onWindowPosition` callbacks. Highlight redraws correctly on next `tick` — same behavior as the `render()` called during playback row. No `stop()` fired. |
 | Corpus reloads during playback | `stop()` called before reload |
 | Student plays MIDI during playback | Works normally — grading unaffected |
 | Playback ends naturally | `stopped` event fires, button resets to Play |
