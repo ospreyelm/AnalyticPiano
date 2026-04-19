@@ -217,6 +217,7 @@ define([
           sheet: new ExerciseSheetComponent({
             exerciseContext: this.models.exerciseContext,
             keySignature: this.models.keySignature,
+            midiDevice: this.models.midiDevice,
           }),
           analysisSettings: definition.getAnalysisSettings(),
           staffDistribution: definition.getStaffDistribution(),

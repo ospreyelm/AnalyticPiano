@@ -116,7 +116,7 @@ define([
 
       // Playback
       var self = this;
-      this.scorePlayer = new ScorePlayer(window.midiDevice);
+      this.scorePlayer = new ScorePlayer(this.settings.midiDevice);
       this.scorePlayer.bind("tick", function (windowIndex) {
         self._playbackWindowIndex = windowIndex;
         self._drawPlaybackHighlight();
