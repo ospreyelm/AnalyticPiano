@@ -64,7 +64,6 @@ define([
     this._cachedTimeline = null;
     this._windowPositionCache = {};
     this._playbackWindowIndex = null;
-    this._playbackHighlightRect = null;
 
     if ("chords" in this.settings) {
       this.chords = this.settings.chords;
@@ -646,33 +645,30 @@ define([
       if (!slot) return;
 
       var canvas = this.el[0];
-      var ctx = canvas.getContext("2d");
-
-      this._clearPlaybackHighlight();
-
-      var x = slot.x;
-      var y = 0;
+      var canvasOffset = $(canvas).offset();
       var w = 30;
       var h = slot.y;
+      var left = canvasOffset.left + slot.x - w / 2;
+      var top = canvasOffset.top;
 
-      ctx.save();
-      ctx.fillStyle = "rgba(79, 172, 254, 0.15)";
-      ctx.strokeStyle = "rgba(79, 172, 254, 0.35)";
-      ctx.lineWidth = 1;
-      ctx.fillRect(x - w / 2, y, w, h);
-      ctx.strokeRect(x - w / 2, y, w, h);
-      ctx.restore();
+      var $hl = $("#playback-highlight");
+      if (!$hl.length) {
+        $hl = $('<div id="playback-highlight">').css({
+          position: "fixed",
+          pointerEvents: "none",
+          background: "rgba(79, 172, 254, 0.15)",
+          border: "1px solid rgba(79, 172, 254, 0.35)",
+          boxSizing: "border-box",
+          zIndex: 10,
+        });
+        $("body").append($hl);
+      }
 
-      this._playbackHighlightRect = { x: x - w / 2, y: y, w: w, h: h };
+      $hl.css({ left: left, top: top, width: w, height: h }).show();
     },
 
     _clearPlaybackHighlight: function () {
-      if (!this._playbackHighlightRect) return;
-      var r = this._playbackHighlightRect;
-      var canvas = this.el[0];
-      var ctx = canvas.getContext("2d");
-      ctx.clearRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
-      this._playbackHighlightRect = null;
+      $("#playback-highlight").hide();
     },
 
     /* solution for saving data as exercise; called by render() and saved to sessionStorage */
