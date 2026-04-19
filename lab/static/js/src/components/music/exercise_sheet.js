@@ -15,6 +15,8 @@ define([
   "./rendering/vexflow_adapter",
   "./score_timeline",
   "app/components/input/label_input",
+  "app/models/score_player",
+  "app/components/music/playback_controls",
 ], function (
   $,
   $UI,
@@ -30,7 +32,9 @@ define([
   ExerciseNoteFactory,
   VexFlowAdapter,
   ScoreTimeline,
-  LabelInput
+  LabelInput,
+  ScorePlayer,
+  renderPlaybackControls
 ) {
   "use strict";
 
@@ -109,6 +113,20 @@ define([
       if (this._isIdentificationLikeExercise()) {
         this.initIdentificationMode();
       }
+
+      // Playback
+      var self = this;
+      this.scorePlayer = new ScorePlayer(window.midiDevice);
+      this.scorePlayer.bind("tick", function (windowIndex) {
+        self._playbackWindowIndex = windowIndex;
+        self._drawPlaybackHighlight();
+      });
+      this.scorePlayer.bind("stopped", function () {
+        self._playbackWindowIndex = null;
+        self._clearPlaybackHighlight();
+      });
+      this._playbackWindowIndex = null;
+      this._playbackHighlightRect = null;
     },
     /**
      * Initializes the canvas renderer and dom element.
@@ -805,6 +823,25 @@ define([
       this.renderExerciseStatus();
       if (this._isIdentificationLikeExercise()) {
         this.renderExerciseText();
+      }
+
+      // Playback controls — only for chorale exercise types (idempotent)
+      var definition = this.exerciseContext.getDefinition();
+      if (definition.isChorale() || (definition.isChoraleIdentification && definition.isChoraleIdentification())) {
+        var $toolbar = $("#staff-toolbar");
+        if ($toolbar.length) {
+          var self = this;
+          renderPlaybackControls($toolbar, this.scorePlayer, function () {
+            var score = definition.getScore ? definition.getScore() : null;
+            if (!score) return null;
+            var opts = {};
+            if (self._chorale) {
+              opts.startMeasure = self._chorale.startMeasure || 0;
+              opts.maxMeasures = self._chorale.maxMeasures || 4;
+            }
+            return ScoreTimeline.buildTimeline(score, opts);
+          });
+        }
       }
 
       return this;
@@ -1837,20 +1874,56 @@ define([
      */
     onClickPristine: function () {
       var definition = this.exerciseContext.getDefinition();
-      
+
       // Reset chorale state if in chorale mode
       if (definition.isChorale()) {
         this.initChoraleMode();
       }
-      
+
       // Reset exercise context state
       this.exerciseContext.done = false;
       this.exerciseContext.sealed = false;
       this.exerciseContext.state = this.exerciseContext.STATE.READY;
-      
+
       // Re-render
       this.render();
       this.renderExerciseStatus();
+    },
+
+    _drawPlaybackHighlight: function () {
+      var idx = this._playbackWindowIndex;
+      if (idx === null || idx === undefined) return;
+      var slot = this._identWindowLayout && this._identWindowLayout[idx];
+      if (!slot) return;
+
+      var canvas = this.el[0];
+      var ctx = canvas.getContext("2d");
+
+      this._clearPlaybackHighlight();
+
+      var x = slot.x;
+      var y = 0;
+      var w = 30;
+      var h = slot.y;  // bassStave.getBottomY() + 18
+
+      ctx.save();
+      ctx.fillStyle = "rgba(79, 172, 254, 0.15)";
+      ctx.strokeStyle = "rgba(79, 172, 254, 0.35)";
+      ctx.lineWidth = 1;
+      ctx.fillRect(x - w / 2, y, w, h);
+      ctx.strokeRect(x - w / 2, y, w, h);
+      ctx.restore();
+
+      this._playbackHighlightRect = { x: x - w / 2, y: y, w: w, h: h };
+    },
+
+    _clearPlaybackHighlight: function () {
+      if (!this._playbackHighlightRect) return;
+      var r = this._playbackHighlightRect;
+      var canvas = this.el[0];
+      var ctx = canvas.getContext("2d");
+      ctx.clearRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
+      this._playbackHighlightRect = null;
     },
   });
 
