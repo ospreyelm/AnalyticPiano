@@ -65,10 +65,13 @@ define(["lodash", "microevent", "Tone"], function (_, MicroEvent, Tone) {
         });
 
         // Schedule stopped event after last note release
-        var lastWin = windows[windows.length - 1];
-        var lastRelease = Math.max.apply(null, lastWin.events.map(function (ev) {
-          return ticksToSeconds(lastWin.onset + ev.duration, bpm);
-        }));
+        var lastRelease = 0;
+        windows.forEach(function (win) {
+          win.events.forEach(function (ev) {
+            var t = ticksToSeconds(win.onset + ev.duration, bpm);
+            if (t > lastRelease) lastRelease = t;
+          });
+        });
         Tone.Transport.schedule(function () {
           self._playing = false;
           device.releaseAllNotes();
