@@ -375,6 +375,7 @@ define([
         sheetComponent.renderExerciseText();
         scex.sealed = false;
         scex.done = false;
+        scex.graded = false;
         scex.timer = null;
         scex.timepoints = {};
 
