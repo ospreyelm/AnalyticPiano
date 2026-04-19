@@ -1,7 +1,7 @@
 # MIDI Playback Design
 
 **Date:** 2026-04-18  
-**Status:** Approved  
+**Status:** Approved (revised post code-review)  
 **Scope:** Add score playback to ExerciseSheetComponent and PlaySheetComponent
 
 ---
@@ -55,16 +55,16 @@ player.on('stopped', fn);       // called when playback ends or is cancelled
 - Accepts `timeline` — flat array from `ScoreTimeline.buildTimeline()`
 - Groups events by onset window (same grouping as `ChoraleGrader`)
 - Schedules all note attacks/releases via `Tone.Transport.schedule()` before calling `Tone.Transport.start()`
-- Tick conversion: `seconds = (ticks / 4096) * (60 / bpm)` (quarter note = 1024 ticks)
-- Uses existing `Tone.Sampler` from `MidiDevice` — ScorePlayer receives sampler reference at construction or calls notes via the existing `MidiDevice.noteOn/noteOff` interface
+- **Tick conversion:** `seconds = (ticks / 1024) * (60 / bpm)` — quarter note = 1024 ticks, so 1024 ticks at 60 BPM = 1 second. (A whole note = 4096 ticks = 4 seconds at 60 BPM.)
+- Uses `midiDevice.playNote(midi)` / `midiDevice.releaseNote(midi)` — see Sampler Access below
 - Fires `tick(windowIndex)` at the onset of each window via a scheduled callback
 - Fires `stopped` when transport reaches end or `stop()` is called
-- `stop()` calls `Tone.Transport.stop()` + `Tone.Transport.cancel()` + `sampler.releaseAll()`
+- `stop()` calls `Tone.Transport.stop()` + `Tone.Transport.cancel()` + releases all notes via `midiDevice.releaseAllNotes()`
 - No looping — single playthrough only
 
 **Tone.js notes:**
 - `Tone.Transport` is global — ScorePlayer starts and stops it. No conflict expected since nothing else uses Transport currently.
-- Sampler is already loaded and warm (24 piano samples, A0–C8)
+- Sampler is already loaded and warm (30 piano samples, A0–C8)
 
 ---
 
@@ -85,9 +85,11 @@ Injects into the toolbar DOM between nav buttons and existing exercise controls:
 - On play: calls `scorePlayer.play(timeline, tempo)`
 - On stop: calls `scorePlayer.stop()`
 - Listens for `stopped` event to reset button state when playback ends naturally
-- Both sheet components call `renderPlaybackControls()` from their `render()` method
+- **Idempotency:** `renderPlaybackControls()` checks for existing `#playback-controls` in container before injecting; if found, updates ScorePlayer reference and returns. This prevents DOM duplication on repeated `render()` calls.
 
-**Tempo persistence:** reads/writes `harmonylab.playback.tempo` in `sessionStorage` on slider change (matches existing volume persistence pattern in `midi_device.js`).
+**Tempo persistence:** reads/writes `harmonylab.playback.tempo` in `sessionStorage` on slider change.
+
+**Open question resolved:** MidiDevice volume persistence uses server-backed AJAX preferences, not sessionStorage. Playback tempo uses sessionStorage (simpler, not user-account-level preference).
 
 ---
 
@@ -101,20 +103,22 @@ Injects into the toolbar DOM between nav buttons and existing exercise controls:
 
 **Drawing:**
 
-- `_drawPlaybackHighlight()` reads cached window x-position from `_windowPositionCache` (see below)
+- `_drawPlaybackHighlight()` reads cached window center-x from `_windowPositionCache`
 - Draws a semi-transparent blue column on the VexFlow canvas:
   - Fill: `rgba(79, 172, 254, 0.15)`
   - Border: `1px solid rgba(79, 172, 254, 0.35)`
-  - Height: full staff system (top of treble staff to bottom of bass staff)
-  - Width: window column width from cache
+  - Height: full staff system (top of treble staff to bottom of bass staff — derive from stored y + fixed offset)
+  - **Width:** fixed 30px centered on cached x (adapter emits center x only, no column width)
 - Does **not** re-render VexFlow — canvas overlay only (fast, no flicker)
 - Clears previous rect before drawing new one (store previous rect coords)
 
 **Window position cache (`_windowPositionCache`):**
 
-- Exercise sheet already caches positions in `_identWindowLayout` (keyed by `windowIndex`) via `onWindowPosition` callback from VexFlow adapter
-- Play sheet needs equivalent: add `onWindowPosition` callback wiring to its render path in `vexflow_adapter.js` — small addition, same pattern
-- Both sheets expose `_windowPositionCache` as `{ [windowIndex]: {x, y, width, height} }`
+The VexFlow adapter emits `onWindowPosition({windowIndex, onset, x, y})` where `x` is the column center X and `y` is `bassStave.getBottomY() + 18`. Width is not emitted — use fixed 30px.
+
+- **Exercise sheet:** already caches via `_identWindowLayout` in `onWindowPosition` callback ([exercise_sheet.js:1125](lab/static/js/src/components/music/exercise_sheet.js#L1125)). Reuse this cache as `_windowPositionCache` (alias).
+- **Play sheet:** does NOT currently pass `onWindowPosition` to the adapter ([play_sheet.js:206](lab/static/js/src/components/music/play_sheet.js#L206)). Add this callback in play sheet's render options — no adapter changes needed. The adapter already supports the callback ([vexflow_adapter.js:1241](lab/static/js/src/components/music/rendering/vexflow_adapter.js#L1241)).
+- Both sheets store cache as `{ [windowIndex]: {x, y} }`
 
 ---
 
@@ -122,24 +126,31 @@ Injects into the toolbar DOM between nav buttons and existing exercise controls:
 
 ### ExerciseSheetComponent
 
-- `ScorePlayer` instantiated in `initExercise()`, timeline built from `exerciseContext.getDefinition().getScore()`
-- `renderPlaybackControls()` called from `render()`
-- `scorePlayer.stop()` called in `renderPristine()` before loading new exercise (already resets `scex.graded`, add stop here)
+- `ScorePlayer` instantiated in `initComponent()` ([exercise_sheet.js:137](lab/static/js/src/components/music/exercise_sheet.js#L137)) — there is no `initExercise()` method; lifecycle entry is `initComponent`
+- Timeline built from `exerciseContext.getDefinition().getScore()` at play-time (not init), so score is available
+- `renderPlaybackControls()` called from `render()` (idempotent — safe to call repeatedly)
+- `scorePlayer.stop()` called in `music.js renderPristine()` before loading new exercise
 - Playback runs independently of grading — no interaction with `ChoraleGrader` or `IdentificationGrader`
 
 ### PlaySheetComponent
 
-- `ScorePlayer` instantiated after corpus load completes
-- `renderPlaybackControls()` called from `render()`
+- `ScorePlayer` instantiated in play sheet's `initComponent()`
+- `renderPlaybackControls()` called from `render()` (idempotent)
 - `scorePlayer.stop()` called before corpus reload
+- Playback plays full score regardless of active voice filters (voices, octave-shift) — always uses raw timeline from full CIR score
 
 ### Sampler Access
 
-ScorePlayer needs access to the Tone.js sampler. Two options:
-1. Pass `midiDevice` reference to ScorePlayer; call `midiDevice.triggerAttack(midi)` / `midiDevice.triggerRelease(midi)`
-2. ScorePlayer accesses sampler directly via the global `Tone.Sampler` instance
+ScorePlayer needs access to the Tone.js sampler. Pass `midiDevice` reference to ScorePlayer constructor.
 
-**Decision:** Option 1 — pass `midiDevice` reference. Reuses existing MIDI-to-note-name conversion (`_midiToTone()`) and volume/mute state. ScorePlayer calls `midiDevice.playNote(midi)` and `midiDevice.releaseNote(midi)` — two small public wrapper methods added to `MidiDevice` that delegate to the existing internal sampler calls. If student mutes audio, playback also mutes (correct behavior).
+ScorePlayer calls three new public methods added to `MidiDevice`:
+- `midiDevice.playNote(midi)` — triggers attack via internal sampler (wraps existing inline logic at [midi_device.js:438](lab/static/js/src/models/midi_device.js#L438))
+- `midiDevice.releaseNote(midi)` — triggers release
+- `midiDevice.releaseAllNotes()` — calls `sampler.releaseAll()`
+
+These delegate to the existing sampler calls. Midi-to-note-name conversion is inline in MidiDevice around line 420 — extract into a small private `_midiToToneName(midi)` helper as part of this work (no behavior change, just DRY).
+
+Benefit: volume and mute state are respected automatically — if student mutes audio, playback is also silent.
 
 ---
 
@@ -148,12 +159,14 @@ ScorePlayer needs access to the Tone.js sampler. Two options:
 | Scenario | Behavior |
 |----------|----------|
 | Play clicked, no score loaded | Button disabled until timeline available |
-| Exercise advances during playback | `renderPristine` calls `stop()` first |
+| Exercise advances during playback | `renderPristine` in music.js calls `stop()` first |
+| Key signature change or other re-render | `renderPristine` path covers this; no additional stop needed |
 | Corpus reloads during playback | `stop()` called before reload |
 | Student plays MIDI during playback | Works normally — grading unaffected |
 | Playback ends naturally | `stopped` event fires, button resets to Play |
 | Tempo changed during playback | Takes effect on next play (not mid-playback) |
 | Audio muted via mute button | Playback still schedules; sampler muted so silent |
+| `render()` called during playback | Controls re-use existing DOM (idempotent), highlight redraws on next tick |
 
 ---
 
@@ -162,12 +175,13 @@ ScorePlayer needs access to the Tone.js sampler. Two options:
 | File | Change |
 |------|--------|
 | `lab/static/js/src/models/score_player.js` | **New** — ScorePlayer model |
-| `lab/static/js/src/components/music/playback_controls.js` | **New** — toolbar mixin |
-| `lab/static/js/src/components/music/exercise_sheet.js` | Add ScorePlayer, controls, highlight drawing |
-| `lab/static/js/src/components/music/play_sheet.js` | Add ScorePlayer, controls, highlight drawing |
-| `lab/static/js/src/components/music/vexflow_adapter.js` | Wire `onWindowPosition` for play sheet |
+| `lab/static/js/src/components/music/playback_controls.js` | **New** — toolbar mixin (idempotent) |
+| `lab/static/js/src/components/music/exercise_sheet.js` | Add ScorePlayer init, controls, highlight drawing |
+| `lab/static/js/src/components/music/play_sheet.js` | Add ScorePlayer init, controls, highlight, `onWindowPosition` callback |
 | `lab/static/js/src/components/music.js` | Call `scorePlayer.stop()` in `renderPristine` |
-| `lab/static/js/src/models/midi_device.js` | Add `playNote(midi)` and `releaseNote(midi)` public methods |
+| `lab/static/js/src/models/midi_device.js` | Add `playNote`, `releaseNote`, `releaseAllNotes` public methods; extract `_midiToToneName` helper |
+
+Note: `vexflow_adapter.js` requires **no changes** — adapter already supports `onWindowPosition`. Only play sheet needs to pass the callback.
 
 ---
 
@@ -178,3 +192,4 @@ ScorePlayer needs access to the Tone.js sampler. Two options:
 - Playback of student's input (answer verification)
 - Progress scrubber / click-to-seek
 - Play current page only (always plays full score)
+- Voice filter / octave-shift applied to playback audio
