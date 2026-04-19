@@ -82,7 +82,7 @@ define([
       throw new Error("Missing parameter property: .timeSignature");
     }
 
-    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onSubmitIdentification", "onToggleMode"]);
+    _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onSubmitIdentification", "onToggleMode", "_onIdentKeyDown"]);
   };
 
   ExerciseSheetComponent.prototype = new Component();
@@ -147,6 +147,9 @@ define([
       this.subscribe(EVENTS.BROADCAST.NOTE, this.onMidiNote);
       // Listen for pristine/refresh button
       this.subscribe(EVENTS.BROADCAST.PRISTINE, this.onClickPristine);
+      // Arrow key page navigation for identification exercises
+      window.removeEventListener("keydown", this._onIdentKeyDown, true);
+      window.addEventListener("keydown", this._onIdentKeyDown, true);
     },
     _isIdentificationLikeExercise: function () {
       var definition = this.exerciseContext.getDefinition();
@@ -592,6 +595,13 @@ define([
                 '  transform: translateY(-1px);' +
                 '  box-shadow: 0 6px 14px rgba(0, 198, 255, 0.5);' +
                 '}' +
+                '#identification-submit.hint-pulse {' +
+                '  animation: ident-hint-pulse 1.6s ease-in-out infinite;' +
+                '}' +
+                '@keyframes ident-hint-pulse {' +
+                '  0%,100% { box-shadow: 0 4px 10px rgba(0,198,255,0.4); transform: scale(1); }' +
+                '  50% { box-shadow: 0 8px 22px rgba(0,198,255,0.7); transform: scale(1.04); }' +
+                '}' +
                 '</style>').appendTo('head');
           }
       }
@@ -625,8 +635,13 @@ define([
       // The button only cares if the CURRENT page is complete
       if (answeredCount >= totalCount) {
           $btn.addClass('ready').text(isLastPage ? 'Submit' : 'Next Page');
+          if (!isLastPage) {
+            $btn.addClass('hint-pulse');
+          } else {
+            $btn.removeClass('hint-pulse');
+          }
       } else {
-          $btn.removeClass('ready').text('Complete Analysis');
+          $btn.removeClass('ready hint-pulse').text('Complete Analysis');
       }
     },
 
@@ -635,6 +650,18 @@ define([
      */
     onSubmitIdentification: function () {
       this.exerciseContext.submitIdentPage({ fromUI: true, mode: this._currentMode });
+    },
+
+    _onIdentKeyDown: function (e) {
+      if (!this._isIdentificationLikeExercise()) return;
+      if ($(e.target).is("input, textarea, select") || e.target.isContentEditable) return;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        this.exerciseContext.goToIdentPage(this.exerciseContext.getIdentPage() + 1);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        this.exerciseContext.goToIdentPage(this.exerciseContext.getIdentPage() - 1);
+      }
     },
 
     renderModeToggle: function () {
