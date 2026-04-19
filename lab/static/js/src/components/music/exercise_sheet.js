@@ -578,29 +578,30 @@ define([
                 '  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);' +
                 '  color: white;' +
                 '  border: none;' +
-                '  border-radius: 20px;' +
-                '  padding: 8px 30px;' +
-                '  font-size: 15px;' +
+                '  border-radius: 22px;' +
+                '  padding: 10px 36px;' +
+                '  font-size: 16px;' +
                 '  font-weight: 600;' +
                 '  cursor: default;' +
-                '  transition: all 0.2s ease-in-out;' +
-                '  opacity: 0.5;' +
+                '  opacity: 0.45;' +
+                '  letter-spacing: 0.02em;' +
                 '} ' +
                 '#identification-submit.ready {' +
                 '  cursor: pointer;' +
                 '  opacity: 1;' +
-                '  box-shadow: 0 4px 10px rgba(0, 198, 255, 0.4);' +
+                '  box-shadow: 0 4px 12px rgba(0, 198, 255, 0.45);' +
+                '  transition: box-shadow 0.2s, opacity 0.2s;' +
                 '} ' +
-                '#identification-submit.ready:hover {' +
-                '  transform: translateY(-1px);' +
-                '  box-shadow: 0 6px 14px rgba(0, 198, 255, 0.5);' +
+                '#identification-submit.ready:not(.hint-pulse):hover {' +
+                '  box-shadow: 0 6px 18px rgba(0, 198, 255, 0.65);' +
                 '}' +
                 '#identification-submit.hint-pulse {' +
-                '  animation: ident-hint-pulse 1.6s ease-in-out infinite;' +
+                '  animation: ident-hint-pulse 1.4s ease-in-out infinite !important;' +
+                '  transition: none !important;' +
                 '}' +
                 '@keyframes ident-hint-pulse {' +
-                '  0%,100% { box-shadow: 0 4px 10px rgba(0,198,255,0.4); transform: scale(1); }' +
-                '  50% { box-shadow: 0 8px 22px rgba(0,198,255,0.7); transform: scale(1.04); }' +
+                '  0%,100% { box-shadow: 0 4px 12px rgba(0,198,255,0.45); opacity:1; }' +
+                '  50% { box-shadow: 0 0 28px 6px rgba(0,198,255,0.85); opacity:1; }' +
                 '}' +
                 '</style>').appendTo('head');
           }
@@ -634,7 +635,7 @@ define([
 
       // The button only cares if the CURRENT page is complete
       if (answeredCount >= totalCount) {
-          $btn.addClass('ready').text(isLastPage ? 'Submit' : 'Next Page');
+          $btn.addClass('ready').text(isLastPage ? 'Check' : 'Next Page');
           if (!isLastPage) {
             $btn.addClass('hint-pulse');
           } else {
@@ -649,7 +650,56 @@ define([
      * Called when the student clicks Submit (submit mode only).
      */
     onSubmitIdentification: function () {
-      this.exerciseContext.submitIdentPage({ fromUI: true, mode: this._currentMode });
+      var graded = this.exerciseContext.submitIdentPage({ fromUI: true, mode: this._currentMode });
+      if (graded && graded.completedExercise && graded.result === 'correct') {
+        this._launchConfetti();
+      }
+    },
+
+    _launchConfetti: function () {
+      var canvas = document.createElement('canvas');
+      canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+      document.body.appendChild(canvas);
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      var ctx = canvas.getContext('2d');
+      var particles = [];
+      var colors = ['#4facfe','#00f2fe','#f6d365','#fda085','#84fab0','#8fd3f4','#a18cd1','#fbc2eb'];
+      for (var i = 0; i < 120; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height * 0.4,
+          r: Math.random() * 7 + 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 4,
+          vy: Math.random() * 3 + 2,
+          alpha: 1,
+          rot: Math.random() * 360,
+          rotV: (Math.random() - 0.5) * 6,
+        });
+      }
+      var startTime = Date.now();
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        var elapsed = Date.now() - startTime;
+        particles.forEach(function(p) {
+          p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.rot += p.rotV;
+          p.alpha = Math.max(0, 1 - elapsed / 2000);
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot * Math.PI / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.5);
+          ctx.restore();
+        });
+        if (elapsed < 2200) {
+          requestAnimationFrame(draw);
+        } else {
+          document.body.removeChild(canvas);
+        }
+      }
+      draw();
     },
 
     _onIdentKeyDown: function (e) {
