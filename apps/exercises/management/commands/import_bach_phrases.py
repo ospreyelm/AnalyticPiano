@@ -145,40 +145,58 @@ class Command(BaseCommand):
             # with number > end_m to avoid leaking the pickup to the next phrase.
             phrase_score = score.measures(start_m, end_m)
             for part in phrase_score.parts:
+                # Remove trailing overflow measures (music21 includes one extra for tie resolution)
                 for m in list(part.getElementsByClass(stream.Measure)):
                     if m.number > end_m:
                         part.remove(m)
+                # Remove first-ending duplicates: when a chorale has repeat brackets,
+                # music21 stores both endings with the same measure number.
+                # Keep only the last occurrence (second ending = cadential measure).
+                seen_nums = {}
+                for m in list(part.getElementsByClass(stream.Measure)):
+                    if m.number in seen_nums:
+                        part.remove(seen_nums[m.number])  # remove earlier occurrence
+                    seen_nums[m.number] = m
 
-            # GAP FILTER: Check for internal silence (full measures of rests)
-            # We check the soprano part (part 0) for note presence in each measure
+            # GAP FILTER: Skip phrases with silent or rest-dominated measures.
+            # music21 uses implicit rests (no Rest objects), so we compare
+            # filled duration (notes_ql) against the full bar duration.
             has_silent_measure = False
             for m_test in phrase_score.parts[0].getElementsByClass(stream.Measure):
-                # We flatten to find notes (including notes in voices if any)
-                if len(m_test.flatten().notes) == 0:
+                notes_ql = sum(n.quarterLength for n in m_test.flatten().notes)
+                bar_ql = m_test.barDuration.quarterLength
+                # Skip if less than half the measure is filled with notes
+                if bar_ql > 0 and notes_ql < bar_ql * 0.5:
                     has_silent_measure = True
                     break
-            
+
             if has_silent_measure:
-                self.stdout.write(self.style.WARNING(f"  Skipping Phrase {idx+1} (mm. {start_m}-{end_m}): Contains silent measures (Gap Filter)."))
+                self.stdout.write(self.style.WARNING(f"  Skipping Phrase {idx+1} (mm. {start_m}-{end_m}): Contains silent/rest-heavy measures (Gap Filter)."))
                 start_m = end_m + 1
                 continue
             
             # 3. Detect Key and Mode
             try:
-                # FORCE GLOBAL KEY FOR PHRASE 1
-                if idx == 0:
-                    m21_key = global_key
+                # FORCE GLOBAL KEY FOR ALL PHRASES (per-phrase detection unreliable for short phrases)
+                m21_key = global_key
+
+                # Build HarmonyLab key format: "iA_", "jC_", "iD_", "jBb", "jF#" etc.
+                tonic = m21_key.tonic.name  # e.g. "A", "B-", "F#"
+                if "-" in tonic:
+                    hl_tonic = tonic[0] + "b"   # "B-" → "Bb"
+                elif "#" in tonic:
+                    hl_tonic = tonic             # "F#" → "F#"
                 else:
-                    m21_key = phrase_score.analyze('key')
-                
-                # Store "Clean" key name (e.g. 'D', 'Bb', 'F#m') 
-                harmony_sig = m21_key.tonic.name.replace("-", "b")
-                if m21_key.mode == "minor":
-                    harmony_sig += "m"
-                harmony_key = harmony_sig
+                    hl_tonic = tonic + "_"       # "A" → "A_"
+                mode_prefix = "j" if m21_key.mode == "major" else "i"
+                harmony_key = mode_prefix + hl_tonic   # e.g. "iA_", "jC_"
+
+                # Build sharps/flats string for staff key signature ("", "#", "b", "##", etc.)
+                sharps = m21_key.sharps
+                harmony_sig = "#" * sharps if sharps > 0 else "b" * abs(sharps)
             except Exception:
-                harmony_sig = "C"
-                harmony_key = "C"
+                harmony_sig = ""      # no accidentals (C major / A minor)
+                harmony_key = "jC_"  # default to C major
 
             try:
                 detected_skills, detected_complexity = analyze_chunk_skills(phrase_score, m21_key.tonicPitchNameWithCase)
@@ -187,7 +205,7 @@ class Command(BaseCommand):
                 detected_skills, detected_complexity = [], 1
 
             # Convert to CIR JSON
-            cir_data = m21_to_cir(phrase_score)
+            cir_data = m21_to_cir(phrase_score, key_override=harmony_key)
             
             if mode in ['roman', 'figures', 'matching']:
                 analysis_type = "roman"

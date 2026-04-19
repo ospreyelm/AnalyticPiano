@@ -80,8 +80,23 @@ class Command(BaseCommand):
         # Load MusicXML
         score = converter.parse(file_path)
 
+        # Detect Key
+        try:
+            m21_key = score.analyze('key')
+            tonic = m21_key.tonic.name
+            if "-" in tonic:
+                hl_tonic = tonic[0] + "b"
+            elif "#" in tonic:
+                hl_tonic = tonic
+            else:
+                hl_tonic = tonic + "_"
+            mode_prefix = "j" if m21_key.mode == "major" else "i"
+            harmony_key = mode_prefix + hl_tonic
+        except Exception:
+            harmony_key = "jC_"
+
         # Convert to CIR
-        cir = m21_to_cir(score)
+        cir = m21_to_cir(score, key_override=harmony_key)
         meta = cir.get('meta', {})
         measures = cir.get('measures', [])
 
@@ -97,7 +112,7 @@ class Command(BaseCommand):
 
         # AUTO-ANALysis for Knowledge Graph
         # We analyze the score to get Unit tags and complexity
-        detected_tags, complexity = analyze_chunk_skills(score, meta.get("key", "C"))
+        detected_tags, complexity = analyze_chunk_skills(score, harmony_key)
 
         # Build exercise data
         exercise_data = {
@@ -115,7 +130,7 @@ class Command(BaseCommand):
             "excerpt": {"startMeasure": start_measure, "endMeasure": end_measure if end_measure else len(measures)},
             "introText": f"Play {title}.",
             "reviewText": "Good work!",
-            "key": meta.get("key", "C"),
+            "key": harmony_key,
             "staffDistribution": "chorale"
         }
 

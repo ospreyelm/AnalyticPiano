@@ -127,7 +127,7 @@ def pad_voice_to_duration(items: List[Dict], target_ql: float, is_first: bool = 
     # We'll use a more robust approach: the part_to_voice loop already knows the QL.
     return items
 
-def m21_to_cir(s: stream.Score) -> Dict:
+def m21_to_cir(s: stream.Score, key_override: Optional[str] = None) -> Dict:
     # Explicitly calculate beams based on time signature rules
     try:
         s.makeBeams(inPlace=True)
@@ -139,16 +139,29 @@ def m21_to_cir(s: stream.Score) -> Dict:
     num, den = [int(x) for x in time_str.split("/")]
     target_ql_per_measure = num * (4.0 / den)
     
-    ks = s.recurse().getElementsByClass(key.KeySignature).first()
     vex_key = None
-    if ks is not None:
-        try:
-            vex_key = ks.asKey().tonic.name.replace("-", "b")
-            if ks.mode:
-                if ks.mode.lower().startswith("minor"):
-                    vex_key = vex_key + "m"
-        except Exception:
-            pass
+    if key_override:
+        # HarmonyLab keys like 'iG_', 'jC_'
+        # Convert to VexFlow style: Gm, C
+        if key_override.startswith('i'):
+            # minor
+            vex_key = key_override[1:].replace('_', '') + 'm'
+        elif key_override.startswith('j'):
+            # major
+            vex_key = key_override[1:].replace('_', '')
+        else:
+            # Fallback for plain 'Gm' or 'C'
+            vex_key = key_override
+    else:
+        ks = s.recurse().getElementsByClass(key.KeySignature).first()
+        if ks is not None:
+            try:
+                vex_key = ks.asKey().tonic.name.replace("-", "b")
+                if ks.mode:
+                    if ks.mode.lower().startswith("minor"):
+                        vex_key = vex_key + "m"
+            except Exception:
+                pass
 
     # ALIGNMENT FIX: Shift ALL offsets so the exercise starts at global offset 0.
     lowest = s.lowestOffset

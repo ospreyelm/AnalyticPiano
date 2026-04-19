@@ -236,25 +236,38 @@ def pad_voice_to_duration(items: List[Dict], target_ql: float, is_first_measure:
     return list(items) + rests
 
 
-def m21_to_cir(s: stream.Score) -> Dict:
+def m21_to_cir(s: stream.Score, key_override: Optional[str] = None) -> Dict:
     # Assume 4/4 if missing
     ts = s.recurse().getElementsByClass(meter.TimeSignature).first()
     time_str = f"{ts.numerator}/{ts.denominator}" if ts else "4/4"
     num, den = [int(x) for x in time_str.split("/")]
     target_ql_per_measure = num * (4.0 / den)
     
-    ks = s.recurse().getElementsByClass(key.KeySignature).first()
     vex_key = None
-    if ks is not None:
-        # music21: sharps positive, flats negative. We'll translate to VexFlow-like triad (e.g., "C", "G", "F").
-        try:
-            vex_key = ks.asKey().tonic.name.replace("-", "b")
-            if ks.mode:
-                # VexFlow expects a string like "C" or "Cm"; keep major only for now
-                if ks.mode.lower().startswith("minor"):
-                    vex_key = vex_key + "m"
-        except Exception:
-            pass
+    if key_override:
+        # HarmonyLab keys like 'iG_', 'jC_'
+        # Convert to VexFlow style: Gm, C
+        if key_override.startswith('i'):
+            # minor
+            vex_key = key_override[1:].replace('_', '') + 'm'
+        elif key_override.startswith('j'):
+            # major
+            vex_key = key_override[1:].replace('_', '')
+        else:
+            # Fallback for plain 'Gm' or 'C'
+            vex_key = key_override
+    else:
+        ks = s.recurse().getElementsByClass(key.KeySignature).first()
+        if ks is not None:
+            # music21: sharps positive, flats negative. We'll translate to VexFlow-like triad (e.g., "C", "G", "F").
+            try:
+                vex_key = ks.asKey().tonic.name.replace("-", "b")
+                if ks.mode:
+                    # VexFlow expects a string like "C" or "Cm"; keep major only for now
+                    if ks.mode.lower().startswith("minor"):
+                        vex_key = vex_key + "m"
+            except Exception:
+                pass
 
     # Parts to staves: S,A -> treble; T,B -> bass
     parts = list(s.parts)
