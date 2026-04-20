@@ -11,55 +11,116 @@ define([
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
   var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
-  var SKILL_CHORD_PATTERNS = {
-    // Unit-level tags (from playlist.tags / CONTENT_TAGS)
-    "unit:9":  /^(I|V|V7)$/,
-    "unit:10": /^(I|ii|iii|IV|V|vi|vii°)(6)$/,
-    "unit:11": /^(IV|ii|ii6|vi)$/,
-    "unit:12": /^(I|ii|iii|IV|V|vi|vii°)(64)$/,
-    "unit:16": /^V7?\//,
-    "unit:18": /^(N6?|(It|Ger|Fr)\+?6)/,
+  var UNIT_ALLOWED_ANSWERS = {
+    // Unit 9: Tonic & dominant — I, V, V7 root position only
+    9: ['I', 'i', 'V', 'V7'],
 
-    // Granular skill tags (from playlist.skill_tags)
-    "tonic_dominant_exclusively": /^(I|V|V7)$/,
-    "Diatonic_Triads":            /^(I|ii|iii|IV|V|vi|vii°)$/,
-    "Inversions_First":        /^(I|ii|iii|IV|V|vi|vii°)(6)$/,
-    "Inversions_Second":       /^(I|ii|iii|IV|V|vi|vii°)(64)$/,
-    "Dominant_Seventh":        /^V7$/,
-    "Diminished_Seventh":      /^vii°7/,
-    "Half_Diminished_Seventh": /^viiø7/,
-    "Secondary_Dominant":      /^V7?\//,
-    "Secondary_Leading_Tone":  /^vii°(7)?\//,
-    "Neapolitan_Sixth":        /^N6?$/,
-    "Augmented_Sixth":         /^(It|Ger|Fr)\+?6/,
+    // Unit 10: First inversions — adds I6, i6, V6, vii°6
+    10: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6'],
+
+    // Unit 11: Pre-dominants — adds IV, iv, ii, ii6, vi, VI
+    11: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI'],
+
+    // Unit 12: Second inversions — adds I64, V64
+    12: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64'],
+
+    // Unit 13: Rule of the octave — adds iii, III, VII
+    13: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII'],
+
+    // Unit 14: Diatonic seventh chords — adds ii7, ii°7, IV7, vi7, iii7, vii°7
+    14: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7'],
+
+    // Unit 15: Sequences — no new chord types beyond unit 14
+    15: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7'],
+
+    // Unit 16: Applied (secondary) chords — adds V/x, V7/x, vii°/x, vii°7/x
+    16: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
+      'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
+      'V/vi', 'V7/vi', 'V/III', 'V7/III',
+      'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
+      'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV'],
+
+    // Unit 17: Modal mixture — adds bVI, bVII, bIII, ii°, ii°6
+    17: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
+      'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
+      'V/vi', 'V7/vi', 'V/III', 'V7/III',
+      'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
+      'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV',
+      'bVI', 'bVII', 'bIII', 'ii°', 'ii°6'],
+
+    // Unit 18: Neapolitan & augmented sixths — adds N6, It+6, Ger+6, Fr+6
+    18: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
+      'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
+      'V/vi', 'V7/vi', 'V/III', 'V7/III',
+      'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
+      'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV',
+      'bVI', 'bVII', 'bIII', 'ii°', 'ii°6',
+      'N6', 'It+6', 'Ger+6', 'Fr+6'],
+
+    // Units 19–20: Modulation — pass through unmodified.
+    // Modulation exercises span tonal centres; filtering to one key's allowlist
+    // would hide legitimate chords in the new key.
+    19: null,
+    20: null,
   };
 
-  function applySkillFilter(problems, skillTags) {
-    if (!skillTags || skillTags.length === 0) {
-      return problems;
-    }
-    
-    // Identify Unit 9 specifically (Tonic/Dominant only)
-    var isUnit9 = _.some(skillTags, function(t) { 
-      return t === 'unit:9' || t === 'unit:9_diatonic_triads' || t === 'unit:9_Dominant_Seventh'; 
+  function applySkillFilter(problems, skillTags, analysisType) {
+    if (!skillTags || skillTags.length === 0) return problems;
+
+    // Only filter roman numeral exercises — all other types pass through
+    if ((analysisType || 'roman') !== 'roman') return problems;
+
+    // Extract the highest unit number from any 'unit:N' tag (deterministic, order-independent)
+    var unitNum = null;
+    _.each(skillTags, function (t) {
+      var m = t.match(/^unit:(\d+)/);
+      if (m) {
+        var parsed = parseInt(m[1], 10);
+        unitNum = (unitNum === null) ? parsed : Math.max(unitNum, parsed);
+      }
     });
+
+    // No unit tag → pass through
+    if (unitNum === null) return problems;
+
+    // Unit not in map → pass through (safe fallback for units 21+)
+    if (!Object.prototype.hasOwnProperty.call(UNIT_ALLOWED_ANSWERS, unitNum)) return problems;
+
+    var allowed = UNIT_ALLOWED_ANSWERS[unitNum];
+
+    // null entry (units 19–20) → pass through
+    if (allowed === null) return problems;
 
     return _.map(problems, function (p) {
       if (p.hidden) return p;
-      
-      var matches = false;
-      if (isUnit9) {
-        // Root position only: I, i, V, V7 — no inversions
-        var answer = (p.answer || "").trim();
-        matches = (answer === 'I' || answer === 'i' || answer === 'V' || answer === 'V7');
-      } else {
-        matches = _.some(skillTags, function (tag) {
-          var cleanTag = tag.replace(/^unit:\d+_/, '');
-          return p.answer.startsWith(cleanTag);
-        });
-      }
-      
-      if (!matches) {
+      if (allowed.indexOf(p.answer) === -1) {
+        p = _.clone(p);
         p.hidden = true;
       }
       return p;
@@ -760,8 +821,9 @@ define([
         exercise.skill_tags = definition.skillTags || [];
         exercise.playlistTags = definition.playlistTags || [];
         exercise.problems = applySkillFilter(
-            buildChoraleIdentificationProblems(exercise),
-            (exercise.playlistSkillTags).concat(exercise.playlistTags)
+          buildChoraleIdentificationProblems(exercise),
+          (exercise.playlistSkillTags).concat(exercise.playlistTags),
+          exercise.analysisType
         );
 
         return exercise;
