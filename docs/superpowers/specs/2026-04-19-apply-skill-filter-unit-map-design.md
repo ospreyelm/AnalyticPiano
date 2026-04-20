@@ -98,15 +98,24 @@ var UNIT_ALLOWED_ANSWERS = {
        'bVI', 'bVII', 'bIII', 'ii°', 'ii°6',
        'N6', 'It+6', 'Ger+6', 'Fr+6'],
 
-  // Units 19–20: Modulation — no new Roman numeral types within a key;
-  // filter passes through (same allowlist as 18). Modulation exercises
-  // span two keys; both keys' full diatonic + chromatic sets are visible.
-  19: null,  // → pass through (modulation: show all)
-  20: null,  // → pass through (modulation: show all)
+     // Units 19–20: Modulation.
+     // Pass through unmodified: modulation exercises span tonal centres,
+     // and filtering to a single-key allowlist would hide legitimate answers.
+     19: null,  // → pass through (modulation: show all)
+     20: null,  // → pass through (modulation: show all)
 };
 ```
 
-`null` entries = pass through unmodified. Modulation exercises span tonal centres; filtering by a single key's allowlist would incorrectly hide legitimate chords in the new key.
+`null` entries = pass through unmodified. For units 19-20 this is intentional: modulation exercises span tonal centres, so filtering by a single-key allowlist would incorrectly hide legitimate chords in the new key.
+
+## Unit Tag Selection Policy
+
+If multiple `unit:N` tags are present, filtering MUST use the highest unit number found.
+
+Rationale:
+- `UNIT_ALLOWED_ANSWERS` is cumulative by design.
+- Using max(unit) is deterministic and order-independent.
+- It avoids behavior changes caused by tag ordering.
 
 ## Updated `applySkillFilter` Logic
 
@@ -117,11 +126,14 @@ function applySkillFilter(problems, skillTags, analysisType) {
   // Only filter roman numeral exercises — all other types pass through
   if ((analysisType || 'roman') !== 'roman') return problems;
 
-  // Extract unit number from any 'unit:N' tag
+  // Extract the highest unit number from any 'unit:N' tag
   var unitNum = null;
   _.each(skillTags, function(t) {
     var m = t.match(/^unit:(\d+)/);
-    if (m) unitNum = parseInt(m[1], 10);
+    if (m) {
+      var parsed = parseInt(m[1], 10);
+      unitNum = (unitNum === null) ? parsed : Math.max(unitNum, parsed);
+    }
   });
 
   // No unit tag → pass through
@@ -151,6 +163,7 @@ function applySkillFilter(problems, skillTags, analysisType) {
 Key differences from current code:
 - Third `analysisType` arg guards non-roman exercises at entry — nothing filtered, nothing hidden
 - Extracts unit number via regex — handles `unit:9`, `unit:9_diatonic_triads`, `unit:9_Dominant_Seventh` all equally
+- Resolves multiple unit tags deterministically by selecting the highest `unit:N`
 - Uses `indexOf` exact match — no `startsWith` false matches (`V` no longer matches `VI`, `vii`)
 - Clones problem before mutating (defensive)
 - Single unified path for all units
@@ -184,7 +197,21 @@ Answer strings must match exactly what `computeWindowLabel` produces. Key conven
 2. **Unit 11 smoke test:** Tag a test playlist `unit:11`, load a phrase with `IV` and `V/V` → `IV` slot visible, `V/V` slot hidden.
 3. **Pass-through:** Tag playlist `unit:22` → all slots visible.
 4. **Non-roman pass-through:** Tag playlist `unit:9`, use `figured_bass` exercise → all slots visible (analysisType guard fires).
-5. **Answer string verification:** During implementation, `console.log(p.answer)` for a Unit 16 exercise to confirm secondary chord format matches map entries. Adjust map if needed.
+5. **Exact-match guard:** Ensure `V` does not match `VI` or `vii` (regression against old `startsWith` behavior).
+6. **Multi-unit determinism:** Given tags including `unit:9` and `unit:11`, filtering must behave as Unit 11 regardless of tag order.
+7. **Answer string verification:** Sample real generated labels for units 16-18 and confirm map strings match `computeWindowLabel` output exactly. Adjust map if needed before finalizing.
+
+At least tests 3-6 should be automated where feasible (unit/integration), not manual-only UI checks.
+
+## Acceptance Criteria
+
+- `applySkillFilter` takes `(problems, skillTags, analysisType)`.
+- Call site passes `exercise.analysisType` as the third argument.
+- Units 9-18 use explicit allowlists; units 19-20 pass through via `null`.
+- Multiple `unit:N` tags select the highest unit number.
+- Unknown units (21+) pass through unchanged.
+- Non-roman analysis types pass through unchanged.
+- Exact-match filtering is used (`indexOf`), not prefix matching.
 
 ## Files Changed
 
