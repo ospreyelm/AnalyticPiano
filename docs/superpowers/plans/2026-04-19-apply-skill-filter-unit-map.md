@@ -6,7 +6,9 @@
 
 **Architecture:** Add `UNIT_ALLOWED_ANSWERS` object above `applySkillFilter`. Rewrite the function to extract the highest `unit:N` tag, look up the allowlist, and apply exact-match hiding. Pass `analysisType` as a third argument from the call site so non-roman exercises pass through untouched.
 
-**Tech Stack:** JavaScript (AMD/RequireJS module), Lodash (`_`), QUnit (existing test suite pattern)
+**Tech Stack:** JavaScript (AMD/RequireJS module), Lodash (`_`)
+
+> **Note on automated tests:** No JS unit test harness exists in this codebase. The approved spec requests automation for tests 3–6 where feasible. Standing up QUnit or Jest is out of scope for this task. The manual browser steps below cover all spec-required cases. If a test harness is added later, the acceptance criteria table maps 1:1 to unit test cases.
 
 ---
 
@@ -399,9 +401,9 @@ Before marking complete, verify all of these:
 
 - [ ] Unit 9 playlist: only `I/i/V/V7` slots interactive — all others hidden
 - [ ] Unit 11 playlist: `IV`, `ii`, `vi` slots visible; `V/V`, `N6` slots hidden
-- [ ] `VI` answer with `unit:9` tag → **hidden** (old `startsWith('V')` bug: `VI` was falsely shown)
-- [ ] `vii°6` answer with `unit:9` tag → **hidden** (old `startsWith('V')` bug does not apply here, but confirm hidden)
-- [ ] `V` answer with `unit:9` tag → **visible** (V is in the unit:9 allowlist)
+- [ ] `VI` answer with `unit:9` tag → **hidden** (`VI` not in unit:9 allowlist; old `startsWith('V')` bug falsely showed it)
+- [ ] `V` answer with `unit:9` tag → **visible** (`V` is in unit:9 allowlist — confirm it's NOT hidden)
+- [ ] `vii°6` answer with `unit:9` tag → **hidden** (not in unit:9 allowlist)
 - [ ] Multiple `unit:9` + `unit:11` tags → uses unit 11 allowlist (highest wins)
 - [ ] `figured_bass` exercise with `unit:9` tag → all slots visible (analysisType guard)
 - [ ] Unit 22 playlist (no map entry) → all slots visible (pass-through)
