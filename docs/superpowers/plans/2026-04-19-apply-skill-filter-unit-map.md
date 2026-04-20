@@ -15,8 +15,9 @@
 | File | Change |
 |---|---|
 | `lab/static/js/src/models/exercise_definition.js` | Add `UNIT_ALLOWED_ANSWERS` map; rewrite `applySkillFilter` (lines 37–67); update call site at line 762 |
+| `docs/superpowers/specs/2026-04-19-apply-skill-filter-unit-map-design.md` | Update map entries if Task 1 reveals label mismatches (conditional) |
 
-No new files. No other files touched.
+No other files touched.
 
 ---
 
@@ -320,9 +321,25 @@ Expected:
 - `I`, `i`, `V`, `V7`, `I6`, `i6`, `V6`, `vii°6`, `IV`, `iv`, `ii`, `ii6`, `vi`, `VI` slots → **visible and interactive**
 - `V/V`, `V7/V`, `N6`, `It+6` slots → **hidden**
 
-- [ ] **Step 4: Revert test playlist tag if needed**
+- [ ] **Step 4: Clean up test playlist**
 
-If you modified PA01TO in Step 1, restore `skill_tags = ['unit:9']`.
+If you **created a new playlist** in Step 1, delete it:
+```python
+from apps.exercises.models import Playlist
+Playlist.objects.filter(name='Unit 11 Test').delete()
+```
+
+If you **modified PA01TO directly** in Step 1 (not recommended), restore its original tags:
+```python
+from apps.exercises.models import Playlist
+p = Playlist.objects.get(id='PA01TO')
+# Restore to original — check git history for original value before overwriting:
+# git show HEAD:apps/exercises/fixtures/... or check admin
+p.skill_tags = ['unit:9']
+p.save()
+```
+
+> **Prefer creating a new test playlist** over modifying PA01TO to avoid risk of overwriting legitimate production tags.
 
 ---
 
@@ -334,17 +351,13 @@ Verify the old `startsWith` false-positive is gone.
 
 In browser console after loading a Unit 9 exercise, find a window where `answer === 'VI'` and confirm the slot is hidden.
 
-If no `VI` chord exists in Unit 9 exercises, use the shell to inspect:
-```python
-from apps.exercises.models import Exercise
-import json
-exs = Exercise.objects.filter(data__type='chorale_identification')
-for ex in exs[:10]:
-    problems = ex.data.get('problems', [])
-    for p in problems:
-        if p.get('answer', '').startswith('V') and p.get('answer') not in ['V', 'V7']:
-            print(ex.id, p['answer'])
+If no `VI` chord is visible in the current exercise, find one via the browser console. Problems are generated client-side from the score timeline, not stored in `Exercise.data` — the Django shell cannot inspect them. Instead, add a temporary log in `buildChoraleIdentificationProblems` at `exercise_definition.js:398` to dump all answer strings for the loaded exercise:
+
+```javascript
+console.log('[ALL_ANSWERS]', _.map(problems, function(p) { return p.answer; }));
 ```
+
+Load exercises until you see one with a `VI` answer in the console output. Then remove the log.
 
 - [ ] **Step 2: Confirm in console**
 
@@ -386,7 +399,9 @@ Before marking complete, verify all of these:
 
 - [ ] Unit 9 playlist: only `I/i/V/V7` slots interactive — all others hidden
 - [ ] Unit 11 playlist: `IV`, `ii`, `vi` slots visible; `V/V`, `N6` slots hidden
-- [ ] `V` answer with `unit:9` tag → hidden (not matched by `VI` or `vii` entries)
+- [ ] `VI` answer with `unit:9` tag → **hidden** (old `startsWith('V')` bug: `VI` was falsely shown)
+- [ ] `vii°6` answer with `unit:9` tag → **hidden** (old `startsWith('V')` bug does not apply here, but confirm hidden)
+- [ ] `V` answer with `unit:9` tag → **visible** (V is in the unit:9 allowlist)
 - [ ] Multiple `unit:9` + `unit:11` tags → uses unit 11 allowlist (highest wins)
 - [ ] `figured_bass` exercise with `unit:9` tag → all slots visible (analysisType guard)
 - [ ] Unit 22 playlist (no map entry) → all slots visible (pass-through)
