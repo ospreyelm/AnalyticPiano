@@ -106,15 +106,17 @@ Each skill gets its own playlist (or two playlists for Note Names). All playlist
 | Unit 1 — Clefs (Bass) | `clefs` | `--voice bass` | bass |
 | Unit 1 — Enharmonics | `enharmonic` | `--voice soprano` | treble |
 
-Creation command per playlist (`--skill-tags` does not exist yet in `import_chorale.py`; tags are applied in a post-import step via Django admin or a thin wrapper script that calls `Exercise.objects.filter(playlist=p).update(skill_tags=['unit:1', '<Tag>'])`):
-```bash
-# Step 1: import exercises into a named playlist
-python manage.py import_chorale <file> --mode identify --analysis note_name --voice <voice> --playlist-name "Unit 1 — Note Names (Treble)"
+Neither `--skill-tags` nor `--playlist-name` exist in `import_chorale.py`. Both are new work. The creation process is:
 
-# Step 2: tag exercises (run once per playlist)
-python manage.py tag_unit_exercises --playlist "Unit 1 — Note Names (Treble)" --tags unit:1,Note_Names
+```bash
+# Step 1: import exercises (existing command — creates a Playlist automatically)
+python manage.py import_chorale <file> --mode identify --analysis note_name --voice <voice>
+
+# Step 2: tag exercises and link playlist to Unit 1 course
+python manage.py tag_unit_exercises --playlist <playlist_id> --tags unit:1,<Tag> --course "Unit 1"
 ```
-`tag_unit_exercises` is a small new management command to be written as part of this work.
+
+`tag_unit_exercises` is a new management command to be written as part of this work. It sets `skill_tags` on all exercises in the playlist and links the playlist to the Unit 1 course via `PlaylistCourseOrdered`.
 
 ### Note: `applySkillFilter` is non-blocking for Unit 1
 
