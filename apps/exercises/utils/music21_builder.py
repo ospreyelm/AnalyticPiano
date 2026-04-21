@@ -135,4 +135,128 @@ def _pitch_to_midi(pitch_data):
     semitone = step_semitones.get(step, 0)
     midi = (octave + 1) * 12 + semitone + alter
 
-    return midi
+
+DUR_TO_TYPE = {
+    4.0: ("w", 0),
+    3.0: ("h", 1),
+    2.0: ("h", 0),
+    1.5: ("q", 1),
+    1.0: ("q", 0),
+    0.5: ("8", 0),
+    0.25: ("16", 0),
+}
+
+
+def _ql_to_duration(quarter_length):
+    ql = round(float(quarter_length), 5)
+    if ql in DUR_TO_TYPE:
+        t, d = DUR_TO_TYPE[ql]
+        return {"type": t, "dots": d}
+    # conservative fallback
+    return {"type": "q", "dots": 0}
+
+
+def _pitch_to_cir(p, diatonic_alters=None):
+    alter = 0
+    if p.accidental is not None and p.accidental.alter is not None:
+        alter = int(p.accidental.alter)
+    data = {
+        "step": p.step,
+        "alter": alter,
+        "octave": int(p.octave),
+    }
+    if diatonic_alters is not None:
+        data["is_diatonic"] = (diatonic_alters.get(p.step) == alter)
+    return data
+
+
+def _element_to_item(el, diatonic_alters=None):
+    if isinstance(el, note.Rest):
+        return {"kind": "rest", "duration": _ql_to_duration(el.quarterLength)}
+    if isinstance(el, note.Note):
+        return {
+            "kind": "note",
+            "pitch": _pitch_to_cir(el.pitch, diatonic_alters),
+            "duration": _ql_to_duration(el.quarterLength),
+        }
+    if isinstance(el, chord.Chord):
+        return {
+            "kind": "chord",
+            "pitches": [_pitch_to_cir(p, diatonic_alters) for p in el.pitches],
+            "duration": _ql_to_duration(el.quarterLength),
+        }
+    return None
+
+
+def score_to_cir(score):
+    parts = list(score.parts)
+    if len(parts) < 4:
+        raise ValueError("Expected SATB score with 4 parts")
+
+    part_map = {
+        "soprano": parts[0],
+        "alto": parts[1],
+        "tenor": parts[2],
+        "bass": parts[3],
+    }
+
+    ts = score.recurse().getElementsByClass(meter.TimeSignature).first()
+    ks = score.recurse().getElementsByClass(key.Key).first()
+    if ks is None:
+        ks_sig = score.recurse().getElementsByClass(key.KeySignature).first()
+        k_obj = ks_sig.asKey() if ks_sig else key.Key("C")
+        key_name = k_obj.tonic.name
+    else:
+        k_obj = ks
+        key_name = ks.tonic.name
+
+    diatonic_alters = {p.step: p.alter for p in k_obj.pitches}
+
+    measures_by_part = {
+        name: list(part.getElementsByClass(stream.Measure))
+        for name, part in part_map.items()
+    }
+    measure_count = max(len(m) for m in measures_by_part.values())
+
+    out_measures = []
+    for idx in range(measure_count):
+        treble_voices = []
+        bass_voices = []
+
+        for voice_name in ["soprano", "alto"]:
+            items = []
+            voice_measures = measures_by_part[voice_name]
+            if idx < len(voice_measures):
+                for el in voice_measures[idx].notesAndRests:
+                    item = _element_to_item(el, diatonic_alters)
+                    if item is not None:
+                        items.append(item)
+            treble_voices.append({"items": items})
+
+        for voice_name in ["tenor", "bass"]:
+            items = []
+            voice_measures = measures_by_part[voice_name]
+            if idx < len(voice_measures):
+                for el in voice_measures[idx].notesAndRests:
+                    item = _element_to_item(el, diatonic_alters)
+                    if item is not None:
+                        items.append(item)
+            bass_voices.append({"items": items})
+
+        out_measures.append(
+            {
+                "number": idx + 1,
+                "staves": {
+                    "treble": {"voices": treble_voices},
+                    "bass": {"voices": bass_voices},
+                },
+            }
+        )
+
+    return {
+        "meta": {
+            "key": key_name,
+            "time": str(ts.ratioString if ts else "4/4"),
+        },
+        "measures": out_measures,
+    }

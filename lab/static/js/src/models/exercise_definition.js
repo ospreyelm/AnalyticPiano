@@ -259,6 +259,16 @@ define([
     ].indexOf(analysisType) !== -1;
   }
 
+  function computeNoteNameFromEvent(ev) {
+    if (!ev) return "";
+    var name = ev.step.toUpperCase();
+    if (ev.alter === 1) name += "#";
+    else if (ev.alter === -1) name += "b";
+    else if (ev.alter === 2) name += "##";
+    else if (ev.alter === -2) name += "bb";
+    return name;
+  }
+
   function computeWindowLabel(midiStack, analysisType, analyzer, compoundIntervals, windowEvents) {
     if (!midiStack || !midiStack.length || !analyzer) {
       return "";
@@ -272,6 +282,11 @@ define([
 
         var midi = midiStack[0];
         if (analysisType === "note_name") {
+          // Priority: If we have a single event in the window, use its original spelling (step/alter)
+          // This prevents enharmonic errors like Bb being called A#.
+          if (windowEvents && windowEvents.length === 1) {
+              return normalizeAnalysisLabel(computeNoteNameFromEvent(windowEvents[0]));
+          }
           return normalizeAnalysisLabel(analyzer.to_note_name([midi]));
         }
         if (analysisType === "solfege") {

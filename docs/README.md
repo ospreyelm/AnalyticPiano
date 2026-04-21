@@ -59,6 +59,27 @@ This directory contains comprehensive documentation for the HarmonyLab system, i
 
 ---
 
+## Curriculum Strategy
+
+### **[unit_1_note_reading_strategy.md](unit_1_note_reading_strategy.md)** - Unit 1 Implementation
+- **Focus:** How we generated 1,200+ diatonic note-reading exercises from Bach chorales
+- **Key finding:** Uses strict diatonicality checks and stage-based categorization (Stages 1-4) to avoid accidentals for early learners
+- **Content:**
+  - Stage definitions (Step/Octave sets)
+  - Exclude-chromatic policy
+  - Complexity-based sorting (Stage + Key Simplicity)
+- **Audience:** Instructors and agents rebuilding or extending the Note Names unit
+
+### **[unit_9_bach_import_strategy.md](unit_9_bach_import_strategy.md)** - Unit 9 Implementation
+- **Focus:** How we implemented Tonic/Dominant filtering for Bach chorales
+- **Key finding:** Uses `skill_tags: ["unit:9"]` on a Playlist to trigger frontend filtering in `exercise_definition.js`
+- **Content:**
+  - Rationale for using frontend filtering instead of data destructive imports
+  - How to create curriculum-aligned playlists using the standard Bach importer
+- **Audience:** Instructors and agents building new curriculum units
+
+---
+
 ## Student Experience & LMS Assessment
 
 ### **[lms_student_ux_assessment.md](lms_student_ux_assessment.md)** - Comprehensive LMS Evaluation
@@ -129,6 +150,8 @@ docs/
 ├── claude.md                              (main implementation guide)
 ├── chorale_analysis.md                    (harmonic analysis pipeline — computed on the fly)
 ├── chorale_future_improvements.md         (chorale feature roadmap)
+├── unit_1_note_reading_strategy.md        (Curriculum strategy: diatonic Note Names for Unit 1)
+├── unit_9_bach_import_strategy.md        (Curriculum strategy: frontend filtering for Unit 9)
 └── lms_student_ux_assessment.md          (LMS/student experience evaluation)
 ```
 
@@ -230,4 +253,4 @@ When updating these documents:
 - **Student UX questions:** See [lms_student_ux_assessment.md](lms_student_ux_assessment.md) relevant section
 - **Feature planning:** See corresponding roadmap document
 
-Last updated: 2026-04-13
+Last updated: 2026-04-21
