@@ -106,10 +106,15 @@ Each skill gets its own playlist (or two playlists for Note Names). All playlist
 | Unit 1 — Clefs (Bass) | `clefs` | `--voice bass` | bass |
 | Unit 1 — Enharmonics | `enharmonic` | `--voice soprano` | treble |
 
-Creation command per playlist:
+Creation command per playlist (`--skill-tags` does not exist yet in `import_chorale.py`; tags are applied in a post-import step via Django admin or a thin wrapper script that calls `Exercise.objects.filter(playlist=p).update(skill_tags=['unit:1', '<Tag>'])`):
 ```bash
-python manage.py import_chorale <file> --mode identify --analysis note_name --voice <voice> --skill-tags unit:1,<Tag>
+# Step 1: import exercises into a named playlist
+python manage.py import_chorale <file> --mode identify --analysis note_name --voice <voice> --playlist-name "Unit 1 — Note Names (Treble)"
+
+# Step 2: tag exercises (run once per playlist)
+python manage.py tag_unit_exercises --playlist "Unit 1 — Note Names (Treble)" --tags unit:1,Note_Names
 ```
+`tag_unit_exercises` is a small new management command to be written as part of this work.
 
 ### Note: `applySkillFilter` is non-blocking for Unit 1
 
@@ -153,8 +158,8 @@ Unit number → skill tags mapping is derived from `music_theory_taxonomy_with_b
 
 ### PlayerView (`/s/units/<unit_num>/play/`)
 
-- Accepts `?skill=<tag>` query param to select which skill's playlist to load
-- Loads the playlist for that skill
+- Accepts `?playlist=<playlist_id>` query param — explicit playlist ID, not tag (avoids ambiguity when multiple playlists share a tag e.g. Note Names Treble vs Bass)
+- Loads the playlist by ID
 - Renders `player.html` — embeds existing lab exercise JS
 - No instructor chrome: no key selector, no display options, no screenshot, no MIDI toggle tabs
 - Back link → `UnitView`
@@ -169,13 +174,13 @@ Unit number → skill tags mapping is derived from `music_theory_taxonomy_with_b
 1. Student logs in at `/s/login/`
 2. Redirected to `/s/` — sees Unit 1 (active), Unit 2+ (locked)
 3. Unit 1 shows "Start here →" — 0% mastery
-4. Student clicks → `UnitView` — sees 5 skills, all "Not started"
+4. Student clicks → `UnitView` — sees 4 mastery skills, all "Not started"
 5. Clicks "Start" on first skill → `PlayerView`
 
 ### Returning visit
 
 1. Student logs in → `/s/`
-2. Auto-resume card: "Pick up where you left off — Unit 1 · Ledger Lines, 4 of 10 skills practiced"
+2. Auto-resume card: "Pick up where you left off — Unit 1 · Ledger Lines, 1 of 4 skills mastered"
 3. One tap → `PlayerView` for that skill
 4. Unit list below shows overall progress bar
 
@@ -213,7 +218,9 @@ Unit number → skill tags mapping is derived from `music_theory_taxonomy_with_b
 
 ## Progress & Mastery
 
-Unit % complete = `(mastered_skills / total_unit_skills) * 100`
+Unit % complete (Unit 1) = `(count of {Note_Names, Ledger_Lines, clefs, enharmonic} where level == 'mastered') / 4 * 100`
+
+For future units: `(mastered_skill_count / len(unit_skill_tags)) * 100` — denominator derived from taxonomy JSON at runtime.
 
 Mastery state per skill comes from `StudentSkillMastery.level` (model constants: `LEVEL_NOT_STARTED`, `LEVEL_ATTEMPTED`, `LEVEL_FAMILIAR`, `LEVEL_PROFICIENT`, `LEVEL_MASTERED`):
 
