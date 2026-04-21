@@ -64,7 +64,7 @@ Registered in `settings.py` as `student`. Mounted at `/s/` in root `urls.py`.
 | `/s/` | `HomeView` | Unit list + auto-resume |
 | `/s/units/<unit_num>/` | `UnitView` | Skill breakdown |
 | `/s/units/<unit_num>/play/` | `PlayerView` | Exercise player |
-| `/s/login/` | Django `LoginView` with student template | Student login |
+| `/s/login/` | `StudentLoginView` (custom) | Student login → redirects to `/s/` |
 
 ### Reused (unchanged)
 
@@ -80,27 +80,40 @@ Registered in `settings.py` as `student`. Mounted at `/s/` in root `urls.py`.
 
 ### Skills (from taxonomy)
 
-Unit 1 "Pitch & Staff Notation" contains 5 skills, each mapped to a skill tag:
+Unit 1 "Pitch & Staff Notation" contains 4 mastery skills. Note Names is a single mastery tag with two content tracks (treble and bass), each a separate playlist but sharing one `StudentSkillMastery` record. Progress math uses 4 as the denominator.
 
-| Skill | Tag | Exercise type |
-|-------|-----|--------------|
-| Note Names — Treble Staff | `Note_Names` | pitch identification |
-| Note Names — Bass Staff | `Note_Names` | pitch identification |
-| Ledger Lines | `Ledger_Lines` | pitch identification |
-| Clefs | `clefs` | pitch identification |
-| Enharmonics | `enharmonic` | pitch identification |
+| Mastery skill | Tag | Voices / content | Exercise type |
+|---------------|-----|-----------------|--------------|
+| Note Names | `Note_Names` | soprano (treble) + bass voice (bass staff) — two playlists | pitch identification |
+| Ledger Lines | `Ledger_Lines` | soprano | pitch identification |
+| Clefs | `clefs` | soprano + bass | pitch identification |
+| Enharmonics | `enharmonic` | soprano | pitch identification |
+
+UnitView displays 4 skill rows. Note Names row links to treble playlist first; bass playlist is surfaced as a sub-track ("Also practice: Bass Staff") after treble mastery is reached.
 
 ### Exercise Creation
 
 Unit 1 exercises are pitch identification exercises (`analysisType: note_name`). They do not yet exist in the DB and must be created as part of this work.
 
-Creation path: `python manage.py import_chorale` with `--mode identify --analysis note_name --voice soprano` for single-voice pitch ID exercises, tagged with the relevant skill tags.
+Each skill gets its own playlist (or two playlists for Note Names). All playlists are linked to a Unit 1 Course. Content generation matrix:
 
-Each skill gets its own playlist. All 5 playlists are linked to a Unit 1 course (or a single Unit 1 playlist with skill-tagged exercises — see Data Model section).
+| Playlist | Tag | Voice arg | Clef |
+|----------|-----|-----------|------|
+| Unit 1 — Note Names (Treble) | `Note_Names` | `--voice soprano` | treble |
+| Unit 1 — Note Names (Bass) | `Note_Names` | `--voice bass` | bass |
+| Unit 1 — Ledger Lines | `Ledger_Lines` | `--voice soprano` | treble |
+| Unit 1 — Clefs (Treble) | `clefs` | `--voice soprano` | treble |
+| Unit 1 — Clefs (Bass) | `clefs` | `--voice bass` | bass |
+| Unit 1 — Enharmonics | `enharmonic` | `--voice soprano` | treble |
 
-### Blocker: `applySkillFilter`
+Creation command per playlist:
+```bash
+python manage.py import_chorale <file> --mode identify --analysis note_name --voice <voice> --skill-tags unit:1,<Tag>
+```
 
-The existing `applySkillFilter` generic path in `exercise_definition.js` is broken for most units (documented in CLAUDE.md). Unit 1 skill tags (`Note_Names`, `Ledger_Lines`, `clefs`, `enharmonic`) must be added to the `UNIT_ALLOWED_ANSWERS` map before exercise filtering will work. **Fix this before creating exercises.**
+### Note: `applySkillFilter` is non-blocking for Unit 1
+
+`applySkillFilter` in `exercise_definition.js` skips filtering entirely for non-roman analysis types (line: `if ((analysisType || 'roman') !== 'roman') return problems;`). Since all Unit 1 exercises use `analysisType: note_name`, the broken generic path is never hit. No fix needed for this pilot. The CLAUDE.md blocker applies only to roman numeral exercises in other units.
 
 ---
 
@@ -108,9 +121,11 @@ The existing `applySkillFilter` generic path in `exercise_definition.js` is brok
 
 Units are not DB entities. A unit is represented as:
 
-1. One **Playlist per skill** (e.g. "Unit 1 — Note Names Treble"), tagged `skill_tags: ['unit:1', 'Note_Names']`
-2. A **Course** titled "Unit 1: Pitch & Staff Notation" grouping all 5 skill playlists
-3. `StudentSkillMastery` records per student per skill tag — aggregated to compute unit % complete
+1. One **Playlist per content track** (6 total — see content matrix above), each tagged `skill_tags: ['unit:1', '<Tag>']`
+2. A **Course** titled "Unit 1: Pitch & Staff Notation" grouping all 6 playlists
+3. `StudentSkillMastery` records per student per skill tag (4 tags) — aggregated to compute unit % complete
+
+Unit % = `(count of tags where level == 'mastered') / 4 * 100`
 
 Unit number → skill tags mapping is derived from `music_theory_taxonomy_with_branches.json`.
 
@@ -200,11 +215,15 @@ Unit number → skill tags mapping is derived from `music_theory_taxonomy_with_b
 
 Unit % complete = `(mastered_skills / total_unit_skills) * 100`
 
-Mastery state per skill comes from `StudentSkillMastery.level`:
-- `not_started` → empty circle, gray
-- `attempted` / `familiar` → half circle, orange (shown as "Proficient — keep practicing")
-- `proficient` → half circle, orange
-- `mastered` → checkmark, green
+Mastery state per skill comes from `StudentSkillMastery.level` (model constants: `LEVEL_NOT_STARTED`, `LEVEL_ATTEMPTED`, `LEVEL_FAMILIAR`, `LEVEL_PROFICIENT`, `LEVEL_MASTERED`):
+
+| Level | Display | Color |
+|-------|---------|-------|
+| `not_started` (no record) | Empty circle | Gray |
+| `attempted` | Half circle | Orange |
+| `familiar` | Half circle | Orange |
+| `proficient` | Half circle | Orange — "Keep practicing" |
+| `mastered` | Checkmark | Green |
 
 Mastery computation logic is unchanged (existing `mastery.py`).
 
@@ -212,10 +231,12 @@ Mastery computation logic is unchanged (existing `mastery.py`).
 
 ## Auth & Roles
 
-- Student login: `/s/login/` — standard Django auth, student template
-- Instructors (Django `is_staff=True`) hitting `/s/` → redirect to `/dashboard/`
-- No new user model needed for pilot — distinguish by `is_staff` flag
-- Students are created by admin (you) — no self-registration for pilot
+- Existing login at `/accounts/login/` redirects to `/dashboard/my-work/` — **not reused** for students
+- New `StudentLoginView` in `apps/student/views.py`: same email+password form, but `success_url = '/s/'`; does not call existing `accounts.views.login`
+- `HomeView`, `UnitView`, `PlayerView` all use `LoginRequiredMixin` with `login_url = '/s/login/'`
+- Instructors (`is_staff=True`) hitting any `/s/` view → `HttpResponseRedirect('/dashboard/')`
+- No new user model — pilot users created by admin via Django admin
+- No self-registration for pilot
 
 ---
 
