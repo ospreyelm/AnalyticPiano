@@ -131,6 +131,8 @@ INSTALLED_APPS = (
     "apps.accounts",
     "apps.exercises",
     "apps.dashboard",
+    "apps.student",
+
     "lab",
     # Third parties
     "django_extensions",

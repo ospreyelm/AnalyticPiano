@@ -13,4 +13,5 @@ def error_404(request, exception):
     except:
         pass
 
-    return render(request, "404.html", data)
+    return render(request, "404.html", data, status=404)
+

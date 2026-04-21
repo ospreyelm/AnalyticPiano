@@ -1,0 +1,42 @@
+{# apps/student/templates/student/home.html #}
+{% extends "student/base.html" %}
+{% block title %}HarmonyLab{% endblock %}
+{% block content %}
+
+{% if resume_url %}
+  <a class="s-resume-card" href="{{ resume_url }}">
+    <div class="s-resume-label">Pick up where you left off</div>
+    <div class="s-resume-title">Unit 1 · {{ resume_skill|default:"Note Names" }}</div>
+    <div class="s-resume-progress">
+      <div class="s-resume-progress-bar" style="width: {{ unit1_progress.percent }}%"></div>
+    </div>
+    <div class="s-resume-meta">{{ unit1_progress.mastered_count }} of 4 skills mastered</div>
+  </a>
+{% endif %}
+
+<div class="s-section-label">Your Units</div>
+
+{% for unit in units %}
+  {% if unit.locked %}
+    <div class="s-unit-card locked">
+      <div class="s-unit-card-row">
+        <span class="s-unit-title" style="color:#999">Unit {{ unit.num }} · {{ unit.title }}</span>
+        <span style="font-size:0.8rem;color:#ccc">🔒</span>
+      </div>
+    </div>
+  {% else %}
+    <a class="s-unit-card active" href="{{ unit.url }}">
+      <div class="s-unit-card-row">
+        <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
+        <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
+      </div>
+      {% if unit.percent > 0 %}
+        <div class="s-progress-bar-track">
+          <div class="s-progress-bar-fill" style="width: {{ unit.percent }}%"></div>
+        </div>
+      {% endif %}
+    </a>
+  {% endif %}
+{% endfor %}
+
+{% endblock %}

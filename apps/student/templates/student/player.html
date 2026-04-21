@@ -1,0 +1,82 @@
+{# apps/student/templates/student/player.html #}
+{% extends "__base.html" %}
+
+{% block css_extra %}
+  {% load static %}
+  <link href="{% static 'student/student.css' %}" rel="stylesheet">
+  <style>
+    /* Player specific overrides to hide instructor chrome */
+    #container { opacity: 1 !important; background: white; }
+    .s-player-wrap { max-width: 900px; margin: 0 auto; padding: 1rem; }
+    #staffwrapper { background: #fdfdfd; border: 1px solid #eee; border-radius: 8px; margin-bottom: 1rem; }
+    #piano { margin-top: 1rem; }
+    .instruction-panel { border: none !important; background: transparent !important; padding: 0 !important; }
+    .instruction-panel-header { display: none; }
+    #exercise-text { font-size: 1.1rem; line-height: 1.4; color: #333; margin-bottom: 1rem; }
+    #staff-toolbar { margin-bottom: 0.5rem; display: flex; justify-content: center; gap: 1rem; }
+    .icon-btn-camera, .startover-icon { display: none !important; } /* Hide expert tools */
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="s-player-wrap">
+  <header class="s-player-header">
+    <a href="{% url 'student:unit' unit_num=unit_num %}" class="s-back" style="margin:0">← Back</a>
+    <div class="s-header-brand">Unit {{ unit_num }} // {{ playlist.name }}</div>
+    <div class="s-player-controls" style="display: flex; gap: 8px;">
+      <button id="mute-toggle" class="s-btn-secondary" style="min-width: 60px;">Mute</button>
+      <button id="volume" class="s-btn-secondary" style="min-width: 40px; font-weight: bold;">mf</button>
+      <button id="midi-switch" class="s-btn-secondary" style="min-width: 80px;">MIDI</button>
+    </div>
+    <div class="s-player-pos">Exercise <span id="js-player-current">1</span> of <span id="js-player-total">-</span></div>
+  </header>
+
+
+  <div class="harmony-ui">
+    <div id="staff-area">
+      <div id="staff-toolbar">
+        <a class="previous-icon js-btn-previousexercise" title="Previous"> </a>
+        <a class="refresh-icon js-btn-pristine" title="Reset"> </a>
+        <a class="next-icon js-btn-nextexercise" title="Next"> </a>
+      </div>
+      
+      <div id="staffwrapper">
+        <div id="user-interaction-solicitation">CLICK TO START</div>
+        <canvas id="staff"></canvas>
+      </div>
+
+      <div id="identification-actions" style="display: none; text-align: center; margin-bottom: 1rem;">
+        <button id="identification-submit" class="s-btn-primary" style="width: 200px;">Submit Answer</button>
+      </div>
+
+      <div id="instruction-panel">
+        <div id="exercise-text"></div>
+        <div id="exercise-status-and-tempo" style="font-size: 0.85rem; color: #666;"></div>
+      </div>
+    </div>
+
+    <div id="piano"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block js_extra %}
+  <script>require(['app/main']);</script>
+  <script>
+    // Minimal glue to update the student-facing exercise counter
+    window.addEventListener('load', function () {
+        setInterval(() => {
+            const statusEl = document.getElementById('exercise-info');
+            if (statusEl) {
+                // The engine puts "Exercise X of Y" in #exercise-info
+                const text = statusEl.innerText;
+                const match = text.match(/Exercise (\d+) of (\d+)/);
+                if (match) {
+                    document.getElementById('js-player-current').innerText = match[1];
+                    document.getElementById('js-player-total').innerText = match[2];
+                }
+            }
+        }, 500);
+    }, false);
+  </script>
+{% endblock %}

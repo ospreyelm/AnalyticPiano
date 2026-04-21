@@ -15,6 +15,8 @@ urlpatterns = [
     path("", include(lab.urls)),
     path("accounts/", include("apps.accounts.urls"), name="accounts"),
     path("dashboard/", include("apps.dashboard.urls")),
+    path("s/", include("apps.student.urls")),
+
     path("library/", library_view, name="library"),
     path("library/clone-course/<str:course_id>/", clone_course_view, name="clone-course"),
     path("ckeditor/", include("ckeditor_uploader.urls")),
