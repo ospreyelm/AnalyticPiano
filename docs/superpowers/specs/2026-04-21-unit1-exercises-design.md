@@ -37,15 +37,17 @@ Stage map derived from `dandelot-emulator-treble.xml` (Opusmodus-generated file 
 
 ### Bass Clef (gamut F2–D5, anchors F2, C3, F3, C4)
 
-Bass stage note sets mirror the treble Dandelot structure with anchor/neighbor/fill progression. Exact sets to be confirmed against a bass Dandelot reference during implementation — the `import_music21_corpus` output will be used to verify coverage.
+Bass stages are derived algorithmically by mirroring the treble Dandelot structure around middle C (C4). Each treble note maps to its bass mirror: interval from C4 is inverted. This is computed in `generate_unit1` — not hardcoded — so it stays in sync if the treble map is ever adjusted.
 
 | Stage | New notes introduced |
 |-------|----------------------|
-| 1 | F2, C3, F3, C4 |
-| 2 | E2, G2, E3, G3, E4 (neighbors of anchors) |
-| 3 | D2, A2, D3, A3, D4 (fill remaining lines/spaces) |
-| 4 | Ledger line extremes |
+| 1 | F2, C3, F3, C4 (anchors — mirror of G4, C4, G5, C5) |
+| 2 | G2, E3, A3, B3, G3, E4, A2, B2 (neighbors — mirror of treble Stage 2) |
+| 3 | D3, D2, A2 (fill — mirror of treble Stage 3 E/B notes) |
+| 4 | D5 (high ledger line extreme) |
 | 5 | Accidentals |
+
+The exact derived set will be logged by `generate_unit1 --dry-run` for review before first real run.
 
 ---
 
@@ -61,9 +63,11 @@ Exercises within the playlist are sorted using a pre-computed interleave sequenc
 - Mid playlist: Stage 1 reviews interspersed as new stages introduced
 - Later: all stages rotating, Stage 5 (accidentals) appearing last
 
+**Algorithm — weighted round-robin:** Stage K gets weight `6 - K` (Stage 1 = 5 slots, Stage 2 = 4, Stage 3 = 3, Stage 4 = 2, Stage 5 = 1 per cycle). Each cycle exhausts one exercise from each bucket proportional to its weight. Buckets are drained in ascending stage order within each cycle slot. When a bucket empties, remaining cycles skip it.
+
 Sort key computed at generation time and stored as `ExercisePlaylistOrdered.order`. Playlist order is fixed (not dynamically recomputed at serve time).
 
-Within each stage, exercises are sorted by Riemenschneider number (ascending) for consistency.
+Within each stage bucket, exercises are sorted by Riemenschneider number (ascending) before interleaving.
 
 ---
 
@@ -90,10 +94,19 @@ python manage.py import_music21_corpus \
 
 **`score_to_cir(score)` — reverse path in `music21_builder.py`:**
 
+music21 Bach chorales have 4 separate `Part` objects, not 2 staves. Map by part index using the same `VOICE_MAP` ordering as `pitch_voice_utils.py`:
+
+| Part index | Voice | CIR stave | CIR voice index |
+|------------|-------|-----------|-----------------|
+| 0 | Soprano | treble | 0 |
+| 1 | Alto | treble | 1 |
+| 2 | Tenor | bass | 0 |
+| 3 | Bass | bass | 1 |
+
 | music21 object | CIR field |
 |---------------|-----------|
-| `score.parts` | treble/bass staves (detected by clef) |
-| `stream.Voice` | `voices[]` |
+| `score.parts[0,1]` | `staves.treble.voices[0,1]` |
+| `score.parts[2,3]` | `staves.bass.voices[0,1]` |
 | `note.Note` | `{kind:"note", pitch:{step,alter,octave}, duration:{type,dots}}` |
 | `note.Rest` | `{kind:"rest", duration:{type,dots}}` |
 | `note.Chord` | `{kind:"chord", pitches:[...]}` |
@@ -130,7 +143,8 @@ python manage.py generate_unit1 \
      - `analysisType: "note_name"`
      - `skill_tags: ["unit:1", "Note_Names"]`
      - `complexity`: stage number (1–5)
-     - `description`: e.g. `"BWV10.7 mm.3-4 – Soprano (note_name) Stage 1"`
+     - `description`: e.g. `"BWV10.7 mm.3-4 – Soprano (note_name) Stage 1"` — 1-indexed measure numbers (score convention). This description is the **idempotency key**: `generate_unit1` skips creation if `Exercise.objects.filter(description=desc).exists()`. The format is deterministic so re-runs produce identical keys.
+     - `is_public: True`
 5. Compute interleaved sort order across all created exercises (see above)
 6. Create or update `Playlist(name="Unit 1 — Note Names (Treble)", skill_tags=["unit:1","Note_Names"])`
 7. Link exercises via `ExercisePlaylistOrdered` using computed sort order
@@ -173,6 +187,6 @@ No new models required.
 ## Out of Scope
 
 - Ledger Lines, Clefs, Enharmonics playlists (separate skills in Unit 1) — follow same pattern but deferred
-- Bass clef exact stage note sets — to be finalized during implementation
+- Bass clef stage note sets hardcoded — derived algorithmically at runtime by mirroring treble map
 - Mastery gating between stages within playlist — mastery-wiring spec handles this
 - Unit 2+ content generation
