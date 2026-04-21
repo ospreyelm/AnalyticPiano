@@ -544,12 +544,17 @@ define([
     return windows;
   }
 
-  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations) {
+  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex) {
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
       var rest = new Vex.Flow.StaveNote({ clef: clef, keys: ["b/4"], duration: dur, dots: numDots });
       if (numDots > 0) Vex.Flow.Dot.buildAndAttach([rest], { all: true });
+      
+      // Tag with musical position
+      rest._onset = onset;
+      rest._measureIndex = measureIndex;
+      
       return rest;
     }
     if (item.kind === "note") {
@@ -560,6 +565,10 @@ define([
       var numDots = item.duration.dots || 0;
       var note = new Vex.Flow.StaveNote({ clef: clef, keys: [key], duration: durToVF(item.duration), dots: numDots });
       if (numDots > 0) Vex.Flow.Dot.buildAndAttach([note], { all: true });
+
+      // Tag with musical position
+      note._onset = onset;
+      note._measureIndex = measureIndex;
 
       // Only show accidental if it contradicts the key signature
       var keyAlters = keySignatureAlterations || {};
@@ -602,6 +611,10 @@ define([
           chord.addModifier(new Vex.Flow.Accidental(accType), i);
         }
       }
+      
+      // Tag with musical position
+      chord._onset = onset;
+      chord._measureIndex = measureIndex;
       
       // Default: gray until played (per notehead)
       if (chord.setStyle) chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
@@ -756,24 +769,32 @@ define([
         }
       }
 
-      function staffVoices(staffId, staff, clef, idState, keySignatureAlterations) {
+      function staffVoices(staffId, staff, clef, idState, keySignatureAlterations, measureStartTick) {
         // Optional filtering: opts.selectVoices = { treble: [0], bass: [1] }
         var select = (opts && opts.selectVoices && opts.selectVoices[staffId]) || null;
         // Optional octave shift per staff: opts.octaveShift = { treble: 0, bass: -1 }
         var octaveShift = (opts && opts.octaveShift && (opts.octaveShift[staffId] || 0)) || 0;
         // Note playing state across this render; keep shared across entire piece for consistent IDs
         idState = idState || { nextId: 0, playedNoteIds: (opts && opts.playedNoteIds) || null };
+        var measStartTick = measureStartTick || 0;
         return (staff.voices || [])
-          .map(function (v, idx) {
-            if (select && select.indexOf(idx) === -1) return null; // filter out
-            var tickables = v.items.map(function (it) { return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations); }).filter(Boolean);
+          .map(function (v, vIdx) {
+            if (select && select.indexOf(vIdx) === -1) return null; // filter out
+
+            var localOnset = 0;
+            var tickables = v.items.map(function (it) {
+              var onsetToUse = measStartTick + localOnset;
+              localOnset += durationToTicks(it.duration);
+              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex);
+            }).filter(Boolean);
+            
             var stemDir = v.direction === "up" ? 1 : v.direction === "down" ? -1 : 1;
             if (v.direction === "up") tickables.forEach(function (t) { if (t.setStemDirection) t.setStemDirection(1); });
             if (v.direction === "down") tickables.forEach(function (t) { if (t.setStemDirection) t.setStemDirection(-1); });
 
             // Only beam outer voices (S=treble idx0 stems-up, B=bass idx1 stems-down).
             // Inner voices (A=treble idx1, T=bass idx0) beam toward the opposing staff — skip.
-            var isOuterVoice = (stemDir === 1 && idx === 0) || (stemDir === -1 && idx === 1);
+            var isOuterVoice = (stemDir === 1 && vIdx === 0) || (stemDir === -1 && vIdx === 1);
             var beams = isOuterVoice ? autoBeam(tickables, stemDir) : [];
             
             var voice = buildVoice(time, tickables);
@@ -1034,6 +1055,7 @@ define([
         };
       }
 
+      var cumulativeMeasureTick = 0;
       for (var measIdx = 0; measIdx < numMeasures; measIdx++) {
         var meas = measuresToRender[measIdx];
         var treble = meas.staves.treble;
@@ -1078,8 +1100,8 @@ define([
           leftLine.setType(Vex.Flow.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
         }
 
-  var trebleVoices = staffVoices("treble", treble, "treble", globalIdState, keySignatureAlterations);
-  var bassVoices = staffVoices("bass", bass, "bass", globalIdState, keySignatureAlterations);
+  var trebleVoices = staffVoices("treble", treble, "treble", globalIdState, keySignatureAlterations, cumulativeMeasureTick);
+  var bassVoices = staffVoices("bass", bass, "bass", globalIdState, keySignatureAlterations, cumulativeMeasureTick);
 
         // Add barlines at the end of each measure
         // Only show final END barline if this is truly the last measure of the entire piece
@@ -1153,7 +1175,10 @@ define([
                 tks.forEach(function(t){
                   if (!t || typeof t.getAbsoluteX !== 'function') return;
                   var dur = String(t.duration || '');
-                  if (dur.indexOf('r') !== -1) return; // skip rests
+                  // Rests don't create identification columns, 
+                  // but we still want their onsets for playback if needed?
+                  // Actually, for id mode, we only care about columns with notes.
+                  if (dur.indexOf('r') !== -1) return; 
                   allTickables.push(t);
                 });
               });
@@ -1208,32 +1233,26 @@ define([
               var midi = attackList.slice();
               if (!midi.length) return;
 
+              var currentNote = col.notes[0];
+              var noteOnset = currentNote._onset;
+              var noteMeasure = currentNote._measureIndex;
+
               if (analysisWindows.length) {
-                var attackKey = attackList.join(",");
                 var matchedWindow = null;
-                var matchedIndex = analysisWindowIdx;
-                for (var seek = analysisWindowIdx; seek < analysisWindows.length; seek++) {
+                var matchedIndex = -1;
+                
+                // Find EXACT match by measure and onset
+                for (var seek = 0; seek < analysisWindows.length; seek++) {
                   var win = analysisWindows[seek];
-                  if (win.measureIndex < absoluteMeasureIndex) {
-                    analysisWindowIdx = seek + 1;
-                    continue;
-                  }
-                  if (!matchedWindow) {
-                    matchedWindow = win;
-                    matchedIndex = seek;
-                  }
-                  if (win.measureIndex > absoluteMeasureIndex) {
-                    break;
-                  }
-                  if (win.attackKey === attackKey) {
+                  if (win.measureIndex === noteMeasure && Math.abs(win.onset - noteOnset) < 2) {
                     matchedWindow = win;
                     matchedIndex = seek;
                     break;
                   }
                 }
-                if (matchedWindow && matchedWindow.midiStack && matchedWindow.midiStack.length) {
+
+                if (matchedWindow && matchedWindow.midiStack) {
                   midi = matchedWindow.midiStack.slice();
-                  analysisWindowIdx = matchedIndex + 1;
                 }
               }
 
@@ -1292,6 +1311,7 @@ define([
         
         // Move X position for next measure
         currentX += measureWidth;
+        cumulativeMeasureTick += measureDurations[measIdx] || 0;
       }
 
       flushRomanExpRun();
