@@ -1672,8 +1672,8 @@ define([
         return 0.5;
       } else if (rhythm_value === "q") {
         return 0.375;
-        // } else if (rhythm_value === "8") {
-        //   return 0.25;
+      } else if (rhythm_value === "8") {
+        return 0.25;
       } else {
         console.log("Unknown rhythm_value passed to getVisualWidth");
         return 1;

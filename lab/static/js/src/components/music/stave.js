@@ -400,12 +400,12 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
           beat_value: 4,
           resolution: Vex.Flow.RESOLUTION,
         };
-      // } else if (rhythm_value === "8") {
-      //   time = {
-      //     num_beats: 0.5,
-      //     beat_value: 4,
-      //     resolution: Vex.Flow.RESOLUTION,
-      //   };
+      } else if (rhythm_value === "8") {
+        time = {
+          num_beats: 0.5,
+          beat_value: 4,
+          resolution: Vex.Flow.RESOLUTION,
+        };
       } else {
         // should be redundant
         time = {
