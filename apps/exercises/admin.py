@@ -69,6 +69,8 @@ class ExerciseAdmin(ImportExportModelAdmin):
     )
     save_on_top = True
     save_as = True
+    list_per_page = 500
+    list_max_show_all = 2000
 
     resource_class = ExerciseResource
     

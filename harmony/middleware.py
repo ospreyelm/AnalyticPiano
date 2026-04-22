@@ -6,6 +6,7 @@ Custom middleware for HarmonyLab.
 class DisableCSPMiddleware:
     """
     Middleware to add permissive CSP headers for local development.
+    Also disables browser caching for JS files so edits take effect immediately.
     WARNING: This should ONLY be used in local/dev environments, never in production!
     """
 
@@ -29,9 +30,11 @@ class DisableCSPMiddleware:
         )
         
         response['Content-Security-Policy'] = csp_policy
-        # Also set the report-only version for debugging
-        # response['Content-Security-Policy-Report-Only'] = csp_policy
-        
-        print(f"[DisableCSPMiddleware] Set CSP header: {csp_policy[:100]}...")
+
+        # Disable browser caching for JS files in development so edits are always picked up
+        path = request.path
+        if path.startswith('/static/') and path.endswith('.js'):
+            response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response['Pragma'] = 'no-cache'
         
         return response

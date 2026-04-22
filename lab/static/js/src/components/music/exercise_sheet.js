@@ -1112,6 +1112,8 @@ define([
           var wantsRomans = !!display.showRomans;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
+          var wantsNoteNames = !!display.showNoteNames || definition.mode === "analysis";
+
 
           // In chorale identification mode the figures/Romans ARE the student's
           // answers — rendering them via VexFlow would spoil the exercise.
@@ -1122,11 +1124,13 @@ define([
             wantsChordLabels = false;
           }
 
-          var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels;
+          var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsNoteNames;
+
           // Preserve legacy chorale behavior that force-enables roman numerals,
           // but do not force overlays for chorale_identification.
-          if (!wantsRomans && definition.isChorale && definition.isChorale()) {
+          if (!wantsAnalysis && definition.isChorale && definition.isChorale()) {
             wantsRomans = true;
+            wantsAnalysis = true;
           }
           // Ensure analysis renderer is not suppressed
           if (!display.analysisRenderer) {
@@ -1147,7 +1151,11 @@ define([
             if (wantsChordLabels) {
               analyzeConfig.mode.chord_labels = true;
             }
+            if (wantsNoteNames) {
+              analyzeConfig.mode.note_names = true;
+            }
           }
+
           var startMeasure =
             (this._chorale && typeof this._chorale.startMeasure === "number"
               ? this._chorale.startMeasure
@@ -1174,8 +1182,10 @@ define([
             maxMeasures: (this._chorale && this._chorale.maxMeasures) || 4,
             startMeasure: startMeasure,
             playedNoteIds: playedNoteIdsForRender,
+            showNotation: display.showNotation !== undefined ? display.showNotation : true,
             // Analysis wiring for chorale path (Notater bridge inside adapter)
             analyzeConfig: analyzeConfig,
+
             keySignature: this.keySignature,
             analysisRenderer: display.analysisRenderer || "notater", // notater|adapter|none
             staffYOffset: staffYOffset,

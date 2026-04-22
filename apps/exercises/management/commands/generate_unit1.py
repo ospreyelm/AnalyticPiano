@@ -255,44 +255,37 @@ def _key_token(key_name):
     return f"{prefix}{root}{suffix}"
 
 
-def _build_exact_payload(chord_rows, key_name, intro_text, target):
+def _build_exact_payload(score_data, key_name, intro_text, target):
     """Notation-only matching: student sees note on staff, plays exact MIDI."""
     return {
-        "type": "matching",
-        "staffDistribution": target,
+        "type": "chorale",
+        "staffDistribution": "RH" if target == "treble" else "LH",
         "key": _key_token(key_name),
-        "analysis": {
-            "enabled": False,
-            "mode": {
-                "note_names": False,
-                "solfege": False,
-                "scale_degrees": False,
-            },
-        },
-        "chord": chord_rows,
+        "score": score_data,
         "introText": intro_text,
         "reviewText": "Great work.",
     }
 
 
-def _build_analysis_payload(chord_rows, key_name, intro_text, target):
-    """Analysis-only matching: student sees pitch name label, plays the note."""
+def _build_analysis_payload(score_data, key_name, intro_text, target):
+    """Analysis-only matching: student sees pitch name label, plays the note in any octave."""
     return {
-        "type": "analytical",
-        "staffDistribution": target,
+        "type": "chorale",
+        "mode": "analysis",
+        "staffDistribution": "RH" if target == "treble" else "LH",
         "key": _key_token(key_name),
-        "analysis": {
-            "enabled": True,
-            "mode": {
-                "note_names": True,
-                "solfege": False,
-                "scale_degrees": False,
-            },
+        "score": score_data,
+        "grading": {
+            "octaveIndependent": True,
         },
-        "chord": chord_rows,
+        "display": {
+            "showNotation": False,
+            "showNoteNames": True,
+        },
         "introText": intro_text,
         "reviewText": "Great work.",
     }
+
 
 
 def _build_identification_payload(score_data, key_name, intro_text, target):
@@ -301,7 +294,7 @@ def _build_identification_payload(score_data, key_name, intro_text, target):
         "type": "chorale_identification",
         "analysisType": "note_name",
         "identMode": "submit",
-        "staffDistribution": target,
+        "staffDistribution": "RH" if target == "treble" else "LH",
         "key": _key_token(key_name),
         "score": score_data,
         "introText": intro_text,
@@ -488,7 +481,7 @@ class Command(BaseCommand):
                         }
                         one_voice["meta"]["key"] = _key_token(key_name)
 
-                        chord_rows = _voice_window_to_matching_chords(one_voice)
+
                         intro_text = (
                             f"{bwv.upper()}, measures {human_start}-{human_end}, "
                             f"{voice_name.title()} voice."
@@ -496,63 +489,39 @@ class Command(BaseCommand):
 
                         if lanes in ("exact", "both"):
                             exact_desc = f"{bwv.upper()} mm.{human_start}-{human_end} - {voice_name.title()} (exact) Stage {stage}"
-                            exact_payload = _build_exact_payload(chord_rows, key_name, f"Play the notes: {intro_text}", target)
+                            exact_payload = _build_exact_payload(one_voice, key_name, f"Play the notes: {intro_text}", target)
+
                             exact = Exercise.objects.filter(description=exact_desc).first()
                             if exact is None:
                                 if not dry_run:
-                                    exact = Exercise(
-                                        description=exact_desc,
-                                        data=exact_payload,
-                                        authored_by=author,
-                                        is_public=True,
-                                        skill_tags=base_tags,
-                                        complexity=complexity,
-                                    )
+                                    exact = Exercise(description=exact_desc, data=exact_payload, authored_by=author, is_public=True, skill_tags=base_tags, complexity=complexity)
                                     exact.save()
+                                    print(f"Created {exact.id}: {exact_desc}")
+
                             else:
-                                changed = False
-                                if exact.data != exact_payload:
+                                if not dry_run:
                                     exact.data = exact_payload
-                                    changed = True
-                                if exact.complexity != complexity:
-                                    exact.complexity = complexity
-                                    changed = True
-                                if exact.skill_tags != base_tags:
-                                    exact.skill_tags = base_tags
-                                    changed = True
-                                if changed and not dry_run:
                                     exact.save()
+                                    print(f"Updated {exact.id}: {exact_desc}")
                             if exact is not None:
                                 created.append((target, "exact", stage, complexity, exact))
 
                         if lanes in ("analysis", "both"):
                             analysis_desc = f"{bwv.upper()} mm.{human_start}-{human_end} - {voice_name.title()} (analysis) Stage {stage}"
-                            analysis_payload = _build_analysis_payload(chord_rows, key_name, f"Name the notes: {intro_text}", target)
+                            analysis_payload = _build_analysis_payload(one_voice, key_name, f"Name the notes: {intro_text}", target)
+
                             analysis_ex = Exercise.objects.filter(description=analysis_desc).first()
                             if analysis_ex is None:
                                 if not dry_run:
-                                    analysis_ex = Exercise(
-                                        description=analysis_desc,
-                                        data=analysis_payload,
-                                        authored_by=author,
-                                        is_public=True,
-                                        skill_tags=base_tags,
-                                        complexity=complexity,
-                                    )
+                                    analysis_ex = Exercise(description=analysis_desc, data=analysis_payload, authored_by=author, is_public=True, skill_tags=base_tags, complexity=complexity)
                                     analysis_ex.save()
+                                    print(f"Created {analysis_ex.id}: {analysis_desc}")
+
                             else:
-                                changed = False
-                                if analysis_ex.data != analysis_payload:
+                                if not dry_run:
                                     analysis_ex.data = analysis_payload
-                                    changed = True
-                                if analysis_ex.complexity != complexity:
-                                    analysis_ex.complexity = complexity
-                                    changed = True
-                                if analysis_ex.skill_tags != base_tags:
-                                    analysis_ex.skill_tags = base_tags
-                                    changed = True
-                                if changed and not dry_run:
                                     analysis_ex.save()
+                                    print(f"Updated {analysis_ex.id}: {analysis_desc}")
                             if analysis_ex is not None:
                                 created.append((target, "analysis", stage, complexity, analysis_ex))
 
@@ -562,22 +531,15 @@ class Command(BaseCommand):
                             id_ex = Exercise.objects.filter(description=id_desc).first()
                             if id_ex is None:
                                 if not dry_run:
-                                    id_ex = Exercise(
-                                        description=id_desc,
-                                        data=id_payload,
-                                        authored_by=author,
-                                        is_public=True,
-                                        skill_tags=base_tags,
-                                        complexity=complexity,
-                                    )
+                                    id_ex = Exercise(description=id_desc, data=id_payload, authored_by=author, is_public=True, skill_tags=base_tags, complexity=complexity)
                                     id_ex.save()
+                                    print(f"Created {id_ex.id}: {id_desc}")
+
                             else:
-                                changed = False
-                                if id_ex.data != id_payload:
+                                if not dry_run:
                                     id_ex.data = id_payload
-                                    changed = True
-                                if changed and not dry_run:
                                     id_ex.save()
+                                    print(f"Updated {id_ex.id}: {id_desc}")
                             if id_ex is not None:
                                 created.append((target, "identification", stage, complexity, id_ex))
 

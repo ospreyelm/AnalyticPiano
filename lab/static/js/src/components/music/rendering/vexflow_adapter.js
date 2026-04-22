@@ -382,6 +382,15 @@ define([
     );
   }
 
+  function shouldRenderNoteNames(analyzeConfig) {
+    return (
+      analyzeConfig &&
+      analyzeConfig.mode &&
+      analyzeConfig.mode.note_names
+    );
+  }
+
+
   function computeRomanExpLabel(midi, analyzer) {
     if (!analyzer || !midi || !midi.length) return null;
     try {
@@ -482,6 +491,47 @@ define([
     }
     drawInlineRoman(ctx, label, x, targetStave, opts || { yShift: 28 });
   }
+
+  function attachNoteNameAnnotation(
+    col,
+    midi,
+    analyzeConfig,
+    analyzer,
+    ctx,
+    fallbackStave,
+    opts,
+    labelOverride
+  ) {
+    if (!analyzer || !ctx || !col) {
+      return;
+    }
+    var label =
+      typeof labelOverride === "string"
+        ? labelOverride
+        : analyzer.to_note_name(midi);
+    if (!label) {
+      return;
+    }
+    var x = getColumnCenterX(col);
+    if (x === null) {
+      return;
+    }
+    var targetStave = fallbackStave || null;
+    if (col && col.notes && col.notes.length) {
+      for (var i = 0; i < col.notes.length; i++) {
+        var stave = col.notes[i].getStave && col.notes[i].getStave();
+        if (stave && stave.clef === "bass") {
+          targetStave = stave;
+          break;
+        }
+        if (!targetStave && stave) {
+          targetStave = stave;
+        }
+      }
+    }
+    drawInlineRoman(ctx, label, x, targetStave, opts || { yShift: 28 });
+  }
+
 
   function groupTimelineByOnset(timeline) {
     var onsetMap = Object.create(null);
@@ -671,7 +721,7 @@ define([
         "G#m": "B", "D#m": "F#", "A#m": "C#", "Dm": "F",   "Gm": "Bb",
         "Cm": "Eb", "Fm": "Ab", "Bbm": "Db", "Ebm": "Gb", "Abm": "Cb"
       };
-      var fallback = minorToRelativeMajor[key];
+      var fallback = minorToRelativeMajor[k];
       if (fallback) {
         try { stave.addKeySignature(fallback); } catch (_) { /* ignore */ }
       }
@@ -718,11 +768,15 @@ define([
       var renderRomans = shouldRenderRoman(analyzeConfig);
       var renderFigured = !renderRomans && shouldRenderFigured(analyzeConfig);
       var renderRomanExp = !renderRomans && !renderFigured && shouldRenderRomanExp(analyzeConfig);
+      var renderNoteNames = !renderRomans && !renderFigured && !renderRomanExp && shouldRenderNoteNames(analyzeConfig);
       if (!inlineAnalyzer) {
         renderRomans = false;
         renderFigured = false;
         renderRomanExp = false;
+        renderNoteNames = false;
       }
+      var showNotation = opts && opts.showNotation !== undefined ? opts.showNotation : true;
+
       var systemGap = (opts && opts.systemGap) || 150; // vertical spacing between treble and bass staves
       var staffYOffset = (opts && opts.staffYOffset) || 0;
       var baseRomanYOffset = 32;
@@ -1163,24 +1217,27 @@ define([
           formatter.format(allVoices, notesWidth);
         }
 
-        if (trebleStave) {
-          trebleVoices.forEach(function (v) { 
-            v.draw(ctx, trebleStave); 
-            // Draw beams after notes
-            if (v.beams) {
-              v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
-            }
-          });
+        if (showNotation) {
+          if (trebleStave) {
+            trebleVoices.forEach(function (v) { 
+              v.draw(ctx, trebleStave); 
+              // Draw beams after notes
+              if (v.beams) {
+                v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+              }
+            });
+          }
+          if (bassStave) {
+            bassVoices.forEach(function (v) { 
+              v.draw(ctx, bassStave); 
+              // Draw beams after notes
+              if (v.beams) {
+                v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+              }
+            });
+          }
         }
-        if (bassStave) {
-          bassVoices.forEach(function (v) { 
-            v.draw(ctx, bassStave); 
-            // Draw beams after notes
-            if (v.beams) {
-              v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
-            }
-          });
-        }
+
 
         // Analysis annotations using Notater bridge (maximum reuse)
         try {
@@ -1323,7 +1380,10 @@ define([
               } else if (renderRomanExp && activeStaveForAnnotations) {
                 var expLabel = computeRomanExpLabel(midi, inlineAnalyzer);
                 queueRomanExpColumn(col, expLabel, activeStaveForAnnotations);
+              } else if (renderNoteNames && activeStaveForAnnotations) {
+                attachNoteNameAnnotation(col, midi, analyzeConfig, inlineAnalyzer, ctx, activeStaveForAnnotations, { yShift: romanYOffset });
               }
+
 
             });
           }

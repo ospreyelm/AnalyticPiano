@@ -37,7 +37,6 @@ DATABASES = {
 # WARNING: This allows unsafe-eval and unsafe-inline. Remove in production!
 # Place it first so it can set headers before other middleware
 MIDDLEWARE = list(MIDDLEWARE)
-MIDDLEWARE.insert(0, "harmony.middleware.DisableCSPMiddleware")
 MIDDLEWARE = tuple(MIDDLEWARE)
 
 # Also disable some security settings for local dev
@@ -77,3 +76,9 @@ LOGGING = {
         },
     },
 }
+
+# Remove WhiteNoise in local development to prevent macOS wsgiref hanging on static files
+MIDDLEWARE = list(MIDDLEWARE)
+if "whitenoise.middleware.WhiteNoiseMiddleware" in MIDDLEWARE:
+    MIDDLEWARE.remove("whitenoise.middleware.WhiteNoiseMiddleware")
+MIDDLEWARE = tuple(MIDDLEWARE)

@@ -379,3 +379,5 @@ CACHES = {
         "LOCATION": "django_viewcache",
     }
 }
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 5000

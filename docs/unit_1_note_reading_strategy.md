@@ -28,27 +28,38 @@ Exercises are grouped into 4 progressive stages based on their note range (Steps
 *Note: Bass clef exercises use the exact mirror of these sets around Middle C.*
 
 ### 3. Generation & Sorting Logic
+The generator uses a **sliding window** of 2 measures across the entire corpus and produces three distinct exercise "lanes":
+
+1.  **Identification** (`type: "chorale_identification"`): Student sees notation, picks the note name from a list of choices.
+2.  **Matching from Notation** (`type: "matching"`): Student sees notation and plays the corresponding note on MIDI.
+3.  **Matching from Analysis** (`type: "analytical"`): Student sees a text label (e.g., "F#") and must play the correct pitch.
+
 Command: `python manage.py generate_unit1 --author <email> --clef both --lanes both --max-per-playlist 36 --max-per-stage 12`
 
-The generator uses a **sliding window** of 2 measures across the entire corpus:
+The generation logic follows these steps:
 1. **Filtering**: If a window contains any `is_diatonic: false` note, it is **skipped**.
 2. **Categorization**: The window is assigned the lowest Stage (1-4) that contains all of its pitches. If it exceeds Stage 4, it is skipped.
 3. **Complexity Score**: A `complexity` integer is calculated: `(Stage * 10) + NumAccidentals`.
-   - Example: Stage 2 in C Major = **20**
-   - Example: Stage 2 in D Major = **22**
 4. **Interleaving**: The final playlist is sorted primarily by `complexity`. This ensures students start with Stage 1 in C major, then Stage 1 in G/F major, before moving to Stage 2 in C major.
 
-### 4. Playlist Caps
-- Default per-playlist cap: **36**
-- Default per-stage cap: **12**
-- Suggested hard ceiling for pilot runtime: **48** per playlist
+### 4. Playlist Caps & Targeted Volume
+To ensure a robust but manageable pilot, each lane is capped per clef:
 
-These caps keep exercise payload size predictable while preserving stage variety.
+| Lane | Exercises per Clef | Total (Treble + Bass) |
+|---|---|---|
+| **Identification** | 36 | 72 |
+| **Matching (Notation)** | 36 | 72 |
+| **Matching (Analysis)** | 36 | 72 |
+| **Total Unit 1** | **108** | **216** |
+
+- Default per-stage cap: **12** (spread across different keys where possible).
+- Suggested hard ceiling for pilot runtime: **48** per playlist if extra variety is needed.
 
 ### 5. Curriculum Wiring
 The command automatically creates/updates:
-- **Identify playlists**: `"Unit 1 - Note Names (Treble)"` and `"Unit 1 - Note Names (Bass)"`.
-- **Matching playlists**: `"Unit 1 - Note Names (Treble Play)"` and `"Unit 1 - Note Names (Bass Play)"`.
+- **Identification playlists**: `"Unit 1 - Identify the Notes (Treble)"` and `"Unit 1 - Identify the Notes (Bass)"`.
+- **Matching (Notation) playlists**: `"Unit 1 - Play the Notes (Treble)"` and `"Unit 1 - Play the Notes (Bass)"`.
+- **Matching (Analysis) playlists**: `"Unit 1 - Name the Notes (Treble)"` and `"Unit 1 - Name the Notes (Bass)"`.
 - **Tags**: Exercises and playlists are tagged for `unit:1`, `Note_Names`, clef-specific tags, and matching-lane enharmonic aggregation tags.
 - **Course**: The playlists are attached to the `"Unit 1: Pitch & Staff Notation"` course.
 
