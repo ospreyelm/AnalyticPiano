@@ -356,38 +356,27 @@ define([
   }
 
   function shouldRenderRoman(analyzeConfig) {
-    return (
-      analyzeConfig &&
-      analyzeConfig.mode &&
-      analyzeConfig.mode.roman_numerals &&
-      !analyzeConfig.mode.thoroughbass &&
-      !analyzeConfig.mode.abbreviate_thoroughbass
-    );
+    if (!analyzeConfig) return false;
+    var mode = analyzeConfig.mode || {};
+    return !!(analyzeConfig.roman_numerals || mode.roman_numerals);
   }
 
   function shouldRenderFigured(analyzeConfig) {
-    return (
-      analyzeConfig &&
-      analyzeConfig.mode &&
-      (analyzeConfig.mode.thoroughbass ||
-        analyzeConfig.mode.abbreviate_thoroughbass)
-    );
+    if (!analyzeConfig) return false;
+    var mode = analyzeConfig.mode || {};
+    return !!(analyzeConfig.thoroughbass || mode.thoroughbass || mode.abbreviate_thoroughbass);
   }
 
   function shouldRenderRomanExp(analyzeConfig) {
-    return (
-      analyzeConfig &&
-      analyzeConfig.mode &&
-      analyzeConfig.mode.roman_numerals_exp
-    );
+    if (!analyzeConfig) return false;
+    var mode = analyzeConfig.mode || {};
+    return !!(analyzeConfig.roman_numerals_exp || mode.roman_numerals_exp || analyzeConfig.roman_exp || mode.roman_exp);
   }
 
   function shouldRenderNoteNames(analyzeConfig) {
-    return (
-      analyzeConfig &&
-      analyzeConfig.mode &&
-      analyzeConfig.mode.note_names
-    );
+    if (!analyzeConfig) return false;
+    var mode = analyzeConfig.mode || {};
+    return !!(analyzeConfig.note_names || mode.note_names);
   }
 
 
@@ -813,6 +802,21 @@ define([
             maxMeasures: numMeasures,
           })
         : [];
+      
+      // Calculate absolute window offset for playhead alignment
+      var absoluteWindowOffset = 0;
+      if (startMeasure > 0 && ScoreTimeline && ScoreTimeline.buildTimeline) {
+        var fullTimeline = ScoreTimeline.buildTimeline(score);
+        var allWindows = buildAnalysisWindows(fullTimeline);
+        for (var i = 0; i < allWindows.length; i++) {
+          if (allWindows[i].measureIndex < startMeasure) {
+            absoluteWindowOffset++;
+          } else {
+            break;
+          }
+        }
+      }
+
       var analysisWindows = buildAnalysisWindows(timeline);
       var analysisWindowIdx = 0;
       var staffDistribution = (opts && opts.staffDistribution) || (meta && meta.staffDistribution) || "grand_staff";
@@ -1339,7 +1343,7 @@ define([
               var columnCenterX = getColumnCenterX(col);
               if (opts && typeof opts.onWindowPosition === "function" && typeof matchedIndex === "number" && columnCenterX !== null && activeStaveForAnnotations) {
                 opts.onWindowPosition({
-                  windowIndex: matchedIndex,
+                  windowIndex: absoluteWindowOffset + matchedIndex,
                   onset: matchedWindow ? matchedWindow.onset : null,
                   measureIndex: matchedWindow ? matchedWindow.measureIndex : null,
                   x: columnCenterX,
