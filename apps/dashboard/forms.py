@@ -409,7 +409,7 @@ class DashboardPlaylistForm(PlaylistForm):
         # Since the queryset and through_vals are dependent on variable user and instance, set them with initialization inputs
         self.fields["exercises"].queryset = Exercise.objects.filter(
             Q(authored_by=user) | Q(is_public=True)
-        )
+        ).defer("data")
         self.fields["exercises"].value = Exercise.objects.none()
         if self.instance.pk != None:
             # Replace the exercises field value with the exercises combined with the respective EPO

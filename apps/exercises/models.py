@@ -582,11 +582,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def untransposed_exercises_ids(self):
-        related_epos = ExercisePlaylistOrdered.objects.filter(playlist=self).order_by(
-            "order"
+        return list(
+            ExercisePlaylistOrdered.objects.filter(playlist=self)
+            .order_by("order")
+            .values_list("exercise__id", flat=True)
         )
-        sorted_exercise_list = list(map(lambda epo: epo.exercise.id, related_epos))
-        return sorted_exercise_list
 
     @property
     def exercise_list(self):
@@ -603,10 +603,10 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             ex_dict[exercise.id] = exercise
         return ex_dict
 
-    @property
+    @cached_property
     def exercise_count(self):
         if not self.is_transposed():
-            return len(self.exercises.all())
+            return len(self.untransposed_exercises_ids)
 
         return len(self.transposed_exercises_ids)
 

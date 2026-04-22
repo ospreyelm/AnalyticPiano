@@ -1,0 +1,147 @@
+<h2>Question 1: How should notes be displayed?</h2>
+<p class="subtitle">Unit 1 pitch identification — soprano note naming. Which display approach feels right for beginners?</p>
+
+<div class="split" style="gap:24px;align-items:flex-start;">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)" style="padding:0;border:2px solid #ddd;border-radius:12px;overflow:hidden;cursor:pointer;flex:1;">
+    <div style="background:#1a1a2e;color:#fff;padding:10px 16px;font-weight:600;font-size:14px;">A — Single voice only</div>
+    <div style="padding:16px;background:#fafafa;">
+      <div class="mockup-body" style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:16px;margin-bottom:12px;">
+        <!-- Staff mockup: soprano only -->
+        <svg viewBox="0 0 420 100" width="100%" style="display:block;">
+          <!-- Staff lines -->
+          <line x1="20" y1="25" x2="400" y2="25" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="35" x2="400" y2="35" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="45" x2="400" y2="45" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="55" x2="400" y2="55" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="65" x2="400" y2="65" stroke="#aaa" stroke-width="1"/>
+          <!-- Treble clef symbol placeholder -->
+          <text x="24" y="60" font-size="48" fill="#555">𝄞</text>
+          <!-- Notes: some answered (green), current (black with ?), future (gray) -->
+          <!-- Note 1: answered correctly — green -->
+          <ellipse cx="110" cy="35" rx="8" ry="6" fill="#4caf50"/>
+          <line x1="118" y1="35" x2="118" y2="5" stroke="#4caf50" stroke-width="2"/>
+          <text x="104" y="82" font-size="12" fill="#4caf50" text-anchor="middle">C</text>
+          <!-- Note 2: current — black with ? slot below -->
+          <ellipse cx="175" cy="45" rx="8" ry="6" fill="#111"/>
+          <line x1="183" y1="45" x2="183" y2="15" stroke="#111" stroke-width="2"/>
+          <rect x="163" y="72" width="24" height="18" rx="4" fill="#2196f3"/>
+          <text x="175" y="84" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">?</text>
+          <!-- Note 3: future — gray -->
+          <ellipse cx="240" cy="30" rx="8" ry="6" fill="#bbb"/>
+          <line x1="248" y1="30" x2="248" y2="0" stroke="#bbb" stroke-width="2"/>
+          <rect x="228" y="72" width="24" height="18" rx="4" fill="#e0e0e0"/>
+          <text x="240" y="84" font-size="13" fill="#aaa" text-anchor="middle">?</text>
+          <!-- Note 4: future — gray -->
+          <ellipse cx="305" cy="40" rx="8" ry="6" fill="#bbb"/>
+          <line x1="313" y1="40" x2="313" y2="10" stroke="#bbb" stroke-width="2"/>
+          <rect x="293" y="72" width="24" height="18" rx="4" fill="#e0e0e0"/>
+          <text x="305" y="84" font-size="13" fill="#aaa" text-anchor="middle">?</text>
+          <!-- Note 5: future — gray -->
+          <ellipse cx="365" cy="50" rx="8" ry="6" fill="#bbb"/>
+          <line x1="373" y1="50" x2="373" y2="20" stroke="#bbb" stroke-width="2"/>
+          <rect x="353" y="72" width="24" height="18" rx="4" fill="#e0e0e0"/>
+          <text x="365" y="84" font-size="13" fill="#aaa" text-anchor="middle">?</text>
+        </svg>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Zero visual clutter</li>
+          <li>Student focuses on single pitch</li>
+          <li>Easier for absolute beginners</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>No harmonic context</li>
+          <li>Less musical — extracted from real music</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)" style="padding:0;border:2px solid #ddd;border-radius:12px;overflow:hidden;cursor:pointer;flex:1;">
+    <div style="background:#1a1a2e;color:#fff;padding:10px 16px;font-weight:600;font-size:14px;">B — Full chorale, one voice highlighted</div>
+    <div style="padding:16px;background:#fafafa;">
+      <div class="mockup-body" style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:16px;margin-bottom:12px;">
+        <!-- Staff mockup: full SATB, soprano black, others gray -->
+        <svg viewBox="0 0 420 160" width="100%" style="display:block;">
+          <!-- TREBLE STAFF -->
+          <line x1="20" y1="20" x2="400" y2="20" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="30" x2="400" y2="30" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="40" x2="400" y2="40" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="50" x2="400" y2="50" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="60" x2="400" y2="60" stroke="#aaa" stroke-width="1"/>
+          <text x="24" y="56" font-size="44" fill="#555">𝄞</text>
+
+          <!-- Soprano notes (black = active) -->
+          <ellipse cx="110" cy="20" rx="8" ry="6" fill="#4caf50"/>
+          <line x1="118" y1="20" x2="118" y2="-8" stroke="#4caf50" stroke-width="2"/>
+          <ellipse cx="175" cy="30" rx="8" ry="6" fill="#111"/>
+          <line x1="183" y1="30" x2="183" y2="2" stroke="#111" stroke-width="2"/>
+          <ellipse cx="240" cy="25" rx="8" ry="6" fill="#bbb"/>
+          <line x1="248" y1="25" x2="248" y2="-3" stroke="#bbb" stroke-width="2"/>
+          <ellipse cx="305" cy="35" rx="8" ry="6" fill="#bbb"/>
+          <line x1="313" y1="35" x2="313" y2="7" stroke="#bbb" stroke-width="2"/>
+
+          <!-- Alto notes (gray stems down) -->
+          <ellipse cx="110" cy="45" rx="7" ry="5" fill="#ccc"/>
+          <line x1="102" y1="45" x2="102" y2="75" stroke="#ccc" stroke-width="1.5"/>
+          <ellipse cx="175" cy="50" rx="7" ry="5" fill="#ccc"/>
+          <line x1="167" y1="50" x2="167" y2="80" stroke="#ccc" stroke-width="1.5"/>
+          <ellipse cx="240" cy="45" rx="7" ry="5" fill="#ccc"/>
+          <line x1="232" y1="45" x2="232" y2="75" stroke="#ccc" stroke-width="1.5"/>
+          <ellipse cx="305" cy="50" rx="7" ry="5" fill="#ccc"/>
+          <line x1="297" y1="50" x2="297" y2="80" stroke="#ccc" stroke-width="1.5"/>
+
+          <!-- BASS STAFF -->
+          <line x1="20" y1="95" x2="400" y2="95" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="105" x2="400" y2="105" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="115" x2="400" y2="115" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="125" x2="400" y2="125" stroke="#aaa" stroke-width="1"/>
+          <line x1="20" y1="135" x2="400" y2="135" stroke="#aaa" stroke-width="1"/>
+          <text x="22" y="128" font-size="40" fill="#555">𝄢</text>
+
+          <!-- Tenor notes (gray) -->
+          <ellipse cx="110" cy="105" rx="7" ry="5" fill="#ccc"/>
+          <line x1="118" y1="105" x2="118" y2="77" stroke="#ccc" stroke-width="1.5"/>
+          <ellipse cx="175" cy="100" rx="7" ry="5" fill="#ccc"/>
+          <line x1="183" y1="100" x2="183" y2="72" stroke="#ccc" stroke-width="1.5"/>
+          <ellipse cx="240" cy="108" rx="7" ry="5" fill="#ccc"/>
+          <line x1="248" y1="108" x2="248" y2="80" stroke="#ccc" stroke-width="1.5"/>
+          <ellipse cx="305" cy="103" rx="7" ry="5" fill="#ccc"/>
+          <line x1="313" y1="103" x2="313" y2="75" stroke="#ccc" stroke-width="1.5"/>
+
+          <!-- Bass notes (gray) -->
+          <ellipse cx="110" cy="130" rx="7" ry="5" fill="#ccc"/>
+          <line x1="102" y1="130" x2="102" y2="158" stroke="#ccc" stroke-width="1.5"/>
+          <ellipse cx="175" cy="125" rx="7" ry="5" fill="#ccc"/>
+          <line x1="167" y1="125" x2="167" y2="153" stroke="#ccc" stroke-width="1.5"/>
+          <ellipse cx="240" cy="132" rx="7" ry="5" fill="#ccc"/>
+          <line x1="232" y1="132" x2="232" y2="160" stroke="#ccc" stroke-width="1.5"/>
+          <ellipse cx="305" cy="127" rx="7" ry="5" fill="#ccc"/>
+          <line x1="297" y1="127" x2="297" y2="155" stroke="#ccc" stroke-width="1.5"/>
+
+          <!-- ? slots below treble staff for soprano only -->
+          <text x="100" y="155" font-size="10" fill="#4caf50" text-anchor="middle">C</text>
+          <rect x="163" y="145" width="24" height="16" rx="3" fill="#2196f3"/>
+          <text x="175" y="156" font-size="11" fill="#fff" text-anchor="middle">?</text>
+          <rect x="228" y="145" width="24" height="16" rx="3" fill="#e0e0e0"/>
+          <text x="240" y="156" font-size="11" fill="#aaa" text-anchor="middle">?</text>
+          <rect x="293" y="145" width="24" height="16" rx="3" fill="#e0e0e0"/>
+          <text x="305" y="156" font-size="11" fill="#aaa" text-anchor="middle">?</text>
+        </svg>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Musical context — hear the harmony</li>
+          <li>Prepares ear for later harmonic units</li>
+          <li>More engaging, less abstract</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Visually busier for beginners</li>
+          <li>Other voices may distract</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:16px;color:#666;font-size:13px;">Click an option to select it, then reply in the terminal.</p>

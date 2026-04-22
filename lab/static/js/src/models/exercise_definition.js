@@ -165,6 +165,8 @@ define([
       return "";
     }
     var result = String(label).trim();
+    // Normalize musical symbols to standard characters
+    result = result.replace(/♭/g, "b").replace(/♯/g, "#");
     // Remove trailing/leading punctuation that shouldn't be in chord labels
     result = result.replace(/^[\s,;:\-()]+|[\s,;:\-()]+$/g, '');
     return result;
@@ -493,15 +495,20 @@ define([
     }
     
     // Idempotency check: If it already looks like a HarmonyLab key (starts with i/j followed by A-G), return as is.
-    // HL keys are normally 3 chars (e.g. 'jC_', 'iF#'), but we'll accept anything that starts with the mode prefix.
     if ((cirKey.startsWith('i') || cirKey.startsWith('j')) && cirKey.length >= 2 && /^[A-G]/.test(cirKey[1])) {
         return cirKey;
     }
     
-    // Check if minor (ends with 'm')
-    var isMinor = cirKey.endsWith('m');
+    // Check if minor (ends with 'm' or is lowercase)
+    var isMinor = cirKey.endsWith('m') || (cirKey.length > 0 && cirKey[0] === cirKey[0].toLowerCase());
     var prefix = isMinor ? 'i' : 'j';
-    var note = isMinor ? cirKey.slice(0, -1) : cirKey;
+    var note = isMinor && cirKey.endsWith('m') ? cirKey.slice(0, -1) : cirKey;
+    
+    // Capitalize note name and normalize accidental
+    if (note.length > 0) {
+        note = note[0].toUpperCase() + note.slice(1);
+    }
+    note = note.replace('-', 'b');
     
     // Add underscore suffix for naturals (no accidentals)
     var suffix = (note.indexOf('#') === -1 && note.indexOf('b') === -1) ? '_' : '';

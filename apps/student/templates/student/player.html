@@ -13,7 +13,45 @@
     .instruction-panel { border: none !important; background: transparent !important; padding: 0 !important; }
     .instruction-panel-header { display: none; }
     #exercise-text { font-size: 1.1rem; line-height: 1.4; color: #333; margin-bottom: 1rem; }
-    #staff-toolbar { margin-bottom: 0.5rem; display: flex; justify-content: center; gap: 1rem; }
+    #staff-toolbar { margin-bottom: 0.75rem; display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; }
+    .s-toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 110px;
+      padding: 0.6rem 0.9rem;
+      border: 1px solid #d7dbe2;
+      border-radius: 999px;
+      background: #fff;
+      color: #1f2937;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+    .s-toolbar-btn:hover {
+      background: #f8fafc;
+      text-decoration: none;
+    }
+    .s-toolbar-btn-primary {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+      color: #fff;
+    }
+    .s-toolbar-btn-primary:hover {
+      background: #1e40af;
+    }
+    .s-toolbar-icon {
+      display: inline-block;
+      flex: 0 0 25px;
+    }
+    .s-toolbar-icon.previous-icon,
+    .s-toolbar-icon.next-icon,
+    .s-toolbar-icon.refresh-icon {
+      margin: 0;
+      float: none;
+    }
     .icon-btn-camera, .startover-icon { display: none !important; } /* Hide expert tools */
   </style>
 {% endblock %}
@@ -28,16 +66,25 @@
       <button id="volume" class="s-btn-secondary" style="min-width: 40px; font-weight: bold;">mf</button>
       <button id="midi-switch" class="s-btn-secondary" style="min-width: 80px;">MIDI</button>
     </div>
-    <div class="s-player-pos">Exercise <span id="js-player-current">1</span> of <span id="js-player-total">-</span></div>
+    <div class="s-player-pos">Exercise <span id="js-player-current">{{ exercise_num|default:1 }}</span> of <span id="js-player-total">{{ total_exercises|default:'-' }}</span></div>
   </header>
 
 
   <div class="harmony-ui">
     <div id="staff-area">
       <div id="staff-toolbar">
-        <a class="previous-icon js-btn-previousexercise" title="Previous"> </a>
-        <a class="refresh-icon js-btn-pristine" title="Reset"> </a>
-        <a class="next-icon js-btn-nextexercise" title="Next"> </a>
+        <a class="s-toolbar-btn js-btn-previousexercise" title="Go to previous exercise" href="#">
+          <span class="s-toolbar-icon previous-icon" aria-hidden="true"></span>
+          <span>Previous</span>
+        </a>
+        <a class="s-toolbar-btn js-btn-pristine" title="Reset this exercise" href="#">
+          <span class="s-toolbar-icon refresh-icon" aria-hidden="true"></span>
+          <span>Reset</span>
+        </a>
+        <a class="s-toolbar-btn s-toolbar-btn-primary js-btn-nextexercise" title="Go to next exercise" href="#">
+          <span class="s-toolbar-icon next-icon" aria-hidden="true"></span>
+          <span>Next</span>
+        </a>
       </div>
       
       <div id="staffwrapper">

@@ -70,3 +70,14 @@ MusicXML has rests/pickups/repeats that CIR may not model. Normalize at ingest.
 Voice assignment ambiguous (MusicXML voices ≠ SATB). Require teacher to tag voice roles on upload.
 Key detection: music21 analyze('key') works but unreliable on short excerpts. Let teacher specify or validate.
 No 4-voice guarantee → chorale play mode may not apply. Restrict teacher uploads to identification modes initially.
+
+
+
+Priority sequence
+[] Reconcile skill tag vocabulary (skills_analyzer.py vs CLAUDE.md list). Blocking everything adaptive.
+[] Wire mastery updates on IdentificationAttempt + chorale pass. Enables gates.
+[] Seed SkillPrerequisite DAG from taxonomy JSON.
+[] Build generate_curriculum.py for bulk chorale slicing.
+[] Enable course-level gating in PlaylistView (check prereqs met).
+[] MusicXML importer last — infrastructure works, format adapter only.
+[] Biggest risk: tag vocab drift. Fix first or dynamic pools return wrong exercises.

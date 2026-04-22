@@ -132,14 +132,17 @@ class Command(BaseCommand):
             # Algorithmically determine the true tonal center and mode (e.g. "a" minor vs "C" major)
             # using music21's Krumhansl-Schmuckler analysis rather than blindly trusting the key signature.
             try:
-                chunk_key = chunk.analyze('key').tonicPitchNameWithCase
+                m21_key_obj = chunk.analyze('key')
+                tonic = m21_key_obj.tonic.name.replace('-', 'b')
+                mode_prefix = 'j' if m21_key_obj.mode == 'major' else 'i'
+                chunk_key = f"{mode_prefix}{tonic}{'_' if len(tonic) == 1 else ''}"
             except Exception:
                 # Absolute fallback if it's completely empty
-                chunk_key = "C"
+                chunk_key = "jC_"
             
             # Convert to our CIR representation
             try:
-                cir_data = m21_to_cir(chunk)
+                cir_data = m21_to_cir(chunk, key_override=chunk_key)
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"  Error converting to CIR: {e}"))
                 continue

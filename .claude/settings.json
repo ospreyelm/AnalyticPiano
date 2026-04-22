@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local python manage.py test apps.exercises.tests.test_generate_unit1 apps.exercises.tests.test_music21_builder apps.student.tests.test_views apps.student.tests.test_unit1_curriculum_integration --verbosity=2)",
+      "Bash(grep -E \"ERROR|FAIL|ok$\")"
+    ]
+  }
+}

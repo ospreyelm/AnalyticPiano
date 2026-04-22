@@ -80,7 +80,7 @@ Registered in `settings.py` as `student`. Mounted at `/s/` in root `urls.py`.
 
 ### Skills (from taxonomy)
 
-Unit 1 "Pitch & Staff Notation" contains 4 mastery skills. Note Names is a single mastery tag with two content tracks (treble and bass), each a separate playlist but sharing one `StudentSkillMastery` record. Progress math uses 4 as the denominator.
+Unit 1 "Pitch & Staff Notation" contains 4 mastery skills. Note Names is a single mastery tag with two content tracks (treble and bass), and each track now has two modes: identify and matching-playback. Progress math uses 4 as the denominator.
 
 | Mastery skill | Tag | Voices / content | Exercise type |
 |---------------|-----|-----------------|--------------|
@@ -101,10 +101,17 @@ Each skill gets its own playlist (or two playlists for Note Names). All playlist
 |----------|-----|-----------|------|
 | Unit 1 — Note Names (Treble) | `Note_Names` | `--voice soprano` | treble |
 | Unit 1 — Note Names (Bass) | `Note_Names` | `--voice bass` | bass |
+| Unit 1 — Note Names (Treble Play) | `Note_Names` + `enharmonic` path | `--voice soprano` | treble |
+| Unit 1 — Note Names (Bass Play) | `Note_Names` + `enharmonic` path | `--voice bass` | bass |
 | Unit 1 — Ledger Lines | `Ledger_Lines` | `--voice soprano` | treble |
 | Unit 1 — Clefs (Treble) | `clefs` | `--voice soprano` | treble |
 | Unit 1 — Clefs (Bass) | `clefs` | `--voice bass` | bass |
 | Unit 1 — Enharmonics | `enharmonic` | `--voice soprano` | treble |
+
+Operational cap defaults for Unit 1 generator:
+- `--max-per-playlist 36` (recommended default)
+- `--max-per-stage 12` (recommended default)
+- hard ceiling guideline: 48 exercises per playlist
 
 Neither `--skill-tags` nor `--playlist-name` exist in `import_chorale.py`. Both are new work. The creation process is:
 

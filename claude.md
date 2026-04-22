@@ -2,6 +2,38 @@
 
 **Status: ENHANCED** ✓ Core issues fixed + features 1 & 3 implemented + pitch identification exercise type implemented. See updates below.
 
+---
+
+## ⚠️ HIGH PRIORITY: Multi-Unit Playlist System (Not Yet Built)
+
+Two blockers prevent replicating the Unit 9 Bach playlist strategy for other units:
+
+### Blocker 1: `applySkillFilter` generic path is broken for most units
+
+**File:** [lab/static/js/src/models/exercise_definition.js:37–67](lab/static/js/src/models/exercise_definition.js#L37-L67)
+
+Unit 9 works because it has a **hardcoded allowlist** (`I`, `i`, `V`, `V7`). All other units fall through to a generic path that strips `unit:N_` from tag names and calls `answer.startsWith(cleanTag)`. This does **not** produce correct Roman numeral filtering — `Dominant_Seventh` does not match `V7`, for example.
+
+**Fix needed:** Replace the generic path with a `UNIT_ALLOWED_ANSWERS` map keyed by unit number. Source of truth is `music_theory_taxonomy_with_branches.json` — each unit's `tags` array maps to allowed answer strings. The map can be derived from that JSON or hardcoded alongside the Unit 9 case.
+
+### Blocker 2: No management command to create a unit playlist end-to-end
+
+`scratch/batch_import_unit9.py` is a one-off script. Each new unit requires copy-paste + hand-edit.
+
+**Fix needed:** A `create_unit_playlist` management command:
+```bash
+python manage.py create_unit_playlist \
+  --unit 11 \
+  --riemenschneider 21-30 \
+  --author admin@example.com \
+  --mode roman
+```
+This should: look up unit tags from `music_theory_taxonomy_with_branches.json`, run `import_bach_phrases` for the R-range, create a `Playlist(skill_tags=['unit:N'])`, link exercises, and be idempotent.
+
+### Fix Blocker 1 first — it gates whether filtering works at all.
+
+---
+
 ## Overview
 
 The Chorale exercise type is a specialized grading system for teaching Bach chorales using MIDI input. Unlike traditional chord-based exercises, chorales use an **onset-based window system** that requires students to play notes in order as they appear in the score.
@@ -600,5 +632,6 @@ See [chorale_future_improvements.md](docs/chorale_future_improvements.md) for th
 - Django Model: `apps/exercises/models.py` (Exercise model with JSON data field)
 - Planning Doc: [docs/chorale_exercises_plan.md](docs/chorale_exercises_plan.md)
 - Future Improvements: [docs/chorale_future_improvements.md](docs/chorale_future_improvements.md) (roadmap with 5 pending features)
+- Unit 9 Import Strategy: [docs/unit_9_bach_import_strategy.md](docs/unit_9_bach_import_strategy.md) (Curriculum-driven frontend filtering)
 - Import Script: [apps/exercises/management/commands/import_chorale.py](apps/exercises/management/commands/import_chorale.py)
 

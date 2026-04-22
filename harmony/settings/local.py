@@ -42,3 +42,38 @@ MIDDLEWARE = tuple(MIDDLEWARE)
 
 # Also disable some security settings for local dev
 SECURE_CONTENT_TYPE_NOSNIFF = False
+
+# Suppress BrokenPipeError noise from client disconnects during slow local responses
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "ignore_broken_pipe": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda record: "Broken pipe" not in (record.getMessage()),
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["ignore_broken_pipe"],
+        }
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+            "filters": ["ignore_broken_pipe"],
+        },
+    },
+}

@@ -1,0 +1,40 @@
+<h2>How should students enter the app?</h2>
+<p class="subtitle">Three approaches — pick what feels right for your students</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Unit List (Artusi-style)</h3>
+      <p>Student sees all units in order. Each unit shows a mastery bar and the skills inside it. They click into whichever unit they want and pick an exercise. Simple, student-controlled, no magic.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Transparent — student knows where they are</li><li>Easy to build</li><li>Familiar (like a textbook TOC)</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Student must decide what to do next</li><li>No guidance for beginners</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Auto-Resume + Unit Overview (Khan Academy-style)</h3>
+      <p>Student lands on their current unit. A "Keep going" button resumes exactly where they left off. Below that: unit list with mastery bars so they can jump around. Skill breakdown visible on click.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Zero friction to continue</li><li>Still shows full picture</li><li>Research shows highest engagement</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More complex to build</li><li>"Current unit" logic needs defining</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Skill Map (visual graph)</h3>
+      <p>Student sees a node graph of skills. Locked skills are grayed out. Completed ones glow. They click a skill node to practice it. Like Duolingo's path or a video game skill tree.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Visually motivating</li><li>Shows dependencies clearly</li><li>Gamified feel</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Complex to build well</li><li>Can feel overwhelming</li><li>HarmonyLab already has a skill-map view that could be reused/extended</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

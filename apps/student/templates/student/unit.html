@@ -37,9 +37,13 @@
         {% endif %}
       </div>
     </div>
-    {% if skill.playlist_url %}
-      <a href="{{ skill.playlist_url }}" class="s-btn-secondary">Practice</a>
-    {% endif %}
+    <div class="s-skill-actions">
+      {% for link in skill.playlist_links %}
+        <a href="{{ link.url }}" class="s-btn-secondary">{{ link.name }}</a>
+      {% empty %}
+        <span class="s-btn-secondary" style="opacity: 0.4; cursor: default;">Coming soon</span>
+      {% endfor %}
+    </div>
   </div>
 {% endfor %}
 

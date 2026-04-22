@@ -142,8 +142,11 @@ DUR_TO_TYPE = {
     2.0: ("h", 0),
     1.5: ("q", 1),
     1.0: ("q", 0),
+    0.75: ("8", 1),
     0.5: ("8", 0),
+    0.375: ("16", 1),
     0.25: ("16", 0),
+    0.125: ("32", 0),
 }
 
 
@@ -205,10 +208,10 @@ def score_to_cir(score):
     if ks is None:
         ks_sig = score.recurse().getElementsByClass(key.KeySignature).first()
         k_obj = ks_sig.asKey() if ks_sig else key.Key("C")
-        key_name = k_obj.tonic.name
+        key_name = k_obj.tonicPitchNameWithCase
     else:
         k_obj = ks
-        key_name = ks.tonic.name
+        key_name = ks.tonicPitchNameWithCase
 
     diatonic_alters = {p.step: p.alter for p in k_obj.pitches}
 

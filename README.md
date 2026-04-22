@@ -10,6 +10,7 @@ ANALYTIC PIANO (formerly HarmonyLab) is an open-source application for the study
 *   **Bach Curriculum Factory**: An automated pipeline that slices the Bach chorale corpus into pedagogically sound phrases based on harmonic and rhythmic cadences, automatically generating Roman Numeral, Figured Bass, and Matching exercises.
 
 ### References
+*   [Unit 9 Bach Import Strategy](docs/unit_9_bach_import_strategy.md) - How we used frontend filtering to implement Unit 9 (Tonic/Dominant) Bach chorales.
 *   [Music21 Module Reference](https://music21.org/music21docs/moduleReference/index.html) - Official documentation for Bach corpus analysis and stream processing.
 
 # Supported Web Browsers

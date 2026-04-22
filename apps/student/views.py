@@ -2,13 +2,14 @@ import json
 from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.views import View
 
 from apps.accounts.forms import CustomAuthenticationForm
-from apps.exercises.models import Playlist
+from apps.exercises.models import Playlist, PlaylistCourseOrdered
 from lab.views import RequirejsContext, generate_exercise_context
 
 TAXONOMY_PATH = Path(__file__).resolve().parent.parent.parent / "music_theory_taxonomy_with_branches.json"
@@ -32,15 +33,17 @@ def _load_unit_meta(unit_num: int) -> dict:
     return {}
 
 
-def _get_playlist_id_for_tag(tag: str) -> str | None:
-    """Return the primary playlist ID for a Unit 1 skill tag."""
-    playlist = (
-        Playlist.objects.filter(tags__contains=[f"unit:1"])
-        .filter(tags__contains=[tag])
+def _get_playlists_for_tag(tag: str) -> list[dict]:
+    """Return Unit 1 playlists matching the tag from either tags or skill_tags."""
+    playlists = (
+        Playlist.objects.filter(
+            (Q(skill_tags__contains=["unit:1"]) | Q(tags__contains=["unit:1"]))
+            & (Q(skill_tags__contains=[tag]) | Q(tags__contains=[tag]))
+        )
         .order_by("name")
-        .first()
+        .values("id", "name")
     )
-    return playlist.id if playlist else None
+    return list(playlists)
 
 
 class StudentLoginView(View):
@@ -83,9 +86,13 @@ class HomeView(View):
 
         # Build resume URL: find playlist for resume_tag
         resume_url = None
-        resume_playlist_id = _get_playlist_id_for_tag(unit1_progress["resume_tag"]) if unit1_progress["resume_tag"] else None
-        if resume_playlist_id:
-            resume_url = reverse("student:player", kwargs={"unit_num": 1}) + f"?playlist={resume_playlist_id}"
+        if unit1_progress["resume_tag"]:
+            playlists = _get_playlists_for_tag(unit1_progress["resume_tag"])
+            if playlists:
+                resume_url = (
+                    reverse("student:player", kwargs={"unit_num": 1})
+                    + f"?playlist={playlists[0]['id']}&exercise_num=1"
+                )
 
         units = [
             {
@@ -139,16 +146,21 @@ class UnitView(View):
         skills = []
         for s in progress["skills"]:
             tag = s["tag"]
-            playlist_id = _get_playlist_id_for_tag(tag)
-            playlist_url = None
-            if playlist_id:
-                playlist_url = reverse("student:player", kwargs={"unit_num": unit_num}) + f"?playlist={playlist_id}"
+            playlist_links = [
+                {
+                    "id": playlist["id"],
+                    "name": playlist["name"],
+                    "url": reverse("student:player", kwargs={"unit_num": unit_num})
+                    + f"?playlist={playlist['id']}&exercise_num=1",
+                }
+                for playlist in _get_playlists_for_tag(tag)
+            ]
 
             skills.append({
                 "tag": tag,
                 "name": skill_display_names.get(tag, tag),
                 "level": s["level"],
-                "playlist_url": playlist_url,
+                "playlist_links": playlist_links,
             })
 
         return render(request, "student/unit.html", {
@@ -167,33 +179,74 @@ class PlayerView(View):
             raise Http404("Playlist ID is required.")
 
         playlist = get_object_or_404(Playlist, id=playlist_id)
-        
-        # Verify playlist belongs to Unit 1 (for Pilot)
-        if "unit:1" not in playlist.tags:
-             raise Http404("Playlist not part of Unit 1.")
 
-        # Always start at exercise 1 for student resume flow if not specified
-        # (Though resume flow usually points to a specific playlist, the playlist itself manages its own exercise sequence)
-        exercise_num = 1
+        # Verify playlist belongs to Unit 1 (for Pilot)
+        playlist_tags = (playlist.tags or []) + (playlist.skill_tags or [])
+        if "unit:1" not in playlist_tags:
+            raise Http404("Playlist not part of Unit 1.")
+
+        try:
+            exercise_num = int(request.GET.get("exercise_num", 1))
+        except (TypeError, ValueError):
+            raise Http404("Invalid exercise number.")
+
+        if exercise_num < 1:
+            raise Http404("Invalid exercise number.")
+
+        playlist_course = (
+            PlaylistCourseOrdered.objects.filter(playlist=playlist)
+            .select_related("course")
+            .order_by("order", "_id")
+            .first()
+        )
+        course = playlist_course.course if playlist_course else None
+
+        if exercise_num > playlist.exercise_count:
+            return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
+
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if not exercise:
-            raise Http404("No exercises in this playlist.")
+            return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
 
         exercise_context = generate_exercise_context(
             exercise_num,
             exercise,
             request.user,
             playlist,
-            None, # No course for now
+            course,
         )
+
+        base_url = reverse("student:player", kwargs={"unit_num": unit_num}) + f"?playlist={playlist.id}"
+        next_num = exercise_num + 1 if exercise_num < playlist.exercise_count else None
+        prev_num = exercise_num - 1 if exercise_num > 1 else None
+
+        exercise_context["courseId"] = course.id if course else None
+        exercise_context["nextExercise"] = (
+            f"{base_url}&exercise_num={next_num}" if next_num else None
+        )
+        exercise_context["nextExerciseNum"] = next_num
+        exercise_context["previousExercise"] = (
+            f"{base_url}&exercise_num={prev_num}" if prev_num else None
+        )
+        exercise_context["previousExerciseNum"] = prev_num
+        exercise_context["forceRedirect"] = True
+        exercise_context["exerciseList"] = [
+            {
+                **item,
+                "url": f"{base_url}&exercise_num={index}",
+            }
+            for index, item in enumerate(exercise_context.get("exerciseList", []), 1)
+        ]
 
         rj_context = RequirejsContext(settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG)
         rj_context.set_app_module("app/components/app/exercise")
         rj_context.set_module_params("app/components/app/exercise", exercise_context)
-        
+
         context = {
             "unit_num": unit_num,
             "playlist": playlist,
+            "exercise_num": exercise_num,
+            "total_exercises": playlist.exercise_count,
         }
         rj_context.add_to_view(context)
 

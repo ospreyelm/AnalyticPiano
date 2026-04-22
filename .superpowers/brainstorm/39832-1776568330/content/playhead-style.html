@@ -1,0 +1,83 @@
+<h2>Playhead Visual Style</h2>
+<p class="subtitle">How should the current-playing position be highlighted?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f8f4;border-radius:8px;padding:16px;font-family:serif;position:relative;min-height:100px;">
+        <!-- Simulated staff lines -->
+        <div style="position:relative;height:60px;">
+          <div style="position:absolute;left:0;right:0;top:10px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:20px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:30px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:40px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:50px;height:1px;background:#999;"></div>
+          <!-- Vertical bar playhead -->
+          <div style="position:absolute;left:42%;top:-4px;bottom:-4px;width:2px;background:rgba(79,172,254,0.7);border-radius:2px;"></div>
+          <!-- Notes -->
+          <div style="position:absolute;left:15%;top:22px;width:12px;height:12px;background:#333;border-radius:50%;"></div>
+          <div style="position:absolute;left:40%;top:16px;width:12px;height:12px;background:#4facfe;border-radius:50%;box-shadow:0 0 6px #4facfe;"></div>
+          <div style="position:absolute;left:65%;top:26px;width:12px;height:12px;background:#333;border-radius:50%;"></div>
+        </div>
+        <div style="text-align:center;margin-top:6px;font-size:10px;color:#888;font-family:sans-serif;">vertical line + note glow</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Vertical line + note glow</h3>
+      <p>Thin blue vertical bar sweeps across. Active notes glow blue. DAW-style, precise position.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f8f4;border-radius:8px;padding:16px;font-family:serif;position:relative;min-height:100px;">
+        <div style="position:relative;height:60px;">
+          <!-- Highlight column -->
+          <div style="position:absolute;left:35%;width:18%;top:-4px;bottom:-4px;background:rgba(79,172,254,0.15);border-radius:3px;border:1px solid rgba(79,172,254,0.3);"></div>
+          <div style="position:absolute;left:0;right:0;top:10px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:20px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:30px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:40px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:50px;height:1px;background:#999;"></div>
+          <!-- Notes -->
+          <div style="position:absolute;left:15%;top:22px;width:12px;height:12px;background:#333;border-radius:50%;"></div>
+          <div style="position:absolute;left:40%;top:16px;width:12px;height:12px;background:#4facfe;border-radius:50%;"></div>
+          <div style="position:absolute;left:65%;top:26px;width:12px;height:12px;background:#333;border-radius:50%;"></div>
+        </div>
+        <div style="text-align:center;margin-top:6px;font-size:10px;color:#888;font-family:sans-serif;">column highlight</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Column highlight</h3>
+      <p>Soft blue band covers the whole beat column. Gentler, matches "window" concept from chorale grader.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f8f4;border-radius:8px;padding:16px;font-family:serif;position:relative;min-height:100px;">
+        <div style="position:relative;height:60px;">
+          <div style="position:absolute;left:0;right:0;top:10px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:20px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:30px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:40px;height:1px;background:#999;"></div>
+          <div style="position:absolute;left:0;right:0;top:50px;height:1px;background:#999;"></div>
+          <!-- Notes — active ones colored -->
+          <div style="position:absolute;left:15%;top:22px;width:12px;height:12px;background:#333;border-radius:50%;"></div>
+          <div style="position:absolute;left:40%;top:16px;width:12px;height:12px;background:#4facfe;border-radius:50%;"></div>
+          <div style="position:absolute;left:40%;top:34px;width:12px;height:12px;background:#4facfe;border-radius:50%;"></div>
+          <div style="position:absolute;left:65%;top:26px;width:12px;height:12px;background:#333;border-radius:50%;"></div>
+        </div>
+        <div style="text-align:center;margin-top:6px;font-size:10px;color:#888;font-family:sans-serif;">note color only</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Note color only</h3>
+      <p>No background band or line — active notes simply turn blue. Cleanest, least visual noise. Reuses existing note-coloring infrastructure.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Click to select, then tell me in terminal.</p>

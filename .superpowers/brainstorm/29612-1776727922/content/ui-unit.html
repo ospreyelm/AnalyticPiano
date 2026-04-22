@@ -1,0 +1,79 @@
+<h2>UI Design: Section 3 of 4 — Unit Detail</h2>
+<p class="subtitle">Student clicks Unit 1 — sees skills and their mastery state</p>
+
+<div class="mockup">
+  <div class="mockup-header">Unit 1 · Pitch &amp; Staff Notation</div>
+  <div class="mockup-body" style="font-size:0.85rem;max-width:520px;margin:0 auto">
+
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
+      <a style="color:#4A90D9;font-size:0.8rem;text-decoration:none">← All Units</a>
+    </div>
+
+    <div style="font-size:1.1rem;font-weight:700;margin-bottom:0.25rem">Unit 1 · Pitch &amp; Staff Notation</div>
+    <div style="font-size:0.8rem;color:#888;margin-bottom:1rem">Clefs, ledger lines, note names, enharmonics</div>
+
+    <div style="background:#f5f5f5;border-radius:8px;padding:0.75rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem">
+      <div style="flex:1">
+        <div style="background:#ddd;height:6px;border-radius:3px"><div style="background:#4A90D9;width:40%;height:6px;border-radius:3px"></div></div>
+      </div>
+      <div style="font-size:0.8rem;color:#555;white-space:nowrap">2 of 5 skills mastered</div>
+      <button style="background:#4A90D9;color:white;border:none;border-radius:6px;padding:0.4rem 0.9rem;font-size:0.8rem;cursor:pointer">Continue →</button>
+    </div>
+
+    <!-- Skill rows -->
+    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:0.5rem">Skills</div>
+
+    <!-- Mastered -->
+    <div style="border:1px solid #e0f0e0;border-radius:8px;padding:0.75rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem">
+      <div style="width:28px;height:28px;border-radius:50%;background:#4CAF50;display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;flex-shrink:0">✓</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.85rem">Note Names — Treble Staff</div>
+        <div style="font-size:0.75rem;color:#4CAF50">Mastered</div>
+      </div>
+      <button style="border:1px solid #ddd;background:white;border-radius:6px;padding:0.3rem 0.7rem;font-size:0.75rem;color:#555;cursor:pointer">Practice</button>
+    </div>
+
+    <!-- Mastered -->
+    <div style="border:1px solid #e0f0e0;border-radius:8px;padding:0.75rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem">
+      <div style="width:28px;height:28px;border-radius:50%;background:#4CAF50;display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;flex-shrink:0">✓</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.85rem">Note Names — Bass Staff</div>
+        <div style="font-size:0.75rem;color:#4CAF50">Mastered</div>
+      </div>
+      <button style="border:1px solid #ddd;background:white;border-radius:6px;padding:0.3rem 0.7rem;font-size:0.75rem;color:#555;cursor:pointer">Practice</button>
+    </div>
+
+    <!-- Proficient -->
+    <div style="border:1px solid #fff3cd;border-radius:8px;padding:0.75rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem;background:#fffdf0">
+      <div style="width:28px;height:28px;border-radius:50%;background:#FF9800;display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;flex-shrink:0">◑</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.85rem">Ledger Lines</div>
+        <div style="font-size:0.75rem;color:#FF9800">Proficient — keep practicing</div>
+      </div>
+      <button style="border:none;background:#4A90D9;color:white;border-radius:6px;padding:0.3rem 0.7rem;font-size:0.75rem;cursor:pointer">Go →</button>
+    </div>
+
+    <!-- Not started -->
+    <div style="border:1px solid #eee;border-radius:8px;padding:0.75rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem">
+      <div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;color:#999;font-size:0.8rem;flex-shrink:0">○</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.85rem;color:#555">Clefs</div>
+        <div style="font-size:0.75rem;color:#aaa">Not started</div>
+      </div>
+      <button style="border:1px solid #ddd;background:white;border-radius:6px;padding:0.3rem 0.7rem;font-size:0.75rem;color:#555;cursor:pointer">Start</button>
+    </div>
+
+    <!-- Not started -->
+    <div style="border:1px solid #eee;border-radius:8px;padding:0.75rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem">
+      <div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;color:#999;font-size:0.8rem;flex-shrink:0">○</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.85rem;color:#555">Enharmonics</div>
+        <div style="font-size:0.75rem;color:#aaa">Not started</div>
+      </div>
+      <button style="border:1px solid #ddd;background:white;border-radius:6px;padding:0.3rem 0.7rem;font-size:0.75rem;color:#555;cursor:pointer">Start</button>
+    </div>
+
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:1.5rem">Each skill row maps to a skill tag (e.g. <code>Note_Names</code>). Mastery state comes from <code>StudentSkillMastery</code>. "Continue →" resumes the next unmastered skill. "Practice" replays a mastered skill for review.</p>

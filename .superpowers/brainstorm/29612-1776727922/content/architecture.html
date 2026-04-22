@@ -1,0 +1,46 @@
+<h2>Architecture: Section 1 of 4</h2>
+<p class="subtitle">New <code>student/</code> Django app — clean separation from dashboard and lab</p>
+
+<div class="mockup">
+  <div class="mockup-header">URL Structure</div>
+  <div class="mockup-body" style="font-family:monospace;font-size:0.9rem;line-height:2">
+    <div><strong>/s/</strong> → Student home (unit list + auto-resume)</div>
+    <div><strong>/s/units/&lt;unit_num&gt;/</strong> → Unit detail (skill breakdown + exercise list)</div>
+    <div><strong>/s/units/&lt;unit_num&gt;/play/</strong> → Exercise player (clean, no nav clutter)</div>
+    <div><strong>/s/login/</strong> → Student login (separate from /dashboard/)</div>
+    <div style="margin-top:1rem;color:#888">Existing URLs unchanged — dashboard/lab still work for you as instructor</div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:1.5rem">
+  <div class="mockup-header">New Django App: <code>apps/student/</code></div>
+  <div class="mockup-body" style="font-family:monospace;font-size:0.85rem;line-height:1.8">
+    <div>apps/student/</div>
+    <div>&nbsp;&nbsp;views.py &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← HomeView, UnitView, PlayerView</div>
+    <div>&nbsp;&nbsp;urls.py &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← /s/ namespace</div>
+    <div>&nbsp;&nbsp;templates/ &nbsp;&nbsp;&nbsp;&nbsp;← student-only templates (no dashboard chrome)</div>
+    <div>&nbsp;&nbsp;static/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← student CSS (clean, minimal)</div>
+    <div>&nbsp;&nbsp;progress_api.py ← JSON endpoint for mastery data</div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:1.5rem">
+  <div class="mockup-header">What gets reused (no changes needed)</div>
+  <div class="mockup-body" style="font-family:monospace;font-size:0.85rem;line-height:1.8">
+    <div>Exercise, Playlist, Course models &nbsp;&nbsp;&nbsp;← same DB</div>
+    <div>StudentSkillMastery model &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← same mastery tracking</div>
+    <div>PerformanceData model &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← same submission storage</div>
+    <div>Exercise JS engine (lab/static/js) &nbsp;← embedded in player template</div>
+    <div>music_theory_taxonomy_with_branches.json ← unit definitions</div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:1.5rem">
+  <div class="mockup-header">What's new</div>
+  <div class="mockup-body" style="font-family:monospace;font-size:0.85rem;line-height:1.8">
+    <div>Unit 1 playlist + exercises &nbsp;&nbsp;&nbsp;← created via management command</div>
+    <div>Student-facing templates &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← clean Khan-style UI</div>
+    <div>Unit progress API &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← aggregates StudentSkillMastery per unit</div>
+    <div>Student role check &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← redirect /s/ to /dashboard/ if instructor</div>
+  </div>
+</div>

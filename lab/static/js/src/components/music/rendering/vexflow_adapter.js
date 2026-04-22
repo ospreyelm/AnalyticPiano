@@ -275,11 +275,28 @@ define([
     return null;
   }
 
+  function normalizeKeyForVexFlow(key) {
+    if (!key) return "C";
+    var k = String(key).trim();
+    // Handle HarmonyLab format: iG_ -> Gm, jG_ -> G
+    if (k.startsWith('i') || k.startsWith('j')) {
+      var mode = k.charAt(0);
+      var root = k.substring(1).replace('_', '');
+      return mode === 'i' ? root + 'm' : root;
+    }
+    // Handle lowercase keys (music21 style): g -> Gm, c -> Cm
+    if (k.length > 0 && k[0] === k[0].toLowerCase()) {
+      var root = k[0].toUpperCase() + k.substring(1);
+      return root.endsWith('m') ? root : root + 'm';
+    }
+    return k;
+  }
+
   function getKeySignatureAlterations(key) {
     if (!key) return {};
     
     var alterations = {};
-    var k = String(key).trim();
+    var k = normalizeKeyForVexFlow(key);
     
     // Map key to number of sharps (positive) or flats (negative)
     var map = {
@@ -644,8 +661,9 @@ define([
   // Add a key signature with a minor->relative-major fallback for older VexFlow builds
   function addKeySignatureSafe(stave, key) {
     if (!key) return;
+    var k = normalizeKeyForVexFlow(key);
     try {
-      stave.addKeySignature(key);
+      stave.addKeySignature(k);
     } catch (e) {
       // Some VexFlow versions only accept major names; try relative major for minor keys
       var minorToRelativeMajor = {
@@ -743,9 +761,14 @@ define([
         : [];
       var analysisWindows = buildAnalysisWindows(timeline);
       var analysisWindowIdx = 0;
-      var availableWidth = width - margin.left - margin.right;
+      var staffDistribution = (opts && opts.staffDistribution) || (meta && meta.staffDistribution) || "grand_staff";
+      var showTreble = staffDistribution !== "bass";
+      var showBass = staffDistribution !== "treble";
+
+      var systemGap = (opts && opts.systemGap) || 150; // vertical spacing between treble and bass staves
+      var staffYOffset = (opts && opts.staffYOffset) || 0;
       var trebleY = margin.top + 30 + staffYOffset;
-      var bassY = trebleY + systemGap;
+      var bassY = showTreble ? trebleY + systemGap : trebleY;
 
       // Time from metadata if present; default 4/4
       var time = (function () {
@@ -770,6 +793,7 @@ define([
       }
 
       function staffVoices(staffId, staff, clef, idState, keySignatureAlterations, measureStartTick) {
+        if (!staff) return [];
         // Optional filtering: opts.selectVoices = { treble: [0], bass: [1] }
         var select = (opts && opts.selectVoices && opts.selectVoices[staffId]) || null;
         // Optional octave shift per staff: opts.octaveShift = { treble: 0, bass: -1 }
@@ -979,6 +1003,7 @@ define([
         baseWidths[0] = firstBarCompensation;
       }
 
+      var availableWidth = width - margin.left - margin.right;
       var requiredBase = baseWidths.reduce(function(a,b){return a+b;}, 0);
       var remaining = Math.max(0, availableWidth - requiredBase);
       var totalWeight = weights.reduce(function(a, b) { return a + b; }, 0) || 1;
@@ -1065,8 +1090,9 @@ define([
         var isFirstMeasure = measIdx === 0;
         var absoluteMeasureIndex = startMeasure + measIdx;
 
-        var trebleStave = makeStave(ctx, currentX, trebleY, measureWidth, "treble", isFirstMeasure ? meta : {}, isFirstMeasure);
-        var bassStave = makeStave(ctx, currentX, bassY, measureWidth, "bass", isFirstMeasure ? meta : {}, isFirstMeasure);
+        var trebleStave = showTreble ? makeStave(ctx, currentX, trebleY, measureWidth, "treble", isFirstMeasure ? meta : {}, isFirstMeasure) : null;
+        var bassStave = showBass ? makeStave(ctx, currentX, bassY, measureWidth, "bass", isFirstMeasure ? meta : {}, isFirstMeasure) : null;
+        var activeStaveForLabel = bassStave || trebleStave;
 
         // Draw explicit key label beneath the bass clef (e.g., "Am:", "C:")
         function formatKeyForDisplay(k) {
@@ -1080,20 +1106,19 @@ define([
           ? formatKeyForDisplay(opts.keySignature.getKey())
           : (meta && meta.key);
 
-        if (isFirstMeasure && displayKey) {
+        if (isFirstMeasure && displayKey && activeStaveForLabel) {
           ctx.save();
           ctx.font = "bold 18px JazzSerifs";
           ctx.fillStyle = "#000";
           ctx.textAlign = "center";
-          // Center under the bass clef (clef is ~28px wide, so offset by 14px)
           var labelX = currentX + 16; 
-          var labelY = bassStave.getBottomY() + 22; 
+          var labelY = activeStaveForLabel.getBottomY() + 22; 
           ctx.fillText(displayKey + ":", labelX, labelY);
           ctx.restore();
         }
 
-        // Draw system connector only on first measure
-        if (isFirstMeasure) {
+        // Draw system connector only on first measure and only if both staves are shown
+        if (isFirstMeasure && trebleStave && bassStave) {
           var connector = new Vex.Flow.StaveConnector(trebleStave, bassStave);
           connector.setType(Vex.Flow.StaveConnector.type.BRACE).setContext(ctx).draw();
           var leftLine = new Vex.Flow.StaveConnector(trebleStave, bassStave);
@@ -1104,26 +1129,19 @@ define([
   var bassVoices = staffVoices("bass", bass, "bass", globalIdState, keySignatureAlterations, cumulativeMeasureTick);
 
         // Add barlines at the end of each measure
-        // Only show final END barline if this is truly the last measure of the entire piece
         var isLastMeasureOfPiece = (absoluteMeasureIndex === score.measures.length - 1);
-        if (measIdx < numMeasures - 1) {
-          // Not the last rendered measure: always use SINGLE
-          trebleStave.setEndBarType(Vex.Flow.Barline.type.SINGLE);
-          bassStave.setEndBarType(Vex.Flow.Barline.type.SINGLE);
-        } else if (isLastMeasureOfPiece) {
-          // Last measure of entire piece: use END
-          trebleStave.setEndBarType(Vex.Flow.Barline.type.END);
-          bassStave.setEndBarType(Vex.Flow.Barline.type.END);
-        } else {
-          // Last rendered measure but not last of piece: use SINGLE
-          trebleStave.setEndBarType(Vex.Flow.Barline.type.SINGLE);
-          bassStave.setEndBarType(Vex.Flow.Barline.type.SINGLE);
+        var barType = (measIdx < numMeasures - 1) ? Vex.Flow.Barline.type.SINGLE : (isLastMeasureOfPiece ? Vex.Flow.Barline.type.END : Vex.Flow.Barline.type.SINGLE);
+        
+        if (trebleStave) {
+          trebleStave.setEndBarType(barType);
+          trebleStave.draw();
+          lastTrebleStave = trebleStave;
         }
-
-  trebleStave.draw();
-  bassStave.draw();
-  lastTrebleStave = trebleStave;
-  lastBassStave = bassStave;
+        if (bassStave) {
+          bassStave.setEndBarType(barType);
+          bassStave.draw();
+          lastBassStave = bassStave;
+        }
 
         // Use VexFlow 4's improved formatter for better spacing
         var allVoices = trebleVoices.concat(bassVoices);
@@ -1135,8 +1153,8 @@ define([
           if (bassVoices.length) formatter.joinVoices(bassVoices);
 
           // Compute actual left padding from the stave (clef/key/time already added)
-          var leftPadTreble = trebleStave.getNoteStartX() - trebleStave.getX();
-          var leftPadBass = bassStave.getNoteStartX() - bassStave.getX();
+          var leftPadTreble = trebleStave ? (trebleStave.getNoteStartX() - trebleStave.getX()) : 0;
+          var leftPadBass = bassStave ? (bassStave.getNoteStartX() - bassStave.getX()) : 0;
           var leftPad = Math.max(leftPadTreble, leftPadBass);
           // Keep a margin before the barline; the final END barline is thicker, so reserve more
           var rightPad = (measIdx === numMeasures - 1) ? 20 : 12;
@@ -1145,20 +1163,24 @@ define([
           formatter.format(allVoices, notesWidth);
         }
 
-        trebleVoices.forEach(function (v) { 
-          v.draw(ctx, trebleStave); 
-          // Draw beams after notes
-          if (v.beams) {
-            v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
-          }
-        });
-        bassVoices.forEach(function (v) { 
-          v.draw(ctx, bassStave); 
-          // Draw beams after notes
-          if (v.beams) {
-            v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
-          }
-        });
+        if (trebleStave) {
+          trebleVoices.forEach(function (v) { 
+            v.draw(ctx, trebleStave); 
+            // Draw beams after notes
+            if (v.beams) {
+              v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+            }
+          });
+        }
+        if (bassStave) {
+          bassVoices.forEach(function (v) { 
+            v.draw(ctx, bassStave); 
+            // Draw beams after notes
+            if (v.beams) {
+              v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+            }
+          });
+        }
 
         // Analysis annotations using Notater bridge (maximum reuse)
         try {
@@ -1256,28 +1278,29 @@ define([
                 }
               }
 
+              var activeStaveForAnnotations = bassStave || trebleStave;
               var columnCenterX = getColumnCenterX(col);
-              if (opts && typeof opts.onWindowPosition === "function" && typeof matchedIndex === "number" && columnCenterX !== null) {
+              if (opts && typeof opts.onWindowPosition === "function" && typeof matchedIndex === "number" && columnCenterX !== null && activeStaveForAnnotations) {
                 opts.onWindowPosition({
                   windowIndex: matchedIndex,
                   onset: matchedWindow ? matchedWindow.onset : null,
                   measureIndex: matchedWindow ? matchedWindow.measureIndex : null,
                   x: columnCenterX,
-                  y: bassStave.getBottomY() + 18,
+                  y: activeStaveForAnnotations.getBottomY() + 18,
                 });
               }
 
-              if (renderRomans) {
+              if (renderRomans && activeStaveForAnnotations) {
                 attachInlineRomanAnnotation(
                   col,
                   midi,
                   analyzeConfig,
                   inlineAnalyzer,
                   ctx,
-                  bassStave,
+                  activeStaveForAnnotations,
                   { yShift: romanYOffset }
                 );
-              } else if (renderFigured) {
+              } else if (renderFigured && activeStaveForAnnotations) {
                 var figureLabel = computeFiguredLabel(
                   midi,
                   inlineAnalyzer,
@@ -1292,14 +1315,14 @@ define([
                     analyzeConfig,
                     inlineAnalyzer,
                     ctx,
-                    bassStave,
+                    activeStaveForAnnotations,
                     { yShift: figuredYOffset, lineHeight: 12 },
                     figureLabel
                   );
                 }
-              } else if (renderRomanExp) {
+              } else if (renderRomanExp && activeStaveForAnnotations) {
                 var expLabel = computeRomanExpLabel(midi, inlineAnalyzer);
-                queueRomanExpColumn(col, expLabel, bassStave);
+                queueRomanExpColumn(col, expLabel, activeStaveForAnnotations);
               }
 
             });
