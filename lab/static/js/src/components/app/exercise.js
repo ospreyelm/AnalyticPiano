@@ -102,7 +102,7 @@ define([
     });
     // Choose grader depending on exercise type
     if (models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale()) {
-      models.exerciseGrader = new ChoraleGrader({});
+      models.exerciseGrader = new ChoraleGrader(models.exerciseDefinition.getGrading());
       // Initialize from definition so it has the timeline ready
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else if (

@@ -217,7 +217,7 @@ define([
       var matched = false;
       for (var i = 0; i < idxs.length; i++) {
         var ev = tl[idxs[i]];
-        if (!this.playedNoteIds.has(ev.id) && ev.midi === midi) {
+        if (!this.playedNoteIds.has(ev.id) && this._matchPitch(ev.midi, midi)) {
           this.playedNoteIds.add(ev.id);
           matched = true;
           console.log("[2. GRADE] ✓ Matched note " + midi + " in current window (id=" + ev.id + ")");
@@ -228,7 +228,7 @@ define([
       // Also check held notes
       if (!matched) {
         for (var j = 0; j < heldNotes.length; j++) {
-          if (!this.playedNoteIds.has(heldNotes[j].id) && heldNotes[j].midi === midi) {
+          if (!this.playedNoteIds.has(heldNotes[j].id) && this._matchPitch(heldNotes[j].midi, midi)) {
             this.playedNoteIds.add(heldNotes[j].id);
             matched = true;
             console.log("[2. GRADE] ✓ Matched held note " + midi + " (id=" + heldNotes[j].id + ")");
@@ -261,8 +261,18 @@ define([
         console.log("[3. VISUAL] Advanced window pointer from " + oldPointer + " to " + this.pointer);
       }
     },
-    
-    // Find notes that are still sounding at a given onset (from previous events)
+
+    _matchPitch: function(expectedMidi, playedMidi) {
+      if (expectedMidi === playedMidi) return true;
+      
+      // If octave independent/flexible, match based on pitch class (midi % 12)
+      if (this.settings.octaveIndependent || this.settings.octaveFlexible) {
+        return (expectedMidi % 12) === (playedMidi % 12);
+      }
+      
+      return false;
+    },
+
     _getHeldNotesAtOnset: function(onset) {
       var tl = this.timeline;
       var held = [];

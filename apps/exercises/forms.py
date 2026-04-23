@@ -1019,6 +1019,7 @@ class ExerciseForm(forms.ModelForm):
         if release_tol is not None:
             grading["releaseTolerancePct"] = release_tol
         grading["octaveFlexible"] = self.cleaned_data.get("chorale_octave_flexible", False)
+        grading["octaveIndependent"] = grading["octaveFlexible"]
         chord_min = self.cleaned_data.get("chorale_chord_member_min")
         if chord_min:
             grading["chordMemberMin"] = chord_min

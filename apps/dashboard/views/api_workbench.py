@@ -156,6 +156,12 @@ def api_multiply_projection(request):
                     "analysisRenderer": "notater" if is_match or target_type in ["roman_numeral", "figured_bass"] else "none",
                     "transpose": 0,
                     "tempo": 60
+                },
+                "grading": {
+                    "onsetWindowMs": 150,
+                    "octaveFlexible": target_type == "analysis_match",
+                    "octaveIndependent": target_type == "analysis_match",
+                    "releaseTolerancePct": 40
                 }
             }
             
