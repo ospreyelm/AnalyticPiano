@@ -379,6 +379,23 @@ define([
     return !!(analyzeConfig.note_names || mode.note_names);
   }
 
+  function formatExplicitNoteNames(spellings) {
+    if (!spellings || !spellings.length) return "";
+    var accidentalMap = {
+      1: "♯",
+      "-1": "♭",
+      0: "",
+      2: "𝄪",
+      "-2": "𝄫",
+    };
+    return spellings
+      .map(function (s) {
+        var acc = accidentalMap[s.alter] || "";
+        return (s.step || "").toUpperCase() + acc;
+      })
+      .join(" ");
+  }
+
 
   function computeRomanExpLabel(midi, analyzer) {
     if (!analyzer || !midi || !midi.length) return null;
@@ -568,6 +585,8 @@ define([
       win.events.forEach(function (ev) {
         activeNotes.push({
           midi: ev.midi,
+          step: ev.step,
+          alter: ev.alter,
           end: ev.onset + ev.duration,
           measureIndex:
             typeof ev.measureIndex === "number" ? ev.measureIndex : win.measureIndex,
@@ -584,6 +603,20 @@ define([
         .sort(function (a, b) {
           return a - b;
         });
+
+      var sortedActive = activeNotes.slice().sort(function (a, b) {
+        return a.midi - b.midi;
+      });
+      var seenSpelling = {};
+      win.spellingStack = [];
+      sortedActive.forEach(function (n) {
+        if (n.step === undefined) return;
+        var key = n.step + (n.alter || 0);
+        if (!seenSpelling[key]) {
+          seenSpelling[key] = true;
+          win.spellingStack.push({ step: n.step, alter: n.alter || 0 });
+        }
+      });
       var attackMap = Object.create(null);
       win.events.forEach(function (ev) {
         attackMap[ev.midi] = true;
@@ -1385,7 +1418,21 @@ define([
                 var expLabel = computeRomanExpLabel(midi, inlineAnalyzer);
                 queueRomanExpColumn(col, expLabel, activeStaveForAnnotations);
               } else if (renderNoteNames && activeStaveForAnnotations) {
-                attachNoteNameAnnotation(col, midi, analyzeConfig, inlineAnalyzer, ctx, activeStaveForAnnotations, { yShift: romanYOffset });
+                var spelling = null;
+                if (matchedWindow && matchedWindow.spellingStack) {
+                  spelling = matchedWindow.spellingStack;
+                }
+                var explicitLabel = spelling ? formatExplicitNoteNames(spelling) : null;
+                attachNoteNameAnnotation(
+                  col,
+                  midi,
+                  analyzeConfig,
+                  inlineAnalyzer,
+                  ctx,
+                  activeStaveForAnnotations,
+                  { yShift: romanYOffset },
+                  explicitLabel
+                );
               }
 
 
