@@ -121,27 +121,39 @@ def api_multiply_projection(request):
             score_data = _copy.deepcopy(source_data.get("score", {}))
             
             # Map target_type to the correct exercise type and analysisType
-            # All projection types produce chorale_identification exercises;
-            # the analysisType field drives what the student labels.
+            # Standard projection types produce chorale_identification exercises (labeling);
+            # Match types produce chorale exercises (playback).
             ANALYSIS_TYPE_MAP = {
                 "roman_numeral":         "roman",
                 "figured_bass":          "figured_bass",
-                "identification":        "roman", # 'identification' from UI maps to 'roman' analysisType
+                "identification":        "roman",
+                "analysis_match":        "note_name",
+                "exact_match":           "roman",
             }
             analysis_type = ANALYSIS_TYPE_MAP.get(target_type, "roman")
+            is_match = target_type in ["exact_match", "analysis_match"]
 
             new_data = {
-                "type": "chorale_identification",
+                "type": "chorale" if is_match else "chorale_identification",
                 "identMode": ident_mode,
                 "analysisType": analysis_type,
                 "score": score_data,
                 "key": source_data.get("key") or score_data.get("meta", {}).get("key", "C"),
                 "staffDistribution": "chorale",
-                "introText": f"Provide the {target_type.replace('_', ' ')} analysis below.",
+                "introText": f"Play back the notes based on the {target_type.replace('_', ' ')}." if is_match else f"Provide the {target_type.replace('_', ' ')} analysis below.",
                 "reviewText": "Well done!",
+                "analysis": {
+                    "enabled": True,
+                    "mode": {
+                        "note_names": target_type == "analysis_match",
+                    }
+                },
                 "display": {
+                    "showNotation": target_type != "analysis_match",
+                    "showNoteNames": target_type == "analysis_match",
                     "showFigures": target_type == "figured_bass",
                     "showRomans": target_type == "roman_numeral",
+                    "analysisRenderer": "notater" if is_match or target_type in ["roman_numeral", "figured_bass"] else "none",
                     "transpose": 0,
                     "tempo": 60
                 }

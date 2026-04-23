@@ -552,6 +552,7 @@ class ExerciseForm(forms.ModelForm):
     chorale_label_mode = forms.ChoiceField(
         choices=(
             ("none", "Hide analysis"),
+            ("note_names", "Note names"),
             ("figures", "Figured bass (full)"),
             ("figures_abbrev", "Figured bass (abbreviated)"),
             ("romans", "Roman numerals"),
@@ -580,6 +581,12 @@ class ExerciseForm(forms.ModelForm):
         required=False,
         label="Wait for correct notes",
         help_text="If enabled, the viewport only advances when the player satisfies the current onset.",
+    )
+    chorale_show_notation = forms.BooleanField(
+        required=False,
+        label="Show notation",
+        initial=True,
+        help_text="Uncheck for 'Analysis Match' mode where the student plays from labels only.",
     )
     chorale_onset_window_ms = forms.IntegerField(
         required=False,
@@ -751,6 +758,7 @@ class ExerciseForm(forms.ModelForm):
         "chorale_visible_voices",
         "chorale_label_mode",
         "chorale_show_chord_labels",
+        "chorale_show_notation",
         "chorale_transpose",
         "chorale_tempo",
         "chorale_wait_mode",
@@ -883,19 +891,16 @@ class ExerciseForm(forms.ModelForm):
                     if analysis_mode.get("abbreviate_thoroughbass")
                     else "figures"
                 )
+            elif display.get("showNoteNames"):
+                label_mode = "note_names"
 
         defaults = {
             "chorale_mode": data.get("mode") or "play-all-voices",
             "chorale_label_mode": label_mode,
             "chorale_show_chord_labels": display.get("showChordLabels", False),
-            "isAdaptive": getattr(playlist, "is_adaptive", False),
-            "isDynamic": getattr(playlist, "is_dynamic", False),
-            "playlistTags": getattr(playlist, "tags", []),
-            "minComplexity": getattr(playlist, "min_complexity", 1),
-            "maxComplexity": getattr(playlist, "max_complexity", 10),
-            "exerciseIsPerformed": exercise_is_performed,
             "chorale_tempo": display.get("tempo", 60),
             "chorale_wait_mode": display.get("waitMode", False),
+            "chorale_show_notation": display.get("showNotation", True),
             "chorale_onset_window_ms": grading.get("onsetWindowMs", 150),
             "chorale_release_tolerance_pct": grading.get("releaseTolerancePct", 40),
             "chorale_octave_flexible": grading.get("octaveFlexible", False),
@@ -923,7 +928,7 @@ class ExerciseForm(forms.ModelForm):
             "chorale_mode": "Choose the assignment style (all voices, melody only, etc.).",
             "chorale_target_voices": "Only these voices must be performed correctly to pass.",
             "chorale_visible_voices": "Toggles which staves/voices are drawn on the score.",
-            "chorale_label_mode": "Select exactly one overlay: figured bass, Roman numerals, or hide labels.",
+            "chorale_label_mode": "Select exactly one overlay: note names, figured bass, Roman numerals, or hide labels.",
             "chorale_show_chord_labels": "Adds lead-sheet chord symbols (F, C/E, etc.) alongside the selected overlay.",
             "chorale_transpose": "Shift the printed score and required pitches by the given semitones.",
             "chorale_tempo": "Viewport tempo in BPM (purely informational for now).",
@@ -932,6 +937,7 @@ class ExerciseForm(forms.ModelForm):
             "chorale_release_tolerance_pct": "What fraction of the notated duration the student must hold before releasing.",
             "chorale_octave_flexible": "Allow correct notes in any octave (useful for limited keyboards).",
             "chorale_chord_member_min": "Require at least this many chord members at each onset (use 0/blank to require all).",
+            "chorale_show_notation": "Whether to draw the musical staff notation.",
             "chorale_excerpt_start": "Optional starting measure index for the viewport.",
             "chorale_excerpt_end": "Optional ending measure index (exclusive).",
         }
@@ -986,6 +992,7 @@ class ExerciseForm(forms.ModelForm):
         display["showFigures"] = raw_label_mode in ("figures", "figures_abbrev")
         display["showRomans"] = label_mode == "romans"
         display["showRomansExp"] = label_mode == "romans_exp"
+        display["showNoteNames"] = label_mode == "note_names"
         display["showChordLabels"] = self.cleaned_data.get(
             "chorale_show_chord_labels", False
         )
@@ -994,12 +1001,14 @@ class ExerciseForm(forms.ModelForm):
         tempo = self.cleaned_data.get("chorale_tempo")
         display["tempo"] = tempo if tempo is not None else display.get("tempo", 60)
         display["waitMode"] = self.cleaned_data.get("chorale_wait_mode", False)
+        display["showNotation"] = self.cleaned_data.get("chorale_show_notation", True)
         display["analysisRenderer"] = (
             "notater"
             if display["showFigures"]
             or display["showRomans"]
             or display["showRomansExp"]
             or display["showChordLabels"]
+            or display["showNoteNames"]
             else "none"
         )
 
@@ -1032,9 +1041,10 @@ class ExerciseForm(forms.ModelForm):
             data,
             raw_label_mode,
             display["showChordLabels"],
+            display["showNoteNames"],
         )
 
-    def _apply_chorale_analysis_settings(self, data, label_mode, show_chords):
+    def _apply_chorale_analysis_settings(self, data, label_mode, show_chords, show_note_names=False):
         analysis = data.get("analysis", {}) or {}
         mode = {key: False for key in CHORALE_ANALYSIS_KEYS}
         mode["thoroughbass"] = label_mode in ("figures", "figures_abbrev")
@@ -1042,6 +1052,7 @@ class ExerciseForm(forms.ModelForm):
         mode["roman_numerals"] = label_mode == "romans"
         mode["roman_numerals_exp"] = label_mode == "romans_exp"
         mode["chord_labels"] = bool(show_chords)
+        mode["note_names"] = bool(show_note_names)
 
         analysis["mode"] = mode
         analysis["enabled"] = any(mode.values())

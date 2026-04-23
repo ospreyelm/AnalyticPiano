@@ -26,11 +26,11 @@ define([
     if (!lines.length) {
       return;
     }
-    var yBase = (stave && stave.getBottomY) ? stave.getBottomY() : 0;
+    var yBase = (stave && stave.getBottomY) ? stave.getBottomY() : 100;
     var y = yBase + ((opts && opts.yShift) || 30);
     ctx.save();
-    ctx.font = "18px JazzSerifs";
-    ctx.fillStyle = "#000";
+    ctx.font = "16px Arial, sans-serif";
+    ctx.fillStyle = (opts && opts.color) || "#000";
     ctx.textAlign = "left";
     var lineHeight = (opts && opts.lineHeight) || 16;
 
@@ -633,7 +633,8 @@ define([
     return windows;
   }
 
-  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex) {
+  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation) {
+    if (showNotation === undefined) showNotation = true;
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
@@ -672,7 +673,13 @@ define([
       
       // Default: gray until played (will be set to black by matcher later)
       var played = idState && idState.playedNoteIds && idState.playedNoteIds.has(idState.nextId || 0);
-      if (note.setStyle) note.setStyle({ fillStyle: played ? '#000000' : '#9aa0a6', strokeStyle: played ? '#000000' : '#9aa0a6' });
+      if (note.setStyle) {
+        if (!showNotation) {
+          note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
+        } else {
+          note.setStyle({ fillStyle: played ? '#000000' : '#9aa0a6', strokeStyle: played ? '#000000' : '#9aa0a6' });
+        }
+      }
       if (idState) idState.nextId = (idState.nextId || 0) + 1;
       return note;
     }
@@ -706,7 +713,13 @@ define([
       chord._measureIndex = measureIndex;
       
       // Default: gray until played (per notehead)
-      if (chord.setStyle) chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
+      if (chord.setStyle) {
+        if (!showNotation) {
+          chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
+        } else {
+          chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
+        }
+      }
       if (idState) {
         var idx = idState.nextId || 0;
         for (var h = 0; h < keys.length; h++) {
@@ -777,10 +790,10 @@ define([
       var height = (opts && opts.height) || (canvas && canvas.height) || 300;
       var meta = score.meta || {};
       var analyzeConfig = (opts && opts.analyzeConfig) || { enabled: false, mode: {} };
-      var keySignatureModel = opts && opts.keySignature; // KeySignature instance expected
+      var keySignatureModel = (opts && opts.keySignature) || (score.meta && score.meta.key ? new KeySignature(score.meta.key) : new KeySignature("C"));
       var analysisRenderer = (opts && opts.analysisRenderer) || "notater"; // notater|adapter|none
       var inlineAnalyzer = null;
-      if (keySignatureModel && analyzeConfig && analyzeConfig.enabled && analysisRenderer !== "none") {
+      if (analyzeConfig && analyzeConfig.enabled && analysisRenderer !== "none") {
         try {
           inlineAnalyzer = new Analyze(keySignatureModel);
         } catch (err) {
@@ -900,7 +913,7 @@ define([
             var tickables = v.items.map(function (it) {
               var onsetToUse = measStartTick + localOnset;
               localOnset += durationToTicks(it.duration);
-              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex);
+              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex, showNotation);
             }).filter(Boolean);
             
             var stemDir = v.direction === "up" ? 1 : v.direction === "down" ? -1 : 1;
@@ -1199,9 +1212,9 @@ define([
 
         if (isFirstMeasure && displayKey && activeStaveForLabel) {
           ctx.save();
-          ctx.font = "bold 18px JazzSerifs";
-          ctx.fillStyle = "#000";
-          ctx.textAlign = "center";
+          ctx.font = "16px Arial, sans-serif";
+          ctx.fillStyle = (opts && opts.color) || "#000";
+          ctx.textAlign = "left";
           var labelX = currentX + 16; 
           var labelY = activeStaveForLabel.getBottomY() + 22; 
           ctx.fillText(displayKey + ":", labelX, labelY);
@@ -1238,41 +1251,44 @@ define([
         var allVoices = trebleVoices.concat(bassVoices);
         if (allVoices.length) {
           var formatter = new Vex.Flow.Formatter();
-          
-          // Join voices for alignment
           if (trebleVoices.length) formatter.joinVoices(trebleVoices);
           if (bassVoices.length) formatter.joinVoices(bassVoices);
 
-          // Compute actual left padding from the stave (clef/key/time already added)
           var leftPadTreble = trebleStave ? (trebleStave.getNoteStartX() - trebleStave.getX()) : 0;
           var leftPadBass = bassStave ? (bassStave.getNoteStartX() - bassStave.getX()) : 0;
           var leftPad = Math.max(leftPadTreble, leftPadBass);
-          // Keep a margin before the barline; the final END barline is thicker, so reserve more
           var rightPad = (measIdx === numMeasures - 1) ? 20 : 12;
           var notesWidth = Math.max(0, measureWidth - leftPad - rightPad);
           
           formatter.format(allVoices, notesWidth);
         }
 
-        if (showNotation) {
-          if (trebleStave) {
-            trebleVoices.forEach(function (v) { 
-              v.draw(ctx, trebleStave); 
-              // Draw beams after notes
-              if (v.beams) {
-                v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
-              }
-            });
-          }
-          if (bassStave) {
-            bassVoices.forEach(function (v) { 
-              v.draw(ctx, bassStave); 
-              // Draw beams after notes
-              if (v.beams) {
-                v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
-              }
-            });
-          }
+        // Always "draw" voices to ensure layout and coordinates are valid.
+        // If notation is hidden, we draw with alpha=0 (invisible but still occupies space).
+        if (!showNotation) {
+          ctx.save();
+          ctx.globalAlpha = 0;
+        }
+
+        if (trebleStave) {
+          trebleVoices.forEach(function (v) { 
+            v.draw(ctx, trebleStave); 
+            if (v.beams) {
+              v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+            }
+          });
+        }
+        if (bassStave) {
+          bassVoices.forEach(function (v) { 
+            v.draw(ctx, bassStave); 
+            if (v.beams) {
+              v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+            }
+          });
+        }
+
+        if (!showNotation) {
+          ctx.restore();
         }
 
 
