@@ -505,7 +505,9 @@ define([
         if (!chosen) {
           // Draw a clear, clickable pill background for unanswered items
           ctx.beginPath();
-          var w = 32;
+          ctx.font = 'bold 18px sans-serif';
+          var textWidth = ctx.measureText(label).width;
+          var w = Math.max(32, textWidth + 12);
           var h = 28;
           var rx = lx - w/2;
           var ry = labelY - 20;
@@ -528,7 +530,6 @@ define([
           ctx.stroke();
 
           ctx.fillStyle = '#ca8a04';
-          ctx.font = 'bold 18px sans-serif';
           ctx.fillText(label, lx, labelY);
         } else {
           // Answered slot — render properly based on analysis type

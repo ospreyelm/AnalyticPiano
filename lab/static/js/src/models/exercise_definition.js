@@ -508,6 +508,20 @@ define([
     // Map UMTO analysis slices to problems
     _.each(umto.analysis, function (slice, idx) {
       let answer = "";
+      let isTarget = true; // Default to true
+
+      // Find the vertical sonority for this slice to check for context notes
+      const pitchesAtOffset = umto.voices.S.concat(umto.voices.A, umto.voices.T, umto.voices.B)
+          .filter(e => Math.abs(e.offset - slice.offset) < 0.001);
+      
+      // If any sounding note at this offset is marked as NOT a target, 
+      // we might want to hide this slice from identification.
+      // For Unit 1 specifically, we look at the grading slice.
+      const gradingMatch = umto.grading.find(g => Math.abs(g.offset - slice.offset) < 0.001);
+      if (gradingMatch && gradingMatch.target_midi_pitches.length === 0) {
+          isTarget = false;
+      }
+
       // Pedagogical Priority
       if (slice.content.roman_numeral) answer = stripFiguredBassTokens(slice.content.roman_numeral);
       else if (slice.content.pop_symbol) answer = slice.content.pop_symbol;
@@ -516,28 +530,22 @@ define([
 
       // Unit 1 Bridge: Note Names
       if (!answer && umto.metadata.complexity_score === 1) {
-          const pitches = umto.grading.find(g => Math.abs(g.offset - slice.offset) < 0.001);
-          if (pitches && pitches.target_midi_pitches.length > 0) {
-              // For Unit 1, we assume single note identification
-              const midi = pitches.target_midi_pitches[0];
-              // Use a helper or logic to get the "Long Name"
-              if (midi === 60) answer = "Middle C";
-              else {
-                  const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-                  const name = names[midi % 12];
-                  const oct = Math.floor(midi / 12) - 1;
-                  answer = name + oct;
-              }
+          if (gradingMatch && gradingMatch.target_midi_pitches.length > 0) {
+              const midi = gradingMatch.target_midi_pitches[0];
+              const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+              answer = names[midi % 12];
+          } else {
+              isTarget = false;
           }
       }
 
       problems.push({
         windowIndex: idx,
-        measureIndex: 0, // UMTO is offset-based, but renderer might expect measures
+        measureIndex: 0,
         onset: slice.offset,
         answer: normalizeAnalysisLabel(answer),
-        choices: exercise.allowed_answers || [], // Use the dynamic list as the choice pool
-        hidden: !answer
+        choices: exercise.allowed_answers || [],
+        hidden: !answer || !isTarget
       });
     });
 

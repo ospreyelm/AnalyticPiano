@@ -25,11 +25,9 @@ class Pitch(BaseModel):
         return f"{self.step.lower()}{acc}{self.octave}"
 
     def to_long_name(self) -> str:
-        """e.g. Middle C, F#4"""
-        if self.midi == 60:
-            return "Middle C"
+        """e.g. C, F#, Bb"""
         acc = {1: "#", -1: "b", 0: "", 2: "##", -2: "bb"}.get(self.alter, "")
-        return f"{self.step}{acc}{self.octave}"
+        return f"{self.step}{acc}"
 
 class VoiceEvent(BaseModel):
     kind: str = "note" # "note" or "rest"
@@ -79,6 +77,7 @@ class Metadata(BaseModel):
     source: str # e.g. "Bach Chorale BWV 269", "Sonata K.331"
     key: str # e.g. "G Major", "c minor"
     meter: str # e.g. "4/4", "3/4"
+    clef: str = "treble" # "treble", "bass", "alto", "tenor"
     complexity_score: int = Field(ge=1, le=12, description="Unit 1-12 ranking system")
 
 class UMTO(BaseModel):
@@ -170,9 +169,10 @@ class UMTO(BaseModel):
             "exerciseId": self.metadata.exercise_id,
             "key": self.metadata.key,
             "meter": self.metadata.meter,
+            "clef": self.metadata.clef,
             "allowed_answers": self.get_allowed_answers(unit),
             "score": {
-                "meta": {"key": self.metadata.key, "time": self.metadata.meter},
+                "meta": {"key": self.metadata.key, "time": self.metadata.meter, "clef": self.metadata.clef},
                 # We can transform UMTO voices into the measure-based structure 
                 # expected by VexFlowAdapter if needed, or update the adapter.
                 "umto": self.model_dump()
