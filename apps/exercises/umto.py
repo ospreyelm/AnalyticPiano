@@ -24,6 +24,13 @@ class Pitch(BaseModel):
         acc = {1: "#", -1: "b", 0: "", 2: "##", -2: "bb"}.get(self.alter, "")
         return f"{self.step.lower()}{acc}{self.octave}"
 
+    def to_long_name(self) -> str:
+        """e.g. Middle C, F#4"""
+        if self.midi == 60:
+            return "Middle C"
+        acc = {1: "#", -1: "b", 0: "", 2: "##", -2: "bb"}.get(self.alter, "")
+        return f"{self.step}{acc}{self.octave}"
+
 class VoiceEvent(BaseModel):
     kind: str = "note" # "note" or "rest"
     pitch: Optional[Pitch] = None
@@ -32,6 +39,7 @@ class VoiceEvent(BaseModel):
     dots: int = 0
     is_tied_start: bool = False
     is_tied_stop: bool = False
+    is_target: bool = True # False if this note is just context/accompaniment
 
 class Voices(BaseModel):
     S: List[VoiceEvent] = Field(default_factory=list)
@@ -122,6 +130,55 @@ class UMTO(BaseModel):
                     break
                 current_time += event.duration
         return pitches
+
+    def get_allowed_answers(self, unit: Optional[int] = None) -> List[str]:
+        """
+        Returns a list of unique analysis labels applicable to this exercise,
+        optionally filtered by a specific pedagogical Unit.
+        """
+        labels = set()
+        for slice in self.analysis:
+            if unit is None or unit in slice.unit_tags:
+                # Priority of labels
+                if slice.content.roman_numeral:
+                    labels.add(slice.content.roman_numeral)
+                elif slice.content.pop_symbol:
+                    labels.add(slice.content.pop_symbol)
+                elif slice.content.figured_bass:
+                    labels.add(slice.content.figured_bass)
+                elif slice.content.functional_label:
+                    labels.add(slice.content.functional_label)
+
+        # Unit 1 Bridge: If no theory labels found and it's Unit 1, 
+        # use the Pitch names sounding at those offsets.
+        if not labels and unit == 1:
+            for slice in self.analysis:
+                if 1 in slice.unit_tags:
+                    pitches = self.get_chord_at_offset(slice.offset)
+                    for p in pitches:
+                        labels.add(p.to_long_name())
+
+        return sorted(list(labels))
+
+    def to_frontend_payload(self, unit: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Generates a payload ready for the ExerciseDefinition JS parser.
+        """
+        return {
+            "type": "umto_chorale",
+            "isUMTO": True,
+            "exerciseId": self.metadata.exercise_id,
+            "key": self.metadata.key,
+            "meter": self.metadata.meter,
+            "allowed_answers": self.get_allowed_answers(unit),
+            "score": {
+                "meta": {"key": self.metadata.key, "time": self.metadata.meter},
+                # We can transform UMTO voices into the measure-based structure 
+                # expected by VexFlowAdapter if needed, or update the adapter.
+                "umto": self.model_dump()
+            },
+            "grading": [s.model_dump() for s in self.grading]
+        }
 
     def flatten_to_artusi(self) -> str:
         """

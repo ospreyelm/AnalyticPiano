@@ -268,7 +268,30 @@ def generate_exercise_context(
         exercise_is_performed = playlist_performance.exercise_is_performed(exercise.id)
         exercise_error_count = playlist_performance.exercise_error_count(exercise.id)
     
-    exercise_context.update(exercise.data)
+    # UMTO Alignment: If the data follows the UMTO schema, use its frontend payload generator
+    is_umto = exercise.data.get("isUMTO", False) or ("metadata" in exercise.data and "voices" in exercise.data)
+    if is_umto:
+        try:
+            from apps.exercises.umto import UMTO
+            umto_obj = UMTO.model_validate(exercise.data)
+            
+            # Determine unit focus for filtering
+            unit_focus = None
+            all_tags = (exercise.skill_tags or []) + (playlist.skill_tags if playlist else [])
+            for tag in all_tags:
+                if isinstance(tag, str) and tag.startswith("unit:"):
+                    try:
+                        unit_focus = int(tag.split(":")[1])
+                    except (ValueError, IndexError):
+                        continue
+            
+            exercise_context.update(umto_obj.to_frontend_payload(unit=unit_focus))
+        except Exception as e:
+            # Fallback to raw data if UMTO validation fails
+            print(f"UMTO Alignment Warning: {e}")
+            exercise_context.update(exercise.data)
+    else:
+        exercise_context.update(exercise.data)
     exercise_context.update(
         {
             "nextExercise": next_exercise_url,

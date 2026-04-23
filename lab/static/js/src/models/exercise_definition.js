@@ -90,7 +90,19 @@ define([
     20: null,
   };
 
-  function applySkillFilter(problems, skillTags, analysisType) {
+  function applySkillFilter(problems, skillTags, analysisType, explicitAllowedAnswers) {
+    // If UMTO provided an explicit allowlist, use it exclusively
+    if (explicitAllowedAnswers && explicitAllowedAnswers.length > 0) {
+      return _.map(problems, function (p) {
+        if (p.hidden) return p;
+        if (explicitAllowedAnswers.indexOf(p.answer) === -1) {
+          p = _.clone(p);
+          p.hidden = true;
+        }
+        return p;
+      });
+    }
+
     if (!skillTags || skillTags.length === 0) return problems;
 
     // Only filter roman numeral exercises — all other types pass through
@@ -483,6 +495,55 @@ define([
     return problems;
   }
 
+  function buildUMTOIdentificationProblems(exercise) {
+    const umto = exercise.score.umto;
+    if (!umto) return [];
+
+    const problems = [];
+    const analysisType = exercise.analysisType || "roman";
+    const hlKey = exercise.key;
+    const keySignature = new KeySignature(hlKey, exercise.keySignature);
+    const analyzer = new Analyze(keySignature);
+
+    // Map UMTO analysis slices to problems
+    _.each(umto.analysis, function (slice, idx) {
+      let answer = "";
+      // Pedagogical Priority
+      if (slice.content.roman_numeral) answer = stripFiguredBassTokens(slice.content.roman_numeral);
+      else if (slice.content.pop_symbol) answer = slice.content.pop_symbol;
+      else if (slice.content.figured_bass) answer = expandFiguredBassToken(slice.content.figured_bass);
+      else if (slice.content.functional_label) answer = slice.content.functional_label;
+
+      // Unit 1 Bridge: Note Names
+      if (!answer && umto.metadata.complexity_score === 1) {
+          const pitches = umto.grading.find(g => Math.abs(g.offset - slice.offset) < 0.001);
+          if (pitches && pitches.target_midi_pitches.length > 0) {
+              // For Unit 1, we assume single note identification
+              const midi = pitches.target_midi_pitches[0];
+              // Use a helper or logic to get the "Long Name"
+              if (midi === 60) answer = "Middle C";
+              else {
+                  const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+                  const name = names[midi % 12];
+                  const oct = Math.floor(midi / 12) - 1;
+                  answer = name + oct;
+              }
+          }
+      }
+
+      problems.push({
+        windowIndex: idx,
+        measureIndex: 0, // UMTO is offset-based, but renderer might expect measures
+        onset: slice.offset,
+        answer: normalizeAnalysisLabel(answer),
+        choices: exercise.allowed_answers || [], // Use the dynamic list as the choice pool
+        hidden: !answer
+      });
+    });
+
+    return problems;
+  }
+
   /**
    * Converts a CIR-style key (e.g., "F", "Fm", "Bb", "C#m") to HarmonyLab key format (e.g., "jF_", "iF_", "jBb", "iC#").
    *
@@ -770,6 +831,33 @@ define([
     parse: function (definition) {
       var exercise = {};
       var problems = [];
+
+      if (definition.isUMTO) {
+        exercise.isUMTO = true;
+        exercise.type = definition.type;
+        exercise.score = definition.score || {};
+        exercise.allowed_answers = definition.allowed_answers || [];
+        exercise.grading = definition.grading || [];
+        exercise.key = convertCIRKeyToHarmonyLabKey(definition.key || "C");
+        exercise.keySignature = false;
+
+        exercise.introText = definition.introText || false;
+        exercise.reviewText = definition.reviewText || false;
+        exercise.nextExercise = definition.nextExercise || false;
+        exercise.exerciseList = definition.exerciseList || [];
+        exercise.staffDistribution = definition.staffDistribution || "chorale";
+        exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
+
+        if (exercise.type === "umto_chorale") {
+          exercise.problems = applySkillFilter(
+            buildUMTOIdentificationProblems(exercise),
+            (definition.playlistSkillTags || []).concat(definition.playlistTags || []),
+            exercise.analysisType,
+            exercise.allowed_answers
+          );
+        }
+        return exercise;
+      }
 
       // Special handling for chorale and musicxml exercises
       if (definition.type === "chorale" || definition.type === "musicxml") {

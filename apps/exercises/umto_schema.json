@@ -274,6 +274,11 @@
           "default": false,
           "title": "Is Tied Stop",
           "type": "boolean"
+        },
+        "is_target": {
+          "default": true,
+          "title": "Is Target",
+          "type": "boolean"
         }
       },
       "required": [
