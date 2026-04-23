@@ -674,10 +674,12 @@ define([
       // Default: gray until played (will be set to black by matcher later)
       var played = idState && idState.playedNoteIds && idState.playedNoteIds.has(idState.nextId || 0);
       if (note.setStyle) {
-        if (!showNotation) {
+        if (played) {
+          note.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+        } else if (!showNotation) {
           note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
         } else {
-          note.setStyle({ fillStyle: played ? '#000000' : '#9aa0a6', strokeStyle: played ? '#000000' : '#9aa0a6' });
+          note.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
         }
       }
       if (idState) idState.nextId = (idState.nextId || 0) + 1;
@@ -714,7 +716,10 @@ define([
       
       // Default: gray until played (per notehead)
       if (chord.setStyle) {
-        if (!showNotation) {
+        var playedAny = idState && idState.playedNoteIds && idState.playedNoteIds.has(idState.nextId || 0);
+        if (playedAny) {
+          chord.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+        } else if (!showNotation) {
           chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
         } else {
           chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
@@ -1289,6 +1294,21 @@ define([
 
         if (!showNotation) {
           ctx.restore();
+          
+          // Second pass: Draw only the played notes with full opacity
+          var drawPlayedNotes = function(voices, stave) {
+            voices.forEach(function(v) {
+              var tks = (typeof v.getTickables === 'function') ? v.getTickables() : (v.tickables || []);
+              tks.forEach(function(t) {
+                // If it's a played note, it will have a non-transparent fillStyle from itemToTickable
+                if (t.getStyle && t.getStyle().fillStyle !== "transparent") {
+                   t.setContext(ctx).setStave(stave).draw();
+                }
+              });
+            });
+          };
+          if (trebleStave) drawPlayedNotes(trebleVoices, trebleStave);
+          if (bassStave) drawPlayedNotes(bassVoices, bassStave);
         }
 
 
