@@ -79,7 +79,11 @@ define([
 
     // Skip sparse chorale_identification exercises before any rendering occurs.
     // If first page (first 4 measures) has fewer than 4 visible problems, redirect now.
+    // Skip sparse chorale_identification exercises before any rendering occurs.
+    // NOTE: This check is disabled for UMTO/Unit 1 exercises as they may have 
+    // fewer than 4 measures but sufficient problems.
     if (
+      false && // DISABLED: causing loops in Unit 1
       models.exerciseDefinition.isChoraleIdentification &&
       models.exerciseDefinition.isChoraleIdentification() &&
       definition.nextExercise
@@ -105,9 +109,11 @@ define([
       (models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) ||
       (models.exerciseDefinition.isChoraleIdentification && models.exerciseDefinition.isChoraleIdentification())
     ) {
+      console.log("[ID] Selecting IdentificationGrader");
       models.exerciseGrader = new IdentificationGrader({});
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else if (models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale()) {
+      console.log("[ID] Selecting ChoraleGrader");
       var gradingSettings = models.exerciseDefinition.getGrading();
       // Unit 1 Bridge: Make grading octave-agnostic for Note Identification
       if (models.exerciseDefinition.isUnit(1)) {
