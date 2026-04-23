@@ -842,38 +842,12 @@ define([
         if ($toolbar.length) {
           var self = this;
           renderPlaybackControls($toolbar, this.scorePlayer, function () {
-            var score = definition.getScore ? definition.getScore() : null;
-            if (!score) return null;
-            var tl = ScoreTimeline.buildTimeline(score);
-            // Group by onset (same as ScorePlayer.groupByOnset) to build per-window maps.
-            var onsetSeen = {};
-            var order = [];
-            for (var i = 0; i < tl.length; i++) {
-              var ev = tl[i];
-              if (!onsetSeen[ev.onset]) {
-                onsetSeen[ev.onset] = { measureIndex: ev.measureIndex };
-                order.push(ev.onset);
-              }
-            }
-            order.sort(function (a, b) { return a - b; });
-            self._playbackWindowOnsets = order.slice();
-            self._playbackWindowMeasures = order.map(function (onset) { return onsetSeen[onset].measureIndex; });
-
-            // Build measure → tick-offset map so we can convert global onset to page-local onset.
-            // _playbackMeasureTickOffset[measureIndex] = cumulative global tick at start of that measure.
-            var measureOffset = {};
-            for (var j = 0; j < tl.length; j++) {
-              var e = tl[j];
-              if (!(e.measureIndex in measureOffset)) {
-                measureOffset[e.measureIndex] = e.onset;
-              }
-            }
-            self._playbackMeasureTickOffset = measureOffset;
-            return tl;
+            return self._calculatePlaybackOffsets();
           });
         }
       }
-
+      this._calculatePlaybackOffsets();
+      this.autoScroll();
       return this;
     },
     /**
@@ -1880,6 +1854,38 @@ define([
       this.render();
     },
     /**
+     * Calculates onset-to-measure mapping and page-start offsets for the current score.
+     * Populate _playbackMeasureTickOffset so autoScroll and highlights work reliably.
+     */
+    _calculatePlaybackOffsets: function () {
+      var definition = this.exerciseContext.getDefinition();
+      var score = definition.getScore ? definition.getScore() : null;
+      if (!score) return null;
+
+      var tl = ScoreTimeline.buildTimeline(score);
+      var onsetSeen = {};
+      var order = [];
+      var measureOffset = {};
+
+      for (var i = 0; i < tl.length; i++) {
+        var ev = tl[i];
+        if (!onsetSeen[ev.onset]) {
+          onsetSeen[ev.onset] = { measureIndex: ev.measureIndex };
+          order.push(ev.onset);
+        }
+        if (!(ev.measureIndex in measureOffset)) {
+          measureOffset[ev.measureIndex] = ev.onset;
+        }
+      }
+      order.sort(function (a, b) { return a - b; });
+
+      this._playbackWindowOnsets = order.slice();
+      this._playbackWindowMeasures = order.map(function (onset) { return onsetSeen[onset].measureIndex; });
+      this._playbackMeasureTickOffset = measureOffset;
+
+      return tl;
+    },
+    /**
      * Handle MIDI note events in chorale mode by delegating to the ChoraleGrader
      */
     onMidiNote: function (state, noteNum) {
@@ -1906,8 +1912,51 @@ define([
       var playedIds = grader.getPlayedNoteIds ? grader.getPlayedNoteIds() : new Set();
       var idArray = [];
       playedIds.forEach(function(id) { idArray.push(id); });
-      console.log("[3. VISUAL] Re-rendering with " + playedIds.size + " played notes, IDs:", idArray.sort(function(a,b){return a-b;}));
       this.render();
+      this.autoScroll();
+    },
+
+    /**
+     * Automatically scrolls the sheet horizontally to keep the current active note in view.
+     */
+    autoScroll: function () {
+      var grader = this.exerciseContext.grader;
+      if (!grader || typeof grader.getActiveIndex !== "function") return;
+      
+      var windowIdx = grader.getActiveIndex();
+      if (windowIdx === null || windowIdx === undefined) return;
+
+      var globalOnset = grader.timeline && grader.timeline[windowIdx] && grader.timeline[windowIdx].onset;
+      if (globalOnset === undefined) return;
+
+      // Use the same coordinate mapping as playback highlight
+      var measureIdx = grader.getMeasureIndexForWindow ? grader.getMeasureIndexForWindow(windowIdx) : 0;
+      var targetStart = Math.floor(measureIdx / 4) * 4;
+      var pageStartTick = (this._playbackMeasureTickOffset && this._playbackMeasureTickOffset[targetStart]) || 0;
+      var pageLocalOnset = globalOnset - pageStartTick;
+      var cacheKey = measureIdx + ":" + pageLocalOnset;
+
+      var slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[cacheKey];
+      if (slot && slot.x) {
+        var $container = $("#staffwrapper");
+        if (!$container.length) {
+          $container = this.el.parent();
+        }
+        
+        var scrollLeft = $container.scrollLeft();
+        var containerWidth = $container.width();
+        var noteX = slot.x;
+
+        // padding to keep some context
+        var padding = 100;
+        
+        // If note is near the right edge or beyond, scroll it into view
+        if (noteX > scrollLeft + containerWidth - padding) {
+          $container.stop().animate({ scrollLeft: noteX - containerWidth + padding + 200 }, 300);
+        } else if (noteX < scrollLeft + padding) {
+          $container.stop().animate({ scrollLeft: Math.max(0, noteX - padding) }, 300);
+        }
+      }
     },
     /**
      * Handles navigating to the next exercise.

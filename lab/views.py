@@ -319,8 +319,10 @@ def generate_exercise_context(
             "forceRedirect": force_redirect,
             "identMode": getattr(playlist, "feedback_mode", "") or exercise.data.get("identMode", "submit"),
             "modeLocked": bool(getattr(playlist, "feedback_mode", "")),
+            "complexity_score": int(exercise_context.get("complexity_score") or exercise.complexity or 1),
         }
     )
+    # print(f"DEBUG: Exercise {exercise.id} complexity_score={exercise_context['complexity_score']}")
     return exercise_context
 
 

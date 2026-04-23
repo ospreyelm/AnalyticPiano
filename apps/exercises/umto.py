@@ -167,6 +167,7 @@ class UMTO(BaseModel):
             "type": "umto_chorale",
             "isUMTO": True,
             "staffDistribution": self.metadata.clef,
+            "complexity_score": self.metadata.complexity_score,
             "exerciseId": self.metadata.exercise_id,
             "key": self.metadata.key,
             "meter": self.metadata.meter,

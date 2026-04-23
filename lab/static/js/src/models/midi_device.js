@@ -119,7 +119,7 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
    */
   var MESSAGE_DISMISSED = false;
 
-  document.documentElement.addEventListener("mousedown", function () {
+  var initAudio = function () {
     if (!MESSAGE_DISMISSED) {
       try {
         Tone.start().then(function() {
@@ -134,14 +134,18 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
             }
           }
 
-          document.getElementById("user-interaction-solicitation").style.display = "none";
+          var solicitation = document.getElementById("user-interaction-solicitation");
+          if (solicitation) solicitation.style.display = "none";
           MESSAGE_DISMISSED = true;
         });
       } catch (e) { 
         console.log('Error initializing audio:', e); 
       }
     }
-  });
+  };
+
+  document.documentElement.addEventListener("mousedown", initAudio);
+  document.documentElement.addEventListener("keydown", initAudio);
 
   /* Mute button */
   if ($("#mute-toggle").length > 0) {

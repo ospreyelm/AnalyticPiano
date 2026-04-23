@@ -102,7 +102,12 @@ define([
     });
     // Choose grader depending on exercise type
     if (models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale()) {
-      models.exerciseGrader = new ChoraleGrader(models.exerciseDefinition.getGrading());
+      var gradingSettings = models.exerciseDefinition.getGrading();
+      // Unit 1 Bridge: Make grading octave-agnostic for Note Identification
+      if (models.exerciseDefinition.isUnit(1)) {
+        gradingSettings.octaveIndependent = true;
+      }
+      models.exerciseGrader = new ChoraleGrader(gradingSettings);
       // Initialize from definition so it has the timeline ready
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else if (
@@ -184,7 +189,9 @@ define([
         this.addComponent(c);
       },
       function () {
-        var c = new NoteNameInputComponent();
+        var c = new NoteNameInputComponent({
+          defaultMode: "notename"
+        });
         c.init(this);
         c.renderTo("#piano");
         this.addComponent(c);

@@ -610,6 +610,23 @@ define([
       return this.exercise.isUMTO === true;
     },
     /**
+     * Returns the complexity score (Unit level).
+     * @return {number}
+     */
+    getComplexityScore: function () {
+      return this.exercise.complexity_score || 0;
+    },
+    /**
+     * Returns true if the exercise belongs to a specific unit.
+     * @param {number|string} unitNum
+     * @return {boolean}
+     */
+    isUnit: function (unitNum) {
+      var tag = "unit:" + unitNum;
+      var tags = (this.exercise.skill_tags || []).concat(this.exercise.playlistTags || []);
+      return tags.indexOf(tag) !== -1;
+    },
+    /**
      * Returns true if the exercise has any problems attached.
      *
      * @return {boolean}
@@ -861,6 +878,7 @@ define([
         exercise.nextExercise = definition.nextExercise || false;
         exercise.exerciseList = definition.exerciseList || [];
         exercise.staffDistribution = definition.staffDistribution || "chorale";
+        exercise.complexity_score = definition.complexity_score || 0;
         exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
 
         if (exercise.type === "umto_chorale") {
@@ -871,6 +889,9 @@ define([
             exercise.allowed_answers
           );
         }
+        exercise.playlistTags = definition.playlistTags || [];
+        exercise.playlistSkillTags = definition.playlistSkillTags || [];
+        exercise.complexity_score = definition.complexity_score || 0;
         return exercise;
       }
 
@@ -908,6 +929,9 @@ define([
         exercise.nextExercise = definition.nextExercise || false;
         exercise.staffDistribution = definition.staffDistribution || "chorale";
         exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
+        exercise.playlistTags = definition.playlistTags || [];
+        exercise.playlistSkillTags = definition.playlistSkillTags || [];
+        exercise.complexity_score = definition.complexity_score || 0;
         return exercise;
       }
 
@@ -950,7 +974,7 @@ define([
           (exercise.playlistSkillTags).concat(exercise.playlistTags),
           exercise.analysisType
         );
-
+        exercise.complexity_score = definition.complexity_score || 0;
         return exercise;
       }
 

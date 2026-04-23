@@ -187,6 +187,14 @@ define([
       return evt && typeof evt.measureIndex === "number" ? evt.measureIndex : 0;
     },
 
+    getMeasureIndexForWindow: function (windowIdx) {
+      if (!this.timeline.length || !this.windowGroups.length) return 0;
+      var idxs = this.windowGroups[windowIdx];
+      if (!idxs || !idxs.length) return 0;
+      var evt = this.timeline[idxs[0]];
+      return evt && typeof evt.measureIndex === "number" ? evt.measureIndex : 0;
+    },
+
     // Feed MIDI events
     noteOn: function (midi) {
       console.log("[1. PLAY] NOTE ON:", midi);
