@@ -1273,7 +1273,7 @@ define([
         if (trebleStave) {
           trebleVoices.forEach(function (v) { 
             v.draw(ctx, trebleStave); 
-            if (v.beams) {
+            if (v.beams && showNotation) {
               v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
             }
           });
@@ -1281,7 +1281,7 @@ define([
         if (bassStave) {
           bassVoices.forEach(function (v) { 
             v.draw(ctx, bassStave); 
-            if (v.beams) {
+            if (v.beams && showNotation) {
               v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
             }
           });
