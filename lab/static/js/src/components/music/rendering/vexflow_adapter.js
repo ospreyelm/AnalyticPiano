@@ -1310,6 +1310,24 @@ define([
           };
           if (trebleStave) drawPlayedNotes(trebleVoices, trebleStave);
           if (bassStave) drawPlayedNotes(bassVoices, bassStave);
+
+          // Third pass: Draw beams if ALL notes in the beam are played
+          var drawPlayedBeams = function(voices) {
+            voices.forEach(function(v) {
+              if (!v.beams) return;
+              v.beams.forEach(function(beam) {
+                var allPlayed = beam.notes.every(function(n) {
+                  var style = (n.getStyle ? n.getStyle() : null);
+                  return style && style.fillStyle !== "transparent";
+                });
+                if (allPlayed) {
+                  beam.setContext(ctx).draw();
+                }
+              });
+            });
+          };
+          drawPlayedBeams(trebleVoices);
+          drawPlayedBeams(bassVoices);
         }
 
 
