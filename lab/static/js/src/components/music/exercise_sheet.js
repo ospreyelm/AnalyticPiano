@@ -472,6 +472,16 @@ define([
         if (problem && problem.hidden) { continue; } // LEAVE A SPACE
         visibleSlotCount++;
 
+        // AUTO-SCROLL LOGIC: Scroll the active problem into view
+        var activeIndex = grader && grader.activeIndex !== undefined ? grader.activeIndex : 0;
+        if (absoluteIndex === activeIndex && this.el && this.el.parent) {
+          var container = this.el.parent();
+          if (container.length) {
+            var scrollX = lx - container.width() / 2;
+            container.stop().animate({ scrollLeft: Math.max(0, scrollX) }, 200);
+          }
+        }
+
         var chosen = grader && grader.answers && grader.answers.hasOwnProperty(absoluteIndex)
           ? grader.answers[absoluteIndex] : null;
         var label = chosen || '?';

@@ -73,8 +73,8 @@ define([
         var groupIndices = rawGroups[w];
         var onset = this.timeline[groupIndices[0]].onset;
 
-        // If this is the first group or onset is close to last (within 1 beat), merge
-        if (lastOnset === null || (onset - lastOnset <= 1024)) {
+        // If this is the first group or onset is nearly identical to last, merge
+        if (lastOnset === null || (onset - lastOnset <= 0.1)) {
           mergedGroup = mergedGroup.concat(groupIndices);
           lastOnset = onset;
         } else {

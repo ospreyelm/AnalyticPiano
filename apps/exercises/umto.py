@@ -166,19 +166,81 @@ class UMTO(BaseModel):
         return {
             "type": "umto_chorale",
             "isUMTO": True,
+            "staffDistribution": self.metadata.clef,
             "exerciseId": self.metadata.exercise_id,
             "key": self.metadata.key,
             "meter": self.metadata.meter,
             "clef": self.metadata.clef,
             "allowed_answers": self.get_allowed_answers(unit),
             "score": {
-                "meta": {"key": self.metadata.key, "time": self.metadata.meter, "clef": self.metadata.clef},
-                # We can transform UMTO voices into the measure-based structure 
-                # expected by VexFlowAdapter if needed, or update the adapter.
+                "meta": {
+                    "key": self.metadata.key, 
+                    "time": self.metadata.meter, 
+                    "clef": self.metadata.clef,
+                    "staffDistribution": self.metadata.clef
+                },
+                "measures": self._to_legacy_measures(),
                 "umto": self.model_dump()
             },
             "grading": [s.model_dump() for s in self.grading]
         }
+
+    def _to_legacy_measures(self) -> List[Dict[str, Any]]:
+        """
+        Converts UMTO voices into measure-based structures for the legacy VexFlow adapter.
+        For Unit 1, we usually have 1 measure per exercise.
+        """
+        # Calculate beats per measure from meter
+        try:
+            num_beats = int(self.metadata.meter.split("/")[0])
+        except:
+            num_beats = 4
+        
+        # Determine which staff to put voices on
+        is_bass_clef = self.metadata.clef == "bass"
+        target_staff = "bass" if is_bass_clef else "treble"
+        
+        # Group voices (S+A on treble, T+B on bass) or just use the primary voice for ID
+        # For identification exercises, we often just have one voice.
+        voices_to_render = []
+        for vid in ["S", "A", "T", "B"]:
+            events = getattr(self.voices, vid)
+            if not events:
+                continue
+            
+            items = []
+            for ev in events:
+                if ev.kind == "note" and ev.pitch:
+                    items.append({
+                        "kind": "note",
+                        "pitch": {
+                            "step": ev.pitch.step,
+                            "alter": ev.pitch.alter,
+                            "octave": ev.pitch.octave
+                        },
+                        "duration": {"type": ev.duration_type, "dots": ev.dots}
+                    })
+                else:
+                    items.append({
+                        "kind": "rest",
+                        "duration": {"type": ev.duration_type, "dots": ev.dots}
+                    })
+            
+            voices_to_render.append({
+                "items": items,
+                "direction": "up" if vid in ["S", "T"] else "down"
+            })
+
+        # Create measures (simplified: one measure containing all notes for Unit 1)
+        # In a real chorale, we would split by measure boundaries.
+        # But for Unit 1 generators, we keep it to one measure.
+        measure = {
+            "treble": {"clef": "treble", "voices": []},
+            "bass": {"clef": "bass", "voices": []}
+        }
+        measure[target_staff]["voices"] = voices_to_render
+        
+        return [measure]
 
     def flatten_to_artusi(self) -> str:
         """

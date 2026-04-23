@@ -235,7 +235,6 @@ define(["lodash", "app/components/component"], function (_, Component) {
           this.triggerKey(this.state, this.noteNumber);
         }
       }
-      return false;
     },
     /**
      * Event handler for key release.
@@ -266,7 +265,6 @@ define(["lodash", "app/components/component"], function (_, Component) {
           this.triggerKey(this.state, this.noteNumber);
         }
       }
-      return false;
     },
     /**
      * Update the element color.

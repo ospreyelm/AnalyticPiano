@@ -51,19 +51,25 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sa
 .s-progress-bar-fill { background: #4A90D9; height: 4px; border-radius: 2px; }
 
 /* Skill rows */
-.s-skill-row { border: 1px solid #eee; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; }
-.s-skill-row.mastered { border-color: #c8ebc8; }
+.s-skill-row { border: 1px solid #eee; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+.s-skill-row.mastered { border-color: #c8ebc8; background: #fafffa; }
 .s-skill-row.in-progress { border-color: #ffe082; background: #fffdf0; }
-.s-skill-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; }
+.s-skill-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
 .s-skill-dot.mastered { background: #4CAF50; color: white; }
 .s-skill-dot.in-progress { background: #FF9800; color: white; }
 .s-skill-dot.not-started { background: #e0e0e0; color: #999; }
-.s-skill-info { flex: 1; }
-.s-skill-name { font-weight: 600; font-size: 0.85rem; }
-.s-skill-level { font-size: 0.75rem; }
-.s-skill-level.mastered { color: #4CAF50; }
-.s-skill-level.in-progress { color: #FF9800; }
-.s-skill-level.not-started { color: #aaa; }
+.s-skill-info { min-width: 150px; flex: 1; }
+.s-skill-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.1rem; }
+.s-skill-level { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.s-skill-level.mastered { color: #2e7d32; }
+.s-skill-level.in-progress { color: #ef6c00; }
+.s-skill-level.not-started { color: #888; }
+.s-skill-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%; margin-top: 0.5rem; border-top: 1px solid #f0f0f0; padding-top: 0.75rem; }
+@media (min-width: 500px) {
+  .s-skill-actions { width: auto; margin-top: 0; border-top: none; padding-top: 0; justify-content: flex-end; }
+}
+.s-btn-secondary { background: white; color: #4A90D9; border: 1px solid #4A90D9; border-radius: 16px; padding: 0.4rem 1rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+.s-btn-secondary:hover { background: #f0f7ff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
 /* Player */
 .s-player-header { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #eee; margin-bottom: 0.75rem; }

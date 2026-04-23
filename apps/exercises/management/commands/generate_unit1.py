@@ -10,6 +10,7 @@ from music21 import key
 
 from apps.exercises.models import Course, Exercise, ExercisePlaylistOrdered, Playlist, PlaylistCourseOrdered
 from apps.exercises.pitch_voice_utils import strip_to_voice, validate_pitch_voice
+from apps.exercises.umto import UMTO, Metadata, Voices, VoiceEvent, Pitch, GradingSlice, AnalysisSlice, AnalysisLayer
 
 User = get_user_model()
 
@@ -288,24 +289,59 @@ def _build_analysis_payload(score_data, key_name, intro_text, target):
 
 
 
-def _build_identification_payload(score_data, key_name, intro_text, target):
+def _build_identification_payload(score_data, key_name, intro_text, target, ex_id):
     """Note identification: student sees notation, picks note name from choices."""
-    return {
-        "type": "chorale_identification",
-        "analysisType": "note_name",
-        "identMode": "submit",
-        "staffDistribution": "RH" if target == "treble" else "LH",
-        "key": _key_token(key_name),
-        "score": score_data,
-        "introText": intro_text,
-        "reviewText": "Great work.",
-        "display": {
-            "showFigures": False,
-            "showRomans": False,
-            "transpose": 0,
-            "tempo": 60
-        }
-    }
+    meta = score_data.get("meta", {})
+    umto_meta = Metadata(
+        exercise_id=ex_id,
+        source=intro_text,
+        key=meta.get("key", "C"),
+        meter=meta.get("time", "4/4"),
+        clef=target,
+        complexity_score=1
+    )
+
+    voices_dict = {"S": [], "A": [], "T": [], "B": []}
+    grading_slices = []
+    analysis_slices = []
+    
+    # In generate_unit1, score_data is already a single-voice snippet
+    umto_voice_id = "S" if target == "treble" else "B"
+    
+    current_offset = 0.0
+    for m in score_data.get("measures", []):
+        measure_ql = 4.0 # Default fallback
+        # In a real scenario we'd use _full_measure_ql but here we just need consistency
+        
+        staff_data = m.get("staves", {}).get(target, {})
+        voice_list = staff_data.get("voices", [])
+        if not voice_list: continue
+            
+        v_items = voice_list[0].get("items", [])
+        for item in v_items:
+            dur = item.get("duration", {})
+            # Simplified QL calculation for the generator context
+            base = {"w": 4.0, "h": 2.0, "q": 1.0, "8": 0.5, "16": 0.25, "32": 0.125}.get(dur.get("type", "q"), 1.0)
+            ql = base * (2.0 - 0.5**dur.get("dots", 0)) if dur.get("dots", 0) else base
+            
+            if item.get("kind") == "note":
+                p_data = item.get("pitch", {})
+                semitones = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+                midi = ((p_data.get("octave", 4) + 1) * 12) + semitones[p_data.get("step", "C")] + p_data.get("alter", 0)
+                
+                pitch = Pitch(step=p_data["step"], alter=p_data.get("alter", 0), octave=p_data["octave"], midi=midi)
+                event = VoiceEvent(kind="note", pitch=pitch, duration=ql, duration_type=dur.get("type", "q"), dots=dur.get("dots", 0))
+                voices_dict[umto_voice_id].append(event)
+                grading_slices.append(GradingSlice(offset=current_offset, target_midi_pitches=[midi]))
+                analysis_slices.append(AnalysisSlice(offset=current_offset, content=AnalysisLayer(), unit_tags=[1]))
+            elif item.get("kind") == "rest":
+                event = VoiceEvent(kind="rest", duration=ql, duration_type=dur.get("type", "q"), dots=dur.get("dots", 0))
+                voices_dict[umto_voice_id].append(event)
+            
+            current_offset += ql
+
+    umto = UMTO(metadata=umto_meta, voices=Voices(**voices_dict), analysis=analysis_slices, grading=grading_slices)
+    return umto.to_frontend_payload(unit=1)
 
 
 class Command(BaseCommand):
@@ -527,11 +563,17 @@ class Command(BaseCommand):
 
                         if lanes in ("identification", "both"):
                             id_desc = f"{bwv.upper()} mm.{human_start}-{human_end} - {voice_name.title()} (identification) Stage {stage}"
-                            id_payload = _build_identification_payload(one_voice, key_name, f"Identify the notes: {intro_text}", target)
+                            
                             id_ex = Exercise.objects.filter(description=id_desc).first()
+                            ex_id_val = id_ex.id if id_ex else "TEMP"
+                            id_payload = _build_identification_payload(one_voice, key_name, f"Identify the notes: {intro_text}", target, ex_id_val)
+                            
                             if id_ex is None:
                                 if not dry_run:
                                     id_ex = Exercise(description=id_desc, data=id_payload, authored_by=author, is_public=True, skill_tags=base_tags, complexity=complexity)
+                                    id_ex.save()
+                                    # Now we have the real ID, update payload
+                                    id_ex.data["metadata"]["exercise_id"] = id_ex.id
                                     id_ex.save()
                                     print(f"Created {id_ex.id}: {id_desc}")
 
@@ -567,7 +609,7 @@ class Command(BaseCommand):
             if lane == "exact":
                 playlist_name = f"Unit 1 - Play the Notes ({clef_label})"
             elif lane == "analysis":
-                playlist_name = f"Unit 1 - Name the Notes ({clef_label})"
+                playlist_name = f"Unit 1 - Play from Name ({clef_label})"
             else:  # identification
                 playlist_name = f"Unit 1 - Identify the Notes ({clef_label})"
             playlist_tags = ["unit:1", "Note_Names", "enharmonic", "Enharmonic_Reading", clef_tag]

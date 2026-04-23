@@ -98,7 +98,7 @@ define([
 
     this.sealed = false; /* will be used to ignore input post-completion */
 
-    _.bindAll(this, ["grade", "triggerTimer"]);
+    _.bindAll(this, ["grade", "triggerTimer", "validateGradingAlignment"]);
 
     this.init();
   };
@@ -279,7 +279,7 @@ define([
      * Debugging helper to ensure played MIDI notes match the UMTO grading targets.
      */
     validateGradingAlignment: function () {
-      if (!this.definition.isUMTO || !this.definition.grading) return;
+      if (!this.definition.isUMTO || !this.definition.isUMTO() || !this.definition.exercise.grading) return;
 
       const currentChord = this.inputChords.current();
       const playedPitches = _.sortBy(currentChord.getNoteNumbers());

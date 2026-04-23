@@ -603,6 +603,13 @@ define([
       return this.exercise.reviewText !== false;
     },
     /**
+     * Returns true if this is a UMTO exercise.
+     * @return {boolean}
+     */
+    isUMTO: function () {
+      return this.exercise.isUMTO === true;
+    },
+    /**
      * Returns true if the exercise has any problems attached.
      *
      * @return {boolean}

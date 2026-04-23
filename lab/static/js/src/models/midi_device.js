@@ -67,7 +67,7 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
   }).connect(vol);
 
   /* Helper function to convert MIDI note number to Tone.js note name */
-  var PITCH_NAMES = ["c","c#","d","eb","e","f","f#","g","g#","a","bb","b"];
+  var PITCH_NAMES = ["C","C#","D","Eb","E","F","F#","G","G#","A","Bb","B"];
   function _midiToToneName(midi) {
     return PITCH_NAMES[(midi + 12) % 12] + (Math.floor(midi / 12) - 1).toString();
   }
@@ -122,30 +122,24 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
   document.documentElement.addEventListener("mousedown", function () {
     if (!MESSAGE_DISMISSED) {
       try {
-        if (Tone.context.state !== "running") {
+        Tone.start().then(function() {
           sampler.releaseAll();
-          Tone.context.resume();
-        } else {
-          console.log('Tone.context.state already === "running"')
-        }
-
-        /* apply sticky settings */
-        if (typeof STICKY_MUTE == "boolean") {
-          // wait to unmute audio until the document.hasFocus()
-          // see comment at the declaration of vol.mute
-          vol.mute = STICKY_MUTE;
-          let mute = document.getElementById("mute-toggle");
-          if (STICKY_MUTE) { // set to muted
-            mute.innerHTML = muteToggleText[1];
-          } else { // set to unmuted
-            mute.innerHTML = muteToggleText[0];
+          
+          /* apply sticky settings */
+          if (typeof STICKY_MUTE == "boolean") {
+            vol.mute = STICKY_MUTE;
+            let mute = document.getElementById("mute-toggle");
+            if (mute) {
+              mute.innerHTML = STICKY_MUTE ? muteToggleText[1] : muteToggleText[0];
+            }
           }
-        }
 
-        document.getElementById("user-interaction-solicitation").style.display = "none";
-
-        MESSAGE_DISMISSED = true; // only run this code once
-      } catch { console.log('Some error occured with initializing audio.') }
+          document.getElementById("user-interaction-solicitation").style.display = "none";
+          MESSAGE_DISMISSED = true;
+        });
+      } catch (e) { 
+        console.log('Error initializing audio:', e); 
+      }
     }
   });
 
@@ -425,11 +419,12 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
       /* convert MIDI number to pitch name */
       var toneJsNoteName = _midiToToneName(msg[1]);
 
-      if (msg[0] == 144) {
-        /* note on, channel 1 */
+      var status = msg[0] & 0xf0; // Mask out the channel
+      if (status == 0x90) {
+        /* note on */
         sampler.triggerAttack(toneJsNoteName);
-      } else if (msg[0] == 128) {
-        /* note off, channel 1 */
+      } else if (status == 0x80) {
+        /* note off */
         sampler.triggerRelease(toneJsNoteName);
       }
     }
