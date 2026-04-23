@@ -70,12 +70,14 @@ define([
       var gradedProblems = [];
       var allAnswered = true;
       var allCorrect = true;
+      var visibleCount = 0;
 
       for (var i = 0; i < problems.length; i++) {
         if (problems[i].hidden) {
           gradedProblems.push({ answer: problems[i].answer, chosen: null, correct: null, hidden: true });
           continue;
         }
+        visibleCount++;
         var absoluteIndex = pageOffset + i;
         var answer = problems[i].answer;
         var chosen = this.answers.hasOwnProperty(absoluteIndex)
@@ -87,6 +89,11 @@ define([
         if (correct !== true) { allCorrect = false; }
 
         gradedProblems.push({ answer: answer, chosen: chosen, correct: correct });
+      }
+
+      if (visibleCount === 0) {
+        allAnswered = false;
+        allCorrect = false;
       }
 
       var resultState = (allAnswered && allCorrect) ? CORRECT : (allAnswered ? INCORRECT : PARTIAL);

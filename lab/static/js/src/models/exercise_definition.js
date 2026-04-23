@@ -529,7 +529,11 @@ define([
       else if (slice.content.functional_label) answer = slice.content.functional_label;
 
       // Unit 1 Bridge: Note Names
-      if (!answer && (umto.metadata.complexity_score === 1 || exercise.analysisType === "note_name")) {
+      var isNoteNameEx = (exercise.analysisType === "note_name") || 
+                         (umto.metadata && umto.metadata.complexity_score === 1) ||
+                         (exercise.unit && (exercise.unit == 1 || exercise.unit == "1" || String(exercise.unit).indexOf("Unit 1") !== -1));
+      
+      if (!answer && isNoteNameEx) {
           if (gradingMatch && gradingMatch.target_midi_pitches.length > 0) {
               const midi = gradingMatch.target_midi_pitches[0];
               const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
