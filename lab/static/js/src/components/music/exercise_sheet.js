@@ -170,10 +170,10 @@ define([
     },
     _isIdentificationLikeExercise: function () {
       var definition = this.exerciseContext.getDefinition();
-      return (
-        (definition.isIdentification && definition.isIdentification()) ||
-        (definition.isChoraleIdentification && definition.isChoraleIdentification())
-      );
+      var isIdent = (definition.isIdentification && definition.isIdentification()) ||
+             (definition.isChoraleIdentification && definition.isChoraleIdentification());
+      console.log("[ID] _isIdentificationLikeExercise result:", isIdent, "type:", definition.getType());
+      return isIdent;
     },
     _isChoraleIdentificationExercise: function () {
       var definition = this.exerciseContext.getDefinition();
@@ -412,8 +412,10 @@ define([
       var problems = this.exerciseContext.getVisibleProblems
         ? this.exerciseContext.getVisibleProblems()
         : (definition.getProblems ? definition.getProblems() : []);
-      if (definition.isChoraleIdentification && definition.isChoraleIdentification()) {
+      console.log("[ID] _getIdentificationSlots problems count:", problems.length);
+      if ((this._isChoraleIdentificationExercise() || definition.getScore()) && !_.isEmpty(this._identWindowLayout)) {
         var layout = this._identWindowLayout || {};
+        console.log("[ID] UMTO layout keys:", Object.keys(layout));
         return _.map(problems, function (_problem, idx) {
           var slot = layout[idx];
           if (!slot) { return null; }
@@ -422,8 +424,10 @@ define([
       }
 
       var noteStaves = this.staves.slice(1);
+      console.log("[ID] noteStaves count:", noteStaves.length);
       return _.map(noteStaves, function (treble, idx) {
         var bass = treble.connectedStave;
+        console.log("[ID] Slot", idx, "bass:", !!bass, "bass.staffSegment:", !!(bass && bass.staffSegment));
         if (!bass || !bass.staffSegment) {
           return null;
         }
@@ -437,6 +441,7 @@ define([
 
     drawIdentificationLabels: function () {
       var slots = this._getIdentificationSlots();
+      console.log("[ID] drawIdentificationLabels slots count:", slots.length);
       if (!slots.length) { return; }
 
       var grader = this.exerciseContext.grader;
@@ -474,6 +479,7 @@ define([
 
         // AUTO-SCROLL LOGIC: Scroll the active problem into view
         var activeIndex = grader && grader.activeIndex !== undefined ? grader.activeIndex : 0;
+        console.log("[ID] Slot", i, "absIdx:", absoluteIndex, "lx:", lx, "ly:", ly, "label:", (grader && grader.answers && grader.answers[absoluteIndex]) || '?');
         if (absoluteIndex === activeIndex && this.el && this.el.parent) {
           var container = this.el.parent();
           if (container.length) {
@@ -827,7 +833,8 @@ define([
      *
      * @return this
      */
-    render: function (exercise_midi_nums = false) {
+    render: function (exercise_midi_nums) {
+      exercise_midi_nums = exercise_midi_nums || false;
       this.clear();
       this.renderStaves(exercise_midi_nums);
       this.renderExerciseStatus();
@@ -848,7 +855,31 @@ define([
       }
       this._calculatePlaybackOffsets();
       this.autoScroll();
+
+      // Simple Debug Overlay
+      if (window.location.search.indexOf('debug=1') !== -1) {
+        this._renderDebugOverlay();
+      }
+
       return this;
+    },
+    
+    _renderDebugOverlay: function () {
+      $('#id-debug-overlay').remove();
+      var problems = this.exerciseContext.getDefinition().getProblems();
+      var overlay = $('<div id="id-debug-overlay" style="position:fixed; top:10px; right:10px; background:rgba(0,0,0,0.8); color:white; padding:10px; font-size:10px; z-index:9999; max-height:80vh; overflow-y:auto; border-radius:5px; font-family:monospace;"></div>');
+      overlay.append('<h3 style="margin:0 0 10px 0;">UMTO Logic Auditor</h3>');
+      var table = $('<table border="1" style="border-collapse:collapse; width:100%;"><tr><th>Idx</th><th>Off</th><th>Ans</th><th>Tgt</th></tr></table>');
+      _.each(problems, function(p, i) {
+        var row = $('<tr></tr>');
+        row.append('<td style="padding:2px;">'+i+'</td>');
+        row.append('<td style="padding:2px;">'+p.onset.toFixed(2)+'</td>');
+        row.append('<td style="padding:2px;">'+p.answer+'</td>');
+        row.append('<td style="padding:2px;">'+(p.hidden?'No':'Yes')+'</td>');
+        table.append(row);
+      });
+      overlay.append(table);
+      $('body').append(overlay);
     },
     /**
      * Renders textual prompt for the exercise.
@@ -1077,21 +1108,33 @@ define([
      *
      * @return this
      */
-    renderStaves: function (exercise_midi_nums = false) {
+    renderStaves: function (exercise_midi_nums) {
+      exercise_midi_nums = exercise_midi_nums || false;
       var definition = this.exerciseContext.getDefinition();
-      var isChoraleLike =
-        definition.isChorale() ||
-        (definition.isChoraleIdentification && definition.isChoraleIdentification());
+      var score = definition.getScore();
+      var isChoraleLike = (definition.isChorale() || definition.isChoraleIdentification());
+      
+      // If it's a UMTO chorale with no pre-processed measures, build them on the fly
+      if (isChoraleLike && score && (!score.measures || score.measures.length === 0) && score.umto) {
+        console.log("[ID] Converting UMTO to processed score for rendering");
+        score = this._convertUMTOToProcessedScore(score.umto);
+      }
+
+      var hasMeasures = !!(score && score.measures && score.measures.length > 0);
+      console.log("[ID] renderStaves. isChoraleLike:", isChoraleLike, "type:", definition.getType(), "hasMeasures:", hasMeasures);
       
       // Use VexFlow adapter for chorale exercises
-      if (isChoraleLike) {
-        var score = definition.getScore();
+      if (isChoraleLike && hasMeasures) {
         if (score && score.measures && score.measures.length > 0) {
           var self = this;
           this._identWindowLayout = {};
           this._identWindowLayoutByOnset = {};
           this._updateChoraleViewport(score);
           var canvas = this.el[0];
+          console.log("[ID] Canvas:", canvas, "Width:", canvas.width, "Height:", canvas.height);
+          var ctx = this.vexRenderer.getContext();
+          console.log("[ID] Context:", ctx);
+          
           var display = definition.getDisplay() || {};
           var analyzeConfig = _.cloneDeep(this.getAnalyzeConfig() || {});
           var wantsRomans = !!display.showRomans;
@@ -1161,6 +1204,7 @@ define([
             });
           }
 
+          console.log("[ID] Calling VexFlowAdapter.render with score:", score, "analyzeConfig:", analyzeConfig);
           VexFlowAdapter.render(score, this.vexRenderer, {
             width: canvas.width,
             height: canvas.height,
@@ -1178,6 +1222,7 @@ define([
               if (!slot || typeof slot.windowIndex !== "number") {
                 return;
               }
+              console.log("[ID] onWindowPosition received:", slot.windowIndex, slot.x, slot.y);
               self._identWindowLayout[slot.windowIndex] = slot;
               // Index by "measureIndex:pageLocalOnset" for cross-page playback highlight lookup.
               // The adapter emits absolute measureIndex and page-local onset.
@@ -1186,6 +1231,7 @@ define([
               }
             },
           });
+          console.log("[ID] VexFlowAdapter.render finished.");
 
 
 
@@ -2048,6 +2094,64 @@ define([
 
     _clearPlaybackHighlight: function () {
       $("#playback-highlight").hide();
+    },
+    /**
+     * Converts raw UMTO data into the "Processed Score" format that VexFlowAdapter expects.
+     * @param {object} umto 
+     * @returns {object} Processed score
+     */
+    _convertUMTOToProcessedScore: function (umto) {
+      if (!umto || !umto.voices) {
+        console.error("[ID] UMTO or voices missing", umto);
+        return null;
+      }
+      
+      var self = this;
+      var voicesObj = { S: [], A: [], T: [], B: [] };
+      
+      _.each(['S', 'A', 'T', 'B'], function(vName) {
+        if (umto.voices[vName]) {
+          voicesObj[vName] = _.map(umto.voices[vName], function(ev) {
+            var item = {
+              kind: ev.kind || 'note',
+              duration: {
+                type: ev.duration_type || 'q',
+                dots: ev.dots || 0
+              }
+            };
+            if (ev.pitch) {
+              item.pitch = _.cloneDeep(ev.pitch);
+              item.notes = [{ pitch: item.pitch }];
+            }
+            return item;
+          });
+        }
+      });
+      
+      var meta = _.cloneDeep(umto.metadata || {});
+      // Map UMTO 'meter' to VexFlowAdapter 'time'
+      if (meta.meter && !meta.time) {
+        meta.time = meta.meter;
+      }
+      // Map UMTO 'clef' to VexFlowAdapter 'staffDistribution'
+      if (meta.clef && !meta.staffDistribution) {
+          if (meta.clef === 'bass') meta.staffDistribution = 'bass';
+          else if (meta.clef === 'treble') meta.staffDistribution = 'treble';
+      }
+      
+      var processed = {
+        metadata: meta,
+        measures: [
+          {
+            staves: {
+              treble: { voices: [ { items: voicesObj.S }, { items: voicesObj.A } ] },
+              bass: { voices: [ { items: voicesObj.T }, { items: voicesObj.B } ] }
+            }
+          }
+        ]
+      };
+      console.log("[ID] Processed score built:", processed);
+      return processed;
     },
   });
 

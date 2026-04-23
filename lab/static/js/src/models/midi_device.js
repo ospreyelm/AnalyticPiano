@@ -144,8 +144,8 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
     }
   };
 
-  document.documentElement.addEventListener("mousedown", initAudio);
-  document.documentElement.addEventListener("keydown", initAudio);
+  document.documentElement.addEventListener("mousedown", initAudio, {capture: true});
+  document.documentElement.addEventListener("keydown", initAudio, {capture: true});
 
   /* Mute button */
   if ($("#mute-toggle").length > 0) {

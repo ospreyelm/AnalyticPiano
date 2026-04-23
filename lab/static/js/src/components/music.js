@@ -166,7 +166,7 @@ define([
       if (sheetComponent.hasOwnProperty("exerciseContext")) {
         var exercise_midi_nums =
           sheetComponent.exerciseContext.exerciseChords._items.map((item) =>
-            Object.keys(item._notes)
+            item.getNoteNumbers()
           );
         sheetComponent.render(exercise_midi_nums);
       } else {

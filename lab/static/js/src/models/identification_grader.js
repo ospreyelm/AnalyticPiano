@@ -25,6 +25,7 @@ define([
     reset: function () {
       this.answers = {};  // { problemIndex: label }
       this.attemptCounts = {}; // { problemIndex: count }
+      this.activeIndex = 0;
     },
 
     initFromDefinition: function (definition) {
@@ -36,6 +37,16 @@ define([
     setAnswer: function (problemIndex, label) {
       this.answers[problemIndex] = label;
       this.attemptCounts[problemIndex] = (this.attemptCounts[problemIndex] || 0) + 1;
+      
+      // Update activeIndex to the next unanswered question on this page
+      var problems = this.definition.getProblems();
+      var nextActive = problemIndex + 1;
+      while (nextActive < problems.length && (problems[nextActive].hidden || this.answers.hasOwnProperty(nextActive))) {
+        nextActive++;
+      }
+      if (nextActive < problems.length) {
+        this.activeIndex = nextActive;
+      }
     },
 
     getActiveMeasureIndex: function () {

@@ -529,7 +529,7 @@ define([
       else if (slice.content.functional_label) answer = slice.content.functional_label;
 
       // Unit 1 Bridge: Note Names
-      if (!answer && umto.metadata.complexity_score === 1) {
+      if (!answer && (umto.metadata.complexity_score === 1 || exercise.analysisType === "note_name")) {
           if (gradingMatch && gradingMatch.target_midi_pitches.length > 0) {
               const midi = gradingMatch.target_midi_pitches[0];
               const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -538,6 +538,8 @@ define([
               isTarget = false;
           }
       }
+      
+      console.log("[ID] Problem built:", idx, "offset:", slice.offset, "answer:", answer, "isTarget:", isTarget);
 
       problems.push({
         windowIndex: idx,
@@ -545,7 +547,10 @@ define([
         onset: slice.offset,
         answer: normalizeAnalysisLabel(answer),
         choices: exercise.allowed_answers || [],
-        hidden: !answer || !isTarget
+        hidden: !answer || !isTarget,
+        visible: (gradingMatch && gradingMatch.target_midi_pitches) ? gradingMatch.target_midi_pitches : [],
+        notes: pitchesAtOffset.map(p => p.midi),
+        rhythm: "q"
       });
     });
 
@@ -614,7 +619,11 @@ define([
      * @return {number}
      */
     getComplexityScore: function () {
-      return this.exercise.complexity_score || 0;
+      var score = this.exercise.complexity_score;
+      if (score === undefined && this.exercise.score && this.exercise.score.umto && this.exercise.score.umto.metadata) {
+        score = this.exercise.score.umto.metadata.complexity_score;
+      }
+      return score || 0;
     },
     /**
      * Returns true if the exercise belongs to a specific unit.
@@ -622,9 +631,11 @@ define([
      * @return {boolean}
      */
     isUnit: function (unitNum) {
-      var tag = "unit:" + unitNum;
       var tags = (this.exercise.skill_tags || []).concat(this.exercise.playlistTags || []);
-      return tags.indexOf(tag) !== -1;
+      var searchTags = ["unit:" + unitNum, "Unit " + unitNum];
+      return _.some(tags, function(t) {
+        return _.includes(searchTags, t);
+      });
     },
     /**
      * Returns true if the exercise has any problems attached.
@@ -729,7 +740,7 @@ define([
      * @return {boolean}
      */
     isChorale: function () {
-      return this.exercise.type === "chorale";
+      return this.exercise.type === "chorale" || this.exercise.type === "umto_chorale";
     },
     /**
      * Returns true if this is a chorale identification exercise.
@@ -737,7 +748,7 @@ define([
      * @return {boolean}
      */
     isChoraleIdentification: function () {
-      return this.exercise.type === "chorale_identification";
+      return this.exercise.type === "chorale_identification" || this.exercise.type === "umto_chorale";
     },
     /**
      * Returns true if this is a musicxml exercise.
@@ -753,7 +764,11 @@ define([
      * @return {boolean}
      */
     isIdentification: function () {
-      return this.exercise.type === "identification";
+      var isIdent = this.exercise.type === "identification" || 
+                    this.exercise.type === "chorale_identification" ||
+                    this.exercise.type === "umto_chorale";
+      console.log("[ID] isIdentification final check:", isIdent, "type:", this.exercise.type);
+      return isIdent;
     },
     /**
      * Returns the feedback mode for identification exercises.
