@@ -1,0 +1,369 @@
+{
+  "$defs": {
+    "AnalysisLayer": {
+      "properties": {
+        "roman_numeral": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roman Numeral"
+        },
+        "figured_bass": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Figured Bass"
+        },
+        "pop_symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pop Symbol"
+        },
+        "functional_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Functional Label"
+        }
+      },
+      "title": "AnalysisLayer",
+      "type": "object"
+    },
+    "AnalysisSlice": {
+      "properties": {
+        "offset": {
+          "title": "Offset",
+          "type": "number"
+        },
+        "content": {
+          "$ref": "#/$defs/AnalysisLayer"
+        },
+        "visual": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VisualMetadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "unit_tags": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Unit Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "offset",
+        "content"
+      ],
+      "title": "AnalysisSlice",
+      "type": "object"
+    },
+    "GradingSlice": {
+      "properties": {
+        "offset": {
+          "title": "Offset",
+          "type": "number"
+        },
+        "target_midi_pitches": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Target Midi Pitches",
+          "type": "array"
+        },
+        "rhythmic_flexibility": {
+          "default": false,
+          "title": "Rhythmic Flexibility",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "offset",
+        "target_midi_pitches"
+      ],
+      "title": "GradingSlice",
+      "type": "object"
+    },
+    "Metadata": {
+      "properties": {
+        "exercise_id": {
+          "title": "Exercise Id",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "meter": {
+          "title": "Meter",
+          "type": "string"
+        },
+        "complexity_score": {
+          "description": "Unit 1-12 ranking system",
+          "maximum": 12,
+          "minimum": 1,
+          "title": "Complexity Score",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "exercise_id",
+        "source",
+        "key",
+        "meter",
+        "complexity_score"
+      ],
+      "title": "Metadata",
+      "type": "object"
+    },
+    "Pitch": {
+      "properties": {
+        "step": {
+          "title": "Step",
+          "type": "string"
+        },
+        "alter": {
+          "title": "Alter",
+          "type": "integer"
+        },
+        "octave": {
+          "title": "Octave",
+          "type": "integer"
+        },
+        "midi": {
+          "title": "Midi",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "step",
+        "alter",
+        "octave",
+        "midi"
+      ],
+      "title": "Pitch",
+      "type": "object"
+    },
+    "VisualMetadata": {
+      "description": "Coordinates or hints for the rendering engine to place \n'hand-written' style analysis on the page.",
+      "properties": {
+        "x_hint": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "X Hint"
+        },
+        "y_hint": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Y Hint"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "slice",
+          "title": "Anchor"
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "handwritten",
+          "title": "Style"
+        }
+      },
+      "title": "VisualMetadata",
+      "type": "object"
+    },
+    "VoiceEvent": {
+      "properties": {
+        "kind": {
+          "default": "note",
+          "title": "Kind",
+          "type": "string"
+        },
+        "pitch": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pitch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "duration": {
+          "title": "Duration",
+          "type": "number"
+        },
+        "duration_type": {
+          "title": "Duration Type",
+          "type": "string"
+        },
+        "dots": {
+          "default": 0,
+          "title": "Dots",
+          "type": "integer"
+        },
+        "is_tied_start": {
+          "default": false,
+          "title": "Is Tied Start",
+          "type": "boolean"
+        },
+        "is_tied_stop": {
+          "default": false,
+          "title": "Is Tied Stop",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "duration",
+        "duration_type"
+      ],
+      "title": "VoiceEvent",
+      "type": "object"
+    },
+    "Voices": {
+      "properties": {
+        "S": {
+          "items": {
+            "$ref": "#/$defs/VoiceEvent"
+          },
+          "title": "S",
+          "type": "array"
+        },
+        "A": {
+          "items": {
+            "$ref": "#/$defs/VoiceEvent"
+          },
+          "title": "A",
+          "type": "array"
+        },
+        "T": {
+          "items": {
+            "$ref": "#/$defs/VoiceEvent"
+          },
+          "title": "T",
+          "type": "array"
+        },
+        "B": {
+          "items": {
+            "$ref": "#/$defs/VoiceEvent"
+          },
+          "title": "B",
+          "type": "array"
+        }
+      },
+      "title": "Voices",
+      "type": "object"
+    }
+  },
+  "description": "Universal Music Theory Object (UMTO)\n\nA modular schema acting as a bridge between Analysis Logic (theory engine)\nand Rendering/Grading Logic (VexFlow and MIDI).",
+  "examples": [
+    {
+      "analysis": [],
+      "grading": [],
+      "metadata": {
+        "complexity_score": 1,
+        "exercise_id": "EA01",
+        "key": "C Major",
+        "meter": "4/4",
+        "source": "Bach Chorale"
+      },
+      "voices": {
+        "A": [],
+        "B": [],
+        "S": [],
+        "T": []
+      }
+    }
+  ],
+  "properties": {
+    "metadata": {
+      "$ref": "#/$defs/Metadata"
+    },
+    "voices": {
+      "$ref": "#/$defs/Voices"
+    },
+    "analysis": {
+      "items": {
+        "$ref": "#/$defs/AnalysisSlice"
+      },
+      "title": "Analysis",
+      "type": "array"
+    },
+    "grading": {
+      "items": {
+        "$ref": "#/$defs/GradingSlice"
+      },
+      "title": "Grading",
+      "type": "array"
+    }
+  },
+  "required": [
+    "metadata",
+    "voices"
+  ],
+  "title": "Universal Music Theory Object",
+  "type": "object"
+}
