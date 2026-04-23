@@ -1301,7 +1301,8 @@ define([
               var tks = (typeof v.getTickables === 'function') ? v.getTickables() : (v.tickables || []);
               tks.forEach(function(t) {
                 // If it's a played note, it will have a non-transparent fillStyle from itemToTickable
-                if (t.getStyle && t.getStyle().fillStyle !== "transparent") {
+                var style = (t.getStyle ? t.getStyle() : null);
+                if (style && style.fillStyle !== "transparent") {
                    t.setContext(ctx).setStave(stave).draw();
                 }
               });
