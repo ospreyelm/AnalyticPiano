@@ -1125,6 +1125,7 @@ define([
       
       // Use VexFlow adapter for chorale exercises
       if (isChoraleLike && hasMeasures) {
+        console.log("[ID] Using VexFlowAdapter (Chorale Model) for rendering");
         if (score && score.measures && score.measures.length > 0) {
           var self = this;
           this._identWindowLayout = {};
@@ -1243,6 +1244,7 @@ define([
       }
       
       // Legacy rendering for non-chorale exercises
+      console.log("[ID] Using Legacy Renderer (FALLBACK)");
       const show_barlines = true;
 
       var i,
@@ -2129,15 +2131,18 @@ define([
       });
       
       var meta = _.cloneDeep(umto.metadata || {});
-      // Map UMTO 'meter' to VexFlowAdapter 'time'
-      if (meta.meter && !meta.time) {
-        meta.time = meta.meter;
-      }
+      // Map UMTO fields to VexFlowAdapter fields
+      if (meta.meter && !meta.time) meta.time = meta.meter;
+      if (meta.key && !meta.keySignature) meta.keySignature = meta.key;
+      
       // Map UMTO 'clef' to VexFlowAdapter 'staffDistribution'
       if (meta.clef && !meta.staffDistribution) {
           if (meta.clef === 'bass') meta.staffDistribution = 'bass';
           else if (meta.clef === 'treble') meta.staffDistribution = 'treble';
       }
+      
+      // Ensure we have a default time signature if missing
+      if (!meta.time) meta.time = "4/4";
       
       var processed = {
         metadata: meta,

@@ -769,11 +769,20 @@ define([
   }
 
   function makeStave(ctx, x, y, w, clef, meta, addClef) {
+    console.log("[ID] makeStave. clef:", clef, "addClef:", addClef, "meta:", meta);
     var stave = new Vex.Flow.Stave(x, y, w);
     stave.setContext(ctx);
-    if (addClef) stave.addClef(clef);
-    if (meta && meta.key) addKeySignatureSafe(stave, meta.key);
-    if (meta && meta.time) stave.addTimeSignature(meta.time);
+    if (addClef) {
+      stave.addClef(clef);
+      if (meta && meta.key) {
+        console.log("[ID] adding key:", meta.key);
+        addKeySignatureSafe(stave, meta.key);
+      }
+      if (meta && meta.time) {
+        console.log("[ID] adding time:", meta.time);
+        stave.addTimeSignature(meta.time);
+      }
+    }
     return stave;
   }
 
