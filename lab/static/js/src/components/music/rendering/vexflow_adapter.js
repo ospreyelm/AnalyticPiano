@@ -685,7 +685,7 @@ define([
         } else if (!showNotation) {
           note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
         } else if (isAnalysisMatch) {
-          note.setStyle({ fillStyle: '#ffffff', strokeStyle: '#ffffff' });
+          note.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
         } else {
           note.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
         }
@@ -730,7 +730,7 @@ define([
         } else if (!showNotation) {
           chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
         } else if (isAnalysisMatch) {
-          chord.setStyle({ fillStyle: '#ffffff', strokeStyle: '#ffffff' });
+          chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
         } else {
           chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
         }

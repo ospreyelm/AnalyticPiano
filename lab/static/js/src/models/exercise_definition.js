@@ -637,7 +637,7 @@ define([
       var tags = (this.exercise.skill_tags || []).concat(this.exercise.playlistTags || []);
       var searchTags = ["unit:" + unitNum, "Unit " + unitNum];
       return _.some(tags, function(t) {
-        return _.includes(searchTags, t);
+        return searchTags.indexOf(t) !== -1;
       });
     },
     /**
