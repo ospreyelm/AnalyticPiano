@@ -1,0 +1,6 @@
+{
+  "metadata": { "exercise_id": 201, "source": "Unit 2 Test", "key": "G", "meter": "4/4", "clef": "treble", "complexity_score": 2, "mode": "identification" },
+  "voices": { "S": [{ "kind": "note", "pitch": { "step": "F", "alter": 1, "octave": 4, "midi": 66 }, "duration": 1.0, "duration_type": "q", "dots": 0 }], "A": [], "T": [], "B": [] },
+  "grading": [{ "offset": 0.0, "target_midi_pitches": [66] }],
+  "analysis": [{ "offset": 0.0, "content": {}, "unit_tags": [2] }]
+}

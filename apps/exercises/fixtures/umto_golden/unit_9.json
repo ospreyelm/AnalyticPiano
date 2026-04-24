@@ -1,0 +1,6 @@
+{
+  "metadata": { "exercise_id": 901, "source": "Unit 9 Test", "key": "C", "meter": "4/4", "clef": "keyboard", "complexity_score": 9, "mode": "playback" },
+  "voices": { "S": [{ "kind": "note", "pitch": { "step": "C", "alter": 0, "octave": 5, "midi": 72 }, "duration": 1.0, "duration_type": "q", "dots": 0 }], "A": [], "T": [], "B": [{ "kind": "note", "pitch": { "step": "C", "alter": 0, "octave": 3, "midi": 48 }, "duration": 1.0, "duration_type": "q", "dots": 0 }] },
+  "grading": [{ "offset": 0.0, "target_midi_pitches": [48, 72] }],
+  "analysis": [{ "offset": 0.0, "content": { "roman": "I" }, "unit_tags": [9] }]
+}

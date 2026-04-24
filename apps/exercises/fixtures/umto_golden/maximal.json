@@ -1,0 +1,89 @@
+{
+  "metadata": {
+    "exercise_id": 999,
+    "source": "Maximal Test",
+    "key": "F#",
+    "meter": "3/4",
+    "clef": "keyboard",
+    "complexity_score": 9,
+    "mode": "playback"
+  },
+  "voices": {
+    "S": [
+      {
+        "kind": "note",
+        "pitch": {
+          "step": "F",
+          "alter": 1,
+          "octave": 4,
+          "midi": 66
+        },
+        "duration": 1.5,
+        "duration_type": "q",
+        "dots": 1,
+        "is_umto": true,
+        "is_target": true,
+        "is_tied_start": true
+      }
+    ],
+    "A": [
+      {
+        "kind": "rest",
+        "duration": 0.5,
+        "duration_type": "8",
+        "dots": 0
+      }
+    ],
+    "T": [
+      {
+        "kind": "note",
+        "pitch": {
+          "step": "A",
+          "alter": 1,
+          "octave": 3,
+          "midi": 58
+        },
+        "duration": 1.0,
+        "duration_type": "q",
+        "dots": 0
+      }
+    ],
+    "B": [
+      {
+        "kind": "note",
+        "pitch": {
+          "step": "F",
+          "alter": 1,
+          "octave": 2,
+          "midi": 42
+        },
+        "duration": 1.0,
+        "duration_type": "q",
+        "dots": 0
+      }
+    ]
+  },
+  "grading": [
+    {
+      "offset": 0.0,
+      "target_midi_pitches": [
+        42,
+        58,
+        66
+      ],
+      "is_optional": false
+    }
+  ],
+  "analysis": [
+    {
+      "offset": 0.0,
+      "content": {
+        "roman": "I",
+        "label": "F# Major"
+      },
+      "unit_tags": [
+        9
+      ]
+    }
+  ]
+}

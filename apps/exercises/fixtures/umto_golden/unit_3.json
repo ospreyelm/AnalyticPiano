@@ -1,0 +1,6 @@
+{
+  "metadata": { "exercise_id": 301, "source": "Unit 3 Test", "key": "D", "meter": "4/4", "clef": "treble", "complexity_score": 3, "mode": "identification" },
+  "voices": { "S": [{ "kind": "note", "pitch": { "step": "C", "alter": 1, "octave": 5, "midi": 73 }, "duration": 1.0, "duration_type": "q", "dots": 0 }], "A": [], "T": [], "B": [] },
+  "grading": [{ "offset": 0.0, "target_midi_pitches": [73] }],
+  "analysis": [{ "offset": 0.0, "content": {}, "unit_tags": [3] }]
+}
