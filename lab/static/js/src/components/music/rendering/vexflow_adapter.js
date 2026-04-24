@@ -640,6 +640,7 @@ define([
 
   function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation, isAnalysisMatch) {
     if (showNotation === undefined) showNotation = true;
+    if (isAnalysisMatch === undefined) isAnalysisMatch = false;
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
