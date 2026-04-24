@@ -1231,6 +1231,7 @@ define([
             keySignature: this.keySignature,
             analysisRenderer: display.analysisRenderer || "notater", // notater|adapter|none
             staffYOffset: staffYOffset,
+            isAnalysisMatch: isAnalysisMatchMode,
             onWindowPosition: function (slot) {
               if (!slot || typeof slot.windowIndex !== "number") {
                 return;

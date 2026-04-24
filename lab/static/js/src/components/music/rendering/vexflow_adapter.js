@@ -638,7 +638,7 @@ define([
     return windows;
   }
 
-  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation) {
+  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation, isAnalysisMatch) {
     if (showNotation === undefined) showNotation = true;
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
@@ -683,6 +683,8 @@ define([
           note.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
         } else if (!showNotation) {
           note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
+        } else if (isAnalysisMatch) {
+          note.setStyle({ fillStyle: '#ffffff', strokeStyle: '#ffffff' });
         } else {
           note.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
         }
@@ -726,6 +728,8 @@ define([
           chord.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
         } else if (!showNotation) {
           chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
+        } else if (isAnalysisMatch) {
+          chord.setStyle({ fillStyle: '#ffffff', strokeStyle: '#ffffff' });
         } else {
           chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
         }
@@ -830,6 +834,7 @@ define([
         renderNoteNames = false;
       }
       var showNotation = opts && opts.showNotation !== undefined ? opts.showNotation : true;
+      var isAnalysisMatch = !!(opts && opts.isAnalysisMatch);
 
       var systemGap = (opts && opts.systemGap) || 150; // vertical spacing between treble and bass staves
       var staffYOffset = (opts && opts.staffYOffset) || 0;
@@ -932,7 +937,7 @@ define([
             var tickables = v.items.map(function (it) {
               var onsetToUse = measStartTick + localOnset;
               localOnset += durationToTicks(it.duration);
-              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex, showNotation);
+              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex, showNotation, isAnalysisMatch);
             }).filter(Boolean);
             
             var stemDir = v.direction === "up" ? 1 : v.direction === "down" ? -1 : 1;
