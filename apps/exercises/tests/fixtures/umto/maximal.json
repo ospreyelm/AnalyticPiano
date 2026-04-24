@@ -1,0 +1,44 @@
+{
+  "metadata": {
+    "exercise_id": "FIXTURE_MAXIMAL",
+    "source": "maximal fixture — every optional field populated",
+    "key": "g minor",
+    "meter": "3/4",
+    "clef": "keyboard",
+    "complexity_score": 12,
+    "mode": "identification",
+    "is_umto": true
+  },
+  "voices": {
+    "S": [
+      {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 5, "midi": 79}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": true, "is_tied_stop": false, "is_target": true},
+      {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 5, "midi": 79}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": false, "is_tied_stop": true, "is_target": false}
+    ],
+    "A": [
+      {"kind": "note", "pitch": {"step": "D", "alter": 0, "octave": 5, "midi": 74}, "duration": 2.0, "duration_type": "h", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}
+    ],
+    "T": [
+      {"kind": "note", "pitch": {"step": "B", "alter": -1, "octave": 4, "midi": 70}, "duration": 1.5, "duration_type": "q", "dots": 1, "is_tied_start": false, "is_tied_stop": false, "is_target": true},
+      {"kind": "rest", "duration": 0.5, "duration_type": "8", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": false}
+    ],
+    "B": [
+      {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 3, "midi": 55}, "duration": 2.0, "duration_type": "h", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}
+    ]
+  },
+  "analysis": [
+    {
+      "offset": 0.0,
+      "content": {
+        "roman_numeral": "i",
+        "figured_bass": "5/3",
+        "pop_symbol": "Gm",
+        "functional_label": "Tonic"
+      },
+      "visual": {"x_hint": 0.0, "y_hint": -40.0, "anchor": "slice", "style": "handwritten"},
+      "unit_tags": [1, 9, 12]
+    }
+  ],
+  "grading": [
+    {"offset": 0.0, "target_midi_pitches": [55, 70, 74, 79], "rhythmic_flexibility": true}
+  ]
+}

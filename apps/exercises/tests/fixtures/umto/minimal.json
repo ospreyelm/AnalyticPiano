@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "exercise_id": "FIXTURE_MINIMAL",
+    "source": "minimal fixture",
+    "key": "C",
+    "meter": "4/4",
+    "clef": "treble",
+    "complexity_score": 1,
+    "mode": "playback",
+    "is_umto": true
+  },
+  "voices": {
+    "S": [
+      {"kind": "note", "pitch": {"step": "C", "alter": 0, "octave": 4, "midi": 60}, "duration": 4.0, "duration_type": "w", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}
+    ],
+    "A": [],
+    "T": [],
+    "B": []
+  },
+  "analysis": [],
+  "grading": [
+    {"offset": 0.0, "target_midi_pitches": [60], "rhythmic_flexibility": false}
+  ]
+}

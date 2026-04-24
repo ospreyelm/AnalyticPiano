@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "exercise_id": "FIXTURE_U1_PB_TREBLE",
+    "source": "BWV1.6 mm.1-2 Soprano playback",
+    "key": "G",
+    "meter": "4/4",
+    "clef": "treble",
+    "complexity_score": 1,
+    "mode": "playback",
+    "is_umto": true
+  },
+  "voices": {
+    "S": [
+      {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 4, "midi": 67}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true},
+      {"kind": "note", "pitch": {"step": "A", "alter": 0, "octave": 4, "midi": 69}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true},
+      {"kind": "note", "pitch": {"step": "B", "alter": 0, "octave": 4, "midi": 71}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true},
+      {"kind": "note", "pitch": {"step": "C", "alter": 0, "octave": 5, "midi": 72}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}
+    ],
+    "A": [], "T": [], "B": []
+  },
+  "analysis": [
+    {"offset": 0.0, "content": {}, "visual": null, "unit_tags": [1]},
+    {"offset": 1.0, "content": {}, "visual": null, "unit_tags": [1]},
+    {"offset": 2.0, "content": {}, "visual": null, "unit_tags": [1]},
+    {"offset": 3.0, "content": {}, "visual": null, "unit_tags": [1]}
+  ],
+  "grading": [
+    {"offset": 0.0, "target_midi_pitches": [67], "rhythmic_flexibility": false},
+    {"offset": 1.0, "target_midi_pitches": [69], "rhythmic_flexibility": false},
+    {"offset": 2.0, "target_midi_pitches": [71], "rhythmic_flexibility": false},
+    {"offset": 3.0, "target_midi_pitches": [72], "rhythmic_flexibility": false}
+  ]
+}
