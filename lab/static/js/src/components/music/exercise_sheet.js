@@ -1152,7 +1152,7 @@ define([
           var wantsRomans = !!display.showRomans;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
-          var isAnalysisMatchMode = definition.mode === "analysis_match" || definition.mode === "analysis";
+          var isAnalysisMatchMode = !!(definition.isAnalysisMatch && definition.isAnalysisMatch());
           var wantsNoteNames = !!display.showNoteNames || isAnalysisMatchMode;
 
 
