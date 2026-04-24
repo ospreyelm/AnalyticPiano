@@ -1152,7 +1152,8 @@ define([
           var wantsRomans = !!display.showRomans;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
-          var wantsNoteNames = !!display.showNoteNames || definition.mode === "analysis";
+          var isAnalysisMatchMode = definition.mode === "analysis_match" || definition.mode === "analysis";
+          var wantsNoteNames = !!display.showNoteNames || isAnalysisMatchMode;
 
 
           // In chorale identification mode the figures/Romans ARE the student's
@@ -1168,7 +1169,7 @@ define([
 
           // Preserve legacy chorale behavior that force-enables roman numerals,
           // but do not force overlays for chorale_identification.
-          if (!wantsAnalysis && definition.isChorale && definition.isChorale()) {
+          if (!wantsAnalysis && definition.isChorale && definition.isChorale() && !isAnalysisMatchMode) {
             wantsRomans = true;
             wantsAnalysis = true;
           }
