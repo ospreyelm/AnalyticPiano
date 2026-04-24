@@ -6,7 +6,7 @@
     "meter": "4/4",
     "clef": "treble",
     "complexity_score": 1,
-    "mode": "analysis",
+    "mode": "analysis_match",
     "is_umto": true
   },
   "voices": {

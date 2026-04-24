@@ -6,7 +6,7 @@
     "meter": "4/4",
     "clef": "keyboard",
     "complexity_score": 9,
-    "mode": "analysis",
+    "mode": "analysis_match",
     "is_umto": true
   },
   "voices": {
