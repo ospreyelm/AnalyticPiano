@@ -1121,6 +1121,14 @@ define([
       }
 
       var hasMeasures = !!(score && score.measures && score.measures.length > 0);
+      
+      // Ensure score has metadata for VexFlowAdapter
+      if (score && hasMeasures) {
+        score.metadata = score.metadata || {};
+        if (score.metadata.meter && !score.metadata.time) score.metadata.time = score.metadata.meter;
+        if (!score.metadata.time) score.metadata.time = "4/4";
+      }
+
       console.log("[ID] renderStaves. isChoraleLike:", isChoraleLike, "type:", definition.getType(), "hasMeasures:", hasMeasures);
       
       // Use VexFlow adapter for chorale exercises
