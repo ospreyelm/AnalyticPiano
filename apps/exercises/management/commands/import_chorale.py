@@ -11,8 +11,8 @@ import json
 import os
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
-from apps.exercises.models import Exercise
-from apps.exercises.pitch_voice_utils import strip_to_voice
+from apps.exercises.umto import InteractionMode
+from apps.exercises.umto_factory import save_umto_exercise
 
 User = get_user_model()
 
@@ -101,89 +101,26 @@ class Command(BaseCommand):
         bwv = corpus_file.replace('.json', '').upper()
         title = f"{bwv} (mm. {start_measure+1}–{end_measure})"
 
-        if mode == 'identify':
-            score_for_ident = {
-                'meta': meta,
-                'measures': excerpt_measures,
-            }
-
-            if analysis_type in PITCH_ANALYSIS_TYPES:
-                if not voice_name:
-                    raise CommandError('--voice is required for pitch analysis types in identify mode')
-                try:
-                    score_for_ident = strip_to_voice(score_for_ident, voice_name)
-                except ValueError as exc:
-                    raise CommandError(str(exc))
-
-            if analysis_type == 'roman':
-                analysis_label = 'Roman numerals'
-            elif analysis_type == 'figured_bass':
-                analysis_label = 'figured bass'
-            elif analysis_type == 'interval_generic':
-                analysis_label = 'generic intervals'
-            elif analysis_type == 'interval_specific':
-                analysis_label = 'specific intervals'
-            elif analysis_type == 'note_name':
-                analysis_label = 'note names'
-            elif analysis_type == 'solfege':
-                analysis_label = 'solfege syllables'
-            elif analysis_type == 'do_based_solfege':
-                analysis_label = 'do-based solfege syllables'
-            elif analysis_type == 'scale_degree':
-                analysis_label = 'scale degrees'
-            elif analysis_type == 'fixed_do':
-                analysis_label = 'fixed-do syllables'
-            else:
-                analysis_label = 'pitch classes'
-
-            if analysis_type in ('interval_generic', 'interval_specific'):
-                intro = f"Identify the {analysis_label} in this two-voice excerpt of {bwv}, measures {start_measure+1}–{end_measure}."
-            else:
-                intro = f"Label the {analysis_label} for {bwv}, measures {start_measure+1}–{end_measure}."
-
-            exercise_data = {
-                "type": "chorale_identification",
-                "identMode": "submit",
-                "analysisType": analysis_type,
-                "compoundIntervals": compound,
-                "score": score_for_ident,
-                "introText": intro,
-                "reviewText": f"Well done! You completed {bwv}, measures {start_measure+1}–{end_measure}.",
-                "key": meta.get("key", "C"),
-                "staffDistribution": "chorale"
-            }
-            title = f"{bwv} identification ({analysis_type}, mm. {start_measure+1}–{end_measure})"
+        # Build UMTO Interaction Mode
+        if mode == 'play':
+            umto_mode = InteractionMode.PLAYBACK
+        elif analysis_type in ('roman', 'figured_bass'):
+            umto_mode = InteractionMode.ANALYSIS_MATCH
         else:
-            exercise_data = {
-                "type": "chorale",
-                "mode": "play-all-voices",
-                "score": {
-                    "meta": meta,
-                    "measures": excerpt_measures
-                },
-                "targetVoices": "all",
-                "display": {
-                    "showFigures": False,
-                    "showRomans": False,
-                    "transpose": 0,
-                    "tempo": 60
-                },
-                "grading": {
-                    "onsetWindowMs": 150,
-                    "releaseTolerancePct": 40,
-                    "octaveFlexible": False
-                },
-                "excerpt": {
-                    "startMeasure": start_measure,
-                    "endMeasure": end_measure
-                },
-                "introText": f"Play all four voices of {bwv}, measures {start_measure+1}–{end_measure}. Use the keyboard or MIDI controller to play each note as it appears. Notes turn black when played correctly.",
-                "reviewText": f"Well done! You completed {bwv}, measures {start_measure+1}–{end_measure}.",
-                # Legacy fields for compatibility
-                "key": meta.get("key", "C"),
-                "keySignature": meta.get("key", "C"),
-                "staffDistribution": "chorale"
-            }
+            umto_mode = InteractionMode.IDENTIFICATION
+
+        # Build intro text
+        if umto_mode == InteractionMode.PLAYBACK:
+            intro = f"Play all four voices of {bwv}, mm. {start_measure+1}–{end_measure}."
+        elif analysis_type in ('interval_generic', 'interval_specific'):
+            intro = f"Identify the {analysis_type.replace('_', ' ')} in this excerpt of {bwv}, mm. {start_measure+1}–{end_measure}."
+        else:
+            intro = f"Label the {analysis_type.replace('_', ' ')} for {bwv}, mm. {start_measure+1}–{end_measure}."
+
+        score_for_umto = {
+            'meta': meta,
+            'measures': excerpt_measures,
+        }
 
         # Detect skill tags via music21 analysis
         from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
@@ -203,20 +140,34 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.WARNING(f'  Warning: Skills analysis failed: {e}'))
 
-        # Create the Exercise
-        exercise = Exercise(
+        # Determine primary clef for UMTO metadata
+        # If it's a single voice, use its clef. Otherwise assume keyboard/chorale layout.
+        primary_clef = meta.get("clef", "treble")
+        
+        # Create the Exercise via UMTO factory
+        exercise = save_umto_exercise(
             description=title,
-            data=exercise_data,
-            authored_by=author,
-            is_public=is_public,
+            score_data=score_for_umto,
+            author=author,
             skill_tags=detected_skills,
-            complexity=detected_complexity
+            complexity=detected_complexity,
+            is_public=is_public,
+            umto_kwargs=dict(
+                exercise_id="TEMP",
+                source=intro,
+                key=meta.get("key", "C"),
+                meter=meta.get("time", "4/4"),
+                clef=primary_clef,
+                complexity_score=detected_complexity,
+                mode=umto_mode,
+                target_voice=voice_name,
+            )
         )
-        exercise.save()
 
         self.stdout.write(self.style.SUCCESS(
-            f'Successfully created exercise {exercise.id}: {title}'
+            f'Successfully created UMTO exercise {exercise.id}: {title}'
         ))
+        self.stdout.write(f'  Mode: {umto_mode}')
         self.stdout.write(f'  Measures: {len(excerpt_measures)}')
         self.stdout.write(f'  Key: {meta.get("key", "?")}')
         self.stdout.write(f'  Time: {meta.get("time", "?")}')

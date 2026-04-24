@@ -134,7 +134,7 @@ class DashboardExerciseForm(ExerciseForm):
 
     # data_fields = ['analysis', 'highlight']
 
-    data = JSONField(widget=forms.HiddenInput)
+    data = JSONField(widget=PrettyJSONWidget(attrs={"initial": "parsed"}), label="Full JSON Data", required=False)
 
     editable_fields = ["description", "is_public"]
 

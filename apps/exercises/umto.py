@@ -9,6 +9,11 @@ class VoiceID(str, Enum):
     TENOR = "T"
     BASS = "B"
 
+class InteractionMode(str, Enum):
+    IDENTIFICATION = "identification"
+    PLAYBACK = "playback"
+    ANALYSIS_MATCH = "analysis_match"
+
 class Pitch(BaseModel):
     step: str
     alter: int
@@ -79,6 +84,8 @@ class Metadata(BaseModel):
     meter: str # e.g. "4/4", "3/4"
     clef: str = "treble" # "treble", "bass", "alto", "tenor"
     complexity_score: int = Field(ge=1, le=12, description="Unit 1-12 ranking system")
+    mode: InteractionMode = InteractionMode.PLAYBACK
+    is_umto: bool = True
 
 class UMTO(BaseModel):
     """
@@ -166,6 +173,7 @@ class UMTO(BaseModel):
         return {
             "type": "umto_chorale",
             "isUMTO": True,
+            "mode": self.metadata.mode.value if hasattr(self.metadata.mode, 'value') else self.metadata.mode,
             "staffDistribution": self.metadata.clef,
             "complexity_score": self.metadata.complexity_score,
             "exerciseId": self.metadata.exercise_id,
@@ -197,13 +205,16 @@ class UMTO(BaseModel):
         except:
             num_beats = 4
         
-        # Determine which staff to put voices on
-        is_bass_clef = self.metadata.clef == "bass"
-        target_staff = "bass" if is_bass_clef else "treble"
+        # Determine if we are in single-staff mode or keyboard mode
+        staff_mode = self.metadata.clef # "treble", "bass", or "keyboard"
         
-        # Group voices (S+A on treble, T+B on bass) or just use the primary voice for ID
-        # For identification exercises, we often just have one voice.
-        voices_to_render = []
+        measure = {
+            "staves": {
+                "treble": {"clef": "treble", "voices": []},
+                "bass": {"clef": "bass", "voices": []}
+            }
+        }
+
         for vid in ["S", "A", "T", "B"]:
             events = getattr(self.voices, vid)
             if not events:
@@ -211,6 +222,7 @@ class UMTO(BaseModel):
             
             items = []
             for ev in events:
+                # ... conversion logic remains the same ...
                 if ev.kind == "note" and ev.pitch:
                     items.append({
                         "kind": "note",
@@ -227,19 +239,17 @@ class UMTO(BaseModel):
                         "duration": {"type": ev.duration_type, "dots": ev.dots}
                     })
             
-            voices_to_render.append({
+            # If single-staff mode, put EVERYTHING on that one staff.
+            # If keyboard mode, split S/A to treble and T/B to bass.
+            if staff_mode in ["treble", "bass"]:
+                target_staff = staff_mode
+            else:
+                target_staff = "treble" if vid in ["S", "A"] else "bass"
+                
+            measure["staves"][target_staff]["voices"].append({
                 "items": items,
-                "direction": "up" if vid in ["S", "T"] else "down"
+                "direction": "auto"
             })
-
-        # Create measures (simplified: one measure containing all notes for Unit 1)
-        # In a real chorale, we would split by measure boundaries.
-        # But for Unit 1 generators, we keep it to one measure.
-        measure = {
-            "treble": {"clef": "treble", "voices": []},
-            "bass": {"clef": "bass", "voices": []}
-        }
-        measure[target_staff]["voices"] = voices_to_render
         
         return [measure]
 

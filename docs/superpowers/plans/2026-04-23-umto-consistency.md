@@ -55,13 +55,13 @@
 
 ---
 
-## Task 1: Bootstrap factory module skeleton
+## Task 1: Bootstrap factory module skeleton [COMPLETED]
 
 **Files:**
 - Create: `apps/exercises/umto_factory.py`
 - Test: `apps/exercises/tests/test_umto_factory.py`
 
-- [ ] **Step 1.1: Write failing test for NonUMTOExerciseError import**
+- [x] **Step 1.1: Write failing test for NonUMTOExerciseError import**
 
 Create `apps/exercises/tests/test_umto_factory.py`:
 
@@ -79,12 +79,12 @@ def test_non_umto_exercise_error_carries_message():
     assert str(err) == "test message"
 ```
 
-- [ ] **Step 1.2: Run test, verify fail**
+- [x] **Step 1.2: Run test, verify fail**
 
 Run: `pytest apps/exercises/tests/test_umto_factory.py -v`
 Expected: `ImportError: cannot import name 'NonUMTOExerciseError' from 'apps.exercises.umto_factory'`
 
-- [ ] **Step 1.3: Create module with error class**
+- [x] **Step 1.3: Create module with error class**
 
 Create `apps/exercises/umto_factory.py`:
 
@@ -108,12 +108,12 @@ class NonUMTOExerciseError(ValueError):
     validation."""
 ```
 
-- [ ] **Step 1.4: Run test, verify pass**
+- [x] **Step 1.4: Run test, verify pass**
 
 Run: `pytest apps/exercises/tests/test_umto_factory.py -v`
 Expected: 2 passed.
 
-- [ ] **Step 1.5: Commit**
+- [x] **Step 1.5: Commit**
 
 ```bash
 git add apps/exercises/umto_factory.py apps/exercises/tests/test_umto_factory.py
@@ -122,13 +122,13 @@ git commit -m "Bootstrap umto_factory module with NonUMTOExerciseError"
 
 ---
 
-## Task 2: Factory — `build_umto_payload` for single-voice (Unit 1) case
+## Task 2: Factory — `build_umto_payload` for single-voice (Unit 1) case [COMPLETED]
 
 **Files:**
 - Modify: `apps/exercises/umto_factory.py`
 - Test: `apps/exercises/tests/test_umto_factory.py`
 
-- [ ] **Step 2.1: Write failing test for single-voice treble build**
+- [x] **Step 2.1: Write failing test for single-voice treble build**
 
 Append to `apps/exercises/tests/test_umto_factory.py`:
 
@@ -200,12 +200,12 @@ def test_build_umto_payload_single_voice_treble_identification():
     assert umto["analysis"][0]["unit_tags"] == [1]
 ```
 
-- [ ] **Step 2.2: Run test, verify fail**
+- [x] **Step 2.2: Run test, verify fail**
 
 Run: `pytest apps/exercises/tests/test_umto_factory.py::test_build_umto_payload_single_voice_treble_identification -v`
 Expected: `ImportError: cannot import name 'build_umto_payload'`.
 
-- [ ] **Step 2.3: Implement `build_umto_payload`**
+- [x] **Step 2.3: Implement `build_umto_payload`**
 
 Append to `apps/exercises/umto_factory.py`:
 
@@ -341,12 +341,12 @@ def build_umto_payload(
     return umto.to_frontend_payload(unit=unit)
 ```
 
-- [ ] **Step 2.4: Run test, verify pass**
+- [x] **Step 2.4: Run test, verify pass**
 
 Run: `pytest apps/exercises/tests/test_umto_factory.py -v`
 Expected: all tests pass.
 
-- [ ] **Step 2.5: Commit**
+- [x] **Step 2.5: Commit**
 
 ```bash
 git add apps/exercises/umto_factory.py apps/exercises/tests/test_umto_factory.py
@@ -355,13 +355,13 @@ git commit -m "Add build_umto_payload factory function for single-voice CIR→UM
 
 ---
 
-## Task 3: Factory — `build_umto_payload` for SATB (chorale) case
+## Task 3: Factory — `build_umto_payload` for SATB (chorale) case [COMPLETED]
 
 **Files:**
 - Modify: `apps/exercises/umto_factory.py`
 - Test: `apps/exercises/tests/test_umto_factory.py`
 
-- [ ] **Step 3.1: Write failing test for SATB build**
+- [x] **Step 3.1: Write failing test for SATB build**
 
 Append to `apps/exercises/tests/test_umto_factory.py`:
 
@@ -417,12 +417,12 @@ def test_build_umto_payload_satb_all_voices_playback():
     assert umto["voices"]["B"][0]["pitch"]["midi"] == 43
 ```
 
-- [ ] **Step 3.2: Run test, verify fail**
+- [x] **Step 3.2: Run test, verify fail**
 
 Run: `pytest apps/exercises/tests/test_umto_factory.py::test_build_umto_payload_satb_all_voices_playback -v`
 Expected: FAIL — current loop only handles single voice under one `clef` staff.
 
-- [ ] **Step 3.3: Extend `build_umto_payload` to handle SATB routing**
+- [x] **Step 3.3: Extend `build_umto_payload` to handle SATB routing**
 
 Replace the measure-walking loop in `apps/exercises/umto_factory.py` (inside `build_umto_payload`) with:
 
@@ -532,12 +532,12 @@ Replace the measure-walking loop in `apps/exercises/umto_factory.py` (inside `bu
 
 Remove the old single-voice loop above (the `for measure in score_data.get("measures", []):` block that existed before this change) — the new block replaces it entirely.
 
-- [ ] **Step 3.4: Run all factory tests**
+- [x] **Step 3.4: Run all factory tests**
 
 Run: `pytest apps/exercises/tests/test_umto_factory.py -v`
 Expected: all pass, including single-voice test from Task 2.
 
-- [ ] **Step 3.5: Commit**
+- [x] **Step 3.5: Commit**
 
 ```bash
 git add apps/exercises/umto_factory.py apps/exercises/tests/test_umto_factory.py
@@ -546,13 +546,13 @@ git commit -m "Extend factory to handle SATB multi-voice CIR→UMTO routing"
 
 ---
 
-## Task 4: Factory — `save_umto_exercise`
+## Task 4: Factory — `save_umto_exercise` [COMPLETED]
 
 **Files:**
 - Modify: `apps/exercises/umto_factory.py`
 - Test: `apps/exercises/tests/test_umto_factory.py`
 
-- [ ] **Step 4.1: Write failing test**
+- [x] **Step 4.1: Write failing test**
 
 Append to `apps/exercises/tests/test_umto_factory.py`:
 
@@ -622,12 +622,12 @@ def test_save_umto_exercise_rejects_legacy_score_data():
         )
 ```
 
-- [ ] **Step 4.2: Run test, verify fail**
+- [x] **Step 4.2: Run test, verify fail**
 
 Run: `pytest apps/exercises/tests/test_umto_factory.py -v -k save_umto_exercise`
 Expected: `ImportError: cannot import name 'save_umto_exercise'`.
 
-- [ ] **Step 4.3: Implement `save_umto_exercise`**
+- [x] **Step 4.3: Implement `save_umto_exercise`**
 
 Append to `apps/exercises/umto_factory.py`:
 
@@ -684,12 +684,12 @@ def save_umto_exercise(
     return ex
 ```
 
-- [ ] **Step 4.4: Run tests, verify pass**
+- [x] **Step 4.4: Run tests, verify pass**
 
 Run: `pytest apps/exercises/tests/test_umto_factory.py -v`
 Expected: all tests pass.
 
-- [ ] **Step 4.5: Commit**
+- [x] **Step 4.5: Commit**
 
 ```bash
 git add apps/exercises/umto_factory.py apps/exercises/tests/test_umto_factory.py
@@ -698,13 +698,13 @@ git commit -m "Add save_umto_exercise with validation and exercise_id backfill"
 
 ---
 
-## Task 5: Regenerate `umto_schema.json` + add `make_umto_schema` command
+## Task 5: Regenerate `umto_schema.json` + add `make_umto_schema` command [COMPLETED]
 
 **Files:**
 - Create: `apps/exercises/management/commands/make_umto_schema.py`
 - Modify: `apps/exercises/umto_schema.json`
 
-- [ ] **Step 5.1: Create management command**
+- [x] **Step 5.1: Create management command**
 
 Create `apps/exercises/management/commands/make_umto_schema.py`:
 
@@ -727,17 +727,17 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Wrote {path}"))
 ```
 
-- [ ] **Step 5.2: Run it to regenerate schema**
+- [x] **Step 5.2: Run it to regenerate schema**
 
 Run: `python manage.py make_umto_schema`
 Expected output: `Wrote apps/exercises/umto_schema.json`.
 
-- [ ] **Step 5.3: Verify new fields now present in schema**
+- [x] **Step 5.3: Verify new fields now present in schema**
 
 Run: `grep -E '"mode"|"clef"|"is_umto"|"is_target"|"is_tied_start"' apps/exercises/umto_schema.json`
 Expected: matches found for all five fields.
 
-- [ ] **Step 5.4: Commit**
+- [x] **Step 5.4: Commit**
 
 ```bash
 git add apps/exercises/management/commands/make_umto_schema.py apps/exercises/umto_schema.json
@@ -746,7 +746,7 @@ git commit -m "Regenerate umto_schema.json and add make_umto_schema command"
 
 ---
 
-## Task 6: Golden fixtures — hand-authored
+## Task 6: Golden fixtures — hand-authored [COMPLETED]
 
 **Files:**
 - Create: `apps/exercises/tests/fixtures/umto/minimal.json`
@@ -758,7 +758,7 @@ git commit -m "Regenerate umto_schema.json and add make_umto_schema command"
 - Create: `apps/exercises/tests/fixtures/umto/unit9_chorale_roman.json`
 - Create: `apps/exercises/tests/fixtures/umto/unit12_chromatic_analysis.json`
 
-- [ ] **Step 6.1: Write `minimal.json`**
+- [x] **Step 6.1: Write `minimal.json`**
 
 Create `apps/exercises/tests/fixtures/umto/minimal.json`:
 
@@ -789,7 +789,7 @@ Create `apps/exercises/tests/fixtures/umto/minimal.json`:
 }
 ```
 
-- [ ] **Step 6.2: Write `maximal.json`**
+- [x] **Step 6.2: Write `maximal.json`**
 
 Create `apps/exercises/tests/fixtures/umto/maximal.json`:
 
@@ -840,7 +840,7 @@ Create `apps/exercises/tests/fixtures/umto/maximal.json`:
 }
 ```
 
-- [ ] **Step 6.3: Write Unit 1 treble identification fixture**
+- [x] **Step 6.3: Write Unit 1 treble identification fixture**
 
 Create `apps/exercises/tests/fixtures/umto/unit1_identification_treble.json`:
 
@@ -882,7 +882,7 @@ Create `apps/exercises/tests/fixtures/umto/unit1_identification_treble.json`:
 }
 ```
 
-- [ ] **Step 6.4: Write Unit 1 bass identification fixture**
+- [x] **Step 6.4: Write Unit 1 bass identification fixture**
 
 Create `apps/exercises/tests/fixtures/umto/unit1_identification_bass.json`:
 
@@ -924,11 +924,11 @@ Create `apps/exercises/tests/fixtures/umto/unit1_identification_bass.json`:
 }
 ```
 
-- [ ] **Step 6.5: Write Unit 1 playback fixture**
+- [x] **Step 6.5: Write Unit 1 playback fixture**
 
 Create `apps/exercises/tests/fixtures/umto/unit1_playback_treble.json` (same voices as `unit1_identification_treble.json` but set `"mode": "playback"`, `"exercise_id": "FIXTURE_U1_PB_TREBLE"`). Copy the identification fixture and edit these two fields.
 
-- [ ] **Step 6.6: Write Unit 1 analysis fixture**
+- [x] **Step 6.6: Write Unit 1 analysis fixture**
 
 Create `apps/exercises/tests/fixtures/umto/unit1_analysis_treble.json` (same voices, `"mode": "analysis_match"`, `"exercise_id": "FIXTURE_U1_AN_TREBLE"`).
 
@@ -1043,14 +1043,14 @@ git commit -m "Add golden UMTO fixtures for all interaction modes + min/max edge
 
 ---
 
-## Task 7: CIR input fixtures (for factory-idempotence test)
+## Task 7: CIR input fixtures (for factory-idempotence test) [COMPLETED]
 
 **Files:**
 - Create: `apps/exercises/tests/fixtures/cir_inputs/unit1_treble.json`
 - Create: `apps/exercises/tests/fixtures/cir_inputs/unit1_bass.json`
 - Create: `apps/exercises/tests/fixtures/cir_inputs/unit9_satb.json`
 
-- [ ] **Step 7.1: Write CIR inputs that factory must transform into golden fixtures**
+- [x] **Step 7.1: Write CIR inputs that factory must transform into golden fixtures**
 
 Create `apps/exercises/tests/fixtures/cir_inputs/unit1_treble.json`:
 
@@ -1082,7 +1082,7 @@ Create `apps/exercises/tests/fixtures/cir_inputs/unit1_bass.json` (same shape, c
 
 Create `apps/exercises/tests/fixtures/cir_inputs/unit9_satb.json` (two measures, SATB matching `unit9_chorale_roman.json`).
 
-- [ ] **Step 7.2: Commit**
+- [x] **Step 7.2: Commit**
 
 ```bash
 git add apps/exercises/tests/fixtures/cir_inputs/
@@ -1091,12 +1091,12 @@ git commit -m "Add CIR input fixtures paired with golden UMTO fixtures"
 
 ---
 
-## Task 8: Contract tests
+## Task 8: Contract tests [COMPLETED]
 
 **Files:**
 - Create: `apps/exercises/tests/test_umto_contract.py`
 
-- [ ] **Step 8.1: Write contract test file**
+- [x] **Step 8.1: Write contract test file**
 
 Create `apps/exercises/tests/test_umto_contract.py`:
 
@@ -1225,7 +1225,7 @@ def test_save_umto_then_reload_matches_fixture():
 Run: `pytest apps/exercises/tests/test_umto_contract.py -v`
 Expected: all tests pass. If `test_schema_file_matches_pydantic_model` fails, re-run `python manage.py make_umto_schema` and recommit.
 
-- [ ] **Step 8.3: Commit**
+- [x] **Step 8.3: Commit**
 
 ```bash
 git add apps/exercises/tests/test_umto_contract.py

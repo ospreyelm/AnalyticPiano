@@ -739,11 +739,22 @@ define([
       return this.exercise.type;
     },
     /**
+     * Returns the explicit interaction mode if defined.
+     * @return {string|null}
+     */
+    getMode: function () {
+      return this.exercise.mode || (this.exercise.score && this.exercise.score.umto && this.exercise.score.umto.metadata && this.exercise.score.umto.metadata.mode) || null;
+    },
+    /**
      * Returns true if this is a chorale exercise.
      *
      * @return {boolean}
      */
     isChorale: function () {
+      var mode = this.getMode();
+      if (mode) {
+        return mode === "playback" || mode === "analysis_match" || mode === "play-all-voices" || mode === "analysis";
+      }
       return this.exercise.type === "chorale" || this.exercise.type === "umto_chorale";
     },
     /**
@@ -752,6 +763,10 @@ define([
      * @return {boolean}
      */
     isChoraleIdentification: function () {
+      var mode = this.getMode();
+      if (mode) {
+        return mode === "identification" || mode === "chorale_identification";
+      }
       return this.exercise.type === "chorale_identification" || this.exercise.type === "umto_chorale";
     },
     /**
@@ -768,6 +783,10 @@ define([
      * @return {boolean}
      */
     isIdentification: function () {
+      var mode = this.getMode();
+      if (mode) {
+        return mode === "identification" || mode === "chorale_identification";
+      }
       var isIdent = this.exercise.type === "identification" || 
                     this.exercise.type === "chorale_identification" ||
                     this.exercise.type === "umto_chorale";

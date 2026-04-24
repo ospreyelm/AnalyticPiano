@@ -10,7 +10,8 @@ from music21 import key
 
 from apps.exercises.models import Course, Exercise, ExercisePlaylistOrdered, Playlist, PlaylistCourseOrdered
 from apps.exercises.pitch_voice_utils import strip_to_voice, validate_pitch_voice
-from apps.exercises.umto import UMTO, Metadata, Voices, VoiceEvent, Pitch, GradingSlice, AnalysisSlice, AnalysisLayer
+from apps.exercises.umto import UMTO, Metadata, Voices, VoiceEvent, Pitch, GradingSlice, AnalysisSlice, AnalysisLayer, InteractionMode
+from apps.exercises.umto_factory import save_umto_exercise
 
 User = get_user_model()
 
@@ -208,7 +209,7 @@ def _has_long_consecutive_note_run(notes_data, max_allowed=3):
 
 
 def _extract_stage_from_description(description):
-    match = re.search(r"Stage\s+(\d+)\s*$", description or "")
+    match = re.search(r"S(\d+)\s*$", description or "")
     if not match:
         return None
     return int(match.group(1))
@@ -256,92 +257,6 @@ def _key_token(key_name):
     return f"{prefix}{root}{suffix}"
 
 
-def _build_exact_payload(score_data, key_name, intro_text, target):
-    """Notation-only matching: student sees note on staff, plays exact MIDI."""
-    return {
-        "type": "chorale",
-        "staffDistribution": "RH" if target == "treble" else "LH",
-        "key": _key_token(key_name),
-        "score": score_data,
-        "introText": intro_text,
-        "reviewText": "Great work.",
-    }
-
-
-def _build_analysis_payload(score_data, key_name, intro_text, target):
-    """Analysis-only matching: student sees pitch name label, plays the note in any octave."""
-    return {
-        "type": "chorale",
-        "mode": "analysis",
-        "staffDistribution": "RH" if target == "treble" else "LH",
-        "key": _key_token(key_name),
-        "score": score_data,
-        "grading": {
-            "octaveIndependent": True,
-        },
-        "display": {
-            "showNotation": False,
-            "showNoteNames": True,
-        },
-        "introText": intro_text,
-        "reviewText": "Great work.",
-    }
-
-
-
-def _build_identification_payload(score_data, key_name, intro_text, target, ex_id):
-    """Note identification: student sees notation, picks note name from choices."""
-    meta = score_data.get("meta", {})
-    umto_meta = Metadata(
-        exercise_id=ex_id,
-        source=intro_text,
-        key=meta.get("key", "C"),
-        meter=meta.get("time", "4/4"),
-        clef=target,
-        complexity_score=1
-    )
-
-    voices_dict = {"S": [], "A": [], "T": [], "B": []}
-    grading_slices = []
-    analysis_slices = []
-    
-    # In generate_unit1, score_data is already a single-voice snippet
-    umto_voice_id = "S" if target == "treble" else "B"
-    
-    current_offset = 0.0
-    for m in score_data.get("measures", []):
-        measure_ql = 4.0 # Default fallback
-        # In a real scenario we'd use _full_measure_ql but here we just need consistency
-        
-        staff_data = m.get("staves", {}).get(target, {})
-        voice_list = staff_data.get("voices", [])
-        if not voice_list: continue
-            
-        v_items = voice_list[0].get("items", [])
-        for item in v_items:
-            dur = item.get("duration", {})
-            # Simplified QL calculation for the generator context
-            base = {"w": 4.0, "h": 2.0, "q": 1.0, "8": 0.5, "16": 0.25, "32": 0.125}.get(dur.get("type", "q"), 1.0)
-            ql = base * (2.0 - 0.5**dur.get("dots", 0)) if dur.get("dots", 0) else base
-            
-            if item.get("kind") == "note":
-                p_data = item.get("pitch", {})
-                semitones = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
-                midi = ((p_data.get("octave", 4) + 1) * 12) + semitones[p_data.get("step", "C")] + p_data.get("alter", 0)
-                
-                pitch = Pitch(step=p_data["step"], alter=p_data.get("alter", 0), octave=p_data["octave"], midi=midi)
-                event = VoiceEvent(kind="note", pitch=pitch, duration=ql, duration_type=dur.get("type", "q"), dots=dur.get("dots", 0))
-                voices_dict[umto_voice_id].append(event)
-                grading_slices.append(GradingSlice(offset=current_offset, target_midi_pitches=[midi]))
-                analysis_slices.append(AnalysisSlice(offset=current_offset, content=AnalysisLayer(), unit_tags=[1]))
-            elif item.get("kind") == "rest":
-                event = VoiceEvent(kind="rest", duration=ql, duration_type=dur.get("type", "q"), dots=dur.get("dots", 0))
-                voices_dict[umto_voice_id].append(event)
-            
-            current_offset += ql
-
-    umto = UMTO(metadata=umto_meta, voices=Voices(**voices_dict), analysis=analysis_slices, grading=grading_slices)
-    return umto.to_frontend_payload(unit=1)
 
 
 class Command(BaseCommand):
@@ -353,7 +268,12 @@ class Command(BaseCommand):
         parser.add_argument("--input-dir", default=os.path.join("data", "corpus", "bach"))
         parser.add_argument("--max-per-playlist", type=int, default=36)
         parser.add_argument("--max-per-stage", type=int, default=12)
-        parser.add_argument("--lanes", choices=["exact", "analysis", "both"], default="both")
+        parser.add_argument(
+            "--lanes",
+            choices=["exact", "analysis", "identification", "all"],
+            default="all",
+            help="Which lane(s) to emit. 'all' = exact + analysis + identification.",
+        )
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--cleanup-legacy", action="store_true",
                             help="Delete exercises with old (matching) and (note_name) descriptions")
@@ -523,64 +443,150 @@ class Command(BaseCommand):
                             f"{voice_name.title()} voice."
                         )
 
-                        if lanes in ("exact", "both"):
-                            exact_desc = f"{bwv.upper()} mm.{human_start}-{human_end} - {voice_name.title()} (exact) Stage {stage}"
-                            exact_payload = _build_exact_payload(one_voice, key_name, f"Play the notes: {intro_text}", target)
-
+                        if lanes in ("exact", "all"):
+                            exact_desc = f"{bwv.upper()} m.{human_start}-{human_end} {voice_name.title()} (exact) S{stage}"
                             exact = Exercise.objects.filter(description=exact_desc).first()
                             if exact is None:
                                 if not dry_run:
-                                    exact = Exercise(description=exact_desc, data=exact_payload, authored_by=author, is_public=True, skill_tags=base_tags, complexity=complexity)
-                                    exact.save()
+                                    exact = save_umto_exercise(
+                                        description=exact_desc,
+                                        score_data=one_voice,
+                                        author=author,
+                                        skill_tags=base_tags,
+                                        complexity=complexity,
+                                        umto_kwargs=dict(
+                                            exercise_id="TEMP",
+                                            source=f"Play the notes: {intro_text}",
+                                            key=one_voice["meta"].get("key", "C"),
+                                            meter=one_voice["meta"].get("time", "4/4"),
+                                            clef=target,
+                                            complexity_score=1,
+                                            mode=InteractionMode.PLAYBACK,
+                                            target_voice=voice_name,
+                                            unit=1,
+                                        ),
+                                    )
                                     print(f"Created {exact.id}: {exact_desc}")
-
                             else:
                                 if not dry_run:
-                                    exact.data = exact_payload
-                                    exact.save()
+                                    # Update via factory to ensure schema consistency
+                                    exact = save_umto_exercise(
+                                        description=exact_desc,
+                                        score_data=one_voice,
+                                        author=author,
+                                        skill_tags=base_tags,
+                                        complexity=complexity,
+                                        umto_kwargs=dict(
+                                            exercise_id=exact.id,
+                                            source=f"Play the notes: {intro_text}",
+                                            key=one_voice["meta"].get("key", "C"),
+                                            meter=one_voice["meta"].get("time", "4/4"),
+                                            clef=target,
+                                            complexity_score=1,
+                                            mode=InteractionMode.PLAYBACK,
+                                            target_voice=voice_name,
+                                            unit=1,
+                                        ),
+                                        overwrite=True
+                                    )
                                     print(f"Updated {exact.id}: {exact_desc}")
                             if exact is not None:
                                 created.append((target, "exact", stage, complexity, exact))
 
-                        if lanes in ("analysis", "both"):
-                            analysis_desc = f"{bwv.upper()} mm.{human_start}-{human_end} - {voice_name.title()} (analysis) Stage {stage}"
-                            analysis_payload = _build_analysis_payload(one_voice, key_name, f"Name the notes: {intro_text}", target)
-
+                        if lanes in ("analysis", "all"):
+                            analysis_desc = f"{bwv.upper()} m.{human_start}-{human_end} {voice_name.title()} (analysis) S{stage}"
                             analysis_ex = Exercise.objects.filter(description=analysis_desc).first()
                             if analysis_ex is None:
                                 if not dry_run:
-                                    analysis_ex = Exercise(description=analysis_desc, data=analysis_payload, authored_by=author, is_public=True, skill_tags=base_tags, complexity=complexity)
-                                    analysis_ex.save()
+                                    analysis_ex = save_umto_exercise(
+                                        description=analysis_desc,
+                                        score_data=one_voice,
+                                        author=author,
+                                        skill_tags=base_tags,
+                                        complexity=complexity,
+                                        umto_kwargs=dict(
+                                            exercise_id="TEMP",
+                                            source=f"Name the notes: {intro_text}",
+                                            key=one_voice["meta"].get("key", "C"),
+                                            meter=one_voice["meta"].get("time", "4/4"),
+                                            clef=target,
+                                            complexity_score=1,
+                                            mode=InteractionMode.ANALYSIS_MATCH,
+                                            target_voice=voice_name,
+                                            unit=1,
+                                        ),
+                                    )
                                     print(f"Created {analysis_ex.id}: {analysis_desc}")
-
                             else:
                                 if not dry_run:
-                                    analysis_ex.data = analysis_payload
-                                    analysis_ex.save()
+                                    analysis_ex = save_umto_exercise(
+                                        description=analysis_desc,
+                                        score_data=one_voice,
+                                        author=author,
+                                        skill_tags=base_tags,
+                                        complexity=complexity,
+                                        umto_kwargs=dict(
+                                            exercise_id=analysis_ex.id,
+                                            source=f"Name the notes: {intro_text}",
+                                            key=one_voice["meta"].get("key", "C"),
+                                            meter=one_voice["meta"].get("time", "4/4"),
+                                            clef=target,
+                                            complexity_score=1,
+                                            mode=InteractionMode.ANALYSIS_MATCH,
+                                            target_voice=voice_name,
+                                            unit=1,
+                                        ),
+                                        overwrite=True
+                                    )
                                     print(f"Updated {analysis_ex.id}: {analysis_desc}")
                             if analysis_ex is not None:
                                 created.append((target, "analysis", stage, complexity, analysis_ex))
 
-                        if lanes in ("identification", "both"):
-                            id_desc = f"{bwv.upper()} mm.{human_start}-{human_end} - {voice_name.title()} (identification) Stage {stage}"
-                            
+                        if lanes in ("identification", "all"):
+                            id_desc = f"{bwv.upper()} m.{human_start}-{human_end} {voice_name.title()} (id) S{stage}"
                             id_ex = Exercise.objects.filter(description=id_desc).first()
-                            ex_id_val = id_ex.id if id_ex else "TEMP"
-                            id_payload = _build_identification_payload(one_voice, key_name, f"Identify the notes: {intro_text}", target, ex_id_val)
-                            
                             if id_ex is None:
                                 if not dry_run:
-                                    id_ex = Exercise(description=id_desc, data=id_payload, authored_by=author, is_public=True, skill_tags=base_tags, complexity=complexity)
-                                    id_ex.save()
-                                    # Now we have the real ID, update payload
-                                    id_ex.data["metadata"]["exercise_id"] = id_ex.id
-                                    id_ex.save()
+                                    id_ex = save_umto_exercise(
+                                        description=id_desc,
+                                        score_data=one_voice,
+                                        author=author,
+                                        skill_tags=base_tags,
+                                        complexity=complexity,
+                                        umto_kwargs=dict(
+                                            exercise_id="TEMP",
+                                            source=f"Identify the notes: {intro_text}",
+                                            key=one_voice["meta"].get("key", "C"),
+                                            meter=one_voice["meta"].get("time", "4/4"),
+                                            clef=target,
+                                            complexity_score=1,
+                                            mode=InteractionMode.IDENTIFICATION,
+                                            target_voice=voice_name,
+                                            unit=1,
+                                        ),
+                                    )
                                     print(f"Created {id_ex.id}: {id_desc}")
-
                             else:
                                 if not dry_run:
-                                    id_ex.data = id_payload
-                                    id_ex.save()
+                                    id_ex = save_umto_exercise(
+                                        description=id_desc,
+                                        score_data=one_voice,
+                                        author=author,
+                                        skill_tags=base_tags,
+                                        complexity=complexity,
+                                        umto_kwargs=dict(
+                                            exercise_id=id_ex.id,
+                                            source=f"Identify the notes: {intro_text}",
+                                            key=one_voice["meta"].get("key", "C"),
+                                            meter=one_voice["meta"].get("time", "4/4"),
+                                            clef=target,
+                                            complexity_score=1,
+                                            mode=InteractionMode.IDENTIFICATION,
+                                            target_voice=voice_name,
+                                            unit=1,
+                                        ),
+                                        overwrite=True
+                                    )
                                     print(f"Updated {id_ex.id}: {id_desc}")
                             if id_ex is not None:
                                 created.append((target, "identification", stage, complexity, id_ex))
@@ -607,11 +613,11 @@ class Command(BaseCommand):
             clef_tag = "Read_Treble_Clef" if target == "treble" else "Read_Bass_Clef"
             clef_label = "Treble" if target == "treble" else "Bass"
             if lane == "exact":
-                playlist_name = f"Unit 1 - Play the Notes ({clef_label})"
+                playlist_name = f"Unit 1 - Note Names ({clef_label} Play)"
             elif lane == "analysis":
-                playlist_name = f"Unit 1 - Play from Name ({clef_label})"
+                playlist_name = f"Unit 1 - Note Names ({clef_label} Name)"
             else:  # identification
-                playlist_name = f"Unit 1 - Identify the Notes ({clef_label})"
+                playlist_name = f"Unit 1 - Note Names ({clef_label})"
             playlist_tags = ["unit:1", "Note_Names", "enharmonic", "Enharmonic_Reading", clef_tag]
             
             try:

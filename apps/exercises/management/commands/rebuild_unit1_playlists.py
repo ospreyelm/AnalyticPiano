@@ -100,12 +100,12 @@ class Command(BaseCommand):
                 rows = rows.filter(skill_tags__contains=[tag])
 
             # Filter by description token to guarantee lane separation.
-            # Identify exercises always contain "(note_name)", matching contain "(matching)".
+            # Identify exercises contain "(id)", matching/playback contain "(exact)".
             lane_type = lane.get("exercise_type")
             if lane_type == "identify":
-                rows = rows.filter(description__icontains="(note_name)")
+                rows = rows.filter(description__icontains="(id)")
             elif lane_type == "matching":
-                rows = rows.filter(description__icontains="(matching)")
+                rows = rows.filter(description__icontains="(exact)")
 
             ordered_exercises = list(rows.order_by("complexity", "description", "_id"))
             if max_per_playlist:

@@ -104,16 +104,23 @@ define([
     models.inputChords = new ExerciseChordBank({
       staffDistribution: definition.staffDistribution,
     });
-    // Choose grader depending on exercise type
+    // Choose grader depending on exercise type/mode
+    var interactionMode = models.exerciseDefinition.getMode();
     if (
-      (models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) ||
-      (models.exerciseDefinition.isChoraleIdentification && models.exerciseDefinition.isChoraleIdentification())
+      interactionMode === "identification" ||
+      (!interactionMode && 
+        ((models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) ||
+         (models.exerciseDefinition.isChoraleIdentification && models.exerciseDefinition.isChoraleIdentification())))
     ) {
-      console.log("[ID] Selecting IdentificationGrader");
+      console.log("[ID] Selecting IdentificationGrader (mode: " + interactionMode + ")");
       models.exerciseGrader = new IdentificationGrader({});
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
-    } else if (models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale()) {
-      console.log("[ID] Selecting ChoraleGrader");
+    } else if (
+      interactionMode === "playback" || 
+      interactionMode === "analysis_match" ||
+      (!interactionMode && models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale())
+    ) {
+      console.log("[ID] Selecting ChoraleGrader (mode: " + interactionMode + ")");
       var gradingSettings = models.exerciseDefinition.getGrading();
       // Unit 1 Bridge: Make grading octave-agnostic for Note Identification
       if (models.exerciseDefinition.isUnit(1)) {

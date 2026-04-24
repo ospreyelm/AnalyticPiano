@@ -675,6 +675,7 @@ class ExerciseForm(forms.ModelForm):
         "chorale_excerpt_end",
         "ident_mode",
         "compound_intervals",
+        "data",
     ]
 
     def __init__(self, *arg, **kwargs):

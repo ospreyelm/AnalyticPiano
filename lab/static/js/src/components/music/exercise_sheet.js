@@ -653,10 +653,10 @@ define([
       var allProblems = this.exerciseContext.getDefinition().getProblems() || [];
       var visibleProblems = _.filter(allProblems, function(p) { return !p.hidden; });
       var globalTotal = visibleProblems.length;
-      var answers = this.exerciseContext.grader ? this.exerciseContext.grader.answers : {};
+      var answers = (this.exerciseContext.grader && this.exerciseContext.grader.answers) ? this.exerciseContext.grader.answers : {};
       var globalAnswered = 0;
       for (var i = 0; i < allProblems.length; i++) {
-          if (!allProblems[i].hidden && answers.hasOwnProperty(i) && answers[i] !== null && answers[i] !== '') {
+          if (allProblems[i] && !allProblems[i].hidden && answers && typeof answers.hasOwnProperty === 'function' && answers.hasOwnProperty(i) && answers[i] !== null && answers[i] !== '') {
               globalAnswered++;
           }
       }
@@ -2133,6 +2133,8 @@ define([
               item.pitch = _.cloneDeep(ev.pitch);
               item.notes = [{ pitch: item.pitch }];
             }
+            if (ev.is_tied_start) item.is_tied_start = ev.is_tied_start;
+            if (ev.is_tied_stop) item.is_tied_stop = ev.is_tied_stop;
             return item;
           });
         }
@@ -2147,21 +2149,82 @@ define([
       if (meta.clef && !meta.staffDistribution) {
           if (meta.clef === 'bass') meta.staffDistribution = 'bass';
           else if (meta.clef === 'treble') meta.staffDistribution = 'treble';
+          else meta.staffDistribution = 'keyboard';
       }
       
-      // Ensure we have a default time signature if missing
       if (!meta.time) meta.time = "4/4";
+      
+      // Helper to calculate ticks
+      function getDurTicks(dur) {
+        var base = { 'w': 4096, 'h': 2048, 'q': 1024, '8': 512, '16': 256, '32': 128 }[dur.type] || 1024;
+        var add = base / 2;
+        var total = base;
+        for (var i = 0; i < (dur.dots || 0); i++) { total += add; add /= 2; }
+        return total;
+      }
+
+      var timeSig = meta.time.split('/');
+      var beats = parseInt(timeSig[0], 10);
+      var beatType = parseInt(timeSig[1], 10);
+      // For compound meter like 6/8, beats=6, beatType=8. 
+      // measureTicks = 6 * (4096 / 8) = 6 * 512 = 3072.
+      var measureTicks = beats * (4096 / beatType);
+      
+      var measures = [];
+      var voiceKeys = ['S', 'A', 'T', 'B'];
+      var voiceIndices = { S: 0, A: 0, T: 0, B: 0 };
+      
+      var hasMore = true;
+      while (hasMore) {
+        hasMore = false;
+        var m_items = { S: [], A: [], T: [], B: [] };
+        
+        for (var i = 0; i < voiceKeys.length; i++) {
+          var vk = voiceKeys[i];
+          var list = voicesObj[vk];
+          var ticks = 0;
+          
+          while (voiceIndices[vk] < list.length && ticks < measureTicks) {
+            var item = list[voiceIndices[vk]];
+            m_items[vk].push(item);
+            ticks += getDurTicks(item.duration);
+            voiceIndices[vk]++;
+          }
+          if (voiceIndices[vk] < list.length) {
+            hasMore = true;
+          }
+        }
+        
+        // Only add measure if at least one voice has items
+        if (m_items.S.length > 0 || m_items.A.length > 0 || m_items.T.length > 0 || m_items.B.length > 0) {
+          var m = { staves: { treble: { voices: [] }, bass: { voices: [] } } };
+          
+          if (meta.staffDistribution === 'bass') {
+             delete m.staves.treble;
+             if (m_items.S.length > 0) m.staves.bass.voices.push({ items: m_items.S, direction: 'auto' });
+             if (m_items.A.length > 0) m.staves.bass.voices.push({ items: m_items.A, direction: 'auto' });
+             if (m_items.T.length > 0) m.staves.bass.voices.push({ items: m_items.T, direction: 'auto' });
+             if (m_items.B.length > 0) m.staves.bass.voices.push({ items: m_items.B, direction: 'auto' });
+          } else if (meta.staffDistribution === 'treble') {
+             delete m.staves.bass;
+             if (m_items.S.length > 0) m.staves.treble.voices.push({ items: m_items.S, direction: 'auto' });
+             if (m_items.A.length > 0) m.staves.treble.voices.push({ items: m_items.A, direction: 'auto' });
+             if (m_items.T.length > 0) m.staves.treble.voices.push({ items: m_items.T, direction: 'auto' });
+             if (m_items.B.length > 0) m.staves.treble.voices.push({ items: m_items.B, direction: 'auto' });
+          } else {
+             if (m_items.S.length > 0) m.staves.treble.voices.push({ items: m_items.S, direction: m_items.A.length > 0 ? 'up' : 'auto' });
+             if (m_items.A.length > 0) m.staves.treble.voices.push({ items: m_items.A, direction: m_items.S.length > 0 ? 'down' : 'auto' });
+             if (m_items.T.length > 0) m.staves.bass.voices.push({ items: m_items.T, direction: m_items.B.length > 0 ? 'up' : 'auto' });
+             if (m_items.B.length > 0) m.staves.bass.voices.push({ items: m_items.B, direction: m_items.T.length > 0 ? 'down' : 'auto' });
+          }
+          
+          measures.push(m);
+        }
+      }
       
       var processed = {
         metadata: meta,
-        measures: [
-          {
-            staves: {
-              treble: { voices: [ { items: voicesObj.S }, { items: voicesObj.A } ] },
-              bass: { voices: [ { items: voicesObj.T }, { items: voicesObj.B } ] }
-            }
-          }
-        ]
+        measures: measures
       };
       console.log("[ID] Processed score built:", processed);
       return processed;

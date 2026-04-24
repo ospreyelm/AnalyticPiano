@@ -220,12 +220,13 @@ def save_umto_exercise(
     complexity: int,
     is_public: bool = True,
     umto_kwargs: dict,
+    overwrite: bool = False,
 ) -> Exercise:
     """Build a UMTO payload from score_data + umto_kwargs, validate, save Exercise,
     and backfill exercise_id in the stored payload.
 
-    Create-only. Conversions of existing legacy rows go through dedicated
-    migration commands with HARMONYLAB_ALLOW_LEGACY_EXERCISE=1 bypass.
+    If overwrite=True and an exercise with the same description and author exists,
+    it will be updated instead of creating a new one.
     """
     try:
         payload = build_umto_payload(score_data=score_data, **umto_kwargs)
@@ -238,14 +239,25 @@ def save_umto_exercise(
     except Exception as e:
         raise NonUMTOExerciseError(f"UMTO validation failed: {e}") from e
 
-    ex = Exercise(
-        description=description,
-        data=payload,
-        authored_by=author,
-        is_public=is_public,
-        skill_tags=list(skill_tags),
-        complexity=complexity,
-    )
+    ex = None
+    if overwrite:
+        ex = Exercise.objects.filter(description=description, authored_by=author).first()
+
+    if ex is None:
+        ex = Exercise(
+            description=description,
+            data=payload,
+            authored_by=author,
+            is_public=is_public,
+            skill_tags=list(skill_tags),
+            complexity=complexity,
+        )
+    else:
+        ex.data = payload
+        ex.skill_tags = list(skill_tags)
+        ex.complexity = complexity
+        ex.is_public = is_public
+
     ex.save()
     # Backfill now that the DB-assigned id is known.
     ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id

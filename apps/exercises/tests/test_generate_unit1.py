@@ -146,12 +146,15 @@ class GenerateUnit1Tests(TestCase):
         # Verify C major simple windows are Stage 1 (complexity 10)
         ex1 = Exercise.objects.filter(description__icontains="C_MAJOR_SIMPLE")
         self.assertTrue(ex1.exists())
-        self.assertTrue(all(e.complexity == 10 for e in ex1))  # Stage 1 * 10 + 0 accidentals
+        # The generator now uses S1 format
+        self.assertTrue(all("S1" in e.description for e in ex1))
+        self.assertTrue(all(e.complexity == 10 for e in ex1))
         
         # Verify G major diatonic windows are Stage 2 (complexity 21)
         ex2 = Exercise.objects.filter(description__icontains="G_MAJOR_DIATONIC")
         self.assertTrue(ex2.exists())
-        self.assertTrue(all(e.complexity == 21 for e in ex2))  # Stage 2 * 10 + 1 accidental
+        self.assertTrue(all("S2" in e.description for e in ex2))
+        self.assertTrue(all(e.complexity == 21 for e in ex2))
         
         # Verify E major chromatic IS GONE
         exists = Exercise.objects.filter(description__icontains="E_MAJOR_CHROMATIC").exists()
@@ -208,20 +211,15 @@ class GenerateUnit1Tests(TestCase):
     def test_generate_unit1_creates_matching_lane_exercises(self):
         call_command("generate_unit1", author=self.author.email, input_dir=self.test_dir, clef="treble")
 
-        ex = Exercise.objects.filter(description__icontains="(matching)").first()
+        ex = Exercise.objects.filter(description__icontains="(exact)").first()
         self.assertIsNotNone(ex)
 
         payload = ex.data
-        self.assertEqual(payload.get("type"), "matching")
-        self.assertIn("analysis", payload)
-        self.assertIn("chord", payload)
-        self.assertIsInstance(payload["chord"], list)
-        self.assertGreater(len(payload["chord"]), 0)
-
-        first = payload["chord"][0]
-        self.assertIn("visible", first)
-        self.assertIn("hidden", first)
-        self.assertIn("rhythmValue", first)
+        self.assertEqual(payload.get("type"), "umto_chorale")
+        self.assertEqual(payload.get("mode"), "playback")
+        self.assertTrue(payload.get("isUMTO"))
+        self.assertIn("score", payload)
+        self.assertIn("umto", payload["score"])
 
     def test_rebuild_unit1_playlists_is_idempotent(self):
         call_command("generate_unit1", author=self.author.email, input_dir=self.test_dir, clef="both")
@@ -269,15 +267,15 @@ class GenerateUnit1Tests(TestCase):
 
         identify_types = set(
             treble_identify.exerciseplaylistordered_set.select_related("exercise")
-            .values_list("exercise__data__type", flat=True)
+            .values_list("exercise__data__mode", flat=True)
         )
         play_types = set(
             treble_play.exerciseplaylistordered_set.select_related("exercise")
-            .values_list("exercise__data__type", flat=True)
+            .values_list("exercise__data__mode", flat=True)
         )
 
-        self.assertNotIn("matching", identify_types)
-        self.assertEqual(play_types, {"matching"})
+        self.assertNotIn("playback", identify_types)
+        self.assertEqual(play_types, {"playback"})
 
     def test_diatonic_index_round_trip_uses_expected_span(self):
         self.assertEqual(generate_unit1._step_octave_to_diatonic_index("C", 4), 0)

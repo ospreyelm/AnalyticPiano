@@ -6,7 +6,8 @@ from django.db import transaction
 from music21 import corpus, stream, note, chord, meter, key
 from music21.expressions import Fermata
 
-from apps.exercises.models import Exercise
+from apps.exercises.umto import InteractionMode
+from apps.exercises.umto_factory import save_umto_exercise
 from apps.exercises.utils.m21_cir_converter import m21_to_cir
 from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
 
@@ -207,76 +208,41 @@ class Command(BaseCommand):
             # Convert to CIR JSON
             cir_data = m21_to_cir(phrase_score, key_override=harmony_key)
             
-            if mode in ['roman', 'figures', 'matching']:
-                analysis_type = "roman"
-                if mode == 'figures':
-                    analysis_type = "figured_bass"
-                
-                intro_text = f"Provide a Roman Numeral analysis for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
-                if mode == 'figures':
-                    intro_text = f"Provide the Figured Bass for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
-                elif mode == 'matching':
-                    intro_text = f"Match the Roman Numerals to the notes in this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
-
-                exercise_data = {
-                    "key": harmony_key,
-                    "keySignature": harmony_sig,
-                    "type": "chorale_identification",
-                    "analysisType": analysis_type,
-                    "chord": cir_data.get("chord", []),
-                    "score": cir_data,
-                    "source": {
-                        "type": "bach_corpus",
-                        "bwv": bwv_num,
-                        "phrase": idx + 1,
-                        "measures": f"{start_m}-{end_m}"
-                    },
-                    "display": {
-                        "showFigures": False,
-                        "showRomans": False,
-                        "transpose": 0,
-                        "tempo": 60
-                    },
-                    "introText": intro_text,
-                    "staffDistribution": "keyboard"
-                }
+            # 4. Map to UMTO Interaction Mode
+            if mode == 'play':
+                umto_mode = InteractionMode.PLAYBACK
             else:
-                exercise_data = {
-                    "key": harmony_key,
-                    "keySignature": harmony_sig,
-                    "type": "chorale",
-                    "mode": "play-all-voices",
-                    "chord": cir_data.get("chord", []),
-                    "score": cir_data,
-                    "source": {
-                        "type": "bach_corpus",
-                        "bwv": bwv_num,
-                        "phrase": idx + 1,
-                        "measures": f"{start_m}-{end_m}"
-                    },
-                    "display": {
-                        "showFigures": False,
-                        "showRomans": False,
-                        "transpose": 0,
-                        "tempo": 60
-                    },
-                    "introText": f"Analyze the following phrase from BWV {bwv_num} (mm. {start_m}-{end_m}).",
-                    "staffDistribution": "keyboard"
-                }
+                umto_mode = InteractionMode.ANALYSIS_MATCH
+            
+            # 5. Build Intro Text
+            if mode == 'figures':
+                intro_text = f"Provide the Figured Bass for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
+            elif mode == 'matching' or mode == 'roman':
+                intro_text = f"Analyze the Roman Numerals for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
+            else:
+                intro_text = f"Play all four voices of this Bach phrase (BWV {bwv_display}, mm. {start_m}-{end_m})."
 
             description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m})"
             
-            ex = Exercise(
-                description=description[:60], # Max length
-                data=exercise_data,
-                authored_by=author,
-                is_public=False,
-                tags=['bach'],
+            # Create the Exercise via UMTO factory
+            ex = save_umto_exercise(
+                description=description[:60],
+                score_data=cir_data,
+                author=author,
                 skill_tags=detected_skills,
-                complexity=detected_complexity
+                complexity=detected_complexity,
+                is_public=False,
+                umto_kwargs=dict(
+                    exercise_id="TEMP",
+                    source=intro_text,
+                    key=harmony_key,
+                    meter=cir_data.get("meta", {}).get("time", "4/4"),
+                    clef="keyboard", # Phrases are typically SATB split across staves
+                    complexity_score=detected_complexity,
+                    mode=umto_mode,
+                )
             )
-            ex.save()
-            self.stdout.write(self.style.SUCCESS(f"  Created Exercise {ex.id}"))
+            self.stdout.write(self.style.SUCCESS(f"  Created UMTO Exercise {ex.id}"))
 
             # Update start for next phrase
             start_m = end_m + 1

@@ -214,6 +214,25 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     def __str__(self):
         return self.id
 
+    def clean(self):
+        """
+        Enforce UMTO schema for all new or updated exercises.
+        Can be bypassed via HARMONYLAB_ALLOW_LEGACY_EXERCISE=1 for migrations.
+        """
+        import os
+        super().clean()
+        
+        # Bypass for migrations
+        if os.environ.get("HARMONYLAB_ALLOW_LEGACY_EXERCISE") == "1":
+            return
+
+        # Block non-UMTO data
+        if not self.data or not self.data.get("isUMTO"):
+            raise ValidationError(
+                "Legacy exercise schema is no longer allowed. "
+                "Exercises must be created/updated via the UMTO factory (save_umto_exercise)."
+            )
+
     def get_previous_authored_exercise(self):
         return Exercise.objects.filter(
             authored_by=self.authored_by, created__lt=self.created
@@ -225,6 +244,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         ).first()
 
     def save(self, *args, **kwargs):
+        self.clean()
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
             self.set_id(initial="E")
