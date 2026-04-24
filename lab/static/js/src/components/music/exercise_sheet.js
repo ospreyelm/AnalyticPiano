@@ -1164,6 +1164,9 @@ define([
             wantsFigures = false;
             wantsChordLabels = false;
             wantsNoteNames = false;
+            if (analyzeConfig.mode) {
+              analyzeConfig.mode.note_names = false;
+            }
           }
 
           var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsNoteNames;
