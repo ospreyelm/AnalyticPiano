@@ -1163,6 +1163,7 @@ define([
             wantsRomans = false;
             wantsFigures = false;
             wantsChordLabels = false;
+            wantsNoteNames = false;
           }
 
           var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsNoteNames;
