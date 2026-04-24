@@ -115,6 +115,15 @@
       "title": "GradingSlice",
       "type": "object"
     },
+    "InteractionMode": {
+      "enum": [
+        "identification",
+        "playback",
+        "analysis_match"
+      ],
+      "title": "InteractionMode",
+      "type": "string"
+    },
     "Metadata": {
       "properties": {
         "exercise_id": {
@@ -133,12 +142,26 @@
           "title": "Meter",
           "type": "string"
         },
+        "clef": {
+          "default": "treble",
+          "title": "Clef",
+          "type": "string"
+        },
         "complexity_score": {
           "description": "Unit 1-12 ranking system",
           "maximum": 12,
           "minimum": 1,
           "title": "Complexity Score",
           "type": "integer"
+        },
+        "mode": {
+          "$ref": "#/$defs/InteractionMode",
+          "default": "playback"
+        },
+        "is_umto": {
+          "default": true,
+          "title": "Is Umto",
+          "type": "boolean"
         }
       },
       "required": [
