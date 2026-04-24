@@ -200,3 +200,55 @@ def build_umto_payload(
         grading=grading_slices,
     )
     return umto.to_frontend_payload(unit=unit)
+
+
+import os
+
+from apps.exercises.models import Exercise
+
+
+def _legacy_bypass_enabled() -> bool:
+    return os.environ.get("HARMONYLAB_ALLOW_LEGACY_EXERCISE") == "1"
+
+
+def save_umto_exercise(
+    *,
+    description: str,
+    score_data: dict,
+    author,
+    skill_tags: list,
+    complexity: int,
+    is_public: bool = True,
+    umto_kwargs: dict,
+) -> Exercise:
+    """Build a UMTO payload from score_data + umto_kwargs, validate, save Exercise,
+    and backfill exercise_id in the stored payload.
+
+    Create-only. Conversions of existing legacy rows go through dedicated
+    migration commands with HARMONYLAB_ALLOW_LEGACY_EXERCISE=1 bypass.
+    """
+    try:
+        payload = build_umto_payload(score_data=score_data, **umto_kwargs)
+    except Exception as e:
+        raise NonUMTOExerciseError(f"Failed to build UMTO payload: {e}") from e
+
+    # Validate before DB write.
+    try:
+        UMTO.model_validate(payload["score"]["umto"])
+    except Exception as e:
+        raise NonUMTOExerciseError(f"UMTO validation failed: {e}") from e
+
+    ex = Exercise(
+        description=description,
+        data=payload,
+        authored_by=author,
+        is_public=is_public,
+        skill_tags=list(skill_tags),
+        complexity=complexity,
+    )
+    ex.save()
+    # Backfill now that the DB-assigned id is known.
+    ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
+    ex.data["exerciseId"] = ex.id
+    ex.save()
+    return ex
