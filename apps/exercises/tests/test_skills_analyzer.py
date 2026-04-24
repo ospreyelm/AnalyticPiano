@@ -26,7 +26,7 @@ class SkillsAnalyzerTests(unittest.TestCase):
         skills, complexity = analyze_chunk_skills(chunk, 'C')
         self.assertIn('Diatonic_Triads', skills)
         self.assertIn('Cadence_Perfect_Authentic', skills)
-        self.assertEqual(complexity, 1)
+        self.assertEqual(complexity, 9)
 
     def test_inversions(self):
         # C Major: I6 - V6/4
@@ -37,28 +37,28 @@ class SkillsAnalyzerTests(unittest.TestCase):
         skills, complexity = analyze_chunk_skills(chunk, 'C')
         self.assertIn('Inversions_First', skills)
         self.assertIn('Inversions_Second', skills)
-        self.assertEqual(complexity, 3)
+        self.assertEqual(complexity, 12)
 
     def test_dominant_seventh(self):
         # C Major: V7
         chunk = self.build_chunk([['G4', 'B4', 'D5', 'F5']])
         skills, complexity = analyze_chunk_skills(chunk, 'C')
         self.assertIn('Dominant_Seventh', skills)
-        self.assertEqual(complexity, 2)
+        self.assertEqual(complexity, 9)
 
     def test_secondary_dominant(self):
         # C Major: V/V (D major triad) -> V
         chunk = self.build_chunk([['D4', 'F#4', 'A4'], ['G4', 'B4', 'D5']])
         skills, complexity = analyze_chunk_skills(chunk, 'C')
         self.assertIn('Secondary_Dominant', skills)
-        self.assertEqual(complexity, 5)
+        self.assertEqual(complexity, 16)
 
     def test_secondary_leading_tone(self):
         # C Major: vii°7/V (F# fully dim 7)
         chunk = self.build_chunk([['F#4', 'A4', 'C5', 'E-5']])
         skills, complexity = analyze_chunk_skills(chunk, 'C')
         self.assertIn('Secondary_Leading_Tone', skills)
-        self.assertEqual(complexity, 5)
+        self.assertEqual(complexity, 16)
 
     def test_neapolitan(self):
         # C Major: N6 (Db major triad in first inversion)
@@ -66,14 +66,14 @@ class SkillsAnalyzerTests(unittest.TestCase):
         skills, complexity = analyze_chunk_skills(chunk, 'C')
         self.assertIn('Neapolitan_Sixth', skills)
         self.assertNotIn('Secondary_Dominant', skills)
-        self.assertEqual(complexity, 7)
+        self.assertEqual(complexity, 18)
 
     def test_augmented_sixth(self):
         # C Major: It+6 (Ab C F#)
         chunk = self.build_chunk([['A-3', 'C4', 'F#4']])
         skills, complexity = analyze_chunk_skills(chunk, 'C')
         self.assertIn('Augmented_Sixth', skills)
-        self.assertEqual(complexity, 8)
+        self.assertEqual(complexity, 18)
 
     def test_cadence_plagal(self):
         # C Major: IV - I

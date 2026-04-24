@@ -536,8 +536,7 @@ define([
       if (!answer && isNoteNameEx) {
           if (gradingMatch && gradingMatch.target_midi_pitches.length > 0) {
               const midi = gradingMatch.target_midi_pitches[0];
-              const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-              answer = names[midi % 12];
+              answer = analyzer.to_note_name([midi]);
           } else {
               isTarget = false;
           }
@@ -767,7 +766,15 @@ define([
       if (mode) {
         return mode === "identification" || mode === "chorale_identification";
       }
-      return this.exercise.type === "chorale_identification" || this.exercise.type === "umto_chorale";
+      return this.exercise.type === "chorale_identification";
+    },
+    /**
+     * Returns true if this is an analysis match exercise.
+     *
+     * @return {boolean}
+     */
+    isAnalysisMatch: function () {
+      return this.getMode() === "analysis_match";
     },
     /**
      * Returns true if this is a musicxml exercise.
@@ -787,11 +794,7 @@ define([
       if (mode) {
         return mode === "identification" || mode === "chorale_identification";
       }
-      var isIdent = this.exercise.type === "identification" || 
-                    this.exercise.type === "chorale_identification" ||
-                    this.exercise.type === "umto_chorale";
-      console.log("[ID] isIdentification final check:", isIdent, "type:", this.exercise.type);
-      return isIdent;
+      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification";
     },
     /**
      * Returns the feedback mode for identification exercises.
@@ -911,21 +914,46 @@ define([
         exercise.key = convertCIRKeyToHarmonyLabKey(definition.key || "C");
         exercise.keySignature = false;
 
-        exercise.introText = definition.introText || false;
-        exercise.reviewText = definition.reviewText || false;
+        exercise.introText = definition.introText || (definition.score && definition.score.umto && definition.score.umto.metadata && definition.score.umto.metadata.source) || false;
+        exercise.reviewText = definition.reviewText || "Well done!";
         exercise.nextExercise = definition.nextExercise || false;
         exercise.exerciseList = definition.exerciseList || [];
         exercise.staffDistribution = definition.staffDistribution || "chorale";
         exercise.complexity_score = definition.complexity_score || 0;
         exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
+        exercise.mode = definition.mode || (definition.score && definition.score.umto && definition.score.umto.metadata && definition.score.umto.metadata.mode) || "play";
+        exercise.analysisType = definition.analysisType || (exercise.complexity_score === 1 ? "note_name" : "roman");
+        exercise.analysis = {
+          enabled: true,
+          mode: {}
+        };
+        if (exercise.analysisType === "note_name") {
+          exercise.analysis.mode.note_names = true;
+        } else {
+          exercise.analysis.mode.roman_numerals = true;
+        }
+
+        console.log("[UMTO-DEBUG] parsed exercise:", {
+            type: exercise.type,
+            mode: exercise.mode,
+            analysisType: exercise.analysisType,
+            analysis: exercise.analysis
+        });
 
         if (exercise.type === "umto_chorale") {
-          exercise.problems = applySkillFilter(
-            buildUMTOIdentificationProblems(exercise),
-            (definition.playlistSkillTags || []).concat(definition.playlistTags || []),
-            exercise.analysisType,
-            exercise.allowed_answers
-          );
+          var isIdent = exercise.mode === "identification" || exercise.mode === "chorale_identification";
+          console.log("[UMTO-DEBUG] isIdent:", isIdent, "mode:", exercise.mode);
+          if (isIdent) {
+            exercise.problems = applySkillFilter(
+              buildUMTOIdentificationProblems(exercise),
+              (definition.playlistSkillTags || []).concat(definition.playlistTags || []),
+              exercise.analysisType,
+              exercise.allowed_answers
+            );
+          } else {
+            console.log("[UMTO-DEBUG] using fallback problems for non-ident mode");
+            exercise.problems = buildUMTOIdentificationProblems(exercise); 
+          }
         }
         exercise.playlistTags = definition.playlistTags || [];
         exercise.playlistSkillTags = definition.playlistSkillTags || [];

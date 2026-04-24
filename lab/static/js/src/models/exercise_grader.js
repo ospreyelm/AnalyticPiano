@@ -124,7 +124,18 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
             actual_notes.splice(dummy_idx, 1);
           }
         }
+        var mode = definition.getMode();
+        console.log("[UMTO-DEBUG] grading exercise. type:", definition.exercise.type, "mode:", mode);
         switch (definition.exercise.type) {
+          case "umto_chorale":
+            if (mode === "analysis_match") {
+              result = this.analysisMatch(expected_notes, actual_notes, analysis_types);
+              console.log("[UMTO-DEBUG] analysisMatch result:", result.state);
+            } else {
+              result = this.notesMatch(expected_notes, actual_notes, problems[i].unison_idx || null, delivered_unison_idx);
+              console.log("[UMTO-DEBUG] notesMatch result:", result.state);
+            }
+            break;
           case "matching":
             result = this.notesMatch(expected_notes, actual_notes, problems[i].unison_idx || null, delivered_unison_idx);
             break;

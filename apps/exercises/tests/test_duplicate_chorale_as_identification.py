@@ -3,40 +3,18 @@ from django.test import TestCase
 
 from apps.accounts.models import User
 from apps.exercises.models import Exercise
+from apps.exercises.tests.umto_test_helpers import make_umto_exercise
 
 
 class DuplicateChoraleAsIdentificationTests(TestCase):
     def test_creates_identification_copy_from_chorale(self):
         author = User.objects.create_user(email="teacher@example.com", password="pw")
-        source = Exercise(
-            authored_by=author,
-            is_public=True,
+        source = make_umto_exercise(
+            author=author,
             description="BWV1.6 (mm. 1-4)",
-            data={
-                "type": "chorale",
-                "score": {
-                    "meta": {"key": "G", "time": "4/4"},
-                    "measures": [
-                        {
-                            "staves": {
-                                "treble": {
-                                    "voices": [
-                                        {
-                                            "items": [
-                                                {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}}
-                                            ]
-                                        }
-                                    ]
-                                },
-                                "bass": {"voices": []},
-                            }
-                        }
-                    ],
-                },
-                "staffDistribution": "chorale",
-            },
+            complexity=1,
+            unit=1
         )
-        source.save()
 
         # Refactored command no longer takes 'analysis' argument
         call_command(

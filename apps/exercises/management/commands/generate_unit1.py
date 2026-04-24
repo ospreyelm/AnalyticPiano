@@ -270,9 +270,9 @@ class Command(BaseCommand):
         parser.add_argument("--max-per-stage", type=int, default=12)
         parser.add_argument(
             "--lanes",
-            choices=["exact", "analysis", "identification", "all"],
+            choices=["exact", "analysis", "identification", "all", "both"],
             default="all",
-            help="Which lane(s) to emit. 'all' = exact + analysis + identification.",
+            help="Which lane(s) to emit. 'all' or 'both' = exact + analysis + identification.",
         )
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--cleanup-legacy", action="store_true",
@@ -443,7 +443,7 @@ class Command(BaseCommand):
                             f"{voice_name.title()} voice."
                         )
 
-                        if lanes in ("exact", "all"):
+                        if lanes in ("exact", "all", "both"):
                             exact_desc = f"{bwv.upper()} m.{human_start}-{human_end} {voice_name.title()} (exact) S{stage}"
                             exact = Exercise.objects.filter(description=exact_desc).first()
                             if exact is None:
@@ -493,7 +493,7 @@ class Command(BaseCommand):
                             if exact is not None:
                                 created.append((target, "exact", stage, complexity, exact))
 
-                        if lanes in ("analysis", "all"):
+                        if lanes in ("analysis", "all", "both"):
                             analysis_desc = f"{bwv.upper()} m.{human_start}-{human_end} {voice_name.title()} (analysis) S{stage}"
                             analysis_ex = Exercise.objects.filter(description=analysis_desc).first()
                             if analysis_ex is None:
@@ -542,7 +542,7 @@ class Command(BaseCommand):
                             if analysis_ex is not None:
                                 created.append((target, "analysis", stage, complexity, analysis_ex))
 
-                        if lanes in ("identification", "all"):
+                        if lanes in ("identification", "all", "both"):
                             id_desc = f"{bwv.upper()} m.{human_start}-{human_end} {voice_name.title()} (id) S{stage}"
                             id_ex = Exercise.objects.filter(description=id_desc).first()
                             if id_ex is None:

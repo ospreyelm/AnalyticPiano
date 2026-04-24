@@ -180,6 +180,10 @@ class UMTO(BaseModel):
             "key": self.metadata.key,
             "meter": self.metadata.meter,
             "clef": self.metadata.clef,
+            "semibrevesPerLine": 4,
+            "analysisType": "note_name" if self.metadata.complexity_score == 1 else "roman",
+            "introText": self.metadata.source,
+            "reviewText": "Well done!",
             "allowed_answers": self.get_allowed_answers(unit),
             "score": {
                 "meta": {
@@ -197,61 +201,88 @@ class UMTO(BaseModel):
     def _to_legacy_measures(self) -> List[Dict[str, Any]]:
         """
         Converts UMTO voices into measure-based structures for the legacy VexFlow adapter.
-        For Unit 1, we usually have 1 measure per exercise.
+        Splits events across measures based on the meter.
         """
-        # Calculate beats per measure from meter
+        import math
         try:
-            num_beats = int(self.metadata.meter.split("/")[0])
+            num_beats = float(self.metadata.meter.split("/")[0])
         except:
-            num_beats = 4
+            num_beats = 4.0
         
-        # Determine if we are in single-staff mode or keyboard mode
         staff_mode = self.metadata.clef # "treble", "bass", or "keyboard"
         
-        measure = {
-            "staves": {
-                "treble": {"clef": "treble", "voices": []},
-                "bass": {"clef": "bass", "voices": []}
-            }
-        }
-
+        # 1. Collect all events per voice with their absolute timeline
+        voice_streams = {}
         for vid in ["S", "A", "T", "B"]:
             events = getattr(self.voices, vid)
-            if not events:
-                continue
+            if not events: continue
             
-            items = []
-            for ev in events:
-                # ... conversion logic remains the same ...
-                if ev.kind == "note" and ev.pitch:
-                    items.append({
-                        "kind": "note",
-                        "pitch": {
-                            "step": ev.pitch.step,
-                            "alter": ev.pitch.alter,
-                            "octave": ev.pitch.octave
-                        },
-                        "duration": {"type": ev.duration_type, "dots": ev.dots}
-                    })
-                else:
-                    items.append({
-                        "kind": "rest",
-                        "duration": {"type": ev.duration_type, "dots": ev.dots}
-                    })
-            
-            # If single-staff mode, put EVERYTHING on that one staff.
-            # If keyboard mode, split S/A to treble and T/B to bass.
             if staff_mode in ["treble", "bass"]:
                 target_staff = staff_mode
+                v_idx = {"S": 0, "A": 1, "T": 2, "B": 3}[vid]
             else:
                 target_staff = "treble" if vid in ["S", "A"] else "bass"
-                
-            measure["staves"][target_staff]["voices"].append({
-                "items": items,
-                "direction": "auto"
-            })
+                v_idx = 0 if vid in ["S", "T"] else 1
+            
+            key = (target_staff, v_idx)
+            if key not in voice_streams: voice_streams[key] = []
+            
+            t = 0.0
+            for ev in events:
+                voice_streams[key].append((t, ev))
+                t += ev.duration
+
+        # 2. Determine max duration
+        max_t = 0.0
+        for stream in voice_streams.values():
+            if stream:
+                last_start, last_ev = stream[-1]
+                max_t = max(max_t, last_start + last_ev.duration)
         
-        return [measure]
+        num_measures = math.ceil((max_t - 0.001) / num_beats)
+        if num_measures < 1: num_measures = 1
+        
+        measures = []
+        for m_idx in range(num_measures):
+            m_start = m_idx * num_beats
+            m_end = (m_idx + 1) * num_beats
+            measure = {
+                "staves": {
+                    "treble": {"clef": "treble", "voices": []},
+                    "bass": {"clef": "bass", "voices": []}
+                }
+            }
+            for (staff_name, v_idx), stream in voice_streams.items():
+                items = []
+                for t, ev in stream:
+                    # Does this event fall (even partially) in this measure?
+                    ev_end = t + ev.duration
+                    if ev_end <= m_start + 0.001 or t >= m_end - 0.001: continue
+                    
+                    # If it starts in this measure, add it.
+                    if t >= m_start - 0.001 and t < m_end - 0.001:
+                        if ev.kind == "note" and ev.pitch:
+                            items.append({
+                                "kind": "note",
+                                "pitch": {"step": ev.pitch.step, "alter": ev.pitch.alter, "octave": ev.pitch.octave},
+                                "duration": {"type": ev.duration_type, "dots": ev.dots}
+                            })
+                        else:
+                            items.append({
+                                "kind": "rest",
+                                "duration": {"type": ev.duration_type, "dots": ev.dots}
+                            })
+                    # Note: We don't handle ties/splitting across measures here yet, 
+                    # as Unit 1 exercises are designed to fit measure boundaries.
+                
+                if items:
+                    voice_list = measure["staves"][staff_name]["voices"]
+                    while len(voice_list) <= v_idx:
+                        voice_list.append({"items": [], "direction": "auto"})
+                    voice_list[v_idx]["items"] = items
+            measures.append(measure)
+        return measures
+        return measures
 
     def flatten_to_artusi(self) -> str:
         """

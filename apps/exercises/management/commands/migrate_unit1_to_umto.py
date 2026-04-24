@@ -12,6 +12,8 @@ class Command(BaseCommand):
         parser.add_argument("--limit", type=int, default=None)
 
     def handle(self, *args, **options):
+        import os
+        os.environ["HARMONYLAB_ALLOW_LEGACY_EXERCISE"] = "1"
         dry_run = options["dry_run"]
         limit = options["limit"]
 

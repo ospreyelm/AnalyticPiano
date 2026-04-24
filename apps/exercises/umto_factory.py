@@ -11,10 +11,7 @@ scripts only. Never set in CI, tests, or production.
 from __future__ import annotations
 
 
-class NonUMTOExerciseError(ValueError):
-    """Raised when save_umto_exercise is handed legacy-shaped data, or when
-    Exercise.save() / Exercise.clean() sees a new row whose data fails UMTO
-    validation."""
+from apps.exercises.models import NonUMTOExerciseError
 
 
 from typing import Optional

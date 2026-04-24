@@ -94,3 +94,79 @@ def test_factory_idempotence_unit9_satb():
     assert umto_result["voices"]["S"] == golden["voices"]["S"]
     assert umto_result["voices"]["B"] == golden["voices"]["B"]
     assert umto_result["grading"] == golden["grading"]
+
+
+from django.test import TestCase
+from apps.exercises.models import Exercise, NonUMTOExerciseError
+from django.contrib.auth import get_user_model
+import os
+
+class UMTOContractTests(TestCase):
+    def test_factory_emits_is_umto_flag(self):
+        """
+        Contract test: build_umto_payload must always set isUMTO=True.
+        """
+        with open(CIR_FIXTURES_DIR / "unit1_treble.json", "r") as f:
+            cir = json.load(f)
+        payload = build_umto_payload(
+            exercise_id="TEMP",
+            source="Test",
+            key="C",
+            meter="4/4",
+            clef="treble",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            score_data=cir,
+        )
+        self.assertTrue(payload["isUMTO"])
+
+    def test_schema_file_is_in_sync_with_models(self):
+        """
+        Contract test: verify that the committed umto_schema.json matches 
+        the Pydantic model's current schema.
+        """
+        schema_path = Path("apps/exercises/umto_schema.json")
+        if not schema_path.exists():
+            self.fail("umto_schema.json is missing")
+        
+        with open(schema_path, "r") as f:
+            stored_schema = json.load(f)
+        
+        current_schema = UMTO.model_json_schema()
+        self.assertEqual(stored_schema, current_schema)
+
+    def test_model_guard_rejects_legacy_on_new_row(self):
+        """
+        Contract test: Exercise.save() must reject non-UMTO data for NEW rows.
+        """
+        User = get_user_model()
+        author = User.objects.create(email="test@harmony.lab")
+        
+        # Bypass is NOT set in this test.
+        ex = Exercise(
+            description="Legacy Row",
+            authored_by=author,
+            data={"type": "legacy", "score": {}}
+        )
+        with self.assertRaises(NonUMTOExerciseError):
+            ex.save()
+
+    def test_model_guard_allows_legacy_on_existing_row(self):
+        """
+        Contract test: Exercise.save() must allow legacy data for EXISTING rows (grandfathered).
+        """
+        User = get_user_model()
+        author = User.objects.create(email="test2@harmony.lab")
+        
+        # Create a legacy row using the bypass
+        os.environ["HARMONYLAB_ALLOW_LEGACY_EXERCISE"] = "1"
+        ex = Exercise.objects.create(
+            description="Grandfathered Legacy",
+            authored_by=author,
+            data={"type": "legacy", "score": {}}
+        )
+        del os.environ["HARMONYLAB_ALLOW_LEGACY_EXERCISE"]
+        
+        # Update it (not is_new) - should be allowed
+        ex.description = "Updated Grandfathered"
+        ex.save() # Should not raise

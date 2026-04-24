@@ -171,7 +171,8 @@ define([
     _isIdentificationLikeExercise: function () {
       var definition = this.exerciseContext.getDefinition();
       var isIdent = (definition.isIdentification && definition.isIdentification()) ||
-             (definition.isChoraleIdentification && definition.isChoraleIdentification());
+             (definition.isChoraleIdentification && definition.isChoraleIdentification()) ||
+             (definition.isAnalysisMatch && definition.isAnalysisMatch());
       console.log("[ID] _isIdentificationLikeExercise result:", isIdent, "type:", definition.getType());
       return isIdent;
     },

@@ -1248,8 +1248,11 @@ define([
 
         // Add barlines at the end of each measure
         var isLastMeasureOfPiece = (absoluteMeasureIndex === score.measures.length - 1);
-        var barType = (measIdx < numMeasures - 1) ? Vex.Flow.Barline.type.SINGLE : (isLastMeasureOfPiece ? Vex.Flow.Barline.type.END : Vex.Flow.Barline.type.SINGLE);
+        // Use DOUBLE barline for debug visibility
+        var barType = isLastMeasureOfPiece ? Vex.Flow.Barline.type.END : Vex.Flow.Barline.type.DOUBLE;
         
+        console.log("[UMTO-DEBUG] rendering measure", absoluteMeasureIndex, "barType:", barType, "isLast:", isLastMeasureOfPiece);
+
         if (trebleStave) {
           trebleStave.setEndBarType(barType);
           trebleStave.draw();

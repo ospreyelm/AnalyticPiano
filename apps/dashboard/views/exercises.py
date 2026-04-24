@@ -9,6 +9,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django_tables2 import RequestConfig
 
+# FROZEN — legacy Exercise-shape support remains only for reading existing rows.
+# NEW Exercise creation in this module MUST use apps.exercises.umto_factory.
+# See CLAUDE.md "UMTO is the Canonical Exercise Representation".
+
 from apps.dashboard.filters import ListIDFilter, ExerciseListDescriptionFilter
 from apps.dashboard.forms import DashboardExerciseForm
 from apps.dashboard.tables import ExercisesListTable
@@ -247,6 +251,7 @@ def exercise_edit_view(request, exercise_id):
                                     complexity_score=exercise.complexity,
                                     mode=InteractionMode.IDENTIFICATION,
                                     target_voice=voice,
+                                    analysisType=analysis_type,
                                 )
                             )
                 except ValueError as exc:

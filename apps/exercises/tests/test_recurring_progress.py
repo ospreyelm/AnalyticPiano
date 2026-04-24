@@ -15,6 +15,7 @@ from apps.exercises.models import (
     PlaylistCourseOrdered,
     RecurringPlaylistPeriodProgress,
 )
+from apps.exercises.tests.umto_test_helpers import make_umto_exercise
 from apps.exercises.utils.recurrence import (
     count_playlist_cycles,
     get_assignment_period_bounds,
@@ -416,11 +417,12 @@ class RecurringSubmitFlowTests(TestCase):
             email="performer@example.com",
             password="test-pass-123",
         )
-        exercise = Exercise(
-            authored_by=author,
-            data={},
+        exercise = make_umto_exercise(
+            author=author,
+            description="test",
+            complexity=1,
+            unit=1
         )
-        exercise.save()
         playlist = Playlist(
             authored_by=author,
             name="Recurring Playlist",

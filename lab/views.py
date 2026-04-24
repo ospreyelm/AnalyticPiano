@@ -12,6 +12,9 @@ from django.utils.http import urlencode
 from django.views.generic import View, TemplateView, RedirectView
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
+import logging
+logger = logging.getLogger(__name__)
+
 from braces.views import CsrfExemptMixin, LoginRequiredMixin
 
 from django_tables2 import RequestConfig
@@ -288,7 +291,11 @@ def generate_exercise_context(
             exercise_context.update(umto_obj.to_frontend_payload(unit=unit_focus))
         except Exception as e:
             # Fallback to raw data if UMTO validation fails
-            print(f"UMTO Alignment Warning: {e}")
+            logger.warning(
+                "[LEGACY EXERCISE] Exercise %s failed UMTO validation: %s. "
+                "Falling back to raw data. Migrate via apps.exercises.umto_factory.",
+                exercise.id, e,
+            )
             exercise_context.update(exercise.data)
     else:
         exercise_context.update(exercise.data)

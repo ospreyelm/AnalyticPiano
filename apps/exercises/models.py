@@ -89,6 +89,12 @@ class ClonableModelMixin:
         return fields
 
 
+class NonUMTOExerciseError(ValueError):
+    """Raised when save_umto_exercise is handed legacy-shaped data, or when
+    Exercise.save() / Exercise.clean() sees a new row whose data fails UMTO
+    validation."""
+
+
 class Exercise(ClonableModelMixin, BaseContentModel):
     id = models.CharField("E-ID", unique=True, max_length=16, null=True)
     description = models.CharField(
@@ -222,13 +228,17 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         import os
         super().clean()
         
+        # Only enforce on new rows. Existing rows are grandfathered.
+        if self._id is not None:
+            return
+
         # Bypass for migrations
         if os.environ.get("HARMONYLAB_ALLOW_LEGACY_EXERCISE") == "1":
             return
 
         # Block non-UMTO data
         if not self.data or not self.data.get("isUMTO"):
-            raise ValidationError(
+            raise NonUMTOExerciseError(
                 "Legacy exercise schema is no longer allowed. "
                 "Exercises must be created/updated via the UMTO factory (save_umto_exercise)."
             )

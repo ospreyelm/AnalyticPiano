@@ -338,7 +338,7 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
     # 7. Transposition Variety
     # Spec: randomized among common keys or playlist requests.
     # User Request: Don't transpose Bach chorale pieces at all. Use None to bypass.
-    if best_ex.data.get("type") == "chorale" or "bach" in best_ex.tags:
+    if best_ex.data.get("type") in ["chorale", "umto_chorale"] or "bach" in (best_ex.skill_tags or []):
         target_key = None
     else:
         common_keys = ["C", "G", "F", "D", "Bb", "A", "Eb"]
