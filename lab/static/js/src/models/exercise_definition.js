@@ -959,6 +959,7 @@ define([
         }
         exercise.playlistTags = definition.playlistTags || [];
         exercise.playlistSkillTags = definition.playlistSkillTags || [];
+        exercise.skill_tags = definition.skillTags || [];
         exercise.complexity_score = definition.complexity_score || 0;
         return exercise;
       }
