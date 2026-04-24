@@ -76,3 +76,54 @@ def test_build_umto_payload_single_voice_treble_identification():
     assert umto["grading"][0]["target_midi_pitches"] == [60]
     assert len(umto["analysis"]) == 4
     assert umto["analysis"][0]["unit_tags"] == [1]
+
+
+SATB_CIR = {
+    "meta": {"key": "G", "time": "4/4"},
+    "measures": [
+        {
+            "staves": {
+                "treble": {
+                    "voices": [
+                        {"items": [{"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}}]},
+                        {"items": [{"kind": "note", "pitch": {"step": "D", "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}}]},
+                    ]
+                },
+                "bass": {
+                    "voices": [
+                        {"items": [{"kind": "note", "pitch": {"step": "B", "alter": 0, "octave": 3}, "duration": {"type": "q", "dots": 0}}]},
+                        {"items": [{"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 2}, "duration": {"type": "q", "dots": 0}}]},
+                    ]
+                },
+            }
+        }
+    ],
+}
+
+
+def test_build_umto_payload_satb_all_voices_playback():
+    from apps.exercises.umto_factory import build_umto_payload
+
+    payload = build_umto_payload(
+        exercise_id="TEMP",
+        source="Test SATB",
+        key="G",
+        meter="4/4",
+        clef="keyboard",
+        complexity_score=9,
+        mode=InteractionMode.PLAYBACK,
+        score_data=SATB_CIR,
+        target_voice=None,
+        unit=9,
+    )
+
+    assert payload["isUMTO"] is True
+    umto = payload["score"]["umto"]
+    assert len(umto["voices"]["S"]) == 1
+    assert len(umto["voices"]["A"]) == 1
+    assert len(umto["voices"]["T"]) == 1
+    assert len(umto["voices"]["B"]) == 1
+    assert umto["voices"]["S"][0]["pitch"]["midi"] == 67
+    assert umto["voices"]["A"][0]["pitch"]["midi"] == 62
+    assert umto["voices"]["T"][0]["pitch"]["midi"] == 59
+    assert umto["voices"]["B"][0]["pitch"]["midi"] == 43
