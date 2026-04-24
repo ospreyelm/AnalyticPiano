@@ -14,6 +14,9 @@ try:
 except ImportError:
     m21_to_cir = None
 
+from apps.exercises.umto_factory import save_umto_exercise
+from apps.exercises.umto import InteractionMode
+
 
 def split_score_into_chunks(score):
     """
@@ -132,45 +135,23 @@ class Command(BaseCommand):
             # Algorithmically determine the true tonal center and mode (e.g. "a" minor vs "C" major)
             # using music21's Krumhansl-Schmuckler analysis rather than blindly trusting the key signature.
             try:
-                chunk_key = chunk.analyze('key').tonicPitchNameWithCase
+                m21_key_obj = chunk.analyze('key')
+                tonic = m21_key_obj.tonic.name.replace('-', 'b')
+                mode_prefix = 'j' if m21_key_obj.mode == 'major' else 'i'
+                chunk_key = f"{mode_prefix}{tonic}{'_' if len(tonic) == 1 else ''}"
             except Exception:
                 # Absolute fallback if it's completely empty
-                chunk_key = "C"
+                chunk_key = "jC_"
             
             # Convert to our CIR representation
             try:
-                cir_data = m21_to_cir(chunk)
+                cir_data = m21_to_cir(chunk, key_override=chunk_key)
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"  Error converting to CIR: {e}"))
                 continue
             
             meta_data = cir_data.get('meta', {})
             meta_data['key'] = chunk_key
-
-            # Build base exercise JSON payload
-            exercise_data = {
-                "key": chunk_key,
-                "type": "musicxml",  # Use the generic CIR-capable type
-                "mode": "play-all-voices",
-                "score": {
-                    "meta": meta_data,
-                    "measures": cir_data.get('measures', [])
-                },
-                "source": {
-                    "type": "mass_import",
-                    "filename": os.path.basename(file_path),
-                    "chunk": idx + 1
-                },
-                "targetVoices": "all",
-                "display": {
-                    "showFigures": False,
-                    "showRomans": False,
-                    "transpose": 0,
-                    "tempo": 60
-                },
-                "introText": "Play the exercise as written.",
-                "staffDistribution": "keyboard"
-            }
 
             # Create Database Record
             description = f"Auto-Import: {os.path.basename(file_path)} (Chunk {idx+1}, mm.{m_start}-{m_end})"
@@ -182,15 +163,28 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f"  Warning: Skills analysis failed for chunk {idx+1}: {e}"))
                 detected_skills, detected_complexity = [], 1
 
-            ex = Exercise(
+            # Build UMTO-specific kwargs
+            umto_kwargs = {
+                "exercise_id": "TEMP",
+                "source": "mass_import",
+                "key": chunk_key,
+                "meter": chunk.getTimeSignatures()[0].ratioString if chunk.getTimeSignatures() else "4/4",
+                "clef": "keyboard",
+                "complexity_score": detected_complexity,
+                "mode": InteractionMode.PLAYBACK,
+            }
+
+            # Create/Save via Factory
+            ex = save_umto_exercise(
                 description=description,
-                data=exercise_data,
-                authored_by=author,
-                is_public=False,
+                score_data=cir_data,
+                author=author,
                 skill_tags=detected_skills,
-                complexity=detected_complexity
+                complexity=detected_complexity,
+                is_public=False,
+                umto_kwargs=umto_kwargs,
+                overwrite=True
             )
-            ex.save()
             
             if playlist:
                 ExercisePlaylistOrdered.objects.create(

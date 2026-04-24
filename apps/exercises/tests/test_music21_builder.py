@@ -14,7 +14,8 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from apps.exercises.generation import music21_builder as mb
-from music21 import pitch
+from apps.exercises.utils.music21_builder import score_to_cir
+from music21 import pitch, stream, note, meter, key
 
 
 # ---------------------------------------------------------------------------
@@ -353,6 +354,66 @@ class TestRhythmValues(unittest.TestCase):
         result = mb.scale("jC_", "major", "ascending", "matching")
         for chord_dict in result:
             self.assertEqual(chord_dict["rhythmValue"], "q")
+
+
+
+# ---------------------------------------------------------------------------
+# Tests: Reverse Conversion (score_to_cir)
+# ---------------------------------------------------------------------------
+
+def _make_satb_score():
+    s = stream.Score()
+
+    soprano = stream.Part(id="Soprano")
+    alto = stream.Part(id="Alto")
+    tenor = stream.Part(id="Tenor")
+    bass = stream.Part(id="Bass")
+
+    for p in [soprano, alto, tenor, bass]:
+        m = stream.Measure(number=1)
+        m.append(meter.TimeSignature("4/4"))
+        m.append(key.Key("C"))
+        p.append(m)
+
+    soprano.measure(1).append(note.Note("C5", quarterLength=1.0))
+    alto.measure(1).append(note.Note("A4", quarterLength=1.0))
+    tenor.measure(1).append(note.Note("E3", quarterLength=1.0))
+    bass.measure(1).append(note.Note("C3", quarterLength=1.0))
+
+    s.append(soprano)
+    s.append(alto)
+    s.append(tenor)
+    s.append(bass)
+    return s
+
+
+class TestScoreToCIR(unittest.TestCase):
+    def test_score_to_cir_maps_satb_parts_to_expected_voices(self):
+        cir = score_to_cir(_make_satb_score())
+        m1 = cir["measures"][0]
+
+        self.assertEqual(list(m1["staves"].keys()), ["treble", "bass"])
+        self.assertEqual(len(m1["staves"]["treble"]["voices"]), 2)
+        self.assertEqual(len(m1["staves"]["bass"]["voices"]), 2)
+
+        soprano_item = m1["staves"]["treble"]["voices"][0]["items"][0]
+        alto_item = m1["staves"]["treble"]["voices"][1]["items"][0]
+        tenor_item = m1["staves"]["bass"]["voices"][0]["items"][0]
+        bass_item = m1["staves"]["bass"]["voices"][1]["items"][0]
+
+        self.assertEqual(soprano_item["pitch"]["step"], "C")
+        self.assertEqual(soprano_item["pitch"]["octave"], 5)
+        self.assertEqual(alto_item["pitch"]["step"], "A")
+        self.assertEqual(alto_item["pitch"]["octave"], 4)
+        self.assertEqual(tenor_item["pitch"]["step"], "E")
+        self.assertEqual(tenor_item["pitch"]["octave"], 3)
+        self.assertEqual(bass_item["pitch"]["step"], "C")
+        self.assertEqual(bass_item["pitch"]["octave"], 3)
+
+    def test_score_to_cir_emits_meta_key_and_time_signature(self):
+        cir = score_to_cir(_make_satb_score())
+        self.assertEqual(cir["meta"]["time"], "4/4")
+        self.assertIn(cir["meta"]["key"], ["C", "CM", "C major"])
 
 
 # ---------------------------------------------------------------------------

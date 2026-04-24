@@ -1,0 +1,6 @@
+{
+  "metadata": { "exercise_id": 401, "source": "Unit 4 Test", "key": "A", "meter": "4/4", "clef": "treble", "complexity_score": 4, "mode": "identification" },
+  "voices": { "S": [{ "kind": "note", "pitch": { "step": "G", "alter": 1, "octave": 4, "midi": 68 }, "duration": 1.0, "duration_type": "q", "dots": 0 }], "A": [], "T": [], "B": [] },
+  "grading": [{ "offset": 0.0, "target_midi_pitches": [68] }],
+  "analysis": [{ "offset": 0.0, "content": {}, "unit_tags": [4] }]
+}

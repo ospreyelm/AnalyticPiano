@@ -339,6 +339,11 @@ class ExercisesListTable(tables.Table):
         verbose_name="Complexity",
         orderable=True,
     )
+    staff_distribution = columns.Column(
+        verbose_name="Staff",
+        accessor=A("data.staffDistribution"),
+        orderable=True,
+    )
     delete = columns.LinkColumn(
         "dashboard:delete-exercise",
         kwargs={"exercise_id": A("id")},
@@ -371,7 +376,7 @@ class ExercisesListTable(tables.Table):
         table_pagination = False
         order_by = "-id"
         template_name = "django_tables2/bootstrap4.html"
-        sequence = ("selection", "id", "description", "skill_tags", "complexity", "view", "edit", "created", "updated", "is_public", "delete")
+        sequence = ("selection", "id", "description", "staff_distribution", "skill_tags", "complexity", "view", "edit", "created", "updated", "is_public", "delete")
 
 
 class PlaylistsListTable(tables.Table):

@@ -90,8 +90,9 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
       let vexflow_duration = duration
         ? duration
         : this.getRhythmValue().toLowerCase();
+      const rv = this.getRhythmValue();
       let vexflow_dots =
-        this.getRhythmValue().toUpperCase() == this.getRhythmValue() ? 1 : 0;
+        rv.toUpperCase() == rv && /^[a-zA-Z]$/.test(rv) ? 1 : 0;
       let vexflow_keys = this.getNoteKeys();
       let full_context = this.chord.settings.full_context || false;
 
@@ -511,7 +512,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
      */
     makeAccidentalModifier: function (keyIndex, accidental) {
       return function (staveNote) {
-        staveNote.addAccidental(keyIndex, new Vex.Flow.Accidental(accidental));
+        staveNote.addModifier(new Vex.Flow.Accidental(accidental), keyIndex);
       };
     },
     /**
@@ -595,7 +596,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         // displaced: unison_bool,
       });
       if (dot_count) {
-        stave_note = stave_note.addDotToAll();
+        Vex.Flow.Dot.buildAndAttach([stave_note], { all: true });
       }
 
       if (["AB", "ST"].includes(part)) {
@@ -603,7 +604,7 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
 
         const accidental = this.getAccidentalsOf(keys, this.activeAlterations)[0] || false;
         try {
-          if (accidental) { stave_note.addAccidental(0, new Vex.Flow.Accidental(accidental)); }
+          if (accidental) { stave_note.addModifier(new Vex.Flow.Accidental(accidental), 0); }
         } catch { console.log('Bad parameters for VexFlow .addAccidental', accidental) }
         const style = this.getHighlightOf(["AB", "ST"].indexOf(part));
         try {

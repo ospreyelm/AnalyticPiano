@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from apps.exercises.models import Exercise, Playlist, Course, ExercisePlaylistOrdered, StudentSkillMastery, SkillPrerequisite
 from apps.exercises.mastery import get_next_exercise
 from apps.exercises.skill_graph import ALL_SKILL_TAGS, DEFAULT_PREREQUISITES
+from apps.exercises.tests.umto_test_helpers import make_umto_exercise
 
 User = get_user_model()
 
@@ -11,33 +12,26 @@ class AdaptiveServingTests(TestCase):
         self.user = User.objects.create_user(email="test@example.com", password="password123")
         self.teacher = User.objects.create_user(email="teacher@example.com", password="password123")
         
-        # Manually save exercises to avoid double-save issues with .create()
-        self.ex1 = Exercise(
-            id="E11111", 
-            authored_by=self.teacher, 
+        self.ex1 = make_umto_exercise(
+            author=self.teacher, 
             skill_tags=["Note_Names"], 
             complexity=1,
-            data={"type": "chorale"}
+            description="E1"
         )
-        self.ex1.save()
 
-        self.ex2 = Exercise(
-            id="E22222", 
-            authored_by=self.teacher, 
+        self.ex2 = make_umto_exercise(
+            author=self.teacher, 
             skill_tags=["Interval_Generic"], 
             complexity=2,
-            data={"type": "chorale"}
+            description="E2"
         )
-        self.ex2.save()
 
-        self.ex3 = Exercise(
-            id="E33333", 
-            authored_by=self.teacher, 
+        self.ex3 = make_umto_exercise(
+            author=self.teacher, 
             skill_tags=["Triad_Major"], 
             complexity=3,
-            data={"type": "chorale"}
+            description="E3"
         )
-        self.ex3.save()
         
         self.playlist = Playlist(
             id="P11111", 
@@ -60,7 +54,7 @@ class AdaptiveServingTests(TestCase):
         """A new student with no mastery should get the entry point exercise."""
         exercise, key = get_next_exercise(self.user.id, playlist=self.playlist)
         self.assertEqual(exercise.id, self.ex1.id)
-        self.assertIn(key, ["C", "G", "F", "D", "Bb", "A", "Eb"])
+        self.assertIsNone(key)
 
     def test_unlocking_logic(self):
         """Mastering Note_Names should unlock Interval_Generic."""
@@ -102,14 +96,12 @@ class AdaptiveServingTests(TestCase):
         # We have two exercises targeting these skills:
         # 1. ex_only_notes: targets Note_Names, complexity 0
         # 2. ex2: targets Interval_Generic, complexity 2
-        self.ex_only_notes = Exercise(
-            id="E44444", 
-            authored_by=self.teacher, 
+        self.ex_only_notes = make_umto_exercise(
+            author=self.teacher, 
             skill_tags=["Note_Names"], 
             complexity=0, 
-            data={"type": "chorale"}
+            description="E4"
         )
-        self.ex_only_notes.save()
         ExercisePlaylistOrdered.objects.create(exercise=self.ex_only_notes, playlist=self.playlist, order=4)
 
         # Case A: Global mode (threshold=mastered). 

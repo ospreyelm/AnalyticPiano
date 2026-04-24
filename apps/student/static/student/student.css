@@ -1,0 +1,85 @@
+/* apps/student/static/student/student.css */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #222; background: #fff; }
+
+/* Header */
+.s-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; border-bottom: 1px solid #eee; }
+.s-header-brand { font-weight: 700; font-size: 1rem; }
+.s-header-user { font-size: 0.8rem; color: #888; }
+
+/* Main */
+.s-main { max-width: 600px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+/* Login */
+.s-login-wrap { max-width: 360px; margin: 3rem auto; }
+.s-login-title { font-size: 1.4rem; margin-bottom: 1.5rem; }
+
+/* Form */
+.s-form { display: flex; flex-direction: column; gap: 0.6rem; }
+.s-label { font-size: 0.85rem; font-weight: 600; }
+.s-input { padding: 0.55rem 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 100%; }
+.s-input:focus { outline: 2px solid #4A90D9; border-color: transparent; }
+.s-form-error { background: #fde8e8; border: 1px solid #f5c6c6; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.85rem; color: #c0392b; }
+
+/* Buttons */
+.s-btn-primary { background: #4A90D9; color: white; border: none; border-radius: 6px; padding: 0.6rem 1.25rem; font-size: 0.95rem; cursor: pointer; margin-top: 0.5rem; }
+.s-btn-primary:hover { background: #357abd; }
+.s-btn-secondary { background: white; color: #555; border: 1px solid #ddd; border-radius: 6px; padding: 0.4rem 0.9rem; font-size: 0.8rem; cursor: pointer; }
+
+/* Back link */
+.s-back { color: #4A90D9; font-size: 0.8rem; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+.s-back:hover { text-decoration: underline; }
+
+/* Unit card / resume card */
+.s-resume-card { background: #4A90D9; color: white; border-radius: 8px; padding: 1rem 1.25rem; cursor: pointer; margin-bottom: 1.5rem; text-decoration: none; display: block; }
+.s-resume-card:hover { background: #357abd; }
+.s-resume-label { font-size: 0.72rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+.s-resume-title { font-weight: 600; font-size: 0.95rem; }
+.s-resume-progress { background: rgba(255,255,255,0.3); height: 4px; border-radius: 2px; margin-top: 0.75rem; }
+.s-resume-progress-bar { background: white; height: 4px; border-radius: 2px; }
+.s-resume-meta { font-size: 0.75rem; opacity: 0.85; margin-top: 0.4rem; }
+
+/* Unit list */
+.s-section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 0.5rem; }
+.s-unit-card { border: 1px solid #eee; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 0.5rem; text-decoration: none; display: block; color: inherit; }
+.s-unit-card.active { border-color: #4A90D9; }
+.s-unit-card.locked { opacity: 0.5; pointer-events: none; }
+.s-unit-card-row { display: flex; justify-content: space-between; align-items: center; }
+.s-unit-title { font-weight: 600; font-size: 0.9rem; }
+.s-unit-pct { font-size: 0.75rem; color: #4A90D9; }
+.s-progress-bar-track { background: #e0e0e0; height: 4px; border-radius: 2px; margin-top: 0.5rem; }
+.s-progress-bar-fill { background: #4A90D9; height: 4px; border-radius: 2px; }
+
+/* Skill rows */
+.s-skill-row { border: 1px solid #eee; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+.s-skill-row.mastered { border-color: #c8ebc8; background: #fafffa; }
+.s-skill-row.in-progress { border-color: #ffe082; background: #fffdf0; }
+.s-skill-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+.s-skill-dot.mastered { background: #4CAF50; color: white; }
+.s-skill-dot.in-progress { background: #FF9800; color: white; }
+.s-skill-dot.not-started { background: #e0e0e0; color: #999; }
+.s-skill-info { min-width: 150px; flex: 1; }
+.s-skill-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.1rem; }
+.s-skill-level { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.s-skill-level.mastered { color: #2e7d32; }
+.s-skill-level.in-progress { color: #ef6c00; }
+.s-skill-level.not-started { color: #888; }
+.s-skill-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%; margin-top: 0.5rem; border-top: 1px solid #f0f0f0; padding-top: 0.75rem; }
+@media (min-width: 500px) {
+  .s-skill-actions { width: auto; margin-top: 0; border-top: none; padding-top: 0; justify-content: flex-end; }
+}
+.s-btn-secondary { background: white; color: #4A90D9; border: 1px solid #4A90D9; border-radius: 16px; padding: 0.4rem 1rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+.s-btn-secondary:hover { background: #f0f7ff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+/* Player */
+.s-player-header { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #eee; margin-bottom: 0.75rem; }
+.s-player-pos { font-size: 0.75rem; color: #888; }
+.s-player-instruction { background: #f0f7ff; border: 1px solid #dce8f5; border-radius: 6px; padding: 0.6rem 0.85rem; font-size: 0.85rem; margin-bottom: 0.75rem; }
+.s-player-dots { display: flex; gap: 4px; justify-content: center; padding: 0.5rem 0; }
+.s-dot { width: 8px; height: 8px; border-radius: 50%; background: #e0e0e0; }
+.s-dot.done { background: #4CAF50; }
+.s-dot.current { background: #4A90D9; }
+
+@media (max-width: 600px) {
+  .s-main { padding: 1rem 0.75rem; }
+}

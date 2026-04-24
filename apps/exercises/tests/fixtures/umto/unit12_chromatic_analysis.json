@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "exercise_id": "FIXTURE_U12_CHROMATIC",
+    "source": "Chromatic test",
+    "key": "C",
+    "meter": "4/4",
+    "clef": "keyboard",
+    "complexity_score": 12,
+    "mode": "analysis_match",
+    "is_umto": true
+  },
+  "voices": {
+    "S": [{"kind": "note", "pitch": {"step": "F", "alter": 1, "octave": 4, "midi": 66}, "duration": 4.0, "duration_type": "w", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}],
+    "A": [], "T": [], "B": []
+  },
+  "analysis": [
+    {"offset": 0.0, "content": {"roman_numeral": "V/V"}, "visual": null, "unit_tags": [12]}
+  ],
+  "grading": [
+    {"offset": 0.0, "target_midi_pitches": [66], "rhythmic_flexibility": false}
+  ]
+}

@@ -59,6 +59,10 @@ define([
       _.bindAll(this, ["_onKeyCapture", "_onKeyUpCapture", "_onModeChange"]);
       this.el = this._buildEl();
       this.subscribe(EVENTS.BROADCAST.INPUT_MODE, this._onModeChange);
+
+      if (this.settings.defaultMode) {
+        this._onModeChange(this.settings.defaultMode);
+      }
     },
 
     // ------------------------------------------------------------------

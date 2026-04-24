@@ -11,55 +11,128 @@ define([
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
   var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
-  var SKILL_CHORD_PATTERNS = {
-    // Unit-level tags (from playlist.tags / CONTENT_TAGS)
-    "unit:9":  /^(I|V|V7)$/,
-    "unit:10": /^(I|ii|iii|IV|V|vi|vii°)(6)$/,
-    "unit:11": /^(IV|ii|ii6|vi)$/,
-    "unit:12": /^(I|ii|iii|IV|V|vi|vii°)(64)$/,
-    "unit:16": /^V7?\//,
-    "unit:18": /^(N6?|(It|Ger|Fr)\+?6)/,
+  var UNIT_ALLOWED_ANSWERS = {
+    // Unit 9: Tonic & dominant — I, V, V7 root position only
+    9: ['I', 'i', 'V', 'V7'],
 
-    // Granular skill tags (from playlist.skill_tags)
-    "tonic_dominant_exclusively": /^(I|V|V7)$/,
-    "Diatonic_Triads":            /^(I|ii|iii|IV|V|vi|vii°)$/,
-    "Inversions_First":        /^(I|ii|iii|IV|V|vi|vii°)(6)$/,
-    "Inversions_Second":       /^(I|ii|iii|IV|V|vi|vii°)(64)$/,
-    "Dominant_Seventh":        /^V7$/,
-    "Diminished_Seventh":      /^vii°7/,
-    "Half_Diminished_Seventh": /^viiø7/,
-    "Secondary_Dominant":      /^V7?\//,
-    "Secondary_Leading_Tone":  /^vii°(7)?\//,
-    "Neapolitan_Sixth":        /^N6?$/,
-    "Augmented_Sixth":         /^(It|Ger|Fr)\+?6/,
+    // Unit 10: First inversions — adds I6, i6, V6, vii°6
+    10: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6'],
+
+    // Unit 11: Pre-dominants — adds IV, iv, ii, ii6, vi, VI
+    11: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI'],
+
+    // Unit 12: Second inversions — adds I64, V64
+    12: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64'],
+
+    // Unit 13: Rule of the octave — adds iii, III, VII
+    13: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII'],
+
+    // Unit 14: Diatonic seventh chords — adds ii7, ii°7, IV7, vi7, iii7, vii°7
+    14: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7'],
+
+    // Unit 15: Sequences — no new chord types beyond unit 14
+    15: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7'],
+
+    // Unit 16: Applied (secondary) chords — adds V/x, V7/x, vii°/x, vii°7/x
+    16: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
+      'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
+      'V/vi', 'V7/vi', 'V/III', 'V7/III',
+      'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
+      'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV'],
+
+    // Unit 17: Modal mixture — adds bVI, bVII, bIII, ii°, ii°6
+    17: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
+      'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
+      'V/vi', 'V7/vi', 'V/III', 'V7/III',
+      'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
+      'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV',
+      'bVI', 'bVII', 'bIII', 'ii°', 'ii°6'],
+
+    // Unit 18: Neapolitan & augmented sixths — adds N6, It+6, Ger+6, Fr+6
+    18: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+      'I64', 'V64',
+      'iii', 'III', 'VII',
+      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
+      'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
+      'V/vi', 'V7/vi', 'V/III', 'V7/III',
+      'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
+      'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV',
+      'bVI', 'bVII', 'bIII', 'ii°', 'ii°6',
+      'N6', 'It+6', 'Ger+6', 'Fr+6'],
+
+    // Units 19–20: Modulation — pass through unmodified.
+    // Modulation exercises span tonal centres; filtering to one key's allowlist
+    // would hide legitimate chords in the new key.
+    19: null,
+    20: null,
   };
 
-  function applySkillFilter(problems, skillTags) {
-    if (!skillTags || skillTags.length === 0) {
-      return problems;
+  function applySkillFilter(problems, skillTags, analysisType, explicitAllowedAnswers) {
+    // If UMTO provided an explicit allowlist, use it exclusively
+    if (explicitAllowedAnswers && explicitAllowedAnswers.length > 0) {
+      return _.map(problems, function (p) {
+        if (p.hidden) return p;
+        if (explicitAllowedAnswers.indexOf(p.answer) === -1) {
+          p = _.clone(p);
+          p.hidden = true;
+        }
+        return p;
+      });
     }
-    
-    // Identify Unit 9 specifically (Tonic/Dominant only)
-    var isUnit9 = _.some(skillTags, function(t) { 
-      return t === 'unit:9' || t === 'unit:9_diatonic_triads' || t === 'unit:9_Dominant_Seventh'; 
+
+    if (!skillTags || skillTags.length === 0) return problems;
+
+    // Only filter roman numeral exercises — all other types pass through
+    if ((analysisType || 'roman') !== 'roman') return problems;
+
+    // Extract the highest unit number from any 'unit:N' tag (deterministic, order-independent)
+    var unitNum = null;
+    _.each(skillTags, function (t) {
+      var m = t.match(/^unit:(\d+)/);
+      if (m) {
+        var parsed = parseInt(m[1], 10);
+        unitNum = (unitNum === null) ? parsed : Math.max(unitNum, parsed);
+      }
     });
+
+    // No unit tag → pass through
+    if (unitNum === null) return problems;
+
+    // Unit not in map → pass through (safe fallback for units 21+)
+    if (!Object.prototype.hasOwnProperty.call(UNIT_ALLOWED_ANSWERS, unitNum)) return problems;
+
+    var allowed = UNIT_ALLOWED_ANSWERS[unitNum];
+
+    // null entry (units 19–20) → pass through
+    if (allowed === null) return problems;
 
     return _.map(problems, function (p) {
       if (p.hidden) return p;
-      
-      var matches = false;
-      if (isUnit9) {
-        // Root position only: I, i, V, V7 — no inversions
-        var answer = (p.answer || "").trim();
-        matches = (answer === 'I' || answer === 'i' || answer === 'V' || answer === 'V7');
-      } else {
-        matches = _.some(skillTags, function (tag) {
-          var cleanTag = tag.replace(/^unit:\d+_/, '');
-          return p.answer.startsWith(cleanTag);
-        });
-      }
-      
-      if (!matches) {
+      if (allowed.indexOf(p.answer) === -1) {
+        p = _.clone(p);
         p.hidden = true;
       }
       return p;
@@ -104,6 +177,8 @@ define([
       return "";
     }
     var result = String(label).trim();
+    // Normalize musical symbols to standard characters
+    result = result.replace(/♭/g, "b").replace(/♯/g, "#");
     // Remove trailing/leading punctuation that shouldn't be in chord labels
     result = result.replace(/^[\s,;:\-()]+|[\s,;:\-()]+$/g, '');
     return result;
@@ -198,6 +273,16 @@ define([
     ].indexOf(analysisType) !== -1;
   }
 
+  function computeNoteNameFromEvent(ev) {
+    if (!ev) return "";
+    var name = ev.step.toUpperCase();
+    if (ev.alter === 1) name += "#";
+    else if (ev.alter === -1) name += "b";
+    else if (ev.alter === 2) name += "##";
+    else if (ev.alter === -2) name += "bb";
+    return name;
+  }
+
   function computeWindowLabel(midiStack, analysisType, analyzer, compoundIntervals, windowEvents) {
     if (!midiStack || !midiStack.length || !analyzer) {
       return "";
@@ -211,6 +296,11 @@ define([
 
         var midi = midiStack[0];
         if (analysisType === "note_name") {
+          // Priority: If we have a single event in the window, use its original spelling (step/alter)
+          // This prevents enharmonic errors like Bb being called A#.
+          if (windowEvents && windowEvents.length === 1) {
+              return normalizeAnalysisLabel(computeNoteNameFromEvent(windowEvents[0]));
+          }
           return normalizeAnalysisLabel(analyzer.to_note_name([midi]));
         }
         if (analysisType === "solfege") {
@@ -405,6 +495,71 @@ define([
     return problems;
   }
 
+  function buildUMTOIdentificationProblems(exercise) {
+    const umto = exercise.score.umto;
+    if (!umto) return [];
+
+    const problems = [];
+    const analysisType = exercise.analysisType || "roman";
+    const hlKey = exercise.key;
+    const keySignature = new KeySignature(hlKey, exercise.keySignature);
+    const analyzer = new Analyze(keySignature);
+
+    // Map UMTO analysis slices to problems
+    _.each(umto.analysis, function (slice, idx) {
+      let answer = "";
+      let isTarget = true; // Default to true
+
+      // Find the vertical sonority for this slice to check for context notes
+      const pitchesAtOffset = umto.voices.S.concat(umto.voices.A, umto.voices.T, umto.voices.B)
+          .filter(e => Math.abs(e.offset - slice.offset) < 0.001);
+      
+      // If any sounding note at this offset is marked as NOT a target, 
+      // we might want to hide this slice from identification.
+      // For Unit 1 specifically, we look at the grading slice.
+      const gradingMatch = umto.grading.find(g => Math.abs(g.offset - slice.offset) < 0.001);
+      if (gradingMatch && gradingMatch.target_midi_pitches.length === 0) {
+          isTarget = false;
+      }
+
+      // Pedagogical Priority
+      if (slice.content.roman_numeral) answer = stripFiguredBassTokens(slice.content.roman_numeral);
+      else if (slice.content.pop_symbol) answer = slice.content.pop_symbol;
+      else if (slice.content.figured_bass) answer = expandFiguredBassToken(slice.content.figured_bass);
+      else if (slice.content.functional_label) answer = slice.content.functional_label;
+
+      // Unit 1 Bridge: Note Names
+      var isNoteNameEx = (exercise.analysisType === "note_name") || 
+                         (umto.metadata && umto.metadata.complexity_score === 1) ||
+                         (exercise.unit && (exercise.unit == 1 || exercise.unit == "1" || String(exercise.unit).indexOf("Unit 1") !== -1));
+      
+      if (!answer && isNoteNameEx) {
+          if (gradingMatch && gradingMatch.target_midi_pitches.length > 0) {
+              const midi = gradingMatch.target_midi_pitches[0];
+              answer = analyzer.to_note_name([midi]);
+          } else {
+              isTarget = false;
+          }
+      }
+      
+      console.log("[ID] Problem built:", idx, "offset:", slice.offset, "answer:", answer, "isTarget:", isTarget);
+
+      problems.push({
+        windowIndex: idx,
+        measureIndex: 0,
+        onset: slice.offset,
+        answer: normalizeAnalysisLabel(answer),
+        choices: exercise.allowed_answers || [],
+        hidden: !answer || !isTarget,
+        visible: (gradingMatch && gradingMatch.target_midi_pitches) ? gradingMatch.target_midi_pitches : [],
+        notes: pitchesAtOffset.map(p => p.midi),
+        rhythm: "q"
+      });
+    });
+
+    return problems;
+  }
+
   /**
    * Converts a CIR-style key (e.g., "F", "Fm", "Bb", "C#m") to HarmonyLab key format (e.g., "jF_", "iF_", "jBb", "iC#").
    *
@@ -417,15 +572,20 @@ define([
     }
     
     // Idempotency check: If it already looks like a HarmonyLab key (starts with i/j followed by A-G), return as is.
-    // HL keys are normally 3 chars (e.g. 'jC_', 'iF#'), but we'll accept anything that starts with the mode prefix.
     if ((cirKey.startsWith('i') || cirKey.startsWith('j')) && cirKey.length >= 2 && /^[A-G]/.test(cirKey[1])) {
         return cirKey;
     }
     
-    // Check if minor (ends with 'm')
-    var isMinor = cirKey.endsWith('m');
+    // Check if minor (ends with 'm' or is lowercase)
+    var isMinor = cirKey.endsWith('m') || (cirKey.length > 0 && cirKey[0] === cirKey[0].toLowerCase());
     var prefix = isMinor ? 'i' : 'j';
-    var note = isMinor ? cirKey.slice(0, -1) : cirKey;
+    var note = isMinor && cirKey.endsWith('m') ? cirKey.slice(0, -1) : cirKey;
+    
+    // Capitalize note name and normalize accidental
+    if (note.length > 0) {
+        note = note[0].toUpperCase() + note.slice(1);
+    }
+    note = note.replace('-', 'b');
     
     // Add underscore suffix for naturals (no accidentals)
     var suffix = (note.indexOf('#') === -1 && note.indexOf('b') === -1) ? '_' : '';
@@ -449,6 +609,36 @@ define([
      */
     hasReview: function () {
       return this.exercise.reviewText !== false;
+    },
+    /**
+     * Returns true if this is a UMTO exercise.
+     * @return {boolean}
+     */
+    isUMTO: function () {
+      return this.exercise.isUMTO === true;
+    },
+    /**
+     * Returns the complexity score (Unit level).
+     * @return {number}
+     */
+    getComplexityScore: function () {
+      var score = this.exercise.complexity_score;
+      if (score === undefined && this.exercise.score && this.exercise.score.umto && this.exercise.score.umto.metadata) {
+        score = this.exercise.score.umto.metadata.complexity_score;
+      }
+      return score || 0;
+    },
+    /**
+     * Returns true if the exercise belongs to a specific unit.
+     * @param {number|string} unitNum
+     * @return {boolean}
+     */
+    isUnit: function (unitNum) {
+      var tags = (this.exercise.skill_tags || []).concat(this.exercise.playlistTags || []);
+      var searchTags = ["unit:" + unitNum, "Unit " + unitNum];
+      return _.some(tags, function(t) {
+        return searchTags.indexOf(t) !== -1;
+      });
     },
     /**
      * Returns true if the exercise has any problems attached.
@@ -548,12 +738,23 @@ define([
       return this.exercise.type;
     },
     /**
+     * Returns the explicit interaction mode if defined.
+     * @return {string|null}
+     */
+    getMode: function () {
+      return this.exercise.mode || (this.exercise.score && this.exercise.score.umto && this.exercise.score.umto.metadata && this.exercise.score.umto.metadata.mode) || null;
+    },
+    /**
      * Returns true if this is a chorale exercise.
      *
      * @return {boolean}
      */
     isChorale: function () {
-      return this.exercise.type === "chorale";
+      var mode = this.getMode();
+      if (mode) {
+        return mode === "playback" || mode === "analysis_match" || mode === "play-all-voices" || mode === "analysis";
+      }
+      return this.exercise.type === "chorale" || this.exercise.type === "umto_chorale";
     },
     /**
      * Returns true if this is a chorale identification exercise.
@@ -561,7 +762,19 @@ define([
      * @return {boolean}
      */
     isChoraleIdentification: function () {
+      var mode = this.getMode();
+      if (mode) {
+        return mode === "identification" || mode === "chorale_identification";
+      }
       return this.exercise.type === "chorale_identification";
+    },
+    /**
+     * Returns true if this is an analysis match exercise.
+     *
+     * @return {boolean}
+     */
+    isAnalysisMatch: function () {
+      return this.getMode() === "analysis_match";
     },
     /**
      * Returns true if this is a musicxml exercise.
@@ -577,7 +790,11 @@ define([
      * @return {boolean}
      */
     isIdentification: function () {
-      return this.exercise.type === "identification";
+      var mode = this.getMode();
+      if (mode) {
+        return mode === "identification" || mode === "chorale_identification";
+      }
+      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification";
     },
     /**
      * Returns the feedback mode for identification exercises.
@@ -688,6 +905,65 @@ define([
       var exercise = {};
       var problems = [];
 
+      if (definition.isUMTO) {
+        exercise.isUMTO = true;
+        exercise.type = definition.type;
+        exercise.score = definition.score || {};
+        exercise.allowed_answers = definition.allowed_answers || [];
+        exercise.grading = definition.grading || [];
+        exercise.key = convertCIRKeyToHarmonyLabKey(definition.key || "C");
+        exercise.keySignature = false;
+
+        exercise.introText = definition.introText || (definition.score && definition.score.umto && definition.score.umto.metadata && definition.score.umto.metadata.source) || false;
+        exercise.reviewText = definition.reviewText || "Well done!";
+        exercise.nextExercise = definition.nextExercise || false;
+        exercise.exerciseList = definition.exerciseList || [];
+        exercise.staffDistribution = definition.staffDistribution || "chorale";
+        exercise.complexity_score = definition.complexity_score || 0;
+        exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
+        exercise.mode = definition.mode || (definition.score && definition.score.umto && definition.score.umto.metadata && definition.score.umto.metadata.mode) || "play";
+        exercise.analysisType = definition.analysisType || (exercise.complexity_score === 1 ? "note_name" : "roman");
+        exercise.analysis = {
+          enabled: true,
+          mode: {}
+        };
+        if (exercise.analysisType === "note_name") {
+          exercise.analysis.mode.note_names = true;
+        } else {
+          exercise.analysis.mode.roman_numerals = true;
+        }
+
+        console.log("[UMTO-DEBUG] parsed exercise:", {
+            type: exercise.type,
+            mode: exercise.mode,
+            analysisType: exercise.analysisType,
+            analysis: exercise.analysis
+        });
+
+        if (exercise.type === "umto_chorale") {
+          var isIdent = exercise.mode === "identification" || exercise.mode === "chorale_identification";
+          console.log("[UMTO-DEBUG] isIdent:", isIdent, "mode:", exercise.mode);
+          if (isIdent) {
+            exercise.problems = applySkillFilter(
+              buildUMTOIdentificationProblems(exercise),
+              (definition.playlistSkillTags || []).concat(definition.playlistTags || []),
+              exercise.analysisType,
+              exercise.allowed_answers
+            );
+          } else {
+            var isPlayback = exercise.mode === "playback" || exercise.mode === "analysis_match" || exercise.mode === "play-all-voices";
+            console.log("[UMTO-DEBUG] using fallback problems for non-ident mode. isPlayback:", isPlayback);
+            // Playback modes don't need problems structure; they use grading slices instead.
+            exercise.problems = isPlayback ? [] : buildUMTOIdentificationProblems(exercise); 
+          }
+        }
+        exercise.playlistTags = definition.playlistTags || [];
+        exercise.playlistSkillTags = definition.playlistSkillTags || [];
+        exercise.skill_tags = definition.skillTags || [];
+        exercise.complexity_score = definition.complexity_score || 0;
+        return exercise;
+      }
+
       // Special handling for chorale and musicxml exercises
       if (definition.type === "chorale" || definition.type === "musicxml") {
         exercise.type = definition.type;
@@ -722,6 +998,9 @@ define([
         exercise.nextExercise = definition.nextExercise || false;
         exercise.staffDistribution = definition.staffDistribution || "chorale";
         exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
+        exercise.playlistTags = definition.playlistTags || [];
+        exercise.playlistSkillTags = definition.playlistSkillTags || [];
+        exercise.complexity_score = definition.complexity_score || 0;
         return exercise;
       }
 
@@ -760,10 +1039,11 @@ define([
         exercise.skill_tags = definition.skillTags || [];
         exercise.playlistTags = definition.playlistTags || [];
         exercise.problems = applySkillFilter(
-            buildChoraleIdentificationProblems(exercise),
-            (exercise.playlistSkillTags).concat(exercise.playlistTags)
+          buildChoraleIdentificationProblems(exercise),
+          (exercise.playlistSkillTags).concat(exercise.playlistTags),
+          exercise.analysisType
         );
-
+        exercise.complexity_score = definition.complexity_score || 0;
         return exercise;
       }
 

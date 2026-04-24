@@ -5,12 +5,14 @@ define([
   "vexflow",
   "app/components/music/score_timeline",
   "app/utils/analyze",
-], function (_, Vex, ScoreTimeline, Analyze) {
+  "app/utils/measure_engine",
+], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine) {
   "use strict";
 
   function durToVF(d) {
-    // Return just the base duration type (no dots - those are handled separately)
-    return d.type; // 'w','h','q','8','16', etc.
+    var type = d.type;
+    var map = { 'whole': 'w', 'half': 'h', 'quarter': 'q', 'eighth': '8', '16th': '16', '32nd': '32', 'e': '8', 's': '16' };
+    return map[type] || type;
   }
 
   // Returns the alteration (in semitones) that the key signature applies to each step (C, D, E, F, G, A, B)
@@ -26,11 +28,13 @@ define([
     if (!lines.length) {
       return;
     }
-    var yBase = (stave && stave.getBottomY) ? stave.getBottomY() : 0;
+    var yBase = (stave && stave.getBottomY) ? stave.getBottomY() : 100;
     var y = yBase + ((opts && opts.yShift) || 30);
     ctx.save();
-    ctx.font = "18px JazzSerifs";
-    ctx.fillStyle = "#000";
+    var color = (opts && opts.color) || "#000";
+    if (typeof ctx.setFillStyle === "function") ctx.setFillStyle(color);
+    ctx.fillStyle = color;
+    ctx.font = "16px Arial, sans-serif";
     ctx.textAlign = "left";
     var lineHeight = (opts && opts.lineHeight) || 16;
 
@@ -59,6 +63,7 @@ define([
     var figureCenterX = columnX + 6;
 
     ctx.save();
+    if (typeof ctx.setFillStyle === "function") ctx.setFillStyle("#000");
     ctx.fillStyle = "#000";
     ctx.textAlign = "left";
 
@@ -275,11 +280,28 @@ define([
     return null;
   }
 
+  function normalizeKeyForVexFlow(key) {
+    if (!key) return "C";
+    var k = String(key).trim();
+    // Handle HarmonyLab format: iG_ -> Gm, jG_ -> G
+    if (k.startsWith('i') || k.startsWith('j')) {
+      var mode = k.charAt(0);
+      var root = k.substring(1).replace('_', '');
+      return mode === 'i' ? root + 'm' : root;
+    }
+    // Handle lowercase keys (music21 style): g -> Gm, c -> Cm
+    if (k.length > 0 && k[0] === k[0].toLowerCase()) {
+      var root = k[0].toUpperCase() + k.substring(1);
+      return root.endsWith('m') ? root : root + 'm';
+    }
+    return k;
+  }
+
   function getKeySignatureAlterations(key) {
     if (!key) return {};
     
     var alterations = {};
-    var k = String(key).trim();
+    var k = normalizeKeyForVexFlow(key);
     
     // Map key to number of sharps (positive) or flats (negative)
     var map = {
@@ -339,31 +361,46 @@ define([
   }
 
   function shouldRenderRoman(analyzeConfig) {
-    return (
-      analyzeConfig &&
-      analyzeConfig.mode &&
-      analyzeConfig.mode.roman_numerals &&
-      !analyzeConfig.mode.thoroughbass &&
-      !analyzeConfig.mode.abbreviate_thoroughbass
-    );
+    if (!analyzeConfig) return false;
+    var mode = analyzeConfig.mode || {};
+    return !!(analyzeConfig.roman_numerals || mode.roman_numerals);
   }
 
   function shouldRenderFigured(analyzeConfig) {
-    return (
-      analyzeConfig &&
-      analyzeConfig.mode &&
-      (analyzeConfig.mode.thoroughbass ||
-        analyzeConfig.mode.abbreviate_thoroughbass)
-    );
+    if (!analyzeConfig) return false;
+    var mode = analyzeConfig.mode || {};
+    return !!(analyzeConfig.thoroughbass || mode.thoroughbass || mode.abbreviate_thoroughbass);
   }
 
   function shouldRenderRomanExp(analyzeConfig) {
-    return (
-      analyzeConfig &&
-      analyzeConfig.mode &&
-      analyzeConfig.mode.roman_numerals_exp
-    );
+    if (!analyzeConfig) return false;
+    var mode = analyzeConfig.mode || {};
+    return !!(analyzeConfig.roman_numerals_exp || mode.roman_numerals_exp || analyzeConfig.roman_exp || mode.roman_exp);
   }
+
+  function shouldRenderNoteNames(analyzeConfig) {
+    if (!analyzeConfig) return false;
+    var mode = analyzeConfig.mode || {};
+    return !!(analyzeConfig.note_names || mode.note_names);
+  }
+
+  function formatExplicitNoteNames(spellings) {
+    if (!spellings || !spellings.length) return "";
+    var accidentalMap = {
+      1: "♯",
+      "-1": "♭",
+      0: "",
+      2: "𝄪",
+      "-2": "𝄫",
+    };
+    return spellings
+      .map(function (s) {
+        var acc = accidentalMap[s.alter] || "";
+        return (s.step || "").toUpperCase() + acc;
+      })
+      .join(" ");
+  }
+
 
   function computeRomanExpLabel(midi, analyzer) {
     if (!analyzer || !midi || !midi.length) return null;
@@ -466,6 +503,47 @@ define([
     drawInlineRoman(ctx, label, x, targetStave, opts || { yShift: 28 });
   }
 
+  function attachNoteNameAnnotation(
+    col,
+    midi,
+    analyzeConfig,
+    analyzer,
+    ctx,
+    fallbackStave,
+    opts,
+    labelOverride
+  ) {
+    if (!analyzer || !ctx || !col) {
+      return;
+    }
+    var label =
+      typeof labelOverride === "string"
+        ? labelOverride
+        : analyzer.to_note_name(midi);
+    if (!label) {
+      return;
+    }
+    var x = getColumnCenterX(col);
+    if (x === null) {
+      return;
+    }
+    var targetStave = fallbackStave || null;
+    if (col && col.notes && col.notes.length) {
+      for (var i = 0; i < col.notes.length; i++) {
+        var stave = col.notes[i].getStave && col.notes[i].getStave();
+        if (stave && stave.clef === "bass") {
+          targetStave = stave;
+          break;
+        }
+        if (!targetStave && stave) {
+          targetStave = stave;
+        }
+      }
+    }
+    drawInlineRoman(ctx, label, x, targetStave, opts || { yShift: 28 });
+  }
+
+
   function groupTimelineByOnset(timeline) {
     var onsetMap = Object.create(null);
     var ordered = [];
@@ -512,6 +590,8 @@ define([
       win.events.forEach(function (ev) {
         activeNotes.push({
           midi: ev.midi,
+          step: ev.step,
+          alter: ev.alter,
           end: ev.onset + ev.duration,
           measureIndex:
             typeof ev.measureIndex === "number" ? ev.measureIndex : win.measureIndex,
@@ -528,6 +608,20 @@ define([
         .sort(function (a, b) {
           return a - b;
         });
+
+      var sortedActive = activeNotes.slice().sort(function (a, b) {
+        return a.midi - b.midi;
+      });
+      var seenSpelling = {};
+      win.spellingStack = [];
+      sortedActive.forEach(function (n) {
+        if (n.step === undefined) return;
+        var key = n.step + (n.alter || 0);
+        if (!seenSpelling[key]) {
+          seenSpelling[key] = true;
+          win.spellingStack.push({ step: n.step, alter: n.alter || 0 });
+        }
+      });
       var attackMap = Object.create(null);
       win.events.forEach(function (ev) {
         attackMap[ev.midi] = true;
@@ -544,12 +638,19 @@ define([
     return windows;
   }
 
-  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations) {
+  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation, isAnalysisMatch) {
+    if (showNotation === undefined) showNotation = true;
+    if (isAnalysisMatch === undefined) isAnalysisMatch = false;
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
       var rest = new Vex.Flow.StaveNote({ clef: clef, keys: ["b/4"], duration: dur, dots: numDots });
       if (numDots > 0) Vex.Flow.Dot.buildAndAttach([rest], { all: true });
+      
+      // Tag with musical position
+      rest._onset = onset;
+      rest._measureIndex = measureIndex;
+      
       return rest;
     }
     if (item.kind === "note") {
@@ -560,6 +661,10 @@ define([
       var numDots = item.duration.dots || 0;
       var note = new Vex.Flow.StaveNote({ clef: clef, keys: [key], duration: durToVF(item.duration), dots: numDots });
       if (numDots > 0) Vex.Flow.Dot.buildAndAttach([note], { all: true });
+
+      // Tag with musical position
+      note._onset = onset;
+      note._measureIndex = measureIndex;
 
       // Only show accidental if it contradicts the key signature
       var keyAlters = keySignatureAlterations || {};
@@ -574,7 +679,17 @@ define([
       
       // Default: gray until played (will be set to black by matcher later)
       var played = idState && idState.playedNoteIds && idState.playedNoteIds.has(idState.nextId || 0);
-      if (note.setStyle) note.setStyle({ fillStyle: played ? '#000000' : '#9aa0a6', strokeStyle: played ? '#000000' : '#9aa0a6' });
+      if (note.setStyle) {
+        if (played) {
+          note.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+        } else if (!showNotation) {
+          note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
+        } else if (isAnalysisMatch) {
+          note.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
+        } else {
+          note.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
+        }
+      }
       if (idState) idState.nextId = (idState.nextId || 0) + 1;
       return note;
     }
@@ -603,8 +718,23 @@ define([
         }
       }
       
+      // Tag with musical position
+      chord._onset = onset;
+      chord._measureIndex = measureIndex;
+      
       // Default: gray until played (per notehead)
-      if (chord.setStyle) chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
+      if (chord.setStyle) {
+        var playedAny = idState && idState.playedNoteIds && idState.playedNoteIds.has(idState.nextId || 0);
+        if (playedAny) {
+          chord.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+        } else if (!showNotation) {
+          chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
+        } else if (isAnalysisMatch) {
+          chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
+        } else {
+          chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
+        }
+      }
       if (idState) {
         var idx = idState.nextId || 0;
         for (var h = 0; h < keys.length; h++) {
@@ -631,8 +761,9 @@ define([
   // Add a key signature with a minor->relative-major fallback for older VexFlow builds
   function addKeySignatureSafe(stave, key) {
     if (!key) return;
+    var k = normalizeKeyForVexFlow(key);
     try {
-      stave.addKeySignature(key);
+      stave.addKeySignature(k);
     } catch (e) {
       // Some VexFlow versions only accept major names; try relative major for minor keys
       var minorToRelativeMajor = {
@@ -640,7 +771,7 @@ define([
         "G#m": "B", "D#m": "F#", "A#m": "C#", "Dm": "F",   "Gm": "Bb",
         "Cm": "Eb", "Fm": "Ab", "Bbm": "Db", "Ebm": "Gb", "Abm": "Cb"
       };
-      var fallback = minorToRelativeMajor[key];
+      var fallback = minorToRelativeMajor[k];
       if (fallback) {
         try { stave.addKeySignature(fallback); } catch (_) { /* ignore */ }
       }
@@ -648,11 +779,20 @@ define([
   }
 
   function makeStave(ctx, x, y, w, clef, meta, addClef) {
+    console.log("[ID] makeStave. clef:", clef, "addClef:", addClef, "meta:", meta);
     var stave = new Vex.Flow.Stave(x, y, w);
     stave.setContext(ctx);
-    if (addClef) stave.addClef(clef);
-    if (meta && meta.key) addKeySignatureSafe(stave, meta.key);
-    if (meta && meta.time) stave.addTimeSignature(meta.time);
+    if (addClef) {
+      stave.addClef(clef);
+      if (meta && meta.key) {
+        console.log("[ID] adding key:", meta.key);
+        addKeySignatureSafe(stave, meta.key);
+      }
+      if (meta && meta.time) {
+        console.log("[ID] adding time:", meta.time);
+        stave.addTimeSignature(meta.time);
+      }
+    }
     return stave;
   }
 
@@ -674,10 +814,10 @@ define([
       var height = (opts && opts.height) || (canvas && canvas.height) || 300;
       var meta = score.meta || {};
       var analyzeConfig = (opts && opts.analyzeConfig) || { enabled: false, mode: {} };
-      var keySignatureModel = opts && opts.keySignature; // KeySignature instance expected
+      var keySignatureModel = (opts && opts.keySignature) || (score.meta && score.meta.key ? new KeySignature(score.meta.key) : new KeySignature("C"));
       var analysisRenderer = (opts && opts.analysisRenderer) || "notater"; // notater|adapter|none
       var inlineAnalyzer = null;
-      if (keySignatureModel && analyzeConfig && analyzeConfig.enabled && analysisRenderer !== "none") {
+      if (analyzeConfig && analyzeConfig.enabled && analysisRenderer !== "none") {
         try {
           inlineAnalyzer = new Analyze(keySignatureModel);
         } catch (err) {
@@ -687,11 +827,16 @@ define([
       var renderRomans = shouldRenderRoman(analyzeConfig);
       var renderFigured = !renderRomans && shouldRenderFigured(analyzeConfig);
       var renderRomanExp = !renderRomans && !renderFigured && shouldRenderRomanExp(analyzeConfig);
+      var renderNoteNames = !renderRomans && !renderFigured && !renderRomanExp && shouldRenderNoteNames(analyzeConfig);
       if (!inlineAnalyzer) {
         renderRomans = false;
         renderFigured = false;
         renderRomanExp = false;
+        renderNoteNames = false;
       }
+      var showNotation = opts && opts.showNotation !== undefined ? opts.showNotation : true;
+      var isAnalysisMatch = !!(opts && opts.isAnalysisMatch);
+
       var systemGap = (opts && opts.systemGap) || 150; // vertical spacing between treble and bass staves
       var staffYOffset = (opts && opts.staffYOffset) || 0;
       var baseRomanYOffset = 32;
@@ -728,11 +873,31 @@ define([
             maxMeasures: numMeasures,
           })
         : [];
+      
+      // Calculate absolute window offset for playhead alignment
+      var absoluteWindowOffset = 0;
+      if (startMeasure > 0 && ScoreTimeline && ScoreTimeline.buildTimeline) {
+        var fullTimeline = ScoreTimeline.buildTimeline(score);
+        var allWindows = buildAnalysisWindows(fullTimeline);
+        for (var i = 0; i < allWindows.length; i++) {
+          if (allWindows[i].measureIndex < startMeasure) {
+            absoluteWindowOffset++;
+          } else {
+            break;
+          }
+        }
+      }
+
       var analysisWindows = buildAnalysisWindows(timeline);
       var analysisWindowIdx = 0;
-      var availableWidth = width - margin.left - margin.right;
+      var staffDistribution = (opts && opts.staffDistribution) || (meta && meta.staffDistribution) || "grand_staff";
+      var showTreble = staffDistribution !== "bass";
+      var showBass = staffDistribution !== "treble";
+
+      var systemGap = (opts && opts.systemGap) || 150; // vertical spacing between treble and bass staves
+      var staffYOffset = (opts && opts.staffYOffset) || 0;
       var trebleY = margin.top + 30 + staffYOffset;
-      var bassY = trebleY + systemGap;
+      var bassY = showTreble ? trebleY + systemGap : trebleY;
 
       // Time from metadata if present; default 4/4
       var time = (function () {
@@ -756,24 +921,33 @@ define([
         }
       }
 
-      function staffVoices(staffId, staff, clef, idState, keySignatureAlterations) {
+      function staffVoices(staffId, staff, clef, idState, keySignatureAlterations, measureStartTick) {
+        if (!staff) return [];
         // Optional filtering: opts.selectVoices = { treble: [0], bass: [1] }
         var select = (opts && opts.selectVoices && opts.selectVoices[staffId]) || null;
         // Optional octave shift per staff: opts.octaveShift = { treble: 0, bass: -1 }
         var octaveShift = (opts && opts.octaveShift && (opts.octaveShift[staffId] || 0)) || 0;
         // Note playing state across this render; keep shared across entire piece for consistent IDs
         idState = idState || { nextId: 0, playedNoteIds: (opts && opts.playedNoteIds) || null };
+        var measStartTick = measureStartTick || 0;
         return (staff.voices || [])
-          .map(function (v, idx) {
-            if (select && select.indexOf(idx) === -1) return null; // filter out
-            var tickables = v.items.map(function (it) { return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations); }).filter(Boolean);
+          .map(function (v, vIdx) {
+            if (select && select.indexOf(vIdx) === -1) return null; // filter out
+
+            var localOnset = 0;
+            var tickables = v.items.map(function (it) {
+              var onsetToUse = measStartTick + localOnset;
+              localOnset += durationToTicks(it.duration);
+              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex, showNotation, isAnalysisMatch);
+            }).filter(Boolean);
+            
             var stemDir = v.direction === "up" ? 1 : v.direction === "down" ? -1 : 1;
             if (v.direction === "up") tickables.forEach(function (t) { if (t.setStemDirection) t.setStemDirection(1); });
             if (v.direction === "down") tickables.forEach(function (t) { if (t.setStemDirection) t.setStemDirection(-1); });
 
             // Only beam outer voices (S=treble idx0 stems-up, B=bass idx1 stems-down).
             // Inner voices (A=treble idx1, T=bass idx0) beam toward the opposing staff — skip.
-            var isOuterVoice = (stemDir === 1 && idx === 0) || (stemDir === -1 && idx === 1);
+            var isOuterVoice = (stemDir === 1 && vIdx === 0) || (stemDir === -1 && vIdx === 1);
             var beams = isOuterVoice ? autoBeam(tickables, stemDir) : [];
             
             var voice = buildVoice(time, tickables);
@@ -788,16 +962,7 @@ define([
       
       // Helper to convert duration to ticks
       function durationToTicks(dur) {
-        var base = { 'w': 4096, 'h': 2048, 'q': 1024, '8': 512, '16': 256, '32': 128 }[dur.type] || 1024;
-        var dots = dur.dots || 0;
-        var tickVal = base;
-        // Add ticks for dots (each dot adds half of the previous value)
-        var dotAdd = base / 2;
-        for (var d = 0; d < dots; d++) {
-          tickVal += dotAdd;
-          dotAdd /= 2;
-        }
-        return tickVal;
+        return MeasureEngine.getTicks(dur.type, dur.dots || 0);
       }
       
       // Count noteheads in a measure (respects optional voice filtering)
@@ -958,6 +1123,7 @@ define([
         baseWidths[0] = firstBarCompensation;
       }
 
+      var availableWidth = width - margin.left - margin.right;
       var requiredBase = baseWidths.reduce(function(a,b){return a+b;}, 0);
       var remaining = Math.max(0, availableWidth - requiredBase);
       var totalWeight = weights.reduce(function(a, b) { return a + b; }, 0) || 1;
@@ -1034,6 +1200,7 @@ define([
         };
       }
 
+      var cumulativeMeasureTick = 0;
       for (var measIdx = 0; measIdx < numMeasures; measIdx++) {
         var meas = measuresToRender[measIdx];
         var treble = meas.staves.treble;
@@ -1043,8 +1210,9 @@ define([
         var isFirstMeasure = measIdx === 0;
         var absoluteMeasureIndex = startMeasure + measIdx;
 
-        var trebleStave = makeStave(ctx, currentX, trebleY, measureWidth, "treble", isFirstMeasure ? meta : {}, isFirstMeasure);
-        var bassStave = makeStave(ctx, currentX, bassY, measureWidth, "bass", isFirstMeasure ? meta : {}, isFirstMeasure);
+        var trebleStave = showTreble ? makeStave(ctx, currentX, trebleY, measureWidth, "treble", isFirstMeasure ? meta : {}, isFirstMeasure) : null;
+        var bassStave = showBass ? makeStave(ctx, currentX, bassY, measureWidth, "bass", isFirstMeasure ? meta : {}, isFirstMeasure) : null;
+        var activeStaveForLabel = bassStave || trebleStave;
 
         // Draw explicit key label beneath the bass clef (e.g., "Am:", "C:")
         function formatKeyForDisplay(k) {
@@ -1058,85 +1226,148 @@ define([
           ? formatKeyForDisplay(opts.keySignature.getKey())
           : (meta && meta.key);
 
-        if (isFirstMeasure && displayKey) {
+        if (isFirstMeasure && displayKey && activeStaveForLabel) {
           ctx.save();
-          ctx.font = "bold 18px JazzSerifs";
-          ctx.fillStyle = "#000";
-          ctx.textAlign = "center";
-          // Center under the bass clef (clef is ~28px wide, so offset by 14px)
+          ctx.font = "16px Arial, sans-serif";
+          ctx.fillStyle = (opts && opts.color) || "#000";
+          ctx.textAlign = "left";
           var labelX = currentX + 16; 
-          var labelY = bassStave.getBottomY() + 22; 
+          var labelY = activeStaveForLabel.getBottomY() + 22; 
           ctx.fillText(displayKey + ":", labelX, labelY);
           ctx.restore();
         }
 
-        // Draw system connector only on first measure
-        if (isFirstMeasure) {
+        // Draw system connector only on first measure and only if both staves are shown
+        if (isFirstMeasure && trebleStave && bassStave) {
           var connector = new Vex.Flow.StaveConnector(trebleStave, bassStave);
-          connector.setType(Vex.Flow.StaveConnector.type.BRACE).setContext(ctx).draw();
+          connector.setType('brace').setContext(ctx).draw();
           var leftLine = new Vex.Flow.StaveConnector(trebleStave, bassStave);
-          leftLine.setType(Vex.Flow.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+          leftLine.setType('singleLeft').setContext(ctx).draw();
         }
 
-  var trebleVoices = staffVoices("treble", treble, "treble", globalIdState, keySignatureAlterations);
-  var bassVoices = staffVoices("bass", bass, "bass", globalIdState, keySignatureAlterations);
+  var trebleVoices = staffVoices("treble", treble, "treble", globalIdState, keySignatureAlterations, cumulativeMeasureTick);
+  var bassVoices = staffVoices("bass", bass, "bass", globalIdState, keySignatureAlterations, cumulativeMeasureTick);
 
         // Add barlines at the end of each measure
-        // Only show final END barline if this is truly the last measure of the entire piece
         var isLastMeasureOfPiece = (absoluteMeasureIndex === score.measures.length - 1);
-        if (measIdx < numMeasures - 1) {
-          // Not the last rendered measure: always use SINGLE
-          trebleStave.setEndBarType(Vex.Flow.Barline.type.SINGLE);
-          bassStave.setEndBarType(Vex.Flow.Barline.type.SINGLE);
-        } else if (isLastMeasureOfPiece) {
-          // Last measure of entire piece: use END
-          trebleStave.setEndBarType(Vex.Flow.Barline.type.END);
-          bassStave.setEndBarType(Vex.Flow.Barline.type.END);
-        } else {
-          // Last rendered measure but not last of piece: use SINGLE
-          trebleStave.setEndBarType(Vex.Flow.Barline.type.SINGLE);
-          bassStave.setEndBarType(Vex.Flow.Barline.type.SINGLE);
+        // Standard intermediate barline is 'single'. Piece end is 'end'.
+        var barType = isLastMeasureOfPiece ? 'end' : 'single';
+        
+        console.log("[UMTO-DEBUG] rendering measure", absoluteMeasureIndex, "barType:", barType, "isLast:", isLastMeasureOfPiece);
+
+        if (trebleStave) {
+          trebleStave.setBegBarType(isFirstMeasure ? 'single' : 'none');
+          trebleStave.setEndBarType(barType);
+          trebleStave.draw();
+          lastTrebleStave = trebleStave;
+        }
+        if (bassStave) {
+          bassStave.setBegBarType(isFirstMeasure ? 'single' : 'none');
+          bassStave.setEndBarType(barType);
+          bassStave.draw();
+          lastBassStave = bassStave;
         }
 
-  trebleStave.draw();
-  bassStave.draw();
-  lastTrebleStave = trebleStave;
-  lastBassStave = bassStave;
+        // Connect staves with a vertical barline at the end of each measure
+        if (trebleStave && bassStave) {
+          try {
+            var rightLine = new Vex.Flow.StaveConnector(trebleStave, bassStave);
+            var connectorType = isLastMeasureOfPiece ? 'boldDoubleRight' : 'singleRight';
+            rightLine.setType(connectorType).setContext(ctx).draw();
+          } catch (e) {
+            console.warn("[VexFlowAdapter] StaveConnector error:", e);
+          }
+        }
 
         // Use VexFlow 4's improved formatter for better spacing
         var allVoices = trebleVoices.concat(bassVoices);
         if (allVoices.length) {
           var formatter = new Vex.Flow.Formatter();
-          
-          // Join voices for alignment
           if (trebleVoices.length) formatter.joinVoices(trebleVoices);
           if (bassVoices.length) formatter.joinVoices(bassVoices);
 
-          // Compute actual left padding from the stave (clef/key/time already added)
-          var leftPadTreble = trebleStave.getNoteStartX() - trebleStave.getX();
-          var leftPadBass = bassStave.getNoteStartX() - bassStave.getX();
+          var leftPadTreble = trebleStave ? (trebleStave.getNoteStartX() - trebleStave.getX()) : 0;
+          var leftPadBass = bassStave ? (bassStave.getNoteStartX() - bassStave.getX()) : 0;
           var leftPad = Math.max(leftPadTreble, leftPadBass);
-          // Keep a margin before the barline; the final END barline is thicker, so reserve more
           var rightPad = (measIdx === numMeasures - 1) ? 20 : 12;
           var notesWidth = Math.max(0, measureWidth - leftPad - rightPad);
           
           formatter.format(allVoices, notesWidth);
         }
 
-        trebleVoices.forEach(function (v) { 
-          v.draw(ctx, trebleStave); 
-          // Draw beams after notes
-          if (v.beams) {
-            v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+        // In VexFlow, format() calculates layout. We don't need to draw unplayed notes if showNotation is false.
+        // However, some versions of VexFlow require draw() to compute absolute coordinates for tickables.
+        // We will draw them inside an invisible SVG group if openGroup is available.
+        var hiddenGroup = null;
+        if (!showNotation) {
+          ctx.save();
+          if (typeof ctx.setGlobalAlpha === "function") ctx.setGlobalAlpha(0);
+          ctx.globalAlpha = 0;
+          if (typeof ctx.openGroup === "function") {
+            hiddenGroup = ctx.openGroup("hidden_notation");
           }
-        });
-        bassVoices.forEach(function (v) { 
-          v.draw(ctx, bassStave); 
-          // Draw beams after notes
-          if (v.beams) {
-            v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+        }
+
+        if (trebleStave) {
+          trebleVoices.forEach(function (v) { 
+            v.draw(ctx, trebleStave); 
+            if (v.beams && showNotation) {
+              v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+            }
+          });
+        }
+        if (bassStave) {
+          bassVoices.forEach(function (v) { 
+            v.draw(ctx, bassStave); 
+            if (v.beams && showNotation) {
+              v.beams.forEach(function(beam) { beam.setContext(ctx).draw(); });
+            }
+          });
+        }
+
+        if (!showNotation) {
+          if (hiddenGroup) {
+            ctx.closeGroup();
+            hiddenGroup.setAttribute("opacity", "0");
+            hiddenGroup.setAttribute("visibility", "hidden");
           }
-        });
+          ctx.restore();
+          
+          // Second pass: Draw only the played notes with full opacity
+          var drawPlayedNotes = function(voices, stave) {
+            voices.forEach(function(v) {
+              var tks = (typeof v.getTickables === 'function') ? v.getTickables() : (v.tickables || []);
+              tks.forEach(function(t) {
+                // If it's a played note, it will have a non-transparent fillStyle from itemToTickable
+                var style = (t.getStyle ? t.getStyle() : null);
+                if (style && style.fillStyle !== "transparent") {
+                   t.setContext(ctx).setStave(stave).draw();
+                }
+              });
+            });
+          };
+          if (trebleStave) drawPlayedNotes(trebleVoices, trebleStave);
+          if (bassStave) drawPlayedNotes(bassVoices, bassStave);
+
+          // Third pass: Draw beams if ALL notes in the beam are played
+          var drawPlayedBeams = function(voices) {
+            voices.forEach(function(v) {
+              if (!v.beams) return;
+              v.beams.forEach(function(beam) {
+                var allPlayed = beam.notes.every(function(n) {
+                  var style = (n.getStyle ? n.getStyle() : null);
+                  return style && style.fillStyle !== "transparent";
+                });
+                if (allPlayed) {
+                  beam.setContext(ctx).draw();
+                }
+              });
+            });
+          };
+          drawPlayedBeams(trebleVoices);
+          drawPlayedBeams(bassVoices);
+        }
+
 
         // Analysis annotations using Notater bridge (maximum reuse)
         try {
@@ -1153,7 +1384,10 @@ define([
                 tks.forEach(function(t){
                   if (!t || typeof t.getAbsoluteX !== 'function') return;
                   var dur = String(t.duration || '');
-                  if (dur.indexOf('r') !== -1) return; // skip rests
+                  // Rests don't create identification columns, 
+                  // but we still want their onsets for playback if needed?
+                  // Actually, for id mode, we only care about columns with notes.
+                  if (dur.indexOf('r') !== -1) return; 
                   allTickables.push(t);
                 });
               });
@@ -1208,57 +1442,52 @@ define([
               var midi = attackList.slice();
               if (!midi.length) return;
 
+              var currentNote = col.notes[0];
+              var noteOnset = currentNote._onset;
+              var noteMeasure = currentNote._measureIndex;
+
               if (analysisWindows.length) {
-                var attackKey = attackList.join(",");
                 var matchedWindow = null;
-                var matchedIndex = analysisWindowIdx;
-                for (var seek = analysisWindowIdx; seek < analysisWindows.length; seek++) {
+                var matchedIndex = -1;
+                
+                // Find EXACT match by measure and onset
+                for (var seek = 0; seek < analysisWindows.length; seek++) {
                   var win = analysisWindows[seek];
-                  if (win.measureIndex < absoluteMeasureIndex) {
-                    analysisWindowIdx = seek + 1;
-                    continue;
-                  }
-                  if (!matchedWindow) {
-                    matchedWindow = win;
-                    matchedIndex = seek;
-                  }
-                  if (win.measureIndex > absoluteMeasureIndex) {
-                    break;
-                  }
-                  if (win.attackKey === attackKey) {
+                  if (win.measureIndex === noteMeasure && Math.abs(win.onset - noteOnset) < 2) {
                     matchedWindow = win;
                     matchedIndex = seek;
                     break;
                   }
                 }
-                if (matchedWindow && matchedWindow.midiStack && matchedWindow.midiStack.length) {
+
+                if (matchedWindow && matchedWindow.midiStack) {
                   midi = matchedWindow.midiStack.slice();
-                  analysisWindowIdx = matchedIndex + 1;
                 }
               }
 
+              var activeStaveForAnnotations = bassStave || trebleStave;
               var columnCenterX = getColumnCenterX(col);
-              if (opts && typeof opts.onWindowPosition === "function" && typeof matchedIndex === "number" && columnCenterX !== null) {
+              if (opts && typeof opts.onWindowPosition === "function" && typeof matchedIndex === "number" && columnCenterX !== null && activeStaveForAnnotations) {
                 opts.onWindowPosition({
-                  windowIndex: matchedIndex,
+                  windowIndex: absoluteWindowOffset + matchedIndex,
                   onset: matchedWindow ? matchedWindow.onset : null,
                   measureIndex: matchedWindow ? matchedWindow.measureIndex : null,
                   x: columnCenterX,
-                  y: bassStave.getBottomY() + 18,
+                  y: activeStaveForAnnotations.getBottomY() + 18,
                 });
               }
 
-              if (renderRomans) {
+              if (renderRomans && activeStaveForAnnotations) {
                 attachInlineRomanAnnotation(
                   col,
                   midi,
                   analyzeConfig,
                   inlineAnalyzer,
                   ctx,
-                  bassStave,
+                  activeStaveForAnnotations,
                   { yShift: romanYOffset }
                 );
-              } else if (renderFigured) {
+              } else if (renderFigured && activeStaveForAnnotations) {
                 var figureLabel = computeFiguredLabel(
                   midi,
                   inlineAnalyzer,
@@ -1273,15 +1502,32 @@ define([
                     analyzeConfig,
                     inlineAnalyzer,
                     ctx,
-                    bassStave,
+                    activeStaveForAnnotations,
                     { yShift: figuredYOffset, lineHeight: 12 },
                     figureLabel
                   );
                 }
-              } else if (renderRomanExp) {
+              } else if (renderRomanExp && activeStaveForAnnotations) {
                 var expLabel = computeRomanExpLabel(midi, inlineAnalyzer);
-                queueRomanExpColumn(col, expLabel, bassStave);
+                queueRomanExpColumn(col, expLabel, activeStaveForAnnotations);
+              } else if (renderNoteNames && activeStaveForAnnotations) {
+                var spelling = null;
+                if (matchedWindow && matchedWindow.spellingStack) {
+                  spelling = matchedWindow.spellingStack;
+                }
+                var explicitLabel = spelling ? formatExplicitNoteNames(spelling) : null;
+                attachNoteNameAnnotation(
+                  col,
+                  midi,
+                  analyzeConfig,
+                  inlineAnalyzer,
+                  ctx,
+                  activeStaveForAnnotations,
+                  { yShift: romanYOffset },
+                  explicitLabel
+                );
               }
+
 
             });
           }
@@ -1292,6 +1538,7 @@ define([
         
         // Move X position for next measure
         currentX += measureWidth;
+        cumulativeMeasureTick += measureDurations[measIdx] || 0;
       }
 
       flushRomanExpRun();

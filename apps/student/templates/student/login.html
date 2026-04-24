@@ -1,0 +1,19 @@
+{# apps/student/templates/student/login.html #}
+{% extends "student/base.html" %}
+{% block title %}Sign In — HarmonyLab{% endblock %}
+{% block content %}
+<div class="s-login-wrap">
+  <h1 class="s-login-title">Sign in</h1>
+  <form method="post" class="s-form">
+    {% csrf_token %}
+    {% if form.errors %}
+      <div class="s-form-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <label class="s-label" for="id_email">Email</label>
+    <input class="s-input" type="email" name="email" id="id_email" autofocus required>
+    <label class="s-label" for="id_password">Password</label>
+    <input class="s-input" type="password" name="password" id="id_password" required>
+    <button class="s-btn-primary" type="submit">Sign in</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+<h2>UI Design: Section 4 of 4 — Exercise Player</h2>
+<p class="subtitle">The exercise itself — stripped of all instructor chrome</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Current lab (noisy)</div>
+    <div class="mockup-body" style="font-size:0.8rem">
+      <div style="background:#333;color:white;padding:0.5rem 0.75rem;display:flex;justify-content:space-between;font-size:0.75rem">
+        <span>HarmonyLab | Dashboard | Play</span>
+        <span>🔇 Vol MIDI user@email ↓</span>
+      </div>
+      <div style="background:#444;color:#ccc;padding:0.4rem 0.75rem;font-size:0.7rem;display:flex;gap:1rem">
+        <span>Key: C Major ▾</span>
+        <span>Display Options ▾</span>
+        <span>📷 ↺ ← 1/10 →</span>
+      </div>
+      <div style="background:#555;color:#aaa;padding:0.4rem 0.75rem;font-size:0.7rem">
+        Piano | Keyboard | MIDI | Settings
+      </div>
+      <div style="background:#f5f5f5;height:100px;display:flex;align-items:center;justify-content:center;color:#888;border:1px solid #ddd">
+        Staff / Score area
+      </div>
+      <div style="background:#f0f0f0;height:60px;display:flex;align-items:center;justify-content:center;color:#888;border:1px solid #ddd;margin-top:2px">
+        Piano keyboard
+      </div>
+      <div style="background:#e8e8e8;padding:0.5rem;font-size:0.7rem;color:#666">
+        Instructions | Submit | Skip | Start Over | Screenshot
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">New student player (clean)</div>
+    <div class="mockup-body" style="font-size:0.8rem">
+      <!-- Minimal header -->
+      <div style="padding:0.5rem 0.75rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee">
+        <a style="color:#4A90D9;font-size:0.75rem;text-decoration:none">← Ledger Lines</a>
+        <span style="font-size:0.75rem;color:#888">3 of 8</span>
+      </div>
+
+      <!-- Instruction text -->
+      <div style="padding:0.6rem 0.75rem;background:#f0f7ff;font-size:0.78rem;color:#333;border-bottom:1px solid #dce8f5">
+        Name the note shown on the staff.
+      </div>
+
+      <!-- Staff area -->
+      <div style="background:#fff;height:110px;display:flex;align-items:center;justify-content:center;color:#888;border-bottom:1px solid #eee;font-size:0.8rem">
+        ♩ Staff / Score (existing VexFlow engine)
+      </div>
+
+      <!-- Piano -->
+      <div style="background:#fafafa;height:55px;display:flex;align-items:center;justify-content:center;color:#888;border-bottom:1px solid #eee;font-size:0.75rem">
+        Piano keyboard (existing engine)
+      </div>
+
+      <!-- Feedback / submit -->
+      <div style="padding:0.6rem 0.75rem;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:0.75rem;color:#4CAF50;font-weight:600"></span>
+        <button style="background:#4A90D9;color:white;border:none;border-radius:6px;padding:0.4rem 1rem;font-size:0.8rem">Submit</button>
+      </div>
+
+      <!-- Progress dots -->
+      <div style="padding:0.4rem 0.75rem;display:flex;gap:4px;justify-content:center">
+        <div style="width:8px;height:8px;border-radius:50%;background:#4CAF50"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#4CAF50"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#4A90D9"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#ddd"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#ddd"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#ddd"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#ddd"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#ddd"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:1.5rem">
+  <h3>What's removed vs. current lab</h3>
+  <ul style="font-size:0.85rem;line-height:2">
+    <li>❌ Dashboard / Login links in header</li>
+    <li>❌ Key signature selector (set by exercise, not student)</li>
+    <li>❌ Display Options menu</li>
+    <li>❌ Screenshot button</li>
+    <li>❌ MIDI toggle (auto-detected, or simple inline indicator)</li>
+    <li>❌ Volume / Mute controls (browser handles this)</li>
+    <li>❌ Piano / Keyboard / MIDI / Settings tabs</li>
+  </ul>
+  <h3>What's kept</h3>
+  <ul style="font-size:0.85rem;line-height:2">
+    <li>✅ Staff / score (VexFlow, unchanged)</li>
+    <li>✅ Piano keyboard (existing engine)</li>
+    <li>✅ Submit + feedback</li>
+    <li>✅ Back link → unit detail</li>
+    <li>✅ Exercise position indicator (3 of 8)</li>
+    <li>✅ Progress dots (current exercise position)</li>
+  </ul>
+</div>

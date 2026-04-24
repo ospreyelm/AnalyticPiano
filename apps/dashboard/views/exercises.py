@@ -9,9 +9,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django_tables2 import RequestConfig
 
+# FROZEN — legacy Exercise-shape support remains only for reading existing rows.
+# NEW Exercise creation in this module MUST use apps.exercises.umto_factory.
+# See CLAUDE.md "UMTO is the Canonical Exercise Representation".
+
 from apps.dashboard.filters import ListIDFilter, ExerciseListDescriptionFilter
 from apps.dashboard.forms import DashboardExerciseForm
 from apps.dashboard.tables import ExercisesListTable
+from apps.exercises.umto import InteractionMode
+from apps.exercises.umto_factory import save_umto_exercise
 from apps.exercises.pitch_voice_utils import strip_to_voice
 from apps.exercises.models import Exercise
 
@@ -188,24 +194,26 @@ def exercise_edit_view(request, exercise_id):
                 return redirect("dashboard:edit-exercise", exercise.id)
             elif "duplicate-as-identification" in request.POST:
                 source_data = exercise.data or {}
-                score = _copy.deepcopy(source_data.get("score", {}))
-                new_data = {
-                    "type": "chorale_identification",
-                    "identMode": "submit",
-                    "analysisType": "roman",
-                    "score": score,
-                    "key": source_data.get("key") or score.get("meta", {}).get("key", "C"),
-                    "staffDistribution": "chorale",
-                    "introText": source_data.get("introText") or "Label the harmony for each onset.",
-                    "reviewText": source_data.get("reviewText") or "Well done!",
-                }
-                new_exercise = Exercise(
-                    description=f"{exercise.description or exercise.id} (identification)",
-                    data=new_data,
-                    authored_by=request.user,
+                score_data = _copy.deepcopy(source_data.get("score", {}))
+                intro = source_data.get("introText") or "Label the harmony for each onset."
+                
+                new_exercise = save_umto_exercise(
+                    description=f"{exercise.description or exercise.id} (id)",
+                    score_data=score_data,
+                    author=request.user,
+                    skill_tags=exercise.skill_tags,
+                    complexity=exercise.complexity,
                     is_public=exercise.is_public,
+                    umto_kwargs=dict(
+                        exercise_id="TEMP",
+                        source=intro,
+                        key=source_data.get("key") or score_data.get("meta", {}).get("key", "C"),
+                        meter=score_data.get("meta", {}).get("time", "4/4"),
+                        clef=score_data.get("meta", {}).get("clef", "keyboard"),
+                        complexity_score=exercise.complexity,
+                        mode=InteractionMode.ANALYSIS_MATCH,
+                    )
                 )
-                new_exercise.save()
                 return redirect("dashboard:edit-exercise", new_exercise.id)
             elif "duplicate-as-pitch-identification" in request.POST:
                 source_data = exercise.data or {}
@@ -225,23 +233,27 @@ def exercise_edit_view(request, exercise_id):
 
                         for voice in voices:
                             stripped_score = strip_to_voice(source_score, voice)
-                            new_data = {
-                                "type": "chorale_identification",
-                                "identMode": ident_mode,
-                                "analysisType": analysis_type,
-                                "score": stripped_score,
-                                "key": source_data.get("key") or source_score.get("meta", {}).get("key", "C"),
-                                "staffDistribution": "chorale",
-                                "introText": source_data.get("introText") or f"Name each note in the {voice} voice.",
-                                "reviewText": source_data.get("reviewText") or "Well done!",
-                            }
-                            new_exercise = Exercise(
-                                description=f"{exercise.description or exercise.id} ({voice} pitch identification)",
-                                data=new_data,
-                                authored_by=request.user,
+                            intro = source_data.get("introText") or f"Name each note in the {voice} voice."
+                            
+                            new_exercise = save_umto_exercise(
+                                description=f"{exercise.description or exercise.id} ({voice} id)",
+                                score_data=stripped_score,
+                                author=request.user,
+                                skill_tags=exercise.skill_tags,
+                                complexity=exercise.complexity,
                                 is_public=exercise.is_public,
+                                umto_kwargs=dict(
+                                    exercise_id="TEMP",
+                                    source=intro,
+                                    key=source_data.get("key") or source_score.get("meta", {}).get("key", "C"),
+                                    meter=source_score.get("meta", {}).get("time", "4/4"),
+                                    clef=source_score.get("meta", {}).get("clef", "treble"),
+                                    complexity_score=exercise.complexity,
+                                    mode=InteractionMode.IDENTIFICATION,
+                                    target_voice=voice,
+                                    analysisType=analysis_type,
+                                )
                             )
-                            new_exercise.save()
                 except ValueError as exc:
                     messages.error(request, str(exc))
                     return redirect("dashboard:edit-exercise", exercise.id)

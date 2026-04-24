@@ -1,0 +1,6 @@
+{
+  "metadata": { "exercise_id": 501, "source": "Unit 5 Test", "key": "E", "meter": "4/4", "clef": "treble", "complexity_score": 5, "mode": "identification" },
+  "voices": { "S": [{ "kind": "note", "pitch": { "step": "D", "alter": 1, "octave": 5, "midi": 75 }, "duration": 1.0, "duration_type": "q", "dots": 0 }], "A": [], "T": [], "B": [] },
+  "grading": [{ "offset": 0.0, "target_midi_pitches": [75] }],
+  "analysis": [{ "offset": 0.0, "content": {}, "unit_tags": [5] }]
+}

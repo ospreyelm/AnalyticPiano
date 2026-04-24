@@ -13,7 +13,8 @@ except ImportError:
     m21_to_cir = None
     build_events = None
 
-from apps.exercises.models import Exercise
+from apps.exercises.umto import InteractionMode
+from apps.exercises.umto_factory import save_umto_exercise
 from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
 
 User = get_user_model()
@@ -114,41 +115,26 @@ class Command(BaseCommand):
         # We analyze the score to get Unit tags and complexity
         detected_tags, complexity = analyze_chunk_skills(score, harmony_key)
 
-        # Build exercise data
-        exercise_data = {
-            "type": "musicxml",
-            "mode": "play-all-voices",
-            "score": {"meta": meta, "measures": excerpt_measures},
-            "source": {
-                "type": "musicxml",
-                "filename": basename,
-                "originalPath": file_path,
-                "imported": True
-            },
-            "display": {"showFigures": False, "showRomans": False, "transpose": 0, "tempo": 60},
-            "grading": {"onsetWindowMs": 150, "releaseTolerancePct": 40, "octaveFlexible": False},
-            "excerpt": {"startMeasure": start_measure, "endMeasure": end_measure if end_measure else len(measures)},
-            "introText": f"Play {title}.",
-            "reviewText": "Good work!",
-            "key": harmony_key,
-            "staffDistribution": "chorale"
-        }
-
-        # Build events
-        events = build_events(cir)
-        if events:
-            exercise_data["events"] = [{"start": e.start, "perStaff": e.perStaff} for e in events]
-
-        # Create the Exercise
-        exercise = Exercise(
+        # Use UMTO factory for persistence
+        score_data = {"meta": meta, "measures": excerpt_measures}
+        
+        exercise = save_umto_exercise(
             description=title,
-            data=exercise_data,
-            authored_by=author,
+            score_data=score_data,
+            author=author,
+            skill_tags=list(detected_tags),
+            complexity=complexity,
             is_public=is_public,
-            complexity=complexity,  # Assign complexity from analyzer
-            skill_tags=list(detected_tags) # Correctly assign to ArrayField
+            umto_kwargs=dict(
+                exercise_id="TEMP",
+                source=f"Play {title}.",
+                key=harmony_key,
+                meter=meta.get("time", "4/4"),
+                clef=meta.get("clef", "treble"),
+                complexity_score=complexity,
+                mode=InteractionMode.PLAYBACK,
+            )
         )
-        exercise.save()
 
         return exercise
 

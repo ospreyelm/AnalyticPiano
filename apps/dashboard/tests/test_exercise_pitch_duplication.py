@@ -5,53 +5,25 @@ from django.urls import reverse
 
 from apps.accounts.models import User
 from apps.exercises.models import Exercise
+from apps.exercises.tests.umto_test_helpers import make_umto_exercise
 
 
 class DashboardPitchDuplicationTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(email="teacher@example.com", password="pw")
         self.client.force_login(self.user)
-        self.source = Exercise(
-            authored_by=self.user,
-            is_public=True,
+        self.source = make_umto_exercise(
+            author=self.user,
             description="Source chorale",
-            data={
-                "type": "chorale",
-                "score": {
-                    "meta": {"key": "G", "time": "4/4"},
-                    "measures": [
-                        {
-                            "number": 1,
-                            "staves": {
-                                "treble": {
-                                    "voices": [
-                                        {"items": [{"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}}]},
-                                        {"items": [{"kind": "note", "pitch": {"step": "E", "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}}]},
-                                    ]
-                                },
-                                "bass": {
-                                    "voices": [
-                                        {"items": [{"kind": "note", "pitch": {"step": "C", "alter": 0, "octave": 3}, "duration": {"type": "q", "dots": 0}}]},
-                                        {"items": [{"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 2}, "duration": {"type": "q", "dots": 0}}]},
-                                    ]
-                                },
-                            },
-                        }
-                    ],
-                },
-                "staffDistribution": "chorale",
-                "introText": "Play this excerpt.",
-                "reviewText": "Done.",
-            },
+            complexity=1,
+            unit=1
         )
-        self.source.save()
 
-    def _base_post_data(self):
         return {
             "description": self.source.description,
             "is_public": "on",
             "data": json.dumps(self.source.data),
-            "type": "chorale",
+            "type": "umto_chorale",
             "staff_distribution": "chorale",
             "identMode": "practice",
             "analysisType": "note_name",
@@ -73,8 +45,8 @@ class DashboardPitchDuplicationTests(TestCase):
         self.assertEqual(clones.count(), 2)
 
         for clone in clones:
-            self.assertEqual(clone.data["type"], "chorale_identification")
-            self.assertEqual(clone.data["analysisType"], "note_name")
+            self.assertEqual(clone.data["type"], "umto_chorale")
+            self.assertEqual(clone.data["isUMTO"], True)
             self.assertEqual(clone.data["identMode"], "practice")
 
         # soprano and alto should each map to one treble voice in isolated scores.

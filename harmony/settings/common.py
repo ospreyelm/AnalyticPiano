@@ -131,6 +131,8 @@ INSTALLED_APPS = (
     "apps.accounts",
     "apps.exercises",
     "apps.dashboard",
+    "apps.student",
+
     "lab",
     # Third parties
     "django_extensions",
@@ -377,3 +379,5 @@ CACHES = {
         "LOCATION": "django_viewcache",
     }
 }
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 5000

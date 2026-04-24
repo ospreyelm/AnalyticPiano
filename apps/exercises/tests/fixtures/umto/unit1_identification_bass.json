@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "exercise_id": "FIXTURE_U1_ID_BASS",
+    "source": "BWV1.6 mm.1-2 Bass identification",
+    "key": "G",
+    "meter": "4/4",
+    "clef": "bass",
+    "complexity_score": 1,
+    "mode": "identification",
+    "is_umto": true
+  },
+  "voices": {
+    "S": [], "A": [], "T": [],
+    "B": [
+      {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 2, "midi": 43}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true},
+      {"kind": "note", "pitch": {"step": "D", "alter": 0, "octave": 3, "midi": 50}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true},
+      {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 3, "midi": 55}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true},
+      {"kind": "note", "pitch": {"step": "B", "alter": 0, "octave": 3, "midi": 59}, "duration": 1.0, "duration_type": "q", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}
+    ]
+  },
+  "analysis": [
+    {"offset": 0.0, "content": {}, "visual": null, "unit_tags": [1]},
+    {"offset": 1.0, "content": {}, "visual": null, "unit_tags": [1]},
+    {"offset": 2.0, "content": {}, "visual": null, "unit_tags": [1]},
+    {"offset": 3.0, "content": {}, "visual": null, "unit_tags": [1]}
+  ],
+  "grading": [
+    {"offset": 0.0, "target_midi_pitches": [43], "rhythmic_flexibility": false},
+    {"offset": 1.0, "target_midi_pitches": [50], "rhythmic_flexibility": false},
+    {"offset": 2.0, "target_midi_pitches": [55], "rhythmic_flexibility": false},
+    {"offset": 3.0, "target_midi_pitches": [59], "rhythmic_flexibility": false}
+  ]
+}

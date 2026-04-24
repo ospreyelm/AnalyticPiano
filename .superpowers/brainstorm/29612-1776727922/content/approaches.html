@@ -1,0 +1,42 @@
+<h2>Three approaches to the student app</h2>
+<p class="subtitle">All three use Django + the existing data models. Differences are in scope and architecture.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Thin skin on existing lab</h3>
+      <p>Add a new Django app (<code>student/</code>) with clean templates that wrap the existing exercise lab. Strip the header, hide dashboard links, add a unit progress sidebar. The exercise engine stays unchanged — same JS, same URLs, just different chrome.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Fastest to ship — days not weeks</li><li>Exercise engine already works</li><li>One codebase, no duplication</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Current lab JS is RequireJS/jQuery — hard to extend cleanly</li><li>URL structure exposes lab internals</li><li>Instructor/student separation is CSS, not real</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>New student app with clean URLs + views (recommended)</h3>
+      <p>New Django app <code>student/</code> with its own URL namespace (<code>/s/</code>), templates, and views. Unit home, exercise player, progress API. Reuses existing models (Exercise, Playlist, StudentSkillMastery, PerformanceData) and embeds the existing exercise JS via iframe or direct include — but the surrounding page is fully student-focused.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Clean separation — student URLs never show dashboard</li><li>Proper auth: student role vs instructor role</li><li>Khan-style UX: unit home + auto-resume + skill mastery</li><li>Foundation for future mobile/PWA</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>2–3 weeks to build well</li><li>Need to define student vs instructor auth clearly</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Separate React SPA</h3>
+      <p>Full React frontend, Django REST API backend. Student app is a standalone SPA at a subdomain (<code>learn.harmonylab.com</code>). Exercise player is reimplemented in React, pulling data from DRF endpoints.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Modern, fast, mobile-friendly</li><li>Clean API boundary — future-proof for native apps</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Months of work — reimplements exercise engine</li><li>Two codebases to maintain</li><li>Overkill for a pilot</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:2rem">My recommendation: <strong>B</strong> — new Django app, clean student URLs, reuse existing engine and models. Ships in 2–3 weeks, looks nothing like the current dashboard, and sets up the right foundation for monetization later.</p>

@@ -1,5 +1,18 @@
 # Changelog
 
+## [2026-04-23]
+### Added
+- **Analysis Match Mode**: A new interactive exercise type where students play from analytical labels.
+- **Discovery Feedback**: Correctly played notes "appear" on the staff dynamically.
+- **Octave-Agnostic Grading**: Support for pitch-class matching in `ChoraleGrader`.
+- **Workbench Projection**: One-click "Analysis Match" and "Exact Match" projection in the Teacher Workbench.
+- **Mass Tagging**: Applied `unit:1` tag to over 11,000 imported Unit 1 exercises for dashboard visibility.
+
+### Fixed
+- Fixed coordinate synchronization for playhead in invisible notation mode.
+- Fixed `ExerciseForm` bug where `showNoteNames` was being incorrectly reset.
+- Fixed `skill_tags` vs `tags` field mismatch for dashboard categorization.
+
 All notable changes to the HarmonyLab codebase will be documented in this file.
 
 ## [Unreleased] - 2026-04-16

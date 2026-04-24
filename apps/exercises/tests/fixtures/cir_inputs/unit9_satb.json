@@ -1,0 +1,21 @@
+{
+  "meta": {"key": "G", "time": "4/4"},
+  "measures": [
+    {
+      "staves": {
+        "treble": {
+          "voices": [
+            {"items": [{"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 4}, "duration": {"type": "w", "dots": 0}}]},
+            {"items": [{"kind": "note", "pitch": {"step": "D", "alter": 0, "octave": 4}, "duration": {"type": "w", "dots": 0}}]}
+          ]
+        },
+        "bass": {
+          "voices": [
+            {"items": [{"kind": "note", "pitch": {"step": "B", "alter": 0, "octave": 3}, "duration": {"type": "w", "dots": 0}}]},
+            {"items": [{"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 2}, "duration": {"type": "w", "dots": 0}}]}
+          ]
+        }
+      }
+    }
+  ]
+}

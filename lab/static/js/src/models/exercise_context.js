@@ -98,7 +98,7 @@ define([
 
     this.sealed = false; /* will be used to ignore input post-completion */
 
-    _.bindAll(this, ["grade", "triggerTimer"]);
+    _.bindAll(this, ["grade", "triggerTimer", "validateGradingAlignment"]);
 
     this.init();
   };
@@ -140,6 +140,7 @@ define([
       if (!this._isIdentificationExercise()) {
         this.inputChords.bind("change", this.triggerTimer);
         this.inputChords.bind("change", this.grade);
+        this.inputChords.bind("change", this.validateGradingAlignment);
       }
     },
     /**
@@ -273,6 +274,43 @@ define([
       }
 
       this.trigger("graded");
+    },
+    /**
+     * Debugging helper to ensure played MIDI notes match the UMTO grading targets.
+     */
+    validateGradingAlignment: function () {
+      if (!this.definition.isUMTO || !this.definition.isUMTO() || !this.definition.exercise.grading) return;
+
+      const currentChord = this.inputChords.current();
+      const playedPitches = _.sortBy(currentChord.getNoteNumbers());
+
+      if (playedPitches.length === 0) return;
+
+      // Find if these pitches match any grading slice
+      const match = _.find(this.definition.grading, function (s) {
+        const target = _.sortBy(s.target_midi_pitches);
+        // Check for exact pitch match
+        if (_.isEqual(playedPitches, target)) return true;
+        
+        // Check for pitch-class match (Inversion Error)
+        const playedPCs = _.sortBy(_.map(playedPitches, p => p % 12));
+        const targetPCs = _.sortBy(_.map(target, p => p % 12));
+        if (_.isEqual(playedPCs, targetPCs)) {
+            console.warn("[UMTO Debug] Inversion Error: Pitch classes match, but vertical ordering or octaves are wrong. Expected:", target, "Played:", playedPitches);
+            return false;
+        }
+        return false;
+      });
+
+      if (!match) {
+        console.warn(
+          "[UMTO Debug] Pitch Error: Played",
+          playedPitches,
+          "does not match any defined GradingSlice."
+        );
+      } else if (match.rhythmic_flexibility === false) {
+          // Future: check timing/onset alignment here if rhythmic_flexibility is false
+      }
     },
     /**
      * Trigger timer. (Desirable: on first note that is played.)

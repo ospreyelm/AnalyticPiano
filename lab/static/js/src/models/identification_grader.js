@@ -25,6 +25,7 @@ define([
     reset: function () {
       this.answers = {};  // { problemIndex: label }
       this.attemptCounts = {}; // { problemIndex: count }
+      this.activeIndex = 0;
     },
 
     initFromDefinition: function (definition) {
@@ -36,6 +37,16 @@ define([
     setAnswer: function (problemIndex, label) {
       this.answers[problemIndex] = label;
       this.attemptCounts[problemIndex] = (this.attemptCounts[problemIndex] || 0) + 1;
+      
+      // Update activeIndex to the next unanswered question on this page
+      var problems = this.definition.getProblems();
+      var nextActive = problemIndex + 1;
+      while (nextActive < problems.length && (problems[nextActive].hidden || this.answers.hasOwnProperty(nextActive))) {
+        nextActive++;
+      }
+      if (nextActive < problems.length) {
+        this.activeIndex = nextActive;
+      }
     },
 
     getActiveMeasureIndex: function () {
@@ -59,12 +70,14 @@ define([
       var gradedProblems = [];
       var allAnswered = true;
       var allCorrect = true;
+      var visibleCount = 0;
 
       for (var i = 0; i < problems.length; i++) {
         if (problems[i].hidden) {
           gradedProblems.push({ answer: problems[i].answer, chosen: null, correct: null, hidden: true });
           continue;
         }
+        visibleCount++;
         var absoluteIndex = pageOffset + i;
         var answer = problems[i].answer;
         var chosen = this.answers.hasOwnProperty(absoluteIndex)
@@ -76,6 +89,11 @@ define([
         if (correct !== true) { allCorrect = false; }
 
         gradedProblems.push({ answer: answer, chosen: chosen, correct: correct });
+      }
+
+      if (visibleCount === 0) {
+        allAnswered = false;
+        allCorrect = false;
       }
 
       var resultState = (allAnswered && allCorrect) ? CORRECT : (allAnswered ? INCORRECT : PARTIAL);

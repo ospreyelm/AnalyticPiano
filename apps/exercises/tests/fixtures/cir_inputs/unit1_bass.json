@@ -1,0 +1,21 @@
+{
+  "meta": {"key": "G", "time": "4/4"},
+  "measures": [
+    {
+      "staves": {
+        "bass": {
+          "voices": [
+            {
+              "items": [
+                {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 2}, "duration": {"type": "q", "dots": 0}},
+                {"kind": "note", "pitch": {"step": "D", "alter": 0, "octave": 3}, "duration": {"type": "q", "dots": 0}},
+                {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 3}, "duration": {"type": "q", "dots": 0}},
+                {"kind": "note", "pitch": {"step": "B", "alter": 0, "octave": 3}, "duration": {"type": "q", "dots": 0}}
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

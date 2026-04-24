@@ -1,0 +1,81 @@
+<h2>Playback Controls — Where should they live?</h2>
+<p class="subtitle">Both exercise and play views. Which placement feels right?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#1a1a2e;border-radius:8px;padding:12px;font-family:sans-serif;">
+        <!-- Toolbar mockup -->
+        <div style="display:flex;align-items:center;gap:10px;background:#16213e;border-radius:6px;padding:8px 12px;">
+          <span style="color:#aaa;font-size:11px;letter-spacing:1px;">◀ ▶ ↺ ⟳</span>
+          <div style="width:1px;height:20px;background:#444;margin:0 4px;"></div>
+          <button style="background:#4facfe;color:white;border:none;border-radius:4px;padding:4px 12px;font-size:12px;cursor:pointer;">▶ Play</button>
+          <input type="range" min="60" max="160" value="100" style="width:70px;accent-color:#4facfe;" disabled>
+          <span style="color:#aaa;font-size:11px;">100 bpm</span>
+        </div>
+        <!-- Sheet music placeholder -->
+        <div style="background:#0f3460;border-radius:4px;margin-top:8px;height:80px;display:flex;align-items:center;justify-content:center;">
+          <span style="color:#555;font-size:12px;">♩ ♪ ♫ sheet music ♫ ♪ ♩</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — In toolbar</h3>
+      <p>Play/Stop + tempo slider added to existing nav toolbar above the score. Compact. Shares space with next/prev/refresh buttons.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#1a1a2e;border-radius:8px;padding:12px;font-family:sans-serif;">
+        <!-- Toolbar mockup -->
+        <div style="display:flex;align-items:center;gap:10px;background:#16213e;border-radius:6px;padding:8px 12px;">
+          <span style="color:#aaa;font-size:11px;letter-spacing:1px;">◀ ▶ ↺ ⟳</span>
+        </div>
+        <!-- Sheet music placeholder -->
+        <div style="background:#0f3460;border-radius:4px;margin-top:8px;height:80px;display:flex;align-items:center;justify-content:center;">
+          <span style="color:#555;font-size:12px;">♩ ♪ ♫ sheet music ♫ ♪ ♩</span>
+        </div>
+        <!-- Floating bar below -->
+        <div style="display:flex;align-items:center;gap:10px;background:#16213e;border-radius:6px;padding:8px 12px;margin-top:8px;justify-content:center;">
+          <button style="background:#4facfe;color:white;border:none;border-radius:4px;padding:4px 14px;font-size:12px;">▶ Play</button>
+          <input type="range" min="60" max="160" value="100" style="width:90px;accent-color:#4facfe;" disabled>
+          <span style="color:#aaa;font-size:11px;">100 bpm</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Below score</h3>
+      <p>Dedicated playback bar sits below the sheet music, centered. Keeps toolbar clean. More prominent, easier to find.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#1a1a2e;border-radius:8px;padding:12px;font-family:sans-serif;">
+        <!-- Toolbar mockup -->
+        <div style="display:flex;align-items:center;gap:10px;background:#16213e;border-radius:6px;padding:8px 12px;">
+          <span style="color:#aaa;font-size:11px;letter-spacing:1px;">◀ ▶ ↺ ⟳</span>
+        </div>
+        <!-- Sheet music placeholder -->
+        <div style="background:#0f3460;border-radius:4px;margin-top:8px;height:80px;display:flex;align-items:center;justify-content:center;position:relative;">
+          <span style="color:#555;font-size:12px;">♩ ♪ ♫ sheet music ♫ ♪ ♩</span>
+          <!-- Floating button overlay -->
+          <div style="position:absolute;bottom:8px;right:10px;display:flex;align-items:center;gap:6px;background:rgba(22,33,62,0.92);border-radius:20px;padding:4px 10px;">
+            <button style="background:#4facfe;color:white;border:none;border-radius:12px;padding:3px 10px;font-size:11px;">▶</button>
+            <input type="range" min="60" max="160" value="100" style="width:55px;accent-color:#4facfe;" disabled>
+            <span style="color:#aaa;font-size:10px;">100</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Floating overlay</h3>
+      <p>Compact pill overlaid on the score canvas corner. Minimal footprint, always visible while reading music.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Click to select, then tell me in terminal.</p>

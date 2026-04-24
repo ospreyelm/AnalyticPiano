@@ -1,3 +1,5 @@
+import os
+hasattr(os, "sendfile") and delattr(os, "sendfile")
 #!/usr/bin/env python
 import os
 import sys

@@ -31,6 +31,7 @@ from apps.exercises.constants import (
 )
 from apps.exercises.utils.recurrence import rebuild_period_progress
 from apps.exercises.utils.transpose import transpose
+from apps.exercises.utils.abc_preview import generate_abc_preview
 
 User = get_user_model()
 
@@ -87,6 +88,12 @@ class ClonableModelMixin:
             if field.unique:
                 fields.append(field.name)
         return fields
+
+
+class NonUMTOExerciseError(ValueError):
+    """Raised when save_umto_exercise is handed legacy-shaped data, or when
+    Exercise.save() / Exercise.clean() sees a new row whose data fails UMTO
+    validation."""
 
 
 class Exercise(ClonableModelMixin, BaseContentModel):
@@ -214,6 +221,29 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     def __str__(self):
         return self.id
 
+    def clean(self):
+        """
+        Enforce UMTO schema for all new or updated exercises.
+        Can be bypassed via HARMONYLAB_ALLOW_LEGACY_EXERCISE=1 for migrations.
+        """
+        import os
+        super().clean()
+        
+        # Only enforce on new rows. Existing rows are grandfathered.
+        if self._id is not None:
+            return
+
+        # Bypass for migrations
+        if os.environ.get("HARMONYLAB_ALLOW_LEGACY_EXERCISE") == "1":
+            return
+
+        # Block non-UMTO data
+        if not self.data or not self.data.get("isUMTO"):
+            raise NonUMTOExerciseError(
+                "Legacy exercise schema is no longer allowed. "
+                "Exercises must be created/updated via the UMTO factory (save_umto_exercise)."
+            )
+
     def get_previous_authored_exercise(self):
         return Exercise.objects.filter(
             authored_by=self.authored_by, created__lt=self.created
@@ -225,6 +255,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         ).first()
 
     def save(self, *args, **kwargs):
+        self.clean()
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
             self.set_id(initial="E")
@@ -328,6 +359,10 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     def lock(self):
         self.locked = True
         self.save()
+
+    @property
+    def preview_notation(self):
+        return generate_abc_preview(self)
 
 
 class StudentSkillMastery(models.Model):
@@ -582,11 +617,11 @@ class Playlist(ClonableModelMixin, BaseContentModel):
 
     @cached_property
     def untransposed_exercises_ids(self):
-        related_epos = ExercisePlaylistOrdered.objects.filter(playlist=self).order_by(
-            "order"
+        return list(
+            ExercisePlaylistOrdered.objects.filter(playlist=self)
+            .order_by("order")
+            .values_list("exercise__id", flat=True)
         )
-        sorted_exercise_list = list(map(lambda epo: epo.exercise.id, related_epos))
-        return sorted_exercise_list
 
     @property
     def exercise_list(self):
@@ -603,10 +638,10 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             ex_dict[exercise.id] = exercise
         return ex_dict
 
-    @property
+    @cached_property
     def exercise_count(self):
         if not self.is_transposed():
-            return len(self.exercises.all())
+            return len(self.untransposed_exercises_ids)
 
         return len(self.transposed_exercises_ids)
 

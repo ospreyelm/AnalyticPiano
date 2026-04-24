@@ -1,0 +1,50 @@
+{# apps/student/templates/student/unit.html #}
+{% extends "student/base.html" %}
+{% block title %}Unit {{ unit_num }} — HarmonyLab{% endblock %}
+{% block content %}
+
+<a href="{% url 'student:home' %}" class="s-back">← Back to Units</a>
+
+<h1 class="s-section-label">Unit {{ unit_num }} · {{ unit_title }}</h1>
+
+<div class="s-unit-progress-detail" style="margin-bottom: 2rem;">
+  <div class="s-progress-bar-track" style="height: 8px;">
+    <div class="s-progress-bar-fill" style="width: {{ progress.percent }}%; height: 8px;"></div>
+  </div>
+  <div style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;">
+    {{ progress.mastered_count }} of {{ skills|length }} skills mastered ({{ progress.percent }}%)
+  </div>
+</div>
+
+{% for skill in skills %}
+  <div class="s-skill-row {% if skill.level == 'mastered' %}mastered{% elif skill.level != 'not_started' %}in-progress{% endif %}">
+    <div class="s-skill-dot {{ skill.level }}">
+      {% if skill.level == 'mastered' %}
+        ✓
+      {% elif skill.level != 'not_started' %}
+        ●
+      {% endif %}
+    </div>
+    <div class="s-skill-info">
+      <div class="s-skill-name">{{ skill.name }}</div>
+      <div class="s-skill-level {{ skill.level }}">
+        {% if skill.level == 'mastered' %}
+          Mastered
+        {% elif skill.level != 'not_started' %}
+          In Progress
+        {% else %}
+          Not Started
+        {% endif %}
+      </div>
+    </div>
+    <div class="s-skill-actions">
+      {% for link in skill.playlist_links %}
+        <a href="{{ link.url }}" class="s-btn-secondary">{{ link.name }}</a>
+      {% empty %}
+        <span class="s-btn-secondary" style="opacity: 0.4; cursor: default;">Coming soon</span>
+      {% endfor %}
+    </div>
+  </div>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "exercise_id": "FIXTURE_U9_ROMAN",
+    "source": "BWV1.6 mm.1-2 SATB Roman",
+    "key": "G",
+    "meter": "4/4",
+    "clef": "keyboard",
+    "complexity_score": 9,
+    "mode": "analysis_match",
+    "is_umto": true
+  },
+  "voices": {
+    "S": [{"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 4, "midi": 67}, "duration": 4.0, "duration_type": "w", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}],
+    "A": [{"kind": "note", "pitch": {"step": "D", "alter": 0, "octave": 4, "midi": 62}, "duration": 4.0, "duration_type": "w", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}],
+    "T": [{"kind": "note", "pitch": {"step": "B", "alter": 0, "octave": 3, "midi": 59}, "duration": 4.0, "duration_type": "w", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}],
+    "B": [{"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 2, "midi": 43}, "duration": 4.0, "duration_type": "w", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true}]
+  },
+  "analysis": [
+    {"offset": 0.0, "content": {"roman_numeral": "I"}, "visual": null, "unit_tags": [9]}
+  ],
+  "grading": [
+    {"offset": 0.0, "target_midi_pitches": [43, 59, 62, 67], "rhythmic_flexibility": false}
+  ]
+}

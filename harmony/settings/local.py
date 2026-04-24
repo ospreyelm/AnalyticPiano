@@ -37,8 +37,48 @@ DATABASES = {
 # WARNING: This allows unsafe-eval and unsafe-inline. Remove in production!
 # Place it first so it can set headers before other middleware
 MIDDLEWARE = list(MIDDLEWARE)
-MIDDLEWARE.insert(0, "harmony.middleware.DisableCSPMiddleware")
 MIDDLEWARE = tuple(MIDDLEWARE)
 
 # Also disable some security settings for local dev
 SECURE_CONTENT_TYPE_NOSNIFF = False
+
+# Suppress BrokenPipeError noise from client disconnects during slow local responses
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "ignore_broken_pipe": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda record: "Broken pipe" not in (record.getMessage()),
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["ignore_broken_pipe"],
+        }
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+            "filters": ["ignore_broken_pipe"],
+        },
+    },
+}
+
+# Remove WhiteNoise in local development to prevent macOS wsgiref hanging on static files
+MIDDLEWARE = list(MIDDLEWARE)
+if "whitenoise.middleware.WhiteNoiseMiddleware" in MIDDLEWARE:
+    MIDDLEWARE.remove("whitenoise.middleware.WhiteNoiseMiddleware")
+MIDDLEWARE = tuple(MIDDLEWARE)

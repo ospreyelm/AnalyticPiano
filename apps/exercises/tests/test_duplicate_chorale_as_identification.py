@@ -3,45 +3,32 @@ from django.test import TestCase
 
 from apps.accounts.models import User
 from apps.exercises.models import Exercise
+from apps.exercises.tests.umto_test_helpers import make_umto_exercise
 
 
 class DuplicateChoraleAsIdentificationTests(TestCase):
     def test_creates_identification_copy_from_chorale(self):
         author = User.objects.create_user(email="teacher@example.com", password="pw")
-        source = Exercise(
-            authored_by=author,
-            is_public=True,
+        source = make_umto_exercise(
+            author=author,
             description="BWV1.6 (mm. 1-4)",
-            data={
-                "type": "chorale",
-                "score": {
-                    "meta": {"key": "G", "time": "4/4"},
-                    "measures": [
-                        {
-                            "staves": {
-                                "treble": {"voices": []},
-                                "bass": {"voices": []},
-                            }
-                        }
-                    ],
-                },
-                "staffDistribution": "chorale",
-                "introText": "Play this excerpt.",
-                "reviewText": "Done.",
-            },
+            complexity=1,
+            unit=1
         )
-        source.save()
 
+        # Refactored command no longer takes 'analysis' argument
         call_command(
             "duplicate_chorale_as_identification",
             str(source.id),
             author="teacher@example.com",
-            analysis="roman",
         )
 
         clone = Exercise.objects.exclude(id=source.id).latest("created")
-        self.assertEqual(clone.data["type"], "chorale_identification")
-        self.assertEqual(clone.data["analysisType"], "roman")
-        self.assertEqual(clone.data["identMode"], "submit")
-        self.assertEqual(clone.data["score"], source.data["score"])
+        # Now expects UMTO structure
+        self.assertEqual(clone.data["type"], "umto_chorale")
+        self.assertEqual(clone.data["mode"], "identification")
+        self.assertTrue(clone.data["isUMTO"])
         self.assertEqual(clone.authored_by_id, author.id)
+        # Verify the score was preserved (via umto synthesis)
+        self.assertIn("umto", clone.data["score"])
+        self.assertEqual(clone.data["score"]["umto"]["voices"]["S"][0]["pitch"]["midi"], 67)

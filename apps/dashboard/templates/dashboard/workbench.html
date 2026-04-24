@@ -81,6 +81,22 @@
                         </div>
                     </button>
 
+                    <button class="action-btn" onclick="projectItems('exact_match')" id="btn-exact" disabled>
+                        <i class="fas fa-check-double icon-large"></i>
+                        <div class="btn-text">
+                            <h4>Exact Match (Notation)</h4>
+                            <p>Students play back the notation exactly as written.</p>
+                        </div>
+                    </button>
+
+                    <button class="action-btn" onclick="projectItems('analysis_match')" id="btn-analysis" disabled>
+                        <i class="fas fa-spell-check icon-large"></i>
+                        <div class="btn-text">
+                            <h4>Analysis Match (Note Names)</h4>
+                            <p>Students play back notes from analytical labels (notation hidden).</p>
+                        </div>
+                    </button>
+
                     <button class="action-btn" onclick="projectItems('identification')" id="btn-id" disabled>
                         <i class="fas fa-search icon-large"></i>
                         <div class="btn-text">
@@ -212,6 +228,8 @@
     .icon-large { font-size: 24px; margin-right: 20px; color: #4a5568; width: 30px; text-align: center; }
     #btn-roman .icon-large { color: #3498db; }
     #btn-figured .icon-large { color: #2ecc71; }
+    #btn-exact .icon-large { color: #e67e22; }
+    #btn-analysis .icon-large { color: #f1c40f; }
     #btn-id .icon-large { color: #9b59b6; }
     
     .btn-text h4 { margin: 0 0 4px 0; font-size: 15px; font-weight: 600; color: #2d3748; }
@@ -277,7 +295,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const importsList = document.getElementById('imports-list');
     const selectionCount = document.getElementById('selectionCount');
     const alertBox = document.getElementById('alertBox');
-    const actionBtns = [document.getElementById('btn-roman'), document.getElementById('btn-figured'), document.getElementById('btn-id')];
+    const actionBtns = [
+        document.getElementById('btn-roman'), 
+        document.getElementById('btn-figured'), 
+        document.getElementById('btn-exact'),
+        document.getElementById('btn-analysis'),
+        document.getElementById('btn-id')
+    ];
     
     window.fetchImports = function() {
         document.getElementById('refreshBtn').innerHTML = 'Refreshing...';

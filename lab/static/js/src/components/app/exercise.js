@@ -79,7 +79,11 @@ define([
 
     // Skip sparse chorale_identification exercises before any rendering occurs.
     // If first page (first 4 measures) has fewer than 4 visible problems, redirect now.
+    // Skip sparse chorale_identification exercises before any rendering occurs.
+    // NOTE: This check is disabled for UMTO/Unit 1 exercises as they may have 
+    // fewer than 4 measures but sufficient problems.
     if (
+      false && // DISABLED: causing loops in Unit 1
       models.exerciseDefinition.isChoraleIdentification &&
       models.exerciseDefinition.isChoraleIdentification() &&
       definition.nextExercise
@@ -100,16 +104,30 @@ define([
     models.inputChords = new ExerciseChordBank({
       staffDistribution: definition.staffDistribution,
     });
-    // Choose grader depending on exercise type
-    if (models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale()) {
-      models.exerciseGrader = new ChoraleGrader({});
-      // Initialize from definition so it has the timeline ready
+    // Choose grader depending on exercise type/mode
+    var interactionMode = models.exerciseDefinition.getMode();
+    if (
+      interactionMode === "identification" ||
+      (!interactionMode && 
+        ((models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) ||
+         (models.exerciseDefinition.isChoraleIdentification && models.exerciseDefinition.isChoraleIdentification())))
+    ) {
+      console.log("[ID] Selecting IdentificationGrader (mode: " + interactionMode + ")");
+      models.exerciseGrader = new IdentificationGrader({});
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else if (
-      (models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) ||
-      (models.exerciseDefinition.isChoraleIdentification && models.exerciseDefinition.isChoraleIdentification())
+      interactionMode === "playback" || 
+      interactionMode === "analysis_match" ||
+      (!interactionMode && models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale())
     ) {
-      models.exerciseGrader = new IdentificationGrader({});
+      console.log("[ID] Selecting ChoraleGrader (mode: " + interactionMode + ")");
+      var gradingSettings = models.exerciseDefinition.getGrading();
+      // Unit 1 Bridge: Make grading octave-agnostic for Note Identification
+      if (models.exerciseDefinition.isUnit(1)) {
+        gradingSettings.octaveIndependent = true;
+      }
+      models.exerciseGrader = new ChoraleGrader(gradingSettings);
+      // Initialize from definition so it has the timeline ready
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else {
       models.exerciseGrader = new ExerciseGrader({
@@ -184,7 +202,9 @@ define([
         this.addComponent(c);
       },
       function () {
-        var c = new NoteNameInputComponent();
+        var c = new NoteNameInputComponent({
+          defaultMode: "notename"
+        });
         c.init(this);
         c.renderTo("#piano");
         this.addComponent(c);
@@ -226,9 +246,9 @@ define([
         c.init(this);
         var exercise_midi_nums =
           c.settings.sheet.exerciseContext.exerciseChords._items.map((item) =>
-            Object.keys(item._notes)
+            item.getNoteNumbers()
           );
-        c.render(typeof exercise_midi_nums); // send midi nums from exercise chords ahead for the purposes of contextual Roman numeral analysis
+        c.render(exercise_midi_nums); // send midi nums from exercise chords ahead for the purposes of contextual Roman numeral analysis
         this.addComponent(c);
       },
     ];
@@ -245,13 +265,6 @@ define([
     app = new AppExerciseComponent();
     app.init();
     app.log("App ready");
-    /**
-     * The following on-off instruction is meant to stimulate a new call
-     * of StaveNotater.prototype.drawRoman so that contextual
-     * analysis modifications within that function become active.
-     * In ExerciseContext, this note is given special treatment not
-     * to generate exercise errors.
-     */
   };
 
   return AppExerciseComponent;

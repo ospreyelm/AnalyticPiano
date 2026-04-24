@@ -17,6 +17,7 @@ define([
   "app/components/input/label_input",
   "app/models/score_player",
   "app/components/music/playback_controls",
+  "app/utils/measure_engine",
 ], function (
   $,
   $UI,
@@ -34,7 +35,8 @@ define([
   ScoreTimeline,
   LabelInput,
   ScorePlayer,
-  renderPlaybackControls
+  renderPlaybackControls,
+  MeasureEngine
 ) {
   "use strict";
 
@@ -170,10 +172,10 @@ define([
     },
     _isIdentificationLikeExercise: function () {
       var definition = this.exerciseContext.getDefinition();
-      return (
-        (definition.isIdentification && definition.isIdentification()) ||
-        (definition.isChoraleIdentification && definition.isChoraleIdentification())
-      );
+      var isIdent = (definition.isIdentification && definition.isIdentification()) ||
+             (definition.isChoraleIdentification && definition.isChoraleIdentification());
+      console.log("[ID] _isIdentificationLikeExercise result:", isIdent, "type:", definition.getType());
+      return isIdent;
     },
     _isChoraleIdentificationExercise: function () {
       var definition = this.exerciseContext.getDefinition();
@@ -412,8 +414,10 @@ define([
       var problems = this.exerciseContext.getVisibleProblems
         ? this.exerciseContext.getVisibleProblems()
         : (definition.getProblems ? definition.getProblems() : []);
-      if (definition.isChoraleIdentification && definition.isChoraleIdentification()) {
+      console.log("[ID] _getIdentificationSlots problems count:", problems.length);
+      if ((this._isChoraleIdentificationExercise() || definition.getScore()) && !_.isEmpty(this._identWindowLayout)) {
         var layout = this._identWindowLayout || {};
+        console.log("[ID] UMTO layout keys:", Object.keys(layout));
         return _.map(problems, function (_problem, idx) {
           var slot = layout[idx];
           if (!slot) { return null; }
@@ -422,8 +426,10 @@ define([
       }
 
       var noteStaves = this.staves.slice(1);
+      console.log("[ID] noteStaves count:", noteStaves.length);
       return _.map(noteStaves, function (treble, idx) {
         var bass = treble.connectedStave;
+        console.log("[ID] Slot", idx, "bass:", !!bass, "bass.staffSegment:", !!(bass && bass.staffSegment));
         if (!bass || !bass.staffSegment) {
           return null;
         }
@@ -437,6 +443,7 @@ define([
 
     drawIdentificationLabels: function () {
       var slots = this._getIdentificationSlots();
+      console.log("[ID] drawIdentificationLabels slots count:", slots.length);
       if (!slots.length) { return; }
 
       var grader = this.exerciseContext.grader;
@@ -472,6 +479,17 @@ define([
         if (problem && problem.hidden) { continue; } // LEAVE A SPACE
         visibleSlotCount++;
 
+        // AUTO-SCROLL LOGIC: Scroll the active problem into view
+        var activeIndex = grader && grader.activeIndex !== undefined ? grader.activeIndex : 0;
+        console.log("[ID] Slot", i, "absIdx:", absoluteIndex, "lx:", lx, "ly:", ly, "label:", (grader && grader.answers && grader.answers[absoluteIndex]) || '?');
+        if (absoluteIndex === activeIndex && this.el && this.el.parent) {
+          var container = this.el.parent();
+          if (container.length) {
+            var scrollX = lx - container.width() / 2;
+            container.stop().animate({ scrollLeft: Math.max(0, scrollX) }, 200);
+          }
+        }
+
         var chosen = grader && grader.answers && grader.answers.hasOwnProperty(absoluteIndex)
           ? grader.answers[absoluteIndex] : null;
         var label = chosen || '?';
@@ -505,7 +523,9 @@ define([
         if (!chosen) {
           // Draw a clear, clickable pill background for unanswered items
           ctx.beginPath();
-          var w = 32;
+          ctx.font = 'bold 18px sans-serif';
+          var textWidth = ctx.measureText(label).width;
+          var w = Math.max(32, textWidth + 12);
           var h = 28;
           var rx = lx - w/2;
           var ry = labelY - 20;
@@ -528,7 +548,6 @@ define([
           ctx.stroke();
 
           ctx.fillStyle = '#ca8a04';
-          ctx.font = 'bold 18px sans-serif';
           ctx.fillText(label, lx, labelY);
         } else {
           // Answered slot — render properly based on analysis type
@@ -636,10 +655,10 @@ define([
       var allProblems = this.exerciseContext.getDefinition().getProblems() || [];
       var visibleProblems = _.filter(allProblems, function(p) { return !p.hidden; });
       var globalTotal = visibleProblems.length;
-      var answers = this.exerciseContext.grader ? this.exerciseContext.grader.answers : {};
+      var answers = (this.exerciseContext.grader && this.exerciseContext.grader.answers) ? this.exerciseContext.grader.answers : {};
       var globalAnswered = 0;
       for (var i = 0; i < allProblems.length; i++) {
-          if (!allProblems[i].hidden && answers.hasOwnProperty(i) && answers[i] !== null && answers[i] !== '') {
+          if (allProblems[i] && !allProblems[i].hidden && answers && typeof answers.hasOwnProperty === 'function' && answers.hasOwnProperty(i) && answers[i] !== null && answers[i] !== '') {
               globalAnswered++;
           }
       }
@@ -816,7 +835,8 @@ define([
      *
      * @return this
      */
-    render: function (exercise_midi_nums = false) {
+    render: function (exercise_midi_nums) {
+      exercise_midi_nums = exercise_midi_nums || false;
       this.clear();
       this.renderStaves(exercise_midi_nums);
       this.renderExerciseStatus();
@@ -831,39 +851,37 @@ define([
         if ($toolbar.length) {
           var self = this;
           renderPlaybackControls($toolbar, this.scorePlayer, function () {
-            var score = definition.getScore ? definition.getScore() : null;
-            if (!score) return null;
-            var tl = ScoreTimeline.buildTimeline(score);
-            // Group by onset (same as ScorePlayer.groupByOnset) to build per-window maps.
-            var onsetSeen = {};
-            var order = [];
-            for (var i = 0; i < tl.length; i++) {
-              var ev = tl[i];
-              if (!onsetSeen[ev.onset]) {
-                onsetSeen[ev.onset] = { measureIndex: ev.measureIndex };
-                order.push(ev.onset);
-              }
-            }
-            order.sort(function (a, b) { return a - b; });
-            self._playbackWindowOnsets = order.slice();
-            self._playbackWindowMeasures = order.map(function (onset) { return onsetSeen[onset].measureIndex; });
-
-            // Build measure → tick-offset map so we can convert global onset to page-local onset.
-            // _playbackMeasureTickOffset[measureIndex] = cumulative global tick at start of that measure.
-            var measureOffset = {};
-            for (var j = 0; j < tl.length; j++) {
-              var e = tl[j];
-              if (!(e.measureIndex in measureOffset)) {
-                measureOffset[e.measureIndex] = e.onset;
-              }
-            }
-            self._playbackMeasureTickOffset = measureOffset;
-            return tl;
+            return self._calculatePlaybackOffsets();
           });
         }
       }
+      this._calculatePlaybackOffsets();
+      this.autoScroll();
+
+      // Simple Debug Overlay
+      if (window.location.search.indexOf('debug=1') !== -1) {
+        this._renderDebugOverlay();
+      }
 
       return this;
+    },
+    
+    _renderDebugOverlay: function () {
+      $('#id-debug-overlay').remove();
+      var problems = this.exerciseContext.getDefinition().getProblems();
+      var overlay = $('<div id="id-debug-overlay" style="position:fixed; top:10px; right:10px; background:rgba(0,0,0,0.8); color:white; padding:10px; font-size:10px; z-index:9999; max-height:80vh; overflow-y:auto; border-radius:5px; font-family:monospace;"></div>');
+      overlay.append('<h3 style="margin:0 0 10px 0;">UMTO Logic Auditor</h3>');
+      var table = $('<table border="1" style="border-collapse:collapse; width:100%;"><tr><th>Idx</th><th>Off</th><th>Ans</th><th>Tgt</th></tr></table>');
+      _.each(problems, function(p, i) {
+        var row = $('<tr></tr>');
+        row.append('<td style="padding:2px;">'+i+'</td>');
+        row.append('<td style="padding:2px;">'+p.onset.toFixed(2)+'</td>');
+        row.append('<td style="padding:2px;">'+p.answer+'</td>');
+        row.append('<td style="padding:2px;">'+(p.hidden?'No':'Yes')+'</td>');
+        table.append(row);
+      });
+      overlay.append(table);
+      $('body').append(overlay);
     },
     /**
      * Renders textual prompt for the exercise.
@@ -1092,26 +1110,51 @@ define([
      *
      * @return this
      */
-    renderStaves: function (exercise_midi_nums = false) {
+    renderStaves: function (exercise_midi_nums) {
+      exercise_midi_nums = exercise_midi_nums || false;
       var definition = this.exerciseContext.getDefinition();
-      var isChoraleLike =
-        definition.isChorale() ||
-        (definition.isChoraleIdentification && definition.isChoraleIdentification());
+      var score = definition.getScore();
+      var isChoraleLike = (definition.isChorale() || definition.isChoraleIdentification());
+      
+      // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
+      // This fixes cases where the database might have a single 'blob' measure.
+      if (isChoraleLike && score && score.umto) {
+        console.log("[ID] Forcing UMTO conversion for consistent measure splitting");
+        score = this._convertUMTOToProcessedScore(score.umto);
+      }
+
+      var hasMeasures = !!(score && score.measures && score.measures.length > 0);
+      
+      // Ensure score has metadata for VexFlowAdapter
+      if (score && hasMeasures) {
+        score.metadata = score.metadata || {};
+        if (score.metadata.meter && !score.metadata.time) score.metadata.time = score.metadata.meter;
+        if (!score.metadata.time) score.metadata.time = "4/4";
+      }
+
+      console.log("[ID] renderStaves. isChoraleLike:", isChoraleLike, "type:", definition.getType(), "hasMeasures:", hasMeasures);
       
       // Use VexFlow adapter for chorale exercises
-      if (isChoraleLike) {
-        var score = definition.getScore();
+      if (isChoraleLike && hasMeasures) {
+        console.log("[ID] Using VexFlowAdapter (Chorale Model) for rendering");
         if (score && score.measures && score.measures.length > 0) {
           var self = this;
           this._identWindowLayout = {};
           this._identWindowLayoutByOnset = {};
           this._updateChoraleViewport(score);
           var canvas = this.el[0];
+          console.log("[ID] Canvas:", canvas, "Width:", canvas.width, "Height:", canvas.height);
+          var ctx = this.vexRenderer.getContext();
+          console.log("[ID] Context:", ctx);
+          
           var display = definition.getDisplay() || {};
           var analyzeConfig = _.cloneDeep(this.getAnalyzeConfig() || {});
           var wantsRomans = !!display.showRomans;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
+          var isAnalysisMatchMode = !!(definition.isAnalysisMatch && definition.isAnalysisMatch());
+          var wantsNoteNames = !!display.showNoteNames || isAnalysisMatchMode;
+
 
           // In chorale identification mode the figures/Romans ARE the student's
           // answers — rendering them via VexFlow would spoil the exercise.
@@ -1122,11 +1165,13 @@ define([
             wantsChordLabels = false;
           }
 
-          var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels;
+          var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsNoteNames;
+
           // Preserve legacy chorale behavior that force-enables roman numerals,
           // but do not force overlays for chorale_identification.
-          if (!wantsRomans && definition.isChorale && definition.isChorale()) {
+          if (!wantsAnalysis && definition.isChorale && definition.isChorale() && !isAnalysisMatchMode) {
             wantsRomans = true;
+            wantsAnalysis = true;
           }
           // Ensure analysis renderer is not suppressed
           if (!display.analysisRenderer) {
@@ -1147,7 +1192,11 @@ define([
             if (wantsChordLabels) {
               analyzeConfig.mode.chord_labels = true;
             }
+            if (wantsNoteNames) {
+              analyzeConfig.mode.note_names = true;
+            }
           }
+
           var startMeasure =
             (this._chorale && typeof this._chorale.startMeasure === "number"
               ? this._chorale.startMeasure
@@ -1168,21 +1217,26 @@ define([
             });
           }
 
+          console.log("[ID] Calling VexFlowAdapter.render with score:", score, "analyzeConfig:", analyzeConfig);
           VexFlowAdapter.render(score, this.vexRenderer, {
             width: canvas.width,
             height: canvas.height,
             maxMeasures: (this._chorale && this._chorale.maxMeasures) || 4,
             startMeasure: startMeasure,
             playedNoteIds: playedNoteIdsForRender,
+            showNotation: display.showNotation !== undefined ? display.showNotation : true,
             // Analysis wiring for chorale path (Notater bridge inside adapter)
             analyzeConfig: analyzeConfig,
+
             keySignature: this.keySignature,
             analysisRenderer: display.analysisRenderer || "notater", // notater|adapter|none
             staffYOffset: staffYOffset,
+            isAnalysisMatch: isAnalysisMatchMode,
             onWindowPosition: function (slot) {
               if (!slot || typeof slot.windowIndex !== "number") {
                 return;
               }
+              console.log("[ID] onWindowPosition received:", slot.windowIndex, slot.x, slot.y);
               self._identWindowLayout[slot.windowIndex] = slot;
               // Index by "measureIndex:pageLocalOnset" for cross-page playback highlight lookup.
               // The adapter emits absolute measureIndex and page-local onset.
@@ -1191,6 +1245,7 @@ define([
               }
             },
           });
+          console.log("[ID] VexFlowAdapter.render finished.");
 
 
 
@@ -1202,6 +1257,7 @@ define([
       }
       
       // Legacy rendering for non-chorale exercises
+      console.log("[ID] Using Legacy Renderer (FALLBACK)");
       const show_barlines = true;
 
       var i,
@@ -1672,34 +1728,20 @@ define([
         return 0.5;
       } else if (rhythm_value === "q") {
         return 0.375;
-        // } else if (rhythm_value === "8") {
-        //   return 0.25;
+      } else if (rhythm_value === "8") {
+        return 0.25;
       } else {
         console.log("Unknown rhythm_value passed to getVisualWidth");
         return 1;
       }
     },
     getWholeNoteCount: function (rhythm_value) {
-      if (rhythm_value === "w") {
-        return 1;
-      } else if (rhythm_value === "W") {
-        return 1.5;
-      } else if (rhythm_value === "H") {
-        return 0.75;
-      } else if (rhythm_value === "h") {
-        return 0.5;
-      } else if (rhythm_value === "Q") {
-        return 0.375;
-      } else if (rhythm_value === "q") {
-        return 0.25;
-      } else if (rhythm_value === "E") {
-        return 0.1875;
-      } else if (rhythm_value === "8") {
-        return 0.125;
-      } else {
-        console.log("Unknown rhythm_value passed to getWholeNoteCount");
-        return 0.1; // this will prevent display of bogus barlines
+      if (!rhythm_value) return 0.25;
+      // Use MeasureEngine if it understands the format, otherwise fallback
+      if (typeof rhythm_value === 'string') {
+        return MeasureEngine.getWholeNoteCount(rhythm_value, 0);
       }
+      return 0.25;
     },
     /**
      * Creates a stave to display notes.
@@ -1859,6 +1901,38 @@ define([
       this.render();
     },
     /**
+     * Calculates onset-to-measure mapping and page-start offsets for the current score.
+     * Populate _playbackMeasureTickOffset so autoScroll and highlights work reliably.
+     */
+    _calculatePlaybackOffsets: function () {
+      var definition = this.exerciseContext.getDefinition();
+      var score = definition.getScore ? definition.getScore() : null;
+      if (!score) return null;
+
+      var tl = ScoreTimeline.buildTimeline(score);
+      var onsetSeen = {};
+      var order = [];
+      var measureOffset = {};
+
+      for (var i = 0; i < tl.length; i++) {
+        var ev = tl[i];
+        if (!onsetSeen[ev.onset]) {
+          onsetSeen[ev.onset] = { measureIndex: ev.measureIndex };
+          order.push(ev.onset);
+        }
+        if (!(ev.measureIndex in measureOffset)) {
+          measureOffset[ev.measureIndex] = ev.onset;
+        }
+      }
+      order.sort(function (a, b) { return a - b; });
+
+      this._playbackWindowOnsets = order.slice();
+      this._playbackWindowMeasures = order.map(function (onset) { return onsetSeen[onset].measureIndex; });
+      this._playbackMeasureTickOffset = measureOffset;
+
+      return tl;
+    },
+    /**
      * Handle MIDI note events in chorale mode by delegating to the ChoraleGrader
      */
     onMidiNote: function (state, noteNum) {
@@ -1885,8 +1959,51 @@ define([
       var playedIds = grader.getPlayedNoteIds ? grader.getPlayedNoteIds() : new Set();
       var idArray = [];
       playedIds.forEach(function(id) { idArray.push(id); });
-      console.log("[3. VISUAL] Re-rendering with " + playedIds.size + " played notes, IDs:", idArray.sort(function(a,b){return a-b;}));
       this.render();
+      this.autoScroll();
+    },
+
+    /**
+     * Automatically scrolls the sheet horizontally to keep the current active note in view.
+     */
+    autoScroll: function () {
+      var grader = this.exerciseContext.grader;
+      if (!grader || typeof grader.getActiveIndex !== "function") return;
+      
+      var windowIdx = grader.getActiveIndex();
+      if (windowIdx === null || windowIdx === undefined) return;
+
+      var globalOnset = grader.timeline && grader.timeline[windowIdx] && grader.timeline[windowIdx].onset;
+      if (globalOnset === undefined) return;
+
+      // Use the same coordinate mapping as playback highlight
+      var measureIdx = grader.getMeasureIndexForWindow ? grader.getMeasureIndexForWindow(windowIdx) : 0;
+      var targetStart = Math.floor(measureIdx / 4) * 4;
+      var pageStartTick = (this._playbackMeasureTickOffset && this._playbackMeasureTickOffset[targetStart]) || 0;
+      var pageLocalOnset = globalOnset - pageStartTick;
+      var cacheKey = measureIdx + ":" + pageLocalOnset;
+
+      var slot = this._identWindowLayoutByOnset && this._identWindowLayoutByOnset[cacheKey];
+      if (slot && slot.x) {
+        var $container = $("#staffwrapper");
+        if (!$container.length) {
+          $container = this.el.parent();
+        }
+        
+        var scrollLeft = $container.scrollLeft();
+        var containerWidth = $container.width();
+        var noteX = slot.x;
+
+        // padding to keep some context
+        var padding = 100;
+        
+        // If note is near the right edge or beyond, scroll it into view
+        if (noteX > scrollLeft + containerWidth - padding) {
+          $container.stop().animate({ scrollLeft: noteX - containerWidth + padding + 200 }, 300);
+        } else if (noteX < scrollLeft + padding) {
+          $container.stop().animate({ scrollLeft: Math.max(0, noteX - padding) }, 300);
+        }
+      }
     },
     /**
      * Handles navigating to the next exercise.
@@ -1978,6 +2095,86 @@ define([
 
     _clearPlaybackHighlight: function () {
       $("#playback-highlight").hide();
+    },
+    /**
+     * Converts raw UMTO data into the "Processed Score" format that VexFlowAdapter expects.
+     * @param {object} umto 
+     * @returns {object} Processed score
+     */
+    _convertUMTOToProcessedScore: function (umto) {
+      if (!umto || !umto.voices) {
+        console.error("[ID] UMTO or voices missing", umto);
+        return null;
+      }
+      
+      var meta = _.cloneDeep(umto.metadata || {});
+      if (meta.meter && !meta.time) meta.time = meta.meter;
+      if (!meta.time) meta.time = "4/4";
+      
+      // Use the MeasureEngine to split each voice into measures
+      var voiceKeys = ['S', 'A', 'T', 'B'];
+      var splitVoices = {};
+      var maxMeasures = 0;
+      
+      _.each(voiceKeys, function(vk) {
+        var voiceItems = umto.voices[vk] || [];
+        var processedItems = _.map(voiceItems, function(ev) {
+          var item = _.cloneDeep(ev);
+          item.kind = ev.kind || 'note';
+          item.duration = {
+            type: ev.duration_type || 'q',
+            dots: ev.dots || 0
+          };
+          if (ev.pitch) {
+            item.notes = [{ pitch: _.cloneDeep(ev.pitch) }];
+          }
+          return item;
+        });
+        
+        splitVoices[vk] = MeasureEngine.splitIntoMeasures(processedItems, meta.time);
+        maxMeasures = Math.max(maxMeasures, splitVoices[vk].length);
+      });
+      
+      var measures = [];
+      for (var mIdx = 0; mIdx < maxMeasures; mIdx++) {
+        var m = { staves: { treble: { voices: [] }, bass: { voices: [] } } };
+        
+        _.each(voiceKeys, function(vk) {
+          var items = (splitVoices[vk][mIdx]) || [];
+          if (items.length === 0) return;
+          
+          var staffName = (vk === 'S' || vk === 'A') ? 'treble' : 'bass';
+          // Override if staffDistribution is specific
+          if (meta.staffDistribution === 'bass') staffName = 'bass';
+          else if (meta.staffDistribution === 'treble') staffName = 'treble';
+          
+          if (!m.staves[staffName]) m.staves[staffName] = { voices: [] };
+          
+          var dir = 'auto';
+          if (staffName === 'treble') {
+            dir = (vk === 'S' && umto.voices.A && umto.voices.A.length > 0) ? 'up' : 'auto';
+            if (vk === 'A') dir = 'down';
+          } else {
+            dir = (vk === 'T' && umto.voices.B && umto.voices.B.length > 0) ? 'up' : 'auto';
+            if (vk === 'B') dir = 'down';
+          }
+          
+          m.staves[staffName].voices.push({ items: items, direction: dir });
+        });
+        
+        // Clean up empty staves
+        if (m.staves.treble && m.staves.treble.voices.length === 0) delete m.staves.treble;
+        if (m.staves.bass && m.staves.bass.voices.length === 0) delete m.staves.bass;
+        
+        measures.push(m);
+      }
+      
+      var processed = {
+        meta: meta,
+        measures: measures
+      };
+      console.log("[ID] Processed score built via MeasureEngine:", processed);
+      return processed;
     },
   });
 

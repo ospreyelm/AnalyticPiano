@@ -134,9 +134,9 @@ class DashboardExerciseForm(ExerciseForm):
 
     # data_fields = ['analysis', 'highlight']
 
-    data = JSONField(widget=forms.HiddenInput)
+    data = JSONField(widget=PrettyJSONWidget(attrs={"initial": "parsed"}), label="Full JSON Data", required=False)
 
-    editable_fields = ["description", "is_public"]
+    editable_fields = ["description", "is_public", "type"]
 
     class Meta:
         model = Exercise
@@ -409,7 +409,7 @@ class DashboardPlaylistForm(PlaylistForm):
         # Since the queryset and through_vals are dependent on variable user and instance, set them with initialization inputs
         self.fields["exercises"].queryset = Exercise.objects.filter(
             Q(authored_by=user) | Q(is_public=True)
-        )
+        ).defer("data")
         self.fields["exercises"].value = Exercise.objects.none()
         if self.instance.pk != None:
             # Replace the exercises field value with the exercises combined with the respective EPO

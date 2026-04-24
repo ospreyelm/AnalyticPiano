@@ -120,55 +120,46 @@ def api_multiply_projection(request):
             source_data = base_ex.data or {}
             score_data = _copy.deepcopy(source_data.get("score", {}))
             
-            # Map target_type to the correct exercise type and analysisType
-            # All projection types produce chorale_identification exercises;
-            # the analysisType field drives what the student labels.
-            ANALYSIS_TYPE_MAP = {
-                "roman_numeral":         "roman",
-                "figured_bass":          "figured_bass",
-                "identification":        "roman", # 'identification' from UI maps to 'roman' analysisType
-            }
-            analysis_type = ANALYSIS_TYPE_MAP.get(target_type, "roman")
-
-            new_data = {
-                "type": "chorale_identification",
-                "identMode": ident_mode,
-                "analysisType": analysis_type,
-                "score": score_data,
-                "key": source_data.get("key") or score_data.get("meta", {}).get("key", "C"),
-                "staffDistribution": "chorale",
-                "introText": f"Provide the {target_type.replace('_', ' ')} analysis below.",
-                "reviewText": "Well done!",
-                "display": {
-                    "showFigures": target_type == "figured_bass",
-                    "showRomans": target_type == "roman_numeral",
-                    "transpose": 0,
-                    "tempo": 60
-                }
-            }
+            from apps.exercises.umto_factory import save_umto_exercise
+            from apps.exercises.umto import InteractionMode
             
-            # Clean up null values to comply broadly
-            new_data = {k: v for k, v in new_data.items() if v is not None}
+            # Map target_type to InteractionMode
+            mode_map = {
+                "roman_numeral":  InteractionMode.IDENTIFICATION,
+                "figured_bass":   InteractionMode.IDENTIFICATION,
+                "identification": InteractionMode.IDENTIFICATION,
+                "analysis_match": InteractionMode.ANALYSIS_MATCH,
+                "exact_match":    InteractionMode.PLAYBACK,
+            }
+            mode = mode_map.get(target_type, InteractionMode.IDENTIFICATION)
 
             # Safely build description without exceeding the 60 char database limit
             target_suffix = f" ({target_type})"
             max_base_len = 60 - len(target_suffix)
             safe_desc = f"{base_ex.description[:max_base_len]}{target_suffix}"
 
-            source_skill_tags = base_ex.skill_tags
-            source_complexity = base_ex.complexity
+            # Determine clef from base data or default to keyboard for chorales
+            source_clef = source_data.get("clef") or source_data.get("metadata", {}).get("clef") or "keyboard"
 
-            base_ex.pk = None
-            base_ex.id = None
-            base_ex.locked = False
-            base_ex.description = safe_desc
-            base_ex.data = new_data
-            base_ex.is_public = False
-            base_ex.skill_tags = source_skill_tags
-            base_ex.complexity = source_complexity
-            base_ex.save()
-            
-            created_ids.append(base_ex.id)
+            new_ex = save_umto_exercise(
+                description=safe_desc,
+                score_data=score_data,
+                author=request.user,
+                skill_tags=base_ex.skill_tags,
+                complexity=base_ex.complexity,
+                is_public=False,
+                umto_kwargs=dict(
+                    exercise_id="TEMP",
+                    source=f"Projected from {base_ex.id}",
+                    key=source_data.get("key") or score_data.get("meta", {}).get("key", "C"),
+                    meter=score_data.get("meta", {}).get("time", "4/4"),
+                    clef=source_clef,
+                    complexity_score=base_ex.complexity,
+                    mode=mode,
+                    target_voice=None, # Projection assumes SATB/chorale
+                )
+            )
+            created_ids.append(new_ex.id)
 
     return JsonResponse({
         "status": "success", 
