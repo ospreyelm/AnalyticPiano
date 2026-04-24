@@ -38,6 +38,8 @@ Four layers. Build bottom-up. Flip the model guard (Layer 2) last, after all com
 
 **New module:** [apps/exercises/umto_factory.py](../../apps/exercises/umto_factory.py)
 
+**Ownership rule:** the factory *owns* the CIR→UMTO conversion. It is not a thin wrapper over existing builders — the conversion logic (offset walking, MIDI calculation, voice-to-staff routing, analysis-slice synthesis, unit-tag attachment, `exercise_id` backfill) lives inside `umto_factory.py`. Existing helpers (`_build_exact_payload`, `_build_analysis_payload`, `_build_identification_payload`, `_score_to_umto_payload` in `generate_unit1.py`; any equivalents in other commands) are **deleted**, not re-exported or delegated to. Every new Exercise in the codebase, including scratch scripts, flows through this one conversion function.
+
 Public API:
 
 ```python
@@ -56,8 +58,11 @@ def build_umto_payload(
     analysis_overrides: list[dict] | None = None,  # optional pre-built AnalysisSlice dicts
 ) -> dict:
     """Build a UMTO frontend payload from CIR-shaped score_data.
-    Replaces _build_exact_payload, _build_analysis_payload, _build_identification_payload,
-    _score_to_umto_payload, _build_identification_payload in generate_unit1.py and equivalents elsewhere."""
+    Owns all CIR→UMTO conversion logic. Replaces _build_exact_payload,
+    _build_analysis_payload, _build_identification_payload, _score_to_umto_payload
+    in generate_unit1.py and every equivalent in import_chorale, import_bach_phrases,
+    import_musicxml, duplicate_chorale_as_identification, mass_import_performance,
+    dashboard duplicate endpoint, and scratch/*.py. Those helpers are deleted."""
 
 
 def save_umto_exercise(
@@ -70,7 +75,10 @@ def save_umto_exercise(
     is_public: bool = True,
     umto_kwargs: dict,             # forwarded to build_umto_payload
 ) -> Exercise:
-    """Builds payload, validates via UMTO.model_validate, saves Exercise, backfills exercise_id."""
+    """Builds payload, validates via UMTO.model_validate, saves Exercise, backfills exercise_id.
+    Create-only — not intended for converting existing legacy rows. Conversion of existing
+    rows goes through dedicated migration commands (migrate_unit1_to_umto, migrate_exercises)
+    with HARMONYLAB_ALLOW_LEGACY_EXERCISE=1 bypass."""
 
 
 class NonUMTOExerciseError(ValueError):
@@ -82,9 +90,28 @@ Factory is the only sanctioned path to create an Exercise. All commands import f
 
 ### Layer 2 — Model-level guard
 
-[apps/exercises/models.py](../../apps/exercises/models.py) `Exercise.save()` override:
+[apps/exercises/models.py](../../apps/exercises/models.py) `Exercise.save()` override plus `clean()` for Django-admin UX:
 
 ```python
+def clean(self):
+    """Surfaces UMTO validation as a standard ValidationError so Django Admin
+    renders a red inline error instead of a 500 page when a legacy exercise
+    is submitted via the admin form."""
+    super().clean()
+    if not self.pk and not _legacy_bypass_enabled():
+        if not isinstance(self.data, dict) or not self.data.get("isUMTO"):
+            from django.core.exceptions import ValidationError
+            raise ValidationError(
+                {"data": "New exercises must be UMTO. Use apps.exercises.umto_factory.save_umto_exercise()."}
+            )
+        try:
+            from apps.exercises.umto import UMTO
+            UMTO.model_validate(self.data.get("score", {}).get("umto") or self.data)
+        except Exception as e:
+            from django.core.exceptions import ValidationError
+            raise ValidationError({"data": f"UMTO validation failed: {e}"}) from e
+
+
 def save(self, *args, **kwargs):
     is_new = self.pk is None
     if is_new and not _legacy_bypass_enabled():
@@ -104,6 +131,8 @@ def save(self, *args, **kwargs):
 def _legacy_bypass_enabled() -> bool:
     return os.environ.get("HARMONYLAB_ALLOW_LEGACY_EXERCISE") == "1"
 ```
+
+`clean()` is invoked automatically by `ModelForm.is_valid()` in Django admin, producing inline form errors. `save()` is the backstop for code paths that bypass forms (raw ORM writes, management commands). Both run the same UMTO validation.
 
 **Bypass policy:**
 - `HARMONYLAB_ALLOW_LEGACY_EXERCISE=1` reserved for one-shot migration scripts only.
@@ -144,6 +173,8 @@ Route through `umto_factory.save_umto_exercise()`. Input is an existing Exercise
 - `unit1_analysis_treble.json` — ANALYSIS_MATCH mode
 - `unit9_chorale_roman.json` — 4-voice SATB, roman-numeral analysis slices
 - `unit12_chromatic_analysis.json` — secondary dominants, chromatic mediants
+- `minimal.json` — **minimalist edge case**: smallest valid UMTO (one note, no analysis, one grading slice, all optional fields at defaults). Catches "does empty `analysis=[]` crash downstream?"
+- `maximal.json` — **maximalist edge case**: every optional field populated (`is_tied_start`, `is_tied_stop`, `is_target=False`, `VisualMetadata` with all hints, `AnalysisLayer` with `roman_numeral` + `figured_bass` + `pop_symbol` + `functional_label` all set, `unit_tags=[1,9,12]`, `rhythmic_flexibility=True`). Catches "does schema regen drop optional fields?" and exercises every serialization branch.
 
 Each fixture is a full UMTO JSON payload (not CIR). Generated once by running `python manage.py make_umto_fixtures`, reviewed by hand, committed. Fixtures are the source of truth for what "valid UMTO" looks like.
 
@@ -151,7 +182,7 @@ Each fixture is a full UMTO JSON payload (not CIR). Generated once by running `p
 
 1. **Round-trip invariance:** For each fixture, `UMTO.model_validate_json(f).model_dump_json(indent=2)` equals the file contents (after pydantic-stable key ordering). Fails if Pydantic schema changes silently break serialization.
 2. **Schema-file sync:** Regenerate `UMTO.generate_schema()` and assert equal to contents of `apps/exercises/umto_schema.json`. CI fails if `umto.py` changes without corresponding `python manage.py make_umto_schema`.
-3. **Frontend payload shape:** For each fixture, `to_frontend_payload(unit=N)` output contains the frozen key set `{type, isUMTO, mode, staffDistribution, complexity_score, exerciseId, key, meter, clef, allowed_answers, score, grading}`.
+3. **Frontend payload shape:** For each fixture, `to_frontend_payload(unit=N)` output contains the frozen key set `{type, isUMTO, mode, staffDistribution, complexity_score, exerciseId, key, meter, clef, allowed_answers, score, grading}`. **Explicit value assertion: `payload["isUMTO"] is True`** — this is the flag the frontend `isUMTO()` gate ([exercise_definition.js:618-619](../../lab/static/js/src/models/exercise_definition.js#L618-L619)) reads to route rendering/grading. If the flag drops, the frontend silently reverts to the legacy path. Assert value, not just key presence.
 4. **Legacy rejection:** `Exercise(data={"type":"chorale_identification", ...}).save()` raises `NonUMTOExerciseError`.
 5. **Factory idempotence:** `build_umto_payload(...)` on a fixture's CIR-style input produces byte-equal output to the fixture.
 6. **Round-trip via save:** `save_umto_exercise(...)` with fixture input → reload from DB → `Exercise.data["score"]["umto"]` equals the fixture UMTO.
@@ -276,7 +307,7 @@ Banner text:
 | Command / file | Currently emits | Action |
 |---|---|---|
 | `import_chorale.py` | Legacy CIR `chorale`/`chorale_identification` | Rewrite to call `umto_factory.save_umto_exercise` |
-| `generate_unit1.py` | UMTO (three duplicated builders) | Collapse `_build_*_payload` into factory call; fix `--lanes` argparse |
+| `generate_unit1.py` | UMTO (three duplicated builders) | **Delete** `_build_exact_payload`, `_build_analysis_payload`, `_build_identification_payload`, `_score_to_umto_payload`. Replace with one `umto_factory.save_umto_exercise(...)` call per lane, passing `mode=InteractionMode.PLAYBACK/ANALYSIS_MATCH/IDENTIFICATION`. Fix `--lanes` argparse choices. |
 | `migrate_unit1_to_umto.py` | UMTO | Keep; refactor to use factory for symmetry; set `HARMONYLAB_ALLOW_LEGACY_EXERCISE=1` while mutating existing rows (update path, not new-row) |
 | `migrate_exercises.py` | Varies | Audit; migrate to factory or delete if obsolete |
 | `import_bach_phrases.py` | Legacy CIR | Rewrite via factory |
