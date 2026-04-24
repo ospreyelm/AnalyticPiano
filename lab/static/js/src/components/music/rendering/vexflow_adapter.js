@@ -31,8 +31,10 @@ define([
     var yBase = (stave && stave.getBottomY) ? stave.getBottomY() : 100;
     var y = yBase + ((opts && opts.yShift) || 30);
     ctx.save();
+    var color = (opts && opts.color) || "#000";
+    if (typeof ctx.setFillStyle === "function") ctx.setFillStyle(color);
+    ctx.fillStyle = color;
     ctx.font = "16px Arial, sans-serif";
-    ctx.fillStyle = (opts && opts.color) || "#000";
     ctx.textAlign = "left";
     var lineHeight = (opts && opts.lineHeight) || 16;
 
@@ -61,6 +63,7 @@ define([
     var figureCenterX = columnX + 6;
 
     ctx.save();
+    if (typeof ctx.setFillStyle === "function") ctx.setFillStyle("#000");
     ctx.fillStyle = "#000";
     ctx.textAlign = "left";
 
@@ -1286,11 +1289,17 @@ define([
           formatter.format(allVoices, notesWidth);
         }
 
-        // Always "draw" voices to ensure layout and coordinates are valid.
-        // If notation is hidden, we draw with alpha=0 (invisible but still occupies space).
+        // In VexFlow, format() calculates layout. We don't need to draw unplayed notes if showNotation is false.
+        // However, some versions of VexFlow require draw() to compute absolute coordinates for tickables.
+        // We will draw them inside an invisible SVG group if openGroup is available.
+        var hiddenGroup = null;
         if (!showNotation) {
           ctx.save();
+          if (typeof ctx.setGlobalAlpha === "function") ctx.setGlobalAlpha(0);
           ctx.globalAlpha = 0;
+          if (typeof ctx.openGroup === "function") {
+            hiddenGroup = ctx.openGroup("hidden_notation");
+          }
         }
 
         if (trebleStave) {
@@ -1311,6 +1320,11 @@ define([
         }
 
         if (!showNotation) {
+          if (hiddenGroup) {
+            ctx.closeGroup();
+            hiddenGroup.setAttribute("opacity", "0");
+            hiddenGroup.setAttribute("visibility", "hidden");
+          }
           ctx.restore();
           
           // Second pass: Draw only the played notes with full opacity

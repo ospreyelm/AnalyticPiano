@@ -453,7 +453,9 @@ CHORALE_ANALYSIS_KEYS = [
 
 class ExerciseForm(forms.ModelForm):
     TYPE_CHORALE = "chorale"
+    TYPE_UMTO_CHORALE = "umto_chorale"
     TYPE_CHORALE_IDENTIFICATION = "chorale_identification"
+    TYPE_UMTO_IDENTIFICATION = "umto_identification"
     TYPE_IDENTIFICATION = "identification"
     TYPE_MATCHING = "matching"
     TYPE_ANALYTICAL = "analytical"
@@ -461,11 +463,16 @@ class ExerciseForm(forms.ModelForm):
     TYPE_FIGURED_BASS = "figured_bass"
     TYPE_FIGURED_BASS_PCS = "figured_bass_pcs"
     TYPE_CHOICES = (
-        (TYPE_MATCHING, "Exact match"),
-        (TYPE_ANALYTICAL, "Analysis match"),
-        (TYPE_ANALYTICAL_PCS, "Analysis match with wrong PCs highlighted"),
-        (TYPE_FIGURED_BASS, "Figured bass"),
-        (TYPE_FIGURED_BASS_PCS, "Figured bass with wrong PCs highlighted"),
+        (TYPE_MATCHING, "Exact match (legacy)"),
+        (TYPE_ANALYTICAL, "Analysis match (legacy)"),
+        (TYPE_ANALYTICAL_PCS, "Analysis match with wrong PCs highlighted (legacy)"),
+        (TYPE_FIGURED_BASS, "Figured bass (legacy)"),
+        (TYPE_FIGURED_BASS_PCS, "Figured bass with wrong PCs highlighted (legacy)"),
+        (TYPE_CHORALE, "Chorale score (legacy)"),
+        (TYPE_UMTO_CHORALE, "Chorale score (UMTO)"),
+        (TYPE_CHORALE_IDENTIFICATION, "Chorale identification (legacy)"),
+        (TYPE_UMTO_IDENTIFICATION, "Chorale identification (UMTO)"),
+        (TYPE_IDENTIFICATION, "Identification (legacy)"),
     )
 
     IDENT_MODE_CHOICES = (
@@ -479,6 +486,8 @@ class ExerciseForm(forms.ModelForm):
         ("play-outer", "Play outer voices"),
         ("play-soprano", "Play soprano"),
         ("play-bass", "Play bass line"),
+        ("analysis_match", "Analysis match (play from labels)"),
+        ("identification", "Identification (click to identify)"),
     )
 
     DISTRIBUTION_KEYBOARD = "keyboard"
@@ -586,7 +595,12 @@ class ExerciseForm(forms.ModelForm):
         required=False,
         label="Show notation",
         initial=True,
-        help_text="Uncheck for 'Analysis Match' mode where the student plays from labels only.",
+        help_text="Uncheck to hide the notes on the staff (useful for Analysis Match mode).",
+    )
+    chorale_is_analysis_match = forms.BooleanField(
+        required=False,
+        label="Analysis Match mode",
+        help_text="Check to require students to play notes based on analysis labels instead of seeing notation.",
     )
     chorale_onset_window_ms = forms.IntegerField(
         required=False,
@@ -667,6 +681,8 @@ class ExerciseForm(forms.ModelForm):
         "chorale_transpose",
         "chorale_tempo",
         "chorale_wait_mode",
+        "chorale_is_analysis_match",
+        "chorale_show_notation",
         "chorale_onset_window_ms",
         "chorale_release_tolerance_pct",
         "chorale_octave_flexible",
@@ -759,6 +775,7 @@ class ExerciseForm(forms.ModelForm):
         "chorale_visible_voices",
         "chorale_label_mode",
         "chorale_show_chord_labels",
+        "chorale_is_analysis_match",
         "chorale_show_notation",
         "chorale_transpose",
         "chorale_tempo",
@@ -789,36 +806,32 @@ class ExerciseForm(forms.ModelForm):
         bound_data = getattr(self, "data", None)
         if not form_type and bound_data and "type" in bound_data:
             form_type = bound_data.get("type")
-        return form_type == self.TYPE_CHORALE
+        return form_type in (self.TYPE_CHORALE, self.TYPE_UMTO_CHORALE)
 
     def _configure_type_field(self):
         if "type" not in self.fields:
             return
+            
+        current_type = self.instance.data.get("type") if self.instance and self.instance.data else None
+        
         if self._is_chorale:
-            choices = list(self.fields["type"].choices)
-            if (self.TYPE_CHORALE, "Chorale score") not in choices:
-                choices.append((self.TYPE_CHORALE, "Chorale score"))
-            self.fields["type"].choices = choices
-            self.fields["type"].initial = self.TYPE_CHORALE
-            self.fields["type"].widget = forms.HiddenInput()
+            self.fields["type"].initial = current_type or self.TYPE_CHORALE
+            is_umto = self.instance.data.get("isUMTO", False) if self.instance and self.instance.data else False
+            allowed_types = (self.TYPE_UMTO_CHORALE,) if is_umto else (self.TYPE_CHORALE,)
+            self.fields["type"].choices = tuple([c for c in self.fields["type"].choices if c[0] in allowed_types])
         elif self._is_chorale_identification:
-            choices = list(self.fields["type"].choices)
-            if (self.TYPE_CHORALE_IDENTIFICATION, "Chorale identification") not in choices:
-                choices.append((self.TYPE_CHORALE_IDENTIFICATION, "Chorale identification"))
-            self.fields["type"].choices = choices
-            self.fields["type"].initial = self.TYPE_CHORALE_IDENTIFICATION
-            self.fields["type"].widget = forms.HiddenInput()
+            self.fields["type"].initial = current_type or self.TYPE_CHORALE_IDENTIFICATION
+            is_umto = self.instance.data.get("isUMTO", False) if self.instance and self.instance.data else False
+            allowed_types = (self.TYPE_UMTO_IDENTIFICATION,) if is_umto else (self.TYPE_CHORALE_IDENTIFICATION,)
+            self.fields["type"].choices = tuple([c for c in self.fields["type"].choices if c[0] in allowed_types])
         elif self._is_identification:
-            choices = list(self.fields["type"].choices)
-            if (self.TYPE_IDENTIFICATION, "Identification") not in choices:
-                choices.append((self.TYPE_IDENTIFICATION, "Identification"))
-            self.fields["type"].choices = choices
-            self.fields["type"].initial = self.TYPE_IDENTIFICATION
-            self.fields["type"].widget = forms.HiddenInput()
+            self.fields["type"].initial = current_type or self.TYPE_IDENTIFICATION
+            self.fields["type"].choices = tuple([c for c in self.fields["type"].choices if c[0] == self.TYPE_IDENTIFICATION])
         else:
             filtered = [
                 c for c in self.fields["type"].choices
-                if c[0] not in (self.TYPE_CHORALE, self.TYPE_IDENTIFICATION, self.TYPE_CHORALE_IDENTIFICATION)
+                if c[0] not in (self.TYPE_CHORALE, self.TYPE_UMTO_CHORALE, self.TYPE_IDENTIFICATION, 
+                               self.TYPE_CHORALE_IDENTIFICATION, self.TYPE_UMTO_IDENTIFICATION)
             ]
             self.fields["type"].choices = tuple(filtered)
 
@@ -873,8 +886,11 @@ class ExerciseForm(forms.ModelForm):
 
     def _init_chorale_initials(self, score):
         data = self.instance.data if self.instance and getattr(self.instance, "data", None) else {}
+        is_umto = data.get("isUMTO", False)
         display = data.get("display", {}) or {}
         grading = data.get("grading", {}) or {}
+        if not isinstance(grading, dict):
+            grading = {} # UMTO uses a list for grading content; settings are elsewhere or use defaults
         excerpt = data.get("excerpt", {}) or {}
 
         analysis_mode = (data.get("analysis", {}) or {}).get("mode", {}) or {}
@@ -897,6 +913,7 @@ class ExerciseForm(forms.ModelForm):
 
         defaults = {
             "chorale_mode": data.get("mode") or "play-all-voices",
+            "chorale_is_analysis_match": data.get("mode") == "analysis_match",
             "chorale_label_mode": label_mode,
             "chorale_show_chord_labels": display.get("showChordLabels", False),
             "chorale_tempo": display.get("tempo", 60),
@@ -963,9 +980,12 @@ class ExerciseForm(forms.ModelForm):
         display = data.get("display", {}) or {}
         grading = data.get("grading", {}) or {}
 
-        data["type"] = self.TYPE_CHORALE
+        # Preserve actual type (umto_chorale vs chorale)
+        data["type"] = self.cleaned_data.get("type") or data.get("type") or self.TYPE_CHORALE
         data["staffDistribution"] = self.DISTRIBUTION_CHORALE
-        data["mode"] = (
+        
+        is_analysis_match = self.cleaned_data.get("chorale_is_analysis_match")
+        data["mode"] = "analysis_match" if is_analysis_match else (
             self.cleaned_data.get("chorale_mode") or data.get("mode") or "play-all-voices"
         )
 
@@ -1002,7 +1022,7 @@ class ExerciseForm(forms.ModelForm):
         tempo = self.cleaned_data.get("chorale_tempo")
         display["tempo"] = tempo if tempo is not None else display.get("tempo", 60)
         display["waitMode"] = self.cleaned_data.get("chorale_wait_mode", False)
-        display["showNotation"] = self.cleaned_data.get("chorale_show_notation", True)
+        display["showNotation"] = False if is_analysis_match else self.cleaned_data.get("chorale_show_notation", True)
         display["analysisRenderer"] = (
             "notater"
             if display["showFigures"]
@@ -1013,22 +1033,27 @@ class ExerciseForm(forms.ModelForm):
             else "none"
         )
 
-        onset_window = self.cleaned_data.get("chorale_onset_window_ms")
-        if onset_window is not None:
-            grading["onsetWindowMs"] = onset_window
-        release_tol = self.cleaned_data.get("chorale_release_tolerance_pct")
-        if release_tol is not None:
-            grading["releaseTolerancePct"] = release_tol
-        grading["octaveFlexible"] = self.cleaned_data.get("chorale_octave_flexible", False)
-        grading["octaveIndependent"] = grading["octaveFlexible"]
-        chord_min = self.cleaned_data.get("chorale_chord_member_min")
-        if chord_min:
-            grading["chordMemberMin"] = chord_min
-        elif "chordMemberMin" in grading:
-            grading.pop("chordMemberMin")
+        if not isinstance(grading, dict):
+            # UMTO uses a list for grading; skip modifying it as a dict to avoid corruption/crash
+            pass
+        else:
+            onset_window = self.cleaned_data.get("chorale_onset_window_ms")
+            if onset_window is not None:
+                grading["onsetWindowMs"] = onset_window
+            release_tol = self.cleaned_data.get("chorale_release_tolerance_pct")
+            if release_tol is not None:
+                grading["releaseTolerancePct"] = release_tol
+            grading["octaveFlexible"] = self.cleaned_data.get("chorale_octave_flexible", False)
+            grading["octaveIndependent"] = grading["octaveFlexible"]
+            chord_min = self.cleaned_data.get("chorale_chord_member_min")
+            if chord_min:
+                grading["chordMemberMin"] = chord_min
+            elif "chordMemberMin" in grading:
+                grading.pop("chordMemberMin")
 
         data["display"] = display
-        data["grading"] = grading
+        if isinstance(grading, dict):
+            data["grading"] = grading
 
         start_measure = self.cleaned_data.get("chorale_excerpt_start")
         end_measure = self.cleaned_data.get("chorale_excerpt_end")
@@ -1125,7 +1150,7 @@ class ExerciseForm(forms.ModelForm):
         bound_data = getattr(self, "data", None)
         if not form_type and bound_data and "type" in bound_data:
             form_type = bound_data.get("type")
-        return form_type == self.TYPE_CHORALE_IDENTIFICATION
+        return form_type in (self.TYPE_CHORALE_IDENTIFICATION, self.TYPE_UMTO_IDENTIFICATION)
 
     def _configure_identification_fields(self):
         if not self._is_identification:

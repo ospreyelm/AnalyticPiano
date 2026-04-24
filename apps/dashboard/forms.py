@@ -136,7 +136,7 @@ class DashboardExerciseForm(ExerciseForm):
 
     data = JSONField(widget=PrettyJSONWidget(attrs={"initial": "parsed"}), label="Full JSON Data", required=False)
 
-    editable_fields = ["description", "is_public"]
+    editable_fields = ["description", "is_public", "type"]
 
     class Meta:
         model = Exercise
