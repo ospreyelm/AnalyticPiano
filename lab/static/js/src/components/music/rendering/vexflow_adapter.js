@@ -5,12 +5,14 @@ define([
   "vexflow",
   "app/components/music/score_timeline",
   "app/utils/analyze",
-], function (_, Vex, ScoreTimeline, Analyze) {
+  "app/utils/measure_engine",
+], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine) {
   "use strict";
 
   function durToVF(d) {
-    // Return just the base duration type (no dots - those are handled separately)
-    return d.type; // 'w','h','q','8','16', etc.
+    var type = d.type;
+    var map = { 'whole': 'w', 'half': 'h', 'quarter': 'q', 'eighth': '8', '16th': '16', '32nd': '32', 'e': '8', 's': '16' };
+    return map[type] || type;
   }
 
   // Returns the alteration (in semitones) that the key signature applies to each step (C, D, E, F, G, A, B)
@@ -951,16 +953,7 @@ define([
       
       // Helper to convert duration to ticks
       function durationToTicks(dur) {
-        var base = { 'w': 4096, 'h': 2048, 'q': 1024, '8': 512, '16': 256, '32': 128 }[dur.type] || 1024;
-        var dots = dur.dots || 0;
-        var tickVal = base;
-        // Add ticks for dots (each dot adds half of the previous value)
-        var dotAdd = base / 2;
-        for (var d = 0; d < dots; d++) {
-          tickVal += dotAdd;
-          dotAdd /= 2;
-        }
-        return tickVal;
+        return MeasureEngine.getTicks(dur.type, dur.dots || 0);
       }
       
       // Count noteheads in a measure (respects optional voice filtering)
@@ -1238,9 +1231,9 @@ define([
         // Draw system connector only on first measure and only if both staves are shown
         if (isFirstMeasure && trebleStave && bassStave) {
           var connector = new Vex.Flow.StaveConnector(trebleStave, bassStave);
-          connector.setType(Vex.Flow.StaveConnector.type.BRACE).setContext(ctx).draw();
+          connector.setType('brace').setContext(ctx).draw();
           var leftLine = new Vex.Flow.StaveConnector(trebleStave, bassStave);
-          leftLine.setType(Vex.Flow.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+          leftLine.setType('singleLeft').setContext(ctx).draw();
         }
 
   var trebleVoices = staffVoices("treble", treble, "treble", globalIdState, keySignatureAlterations, cumulativeMeasureTick);
@@ -1248,20 +1241,33 @@ define([
 
         // Add barlines at the end of each measure
         var isLastMeasureOfPiece = (absoluteMeasureIndex === score.measures.length - 1);
-        // Use DOUBLE barline for debug visibility
-        var barType = isLastMeasureOfPiece ? Vex.Flow.Barline.type.END : Vex.Flow.Barline.type.DOUBLE;
+        // Standard intermediate barline is 'single'. Piece end is 'end'.
+        var barType = isLastMeasureOfPiece ? 'end' : 'single';
         
         console.log("[UMTO-DEBUG] rendering measure", absoluteMeasureIndex, "barType:", barType, "isLast:", isLastMeasureOfPiece);
 
         if (trebleStave) {
+          trebleStave.setBegBarType(isFirstMeasure ? 'single' : 'none');
           trebleStave.setEndBarType(barType);
           trebleStave.draw();
           lastTrebleStave = trebleStave;
         }
         if (bassStave) {
+          bassStave.setBegBarType(isFirstMeasure ? 'single' : 'none');
           bassStave.setEndBarType(barType);
           bassStave.draw();
           lastBassStave = bassStave;
+        }
+
+        // Connect staves with a vertical barline at the end of each measure
+        if (trebleStave && bassStave) {
+          try {
+            var rightLine = new Vex.Flow.StaveConnector(trebleStave, bassStave);
+            var connectorType = isLastMeasureOfPiece ? 'boldDoubleRight' : 'singleRight';
+            rightLine.setType(connectorType).setContext(ctx).draw();
+          } catch (e) {
+            console.warn("[VexFlowAdapter] StaveConnector error:", e);
+          }
         }
 
         // Use VexFlow 4's improved formatter for better spacing

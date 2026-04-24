@@ -17,6 +17,7 @@ define([
   "app/components/input/label_input",
   "app/models/score_player",
   "app/components/music/playback_controls",
+  "app/utils/measure_engine",
 ], function (
   $,
   $UI,
@@ -34,7 +35,8 @@ define([
   ScoreTimeline,
   LabelInput,
   ScorePlayer,
-  renderPlaybackControls
+  renderPlaybackControls,
+  MeasureEngine
 ) {
   "use strict";
 
@@ -171,8 +173,7 @@ define([
     _isIdentificationLikeExercise: function () {
       var definition = this.exerciseContext.getDefinition();
       var isIdent = (definition.isIdentification && definition.isIdentification()) ||
-             (definition.isChoraleIdentification && definition.isChoraleIdentification()) ||
-             (definition.isAnalysisMatch && definition.isAnalysisMatch());
+             (definition.isChoraleIdentification && definition.isChoraleIdentification());
       console.log("[ID] _isIdentificationLikeExercise result:", isIdent, "type:", definition.getType());
       return isIdent;
     },
@@ -1115,9 +1116,10 @@ define([
       var score = definition.getScore();
       var isChoraleLike = (definition.isChorale() || definition.isChoraleIdentification());
       
-      // If it's a UMTO chorale with no pre-processed measures, build them on the fly
-      if (isChoraleLike && score && (!score.measures || score.measures.length === 0) && score.umto) {
-        console.log("[ID] Converting UMTO to processed score for rendering");
+      // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
+      // This fixes cases where the database might have a single 'blob' measure.
+      if (isChoraleLike && score && score.umto) {
+        console.log("[ID] Forcing UMTO conversion for consistent measure splitting");
         score = this._convertUMTOToProcessedScore(score.umto);
       }
 
@@ -1732,26 +1734,12 @@ define([
       }
     },
     getWholeNoteCount: function (rhythm_value) {
-      if (rhythm_value === "w") {
-        return 1;
-      } else if (rhythm_value === "W") {
-        return 1.5;
-      } else if (rhythm_value === "H") {
-        return 0.75;
-      } else if (rhythm_value === "h") {
-        return 0.5;
-      } else if (rhythm_value === "Q") {
-        return 0.375;
-      } else if (rhythm_value === "q") {
-        return 0.25;
-      } else if (rhythm_value === "E") {
-        return 0.1875;
-      } else if (rhythm_value === "8") {
-        return 0.125;
-      } else {
-        console.log("Unknown rhythm_value passed to getWholeNoteCount");
-        return 0.1; // this will prevent display of bogus barlines
+      if (!rhythm_value) return 0.25;
+      // Use MeasureEngine if it understands the format, otherwise fallback
+      if (typeof rhythm_value === 'string') {
+        return MeasureEngine.getWholeNoteCount(rhythm_value, 0);
       }
+      return 0.25;
     },
     /**
      * Creates a stave to display notes.
@@ -2117,117 +2105,73 @@ define([
         return null;
       }
       
-      var self = this;
-      var voicesObj = { S: [], A: [], T: [], B: [] };
-      
-      _.each(['S', 'A', 'T', 'B'], function(vName) {
-        if (umto.voices[vName]) {
-          voicesObj[vName] = _.map(umto.voices[vName], function(ev) {
-            var item = {
-              kind: ev.kind || 'note',
-              duration: {
-                type: ev.duration_type || 'q',
-                dots: ev.dots || 0
-              }
-            };
-            if (ev.pitch) {
-              item.pitch = _.cloneDeep(ev.pitch);
-              item.notes = [{ pitch: item.pitch }];
-            }
-            if (ev.is_tied_start) item.is_tied_start = ev.is_tied_start;
-            if (ev.is_tied_stop) item.is_tied_stop = ev.is_tied_stop;
-            return item;
-          });
-        }
-      });
-      
       var meta = _.cloneDeep(umto.metadata || {});
-      // Map UMTO fields to VexFlowAdapter fields
       if (meta.meter && !meta.time) meta.time = meta.meter;
-      if (meta.key && !meta.keySignature) meta.keySignature = meta.key;
-      
-      // Map UMTO 'clef' to VexFlowAdapter 'staffDistribution'
-      if (meta.clef && !meta.staffDistribution) {
-          if (meta.clef === 'bass') meta.staffDistribution = 'bass';
-          else if (meta.clef === 'treble') meta.staffDistribution = 'treble';
-          else meta.staffDistribution = 'keyboard';
-      }
-      
       if (!meta.time) meta.time = "4/4";
       
-      // Helper to calculate ticks
-      function getDurTicks(dur) {
-        var base = { 'w': 4096, 'h': 2048, 'q': 1024, '8': 512, '16': 256, '32': 128 }[dur.type] || 1024;
-        var add = base / 2;
-        var total = base;
-        for (var i = 0; i < (dur.dots || 0); i++) { total += add; add /= 2; }
-        return total;
-      }
-
-      var timeSig = meta.time.split('/');
-      var beats = parseInt(timeSig[0], 10);
-      var beatType = parseInt(timeSig[1], 10);
-      // For compound meter like 6/8, beats=6, beatType=8. 
-      // measureTicks = 6 * (4096 / 8) = 6 * 512 = 3072.
-      var measureTicks = beats * (4096 / beatType);
+      // Use the MeasureEngine to split each voice into measures
+      var voiceKeys = ['S', 'A', 'T', 'B'];
+      var splitVoices = {};
+      var maxMeasures = 0;
+      
+      _.each(voiceKeys, function(vk) {
+        var voiceItems = umto.voices[vk] || [];
+        var processedItems = _.map(voiceItems, function(ev) {
+          var item = _.cloneDeep(ev);
+          item.kind = ev.kind || 'note';
+          item.duration = {
+            type: ev.duration_type || 'q',
+            dots: ev.dots || 0
+          };
+          if (ev.pitch) {
+            item.notes = [{ pitch: _.cloneDeep(ev.pitch) }];
+          }
+          return item;
+        });
+        
+        splitVoices[vk] = MeasureEngine.splitIntoMeasures(processedItems, meta.time);
+        maxMeasures = Math.max(maxMeasures, splitVoices[vk].length);
+      });
       
       var measures = [];
-      var voiceKeys = ['S', 'A', 'T', 'B'];
-      var voiceIndices = { S: 0, A: 0, T: 0, B: 0 };
-      
-      var hasMore = true;
-      while (hasMore) {
-        hasMore = false;
-        var m_items = { S: [], A: [], T: [], B: [] };
+      for (var mIdx = 0; mIdx < maxMeasures; mIdx++) {
+        var m = { staves: { treble: { voices: [] }, bass: { voices: [] } } };
         
-        for (var i = 0; i < voiceKeys.length; i++) {
-          var vk = voiceKeys[i];
-          var list = voicesObj[vk];
-          var ticks = 0;
+        _.each(voiceKeys, function(vk) {
+          var items = (splitVoices[vk][mIdx]) || [];
+          if (items.length === 0) return;
           
-          while (voiceIndices[vk] < list.length && ticks < measureTicks) {
-            var item = list[voiceIndices[vk]];
-            m_items[vk].push(item);
-            ticks += getDurTicks(item.duration);
-            voiceIndices[vk]++;
-          }
-          if (voiceIndices[vk] < list.length) {
-            hasMore = true;
-          }
-        }
-        
-        // Only add measure if at least one voice has items
-        if (m_items.S.length > 0 || m_items.A.length > 0 || m_items.T.length > 0 || m_items.B.length > 0) {
-          var m = { staves: { treble: { voices: [] }, bass: { voices: [] } } };
+          var staffName = (vk === 'S' || vk === 'A') ? 'treble' : 'bass';
+          // Override if staffDistribution is specific
+          if (meta.staffDistribution === 'bass') staffName = 'bass';
+          else if (meta.staffDistribution === 'treble') staffName = 'treble';
           
-          if (meta.staffDistribution === 'bass') {
-             delete m.staves.treble;
-             if (m_items.S.length > 0) m.staves.bass.voices.push({ items: m_items.S, direction: 'auto' });
-             if (m_items.A.length > 0) m.staves.bass.voices.push({ items: m_items.A, direction: 'auto' });
-             if (m_items.T.length > 0) m.staves.bass.voices.push({ items: m_items.T, direction: 'auto' });
-             if (m_items.B.length > 0) m.staves.bass.voices.push({ items: m_items.B, direction: 'auto' });
-          } else if (meta.staffDistribution === 'treble') {
-             delete m.staves.bass;
-             if (m_items.S.length > 0) m.staves.treble.voices.push({ items: m_items.S, direction: 'auto' });
-             if (m_items.A.length > 0) m.staves.treble.voices.push({ items: m_items.A, direction: 'auto' });
-             if (m_items.T.length > 0) m.staves.treble.voices.push({ items: m_items.T, direction: 'auto' });
-             if (m_items.B.length > 0) m.staves.treble.voices.push({ items: m_items.B, direction: 'auto' });
+          if (!m.staves[staffName]) m.staves[staffName] = { voices: [] };
+          
+          var dir = 'auto';
+          if (staffName === 'treble') {
+            dir = (vk === 'S' && umto.voices.A && umto.voices.A.length > 0) ? 'up' : 'auto';
+            if (vk === 'A') dir = 'down';
           } else {
-             if (m_items.S.length > 0) m.staves.treble.voices.push({ items: m_items.S, direction: m_items.A.length > 0 ? 'up' : 'auto' });
-             if (m_items.A.length > 0) m.staves.treble.voices.push({ items: m_items.A, direction: m_items.S.length > 0 ? 'down' : 'auto' });
-             if (m_items.T.length > 0) m.staves.bass.voices.push({ items: m_items.T, direction: m_items.B.length > 0 ? 'up' : 'auto' });
-             if (m_items.B.length > 0) m.staves.bass.voices.push({ items: m_items.B, direction: m_items.T.length > 0 ? 'down' : 'auto' });
+            dir = (vk === 'T' && umto.voices.B && umto.voices.B.length > 0) ? 'up' : 'auto';
+            if (vk === 'B') dir = 'down';
           }
           
-          measures.push(m);
-        }
+          m.staves[staffName].voices.push({ items: items, direction: dir });
+        });
+        
+        // Clean up empty staves
+        if (m.staves.treble && m.staves.treble.voices.length === 0) delete m.staves.treble;
+        if (m.staves.bass && m.staves.bass.voices.length === 0) delete m.staves.bass;
+        
+        measures.push(m);
       }
       
       var processed = {
-        metadata: meta,
+        meta: meta,
         measures: measures
       };
-      console.log("[ID] Processed score built:", processed);
+      console.log("[ID] Processed score built via MeasureEngine:", processed);
       return processed;
     },
   });

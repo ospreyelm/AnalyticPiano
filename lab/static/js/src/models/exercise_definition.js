@@ -951,8 +951,10 @@ define([
               exercise.allowed_answers
             );
           } else {
-            console.log("[UMTO-DEBUG] using fallback problems for non-ident mode");
-            exercise.problems = buildUMTOIdentificationProblems(exercise); 
+            var isPlayback = exercise.mode === "playback" || exercise.mode === "analysis_match" || exercise.mode === "play-all-voices";
+            console.log("[UMTO-DEBUG] using fallback problems for non-ident mode. isPlayback:", isPlayback);
+            // Playback modes don't need problems structure; they use grading slices instead.
+            exercise.problems = isPlayback ? [] : buildUMTOIdentificationProblems(exercise); 
           }
         }
         exercise.playlistTags = definition.playlistTags || [];

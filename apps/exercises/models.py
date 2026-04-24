@@ -31,6 +31,7 @@ from apps.exercises.constants import (
 )
 from apps.exercises.utils.recurrence import rebuild_period_progress
 from apps.exercises.utils.transpose import transpose
+from apps.exercises.utils.abc_preview import generate_abc_preview
 
 User = get_user_model()
 
@@ -358,6 +359,10 @@ class Exercise(ClonableModelMixin, BaseContentModel):
     def lock(self):
         self.locked = True
         self.save()
+
+    @property
+    def preview_notation(self):
+        return generate_abc_preview(self)
 
 
 class StudentSkillMastery(models.Model):
