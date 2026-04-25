@@ -34,6 +34,10 @@ Also create apps/exercises/tests/test_taxonomy_reader.py with these tests:
 - test_skill_label_formatting
 
 Acceptance: python manage.py test apps.exercises.tests.test_taxonomy_reader — all pass.
+
+Stage and commit:
+  git add apps/exercises/taxonomy_reader.py apps/exercises/tests/test_taxonomy_reader.py
+  git commit -m "feat: add TaxonomyReader utility (Phase 1)"
 ```
 
 ---
@@ -69,6 +73,10 @@ Also write tests in apps/student/tests/test_unit_progress.py:
 - test_last_score_pct_none_for_old_data
 
 Run: python manage.py test apps.student.tests.test_unit_progress
+
+Stage and commit:
+  git add apps/student/unit_progress.py apps/student/tests/test_unit_progress.py
+  git commit -m "feat: add UnitProgressView service (Phase 2)"
 ```
 
 ---
@@ -99,6 +107,10 @@ Add two tests to apps/exercises/tests/test_mastery.py (or a new test file if tha
 - test_record_attempt_returns_level_change_when_threshold_crossed
 
 Run existing tests to confirm nothing is broken: python manage.py test apps.exercises.tests
+
+Stage and commit:
+  git add apps/exercises/mastery.py apps/exercises/tests/test_mastery.py
+  git commit -m "feat: record_attempt() returns mastery level changes (Phase 3)"
 ```
 
 ---
@@ -128,6 +140,10 @@ Tasks:
 4. Guard: if score_denominator is 0 in the incoming payload, store it as-is (display layer handles divide-by-zero).
 
 Run the existing exercise submission tests to confirm nothing is broken.
+
+Stage and commit:
+  git add apps/exercises/views.py apps/exercises/models.py
+  git commit -m "feat: submit endpoint returns mastery_changes in JSON response (Phase 4)"
 ```
 
 ---
@@ -157,6 +173,10 @@ Tasks:
 Do NOT change the submission URL or response handling — just add the two fields to the outgoing payload.
 
 Manual acceptance test: complete any exercise in the browser, open DevTools Network tab, confirm the POST payload includes score_numerator and score_denominator as integers.
+
+Stage and commit:
+  git add lab/static/js/src/  (only the grader files you modified)
+  git commit -m "feat: add score_numerator/denominator to exercise submission payload (Phase 5)"
 ```
 
 ---
@@ -199,6 +219,10 @@ Colors: mastered=green, proficient=blue, familiar=amber, not_started=light gray.
 After show() is done, wire into exercise_context.js: after submitExerciseReport() resolves with success, call scoreCard.show(responseData).
 
 Make sure the component is imported/registered correctly for the existing JS build system (check if there's a webpack config, an index.js barrel file, or a simple script tag in the template).
+
+Stage and commit:
+  git add lab/static/js/src/components/exercise_score_card.js lab/static/js/src/models/exercise_context.js
+  git commit -m "feat: add exercise score card overlay component (Phase 6)"
 ```
 
 ---
@@ -242,6 +266,10 @@ Tasks:
    path("units/<str:unit_n>/", UnitProgressView.as_view(), name="unit-progress")
 
 Manual acceptance: visit /student/units/1/ as a logged-in student — page renders without errors.
+
+Stage and commit:
+  git add apps/student/views.py apps/student/urls.py apps/student/templates/student/unit_progress.html
+  git commit -m "feat: add unit progress page (Phase 7)"
 ```
 
 ---
@@ -283,6 +311,10 @@ Tasks:
 Manual acceptance: full journey works — Course page → click unit heading → Unit progress page → 
 click playlist row → Exercise player → complete exercise → Score card appears → click Next →
 return to exercise → Unit page now shows updated mastery bar.
+
+Stage and commit all changed files:
+  git add -A
+  git commit -m "feat: wire unit progress navigation across course, player, and score card (Phase 8)"
 ```
 
 ---
