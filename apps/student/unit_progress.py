@@ -130,10 +130,18 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
             unit_num = int(unit.get("n", 1))
             break
 
+    # Determine the next uncompleted exercise number
+    next_exercise_num = 1
+    ex_ids = playlist.untransposed_exercises_ids
+    for idx, ex_id in enumerate(ex_ids, 1):
+        if ex_id not in completed_ids:
+            next_exercise_num = idx
+            break
+
     url = reverse(
         "student:player",
         kwargs={"unit_num": unit_num},
-    ) + f"?playlist={playlist.id}&exercise_num=1"
+    ) + f"?playlist={playlist.id}&exercise_num={next_exercise_num}"
 
     return {
         "id": playlist.id,
