@@ -10,8 +10,13 @@ function _scorePct(numerator, denominator) {
   return Math.round((numerator / denominator) * 100);
 }
 
-function _tierLabel(pct) {
+function _hadCorrections(errorTally) {
+  return typeof errorTally === "number" && errorTally > 0;
+}
+
+function _tierLabel(pct, errorTally) {
   if (pct === null) return "—";
+  if (pct === 100 && _hadCorrections(errorTally)) return "Corrected";
   if (pct === 100) return "Mastered";
   if (pct >= 80) return "Proficient";
   if (pct >= 60) return "Familiar";
@@ -19,8 +24,9 @@ function _tierLabel(pct) {
   return "Needs Practice";
 }
 
-function _masteryColor(pct) {
+function _masteryColor(pct, errorTally) {
   if (pct === null) return "gray";
+  if (pct === 100 && _hadCorrections(errorTally)) return "blue";
   if (pct === 100) return "green";
   if (pct >= 60) return "blue";
   return "amber";
@@ -55,5 +61,5 @@ function _bannerState(masteryChanges) {
 
 // Node.js export (for tests); AMD loader ignores this.
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { _scorePct: _scorePct, _tierLabel: _tierLabel, _masteryColor: _masteryColor, _segmentColor: _segmentColor, _primaryCta: _primaryCta, _bannerState: _bannerState };
+  module.exports = { _scorePct: _scorePct, _hadCorrections: _hadCorrections, _tierLabel: _tierLabel, _masteryColor: _masteryColor, _segmentColor: _segmentColor, _primaryCta: _primaryCta, _bannerState: _bannerState };
 }

@@ -16,7 +16,7 @@ from apps.exercises.taxonomy_reader import TaxonomyReader
 User = get_user_model()
 
 
-def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num, score_numerator, score_denominator, mastery_changes):
+def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num, score_numerator, score_denominator, mastery_changes, error_tally=None):
     unit_n = None
     unit_name = None
     if exercise_obj.skill_tags:
@@ -56,6 +56,7 @@ def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num,
         "mastery_changes": mastery_changes,
         "score_numerator": score_numerator,
         "score_denominator": score_denominator,
+        "error_tally": error_tally,
         "skill_name": TaxonomyReader.get_skill_label(exercise_obj.skill_tags[0]) if exercise_obj.skill_tags else None,
         "exercise_num": exercise_num,
         "total_exercises": playlist.exercise_count,
@@ -188,6 +189,7 @@ def _submit_exercise_performance(request):
         score_numerator=performance_data.get("score_numerator"),
         score_denominator=performance_data.get("score_denominator"),
         mastery_changes=mastery_changes,
+        error_tally=performance_data.get("error_tally"),
     )
     return JsonResponse(response_data)
 
@@ -239,6 +241,7 @@ def identification_answers_view(request):
             score_numerator=score_data.get("correct"),
             score_denominator=total_answered,
             mastery_changes=mastery_changes,
+            error_tally=score_data.get("incorrect", 0),
         )
 
         return JsonResponse(response_data, status=201)

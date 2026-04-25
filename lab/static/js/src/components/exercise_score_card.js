@@ -19,8 +19,13 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
     return Math.round((numerator / denominator) * 100);
   }
 
-  function _tierLabel(pct) {
+  function _hadCorrections(errorTally) {
+    return typeof errorTally === "number" && errorTally > 0;
+  }
+
+  function _tierLabel(pct, errorTally) {
     if (pct === null) return "—";
+    if (pct === 100 && _hadCorrections(errorTally)) return "Corrected";
     if (pct === 100) return "Mastered";
     if (pct >= 80) return "Proficient";
     if (pct >= 60) return "Familiar";
@@ -28,8 +33,9 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
     return "Needs Practice";
   }
 
-  function _masteryColor(pct) {
+  function _masteryColor(pct, errorTally) {
     if (pct === null) return "gray";
+    if (pct === 100 && _hadCorrections(errorTally)) return "blue";
     if (pct === 100) return "green";
     if (pct >= 60) return "blue";
     return "amber";
@@ -237,16 +243,17 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
 
     this._data = data;
     var pct = _scorePct(data.score_numerator, data.score_denominator);
-    var color = _masteryColor(pct);
-    var label = _tierLabel(pct);
+    var hadCorrections = _hadCorrections(data.error_tally);
+    var color = _masteryColor(pct, data.error_tally);
+    var label = _tierLabel(pct, data.error_tally);
     var banner = _bannerState(data.mastery_changes || {});
     var cta = _primaryCta(pct, data.mastery_changes || {}, data.next_skill_name || null);
-    var isMastered = banner && banner.type === "mastered";
+    var isMastered = banner && banner.type === "mastered" && !hadCorrections;
     var isLow = pct !== null && pct < 60;
 
     // Banner HTML
     var bannerHtml = "";
-    if (banner && banner.type === "mastered") {
+    if (banner && banner.type === "mastered" && !hadCorrections) {
       bannerHtml = '<div class="esc-banner esc-banner-gold">You\'ve mastered ' + _esc(banner.skill.replace(/_/g, " ")) + '</div>';
     } else if (banner && banner.type === "level_up") {
       var oldLabel = _capitalize(banner.old);
@@ -271,6 +278,7 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
 
     // Meta line
     var metaParts = [];
+    if (hadCorrections) metaParts.push("After fixing " + data.error_tally + " error" + (data.error_tally === 1 ? "" : "s"));
     if (data.skill_name) metaParts.push("Skill: " + _esc(data.skill_name));
     if (data.exercise_num && data.total_exercises) metaParts.push("Ex " + data.exercise_num + "/" + data.total_exercises);
     var metaHtml = metaParts.length ? '<div class="esc-meta">' + metaParts.join(" · ") + '</div>' : "";

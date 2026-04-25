@@ -40,6 +40,13 @@ class StudentBasicViewTests(TransactionTestCase):
         response = self.client.get(reverse("student:login"))
         self.assertEqual(response.status_code, 200)
 
+    def test_login_page_uses_monteverdi_branding(self):
+        response = self.client.get(reverse("student:login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Monteverdi")
+        self.assertNotContains(response, "HarmonyLab")
+
     def test_login_post_valid_redirects_to_home(self):
         response = self.client.post(
             reverse("student:login"),
@@ -72,6 +79,14 @@ class StudentBasicViewTests(TransactionTestCase):
         response = self.client.get(reverse("student:home"))
         self.assertEqual(response.status_code, 200)
 
+    def test_home_page_uses_monteverdi_branding(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("student:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Monteverdi")
+        self.assertNotContains(response, "HarmonyLab")
+
     def test_home_context_has_units(self):
         self.client.force_login(self.student)
         response = self.client.get(reverse("student:home"))
@@ -87,6 +102,14 @@ class StudentBasicViewTests(TransactionTestCase):
         self.client.force_login(self.student)
         response = self.client.get(reverse("student:unit", kwargs={"unit_num": 1}))
         self.assertEqual(response.status_code, 200)
+
+    def test_unit_page_uses_monteverdi_branding(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("student:unit", kwargs={"unit_num": 1}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Monteverdi")
+        self.assertNotContains(response, "HarmonyLab")
 
     def test_unit_view_context_has_skills(self):
         self.client.force_login(self.student)
@@ -281,6 +304,15 @@ class StudentPlayerViewTests(TransactionTestCase):
         self.assertIn(b">Previous<", response.content)
         self.assertIn(b">Reset<", response.content)
         self.assertIn(b">Next<", response.content)
+
+    def test_player_page_does_not_render_harmonylab_branding(self):
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "HarmonyLab")
 
     def test_player_disables_computer_keyboard_for_unit1_playback_note_names(self):
         with open(FIXTURES_DIR / "unit1_playback_treble.json") as fh:

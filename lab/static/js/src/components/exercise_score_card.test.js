@@ -14,8 +14,13 @@ function scorePct(numerator, denominator) {
   return Math.round((numerator / denominator) * 100);
 }
 
-function tierLabel(pct) {
+function hadCorrections(errorTally) {
+  return typeof errorTally === "number" && errorTally > 0;
+}
+
+function tierLabel(pct, errorTally) {
   if (pct === null) return "—";
+  if (pct === 100 && hadCorrections(errorTally)) return "Corrected";
   if (pct === 100) return "Mastered";
   if (pct >= 80) return "Proficient";
   if (pct >= 60) return "Familiar";
@@ -23,8 +28,9 @@ function tierLabel(pct) {
   return "Needs Practice";
 }
 
-function masteryColor(pct) {
+function masteryColor(pct, errorTally) {
   if (pct === null) return "gray";
+  if (pct === 100 && hadCorrections(errorTally)) return "blue";
   if (pct === 100) return "green";
   if (pct >= 60) return "blue";
   return "amber";
@@ -96,7 +102,8 @@ assertEqual("null denominator = null", scorePct(5, null), null);
 
 // ---- tierLabel ----
 console.log("\ntierLabel:");
-assertEqual("100% = Mastered", tierLabel(100), "Mastered");
+assertEqual("100% first pass = Mastered", tierLabel(100, 0), "Mastered");
+assertEqual("100% after corrections = Corrected", tierLabel(100, 2), "Corrected");
 assertEqual("95% = Proficient", tierLabel(95), "Proficient");
 assertEqual("80% = Proficient", tierLabel(80), "Proficient");
 assertEqual("70% = Familiar", tierLabel(70), "Familiar");
@@ -108,7 +115,8 @@ assertEqual("null = —", tierLabel(null), "—");
 
 // ---- masteryColor ----
 console.log("\nmasteryColor:");
-assertEqual("100 = green", masteryColor(100), "green");
+assertEqual("100 first pass = green", masteryColor(100, 0), "green");
+assertEqual("100 after corrections = blue", masteryColor(100, 2), "blue");
 assertEqual("80 = blue", masteryColor(80), "blue");
 assertEqual("60 = blue", masteryColor(60), "blue");
 assertEqual("59 = amber", masteryColor(59), "amber");
@@ -154,6 +162,7 @@ console.log("\nExerciseScoreCard module:");
 try {
   var mod = require("./exercise_score_card_logic");
   assert("exports _scorePct", typeof mod._scorePct === "function");
+  assert("exports _hadCorrections", typeof mod._hadCorrections === "function");
   assert("exports _tierLabel", typeof mod._tierLabel === "function");
   assert("exports _masteryColor", typeof mod._masteryColor === "function");
   assert("exports _segmentColor", typeof mod._segmentColor === "function");
@@ -161,12 +170,13 @@ try {
   assert("exports _bannerState", typeof mod._bannerState === "function");
   // Cross-check: module's logic matches inline
   assertEqual("module _scorePct(4,5)=80", mod._scorePct(4, 5), 80);
-  assertEqual("module _tierLabel(100)=Mastered", mod._tierLabel(100), "Mastered");
-  assertEqual("module _masteryColor(100)=green", mod._masteryColor(100), "green");
+  assertEqual("module _hadCorrections(2)=true", mod._hadCorrections(2), true);
+  assertEqual("module _tierLabel(100,2)=Corrected", mod._tierLabel(100, 2), "Corrected");
+  assertEqual("module _masteryColor(100,2)=blue", mod._masteryColor(100, 2), "blue");
   assertEqual("module _segmentColor('mastered')=green", mod._segmentColor("mastered"), "green");
 } catch (e) {
   console.log("  FAIL: module not found — " + e.message);
-  fail += 7;
+  fail += 8;
 }
 
 // ---- Summary ----

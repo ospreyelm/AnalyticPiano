@@ -4,13 +4,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}HarmonyLab{% endblock %}</title>
+  <title>{% block title %}Monteverdi{% endblock %}</title>
   {% load static %}
   <link href="{% static 'student/student.css' %}" rel="stylesheet">
 </head>
 <body>
   <header class="s-header">
-    <span class="s-header-brand">HarmonyLab</span>
+    <span class="s-header-brand">Monteverdi</span>
     {% if request.user.is_authenticated %}
       <span class="s-header-user">{{ request.user.first_name|default:request.user.email }}</span>
     {% endif %}
