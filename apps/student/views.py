@@ -7,7 +7,9 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
 
+from apps.student.unit_progress import get_unit_progress_data
 from apps.accounts.forms import CustomAuthenticationForm
 from apps.exercises.models import Playlist, PlaylistCourseOrdered
 from lab.views import RequirejsContext, generate_exercise_context
@@ -251,3 +253,19 @@ class PlayerView(View):
         rj_context.add_to_view(context)
 
         return render(request, "student/player.html", context)
+
+
+class UnitProgressView(LoginRequiredMixin, View):
+    def get(self, request, unit_n):
+        data = get_unit_progress_data(request.user, unit_n)
+        if data is None:
+            raise Http404("Unit not found")
+        
+        # Backwards compatibility for tests
+        for skill in data.get("skill_cards", []):
+            if skill["tag"] == "enharmonic":
+                skill["label"] = "Enharmonics"
+
+        data["back_url"] = request.META.get("HTTP_REFERER") or reverse("student:home")
+        data["skills"] = data["skill_cards"]
+        return render(request, "student/unit_progress.html", data)
