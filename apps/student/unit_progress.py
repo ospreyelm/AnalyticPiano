@@ -61,8 +61,11 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
                          score_numerator, or None if no such entry exists
         url           - URL to resume the playlist at exercise 1
     """
+    from apps.exercises.models import IdentificationAttempt
+    
     # Aggregate all PerformanceData rows for (user, playlist) across all courses
     pd_rows = PerformanceData.objects.filter(user=user, playlist=playlist)
+    ident_attempts = IdentificationAttempt.objects.filter(user=user, playlist=playlist)
 
     # Unique exercise IDs across all rows and all data entries
     completed_ids: set[str] = {
@@ -71,12 +74,16 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
         for entry in (pd.data or [])
         if "id" in entry
     }
+    
+    ident_completed_ids = {
+        attempt.exercise.id
+        for attempt in ident_attempts
+        if attempt.exercise
+    }
+    completed_ids.update(ident_completed_ids)
     done = len(completed_ids)
 
     # Last score: most recent data entry with score_numerator present.
-    # PerformanceData rows are ordered by creation; entries within each row
-    # are appended chronologically.  We collect all scored entries and take
-    # the last.
     last_score_pct = None
     all_scored_entries = [
         entry
@@ -93,6 +100,26 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
                 last_score_pct = round(numerator / denominator * 100)
         except (KeyError, TypeError, ZeroDivisionError):
             pass
+
+    # Check Identification attempts for scores
+    ident_scores = []
+    for attempt in ident_attempts.order_by("submitted_at"):
+        score_data = attempt.score or {}
+        correct = score_data.get("correct", 0)
+        incorrect = score_data.get("incorrect", 0)
+        unanswered = score_data.get("unanswered", 0)
+        tot = correct + incorrect + unanswered
+        if tot > 0:
+            ident_scores.append(round(correct / tot * 100))
+            
+    if ident_scores:
+        last_pd_date = pd_rows.order_by("created").last().created if pd_rows.exists() else None
+        last_id_date = ident_attempts.order_by("submitted_at").last().submitted_at if ident_attempts.exists() else None
+        
+        if last_id_date and (not last_pd_date or last_id_date > last_pd_date):
+            last_score_pct = ident_scores[-1]
+        elif last_score_pct is None:
+            last_score_pct = ident_scores[-1]
 
     # Build playlist URL targeting the student exercise player
     from apps.exercises.taxonomy_reader import TaxonomyReader
