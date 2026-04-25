@@ -90,7 +90,19 @@ def compute_decay(level: str, last_practiced_dt) -> str:
 # Attempt recording
 # ---------------------------------------------------------------------------
 
-def record_attempt(user_id: int, exercise, correct: bool) -> None:
+def _current_level(user_id: int, skill_tag: str) -> str:
+    """
+    Get the current mastery level for a skill tag.
+    Returns 'not_started' if no record exists.
+    """
+    from apps.exercises.models import StudentSkillMastery
+    try:
+        return StudentSkillMastery.objects.get(user_id=user_id, skill_tag=skill_tag).level
+    except StudentSkillMastery.DoesNotExist:
+        return "not_started"
+
+
+def record_attempt(user_id: int, exercise, correct: bool) -> dict:
     """
     Record an exercise attempt for every skill tag on the exercise.
     Also applies decay before computing the new mastery level, and
@@ -102,9 +114,20 @@ def record_attempt(user_id: int, exercise, correct: bool) -> None:
         user_id:  Integer user PK.
         exercise: Exercise model instance (must have .skill_tags list).
         correct:  True if the attempt was error-free / passed threshold.
+
+    Returns:
+        A dict of skill-level changes, e.g.:
+        {"Note_Names": {"old": "familiar", "new": "proficient"}}
+        Empty dict if no levels changed.
     """
     # Deferred import to keep this module importable without Django setup
     from apps.exercises.models import StudentSkillMastery
+
+    # Snapshot current levels
+    old_levels = {}
+    for skill_tag in exercise.skill_tags:
+        if skill_tag in MASTERY_TAGS:
+            old_levels[skill_tag] = _current_level(user_id, skill_tag)
 
     today = date.today().isoformat()
 
@@ -145,6 +168,15 @@ def record_attempt(user_id: int, exercise, correct: bool) -> None:
 
         mastery.level = new_level
         mastery.save()
+
+    # Snapshot new levels and compare
+    changes = {}
+    for skill_tag, old_level in old_levels.items():
+        new_level = _current_level(user_id, skill_tag)
+        if new_level != old_level:
+            changes[skill_tag] = {"old": old_level, "new": new_level}
+
+    return changes
 
 
 # ---------------------------------------------------------------------------

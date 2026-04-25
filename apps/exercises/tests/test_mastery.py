@@ -186,5 +186,38 @@ class TestRecordAttemptCanonicalFilter(unittest.TestCase):
         mock_mastery_cls.objects.get_or_create.assert_not_called()
 
 
+from django.test import TestCase
+
+class TestRecordAttemptReturnValues(TestCase):
+    def test_record_attempt_returns_empty_dict_when_no_level_change(self):
+        from apps.exercises.mastery import record_attempt
+        from django.contrib.auth import get_user_model
+        from unittest.mock import MagicMock
+        
+        User = get_user_model()
+        user = User.objects.create(email="testuser1@example.com")
+        ex = MagicMock(skill_tags=["Note_Names"])
+        
+        # First attempt creates level 'attempted'
+        record_attempt(user.id, ex, correct=True)
+        
+        # Second attempt keeps it at 'attempted' (needs 3 for familiar)
+        result = record_attempt(user.id, ex, correct=True)
+        self.assertEqual(result, {})
+
+    def test_record_attempt_returns_level_change_when_threshold_crossed(self):
+        from apps.exercises.mastery import record_attempt
+        from django.contrib.auth import get_user_model
+        from unittest.mock import MagicMock
+        
+        User = get_user_model()
+        user = User.objects.create(email="testuser2@example.com")
+        ex = MagicMock(skill_tags=["Note_Names"])
+        
+        # 0 -> 1 attempt: 'not_started' -> 'attempted'
+        result = record_attempt(user.id, ex, correct=True)
+        self.assertEqual(result, {"Note_Names": {"old": "not_started", "new": "attempted"}})
+
+
 if __name__ == "__main__":
     unittest.main()
