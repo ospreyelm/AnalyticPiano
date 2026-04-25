@@ -59,6 +59,22 @@ define([
       return 0;
     },
 
+    // Phase 5: Expose score via getScore()
+    getScore: function () {
+      if (!this.definition) return { numerator: 0, denominator: 0 };
+      var allProblems = this.definition.getProblems() || [];
+      var denominator = 0;
+      var numerator = 0;
+      for (var i = 0; i < allProblems.length; i++) {
+        if (allProblems[i].hidden) continue;
+        denominator++;
+        if (this.answers.hasOwnProperty(String(i)) && this.answers[String(i)] === allProblems[i].answer) {
+          numerator++;
+        }
+      }
+      return { numerator: numerator, denominator: denominator };
+    },
+
     grade: function (definition, visibleProblems, pageOffset) {
       var problems = visibleProblems || definition.getProblems();
       if (typeof pageOffset !== "number") {

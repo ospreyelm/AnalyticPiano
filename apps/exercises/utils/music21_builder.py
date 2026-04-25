@@ -8,6 +8,14 @@ to convert stored exercise data back into analyzable music21 objects.
 from music21 import stream, note, chord, meter, key, instrument, metadata as m21_metadata
 
 
+def _serialize_key_name(k_obj):
+    tonic = k_obj.tonic.name.replace("-", "b")
+    mode = (getattr(k_obj, "mode", "") or "").lower()
+    if mode.startswith("minor"):
+        return f"{tonic}m"
+    return tonic
+
+
 def build_score_from_data(exercise_data):
     """
     Convert exercise JSON data back into a music21 Score object.
@@ -208,10 +216,9 @@ def score_to_cir(score):
     if ks is None:
         ks_sig = score.recurse().getElementsByClass(key.KeySignature).first()
         k_obj = ks_sig.asKey() if ks_sig else key.Key("C")
-        key_name = k_obj.tonicPitchNameWithCase
     else:
         k_obj = ks
-        key_name = ks.tonicPitchNameWithCase
+    key_name = _serialize_key_name(k_obj)
 
     diatonic_alters = {p.step: p.alter for p in k_obj.pitches}
 

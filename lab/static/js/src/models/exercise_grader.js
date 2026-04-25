@@ -195,6 +195,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
       graded.result = result_map[score];
       graded.activeIndex = active_idx;
 
+      this._lastGradedProblems = graded.problems;
       return graded;
     },
     /**
@@ -592,6 +593,17 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
 
       return result;
     },
+    // Phase 5: Expose score via getScore()
+    getScore: function () {
+      var problems = this._lastGradedProblems || [];
+      var denominator = problems.length;
+      var numerator = 0;
+      for (var i = 0; i < problems.length; i++) {
+        if (problems[i].score === 0) numerator++;
+      }
+      return { numerator: numerator, denominator: denominator };
+    },
+
     sopranoMatch: function (expected, delivered) {
       /* parameters are arrays of midi numbers */
 

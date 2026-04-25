@@ -1,0 +1,93 @@
+{% extends "student/base.html" %}
+
+{% block title %}Unit {{ unit.n }} · {{ unit.title }}{% endblock %}
+
+{% block content %}
+  <a href="{{ back_url }}" class="s-back">← Back</a>
+
+  <div class="unit-header">
+    <span class="tier-badge">{{ tier.badge }}</span>
+    <h1 class="unit-title">Unit {{ unit.n }} · {{ unit.title }}</h1>
+    {% if unit.feat %}
+      <p class="unit-desc">{{ unit.feat }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Segmented Mastery Bar -->
+  <div class="segmented-mastery-bar">
+    {% for segment in bar_segments %}
+      <div class="bar-segment tier-{{ segment.level }} tier-{{ segment.level|slugify }} {{ segment.level }}" title="{{ segment.label }}: {{ segment.level|title }}"></div>
+    {% endfor %}
+  </div>
+
+  <!-- Skill Cards -->
+  <div class="skill-cards-container">
+    {% for skill in skill_cards %}
+      <div class="skill-card">
+        <div class="skill-card-header">
+          <h2 class="skill-card-title">{{ skill.label }}</h2>
+          <span class="skill-mastery-badge tier-{{ skill.level }} tier-{{ skill.level|slugify }} {{ skill.level }}">{{ skill.level|title }}</span>
+        </div>
+        <div class="skill-playlists">
+          {% for playlist in skill.playlists %}
+            <a href="{{ playlist.url }}" class="playlist-row">
+              <span class="playlist-name">{{ playlist.name }}</span>
+              <div class="playlist-progress-info">
+                <div class="mini-progress-bar">
+                  <div class="mini-progress-fill" style="width: {% if playlist.total > 0 %}{% widthratio playlist.done playlist.total 100 %}{% else %}0{% endif %}%"></div>
+                </div>
+                <span class="playlist-count">{{ playlist.done }}/{{ playlist.total }}</span>
+                {% if playlist.last_score_pct is not None %}
+                  <span class="playlist-score">· Last: {{ playlist.last_score_pct }}%</span>
+                {% endif %}
+              </div>
+            </a>
+          {% empty %}
+            <div class="coming-soon">Coming soon</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <style>
+    /* Unit Header */
+    .unit-header { margin-bottom: 1.5rem; }
+    .tier-badge { background: #e0e0e0; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 0.5rem; display: inline-block; }
+    .unit-title { font-size: 1.5rem; font-weight: bold; margin: 0.25rem 0; }
+    .unit-desc { font-size: 0.95rem; color: #666; margin: 0; }
+
+    /* Segmented Mastery Bar */
+    .segmented-mastery-bar { display: flex; gap: 4px; height: 12px; width: 100%; margin-bottom: 2rem; background: transparent; border-radius: 6px; overflow: hidden; }
+    .bar-segment { flex: 1; height: 100%; border-radius: 2px; transition: opacity 0.2s; }
+    .bar-segment:hover { opacity: 0.8; }
+    
+    /* Mastery Colors for Bar Segments and Badges */
+    .tier-mastered, .mastered { background-color: #4CAF50 !important; color: white !important; }
+    .tier-proficient, .proficient { background-color: #4A90D9 !important; color: white !important; }
+    .tier-familiar, .familiar { background-color: #FF9800 !important; color: white !important; }
+    .tier-attempted, .attempted { background-color: #FFD28A !important; color: #6b4e16 !important; }
+    .tier-not-started, .tier-not_started, .not_started, .not-started { background-color: #e0e0e0 !important; color: #666 !important; }
+
+    /* Skill Cards */
+    .skill-cards-container { display: flex; flex-direction: column; gap: 1.5rem; }
+    .skill-card { border: 1px solid #eee; border-radius: 8px; padding: 1.25rem; background: #fff; }
+    .skill-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f0f0f0; padding-bottom: 0.5rem; }
+    .skill-card-title { font-size: 1.1rem; font-weight: bold; margin: 0; color: #222; }
+    .skill-mastery-badge { font-size: 0.75rem; font-weight: bold; padding: 0.25rem 0.6rem; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* Playlist Rows */
+    .skill-playlists { display: flex; flex-direction: column; gap: 0.5rem; }
+    .playlist-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #fcfcfc; border: 1px solid #f0f0f0; border-radius: 6px; text-decoration: none; color: #333; transition: background 0.2s, border-color 0.2s; }
+    .playlist-row:hover { background: #f5f9ff; border-color: #4A90D9; }
+    .playlist-name { font-size: 0.9rem; font-weight: 500; }
+    .playlist-progress-info { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: #666; }
+
+    /* Mini Progress Bar */
+    .mini-progress-bar { background: #e0e0e0; width: 60px; height: 6px; border-radius: 3px; overflow: hidden; }
+    .mini-progress-fill { background: #4A90D9; height: 100%; border-radius: 3px; }
+    .playlist-count { font-weight: 600; color: #444; }
+    .playlist-score { color: #888; }
+    .coming-soon { font-size: 0.85rem; color: #888; font-style: italic; padding: 0.5rem 0; }
+  </style>
+{% endblock %}

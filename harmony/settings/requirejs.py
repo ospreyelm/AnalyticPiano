@@ -33,9 +33,11 @@ def configure(ROOT_DIR, STATIC_URL):
         "paths": {
             "app": os.path.join(STATIC_URL, "js", "src"),
             "tonal": os.path.join(STATIC_URL, "js", "lib", "tonal.min"),
+            "canvas-confetti": os.path.join(STATIC_URL, "js", "lib", "canvas-confetti"),
         },
         "shim": {
             "tonal": {"exports": "Tonal"},
+            "canvas-confetti": {"exports": "confetti"},
         },
         "config": {},
     }

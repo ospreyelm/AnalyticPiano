@@ -7,15 +7,33 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
 
+from apps.student.unit_progress import get_unit_progress_data
 from apps.accounts.forms import CustomAuthenticationForm
-from apps.exercises.models import Playlist, PlaylistCourseOrdered
+from apps.exercises.models import Exercise, Playlist, PlaylistCourseOrdered
 from lab.views import RequirejsContext, generate_exercise_context
 
 TAXONOMY_PATH = Path(__file__).resolve().parent.parent.parent / "music_theory_taxonomy_with_branches.json"
 
 # Unit 1 skill tags (fixed for pilot)
 UNIT_1_TAGS = ["Note_Names", "Ledger_Lines", "clefs", "enharmonic"]
+
+
+def _disable_computer_keyboard_input(exercise_context: dict, playlist: Playlist, exercise: Exercise) -> bool:
+    tags = set((playlist.tags or []) + (playlist.skill_tags or []) + (exercise_context.get("skillTags") or []))
+    playlist_name = (playlist.name or "").lower()
+    description = (exercise.description or "").lower()
+    source = str(exercise_context.get("introText") or exercise_context.get("source") or "").lower()
+
+    is_play_from_name_lane = (
+        "play from name" in playlist_name
+        or " note names (" in playlist_name and " play)" in playlist_name
+        or "(exact)" in description
+        or source.startswith("play the notes:")
+    )
+
+    return "unit:1" in tags and "Note_Names" in tags and is_play_from_name_lane
 
 
 def _load_unit_meta(unit_num: int) -> dict:
@@ -129,9 +147,9 @@ class UnitView(View):
     @_require_student
     def get(self, request, unit_num):
         from apps.student.progress import get_unit_progress
+        from apps.exercises.taxonomy_reader import TaxonomyReader
 
         unit_meta = _load_unit_meta(unit_num)
-        # Pilot: only Unit 1 supported
         tags = UNIT_1_TAGS if str(unit_num) == "1" else []
         progress = get_unit_progress(request.user, tags)
 
@@ -163,11 +181,53 @@ class UnitView(View):
                 "playlist_links": playlist_links,
             })
 
+        # Group playlists by unit
+        playlists_qs = Playlist.objects.filter(Q(is_public=True) | Q(authored_by=request.user)).order_by("name")
+        unit_groups = {}
+        ungrouped_playlists = []
+
+        for pl in playlists_qs:
+            pl_unit = None
+            pl_skill_tags = pl.skill_tags or []
+            for t in pl_skill_tags:
+                pl_unit = TaxonomyReader.get_unit_for_tag(t)
+                if pl_unit:
+                    break
+            
+            pl_data = {
+                "id": pl.id,
+                "name": pl.name or pl.id,
+                "url": reverse("student:player", kwargs={"unit_num": unit_num})
+                + f"?playlist={pl.id}&exercise_num=1",
+            }
+
+            if pl_unit:
+                n = str(pl_unit["n"])
+                if n not in unit_groups:
+                    unit_groups[n] = {
+                        "unit": pl_unit,
+                        "playlists": []
+                    }
+                unit_groups[n]["playlists"].append(pl_data)
+            else:
+                ungrouped_playlists.append(pl_data)
+
+        sorted_groups = []
+        for n_str in sorted(unit_groups.keys(), key=lambda k: int(k)):
+            sorted_groups.append(unit_groups[n_str])
+            
+        if ungrouped_playlists:
+            sorted_groups.append({
+                "unit": None,
+                "playlists": ungrouped_playlists
+            })
+
         return render(request, "student/unit.html", {
             "unit_num": unit_num,
             "unit_title": unit_meta.get("title", "Pitch & Staff Notation"),
             "progress": progress,
             "skills": skills,
+            "grouped_playlists": sorted_groups,
         })
 
 
@@ -237,6 +297,9 @@ class PlayerView(View):
             }
             for index, item in enumerate(exercise_context.get("exerciseList", []), 1)
         ]
+        exercise_context["disableComputerKeyboardInput"] = _disable_computer_keyboard_input(
+            exercise_context, playlist, exercise
+        )
 
         rj_context = RequirejsContext(settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG)
         rj_context.set_app_module("app/components/app/exercise")
@@ -247,7 +310,24 @@ class PlayerView(View):
             "playlist": playlist,
             "exercise_num": exercise_num,
             "total_exercises": playlist.exercise_count,
+            "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
         }
         rj_context.add_to_view(context)
 
         return render(request, "student/player.html", context)
+
+
+class UnitProgressView(LoginRequiredMixin, View):
+    def get(self, request, unit_n):
+        data = get_unit_progress_data(request.user, unit_n)
+        if data is None:
+            raise Http404("Unit not found")
+        
+        # Backwards compatibility for tests
+        for skill in data.get("skill_cards", []):
+            if skill["tag"] == "enharmonic":
+                skill["label"] = "Enharmonics"
+
+        data["back_url"] = request.META.get("HTTP_REFERER") or reverse("student:home")
+        data["skills"] = data["skill_cards"]
+        return render(request, "student/unit_progress.html", data)

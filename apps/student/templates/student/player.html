@@ -6,13 +6,47 @@
   <link href="{% static 'student/student.css' %}" rel="stylesheet">
   <style>
     /* Player specific overrides to hide instructor chrome */
-    #container { opacity: 1 !important; background: white; }
-    .s-player-wrap { max-width: 900px; margin: 0 auto; padding: 1rem; }
+    body { background: white !important; }
+    #container {
+      opacity: 1 !important;
+      background: white;
+      margin: 0 auto;
+      padding: 1rem 0 0;
+    }
+    .s-player-wrap {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0 0 1rem;
+    }
+    .s-player-header {
+      width: 95vw;
+      max-width: 85rem;
+      margin: 0 auto 0.75rem;
+    }
     #staffwrapper { background: #fdfdfd; border: 1px solid #eee; border-radius: 8px; margin-bottom: 1rem; }
+    #piano {
+      width: 95vw;
+      max-width: 85rem;
+      margin: 1rem auto 0;
+    }
     #piano { margin-top: 1rem; }
     .instruction-panel { border: none !important; background: transparent !important; padding: 0 !important; }
     .instruction-panel-header { display: none; }
     #exercise-text { font-size: 1.1rem; line-height: 1.4; color: #333; margin-bottom: 1rem; }
+    .s-player-input-hint {
+      width: 95vw;
+      max-width: 85rem;
+      margin: 0 auto 0.75rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid #dbe7ff;
+      border-radius: 10px;
+      background: #f5f9ff;
+      color: #163269;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      text-align: left;
+    }
     #staff-toolbar { margin-bottom: 0.75rem; display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; }
     .s-toolbar-btn {
       display: inline-flex;
@@ -57,52 +91,58 @@
 {% endblock %}
 
 {% block content %}
-<div class="s-player-wrap">
-  <header class="s-player-header">
-    <a href="{% url 'student:unit' unit_num=unit_num %}" class="s-back" style="margin:0">← Back</a>
-    <div class="s-header-brand">Unit {{ unit_num }} // {{ playlist.name }}</div>
-    <div class="s-player-controls" style="display: flex; gap: 8px;">
-      <button id="mute-toggle" class="s-btn-secondary" style="min-width: 60px;">Mute</button>
-      <button id="volume" class="s-btn-secondary" style="min-width: 40px; font-weight: bold;">mf</button>
-      <button id="midi-switch" class="s-btn-secondary" style="min-width: 80px;">MIDI</button>
+<div id="container" class="js-fade-in fade" style="opacity: 0;">
+  <div class="s-player-wrap">
+    <header class="s-player-header">
+      <a href="{% url 'student:unit' unit_num=unit_num %}" class="s-back" style="margin:0">← Back</a>
+      <div class="s-header-brand"><a href="{% url 'student:unit-progress' unit_n=unit_num %}" style="color: inherit; text-decoration: none;">Unit {{ unit_num }}</a> // {{ playlist.name }}</div>
+      <div class="s-player-controls" style="display: flex; gap: 8px;">
+        <button id="mute-toggle" class="s-btn-secondary" style="min-width: 60px;">Mute</button>
+        <button id="volume" class="s-btn-secondary" style="min-width: 40px; font-weight: bold;">mf</button>
+        <button id="midi-switch" class="s-btn-secondary" style="min-width: 80px;">MIDI</button>
+      </div>
+      <div class="s-player-pos">Exercise <span id="js-player-current">{{ exercise_num|default:1 }}</span> of <span id="js-player-total">{{ total_exercises|default:'-' }}</span></div>
+    </header>
+
+    {% if disable_computer_keyboard_input %}
+      <div class="s-player-input-hint">
+        Play each note using your MIDI keyboard or by clicking the piano below. You can play the notes in any octave.
+      </div>
+    {% endif %}
+
+    <div class="harmony-ui">
+      <div id="staff-area">
+        <div id="staff-toolbar">
+          <a class="s-toolbar-btn js-btn-previousexercise" title="Go to previous exercise" href="#">
+            <span class="s-toolbar-icon previous-icon" aria-hidden="true"></span>
+            <span>Previous</span>
+          </a>
+          <a class="s-toolbar-btn js-btn-pristine" title="Reset this exercise" href="#">
+            <span class="s-toolbar-icon refresh-icon" aria-hidden="true"></span>
+            <span>Reset</span>
+          </a>
+          <a class="s-toolbar-btn s-toolbar-btn-primary js-btn-nextexercise" title="Go to next exercise" href="#">
+            <span class="s-toolbar-icon next-icon" aria-hidden="true"></span>
+            <span>Next</span>
+          </a>
+        </div>
+        
+        <div id="staffwrapper">
+          <div id="user-interaction-solicitation">CLICK TO START</div>
+          <canvas id="staff"></canvas>
+        </div>
+
+        <div id="identification-actions" style="display: none; text-align: center; margin-bottom: 1rem;">
+          <button id="identification-submit" class="s-btn-primary" style="width: 200px;">Submit Answer</button>
+        </div>
+
+        <div id="instruction-panel">
+          <div id="exercise-text"></div>
+          <div id="exercise-status-and-tempo" style="font-size: 0.85rem; color: #666;"></div>
+        </div>
+      </div>
+      <div id="piano"></div>
     </div>
-    <div class="s-player-pos">Exercise <span id="js-player-current">{{ exercise_num|default:1 }}</span> of <span id="js-player-total">{{ total_exercises|default:'-' }}</span></div>
-  </header>
-
-
-  <div class="harmony-ui">
-    <div id="staff-area">
-      <div id="staff-toolbar">
-        <a class="s-toolbar-btn js-btn-previousexercise" title="Go to previous exercise" href="#">
-          <span class="s-toolbar-icon previous-icon" aria-hidden="true"></span>
-          <span>Previous</span>
-        </a>
-        <a class="s-toolbar-btn js-btn-pristine" title="Reset this exercise" href="#">
-          <span class="s-toolbar-icon refresh-icon" aria-hidden="true"></span>
-          <span>Reset</span>
-        </a>
-        <a class="s-toolbar-btn s-toolbar-btn-primary js-btn-nextexercise" title="Go to next exercise" href="#">
-          <span class="s-toolbar-icon next-icon" aria-hidden="true"></span>
-          <span>Next</span>
-        </a>
-      </div>
-      
-      <div id="staffwrapper">
-        <div id="user-interaction-solicitation">CLICK TO START</div>
-        <canvas id="staff"></canvas>
-      </div>
-
-      <div id="identification-actions" style="display: none; text-align: center; margin-bottom: 1rem;">
-        <button id="identification-submit" class="s-btn-primary" style="width: 200px;">Submit Answer</button>
-      </div>
-
-      <div id="instruction-panel">
-        <div id="exercise-text"></div>
-        <div id="exercise-status-and-tempo" style="font-size: 0.85rem; color: #666;"></div>
-      </div>
-    </div>
-
-    <div id="piano"></div>
   </div>
 </div>
 {% endblock %}

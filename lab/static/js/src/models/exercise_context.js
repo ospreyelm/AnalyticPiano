@@ -82,6 +82,7 @@ define([
     this.grader = this.settings.grader;
     this.inputChords = this.settings.inputChords;
     this.exercise = this.settings.exercise;
+    this.scoreCard = this.settings.scoreCard || null;
 
     this.state = ExerciseContext.STATE.READY;
     this.graded = false;
@@ -532,10 +533,7 @@ define([
           ? String((offset * -1) / 60)
           : "+" + String((offset * -1) / 60));
 
-      if (this.definition.exercise.performing_course == null) {
-        console.log("No course context found.");
-        return null;
-      }
+      // No course context enforcement - allows independent tracking
 
       var idx = this.definition
         .getExerciseList()
@@ -590,14 +588,21 @@ define([
             ? this._identPage >= this.getTotalIdentPages() - 1
             : null,
         };
+
+        if (this.grader && typeof this.grader.getScore === "function") {
+          var scoreData = this.grader.getScore();
+          report.score_numerator = scoreData.numerator;
+          report.score_denominator = scoreData.denominator;
+        }
       } catch {
         return null;
       }
 
       return report;
     },
-    submitExerciseReport: function () {
+    submitExerciseReport: function (options) {
       const exercise_report = this.compileExerciseReport();
+      console.log("[SCORE-DEBUG] Payload:", exercise_report);
       if (exercise_report == null) {
         console.log(
           "The course-playlist context could not be determined. No performance data submitted."
@@ -606,14 +611,19 @@ define([
         return null;
       }
       const json_data = JSON.stringify(exercise_report);
+      const scoreCard = this.scoreCard;
+      const shouldShowScoreCard = !(options && options.showScoreCard === false);
       $.ajax({
         type: "POST",
         url: "/ajax/exercise-performance/",
         data: { data: json_data },
-        dataType: "text",
+        dataType: "json",
       })
         .done(function (data) {
           console.log("Exercise performance saved");
+          if (shouldShowScoreCard && scoreCard && data && data.status === "ok") {
+            scoreCard.show(data);
+          }
         })
         .fail(function (jqXHR, textStatus, errorThrown) {
           console.log("Possible save failure", textStatus, errorThrown);
@@ -707,7 +717,7 @@ define([
     submitIdentificationAnswers: function (options) {
       var isPageSubmit = options && options.is_page_submit === true;
       if (!this._isIdentificationExercise()) return;
-      if (!this.definition.exercise.performing_course) return;
+      // No course context enforcement - allows independent tracking
 
       var grader = this.grader;
       if (!grader.answers || Object.keys(grader.answers).length === 0) return;
@@ -758,8 +768,8 @@ define([
         type: "POST",
         url: "/ajax/identification-answers/",
         data: { data: JSON.stringify(payload) },
-        dataType: "text"
-      }).done(function () {
+        dataType: "json"
+      }).done(function (data) {
         console.log("Identification answers saved");
         try { localStorage.removeItem("identAnswers:" + selfExerciseId); } catch (e) {}
       }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -1158,6 +1168,9 @@ define([
      * @return undefined
      */
     triggerNextExercise: async function () {
+      if (this.scoreCard) {
+        return;
+      }
       if (
         this.done === true &&
         AUTO_ADVANCE === true &&
@@ -1173,6 +1186,9 @@ define([
      * @return undefined
      */
     triggerRepeatExercise: async function () {
+      if (this.scoreCard) {
+        return;
+      }
       if (this.done === true && AUTO_REPEAT === true) {
         await this.sleep(AUTO_REPEAT_DELAY * 1000);
         this.reloadExercise();

@@ -1,0 +1,77 @@
+<h2>Option A: Clerk + Django Architecture</h2>
+<p class="subtitle">How the pieces fit together — does this match your mental model?</p>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">Request Flow</div>
+    <div class="mockup-body" style="font-family:monospace;font-size:13px;line-height:2">
+      <div style="display:grid;grid-template-columns:1fr 40px 1fr 40px 1fr;gap:0;align-items:center;text-align:center">
+
+        <div style="background:#1a1a2e;border:1px solid #444;border-radius:6px;padding:12px">
+          <div style="color:#a78bfa;font-weight:bold">Browser</div>
+          <div style="color:#888;font-size:11px;margin-top:4px">Student / Teacher</div>
+        </div>
+        <div style="color:#666;font-size:20px">→</div>
+        <div style="background:#1a1a2e;border:1px solid #7c3aed;border-radius:6px;padding:12px">
+          <div style="color:#a78bfa;font-weight:bold">Clerk</div>
+          <div style="color:#888;font-size:11px;margin-top:4px">Login UI + JWT issuer</div>
+          <div style="color:#555;font-size:10px;margin-top:4px">clerk.com hosted</div>
+        </div>
+        <div style="color:#666;font-size:20px">→</div>
+        <div style="background:#1a1a2e;border:1px solid #444;border-radius:6px;padding:12px">
+          <div style="color:#a78bfa;font-weight:bold">Django</div>
+          <div style="color:#888;font-size:11px;margin-top:4px">App + DB</div>
+          <div style="color:#555;font-size:10px;margin-top:4px">Fly.io</div>
+        </div>
+
+      </div>
+
+      <div style="margin:24px 0 8px;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px">Login sequence</div>
+
+      <div style="background:#111;border-radius:6px;padding:16px;text-align:left">
+        <div style="color:#888">1. User visits <span style="color:#a78bfa">/accounts/login/</span> → redirected to <span style="color:#a78bfa">clerk.harmonylab.com/sign-in</span></div>
+        <div style="color:#888;margin-top:8px">2. User signs in via email, Google, or Apple (Clerk handles UI)</div>
+        <div style="color:#888;margin-top:8px">3. Clerk issues a <span style="color:#a78bfa">JWT</span> → stored in browser cookie</div>
+        <div style="color:#888;margin-top:8px">4. Every Django request: middleware validates JWT → looks up <span style="color:#a78bfa">User</span> by <span style="color:#a78bfa">clerk_user_id</span></div>
+        <div style="color:#888;margin-top:8px">5. <span style="color:#a78bfa">request.user</span> is the Django <span style="color:#a78bfa">User</span> instance — all existing views unchanged</div>
+      </div>
+
+      <div style="margin:24px 0 8px;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px">New user signup</div>
+
+      <div style="background:#111;border-radius:6px;padding:16px;text-align:left">
+        <div style="color:#888">1. Clerk webhook fires <span style="color:#a78bfa">user.created</span> event → hits <span style="color:#a78bfa">/accounts/clerk-webhook/</span></div>
+        <div style="color:#888;margin-top:8px">2. Django creates <span style="color:#a78bfa">User(email=..., clerk_user_id=...)</span> row</div>
+        <div style="color:#888;font-size:11px;margin-top:4px;padding-left:16px">Preferences, groups, performance data all attach to this row as normal</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div style="background:#111;border-radius:6px;padding:16px">
+      <div style="color:#a78bfa;font-weight:bold;margin-bottom:8px">What changes</div>
+      <ul style="color:#888;margin:0;padding-left:16px;line-height:1.8;font-size:13px">
+        <li>Add <code style="color:#a78bfa">clerk_user_id</code> field to User model</li>
+        <li>New <code style="color:#a78bfa">ClerkAuthMiddleware</code> validates JWT</li>
+        <li>Webhook endpoint creates new users</li>
+        <li>Login/register templates → Clerk hosted pages</li>
+        <li>New <code style="color:#a78bfa">harmony/settings/fly.py</code></li>
+        <li><code style="color:#a78bfa">Dockerfile</code> + <code style="color:#a78bfa">fly.toml</code></li>
+      </ul>
+    </div>
+    <div style="background:#111;border-radius:6px;padding:16px">
+      <div style="color:#34d399;font-weight:bold;margin-bottom:8px">What stays the same</div>
+      <ul style="color:#888;margin:0;padding-left:16px;line-height:1.8;font-size:13px">
+        <li>All 65 <code style="color:#34d399">@login_required</code> decorators</li>
+        <li>User model fields (preferences, groups…)</li>
+        <li>PerformanceData, Group, Exercise models</li>
+        <li>Dashboard and exercise views</li>
+        <li>All existing URLs</li>
+        <li>Admin panel</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:8px">Does this architecture look right? Any concerns before we go deeper?</p>

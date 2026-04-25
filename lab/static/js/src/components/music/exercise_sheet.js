@@ -333,6 +333,7 @@ define([
         btn.on('click', function (e) {
           e.stopPropagation();
           var grdr = self.exerciseContext.grader;
+          self.exerciseContext.triggerTimer();
           grdr.setAnswer(problemIndex, choice);
           self._closeIdentPopup();
 
@@ -689,55 +690,7 @@ define([
      */
     onSubmitIdentification: function () {
       var graded = this.exerciseContext.submitIdentPage({ fromUI: true, mode: this._currentMode });
-      if (graded && graded.completedExercise && graded.result === 'correct') {
-        this._launchConfetti();
-      }
-    },
-
-    _launchConfetti: function () {
-      var canvas = document.createElement('canvas');
-      canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
-      document.body.appendChild(canvas);
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      var ctx = canvas.getContext('2d');
-      var particles = [];
-      var colors = ['#4facfe','#00f2fe','#f6d365','#fda085','#84fab0','#8fd3f4','#a18cd1','#fbc2eb'];
-      for (var i = 0; i < 120; i++) {
-        particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height * 0.4,
-          r: Math.random() * 7 + 3,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          vx: (Math.random() - 0.5) * 4,
-          vy: Math.random() * 3 + 2,
-          alpha: 1,
-          rot: Math.random() * 360,
-          rotV: (Math.random() - 0.5) * 6,
-        });
-      }
-      var startTime = Date.now();
-      function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        var elapsed = Date.now() - startTime;
-        particles.forEach(function(p) {
-          p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.rot += p.rotV;
-          p.alpha = Math.max(0, 1 - elapsed / 2000);
-          ctx.save();
-          ctx.globalAlpha = p.alpha;
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.rot * Math.PI / 180);
-          ctx.fillStyle = p.color;
-          ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.5);
-          ctx.restore();
-        });
-        if (elapsed < 2200) {
-          requestAnimationFrame(draw);
-        } else {
-          document.body.removeChild(canvas);
-        }
-      }
-      draw();
+      return graded;
     },
 
     _onIdentKeyDown: function (e) {
@@ -1163,6 +1116,10 @@ define([
             wantsRomans = false;
             wantsFigures = false;
             wantsChordLabels = false;
+            wantsNoteNames = false;
+            if (analyzeConfig.mode) {
+              analyzeConfig.mode.note_names = false;
+            }
           }
 
           var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsNoteNames;

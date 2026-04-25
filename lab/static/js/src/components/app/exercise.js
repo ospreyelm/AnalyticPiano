@@ -22,6 +22,7 @@ define([
   "app/models/chorale_grader",
   "app/models/identification_grader",
   "app/models/exercise_context",
+  "app/components/exercise_score_card",
 ], function (
   module,
   _,
@@ -45,7 +46,8 @@ define([
   ExerciseGrader,
   ChoraleGrader,
   IdentificationGrader,
-  ExerciseContext
+  ExerciseContext,
+  ExerciseScoreCard
 ) {
   /**
    * AppExerciseComponent class.
@@ -137,11 +139,16 @@ define([
         ),
       });
     }
+    var scoreCard = new ExerciseScoreCard();
+    scoreCard.init(document.getElementById("staff-area") || document.body);
+    models.scoreCard = scoreCard;
+
     models.exerciseContext = new ExerciseContext({
       inputChords: models.inputChords,
       grader: models.exerciseGrader,
       definition: models.exerciseDefinition,
       exercise: this,
+      scoreCard: scoreCard,
     });
     models.keySignature = new KeySignature(
       models.exerciseDefinition.getKey(),
@@ -170,6 +177,8 @@ define([
    * @return {array} of functions
    */
   AppExerciseComponent.prototype.getComponentMethods = function () {
+    var definition = this.getExerciseDefinition();
+    var disableComputerKeyboardInput = !!definition.disableComputerKeyboardInput;
     var methods = [
       // function () {
       //  var c = new NotificationsComponent();
@@ -195,6 +204,9 @@ define([
         this.addComponent(c);
       },
       function () {
+        if (disableComputerKeyboardInput) {
+          return;
+        }
         var c = new KeyboardShortcutsComponent({
           keySignature: this.models.keySignature,
         });
@@ -202,6 +214,9 @@ define([
         this.addComponent(c);
       },
       function () {
+        if (disableComputerKeyboardInput) {
+          return;
+        }
         var c = new NoteNameInputComponent({
           defaultMode: "notename"
         });

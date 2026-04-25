@@ -1,0 +1,101 @@
+<h2>Fly.io Deployment Design</h2>
+<p class="subtitle">Four new files + env vars. Existing app code unchanged.</p>
+
+<div class="section">
+  <h3>New files</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+    <div style="background:#111;border-radius:6px;padding:16px">
+      <div style="color:#a78bfa;font-weight:bold;margin-bottom:8px;font-family:monospace">Dockerfile</div>
+      <div style="color:#888;font-size:13px;line-height:1.7">
+        Python 3.12 slim base<br>
+        Install Pipfile deps via <code style="color:#a78bfa">pipenv install --system</code><br>
+        Collect static files at build time<br>
+        Expose port 8000, run gunicorn
+      </div>
+    </div>
+
+    <div style="background:#111;border-radius:6px;padding:16px">
+      <div style="color:#a78bfa;font-weight:bold;margin-bottom:8px;font-family:monospace">fly.toml</div>
+      <div style="color:#888;font-size:13px;line-height:1.7">
+        App name, region (ord = Chicago)<br>
+        Port 8000, HTTP health check on <code style="color:#a78bfa">/</code><br>
+        <code style="color:#a78bfa">[deploy] release_command</code> runs migrations + createcachetable<br>
+        1 shared-cpu-1x machine (upgradeable)
+      </div>
+    </div>
+
+    <div style="background:#111;border-radius:6px;padding:16px">
+      <div style="color:#a78bfa;font-weight:bold;margin-bottom:8px;font-family:monospace">harmony/settings/fly.py</div>
+      <div style="color:#888;font-size:13px;line-height:1.7">
+        Inherits from <code style="color:#a78bfa">common.py</code> (mirrors heroku.py)<br>
+        <code style="color:#a78bfa">DEBUG = False</code>, SSL redirect, secure cookies<br>
+        <code style="color:#a78bfa">SECRET_KEY</code>, <code style="color:#a78bfa">ALLOWED_HOSTS</code>, <code style="color:#a78bfa">DATABASE_URL</code> from env<br>
+        Sentry integration (optional)
+      </div>
+    </div>
+
+    <div style="background:#111;border-radius:6px;padding:16px">
+      <div style="color:#a78bfa;font-weight:bold;margin-bottom:8px;font-family:monospace">.dockerignore</div>
+      <div style="color:#888;font-size:13px;line-height:1.7">
+        Exclude <code style="color:#a78bfa">.git</code>, <code style="color:#a78bfa">db.sqlite3</code>, <code style="color:#a78bfa">.env</code>, <code style="color:#a78bfa">__pycache__</code>,<br>
+        <code style="color:#a78bfa">*.pyc</code>, local data files, scratch files
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h3>Environment variables (set via <code style="color:#a78bfa">fly secrets set</code>)</h3>
+  <div style="background:#111;border-radius:6px;padding:16px;font-family:monospace;font-size:13px">
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:8px;align-items:baseline">
+      <div style="color:#a78bfa">DJANGO_SETTINGS_MODULE</div><div style="color:#888">harmony.settings.fly</div>
+      <div style="color:#a78bfa">SECRET_KEY</div><div style="color:#888">generated strong random key</div>
+      <div style="color:#a78bfa">ALLOWED_HOSTS</div><div style="color:#888">["your-app.fly.dev"] (JSON list)</div>
+      <div style="color:#a78bfa">DATABASE_URL</div><div style="color:#888">auto-set by Fly Postgres attach</div>
+      <div style="color:#a78bfa">EMAIL_HOST_USER</div><div style="color:#888">Gmail address for password reset</div>
+      <div style="color:#a78bfa">EMAIL_HOST_PASSWORD</div><div style="color:#888">Gmail app password</div>
+      <div style="color:#a78bfa">SENTRY_DSN</div><div style="color:#888">optional</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Deploy sequence</h3>
+  <div style="background:#111;border-radius:6px;padding:16px;font-family:monospace;font-size:13px;line-height:2">
+    <div style="color:#888">1. <code style="color:#a78bfa">fly launch</code> — creates app + generates fly.toml skeleton</div>
+    <div style="color:#888">2. <code style="color:#a78bfa">fly postgres create</code> — provision Postgres cluster</div>
+    <div style="color:#888">3. <code style="color:#a78bfa">fly postgres attach</code> — sets DATABASE_URL secret automatically</div>
+    <div style="color:#888">4. <code style="color:#a78bfa">fly secrets set ...</code> — remaining env vars</div>
+    <div style="color:#888">5. <code style="color:#a78bfa">fly deploy</code> — builds Docker image, runs release_command (migrate), starts app</div>
+    <div style="color:#888">6. <code style="color:#a78bfa">fly open</code> — verify app loads</div>
+    <div style="color:#888">7. DNS: point custom domain → fly.dev (optional, post-verify)</div>
+  </div>
+</div>
+
+<div class="section">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="background:#111;border-radius:6px;padding:16px">
+      <div style="color:#34d399;font-weight:bold;margin-bottom:8px">Not in scope</div>
+      <ul style="color:#888;margin:0;padding-left:16px;line-height:1.8;font-size:13px">
+        <li>Clerk auth (separate spec)</li>
+        <li>Migrating old Heroku DB (one-off task, not code)</li>
+        <li>Custom domain setup (DNS, post-verify)</li>
+        <li>S3 / media storage (WhiteNoise handles static)</li>
+        <li>CI/CD pipeline</li>
+      </ul>
+    </div>
+    <div style="background:#111;border-radius:6px;padding:16px">
+      <div style="color:#fbbf24;font-weight:bold;margin-bottom:8px">Cost estimate</div>
+      <ul style="color:#888;margin:0;padding-left:16px;line-height:1.8;font-size:13px">
+        <li>1× shared-cpu-1x VM: ~$2–4/mo</li>
+        <li>Fly Postgres (1GB shared): ~$3/mo</li>
+        <li><strong style="color:#fbbf24">Total: ~$5–7/mo</strong></li>
+        <li>Free allowance may cover VM initially</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">Does this design look right? Anything to add or change?</p>

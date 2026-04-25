@@ -384,6 +384,17 @@ define([
       }
     },
 
+    // Phase 5: Expose score via getScore()
+    getScore: function () {
+      var denominator = this.windowGroups.length;
+      var numerator = 0;
+      for (var i = 0; i < this.windowStats.length; i++) {
+        var s = this.windowStats[i];
+        if (s.status === 'complete' && s.incorrect.length === 0) numerator++;
+      }
+      return { numerator: numerator, denominator: denominator };
+    },
+
     // Primary grading entrypoint used by ExerciseContext
     grade: function (definition, inputChords) {
       var graded = {
