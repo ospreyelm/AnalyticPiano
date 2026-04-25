@@ -85,6 +85,7 @@ def submit_exercise_performance(request):
     try:
         return _submit_exercise_performance(request)
     except Exception as e:
+        # TODO(agent): remove this debug wrapper before deploying to production — it exposes tracebacks in responses
         return JsonResponse({"error": str(e), "traceback": _tb.format_exc()}, status=500)
 
 
@@ -159,13 +160,11 @@ def _submit_exercise_performance(request):
                         "level": mastery_rows.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED),
                     })
 
-    # Next exercise URL
+    # Next exercise URL — student player at /s/units/<unit_n>/play/?playlist=<id>&exercise_num=<n>
     next_num = playlist_obj.next_num(int(data_exercise_num))
     next_exercise_url = None
-    if next_num:
-        next_exercise_url = playlist_obj.get_exercise_url_by_num(
-            num=next_num, course_id=data_course_id or None
-        )
+    if next_num and unit_n:
+        next_exercise_url = f"/s/units/{unit_n}/play/?playlist={data_playlist_id}&exercise_num={next_num}"
 
     # Score fields from submitted report
     score_numerator = performance_data.get("score_numerator")
