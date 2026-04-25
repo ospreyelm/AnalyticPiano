@@ -82,6 +82,7 @@ define([
     this.grader = this.settings.grader;
     this.inputChords = this.settings.inputChords;
     this.exercise = this.settings.exercise;
+    this.scoreCard = this.settings.scoreCard || null;
 
     this.state = ExerciseContext.STATE.READY;
     this.graded = false;
@@ -604,6 +605,7 @@ define([
     },
     submitExerciseReport: function () {
       const exercise_report = this.compileExerciseReport();
+      console.log("[SCORE-DEBUG] Payload:", exercise_report);
       if (exercise_report == null) {
         console.log(
           "The course-playlist context could not be determined. No performance data submitted."
@@ -612,14 +614,18 @@ define([
         return null;
       }
       const json_data = JSON.stringify(exercise_report);
+      const scoreCard = this.scoreCard;
       $.ajax({
         type: "POST",
         url: "/ajax/exercise-performance/",
         data: { data: json_data },
-        dataType: "text",
+        dataType: "json",
       })
         .done(function (data) {
           console.log("Exercise performance saved");
+          if (scoreCard && data && data.status === "ok") {
+            scoreCard.show(data);
+          }
         })
         .fail(function (jqXHR, textStatus, errorThrown) {
           console.log("Possible save failure", textStatus, errorThrown);
