@@ -177,6 +177,8 @@ define([
    * @return {array} of functions
    */
   AppExerciseComponent.prototype.getComponentMethods = function () {
+    var definition = this.getExerciseDefinition();
+    var disableComputerKeyboardInput = !!definition.disableComputerKeyboardInput;
     var methods = [
       // function () {
       //  var c = new NotificationsComponent();
@@ -202,6 +204,9 @@ define([
         this.addComponent(c);
       },
       function () {
+        if (disableComputerKeyboardInput) {
+          return;
+        }
         var c = new KeyboardShortcutsComponent({
           keySignature: this.models.keySignature,
         });
@@ -209,6 +214,9 @@ define([
         this.addComponent(c);
       },
       function () {
+        if (disableComputerKeyboardInput) {
+          return;
+        }
         var c = new NoteNameInputComponent({
           defaultMode: "notename"
         });

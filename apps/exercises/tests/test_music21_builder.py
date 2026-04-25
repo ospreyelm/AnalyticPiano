@@ -387,6 +387,32 @@ def _make_satb_score():
     return s
 
 
+def _make_satb_minor_score():
+    s = stream.Score()
+
+    soprano = stream.Part(id="Soprano")
+    alto = stream.Part(id="Alto")
+    tenor = stream.Part(id="Tenor")
+    bass = stream.Part(id="Bass")
+
+    for p in [soprano, alto, tenor, bass]:
+        m = stream.Measure(number=1)
+        m.append(meter.TimeSignature("4/4"))
+        m.append(key.Key("g"))
+        p.append(m)
+
+    soprano.measure(1).append(note.Note("D5", quarterLength=1.0))
+    alto.measure(1).append(note.Note("Bb4", quarterLength=1.0))
+    tenor.measure(1).append(note.Note("G3", quarterLength=1.0))
+    bass.measure(1).append(note.Note("G2", quarterLength=1.0))
+
+    s.append(soprano)
+    s.append(alto)
+    s.append(tenor)
+    s.append(bass)
+    return s
+
+
 class TestScoreToCIR(unittest.TestCase):
     def test_score_to_cir_maps_satb_parts_to_expected_voices(self):
         cir = score_to_cir(_make_satb_score())
@@ -413,7 +439,11 @@ class TestScoreToCIR(unittest.TestCase):
     def test_score_to_cir_emits_meta_key_and_time_signature(self):
         cir = score_to_cir(_make_satb_score())
         self.assertEqual(cir["meta"]["time"], "4/4")
-        self.assertIn(cir["meta"]["key"], ["C", "CM", "C major"])
+        self.assertEqual(cir["meta"]["key"], "C")
+
+    def test_score_to_cir_serializes_minor_key_explicitly(self):
+        cir = score_to_cir(_make_satb_minor_score())
+        self.assertEqual(cir["meta"]["key"], "Gm")
 
 
 # ---------------------------------------------------------------------------

@@ -516,6 +516,15 @@ define([
     if (!analyzer || !ctx || !col) {
       return;
     }
+    if (
+      col.notes &&
+      col.notes.length &&
+      col.notes.every(function (note) {
+        return note && (note._isRest || String(note.duration || "").indexOf("r") !== -1);
+      })
+    ) {
+      return;
+    }
     var label =
       typeof labelOverride === "string"
         ? labelOverride
@@ -644,12 +653,24 @@ define([
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
-      var rest = new Vex.Flow.StaveNote({ clef: clef, keys: ["b/4"], duration: dur, dots: numDots });
+      var restKeyByClef = {
+        treble: "b/4",
+        bass: "d/3",
+        alto: "c/4",
+        tenor: "e/3",
+      };
+      var rest = new Vex.Flow.StaveNote({
+        clef: clef,
+        keys: [restKeyByClef[clef] || "b/4"],
+        duration: dur,
+        dots: numDots
+      });
       if (numDots > 0) Vex.Flow.Dot.buildAndAttach([rest], { all: true });
       
       // Tag with musical position
       rest._onset = onset;
       rest._measureIndex = measureIndex;
+      rest._isRest = true;
       
       return rest;
     }
@@ -1214,17 +1235,22 @@ define([
         var bassStave = showBass ? makeStave(ctx, currentX, bassY, measureWidth, "bass", isFirstMeasure ? meta : {}, isFirstMeasure) : null;
         var activeStaveForLabel = bassStave || trebleStave;
 
-        // Draw explicit key label beneath the bass clef (e.g., "Am:", "C:")
+        // Draw explicit key label beneath the bass clef (e.g., "A minor", "C major")
         function formatKeyForDisplay(k) {
-          if (!k || typeof k !== 'string' || k.length < 2) return k;
+          if (!k || typeof k !== "string" || k.length < 2) return k;
           var mode = k.charAt(0);
           var tonic = k.slice(1).replace(/_/g, "");
-          return tonic + (mode === 'i' ? 'm' : '');
+          return tonic + " " + (mode === "i" ? "minor" : "major");
         }
 
-        var displayKey = (opts && opts.keySignature && typeof opts.keySignature.getKey === 'function') 
-          ? formatKeyForDisplay(opts.keySignature.getKey())
-          : (meta && meta.key);
+        var displayKey =
+          (opts &&
+            opts.keySignature &&
+            typeof opts.keySignature.getKeyName === "function" &&
+            opts.keySignature.getKeyName()) ||
+          ((opts && opts.keySignature && typeof opts.keySignature.getKey === "function")
+            ? formatKeyForDisplay(opts.keySignature.getKey())
+            : (meta && meta.key));
 
         if (isFirstMeasure && displayKey && activeStaveForLabel) {
           ctx.save();
@@ -1233,7 +1259,7 @@ define([
           ctx.textAlign = "left";
           var labelX = currentX + 16; 
           var labelY = activeStaveForLabel.getBottomY() + 22; 
-          ctx.fillText(displayKey + ":", labelX, labelY);
+          ctx.fillText(displayKey, labelX, labelY);
           ctx.restore();
         }
 

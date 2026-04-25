@@ -11,13 +11,29 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from apps.student.unit_progress import get_unit_progress_data
 from apps.accounts.forms import CustomAuthenticationForm
-from apps.exercises.models import Playlist, PlaylistCourseOrdered
+from apps.exercises.models import Exercise, Playlist, PlaylistCourseOrdered
 from lab.views import RequirejsContext, generate_exercise_context
 
 TAXONOMY_PATH = Path(__file__).resolve().parent.parent.parent / "music_theory_taxonomy_with_branches.json"
 
 # Unit 1 skill tags (fixed for pilot)
 UNIT_1_TAGS = ["Note_Names", "Ledger_Lines", "clefs", "enharmonic"]
+
+
+def _disable_computer_keyboard_input(exercise_context: dict, playlist: Playlist, exercise: Exercise) -> bool:
+    tags = set((playlist.tags or []) + (playlist.skill_tags or []) + (exercise_context.get("skillTags") or []))
+    playlist_name = (playlist.name or "").lower()
+    description = (exercise.description or "").lower()
+    source = str(exercise_context.get("introText") or exercise_context.get("source") or "").lower()
+
+    is_play_from_name_lane = (
+        "play from name" in playlist_name
+        or " note names (" in playlist_name and " play)" in playlist_name
+        or "(exact)" in description
+        or source.startswith("play the notes:")
+    )
+
+    return "unit:1" in tags and "Note_Names" in tags and is_play_from_name_lane
 
 
 def _load_unit_meta(unit_num: int) -> dict:
@@ -281,6 +297,9 @@ class PlayerView(View):
             }
             for index, item in enumerate(exercise_context.get("exerciseList", []), 1)
         ]
+        exercise_context["disableComputerKeyboardInput"] = _disable_computer_keyboard_input(
+            exercise_context, playlist, exercise
+        )
 
         rj_context = RequirejsContext(settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG)
         rj_context.set_app_module("app/components/app/exercise")
@@ -291,6 +310,7 @@ class PlayerView(View):
             "playlist": playlist,
             "exercise_num": exercise_num,
             "total_exercises": playlist.exercise_count,
+            "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
         }
         rj_context.add_to_view(context)
 

@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TransactionTestCase, override_settings
 from django.urls import reverse
+import json
+from pathlib import Path
 
 from apps.exercises.models import (
     Course,
@@ -12,6 +14,7 @@ from apps.exercises.models import (
 
 
 User = get_user_model()
+FIXTURES_DIR = Path(__file__).resolve().parents[2] / "exercises" / "tests" / "fixtures" / "umto"
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
@@ -278,6 +281,27 @@ class StudentPlayerViewTests(TransactionTestCase):
         self.assertIn(b">Previous<", response.content)
         self.assertIn(b">Reset<", response.content)
         self.assertIn(b">Next<", response.content)
+
+    def test_player_disables_computer_keyboard_for_unit1_playback_note_names(self):
+        with open(FIXTURES_DIR / "unit1_playback_treble.json") as fh:
+            umto_data = json.load(fh)
+
+        self.exercise.data = umto_data
+        self.exercise.description = "BWV1.6 m.1-2 Soprano (exact) S1"
+        self.exercise.skill_tags = ["unit:1", "Note_Names"]
+        self.exercise.complexity = 1
+        self.exercise.save(update_fields=["data", "description", "skill_tags", "complexity"])
+        self.playlist.name = "Unit 1 - Note Names (Treble Play)"
+        self.playlist.save(update_fields=["name"])
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'"disableComputerKeyboardInput": true', response.content)
+        self.assertIn(b"Use MIDI or click the on-screen piano.", response.content)
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
