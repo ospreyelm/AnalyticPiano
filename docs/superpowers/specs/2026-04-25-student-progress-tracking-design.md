@@ -305,6 +305,37 @@ path("units/<str:unit_n>/", UnitProgressView.as_view(), name="unit-progress"),
 
 ---
 
+## Taxonomy Evolution Rules
+
+The `TaxonomyReader` reads `music_theory_taxonomy.json` at runtime, so most changes to the taxonomy are automatically reflected in the UI with no code changes. The table below documents what is safe and what requires extra care:
+
+| Change | Safe? | Notes |
+|---|---|---|
+| Add a new unit | ✅ Yes | Appears automatically at `/student/units/<n>/` |
+| Add a skill tag to an existing unit | ✅ Yes | Shows as "Not Started" for all students immediately |
+| Add a new playlist targeting a skill | ✅ Yes | Appears in the skill card via set-intersection matching |
+| Move a skill tag to a different unit | ✅ Yes | Existing mastery records follow the tag to its new unit |
+| Reorder units within a tier | ✅ Yes | Units are keyed by `n`, not by position |
+| Add a new tier | ✅ Yes | `get_all_units()` flattens all tiers |
+| **Rename a skill tag** | ⚠️ No | Breaks mastery history — see below |
+| Remove a skill tag | ⚠️ Caution | Existing mastery records become orphaned (no unit to display under) |
+
+### The Immutable Tag Rule
+
+**Skill `tags` strings are permanent identifiers.** They are stored as-is in `StudentSkillMastery.skill` and in `ExercisePlaylistOrdered.skill_tags`. Renaming a tag in the taxonomy JSON without a corresponding DB migration will silently orphan all existing mastery data for that tag — the unit page will show "Not Started" even for students who have extensive history.
+
+**Permitted operations:**
+- Add new tags freely
+- Deprecate old tags by removing them from the taxonomy (their mastery records become inactive but are not deleted)
+
+**Prohibited without a migration:**
+- Renaming a tag string (e.g. `"Note_Names"` → `"note_names"`)
+- Splitting a tag into two new tags
+
+**If a rename is necessary**, write a data migration that updates the `skill` field in `StudentSkillMastery` and the `skill_tags` JSONField in `ExercisePlaylistOrdered` for all affected rows, then update the taxonomy JSON in the same commit.
+
+---
+
 ## Out of Scope (Future Phase)
 
 - Teacher gradebook view (class-wide mastery dashboard)
