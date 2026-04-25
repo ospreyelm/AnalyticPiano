@@ -5,13 +5,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django_tables2 import Column
 
-from apps.exercises.models import Course, Playlist, PerformanceData, User as Performers, IdentificationAttempt, Exercise
+from apps.exercises.models import Course, Playlist, PerformanceData, User as Performers, IdentificationAttempt, Exercise, StudentSkillMastery
 from apps.exercises.tables import PlaylistActivityTable
 from apps.exercises.mastery import record_attempt
+from apps.exercises.taxonomy_reader import TaxonomyReader
 
 User = get_user_model()
 
@@ -79,12 +79,20 @@ def playlist_performance_view(request, playlist_id):
 
 
 @login_required
-@method_decorator(csrf_exempt)
+@csrf_exempt
 def submit_exercise_performance(request):
+    import traceback as _tb
+    try:
+        return _submit_exercise_performance(request)
+    except Exception as e:
+        return JsonResponse({"error": str(e), "traceback": _tb.format_exc()}, status=500)
+
+
+def _submit_exercise_performance(request):
     user_id = request.user.id if request.user.is_authenticated else None
     performance_data = json.loads(request.POST.get("data"))
 
-    data_course_id = performance_data["course_ID"]
+    data_course_id = performance_data.get("course_ID")
     data_playlist_id = performance_data["playlist_ID"]
     data_exercise_num = performance_data["exercise_num"]
 
@@ -95,17 +103,13 @@ def submit_exercise_performance(request):
     except Course.DoesNotExist:
         course_id = None
 
-    playlist_id = Playlist.objects.get(id=data_playlist_id)._id
+    playlist_obj = Playlist.objects.get(id=data_playlist_id)
+    playlist_id = playlist_obj._id
 
     # Convoluted procedure because the Playlist object is not imported to exercise_context.js
     # so the accuracy of this database write depends on the playlist not having changed since
     # the call of compileExerciseReport
-    exercise_id = (
-        Playlist.objects.filter(id=data_playlist_id)
-        .first()
-        .get_exercise_obj_by_num(int(data_exercise_num))
-        .id
-    )
+    exercise_id = playlist_obj.get_exercise_obj_by_num(int(data_exercise_num)).id
 
     # Intercept this meaningless prop from being written to the database
     performance_data.pop("exercise_num")
@@ -125,19 +129,61 @@ def submit_exercise_performance(request):
     if exercise_obj.skill_tags:
         mastery_changes = record_attempt(user_id=user_id, exercise=exercise_obj, correct=correct)
 
-    from apps.exercises.taxonomy_reader import TaxonomyReader
     unit_n = None
+    unit_name = None
     if exercise_obj.skill_tags:
         for t in exercise_obj.skill_tags:
             u = TaxonomyReader.get_unit_for_tag(t)
             if u:
                 unit_n = str(u.get("n"))
+                unit_name = u.get("name")
                 break
 
-    response_data = {"status": "ok", "mastery_changes": mastery_changes}
+    # Build unit bar segments from unit taxonomy tags + user mastery levels
+    unit_bar_segments = []
     if unit_n:
-        response_data["unit_n"] = unit_n
-        
+        unit_dict = TaxonomyReader.get_unit(unit_n)
+        if unit_dict:
+            unit_tags = unit_dict.get("tags", [])
+            if user_id and unit_tags:
+                mastery_rows = {
+                    m.skill_tag: m.level
+                    for m in StudentSkillMastery.objects.filter(
+                        user_id=user_id, skill_tag__in=unit_tags
+                    )
+                }
+                for tag in unit_tags:
+                    unit_bar_segments.append({
+                        "tag": tag,
+                        "label": TaxonomyReader.get_skill_label(tag),
+                        "level": mastery_rows.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED),
+                    })
+
+    # Next exercise URL
+    next_num = playlist_obj.next_num(int(data_exercise_num))
+    next_exercise_url = None
+    if next_num:
+        next_exercise_url = playlist_obj.get_exercise_url_by_num(
+            num=next_num, course_id=data_course_id or None
+        )
+
+    # Score fields from submitted report
+    score_numerator = performance_data.get("score_numerator")
+    score_denominator = performance_data.get("score_denominator")
+
+    response_data = {
+        "status": "ok",
+        "mastery_changes": mastery_changes,
+        "score_numerator": score_numerator,
+        "score_denominator": score_denominator,
+        "skill_name": TaxonomyReader.get_skill_label(exercise_obj.skill_tags[0]) if exercise_obj.skill_tags else None,
+        "exercise_num": data_exercise_num,
+        "total_exercises": playlist_obj.exercise_count,
+        "next_exercise_url": next_exercise_url,
+        "unit_n": unit_n,
+        "unit_name": unit_name,
+        "unit_bar_segments": unit_bar_segments,
+    }
     return JsonResponse(response_data)
 
 
