@@ -94,18 +94,19 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
         except (KeyError, TypeError, ZeroDivisionError):
             pass
 
-    # Build playlist URL (exercise 1, no course scoping)
-    url = None
-    try:
-        url = reverse(
-            "lab:playlist-view",
-            kwargs={"playlist_id": playlist.id, "exercise_num": 1},
-        )
-    except NoReverseMatch:
-        try:
-            url = reverse("lab:playlist-view", kwargs={"playlist_id": playlist.id})
-        except NoReverseMatch:
-            pass
+    # Build playlist URL targeting the student exercise player
+    from apps.exercises.taxonomy_reader import TaxonomyReader
+    unit_num = 1  # Default fallback for pilot
+    for tag in (playlist.skill_tags or []):
+        unit = TaxonomyReader.get_unit_for_tag(tag)
+        if unit:
+            unit_num = int(unit.get("n", 1))
+            break
+
+    url = reverse(
+        "student:player",
+        kwargs={"unit_num": unit_num},
+    ) + f"?playlist={playlist.id}&exercise_num=1"
 
     return {
         "id": playlist.id,
