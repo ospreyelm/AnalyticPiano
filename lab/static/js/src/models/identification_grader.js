@@ -59,6 +59,7 @@ define([
       return 0;
     },
 
+    // Phase 5: Expose score via getScore()
     getScore: function () {
       if (!this.definition) return { numerator: 0, denominator: 0 };
       var allProblems = this.definition.getProblems() || [];

@@ -593,6 +593,7 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
 
       return result;
     },
+    // Phase 5: Expose score via getScore()
     getScore: function () {
       var problems = this._lastGradedProblems || [];
       var denominator = problems.length;

@@ -384,6 +384,7 @@ define([
       }
     },
 
+    // Phase 5: Expose score via getScore()
     getScore: function () {
       var denominator = this.windowGroups.length;
       var numerator = 0;
