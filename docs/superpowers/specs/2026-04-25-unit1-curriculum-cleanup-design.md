@@ -40,6 +40,17 @@ The user explicitly chose to treat Unit 1 as a **clean reset**:
 - No forced prerequisite locking between treble and bass.
 - No extended-range, enharmonics, or separate clef cards in Unit 1.
 
+## Preconditions / Blockers
+
+The following must be resolved before implementation begins:
+
+1. **Canonical playlist IDs must be identified from the actual database.**
+   The six Unit 1 lanes cannot be implemented against placeholder playlist references.
+2. **The old Unit 1 seeding path must be updated or retired in the same project.**
+   Otherwise the deprecated Unit 1 structure can be silently reintroduced in dev or CI.
+3. **The canonical student entry surface for Unit 1 must be explicit.**
+   Both existing student Unit 1 surfaces cannot continue to diverge.
+
 ---
 
 ## Curriculum Decisions
@@ -131,11 +142,24 @@ UNIT1_CANONICAL_LANES = {
 }
 ```
 
-The exact playlist IDs may live in Python config, a helper module, or another explicit curated structure, but the key point is this:
+The exact playlist IDs must be resolved from the live/dev database before implementation starts. They may then live in Python config, a helper module, or another explicit curated structure, but the key point is this:
 
 **Unit 1 must stop being inferred from “all playlists that overlap a tag.”**
 
 Instead, the student surface should use one curated source of truth.
+
+### Required discovery step
+
+Before writing implementation code:
+
+- query the current Unit 1 playlists from the database
+- determine the six canonical playlists
+- record those exact playlist IDs in either:
+  - this spec,
+  - a companion seed/curation script, or
+  - the final canonical mapping module
+
+Implementation must not proceed with `...` placeholders.
 
 ## Section 2: Duplicate handling
 
@@ -157,6 +181,24 @@ Reason:
 
 This allows implementation to avoid migration logic entirely.
 
+## Section 4: Seeder policy
+
+The existing Unit 1 seeding command must be updated or retired as part of this project.
+
+Reason:
+- the current seeder creates the old four-tag structure (`Note_Names`, `Ledger_Lines`, `clefs`, `enharmonic`)
+- that structure is explicitly being retired by this spec
+
+Affected file:
+- `apps/student/management/commands/seed_unit1_content.py`
+
+Allowed outcomes:
+
+1. update the seeder to emit the six canonical Unit 1 lanes, or
+2. retire/disable the seeder if it is no longer authoritative
+
+It must not remain capable of silently recreating the deprecated student-facing Unit 1 structure.
+
 ---
 
 ## Student Page Design
@@ -173,6 +215,22 @@ This can be implemented as:
 - a curated Unit 1 view-model generator used only for Unit 1
 
 The generic multi-tag system can remain for other units for now.
+
+## Section 1A: Canonical entry surface
+
+Implementation must explicitly choose the canonical Unit 1 student entry path and align the other surface to it.
+
+Current parallel surfaces:
+
+- `apps/student/views.py` `UnitView` using `student/unit.html`
+- `apps/student/views.py` `UnitProgressView` using `student/unit_progress.html`
+
+Decision required in implementation:
+
+- either `UnitProgressView` becomes the canonical Unit 1 curriculum surface and `UnitView` redirects/alignment-shims to it
+- or `UnitView` becomes canonical and `UnitProgressView` is aligned to the same curated data
+
+This project must not leave one Unit 1 route curated and the other route tag-derived.
 
 ## Section 2: Card layout
 
@@ -232,11 +290,33 @@ Potential implementation files:
 - `apps/student/unit_progress.py`
 - `apps/student/views.py`
 - `apps/student/templates/student/unit_progress.html`
-- possibly `apps/student/templates/student/unit.html` if that surface is still used
+- `apps/student/templates/student/unit.html`
+- `apps/student/management/commands/seed_unit1_content.py`
 - new helper module for curated Unit 1 lane mapping
 - tests for student unit rendering
 
 No migration is required by this spec.
+
+### Legacy cleanup items that must be addressed explicitly
+
+Implementation should review and either remove or stop relying on the following old Unit 1 structures:
+
+- `UNIT_1_TAGS` in `apps/student/views.py`
+- `skill_display_names` entries for retired Unit 1 categories in `apps/student/views.py`
+- the `enharmonic` label compatibility override in `apps/student/views.py`
+- HomeView resume selection logic in `apps/student/views.py` that currently uses `_get_playlists_for_tag(...)` and the retiring Unit 1 tag flow
+
+These are part of the deprecated tag/category model and should not survive unnoticed into the curated Unit 1 implementation.
+
+### Resume flow requirement
+
+If Unit 1 still exposes a resume button or resume URL from `HomeView`, that flow must be updated to use the canonical Unit 1 lane mapping rather than `_get_playlists_for_tag(...)` / `UNIT_1_TAGS`.
+
+Implementation must not leave HomeView resuming students into a non-canonical or duplicate Unit 1 playlist through the old tag-overlap path.
+
+### Tag continuity
+
+Canonical Unit 1 playlists should retain the `unit:1` tag (or equivalent existing unit tag contract) so existing unit-scoped player logic continues to recognize them correctly.
 
 ---
 
@@ -266,6 +346,7 @@ The key constraint is that **the student page and the content mapping must be up
 - confirm exactly six student-facing Unit 1 lanes are rendered
 - confirm each lane maps to one canonical playlist
 - confirm duplicate playlists do not appear on the Unit 1 page
+- confirm the canonical playlists are the six explicitly selected DB rows, not name-based guesses
 
 ### Student UI checks
 
@@ -283,6 +364,22 @@ The key constraint is that **the student page and the content mapping must be up
 - each row resumes into the canonical playlist
 - done/total counts still render correctly
 - last-score display still works if a score exists
+
+### Required automated test coverage
+
+Implementation should add or extend tests in concrete existing files, not rely on manual checks alone.
+
+Primary targets:
+
+- `apps/student/tests/test_unit_progress.py`
+  - verify the curated Unit 1 view-model returns exactly three cards and six rows
+  - verify retired categories do not appear
+- `apps/student/tests/test_unit1_curriculum_integration.py`
+  - verify the student-facing Unit 1 page renders the curated structure end-to-end
+- `apps/student/tests/test_views.py`
+  - verify whichever Unit 1 route remains canonical responds with the curated structure
+
+If implementation introduces a new Unit 1 curation helper/module, add focused unit tests for the canonical lane mapping there as well.
 
 ---
 
@@ -318,4 +415,3 @@ After this cleanup, the next logical project is teacher/tooling support shaped b
 - broader curriculum authoring UX
 
 Those tools should be built **after** Unit 1 is structurally correct, not before.
-
