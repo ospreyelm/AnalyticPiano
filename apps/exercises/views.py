@@ -90,7 +90,11 @@ def submit_exercise_performance(request):
 
     # This shouldn't require a lookup but only a format conversion
     # between integers (0 thru 1,757,599) and strings (A00AA thru Z99ZZ)
-    course_id = Course.objects.get(id=data_course_id)._id
+    try:
+        course_id = Course.objects.get(id=data_course_id)._id if data_course_id else None
+    except Course.DoesNotExist:
+        course_id = None
+
     playlist_id = Playlist.objects.get(id=data_playlist_id)._id
 
     # Convoluted procedure because the Playlist object is not imported to exercise_context.js
@@ -147,7 +151,7 @@ def identification_answers_view(request):
         data_exercise_num = data["exercise_num"]
 
         try:
-            course = Course.objects.get(id=data_course_id)
+            course = Course.objects.get(id=data_course_id) if data_course_id else None
             playlist = Playlist.objects.get(id=data_playlist_id)
             exercise = playlist.get_exercise_obj_by_num(int(data_exercise_num))
         except Exception as e:

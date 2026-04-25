@@ -533,10 +533,7 @@ define([
           ? String((offset * -1) / 60)
           : "+" + String((offset * -1) / 60));
 
-      if (this.definition.exercise.performing_course == null) {
-        console.log("No course context found.");
-        return null;
-      }
+      // No course context enforcement - allows independent tracking
 
       var idx = this.definition
         .getExerciseList()
@@ -719,7 +716,7 @@ define([
     submitIdentificationAnswers: function (options) {
       var isPageSubmit = options && options.is_page_submit === true;
       if (!this._isIdentificationExercise()) return;
-      if (!this.definition.exercise.performing_course) return;
+      // No course context enforcement - allows independent tracking
 
       var grader = this.grader;
       if (!grader.answers || Object.keys(grader.answers).length === 0) return;
@@ -1170,6 +1167,9 @@ define([
      * @return undefined
      */
     triggerNextExercise: async function () {
+      if (this.scoreCard) {
+        return;
+      }
       if (
         this.done === true &&
         AUTO_ADVANCE === true &&
@@ -1185,6 +1185,9 @@ define([
      * @return undefined
      */
     triggerRepeatExercise: async function () {
+      if (this.scoreCard) {
+        return;
+      }
       if (this.done === true && AUTO_REPEAT === true) {
         await this.sleep(AUTO_REPEAT_DELAY * 1000);
         this.reloadExercise();
