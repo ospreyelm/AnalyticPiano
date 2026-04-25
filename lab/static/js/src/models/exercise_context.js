@@ -590,6 +590,12 @@ define([
             ? this._identPage >= this.getTotalIdentPages() - 1
             : null,
         };
+
+        if (this.grader && typeof this.grader.getScore === "function") {
+          var scoreData = this.grader.getScore();
+          report.score_numerator = scoreData.numerator;
+          report.score_denominator = scoreData.denominator;
+        }
       } catch {
         return null;
       }
