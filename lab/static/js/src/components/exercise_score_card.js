@@ -9,7 +9,7 @@
  *               unit_bar_segments, next_exercise_url, next_skill_name, unit_n });
  *   card.hide();
  */
-define(["jquery"], function ($) {
+define(["jquery", "canvas-confetti"], function ($, confetti) {
   "use strict";
 
   // ---- Pure logic helpers ----
@@ -36,7 +36,7 @@ define(["jquery"], function ($) {
   }
 
   function _segmentColor(level) {
-    var map = { mastered: "green", proficient: "blue", familiar: "amber", not_started: "lightgray" };
+    var map = { mastered: "green", proficient: "blue", familiar: "amber", attempted: "amber", not_started: "lightgray" };
     return map[level] || "lightgray";
   }
 
@@ -87,6 +87,34 @@ define(["jquery"], function ($) {
     );
   }
 
+  function _launchConfetti() {
+    if (typeof confetti !== "function") return;
+
+    var defaults = {
+      disableForReducedMotion: true,
+      zIndex: 10060,
+      ticks: 300,
+      gravity: 0.9,
+      decay: 0.94,
+      startVelocity: 32,
+      scalar: 1.05,
+      colors: ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+    };
+
+    function fire(particleRatio, opts) {
+      confetti($.extend({}, defaults, opts, {
+        particleCount: Math.floor(180 * particleRatio)
+      }));
+    }
+
+    fire(0.22, { spread: 72, origin: { x: 0.5, y: 0.58 } });
+    fire(0.18, { spread: 98, startVelocity: 42, scalar: 0.95, origin: { x: 0.32, y: 0.62 } });
+    fire(0.18, { spread: 98, startVelocity: 42, scalar: 0.95, origin: { x: 0.68, y: 0.62 } });
+    fire(0.14, { spread: 120, decay: 0.92, scalar: 1.2, origin: { x: 0.5, y: 0.5 } });
+    fire(0.14, { angle: 60, spread: 58, origin: { x: 0, y: 0.72 } });
+    fire(0.14, { angle: 120, spread: 58, origin: { x: 1, y: 0.72 } });
+  }
+
   // ---- CSS injected once ----
   var _cssInjected = false;
   function _injectCss() {
@@ -100,7 +128,7 @@ define(["jquery"], function ($) {
       "  --esc-arc-gray: #9ca3af;",
       "}",
       ".esc-overlay {",
-      "  position: fixed; bottom: 0; left: 0; right: 0; z-index: 9000;",
+      "  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10050;",
       "  transform: translateY(100%); transition: transform 0.3s ease;",
       "  background: #fff; border-top: 1px solid #e5e7eb;",
       "  box-shadow: 0 -4px 16px rgba(0,0,0,0.10);",
@@ -206,11 +234,6 @@ define(["jquery"], function ($) {
    */
   ExerciseScoreCard.prototype.show = function (data) {
     if (!this._el) return;
-
-    // Suppress in test mode
-    var identMode = (window.HarmonyLab && window.HarmonyLab.identMode) ||
-                    (window.__exerciseIdentMode);  // set by exercise_context.js
-    if (identMode === "test") return;
 
     this._data = data;
     var pct = _scorePct(data.score_numerator, data.score_denominator);
@@ -331,6 +354,9 @@ define(["jquery"], function ($) {
 
     // Slide up
     this._el.classList.add("esc-visible");
+    if (pct === 100) {
+      _launchConfetti();
+    }
   };
 
   /**

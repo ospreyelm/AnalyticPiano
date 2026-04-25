@@ -2,7 +2,13 @@
   // Note: paths are relative to *this* config file
   "baseUrl": "../lib",
   "paths": {
-    "app": "../src"
+    "app": "../src",
+    "canvas-confetti": "canvas-confetti.min"
+  },
+  "shim": {
+    "canvas-confetti": {
+      "exports": "confetti"
+    }
   },
   "name": "app/main",
   "out": "../build/main-built.js"

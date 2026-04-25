@@ -16,6 +16,56 @@ from apps.exercises.taxonomy_reader import TaxonomyReader
 User = get_user_model()
 
 
+def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num, score_numerator, score_denominator, mastery_changes):
+    unit_n = None
+    unit_name = None
+    if exercise_obj.skill_tags:
+        for t in exercise_obj.skill_tags:
+            u = TaxonomyReader.get_unit_for_tag(t)
+            if u:
+                unit_n = str(u.get("n"))
+                unit_name = u.get("name")
+                break
+
+    unit_bar_segments = []
+    if unit_n:
+        unit_dict = TaxonomyReader.get_unit(unit_n)
+        if unit_dict:
+            unit_tags = unit_dict.get("tags", [])
+            if user_id and unit_tags:
+                mastery_rows = {
+                    m.skill_tag: m.level
+                    for m in StudentSkillMastery.objects.filter(
+                        user_id=user_id, skill_tag__in=unit_tags
+                    )
+                }
+                for tag in unit_tags:
+                    unit_bar_segments.append({
+                        "tag": tag,
+                        "label": TaxonomyReader.get_skill_label(tag),
+                        "level": mastery_rows.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED),
+                    })
+
+    next_num = playlist.next_num(int(exercise_num))
+    next_exercise_url = None
+    if next_num and unit_n:
+        next_exercise_url = f"/s/units/{unit_n}/play/?playlist={playlist.id}&exercise_num={next_num}"
+
+    return {
+        "status": "ok",
+        "mastery_changes": mastery_changes,
+        "score_numerator": score_numerator,
+        "score_denominator": score_denominator,
+        "skill_name": TaxonomyReader.get_skill_label(exercise_obj.skill_tags[0]) if exercise_obj.skill_tags else None,
+        "exercise_num": exercise_num,
+        "total_exercises": playlist.exercise_count,
+        "next_exercise_url": next_exercise_url,
+        "unit_n": unit_n,
+        "unit_name": unit_name,
+        "unit_bar_segments": unit_bar_segments,
+    }
+
+
 # @staff_member_required
 def playlist_performance_view(request, playlist_id):
     data = []
@@ -130,59 +180,15 @@ def _submit_exercise_performance(request):
     if exercise_obj.skill_tags:
         mastery_changes = record_attempt(user_id=user_id, exercise=exercise_obj, correct=correct)
 
-    unit_n = None
-    unit_name = None
-    if exercise_obj.skill_tags:
-        for t in exercise_obj.skill_tags:
-            u = TaxonomyReader.get_unit_for_tag(t)
-            if u:
-                unit_n = str(u.get("n"))
-                unit_name = u.get("name")
-                break
-
-    # Build unit bar segments from unit taxonomy tags + user mastery levels
-    unit_bar_segments = []
-    if unit_n:
-        unit_dict = TaxonomyReader.get_unit(unit_n)
-        if unit_dict:
-            unit_tags = unit_dict.get("tags", [])
-            if user_id and unit_tags:
-                mastery_rows = {
-                    m.skill_tag: m.level
-                    for m in StudentSkillMastery.objects.filter(
-                        user_id=user_id, skill_tag__in=unit_tags
-                    )
-                }
-                for tag in unit_tags:
-                    unit_bar_segments.append({
-                        "tag": tag,
-                        "label": TaxonomyReader.get_skill_label(tag),
-                        "level": mastery_rows.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED),
-                    })
-
-    # Next exercise URL — student player at /s/units/<unit_n>/play/?playlist=<id>&exercise_num=<n>
-    next_num = playlist_obj.next_num(int(data_exercise_num))
-    next_exercise_url = None
-    if next_num and unit_n:
-        next_exercise_url = f"/s/units/{unit_n}/play/?playlist={data_playlist_id}&exercise_num={next_num}"
-
-    # Score fields from submitted report
-    score_numerator = performance_data.get("score_numerator")
-    score_denominator = performance_data.get("score_denominator")
-
-    response_data = {
-        "status": "ok",
-        "mastery_changes": mastery_changes,
-        "score_numerator": score_numerator,
-        "score_denominator": score_denominator,
-        "skill_name": TaxonomyReader.get_skill_label(exercise_obj.skill_tags[0]) if exercise_obj.skill_tags else None,
-        "exercise_num": data_exercise_num,
-        "total_exercises": playlist_obj.exercise_count,
-        "next_exercise_url": next_exercise_url,
-        "unit_n": unit_n,
-        "unit_name": unit_name,
-        "unit_bar_segments": unit_bar_segments,
-    }
+    response_data = _build_completion_response(
+        user_id=user_id,
+        playlist=playlist_obj,
+        exercise_obj=exercise_obj,
+        exercise_num=data_exercise_num,
+        score_numerator=performance_data.get("score_numerator"),
+        score_denominator=performance_data.get("score_denominator"),
+        mastery_changes=mastery_changes,
+    )
     return JsonResponse(response_data)
 
 
@@ -220,10 +226,22 @@ def identification_answers_view(request):
         # score structure: {"correct": N, "incorrect": N, "unanswered": N}
         score_data = data.get('score', {})
         correct = (score_data.get('incorrect', 1) == 0 and score_data.get('unanswered', 1) == 0)
+        mastery_changes = {}
         if exercise.skill_tags:
-            record_attempt(user_id=request.user.id, exercise=exercise, correct=correct)
+            mastery_changes = record_attempt(user_id=request.user.id, exercise=exercise, correct=correct)
 
-        return HttpResponse(status=201)
+        total_answered = score_data.get("correct", 0) + score_data.get("incorrect", 0) + score_data.get("unanswered", 0)
+        response_data = _build_completion_response(
+            user_id=request.user.id,
+            playlist=playlist,
+            exercise_obj=exercise,
+            exercise_num=data_exercise_num,
+            score_numerator=score_data.get("correct"),
+            score_denominator=total_answered,
+            mastery_changes=mastery_changes,
+        )
+
+        return JsonResponse(response_data, status=201)
 
     elif request.method == "GET":
         exercise_id = request.GET.get("exercise_id")

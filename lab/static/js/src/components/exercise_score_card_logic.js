@@ -27,7 +27,7 @@ function _masteryColor(pct) {
 }
 
 function _segmentColor(level) {
-  var map = { mastered: "green", proficient: "blue", familiar: "amber", not_started: "lightgray" };
+  var map = { mastered: "green", proficient: "blue", familiar: "amber", attempted: "amber", not_started: "lightgray" };
   return map[level] || "lightgray";
 }
 

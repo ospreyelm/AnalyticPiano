@@ -600,7 +600,7 @@ define([
 
       return report;
     },
-    submitExerciseReport: function () {
+    submitExerciseReport: function (options) {
       const exercise_report = this.compileExerciseReport();
       console.log("[SCORE-DEBUG] Payload:", exercise_report);
       if (exercise_report == null) {
@@ -612,6 +612,7 @@ define([
       }
       const json_data = JSON.stringify(exercise_report);
       const scoreCard = this.scoreCard;
+      const shouldShowScoreCard = !(options && options.showScoreCard === false);
       $.ajax({
         type: "POST",
         url: "/ajax/exercise-performance/",
@@ -620,7 +621,7 @@ define([
       })
         .done(function (data) {
           console.log("Exercise performance saved");
-          if (scoreCard && data && data.status === "ok") {
+          if (shouldShowScoreCard && scoreCard && data && data.status === "ok") {
             scoreCard.show(data);
           }
         })
@@ -767,8 +768,8 @@ define([
         type: "POST",
         url: "/ajax/identification-answers/",
         data: { data: JSON.stringify(payload) },
-        dataType: "text"
-      }).done(function () {
+        dataType: "json"
+      }).done(function (data) {
         console.log("Identification answers saved");
         try { localStorage.removeItem("identAnswers:" + selfExerciseId); } catch (e) {}
       }).fail(function (jqXHR, textStatus, errorThrown) {

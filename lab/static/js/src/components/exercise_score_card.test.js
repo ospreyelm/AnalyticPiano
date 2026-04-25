@@ -31,7 +31,7 @@ function masteryColor(pct) {
 }
 
 function segmentColor(level) {
-  var map = { mastered: "green", proficient: "blue", familiar: "amber", not_started: "lightgray" };
+  var map = { mastered: "green", proficient: "blue", familiar: "amber", attempted: "amber", not_started: "lightgray" };
   return map[level] || "lightgray";
 }
 
@@ -119,6 +119,7 @@ console.log("\nsegmentColor:");
 assertEqual("mastered = green", segmentColor("mastered"), "green");
 assertEqual("proficient = blue", segmentColor("proficient"), "blue");
 assertEqual("familiar = amber", segmentColor("familiar"), "amber");
+assertEqual("attempted = amber", segmentColor("attempted"), "amber");
 assertEqual("not_started = lightgray", segmentColor("not_started"), "lightgray");
 assertEqual("unknown = lightgray", segmentColor("unknown"), "lightgray");
 
