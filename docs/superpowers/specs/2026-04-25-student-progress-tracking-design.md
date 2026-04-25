@@ -148,7 +148,7 @@ def get_unit_progress_data(user, unit_n: str) -> dict:
               "done": 16,
               "total": 36,
               "last_score_pct": 80,    # None if no score_numerator stored yet
-              "url": "/student/playlist/PA01BC/?exercise_num=17"
+              "url": "<existing playlist-view URL, resuming at next uncompleted exercise_num>"
             }
           ]
         },
@@ -158,9 +158,9 @@ def get_unit_progress_data(user, unit_n: str) -> dict:
     """
 ```
 
-**Playlist matching:** Playlists are matched to a skill card when `playlist.skill_tags` and the unit's `tags` share at least one element (set intersection). Only playlists accessible to the student's course are included.
+**Playlist matching:** Playlists are matched to a skill card when `playlist.skill_tags` and the unit's `tags` share at least one element (set intersection). All matching playlists in the database are shown — no course-scoping — so students see the full available set regardless of which course they accessed the unit from.
 
-**Completion count (`done`):** Derived from `PerformanceData.data[]` — count of entries for exercises in that playlist.
+**Completion count (`done`):** Number of *unique exercise IDs* the student has completed at least once in this playlist, aggregated across all courses. Derived from all `PerformanceData` rows for this (user, playlist) pair: collect all `data[].id` values, deduplicate, count.
 
 **Last score:** Most recent entry with `score_numerator` present, computed as `round(score_numerator / score_denominator * 100)`.
 

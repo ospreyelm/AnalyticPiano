@@ -44,7 +44,7 @@ CMD ["gunicorn", "harmony.wsgi:application", "--bind", "0.0.0.0:8000", "--log-fi
 
 App config for Fly.io. Key settings:
 
-- Region: `ord` (Chicago) — change to closest region if needed
+- Region: `ewr` (Eastern US) — change to closest region if needed
 - Internal port: 8000
 - HTTP health check on `/`
 - `[deploy] release_command` runs `python manage.py migrate && python manage.py createcachetable` (equivalent to Heroku's `release` dyno)
@@ -52,7 +52,7 @@ App config for Fly.io. Key settings:
 
 ```toml
 app = "APP_NAME"
-primary_region = "ord"
+primary_region = "ewr"
 
 [build]
 
