@@ -159,6 +159,8 @@ git commit -m "Define canonical Unit 1 curriculum mapping"
 
 - [ ] **Step 1: Write failing service tests for the curated Unit 1 shape**
 
+Before writing the full assertion block, make sure `apps/student/unit_progress.py` exposes an importable `get_unit1_lane_groups` symbol at module scope, even if the first implementation branch is still incomplete. This keeps the red test failure about behavior rather than a patch-target/import error.
+
 Add a focused test in `apps/student/tests/test_unit_progress.py` that expects exactly three groups and six rows for Unit 1:
 
 ```python
@@ -177,6 +179,8 @@ Add a focused test in `apps/student/tests/test_unit_progress.py` that expects ex
 ```
 
 Also add negative assertions that retired Unit 1 categories are absent from the returned labels.
+
+Expected initial failure mode: the test should fail because `activity_cards` behavior is not implemented yet, not because the patch target cannot be imported.
 
 - [ ] **Step 2: Add curated Unit 1 support to the service layer**
 
@@ -307,7 +311,7 @@ def _get_unit1_resume_url(user):
         for idx, exercise_id in enumerate(playlist.untransposed_exercises_ids, 1):
             if exercise_id not in completed_ids:
                 return reverse("student:player", kwargs={"unit_num": 1}) + f"?playlist={playlist.id}&exercise_num={idx}"
-    return reverse("student:unit-progress", kwargs={"unit_n": 1})
+    return reverse("student:unit-progress", kwargs={"unit_n": "1"})
 ```
 
 Use the canonical lane order (Identify/Treble first, then Identify/Bass, then Play from Name/Treble, etc.) rather than old tag overlap.
