@@ -131,9 +131,9 @@ class UnitView(View):
     @_require_student
     def get(self, request, unit_num):
         from apps.student.progress import get_unit_progress
+        from apps.exercises.taxonomy_reader import TaxonomyReader
 
         unit_meta = _load_unit_meta(unit_num)
-        # Pilot: only Unit 1 supported
         tags = UNIT_1_TAGS if str(unit_num) == "1" else []
         progress = get_unit_progress(request.user, tags)
 
@@ -165,11 +165,53 @@ class UnitView(View):
                 "playlist_links": playlist_links,
             })
 
+        # Group playlists by unit
+        playlists_qs = Playlist.objects.filter(Q(is_public=True) | Q(authored_by=request.user)).order_by("name")
+        unit_groups = {}
+        ungrouped_playlists = []
+
+        for pl in playlists_qs:
+            pl_unit = None
+            pl_skill_tags = pl.skill_tags or []
+            for t in pl_skill_tags:
+                pl_unit = TaxonomyReader.get_unit_for_tag(t)
+                if pl_unit:
+                    break
+            
+            pl_data = {
+                "id": pl.id,
+                "name": pl.name or pl.id,
+                "url": reverse("student:player", kwargs={"unit_num": unit_num})
+                + f"?playlist={pl.id}&exercise_num=1",
+            }
+
+            if pl_unit:
+                n = str(pl_unit["n"])
+                if n not in unit_groups:
+                    unit_groups[n] = {
+                        "unit": pl_unit,
+                        "playlists": []
+                    }
+                unit_groups[n]["playlists"].append(pl_data)
+            else:
+                ungrouped_playlists.append(pl_data)
+
+        sorted_groups = []
+        for n_str in sorted(unit_groups.keys(), key=lambda k: int(k)):
+            sorted_groups.append(unit_groups[n_str])
+            
+        if ungrouped_playlists:
+            sorted_groups.append({
+                "unit": None,
+                "playlists": ungrouped_playlists
+            })
+
         return render(request, "student/unit.html", {
             "unit_num": unit_num,
             "unit_title": unit_meta.get("title", "Pitch & Staff Notation"),
             "progress": progress,
             "skills": skills,
+            "grouped_playlists": sorted_groups,
         })
 
 

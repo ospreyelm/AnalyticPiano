@@ -275,6 +275,12 @@ define(["jquery"], function ($) {
     // Buttons
     var ctaClass = isMastered ? "esc-btn-primary-green" : isLow ? "esc-btn-primary-amber" : "esc-btn-primary-blue";
     var nextUrl = data.next_exercise_url || null;
+    
+    var isMasteredCta = (cta.indexOf("Start ") === 0);
+    if (isMasteredCta && data.unit_n) {
+      nextUrl = "/student/units/" + data.unit_n + "/";
+    }
+
     var tryAgainBtn = '<button class="esc-btn esc-btn-secondary js-esc-try-again">Try Again</button>';
     var ctaBtn;
     if (nextUrl) {

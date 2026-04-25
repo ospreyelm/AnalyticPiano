@@ -299,8 +299,24 @@ def generate_exercise_context(
             exercise_context.update(exercise.data)
     else:
         exercise_context.update(exercise.data)
+    unit_n = None
+    all_tags = (exercise.skill_tags or []) + (playlist.skill_tags if playlist else [])
+    for tag in all_tags:
+        if isinstance(tag, str) and tag.startswith("unit:"):
+            unit_n = tag.split(":")[1]
+            break
+    
+    if not unit_n:
+        from apps.exercises.taxonomy_reader import TaxonomyReader
+        for tag in all_tags:
+            u = TaxonomyReader.get_unit_for_tag(tag)
+            if u:
+                unit_n = str(u.get("n"))
+                break
+
     exercise_context.update(
         {
+            "unit_n": unit_n,
             "nextExercise": next_exercise_url,
             "nextExerciseId": next_exercise_id,
             "nextExerciseNum": next_num,
@@ -322,7 +338,6 @@ def generate_exercise_context(
             "exerciseErrorCount": exercise_error_count,
             "playlistName": playlist_id,
             "courseId": course_id,
-            # this variable is used in the exercise preview mode, where the only way to change the displayed exercise is to redirect the URL
             "forceRedirect": force_redirect,
             "identMode": getattr(playlist, "feedback_mode", "") or exercise.data.get("identMode", "submit"),
             "modeLocked": bool(getattr(playlist, "feedback_mode", "")),

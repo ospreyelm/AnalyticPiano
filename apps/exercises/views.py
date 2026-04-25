@@ -121,7 +121,20 @@ def submit_exercise_performance(request):
     if exercise_obj.skill_tags:
         mastery_changes = record_attempt(user_id=user_id, exercise=exercise_obj, correct=correct)
 
-    return JsonResponse({"status": "ok", "mastery_changes": mastery_changes})
+    from apps.exercises.taxonomy_reader import TaxonomyReader
+    unit_n = None
+    if exercise_obj.skill_tags:
+        for t in exercise_obj.skill_tags:
+            u = TaxonomyReader.get_unit_for_tag(t)
+            if u:
+                unit_n = str(u.get("n"))
+                break
+
+    response_data = {"status": "ok", "mastery_changes": mastery_changes}
+    if unit_n:
+        response_data["unit_n"] = unit_n
+        
+    return JsonResponse(response_data)
 
 
 @login_required

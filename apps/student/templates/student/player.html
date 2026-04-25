@@ -60,7 +60,7 @@
 <div class="s-player-wrap">
   <header class="s-player-header">
     <a href="{% url 'student:unit' unit_num=unit_num %}" class="s-back" style="margin:0">← Back</a>
-    <div class="s-header-brand">Unit {{ unit_num }} // {{ playlist.name }}</div>
+    <div class="s-header-brand"><a href="{% url 'student:unit-progress' unit_n=unit_num %}" style="color: inherit; text-decoration: none;">Unit {{ unit_num }}</a> // {{ playlist.name }}</div>
     <div class="s-player-controls" style="display: flex; gap: 8px;">
       <button id="mute-toggle" class="s-btn-secondary" style="min-width: 60px;">Mute</button>
       <button id="volume" class="s-btn-secondary" style="min-width: 40px; font-weight: bold;">mf</button>
