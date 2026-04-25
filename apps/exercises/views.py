@@ -117,10 +117,11 @@ def submit_exercise_performance(request):
     # Record mastery attempt
     exercise_obj = Exercise.objects.get(id=exercise_id[:6])
     correct = performance_data.get('error_tally') in (0, -1, 'n/a')
+    mastery_changes = {}
     if exercise_obj.skill_tags:
-        record_attempt(user_id=user_id, exercise=exercise_obj, correct=correct)
+        mastery_changes = record_attempt(user_id=user_id, exercise=exercise_obj, correct=correct)
 
-    return HttpResponse(status=201)
+    return JsonResponse({"status": "ok", "mastery_changes": mastery_changes})
 
 
 @login_required
