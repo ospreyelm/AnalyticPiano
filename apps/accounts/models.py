@@ -57,6 +57,13 @@ def get_preferences_default():
     }
 
 
+ROLE_STUDENT = "student"
+ROLE_TEACHER = "teacher"
+ROLE_CHOICES = (
+    (ROLE_STUDENT, _("Student")),
+    (ROLE_TEACHER, _("Teacher / Instructor")),
+)
+
 class User(AbstractBaseUser, PermissionsMixin):
     # E-mail
     email = models.EmailField(_("Email"), unique=True)
@@ -67,6 +74,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Surname
     last_name = models.CharField(
         _("Last Name"), max_length=32, unique=False, default="", blank=True
+    )
+    
+    role = models.CharField(
+        _("Role"),
+        max_length=10,
+        choices=ROLE_CHOICES,
+        default=ROLE_STUDENT,
     )
 
     preferences = JSONField(

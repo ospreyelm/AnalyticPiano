@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.forms import UserCreationForm, UsernameField
 from django.core.exceptions import ValidationError
+from apps.accounts.models import ROLE_CHOICES
 from psycopg2 import IntegrityError
 
 User = get_user_model()
@@ -45,8 +46,15 @@ class CustomAuthenticationForm(forms.ModelForm):
 class RegistrationForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ("email", "first_name", "last_name", "password", "confirm_password")
+        fields = ("email", "first_name", "last_name", "role", "password", "confirm_password")
         field_classes = {"email": UsernameField}
+
+    role = forms.ChoiceField(
+        label="I am a...",
+        choices=ROLE_CHOICES,
+        widget=forms.RadioSelect,
+        initial="student",
+    )
 
     password = forms.CharField(
         label="Password",
@@ -79,7 +87,11 @@ class RegistrationForm(forms.ModelForm):
         )
         user.first_name = formUser.first_name
         user.last_name = formUser.last_name
-        return user.save()
+        user.role = self.cleaned_data.get("role", "student")
+        if user.role == "teacher":
+            user.is_staff = True
+        user.save()
+        return user
 
 
 # class ForgotPasswordForm(forms.Form):
