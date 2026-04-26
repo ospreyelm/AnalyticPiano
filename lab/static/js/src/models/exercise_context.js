@@ -7,6 +7,7 @@ define([
   "app/config",
   "app/components/events",
   "simple-statistics.min",
+  "./identification_submit_flow_logic",
 ], function (
   _,
   $,
@@ -15,7 +16,8 @@ define([
   ExerciseChordBank,
   Config,
   EVENTS,
-  SimpleStatistics
+  SimpleStatistics,
+  IdentificationSubmitFlow
 ) {
   var AUTO_ADVANCE = Config.get("general.autoAdvance");
   var AUTO_ADVANCE_DELAY = Config.get("general.autoAdvanceDelay");
@@ -686,9 +688,14 @@ define([
         timeout: 5000,
         success: function (data) {
           self.grader._restoring = false;
-          if (data && data.answers && Object.keys(data.answers).length > 0) {
-            self.grader.answers = data.answers;
-            self._identPage = data.page_num || 0;
+          var reviewMode = !!(self.definition && self.definition.exercise && self.definition.exercise.reviewMode);
+          var restoreAnswers = IdentificationSubmitFlow._selectIdentificationRestoreAnswers({
+            reviewMode: reviewMode,
+            data: data,
+          });
+          if (restoreAnswers && Object.keys(restoreAnswers).length > 0) {
+            self.grader.answers = restoreAnswers;
+            self._identPage = reviewMode ? 0 : (data.page_num || 0);
             self.updateDisplayChords();
             self.trigger("graded");
           }
@@ -991,7 +998,7 @@ define([
      * @return {object|null}
      */
     submitIdentPage: function (options) {
-      var graded, isLastPage, shouldAdvancePlaylist;
+      var graded, isLastPage, shouldAdvancePlaylist, submitPlan;
       var visibleProblems = this.getVisibleProblems();
       var totalPages = this.getTotalIdentPages();
 
@@ -1013,13 +1020,19 @@ define([
 
       var fromUI = options && options.fromUI === true;
       isLastPage = this._identPage >= totalPages - 1;
+      submitPlan = IdentificationSubmitFlow._planIdentificationSubmit({
+        fromUI: fromUI,
+        isLastPage: isLastPage,
+        result: graded.result,
+        correctState: this.grader.STATE.CORRECT,
+        sealed: this.sealed == true,
+      });
 
-      // When called from UI (Next button), always advance the page regardless
-      // of correctness — only the last page completing correctly finishes the exercise.
-      if (fromUI && !isLastPage) {
-        graded.advancedPage = true;
-        this.goToIdentPage(this._identPage + 1);
-        return graded;
+      if (submitPlan.saveAttempt) {
+        this.submitIdentificationAnswers({
+          is_page_submit: true,
+          mode: options && options.mode
+        });
       }
 
       if (graded.result === this.grader.STATE.CORRECT) {
@@ -1032,10 +1045,6 @@ define([
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
-            this.submitIdentificationAnswers({
-              is_page_submit: true,
-              mode: options && options.mode
-            });
           }
           graded.advancedPage = true;
           this.goToIdentPage(this._identPage + 1);
@@ -1044,10 +1053,6 @@ define([
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
-            this.submitIdentificationAnswers({
-              is_page_submit: true,
-              mode: options && options.mode
-            });
           }
           this.state = ExerciseContext.STATE.CORRECT;
           this.sealed = true;
@@ -1075,6 +1080,11 @@ define([
         }
         if (this.sessionMode === "submit") {
           this.sessionMode = "practice";
+        }
+        if (submitPlan.advancePage) {
+          graded.advancedPage = true;
+          this.goToIdentPage(this._identPage + 1);
+          return graded;
         }
         if (this.exercise && typeof this.exercise.trigger === "function") {
           this.exercise.trigger("change");

@@ -8,6 +8,7 @@ from apps.exercises.models import (
     Course,
     Exercise,
     ExercisePlaylistOrdered,
+    IdentificationAttempt,
     PerformanceData,
     Playlist,
     PlaylistCourseOrdered,
@@ -234,6 +235,115 @@ class StudentPlayerViewTests(TransactionTestCase):
             + f"?playlist={self.playlist.id}&exercise_num=1"
         )
         self.assertEqual(response.status_code, 200)
+
+    def test_player_redirects_future_step_to_current_pending_step(self):
+        second_exercise = Exercise.objects.create(
+            _id=21004,
+            description="Unit 1 note names 4",
+            data={"chord": []},
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1", "Note_Names"],
+        )
+        ExercisePlaylistOrdered.objects.create(
+            _id=23004,
+            playlist=self.playlist,
+            exercise=second_exercise,
+            order=2,
+        )
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=2"
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response["Location"],
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1",
+        )
+
+    def test_player_allows_completed_prior_step_in_review_mode(self):
+        PerformanceData.objects.create(
+            user=self.student,
+            playlist=self.playlist,
+            course=None,
+            data=[{"id": self.exercise.id, "score_numerator": 1, "score_denominator": 1}],
+        )
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Review mode")
+        self.assertIn(b'"reviewMode": true', response.content)
+        self.assertIn(b'"previousExerciseId": false', response.content)
+
+    def test_player_review_mode_uses_submitted_identification_answers(self):
+        IdentificationAttempt.objects.create(
+            user=self.student,
+            playlist=self.playlist,
+            exercise=self.exercise,
+            answers={"0": "Student answer"},
+            correct_answers={"0": "Answer key"},
+            score={"correct": 1, "incorrect": 0, "unanswered": 0},
+            is_page_submit=True,
+            mode="submit",
+        )
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        content = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('"reviewMode": true', content)
+        self.assertIn('"reviewAnswers": {"0": "Student answer"}', content)
+        self.assertNotIn('"reviewAnswers": {"0": "Answer key"}', content)
+
+    def test_player_sets_next_navigation_metadata_for_review_mode(self):
+        second_exercise = Exercise.objects.create(
+            _id=21005,
+            description="Unit 1 note names 5",
+            data={"chord": []},
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1", "Note_Names"],
+        )
+        ExercisePlaylistOrdered.objects.create(
+            _id=23005,
+            playlist=self.playlist,
+            exercise=second_exercise,
+            order=2,
+        )
+        PerformanceData.objects.create(
+            user=self.student,
+            playlist=self.playlist,
+            course=None,
+            data=[
+                {"id": self.exercise.id, "score_numerator": 1, "score_denominator": 1},
+                {"id": second_exercise.id, "score_numerator": 1, "score_denominator": 1},
+            ],
+        )
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(f'"nextExerciseId": "{second_exercise.id}"'.encode(), response.content)
+        self.assertIn(
+            (
+                reverse("student:player", kwargs={"unit_num": 1})
+                + f"?playlist={self.playlist.id}&exercise_num=2"
+            ).encode(),
+            response.content,
+        )
 
     def test_player_context_has_course_id(self):
         response = self.client.get(
