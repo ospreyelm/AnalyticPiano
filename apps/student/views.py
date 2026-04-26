@@ -339,6 +339,10 @@ class UnitProgressView(LoginRequiredMixin, View):
         if data is None:
             raise Http404("Unit not found")
 
-        data["back_url"] = request.META.get("HTTP_REFERER") or reverse("student:home")
+        data["back_url"] = (
+            reverse("student:home")
+            if str(unit_n) == "1"
+            else request.META.get("HTTP_REFERER") or reverse("student:home")
+        )
         data["skills"] = data["skill_cards"]
         return render(request, "student/unit_progress.html", data)

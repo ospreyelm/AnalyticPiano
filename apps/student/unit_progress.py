@@ -183,6 +183,24 @@ def _playlist_stats_by_id(user, playlist_id: str) -> dict:
     return _playlist_stats(user, playlist)
 
 
+def _playlist_progress_level(stats: dict) -> str:
+    done = stats.get("done", 0) or 0
+    total = stats.get("total", 0) or 0
+    last_score_pct = stats.get("last_score_pct")
+
+    if done <= 0:
+        return StudentSkillMastery.LEVEL_NOT_STARTED
+    if total > 0 and done < total:
+        return StudentSkillMastery.LEVEL_ATTEMPTED
+    if last_score_pct == 100:
+        return StudentSkillMastery.LEVEL_MASTERED
+    if last_score_pct is not None and last_score_pct >= 85:
+        return StudentSkillMastery.LEVEL_PROFICIENT
+    if last_score_pct is not None and last_score_pct >= 70:
+        return StudentSkillMastery.LEVEL_FAMILIAR
+    return StudentSkillMastery.LEVEL_ATTEMPTED
+
+
 def get_unit_progress_data(user, unit_n: str) -> dict | None:
     """
     Return all data needed to render the unit progress page for the given unit.
@@ -207,7 +225,7 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
     tier = TaxonomyReader.get_tier_for_unit(unit_n) or {}
     unit_tags: list[str] = unit.get("tags", [])
 
-    # --- Bar segments (one per skill tag) ---
+    # --- Bar segments (generic path: one per skill tag) ---
     bar_segments = [
         {
             "tag": tag,
@@ -221,6 +239,7 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
     skill_cards: list[dict] = []
 
     if unit_n == "1":
+        bar_segments = []
         try:
             lane_groups = get_unit1_lane_groups()
         except Playlist.DoesNotExist:
@@ -240,6 +259,13 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
                         "total": stats["total"],
                         "last_score_pct": stats["last_score_pct"],
                         "url": stats["url"],
+                    }
+                )
+                bar_segments.append(
+                    {
+                        "tag": lane["lane_key"],
+                        "label": f"{group['title']} {lane['label']}",
+                        "level": _playlist_progress_level(stats),
                     }
                 )
             activity_cards.append(

@@ -71,8 +71,7 @@ class Unit1CurriculumIntegrationTests(TransactionTestCase):
         self.assertContains(response, "Identify")
         self.assertContains(response, "Play from Name")
         self.assertContains(response, "Play the Notes")
-        self.assertContains(response, "Treble", count=3)
-        self.assertContains(response, "Bass", count=3)
+        self.assertContains(response, "Reading Treble and Bass Clefs.")
         self.assertContains(response, 'class="skill-card"', count=3, html=False)
         self.assertContains(response, 'class="playlist-row"', count=6, html=False)
         self.assertContains(
@@ -109,5 +108,4 @@ class Unit1CurriculumIntegrationTests(TransactionTestCase):
         self.assertNotContains(response, f"playlist={self.legacy_play_from_name_treble.id}")
         self.assertNotContains(response, f"playlist={self.legacy_play_the_notes_treble.id}")
         self.assertNotContains(response, "Ledger Lines")
-        self.assertNotContains(response, "Clefs")
         self.assertNotContains(response, "Enharmonics")

@@ -264,20 +264,30 @@ class Unit1CuratedActivityCardsTest(TestCase):
         segment_levels = {segment["tag"]: segment["level"] for segment in result["bar_segments"]}
         self.assertEqual(
             set(segment_levels),
-            {"pitch_reading", "clefs", "enharmonic", "Note_Names", "Ledger_Lines"},
+            {
+                "identify_treble",
+                "identify_bass",
+                "play_from_name_treble",
+                "play_from_name_bass",
+                "play_the_notes_treble",
+                "play_the_notes_bass",
+            },
         )
         self.assertEqual(
-            segment_levels["clefs"],
-            StudentSkillMastery.LEVEL_PROFICIENT,
-        )
-        self.assertEqual(
-            segment_levels["Note_Names"],
-            StudentSkillMastery.LEVEL_MASTERED,
-        )
-        self.assertEqual(
-            segment_levels["enharmonic"],
+            segment_levels["identify_treble"],
             StudentSkillMastery.LEVEL_NOT_STARTED,
         )
+        self.assertEqual(
+            segment_levels["identify_bass"],
+            StudentSkillMastery.LEVEL_NOT_STARTED,
+        )
+        self.assertEqual(
+            segment_levels["play_from_name_treble"],
+            StudentSkillMastery.LEVEL_NOT_STARTED,
+        )
+        self.assertEqual(segment_levels["play_from_name_bass"], StudentSkillMastery.LEVEL_NOT_STARTED)
+        self.assertEqual(segment_levels["play_the_notes_treble"], StudentSkillMastery.LEVEL_NOT_STARTED)
+        self.assertEqual(segment_levels["play_the_notes_bass"], StudentSkillMastery.LEVEL_NOT_STARTED)
         self.assertEqual(len(result["activity_cards"]), 3)
         self.assertEqual(sum(len(card["rows"]) for card in result["activity_cards"]), 6)
         labels = [card["title"] for card in result["activity_cards"]]
