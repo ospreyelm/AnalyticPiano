@@ -12,7 +12,10 @@
   <header class="s-header">
     <span class="s-header-brand">Monteverdi</span>
     {% if request.user.is_authenticated %}
-      <span class="s-header-user">{{ request.user.first_name|default:request.user.email }}</span>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="s-header-user">{{ request.user.first_name|default:request.user.email }}</span>
+        <a href="{% url 'student:logout' %}" style="font-size: 0.8rem; color: #e74c3c; text-decoration: none;">Sign out</a>
+      </div>
     {% endif %}
   </header>
   <main class="s-main">

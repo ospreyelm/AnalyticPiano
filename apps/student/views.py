@@ -1,18 +1,18 @@
 import json
 from pathlib import Path
 from django.conf import settings
-from django.contrib.auth import authenticate, login as django_login
+from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from apps.student.unit_progress import get_unit_progress_data
 from apps.student.unit1_curriculum import get_unit1_lane_groups
-from apps.accounts.forms import CustomAuthenticationForm
+from apps.accounts.forms import CustomAuthenticationForm, RegistrationForm
 from apps.exercises.models import (
     Exercise,
     IdentificationAttempt,
@@ -133,6 +133,27 @@ class StudentLoginView(View):
                 django_login(request, user)
                 return redirect(reverse("student:home"))
         return render(request, "student/login.html", {"form": form})
+
+class StudentLogoutView(View):
+    def get(self, request):
+        django_logout(request)
+        return redirect(reverse("student:login"))
+
+class StudentSignupView(View):
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect(reverse("student:home"))
+        form = RegistrationForm()
+        return render(request, "student/signup.html", {"form": form})
+
+    def post(self, request):
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            user.backend = "django.contrib.auth.backends.ModelBackend"
+            django_login(request, user)
+            return redirect(reverse("student:home"))
+        return render(request, "student/signup.html", {"form": form})
 
 
 def _require_student(view_func):

@@ -15,5 +15,8 @@
     <input class="s-input" type="password" name="password" id="id_password" required>
     <button class="s-btn-primary" type="submit">Sign in</button>
   </form>
+  <div class="s-login-footer">
+    <p>Don't have an account? <a href="{% url 'student:signup' %}">Sign up</a></p>
+  </div>
 </div>
 {% endblock %}

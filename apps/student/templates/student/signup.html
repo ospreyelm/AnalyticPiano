@@ -1,0 +1,51 @@
+{# apps/student/templates/student/signup.html #}
+{% extends "student/base.html" %}
+{% block title %}Sign Up — Monteverdi{% endblock %}
+{% block content %}
+<div class="s-login-wrap">
+  <h1 class="s-login-title">Create an Account</h1>
+  <form method="post" class="s-form">
+    {% csrf_token %}
+    {% if form.errors %}
+      <div class="s-form-error">
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            <p>{{ field|title }}: {{ error }}</p>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <label class="s-label" for="id_email">Email</label>
+    <input class="s-input" type="email" name="email" id="id_email" autofocus required value="{{ form.email.value|default:'' }}">
+    
+    <label class="s-label" for="id_first_name">First Name</label>
+    <input class="s-input" type="text" name="first_name" id="id_first_name" required value="{{ form.first_name.value|default:'' }}">
+    
+    <label class="s-label" for="id_last_name">Last Name</label>
+    <input class="s-input" type="text" name="last_name" id="id_last_name" required value="{{ form.last_name.value|default:'' }}">
+    
+    <label class="s-label">I am a...</label>
+    <div class="s-radio-group">
+      {% for radio in form.role %}
+        <div class="s-radio-option">
+          {{ radio.tag }}
+          <label for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+        </div>
+      {% endfor %}
+    </div>
+    
+    <label class="s-label" for="id_password">Password</label>
+    <input class="s-input" type="password" name="password" id="id_password" required>
+    
+    <label class="s-label" for="id_confirm_password">Confirm Password</label>
+    <input class="s-input" type="password" name="confirm_password" id="id_confirm_password" required>
+    
+    <button class="s-btn-primary" type="submit">Sign Up</button>
+  </form>
+  
+  <div class="s-login-footer">
+    <p>Already have an account? <a href="{% url 'student:login' %}">Sign in</a></p>
+  </div>
+</div>
+{% endblock %}
