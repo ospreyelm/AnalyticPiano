@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect, get_object_or_404
@@ -10,14 +11,19 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from apps.student.unit_progress import get_unit_progress_data
+from apps.student.unit1_curriculum import get_unit1_lane_groups
 from apps.accounts.forms import CustomAuthenticationForm
-from apps.exercises.models import Exercise, Playlist, PlaylistCourseOrdered
+from apps.exercises.models import (
+    Exercise,
+    IdentificationAttempt,
+    PerformanceData,
+    Playlist,
+    PlaylistCourseOrdered,
+    StudentSkillMastery,
+)
 from lab.views import RequirejsContext, generate_exercise_context
 
 TAXONOMY_PATH = Path(__file__).resolve().parent.parent.parent / "music_theory_taxonomy_with_branches.json"
-
-# Unit 1 skill tags (fixed for pilot)
-UNIT_1_TAGS = ["Note_Names", "Ledger_Lines", "clefs", "enharmonic"]
 
 
 def _disable_computer_keyboard_input(exercise_context: dict, playlist: Playlist, exercise: Exercise) -> bool:
@@ -51,17 +57,58 @@ def _load_unit_meta(unit_num: int) -> dict:
     return {}
 
 
-def _get_playlists_for_tag(tag: str) -> list[dict]:
-    """Return Unit 1 playlists matching the tag from either tags or skill_tags."""
-    playlists = (
-        Playlist.objects.filter(
-            (Q(skill_tags__contains=["unit:1"]) | Q(tags__contains=["unit:1"]))
-            & (Q(skill_tags__contains=[tag]) | Q(tags__contains=[tag]))
-        )
-        .order_by("name")
-        .values("id", "name")
+def _user_completed_exercise_ids(user, playlist: Playlist) -> set[str]:
+    pd_rows = PerformanceData.objects.filter(user=user, playlist=playlist)
+    ident_attempts = IdentificationAttempt.objects.filter(user=user, playlist=playlist)
+
+    completed_ids = {
+        entry["id"]
+        for pd in pd_rows
+        for entry in (pd.data or [])
+        if "id" in entry
+    }
+    completed_ids.update(
+        attempt.exercise.id
+        for attempt in ident_attempts
+        if attempt.exercise
     )
-    return list(playlists)
+    return completed_ids
+
+
+def _get_unit1_resume_target(user) -> tuple[str, str]:
+    try:
+        lane_groups = get_unit1_lane_groups()
+    except (ImproperlyConfigured, Playlist.DoesNotExist):
+        return reverse("student:unit-progress", kwargs={"unit_n": "1"}), "Unit 1"
+
+    for group in lane_groups:
+        for lane in group.get("lanes", []):
+            playlist = Playlist.objects.get(id=lane["playlist_id"])
+            completed_ids = _user_completed_exercise_ids(user, playlist)
+            for idx, exercise_id in enumerate(playlist.untransposed_exercises_ids, 1):
+                if exercise_id not in completed_ids:
+                    return (
+                        reverse("student:player", kwargs={"unit_num": 1})
+                        + f"?playlist={playlist.id}&exercise_num={idx}",
+                        f"{group['title']} · {lane['label']}",
+                    )
+
+    return reverse("student:unit-progress", kwargs={"unit_n": "1"}), "Unit 1"
+
+
+def _summarize_unit_progress(data: dict) -> dict:
+    segments = data.get("bar_segments", [])
+    mastered_count = sum(
+        1 for segment in segments
+        if segment["level"] == StudentSkillMastery.LEVEL_MASTERED
+    )
+    total = len(segments)
+    percent = int(mastered_count / total * 100) if total else 0
+    return {
+        "percent": percent,
+        "mastered_count": mastered_count,
+        "resume_tag": None,
+    }
 
 
 class StudentLoginView(View):
@@ -97,20 +144,12 @@ def _require_student(view_func):
 class HomeView(View):
     @_require_student
     def get(self, request):
-        from apps.student.progress import get_unit_progress
-
         unit_meta = _load_unit_meta(1)
-        unit1_progress = get_unit_progress(request.user, UNIT_1_TAGS)
-
-        # Build resume URL: find playlist for resume_tag
-        resume_url = None
-        if unit1_progress["resume_tag"]:
-            playlists = _get_playlists_for_tag(unit1_progress["resume_tag"])
-            if playlists:
-                resume_url = (
-                    reverse("student:player", kwargs={"unit_num": 1})
-                    + f"?playlist={playlists[0]['id']}&exercise_num=1"
-                )
+        unit1_data = get_unit_progress_data(request.user, "1")
+        if unit1_data is None:
+            raise Http404("Unit not found")
+        unit1_progress = _summarize_unit_progress(unit1_data)
+        resume_url, resume_label = _get_unit1_resume_target(request.user)
 
         units = [
             {
@@ -119,9 +158,9 @@ class HomeView(View):
                 "feat": unit_meta.get("feat", ""),
                 "percent": unit1_progress["percent"],
                 "mastered_count": unit1_progress["mastered_count"],
-                "total_skills": len(UNIT_1_TAGS),
+                "total_skills": len(unit1_data.get("bar_segments", [])),
                 "locked": False,
-                "url": reverse("student:unit", kwargs={"unit_num": 1}),
+                "url": reverse("student:unit-progress", kwargs={"unit_n": "1"}),
             },
             {
                 "num": 2,
@@ -138,7 +177,7 @@ class HomeView(View):
         return render(request, "student/home.html", {
             "units": units,
             "resume_url": resume_url,
-            "resume_skill": unit1_progress["resume_tag"],
+            "resume_skill": resume_label,
             "unit1_progress": unit1_progress,
         })
 
@@ -146,40 +185,17 @@ class HomeView(View):
 class UnitView(View):
     @_require_student
     def get(self, request, unit_num):
-        from apps.student.progress import get_unit_progress
         from apps.exercises.taxonomy_reader import TaxonomyReader
 
+        if str(unit_num) == "1":
+            return redirect(reverse("student:unit-progress", kwargs={"unit_n": "1"}))
+
         unit_meta = _load_unit_meta(unit_num)
-        tags = UNIT_1_TAGS if str(unit_num) == "1" else []
-        progress = get_unit_progress(request.user, tags)
-
-        # Map tags to human-readable names and playlist URLs
-        skill_display_names = {
-            "Note_Names": "Note Names",
-            "Ledger_Lines": "Ledger Lines",
-            "clefs": "Clefs (Treble & Bass)",
-            "enharmonic": "Enharmonics",
-        }
-
-        skills = []
-        for s in progress["skills"]:
-            tag = s["tag"]
-            playlist_links = [
-                {
-                    "id": playlist["id"],
-                    "name": playlist["name"],
-                    "url": reverse("student:player", kwargs={"unit_num": unit_num})
-                    + f"?playlist={playlist['id']}&exercise_num=1",
-                }
-                for playlist in _get_playlists_for_tag(tag)
-            ]
-
-            skills.append({
-                "tag": tag,
-                "name": skill_display_names.get(tag, tag),
-                "level": s["level"],
-                "playlist_links": playlist_links,
-            })
+        unit_data = get_unit_progress_data(request.user, str(unit_num))
+        if unit_data is None:
+            raise Http404("Unit not found")
+        progress = _summarize_unit_progress(unit_data)
+        skills = unit_data.get("skill_cards", [])
 
         # Group playlists by unit
         playlists_qs = Playlist.objects.filter(Q(is_public=True) | Q(authored_by=request.user)).order_by("name")
@@ -322,11 +338,6 @@ class UnitProgressView(LoginRequiredMixin, View):
         data = get_unit_progress_data(request.user, unit_n)
         if data is None:
             raise Http404("Unit not found")
-        
-        # Backwards compatibility for tests
-        for skill in data.get("skill_cards", []):
-            if skill["tag"] == "enharmonic":
-                skill["label"] = "Enharmonics"
 
         data["back_url"] = request.META.get("HTTP_REFERER") or reverse("student:home")
         data["skills"] = data["skill_cards"]

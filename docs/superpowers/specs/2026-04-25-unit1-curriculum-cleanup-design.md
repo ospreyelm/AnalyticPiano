@@ -133,14 +133,51 @@ Example shape:
 
 ```python
 UNIT1_CANONICAL_LANES = {
-    "identify_treble": {"label": "Treble", "playlist_id": "..."},
-    "identify_bass": {"label": "Bass", "playlist_id": "..."},
-    "play_from_name_treble": {"label": "Treble", "playlist_id": "..."},
-    "play_from_name_bass": {"label": "Bass", "playlist_id": "..."},
-    "play_the_notes_treble": {"label": "Treble", "playlist_id": "..."},
-    "play_the_notes_bass": {"label": "Bass", "playlist_id": "..."},
+    "identify_treble": {"label": "Treble", "playlist_name": "Unit 1 - Identify the Notes (Treble)"},
+    "identify_bass": {"label": "Bass", "playlist_name": "Unit 1 - Identify the Notes (Bass)"},
+    "play_from_name_treble": {"label": "Treble", "playlist_name": "Unit 1 - Play from Name (Treble)"},
+    "play_from_name_bass": {"label": "Bass", "playlist_name": "Unit 1 - Play from Name (Bass)"},
+    "play_the_notes_treble": {"label": "Treble", "playlist_name": "Unit 1 - Play the Notes (Treble)"},
+    "play_the_notes_bass": {"label": "Bass", "playlist_name": "Unit 1 - Play the Notes (Bass)"},
 }
 ```
+
+Resolved from the local database on 2026-04-25 by querying Unit 1 playlists via
+`unit:1` tagging in `skill_tags`. The stable source of truth is the canonical
+playlist name, not the environment-specific `Playlist.id` value:
+
+- `identify_treble` -> `Unit 1 - Identify the Notes (Treble)`
+- `identify_bass` -> `Unit 1 - Identify the Notes (Bass)`
+- `play_from_name_treble` -> `Unit 1 - Play from Name (Treble)`
+- `play_from_name_bass` -> `Unit 1 - Play from Name (Bass)`
+- `play_the_notes_treble` -> `Unit 1 - Play the Notes (Treble)`
+- `play_the_notes_bass` -> `Unit 1 - Play the Notes (Bass)`
+
+Runtime code should resolve `Playlist.id` per environment from these canonical
+names plus `unit:1` tagging, rather than hardcoding a local database's generated
+playlist IDs.
+
+During the transition period before the old Unit 1 seeding path is retired,
+runtime resolution may need to accept legacy playlist-name aliases for the same
+pedagogical lane, for example:
+
+- `Play from Name (Treble)` or legacy `Note Names (Treble Name)`
+- `Play the Notes (Treble)` or legacy `Note Names (Treble Play)`
+
+That alias handling must be ordered and explicit. It must not silently guess
+between multiple same-name playlists in a multi-author database.
+
+If a deployment can contain multiple same-name Unit 1 playlists from different
+authors, runtime resolution must also support a canonical author/owner
+discriminator (for example, a configured author email). Ambiguity should fail
+loudly rather than silently choosing an arbitrary playlist.
+
+Retired duplicate rows still present in the database but not canonical for the
+student Unit 1 surface:
+
+- `PA01BX`, `PA01CA` (`Unit 1 - Note Names (Treble/Bass)`)
+- `PA01BW`, `PA01BZ` (`Unit 1 - Note Names (Treble/Bass Name)`)
+- `PA01BV`, `PA01BY` (`Unit 1 - Note Names (Treble/Bass Play)`)
 
 The exact playlist IDs must be resolved from the live/dev database before implementation starts. They may then live in Python config, a helper module, or another explicit curated structure, but the key point is this:
 
@@ -159,7 +196,9 @@ Before writing implementation code:
   - a companion seed/curation script, or
   - the final canonical mapping module
 
-Implementation must not proceed with `...` placeholders.
+Implementation must not proceed with `...` placeholders. This requirement is now
+resolved by the explicit canonical names above and
+`apps/student/unit1_curriculum.py`.
 
 ## Section 2: Duplicate handling
 

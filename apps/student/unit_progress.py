@@ -14,15 +14,40 @@ from django.urls import reverse, NoReverseMatch
 
 from apps.exercises.models import PerformanceData, Playlist, StudentSkillMastery
 from apps.exercises.taxonomy_reader import TaxonomyReader
+from apps.student.progress import TAG_ALIASES
+from apps.student.unit1_curriculum import get_unit1_lane_groups
 
 
 def _get_skill_level(user, skill_tag: str) -> str:
-    """Return the StudentSkillMastery level for (user, skill_tag), or 'not_started'."""
-    try:
-        mastery = StudentSkillMastery.objects.get(user=user, skill_tag=skill_tag)
-        return mastery.level
-    except StudentSkillMastery.DoesNotExist:
-        return StudentSkillMastery.LEVEL_NOT_STARTED
+    """
+    Return the best StudentSkillMastery level for a display skill tag.
+
+    Some student-facing Unit 1 tags are aggregate display buckets, such as
+    ``clefs``, which should reflect mastery from underlying canonical tags like
+    ``Read_Treble_Clef`` and ``Read_Bass_Clef``. For non-aliased tags this
+    still behaves like a direct lookup.
+    """
+    canonical_tags = TAG_ALIASES.get(skill_tag, [skill_tag])
+    mastery_rows = StudentSkillMastery.objects.filter(
+        user=user,
+        skill_tag__in=canonical_tags,
+    )
+    mastery_map = {mastery.skill_tag: mastery.level for mastery in mastery_rows}
+    levels = [
+        mastery_map.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED)
+        for tag in canonical_tags
+    ]
+    level_order = [
+        StudentSkillMastery.LEVEL_MASTERED,
+        StudentSkillMastery.LEVEL_PROFICIENT,
+        StudentSkillMastery.LEVEL_FAMILIAR,
+        StudentSkillMastery.LEVEL_ATTEMPTED,
+        StudentSkillMastery.LEVEL_NOT_STARTED,
+    ]
+    for level in level_order:
+        if level in levels:
+            return level
+    return StudentSkillMastery.LEVEL_NOT_STARTED
 
 
 def _get_playlists_for_unit(unit_tags: list[str]) -> list[Playlist]:
@@ -153,6 +178,11 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
     }
 
 
+def _playlist_stats_by_id(user, playlist_id: str) -> dict:
+    playlist = Playlist.objects.get(id=playlist_id)
+    return _playlist_stats(user, playlist)
+
+
 def get_unit_progress_data(user, unit_n: str) -> dict | None:
     """
     Return all data needed to render the unit progress page for the given unit.
@@ -187,36 +217,70 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
         for tag in unit_tags
     ]
 
-    # --- Group playlists by skill tag ---
-    matching_playlists = _get_playlists_for_unit(unit_tags)
+    activity_cards: list[dict] = []
+    skill_cards: list[dict] = []
 
-    # Build a map: skill_tag -> [playlist_stat_dict, ...]
-    tag_to_playlists: dict[str, list[dict]] = {tag: [] for tag in unit_tags}
-    for playlist in matching_playlists:
-        primary_tag = _playlist_primary_tag(playlist, unit_tags)
-        if primary_tag is None:
-            continue
-        stats = _playlist_stats(user, playlist)
-        tag_to_playlists[primary_tag].append(stats)
+    if unit_n == "1":
+        try:
+            lane_groups = get_unit1_lane_groups()
+        except Playlist.DoesNotExist:
+            lane_groups = []
 
-    # Sort playlists within each skill card by name for stable ordering
-    for tag in tag_to_playlists:
-        tag_to_playlists[tag].sort(key=lambda p: p["name"])
+        for group in lane_groups:
+            rows = []
+            for lane in group.get("lanes", []):
+                stats = _playlist_stats_by_id(user, lane["playlist_id"])
+                rows.append(
+                    {
+                        "slug": lane["lane_key"],
+                        "label": lane["label"],
+                        "playlist_id": lane["playlist_id"],
+                        "playlist_name": stats["name"],
+                        "done": stats["done"],
+                        "total": stats["total"],
+                        "last_score_pct": stats["last_score_pct"],
+                        "url": stats["url"],
+                    }
+                )
+            activity_cards.append(
+                {
+                    "slug": group["key"],
+                    "title": group["title"],
+                    "rows": rows,
+                }
+            )
+    else:
+        # --- Group playlists by skill tag ---
+        matching_playlists = _get_playlists_for_unit(unit_tags)
 
-    # --- Skill cards ---
-    skill_cards = [
-        {
-            "tag": tag,
-            "label": TaxonomyReader.get_skill_label(tag),
-            "level": _get_skill_level(user, tag),
-            "playlists": tag_to_playlists.get(tag, []),
-        }
-        for tag in unit_tags
-    ]
+        # Build a map: skill_tag -> [playlist_stat_dict, ...]
+        tag_to_playlists: dict[str, list[dict]] = {tag: [] for tag in unit_tags}
+        for playlist in matching_playlists:
+            primary_tag = _playlist_primary_tag(playlist, unit_tags)
+            if primary_tag is None:
+                continue
+            stats = _playlist_stats(user, playlist)
+            tag_to_playlists[primary_tag].append(stats)
+
+        # Sort playlists within each skill card by name for stable ordering
+        for tag in tag_to_playlists:
+            tag_to_playlists[tag].sort(key=lambda p: p["name"])
+
+        # --- Skill cards ---
+        skill_cards = [
+            {
+                "tag": tag,
+                "label": TaxonomyReader.get_skill_label(tag),
+                "level": _get_skill_level(user, tag),
+                "playlists": tag_to_playlists.get(tag, []),
+            }
+            for tag in unit_tags
+        ]
 
     return {
         "unit": unit,
         "tier": tier,
         "bar_segments": bar_segments,
+        "activity_cards": activity_cards,
         "skill_cards": skill_cards,
     }

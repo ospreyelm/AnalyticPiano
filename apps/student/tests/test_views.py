@@ -8,6 +8,7 @@ from apps.exercises.models import (
     Course,
     Exercise,
     ExercisePlaylistOrdered,
+    PerformanceData,
     Playlist,
     PlaylistCourseOrdered,
 )
@@ -98,24 +99,28 @@ class StudentBasicViewTests(TransactionTestCase):
         response = self.client.get(reverse("student:home"))
         self.assertIn("resume_url", response.context)
 
-    def test_unit_view_returns_200_for_student(self):
+    def test_unit_view_redirects_unit1_to_curated_progress_surface(self):
         self.client.force_login(self.student)
         response = self.client.get(reverse("student:unit", kwargs={"unit_num": 1}))
         self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "student/unit_progress.html")
 
     def test_unit_page_uses_monteverdi_branding(self):
         self.client.force_login(self.student)
-        response = self.client.get(reverse("student:unit", kwargs={"unit_num": 1}))
+        response = self.client.get(
+            reverse("student:unit-progress", kwargs={"unit_n": "1"})
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Monteverdi")
         self.assertNotContains(response, "HarmonyLab")
 
-    def test_unit_view_context_has_skills(self):
+    def test_unit_view_context_has_curated_activity_cards(self):
         self.client.force_login(self.student)
-        response = self.client.get(reverse("student:unit", kwargs={"unit_num": 1}))
-        self.assertIn("skills", response.context)
-        self.assertGreaterEqual(len(response.context["skills"]), 1)
+        response = self.client.get(
+            reverse("student:unit-progress", kwargs={"unit_n": "1"})
+        )
+        self.assertIn("activity_cards", response.context)
 
     def test_player_view_404_without_playlist_param(self):
         self.client.force_login(self.student)
@@ -333,7 +338,10 @@ class StudentPlayerViewTests(TransactionTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'"disableComputerKeyboardInput": true', response.content)
-        self.assertIn(b"Use MIDI or click the on-screen piano.", response.content)
+        self.assertIn(
+            b"Play each note using your MIDI keyboard or by clicking the piano below. You can play the notes in any octave.",
+            response.content,
+        )
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
@@ -423,22 +431,106 @@ class StudentUnitViewTests(TransactionTestCase):
         response = self.client.get(reverse("student:unit", kwargs={"unit_num": 1}))
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(str(self.treble_playlist.id).encode(), response.content)
-        self.assertIn(str(bass_playlist.id).encode(), response.content)
+        self.assertTemplateUsed(response, "student/unit_progress.html")
 
-    def test_get_playlists_for_tag_finds_playlist_with_only_tags_field(self):
-        from apps.student.views import _get_playlists_for_tag
-
-        tags_only_playlist = Playlist.objects.create(
-            _id=32003,
-            name="Unit 1 - Tags Only",
-            authored_by=self.author,
-            is_public=True,
-            skill_tags=[],
-            tags=["unit:1", "Note_Names"],
+    def test_student_unit_route_renders_curated_unit1_surface(self):
+        response = self.client.get(
+            reverse("student:unit-progress", kwargs={"unit_n": "1"})
         )
 
-        results = _get_playlists_for_tag("Note_Names")
-        result_ids = [item["id"] for item in results]
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "student/unit_progress.html")
 
-        self.assertIn(tags_only_playlist.id, result_ids)
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class StudentHomeResumeTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        self.client = Client()
+        self.student = User.objects.create_user(
+            id=37001,
+            email="resume-student@test.com",
+            password="testpass123",
+            is_staff=False,
+        )
+        self.author = User.objects.create_user(
+            id=37002,
+            email="resume-author@test.com",
+            password="x",
+            is_staff=True,
+        )
+        self.client.force_login(self.student)
+
+    def _make_lane_playlist(self, pk, name):
+        playlist = Playlist.objects.create(
+            _id=pk,
+            name=name,
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1", "Note_Names"],
+            tags=["unit:1", "Note_Names"],
+        )
+        exercise = Exercise.objects.create(
+            _id=pk + 100,
+            description=name,
+            data={"chord": []},
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1", "Note_Names"],
+        )
+        ExercisePlaylistOrdered.objects.create(
+            _id=pk + 200,
+            playlist=playlist,
+            exercise=exercise,
+            order=1,
+        )
+        return playlist, exercise
+
+    def test_home_resume_uses_canonical_unit1_lane_order(self):
+        identify_treble, identify_treble_exercise = self._make_lane_playlist(
+            37100, "Unit 1 - Identify the Notes (Treble)"
+        )
+        identify_bass, _ = self._make_lane_playlist(
+            37200, "Unit 1 - Identify the Notes (Bass)"
+        )
+        self._make_lane_playlist(37300, "Unit 1 - Play from Name (Treble)")
+        self._make_lane_playlist(37400, "Unit 1 - Play from Name (Bass)")
+        self._make_lane_playlist(37500, "Unit 1 - Play the Notes (Treble)")
+        self._make_lane_playlist(37600, "Unit 1 - Play the Notes (Bass)")
+        legacy_identify_treble, _ = self._make_lane_playlist(
+            37700, "Unit 1 - Note Names (Treble)"
+        )
+        legacy_identify_bass, _ = self._make_lane_playlist(
+            37800, "Unit 1 - Note Names (Bass)"
+        )
+
+        PerformanceData.objects.create(
+            user=self.student,
+            playlist=identify_treble,
+            course=None,
+            data=[{"id": identify_treble_exercise.id, "score_numerator": 1, "score_denominator": 1}],
+        )
+
+        response = self.client.get(reverse("student:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["resume_url"],
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={identify_bass.id}&exercise_num=1",
+        )
+        self.assertNotEqual(
+            response.context["resume_url"],
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={legacy_identify_treble.id}&exercise_num=1",
+        )
+        self.assertNotEqual(
+            response.context["resume_url"],
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={legacy_identify_bass.id}&exercise_num=1",
+        )
+        self.assertEqual(
+            response.context["units"][0]["url"],
+            reverse("student:unit-progress", kwargs={"unit_n": "1"}),
+        )

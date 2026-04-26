@@ -8,7 +8,6 @@ Run with:
 """
 from __future__ import annotations
 
-import os
 from unittest.mock import patch, MagicMock
 
 from django.contrib.auth import get_user_model
@@ -30,11 +29,18 @@ User = get_user_model()
 # touch the filesystem or require a full taxonomy JSON.
 # ---------------------------------------------------------------------------
 
-STUB_UNIT = {
+STUB_GENERIC_UNIT = {
+    "n": "2",
+    "title": "Generic Test Unit",
+    "feat": "Generic skill coverage",
+    "tags": ["Note_Names", "Intervals"],
+}
+
+STUB_UNIT1 = {
     "n": "1",
     "title": "Pitch & Staff Notation",
     "feat": "Notes on the staff",
-    "tags": ["Note_Names", "Ledger_Lines"],
+    "tags": ["pitch_reading", "clefs", "enharmonic", "Note_Names", "Ledger_Lines"],
 }
 
 STUB_TIER = {
@@ -98,7 +104,7 @@ def _make_pd(user: User, playlist: Playlist, data: list) -> PerformanceData:
 
 TAXONOMY_PATCH = {
     "apps.student.unit_progress.TaxonomyReader.get_unit":
-        MagicMock(return_value=STUB_UNIT),
+        MagicMock(return_value=STUB_GENERIC_UNIT),
     "apps.student.unit_progress.TaxonomyReader.get_tier_for_unit":
         MagicMock(return_value=STUB_TIER),
     "apps.student.unit_progress.TaxonomyReader.get_skill_label":
@@ -112,14 +118,14 @@ class UnitProgressDataStructureTest(TestCase):
     def setUp(self):
         self.student = _make_student(50001)
 
-    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
     @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
     @patch(
         "apps.student.unit_progress.TaxonomyReader.get_skill_label",
         side_effect=lambda tag: tag.replace("_", " ").title(),
     )
     def test_get_unit_progress_data_structure(self, mock_label, mock_tier, mock_unit):
-        result = get_unit_progress_data(self.student, "1")
+        result = get_unit_progress_data(self.student, "2")
 
         self.assertIsNotNone(result)
         # Top-level keys
@@ -129,8 +135,8 @@ class UnitProgressDataStructureTest(TestCase):
         self.assertIn("skill_cards", result)
 
         # Unit sub-keys
-        self.assertEqual(result["unit"]["n"], "1")
-        self.assertEqual(result["unit"]["title"], "Pitch & Staff Notation")
+        self.assertEqual(result["unit"]["n"], "2")
+        self.assertEqual(result["unit"]["title"], "Generic Test Unit")
 
         # Bar segments — one per tag in the stub unit
         self.assertEqual(len(result["bar_segments"]), 2)
@@ -139,13 +145,14 @@ class UnitProgressDataStructureTest(TestCase):
             self.assertIn("label", seg)
             self.assertIn("level", seg)
 
-        # Skill cards — one per tag
+        # Generic units still return skill cards — one per tag
         self.assertEqual(len(result["skill_cards"]), 2)
         for card in result["skill_cards"]:
             self.assertIn("tag", card)
             self.assertIn("label", card)
             self.assertIn("level", card)
             self.assertIn("playlists", card)
+        self.assertEqual(result["activity_cards"], [])
 
     @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=None)
     def test_returns_none_for_unknown_unit(self, mock_unit):
@@ -159,7 +166,7 @@ class SkillLevelNewUserTest(TestCase):
     def setUp(self):
         self.student = _make_student(51001)
 
-    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
     @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
     @patch(
         "apps.student.unit_progress.TaxonomyReader.get_skill_label",
@@ -167,7 +174,7 @@ class SkillLevelNewUserTest(TestCase):
     )
     def test_skill_level_for_new_user_is_not_started(self, mock_label, mock_tier, mock_unit):
         # Fresh user — no StudentSkillMastery rows exist
-        result = get_unit_progress_data(self.student, "1")
+        result = get_unit_progress_data(self.student, "2")
 
         for seg in result["bar_segments"]:
             self.assertEqual(
@@ -183,7 +190,7 @@ class SkillLevelNewUserTest(TestCase):
                 msg=f"Expected 'not_started' for skill card '{card['tag']}', got '{card['level']}'",
             )
 
-    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
     @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
     @patch(
         "apps.student.unit_progress.TaxonomyReader.get_skill_label",
@@ -195,10 +202,90 @@ class SkillLevelNewUserTest(TestCase):
             skill_tag="Note_Names",
             level=StudentSkillMastery.LEVEL_PROFICIENT,
         )
-        result = get_unit_progress_data(self.student, "1")
+        result = get_unit_progress_data(self.student, "2")
         levels = {seg["tag"]: seg["level"] for seg in result["bar_segments"]}
         self.assertEqual(levels["Note_Names"], "proficient")
-        self.assertEqual(levels["Ledger_Lines"], "not_started")
+        self.assertEqual(levels["Intervals"], "not_started")
+
+
+class Unit1CuratedActivityCardsTest(TestCase):
+    def setUp(self):
+        self.student = _make_student(51501)
+        self.author = _make_author(51502)
+
+    def _create_canonical_lane(self, pk: int, name: str) -> None:
+        playlist = _make_playlist(
+            pk=pk,
+            author=self.author,
+            skill_tags=["unit:1", "Note_Names"],
+            name=name,
+        )
+        playlist.tags = ["unit:1", "Note_Names"]
+        playlist.save(update_fields=["tags"])
+        exercise = _make_exercise(pk + 100, self.author)
+        ExercisePlaylistOrdered.objects.create(
+            _id=pk + 200,
+            playlist=playlist,
+            exercise=exercise,
+            order=1,
+        )
+
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT1)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
+    @patch(
+        "apps.student.unit_progress.TaxonomyReader.get_skill_label",
+        side_effect=lambda tag: tag.replace("_", " ").title(),
+    )
+    def test_unit1_returns_three_curated_activity_cards(
+        self,
+        mock_label,
+        mock_tier,
+        mock_unit,
+    ):
+        StudentSkillMastery.objects.create(
+            user=self.student,
+            skill_tag="Read_Bass_Clef",
+            level=StudentSkillMastery.LEVEL_PROFICIENT,
+        )
+        StudentSkillMastery.objects.create(
+            user=self.student,
+            skill_tag="Note_Names",
+            level=StudentSkillMastery.LEVEL_MASTERED,
+        )
+        self._create_canonical_lane(51600, "Unit 1 - Identify the Notes (Treble)")
+        self._create_canonical_lane(51700, "Unit 1 - Identify the Notes (Bass)")
+        self._create_canonical_lane(51800, "Unit 1 - Play from Name (Treble)")
+        self._create_canonical_lane(51900, "Unit 1 - Play from Name (Bass)")
+        self._create_canonical_lane(52000, "Unit 1 - Play the Notes (Treble)")
+        self._create_canonical_lane(52100, "Unit 1 - Play the Notes (Bass)")
+
+        result = get_unit_progress_data(self.student, "1")
+
+        segment_levels = {segment["tag"]: segment["level"] for segment in result["bar_segments"]}
+        self.assertEqual(
+            set(segment_levels),
+            {"pitch_reading", "clefs", "enharmonic", "Note_Names", "Ledger_Lines"},
+        )
+        self.assertEqual(
+            segment_levels["clefs"],
+            StudentSkillMastery.LEVEL_PROFICIENT,
+        )
+        self.assertEqual(
+            segment_levels["Note_Names"],
+            StudentSkillMastery.LEVEL_MASTERED,
+        )
+        self.assertEqual(
+            segment_levels["enharmonic"],
+            StudentSkillMastery.LEVEL_NOT_STARTED,
+        )
+        self.assertEqual(len(result["activity_cards"]), 3)
+        self.assertEqual(sum(len(card["rows"]) for card in result["activity_cards"]), 6)
+        labels = [card["title"] for card in result["activity_cards"]]
+        self.assertEqual(labels, ["Identify", "Play from Name", "Play the Notes"])
+        self.assertEqual(result["skill_cards"], [])
+        self.assertNotIn("Ledger Lines", labels)
+        self.assertNotIn("Clefs", labels)
+        self.assertNotIn("Enharmonics", labels)
 
 
 class PlaylistStatsUniqueExercisesTest(TestCase):
@@ -207,7 +294,7 @@ class PlaylistStatsUniqueExercisesTest(TestCase):
     def setUp(self):
         self.author = _make_author(52002)
         self.student = _make_student(52001)
-        # Playlist that overlaps with unit stub tags
+        # Playlist that overlaps with the generic stub tags
         self.playlist = _make_playlist(
             pk=52010,
             author=self.author,
@@ -226,7 +313,7 @@ class PlaylistStatsUniqueExercisesTest(TestCase):
         self.ex1_id = ex1.id
         self.ex2_id = ex2.id
 
-    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
     @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
     @patch(
         "apps.student.unit_progress.TaxonomyReader.get_skill_label",
@@ -245,7 +332,7 @@ class PlaylistStatsUniqueExercisesTest(TestCase):
                 {"id": self.ex2_id, "error_tally": 0},
             ],
         )
-        result = get_unit_progress_data(self.student, "1")
+        result = get_unit_progress_data(self.student, "2")
 
         note_names_card = next(
             c for c in result["skill_cards"] if c["tag"] == "Note_Names"
@@ -256,7 +343,7 @@ class PlaylistStatsUniqueExercisesTest(TestCase):
         self.assertEqual(pl_stats["done"], 2)
         self.assertEqual(pl_stats["total"], 2)
 
-    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
     @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
     @patch(
         "apps.student.unit_progress.TaxonomyReader.get_skill_label",
@@ -281,7 +368,7 @@ class PlaylistStatsUniqueExercisesTest(TestCase):
                 {"id": self.ex2_id, "error_tally": 0},
             ],
         )
-        result = get_unit_progress_data(self.student, "1")
+        result = get_unit_progress_data(self.student, "2")
         note_names_card = next(
             c for c in result["skill_cards"] if c["tag"] == "Note_Names"
         )
@@ -308,7 +395,7 @@ class LastScorePctTest(TestCase):
         )
         self.ex_id = ex.id
 
-    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
     @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
     @patch(
         "apps.student.unit_progress.TaxonomyReader.get_skill_label",
@@ -324,14 +411,14 @@ class LastScorePctTest(TestCase):
                 {"id": self.ex_id, "error_tally": 0},
             ],
         )
-        result = get_unit_progress_data(self.student, "1")
+        result = get_unit_progress_data(self.student, "2")
         note_names_card = next(
             c for c in result["skill_cards"] if c["tag"] == "Note_Names"
         )
         pl_stats = note_names_card["playlists"][0]
         self.assertIsNone(pl_stats["last_score_pct"])
 
-    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
     @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
     @patch(
         "apps.student.unit_progress.TaxonomyReader.get_skill_label",
@@ -359,14 +446,14 @@ class LastScorePctTest(TestCase):
                 },
             ],
         )
-        result = get_unit_progress_data(self.student, "1")
+        result = get_unit_progress_data(self.student, "2")
         note_names_card = next(
             c for c in result["skill_cards"] if c["tag"] == "Note_Names"
         )
         pl_stats = note_names_card["playlists"][0]
         self.assertEqual(pl_stats["last_score_pct"], 80)
 
-    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
     @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
     @patch(
         "apps.student.unit_progress.TaxonomyReader.get_skill_label",
@@ -374,7 +461,7 @@ class LastScorePctTest(TestCase):
     )
     def test_last_score_pct_none_when_no_performance_data(self, mock_label, mock_tier, mock_unit):
         """No PerformanceData at all → last_score_pct is None and done is 0."""
-        result = get_unit_progress_data(self.student, "1")
+        result = get_unit_progress_data(self.student, "2")
         note_names_card = next(
             c for c in result["skill_cards"] if c["tag"] == "Note_Names"
         )
@@ -382,7 +469,7 @@ class LastScorePctTest(TestCase):
         self.assertIsNone(pl_stats["last_score_pct"])
         self.assertEqual(pl_stats["done"], 0)
 
-    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
     @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
     @patch(
         "apps.student.unit_progress.TaxonomyReader.get_skill_label",
@@ -401,7 +488,7 @@ class LastScorePctTest(TestCase):
                 },
             ],
         )
-        result = get_unit_progress_data(self.student, "1")
+        result = get_unit_progress_data(self.student, "2")
         note_names_card = next(
             c for c in result["skill_cards"] if c["tag"] == "Note_Names"
         )
