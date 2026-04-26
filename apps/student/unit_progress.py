@@ -13,6 +13,7 @@ from __future__ import annotations
 from django.urls import reverse, NoReverseMatch
 
 from apps.exercises.models import PerformanceData, Playlist, StudentSkillMastery
+from apps.student.player_progression import is_completed_identification_attempt
 from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.student.progress import TAG_ALIASES
 from apps.student.unit1_curriculum import get_unit1_lane_groups
@@ -103,7 +104,7 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
     ident_completed_ids = {
         attempt.exercise.id
         for attempt in ident_attempts
-        if attempt.exercise
+        if attempt.exercise and is_completed_identification_attempt(attempt)
     }
     completed_ids.update(ident_completed_ids)
     done = len(completed_ids)
@@ -128,7 +129,12 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
 
     # Check Identification attempts for scores
     ident_scores = []
-    for attempt in ident_attempts.order_by("submitted_at"):
+    submitted_ident_attempts = [
+        attempt
+        for attempt in ident_attempts.order_by("submitted_at")
+        if attempt.is_page_submit
+    ]
+    for attempt in submitted_ident_attempts:
         score_data = attempt.score or {}
         correct = score_data.get("correct", 0)
         incorrect = score_data.get("incorrect", 0)
@@ -139,7 +145,7 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
             
     if ident_scores:
         last_pd_date = pd_rows.order_by("created").last().created if pd_rows.exists() else None
-        last_id_date = ident_attempts.order_by("submitted_at").last().submitted_at if ident_attempts.exists() else None
+        last_id_date = submitted_ident_attempts[-1].submitted_at if submitted_ident_attempts else None
         
         if last_id_date and (not last_pd_date or last_id_date > last_pd_date):
             last_score_pct = ident_scores[-1]

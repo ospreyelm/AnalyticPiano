@@ -22,6 +22,11 @@ from apps.exercises.models import (
     StudentSkillMastery,
 )
 from lab.views import RequirejsContext, generate_exercise_context
+from apps.student.player_progression import (
+    get_completed_exercise_ids,
+    is_completed_identification_attempt,
+    resolve_requested_step,
+)
 
 TAXONOMY_PATH = Path(__file__).resolve().parent.parent.parent / "music_theory_taxonomy_with_branches.json"
 
@@ -70,7 +75,7 @@ def _user_completed_exercise_ids(user, playlist: Playlist) -> set[str]:
     completed_ids.update(
         attempt.exercise.id
         for attempt in ident_attempts
-        if attempt.exercise
+        if attempt.exercise and is_completed_identification_attempt(attempt)
     )
     return completed_ids
 
@@ -280,6 +285,15 @@ class PlayerView(View):
         if exercise_num > playlist.exercise_count:
             return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
 
+        state = resolve_requested_step(request.user, playlist, exercise_num)
+        if state.should_redirect:
+            return redirect(
+                reverse("student:player", kwargs={"unit_num": unit_num})
+                + f"?playlist={playlist.id}&exercise_num={state.exercise_num}"
+            )
+
+        resolved_num = state.exercise_num
+        exercise_num = resolved_num
         exercise = playlist.get_exercise_obj_by_num(exercise_num)
         if not exercise:
             return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
@@ -292,19 +306,67 @@ class PlayerView(View):
             course,
         )
 
+        exercise_context["reviewMode"] = state.mode == "review"
+        exercise_context["playerMode"] = state.mode
+        if state.mode == "review":
+            attempts = (
+                IdentificationAttempt.objects.filter(
+                    user=request.user,
+                    exercise=exercise,
+                    playlist=playlist,
+                )
+                .order_by("submitted_at")
+            )
+            merged_answers = {}
+            for attempt in attempts:
+                if not is_completed_identification_attempt(attempt):
+                    continue
+                if attempt.answers:
+                    merged_answers.update(attempt.answers)
+
+            if merged_answers:
+                exercise_context["reviewAnswers"] = merged_answers
+
+        all_ids = list(playlist.untransposed_exercises_ids or [])
+        completed_ids = get_completed_exercise_ids(request.user, playlist)
+        completed_nums = [
+            index for index, exercise_id in enumerate(all_ids, 1)
+            if exercise_id in completed_ids
+        ]
+
+        if state.mode == "review":
+            earlier_completed = [n for n in completed_nums if n < resolved_num]
+            later_completed = [n for n in completed_nums if n > resolved_num]
+            prev_num = earlier_completed[-1] if earlier_completed else None
+
+            next_pending = next((i for i, x in enumerate(all_ids, 1) if x not in completed_ids), None)
+            if later_completed:
+                next_num = later_completed[0]
+            elif next_pending == resolved_num + 1:
+                next_num = next_pending
+            else:
+                next_num = None
+        else:
+            prev_num = resolved_num - 1 if resolved_num > 1 else None
+            next_num = resolved_num + 1 if resolved_num < playlist.exercise_count else None
+
         base_url = reverse("student:player", kwargs={"unit_num": unit_num}) + f"?playlist={playlist.id}"
-        next_num = exercise_num + 1 if exercise_num < playlist.exercise_count else None
-        prev_num = exercise_num - 1 if exercise_num > 1 else None
 
         exercise_context["courseId"] = course.id if course else None
         exercise_context["nextExercise"] = (
             f"{base_url}&exercise_num={next_num}" if next_num else None
         )
         exercise_context["nextExerciseNum"] = next_num
+        exercise_context["nextExerciseId"] = (
+            all_ids[next_num - 1] if next_num and next_num <= len(all_ids) else False
+        )
         exercise_context["previousExercise"] = (
             f"{base_url}&exercise_num={prev_num}" if prev_num else None
         )
         exercise_context["previousExerciseNum"] = prev_num
+        exercise_context["previousExerciseId"] = (
+            all_ids[prev_num - 1] if prev_num and prev_num <= len(all_ids) else False
+        )
         exercise_context["forceRedirect"] = True
         exercise_context["exerciseList"] = [
             {

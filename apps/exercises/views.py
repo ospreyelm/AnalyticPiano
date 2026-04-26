@@ -199,7 +199,7 @@ def _submit_exercise_performance(request):
 def identification_answers_view(request):
     if request.method == "POST":
         data = json.loads(request.POST.get("data"))
-        data_course_id = data["course_ID"]
+        data_course_id = data.get("course_ID")
         data_playlist_id = data["playlist_ID"]
         data_exercise_num = data["exercise_num"]
 
@@ -223,6 +223,9 @@ def identification_answers_view(request):
             is_page_submit=data.get("is_page_submit", False),
             mode=data.get("mode", ""),
         )
+
+        if not data.get("is_page_submit", False):
+            return JsonResponse({"status": "saved"}, status=201)
 
         # Record mastery attempt
         # score structure: {"correct": N, "incorrect": N, "unanswered": N}
@@ -253,7 +256,7 @@ def identification_answers_view(request):
         attempt = (
             IdentificationAttempt.objects.filter(
                 user=request.user,
-                exercise_id=exercise_id,
+                exercise__id=exercise_id,
             )
             .order_by("-submitted_at")
             .first()
@@ -264,7 +267,9 @@ def identification_answers_view(request):
             "answers": attempt.answers,
             "correctness": attempt.correctness,
             "score": attempt.score,
+            "correct_answers": attempt.correct_answers,
             "page_num": attempt.page_num,
+            "is_page_submit": attempt.is_page_submit,
             "submitted_at": attempt.submitted_at.strftime("%Y-%m-%d %H:%M:%S"),
         })
 

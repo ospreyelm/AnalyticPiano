@@ -16,6 +16,7 @@ define([
   "./score_timeline",
   "app/components/input/label_input",
   "app/models/score_player",
+  "app/models/identification_submit_flow_logic",
   "app/components/music/playback_controls",
   "app/utils/measure_engine",
 ], function (
@@ -35,6 +36,7 @@ define([
   ScoreTimeline,
   LabelInput,
   ScorePlayer,
+  IdentificationSubmitFlow,
   renderPlaybackControls,
   MeasureEngine
 ) {
@@ -325,11 +327,21 @@ define([
         btn.on('click', function (e) {
           e.stopPropagation();
           var grdr = self.exerciseContext.grader;
+          var currentMode = self._currentMode;
           self.exerciseContext.triggerTimer();
           grdr.setAnswer(problemIndex, choice);
+          if (
+            IdentificationSubmitFlow._shouldAutosaveIdentificationChange({
+              hasAnswer: !!(grdr.answers && grdr.answers.hasOwnProperty(problemIndex)),
+            })
+          ) {
+            self.exerciseContext.saveIdentState();
+            self.exerciseContext.submitIdentificationAnswers({
+              is_page_submit: false,
+              mode: currentMode,
+            });
+          }
           self._closeIdentPopup();
-
-          var currentMode = self._currentMode;
 
           if (currentMode === 'practice') {
             // Show colour feedback immediately
@@ -442,6 +454,7 @@ define([
       var grader = this.exerciseContext.grader;
       var definition = this.exerciseContext.getDefinition();
       var identMode = this._currentMode;
+      var reviewMode = !!(definition && definition.exercise && definition.exercise.reviewMode);
       var ctx = this.vexRenderer.getContext();
       var lastGraded = this.exerciseContext.graded;
 
@@ -483,10 +496,14 @@ define([
           }
         }
 
-        var chosen = grader && grader.answers && grader.answers.hasOwnProperty(absoluteIndex)
-          ? grader.answers[absoluteIndex] : null;
-        var label = chosen || '?';
-
+        var chosen = null;
+        if (grader && grader.answers) {
+          if (grader.answers[absoluteIndex] !== undefined && grader.answers[absoluteIndex] !== null && grader.answers[absoluteIndex] !== '') {
+            chosen = grader.answers[absoluteIndex];
+          } else if (grader.answers[String(absoluteIndex)] !== undefined && grader.answers[String(absoluteIndex)] !== null && grader.answers[String(absoluteIndex)] !== '') {
+            chosen = grader.answers[String(absoluteIndex)];
+          }
+        }
         var fillStyle = '#888888'; // unanswered
         if (chosen) { fillStyle = '#444444'; answeredCount++; } // answered
         var showCheck = false;
@@ -498,6 +515,21 @@ define([
           if (gp.correct === true)  { fillStyle = '#28a745'; showCheck = true; }
           if (gp.correct === false) { fillStyle = '#dc3545'; showCross = true; }
         }
+        if (reviewMode && !chosen && !showCross) {
+          showCheck = true;
+          fillStyle = '#28a745';
+        }
+        var label = IdentificationSubmitFlow._getIdentificationDisplayLabel({
+          answer: chosen,
+          fallbackAnswer: problem && problem.answer,
+          reviewMode: reviewMode,
+          showCheck: showCheck,
+        });
+        var hasDisplayAnswer = label !== '?';
+        var shouldRenderPlaceholder = IdentificationSubmitFlow._shouldRenderIdentificationPlaceholder({
+          reviewMode: reviewMode,
+          hasAnswer: hasDisplayAnswer,
+        });
 
         var labelY = ly;
         var markerY = ly + 18;
@@ -513,7 +545,9 @@ define([
         // ✓ or ✗ drawn below the label text
         var markerYOffset = showCheck || showCross ? 22 : 0;
         
-        if (!chosen) {
+        if (!hasDisplayAnswer && !shouldRenderPlaceholder) {
+          // Review mode: hide unanswered placeholder labels, but keep completion marks.
+        } else if (!hasDisplayAnswer) {
           // Draw a clear, clickable pill background for unanswered items
           ctx.beginPath();
           ctx.font = 'bold 18px sans-serif';
