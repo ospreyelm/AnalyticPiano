@@ -8,7 +8,9 @@
   <div class="unit-header">
     <span class="tier-badge">{{ tier.badge }}</span>
     <h1 class="unit-title">Unit {{ unit.n }} · {{ unit.title }}</h1>
-    {% if unit.feat %}
+    {% if unit.n == "1" %}
+      <p class="unit-desc">Reading Treble and Bass Clefs.</p>
+    {% elif unit.feat %}
       <p class="unit-desc">{{ unit.feat }}</p>
     {% endif %}
   </div>
@@ -16,38 +18,68 @@
   <!-- Segmented Mastery Bar -->
   <div class="segmented-mastery-bar">
     {% for segment in bar_segments %}
-      <div class="bar-segment tier-{{ segment.level }} tier-{{ segment.level|slugify }} {{ segment.level }}" title="{{ segment.label }}: {{ segment.level|title }}"></div>
+      <div
+        class="bar-segment tier-{{ segment.level }} tier-{{ segment.level|slugify }} {{ segment.level }}"
+        tabindex="0"
+        aria-label="{{ segment.label }}: {{ segment.level|title }}"
+        data-tooltip="{{ segment.label }} — {{ segment.level|title }}"
+        {% if unit.n != "1" %}title="{{ segment.label }}: {{ segment.level|title }}"{% endif %}
+      ></div>
     {% endfor %}
   </div>
 
   <!-- Skill Cards -->
   <div class="skill-cards-container">
-    {% for skill in skill_cards %}
-      <div class="skill-card">
-        <div class="skill-card-header">
-          <h2 class="skill-card-title">{{ skill.label }}</h2>
-          <span class="skill-mastery-badge tier-{{ skill.level }} tier-{{ skill.level|slugify }} {{ skill.level }}">{{ skill.level|title }}</span>
-        </div>
-        <div class="skill-playlists">
-          {% for playlist in skill.playlists %}
-            <a href="{{ playlist.url }}" class="playlist-row">
-              <span class="playlist-name">{{ playlist.name }}</span>
-              <div class="playlist-progress-info">
-                <div class="mini-progress-bar">
-                  <div class="mini-progress-fill" style="width: {% if playlist.total > 0 %}{% widthratio playlist.done playlist.total 100 %}{% else %}0{% endif %}%"></div>
+    {% if unit.n == "1" %}
+      {% for card in activity_cards %}
+        <div class="skill-card">
+          <div class="skill-card-header">
+            <h2 class="skill-card-title">{{ card.title }}</h2>
+          </div>
+          <div class="skill-playlists">
+            {% for row in card.rows %}
+              <a href="{{ row.url }}" class="playlist-row">
+                <span class="playlist-name">{{ row.label }}</span>
+                <div class="playlist-progress-info">
+                  <div class="mini-progress-bar">
+                    <div class="mini-progress-fill" style="width: {% if row.total > 0 %}{% widthratio row.done row.total 100 %}{% else %}0{% endif %}%"></div>
+                  </div>
+                  <span class="playlist-count">{{ row.done }}/{{ row.total }}</span>
+                  {% if row.last_score_pct is not None %}
+                    <span class="playlist-score">· Last: {{ row.last_score_pct }}%</span>
+                  {% endif %}
                 </div>
-                <span class="playlist-count">{{ playlist.done }}/{{ playlist.total }}</span>
-                {% if playlist.last_score_pct is not None %}
-                  <span class="playlist-score">· Last: {{ playlist.last_score_pct }}%</span>
-                {% endif %}
-              </div>
-            </a>
-          {% empty %}
-            <div class="coming-soon">Coming soon</div>
-          {% endfor %}
+              </a>
+            {% endfor %}
+          </div>
         </div>
-      </div>
-    {% endfor %}
+      {% endfor %}
+    {% else %}
+      {% for skill in skill_cards %}
+        <div class="skill-card">
+          <div class="skill-card-header">
+            <h2 class="skill-card-title">{{ skill.label }}</h2>
+            <span class="skill-mastery-badge tier-{{ skill.level }} tier-{{ skill.level|slugify }} {{ skill.level }}">{{ skill.level|title }}</span>
+          </div>
+          <div class="skill-playlists">
+            {% for playlist in skill.playlists %}
+              <a href="{{ playlist.url }}" class="playlist-row">
+                <span class="playlist-name">{{ playlist.name }}</span>
+                <div class="playlist-progress-info">
+                  <div class="mini-progress-bar">
+                    <div class="mini-progress-fill" style="width: {% if playlist.total > 0 %}{% widthratio playlist.done playlist.total 100 %}{% else %}0{% endif %}%"></div>
+                  </div>
+                  <span class="playlist-count">{{ playlist.done }}/{{ playlist.total }}</span>
+                  {% if playlist.last_score_pct is not None %}
+                    <span class="playlist-score">· Last: {{ playlist.last_score_pct }}%</span>
+                  {% endif %}
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
   </div>
 
   <style>
@@ -58,9 +90,54 @@
     .unit-desc { font-size: 0.95rem; color: #666; margin: 0; }
 
     /* Segmented Mastery Bar */
-    .segmented-mastery-bar { display: flex; gap: 4px; height: 12px; width: 100%; margin-bottom: 2rem; background: transparent; border-radius: 6px; overflow: hidden; }
-    .bar-segment { flex: 1; height: 100%; border-radius: 2px; transition: opacity 0.2s; }
+    .segmented-mastery-bar { display: flex; gap: 4px; height: 12px; width: 100%; margin-bottom: 2rem; background: transparent; border-radius: 6px; overflow: visible; }
+    .bar-segment { flex: 1; height: 100%; border-radius: 2px; transition: opacity 0.2s; position: relative; outline: none; }
     .bar-segment:hover { opacity: 0.8; }
+    .bar-segment:focus-visible {
+      box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.35);
+    }
+    .bar-segment::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%);
+      padding: 0.45rem 0.65rem;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.96);
+      color: #fff;
+      font-size: 0.75rem;
+      line-height: 1.2;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.16s ease, visibility 0.16s ease;
+      z-index: 20;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+    }
+    .bar-segment::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 4px);
+      transform: translateX(-50%);
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid rgba(15, 23, 42, 0.96);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.16s ease, visibility 0.16s ease;
+      z-index: 20;
+    }
+    .bar-segment:hover::after,
+    .bar-segment:hover::before,
+    .bar-segment:focus-visible::after,
+    .bar-segment:focus-visible::before {
+      opacity: 1;
+      visibility: visible;
+    }
     
     /* Mastery Colors for Bar Segments and Badges */
     .tier-mastered, .mastered { background-color: #4CAF50 !important; color: white !important; }

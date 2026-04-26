@@ -1061,6 +1061,8 @@ define([
           }
         }
       } else {
+        // A failed submit-mode check should fall back to practice immediately
+        // so the UI stops implying the page is still in submit/correction mode.
         this.done = false;
         this.sealed = false;
         this.state =
@@ -1070,6 +1072,9 @@ define([
         if (graded.result === this.grader.STATE.INCORRECT) {
           this.flawless = false;
           this.errorTally += 1;
+        }
+        if (this.sessionMode === "submit") {
+          this.sessionMode = "practice";
         }
         if (this.exercise && typeof this.exercise.trigger === "function") {
           this.exercise.trigger("change");

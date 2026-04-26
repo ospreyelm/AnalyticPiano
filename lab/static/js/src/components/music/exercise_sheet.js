@@ -201,28 +201,20 @@ define([
 
       this._identActiveIndex = null;
       this._identPopupEl = null;
-      this._currentMode = this.exerciseContext.settings.identMode || "submit";
+      this._syncIdentificationModeState();
       this._modeLocked = this.exerciseContext.settings.modeLocked || false;
 
-      this.renderModeToggle();
-
-      var identMode = this._currentMode;
-
-      // Show Submit button only in submit mode
-      if (identMode === 'submit') {
-        $('#identification-actions').show();
-        var $submitBtn = $('#identification-submit');
-        $submitBtn.attr('type', 'button');
-        // Use direct DOM property to ensure the handler cannot be removed by
-        // subsequent .off('click') calls or overridden by other jQuery bindings.
-        var submitBtnEl = $submitBtn[0];
-        if (submitBtnEl) {
-          submitBtnEl.onclick = null; // clear any prior handler
-          submitBtnEl.onclick = _.bind(this.onSubmitIdentification, this);
-        }
-      } else {
-        $('#identification-actions').hide();
+      var $submitBtn = $('#identification-submit');
+      $submitBtn.attr('type', 'button');
+      // Use direct DOM property to ensure the handler cannot be removed by
+      // subsequent .off('click') calls or overridden by other jQuery bindings.
+      var submitBtnEl = $submitBtn[0];
+      if (submitBtnEl) {
+        submitBtnEl.onclick = null; // clear any prior handler
+        submitBtnEl.onclick = _.bind(this.onSubmitIdentification, this);
       }
+
+      this._refreshIdentificationModeUI();
 
       // Canvas click: open popup only inside the label hit zone below bass staff
       this.el.off('click.identification').on('click.identification', function (e) {
@@ -705,7 +697,32 @@ define([
       }
     },
 
+    _getActiveIdentificationMode: function () {
+      return this.exerciseContext.sessionMode ||
+        this.exerciseContext.settings.identMode ||
+        this._currentMode ||
+        "submit";
+    },
+
+    _syncIdentificationModeState: function () {
+      this._currentMode = this._getActiveIdentificationMode();
+      return this._currentMode;
+    },
+
+    _refreshIdentificationModeUI: function () {
+      var identMode = this._syncIdentificationModeState();
+      $("#identification-actions").show();
+      if (identMode === "submit" && !this.exerciseContext.sealed) {
+        $("#identification-submit").show();
+      } else {
+        $("#identification-submit").hide();
+        $("#ident-progress-container").hide();
+      }
+      this.renderModeToggle();
+    },
+
     renderModeToggle: function () {
+      this._syncIdentificationModeState();
       if (this._modeLocked || this._currentMode === "test") {
         $("#ident-mode-container").remove();
         return;
@@ -751,21 +768,13 @@ define([
     },
 
     onToggleMode: function (newMode) {
+      this._syncIdentificationModeState();
       if (this._modeLocked || this._currentMode === "test" || this._currentMode === newMode) {
         return;
       }
       this._currentMode = newMode;
       this.exerciseContext.sessionMode = newMode;
-      
-      // Toggle Submit button visibility
-      if (newMode === 'submit') {
-        $('#identification-submit').show();
-      } else {
-        $('#identification-submit').hide();
-        $('#ident-progress-container').hide();
-      }
-
-      this.renderModeToggle();
+      this._refreshIdentificationModeUI();
       this.render(); // Re-render to update UI elements
     },
     /**
@@ -790,6 +799,9 @@ define([
      */
     render: function (exercise_midi_nums) {
       exercise_midi_nums = exercise_midi_nums || false;
+      if (this._isIdentificationLikeExercise()) {
+        this._refreshIdentificationModeUI();
+      }
       this.clear();
       this.renderStaves(exercise_midi_nums);
       this.renderExerciseStatus();
