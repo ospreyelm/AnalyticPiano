@@ -213,6 +213,72 @@ The frontend uses RequireJS (AMD modules). There is no bundler in dev mode — e
 
 ---
 
+## Student Progress Semantics
+
+Student unit pages intentionally use two different meanings of "progress":
+
+- **Mastery progress**: high-meaning skill state used in top segmented bars
+- **Practice progress**: lane completion / fluency-building used in per-lane rows
+
+These are not interchangeable.
+
+### Mastery progress
+
+Top segments should represent durable skill state such as:
+
+- `not_started`
+- `attempted`
+- `proficient`
+- `mastered`
+
+In scaffolded curricula, `proficient` should require success on sufficiently
+advanced lane content, not merely success on the easiest opening exercises.
+`mastered` is reserved for mixed confirmation, typically via a mastery
+challenge built from the hardest tier of the unit.
+
+### Practice progress
+
+Per-lane rows should continue to show:
+
+- `done / total`
+- mini progress bars
+- recent score information
+
+These rows exist to show volume of recommended practice and fluency-building.
+They may use richer intermediate color bands than the top mastery bar so that
+students see visible movement inside long practice lanes.
+
+In practice, prefer a small number of clearly distinguishable row-color bands
+plus a granular mini-progress bar, rather than a large number of subtly
+different background colors.
+
+### Why the distinction exists
+
+Music pedagogy needs both:
+
+- clear evidence that the student understands the skill
+- visible encouragement that repeated practice is still meaningful after basic
+  competence is established
+
+Therefore, a student may be `proficient` or even `mastered` while still having
+recommended lane work remaining.
+
+### Challenge metadata belongs to the lane, not UMTO
+
+When a unit defines a mastery challenge, whether a given exercise is
+challenge-eligible should be determined by the curricular sequencing layer
+(playlist / lane placement metadata), not by the canonical UMTO payload.
+
+Reason:
+
+- UMTO defines what the exercise *is*
+- challenge eligibility defines how that exercise is *used in a specific lane*
+
+This keeps exercise representation canonical while allowing different units or
+curricular contexts to reuse the same exercise differently.
+
+---
+
 ## Non-Obvious Patterns
 
 **Exercise keys are baked in.** An Exercise object has a specific `key` in its `data`. The key controls both note spelling on the staff and the analytical overlay (Roman numerals, figured bass). You cannot display the same Exercise in a different key without either transposing it or generating a new Exercise.
