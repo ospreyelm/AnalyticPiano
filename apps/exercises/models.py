@@ -472,6 +472,18 @@ class IdentificationAttempt(models.Model):
         help_text="Mode in effect when this attempt was submitted. "
                   "Empty = pre-migration attempt (mode unknown).",
     )
+    ATTEMPT_PRACTICE = "practice"
+    ATTEMPT_MASTERY_CHALLENGE = "mastery_challenge"
+    ATTEMPT_TYPE_CHOICES = [
+        (ATTEMPT_PRACTICE, "Practice"),
+        (ATTEMPT_MASTERY_CHALLENGE, "Mastery Challenge"),
+    ]
+    attempt_type = models.CharField(
+        "Attempt Type",
+        max_length=32,
+        choices=ATTEMPT_TYPE_CHOICES,
+        default=ATTEMPT_PRACTICE,
+    )
 
     class Meta:
         verbose_name = "Identification Attempt"
@@ -868,6 +880,17 @@ class ExercisePlaylistOrdered(ClonableModelMixin, BaseContentModel):
         default=False,
         help_text="Mark as a starting exercise for students with no mastery in this adaptive playlist.",
     )
+    difficulty_tier = models.PositiveSmallIntegerField(
+        "Difficulty Tier",
+        default=1,
+        help_text="Curricular sequencing tier (e.g., 1=easy, 2=medium, 3=hard)."
+    )
+    is_mastery_challenge_source = models.BooleanField(
+        "Mastery Challenge Source",
+        default=False,
+        help_text="If checked, this exercise is eligible to be drawn for a mastery challenge."
+    )
+
 
     def save(self, *args, **kwargs):
         if self.order is None:

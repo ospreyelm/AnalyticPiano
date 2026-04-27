@@ -16,6 +16,14 @@ from apps.exercises.taxonomy_reader import TaxonomyReader
 User = get_user_model()
 
 
+def _performance_demonstrates_skill(performance_data: dict) -> bool:
+    numerator = performance_data.get("score_numerator")
+    denominator = performance_data.get("score_denominator")
+    if denominator not in (None, 0):
+        return numerator == denominator
+    return performance_data.get("error_tally") in (0, -1, "n/a")
+
+
 def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num, score_numerator, score_denominator, mastery_changes, error_tally=None):
     unit_n = None
     unit_name = None
@@ -176,7 +184,7 @@ def _submit_exercise_performance(request):
 
     # Record mastery attempt
     exercise_obj = Exercise.objects.get(id=exercise_id[:6])
-    correct = performance_data.get('error_tally') in (0, -1, 'n/a')
+    correct = _performance_demonstrates_skill(performance_data)
     mastery_changes = {}
     if exercise_obj.skill_tags:
         mastery_changes = record_attempt(user_id=user_id, exercise=exercise_obj, correct=correct)
@@ -222,6 +230,7 @@ def identification_answers_view(request):
             page_num=data.get("page_num"),
             is_page_submit=data.get("is_page_submit", False),
             mode=data.get("mode", ""),
+            attempt_type=data.get("attempt_type", "practice"),
         )
 
         if not data.get("is_page_submit", False):

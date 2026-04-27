@@ -7,6 +7,7 @@ from django.urls import reverse
 from apps.exercises.models import (
     ExercisePlaylistOrdered,
     IdentificationAttempt,
+    PerformanceData,
     Playlist,
     StudentSkillMastery,
 )
@@ -214,3 +215,83 @@ class IdentificationSubmissionViewTests(TestCase):
         self.assertEqual(data["answers"], {"0": "C", "1": "E"})
         self.assertEqual(data["correct_answers"], {"0": "C", "1": "E", "2": "G"})
         self.assertFalse(data["is_page_submit"])
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class PerformanceSubmissionViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.student = User.objects.create_user(
+            email="student-perf@test.com",
+            password="testpass123",
+            is_staff=False,
+        )
+        self.author = User.objects.create_user(
+            email="author-perf@test.com",
+            password="testpass123",
+            is_staff=True,
+        )
+        self.exercise = make_umto_exercise(
+            self.author,
+            description="Unit 1 play notes",
+            skill_tags=["unit:1", "Note_Names"],
+            mode=InteractionMode.PLAYBACK,
+        )
+        self.playlist = Playlist.objects.create(
+            _id=24100,
+            name="Unit 1 - Play the Notes (Bass)",
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1", "Note_Names"],
+            tags=["unit:1", "Note_Names"],
+        )
+        ExercisePlaylistOrdered.objects.create(
+            playlist=self.playlist,
+            exercise=self.exercise,
+            order=1,
+        )
+        self.client.force_login(self.student)
+
+    def test_corrected_play_submission_still_updates_mastery(self):
+        response = self.client.post(
+            reverse("lab:exercise-performance"),
+            {
+                "data": json.dumps(
+                    {
+                        "course_ID": None,
+                        "playlist_ID": self.playlist.id,
+                        "exercise_num": 1,
+                        "client_completion_date": "2026-04-26T14:00:00.000Z",
+                        "error_tally": 2,
+                        "performance_duration_in_seconds": 12.5,
+                        "time_intervals_in_milliseconds": [1000, 1000],
+                        "tempo_mean_semibreves_per_min": 80,
+                        "tempo_SD_semibreves_per_min": 0,
+                        "tempo_rating": 3,
+                        "page_num": None,
+                        "page_total": None,
+                        "is_final_page": None,
+                        "score_numerator": 1,
+                        "score_denominator": 1,
+                    }
+                )
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "ok")
+        self.assertIn("Note_Names", payload["mastery_changes"])
+        self.assertEqual(
+            payload["mastery_changes"]["Note_Names"],
+            {"old": "not_started", "new": "attempted"},
+        )
+
+        mastery = StudentSkillMastery.objects.get(
+            user=self.student,
+            skill_tag="Note_Names",
+        )
+        self.assertEqual(mastery.level, StudentSkillMastery.LEVEL_ATTEMPTED)
+
+        perf = PerformanceData.objects.get(user=self.student, playlist=self.playlist)
+        self.assertEqual(perf.data[-1]["error_tally"], 2)

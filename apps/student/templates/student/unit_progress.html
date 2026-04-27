@@ -28,6 +28,39 @@
     {% endfor %}
   </div>
 
+  {% if challenges %}
+    <!-- Mastery Challenges -->
+    <div class="challenges-section">
+      <h2 class="challenges-title">Mastery Challenges</h2>
+      <div class="challenges-grid">
+        {% for key, challenge in challenges.items %}
+          <div class="challenge-card {% if not challenge.unlocked %}locked{% elif challenge.mastered %}mastered{% endif %}">
+            <div class="challenge-body">
+              <h3 class="challenge-name">{{ key|title }} Mastery Challenge</h3>
+              <div class="challenge-status">
+                {% if challenge.mastered %}
+                  <span class="status-badge mastered">Mastered</span>
+                {% elif challenge.unlocked %}
+                  <span class="status-badge unlocked">Ready</span>
+                {% else %}
+                  <span class="status-badge locked">Locked</span>
+                {% endif %}
+              </div>
+              {% if not challenge.unlocked %}
+                <p class="challenge-help">Achieve "Proficient" in all 3 {{ key }} lanes to unlock.</p>
+              {% endif %}
+            </div>
+            {% if challenge.unlocked %}
+              <a href="{{ challenge.url }}" class="challenge-btn {% if challenge.mastered %}retry{% endif %}">
+                {% if challenge.mastered %}Retry Challenge{% else %}Take Challenge{% endif %}
+              </a>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
   <!-- Skill Cards -->
   <div class="skill-cards-container">
     {% if unit.n == "1" %}
@@ -38,8 +71,16 @@
           </div>
           <div class="skill-playlists">
             {% for row in card.rows %}
-              <a href="{{ row.url }}" class="playlist-row">
-                <span class="playlist-name">{{ row.label }}</span>
+              <a href="{{ row.url }}" class="playlist-row band-{{ row.progress_band }}">
+                <div class="playlist-info">
+                  <span class="playlist-name">{{ row.label }}</span>
+                  {% if row.mastery_state %}
+                    <span class="mastery-badge tier-{{ row.mastery_state }}">{{ row.mastery_state|title }}</span>
+                  {% endif %}
+                  {% if row.recommended_practice %}
+                    <span class="practice-label">Recommended Practice</span>
+                  {% endif %}
+                </div>
                 <div class="playlist-progress-info">
                   <div class="mini-progress-bar">
                     <div class="mini-progress-fill" style="width: {% if row.total > 0 %}{% widthratio row.done row.total 100 %}{% else %}0{% endif %}%"></div>
@@ -139,6 +180,26 @@
       visibility: visible;
     }
     
+    /* Challenges Section */
+    .challenges-section { margin-bottom: 2rem; }
+    .challenges-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem; color: #222; }
+    .challenges-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .challenge-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; background: #fff; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s; }
+    .challenge-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .challenge-card.locked { opacity: 0.6; background: #f8fafc; }
+    .challenge-card.mastered { border-color: #4CAF50; }
+    .challenge-name { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem 0; color: #1e293b; }
+    .challenge-status { margin: 0 0 0.75rem 0; }
+    .status-badge { font-size: 0.7rem; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+    .status-badge.mastered { background: #4CAF50; color: white; }
+    .status-badge.unlocked { background: #4A90D9; color: white; }
+    .status-badge.locked { background: #94a3b8; color: white; }
+    .challenge-help { font-size: 0.8rem; color: #64748b; margin: 0; }
+    .challenge-btn { display: inline-block; text-align: center; background: #4A90D9; color: white; text-decoration: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; margin-top: 1rem; }
+    .challenge-btn:hover { background: #357abd; }
+    .challenge-btn.retry { background: #fff; color: #4CAF50; border: 1px solid #4CAF50; }
+    .challenge-btn.retry:hover { background: #e8f5e9; }
+
     /* Mastery Colors for Bar Segments and Badges */
     .tier-mastered, .mastered { background-color: #4CAF50 !important; color: white !important; }
     .tier-proficient, .proficient { background-color: #4A90D9 !important; color: white !important; }
@@ -153,11 +214,24 @@
     .skill-card-title { font-size: 1.1rem; font-weight: bold; margin: 0; color: #222; }
     .skill-mastery-badge { font-size: 0.75rem; font-weight: bold; padding: 0.25rem 0.6rem; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
 
-    /* Playlist Rows */
+    /* Playlist Rows with Practice Bands */
     .skill-playlists { display: flex; flex-direction: column; gap: 0.5rem; }
-    .playlist-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #fcfcfc; border: 1px solid #f0f0f0; border-radius: 6px; text-decoration: none; color: #333; transition: background 0.2s, border-color 0.2s; }
+    .playlist-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #fcfcfc; border: 1px solid #f0f0f0; border-left: 4px solid #e0e0e0; border-radius: 6px; text-decoration: none; color: #333; transition: background 0.2s, border-color 0.2s; }
     .playlist-row:hover { background: #f5f9ff; border-color: #4A90D9; }
+    
+    .playlist-row.band-not_started { border-left-color: #cbd5e1; }
+    .playlist-row.band-getting_started { border-left-color: #fbd38d; }
+    .playlist-row.band-learning { border-left-color: #f6ad55; }
+    .playlist-row.band-practicing { border-left-color: #63b3ed; }
+    .playlist-row.band-fluency_building { border-left-color: #4299e1; }
+    .playlist-row.band-polishing { border-left-color: #68d391; }
+    .playlist-row.band-completed { border-left-color: #48bb78; }
+
+    .playlist-info { display: flex; align-items: center; gap: 0.75rem; }
     .playlist-name { font-size: 0.9rem; font-weight: 500; }
+    .mastery-badge { font-size: 0.7rem; font-weight: bold; padding: 0.15rem 0.4rem; border-radius: 4px; text-transform: uppercase; }
+    .practice-label { font-size: 0.7rem; font-weight: 600; background: #f1f5f9; color: #475569; padding: 0.15rem 0.4rem; border-radius: 4px; }
+
     .playlist-progress-info { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: #666; }
 
     /* Mini Progress Bar */

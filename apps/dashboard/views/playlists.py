@@ -192,9 +192,17 @@ def playlist_edit_view(request, playlist_id):
                 playlist.id = None
                 playlist = playlist.save()
                 exercise_pairs = form.cleaned_data["exercises"]
+                orig_epos = {
+                    epo.exercise_id: epo 
+                    for epo in ExercisePlaylistOrdered.objects.filter(playlist_id=playlist_id)
+                }
 
                 # edit or add new EPOs
                 for exercise, through_data in exercise_pairs:
+                    orig_epo = orig_epos.get(exercise.id)
+                    if orig_epo:
+                        through_data["difficulty_tier"] = orig_epo.difficulty_tier
+                        through_data["is_mastery_challenge_source"] = orig_epo.is_mastery_challenge_source
                     ExercisePlaylistOrdered.objects.update_or_create(
                         exercise=exercise,
                         playlist=playlist,

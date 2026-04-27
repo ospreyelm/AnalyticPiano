@@ -1,8 +1,15 @@
+import re
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
+
+def _extract_stage_from_description(description):
+    match = re.search(r"S(\d+)\s*$", description or "")
+    if not match:
+        return None
+    return int(match.group(1))
 
 User = get_user_model()
 
@@ -118,12 +125,27 @@ class Command(BaseCommand):
                     playlist.save(update_fields=["skill_tags", "updated"])
 
                 ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
-                ExercisePlaylistOrdered.objects.bulk_create(
-                    [
-                        ExercisePlaylistOrdered(playlist=playlist, exercise=exercise, order=index)
-                        for index, exercise in enumerate(ordered_exercises, start=1)
-                    ]
-                )
+                bulk_epos = []
+                for index, exercise in enumerate(ordered_exercises, start=1):
+                    stage_num = _extract_stage_from_description(exercise.description) or 1
+                    diff_tier = 1
+                    if stage_num == 3:
+                        diff_tier = 2
+                    elif stage_num >= 4:
+                        diff_tier = 3
+                    
+                    is_source = (stage_num >= 4)
+                    
+                    bulk_epos.append(
+                        ExercisePlaylistOrdered(
+                            playlist=playlist,
+                            exercise=exercise,
+                            order=index,
+                            difficulty_tier=diff_tier,
+                            is_mastery_challenge_source=is_source
+                        )
+                    )
+                ExercisePlaylistOrdered.objects.bulk_create(bulk_epos)
 
             rebuilt += 1
             self.stdout.write(
