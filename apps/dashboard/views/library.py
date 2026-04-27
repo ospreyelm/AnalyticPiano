@@ -116,6 +116,8 @@ def clone_course_view(request, course_id):
                 exercise=epo.exercise,
                 playlist=new_playlist,
                 order=epo.order,
+                difficulty_tier=epo.difficulty_tier,
+                is_mastery_challenge_source=epo.is_mastery_challenge_source,
             )
 
         # Wire playlist into cloned course preserving order and dates

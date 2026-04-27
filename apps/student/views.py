@@ -1,4 +1,5 @@
 import json
+import uuid
 from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
@@ -371,7 +372,10 @@ class PlayerView(View):
             prev_num = resolved_num - 1 if resolved_num > 1 else None
             next_num = resolved_num + 1 if resolved_num < playlist.exercise_count else None
 
+        is_challenge = playlist.name and playlist.name.startswith(f"_challenge_{request.user.id}_")
         base_url = reverse("student:player", kwargs={"unit_num": unit_num}) + f"?playlist={playlist.id}"
+        if is_challenge:
+            base_url += "&mode=challenge"
 
         exercise_context["courseId"] = course.id if course else None
         exercise_context["nextExercise"] = (
@@ -409,11 +413,71 @@ class PlayerView(View):
             "playlist": playlist,
             "exercise_num": exercise_num,
             "total_exercises": playlist.exercise_count,
+            "is_review_mode": state.mode == "review",
             "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
         }
         rj_context.add_to_view(context)
 
         return render(request, "student/player.html", context)
+
+
+class ChallengeView(LoginRequiredMixin, View):
+    def get(self, request, group_key):
+        from apps.student.unit1_curriculum import get_unit1_challenge_source_exercises, CHALLENGE_GROUPS
+        from apps.student.unit_progress import get_unit_progress_data
+        from apps.exercises.models import Playlist, ExercisePlaylistOrdered
+        
+        if group_key not in ["treble", "bass"]:
+            raise Http404("Invalid challenge group.")
+            
+        unit1_data = get_unit_progress_data(request.user, "1")
+        lane_masteries = {seg["tag"]: seg["level"] for seg in unit1_data.get("bar_segments", [])}
+        
+        group = CHALLENGE_GROUPS[group_key]
+        is_unlocked = True
+        for tag in group["lane_keys"]:
+            if lane_masteries.get(tag, "not_started") not in ["proficient", "mastered"]:
+                is_unlocked = False
+                break
+                
+        if not is_unlocked:
+            return redirect(reverse("student:unit-progress", kwargs={"unit_n": "1"}))
+            
+        source_exs = get_unit1_challenge_source_exercises(group_key)
+        lane_exercises = {}
+        for lane_key in group["lane_keys"]:
+            exs = source_exs.get(lane_key, [])
+            if len(exs) < 2:
+                raise Http404(f"Lane {lane_key} lacks sufficient challenge-eligible items (needs 2, found {len(exs)}).")
+            lane_exercises[lane_key] = exs[:2]
+            
+        interleaved_exercises = []
+        for i in range(2):
+            for lane_key in group["lane_keys"]:
+                interleaved_exercises.append(lane_exercises[lane_key][i])
+                
+        playlist_name = f"_challenge_{request.user.id}_{group_key}_{uuid.uuid4().hex[:8]}"
+
+        playlist = Playlist.objects.create(
+            name=playlist_name,
+            authored_by=request.user,
+            is_public=False,
+            skill_tags=["unit:1"]
+        )
+        
+        ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
+        
+        for idx, ex in enumerate(interleaved_exercises):
+            ExercisePlaylistOrdered.objects.create(
+                playlist=playlist,
+                exercise=ex,
+                order=idx + 1,
+                difficulty_tier=3,
+                is_mastery_challenge_source=True
+            )
+            
+        player_url = reverse("student:player", kwargs={"unit_num": 1}) + f"?playlist={playlist.id}&exercise_num=1&mode=challenge"
+        return redirect(player_url)
 
 
 class UnitProgressView(LoginRequiredMixin, View):
@@ -428,4 +492,37 @@ class UnitProgressView(LoginRequiredMixin, View):
             else request.META.get("HTTP_REFERER") or reverse("student:home")
         )
         data["skills"] = data["skill_cards"]
+        
+        if str(unit_n) == "1":
+            lane_masteries = {seg["tag"]: seg["level"] for seg in data.get("bar_segments", [])}
+            
+            treble_proficient = True
+            for tag in ["identify_treble", "play_from_name_treble", "play_the_notes_treble"]:
+                if lane_masteries.get(tag, "not_started") not in ["proficient", "mastered"]:
+                    treble_proficient = False
+                    break
+                    
+            bass_proficient = True
+            for tag in ["identify_bass", "play_from_name_bass", "play_the_notes_bass"]:
+                if lane_masteries.get(tag, "not_started") not in ["proficient", "mastered"]:
+                    bass_proficient = False
+                    break
+                    
+            from apps.student.unit_progress import _check_challenge_mastery
+            treble_mastered = _check_challenge_mastery(request.user, "treble")
+            bass_mastered = _check_challenge_mastery(request.user, "bass")
+            
+            data["challenges"] = {
+                "treble": {
+                    "unlocked": treble_proficient,
+                    "mastered": treble_mastered,
+                    "url": reverse("student:unit1-challenge", kwargs={"group_key": "treble"}) if treble_proficient else "#",
+                },
+                "bass": {
+                    "unlocked": bass_proficient,
+                    "mastered": bass_mastered,
+                    "url": reverse("student:unit1-challenge", kwargs={"group_key": "bass"}) if bass_proficient else "#",
+                }
+            }
+            
         return render(request, "student/unit_progress.html", data)

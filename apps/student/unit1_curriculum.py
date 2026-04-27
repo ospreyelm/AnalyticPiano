@@ -140,3 +140,41 @@ def get_unit1_playlist_ids() -> dict[str, str]:
         playlist_ids[lane_key] = _resolve_unit1_playlist_id(lane_key, lane)
 
     return playlist_ids
+
+
+CHALLENGE_GROUPS = {
+    "treble": {
+        "name": "Treble Mastery Challenge",
+        "lane_keys": ["identify_treble", "play_from_name_treble", "play_the_notes_treble"],
+    },
+    "bass": {
+        "name": "Bass Mastery Challenge",
+        "lane_keys": ["identify_bass", "play_from_name_bass", "play_the_notes_bass"],
+    },
+}
+
+def get_unit1_challenge_groups() -> dict:
+    return CHALLENGE_GROUPS
+
+def get_unit1_challenge_source_exercises(group_key: str) -> dict[str, list]:
+    from apps.exercises.models import ExercisePlaylistOrdered
+    group = CHALLENGE_GROUPS.get(group_key)
+    if not group:
+        return {}
+        
+    playlist_ids = get_unit1_playlist_ids()
+    result = {}
+    for lane_key in group["lane_keys"]:
+        p_id = playlist_ids.get(lane_key)
+        if not p_id:
+            result[lane_key] = []
+            continue
+            
+        epos = ExercisePlaylistOrdered.objects.filter(
+            playlist__id=p_id,
+            is_mastery_challenge_source=True
+        ).select_related("exercise").order_by("order")
+        
+        result[lane_key] = [epo.exercise for epo in epos]
+    return result
+

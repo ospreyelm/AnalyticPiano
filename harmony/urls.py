@@ -12,10 +12,13 @@ admin.site.site_title = "Analytic Piano"
 admin.site.index_title = "Admin Main Menu"
 
 urlpatterns = [
-    path("", include(lab.urls)),
+    path("", RedirectView.as_view(url="/s/"), name="root-redirect"),
+    path("play/", RedirectView.as_view(url="/s/"), name="play-redirect"),
+
     path("accounts/", include("apps.accounts.urls"), name="accounts"),
     path("dashboard/", include("apps.dashboard.urls")),
     path("s/", include("apps.student.urls")),
+    path("", include(lab.urls)),
 
     path("library/", library_view, name="library"),
     path("library/clone-course/<str:course_id>/", clone_course_view, name="clone-course"),

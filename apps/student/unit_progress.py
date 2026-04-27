@@ -207,6 +207,154 @@ def _playlist_progress_level(stats: dict) -> str:
     return StudentSkillMastery.LEVEL_ATTEMPTED
 
 
+def _check_challenge_mastery(user, group_key: str) -> bool:
+    from apps.exercises.models import (
+        ExercisePlaylistOrdered,
+        IdentificationAttempt,
+        PerformanceData,
+        Playlist,
+    )
+    
+    prefix = f"_challenge_{user.id}_{group_key}"
+    challenge_playlists = Playlist.objects.filter(authored_by=user, name__startswith=prefix)
+    
+    for pl in challenge_playlists:
+        expected_exercise_ids = list(
+            ExercisePlaylistOrdered.objects.filter(playlist=pl)
+            .order_by("order")
+            .values_list("exercise__id", flat=True)
+        )
+        if len(expected_exercise_ids) != 6:
+            continue
+
+        expected_exercise_set = set(expected_exercise_ids)
+        attempts = []
+        
+        pd_rows = PerformanceData.objects.filter(user=user, playlist=pl)
+        for pd in pd_rows:
+            for entry in (pd.data or []):
+                exercise_id = entry.get("id", "")[:6]
+                if exercise_id not in expected_exercise_set:
+                    continue
+                numerator = entry.get("score_numerator")
+                denominator = entry.get("score_denominator")
+                is_success = False
+                if denominator not in (None, 0):
+                    is_success = (numerator == denominator)
+                else:
+                    is_success = (entry.get("error_tally") in (0, -1, "n/a"))
+                    
+                attempts.append({
+                    "exercise_id": exercise_id,
+                    "is_success": is_success
+                })
+                
+        ident_attempts = IdentificationAttempt.objects.filter(
+            user=user, 
+            playlist=pl,
+            is_page_submit=True
+        )
+        for attempt in ident_attempts:
+            exercise_id = attempt.exercise.id[:6] if attempt.exercise else ""
+            if exercise_id not in expected_exercise_set:
+                continue
+            score_data = attempt.score or {}
+            is_success = (score_data.get("incorrect", 0) == 0 and score_data.get("unanswered", 0) == 0)
+            attempts.append({
+                "exercise_id": exercise_id,
+                "is_success": is_success
+            })
+            
+        success_ex_ids = {a["exercise_id"] for a in attempts if a["is_success"] and a["exercise_id"]}
+        failed_count = sum(1 for a in attempts if not a["is_success"])
+        
+        if failed_count == 0 and success_ex_ids == expected_exercise_set:
+            return True
+            
+    return False
+
+
+def _compute_unit1_lane_mastery_level(user, lane_key, playlist_id) -> str:
+    from apps.exercises.models import PerformanceData, IdentificationAttempt, ExercisePlaylistOrdered
+    
+    group_key = "treble" if "treble" in lane_key else "bass"
+    if _check_challenge_mastery(user, group_key):
+        return StudentSkillMastery.LEVEL_MASTERED
+        
+    epos = ExercisePlaylistOrdered.objects.filter(playlist__id=playlist_id).select_related("exercise")
+    if not epos.exists():
+        return StudentSkillMastery.LEVEL_NOT_STARTED
+        
+    epo_map = {epo.exercise.id[:6]: epo for epo in epos}
+    
+    advanced_successes = 0
+    has_any_attempt = False
+    
+    pd_rows = PerformanceData.objects.filter(user=user, playlist__id=playlist_id)
+    for pd in pd_rows:
+        if pd.data:
+            has_any_attempt = True
+        for entry in (pd.data or []):
+            ex_id = entry.get("id", "")[:6]
+            epo = epo_map.get(ex_id)
+            if not epo:
+                continue
+                
+            numerator = entry.get("score_numerator")
+            denominator = entry.get("score_denominator")
+            is_success = False
+            if denominator not in (None, 0):
+                is_success = (numerator == denominator)
+            else:
+                is_success = (entry.get("error_tally") in (0, -1, "n/a"))
+                
+            if is_success and epo.difficulty_tier >= 3:
+                advanced_successes += 1
+                
+    ident_attempts = IdentificationAttempt.objects.filter(
+        user=user, playlist__id=playlist_id, is_page_submit=True
+    )
+    if ident_attempts.exists():
+        has_any_attempt = True
+        
+    for attempt in ident_attempts:
+        ex_id = attempt.exercise.id[:6] if attempt.exercise else ""
+        epo = epo_map.get(ex_id)
+        if not epo:
+            continue
+            
+        score_data = attempt.score or {}
+        is_success = (score_data.get("incorrect", 0) == 0 and score_data.get("unanswered", 0) == 0)
+        
+        if is_success and epo.difficulty_tier >= 3:
+            advanced_successes += 1
+            
+    if advanced_successes >= 1:
+        return StudentSkillMastery.LEVEL_PROFICIENT
+        
+    if has_any_attempt:
+        return StudentSkillMastery.LEVEL_ATTEMPTED
+        
+    return StudentSkillMastery.LEVEL_NOT_STARTED
+
+
+def _get_practice_band(done, total):
+    if not total:
+        return "not_started"
+    pct = (done / total) * 100
+    if pct == 0:
+        return "not_started"
+    if pct <= 20:
+        return "getting_started"
+    if pct <= 40:
+        return "learning"
+    if pct <= 60:
+        return "practicing"
+    if pct <= 80:
+        return "fluency_building"
+    return "polishing" if pct < 100 else "completed"
+
+
 def get_unit_progress_data(user, unit_n: str) -> dict | None:
     """
     Return all data needed to render the unit progress page for the given unit.
@@ -255,6 +403,10 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
             rows = []
             for lane in group.get("lanes", []):
                 stats = _playlist_stats_by_id(user, lane["playlist_id"])
+                lane_mastery = _compute_unit1_lane_mastery_level(user, lane["lane_key"], lane["playlist_id"])
+                is_proficient = (lane_mastery in ["proficient", "mastered"])
+                practice_band = _get_practice_band(stats["done"], stats["total"])
+                
                 rows.append(
                     {
                         "slug": lane["lane_key"],
@@ -265,13 +417,17 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
                         "total": stats["total"],
                         "last_score_pct": stats["last_score_pct"],
                         "url": stats["url"],
+                        "mastery_state": lane_mastery,
+                        "progress_band": practice_band,
+                        "is_proficient": is_proficient,
+                        "recommended_practice": is_proficient and stats["done"] < stats["total"],
                     }
                 )
                 bar_segments.append(
                     {
                         "tag": lane["lane_key"],
                         "label": f"{group['title']} {lane['label']}",
-                        "level": _playlist_progress_level(stats),
+                        "level": lane_mastery,
                     }
                 )
             activity_cards.append(

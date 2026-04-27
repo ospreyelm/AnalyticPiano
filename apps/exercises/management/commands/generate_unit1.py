@@ -662,7 +662,22 @@ class Command(BaseCommand):
 
             ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
             for idx, ex in enumerate(ordered, start=1):
-                m = ExercisePlaylistOrdered(playlist=playlist, exercise=ex, order=idx)
+                stage_num = _extract_stage_from_description(ex.description) or 1
+                diff_tier = 1
+                if stage_num == 3:
+                    diff_tier = 2
+                elif stage_num >= 4:
+                    diff_tier = 3
+                
+                is_source = (stage_num >= 4)
+                
+                m = ExercisePlaylistOrdered(
+                    playlist=playlist, 
+                    exercise=ex, 
+                    order=idx,
+                    difficulty_tier=diff_tier,
+                    is_mastery_challenge_source=is_source
+                )
                 m.save()
 
             try:

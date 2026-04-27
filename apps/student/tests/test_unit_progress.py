@@ -504,3 +504,142 @@ class LastScorePctTest(TestCase):
         )
         pl_stats = note_names_card["playlists"][0]
         self.assertEqual(pl_stats["last_score_pct"], 67)
+
+
+class MasteryChallengeRedesignTests(TestCase):
+    def setUp(self):
+        self.author = _make_author(55002)
+        self.student = _make_student(55001)
+        self.exercises = []
+        for i in range(6):
+            ex = _make_exercise(55020 + i, self.author)
+            self.exercises.append(ex)
+
+    def _attach_challenge_playlist_rows(self, playlist, exercises):
+        for idx, exercise in enumerate(exercises, start=1):
+            ExercisePlaylistOrdered.objects.create(
+                playlist=playlist,
+                exercise=exercise,
+                order=idx,
+                difficulty_tier=3,
+                is_mastery_challenge_source=True,
+            )
+            
+    def test_successful_6_for_6_run_grants_mastery(self):
+        from apps.student.unit_progress import _check_challenge_mastery
+        from apps.exercises.models import Playlist, PerformanceData
+        
+        playlist = Playlist.objects.create(
+            _id=55100,
+            name=f"_challenge_{self.student.id}_treble_test1",
+            authored_by=self.student,
+            is_public=False
+        )
+        self._attach_challenge_playlist_rows(playlist, self.exercises)
+        
+        pd_data = []
+        for ex in self.exercises:
+            pd_data.append({
+                "id": ex.id,
+                "score_numerator": 1,
+                "score_denominator": 1
+            })
+            
+        PerformanceData.objects.create(
+            user=self.student,
+            playlist=playlist,
+            data=pd_data
+        )
+        
+        self.assertTrue(_check_challenge_mastery(self.student, "treble"))
+
+    def test_two_partial_runs_do_not_combine_into_mastery(self):
+        from apps.student.unit_progress import _check_challenge_mastery
+        from apps.exercises.models import Playlist, PerformanceData
+        
+        pl1 = Playlist.objects.create(
+            _id=55101,
+            name=f"_challenge_{self.student.id}_treble_run1",
+            authored_by=self.student,
+            is_public=False
+        )
+        self._attach_challenge_playlist_rows(pl1, self.exercises[:3])
+        pd1 = []
+        for i in range(3):
+            pd1.append({"id": self.exercises[i].id, "score_numerator": 1, "score_denominator": 1})
+        PerformanceData.objects.create(user=self.student, playlist=pl1, data=pd1)
+        
+        pl2 = Playlist.objects.create(
+            _id=55102,
+            name=f"_challenge_{self.student.id}_treble_run2",
+            authored_by=self.student,
+            is_public=False
+        )
+        self._attach_challenge_playlist_rows(pl2, self.exercises[3:6])
+        pd2 = []
+        for i in range(3, 6):
+            pd2.append({"id": self.exercises[i].id, "score_numerator": 1, "score_denominator": 1})
+        PerformanceData.objects.create(user=self.student, playlist=pl2, data=pd2)
+        
+        self.assertFalse(_check_challenge_mastery(self.student, "treble"))
+
+    def test_challenge_completions_from_temporary_playlists_are_recognized(self):
+        from apps.student.unit_progress import _check_challenge_mastery
+        from apps.exercises.models import Playlist, IdentificationAttempt
+        
+        playlist = Playlist.objects.create(
+            _id=55103,
+            name=f"_challenge_{self.student.id}_treble_temp",
+            authored_by=self.student,
+            is_public=False
+        )
+        self._attach_challenge_playlist_rows(playlist, self.exercises)
+        
+        for ex in self.exercises:
+            IdentificationAttempt.objects.create(
+                user=self.student,
+                playlist=playlist,
+                exercise=ex,
+                is_page_submit=True,
+                score={"correct": 1, "incorrect": 0, "unanswered": 0}
+            )
+            
+        self.assertTrue(_check_challenge_mastery(self.student, "treble"))
+
+    def test_mastery_persists_after_later_failed_retry_run(self):
+        from apps.student.unit_progress import _check_challenge_mastery
+        from apps.exercises.models import Playlist, PerformanceData
+
+        successful_playlist = Playlist.objects.create(
+            _id=55104,
+            name=f"_challenge_{self.student.id}_treble_successful",
+            authored_by=self.student,
+            is_public=False,
+        )
+        self._attach_challenge_playlist_rows(successful_playlist, self.exercises)
+        PerformanceData.objects.create(
+            user=self.student,
+            playlist=successful_playlist,
+            data=[
+                {"id": ex.id, "score_numerator": 1, "score_denominator": 1}
+                for ex in self.exercises
+            ],
+        )
+        self.assertTrue(_check_challenge_mastery(self.student, "treble"))
+
+        retry_playlist = Playlist.objects.create(
+            _id=55105,
+            name=f"_challenge_{self.student.id}_treble_retry",
+            authored_by=self.student,
+            is_public=False,
+        )
+        self._attach_challenge_playlist_rows(retry_playlist, self.exercises)
+        PerformanceData.objects.create(
+            user=self.student,
+            playlist=retry_playlist,
+            data=[
+                {"id": self.exercises[0].id, "score_numerator": 0, "score_denominator": 1},
+            ],
+        )
+
+        self.assertTrue(_check_challenge_mastery(self.student, "treble"))

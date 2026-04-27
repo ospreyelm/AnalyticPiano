@@ -560,6 +560,9 @@ define([
       // ADD tempo_SD_semibreves_per_min (value for existing rows: null)
       // ADD time_intervals_in_milliseconds (value for existing rows: null)
       try {
+        var urlParams = new URLSearchParams(window.location.search);
+        var attempt_type = urlParams.get("mode") === "challenge" ? "mastery_challenge" : "practice";
+
         var report = {
           // new
           /* this.definition.getExerciseList()[idx].id returns e.g. PA00AA/1 */
@@ -589,6 +592,7 @@ define([
           is_final_page: this._isIdentificationExercise()
             ? this._identPage >= this.getTotalIdentPages() - 1
             : null,
+          attempt_type: attempt_type,
         };
 
         if (this.grader && typeof this.grader.getScore === "function") {
@@ -757,6 +761,9 @@ define([
         correct_answers[String(j)] = allProblems[j].answer;
       }
 
+      var urlParams = new URLSearchParams(window.location.search);
+      var attempt_type = urlParams.get("mode") === "challenge" ? "mastery_challenge" : "practice";
+
       var payload = {
         course_ID: this.definition.exercise.performing_course,
         playlist_ID: listEntry.id.split("/")[0],
@@ -768,6 +775,7 @@ define([
         page_num: this._identPage,
         is_page_submit: isPageSubmit,
         mode: options && options.mode ? options.mode : this.sessionMode,
+        attempt_type: attempt_type,
       };
 
       var selfExerciseId = this.definition.exercise.exerciseId;

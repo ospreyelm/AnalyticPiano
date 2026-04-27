@@ -26,6 +26,25 @@ HarmonyLab tracks competency levels for every skill using the following scale:
 4. `proficient` (Level 3)
 5. `mastered` (Level 4)
 
+### Practice vs. Mastery
+
+Student-facing unit pages should distinguish between:
+
+- **mastery state** — high-meaning skill status shown in top summary bars
+- **practice progress** — long-lane fluency work shown in lane rows and mini-bars
+
+This distinction is especially important in music-literacy and performance
+units, where playlists are intentionally scaffolded from easy to harder and
+where completing a few easy exercises is not enough evidence of terminal skill
+ownership.
+
+Global rule:
+
+- top progress segments represent `attempted / proficient / mastered`
+- lane rows represent recommended-practice progress and fluency-building
+- `mastered` is reserved for mixed confirmation on the hardest material in the
+  unit, not just early lane success
+
 ### The Decay Algorithm
 Mastery is not permanent. To simulate forgetting, the engine applies an exponential decay formula based on the time elapsed since the last practice session:
 
@@ -55,6 +74,18 @@ To support massive repertoires like the Bach Chorale corpus, Playlists can be co
 - **Dynamic Pool**: The system ignores the manual exercise list and instead builds a pool from all exercises in the database matching the Playlist's `tags`.
 - **Complexity Gating**: Instructors can set a `min_complexity` and `max_complexity` range, ensuring that even within a huge library like Bach, students only see phrases appropriate for their level (e.g. Theory I vs. Graduate Theory).
 - **Infinite Homework**: This allows for "evergreen" assignments that automatically incorporate new imports.
+
+### Challenge-Based Mastery Confirmation
+
+Where units define a mastery challenge, the challenge should draw from the
+hardest tier of related lanes rather than from the easiest entry material. A
+student may continue to see recommended practice after reaching `proficient`;
+the lane inventory is not itself the mastery bar.
+
+Challenge eligibility should be stored in the curricular sequencing layer
+(playlist / lane placement metadata), not in UMTO itself. Whether an exercise is
+challenge-worthy depends on how the curriculum is using it, not on the
+canonical exercise representation alone.
 
 ---
 
