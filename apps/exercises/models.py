@@ -49,6 +49,13 @@ class RawJSONField(JSONField):
     def db_type(self, connection):
         return "json"
 
+    def from_db_value(self, value, expression, connection):
+        # Some Postgres drivers already deserialize json/jsonb columns to Python
+        # objects before Django's JSONField conversion runs.
+        if value is None or isinstance(value, (dict, list, bool, int, float)):
+            return value
+        return super().from_db_value(value, expression, connection)
+
 
 class BaseContentModel(models.Model):
     _id = models.AutoField("_ID", unique=True, primary_key=True)
@@ -825,6 +832,8 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         self.set_id(initial="P")
         self.set_auto_name()
         # self.clean_exercises()
+        kwargs.pop("force_insert", None)
+        kwargs.pop("force_update", None)
         super(Playlist, self).save(*args, **kwargs)
         return self
 
