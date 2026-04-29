@@ -114,16 +114,22 @@ define([
       // returns false to prevent context menu from popping up
       $(".js-btn-upload-json").on("contextmenu", () => false);
       $(".js-btn-download-json").on("mousedown", () => this.onClickSaveJSON());
-      $(".js-btn-pristine").on("mousedown", () => this.onClickPristine());
-      $(".js-btn-nextexercise").on("mousedown", () =>
-        this.onClickNextExercise()
-      );
-      $(".js-btn-previousexercise").on("mousedown", () =>
-        this.onClickPreviousExercise()
-      );
-      $(".js-btn-firstexercise").on("mousedown", () =>
-        this.onClickFirstExercise()
-      );
+      $(".js-btn-pristine").on("click", (e) => {
+        e.preventDefault();
+        this.onClickPristine();
+      });
+      $(".js-btn-nextexercise").on("click", (e) => {
+        e.preventDefault();
+        this.onClickNextExercise();
+      });
+      $(".js-btn-previousexercise").on("click", (e) => {
+        e.preventDefault();
+        this.onClickPreviousExercise();
+      });
+      $(".js-btn-firstexercise").on("click", (e) => {
+        e.preventDefault();
+        this.onClickFirstExercise();
+      });
 
       this.initControlsLayout();
       this.initKeySignatureTab();

@@ -1,5 +1,7 @@
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+from copy import deepcopy
+from pydantic import ValidationError
 from apps.exercises.umto import InteractionMode
 from apps.exercises.umto_factory import NonUMTOExerciseError, build_umto_payload, save_umto_exercise
 
@@ -168,4 +170,121 @@ class UMTOFactoryTests(TestCase):
                     complexity_score=0,  # invalid: must be >=1
                     mode=InteractionMode.PLAYBACK,
                 ),
+            )
+
+    def test_input_mode_defaults_to_dropdown(self):
+        payload = build_umto_payload(
+            exercise_id="TEMP",
+            source="Test",
+            key="C",
+            meter="4/4",
+            clef="treble",
+            complexity_score=1,
+            mode=InteractionMode.IDENTIFICATION,
+            score_data=SINGLE_VOICE_CIR,
+            target_voice="soprano",
+            unit=1,
+        )
+
+        self.assertEqual(payload["inputMode"], "dropdown")
+        self.assertEqual(
+            payload["score"]["umto"]["metadata"]["input_mode"],
+            "dropdown",
+        )
+
+    def test_input_mode_text_round_trips_through_build_payload(self):
+        payload = build_umto_payload(
+            exercise_id="TEMP",
+            source="Test",
+            key="C",
+            meter="4/4",
+            clef="treble",
+            complexity_score=1,
+            mode=InteractionMode.IDENTIFICATION,
+            score_data=SINGLE_VOICE_CIR,
+            target_voice="soprano",
+            unit=1,
+            input_mode="text",
+        )
+
+        self.assertEqual(payload["inputMode"], "text")
+        self.assertEqual(
+            payload["score"]["umto"]["metadata"]["input_mode"],
+            "text",
+        )
+
+    @patch("apps.exercises.umto_factory.Exercise")
+    def test_save_umto_exercise_propagates_input_mode_from_umto_kwargs(self, mock_exercise_class):
+        mock_author = MagicMock()
+        constructor_payloads = []
+
+        def build_mock_exercise(**kwargs):
+            constructor_payloads.append(deepcopy(kwargs["data"]))
+            mock_instance = MagicMock()
+            mock_instance.id = 999
+            mock_instance.pk = 999
+            mock_instance.data = kwargs["data"]
+            return mock_instance
+
+        mock_exercise_class.side_effect = build_mock_exercise
+
+        ex = save_umto_exercise(
+            description="Factory test",
+            score_data=SINGLE_VOICE_CIR,
+            author=mock_author,
+            skill_tags=["unit:1", "Note_Names"],
+            complexity=11,
+            umto_kwargs=dict(
+                exercise_id="TEMP",
+                source="Factory test",
+                key="C",
+                meter="4/4",
+                clef="treble",
+                complexity_score=1,
+                mode=InteractionMode.IDENTIFICATION,
+                target_voice="soprano",
+                unit=1,
+                input_mode="text",
+            ),
+        )
+
+        constructor_payload = constructor_payloads[0]
+        self.assertEqual(constructor_payload["exerciseId"], "TEMP")
+        self.assertEqual(
+            constructor_payload["inputMode"],
+            "text",
+        )
+        self.assertEqual(
+            constructor_payload["score"]["umto"]["metadata"]["exercise_id"],
+            "TEMP",
+        )
+        self.assertEqual(
+            constructor_payload["score"]["umto"]["metadata"]["input_mode"],
+            "text",
+        )
+        self.assertEqual(ex.data["exerciseId"], 999)
+        self.assertEqual(ex.data["inputMode"], "text")
+        self.assertEqual(
+            ex.data["score"]["umto"]["metadata"]["exercise_id"],
+            999,
+        )
+        self.assertEqual(
+            ex.data["score"]["umto"]["metadata"]["input_mode"],
+            "text",
+        )
+
+    def test_build_umto_payload_rejects_invalid_input_mode(self):
+        with self.assertRaises(ValidationError):
+            build_umto_payload(
+                exercise_id="TEMP",
+                source="Test",
+                key="C",
+                meter="4/4",
+                clef="treble",
+                complexity_score=1,
+                mode=InteractionMode.IDENTIFICATION,
+                score_data=SINGLE_VOICE_CIR,
+                target_voice="soprano",
+                unit=1,
+                input_mode="free_text",
             )

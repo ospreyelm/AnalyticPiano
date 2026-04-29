@@ -817,6 +817,14 @@ define([
       return this.exercise.analysisType || "roman";
     },
     /**
+     * Returns the input mode for identification exercises.
+     *
+     * @return {string}
+     */
+    getInputMode: function () {
+      return this.exercise.inputMode || "dropdown";
+    },
+    /**
      * Returns the score for chorale exercises.
      *
      * @return {object}
@@ -903,6 +911,9 @@ define([
      */
     parse: function (definition) {
       var exercise = {};
+      exercise.exerciseId = definition.exerciseId;
+      exercise.reviewMode = definition.reviewMode || false;
+      exercise.reviewAnswers = definition.reviewAnswers;
       var problems = [];
 
       if (definition.isUMTO) {
@@ -923,6 +934,9 @@ define([
         exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
         exercise.mode = definition.mode || (definition.score && definition.score.umto && definition.score.umto.metadata && definition.score.umto.metadata.mode) || "play";
         exercise.analysisType = definition.analysisType || (exercise.complexity_score === 1 ? "note_name" : "roman");
+        exercise.inputMode = definition.inputMode ||
+          (definition.score && definition.score.umto && definition.score.umto.metadata && definition.score.umto.metadata.input_mode) ||
+          "dropdown";
         exercise.analysis = {
           enabled: true,
           mode: {}

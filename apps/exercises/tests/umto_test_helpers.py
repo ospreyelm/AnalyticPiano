@@ -14,7 +14,16 @@ DEFAULT_CIR = {
 }
 
 
-def make_umto_exercise(author, *, description="test", unit=1, skill_tags=None, complexity=11, mode=None):
+def make_umto_exercise(
+    author,
+    *,
+    description="test",
+    unit=1,
+    skill_tags=None,
+    complexity=11,
+    mode=None,
+    input_mode="dropdown",
+):
     return save_umto_exercise(
         description=description,
         score_data=DEFAULT_CIR,
@@ -31,5 +40,6 @@ def make_umto_exercise(author, *, description="test", unit=1, skill_tags=None, c
             mode=mode or InteractionMode.PLAYBACK,
             target_voice="soprano",
             unit=unit,
+            input_mode=input_mode,
         ),
     )

@@ -33,19 +33,19 @@ define(["lodash", "app/components/component"], function (_, Component) {
    * @type {string}
    * @const
    */
-  var COLOR_BLACK_KEYUP = "90-hsl(0,0,25)-hsl(0,0,0)";
+  var COLOR_BLACK_KEYUP = "90-#3a3a3a:0-#1a1a1a:60-#0a0a0a:100";
   /**
    * White key up state.
    * @type {string}
    * @const
    */
-  var COLOR_WHITE_KEYUP = "#FFFFFF";
+  var COLOR_WHITE_KEYUP = "90-#ffffff:0-#f5f2ee:70-#e8e2d8:100";
   /**
    * Key down state.
    * @type {string}
    * @const
    */
-  var COLOR_KEYDN = "hsl(0,0,55)";
+  var COLOR_KEYDN = "90-#c8c8c8:0-#a8a8a8:100";
   /**
    * Key sustain state.
    * @type {string}
@@ -367,7 +367,12 @@ define(["lodash", "app/components/component"], function (_, Component) {
     render: function (paper, keyWidth, keyboardWidth, keyboardHeight) {
       PianoKeyMixin.render.apply(this, arguments);
       var el = this.el;
-      el.attr({ stroke: "#000", fill: COLOR_WHITE_KEYUP });
+      el.attr({
+        stroke: "#888",
+        "stroke-width": 0.5,
+        fill: COLOR_WHITE_KEYUP,
+        r: 2
+      });
       el.toBack();
       return this;
     },
@@ -448,7 +453,12 @@ define(["lodash", "app/components/component"], function (_, Component) {
     render: function (paper, keyWidth, keyboardWidth, keyboardHeight) {
       PianoKeyMixin.render.apply(this, arguments);
       var el = this.el;
-      el.attr("fill", COLOR_BLACK_KEYUP);
+      el.attr({
+        fill: COLOR_BLACK_KEYUP,
+        stroke: "#000",
+        "stroke-width": 1,
+        r: 2
+      });
       el.toFront();
       return this;
     },
