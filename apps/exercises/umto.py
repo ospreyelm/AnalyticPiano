@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any, Union, Literal
 from pydantic import BaseModel, Field, ConfigDict
 import json
 
@@ -86,6 +86,7 @@ class Metadata(BaseModel):
     complexity_score: int = Field(ge=1, le=12, description="Unit 1-12 ranking system")
     mode: InteractionMode = InteractionMode.PLAYBACK
     is_umto: bool = True
+    input_mode: Literal["dropdown", "text"] = "dropdown"
 
 class UMTO(BaseModel):
     """
@@ -184,6 +185,7 @@ class UMTO(BaseModel):
             "analysisType": "note_name" if self.metadata.complexity_score == 1 else "roman",
             "introText": self.metadata.source,
             "reviewText": "Well done!",
+            "inputMode": self.metadata.input_mode,
             "allowed_answers": self.get_allowed_answers(unit),
             "score": {
                 "meta": {

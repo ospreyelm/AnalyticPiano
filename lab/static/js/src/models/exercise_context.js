@@ -1112,6 +1112,7 @@ define([
       if (
         this._isIdentificationExercise() &&
         this.getTotalIdentPages() > 1 &&
+        !fromUI &&
         this.sealed !== true
       ) {
         return this.submitIdentPage({
@@ -1138,6 +1139,7 @@ define([
       if (
         this._isIdentificationExercise() &&
         this.getTotalIdentPages() > 1 &&
+        !fromUI &&
         this._identPage > 0 &&
         this.sealed !== true
       ) {

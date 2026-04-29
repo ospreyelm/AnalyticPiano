@@ -14,7 +14,7 @@ define([
   "./exercise_note_factory",
   "./rendering/vexflow_adapter",
   "./score_timeline",
-  "app/components/input/label_input",
+  "app/components/input/text_input",
   "app/models/score_player",
   "app/models/identification_submit_flow_logic",
   "app/components/music/playback_controls",
@@ -34,7 +34,7 @@ define([
   ExerciseNoteFactory,
   VexFlowAdapter,
   ScoreTimeline,
-  LabelInput,
+  TextInput,
   ScorePlayer,
   IdentificationSubmitFlow,
   renderPlaybackControls,
@@ -183,6 +183,382 @@ define([
       var definition = this.exerciseContext.getDefinition();
       return !!(definition.isChoraleIdentification && definition.isChoraleIdentification());
     },
+    _IDENT_INPUT_MODE_KEY: "harmonylab.identInputMode",
+
+    _getStoredIdentInputMode: function (definition) {
+      var fallbackMode = definition && definition.getInputMode
+        ? definition.getInputMode()
+        : "dropdown";
+      var storedMode = null;
+
+      try {
+        storedMode = localStorage.getItem(this._IDENT_INPUT_MODE_KEY);
+      } catch (e) {}
+
+      var resolvedMode = storedMode || fallbackMode || "dropdown";
+      return resolvedMode === "text" ? "text" : "dropdown";
+    },
+
+    _supportsTextInputMode: function (definition) {
+      var analysisType = definition && definition.getAnalysisType
+        ? definition.getAnalysisType()
+        : "roman";
+      return analysisType === "note_name";
+    },
+
+    _getRepresentableTextHydrationAnswers: function (answers) {
+      var prefix = [];
+      var sawGapAfterPrefix = false;
+
+      for (var i = 0; i < (answers || []).length; i++) {
+        var answer = answers[i];
+        var hasAnswer = answer !== undefined && answer !== null && answer !== "";
+
+        if (hasAnswer) {
+          if (sawGapAfterPrefix || i !== prefix.length) {
+            return null;
+          }
+          prefix.push(answer);
+        } else if (prefix.length > 0) {
+          sawGapAfterPrefix = true;
+        }
+      }
+
+      return prefix;
+    },
+
+    _getTextInputState: function (definition, problems, currentAnswers) {
+      var preferredMode = this._getStoredIdentInputMode(definition);
+      var supported = this._supportsTextInputMode(definition);
+      var hydrationAnswers = supported
+        ? this._getRepresentableTextHydrationAnswers(currentAnswers)
+        : null;
+      var representable = hydrationAnswers !== null;
+      var enabled = supported && representable;
+
+      return {
+        supported: supported,
+        enabled: enabled,
+        preferredMode: preferredMode,
+        effectiveMode: enabled && preferredMode === "text" ? "text" : "dropdown",
+        hydrationAnswers: hydrationAnswers || [],
+      };
+    },
+
+    _getIdentInputMode: function (definition, problems, currentAnswers) {
+      if (!problems) {
+        problems = this._getVisibleIdentificationProblems(definition);
+      }
+      if (!currentAnswers) {
+        currentAnswers = this._getVisibleIdentificationAnswers(problems);
+      }
+      return this._getTextInputState(definition, problems, currentAnswers).effectiveMode;
+    },
+
+    _setIdentInputMode: function (mode) {
+      if (mode !== "dropdown" && mode !== "text") {
+        return;
+      }
+
+      try {
+        localStorage.setItem(this._IDENT_INPUT_MODE_KEY, mode);
+      } catch (e) {}
+    },
+
+    _buildInputComponent: function (
+      containerEl,
+      problems,
+      feedbackMode,
+      onAnswer,
+      currentAnswers
+    ) {
+      return new TextInput({
+        containerEl: containerEl,
+        problems: problems,
+        problemCount: problems.length,
+        feedbackMode: feedbackMode,
+        onAnswer: onAnswer,
+        currentAnswers: currentAnswers,
+        initialAnswers: currentAnswers,
+      });
+    },
+
+    _getVisibleIdentificationProblems: function (definition) {
+      return this.exerciseContext.getVisibleProblems
+        ? this.exerciseContext.getVisibleProblems()
+        : definition.getProblems();
+    },
+
+    _getIdentificationInputContainer: function () {
+      var $container = $("#ident-input-container");
+      if ($container.length === 0) {
+        $container = $('<div id="ident-input-container" class="ident-input-container"></div>');
+        $("#identification-actions").after($container);
+      }
+      return $container;
+    },
+
+    _getVisibleIdentificationAnswers: function (problems) {
+      var answers = [];
+      var graderAnswers = this.exerciseContext.grader && this.exerciseContext.grader.answers;
+      var pageOffset = this.exerciseContext.getIdentPageOffset
+        ? this.exerciseContext.getIdentPageOffset()
+        : 0;
+
+      if (!graderAnswers) {
+        return answers;
+      }
+
+      for (var i = 0; i < problems.length; i++) {
+        var absoluteIndex = pageOffset + i;
+        var value = graderAnswers[absoluteIndex];
+        if (
+          (value === undefined || value === null || value === "") &&
+          graderAnswers[String(absoluteIndex)] !== undefined &&
+          graderAnswers[String(absoluteIndex)] !== null &&
+          graderAnswers[String(absoluteIndex)] !== ""
+        ) {
+          value = graderAnswers[String(absoluteIndex)];
+        }
+        if (value !== undefined && value !== null && value !== "") {
+          answers[i] = value;
+        }
+      }
+
+      return answers;
+    },
+
+    _getStoredIdentificationAnswer: function (problemIndex) {
+      var graderAnswers = this.exerciseContext.grader && this.exerciseContext.grader.answers;
+      if (!graderAnswers) {
+        return undefined;
+      }
+
+      if (graderAnswers.hasOwnProperty(problemIndex)) {
+        return graderAnswers[problemIndex];
+      }
+
+      if (graderAnswers.hasOwnProperty(String(problemIndex))) {
+        return graderAnswers[String(problemIndex)];
+      }
+
+      return undefined;
+    },
+
+    _cloneIdentificationAnswers: function (answers) {
+      var clone = [];
+      if (!answers) {
+        return clone;
+      }
+
+      for (var i = 0; i < answers.length; i++) {
+        if (typeof answers[i] !== "undefined") {
+          clone[i] = answers[i];
+        }
+      }
+
+      return clone;
+    },
+
+    _serializeIdentificationAnswersForText: function (answers) {
+      return _.filter(answers || [], function (answer) {
+        return answer !== undefined && answer !== null && answer !== "";
+      }).join(" ");
+    },
+
+    _hydrateTextInputComponent: function (component, currentAnswers) {
+      if (!component) {
+        return;
+      }
+
+      var answersClone = this._cloneIdentificationAnswers(currentAnswers);
+      var serializedAnswers = this._serializeIdentificationAnswersForText(answersClone);
+
+      if (component.settings) {
+        component.settings.currentAnswers = answersClone;
+        component.settings.initialAnswers = answersClone;
+      }
+
+      component._prevAnswers = answersClone;
+
+      if (component._fieldEl && component._fieldEl.length) {
+        component._fieldEl.val(serializedAnswers);
+      }
+    },
+
+    _destroyIdentificationInputComponent: function () {
+      if (this._inputComponent && this._inputComponent.destroy) {
+        this._inputComponent.destroy();
+      }
+      this._inputComponent = null;
+      this._identInputSignature = null;
+      this._identInputMode = null;
+    },
+
+    _syncIdentificationInputComponent: function () {
+      if (!this._isIdentificationLikeExercise()) {
+        return;
+      }
+
+      var definition = this.exerciseContext.getDefinition();
+      var problems = this._getVisibleIdentificationProblems(definition);
+      var currentAnswers = this._getVisibleIdentificationAnswers(problems);
+      var textInputState = this._getTextInputState(definition, problems, currentAnswers);
+      var feedbackMode = this._getActiveIdentificationMode();
+      var inputMode = textInputState.effectiveMode;
+      var pageOffset = this.exerciseContext.getIdentPageOffset
+        ? this.exerciseContext.getIdentPageOffset()
+        : 0;
+      var signature = [inputMode, feedbackMode, pageOffset, problems.length].join(":");
+      var $container = this._getIdentificationInputContainer();
+      var self = this;
+
+      if (inputMode !== "text" || !problems.length) {
+        $container.hide().empty();
+        this._destroyIdentificationInputComponent();
+        return;
+      }
+
+      $container
+        .removeClass("ident-input-dropdown")
+        .addClass("ident-input-text")
+        .css("display", "block");
+
+      if (!this._inputComponent || this._identInputSignature !== signature) {
+        this._destroyIdentificationInputComponent();
+        this._inputComponent = this._buildInputComponent(
+          $container,
+          problems,
+          feedbackMode,
+          function (problemIndex, label) {
+            self._applyIdentificationAnswer(pageOffset + problemIndex, label);
+          },
+          currentAnswers
+        );
+        this._inputComponent.render();
+        this._identInputSignature = signature;
+      }
+
+      this._identInputMode = inputMode;
+      this._hydrateTextInputComponent(this._inputComponent, textInputState.hydrationAnswers);
+    },
+
+    _isIdentificationProblemLocked: function (problemIndex) {
+      var grdr = this.exerciseContext.grader;
+      var currentMode = this._getActiveIdentificationMode();
+      var limits = { practice: 3, submit: 2, test: 1 };
+      var limit = limits[currentMode] || 3;
+      var graderCounts = (grdr && grdr.attemptCounts) || {};
+      var count = graderCounts[problemIndex] || 0;
+
+      if (count >= limit) {
+        return true;
+      }
+
+      if (
+        currentMode === "test" &&
+        grdr &&
+        grdr.answers &&
+        (
+          (grdr.answers.hasOwnProperty(problemIndex) && grdr.answers[problemIndex] !== "") ||
+          (grdr.answers.hasOwnProperty(String(problemIndex)) && grdr.answers[String(problemIndex)] !== "")
+        )
+      ) {
+        return true;
+      }
+
+      if (this.exerciseContext.graded && currentMode !== "practice") {
+        var pageOffset = this.exerciseContext.getIdentPageOffset
+          ? this.exerciseContext.getIdentPageOffset()
+          : 0;
+        var localIndex = problemIndex - pageOffset;
+        var gradedProblem = this.exerciseContext.graded.problems
+          ? this.exerciseContext.graded.problems[localIndex]
+          : null;
+        if (gradedProblem && gradedProblem.correct) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+
+    _applyIdentificationAnswer: function (problemIndex, label) {
+      var grdr = this.exerciseContext.grader;
+      var currentMode = this._getActiveIdentificationMode();
+
+      if (!grdr || !grdr.setAnswer) {
+        return;
+      }
+
+      if (this._isIdentificationProblemLocked(problemIndex)) {
+        var lockDefinition = this.exerciseContext.getDefinition();
+        var lockProblems = this._getVisibleIdentificationProblems(lockDefinition);
+        this._hydrateTextInputComponent(
+          this._inputComponent,
+          this._getTextInputState(
+            lockDefinition,
+            lockProblems,
+            this._getVisibleIdentificationAnswers(lockProblems)
+          ).hydrationAnswers
+        );
+        return;
+      }
+
+      var existingAnswer = this._getStoredIdentificationAnswer(problemIndex);
+      if ((existingAnswer || "") === (label || "")) {
+        return;
+      }
+
+      this.exerciseContext.triggerTimer();
+      grdr.setAnswer(problemIndex, label);
+
+      if (
+        IdentificationSubmitFlow._shouldAutosaveIdentificationChange({
+          hasAnswer: !(label === null || label === undefined || label === ""),
+        })
+      ) {
+        this.exerciseContext.saveIdentState();
+        this.exerciseContext.submitIdentificationAnswers({
+          is_page_submit: false,
+          mode: currentMode,
+        });
+      }
+
+      if (currentMode === "practice") {
+        var visibleProblems = this._getVisibleIdentificationProblems(this.exerciseContext.getDefinition());
+        var practicePageOffset = this.exerciseContext.getIdentPageOffset
+          ? this.exerciseContext.getIdentPageOffset()
+          : 0;
+        var graded = grdr.grade(this.exerciseContext.getDefinition(), visibleProblems, practicePageOffset);
+        this.exerciseContext.graded = graded;
+        this.render();
+        if (graded.result === "correct") {
+          setTimeout(_.bind(function () {
+            this.exerciseContext.grade();
+          }, this), 500);
+        }
+      } else if (currentMode === "test") {
+        this.exerciseContext.graded = null;
+        this.render();
+        var allProblems = this.exerciseContext.getDefinition().getProblems();
+        var allAnswered = true;
+        for (var i = 0; i < allProblems.length; i++) {
+          if (!grdr.answers || !grdr.answers.hasOwnProperty(i)) {
+            allAnswered = false;
+            break;
+          }
+        }
+        if (allAnswered) {
+          grdr.grade(this.exerciseContext.getDefinition());
+          setTimeout(_.bind(function () {
+            this.exerciseContext.grade();
+          }, this), 500);
+        }
+      } else {
+        this.render();
+      }
+    },
     /**
      * Set up identification mode.  No DOM selects are created here —
      * answers are drawn on the canvas and editing happens via a position:fixed
@@ -221,6 +597,7 @@ define([
       // Canvas click: open popup only inside the label hit zone below bass staff
       this.el.off('click.identification').on('click.identification', function (e) {
         if (!self._isIdentificationLikeExercise()) { return; }
+        if (self._getIdentInputMode(definition) === "text") { return; }
 
         // Lock individual correct items so users can still modify incorrect choices or finish a new page
         var currentMode = self._currentMode;
@@ -287,6 +664,10 @@ define([
       // Change cursor to pointer when hovering over a label zone
       this.el.off('mousemove.identification').on('mousemove.identification', function (e) {
         if (!self._isIdentificationLikeExercise()) { return; }
+        if (self._getIdentInputMode(definition) === "text") {
+          self.el.css('cursor', '');
+          return;
+        }
         var offset = self.el.offset();
         var cx = e.pageX - offset.left;
         var cy = e.pageY - offset.top;
@@ -326,57 +707,8 @@ define([
         var btn = $('<button></button>').addClass('ident-popup-btn').text(choice);
         btn.on('click', function (e) {
           e.stopPropagation();
-          var grdr = self.exerciseContext.grader;
-          var currentMode = self._currentMode;
-          self.exerciseContext.triggerTimer();
-          grdr.setAnswer(problemIndex, choice);
-          if (
-            IdentificationSubmitFlow._shouldAutosaveIdentificationChange({
-              hasAnswer: !!(grdr.answers && grdr.answers.hasOwnProperty(problemIndex)),
-            })
-          ) {
-            self.exerciseContext.saveIdentState();
-            self.exerciseContext.submitIdentificationAnswers({
-              is_page_submit: false,
-              mode: currentMode,
-            });
-          }
+          self._applyIdentificationAnswer(problemIndex, choice);
           self._closeIdentPopup();
-
-          if (currentMode === 'practice') {
-            // Show colour feedback immediately
-            var visibleProblems = self.exerciseContext.getVisibleProblems
-              ? self.exerciseContext.getVisibleProblems()
-              : null;
-            var practicePageOffset = self.exerciseContext.getIdentPageOffset
-              ? self.exerciseContext.getIdentPageOffset()
-              : 0;
-            var graded = grdr.grade(self.exerciseContext.getDefinition(), visibleProblems, practicePageOffset);
-            self.exerciseContext.graded = graded;
-            self.render();
-            if (graded.result === 'correct') {
-              setTimeout(function () { self.exerciseContext.grade(); }, 500);
-            }
-          } else if (currentMode === 'test') {
-            // No colour feedback; auto-submit silently when all slots answered
-            self.exerciseContext.graded = null;
-            self.render();
-            var allProblems = self.exerciseContext.getDefinition().getProblems();
-            var allAnswered = true;
-            for (var i = 0; i < allProblems.length; i++) {
-              if (!grdr.answers || !grdr.answers.hasOwnProperty(i)) {
-                allAnswered = false;
-                break;
-              }
-            }
-            if (allAnswered) {
-              var silentGrade = grdr.grade(self.exerciseContext.getDefinition());
-              setTimeout(function () { self.exerciseContext.grade(); }, 500);
-            }
-          } else {
-            // submit mode: label goes dark, awaiting Submit click
-            self.render();
-          }
         });
         popup.append(btn);
       });
@@ -422,9 +754,21 @@ define([
       console.log("[ID] _getIdentificationSlots problems count:", problems.length);
       if ((this._isChoraleIdentificationExercise() || definition.getScore()) && !_.isEmpty(this._identWindowLayout)) {
         var layout = this._identWindowLayout || {};
+        var layoutByOnset = this._identWindowLayoutByOnset || {};
         console.log("[ID] UMTO layout keys:", Object.keys(layout));
-        return _.map(problems, function (_problem, idx) {
-          var slot = layout[idx];
+        return _.map(problems, function (problem, idx) {
+          var slot = null;
+          if (problem && typeof problem.windowIndex === "number" && layout[problem.windowIndex]) {
+            slot = layout[problem.windowIndex];
+          }
+          if (
+            !slot &&
+            problem &&
+            problem.measureIndex !== undefined &&
+            problem.onset !== undefined
+          ) {
+            slot = layoutByOnset[problem.measureIndex + ":" + problem.onset] || null;
+          }
           if (!slot) { return null; }
           return { index: idx, x: slot.x, y: slot.y };
         }).filter(Boolean);
@@ -752,7 +1096,23 @@ define([
         $("#identification-submit").hide();
         $("#ident-progress-container").hide();
       }
+      if ($("#ident-text-input-css").length === 0) {
+        $("<style id='ident-text-input-css'>" +
+          ".ident-input-container { margin: 10px auto 0; max-width: 640px; text-align: center; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }" +
+          ".text-id-input { margin: 8px auto; max-width: 520px; }" +
+          ".text-id-pill { display: flex; border: 2px solid #3b82f6; border-radius: 6px; overflow: hidden; background: #fff; }" +
+          ".text-id-field { flex: 1; padding: 8px 12px; font-size: 15px; font-family: monospace; border: none; outline: none; }" +
+          ".text-id-check { background: #3b82f6; color: #fff; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; white-space: nowrap; }" +
+          ".text-id-check:hover { background: #2563eb; }" +
+          ".text-id-hint { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 4px; }" +
+          "</style>").appendTo("head");
+      }
+      var definition = this.exerciseContext.getDefinition();
+      var problems = this._getVisibleIdentificationProblems(definition);
+      var currentAnswers = this._getVisibleIdentificationAnswers(problems);
+      this.renderInputModeToggle(this._getTextInputState(definition, problems, currentAnswers));
       this.renderModeToggle();
+      this._syncIdentificationInputComponent();
     },
 
     renderModeToggle: function () {
@@ -773,7 +1133,9 @@ define([
             ".mode-switch { position: relative; display: inline-flex; background: #f1f5f9; border-radius: 999px; padding: 4px; border: 1px solid #e2e8f0; }" +
             ".mode-option { padding: 6px 16px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; transition: all 0.2s; border-radius: 999px; z-index: 1; }" +
             ".mode-option.active { color: #0f172a; background: white; shadow: 0 1px 3px rgba(0,0,0,0.1); }" +
+            ".mode-option.disabled { color: #94a3b8; cursor: default; opacity: 0.65; }" +
             ".mode-option:hover:not(.active) { color: #475569; }" +
+            ".mode-option.disabled:hover { color: #94a3b8; }" +
             "</style>").appendTo("head");
         }
       }
@@ -799,6 +1161,53 @@ define([
       });
 
       $container.append($switch);
+    },
+
+    renderInputModeToggle: function (textInputState) {
+      var self = this;
+      var $existing = $("#ident-input-toggle-container");
+      if ($existing.length) {
+        $existing.remove();
+      }
+
+      if (!textInputState || !textInputState.supported) {
+        return;
+      }
+
+      var $container = $('<div id="ident-input-toggle-container" class="ident-mode-toggle" style="margin-top: 8px;"></div>');
+      var $switch = $('<div class="mode-switch"></div>');
+      var modes = [
+        { id: "dropdown", label: "Click" },
+        { id: "text", label: "Type" }
+      ];
+
+      _.each(modes, function (m) {
+        var $opt = $('<div class="mode-option"></div>').text(m.label);
+        if (m.id === textInputState.effectiveMode) {
+          $opt.addClass("active");
+        }
+        if (m.id === "text" && !textInputState.enabled) {
+          $opt.addClass("disabled");
+        }
+        $opt.on("click", function () {
+          if (m.id === textInputState.effectiveMode || (m.id === "text" && !textInputState.enabled)) {
+            return;
+          }
+          self._closeIdentPopup();
+          self._setIdentInputMode(m.id);
+          self._identInputSignature = null;
+          self._refreshIdentificationModeUI();
+        });
+        $switch.append($opt);
+      });
+
+      $container.append($switch);
+      var $modeContainer = $("#ident-mode-container");
+      if ($modeContainer.length) {
+        $modeContainer.before($container);
+      } else {
+        $("#identification-actions").append($container);
+      }
     },
 
     onToggleMode: function (newMode) {
@@ -1913,6 +2322,9 @@ define([
       if (!score) return null;
 
       var tl = ScoreTimeline.buildTimeline(score);
+      var measureStarts = ScoreTimeline.buildMeasureOffsets
+        ? ScoreTimeline.buildMeasureOffsets(score)
+        : [];
       var onsetSeen = {};
       var order = [];
       var measureOffset = {};
@@ -1923,11 +2335,14 @@ define([
           onsetSeen[ev.onset] = { measureIndex: ev.measureIndex };
           order.push(ev.onset);
         }
-        if (!(ev.measureIndex in measureOffset)) {
-          measureOffset[ev.measureIndex] = ev.onset;
-        }
       }
       order.sort(function (a, b) { return a - b; });
+
+      if (measureStarts && measureStarts.length) {
+        for (var measureIndex = 0; measureIndex < measureStarts.length; measureIndex++) {
+          measureOffset[measureIndex] = measureStarts[measureIndex];
+        }
+      }
 
       this._playbackWindowOnsets = order.slice();
       this._playbackWindowMeasures = order.map(function (onset) { return onsetSeen[onset].measureIndex; });
@@ -2129,7 +2544,7 @@ define([
             dots: ev.dots || 0
           };
           if (ev.pitch) {
-            item.notes = [{ pitch: _.cloneDeep(ev.pitch) }];
+            item.pitch = _.cloneDeep(ev.pitch);
           }
           return item;
         });

@@ -14,7 +14,7 @@ from __future__ import annotations
 from apps.exercises.models import NonUMTOExerciseError
 
 
-from typing import Optional
+from typing import Literal, Optional
 
 from apps.exercises.umto import (
     UMTO,
@@ -63,6 +63,7 @@ def build_umto_payload(
     complexity_score: int,
     mode: InteractionMode,
     score_data: dict,
+    input_mode: Literal["dropdown", "text"] = "dropdown",
     target_voice: Optional[str] = None,
     unit: Optional[int] = None,
     analysis_overrides: Optional[list] = None,
@@ -80,6 +81,7 @@ def build_umto_payload(
         clef=clef,
         complexity_score=complexity_score,
         mode=mode,
+        input_mode=input_mode,
     )
 
     voices_dict: dict[str, list[VoiceEvent]] = {"S": [], "A": [], "T": [], "B": []}

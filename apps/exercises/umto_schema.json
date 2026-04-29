@@ -162,6 +162,15 @@
           "default": true,
           "title": "Is Umto",
           "type": "boolean"
+        },
+        "input_mode": {
+          "default": "dropdown",
+          "enum": [
+            "dropdown",
+            "text"
+          ],
+          "title": "Input Mode",
+          "type": "string"
         }
       },
       "required": [

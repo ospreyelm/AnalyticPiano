@@ -127,6 +127,24 @@ define([
           this.selects[i].prop("disabled", true);
         }
       }
+    },
+
+    /**
+     * Tears down rendered DOM and event handlers so the component can be
+     * discarded or replaced without leaving orphaned selects behind.
+     */
+    destroy: function () {
+      _.each(this.selects, function (sel) {
+        if (!sel) { return; }
+        sel.off();
+        sel.remove();
+      });
+
+      this.selects = [];
+      this.containerEl = null;
+      this.problems = null;
+      this.onAnswer = null;
+      this.settings = null;
     }
   });
 

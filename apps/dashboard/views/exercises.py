@@ -220,7 +220,11 @@ def exercise_edit_view(request, exercise_id):
                 source_score = _copy.deepcopy(source_data.get("score", {}))
                 analysis_type = request.POST.get("analysisType", "")
                 ident_mode = request.POST.get("identMode") or "submit"
+                input_mode = request.POST.get("inputMode", "dropdown")
                 voices = request.POST.getlist("voices[]") or request.POST.getlist("voices")
+
+                if input_mode not in ("dropdown", "text"):
+                    input_mode = "dropdown"
 
                 if analysis_type not in PITCH_ANALYSIS_TYPES:
                     messages.error(request, "Invalid pitch analysis type.")
@@ -252,6 +256,7 @@ def exercise_edit_view(request, exercise_id):
                                     mode=InteractionMode.IDENTIFICATION,
                                     target_voice=voice,
                                     analysisType=analysis_type,
+                                    input_mode=input_mode,
                                 )
                             )
                 except ValueError as exc:

@@ -278,6 +278,12 @@ class Command(BaseCommand):
         parser.add_argument("--cleanup-legacy", action="store_true",
                             help="Delete exercises with old (matching) and (note_name) descriptions")
         parser.add_argument("--file", help="Only process this specific filename (e.g. bwv2.6.json)")
+        parser.add_argument(
+            "--input-mode",
+            choices=["dropdown", "text"],
+            default="dropdown",
+            help="Default input mode for identification exercises (dropdown or text).",
+        )
 
     def handle(self, *args, **options):
         author_email = options["author"]
@@ -562,6 +568,7 @@ class Command(BaseCommand):
                                             complexity_score=1,
                                             mode=InteractionMode.IDENTIFICATION,
                                             target_voice=voice_name,
+                                            input_mode=options["input_mode"],
                                             unit=1,
                                         ),
                                     )
@@ -583,6 +590,7 @@ class Command(BaseCommand):
                                             complexity_score=1,
                                             mode=InteractionMode.IDENTIFICATION,
                                             target_voice=voice_name,
+                                            input_mode=options["input_mode"],
                                             unit=1,
                                         ),
                                         overwrite=True
