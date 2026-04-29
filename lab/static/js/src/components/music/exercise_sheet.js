@@ -272,12 +272,16 @@ define([
       onAnswer,
       currentAnswers
     ) {
+      var self = this;
       return new TextInput({
         containerEl: containerEl,
         problems: problems,
         problemCount: problems.length,
         feedbackMode: feedbackMode,
         onAnswer: onAnswer,
+        onSubmit: function () {
+          self.onSubmitIdentification();
+        },
         currentAnswers: currentAnswers,
         initialAnswers: currentAnswers,
       });
@@ -793,11 +797,44 @@ define([
     drawIdentificationLabels: function () {
       var slots = this._getIdentificationSlots();
       console.log("[ID] drawIdentificationLabels slots count:", slots.length);
-      if (!slots.length) { return; }
-
-      var grader = this.exerciseContext.grader;
       var definition = this.exerciseContext.getDefinition();
+      var inputMode = this._getIdentInputMode(definition);
+      var grader = this.exerciseContext.grader;
       var identMode = this._currentMode;
+      var allProblems = definition.getProblems ? definition.getProblems() : [];
+      var visibleProblems = _.filter(allProblems, function (problem) {
+        return !(problem && problem.hidden);
+      });
+      var totalVisibleCount = visibleProblems.length;
+      var totalAnsweredCount = 0;
+      if (grader && grader.answers) {
+        for (var answerIndex = 0; answerIndex < allProblems.length; answerIndex++) {
+          if (
+            allProblems[answerIndex] &&
+            !allProblems[answerIndex].hidden &&
+            grader.answers[answerIndex] !== undefined &&
+            grader.answers[answerIndex] !== null &&
+            grader.answers[answerIndex] !== ''
+          ) {
+            totalAnsweredCount++;
+          }
+        }
+      }
+
+      if (inputMode === "text") {
+        if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
+          this._updateIdentificationProgressUI(totalAnsweredCount, totalVisibleCount);
+        }
+        return;
+      }
+
+      if (!slots.length) {
+        if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
+          this._updateIdentificationProgressUI(totalAnsweredCount, totalVisibleCount);
+        }
+        return;
+      }
+
       var reviewMode = !!(definition && definition.exercise && definition.exercise.reviewMode);
       var ctx = this.vexRenderer.getContext();
       var lastGraded = this.exerciseContext.graded;
@@ -960,7 +997,7 @@ define([
       }
 
       if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
-         this._updateIdentificationProgressUI(answeredCount, visibleSlotCount);
+         this._updateIdentificationProgressUI(totalAnsweredCount, totalVisibleCount);
       }
 
       ctx.font = origFont;
@@ -1105,6 +1142,14 @@ define([
           ".text-id-check { background: #3b82f6; color: #fff; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; white-space: nowrap; }" +
           ".text-id-check:hover { background: #2563eb; }" +
           ".text-id-hint { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 4px; }" +
+          ".ident-toggle-row { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; margin-top: 8px; }" +
+          ".ident-mode-toggle { display: flex; justify-content: center; margin-top: 0; font-family: sans-serif; }" +
+          ".mode-switch { position: relative; display: inline-flex; align-items: center; background: #f8fafc; border-radius: 999px; padding: 3px; border: 1px solid #dbe3ee; box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05); }" +
+          ".mode-option { min-width: 92px; padding: 7px 16px; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.18s ease; border-radius: 999px; text-align: center; line-height: 1; user-select: none; }" +
+          ".mode-option.active { color: #0f172a; background: #ffffff; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12); }" +
+          ".mode-option.disabled { color: #94a3b8; cursor: default; opacity: 0.7; }" +
+          ".mode-option:hover:not(.active):not(.disabled) { color: #334155; background: rgba(255,255,255,0.55); }" +
+          ".mode-option.disabled:hover { color: #94a3b8; background: transparent; }" +
           "</style>").appendTo("head");
       }
       var definition = this.exerciseContext.getDefinition();
@@ -1113,6 +1158,15 @@ define([
       this.renderInputModeToggle(this._getTextInputState(definition, problems, currentAnswers));
       this.renderModeToggle();
       this._syncIdentificationInputComponent();
+    },
+
+    _getIdentificationToggleRow: function () {
+      var $row = $("#ident-toggle-row");
+      if ($row.length === 0) {
+        $row = $('<div id="ident-toggle-row" class="ident-toggle-row"></div>');
+        $("#identification-actions").append($row);
+      }
+      return $row;
     },
 
     renderModeToggle: function () {
@@ -1125,20 +1179,8 @@ define([
       var $container = $("#ident-mode-container");
       if ($container.length === 0) {
         $container = $('<div id="ident-mode-container" class="ident-mode-toggle"></div>');
-        $("#identification-actions").append($container);
-
-        if ($("#ident-toggle-css").length === 0) {
-          $("<style id='ident-toggle-css'>" +
-            ".ident-mode-toggle { display: flex; justify-content: center; margin-top: 15px; font-family: sans-serif; }" +
-            ".mode-switch { position: relative; display: inline-flex; background: #f1f5f9; border-radius: 999px; padding: 4px; border: 1px solid #e2e8f0; }" +
-            ".mode-option { padding: 6px 16px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; transition: all 0.2s; border-radius: 999px; z-index: 1; }" +
-            ".mode-option.active { color: #0f172a; background: white; shadow: 0 1px 3px rgba(0,0,0,0.1); }" +
-            ".mode-option.disabled { color: #94a3b8; cursor: default; opacity: 0.65; }" +
-            ".mode-option:hover:not(.active) { color: #475569; }" +
-            ".mode-option.disabled:hover { color: #94a3b8; }" +
-            "</style>").appendTo("head");
-        }
       }
+      this._getIdentificationToggleRow().append($container);
 
       var self = this;
       $container.empty();
@@ -1174,7 +1216,7 @@ define([
         return;
       }
 
-      var $container = $('<div id="ident-input-toggle-container" class="ident-mode-toggle" style="margin-top: 8px;"></div>');
+      var $container = $('<div id="ident-input-toggle-container" class="ident-mode-toggle"></div>');
       var $switch = $('<div class="mode-switch"></div>');
       var modes = [
         { id: "dropdown", label: "Click" },
@@ -1196,18 +1238,13 @@ define([
           self._closeIdentPopup();
           self._setIdentInputMode(m.id);
           self._identInputSignature = null;
-          self._refreshIdentificationModeUI();
+          self.render();
         });
         $switch.append($opt);
       });
 
       $container.append($switch);
-      var $modeContainer = $("#ident-mode-container");
-      if ($modeContainer.length) {
-        $modeContainer.before($container);
-      } else {
-        $("#identification-actions").append($container);
-      }
+      this._getIdentificationToggleRow().append($container);
     },
 
     onToggleMode: function (newMode) {

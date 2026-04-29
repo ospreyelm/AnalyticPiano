@@ -26,9 +26,10 @@ define([
     this.settings = settings || {};
     this.containerEl = this.settings.containerEl;
     this.problems = this.settings.problems || [];
-    this.problemCount = this.settings.problemCount || this.problems.length || 0;
-    this.feedbackMode = this.settings.feedbackMode || "submit";
-    this.onAnswer = this.settings.onAnswer || function () {};
+   this.problemCount = this.settings.problemCount || this.problems.length || 0;
+   this.feedbackMode = this.settings.feedbackMode || "submit";
+   this.onAnswer = this.settings.onAnswer || function () {};
+    this.onSubmit = this.settings.onSubmit || function () {};
     this._didSeedInitialAnswers = false;
     this._prevAnswers = this._resolveInitialAnswers();
     this._wrapEl = null;
@@ -210,6 +211,7 @@ define([
 
     _commitSubmitValue: function (rawValue) {
       this._emitAllAnswers(this._parseTokens(rawValue));
+      this.onSubmit();
     },
 
     /**
