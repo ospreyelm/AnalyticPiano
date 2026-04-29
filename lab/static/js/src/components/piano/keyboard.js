@@ -78,6 +78,7 @@ define([
         "onNoteChange",
         "onClearNotes",
         "triggerNoteChange",
+        "onInputModeChange",
       ]);
 
       this.initListeners();
@@ -91,6 +92,7 @@ define([
       this.subscribe(EVENTS.BROADCAST.NOTE, this.onNoteChange);
       this.subscribe(EVENTS.BROADCAST.CLEAR_NOTES, this.onClearNotes);
       this.subscribe(EVENTS.BROADCAST.PEDAL, this.onPedalChange);
+      this.subscribe(EVENTS.BROADCAST.INPUT_MODE, this.onInputModeChange);
       this.bind("key", this.triggerNoteChange);
     },
     /**
@@ -102,6 +104,7 @@ define([
       this.unsubscribe(EVENTS.BROADCAST.NOTE, this.onNoteChange);
       this.unsubscribe(EVENTS.BROADCAST.CLEAR_NOTES, this.onClearNotes);
       this.unsubscribe(EVENTS.BROADCAST.PEDAL, this.onPedalChange);
+      this.unsubscribe(EVENTS.BROADCAST.INPUT_MODE, this.onInputModeChange);
       this.unbind("key", this.triggerNoteChange);
     },
     /**
@@ -270,8 +273,84 @@ define([
       // render keys
       _.invoke(this.keyComponents, "render", paper, keyWidth, width, height);
 
+      try { this.renderQwertyLabels(); } catch(e) { console.warn('QWERTY labels error:', e); }
+
       return this;
     },
+
+    renderQwertyLabels: function () {
+      this.keyboardEl.find('.qwerty-labels').remove();
+
+      var shortcuts = require('app/config/keyboard_shortcuts');
+      var keyMap = (shortcuts && shortcuts.keyMap) ? shortcuts.keyMap : {};
+      var NOTE_ANCHOR = (shortcuts && shortcuts.noteAnchor != null) ? shortcuts.noteAnchor : 0;
+      var noteToKey = {};
+      _.each(keyMap, function (val, key) {
+        if (val && val.msg === 'toggleNote') {
+          noteToKey[NOTE_ANCHOR + val.data] = key.toUpperCase();
+        }
+      });
+
+      var layout = this.layout;
+      var labelsEl = $('<div class="qwerty-labels"></div>');
+
+      _.each(this.keyComponents, function (keyComponent) {
+        var label = noteToKey[keyComponent.noteNumber];
+        if (!label) { return; }
+
+        var offsetX = keyComponent.calculateOffsetX();
+        var isWhite = keyComponent.isWhite;
+        var keyH = layout.height;
+        var badgeWidth, badgeLeft, badgeTop, badgeHeight;
+
+        if (isWhite) {
+          badgeHeight = 16;
+          badgeWidth  = Math.max(layout.keyWidth - 4, 8);
+          badgeLeft   = offsetX + 2;
+          badgeTop    = keyH - badgeHeight - 6;
+        } else {
+          var blackKeyH = 0.66 * keyH;
+          var blackWidth = layout.keyWidth / 2;
+          badgeHeight = 14;
+          badgeWidth  = Math.max(blackWidth - 2, 6);
+          badgeLeft   = offsetX + 1;
+          badgeTop    = blackKeyH - badgeHeight - 4;
+        }
+
+        var badge = $('<div></div>')
+          .addClass('qwerty-key-badge')
+          .toggleClass('black', !isWhite)
+          .text(label)
+          .css({
+            left:   badgeLeft + 'px',
+            top:    badgeTop + 'px',
+            width:  badgeWidth + 'px',
+            height: badgeHeight + 'px'
+          });
+
+        labelsEl.append(badge);
+      });
+
+      this.keyboardEl.append(labelsEl);
+      this._labelsEl = labelsEl;
+    },
+
+    showQwertyLabels: function () {
+      if (this._labelsEl) { this._labelsEl.show(); }
+    },
+
+    hideQwertyLabels: function () {
+      if (this._labelsEl) { this._labelsEl.hide(); }
+    },
+
+    onInputModeChange: function (mode) {
+      if (mode === 'qwerty') {
+        this.showQwertyLabels();
+      } else {
+        this.hideQwertyLabels();
+      }
+    },
+
     /**
      * Destroys the keyboard.
      *
