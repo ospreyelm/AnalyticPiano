@@ -64,11 +64,13 @@ python manage.py create_unit_playlist \
    
    Idempotency: `import_bach_phrases` skips exercises whose `description` already exists (implement skip-if-exists check inside `import_bach_phrases`).
 
-4. **Create/update playlist** — find or create `Playlist` with `name="Unit {N} — {title}"`. Set:
+4. **Create/update playlist** — find or create `Playlist` with `name="Unit {N} — {title} ({mode})"`. Set:
    - `is_dynamic=True`
    - `is_adaptive=True`
    - `skill_tags=['unit:N']`
    - No `ExercisePlaylistOrdered` rows — dynamic playlist serves by tag at runtime.
+   
+   One playlist per mode. Running the command with `--mode roman` and `--mode play` creates two separate playlists. The pool for each is the same exercises (tagged `unit:N`), but assignment intent differs — the engine doesn't filter by mode, so separate playlists is what keeps a student from receiving a play exercise inside a Roman numeral assignment.
    
    Idempotency: if playlist with that name exists, update `skill_tags` and flags but do not duplicate.
 
@@ -128,7 +130,7 @@ for branch in taxonomy:
 
 | Field | Value |
 |-------|-------|
-| `name` | `"Unit {N} — {title}"` |
+| `name` | `"Unit {N} — {title} ({mode})"` e.g. `"Unit 11 — Pre-dominants (roman)"` |
 | `is_dynamic` | `True` |
 | `is_adaptive` | `True` |
 | `skill_tags` | `['unit:N']` |
@@ -165,7 +167,7 @@ Detected 4 phrases.
 
 [...20 chorales...]
 
-Playlist: Unit 11 — Pre-dominants (P-xyz999) — created
+Playlist: Unit 11 — Pre-dominants (roman) (P-xyz999) — created
 Total exercises created: 67 / skipped: 3
 ```
 
@@ -174,6 +176,6 @@ Total exercises created: 67 / skipped: 3
 ## What this does NOT do
 
 - Does not wire mastery updates (Phase 3 concern)
-- Does not create per-mode playlists (one playlist per unit for now; multi-mode playlists are a Phase 3 workbench feature)
+- Does not import exercises in multiple modes in a single run — run once per mode
 - Does not support MusicXML upload (Phase 3)
 - Does not generate help text (Phase 5)
