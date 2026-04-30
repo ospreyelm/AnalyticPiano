@@ -13,6 +13,30 @@
 - **Mobile = student player only** — teacher tools stay desktop
 - **Help text** = UMTO field + AI-drafted placeholder + human override in workbench
 
+## Known constraints and future flexibility
+
+### Unit numbering is opinionated, not universal
+
+Units are currently numbered 1–30 and represent a specific pedagogical sequence (Avner's curriculum). The number is a display label; the real key in the DB is the tag string (`unit:9`). This means:
+
+- Adding `unit:9b` between units 9 and 10 is valid without renumbering
+- A different teacher's Course can assign playlists in any order regardless of unit numbers
+- The `UNIT_ALLOWED_ANSWERS` map in `exercise_definition.js` must be extended when new units are inserted
+
+**Future work:** Decouple unit sequence from unit label entirely. A Course should define its own ordered skill-group sequence rather than inheriting the global unit numbering. This enables different teachers to teach the same skills in different orders without conflict. Not in scope for current phases.
+
+### Play mode vs identification mode for early units
+
+Bach chorales don't write pedagogically constrained harmony. A phrase tagged `unit:9` will contain chords beyond I/V/V7 — identification mode hides them via `UNIT_ALLOWED_ANSWERS`, but play mode cannot. For early units (9–12), **play mode exercises should be synthetic** (purpose-built short progressions), not Bach phrase slices. `create_unit_playlist --mode play` is most useful from unit 13+ where harmonic density is representative of the unit's content.
+
+**Future work:** A synthetic exercise generator per unit for play mode, following the pattern of `generate_unit1.py`.
+
+### Figured bass sequencing not yet implemented
+
+`UNIT_ALLOWED_ANSWERS` only covers Roman numeral analysis. Figured bass has no equivalent cumulative allowlist (5/3 only → add 6/3 at unit 10, etc.). This means figured bass exercises don't filter by unit yet.
+
+**Future work:** `UNIT_ALLOWED_FIGURES` map parallel to `UNIT_ALLOWED_ANSWERS`, applied in `applySkillFilter` when `analysisType === 'figures'`.
+
 ---
 
 ## Phase overview
