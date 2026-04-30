@@ -6,7 +6,8 @@ define([
   "app/components/music/score_timeline",
   "app/utils/analyze",
   "app/utils/measure_engine",
-], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine) {
+  "app/models/key_signature",
+], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine, KeySignature) {
   "use strict";
 
   function durToVF(d) {
@@ -1250,7 +1251,7 @@ define([
             opts.keySignature.getKeyName()) ||
           ((opts && opts.keySignature && typeof opts.keySignature.getKey === "function")
             ? formatKeyForDisplay(opts.keySignature.getKey())
-            : (meta && meta.key));
+            : formatKeyForDisplay(meta && meta.key));
 
         if (isFirstMeasure && displayKey && activeStaveForLabel) {
           ctx.save();

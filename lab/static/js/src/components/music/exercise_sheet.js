@@ -821,13 +821,6 @@ define([
         }
       }
 
-      if (inputMode === "text") {
-        if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
-          this._updateIdentificationProgressUI(totalAnsweredCount, totalVisibleCount);
-        }
-        return;
-      }
-
       if (!slots.length) {
         if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
           this._updateIdentificationProgressUI(totalAnsweredCount, totalVisibleCount);
@@ -1677,7 +1670,11 @@ define([
             // Analysis wiring for chorale path (Notater bridge inside adapter)
             analyzeConfig: analyzeConfig,
 
-            keySignature: this.keySignature,
+            // Use the score's own key when present; fall back to the app-level
+            // keySignature only when the score has no meta.key.
+            keySignature: (score && score.meta && score.meta.key)
+              ? null
+              : this.keySignature,
             analysisRenderer: display.analysisRenderer || "notater", // notater|adapter|none
             staffYOffset: staffYOffset,
             isAnalysisMatch: isAnalysisMatchMode,

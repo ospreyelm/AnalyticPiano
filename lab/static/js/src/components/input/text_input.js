@@ -238,6 +238,7 @@ define([
       pill.append(field).append(button);
       wrap.append(pill).append(hint);
 
+      var _practiceDebounceTimer = null;
       field.on("input", function () {
         if (self.feedbackMode !== "practice") {
           return;
@@ -247,9 +248,17 @@ define([
         var parsed = self._parseTokens(rawValue);
         var endsWithSpace = /\s$/.test(rawValue);
 
-        if (endsWithSpace || parsed.length >= self.problemCount) {
-          self._emitChangedAnswers(parsed);
+        if (!endsWithSpace && parsed.length < self.problemCount) {
+          return;
         }
+
+        // Debounce: wait until user pauses before committing to the grader.
+        // Without this, every space triggers onAnswer → render() →
+        // _hydrateTextInputComponent → overwrites the field mid-keystroke.
+        clearTimeout(_practiceDebounceTimer);
+        _practiceDebounceTimer = setTimeout(function () {
+          self._emitChangedAnswers(self._parseTokens(field.val()));
+        }, 400);
       });
 
       field.on("keydown", function (e) {
