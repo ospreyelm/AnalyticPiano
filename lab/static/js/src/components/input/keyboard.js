@@ -47,10 +47,10 @@ define(["lodash", "jquery", "app/components/component"], function (
       this.initListeners();
     },
     initListeners: function () {
-      $("body").on(this.events);
+      $(document).on(this.events);
     },
     removeListeners: function () {
-      $("body").off(this.events);
+      $(document).off(this.events);
     },
     destroy: function () {
       this.removeListeners();

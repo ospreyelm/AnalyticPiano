@@ -8,6 +8,7 @@ define([
   "app/models/keyboard_generator",
   "app/components/events",
   "app/components/component",
+  "app/components/input/computer_keyboard_ux_logic",
   "./key",
 ], function (
   $,
@@ -16,6 +17,7 @@ define([
   KeyboardGenerator,
   EVENTS,
   Component,
+  ComputerKeyboardUxLogic,
   KeyComponent
 ) {
   /**
@@ -39,9 +41,9 @@ define([
 
   _.extend(KeyboardComponent.prototype, {
     // defaultWidth: 870,
-    defaultHeight: 120,
+    defaultHeight: 144,
     defaultSmallHeight: 80,
-    defaultKeyWidth: 30,
+    defaultKeyWidth: 34,
     numberOfKeys: null,
     octaveAdjustment: null,
     initComponent: function () {
@@ -279,6 +281,8 @@ define([
     },
 
     renderQwertyLabels: function () {
+      var LABEL_NUDGE_X = 0.5;
+
       this.keyboardEl.find('.qwerty-labels').remove();
 
       var shortcuts = require('app/config/keyboard_shortcuts');
@@ -287,7 +291,8 @@ define([
       var noteToKey = {};
       _.each(keyMap, function (val, key) {
         if (val && val.msg === 'toggleNote') {
-          noteToKey[NOTE_ANCHOR + val.data] = key.toUpperCase();
+          noteToKey[NOTE_ANCHOR + val.data] =
+            ComputerKeyboardUxLogic._getShortcutDisplayLabel(key);
         }
       });
 
@@ -305,16 +310,16 @@ define([
 
         if (isWhite) {
           badgeHeight = 16;
-          badgeWidth  = Math.max(layout.keyWidth - 4, 8);
-          badgeLeft   = offsetX + 2;
-          badgeTop    = keyH - badgeHeight - 6;
+          badgeWidth  = Math.max(layout.keyWidth - 10, 12);
+          badgeLeft   = offsetX + 3 + LABEL_NUDGE_X;
+          badgeTop    = keyH - badgeHeight - 8;
         } else {
           var blackKeyH = 0.66 * keyH;
           var blackWidth = layout.keyWidth / 2;
-          badgeHeight = 14;
-          badgeWidth  = Math.max(blackWidth - 2, 6);
-          badgeLeft   = offsetX + 1;
-          badgeTop    = blackKeyH - badgeHeight - 4;
+          badgeHeight = 13;
+          badgeWidth  = Math.max(blackWidth - 4, 10);
+          badgeLeft   = offsetX + 2 + LABEL_NUDGE_X;
+          badgeTop    = blackKeyH - badgeHeight - 7;
         }
 
         var badge = $('<div></div>')

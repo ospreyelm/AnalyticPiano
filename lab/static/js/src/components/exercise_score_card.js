@@ -9,7 +9,11 @@
  *               unit_bar_segments, next_exercise_url, next_skill_name, unit_n });
  *   card.hide();
  */
-define(["jquery", "canvas-confetti"], function ($, confetti) {
+define([
+  "jquery",
+  "canvas-confetti",
+  "./exercise_score_card_theme_logic",
+], function ($, confetti, scoreCardTheme) {
   "use strict";
 
   // ---- Pure logic helpers ----
@@ -128,10 +132,10 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
     _cssInjected = true;
     var css = [
       ":root {",
-      "  --esc-arc-blue: #3b82f6;",
-      "  --esc-arc-green: #22c55e;",
-      "  --esc-arc-amber: #f59e0b;",
-      "  --esc-arc-gray: #9ca3af;",
+      "  --esc-arc-blue: " + scoreCardTheme.arc.blue + ";",
+      "  --esc-arc-green: " + scoreCardTheme.arc.green + ";",
+      "  --esc-arc-amber: " + scoreCardTheme.arc.amber + ";",
+      "  --esc-arc-gray: " + scoreCardTheme.arc.gray + ";",
       "}",
       ".esc-overlay {",
       "  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10050;",
@@ -150,8 +154,8 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
       "  padding: 8px 12px; border-radius: 4px; margin-bottom: 12px;",
       "  font-size: 14px; font-weight: 600;",
       "}",
-      ".esc-banner-blue { background: #dbeafe; color: #1d4ed8; }",
-      ".esc-banner-gold { background: #fef3c7; color: #92400e; }",
+      ".esc-banner-blue { background: " + scoreCardTheme.banner.blueBg + "; color: " + scoreCardTheme.banner.blueFg + "; }",
+      ".esc-banner-gold { background: " + scoreCardTheme.banner.goldBg + "; color: " + scoreCardTheme.banner.goldFg + "; }",
       ".esc-score-row {",
       "  display: flex; align-items: center; gap: 16px; margin-bottom: 14px;",
       "}",
@@ -167,10 +171,10 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
       "  font-size: 11px; font-weight: 700; letter-spacing: 0.05em;",
       "  text-transform: uppercase; margin-top: 4px;",
       "}",
-      ".esc-badge-blue { background: #dbeafe; color: #1d4ed8; }",
-      ".esc-badge-green { background: #dcfce7; color: #15803d; }",
-      ".esc-badge-amber { background: #fef3c7; color: #92400e; }",
-      ".esc-badge-gray { background: #f3f4f6; color: #6b7280; }",
+      ".esc-badge-blue { background: " + scoreCardTheme.badge.blueBg + "; color: " + scoreCardTheme.badge.blueFg + "; }",
+      ".esc-badge-green { background: " + scoreCardTheme.badge.greenBg + "; color: " + scoreCardTheme.badge.greenFg + "; }",
+      ".esc-badge-amber { background: " + scoreCardTheme.badge.amberBg + "; color: " + scoreCardTheme.badge.amberFg + "; }",
+      ".esc-badge-gray { background: " + scoreCardTheme.badge.grayBg + "; color: " + scoreCardTheme.badge.grayFg + "; }",
       ".esc-unit-bar-section {",
       "  border-top: 1px solid #e5e7eb; padding-top: 12px; margin-bottom: 14px;",
       "}",
@@ -184,7 +188,7 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
       "}",
       ".esc-bar-seg { flex: 1; border-radius: 2px; }",
       ".esc-bar-seg-green { background: #22c55e; }",
-      ".esc-bar-seg-blue { background: #3b82f6; }",
+      ".esc-bar-seg-blue { background: " + scoreCardTheme.arc.blue + "; }",
       ".esc-bar-seg-amber { background: #f59e0b; }",
       ".esc-bar-seg-lightgray { background: #e5e7eb; }",
       ".esc-bar-summary { font-size: 11px; color: #9ca3af; }",
@@ -199,12 +203,12 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
       "  background: #f3f4f6; color: #374151;",
       "}",
       ".esc-btn-secondary:hover { background: #e5e7eb; }",
-      ".esc-btn-primary-blue { background: #3b82f6; color: #fff; }",
-      ".esc-btn-primary-blue:hover { background: #2563eb; }",
-      ".esc-btn-primary-green { background: #22c55e; color: #fff; }",
-      ".esc-btn-primary-green:hover { background: #16a34a; }",
-      ".esc-btn-primary-amber { background: #f59e0b; color: #fff; }",
-      ".esc-btn-primary-amber:hover { background: #d97706; }",
+      ".esc-btn-primary-blue { background: " + scoreCardTheme.button.blueBg + "; color: #fff; }",
+      ".esc-btn-primary-blue:hover { background: " + scoreCardTheme.button.blueHover + "; }",
+      ".esc-btn-primary-green { background: " + scoreCardTheme.button.greenBg + "; color: #fff; }",
+      ".esc-btn-primary-green:hover { background: " + scoreCardTheme.button.greenHover + "; }",
+      ".esc-btn-primary-amber { background: " + scoreCardTheme.button.amberBg + "; color: #fff; }",
+      ".esc-btn-primary-amber:hover { background: " + scoreCardTheme.button.amberHover + "; }",
     ].join("\n");
     var style = document.createElement("style");
     style.textContent = css;
