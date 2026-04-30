@@ -61,7 +61,7 @@ define([
       this.subscribe(EVENTS.BROADCAST.INPUT_MODE, this._onModeChange);
 
       if (this.settings.defaultMode) {
-        this._onModeChange(this.settings.defaultMode);
+        this.broadcast(EVENTS.BROADCAST.INPUT_MODE, this.settings.defaultMode);
       }
     },
 

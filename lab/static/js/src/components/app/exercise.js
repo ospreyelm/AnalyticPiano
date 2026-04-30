@@ -12,6 +12,7 @@ define([
   // 'app/components/notifications',
   "app/components/input/shortcuts",
   "app/components/input/note_name",
+  "app/components/input/computer_keyboard_ux_logic",
   "app/components/ui/main_menu",
   "app/components/ui/music_controls",
   "app/models/key_signature",
@@ -37,6 +38,7 @@ define([
   // NotificationsComponent,
   KeyboardShortcutsComponent,
   NoteNameInputComponent,
+  ComputerKeyboardUxLogic,
   MainMenuComponent,
   MusicControlsComponent,
   KeySignature,
@@ -150,6 +152,15 @@ define([
       exercise: this,
       scoreCard: scoreCard,
     });
+
+    if (models.exerciseContext._isIdentificationExercise && models.exerciseContext._isIdentificationExercise()) {
+      if (definition.reviewMode && definition.reviewAnswers) {
+        models.exerciseGrader.answers = _.clone(definition.reviewAnswers);
+      } else if (definition.exerciseId) {
+        models.exerciseContext.restoreIdentState(definition.exerciseId);
+      }
+    }
+
     models.keySignature = new KeySignature(
       models.exerciseDefinition.getKey(),
       models.exerciseDefinition.getKeySignature()
@@ -218,7 +229,7 @@ define([
           return;
         }
         var c = new NoteNameInputComponent({
-          defaultMode: "notename"
+          defaultMode: ComputerKeyboardUxLogic._getDefaultExerciseInputMode()
         });
         c.init(this);
         c.renderTo("#piano");
