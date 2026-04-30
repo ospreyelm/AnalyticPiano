@@ -5,7 +5,7 @@
   {% load static %}
   <link href="{% static 'student/student.css' %}" rel="stylesheet">
   <style>
-    /* ── Player layout overrides ───────────────────────────── */
+    /* ── Page shell ─────────────────────────────────────────── */
     body { background: #f7f8f8 !important; }
 
     #container {
@@ -22,104 +22,267 @@
       padding: 0 0 12px;
     }
 
-    /* ── Player top bar ────────────────────────────────────── */
+    /* ── Player top bar ─────────────────────────────────────── */
     .s-player-header {
       width: 100%;
       max-width: none;
       margin: 0;
-      padding: 8px 20px;
+      padding: 0 16px;
+      height: 44px;
       border-bottom: 1px solid var(--border);
       background: #fff;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      position: relative;
+      z-index: 10;
     }
+
+    .s-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color 150ms, background 150ms;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .s-back-btn:hover { color: var(--teal); background: var(--teal-pale); }
+    .s-back-arrow { font-size: 0.9rem; }
 
     .s-player-title {
       font-family: var(--font-ui);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: var(--text);
       flex: 1;
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      padding: 0 8px;
     }
-
     .s-player-title a { color: inherit; text-decoration: none; }
+    .s-player-title a:hover { color: var(--teal); }
+    .s-title-sep { color: var(--text-muted); margin: 0 4px; }
 
-    .s-player-controls {
+    .s-player-right {
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-shrink: 0;
     }
-
-    .s-ctrl-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 10px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: #fff;
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      font-family: var(--font-body);
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: border-color 150ms, color 150ms;
-      min-width: 40px;
-      text-align: center;
-    }
-    .s-ctrl-btn:hover { border-color: var(--teal); color: var(--teal); }
 
     .s-player-pos {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
       white-space: nowrap;
       font-family: var(--font-body);
-      min-width: 80px;
-      text-align: right;
+      font-weight: 600;
     }
 
-    /* ── Hint banners ──────────────────────────────────────── */
+    /* Settings gear button */
+    .s-settings-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 150ms, color 150ms, background 150ms;
+      flex-shrink: 0;
+    }
+    .s-settings-btn:hover,
+    .s-settings-btn.active {
+      border-color: var(--teal-mid);
+      color: var(--teal);
+      background: var(--teal-pale);
+    }
+    .s-settings-btn svg { display: block; }
+
+    /* ── Settings drawer ────────────────────────────────────── */
+    .s-settings-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+    }
+    .s-settings-overlay.open { display: block; }
+
+    .s-settings-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 30, 35, 0.18);
+      backdrop-filter: blur(1px);
+    }
+
+    .s-settings-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 280px;
+      background: #fff;
+      border-left: 1px solid var(--border);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+    }
+    .s-settings-overlay.open .s-settings-panel {
+      transform: translateX(0);
+    }
+
+    .s-settings-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .s-settings-title {
+      font-family: var(--font-ui);
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .s-settings-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 1.1rem;
+      transition: color 150ms, background 150ms;
+    }
+    .s-settings-close:hover { color: var(--text); background: var(--surface); }
+
+    .s-settings-body {
+      padding: 12px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .s-settings-group {}
+
+    .s-settings-group-label {
+      font-family: var(--font-body);
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .s-settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 0;
+    }
+    .s-settings-row + .s-settings-row {
+      border-top: 1px solid var(--border);
+    }
+
+    .s-settings-row-label {
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      color: var(--text);
+    }
+
+    /* Reuse the existing ctrl btn style inside drawer */
+    .s-drawer-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-family: var(--font-body);
+      font-weight: 600;
+      cursor: pointer;
+      min-width: 48px;
+      transition: border-color 150ms, color 150ms, background 150ms;
+    }
+    .s-drawer-btn:hover { border-color: var(--teal-mid); background: var(--teal-pale); }
+    .s-drawer-btn.muted { color: var(--danger); border-color: var(--danger); background: #fde8e8; }
+
+    /* ── Hint banner ────────────────────────────────────────── */
     .s-player-input-hint {
       width: 95vw;
       max-width: 900px;
       margin: 8px auto;
-      padding: 8px 16px;
+      padding: 7px 14px;
       border: 1px solid var(--teal-mid);
       border-radius: var(--radius);
       background: var(--teal-pale);
       color: #1a4a56;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       line-height: 1.4;
-      text-align: left;
     }
 
-    /* ── Nav toolbar ───────────────────────────────────────── */
+    /* ── Nav toolbar ────────────────────────────────────────── */
     #staff-toolbar {
-      margin: 8px auto 8px;
+      margin: 8px auto;
       display: flex;
       justify-content: center;
-      gap: 8px;
+      align-items: center;
+      gap: 6px;
       flex-wrap: wrap;
-      width: 95vw;
-      max-width: 900px;
+      width: 100%;
+    }
+
+    /* Slot in toolbar for mode toggles (Click/Type · Practice/Submit).
+     * JS renders #ident-toggle-row into #identification-actions; we move
+     * it here via MutationObserver without touching exercise_sheet.js. */
+    #ident-toolbar-slot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+
+    /* Separator between nav buttons and mode toggles */
+    .s-toolbar-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      flex-shrink: 0;
     }
 
     .s-toolbar-btn {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       padding: 5px 14px;
       border: 1px solid var(--border);
       border-radius: 4px;
       background: #fff;
       color: var(--text);
       cursor: pointer;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-family: var(--font-ui);
       font-weight: 400;
       text-decoration: none;
@@ -139,11 +302,13 @@
     .s-toolbar-icon.next-icon,
     .s-toolbar-icon.refresh-icon { margin: 0; float: none; }
 
-    /* ── Staff area ────────────────────────────────────────── */
+    /* ── Staff area ─────────────────────────────────────────── */
     #staff-area {
-      width: 95vw;
-      max-width: 900px;
+      width: 100%;
+      max-width: none;
       margin: 0 auto;
+      padding: 0 12px;
+      box-sizing: border-box;
     }
 
     #staffwrapper {
@@ -156,77 +321,221 @@
       overflow-y: hidden;
     }
 
-    /* ── Instruction panel — kill all extra space ─────────── */
+    /* ── Instruction panel ──────────────────────────────────── */
     .instruction-panel { border: none !important; background: transparent !important; padding: 0 !important; min-height: 0 !important; }
     .instruction-panel-header { display: none; }
     #instruction-panel { min-height: 0 !important; margin: 0 !important; margin-bottom: 0 !important; }
     #instruction-panel p { padding: 0 !important; margin: 0 !important; }
 
-    /* ── One compact control bar: all identification UI in a single row ── */
-    .s-control-bar {
+    /* ── Persistent answer bar (always below staff for ident exercises) ── */
+    /*
+     * #s-answer-bar is always in the DOM at fixed height. The text field and
+     * Check button live here permanently. JS's #identification-actions and
+     * #ident-input-container are hidden; the Check button (#identification-submit)
+     * is physically placed inside #s-answer-bar so the JS still finds it by id.
+     * In Click mode the field is disabled/grayed; in Type mode it's active.
+     */
+    /* ── Persistent answer bar ─────────────────────────────── */
+    /* Always present below the staff for identification exercises.
+     * Contains: progress bar (full row), then text input + Check button.
+     * JS's TextInputComponent renders into #ident-input-container which we
+     * move here via MutationObserver — its .text-id-field / .text-id-check
+     * remain the real inputs so all onAnswer callbacks work unchanged. */
+    #s-answer-bar {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
       flex-wrap: wrap;
-      width: 95vw;
-      max-width: 900px;
-      margin: 4px auto 4px;
+      gap: 8px;
+      width: 100%;
+      padding: 6px 12px 8px;
+      box-sizing: border-box;
+      min-height: 52px;
     }
 
-    #identification-actions {
-      display: contents !important; /* children participate in .s-control-bar flex */
-    }
-
+    /* Progress bar — spans full row above field+button */
     #ident-progress-container {
-      margin: 0 !important;
-      flex-shrink: 0;
-      width: 100px !important;
-      height: 4px !important;
-      border-radius: 2px !important;
-      margin-top: 0 !important;
+      width: 100% !important;
+      max-width: 480px !important;
+      height: 8px !important;
+      border-radius: 4px !important;
+      margin: 0 auto !important;
+      flex: 0 0 100%;          /* own row */
+      order: -1;
+      display: block !important;
     }
-
     #ident-progress-bar {
       height: 100% !important;
+      border-radius: 4px !important;
     }
 
+    /* #ident-input-container is moved into #s-answer-bar by observer.
+     * Do NOT force display — JS's .show()/.hide() must still work.
+     * In Click mode JS calls .hide() (display:none inline).
+     * In Text mode JS sets display:block inline — we upgrade to flex. */
+    #ident-input-container {
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      flex: 1;
+      max-width: 480px;
+      margin: 0 !important;
+    }
+    /* Upgrade JS's display:block to flex without fighting display:none */
+    #s-answer-bar #ident-input-container:not([style*="none"]) {
+      display: flex !important;
+    }
+
+    /* The .text-id-input wrapper — remove default margins */
+    #ident-input-container .text-id-input {
+      margin: 0 !important;
+      width: 100%;
+    }
+
+    /* Restyle the pill to match our design system */
+    #ident-input-container .text-id-pill {
+      display: flex;
+      border: 1px solid var(--border) !important;
+      border-radius: 4px !important;
+      overflow: hidden;
+      background: #fff;
+    }
+    #ident-input-container .text-id-field {
+      flex: 1;
+      padding: 6px 12px !important;
+      font-size: 0.88rem !important;
+      font-family: var(--font-body) !important;
+      border: none !important;
+      outline: none !important;
+      background: transparent;
+      color: var(--text);
+      min-width: 0;
+    }
+    #ident-input-container .text-id-field:focus {
+      box-shadow: none !important;
+    }
+    #ident-input-container .text-id-pill:focus-within {
+      border-color: var(--teal) !important;
+      box-shadow: 0 0 0 3px rgba(42,126,148,0.12);
+    }
+    /* Click mode: field disabled — JS sets .text-id-field[disabled] */
+    #ident-input-container .text-id-field:disabled {
+      background: var(--surface) !important;
+      color: var(--text-muted) !important;
+      cursor: not-allowed;
+      opacity: 0.55;
+      pointer-events: none;
+      user-select: none;
+    }
+    #ident-input-container .text-id-field::placeholder {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+    /* Hide the "Check ↵" button inside the pill — #identification-submit is our button */
+    #ident-input-container .text-id-check { display: none !important; }
+    /* Hide the hint text below the pill */
+    #ident-input-container .text-id-hint  { display: none !important; }
+
+    /* #identification-submit — the Check button beside the field.
+     * JS finds it by id, sets text "Check"/"Next Page", toggles .ready. */
     #identification-submit {
       flex-shrink: 0;
+      padding: 6px 18px !important;
+      font-size: 0.82rem !important;
+      border-radius: 4px !important;
+      font-family: var(--font-body) !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      border: 1px solid var(--teal) !important;
+      background: var(--teal) !important;
+      color: #fff !important;
+      transition: background 150ms, box-shadow 150ms, opacity 150ms !important;
+      opacity: 0.45;
+      box-shadow: none !important;
+      animation: none !important;
+    }
+    #identification-submit.ready {
+      opacity: 1 !important;
+      box-shadow: 0 2px 8px rgba(42,126,148,0.3) !important;
+    }
+    #identification-submit.ready:hover {
+      background: var(--teal-dark) !important;
+      box-shadow: 0 3px 12px rgba(42,126,148,0.45) !important;
+    }
+    #identification-submit.hint-pulse {
+      animation: ident-hint-teal 1.4s ease-in-out infinite !important;
+    }
+    @keyframes ident-hint-teal {
+      0%,100% { box-shadow: 0 2px 8px rgba(42,126,148,0.3); }
+      50%      { box-shadow: 0 0 20px 4px rgba(42,126,148,0.6); }
+    }
+    /* Override JS-injected blue gradient style */
+    #s-answer-bar #identification-submit { background: var(--teal) !important; border-color: var(--teal) !important; }
+    #s-answer-bar #identification-submit.ready:hover { background: var(--teal-dark) !important; }
+
+    /* ── #identification-actions — zero-height anchor for JS ── */
+    #identification-actions {
+      display: block !important;
+      height: 0;
+      overflow: visible;
+      margin: 0 !important;
+      padding: 0 !important;
     }
 
     #ident-mode-container { margin-top: 0 !important; }
     .ident-mode-toggle { margin-top: 0 !important; }
 
+    /* ── .s-control-bar: holds #identification-actions (zero-height) + instruction panel ── */
+    .s-control-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin: 4px 0 0;
+      padding: 0 12px;
+      box-sizing: border-box;
+    }
+
+    #instruction-panel {
+      width: 100%;
+      text-align: center;
+      min-height: 0 !important;
+      margin: 0 !important;
+    }
+
     #exercise-text {
       font-family: var(--font-body);
-      font-size: 0.8rem;
+      font-size: 0.9rem;
       color: var(--text-muted);
-      margin: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 320px;
+      margin: 2px 0 0;
+      text-align: center;
+      width: 100%;
+      white-space: normal;
     }
 
     #exercise-status-and-tempo {
-      display: contents; /* children join the flex row */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    /* READY / status pill */
+    #exercise-status-and-tempo p { margin: 0 !important; padding: 0 !important; }
+
     #exercise-status {
-      font-size: 0.68rem !important;
-      padding: 2px 8px !important;
+      font-size: 0.72rem !important;
+      padding: 3px 10px !important;
       border-radius: 999px !important;
       font-family: var(--font-body);
       letter-spacing: 0.06em;
       white-space: nowrap;
     }
 
-    /* Play button */
+    /* ── Playback controls moved into drawer / hidden from bar ── */
     #playback-play-btn {
       font-size: 0.75rem !important;
-      padding: 2px 8px !important;
+      padding: 4px 12px !important;
       border: 1px solid var(--border) !important;
       border-radius: 4px !important;
       background: var(--surface-2) !important;
@@ -239,34 +548,76 @@
       border-color: var(--teal) !important;
       background: var(--teal-pale) !important;
     }
-
-    #playback-controls { gap: 4px !important; margin-left: 0 !important; }
-
-    #playback-tempo-label {
-      font-size: 0.72rem !important;
-      color: var(--text-muted) !important;
-    }
-
+    #playback-controls { gap: 6px !important; margin-left: 0 !important; }
+    #playback-tempo-label { font-size: 0.72rem !important; color: var(--text-muted) !important; }
     #playback-tempo-slider { width: 60px !important; }
 
-    /* ── Piano ─────────────────────────────────────────────── */
+    /* ── Piano ──────────────────────────────────────────────── */
     #piano {
-      width: 95vw;
-      max-width: 900px;
+      width: 100%;
+      max-width: none;
       margin: 4px auto 0;
+      padding: 0 12px;
+      box-sizing: border-box;
+      overflow-x: auto;   /* scroll if keyboard wider than viewport */
     }
 
-    /* Shrink the keyboard wrapper to fit within our constrained area */
-    .keyboard-wrapper {
-      width: 100% !important;
-      margin: 4px auto 0 !important;
+    /* Do NOT force keyboard-wrapper to 100% — it renders the SVG at a fixed
+     * pixel width, and the QWERTY badge positions are calculated from those
+     * same pixels. Stretching the wrapper misaligns the badges. */
+    .keyboard-wrapper { margin: 4px auto 0 !important; }
+    .keyboard-input-mode { max-width: 100%; }
+
+    /* ── Input mode hint (replaces always-visible toggle bar) ── */
+    /*
+     * The QWERTY/Note Name toggle rendered by NoteNameInputComponent is kept in
+     * the DOM for JS wiring, but collapsed by default. Students can access it
+     * via the Settings drawer. A one-line hint nudges them there.
+     */
+    .keyboard-input-mode .input-mode-toggle {
+      display: none !important;   /* hidden — accessible from ⚙ drawer */
+    }
+    .keyboard-input-mode .qwerty-help-panel,
+    .keyboard-input-mode .notename-panel {
+      display: none !important;   /* status/guide also hidden by default */
     }
 
-    .keyboard-input-mode {
-      width: 100% !important;
+    /* Input mode controls inside drawer */
+    .s-drawer-input-mode {
+      display: flex;
+      gap: 6px;
+    }
+    .s-drawer-input-mode .s-drawer-btn.active {
+      border-color: var(--teal);
+      background: var(--teal-pale);
+      color: var(--teal);
     }
 
-    /* ── Hide clutter ──────────────────────────────────────── */
+    /* ── Drawer widget selects ──────────────────────────────── */
+    #mainmenu label {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    #mainmenu select {
+      padding: 3px 6px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      background: var(--surface);
+      color: var(--text);
+    }
+    #mainmenu input[type="checkbox"] {
+      accent-color: var(--teal);
+      cursor: pointer;
+    }
+
+    /* ── Hide legacy clutter ─────────────────────────────────── */
     .icon-btn-camera, .startover-icon { display: none !important; }
     #user-interaction-solicitation { display: none !important; }
   </style>
@@ -276,26 +627,86 @@
 <div id="container" class="js-fade-in fade" style="opacity: 0;">
   <div class="s-player-wrap">
 
+    <!-- Top bar -->
     <header class="s-player-header">
-      <a href="{% url 'student:unit' unit_num=unit_num %}" class="s-ctrl-btn">← Back</a>
+      <a href="{% url 'student:unit' unit_num=unit_num %}" class="s-back-btn">
+        <span class="s-back-arrow">←</span> Back
+      </a>
 
       <div class="s-player-title">
         <a href="{% url 'student:unit-progress' unit_n=unit_num %}">Unit {{ unit_num }}</a>
-        <span style="color: var(--text-muted);"> · </span>
+        <span class="s-title-sep">·</span>
         {{ playlist.name }}
       </div>
 
-      <div class="s-player-controls">
-        <button id="mute-toggle" class="s-ctrl-btn">Mute</button>
-        <button id="volume" class="s-ctrl-btn" style="font-weight: 700;">mf</button>
-        <button id="midi-switch" class="s-ctrl-btn">MIDI</button>
-      </div>
-
-      <div class="s-player-pos">
-        <span id="js-player-current">{{ exercise_num|default:1 }}</span> / <span id="js-player-total">{{ total_exercises|default:'—' }}</span>
+      <div class="s-player-right">
+        <span class="s-player-pos">
+          <span id="js-player-current">{{ exercise_num|default:1 }}</span>/<span id="js-player-total">{{ total_exercises|default:'—' }}</span>
+        </span>
+        <button class="s-settings-btn js-settings-toggle" aria-label="Settings" title="Settings">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
+            <path fill-rule="evenodd" d="M6.746 1.137a1.5 1.5 0 0 1 2.508 0l.31.477a1 1 0 0 0 1.263.34l.527-.244a1.5 1.5 0 0 1 1.973 1.972l-.243.528a1 1 0 0 0 .34 1.263l.476.31a1.5 1.5 0 0 1 0 2.508l-.477.31a1 1 0 0 0-.34 1.263l.244.527a1.5 1.5 0 0 1-1.972 1.973l-.528-.243a1 1 0 0 0-1.263.34l-.31.476a1.5 1.5 0 0 1-2.508 0l-.31-.477a1 1 0 0 0-1.263-.34l-.527.244a1.5 1.5 0 0 1-1.973-1.972l.243-.528a1 1 0 0 0-.34-1.263l-.476-.31a1.5 1.5 0 0 1 0-2.508l.477-.31a1 1 0 0 0 .34-1.263l-.244-.527A1.5 1.5 0 0 1 2.904 1.88l.528.243a1 1 0 0 0 1.263-.34l.31-.476ZM8 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+          </svg>
+        </button>
       </div>
     </header>
 
+    <!-- Settings drawer overlay -->
+    <div class="s-settings-overlay js-settings-overlay">
+      <div class="s-settings-backdrop js-settings-backdrop"></div>
+      <aside class="s-settings-panel">
+        <div class="s-settings-head">
+          <span class="s-settings-title">Settings</span>
+          <button class="s-settings-close js-settings-close" aria-label="Close settings">✕</button>
+        </div>
+        <div class="s-settings-body">
+
+          <!-- Sound group -->
+          <div class="s-settings-group">
+            <div class="s-settings-group-label">Sound</div>
+            <div class="s-settings-row">
+              <span class="s-settings-row-label">Mute</span>
+              <button id="mute-toggle" class="s-drawer-btn">Mute</button>
+            </div>
+            <div class="s-settings-row">
+              <span class="s-settings-row-label">Volume</span>
+              <button id="volume" class="s-drawer-btn" style="font-weight:700;">mf</button>
+            </div>
+          </div>
+
+          <!-- Input group -->
+          <div class="s-settings-group">
+            <div class="s-settings-group-label">Keyboard input</div>
+            <div class="s-settings-row">
+              <span class="s-settings-row-label">Mode</span>
+              <div class="s-drawer-input-mode" id="s-drawer-input-mode">
+                <button class="s-drawer-btn active" id="s-drawer-btn-qwerty">QWERTY</button>
+                <button class="s-drawer-btn" id="s-drawer-btn-notename">Note Name</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MIDI group -->
+          <div class="s-settings-group">
+            <div class="s-settings-group-label">MIDI</div>
+            <div class="s-settings-row">
+              <span class="s-settings-row-label">MIDI device</span>
+              <button id="midi-switch" class="s-drawer-btn">MIDI</button>
+            </div>
+            <!-- MusicControls renders widget divs into #mainmenu by selector -->
+            <div id="mainmenu" style="margin-top: 8px;">
+              <div class="js-keyboardsize settings-inline" style="margin-bottom: 6px;"></div>
+              <div class="js-octaveadjustment settings-inline" style="margin-bottom: 6px;"></div>
+              <div class="js-keyboardshortcuts settings-inline"></div>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+    </div>
+
+    <!-- Hint banners -->
     {% if disable_computer_keyboard_input %}
       <div class="s-player-input-hint">
         Play using your MIDI keyboard or click the piano below. Any octave works.
@@ -312,6 +723,10 @@
       <div id="staff-area">
 
         <div id="staff-toolbar">
+          <!-- Mode toggles (Click/Type · Practice/Submit) land here via MutationObserver -->
+          <div id="ident-toolbar-slot"></div>
+          <span class="s-toolbar-sep" id="ident-toolbar-sep" style="display:none;"></span>
+
           <a class="s-toolbar-btn js-btn-previousexercise" title="Previous exercise" href="#">
             <span class="s-toolbar-icon previous-icon" aria-hidden="true"></span>
             <span>Previous</span>
@@ -331,11 +746,19 @@
           <canvas id="staff"></canvas>
         </div>
 
-        <div class="s-control-bar">
-          <div id="identification-actions" style="display: none;">
-            <button id="identification-submit" class="s-btn-primary">Submit Answer</button>
-          </div>
+        <!-- Persistent answer bar: always visible for identification exercises.
+             #ident-input-container (the real JS TextInputComponent) is moved
+             here by MutationObserver once JS creates it.
+             #identification-submit lives here so JS finds it by id. -->
+        <div id="s-answer-bar" style="display:none;">
+          <!-- JS moves #ident-input-container here -->
+          <button id="identification-submit" type="button">Check</button>
+        </div>
 
+        <!-- #identification-actions: JS appends #ident-toggle-row and
+             #ident-progress-container here. Zero-height; we relocate children. -->
+        <div class="s-control-bar">
+          <div id="identification-actions"></div>
           <div id="instruction-panel">
             <div id="exercise-text"></div>
             <div id="exercise-status-and-tempo"></div>
@@ -354,6 +777,8 @@
   <script>require(['app/main']);</script>
   <script>
     window.addEventListener('load', function () {
+
+      // ── Exercise counter sync ──────────────────────────────
       setInterval(function () {
         var statusEl = document.getElementById('exercise-info');
         if (statusEl) {
@@ -364,6 +789,228 @@
           }
         }
       }, 500);
+
+      // ── Settings drawer ────────────────────────────────────
+      var overlay  = document.querySelector('.js-settings-overlay');
+      var backdrop = document.querySelector('.js-settings-backdrop');
+      var openBtns = document.querySelectorAll('.js-settings-toggle');
+      var closeBtn = document.querySelector('.js-settings-close');
+      var gearBtn  = document.querySelector('.s-settings-btn');
+
+      function openDrawer() {
+        overlay.classList.add('open');
+        gearBtn && gearBtn.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeDrawer() {
+        overlay.classList.remove('open');
+        gearBtn && gearBtn.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      openBtns.forEach(function(btn) { btn.addEventListener('click', openDrawer); });
+      closeBtn && closeBtn.addEventListener('click', closeDrawer);
+      backdrop && backdrop.addEventListener('click', closeDrawer);
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeDrawer();
+      });
+
+      // ── Drawer input mode buttons ──────────────────────────
+      var btnQwerty   = document.getElementById('s-drawer-btn-qwerty');
+      var btnNoteName = document.getElementById('s-drawer-btn-notename');
+
+      function setDrawerInputMode(mode) {
+        if (!btnQwerty || !btnNoteName) return;
+        if (mode === 'notename') {
+          btnQwerty.classList.remove('active');
+          btnNoteName.classList.add('active');
+        } else {
+          btnNoteName.classList.remove('active');
+          btnQwerty.classList.add('active');
+        }
+      }
+
+      if (btnQwerty) {
+        btnQwerty.addEventListener('click', function() {
+          var inner = document.querySelector('.input-mode-btn:first-child');
+          if (inner) inner.click();
+          setDrawerInputMode('qwerty');
+        });
+      }
+      if (btnNoteName) {
+        btnNoteName.addEventListener('click', function() {
+          var inner = document.querySelector('.input-mode-btn:last-child');
+          if (inner) inner.click();
+          setDrawerInputMode('notename');
+        });
+      }
+
+      // ── Identification layout orchestration ────────────────
+      //
+      // exercise_sheet.js renders:
+      //   • #ident-toggle-row  → appended into #identification-actions
+      //   • #ident-input-container → inserted as sibling AFTER #identification-actions
+      //       └─ TextInputComponent: .text-id-field + .text-id-check (the REAL inputs)
+      //   • #ident-progress-container → prepended into #identification-actions
+      //
+      // We move:
+      //   • #ident-toggle-row        → #ident-toolbar-slot (toolbar row)
+      //   • #ident-input-container   → into #s-answer-bar (before #identification-submit)
+      //   • #ident-progress-container → into #s-answer-bar (first, as own row)
+      //
+      // The .text-id-field IS the real input — we never proxy it.
+      // In Click mode we set .text-id-field[disabled] to block typing.
+
+      var answerBar    = document.getElementById('s-answer-bar');
+      var submitBtn    = document.getElementById('identification-submit');
+      var toolbarSlot  = document.getElementById('ident-toolbar-slot');
+      var toolbarSep   = document.getElementById('ident-toolbar-sep');
+      var identActions = document.getElementById('identification-actions');
+      var controlBar   = document.querySelector('.s-control-bar');
+
+      // In submit mode, TextInputComponent only fires onAnswer on Enter or the
+      // internal .text-id-check button click — not on keystroke alone.
+      // Our external #identification-submit button's onclick = onSubmitIdentification,
+      // which reads answers already committed to the grader. If the student never
+      // pressed Enter, the field value hasn't been committed yet.
+      //
+      // Fix: intercept the click in capture phase, click the hidden .text-id-check
+      // button (commits answers + calls onSubmit=onSubmitIdentification), then
+      // stop propagation so the outer onclick doesn't double-submit.
+      // If there's no .text-id-check (Click mode / no text component), fall through.
+      if (submitBtn) {
+        submitBtn.addEventListener('click', function (e) {
+          var checkBtn = document.querySelector('#ident-input-container .text-id-check');
+          if (checkBtn) {
+            e.stopImmediatePropagation(); // prevent outer onclick from also calling submit
+            checkBtn.click();             // commits answers + calls onSubmitIdentification
+          }
+          // No checkBtn = Click mode; outer onclick handles it normally.
+        }, true); // capture phase runs before onclick
+      }
+
+      var answerBarShown = false;
+      function showAnswerBar() {
+        if (answerBarShown) return;
+        answerBarShown = true;
+        answerBar.style.display = 'flex';
+      }
+
+      // ── Move #ident-toggle-row to toolbar, #ident-progress-container to answer bar ──
+      if (identActions && toolbarSlot) {
+        var actionsObs = new MutationObserver(function(mutations) {
+          mutations.forEach(function(m) {
+            m.addedNodes.forEach(function(node) {
+              if (!node.id) return;
+              if (node.id === 'ident-toggle-row') {
+                toolbarSlot.appendChild(node);
+                toolbarSep.style.display = '';
+                showAnswerBar();
+              }
+              if (node.id === 'ident-progress-container') {
+                // Insert at front of answer bar (before the submit button)
+                answerBar.insertBefore(node, answerBar.firstChild);
+                showAnswerBar();
+              }
+            });
+          });
+        });
+        actionsObs.observe(identActions, { childList: true });
+      }
+
+      // ── Watch for #ident-input-container inserted after #identification-actions ──
+      // JS does: $('#identification-actions').after($container)
+      // So it lands as a sibling inside .s-control-bar. We move it into #s-answer-bar.
+      if (controlBar && answerBar) {
+        var controlObs = new MutationObserver(function(mutations) {
+          mutations.forEach(function(m) {
+            m.addedNodes.forEach(function(node) {
+              if (node.id === 'ident-input-container') {
+                // Move into answer bar, before the submit button
+                answerBar.insertBefore(node, submitBtn);
+                showAnswerBar();
+              }
+            });
+          });
+        });
+        controlObs.observe(controlBar, { childList: true });
+      }
+
+      // ── Click/Type mode: disable .text-id-field in Click mode ──
+      function getCurrentInputMode() {
+        var container = document.querySelector('#ident-toolbar-slot #ident-input-toggle-container');
+        if (!container) return 'dropdown';
+        var active = container.querySelector('.mode-option.active');
+        var text = active ? (active.textContent || '').trim().toLowerCase() : '';
+        return text === 'type' ? 'text' : 'dropdown';
+      }
+
+      function syncTextFieldDisabled() {
+        var field = document.querySelector('#ident-input-container .text-id-field');
+        if (!field) return;
+        var isClick = getCurrentInputMode() === 'dropdown';
+        field.disabled = isClick;
+        if (isClick) {
+          field.setAttribute('placeholder', 'Click the ? labels on the score');
+        } else {
+          field.setAttribute('placeholder', 'e.g. C D E F');
+        }
+      }
+
+      // Sync disabled state whenever Click/Type toggle changes active class
+      if (toolbarSlot) {
+        new MutationObserver(syncTextFieldDisabled)
+          .observe(toolbarSlot, { attributes: true, subtree: true, attributeFilter: ['class'] });
+      }
+      // Sync whenever answer bar children change (e.g. #ident-input-container moves in)
+      // or when .text-id-field is (re)built inside the container
+      if (answerBar) {
+        new MutationObserver(syncTextFieldDisabled)
+          .observe(answerBar, { childList: true, subtree: true });
+      }
+
+
+      // ── Hint: settings nudge ───────────────────────────────
+      var hintShown = sessionStorage.getItem('hl_settings_hint_shown');
+      if (!hintShown) {
+        var hintTimer = setTimeout(function() {
+          if (overlay.classList.contains('open')) return;
+          var piano = document.getElementById('piano');
+          if (!piano) return;
+          var hint = document.createElement('div');
+          hint.id = 's-settings-hint';
+          hint.style.cssText = [
+            'margin: 6px 12px 0',
+            'padding: 6px 12px',
+            'border: 1px solid var(--teal-mid)',
+            'border-radius: var(--radius)',
+            'background: var(--teal-pale)',
+            'color: #1a4a56',
+            'font-size: 0.78rem',
+            'font-family: var(--font-body)',
+            'display: flex',
+            'align-items: center',
+            'justify-content: space-between',
+            'gap: 8px',
+          ].join(';');
+          hint.innerHTML = '<span>Tip: use <strong>⚙ Settings</strong> to change keyboard input mode or adjust volume.</span>'
+            + '<button style="background:none;border:none;color:#1a4a56;cursor:pointer;font-size:1rem;padding:0;line-height:1;" aria-label="Dismiss">✕</button>';
+          piano.after(hint);
+          hint.querySelector('button').addEventListener('click', function() {
+            hint.remove();
+            sessionStorage.setItem('hl_settings_hint_shown', '1');
+          });
+          sessionStorage.setItem('hl_settings_hint_shown', '1');
+        }, 8000);
+
+        openBtns.forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            clearTimeout(hintTimer);
+            sessionStorage.setItem('hl_settings_hint_shown', '1');
+          });
+        });
+      }
+
     });
   </script>
 {% endblock %}
