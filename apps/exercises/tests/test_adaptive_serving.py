@@ -4,8 +4,21 @@ from apps.exercises.models import Exercise, Playlist, Course, ExercisePlaylistOr
 from apps.exercises.mastery import get_next_exercise
 from apps.exercises.skill_graph import ALL_SKILL_TAGS, DEFAULT_PREREQUISITES
 from apps.exercises.tests.umto_test_helpers import make_umto_exercise
+from apps.exercises.umto import InteractionMode
+from apps.exercises.umto_factory import save_umto_exercise
 
 User = get_user_model()
+
+
+def _single_note_cir(step):
+    return {
+        "meta": {"key": "C", "time": "4/4"},
+        "measures": [{
+            "staves": {"treble": {"voices": [{"items": [
+                {"kind": "note", "pitch": {"step": step, "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}},
+            ]}]}}
+        }]
+    }
 
 class AdaptiveServingTests(TestCase):
     def setUp(self):
@@ -115,3 +128,82 @@ class AdaptiveServingTests(TestCase):
         # It should fallback to stars or pool. 
         # For this test, we just want to ensure that if Note_Names was the ONLY target 
         # it would be skipped.
+
+    def test_next_step_avoids_immediate_content_repeat_when_alternative_exists(self):
+        repeated_a = save_umto_exercise(
+            description="Repeated content A",
+            score_data=_single_note_cir("C"),
+            author=self.teacher,
+            skill_tags=["Note_Names"],
+            complexity=1,
+            umto_kwargs=dict(
+                exercise_id="TEMP",
+                source="Repeated content A",
+                key="C",
+                meter="4/4",
+                clef="treble",
+                complexity_score=1,
+                mode=InteractionMode.PLAYBACK,
+                target_voice="soprano",
+                unit=1,
+            ),
+        )
+        repeated_b = save_umto_exercise(
+            description="Repeated content B",
+            score_data=_single_note_cir("C"),
+            author=self.teacher,
+            skill_tags=["Note_Names"],
+            complexity=1,
+            umto_kwargs=dict(
+                exercise_id="TEMP",
+                source="Repeated content B",
+                key="C",
+                meter="4/4",
+                clef="treble",
+                complexity_score=1,
+                mode=InteractionMode.PLAYBACK,
+                target_voice="soprano",
+                unit=1,
+            ),
+        )
+        alternate = save_umto_exercise(
+            description="Alternate content",
+            score_data=_single_note_cir("D"),
+            author=self.teacher,
+            skill_tags=["Note_Names"],
+            complexity=1,
+            umto_kwargs=dict(
+                exercise_id="TEMP",
+                source="Alternate content",
+                key="C",
+                meter="4/4",
+                clef="treble",
+                complexity_score=1,
+                mode=InteractionMode.PLAYBACK,
+                target_voice="soprano",
+                unit=1,
+            ),
+        )
+        playlist = Playlist.objects.create(
+            _id=19100,
+            name="Adaptive Repeat Guard",
+            authored_by=self.teacher,
+            is_public=True,
+            is_adaptive=True,
+        )
+        ExercisePlaylistOrdered.objects.create(exercise=repeated_a, playlist=playlist, order=1, is_adaptive_entry=True)
+        ExercisePlaylistOrdered.objects.create(exercise=repeated_b, playlist=playlist, order=2)
+        ExercisePlaylistOrdered.objects.create(exercise=alternate, playlist=playlist, order=3)
+
+        from apps.exercises.models import PerformanceData
+        PerformanceData.objects.create(
+            user=self.user,
+            playlist=playlist,
+            course=None,
+            data=[{"id": repeated_a.id, "score_numerator": 1, "score_denominator": 1, "error_tally": 0}],
+        )
+
+        exercise, key = get_next_exercise(self.user.id, playlist=playlist, exercise_num=2, seed="step-2")
+
+        self.assertEqual(exercise.id, alternate.id)
+        self.assertIsNone(key)

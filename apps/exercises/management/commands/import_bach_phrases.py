@@ -11,6 +11,15 @@ from apps.exercises.umto_factory import save_umto_exercise
 from apps.exercises.utils.m21_cir_converter import m21_to_cir
 from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
 
+
+def _description_exists(description: str, authored_by=None) -> bool:
+    from apps.exercises.models import Exercise
+    qs = Exercise.objects.filter(description=description)
+    if authored_by is not None:
+        qs = qs.filter(authored_by=authored_by)
+    return qs.exists()
+
+
 class Command(BaseCommand):
     help = 'Import a Bach chorale and split it into phrases based on fermatas.'
 
@@ -22,6 +31,9 @@ class Command(BaseCommand):
         parser.add_argument('--mode', type=str, choices=['play', 'roman', 'figures', 'matching'], default='play', help='Exercise mode')
         parser.add_argument('--min-measures', type=int, default=3, help='Minimum measures per phrase')
         parser.add_argument('--dry-run', action='store_true', help='Show phrase ranges without creating exercises')
+        parser.add_argument('--public', action='store_true', help='Mark imported exercises as public')
+        parser.add_argument('--extra-tags', nargs='*', default=[], metavar='TAG',
+                            help='Additional skill tags stamped on every imported exercise')
 
     def handle(self, *args, **options):
         bwv_num = options.get('bwv')
@@ -201,18 +213,24 @@ class Command(BaseCommand):
 
             try:
                 detected_skills, detected_complexity = analyze_chunk_skills(phrase_score, m21_key.tonicPitchNameWithCase)
+                detected_complexity = max(1, min(12, detected_complexity))
+                playlist_complexity = max(1, min(10, detected_complexity))
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f"  Skills analysis failed: {e}"))
-                detected_skills, detected_complexity = [], 1
+                detected_skills, detected_complexity, playlist_complexity = [], 1, 1
 
             # Convert to CIR JSON
             cir_data = m21_to_cir(phrase_score, key_override=harmony_key)
             
             # 4. Map to UMTO Interaction Mode
+            # `roman` and `figures` are label-entry exercises (show prompts/slots),
+            # while `matching` is the inverse mode (label shown, play the pitch).
             if mode == 'play':
                 umto_mode = InteractionMode.PLAYBACK
-            else:
+            elif mode == 'matching':
                 umto_mode = InteractionMode.ANALYSIS_MATCH
+            else:
+                umto_mode = InteractionMode.IDENTIFICATION
             
             # 5. Build Intro Text
             if mode == 'figures':
@@ -222,16 +240,21 @@ class Command(BaseCommand):
             else:
                 intro_text = f"Play all four voices of this Bach phrase (BWV {bwv_display}, mm. {start_m}-{end_m})."
 
-            description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m})"
+            description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m}) [{mode}]"
+
+            if _description_exists(description[:60], authored_by=author):
+                self.stdout.write(self.style.WARNING(f"  Skipping (exists): {description[:60]}"))
+                start_m = end_m + 1
+                continue
             
             # Create the Exercise via UMTO factory
             ex = save_umto_exercise(
                 description=description[:60],
                 score_data=cir_data,
                 author=author,
-                skill_tags=detected_skills,
-                complexity=detected_complexity,
-                is_public=False,
+                skill_tags=list(set(detected_skills + options['extra_tags'])),
+                complexity=playlist_complexity,
+                is_public=options['public'],
                 umto_kwargs=dict(
                     exercise_id="TEMP",
                     source=intro_text,

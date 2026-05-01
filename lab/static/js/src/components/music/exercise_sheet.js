@@ -203,7 +203,7 @@ define([
       var analysisType = definition && definition.getAnalysisType
         ? definition.getAnalysisType()
         : "roman";
-      return analysisType === "note_name";
+      return analysisType === "note_name" || analysisType === "roman" || analysisType === "figured_bass";
     },
 
     _getRepresentableTextHydrationAnswers: function (answers) {
@@ -801,29 +801,10 @@ define([
       var inputMode = this._getIdentInputMode(definition);
       var grader = this.exerciseContext.grader;
       var identMode = this._currentMode;
-      var allProblems = definition.getProblems ? definition.getProblems() : [];
-      var visibleProblems = _.filter(allProblems, function (problem) {
-        return !(problem && problem.hidden);
-      });
-      var totalVisibleCount = visibleProblems.length;
-      var totalAnsweredCount = 0;
-      if (grader && grader.answers) {
-        for (var answerIndex = 0; answerIndex < allProblems.length; answerIndex++) {
-          if (
-            allProblems[answerIndex] &&
-            !allProblems[answerIndex].hidden &&
-            grader.answers[answerIndex] !== undefined &&
-            grader.answers[answerIndex] !== null &&
-            grader.answers[answerIndex] !== ''
-          ) {
-            totalAnsweredCount++;
-          }
-        }
-      }
 
       if (!slots.length) {
         if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
-          this._updateIdentificationProgressUI(totalAnsweredCount, totalVisibleCount);
+          this._updateIdentificationProgressUI(0, 0);
         }
         return;
       }
@@ -990,7 +971,7 @@ define([
       }
 
       if (identMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
-         this._updateIdentificationProgressUI(totalAnsweredCount, totalVisibleCount);
+        this._updateIdentificationProgressUI(answeredCount, visibleSlotCount);
       }
 
       ctx.font = origFont;
@@ -1592,26 +1573,30 @@ define([
           var wantsChordLabels = !!display.showChordLabels;
           var isAnalysisMatchMode = !!(definition.isAnalysisMatch && definition.isAnalysisMatch());
           var wantsNoteNames = !!display.showNoteNames || isAnalysisMatchMode;
+          var isChoraleIdentification = this._isChoraleIdentificationExercise();
 
 
           // In chorale identification mode the figures/Romans ARE the student's
           // answers — rendering them via VexFlow would spoil the exercise.
           // The identification overlay draws "?" slots instead.
-          if (this._isChoraleIdentificationExercise()) {
+          if (isChoraleIdentification) {
             wantsRomans = false;
             wantsFigures = false;
             wantsChordLabels = false;
             wantsNoteNames = false;
-            if (analyzeConfig.mode) {
-              analyzeConfig.mode.note_names = false;
-            }
+            analyzeConfig.enabled = false;
+            analyzeConfig.mode = analyzeConfig.mode || {};
+            analyzeConfig.mode.roman_numerals = false;
+            analyzeConfig.mode.thoroughbass = false;
+            analyzeConfig.mode.chord_labels = false;
+            analyzeConfig.mode.note_names = false;
           }
 
           var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsNoteNames;
 
           // Preserve legacy chorale behavior that force-enables roman numerals,
           // but do not force overlays for chorale_identification.
-          if (!wantsAnalysis && definition.isChorale && definition.isChorale() && !isAnalysisMatchMode) {
+          if (!wantsAnalysis && definition.isChorale && definition.isChorale() && !isAnalysisMatchMode && !isChoraleIdentification) {
             wantsRomans = true;
             wantsAnalysis = true;
           }
@@ -1650,7 +1635,7 @@ define([
               : null;
 
           // In chorale-identification mode we want notation rendered in black from the start.
-          if (this._isChoraleIdentificationExercise()) {
+          if (isChoraleIdentification) {
             playedNoteIdsForRender = new Set();
             _.each(ScoreTimeline.buildTimeline(score) || [], function (ev) {
               if (ev && typeof ev.id === 'number') {

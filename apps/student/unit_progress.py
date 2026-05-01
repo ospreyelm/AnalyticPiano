@@ -51,19 +51,32 @@ def _get_skill_level(user, skill_tag: str) -> str:
     return StudentSkillMastery.LEVEL_NOT_STARTED
 
 
-def _get_playlists_for_unit(unit_tags: list[str]) -> list[Playlist]:
+def _get_playlists_for_unit(unit_tags: list[str], unit_n: str | None = None) -> list[Playlist]:
     """
-    Return all Playlist rows whose skill_tags overlap with the unit's tag list.
+    Return all Playlist rows tied to a unit by either:
+    - overlap with taxonomy unit tags, or
+    - explicit unit tag (e.g. unit:11) in playlist tags/skill_tags.
+
     Uses a Python-level set intersection after a broad DB query so that we don't
     rely on database-specific array-overlap operators.
     """
     unit_tag_set = set(unit_tags)
+    explicit_unit_tag = f"unit:{unit_n}" if unit_n is not None else None
     # Fetch all playlists that have at least one skill_tag (non-empty).
     # We then filter in Python to find those whose skill_tags intersect unit_tags.
     candidate_playlists = Playlist.objects.exclude(skill_tags=[])
     matching = [
         pl for pl in candidate_playlists
-        if unit_tag_set & set(pl.skill_tags or [])
+        if (
+            unit_tag_set & set(pl.skill_tags or [])
+            or (
+                explicit_unit_tag is not None
+                and (
+                    explicit_unit_tag in (pl.skill_tags or [])
+                    or explicit_unit_tag in (pl.tags or [])
+                )
+            )
+        )
     ]
     return matching
 
@@ -154,12 +167,25 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
 
     # Build playlist URL targeting the student exercise player
     from apps.exercises.taxonomy_reader import TaxonomyReader
-    unit_num = 1  # Default fallback for pilot
-    for tag in (playlist.skill_tags or []):
-        unit = TaxonomyReader.get_unit_for_tag(tag)
-        if unit:
-            unit_num = int(unit.get("n", 1))
-            break
+    unit_num = 1  # Default fallback
+    playlist_tags = list(playlist.tags or []) + list(playlist.skill_tags or [])
+
+    # First prefer explicit unit tags (e.g., unit:11), which are common on
+    # generated dynamic playlists.
+    for tag in playlist_tags:
+        if isinstance(tag, str) and tag.startswith("unit:"):
+            try:
+                unit_num = int(tag.split(":", 1)[1])
+                break
+            except (TypeError, ValueError):
+                continue
+    else:
+        # Fallback to taxonomy lookup for non-unit tags.
+        for tag in playlist_tags:
+            unit = TaxonomyReader.get_unit_for_tag(tag)
+            if unit:
+                unit_num = int(unit.get("n", 1))
+                break
 
     # Determine the next uncompleted exercise number
     next_exercise_num = 1
@@ -187,6 +213,44 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
 def _playlist_stats_by_id(user, playlist_id: str) -> dict:
     playlist = Playlist.objects.get(id=playlist_id)
     return _playlist_stats(user, playlist)
+
+
+def _dedupe_playlists_by_name(playlists: list[Playlist], user) -> list[Playlist]:
+    """
+    Reduce same-name playlist duplicates (often from different authors/test data)
+    to one visible row per display name.
+
+    Preference order:
+    1. playlists authored by the current user
+    2. newest playlist by created timestamp/_id
+    """
+    best_by_name: dict[str, Playlist] = {}
+
+    for pl in playlists:
+        key = (pl.name or pl.id).strip().lower()
+        current = best_by_name.get(key)
+        if current is None:
+            best_by_name[key] = pl
+            continue
+
+        pl_is_user = bool(getattr(pl, "authored_by_id", None) == getattr(user, "id", None))
+        cur_is_user = bool(getattr(current, "authored_by_id", None) == getattr(user, "id", None))
+
+        if pl_is_user and not cur_is_user:
+            best_by_name[key] = pl
+            continue
+        if cur_is_user and not pl_is_user:
+            continue
+
+        # Tie-breaker: most recently created / highest _id.
+        pl_created = getattr(pl, "created", None)
+        cur_created = getattr(current, "created", None)
+        if (pl_created and cur_created and pl_created > cur_created) or (
+            pl_created == cur_created and getattr(pl, "_id", 0) > getattr(current, "_id", 0)
+        ):
+            best_by_name[key] = pl
+
+    return sorted(best_by_name.values(), key=lambda p: (p.name or p.id).lower())
 
 
 def _playlist_progress_level(stats: dict) -> str:
@@ -439,12 +503,24 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
             )
     else:
         # --- Group playlists by skill tag ---
-        matching_playlists = _get_playlists_for_unit(unit_tags)
+        matching_playlists = _dedupe_playlists_by_name(
+            _get_playlists_for_unit(unit_tags, unit_n=unit_n),
+            user,
+        )
+        explicit_unit_tag = f"unit:{unit_n}"
 
         # Build a map: skill_tag -> [playlist_stat_dict, ...]
         tag_to_playlists: dict[str, list[dict]] = {tag: [] for tag in unit_tags}
         for playlist in matching_playlists:
             primary_tag = _playlist_primary_tag(playlist, unit_tags)
+            if primary_tag is None and unit_tags:
+                # Backward-compatibility fallback: older/generated unit playlists
+                # may only carry unit:N and no taxonomy skill tags.
+                if (
+                    explicit_unit_tag in (playlist.skill_tags or [])
+                    or explicit_unit_tag in (playlist.tags or [])
+                ):
+                    primary_tag = unit_tags[0]
             if primary_tag is None:
                 continue
             stats = _playlist_stats(user, playlist)

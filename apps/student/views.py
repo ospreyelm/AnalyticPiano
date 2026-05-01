@@ -22,8 +22,9 @@ from apps.exercises.models import (
     PlaylistCourseOrdered,
     StudentSkillMastery,
 )
-from lab.views import RequirejsContext, generate_exercise_context
+from lab.views import RequirejsContext, generate_exercise_context, get_adaptive_exercise_for_view
 from apps.student.player_progression import (
+    PlayerProgressState,
     get_completed_exercise_ids,
     is_completed_identification_attempt,
     resolve_requested_step,
@@ -283,10 +284,11 @@ class PlayerView(View):
 
         playlist = get_object_or_404(Playlist, id=playlist_id)
 
-        # Verify playlist belongs to Unit 1 (for Pilot)
+        # Verify playlist belongs to the requested unit.
         playlist_tags = (playlist.tags or []) + (playlist.skill_tags or [])
-        if "unit:1" not in playlist_tags:
-            raise Http404("Playlist not part of Unit 1.")
+        unit_tag = f"unit:{unit_num}"
+        if unit_tag not in playlist_tags:
+            raise Http404(f"Playlist not part of Unit {unit_num}.")
 
         try:
             exercise_num = int(request.GET.get("exercise_num", 1))
@@ -304,10 +306,16 @@ class PlayerView(View):
         )
         course = playlist_course.course if playlist_course else None
 
-        if exercise_num > playlist.exercise_count:
+        is_dynamic_or_adaptive = bool(playlist.is_dynamic or playlist.is_adaptive)
+
+        if not is_dynamic_or_adaptive and exercise_num > playlist.exercise_count:
             return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
 
-        state = resolve_requested_step(request.user, playlist, exercise_num)
+        if is_dynamic_or_adaptive:
+            state = PlayerProgressState(exercise_num=exercise_num, mode="progression")
+        else:
+            state = resolve_requested_step(request.user, playlist, exercise_num)
+
         if state.should_redirect:
             return redirect(
                 reverse("student:player", kwargs={"unit_num": unit_num})
@@ -316,7 +324,16 @@ class PlayerView(View):
 
         resolved_num = state.exercise_num
         exercise_num = resolved_num
-        exercise = playlist.get_exercise_obj_by_num(exercise_num)
+        if is_dynamic_or_adaptive:
+            exercise = get_adaptive_exercise_for_view(
+                request,
+                playlist,
+                exercise_num,
+                course.id if course else None,
+            )
+        else:
+            exercise = playlist.get_exercise_obj_by_num(exercise_num)
+
         if not exercise:
             return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
 
@@ -368,6 +385,9 @@ class PlayerView(View):
                 next_num = next_pending
             else:
                 next_num = None
+        elif is_dynamic_or_adaptive:
+            prev_num = resolved_num - 1 if resolved_num > 1 else None
+            next_num = resolved_num + 1
         else:
             prev_num = resolved_num - 1 if resolved_num > 1 else None
             next_num = resolved_num + 1 if resolved_num < playlist.exercise_count else None
@@ -412,7 +432,7 @@ class PlayerView(View):
             "unit_num": unit_num,
             "playlist": playlist,
             "exercise_num": exercise_num,
-            "total_exercises": playlist.exercise_count,
+            "total_exercises": playlist.exercise_count if playlist.exercise_count > 0 else exercise_num,
             "is_review_mode": state.mode == "review",
             "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
         }

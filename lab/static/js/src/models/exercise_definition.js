@@ -368,7 +368,12 @@ define([
         var cleanLabel = stripFiguredBassTokens(chord.label);
         return normalizeAnalysisLabel(cleanLabel);
       }
-      return normalizeAnalysisLabel(chord);
+      // Some analyzer paths may return a rich object with no `.label`.
+      // Never stringify arbitrary objects into "[object Object]" labels.
+      if (typeof chord === "string") {
+        return normalizeAnalysisLabel(chord);
+      }
+      return "";
     } catch (_err) {
       return "";
     }
@@ -499,11 +504,33 @@ define([
     const umto = exercise.score.umto;
     if (!umto) return [];
 
-    const problems = [];
+    const rawProblems = [];
     const analysisType = exercise.analysisType || "roman";
     const hlKey = exercise.key;
     const keySignature = new KeySignature(hlKey, exercise.keySignature);
     const analyzer = new Analyze(keySignature);
+    const score = exercise.score || {};
+    const timeline = ScoreTimeline && ScoreTimeline.buildTimeline
+      ? ScoreTimeline.buildTimeline(score)
+      : [];
+    const windows = buildAnalysisWindows(timeline);
+
+    function getWindowMeta(sliceOffset, idx) {
+      if (windows && windows[idx]) {
+        var win = windows[idx];
+        var firstEv = win.events && win.events.length ? win.events[0] : null;
+        return {
+          measureIndex: firstEv && typeof firstEv.measureIndex === "number" ? firstEv.measureIndex : 0,
+          onset: typeof win.onset === "number" ? win.onset : sliceOffset,
+            hasSlot: true,
+        };
+      }
+      return {
+        measureIndex: 0,
+        onset: sliceOffset,
+          hasSlot: false,
+      };
+    }
 
     // Map UMTO analysis slices to problems
     _.each(umto.analysis, function (slice, idx) {
@@ -541,23 +568,61 @@ define([
               isTarget = false;
           }
       }
+
+      // Fallback for SATB UMTO imports where analysis slices are intentionally blank:
+      // derive the expected label directly from grading pitch content.
+      if (!answer && gradingMatch && gradingMatch.target_midi_pitches && gradingMatch.target_midi_pitches.length > 0) {
+        answer = computeWindowLabel(
+          gradingMatch.target_midi_pitches,
+          analysisType,
+          analyzer,
+          false,
+          []
+        ) || "";
+      }
       
       console.log("[ID] Problem built:", idx, "offset:", slice.offset, "answer:", answer, "isTarget:", isTarget);
 
-      problems.push({
+      var winMeta = getWindowMeta(slice.offset, idx);
+
+      rawProblems.push({
         windowIndex: idx,
-        measureIndex: 0,
-        onset: slice.offset,
+        measureIndex: winMeta.measureIndex,
+        onset: winMeta.onset,
         answer: normalizeAnalysisLabel(answer),
-        choices: exercise.allowed_answers || [],
-        hidden: !answer || !isTarget,
+        choices: [],
+        hidden: !answer || !isTarget || !winMeta.hasSlot,
         visible: (gradingMatch && gradingMatch.target_midi_pitches) ? gradingMatch.target_midi_pitches : [],
         notes: pitchesAtOffset.map(p => p.midi),
         rhythm: "q"
       });
     });
 
-    return problems;
+    var allAnswers = [];
+    var answerSeen = {};
+    _.each(rawProblems, function (p) {
+      var ans = p && p.answer ? p.answer : null;
+      if (!ans) {
+        return;
+      }
+      if (!answerSeen[ans]) {
+        answerSeen[ans] = true;
+        allAnswers.push(ans);
+      }
+    });
+    var explicitAllowedAnswers = exercise.allowed_answers || [];
+
+    return _.map(rawProblems, function (problem) {
+      var next = _.assign({}, problem);
+      if (explicitAllowedAnswers.length > 0) {
+        next.choices = _.map(explicitAllowedAnswers.slice(), normalizeAnalysisLabel);
+      } else if (next.answer) {
+        next.choices = _.map(buildChoices(next.answer, allAnswers, analysisType, false), normalizeAnalysisLabel);
+      } else {
+        next.choices = [];
+      }
+      return next;
+    });
   }
 
   /**
