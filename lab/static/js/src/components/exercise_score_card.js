@@ -352,8 +352,10 @@ define([
     if (tryAgainEl) {
       tryAgainEl.addEventListener("click", function () {
         self.hide();
-        // Reload current exercise
-        if (window.location) window.location.reload();
+        var resetLink = document.querySelector(".js-btn-pristine");
+        if (resetLink) {
+          resetLink.click();
+        }
       });
     }
     // CTA button without href (no next URL, non-low score): hide card and let auto-advance handle it

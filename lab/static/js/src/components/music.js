@@ -196,22 +196,44 @@ define([
         // The following was used to generate newData as we built this function
         // let currentData = JSON.stringify(setdef.settings.definition, null, 0);
         let newData = {};
-        // var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
-        if (exerciseAction === "reload") {
+        function loadDefinition(targetExerciseNum, targetExerciseId) {
+          var requestUrl = window.PLAYER_DEFINITION_URL || "definition";
+          var requestData;
+
+          if (window.PLAYER_DEFINITION_URL) {
+            requestData = {
+              playlist: setdef.settings.definition.playlistId,
+              exercise_num: targetExerciseNum,
+            };
+          } else {
+            requestData = {
+              playlist_name: setdef.settings.definition.playlistName,
+              exercise_id: targetExerciseId,
+              exercise_num: targetExerciseNum,
+            };
+          }
+
           $.ajax({
             type: "GET",
-            url: "definition",
+            url: requestUrl,
             async: false,
-            data: {
-              playlist_name: setdef.settings.definition.playlistName,
-              exercise_id: setdef.settings.definition.exerciseId,
-              exercise_num: setdef.settings.definition.exerciseNum,
-            },
+            data: requestData,
             dataType: "json",
             success: function (data) {
+              if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+              }
               newData = data;
             },
           });
+        }
+        // var testing = (window.location.href.split(".")[0].slice(-5) == "-beta" ? true : false);
+        if (exerciseAction === "reload") {
+          loadDefinition(
+            setdef.settings.definition.exerciseNum,
+            setdef.settings.definition.exerciseId
+          );
 
           if (!Object.keys(newData).length) {
             console.log("Error reloading exercise data!");
@@ -221,25 +243,10 @@ define([
           exerciseAction === "next" &&
           setdef.settings.definition.nextExerciseId
         ) {
-          if (setdef.settings.definition.forceRedirect)
-            window.location.href = setdef.settings.definition.nextExercise;
-          else
-            $.ajax({
-              type: "GET",
-              url: "definition",
-              async: false,
-              data: {
-                playlist_name: setdef.settings.definition.playlistName,
-                exercise_id: setdef.settings.definition.nextExerciseId,
-                exercise_num: setdef.settings.definition.nextExerciseNum,
-              },
-              dataType: "json",
-              success: function (data) {
-                if (setdef.settings.definition.nextExerciseId) {
-                  newData = data;
-                }
-              },
-            });
+          loadDefinition(
+            setdef.settings.definition.nextExerciseNum,
+            setdef.settings.definition.nextExerciseId
+          );
 
           if (!Object.keys(newData).length) {
             console.log("No next exercise; end of playlist");
@@ -249,45 +256,17 @@ define([
           exerciseAction === "previous" &&
           setdef.settings.definition.previousExerciseId
         ) {
-          if (setdef.settings.definition.forceRedirect)
-            window.location.href = setdef.settings.definition.previousExercise;
-          else
-            $.ajax({
-              type: "GET",
-              url: "definition",
-              async: false,
-              data: {
-                playlist_name: setdef.settings.definition.playlistName,
-                exercise_id: setdef.settings.definition.previousExerciseId,
-                exercise_num: setdef.settings.definition.previousExerciseNum,
-              },
-              dataType: "json",
-              success: function (data) {
-                if (setdef.settings.definition.previousExerciseId) {
-                  newData = data;
-                }
-              },
-            });
+          loadDefinition(
+            setdef.settings.definition.previousExerciseNum,
+            setdef.settings.definition.previousExerciseId
+          );
 
           if (!Object.keys(newData).length) {
             console.log("No previous exercise; start of playlist");
             return null;
           }
         } else if (exerciseAction === "first") {
-          $.ajax({
-            type: "GET",
-            url: "definition",
-            async: false,
-            data: {
-              playlist_name: setdef.settings.definition.playlistName,
-              exercise_id: setdef.settings.definition.firstExerciseId,
-              exercise_num: 1,
-            },
-            dataType: "json",
-            success: function (data) {
-              newData = data;
-            },
-          });
+          loadDefinition(1, setdef.settings.definition.firstExerciseId);
 
           if (!Object.keys(newData).length) {
             console.log("Error finding first exercise!");
@@ -307,7 +286,7 @@ define([
 
         // TODO: work in progress code to enable URL to change dynamically with exercise without refreshing
         //   postponed because of wide range of intersections/conflicts with Django's view features
-        if (!!newData?.exerciseNum) {
+        if (!!newData?.exerciseNum && !window.PLAYER_DEFINITION_URL) {
           const newPath = location.pathname.split("/").slice(0, -2);
           newPath.push(newData.exerciseNum);
           newPath.push("");
@@ -322,6 +301,10 @@ define([
           scex.settings.definition.exercise = scex.definition.parse(newData);
 
           scex.settings.definition.settings.definition = newData;
+
+          if (window.refreshPlayerChrome) {
+            window.refreshPlayerChrome(newData);
+          }
 
           sheetComponent.keySignature = new KeySignature(
             newData.key,
