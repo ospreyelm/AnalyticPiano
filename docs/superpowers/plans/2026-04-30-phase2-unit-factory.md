@@ -82,9 +82,10 @@ Create `apps/exercises/tests/test_create_unit_playlist.py`:
 
 ```python
 from unittest.mock import patch, call
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
 
 from apps.exercises.models import Exercise, Playlist
 from apps.exercises.tests.umto_test_helpers import make_umto_exercise
@@ -107,7 +108,7 @@ class ImportBachPhrasesIdempotencyTest(TestCase):
             author=self.author,
             skill_tags=[],
             complexity=1,
-            description="Bach R1 - Phrase 1 (mm.1-4)",
+            description="Bach R1 - Phrase 1 (mm.1-4) [roman]",
         )
         count_before = Exercise.objects.count()
 
@@ -119,8 +120,9 @@ class ImportBachPhrasesIdempotencyTest(TestCase):
         from apps.exercises.management.commands.import_bach_phrases import (
             _description_exists,
         )
-        self.assertTrue(_description_exists("Bach R1 - Phrase 1 (mm.1-4)"))
-        self.assertFalse(_description_exists("Bach R1 - Phrase 99 (mm.99-200)"))
+        self.assertTrue(_description_exists("Bach R1 - Phrase 1 (mm.1-4) [roman]"))
+        self.assertFalse(_description_exists("Bach R1 - Phrase 1 (mm.1-4) [play]"))  # different mode = not a duplicate
+        self.assertFalse(_description_exists("Bach R1 - Phrase 99 (mm.99-200) [roman]"))
 
         self.assertEqual(Exercise.objects.count(), count_before)
 ```
@@ -147,6 +149,13 @@ Inside `handle`, find the block that builds `description` (around line 225):
 ```python
 description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m})"
 ```
+
+Replace that line with:
+```python
+description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m}) [{mode}]"
+```
+
+This scopes the description to the mode so that importing the same chorale in `roman` and later in `play` creates two distinct exercises rather than the second being skipped as a duplicate.
 
 Immediately after that line, add:
 ```python
@@ -229,7 +238,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.exercises.models import Playlist
 
-TAXONOMY_PATH = Path(__file__).resolve().parents[5] / "music_theory_taxonomy_with_branches.json"
+TAXONOMY_PATH = Path(__file__).resolve().parents[4] / "music_theory_taxonomy_with_branches.json"
 
 User = get_user_model()
 
@@ -455,8 +464,8 @@ def handle(self, *args, **options):
 
     playlist, created = Playlist.objects.get_or_create(
         name=playlist_name,
+        authored_by=author,
         defaults=dict(
-            authored_by=author,
             is_dynamic=True,
             is_adaptive=True,
             skill_tags=[unit_tag],
