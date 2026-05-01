@@ -11,5 +11,6 @@ urlpatterns = [
     path("units/<str:unit_n>/", views.UnitProgressView.as_view(), name="unit-progress"),
     path("units/<int:unit_num>/", views.UnitView.as_view(), name="unit"),
     path("units/<int:unit_num>/play/", views.PlayerView.as_view(), name="player"),
+    path("units/<int:unit_num>/play/definition/", views.PlayerDefinitionView.as_view(), name="player-definition"),
     path("unit1-challenge/<str:group_key>/", views.ChallengeView.as_view(), name="unit1-challenge"),
 ]

@@ -1,78 +1,106 @@
-# SPA-Like Exercise Navigation Design
+# Minimal SPA Exercise Navigation for Student Player
 
 **Date:** 2026-04-30  
-**Status:** Approved  
+**Status:** Revised / Minimal Scope  
 **Branch:** student player
 
 ---
 
 ## Problem
 
-Student player does a full page reload on every next/previous exercise transition. `PlayerView` sets `exercise_context["forceRedirect"] = True`, which causes JS to do `window.location.href = ...` instead of using the existing AJAX path. The AJAX infrastructure already exists in `music.js` but uses `playlist_name` + `exercise_id` params that don't match the student player's `playlist_id` + `exercise_num` scheme.
+The student player does a full page reload on next/previous/retry because `PlayerView` forces redirect behavior by setting `exercise_context["forceRedirect"] = True`.
+
+The lab already has client-side exercise replacement logic in `music.js`. That logic does **not** need to be rebuilt. What is missing in the student player is a compatible JSON endpoint and a small amount of student-specific state refresh after the AJAX load.
 
 ---
 
-## Goal
+## What We Can Reuse
 
-Next/previous/retry transitions in the student player feel instant — no full page reload. URL stays fixed at the initial exercise (no `history.pushState`). Deep-linking and back/forward work via the existing full-page load path.
+### Reuse as-is
+
+- `generate_exercise_context()` in `lab/views.py` already builds the core exercise payload the frontend expects.
+- `music.js` already knows how to fetch a new definition and swap the active exercise without a full page reload.
+- Existing exercise-sheet / grader reset behavior is already mostly in place and should continue to work after AJAX transitions.
+
+### Student-specific additions that must remain
+
+The student player adds behavior that the lab does not have:
+
+- progression / review gating via `resolve_requested_step()`
+- student-specific next / previous rules in review mode
+- unit membership validation
+- student-only banners and header state in `player.html`
+
+So the right approach is:
+
+- keep the existing lab-side AJAX replacement mechanism
+- add a **student** definition endpoint that returns the same payload shape, but with student progression logic applied
 
 ---
 
-## Approach: Extract context builder, add JSON endpoint
+## Non-Goal
 
-Pull `PlayerView.get()`'s body into a shared function. `PlayerView` calls it and renders the template. A new `PlayerDefinitionView` calls it and returns JSON. JS sends AJAX requests to the new endpoint instead of doing `window.location.href`.
+Do **not** refactor the lab navigation system or preserve the old student full-reload behavior.
+
+Do **not** extract a large shared `build_player_exercise_context()` helper unless it becomes necessary during implementation. That is optional cleanup, not part of the minimum change.
+
+Do **not** treat this as an `exercise_id` vs `exercise_num` migration project. The existing playlist refresh flow already navigates primarily by `exercise_num`.
 
 ---
 
-## Backend
+## Minimal Backend Change
 
-### `build_player_exercise_context(request, unit_num, playlist, exercise_num)`
+### Add `PlayerDefinitionView`
 
-Extract from `PlayerView.get()` into a module-level function in `apps/student/views.py`.
+Add a new JSON endpoint in `apps/student/views.py` that:
 
-Returns either:
-- A `dict` — the full exercise context (same fields currently embedded in the page)
-- An `HttpResponseRedirect` — when `resolve_requested_step` returns `should_redirect=True`
+1. Reads `playlist` and `exercise_num` from query params.
+2. Loads the playlist.
+3. Enforces the same unit validation currently done in `PlayerView`.
+4. Applies `resolve_requested_step()`.
+5. If progression rules reject the requested step, returns:
 
-Add two new fields to the returned dict:
-- `totalExercises` (integer) — `playlist.exercise_count`
-- `playlistId` (string) — `playlist.id` — needed by JS to construct AJAX params
-
-The `unit:1` tag validation currently in `PlayerView.get()` must be preserved inside `build_player_exercise_context` (raise `Http404` if tag absent), so `PlayerDefinitionView` also enforces it.
-
-### `PlayerView` (unchanged behavior)
-
-Calls `build_player_exercise_context`. If result is a redirect, returns it. Otherwise renders `student/player.html` with the context. Remove `exercise_context["forceRedirect"] = True`.
-
-### `PlayerDefinitionView` (new)
-
-```python
-class PlayerDefinitionView(View):
-    @_require_student
-    def get(self, request, unit_num):
-        playlist_id = request.GET.get("playlist")
-        exercise_num = int(request.GET.get("exercise_num", 1))
-        playlist = get_object_or_404(Playlist, id=playlist_id)
-        result = build_player_exercise_context(request, unit_num, playlist, exercise_num)
-        if isinstance(result, HttpResponseRedirect):
-            return JsonResponse({"redirect": result.url})
-        return JsonResponse(result)
+```json
+{ "redirect": "/student/units/1/play/?playlist=...&exercise_num=..." }
 ```
 
-### New URL
+6. Otherwise builds the same exercise context currently produced by `PlayerView`, including:
+   - `reviewMode`
+   - `playerMode`
+   - `reviewAnswers` when applicable
+   - student-specific `nextExercise`, `nextExerciseNum`, `nextExerciseId`
+   - student-specific `previousExercise`, `previousExerciseNum`, `previousExerciseId`
+   - `disableComputerKeyboardInput`
+7. Adds:
+   - `playlistId`
+   - `totalExercises`
+8. Returns `JsonResponse(exercise_context)`.
+
+### Keep `PlayerView`, but simplify it
+
+`PlayerView` should continue rendering the initial full page load for deep links and back/forward behavior.
+
+Minimum behavioral changes:
+
+- stop setting `forceRedirect = True`
+- add `playlistId` and `totalExercises` to the embedded definition payload
+- keep all existing student progression/review logic for the initial render
+
+### URL
+
+Add:
 
 ```python
-# apps/student/urls.py
 path("units/<int:unit_num>/play/definition/", PlayerDefinitionView.as_view(), name="player-definition")
 ```
 
 ---
 
-## Frontend
+## Minimal Frontend Change
 
-### Embed endpoint URL + unit_num in player.html
+### 1. Point AJAX reloads to the student endpoint
 
-Add to `player.html` template (small script block):
+In `player.html`, expose the endpoint:
 
 ```html
 <script>
@@ -80,35 +108,26 @@ Add to `player.html` template (small script block):
 </script>
 ```
 
-### Remove forceRedirect
+In `lab/static/js/src/components/music.js`, keep the existing AJAX replacement flow but change the request target and params for student player loads:
 
-With `forceRedirect` gone from the context, `music.js` falls through to the AJAX branch for next/prev automatically. No JS flag removal needed — the branch is already `if (forceRedirect) redirect; else ajax`.
+- URL: `window.PLAYER_DEFINITION_URL`
+- params:
 
-### Fix param mismatch in music.js
-
-All four AJAX calls in `music.js` (reload, next, previous, first) currently send:
 ```javascript
-url: "definition",
-data: { playlist_name: ..., exercise_id: ..., exercise_num: ... }
+data: {
+  playlist: setdef.settings.definition.playlistId,
+  exercise_num: targetExerciseNum,
+}
 ```
 
-Change to:
-```javascript
-url: window.PLAYER_DEFINITION_URL,
-data: { playlist: setdef.settings.definition.playlistId, exercise_num: ... }
-```
+The current `playlist_name` / `exercise_id` values should not be used for the student player endpoint.
 
-`playlistId` must be present in the exercise context dict. Currently `playlistId` is not explicitly set — add it in `build_player_exercise_context` (it's `playlist.id`).
+### 2. Remove redirect-only branching for student navigation
 
-The `exercise_num` for each action:
-- `reload`: `setdef.settings.definition.exerciseNum`
-- `next`: `setdef.settings.definition.nextExerciseNum`
-- `previous`: `setdef.settings.definition.previousExerciseNum`
-- `first`: `1`
+Once `forceRedirect` is no longer injected by `PlayerView`, next/previous/reload can use the existing AJAX branch.
 
-### Redirect handling
+Add redirect handling for guarded cases:
 
-After each AJAX success callback, check:
 ```javascript
 if (data.redirect) {
   window.location.href = data.redirect;
@@ -116,77 +135,82 @@ if (data.redirect) {
 }
 ```
 
-This covers the rare case where progression enforcement rejects the requested step.
+### 3. Do not update browser history
 
-### No URL update
+Keep the existing page URL fixed. No `pushState` or `replaceState` for student transitions.
 
-URL stays fixed at the initial page load URL. No `history.pushState`. Deep-linking works via the full-page load path (`PlayerView`).
+The current history rewrite block in `music.js` should be disabled or bypassed for student-player AJAX transitions.
 
-### Header counter update
+### 4. Update student-only shell state after AJAX load
 
-`player.html` currently polls `#exercise-info` via `setInterval` to update `#js-player-current` / `#js-player-total`. After each AJAX load, update directly:
+After a successful AJAX transition, refresh the parts of `player.html` that are currently only correct on first render:
 
-```javascript
-var cur = document.getElementById('js-player-current');
-var tot = document.getElementById('js-player-total');
-if (cur) cur.textContent = newData.exerciseNum;
-if (tot && newData.totalExercises) tot.textContent = newData.totalExercises;
-```
+- header counter: `exerciseNum` / `totalExercises`
+- review-mode hint banner
+- MIDI-only / keyboard-disabled banner
 
-The `setInterval` polling can be removed once this is in place.
+A small helper in `player.html` is enough, e.g. `window.refreshPlayerChrome(newData)`.
 
-### Hint banner updates
+### 5. Retry should use the same AJAX path
 
-`is_review_mode` and `disable_computer_keyboard_input` banners are rendered server-side at page load. After AJAX transitions they must update from `newData`:
+In `exercise_score_card.js`, replace `window.location.reload()` with the same internal reload path used elsewhere so retry reloads the same exercise without a full page refresh.
 
-- `newData.reviewMode` → show/hide `.s-player-input-hint` review banner
-- `newData.disableComputerKeyboardInput` → show/hide MIDI-only banner
+This can be done with a small broadcast event or a direct call into the existing reload behavior.
 
-Add a `refreshPlayerBanners(newData)` helper in `player.html`'s script block. Called after each successful AJAX load in `music.js`.
+---
 
-### Chorale grader reset
+## Why This Is the Minimum
 
-The existing AJAX transition code in `music.js` (lines ~317-350) updates `scex.definition` and `scex.settings.definition` with the new data. Verify that `exercise_sheet.js` re-calls `grader.initFromDefinition(definition)` when the definition changes — if not, call it explicitly after updating the definition object. If the chorale grader is not active for the new exercise, this is a no-op.
+This keeps the existing exercise runtime intact and only replaces the missing integration points for the student player:
 
-### Retry (Reset)
+- a student-compatible definition endpoint
+- removal of forced full redirects
+- student shell refresh after definition swaps
+- retry using AJAX instead of hard reload
 
-`exercise_score_card.js` line 356: replace `window.location.reload()` with a broadcast or direct call that triggers the `exerciseAction === "reload"` path in `music.js`. The reload AJAX path already exists and fetches the same exercise. With the param fix above it will use the new endpoint.
+Everything else in the earlier spec is optional cleanup.
 
-Simplest implementation: `exercise_score_card.js` fires `EVENTS.BROADCAST.RELOAD` (add this event constant), `music.js` listens and calls `onExerciseAction("reload")`.
+---
+
+## Optional Cleanup (Not Required for MVP)
+
+These are reasonable follow-ups, but they should not block the first implementation:
+
+- extract shared `PlayerView` context assembly into a helper
+- unify lab and student definition endpoints behind a shared backend builder
+- remove remaining assumptions in `music.js` that every environment has a relative `definition` URL
+- split student-specific chrome refresh into a dedicated JS module
 
 ---
 
 ## Testing
 
-### Backend unit tests
+### Backend
 
-- `build_player_exercise_context` — progression redirect case, review mode, normal progression
-- `PlayerDefinitionView` — returns JSON with correct fields; returns `{"redirect": url}` when progression guard fires
-- Existing `test_player_progression.py` unchanged
+- `PlayerDefinitionView` returns JSON for a valid current step
+- `PlayerDefinitionView` returns `{ "redirect": url }` when progression guard rejects the request
+- `PlayerDefinitionView` includes `playlistId` and `totalExercises`
+- existing student progression tests for initial page loads remain green
 
-### Manual test checklist
+### Manual
 
-- [ ] Next/prev through playlist — no page reload, exercise updates
-- [ ] Retry (Reset) — same exercise reloads via AJAX, no page reload
-- [ ] Review mode banner updates on transition between review and progression exercises
-- [ ] `disable_computer_keyboard_input` banner updates on transition
-- [ ] Header counter (`1/12`) updates correctly on each transition
-- [ ] Chorale exercise: grader resets correctly on AJAX transition
-- [ ] Identification exercise: answers saved before navigate, fresh state on new exercise
-- [ ] End of playlist (no next): no crash, Next button inert
-- [ ] Start of playlist (no prev): no crash, Previous button inert
-- [ ] Progression guard: requesting skipped exercise via raw URL → full redirect still works
-- [ ] Lab playlist view (non-student player) unaffected
+- next / previous transitions update the exercise without full page reload
+- retry reloads the current exercise without full page reload
+- review-mode banner updates correctly between exercises
+- keyboard-disabled banner updates correctly between exercises
+- header counter updates correctly
+- chorale exercise resets correctly on AJAX transition
+- identification exercise saves state before navigation and restores correct new state after load
+- direct deep link still works through the full page render path
 
 ---
 
-## Files changed
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `apps/student/views.py` | Extract `build_player_exercise_context`; remove `forceRedirect`; add `PlayerDefinitionView` |
-| `apps/student/urls.py` | Add `player-definition` URL |
-| `apps/student/templates/student/player.html` | Embed `PLAYER_DEFINITION_URL`; add `refreshPlayerBanners`; update counter logic |
-| `lab/static/js/src/components/music.js` | Fix AJAX params (url + playlist_id + exercise_num); add redirect handling |
-| `lab/static/js/src/components/exercise_score_card.js` | Replace `window.location.reload()` with broadcast |
-| `lab/static/js/src/models/exercise_context.js` | Add `RELOAD` event constant (if not present) |
+| `apps/student/views.py` | Add `PlayerDefinitionView`; stop forcing redirect-only navigation in `PlayerView`; include `playlistId` and `totalExercises` |
+| `apps/student/urls.py` | Add `player-definition` route |
+| `apps/student/templates/student/player.html` | Expose definition endpoint URL and add helper to refresh student-specific chrome |
+| `lab/static/js/src/components/music.js` | Reuse existing AJAX swap flow, but target student endpoint, handle redirect payloads, and skip history rewrite for student player |
+| `lab/static/js/src/components/exercise_score_card.js` | Retry via AJAX reload path instead of `window.location.reload()` |

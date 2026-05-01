@@ -856,13 +856,13 @@
 
     <!-- Hint banners -->
     {% if disable_computer_keyboard_input %}
-      <div class="s-player-input-hint">
+      <div class="s-player-input-hint" data-player-hint="midi">
         Play using your MIDI keyboard or click the piano below. Any octave works.
       </div>
     {% endif %}
 
     {% if is_review_mode %}
-      <div class="s-player-input-hint">
+      <div class="s-player-input-hint" data-player-hint="review">
         Review mode — your result is preserved, practice freely.
       </div>
     {% endif %}
@@ -924,19 +924,46 @@
 {% block js_extra %}
   <script>require(['app/main']);</script>
   <script>
-    window.addEventListener('load', function () {
+    window.PLAYER_DEFINITION_URL = "{% url 'student:player-definition' unit_num=unit_num %}";
+    window.refreshPlayerChrome = function (newData) {
+      var cur = document.getElementById('js-player-current');
+      var tot = document.getElementById('js-player-total');
+      var wrap = document.querySelector('.s-player-wrap');
+      var harmonyUi = document.querySelector('.harmony-ui');
 
-      // ── Exercise counter sync ──────────────────────────────
-      setInterval(function () {
-        var statusEl = document.getElementById('exercise-info');
-        if (statusEl) {
-          var match = statusEl.innerText.match(/Exercise (\d+) of (\d+)/);
-          if (match) {
-            document.getElementById('js-player-current').innerText = match[1];
-            document.getElementById('js-player-total').innerText = match[2];
-          }
-        }
-      }, 500);
+      if (cur && newData && newData.exerciseNum != null) {
+        cur.innerText = String(newData.exerciseNum);
+      }
+      if (tot && newData && newData.totalExercises != null) {
+        tot.innerText = String(newData.totalExercises);
+      }
+
+      document.querySelectorAll('.s-player-input-hint[data-player-hint]').forEach(function (node) {
+        node.remove();
+      });
+
+      if (!wrap || !harmonyUi || !newData) {
+        return;
+      }
+
+      if (newData.disableComputerKeyboardInput) {
+        var midiHint = document.createElement('div');
+        midiHint.className = 's-player-input-hint';
+        midiHint.setAttribute('data-player-hint', 'midi');
+        midiHint.innerText = 'Play using your MIDI keyboard or click the piano below. Any octave works.';
+        wrap.insertBefore(midiHint, harmonyUi);
+      }
+
+      if (newData.reviewMode) {
+        var reviewHint = document.createElement('div');
+        reviewHint.className = 's-player-input-hint';
+        reviewHint.setAttribute('data-player-hint', 'review');
+        reviewHint.innerText = 'Review mode — your result is preserved, practice freely.';
+        wrap.insertBefore(reviewHint, harmonyUi);
+      }
+    };
+
+    window.addEventListener('load', function () {
 
       // ── Settings drawer ────────────────────────────────────
       var overlay  = document.querySelector('.js-settings-overlay');
