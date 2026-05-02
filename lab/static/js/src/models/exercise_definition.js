@@ -569,9 +569,19 @@ define([
           }
       }
 
+      // If the slice has all-null content, it was intentionally blanked (e.g. chord outside
+      // the unit's curriculum). Don't derive an answer from pitches — mark non-target.
+      var allContentNull = slice.content.roman_numeral === null &&
+        slice.content.pop_symbol === null &&
+        slice.content.figured_bass === null &&
+        slice.content.functional_label === null;
+      if (!answer && allContentNull) {
+        isTarget = false;
+      }
+
       // Fallback for SATB UMTO imports where analysis slices are intentionally blank:
       // derive the expected label directly from grading pitch content.
-      if (!answer && gradingMatch && gradingMatch.target_midi_pitches && gradingMatch.target_midi_pitches.length > 0) {
+      if (!answer && !allContentNull && gradingMatch && gradingMatch.target_midi_pitches && gradingMatch.target_midi_pitches.length > 0) {
         answer = computeWindowLabel(
           gradingMatch.target_midi_pitches,
           analysisType,

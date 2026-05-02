@@ -5,6 +5,15 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from apps.exercises.models import Playlist, Exercise, ExercisePlaylistOrdered
+from apps.exercises.management.commands.import_bach_phrases import UNIT_ALLOWED_ANSWERS
+
+
+def _unit_new_chords(unit_num: int) -> set[str]:
+    """Chords introduced at unit_num = allowed(N) - allowed(N-1)."""
+    current = set(UNIT_ALLOWED_ANSWERS.get(unit_num, []))
+    sorted_units = sorted(u for u in UNIT_ALLOWED_ANSWERS if u < unit_num)
+    previous = set(UNIT_ALLOWED_ANSWERS[sorted_units[-1]]) if sorted_units else set()
+    return current - previous
 
 # parents[4] from this file = repo root
 TAXONOMY_PATH = Path(__file__).resolve().parents[4] / "music_theory_taxonomy_with_branches.json"
@@ -42,6 +51,17 @@ class Command(BaseCommand):
             return (0, 0)
         return (int(m.group(1)), int(m.group(2)))
 
+    @staticmethod
+    def _has_new_chord(ex: "Exercise", unit_num: int) -> bool:
+        """Return True if exercise analysis contains at least one chord new to unit_num."""
+        new_chords = _unit_new_chords(unit_num)
+        if not new_chords:
+            return True  # no new chords defined — don't filter
+        analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
+        rns = {s["content"]["roman_numeral"] for s in analysis
+               if s.get("content") and s["content"].get("roman_numeral")}
+        return bool(rns & new_chords)
+
     def add_arguments(self, parser):
         parser.add_argument("--unit", type=int, required=True)
         parser.add_argument("--riemenschneider", type=str, required=True)
@@ -51,6 +71,8 @@ class Command(BaseCommand):
         parser.add_argument("--min-measures", type=int, default=3)
         parser.add_argument("--public", action="store_true")
         parser.add_argument("--dry-run", action="store_true")
+        parser.add_argument("--no-chord-filter", action="store_true",
+                            help="Skip the new-chord requirement filter")
 
     def handle(self, *args, **options):
         unit_num = options["unit"]
@@ -122,11 +144,17 @@ class Command(BaseCommand):
                 skill_tags__contains=[mode_tag],
             )
 
-            selected = [
-                ex for ex in candidates
-                if Command._extract_riem_phrase(ex.description)[0] in riem_set
-            ]
-            selected.sort(key=lambda ex: Command._extract_riem_phrase(ex.description))
+            require_new_chords = not options.get("no_chord_filter", False) and mode in ("roman", "figures", "matching")
+            selected = []
+            for ex in candidates:
+                riem_num, _ = Command._extract_riem_phrase(ex.description or "")
+                if riem_num not in riem_set:
+                    continue
+                if require_new_chords and not Command._has_new_chord(ex, unit_num):
+                    self.stdout.write(self.style.WARNING(f"  Skipping {ex.id} (no new-unit chords): {(ex.description or '')[:60]}"))
+                    continue
+                selected.append(ex)
+            selected.sort(key=lambda ex: Command._extract_riem_phrase(ex.description or ""))
 
             ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
             for idx, ex in enumerate(selected, start=1):

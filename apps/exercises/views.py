@@ -25,25 +25,20 @@ def _performance_demonstrates_skill(performance_data: dict) -> bool:
 
 
 def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num, score_numerator, score_denominator, mastery_changes, error_tally=None):
+    import re as _re
     unit_n = None
     unit_name = None
-    if exercise_obj.skill_tags:
-        import re as _re
-        for t in exercise_obj.skill_tags:
-            m = _re.match(r'^unit:(\d+)$', t)
-            if m:
+    # Prefer the playlist's unit tag — exercises carry many unit:N tags from
+    # music21 analysis and the first one is often not the target unit.
+    tag_sources = list(getattr(playlist, "skill_tags", None) or []) + list(exercise_obj.skill_tags or [])
+    for t in tag_sources:
+        m = _re.match(r'^unit:(\d+)$', t)
+        if m:
+            u = TaxonomyReader.get_unit(m.group(1))
+            if u:
                 unit_n = m.group(1)
-                u = TaxonomyReader.get_unit(unit_n)
-                if u:
-                    unit_name = u.get("title")
+                unit_name = u.get("title")
                 break
-        if not unit_n:
-            for t in exercise_obj.skill_tags:
-                u = TaxonomyReader.get_unit_for_tag(t)
-                if u:
-                    unit_n = str(u.get("n"))
-                    unit_name = u.get("title")
-                    break
 
     unit_bar_segments = []
     if unit_n:
