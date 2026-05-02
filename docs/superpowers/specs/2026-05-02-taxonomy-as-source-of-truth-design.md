@@ -125,7 +125,7 @@ Both taxonomy files (`music_theory_taxonomy.json` and `music_theory_taxonomy_wit
 `roman_analyzer.get_raw(chord, key)` → raw music21 figure string, e.g. `"V/V"`, `"bVII"`, `"ii6"`
 
 **Step 2 — Normalization**  
-`roman_normalizer.to_canonical(raw)` → canonical token matching taxonomy `value` symbols. Handles music21 spelling variations (e.g. `viio7` → `vii°7`, `bVII` → `VII`). This is a pure function with no curriculum knowledge.
+`roman_normalizer.to_canonical(raw)` → canonical token matching taxonomy `value` symbols. Handles only music21 *spelling variants of the same token* — e.g. `viio7` → `vii°7` (formatting), `Ger+6` → `Ger⁺⁶` (symbol). **Chromatic alterations are preserved:** `bVII`, `bVI`, `bIII` survive normalization unchanged. Collapsing `bVII` to `VII` is a curriculum decision, not a spelling fix, and belongs only in the targeting step. This is a pure function with no curriculum knowledge.
 
 **Step 3 — Targeting (context-aware disambiguation)**  
 `roman_targeting.resolve(canonical, chord_index, chord_sequence, unit_n)` → final targeted value or `None`.
@@ -209,9 +209,11 @@ The analysis slices in the payload have `roman_numeral` populated (targeted valu
 
 ### New behavior
 
-`applySkillFilter()` uses `analysisPolicy.allowedValues` directly from the exercise context payload. No unit inference, no tag parsing, no local answer tables.
+JS builds gradeable problem slots directly from analysis slices that have `is_target: true` in the payload. It does **not** re-filter slices against `analysisPolicy.allowedValues` — the server is the single authoritative pass for targeting. `applySkillFilter()` is deleted or reduced to a no-op for Roman numeral exercises.
 
-Dropdown rendering for `?` slots uses `analysisPolicy.displayMap` — if the value has an entry, show the display string; otherwise show the value as-is. No hardcoded display mappings in JS.
+`analysisPolicy.allowedValues` is used only to populate **dropdown options** for `?` slots (the list of choices a student picks from). It is not used to decide which slots are gradeable.
+
+Dropdown rendering uses `analysisPolicy.displayMap` — if the value has an entry, show the display string; otherwise show the value as-is. No hardcoded display mappings in JS.
 
 ---
 
@@ -221,13 +223,17 @@ Dropdown rendering for `?` slots uses `analysisPolicy.displayMap` — if the val
 
 Reads `new` and `cumulative` from `TaxonomyReader` — no import from `import_bach_phrases`.
 
+Playlist selection uses the **targeting function** (same as request time), not raw values directly. A chord whose `raw_roman_numeral` is `V/V` but whose targeted value collapses to `V` is treated as containing `V` for both inclusion and ordering. This ensures playlist selection and browser behavior agree on what the exercise contains.
+
 **Analysis exercises (`targeted_slots` mode):**
-- Include phrase if it contains at least one chord whose `raw_roman_numeral` (after normalization) is in `new`
-- Out-of-scope chords are permitted (they become hidden slots)
+- Run targeting on each slice to get the targeted value
+- Include phrase if at least one targeted value is in `new`
+- Out-of-scope chords (targeted value = `None`) are permitted — they become hidden slots
 
 **Performance exercises (`all_chords_in_scope` mode):**
-- Include phrase only if every harmonic event's `raw_roman_numeral` is in `cumulative`
-- Additionally require at least one event in `new` (unless `--no-chord-filter`)
+- Run targeting on each slice
+- Include phrase only if every targeted value is in `cumulative` (no `None` results)
+- Additionally require at least one targeted value in `new` (unless `--no-chord-filter`)
 
 ### Ordering
 
