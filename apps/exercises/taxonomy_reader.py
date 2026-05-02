@@ -58,3 +58,27 @@ class TaxonomyReader:
     def get_skill_label(cls, tag: str) -> str:
         """Converts "Note_Names" -> "Note Names" (replace underscores, title-case)."""
         return tag.replace("_", " ").title()
+
+    @classmethod
+    def get_unit_analysis(cls, unit_n: str, family: str) -> dict | None:
+        """Returns {"cumulative": [...], "new": [...]} for the given unit and analysis family, or None."""
+        unit = cls.get_unit(unit_n)
+        if unit is None:
+            return None
+        return unit.get("analysis", {}).get(family)
+
+    @classmethod
+    def get_cumulative_values(cls, unit_n: str, family: str) -> set[str]:
+        """Returns the set of 'value' strings from the cumulative list for this unit/family."""
+        analysis = cls.get_unit_analysis(unit_n, family)
+        if analysis is None:
+            return set()
+        return {entry["value"] for entry in analysis.get("cumulative", [])}
+
+    @classmethod
+    def get_new_values(cls, unit_n: str, family: str) -> set[str]:
+        """Returns the set of 'value' strings from the new list for this unit/family."""
+        analysis = cls.get_unit_analysis(unit_n, family)
+        if analysis is None:
+            return set()
+        return {entry["value"] for entry in analysis.get("new", [])}

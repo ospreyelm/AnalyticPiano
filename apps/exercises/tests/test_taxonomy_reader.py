@@ -30,3 +30,45 @@ class TaxonomyReaderTestCase(unittest.TestCase):
     def test_skill_label_formatting(self):
         self.assertEqual(TaxonomyReader.get_skill_label("Note_Names"), "Note Names")
         self.assertEqual(TaxonomyReader.get_skill_label("satb_spacing"), "Satb Spacing")
+
+
+class TaxonomyReaderAnalysisTestCase(unittest.TestCase):
+    def test_get_unit_analysis_returns_dict_for_unit_with_analysis(self):
+        result = TaxonomyReader.get_unit_analysis("11", "roman")
+        self.assertIsNotNone(result)
+        self.assertIn("cumulative", result)
+        self.assertIn("new", result)
+        self.assertIsInstance(result["cumulative"], list)
+        self.assertIsInstance(result["new"], list)
+
+    def test_get_unit_analysis_returns_none_for_unit_without_analysis(self):
+        # Unit 1 has no roman analysis
+        result = TaxonomyReader.get_unit_analysis("1", "roman")
+        self.assertIsNone(result)
+
+    def test_get_unit_analysis_returns_none_for_unknown_family(self):
+        result = TaxonomyReader.get_unit_analysis("11", "figured_bass")
+        self.assertIsNone(result)
+
+    def test_get_cumulative_values_returns_set_of_strings(self):
+        result = TaxonomyReader.get_cumulative_values("11", "roman")
+        self.assertIsInstance(result, set)
+        self.assertIn("IV", result)
+        self.assertIn("I", result)
+        self.assertIn("V7", result)
+
+    def test_get_cumulative_values_returns_empty_for_no_analysis(self):
+        result = TaxonomyReader.get_cumulative_values("1", "roman")
+        self.assertEqual(result, set())
+
+    def test_get_new_values_returns_delta(self):
+        result = TaxonomyReader.get_new_values("11", "roman")
+        self.assertIn("IV", result)
+        self.assertIn("ii", result)
+        # Unit 9 chords are NOT in new for unit 11
+        self.assertNotIn("I", result)
+        self.assertNotIn("V", result)
+
+    def test_get_new_values_returns_empty_for_no_analysis(self):
+        result = TaxonomyReader.get_new_values("1", "roman")
+        self.assertEqual(result, set())
