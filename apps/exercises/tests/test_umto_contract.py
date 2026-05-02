@@ -170,3 +170,24 @@ class UMTOContractTests(TestCase):
         # Update it (not is_new) - should be allowed
         ex.description = "Updated Grandfathered"
         ex.save() # Should not raise
+
+
+def test_analysis_layer_has_raw_roman_numeral():
+    from apps.exercises.umto import AnalysisLayer
+    layer = AnalysisLayer(roman_numeral="V", raw_roman_numeral="V/V")
+    assert layer.raw_roman_numeral == "V/V"
+
+def test_analysis_layer_raw_roman_numeral_defaults_none():
+    from apps.exercises.umto import AnalysisLayer
+    layer = AnalysisLayer()
+    assert layer.raw_roman_numeral is None
+
+def test_analysis_slice_has_is_target():
+    from apps.exercises.umto import AnalysisSlice, AnalysisLayer
+    sl = AnalysisSlice(offset=0.0, content=AnalysisLayer())
+    assert sl.is_target is False  # default
+
+def test_analysis_slice_is_target_can_be_set():
+    from apps.exercises.umto import AnalysisSlice, AnalysisLayer
+    sl = AnalysisSlice(offset=0.0, content=AnalysisLayer(roman_numeral="I"), is_target=True)
+    assert sl.is_target is True

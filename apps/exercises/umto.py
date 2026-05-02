@@ -52,6 +52,7 @@ class Voices(BaseModel):
 
 class AnalysisLayer(BaseModel):
     roman_numeral: Optional[str] = None
+    raw_roman_numeral: Optional[str] = None  # unfiltered music21 output; durable record
     figured_bass: Optional[str] = None
     pop_symbol: Optional[str] = None
     functional_label: Optional[str] = None # e.g. "Predominant", "Dominant"
@@ -71,6 +72,7 @@ class AnalysisSlice(BaseModel):
     content: AnalysisLayer
     visual: Optional[VisualMetadata] = None
     unit_tags: List[int] = Field(default_factory=list) # e.g. [1, 9, 12] for unit focus
+    is_target: bool = False  # set at request time by targeting layer
 
 class GradingSlice(BaseModel):
     offset: float
