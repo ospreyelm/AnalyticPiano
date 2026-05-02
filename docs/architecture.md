@@ -68,11 +68,12 @@ The `type` field determines the grading logic:
 | `analytical` | `[]` | all notes | Notes hidden; roman numeral overlay shown — identify by ear |
 | `figured_bass` | bass note only | upper voices | Bass shown; student fills in upper voices from figures |
 | `identification` | all notes | `[]` | See notes, pick the answer from a multiple-choice list |
-| `chorale` | (see below) | — | Play a Bach chorale segment, onset by onset |
+| `chorale` | (see below) | — | Play a Bach chorale segment, onset by onset (Mode: `play`) |
 
-For `identification`, each chord dict also has `"answer"` and `"choices"` keys.
+For `identification`, each chord dict also has `"answer"` and `"choices"` keys. Identification exercises for Bach chorales (UMTO) use `roman_numeral` or `figured_bass` fields in analysis slices (Modes: `roman`, `figures`).
 
 For `chorale`, the `data` dict contains a `"score"` key with a CIR (Canonical Internal Representation) JSON object instead of a `"chord"` array. See `claude.md` and `docs/chorale_exercises_plan.md` for the full chorale system.
+
 
 ### Key Format
 
@@ -125,6 +126,21 @@ A `Course` is an ordered collection of playlists assigned to students. Key field
 - `authored_by` — the teacher who owns the course
 - `adaptive_mode` — Choice toggle to enable adaptive logic for all playlists in the course.
 - `mastery_threshold` — (familiar, proficient, mastered) Defines the competency level required to "close" a skill in this course.
+
+---
+
+## Taxonomy and Curriculum Policy
+
+As of 2026-05-02, the **Taxonomy JSON** (`music_theory_taxonomy_with_branches.json`) is the **Single Source of Truth** for which musical concepts are valid at each curriculum unit.
+
+### Core Principles
+1. **Taxonomy defines Policy**: Which chords are permitted (cumulative) and which are new at each unit.
+2. **Analysis Pipeline**: Three steps: Raw (music21) → Normalization (canonical) → Targeting (curriculum policy).
+3. **Request-Time Resolution**: The database stores raw musical facts; student-facing labels are derived at request time based on the current taxonomy.
+4. **Unified Payload**: The server sends an `analysisPolicy` object to the browser, which drives UI options and grading slots.
+
+For a full breakdown of this architecture and its data flow, see the [Taxonomy Visualization Plan](superpowers/specs/2026-05-02-taxonomy-visualization.md).
+
 
 ---
 
