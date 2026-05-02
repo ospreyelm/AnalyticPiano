@@ -287,11 +287,13 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
                 exercise_data = perf.data[exercise_num - 1]
                 pinned_id = exercise_data.get('id')
                 if pinned_id:
-                    # Return the pinned exercise and its original transposition
-                    # (In the legacy format, ID might include transposition suffix)
-                    # Return None instead of "" if no suffix is present to avoid redundant transposition calls.
-                    pinned_key = pinned_id[6:] if len(pinned_id) > 6 else None
-                    return pinned_id, pinned_key
+                    # Validate pinned exercise still exists before returning.
+                    # If it was deleted (e.g. playlist rebuilt), fall through to fresh selection.
+                    pinned_base = pinned_id[:6]
+                    pinned_ex = Exercise.objects.filter(id=pinned_base).first()
+                    if pinned_ex and ExercisePlaylistOrdered.objects.filter(playlist=playlist, exercise=pinned_ex).exists():
+                        pinned_key = pinned_id[6:] if len(pinned_id) > 6 else None
+                        return pinned_id, pinned_key
             if exercise_num > 1 and len(perf.data) >= exercise_num - 1:
                 prior_exercise_id = (perf.data[exercise_num - 2] or {}).get("id")
         except PerformanceData.DoesNotExist:
