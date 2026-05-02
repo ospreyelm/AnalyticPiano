@@ -315,7 +315,7 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
     var tryAgainBtn = '<button class="esc-btn esc-btn-secondary js-esc-try-again">Try Again</button>';
     var ctaBtn;
     if (nextUrl) {
-      ctaBtn = '<a href="' + _esc(nextUrl) + '"><button class="esc-btn ' + ctaClass + ' js-esc-cta">' + _esc(cta) + '</button></a>';
+      ctaBtn = '<a class="esc-btn ' + ctaClass + ' js-esc-cta" href="' + _esc(nextUrl) + '">' + _esc(cta) + '</a>';
     } else {
       ctaBtn = '<button class="esc-btn ' + ctaClass + ' js-esc-cta">' + _esc(cta) + '</button>';
     }
@@ -365,6 +365,10 @@ define(["jquery", "canvas-confetti"], function ($, confetti) {
     if (pct === 100) {
       _launchConfetti();
     }
+  };
+
+  ExerciseScoreCard.prototype.isVisible = function () {
+    return !!(this._el && this._el.classList.contains("esc-visible"));
   };
 
   /**
