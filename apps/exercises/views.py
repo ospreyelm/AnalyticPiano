@@ -28,12 +28,22 @@ def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num,
     unit_n = None
     unit_name = None
     if exercise_obj.skill_tags:
+        import re as _re
         for t in exercise_obj.skill_tags:
-            u = TaxonomyReader.get_unit_for_tag(t)
-            if u:
-                unit_n = str(u.get("n"))
-                unit_name = u.get("name")
+            m = _re.match(r'^unit:(\d+)$', t)
+            if m:
+                unit_n = m.group(1)
+                u = TaxonomyReader.get_unit(unit_n)
+                if u:
+                    unit_name = u.get("title")
                 break
+        if not unit_n:
+            for t in exercise_obj.skill_tags:
+                u = TaxonomyReader.get_unit_for_tag(t)
+                if u:
+                    unit_n = str(u.get("n"))
+                    unit_name = u.get("title")
+                    break
 
     unit_bar_segments = []
     if unit_n:
