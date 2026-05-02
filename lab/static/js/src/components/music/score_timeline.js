@@ -54,31 +54,7 @@ define([], function () {
     var endMeasure = Math.min(totalMeasures, startMeasure + maxMeasures);
     var numMeasures = Math.max(0, endMeasure - startMeasure);
     
-    // Track cumulative onset per measure (all measures start at the end of the previous measure)
-    var cumulativeOnsetByMeasure = [0]; // measure 0 starts at tick 0
-    for (var rel = 0; rel < numMeasures; rel++) {
-      var m = startMeasure + rel;
-      var meas = score.measures[m];
-      var maxDuration = 0;
-      // Find the longest voice duration in this measure to know the measure's total tick length
-      ['treble', 'bass'].forEach(function(staffName) {
-        var staff = meas.staves[staffName];
-        if (!staff || !staff.voices) return;
-        staff.voices.forEach(function(voice) {
-          var voiceDur = 0;
-          for (var it = 0; it < voice.items.length; it++) {
-            voiceDur += durToTicks(voice.items[it].duration);
-          }
-          maxDuration = Math.max(maxDuration, voiceDur);
-        });
-      });
-      // Next measure starts after this one
-      if (rel + 1 < numMeasures) {
-        cumulativeOnsetByMeasure.push(
-          cumulativeOnsetByMeasure[rel] + maxDuration
-        );
-      }
-    }
+    var cumulativeOnsetByMeasure = buildMeasureOffsets(score, opts);
 
     for (var rel = 0; rel < numMeasures; rel++) {
       var m = startMeasure + rel;
@@ -122,5 +98,45 @@ define([], function () {
     return timeline;
   }
 
-  return { buildTimeline: buildTimeline };
+  function buildMeasureOffsets(score, opts) {
+    opts = opts || {};
+    if (!score || !score.measures || !score.measures.length) return [];
+
+    var totalMeasures = score.measures.length;
+    var startMeasure = Math.max(0, opts.startMeasure || 0);
+    if (startMeasure >= totalMeasures) {
+      startMeasure = Math.max(0, totalMeasures - 1);
+    }
+
+    var maxMeasures =
+      opts.maxMeasures != null ? opts.maxMeasures : totalMeasures;
+    var endMeasure = Math.min(totalMeasures, startMeasure + maxMeasures);
+    var numMeasures = Math.max(0, endMeasure - startMeasure);
+    var cumulativeOnsetByMeasure = [0];
+
+    for (var rel = 0; rel < numMeasures; rel++) {
+      var m = startMeasure + rel;
+      var meas = score.measures[m];
+      var maxDuration = 0;
+      ['treble', 'bass'].forEach(function(staffName) {
+        var staff = meas.staves[staffName];
+        if (!staff || !staff.voices) return;
+        staff.voices.forEach(function(voice) {
+          var voiceDur = 0;
+          for (var it = 0; it < voice.items.length; it++) {
+            voiceDur += durToTicks(voice.items[it].duration);
+          }
+          maxDuration = Math.max(maxDuration, voiceDur);
+        });
+      });
+      if (rel + 1 < numMeasures) {
+        cumulativeOnsetByMeasure.push(
+          cumulativeOnsetByMeasure[rel] + maxDuration
+        );
+      }
+    }
+    return cumulativeOnsetByMeasure;
+  }
+
+  return { buildTimeline: buildTimeline, buildMeasureOffsets: buildMeasureOffsets };
 });

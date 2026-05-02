@@ -144,7 +144,12 @@ def get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id=No
     exercise_obj, target_key = get_next_exercise(
         request.user.id, playlist=playlist, course=course_obj, seed=seed
     )
-    
+
+    # get_next_exercise may return a raw ID string (from the pinning path)
+    if isinstance(exercise_obj, str):
+        base_id = exercise_obj[:6]
+        exercise_obj = Exercise.objects.filter(id=base_id).first()
+
     if exercise_obj:
         # Only invoke transposition if a target_key is explicitly requested (not None)
         if target_key:

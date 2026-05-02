@@ -1,4 +1,5 @@
 import os
+import re
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -11,6 +12,123 @@ from apps.exercises.umto_factory import save_umto_exercise
 from apps.exercises.utils.m21_cir_converter import m21_to_cir
 from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
 
+
+# Mirrors UNIT_ALLOWED_ANSWERS in exercise_definition.js — keep in sync.
+UNIT_ALLOWED_ANSWERS = {
+    9:  ['I', 'i', 'V', 'V7'],
+    10: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6'],
+    11: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+         'IV', 'iv', 'ii', 'ii6', 'vi', 'VI'],
+    12: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+         'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+         'I64', 'V64'],
+    13: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+         'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+         'I64', 'V64', 'iii', 'III', 'VII'],
+    14: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+         'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+         'I64', 'V64', 'iii', 'III', 'VII',
+         'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7'],
+    15: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+         'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+         'I64', 'V64', 'iii', 'III', 'VII',
+         'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7'],
+    16: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+         'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+         'I64', 'V64', 'iii', 'III', 'VII',
+         'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
+         'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
+         'V/vi', 'V7/vi', 'V/III', 'V7/III',
+         'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
+         'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV'],
+    17: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+         'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+         'I64', 'V64', 'iii', 'III', 'VII',
+         'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
+         'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
+         'V/vi', 'V7/vi', 'V/III', 'V7/III',
+         'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
+         'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV',
+         'bVI', 'bVII', 'bIII', 'ii°', 'ii°6'],
+    18: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
+         'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
+         'I64', 'V64', 'iii', 'III', 'VII',
+         'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
+         'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
+         'V/vi', 'V7/vi', 'V/III', 'V7/III',
+         'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
+         'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV',
+         'bVI', 'bVII', 'bIII', 'ii°', 'ii°6',
+         'N6', 'It+6', 'Ger+6', 'Fr+6'],
+    # 19–20: modulation — no filter
+}
+
+
+def _description_exists(description: str, authored_by=None) -> bool:
+    from apps.exercises.models import Exercise
+    qs = Exercise.objects.filter(description=description)
+    if authored_by is not None:
+        qs = qs.filter(authored_by=authored_by)
+    return qs.exists()
+
+
+def _build_roman_analysis_overrides(phrase_score, global_key, unit_tags: list) -> list:
+    """Analyze a phrase and return UMTO analysis_overrides with roman numerals.
+
+    Only stores figures that appear in UNIT_ALLOWED_ANSWERS for the highest unit
+    in unit_tags. Figures outside the cumulative allowlist are stored as null so
+    the frontend treats those slots as non-target.
+
+    Returns list of dicts suitable for passing to build_umto_payload as analysis_overrides.
+    Offsets are cumulative quarter-note beats from the start of the phrase.
+    """
+    from music21.roman import romanNumeralFromChord
+
+    # Determine the allowed set for the highest unit in unit_tags
+    max_unit = max(unit_tags) if unit_tags else None
+    allowed_set = set(UNIT_ALLOWED_ANSWERS.get(max_unit, [])) if max_unit else None
+    # None means no filter (units 19-20 or unknown)
+
+    chorded = phrase_score.chordify()
+    measures = list(chorded.getElementsByClass('Measure'))
+    if not measures:
+        return []
+
+    first_measure_offset = measures[0].offset
+    overrides = []
+    seen_offsets = set()
+
+    for m in measures:
+        measure_start = m.offset - first_measure_offset
+        for element in m.flat.notes:
+            if not isinstance(element, chord.Chord):
+                continue
+            abs_offset = round(measure_start + float(element.offset), 5)
+            if abs_offset in seen_offsets:
+                continue
+            seen_offsets.add(abs_offset)
+            try:
+                rn = romanNumeralFromChord(element, global_key)
+                figure = rn.figure
+            except Exception:
+                figure = ""
+            # Only keep figures in the curriculum allowlist for this unit
+            if allowed_set is not None and figure not in allowed_set:
+                figure = ""
+            overrides.append({
+                "offset": abs_offset,
+                "content": {
+                    "roman_numeral": figure if figure else None,
+                    "figured_bass": None,
+                    "pop_symbol": None,
+                    "functional_label": None,
+                },
+                "unit_tags": list(unit_tags),
+            })
+
+    return overrides
+
+
 class Command(BaseCommand):
     help = 'Import a Bach chorale and split it into phrases based on fermatas.'
 
@@ -22,6 +140,11 @@ class Command(BaseCommand):
         parser.add_argument('--mode', type=str, choices=['play', 'roman', 'figures', 'matching'], default='play', help='Exercise mode')
         parser.add_argument('--min-measures', type=int, default=3, help='Minimum measures per phrase')
         parser.add_argument('--dry-run', action='store_true', help='Show phrase ranges without creating exercises')
+        parser.add_argument('--public', action='store_true', help='Mark imported exercises as public')
+        parser.add_argument('--extra-tags', nargs='*', default=[], metavar='TAG',
+                            help='Additional skill tags stamped on every imported exercise')
+        parser.add_argument('--overwrite', action='store_true',
+                            help='Update existing exercises (matched by description+author) instead of skipping')
 
     def handle(self, *args, **options):
         bwv_num = options.get('bwv')
@@ -31,6 +154,7 @@ class Command(BaseCommand):
         mode = options['mode']
         min_measures = options['min_measures']
         dry_run = options['dry_run']
+        overwrite = options['overwrite']
 
         # 1. Load the score
         from music21 import corpus
@@ -201,18 +325,24 @@ class Command(BaseCommand):
 
             try:
                 detected_skills, detected_complexity = analyze_chunk_skills(phrase_score, m21_key.tonicPitchNameWithCase)
+                detected_complexity = max(1, min(12, detected_complexity))
+                playlist_complexity = max(1, min(10, detected_complexity))
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f"  Skills analysis failed: {e}"))
-                detected_skills, detected_complexity = [], 1
+                detected_skills, detected_complexity, playlist_complexity = [], 1, 1
 
             # Convert to CIR JSON
             cir_data = m21_to_cir(phrase_score, key_override=harmony_key)
             
             # 4. Map to UMTO Interaction Mode
+            # `roman` and `figures` are label-entry exercises (show prompts/slots),
+            # while `matching` is the inverse mode (label shown, play the pitch).
             if mode == 'play':
                 umto_mode = InteractionMode.PLAYBACK
-            else:
+            elif mode == 'matching':
                 umto_mode = InteractionMode.ANALYSIS_MATCH
+            else:
+                umto_mode = InteractionMode.IDENTIFICATION
             
             # 5. Build Intro Text
             if mode == 'figures':
@@ -222,25 +352,53 @@ class Command(BaseCommand):
             else:
                 intro_text = f"Play all four voices of this Bach phrase (BWV {bwv_display}, mm. {start_m}-{end_m})."
 
-            description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m})"
-            
+            description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m}) [{mode}]"
+
+            if _description_exists(description[:60], authored_by=author) and not overwrite:
+                self.stdout.write(self.style.WARNING(f"  Skipping (exists): {description[:60]}"))
+                start_m = end_m + 1
+                continue
+
+            # Extract unit number from extra_tags for analysis tagging
+            unit_nums = []
+            for tag in options['extra_tags']:
+                m2 = re.match(r'^unit:(\d+)$', tag)
+                if m2:
+                    unit_nums.append(int(m2.group(1)))
+
+            # Build roman numeral analysis for label-entry modes
+            analysis_overrides = None
+            if mode in ('roman', 'figures', 'matching'):
+                try:
+                    analysis_overrides = _build_roman_analysis_overrides(
+                        phrase_score, m21_key, unit_nums
+                    )
+                    self.stdout.write(f"  Built {len(analysis_overrides)} analysis slices")
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f"  Analysis overrides failed: {e}"))
+
+            umto_kwargs = dict(
+                exercise_id="TEMP",
+                source=intro_text,
+                key=harmony_key,
+                meter=cir_data.get("meta", {}).get("time", "4/4"),
+                clef="keyboard",
+                complexity_score=detected_complexity,
+                mode=umto_mode,
+            )
+            if analysis_overrides is not None:
+                umto_kwargs["analysis_overrides"] = analysis_overrides
+
             # Create the Exercise via UMTO factory
             ex = save_umto_exercise(
                 description=description[:60],
                 score_data=cir_data,
                 author=author,
-                skill_tags=detected_skills,
-                complexity=detected_complexity,
-                is_public=False,
-                umto_kwargs=dict(
-                    exercise_id="TEMP",
-                    source=intro_text,
-                    key=harmony_key,
-                    meter=cir_data.get("meta", {}).get("time", "4/4"),
-                    clef="keyboard", # Phrases are typically SATB split across staves
-                    complexity_score=detected_complexity,
-                    mode=umto_mode,
-                )
+                skill_tags=list(set(detected_skills + options['extra_tags'])),
+                complexity=playlist_complexity,
+                is_public=options['public'],
+                umto_kwargs=umto_kwargs,
+                overwrite=overwrite,
             )
             self.stdout.write(self.style.SUCCESS(f"  Created UMTO Exercise {ex.id}"))
 

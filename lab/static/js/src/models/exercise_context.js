@@ -7,6 +7,7 @@ define([
   "app/config",
   "app/components/events",
   "simple-statistics.min",
+  "./exercise_completion_flow_logic",
   "./identification_submit_flow_logic",
 ], function (
   _,
@@ -17,6 +18,7 @@ define([
   Config,
   EVENTS,
   SimpleStatistics,
+  ExerciseCompletionFlow,
   IdentificationSubmitFlow
 ) {
   var AUTO_ADVANCE = Config.get("general.autoAdvance");
@@ -1050,14 +1052,16 @@ define([
 
         if (!isLastPage) {
           this.done = false;
+          if (!this.timer) { this.triggerTimer(); }
           this.endTimer();
           if (this.sealed != true) {
-            this.submitExerciseReport();
+            this.submitExerciseReport({ showScoreCard: false });
           }
           graded.advancedPage = true;
           this.goToIdentPage(this._identPage + 1);
         } else {
           this.done = true;
+          if (!this.timer) { this.triggerTimer(); }
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
@@ -1193,7 +1197,7 @@ define([
      * @return undefined
      */
     triggerNextExercise: async function () {
-      if (this.scoreCard) {
+      if (ExerciseCompletionFlow._shouldDeferCompletionAutomation(this.scoreCard)) {
         return;
       }
       if (
@@ -1202,6 +1206,9 @@ define([
         this.definition.exercise.nextExercise
       ) {
         await this.sleep(AUTO_ADVANCE_DELAY * 1000);
+        if (ExerciseCompletionFlow._shouldDeferCompletionAutomation(this.scoreCard)) {
+          return;
+        }
         this.goToNextExercise();
       }
     },
@@ -1211,11 +1218,14 @@ define([
      * @return undefined
      */
     triggerRepeatExercise: async function () {
-      if (this.scoreCard) {
+      if (ExerciseCompletionFlow._shouldDeferCompletionAutomation(this.scoreCard)) {
         return;
       }
       if (this.done === true && AUTO_REPEAT === true) {
         await this.sleep(AUTO_REPEAT_DELAY * 1000);
+        if (ExerciseCompletionFlow._shouldDeferCompletionAutomation(this.scoreCard)) {
+          return;
+        }
         this.reloadExercise();
       }
     },

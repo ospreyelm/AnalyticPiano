@@ -4,6 +4,7 @@ mastery.py — Core mastery tracking logic for the Adaptive Engine.
 No view-layer coupling. Callable from views, management commands, and tests.
 """
 from datetime import date
+import json
 from django.utils.timezone import now
 
 from apps.exercises.skill_graph import (
@@ -100,6 +101,26 @@ def _current_level(user_id: int, skill_tag: str) -> str:
         return StudentSkillMastery.objects.get(user_id=user_id, skill_tag=skill_tag).level
     except StudentSkillMastery.DoesNotExist:
         return "not_started"
+
+
+def _exercise_content_fingerprint(exercise) -> str | None:
+    data = getattr(exercise, "data", {}) or {}
+    score = data.get("score") or {}
+    umto = score.get("umto")
+    if umto:
+        payload = {
+            "voices": umto.get("voices"),
+            "mode": ((umto.get("metadata") or {}).get("mode")),
+            "clef": ((umto.get("metadata") or {}).get("clef")),
+            "meter": ((umto.get("metadata") or {}).get("meter")),
+            "key": ((umto.get("metadata") or {}).get("key")),
+        }
+        return json.dumps(payload, sort_keys=True)
+    if score:
+        return json.dumps(score, sort_keys=True)
+    if "chord" in data:
+        return json.dumps({"chord": data.get("chord"), "rhythm": data.get("rhythm")}, sort_keys=True)
+    return None
 
 
 def record_attempt(user_id: int, exercise, correct: bool) -> dict:
@@ -256,6 +277,8 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
 
     # 1. Navigation Pinning Check
     # If this is part of a playlist journey, check history first.
+    prior_exercise_id = None
+    prior_fingerprint = None
     if playlist and user_obj and user_obj.is_authenticated:
         try:
             perf = PerformanceData.objects.get(user=user_obj, playlist=playlist)
@@ -264,13 +287,23 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
                 exercise_data = perf.data[exercise_num - 1]
                 pinned_id = exercise_data.get('id')
                 if pinned_id:
-                    # Return the pinned exercise and its original transposition
-                    # (In the legacy format, ID might include transposition suffix)
-                    # Return None instead of "" if no suffix is present to avoid redundant transposition calls.
-                    pinned_key = pinned_id[6:] if len(pinned_id) > 6 else None
-                    return pinned_id, pinned_key
+                    # Validate pinned exercise still exists before returning.
+                    # If it was deleted (e.g. playlist rebuilt), fall through to fresh selection.
+                    pinned_base = pinned_id[:6]
+                    pinned_ex = Exercise.objects.filter(id=pinned_base).first()
+                    if pinned_ex and ExercisePlaylistOrdered.objects.filter(playlist=playlist, exercise=pinned_ex).exists():
+                        pinned_key = pinned_id[6:] if len(pinned_id) > 6 else None
+                        return pinned_id, pinned_key
+            if exercise_num > 1 and len(perf.data) >= exercise_num - 1:
+                prior_exercise_id = (perf.data[exercise_num - 2] or {}).get("id")
         except PerformanceData.DoesNotExist:
             pass
+
+    if prior_exercise_id:
+        prior_base_id = prior_exercise_id[:6]
+        prior_exercise = Exercise.objects.filter(id=prior_base_id).first()
+        if prior_exercise:
+            prior_fingerprint = _exercise_content_fingerprint(prior_exercise)
 
     # 2. Setup Deterministic RNG for this slot
     seed_payload = f"{user_id}:{playlist.id if playlist else 'none'}:{exercise_num}:{seed or ''}"
@@ -319,6 +352,18 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
             # playlist.tags (unit:9, bach) or playlist.skill_tags (Dominant_Seventh).
             # Exercise.tags is unused — all tag data lives in skill_tags.
             pool = pool.filter(skill_tags__overlap=filter_tags)
+
+            # If the playlist explicitly scopes a mode (e.g., mode:play), require
+            # that mode tag to be present on candidate exercises. This prevents
+            # mixed-mode pools where overlap on unit tags alone would include
+            # both [play] and [roman] exercises.
+            mode_tags = [
+                tag for tag in filter_tags
+                if isinstance(tag, str) and tag.startswith("mode:")
+            ]
+            for mode_tag in mode_tags:
+                pool = pool.filter(skill_tags__contains=[mode_tag])
+
             # Apply complexity gating from the playlist settings
             pool = pool.filter(
                 complexity__gte=playlist.min_complexity,
@@ -354,7 +399,20 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
     # 6. Ranking Logic
     # We want to pick the exercise that targets the "weakest" skill 
     # (lowest mastery index) with the lowest complexity.
-    candidates = list(eligible.only("id", "skill_tags", "complexity"))
+    candidates = list(eligible.only("id", "skill_tags", "complexity", "data"))
+
+    if prior_exercise_id:
+        non_identical_candidates = [ex for ex in candidates if ex.id != prior_exercise_id[:6]]
+        if non_identical_candidates:
+            candidates = non_identical_candidates
+
+    if prior_fingerprint:
+        non_repeating_candidates = [
+            ex for ex in candidates
+            if _exercise_content_fingerprint(ex) != prior_fingerprint
+        ]
+        if non_repeating_candidates:
+            candidates = non_repeating_candidates
     
     def score_exercise(ex):
         # find the lowest mastery index among the skills this exercise targets
@@ -487,5 +545,4 @@ def get_tier(skill_tag: str) -> int:
         return 2 # chromatic
     except ValueError:
         return 0
-
 
