@@ -442,8 +442,9 @@ class PlayerDefinitionView(View):
         playlist = get_object_or_404(Playlist, id=playlist_id)
 
         playlist_tags = (playlist.tags or []) + (playlist.skill_tags or [])
-        if "unit:1" not in playlist_tags:
-            raise Http404("Playlist not part of Unit 1.")
+        unit_tag = f"unit:{unit_num}"
+        if unit_tag not in playlist_tags:
+            raise Http404(f"Playlist not part of Unit {unit_num}.")
 
         try:
             exercise_num = int(request.GET.get("exercise_num", 1))
