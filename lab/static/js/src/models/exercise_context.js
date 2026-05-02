@@ -1052,14 +1052,16 @@ define([
 
         if (!isLastPage) {
           this.done = false;
+          if (!this.timer) { this.triggerTimer(); }
           this.endTimer();
           if (this.sealed != true) {
-            this.submitExerciseReport();
+            this.submitExerciseReport({ showScoreCard: false });
           }
           graded.advancedPage = true;
           this.goToIdentPage(this._identPage + 1);
         } else {
           this.done = true;
+          if (!this.timer) { this.triggerTimer(); }
           this.endTimer();
           if (this.sealed != true) {
             this.submitExerciseReport();
