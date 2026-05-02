@@ -177,7 +177,7 @@ class StudentBasicViewTests(TransactionTestCase):
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
-class StudentPlayerViewTests(TransactionTestCase):
+class PlayerViewTests(TransactionTestCase):
     reset_sequences = True
 
     def setUp(self):
@@ -280,7 +280,6 @@ class StudentPlayerViewTests(TransactionTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Review mode")
-        self.assertContains(response, "You already completed this exercise")
         self.assertIn(b'"reviewMode": true', response.content)
         self.assertIn(b'"previousExerciseId": false', response.content)
 
@@ -387,7 +386,7 @@ class StudentPlayerViewTests(TransactionTestCase):
         self.assertIn(b"/s/units/1/play/?playlist=", response.content)
         self.assertNotIn(b"/lab/", response.content)
 
-    def test_player_uses_force_redirect_for_student_navigation(self):
+    def test_player_initial_payload_includes_playlist_metadata_without_force_redirect(self):
         second_exercise = Exercise.objects.create(
             _id=21003,
             description="Unit 1 note names 3",
@@ -409,7 +408,89 @@ class StudentPlayerViewTests(TransactionTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'"forceRedirect": true', response.content)
+        self.assertIn(f'"playlistId": "{self.playlist.id}"'.encode(), response.content)
+        self.assertIn(b'"totalExercises": 2', response.content)
+        self.assertNotIn(b'"forceRedirect": true', response.content)
+
+    def test_player_definition_returns_json_payload_for_current_step(self):
+        response = self.client.get(
+            reverse("student:player-definition", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["exerciseNum"], 1)
+        self.assertEqual(payload["playlistId"], self.playlist.id)
+        self.assertEqual(payload["totalExercises"], 1)
+        self.assertFalse(payload["reviewMode"])
+
+    def test_player_definition_returns_redirect_payload_for_skipped_step(self):
+        second_exercise = Exercise.objects.create(
+            _id=21006,
+            description="Unit 1 note names 6",
+            data={"chord": []},
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1", "Note_Names"],
+        )
+        ExercisePlaylistOrdered.objects.create(
+            _id=23006,
+            playlist=self.playlist,
+            exercise=second_exercise,
+            order=2,
+        )
+
+        response = self.client.get(
+            reverse("student:player-definition", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=2"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "redirect": reverse("student:player", kwargs={"unit_num": 1})
+                + f"?playlist={self.playlist.id}&exercise_num=1"
+            },
+        )
+
+    def test_player_definition_includes_review_answers_in_review_mode(self):
+        IdentificationAttempt.objects.create(
+            user=self.student,
+            playlist=self.playlist,
+            exercise=self.exercise,
+            answers={"0": "Student answer"},
+            correct_answers={"0": "Answer key"},
+            score={"correct": 1, "incorrect": 0, "unanswered": 0},
+            is_page_submit=True,
+            mode="submit",
+        )
+
+        response = self.client.get(
+            reverse("student:player-definition", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["reviewMode"])
+        self.assertEqual(payload["reviewAnswers"], {"0": "Student answer"})
+        self.assertNotEqual(payload["reviewAnswers"], {"0": "Answer key"})
+
+    def test_player_page_exposes_definition_endpoint_and_chrome_hooks(self):
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            reverse("student:player-definition", kwargs={"unit_num": 1}).encode(),
+            response.content,
+        )
+        self.assertIn(b"window.PLAYER_DEFINITION_URL", response.content)
+        self.assertIn(b"window.refreshPlayerChrome", response.content)
 
     def test_player_navigation_buttons_have_visible_labels(self):
         response = self.client.get(
@@ -450,10 +531,8 @@ class StudentPlayerViewTests(TransactionTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'"disableComputerKeyboardInput": true', response.content)
-        self.assertIn(
-            b"Play each note using your MIDI keyboard or by clicking the piano below. You can play the notes in any octave.",
-            response.content,
-        )
+        self.assertIn(b'"mode": "playback"', response.content)
+        self.assertIn(b'"analysisType": "note_name"', response.content)
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])

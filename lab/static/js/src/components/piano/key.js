@@ -33,25 +33,25 @@ define(["lodash", "app/components/component"], function (_, Component) {
    * @type {string}
    * @const
    */
-  var COLOR_BLACK_KEYUP = "90-#3a3a3a:0-#1a1a1a:60-#0a0a0a:100";
+  var COLOR_BLACK_KEYUP = "90-#4a3d34:0-#251f1a:60-#0f0c0a:100";
   /**
    * White key up state.
    * @type {string}
    * @const
    */
-  var COLOR_WHITE_KEYUP = "90-#ffffff:0-#f5f2ee:70-#e8e2d8:100";
+  var COLOR_WHITE_KEYUP = "90-#fffef9:0-#f7f1e7:70-#eadfcd:100";
   /**
    * Key down state.
    * @type {string}
    * @const
    */
-  var COLOR_KEYDN = "90-#c8c8c8:0-#a8a8a8:100";
+  var COLOR_KEYDN = "90-#d6c0a6:0-#b99172:100";
   /**
    * Key sustain state.
    * @type {string}
    * @const
    */
-  var COLOR_KEYSUSTAIN = "hsl(0,0,70)"; /*compare .pedal-active in harmony.css*/
+  var COLOR_KEYSUSTAIN = "90-#ded0b9:0-#c7b293:100"; /*compare .pedal-active in harmony.css*/
 
   /**
    * Piano Key Mixin.
@@ -368,10 +368,10 @@ define(["lodash", "app/components/component"], function (_, Component) {
       PianoKeyMixin.render.apply(this, arguments);
       var el = this.el;
       el.attr({
-        stroke: "#888",
+        stroke: "#9b8a74",
         "stroke-width": 0.5,
         fill: COLOR_WHITE_KEYUP,
-        r: 2
+        r: 2.5
       });
       el.toBack();
       return this;
@@ -453,11 +453,24 @@ define(["lodash", "app/components/component"], function (_, Component) {
     render: function (paper, keyWidth, keyboardWidth, keyboardHeight) {
       PianoKeyMixin.render.apply(this, arguments);
       var el = this.el;
+      this.shadowEl = paper.rect(
+        this.calculateOffsetX(),
+        1,
+        this.calculateWidth(),
+        this.calculateHeight(keyboardHeight) + 3
+      );
+      this.shadowEl.attr({
+        fill: "#140f0d",
+        stroke: "none",
+        opacity: 0.22,
+        r: 3,
+        "pointer-events": "none"
+      });
       el.attr({
         fill: COLOR_BLACK_KEYUP,
-        stroke: "#000",
+        stroke: "#080808",
         "stroke-width": 1,
-        r: 2
+        r: 2.5
       });
       el.toFront();
       return this;

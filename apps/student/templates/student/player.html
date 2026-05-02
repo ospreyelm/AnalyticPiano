@@ -29,8 +29,9 @@
       margin: 0;
       padding: 0 16px;
       height: 44px;
-      border-bottom: 1px solid var(--border);
-      background: #fff;
+      border-bottom: 1px solid rgba(125, 101, 74, 0.22);
+      background: linear-gradient(180deg, #faf6ef 0%, #f1eadf 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 1px 0 rgba(255, 255, 255, 0.35);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -59,7 +60,8 @@
     .s-player-title {
       font-family: var(--font-ui);
       font-size: 0.9rem;
-      color: var(--text);
+      color: #2d251d;
+      font-weight: 700;
       flex: 1;
       text-align: center;
       white-space: nowrap;
@@ -68,7 +70,7 @@
       padding: 0 8px;
     }
     .s-player-title a { color: inherit; text-decoration: none; }
-    .s-player-title a:hover { color: var(--teal); }
+    .s-player-title a:hover { color: #1f6c7a; }
     .s-title-sep { color: var(--text-muted); margin: 0 4px; }
 
     .s-player-right {
@@ -234,11 +236,12 @@
       width: 95vw;
       max-width: 900px;
       margin: 8px auto;
-      padding: 7px 14px;
-      border: 1px solid var(--teal-mid);
-      border-radius: var(--radius);
-      background: var(--teal-pale);
-      color: #1a4a56;
+      padding: 10px 18px;
+      border: 1px solid rgba(125, 101, 74, 0.24);
+      border-radius: 16px;
+      background: linear-gradient(180deg, #f7f1e7 0%, #ede3d4 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      color: #4a3b30;
       font-size: 0.82rem;
       line-height: 1.4;
     }
@@ -277,25 +280,36 @@
       align-items: center;
       gap: 5px;
       padding: 5px 14px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: #fff;
-      color: var(--text);
+      border: 1px solid rgba(125, 101, 74, 0.24);
+      border-radius: 999px;
+      background: linear-gradient(180deg, #f8f3ea 0%, #ece4d6 100%);
+      color: #2f281f;
       cursor: pointer;
       font-size: 0.8rem;
       font-family: var(--font-ui);
-      font-weight: 400;
+      font-weight: 600;
       text-decoration: none;
-      transition: border-color 150ms, background 150ms;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 1px 0 rgba(255, 255, 255, 0.35);
+      transition: border-color 150ms, background 150ms, color 150ms, box-shadow 150ms;
     }
-    .s-toolbar-btn:hover { border-color: var(--teal-mid); background: var(--teal-pale); text-decoration: none; }
+    .s-toolbar-btn:hover {
+      border-color: rgba(125, 101, 74, 0.38);
+      background: linear-gradient(180deg, #fcf8f0 0%, #f0e8db 100%);
+      color: #211a14;
+      text-decoration: none;
+    }
 
     .s-toolbar-btn-primary {
-      background: var(--teal);
-      border-color: var(--teal);
+      background: linear-gradient(180deg, #3d352d 0%, #1a1410 100%);
+      border-color: #0f0c0a;
+      color: #f5efe5;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 10px rgba(0, 0, 0, 0.18);
+    }
+    .s-toolbar-btn-primary:hover {
+      background: linear-gradient(180deg, #4a4138 0%, #221a16 100%);
+      border-color: #1b1511;
       color: #fff;
     }
-    .s-toolbar-btn-primary:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
 
     .s-toolbar-icon { display: inline-block; flex: 0 0 20px; }
     .s-toolbar-icon.previous-icon,
@@ -312,6 +326,7 @@
     }
 
     #staffwrapper {
+      position: relative;
       background: #fff;
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -491,7 +506,7 @@
       flex-direction: column;
       align-items: center;
       width: 100%;
-      margin: 4px 0 0;
+      margin: 2px 0 0;
       padding: 0 12px;
       box-sizing: border-box;
     }
@@ -501,24 +516,35 @@
       text-align: center;
       min-height: 0 !important;
       margin: 0 !important;
+      padding: 10px 18px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(57, 45, 36, 0.98) 0%, rgba(28, 22, 18, 0.98) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 14px 26px rgba(22, 14, 10, 0.18);
+      box-sizing: border-box;
     }
 
     #exercise-text {
       font-family: var(--font-body);
       font-size: 0.9rem;
-      color: var(--text-muted);
-      margin: 2px 0 0;
+      color: #f4eadc;
+      margin: 0;
       text-align: center;
       width: 100%;
       white-space: normal;
+      font-weight: 600;
     }
 
     #exercise-status-and-tempo {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
+      margin-top: 4px;
+      margin-bottom: 0;
     }
 
     #exercise-status-and-tempo p { margin: 0 !important; padding: 0 !important; }
@@ -530,6 +556,10 @@
       font-family: var(--font-body);
       letter-spacing: 0.06em;
       white-space: nowrap;
+      background: linear-gradient(180deg, #84715f 0%, #5f4d3f 100%);
+      color: #f8f0e5;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
     /* ── Playback controls moved into drawer / hidden from bar ── */
@@ -556,17 +586,80 @@
     #piano {
       width: 100%;
       max-width: none;
-      margin: 4px auto 0;
-      padding: 0 12px;
+      margin: 6px auto 0;
+      padding: 10px 8px 10px;
       box-sizing: border-box;
       overflow-x: auto;   /* scroll if keyboard wider than viewport */
+      position: relative;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #241c17 0%, #15100d 100%);
+      border: 1px solid rgba(0, 0, 0, 0.34);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        inset 0 -16px 24px rgba(255, 255, 255, 0.03),
+        0 18px 34px rgba(0, 0, 0, 0.22);
+    }
+
+    #piano::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      top: 0;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(158, 46, 46, 0.2), rgba(187, 57, 57, 0.95), rgba(158, 46, 46, 0.2));
     }
 
     /* Do NOT force keyboard-wrapper to 100% — it renders the SVG at a fixed
      * pixel width, and the QWERTY badge positions are calculated from those
      * same pixels. Stretching the wrapper misaligns the badges. */
-    .keyboard-wrapper { margin: 4px auto 0 !important; }
+    .keyboard-wrapper { margin: 0 auto !important; }
     .keyboard-input-mode { max-width: 100%; }
+    .keyboard-area {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* QWERTY badge overlay */
+    .keyboard .qwerty-labels {
+      z-index: 4;
+    }
+
+    .keyboard .qwerty-key-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 0 3px;
+      border-radius: 7px;
+      border: 1px solid rgba(115, 91, 64, 0.38);
+      background: linear-gradient(180deg, rgba(251, 246, 238, 0.98) 0%, rgba(232, 220, 202, 0.98) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.82),
+        0 1px 2px rgba(36, 26, 18, 0.14);
+      color: #2e2217;
+      font-family: var(--font-ui);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      text-transform: uppercase;
+      pointer-events: none;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .keyboard .qwerty-key-badge.black {
+      padding: 0 2px;
+      border-color: rgba(255, 255, 255, 0.18);
+      background: linear-gradient(180deg, rgba(71, 64, 59, 0.96) 0%, rgba(26, 22, 20, 0.96) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.28);
+      color: rgba(255, 248, 238, 0.96);
+    }
 
     /* ── Input mode hint (replaces always-visible toggle bar) ── */
     /*
@@ -619,7 +712,62 @@
 
     /* ── Hide legacy clutter ─────────────────────────────────── */
     .icon-btn-camera, .startover-icon { display: none !important; }
-    #user-interaction-solicitation { display: none !important; }
+    #user-interaction-solicitation {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: min(700px, calc(100% - 24px));
+      max-width: calc(100% - 24px);
+      box-sizing: border-box;
+      padding: 9px 16px;
+      border: 1px solid rgba(110, 86, 61, 0.34);
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(252, 246, 236, 0.99) 0%, rgba(239, 227, 208, 0.98) 100%);
+      color: #241a12;
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: normal;
+      text-align: center;
+      overflow-wrap: anywhere;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.82),
+        0 10px 24px rgba(34, 24, 16, 0.18);
+      cursor: pointer;
+    }
+
+    .harmony-ui {
+      width: calc(100% - 24px);
+      max-width: none;
+      margin: 10px auto 0;
+      padding: 14px 12px 16px;
+      box-sizing: border-box;
+      background: linear-gradient(180deg, #fbf7ef 0%, #f1e8db 100%);
+      border: 1px solid rgba(125, 101, 74, 0.14);
+      border-radius: 28px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 18px 40px rgba(38, 27, 17, 0.08);
+    }
+
+    #piano .slick-dots li,
+    #piano .flickity-page-dots .dot,
+    #piano .swiper-pagination-bullet {
+      transform: scale(0.62);
+      opacity: 0.5;
+    }
+
+    #piano .slick-dots li button:before,
+    #piano .flickity-page-dots .dot,
+    #piano .swiper-pagination-bullet {
+      color: rgba(237, 226, 209, 0.6) !important;
+      background: rgba(237, 226, 209, 0.6) !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
   </style>
 {% endblock %}
 
@@ -708,13 +856,13 @@
 
     <!-- Hint banners -->
     {% if disable_computer_keyboard_input %}
-      <div class="s-player-input-hint">
+      <div class="s-player-input-hint" data-player-hint="midi">
         Play using your MIDI keyboard or click the piano below. Any octave works.
       </div>
     {% endif %}
 
     {% if is_review_mode %}
-      <div class="s-player-input-hint">
+      <div class="s-player-input-hint" data-player-hint="review">
         Review mode — your result is preserved, practice freely.
       </div>
     {% endif %}
@@ -742,7 +890,7 @@
         </div>
 
         <div id="staffwrapper">
-          <div id="user-interaction-solicitation">START</div>
+          <div id="user-interaction-solicitation">Click here, press any key, or use your MIDI keyboard to begin</div>
           <canvas id="staff"></canvas>
         </div>
 
@@ -776,19 +924,46 @@
 {% block js_extra %}
   <script>require(['app/main']);</script>
   <script>
-    window.addEventListener('load', function () {
+    window.PLAYER_DEFINITION_URL = "{% url 'student:player-definition' unit_num=unit_num %}";
+    window.refreshPlayerChrome = function (newData) {
+      var cur = document.getElementById('js-player-current');
+      var tot = document.getElementById('js-player-total');
+      var wrap = document.querySelector('.s-player-wrap');
+      var harmonyUi = document.querySelector('.harmony-ui');
 
-      // ── Exercise counter sync ──────────────────────────────
-      setInterval(function () {
-        var statusEl = document.getElementById('exercise-info');
-        if (statusEl) {
-          var match = statusEl.innerText.match(/Exercise (\d+) of (\d+)/);
-          if (match) {
-            document.getElementById('js-player-current').innerText = match[1];
-            document.getElementById('js-player-total').innerText = match[2];
-          }
-        }
-      }, 500);
+      if (cur && newData && newData.exerciseNum != null) {
+        cur.innerText = String(newData.exerciseNum);
+      }
+      if (tot && newData && newData.totalExercises != null) {
+        tot.innerText = String(newData.totalExercises);
+      }
+
+      document.querySelectorAll('.s-player-input-hint[data-player-hint]').forEach(function (node) {
+        node.remove();
+      });
+
+      if (!wrap || !harmonyUi || !newData) {
+        return;
+      }
+
+      if (newData.disableComputerKeyboardInput) {
+        var midiHint = document.createElement('div');
+        midiHint.className = 's-player-input-hint';
+        midiHint.setAttribute('data-player-hint', 'midi');
+        midiHint.innerText = 'Play using your MIDI keyboard or click the piano below. Any octave works.';
+        wrap.insertBefore(midiHint, harmonyUi);
+      }
+
+      if (newData.reviewMode) {
+        var reviewHint = document.createElement('div');
+        reviewHint.className = 's-player-input-hint';
+        reviewHint.setAttribute('data-player-hint', 'review');
+        reviewHint.innerText = 'Review mode — your result is preserved, practice freely.';
+        wrap.insertBefore(reviewHint, harmonyUi);
+      }
+    };
+
+    window.addEventListener('load', function () {
 
       // ── Settings drawer ────────────────────────────────────
       var overlay  = document.querySelector('.js-settings-overlay');
