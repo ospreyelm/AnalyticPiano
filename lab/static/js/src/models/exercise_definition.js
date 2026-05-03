@@ -335,11 +335,13 @@ define([
         ? ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "m9", "M9", "m10", "M10", "P11", "P12", "m13", "M13", "m14", "M14"]
         : ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8"])
       : ["I", "ii", "IV", "V", "vi", "I6/4", "i6/4", "V6/4", "Cad6/4", "Cadb6/4"];
-    _.each(fallbacks, function (item) {
-      if (item !== correctLabel && pool.indexOf(item) === -1) {
-        pool.push(item);
-      }
-    });
+    if (pool.length < 4) {
+      _.each(fallbacks, function (item) {
+        if (item !== correctLabel && pool.indexOf(item) === -1) {
+          pool.push(item);
+        }
+      });
+    }
     var distractors = _.shuffle(pool).slice(0, 4);
     var choices = _.shuffle([correctLabel].concat(distractors));
     while (choices.length < 5) {
@@ -525,8 +527,8 @@ define([
 
     return _.map(rawProblems, function (problem) {
       var next = _.assign({}, problem);
-      if (explicitAllowedAnswers.length > 0) {
-        next.choices = _.map(explicitAllowedAnswers.slice(), normalizeAnalysisLabel);
+      if (explicitAllowedAnswers.length > 0 && next.answer) {
+        next.choices = _.map(buildChoices(next.answer, explicitAllowedAnswers, analysisType, false), normalizeAnalysisLabel);
       } else if (next.answer) {
         next.choices = _.map(buildChoices(next.answer, allAnswers, analysisType, false), normalizeAnalysisLabel);
       } else {
