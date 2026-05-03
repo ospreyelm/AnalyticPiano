@@ -64,13 +64,23 @@ def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num,
     if next_num and unit_n:
         next_exercise_url = f"/s/units/{unit_n}/play/?playlist={playlist.id}&exercise_num={next_num}"
 
+    # Build skill_name: for figured bass, show the new figures (e.g. "5/3 and 7 figures")
+    playlist_tags = list(getattr(playlist, "skill_tags", None) or [])
+    is_figures = "mode:figures" in playlist_tags or "mode:figures_unabbreviated" in playlist_tags
+    if is_figures and unit_n:
+        _fb_family = "figured_bass_unabbreviated" if "mode:figures_unabbreviated" in playlist_tags else "figured_bass"
+        _new_vals = sorted(TaxonomyReader.get_new_values(unit_n, _fb_family))
+        skill_name = " and ".join(_new_vals) + " figures" if _new_vals else unit_name
+    else:
+        skill_name = unit_name or (TaxonomyReader.get_skill_label(exercise_obj.skill_tags[0]) if exercise_obj.skill_tags else None)
+
     return {
         "status": "ok",
         "mastery_changes": mastery_changes,
         "score_numerator": score_numerator,
         "score_denominator": score_denominator,
         "error_tally": error_tally,
-        "skill_name": unit_name or (TaxonomyReader.get_skill_label(exercise_obj.skill_tags[0]) if exercise_obj.skill_tags else None),
+        "skill_name": skill_name,
         "exercise_num": exercise_num,
         "total_exercises": playlist.exercise_count,
         "next_exercise_url": next_exercise_url,
@@ -187,11 +197,12 @@ def _submit_exercise_performance(request):
         data=performance_data,
     )
 
-    # Record mastery attempt
+    # Record mastery attempt (skip for figured bass — tags are RN-centric)
     exercise_obj = Exercise.objects.get(id=exercise_id[:6])
     correct = _performance_demonstrates_skill(performance_data)
     mastery_changes = {}
-    if exercise_obj.skill_tags:
+    is_figures_mode = "mode:figures" in (exercise_obj.skill_tags or []) or "mode:figures_unabbreviated" in (exercise_obj.skill_tags or [])
+    if exercise_obj.skill_tags and not is_figures_mode:
         mastery_changes = record_attempt(user_id=user_id, exercise=exercise_obj, correct=correct)
 
     response_data = _build_completion_response(
@@ -241,12 +252,12 @@ def identification_answers_view(request):
         if not data.get("is_page_submit", False):
             return JsonResponse({"status": "saved"}, status=201)
 
-        # Record mastery attempt
-        # score structure: {"correct": N, "incorrect": N, "unanswered": N}
+        # Record mastery attempt (skip for figured bass — tags are RN-centric)
         score_data = data.get('score', {})
         correct = (score_data.get('incorrect', 1) == 0 and score_data.get('unanswered', 1) == 0)
         mastery_changes = {}
-        if exercise.skill_tags:
+        is_figures_mode = "mode:figures" in (exercise.skill_tags or []) or "mode:figures_unabbreviated" in (exercise.skill_tags or [])
+        if exercise.skill_tags and not is_figures_mode:
             mastery_changes = record_attempt(user_id=request.user.id, exercise=exercise, correct=correct)
 
         total_answered = score_data.get("correct", 0) + score_data.get("incorrect", 0) + score_data.get("unanswered", 0)

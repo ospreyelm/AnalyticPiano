@@ -645,7 +645,12 @@ define([
     getExerciseText: function () {
       var text = this.exercise.introText || "";
       if (typeof this.isChoraleIdentification === "function" && this.isChoraleIdentification() && text.indexOf("Provide the") > -1) {
+        var at = this.exercise.analysisType || "roman";
+        if (at === "figured_bass" || at === "figured_bass_unabbreviated") {
+          text = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct figures.";
+        } else {
           text = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct harmonic analysis.";
+        }
       }
       return text;
     },
