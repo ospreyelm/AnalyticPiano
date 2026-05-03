@@ -243,8 +243,7 @@ define([
       }
       if (analysisType === "figured_bass") {
         var abbrevFigure = analyzer.abbrev_thoroughbass_figure(midiStack);
-        // Root-position triads conventionally have no figure (""),
-        // but identification exercises need an explicit label — use the full figure.
+        // Root-position triads use "5/3" as both stored and display value.
         if (!abbrevFigure) {
           abbrevFigure = analyzer.full_thoroughbass_figure_minus_octave
             ? analyzer.full_thoroughbass_figure_minus_octave(midiStack)
@@ -317,7 +316,7 @@ define([
       return !!l && l !== correctLabel;
     }));
     var fallbacks = analysisType === "figured_bass"
-      ? ["", "6", "6/4", "7", "6/5", "4/3", "4/2"]
+      ? ["5/3", "6", "6/4", "7", "6/5", "4/3", "4/2"]
       : analysisType === "figured_bass_unabbreviated"
       ? ["8/5/3", "6/3", "6/4", "7/5/3", "6/5/3", "6/4/3", "6/4/2"]
       : analysisType === "note_name"
@@ -445,8 +444,7 @@ define([
           isTarget = false;
       }
 
-      // figured_bass abbreviated value can be "" (root position = no figures),
-      // so use !== null/undefined checks (not truthiness) for figured bass fields.
+      // Use !== null/undefined checks (not truthiness) for figured bass fields.
       if (analysisType === "figured_bass_unabbreviated" && slice.content.raw_figured_bass != null) {
         answer = slice.content.raw_figured_bass;
       } else if (analysisType === "figured_bass" && slice.content.figured_bass != null) {

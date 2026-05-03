@@ -3,10 +3,10 @@ from apps.exercises.utils.figured_bass import abbreviate_figured_bass
 
 
 def test_root_position_triad():
-    assert abbreviate_figured_bass("8/5/3") == ""
+    assert abbreviate_figured_bass("8/5/3") == "5/3"
 
 def test_root_position_triad_without_octave():
-    assert abbreviate_figured_bass("5/3") == ""
+    assert abbreviate_figured_bass("5/3") == "5/3"
 
 def test_first_inversion_triad():
     assert abbreviate_figured_bass("6/3") == "6"
@@ -74,7 +74,7 @@ def test_root_position_A_major():
     c, k = _make_chord("A3 C#4 E4 A4", "A")
     raw, abbrev = compute_figured_bass(c, k)
     assert raw == "8/5/3"
-    assert abbrev == ""
+    assert abbrev == "5/3"
 
 
 def test_root_position_C_major():
@@ -82,7 +82,7 @@ def test_root_position_C_major():
     c, k = _make_chord("C4 E4 G4 C5", "C")
     raw, abbrev = compute_figured_bass(c, k)
     assert raw == "8/5/3"
-    assert abbrev == ""
+    assert abbrev == "5/3"
 
 
 def test_first_inversion_C_major():

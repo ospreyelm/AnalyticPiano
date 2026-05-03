@@ -399,8 +399,7 @@ def generate_exercise_context(
                 else:
                     _compare = _val
 
-                # Note: abbreviated "" for root-position triads IS a valid
-                # value in cumulative — use `is not None`, not truthiness.
+                # Note: use `is not None`, not truthiness — "5/3" is a valid cumulative value.
                 if _compare is not None and _compare in _cumulative:
                     _content[_target_field] = _compare
                     _sl["is_target"] = True

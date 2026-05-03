@@ -7,9 +7,15 @@ from django.core.management.base import BaseCommand, CommandError
 from apps.exercises.models import Playlist, Exercise, ExercisePlaylistOrdered
 from apps.exercises.taxonomy_reader import TaxonomyReader
 
-def _unit_new_chords(unit_num: int) -> set[str]:
+def _unit_new_chords(unit_num: int, family: str = "roman") -> set[str]:
     """Chords introduced at this unit, from taxonomy."""
-    return TaxonomyReader.get_new_values(str(unit_num), "roman")
+    return TaxonomyReader.get_new_values(str(unit_num), family)
+
+
+def _mode_to_family(mode: str) -> str:
+    if mode in ("figures", "figures_unabbreviated"):
+        return "figured_bass"
+    return "roman"
 
 # parents[4] from this file = repo root
 TAXONOMY_PATH = Path(__file__).resolve().parents[4] / "music_theory_taxonomy_with_branches.json"
@@ -36,39 +42,45 @@ def _parse_range(text: str) -> list[int]:
     return [int(text)]
 
 
-def _raw_or_targeted_label(slice_dict: dict) -> str | None:
+def _raw_label(slice_dict: dict, family: str = "roman") -> str | None:
     content = slice_dict.get("content", {})
+    if family == "figured_bass":
+        raw = content.get("raw_figured_bass")
+        if raw is not None:
+            from apps.exercises.utils.figured_bass import abbreviate_figured_bass
+            return abbreviate_figured_bass(raw)
+        return None
     return content.get("raw_roman_numeral") or content.get("roman_numeral")
 
 
-def _out_of_scope_ratio(ex, cumulative):
+def _out_of_scope_ratio(ex, cumulative, family="roman"):
     analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
     if not analysis:
         return 0.0
-    out = sum(1 for s in analysis if _raw_or_targeted_label(s) not in cumulative)
+    out = sum(1 for s in analysis if _raw_label(s, family) not in cumulative)
     return out / len(analysis)
 
 
-def _new_value_event_count(ex, new_set):
+def _new_value_event_count(ex, new_set, family="roman"):
     analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
-    return sum(1 for s in analysis if _raw_or_targeted_label(s) in new_set)
+    return sum(1 for s in analysis if _raw_label(s, family) in new_set)
 
 
-def _targetable_event_ratio(ex, cumulative):
+def _targetable_event_ratio(ex, cumulative, family="roman"):
     analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
     if not analysis:
         return 0.0
-    good = sum(1 for s in analysis if _raw_or_targeted_label(s) in cumulative)
+    good = sum(1 for s in analysis if _raw_label(s, family) in cumulative)
     return good / len(analysis)
 
 
-def _exercise_order_key(ex, unit_num: int):
-    cumulative = TaxonomyReader.get_cumulative_values(str(unit_num), "roman")
-    new_set = TaxonomyReader.get_new_values(str(unit_num), "roman")
+def _exercise_order_key(ex, unit_num: int, family: str = "roman"):
+    cumulative = TaxonomyReader.get_cumulative_values(str(unit_num), family)
+    new_set = TaxonomyReader.get_new_values(str(unit_num), family)
     return (
-        _out_of_scope_ratio(ex, cumulative),
-        -_new_value_event_count(ex, new_set),
-        -_targetable_event_ratio(ex, cumulative),
+        _out_of_scope_ratio(ex, cumulative, family),
+        -_new_value_event_count(ex, new_set, family),
+        -_targetable_event_ratio(ex, cumulative, family),
         ex.complexity,
         Command._extract_riem_phrase(ex.description or ""),
     )
@@ -86,21 +98,18 @@ class Command(BaseCommand):
         return (int(m.group(1)), int(m.group(2)))
 
     @staticmethod
-    def _has_new_chord(ex: "Exercise", unit_num: int) -> bool:
+    def _has_new_chord(ex: "Exercise", unit_num: int, family: str = "roman") -> bool:
         """Return True if exercise analysis contains at least one chord new to unit_num."""
-        new_chords = _unit_new_chords(unit_num)
+        new_chords = _unit_new_chords(unit_num, family)
         if not new_chords:
             return True  # no new chords defined — don't filter
         analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
-        rns = set()
+        labels = set()
         for s in analysis:
-            content = s.get("content", {})
-            # Prefer raw_roman_numeral (unfiltered); fall back to roman_numeral for
-            # exercises imported before the backfill.
-            label = content.get("raw_roman_numeral") or content.get("roman_numeral")
+            label = _raw_label(s, family)
             if label:
-                rns.add(label)
-        return bool(rns & new_chords)
+                labels.add(label)
+        return bool(labels & new_chords)
 
     def add_arguments(self, parser):
         parser.add_argument("--unit", type=int, required=True)
@@ -184,17 +193,18 @@ class Command(BaseCommand):
                 skill_tags__contains=[mode_tag],
             )
 
+            family = _mode_to_family(mode)
             require_new_chords = not options.get("no_chord_filter", False) and mode in ("roman", "figures", "matching")
             selected = []
             for ex in candidates:
                 riem_num, _ = Command._extract_riem_phrase(ex.description or "")
                 if riem_num not in riem_set:
                     continue
-                if require_new_chords and not Command._has_new_chord(ex, unit_num):
+                if require_new_chords and not Command._has_new_chord(ex, unit_num, family):
                     self.stdout.write(self.style.WARNING(f"  Skipping {ex.id} (no new-unit chords): {(ex.description or '')[:60]}"))
                     continue
                 selected.append(ex)
-            selected.sort(key=lambda ex: _exercise_order_key(ex, unit_num))
+            selected.sort(key=lambda ex: _exercise_order_key(ex, unit_num, family))
 
             ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
             for idx, ex in enumerate(selected, start=1):

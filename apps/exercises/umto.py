@@ -171,10 +171,12 @@ class UMTO(BaseModel):
 
         return sorted(list(labels))
 
-    def to_frontend_payload(self, unit: Optional[int] = None) -> Dict[str, Any]:
+    def to_frontend_payload(self, unit: Optional[int] = None, analysis_type: Optional[str] = None) -> Dict[str, Any]:
         """
         Generates a payload ready for the ExerciseDefinition JS parser.
         """
+        if analysis_type is None:
+            analysis_type = "note_name" if self.metadata.complexity_score == 1 else "roman"
         return {
             "type": "umto_chorale",
             "isUMTO": True,
@@ -186,7 +188,7 @@ class UMTO(BaseModel):
             "meter": self.metadata.meter,
             "clef": self.metadata.clef,
             "semibrevesPerLine": 4,
-            "analysisType": "note_name" if self.metadata.complexity_score == 1 else "roman",
+            "analysisType": analysis_type,
             "introText": self.metadata.source,
             "reviewText": "Well done!",
             "inputMode": self.metadata.input_mode,

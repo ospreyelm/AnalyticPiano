@@ -22,9 +22,9 @@ import re
 # Chromatic prefixes are reattached after lookup by matching interval numbers.
 # Empty string means "nothing" (root-position triad convention).
 _ABBREV_TABLE = [
-    # Root-position triads
-    (("8", "5", "3"), ""),
-    (("5", "3"),      ""),
+    # Root-position triads — use "5/3" (empty string is pedagogically confusing)
+    (("8", "5", "3"), "5/3"),
+    (("5", "3"),      "5/3"),
     # Chromatic root-position triad: only an accidental (on the 3rd or 5th)
     # handled separately below
     # First-inversion triad (various doublings)
@@ -93,15 +93,15 @@ def abbreviate_figured_bass(raw: str) -> str:
         if altered:
             # Return just the accidental prefix(es), not the interval number
             return "".join(p for p, n in altered if p)
-        return ""
+        return "5/3"
 
     abbreviated = _ABBREV_MAP.get(key)
     if abbreviated is None:
         # Unknown pattern — pass through unabbreviated
         return raw
 
-    if abbreviated == "":
-        return ""
+    if not abbreviated:
+        return abbreviated
 
     # Reattach prefixes: match each number in the abbreviated form back to its
     # original prefix from the full stack.

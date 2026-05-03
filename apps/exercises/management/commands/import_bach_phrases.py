@@ -380,6 +380,13 @@ class Command(BaseCommand):
                 except Exception as e:
                     self.stdout.write(self.style.WARNING(f"  Figured bass overrides failed: {e}"))
 
+            if mode == 'figures':
+                analysis_type = 'figured_bass'
+            elif mode == 'figures_unabbreviated':
+                analysis_type = 'figured_bass_unabbreviated'
+            else:
+                analysis_type = 'roman'
+
             umto_kwargs = dict(
                 exercise_id="TEMP",
                 source=intro_text,
@@ -388,6 +395,7 @@ class Command(BaseCommand):
                 clef="keyboard",
                 complexity_score=detected_complexity,
                 mode=umto_mode,
+                analysis_type=analysis_type,
             )
             if analysis_overrides is not None:
                 umto_kwargs["analysis_overrides"] = analysis_overrides

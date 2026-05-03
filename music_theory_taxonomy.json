@@ -86,11 +86,11 @@
               },
               "figured_bass": {
                 "cumulative": [
-                  {"value": "",  "display": "5/3"},
+                  {"value": "5/3", "display": "5/3"},
                   {"value": "7", "display": "7"}
                 ],
                 "new": [
-                  {"value": "",  "display": "5/3"},
+                  {"value": "5/3", "display": "5/3"},
                   {"value": "7", "display": "7"}
                 ]
               },
@@ -134,7 +134,7 @@
               },
               "figured_bass": {
                 "cumulative": [
-                  {"value": "",    "display": "5/3"},
+                  {"value": "5/3", "display": "5/3"},
                   {"value": "7",   "display": "7"},
                   {"value": "6",   "display": "6"},
                   {"value": "6/5", "display": "6/5"}
@@ -197,7 +197,7 @@
               },
               "figured_bass": {
                 "cumulative": [
-                  {"value": "",    "display": "5/3"},
+                  {"value": "5/3", "display": "5/3"},
                   {"value": "7",   "display": "7"},
                   {"value": "6",   "display": "6"},
                   {"value": "6/5", "display": "6/5"}
@@ -254,7 +254,7 @@
               },
               "figured_bass": {
                 "cumulative": [
-                  {"value": "",    "display": "5/3"},
+                  {"value": "5/3", "display": "5/3"},
                   {"value": "7",   "display": "7"},
                   {"value": "6",   "display": "6"},
                   {"value": "6/5", "display": "6/5"},
@@ -330,7 +330,7 @@
               },
               "figured_bass": {
                 "cumulative": [
-                  {"value": "",    "display": "5/3"},
+                  {"value": "5/3", "display": "5/3"},
                   {"value": "7",   "display": "7"},
                   {"value": "6",   "display": "6"},
                   {"value": "6/5", "display": "6/5"},
