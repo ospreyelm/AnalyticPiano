@@ -659,13 +659,17 @@ define([
      */
     getExerciseText: function () {
       var text = this.exercise.introText || "";
-      if (typeof this.isChoraleIdentification === "function" && this.isChoraleIdentification() && text.indexOf("Provide the") > -1) {
+      if (typeof this.isChoraleIdentification === "function" && this.isChoraleIdentification()) {
         var at = this.exercise.analysisType || "roman";
+        var instruction;
         if (at === "figured_bass" || at === "figured_bass_unabbreviated") {
-          text = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct figures.";
+          instruction = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct figures.";
         } else {
-          text = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct harmonic analysis.";
+          instruction = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct harmonic analysis.";
         }
+        // Extract "(BWV Rxx, mm. xx-xx)" from source string and prepend
+        var bwvMatch = text.match(/\(BWV[^)]+\)/);
+        text = bwvMatch ? bwvMatch[0] + " &mdash; " + instruction : instruction;
       }
       return text;
     },
