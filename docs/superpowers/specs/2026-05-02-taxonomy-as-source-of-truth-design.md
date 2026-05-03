@@ -277,6 +277,37 @@ The backfill is a prerequisite for the request-time targeting layer to work on e
 
 ---
 
+## Deferred: Secondary Function Disambiguation
+
+**Status:** Not implemented. Tracked here for future implementation.
+
+**The problem:** music21 emits `V/V`, `V7/ii`, `vii°/V` etc. for secondary dominants. The current targeting layer does a direct lookup — if the raw label is in `cumulative`, it's a target; if not, it's null. This means:
+
+- At unit 16+, `V/V` is in `cumulative` and targets correctly ✓
+- At unit 11, `V/V` is not in `cumulative` — correctly hidden ✓
+- BUT: a chord that music21 calls `I6` because it's diatonically F#-A#-C# in F# minor, but is actually functioning as `V6/iv` (tonicizing B minor) — gets labeled `I6` at unit 11. This is a music21 misanalysis, not a targeting error. The student sees `I6` where the musically correct answer is either `I6` (diatonic reading) or hidden (secondary function reading).
+
+**The algorithm (agreed in design, not yet built):**
+
+> *Escalating-context disambiguation for secondary function labels:*
+> 1. If `raw_roman_numeral` contains `/` (secondary function label from music21) AND its diatonic equivalent is in `cumulative`:
+>    - Check 1 chord ahead: does it resolve to the secondary target? → keep secondary label
+>    - Check 2 chords ahead → same
+>    - Check to phrase boundary (next cadence) → same
+>    - If none resolve → use the diatonic label (collapse to what's in `cumulative`)
+> 2. If `raw_roman_numeral` contains `/` AND its diatonic equivalent is NOT in `cumulative` → `None` (hidden slot)
+
+**Normalization prerequisite:** Before disambiguation, a `roman_normalizer.to_canonical()` step must map music21 spelling variants to taxonomy `value` symbols. Spelling only — no curriculum decisions:
+- `viio7` → `vii°7` (ASCII 'o' → Unicode °)
+- `Ger+6` → `Ger⁺⁶`
+- Chromatic alterations (`bVII`, `bVI`, `bIII`) are **preserved** — collapsing them is a curriculum decision, not normalization
+
+**Implementation location:** `apps/exercises/roman_targeting.py` (new file), called from `generate_exercise_context()` in `lab/views.py`. The current direct-lookup in `lab/views.py` lines 356–362 is the placeholder this replaces.
+
+**Why deferred:** Requires phrase boundary detection (cadence identification) and forward-looking chord context — non-trivial. The direct-lookup placeholder is correct for all non-secondary-function labels (units 9–15) and for unambiguous secondary labels at units 16+. Only affects edge cases where music21 and the diatonic reading disagree.
+
+---
+
 ## Files Changed
 
 | File | Change |
