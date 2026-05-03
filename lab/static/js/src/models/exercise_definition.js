@@ -409,19 +409,34 @@ define([
       : [];
     const windows = buildAnalysisWindows(timeline);
 
+    function ticksToRhythm(ticks) {
+      if (ticks >= 4096) return "w";
+      if (ticks >= 2048) return "h";
+      if (ticks >= 1024) return "q";
+      if (ticks >= 512)  return "8";
+      if (ticks >= 256)  return "16";
+      return "32";
+    }
+
     function getWindowMeta(sliceOffset, idx) {
       if (windows && windows[idx]) {
         var win = windows[idx];
         var firstEv = win.events && win.events.length ? win.events[0] : null;
+        var maxDur = firstEv && typeof firstEv.duration === "number" ? firstEv.duration : 1024;
+        _.each(win.events, function(ev) {
+          if (typeof ev.duration === "number" && ev.duration > maxDur) maxDur = ev.duration;
+        });
         return {
           measureIndex: firstEv && typeof firstEv.measureIndex === "number" ? firstEv.measureIndex : 0,
           onset: typeof win.onset === "number" ? win.onset : sliceOffset,
-            hasSlot: true,
+          rhythm: ticksToRhythm(maxDur),
+          hasSlot: true,
         };
       }
       return {
         measureIndex: 0,
         onset: sliceOffset,
+        rhythm: "q",
           hasSlot: false,
       };
     }
@@ -509,7 +524,7 @@ define([
         hidden: !answer || !isTarget || !winMeta.hasSlot,
         visible: (gradingMatch && gradingMatch.target_midi_pitches) ? gradingMatch.target_midi_pitches : [],
         notes: pitchesAtOffset.map(p => p.midi),
-        rhythm: "q"
+        rhythm: winMeta.rhythm || "q"
       });
     });
 
@@ -644,13 +659,17 @@ define([
      */
     getExerciseText: function () {
       var text = this.exercise.introText || "";
-      if (typeof this.isChoraleIdentification === "function" && this.isChoraleIdentification() && text.indexOf("Provide the") > -1) {
+      if (typeof this.isChoraleIdentification === "function" && this.isChoraleIdentification()) {
         var at = this.exercise.analysisType || "roman";
+        var instruction;
         if (at === "figured_bass" || at === "figured_bass_unabbreviated") {
-          text = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct figures.";
+          instruction = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct figures.";
         } else {
-          text = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct harmonic analysis.";
+          instruction = "Click on the highlighted <strong>?</strong> buttons beneath the score to select the correct harmonic analysis.";
         }
+        // Extract "(BWV Rxx, mm. xx-xx)" from source string and prepend
+        var bwvMatch = text.match(/\(BWV[^)]+\)/);
+        text = bwvMatch ? bwvMatch[0] + " &mdash; " + instruction : instruction;
       }
       return text;
     },

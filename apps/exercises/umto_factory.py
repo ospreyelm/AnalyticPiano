@@ -55,6 +55,62 @@ def _resolve_voice_id(target_voice: Optional[str], clef: str) -> str:
     return "S" if clef == "treble" else "B"
 
 
+_QL_TO_DUR_TYPE = {4.0: "w", 2.0: "h", 1.0: "q", 0.5: "8", 0.25: "16", 0.125: "32"}
+
+
+def _ql_to_dur_type(ql: float) -> str:
+    return _QL_TO_DUR_TYPE.get(round(ql, 6), "q")
+
+
+def _split_voices_at_onsets(
+    voices_dict: dict[str, list[VoiceEvent]],
+    attack_onsets: set[float],
+) -> dict[str, list[VoiceEvent]]:
+    """Split held notes at beat-boundary onsets where another voice attacks.
+
+    Only splits at integer quarter-note positions (beat boundaries), not at
+    eighth-note or finer subdivisions. A half note in the alto at beat 2
+    becomes two quarter notes — one per beat — so each beat's slot renders
+    with filled noteheads and remains readable.
+    """
+    # Only cut at beat boundaries (integer quarter-note positions)
+    beat_onsets = {o for o in attack_onsets if abs(o - round(o)) < 1e-6}
+
+    result: dict[str, list[VoiceEvent]] = {}
+    for vid, events in voices_dict.items():
+        new_events: list[VoiceEvent] = []
+        t = 0.0
+        for ev in events:
+            if ev.kind != "note" or ev.duration <= 1.0:
+                new_events.append(ev)
+                t += ev.duration
+                continue
+            # Find beat-boundary onsets strictly inside this note
+            end = t + ev.duration
+            cuts = sorted(
+                o for o in beat_onsets
+                if o > round(t, 5) + 1e-6 and o < round(end, 5) - 1e-6
+            )
+            if not cuts:
+                new_events.append(ev)
+                t += ev.duration
+                continue
+            # Split into quarter notes at each beat boundary
+            boundaries = [t] + cuts + [end]
+            for i in range(len(boundaries) - 1):
+                seg_dur = round(boundaries[i + 1] - boundaries[i], 6)
+                new_events.append(VoiceEvent(
+                    kind="note",
+                    pitch=ev.pitch,
+                    duration=seg_dur,
+                    duration_type=_ql_to_dur_type(seg_dur),
+                    dots=0,
+                ))
+            t += ev.duration
+        result[vid] = new_events
+    return result
+
+
 def _to_music21_key(key_name: str):
     text = (key_name or "").strip()
     if not text:
@@ -183,8 +239,20 @@ def build_umto_payload(
     # unique onset across all four voices. Callers that need roman-numeral
     # analysis_slices must pass analysis_overrides.
     if not single_voice_mode:
+        # First pass: collect all attack onsets before splitting
         onsets: set[float] = set()
-        # Recompute per-voice onsets of note events.
+        for vid in ("S", "A", "T", "B"):
+            t = 0.0
+            for ev in voices_dict[vid]:
+                if ev.kind == "note":
+                    onsets.add(round(t, 5))
+                t += ev.duration
+
+        # Split held notes at interior onsets so each slot gets the correct notehead
+        voices_dict = _split_voices_at_onsets(voices_dict, onsets)
+
+        # Recompute onsets after splitting (new attack points may have been added)
+        onsets = set()
         for vid in ("S", "A", "T", "B"):
             t = 0.0
             for ev in voices_dict[vid]:

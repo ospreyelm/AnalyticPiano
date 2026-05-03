@@ -2,6 +2,35 @@
 define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
   "use strict";
 
+  function _isOpenNotehead(staveNote) {
+    var dur = staveNote && staveNote.duration;
+    // "w" = whole, "h" = half — both have open noteheads
+    return dur === "w" || dur === "h";
+  }
+
+  // After formatToStave, displace open noteheads (half/whole) when the other
+  // voice at the same beat has a filled notehead. VexFlow's format() only
+  // displaces based on pitch-line overlap, not notehead fill type.
+  // Each stave slot has one Voice per part with exactly one tickable.
+  function _displaceMixedNoteheads(voices) {
+    if (!voices || voices.length !== 2) return;
+    var ticksA = voices[0].getTickables ? voices[0].getTickables() : [];
+    var ticksB = voices[1].getTickables ? voices[1].getTickables() : [];
+    var a = ticksA[0];
+    var b = ticksB[0];
+    if (!a || !b) return;
+    var aOpen = _isOpenNotehead(a);
+    var bOpen = _isOpenNotehead(b);
+    if (aOpen === bOpen) return; // both filled or both open — no action needed
+    var openNote  = aOpen ? a : b;
+    var filledNote = aOpen ? b : a;
+    // Shift amount = filled note's voice-shift width (accounts for displaced noteheads)
+    var shift = filledNote.getVoiceShiftWidth ? filledNote.getVoiceShiftWidth() : 13;
+    if (typeof openNote.setXShift === "function") {
+      openNote.setXShift(shift);
+    }
+  }
+
   /**
    * Creates an instance of a Stave.
    *
@@ -467,6 +496,11 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
         formatter.joinVoices(bottom_staff); // causes havoc ... why?
         formatter.formatToStave(bottom_staff, this.staffSegment);
       }
+
+      // Displace open noteheads (half/whole) when simultaneous with filled noteheads
+      // in the other voice. VexFlow doesn't auto-displace across voices by duration type.
+      _displaceMixedNoteheads(top_staff);
+      _displaceMixedNoteheads(bottom_staff);
     },
     /**
      * Draws the Vex.Flow.Voice on the Stave.
