@@ -11,87 +11,12 @@ define([
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
   var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
-  var UNIT_ALLOWED_ANSWERS = {
-    // Unit 9: Tonic & dominant — I, V, V7 root position only
-    9: ['I', 'i', 'V', 'V7'],
-
-    // Unit 10: First inversions — adds I6, i6, V6, vii°6
-    10: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6'],
-
-    // Unit 11: Pre-dominants — adds IV, iv, ii, ii6, vi, VI
-    11: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
-      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI'],
-
-    // Unit 12: Second inversions — adds I64, V64
-    12: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
-      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
-      'I64', 'V64'],
-
-    // Unit 13: Rule of the octave — adds iii, III, VII
-    13: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
-      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
-      'I64', 'V64',
-      'iii', 'III', 'VII'],
-
-    // Unit 14: Diatonic seventh chords — adds ii7, ii°7, IV7, vi7, iii7, vii°7
-    14: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
-      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
-      'I64', 'V64',
-      'iii', 'III', 'VII',
-      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7'],
-
-    // Unit 15: Sequences — no new chord types beyond unit 14
-    15: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
-      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
-      'I64', 'V64',
-      'iii', 'III', 'VII',
-      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7'],
-
-    // Unit 16: Applied (secondary) chords — adds V/x, V7/x, vii°/x, vii°7/x
-    16: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
-      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
-      'I64', 'V64',
-      'iii', 'III', 'VII',
-      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
-      'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
-      'V/vi', 'V7/vi', 'V/III', 'V7/III',
-      'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
-      'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV'],
-
-    // Unit 17: Modal mixture — adds bVI, bVII, bIII, ii°, ii°6
-    17: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
-      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
-      'I64', 'V64',
-      'iii', 'III', 'VII',
-      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
-      'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
-      'V/vi', 'V7/vi', 'V/III', 'V7/III',
-      'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
-      'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV',
-      'bVI', 'bVII', 'bIII', 'ii°', 'ii°6'],
-
-    // Unit 18: Neapolitan & augmented sixths — adds N6, It+6, Ger+6, Fr+6
-    18: ['I', 'i', 'V', 'V7', 'I6', 'i6', 'V6', 'vii°6',
-      'IV', 'iv', 'ii', 'ii6', 'vi', 'VI',
-      'I64', 'V64',
-      'iii', 'III', 'VII',
-      'ii7', 'ii°7', 'IV7', 'vi7', 'iii7', 'vii°7', 'viio7',
-      'V/ii', 'V7/ii', 'V/IV', 'V7/IV', 'V/V', 'V7/V',
-      'V/vi', 'V7/vi', 'V/III', 'V7/III',
-      'vii°/ii', 'vii°7/ii', 'vii°/V', 'vii°7/V',
-      'vii°/vi', 'vii°7/vi', 'vii°/IV', 'vii°7/IV',
-      'bVI', 'bVII', 'bIII', 'ii°', 'ii°6',
-      'N6', 'It+6', 'Ger+6', 'Fr+6'],
-
-    // Units 19–20: Modulation — pass through unmodified.
-    // Modulation exercises span tonal centres; filtering to one key's allowlist
-    // would hide legitimate chords in the new key.
-    19: null,
-    20: null,
-  };
 
   function applySkillFilter(problems, skillTags, analysisType, explicitAllowedAnswers) {
-    // If UMTO provided an explicit allowlist, use it exclusively
+    // Targeting is applied server-side via is_target on each analysis slice.
+    // explicitAllowedAnswers (from analysisPolicy.allowedValues) is used only
+    // to populate dropdown choices, not to hide slots.
+    // This function is now a pass-through — slot visibility is already resolved.
     if (explicitAllowedAnswers && explicitAllowedAnswers.length > 0) {
       return _.map(problems, function (p) {
         if (p.hidden) return p;
@@ -102,41 +27,7 @@ define([
         return p;
       });
     }
-
-    if (!skillTags || skillTags.length === 0) return problems;
-
-    // Only filter roman numeral exercises — all other types pass through
-    if ((analysisType || 'roman') !== 'roman') return problems;
-
-    // Extract the highest unit number from any 'unit:N' tag (deterministic, order-independent)
-    var unitNum = null;
-    _.each(skillTags, function (t) {
-      var m = t.match(/^unit:(\d+)/);
-      if (m) {
-        var parsed = parseInt(m[1], 10);
-        unitNum = (unitNum === null) ? parsed : Math.max(unitNum, parsed);
-      }
-    });
-
-    // No unit tag → pass through
-    if (unitNum === null) return problems;
-
-    // Unit not in map → pass through (safe fallback for units 21+)
-    if (!Object.prototype.hasOwnProperty.call(UNIT_ALLOWED_ANSWERS, unitNum)) return problems;
-
-    var allowed = UNIT_ALLOWED_ANSWERS[unitNum];
-
-    // null entry (units 19–20) → pass through
-    if (allowed === null) return problems;
-
-    return _.map(problems, function (p) {
-      if (p.hidden) return p;
-      if (allowed.indexOf(p.answer) === -1) {
-        p = _.clone(p);
-        p.hidden = true;
-      }
-      return p;
-    });
+    return problems;
   }
 
   /**
@@ -535,7 +426,8 @@ define([
     // Map UMTO analysis slices to problems
     _.each(umto.analysis, function (slice, idx) {
       let answer = "";
-      let isTarget = true; // Default to true
+      // Targeting is applied server-side; respect it if present, otherwise default to true
+      let isTarget = typeof slice.is_target === "boolean" ? slice.is_target : true;
 
       // Find the vertical sonority for this slice to check for context notes
       const pitchesAtOffset = umto.voices.S.concat(umto.voices.A, umto.voices.T, umto.voices.B)
@@ -620,7 +512,16 @@ define([
         allAnswers.push(ans);
       }
     });
-    var explicitAllowedAnswers = exercise.allowed_answers || [];
+    var explicitAllowedAnswers = [];
+    if (
+      exercise.analysisPolicy &&
+      _.isArray(exercise.analysisPolicy.allowedValues) &&
+      exercise.analysisPolicy.allowedValues.length > 0
+    ) {
+      explicitAllowedAnswers = exercise.analysisPolicy.allowedValues;
+    } else {
+      explicitAllowedAnswers = exercise.allowed_answers || [];
+    }
 
     return _.map(rawProblems, function (problem) {
       var next = _.assign({}, problem);
@@ -996,6 +897,7 @@ define([
         exercise.type = definition.type;
         exercise.score = definition.score || {};
         exercise.allowed_answers = definition.allowed_answers || [];
+        exercise.analysisPolicy = definition.analysisPolicy || null;
         exercise.grading = definition.grading || [];
         exercise.key = convertCIRKeyToHarmonyLabKey(definition.key || "C");
         exercise.keySignature = false;

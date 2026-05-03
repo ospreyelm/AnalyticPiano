@@ -89,6 +89,7 @@ class Metadata(BaseModel):
     mode: InteractionMode = InteractionMode.PLAYBACK
     is_umto: bool = True
     input_mode: Literal["dropdown", "text"] = "dropdown"
+    unit: Optional[int] = None
 
 class UMTO(BaseModel):
     """

@@ -27,6 +27,8 @@ from apps.exercises.umto import (
     AnalysisLayer,
     InteractionMode,
 )
+from apps.exercises.utils.music21_builder import build_score_from_data
+from music21 import roman, key as m21_key
 
 
 _DUR_QL = {"w": 4.0, "h": 2.0, "q": 1.0, "8": 0.5, "16": 0.25, "32": 0.125}
@@ -51,6 +53,18 @@ def _resolve_voice_id(target_voice: Optional[str], clef: str) -> str:
             raise ValueError(f"Unknown target_voice: {target_voice}")
         return vid
     return "S" if clef == "treble" else "B"
+
+
+def _to_music21_key(key_name: str):
+    text = (key_name or "").strip()
+    if not text:
+        return m21_key.Key("C")
+    parts = text.split()
+    if len(parts) >= 2 and parts[-1].lower() in {"major", "minor"}:
+        tonic = " ".join(parts[:-1]).replace("b", "-")
+        mode = parts[-1].lower()
+        return m21_key.Key(tonic, mode)
+    return m21_key.Key(text)
 
 
 def build_umto_payload(
@@ -82,6 +96,7 @@ def build_umto_payload(
         complexity_score=complexity_score,
         mode=mode,
         input_mode=input_mode,
+        unit=unit,
     )
 
     voices_dict: dict[str, list[VoiceEvent]] = {"S": [], "A": [], "T": [], "B": []}
@@ -138,10 +153,17 @@ def build_umto_payload(
                         grading_slices.append(
                             GradingSlice(offset=cur_offset, target_midi_pitches=[midi])
                         )
+                        
+                        # Unit 1: identification uses pitch names as analysis
+                        content = AnalysisLayer()
+                        if unit == 1:
+                            content.roman_numeral = None
+                            content.raw_roman_numeral = pitch.to_long_name()
+
                         analysis_slices.append(
                             AnalysisSlice(
                                 offset=cur_offset,
-                                content=AnalysisLayer(),
+                                content=content,
                                 unit_tags=[unit] if unit is not None else [],
                             )
                         )
@@ -168,6 +190,24 @@ def build_umto_payload(
                 if ev.kind == "note":
                     onsets.add(round(t, 5))
                 t += ev.duration
+        
+        # Unit 9+: Generate Roman Numerals via music21
+        theory_map = {}
+        if unit and unit >= 9:
+            try:
+                m21_score = build_score_from_data({"score": score_data})
+                chordified = m21_score.chordify()
+                k_obj = _to_music21_key(key)
+                for off in sorted(onsets):
+                    # Get the chord exactly at this offset
+                    c = chordified.getElementAtOrBefore(off)
+                    if c and hasattr(c, 'pitches'):
+                        rn = roman.romanNumeralFromChord(c, k_obj)
+                        theory_map[off] = (rn.figure, rn.figure) # (roman, raw)
+            except Exception as e:
+                # Log or handle failure? For now, just skip theory.
+                print(f"Warning: music21 analysis failed for {exercise_id}: {e}")
+
         for off in sorted(onsets):
             pitches_at = []
             for vid in ("S", "A", "T", "B"):
@@ -181,10 +221,16 @@ def build_umto_payload(
                 grading_slices.append(
                     GradingSlice(offset=off, target_midi_pitches=sorted(pitches_at))
                 )
+                
+                content = AnalysisLayer()
+                if off in theory_map:
+                    content.roman_numeral = None
+                    content.raw_roman_numeral = theory_map[off][1]
+
                 analysis_slices.append(
                     AnalysisSlice(
                         offset=off,
-                        content=AnalysisLayer(),
+                        content=content,
                         unit_tags=[unit] if unit is not None else [],
                     )
                 )

@@ -36,11 +36,13 @@
 
 This task is purely data authoring — no tests needed, but run the `TaxonomyReader` tests after to confirm JSON is valid.
 
-- [ ] **Step 1: Author `analysis.roman` for units 9–18 in `music_theory_taxonomy.json`**
+- [x] **Step 1: Author `analysis.roman` for units 9–18 in `music_theory_taxonomy.json`**
 
 Open `music_theory_taxonomy.json`. For each unit 9–18, add an `"analysis"` key alongside the existing `"n"`, `"title"`, `"feat"`, `"tags"` keys. The `cumulative` list is derived from the existing `UNIT_ALLOWED_ANSWERS` in `import_bach_phrases.py` (lines 17–64). The `new` list is the delta vs the previous unit.
 
 The `display` field uses Unicode superscripts where needed: `°` for diminished, `⁶` for sixth, `⁷` for seventh, `+` for augmented, `⁶₄` for 6/4. When `value == display` (e.g. `"I"`, `"V"`) you still include both fields for schema consistency.
+
+> **Normalization note (`viio7` / `vii°7`):** music21 emits `viio7` (ASCII 'o') while the canonical taxonomy symbol is `vii°7` (Unicode °). Both spellings appear in the cumulative lists as separate `value` entries sharing the same `display: "vii°⁷"`. This is intentional for the initial implementation — a `roman_normalizer.to_canonical()` step that collapses spelling variants is deferred (see §3 of the design spec). Until normalization is added, the taxonomy **must** enumerate all known music21 spelling variants as separate value entries to avoid silent drops.
 
 Unit 9 block (add inside the unit 9 object):
 ```json
@@ -473,11 +475,11 @@ Unit 18 (adds Neapolitan + augmented sixths):
 }
 ```
 
-- [ ] **Step 2: Mirror the same changes in `music_theory_taxonomy_with_branches.json`**
+- [x] **Step 2: Mirror the same changes in `music_theory_taxonomy_with_branches.json`**
 
 The two taxonomy files must stay identical on the `analysis` field. Copy-paste the same blocks. Both files share the same unit structure; use the same unit `n` values to locate each unit object.
 
-- [ ] **Step 3: Verify JSON is parseable**
+- [x] **Step 3: Verify JSON is parseable**
 
 ```bash
 python -c "import json; json.load(open('music_theory_taxonomy.json')); print('OK')"
@@ -486,7 +488,7 @@ python -c "import json; json.load(open('music_theory_taxonomy_with_branches.json
 
 Expected: `OK` on each line.
 
-- [ ] **Step 4: Run existing TaxonomyReader tests**
+- [x] **Step 4: Run existing TaxonomyReader tests**
 
 ```bash
 cd /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1
@@ -495,7 +497,7 @@ python -m pytest apps/exercises/tests/test_taxonomy_reader.py -v
 
 Expected: all 5 tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add music_theory_taxonomy.json music_theory_taxonomy_with_branches.json
@@ -510,7 +512,7 @@ git commit -m "data: add analysis.roman cumulative/new lists to taxonomy units 9
 - Modify: `apps/exercises/taxonomy_reader.py`
 - Modify: `apps/exercises/tests/test_taxonomy_reader.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 In `apps/exercises/tests/test_taxonomy_reader.py`, add after the existing test class:
 
@@ -557,7 +559,7 @@ class TaxonomyReaderAnalysisTestCase(unittest.TestCase):
         self.assertEqual(result, set())
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 ```bash
 python -m pytest apps/exercises/tests/test_taxonomy_reader.py::TaxonomyReaderAnalysisTestCase -v
@@ -565,7 +567,7 @@ python -m pytest apps/exercises/tests/test_taxonomy_reader.py::TaxonomyReaderAna
 
 Expected: FAIL with `AttributeError: type object 'TaxonomyReader' has no attribute 'get_unit_analysis'`
 
-- [ ] **Step 3: Implement the three new methods in `TaxonomyReader`**
+- [x] **Step 3: Implement the three new methods in `TaxonomyReader`**
 
 In `apps/exercises/taxonomy_reader.py`, append after `get_skill_label`:
 
@@ -595,7 +597,7 @@ In `apps/exercises/taxonomy_reader.py`, append after `get_skill_label`:
         return {entry["value"] for entry in analysis.get("new", [])}
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 ```bash
 python -m pytest apps/exercises/tests/test_taxonomy_reader.py -v
@@ -603,7 +605,7 @@ python -m pytest apps/exercises/tests/test_taxonomy_reader.py -v
 
 Expected: all 12 tests PASS (5 old + 7 new).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/exercises/taxonomy_reader.py apps/exercises/tests/test_taxonomy_reader.py
@@ -620,7 +622,7 @@ git commit -m "feat: add get_unit_analysis, get_cumulative_values, get_new_value
 
 `AnalysisLayer` gains `raw_roman_numeral`; `AnalysisSlice` gains `is_target`. Both are optional/defaulted so existing data remains valid.
 
-- [ ] **Step 1: Write a failing test for the new fields**
+- [x] **Step 1: Write a failing test for the new fields**
 
 In `apps/exercises/tests/test_umto_contract.py`, append:
 
@@ -646,7 +648,7 @@ def test_analysis_slice_is_target_can_be_set():
     assert sl.is_target is True
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 ```bash
 python -m pytest apps/exercises/tests/test_umto_contract.py -v -k "raw_roman_numeral or is_target"
@@ -654,7 +656,7 @@ python -m pytest apps/exercises/tests/test_umto_contract.py -v -k "raw_roman_num
 
 Expected: FAIL with `TypeError` or `ValidationError` (fields don't exist yet).
 
-- [ ] **Step 3: Add fields to the Pydantic models**
+- [x] **Step 3: Add fields to the Pydantic models**
 
 In `apps/exercises/umto.py`, update `AnalysisLayer` (around line 53):
 
@@ -678,7 +680,7 @@ class AnalysisSlice(BaseModel):
     is_target: bool = False  # set at request time by targeting layer
 ```
 
-- [ ] **Step 4: Regenerate the JSON schema**
+- [x] **Step 4: Regenerate the JSON schema**
 
 ```bash
 python manage.py make_umto_schema
@@ -686,7 +688,7 @@ python manage.py make_umto_schema
 
 Expected: `apps/exercises/umto_schema.json` updated with `raw_roman_numeral` and `is_target` fields.
 
-- [ ] **Step 5: Run the new tests**
+- [x] **Step 5: Run the new tests**
 
 ```bash
 python -m pytest apps/exercises/tests/test_umto_contract.py -v
@@ -694,7 +696,7 @@ python -m pytest apps/exercises/tests/test_umto_contract.py -v
 
 Expected: all tests PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/exercises/umto.py apps/exercises/umto_schema.json
@@ -710,7 +712,7 @@ git commit -m "feat: add raw_roman_numeral to AnalysisLayer and is_target to Ana
 
 The goal: delete `UNIT_ALLOWED_ANSWERS`; store music21's raw figure in `raw_roman_numeral` (no filtering); set `roman_numeral` to `None` (targeting happens at request time).
 
-- [ ] **Step 1: Write a failing test**
+- [x] **Step 1: Write a failing test**
 
 In `apps/exercises/tests/` create or append to a test file for import_bach_phrases. Check if `test_import_bach_phrases.py` exists; if not, create it:
 
@@ -762,7 +764,7 @@ class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
         self.assertIsNone(overrides[0]["content"]["roman_numeral"])
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```bash
 python -m pytest apps/exercises/tests/test_import_bach_phrases.py -v
@@ -770,7 +772,7 @@ python -m pytest apps/exercises/tests/test_import_bach_phrases.py -v
 
 Expected: FAIL (currently `roman_numeral` is set to the filtered figure, not `None`).
 
-- [ ] **Step 3: Rewrite `_build_roman_analysis_overrides`**
+- [x] **Step 3: Rewrite `_build_roman_analysis_overrides`**
 
 In `apps/exercises/management/commands/import_bach_phrases.py`, delete the entire `UNIT_ALLOWED_ANSWERS` dict (lines 16–64) and replace `_build_roman_analysis_overrides` (lines 75–129) with:
 
@@ -824,7 +826,7 @@ def _build_roman_analysis_overrides(phrase_score, global_key, unit_tags: list) -
 
 Also remove the import of `UNIT_ALLOWED_ANSWERS` from the top of the file (it no longer exists).
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 ```bash
 python -m pytest apps/exercises/tests/test_import_bach_phrases.py -v
@@ -832,7 +834,7 @@ python -m pytest apps/exercises/tests/test_import_bach_phrases.py -v
 
 Expected: both tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/exercises/management/commands/import_bach_phrases.py \
@@ -849,11 +851,16 @@ git commit -m "feat: store raw_roman_numeral in import; remove UNIT_ALLOWED_ANSW
 
 Existing exercises in the DB have `roman_numeral` populated in stored slices but no `raw_roman_numeral`. This command re-runs music21 on each such exercise and writes the raw figure.
 
-- [ ] **Step 1: Create the management command**
+- [x] **Step 1: Create the management command**
+
+> **Important:** This uses `build_score_from_data` from `apps/exercises/utils/music21_builder.py`
+> to reconstruct the music21 Score. Do **not** build the score inline — the builder correctly
+> handles multi-staff, multi-voice CIR data with proper time alignment.
 
 ```python
 # apps/exercises/management/commands/backfill_raw_roman_numeral.py
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from apps.exercises.models import Exercise
 
 
@@ -865,10 +872,15 @@ class Command(BaseCommand):
             "--dry-run", action="store_true",
             help="Print what would be changed without writing to DB."
         )
+        parser.add_argument(
+            "--batch-size", type=int, default=50,
+            help="Number of exercises to save per transaction batch (default: 50)."
+        )
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
-        from music21 import stream as m21stream, chord as m21chord, key as m21key
+        batch_size = options["batch_size"]
+        from music21 import chord as m21chord, key as m21key
         from music21.roman import romanNumeralFromChord
 
         exercises = Exercise.objects.filter(
@@ -876,6 +888,8 @@ class Command(BaseCommand):
         )
         updated = 0
         skipped = 0
+        errors = 0
+        pending = []  # exercises waiting to be saved in current batch
 
         for ex in exercises:
             umto_data = ex.data.get("score", {}).get("umto", {})
@@ -898,6 +912,7 @@ class Command(BaseCommand):
                 raw_overrides = self._derive_raw_labels(ex)
             except Exception as e:
                 self.stderr.write(f"  ERROR {ex.id}: {e}")
+                errors += 1
                 continue
 
             if not raw_overrides:
@@ -915,22 +930,42 @@ class Command(BaseCommand):
                     changed = True
 
             if changed:
-                if not dry_run:
-                    ex.data["score"]["umto"]["analysis"] = analysis
-                    ex.save(update_fields=["data"])
+                ex.data["score"]["umto"]["analysis"] = analysis
+                pending.append(ex)
                 updated += 1
                 self.stdout.write(f"  {'[dry] ' if dry_run else ''}Updated {ex.id}")
 
+                # Flush batch
+                if not dry_run and len(pending) >= batch_size:
+                    self._flush_batch(pending)
+                    pending = []
+
+        # Final flush
+        if not dry_run and pending:
+            self._flush_batch(pending)
+
         self.stdout.write(
             self.style.SUCCESS(
-                f"Done. Updated: {updated}, skipped (no-op): {skipped}"
+                f"Done. Updated: {updated}, skipped (no-op): {skipped}, errors: {errors}"
             )
         )
 
+    def _flush_batch(self, exercises: list):
+        """Save a batch of exercises in a single transaction."""
+        with transaction.atomic():
+            for ex in exercises:
+                ex.save(update_fields=["data"])
+
     def _derive_raw_labels(self, ex: "Exercise") -> list:
-        """Re-run music21 roman numeral analysis on this exercise's score."""
-        from music21 import stream as m21stream, chord as m21chord, key as m21key
+        """Re-run music21 roman numeral analysis on this exercise's score.
+
+        Uses build_score_from_data (apps/exercises/utils/music21_builder.py)
+        which correctly reconstructs multi-staff, multi-voice CIR data into
+        a music21 Score with proper time alignment across parts.
+        """
+        from music21 import chord as m21chord, key as m21key
         from music21.roman import romanNumeralFromChord
+        from apps.exercises.utils.music21_builder import build_score_from_data
 
         score_data = ex.data.get("score", {})
         key_str = score_data.get("meta", {}).get("key", "C major")
@@ -939,60 +974,39 @@ class Command(BaseCommand):
         except Exception:
             global_key = m21key.Key("C")
 
-        measures = score_data.get("measures", [])
-        if not measures:
-            return []
-
-        # Build a minimal music21 score from the CIR measure data
-        score = m21stream.Score()
-        part = m21stream.Part()
-        for mdata in measures:
-            m = m21stream.Measure()
-            staves = mdata.get("staves", {})
-            for staff_name, staff in staves.items():
-                for voice_list in staff.get("voices", []):
-                    for item in voice_list.get("items", []):
-                        if item.get("kind") == "note" and item.get("pitch"):
-                            p = item["pitch"]
-                            from music21 import note as m21note, pitch as m21pitch
-                            mp = m21pitch.Pitch(
-                                step=p["step"],
-                                accidental=p.get("alter", 0),
-                                octave=p.get("octave", 4),
-                            )
-                            n = m21note.Note()
-                            n.pitch = mp
-                            m.append(n)
-            part.append(m)
-        score.append(part)
+        # Reconstruct a proper multi-part music21 Score from the stored CIR
+        # exercise.data["score"] is the CIR dict with meta + measures
+        score = build_score_from_data(ex.data)
 
         # Chordify and extract roman numerals
         chorded = score.chordify()
         result = []
         seen = set()
-        offset_acc = 0.0
+        first_offset = None
         for m in chorded.getElementsByClass("Measure"):
             for el in m.flat.notes:
                 if not isinstance(el, m21chord.Chord):
                     continue
-                abs_offset = round(offset_acc + float(el.offset), 5)
-                if abs_offset in seen:
+                abs_offset = round(float(el.getOffsetInHierarchy(chorded)), 5)
+                if first_offset is None:
+                    first_offset = abs_offset
+                rel_offset = round(abs_offset - (first_offset or 0), 5)
+                if rel_offset in seen:
                     continue
-                seen.add(abs_offset)
+                seen.add(rel_offset)
                 try:
                     rn = romanNumeralFromChord(el, global_key)
                     raw = rn.figure
                 except Exception:
                     raw = None
                 result.append({
-                    "offset": abs_offset,
+                    "offset": rel_offset,
                     "content": {"raw_roman_numeral": raw},
                 })
-            offset_acc += float(m.barDuration.quarterLength)
         return result
 ```
 
-- [ ] **Step 2: Run a dry-run to verify it doesn't crash**
+- [x] **Step 2: Run a dry-run to verify it doesn't crash**
 
 ```bash
 python manage.py backfill_raw_roman_numeral --dry-run
@@ -1000,7 +1014,7 @@ python manage.py backfill_raw_roman_numeral --dry-run
 
 Expected: output listing exercises that would be updated, ending with `Done. Updated: N, skipped: M`. No errors.
 
-- [ ] **Step 3: Run for real (after verifying dry-run)**
+- [x] **Step 3: Run for real (after verifying dry-run)**
 
 ```bash
 python manage.py backfill_raw_roman_numeral
@@ -1008,7 +1022,7 @@ python manage.py backfill_raw_roman_numeral
 
 Expected: same count of updated exercises, no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/exercises/management/commands/backfill_raw_roman_numeral.py
@@ -1024,70 +1038,94 @@ git commit -m "feat: add backfill_raw_roman_numeral management command for exist
 
 The server now resolves unit from **playlist** `skill_tags`, runs a lightweight targeting pass over raw analysis slices, sets `is_target` on each, and appends `analysisPolicy` to the exercise context.
 
-- [ ] **Step 1: Write a failing test**
+- [x] **Step 1: Write a failing test**
 
 In `apps/exercises/tests/test_views_umto_logging.py` or a new file `apps/exercises/tests/test_generate_exercise_context.py`:
 
 ```python
 # apps/exercises/tests/test_generate_exercise_context.py
-import pytest
 from unittest.mock import MagicMock, patch
 from django.test import TestCase
 
 
 class GenerateExerciseContextAnalysisPolicyTest(TestCase):
-    def _make_exercise(self, raw_rn, unit_tags=None):
-        """Minimal UMTO exercise dict with a single analysis slice."""
+    def _make_exercise_data(self, raw_rn_list, unit_tags=None):
+        """Build exercise data in the ALREADY-RENDERED frontend payload shape.
+
+        generate_exercise_context() will try UMTO.model_validate() on the raw
+        data. To avoid Pydantic validation failures with minimal mock data, we
+        set isUMTO=False so the function falls through to the raw-data path.
+        The analysis slices are nested under score.umto.analysis, which is where
+        the targeting code looks for them.
+
+        raw_rn_list: a single string or list of strings. Each becomes one
+                     analysis slice at successive beat offsets.
+        """
+        if isinstance(raw_rn_list, str):
+            raw_rn_list = [raw_rn_list]
+        slices = []
+        for i, raw_rn in enumerate(raw_rn_list):
+            slices.append({
+                "offset": float(i),
+                "content": {
+                    "roman_numeral": None,
+                    "raw_roman_numeral": raw_rn,
+                    "figured_bass": None,
+                    "pop_symbol": None,
+                    "functional_label": None,
+                },
+                "unit_tags": unit_tags or [12],
+                "is_target": False,
+            })
         return {
-            "isUMTO": True,
-            "metadata": {
-                "exercise_id": "TEST01",
-                "source": "test",
-                "key": "C",
-                "meter": "4/4",
-                "complexity_score": 9,
-                "mode": "identification",
-            },
-            "voices": {"S": [], "A": [], "T": [], "B": []},
-            "analysis": [
-                {
-                    "offset": 0.0,
-                    "content": {
-                        "roman_numeral": None,
-                        "raw_roman_numeral": raw_rn,
-                        "figured_bass": None,
-                        "pop_symbol": None,
-                        "functional_label": None,
+            "isUMTO": False,  # skip UMTO validation — testing targeting layer only
+            "type": "test",
+            "key": "jC_",
+            "keySignature": "",
+            "analysisType": "roman",
+            "score": {
+                "meta": {"key": "jC_", "time": "4/4"},
+                "measures": [],
+                "umto": {
+                    "metadata": {
+                        "exercise_id": "TEST01",
+                        "source": "test",
+                        "key": "C",
+                        "meter": "4/4",
+                        "complexity_score": 9,
+                        "mode": "identification",
                     },
-                    "unit_tags": unit_tags or [11],
-                    "is_target": False,
-                }
-            ],
-            "grading": [],
+                    "voices": {"S": [], "A": [], "T": [], "B": []},
+                    "analysis": slices,
+                    "grading": [],
+                },
+            },
+            "complexity_score": 9,
         }
 
-    @patch("lab.views.TaxonomyReader")
-    def test_analysis_policy_included_in_context(self, mock_reader):
-        mock_reader.get_cumulative_values.return_value = {"I", "V", "IV"}
-        mock_reader.get_new_values.return_value = {"IV"}
+    def _make_mocks(self, cumulative, new_set, mock_reader, mock_perf):
+        """Configure TaxonomyReader and PerformanceData mocks."""
+        mock_reader.get_cumulative_values.return_value = cumulative
+        mock_reader.get_new_values.return_value = new_set
         mock_reader.get_unit_analysis.return_value = {
-            "cumulative": [
-                {"value": "I", "display": "I"},
-                {"value": "V", "display": "V"},
-                {"value": "IV", "display": "IV"},
-            ],
-            "new": [{"value": "IV", "display": "IV"}],
+            "cumulative": [{"value": v, "display": v} for v in sorted(cumulative)],
+            "new": [{"value": v, "display": v} for v in sorted(new_set)],
         }
+        mock_reader.get_unit_for_tag.return_value = None
+        mock_perf.objects.filter.return_value.last.return_value = None
 
+    def _run_context(self, data, unit_n="12"):
+        """Call generate_exercise_context with standard mocks."""
         from apps.exercises.models import Exercise, Playlist
         ex = MagicMock(spec=Exercise)
-        ex.data = self._make_exercise("I")
-        ex.skill_tags = ["unit:11", "mode:roman"]
+        ex.data = data
+        ex.skill_tags = [f"unit:{unit_n}", "mode:roman"]
         ex.id = "TEST01"
         ex.complexity = 9
+        ex.is_public = True
 
         pl = MagicMock(spec=Playlist)
-        pl.skill_tags = ["unit:11", "mode:roman"]
+        pl.skill_tags = [f"unit:{unit_n}", "mode:roman"]
         pl.is_adaptive = False
         pl.is_dynamic = False
         pl.tags = []
@@ -1103,13 +1141,21 @@ class GenerateExerciseContextAnalysisPolicyTest(TestCase):
         pl.max_complexity = 12
 
         from lab.views import generate_exercise_context
-        ctx = generate_exercise_context(
+        return generate_exercise_context(
             exercise_num=1,
             exercise=ex,
             user=MagicMock(id=1),
             playlist=pl,
             course=None,
         )
+
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
+    def test_analysis_policy_included_in_context(self, mock_reader, mock_perf):
+        cumulative = {"I", "V", "IV"}
+        self._make_mocks(cumulative, {"IV"}, mock_reader, mock_perf)
+
+        ctx = self._run_context(self._make_exercise_data("I"), unit_n="11")
 
         self.assertIn("analysisPolicy", ctx)
         policy = ctx["analysisPolicy"]
@@ -1118,9 +1164,50 @@ class GenerateExerciseContextAnalysisPolicyTest(TestCase):
         self.assertIn("allowedValues", policy)
         self.assertIn("newValues", policy)
         self.assertIn("displayMap", policy)
+
+        # Verify targeting was applied to the analysis slice
+        slices = ctx["score"]["umto"]["analysis"]
+        self.assertEqual(len(slices), 1)
+        self.assertTrue(slices[0]["is_target"])  # "I" is in cumulative
+        self.assertEqual(slices[0]["content"]["roman_numeral"], "I")
+
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
+    def test_cadential_64_rewrite_I64_to_V64(self, mock_reader, mock_perf):
+        """I64 followed by V should be rewritten to V64 (cadential)."""
+        # Unit 12 has I64 and V64 in cumulative
+        cumulative = {"I", "i", "V", "V7", "I64", "V64", "IV", "ii"}
+        self._make_mocks(cumulative, {"I64", "V64"}, mock_reader, mock_perf)
+
+        ctx = self._run_context(self._make_exercise_data(["I64", "V"]))
+
+        slices = ctx["score"]["umto"]["analysis"]
+        self.assertEqual(len(slices), 2)
+        # First slice: I64 → V progression = cadential, rewritten to V64
+        self.assertEqual(slices[0]["content"]["roman_numeral"], "V64")
+        self.assertTrue(slices[0]["is_target"])
+        # Second slice: V stays as V
+        self.assertEqual(slices[1]["content"]["roman_numeral"], "V")
+        self.assertTrue(slices[1]["is_target"])
+
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
+    def test_non_cadential_I64_stays_as_I64(self, mock_reader, mock_perf):
+        """I64 NOT followed by V should remain I64 (passing/neighbor)."""
+        cumulative = {"I", "i", "V", "V7", "I64", "V64", "IV", "ii"}
+        self._make_mocks(cumulative, {"I64", "V64"}, mock_reader, mock_perf)
+
+        ctx = self._run_context(self._make_exercise_data(["I64", "IV"]))
+
+        slices = ctx["score"]["umto"]["analysis"]
+        # First slice: I64 → IV = NOT cadential, stays as I64
+        self.assertEqual(slices[0]["content"]["roman_numeral"], "I64")
+        self.assertTrue(slices[0]["is_target"])
+        # Second slice: IV stays as IV
+        self.assertEqual(slices[1]["content"]["roman_numeral"], "IV")
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```bash
 python -m pytest apps/exercises/tests/test_generate_exercise_context.py -v
@@ -1128,9 +1215,9 @@ python -m pytest apps/exercises/tests/test_generate_exercise_context.py -v
 
 Expected: FAIL — `analysisPolicy` not in context.
 
-- [ ] **Step 3: Implement targeting and `analysisPolicy` in `generate_exercise_context`**
+- [x] **Step 3: Implement targeting and `analysisPolicy` in `generate_exercise_context`**
 
-In `lab/views.py`, after the `unit_n = None` / tag-loop block (around line 307), add the targeting + policy logic. Insert before the `exercise_context.update({...})` call at line 322:
+In `lab/views.py`, locate the code block starting with `unit_n = None` followed by the tag-loop that resolves `unit_n` from skill_tags (search for `unit_n = None`). Add the targeting + policy logic **after** that block and **before** the `exercise_context.update({` call. Use code anchors, not line numbers, since earlier tasks may shift lines:
 
 ```python
     # Build analysisPolicy and apply targeting to raw analysis slices
@@ -1167,16 +1254,37 @@ In `lab/views.py`, after the `unit_n = None` / tag-loop block (around line 307),
             for _sl in _slices:
                 _raw = _sl.get("content", {}).get("raw_roman_numeral")
                 if _raw and _raw in _cumulative:
-                    # In-scope: set roman_numeral to the raw value (no secondary-function
-                    # disambiguation in this phase — that is a future enhancement)
                     _sl["content"]["roman_numeral"] = _raw
                     _sl["is_target"] = True
                 else:
                     _sl["content"]["roman_numeral"] = None
                     _sl["is_target"] = False
+
+            # ── Cadential 6/4 contextual rewrite ──
+            # Mirror the substitution logic from stave_notater.js drawRoman():
+            # If I64 (or i64) is immediately followed by V, V7, V65, or V43,
+            # rewrite the I64 label to V64 (cadential interpretation).
+            # This ensures identification exercises show the same label as
+            # the play-mode real-time display.
+            _CAD64_SOURCES = {"I64", "i64"}
+            _CAD64_TARGETS = {"V", "V7", "V65", "V43"}
+            for _i in range(len(_slices) - 1):
+                _cur = _slices[_i]
+                _nxt = _slices[_i + 1]
+                _cur_rn = _cur.get("content", {}).get("roman_numeral")
+                _nxt_rn = _nxt.get("content", {}).get("roman_numeral")
+                if _cur_rn in _CAD64_SOURCES and _nxt_rn in _CAD64_TARGETS:
+                    _cur["content"]["roman_numeral"] = "V64"
+                    # V64 must also be in cumulative for the rewrite to be valid
+                    if "V64" in _cumulative:
+                        _cur["is_target"] = True
+                    else:
+                        # V64 not in this unit's curriculum — hide the slot
+                        _cur["content"]["roman_numeral"] = None
+                        _cur["is_target"] = False
 ```
 
-Then add `"analysisPolicy": analysis_policy,` inside the `exercise_context.update({...})` dict (around line 322):
+Then add `"analysisPolicy": analysis_policy,` inside the `exercise_context.update({` dict (search for `exercise_context.update(` — there is only one call in `generate_exercise_context`):
 
 ```python
     exercise_context.update(
@@ -1188,7 +1296,7 @@ Then add `"analysisPolicy": analysis_policy,` inside the `exercise_context.updat
     )
 ```
 
-- [ ] **Step 4: Run the test**
+- [x] **Step 4: Run the test**
 
 ```bash
 python -m pytest apps/exercises/tests/test_generate_exercise_context.py -v
@@ -1196,7 +1304,7 @@ python -m pytest apps/exercises/tests/test_generate_exercise_context.py -v
 
 Expected: PASS.
 
-- [ ] **Step 5: Also run the full test suite to check for regressions**
+- [x] **Step 5: Also run the full test suite to check for regressions**
 
 ```bash
 python -m pytest apps/exercises/tests/ -v --tb=short 2>&1 | tail -30
@@ -1204,11 +1312,11 @@ python -m pytest apps/exercises/tests/ -v --tb=short 2>&1 | tail -30
 
 Expected: no new failures.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lab/views.py apps/exercises/tests/test_generate_exercise_context.py
-git commit -m "feat: add analysisPolicy to exercise context and apply targeting to raw analysis slices"
+git commit -m "feat: add analysisPolicy with cadential 6/4 rewrite to exercise context"
 ```
 
 ---
@@ -1219,9 +1327,9 @@ git commit -m "feat: add analysisPolicy to exercise context and apply targeting 
 - Modify: `apps/exercises/management/commands/create_unit_playlist.py`
 - Modify: `apps/exercises/tests/test_create_unit_playlist.py`
 
-Delete `UNIT_ALLOWED_ANSWERS` import and `_unit_new_chords`; use `TaxonomyReader` for new-chord detection.
+Delete `UNIT_ALLOWED_ANSWERS` import and `_unit_new_chords`; use `TaxonomyReader` for new-chord detection. Also implement the improved ordering from spec §6.
 
-- [ ] **Step 1: Write a failing test**
+- [x] **Step 1: Write a failing test**
 
 In `apps/exercises/tests/test_create_unit_playlist.py`, add a test that checks `_has_new_chord` uses TaxonomyReader (not the old import):
 
@@ -1241,7 +1349,7 @@ def test_has_new_chord_uses_taxonomy_not_import():
                     )
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```bash
 python -m pytest apps/exercises/tests/test_create_unit_playlist.py::test_has_new_chord_uses_taxonomy_not_import -v
@@ -1249,7 +1357,7 @@ python -m pytest apps/exercises/tests/test_create_unit_playlist.py::test_has_new
 
 Expected: FAIL — the import is currently there.
 
-- [ ] **Step 3: Rewrite `create_unit_playlist.py` — delete stale helpers and use `TaxonomyReader`**
+- [x] **Step 3: Rewrite `create_unit_playlist.py` — delete stale helpers and use `TaxonomyReader`**
 
 Replace the top of `apps/exercises/management/commands/create_unit_playlist.py`:
 
@@ -1298,7 +1406,54 @@ def _has_new_chord(ex: "Exercise", unit_num: int) -> bool:
     return bool(rns & new_chords)
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Implement spec §6 ordering improvements**
+
+Replace the sorting key in `Command.handle` (the `selected.sort(key=...)` line) with the multi-factor ordering from the design spec:
+
+```python
+def _out_of_scope_ratio(ex, cumulative):
+    """Fraction of analysis events whose raw label is NOT in cumulative."""
+    analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
+    if not analysis:
+        return 0.0
+    out = sum(1 for s in analysis
+              if (s.get("content", {}).get("raw_roman_numeral") or
+                  s.get("content", {}).get("roman_numeral")) not in cumulative)
+    return out / len(analysis)
+
+def _new_value_event_count(ex, new_set):
+    """Count of events (not distinct values) whose label is in new_set."""
+    analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
+    return sum(1 for s in analysis
+               if (s.get("content", {}).get("raw_roman_numeral") or
+                   s.get("content", {}).get("roman_numeral")) in new_set)
+
+def _targetable_event_ratio(ex, cumulative):
+    """Fraction of events whose label is in cumulative (targetable)."""
+    analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
+    if not analysis:
+        return 0.0
+    good = sum(1 for s in analysis
+               if (s.get("content", {}).get("raw_roman_numeral") or
+                   s.get("content", {}).get("roman_numeral")) in cumulative)
+    return good / len(analysis)
+```
+
+Then update the sort:
+```python
+cumulative = TaxonomyReader.get_cumulative_values(str(unit_num), "roman")
+new_set = TaxonomyReader.get_new_values(str(unit_num), "roman")
+
+selected.sort(key=lambda ex: (
+    _out_of_scope_ratio(ex, cumulative),       # ascending: fewer out-of-scope first
+    -_new_value_event_count(ex, new_set),       # descending: more new-chord exposure first
+    -_targetable_event_ratio(ex, cumulative),   # descending: more relevant material first
+    ex.complexity,                               # ascending: simpler first
+    Command._extract_riem_phrase(ex.description or "")  # deterministic tiebreaker
+))
+```
+
+- [x] **Step 5: Run the tests**
 
 ```bash
 python -m pytest apps/exercises/tests/test_create_unit_playlist.py -v
@@ -1306,12 +1461,12 @@ python -m pytest apps/exercises/tests/test_create_unit_playlist.py -v
 
 Expected: all tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/exercises/management/commands/create_unit_playlist.py \
         apps/exercises/tests/test_create_unit_playlist.py
-git commit -m "feat: create_unit_playlist uses TaxonomyReader instead of hardcoded UNIT_ALLOWED_ANSWERS"
+git commit -m "feat: create_unit_playlist uses TaxonomyReader + spec §6 ordering"
 ```
 
 ---
@@ -1323,7 +1478,7 @@ git commit -m "feat: create_unit_playlist uses TaxonomyReader instead of hardcod
 
 The `UNIT_ALLOWED_ANSWERS` object (lines 14–91) and the unit-tag parsing logic inside `applySkillFilter` (lines 106–139) are deleted. The function is reduced to a no-op: `is_target` on each slice (set server-side in Task 6) already hides out-of-scope slots. Dropdown choices come from `analysisPolicy.allowedValues`.
 
-- [ ] **Step 1: Delete `UNIT_ALLOWED_ANSWERS` and simplify `applySkillFilter`**
+- [x] **Step 1: Delete `UNIT_ALLOWED_ANSWERS` and simplify `applySkillFilter`**
 
 In `lab/static/js/src/models/exercise_definition.js`:
 
@@ -1352,21 +1507,23 @@ In `lab/static/js/src/models/exercise_definition.js`:
 ```
 
 > **Why keep the `explicitAllowedAnswers` branch?** The server sets `is_target = false` for out-of-scope slices, making their `hidden: true` in `rawProblems`. But `applySkillFilter` is still called with `explicitAllowedAnswers = analysisPolicy.allowedValues` as the dropdown population step — the branch that hides based on `allowedValues` catches any remaining slots whose `answer` is not in scope (belt-and-suspenders for the transition period while some exercises still have `roman_numeral` stored from before the backfill).
+>
+> **Spec §5 reconciliation:** The design spec says "JS does not re-filter slices against allowedValues." This implementation is a deliberate temporary deviation for backward compatibility with pre-backfill exercises. Once `backfill_raw_roman_numeral` has run successfully and all exercises carry `raw_roman_numeral`, this branch can be removed and `applySkillFilter` reduced to a true no-op. Track via TODO in code.
 
-- [ ] **Step 2: Verify dropdown choices use `analysisPolicy.allowedValues`**
+- [x] **Step 2: Verify dropdown choices use `analysisPolicy.allowedValues`**
 
 Search for where `allowed_answers` is passed into `applySkillFilter` and where dropdown `choices` are built. The call site is around line 610–640 in `exercise_definition.js`. The existing code already passes `exercise.allowed_answers` as `explicitAllowedAnswers`. After Task 6, `exercise.allowed_answers` will be populated from `analysisPolicy.allowedValues` via the server payload.
 
 Check that `to_frontend_payload` in `umto.py` (`lab/views.py` path) still sets `allowed_answers`. Looking at `umto.py` line 189: `"allowed_answers": self.get_allowed_answers(unit)`. This is the pre-policy path; after Task 6, `analysisPolicy.allowedValues` is the authoritative source. For now, `allowed_answers` stays for backwards compatibility with non-UMTO exercises. No change needed here.
 
-- [ ] **Step 3: Manual smoke test**
+- [x] **Step 3: Manual smoke test**
 
 Open `http://127.0.0.1:8000/s/units/11/play/?playlist=<your-unit-11-playlist-id>&exercise_num=1` in a browser. Verify:
 - Analysis slots show only pre-dominant and earlier chords
 - Dropdown options match `analysisPolicy.allowedValues` in the page context (check DevTools → Network → the page response JSON or `window.__EXERCISE_CONTEXT__`)
 - No JS errors in console
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add lab/static/js/src/models/exercise_definition.js
@@ -1388,14 +1545,18 @@ git commit -m "feat: remove UNIT_ALLOWED_ANSWERS from JS; applySkillFilter is no
 | §3 Backfill command | Task 5 |
 | §4 `analysisPolicy` payload from server | Task 6 |
 | §4 `is_target` set at request time | Task 6 |
+| §4 Cadential 6/4 contextual rewrite (`I64`→`V` ⇒ `V64`) | Task 6 |
 | §5 JS: delete `UNIT_ALLOWED_ANSWERS` | Task 8 |
 | §5 JS: `applySkillFilter` reduced / server-driven | Task 8 |
 | §5 JS: dropdown uses `analysisPolicy.allowedValues` | Task 8, checked |
 | §6 `create_unit_playlist` uses `TaxonomyReader` | Task 7 |
 | §6 `_has_new_chord` uses `raw_roman_numeral` | Task 7 |
+| §6 Multi-factor ordering (`_out_of_scope_ratio`, `_new_value_event_count`, `_targetable_event_ratio`) | Task 7 |
 | Migration backfill prerequisite | Task 5 |
 
 **Notes on spec items deferred:**
 - **Secondary-function escalating-context disambiguation** (spec §3 targeting step 2): Task 6 uses a simplified targeting pass (raw label in cumulative → keep; else null). The full disambiguation algorithm (check N chords ahead for resolution) is a follow-up. The spec marks this as the targeting layer but the implementation plan delivers a safe first version that is correct for all non-secondary-function labels. Secondary function labels (`V/V` etc.) will appear as `null` slots until the disambiguation logic is added in a future task.
 - **`all_chords_in_scope` mode for performance playlists** (spec §4, §6): not yet implemented. Performance playlists currently use the existing behaviour. This is a separate task.
 - **`displayMap` rendering in JS** (spec §5): `analysisPolicy.displayMap` is emitted by the server (Task 6) but JS rendering using it for dropdown labels is left for a follow-up. The existing display logic continues to work.
+- **`roman_normalizer.to_canonical()` normalization step** (spec §3 step 2): The spec defines a three-step pipeline (Raw → Normalization → Targeting). This plan implements Raw (Task 4) and Targeting (Task 6) but defers the normalization step. Without normalization, the taxonomy must enumerate all music21 spelling variants as separate `value` entries (e.g. both `viio7` and `vii°7`). This is a pragmatic trade-off: the current set of known variants is small and enumerable. A future task should add `roman_normalizer.to_canonical()` and deduplicate the taxonomy entries.
+- **`applySkillFilter` cleanup** (spec §5): The current Task 8 implementation keeps an `explicitAllowedAnswers` filtering branch for backward compatibility with pre-backfill exercises. Once `backfill_raw_roman_numeral` is verified complete, a follow-up should remove this branch and reduce `applySkillFilter` to a true no-op per spec §5.

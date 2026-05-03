@@ -5,15 +5,11 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from apps.exercises.models import Playlist, Exercise, ExercisePlaylistOrdered
-from apps.exercises.management.commands.import_bach_phrases import UNIT_ALLOWED_ANSWERS
-
+from apps.exercises.taxonomy_reader import TaxonomyReader
 
 def _unit_new_chords(unit_num: int) -> set[str]:
-    """Chords introduced at unit_num = allowed(N) - allowed(N-1)."""
-    current = set(UNIT_ALLOWED_ANSWERS.get(unit_num, []))
-    sorted_units = sorted(u for u in UNIT_ALLOWED_ANSWERS if u < unit_num)
-    previous = set(UNIT_ALLOWED_ANSWERS[sorted_units[-1]]) if sorted_units else set()
-    return current - previous
+    """Chords introduced at this unit, from taxonomy."""
+    return TaxonomyReader.get_new_values(str(unit_num), "roman")
 
 # parents[4] from this file = repo root
 TAXONOMY_PATH = Path(__file__).resolve().parents[4] / "music_theory_taxonomy_with_branches.json"
@@ -40,6 +36,44 @@ def _parse_range(text: str) -> list[int]:
     return [int(text)]
 
 
+def _raw_or_targeted_label(slice_dict: dict) -> str | None:
+    content = slice_dict.get("content", {})
+    return content.get("raw_roman_numeral") or content.get("roman_numeral")
+
+
+def _out_of_scope_ratio(ex, cumulative):
+    analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
+    if not analysis:
+        return 0.0
+    out = sum(1 for s in analysis if _raw_or_targeted_label(s) not in cumulative)
+    return out / len(analysis)
+
+
+def _new_value_event_count(ex, new_set):
+    analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
+    return sum(1 for s in analysis if _raw_or_targeted_label(s) in new_set)
+
+
+def _targetable_event_ratio(ex, cumulative):
+    analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
+    if not analysis:
+        return 0.0
+    good = sum(1 for s in analysis if _raw_or_targeted_label(s) in cumulative)
+    return good / len(analysis)
+
+
+def _exercise_order_key(ex, unit_num: int):
+    cumulative = TaxonomyReader.get_cumulative_values(str(unit_num), "roman")
+    new_set = TaxonomyReader.get_new_values(str(unit_num), "roman")
+    return (
+        _out_of_scope_ratio(ex, cumulative),
+        -_new_value_event_count(ex, new_set),
+        -_targetable_event_ratio(ex, cumulative),
+        ex.complexity,
+        Command._extract_riem_phrase(ex.description or ""),
+    )
+
+
 class Command(BaseCommand):
     help = "Import Bach phrases for a unit and create an adaptive (non-dynamic) playlist with explicit exercise ordering."
 
@@ -58,8 +92,14 @@ class Command(BaseCommand):
         if not new_chords:
             return True  # no new chords defined — don't filter
         analysis = ex.data.get("score", {}).get("umto", {}).get("analysis", [])
-        rns = {s["content"]["roman_numeral"] for s in analysis
-               if s.get("content") and s["content"].get("roman_numeral")}
+        rns = set()
+        for s in analysis:
+            content = s.get("content", {})
+            # Prefer raw_roman_numeral (unfiltered); fall back to roman_numeral for
+            # exercises imported before the backfill.
+            label = content.get("raw_roman_numeral") or content.get("roman_numeral")
+            if label:
+                rns.add(label)
         return bool(rns & new_chords)
 
     def add_arguments(self, parser):
@@ -154,7 +194,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING(f"  Skipping {ex.id} (no new-unit chords): {(ex.description or '')[:60]}"))
                     continue
                 selected.append(ex)
-            selected.sort(key=lambda ex: Command._extract_riem_phrase(ex.description or ""))
+            selected.sort(key=lambda ex: _exercise_order_key(ex, unit_num))
 
             ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
             for idx, ex in enumerate(selected, start=1):
