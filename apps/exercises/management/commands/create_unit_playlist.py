@@ -122,6 +122,8 @@ class Command(BaseCommand):
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--no-chord-filter", action="store_true",
                             help="Skip the new-chord requirement filter")
+        parser.add_argument("--overwrite", action="store_true",
+                            help="Overwrite existing exercises (re-import)")
 
     def handle(self, *args, **options):
         unit_num = options["unit"]
@@ -156,7 +158,8 @@ class Command(BaseCommand):
                 call_command("import_bach_phrases",
                              riemenschneider=riem_num, author=author_email,
                              mode=mode, min_measures=min_measures,
-                             extra_tags=[unit_tag, mode_tag], public=make_public)
+                             extra_tags=[unit_tag, mode_tag], public=make_public,
+                             overwrite=options.get("overwrite", False))
 
         playlist_name = f"Unit {unit_num} — {title} ({mode})"
         if dry_run:
