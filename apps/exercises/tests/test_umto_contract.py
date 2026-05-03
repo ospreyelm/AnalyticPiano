@@ -170,3 +170,90 @@ class UMTOContractTests(TestCase):
         # Update it (not is_new) - should be allowed
         ex.description = "Updated Grandfathered"
         ex.save() # Should not raise
+
+
+def test_analysis_layer_has_raw_roman_numeral():
+    from apps.exercises.umto import AnalysisLayer
+    layer = AnalysisLayer(roman_numeral="V", raw_roman_numeral="V/V")
+    assert layer.raw_roman_numeral == "V/V"
+
+def test_analysis_layer_raw_roman_numeral_defaults_none():
+    from apps.exercises.umto import AnalysisLayer
+    layer = AnalysisLayer()
+    assert layer.raw_roman_numeral is None
+
+def test_analysis_layer_has_raw_figured_bass():
+    from apps.exercises.umto import AnalysisLayer
+    layer = AnalysisLayer()
+    assert hasattr(layer, "raw_figured_bass")
+    assert layer.raw_figured_bass is None
+
+def test_analysis_layer_raw_figured_bass_stores_value():
+    from apps.exercises.umto import AnalysisLayer
+    layer = AnalysisLayer(raw_figured_bass="7/5/3", figured_bass="7")
+    assert layer.raw_figured_bass == "7/5/3"
+    assert layer.figured_bass == "7"
+
+def test_analysis_slice_has_is_target():
+    from apps.exercises.umto import AnalysisSlice, AnalysisLayer
+    sl = AnalysisSlice(offset=0.0, content=AnalysisLayer())
+    assert sl.is_target is False  # default
+
+def test_analysis_slice_is_target_can_be_set():
+    from apps.exercises.umto import AnalysisSlice, AnalysisLayer
+    sl = AnalysisSlice(offset=0.0, content=AnalysisLayer(roman_numeral="I"), is_target=True)
+    assert sl.is_target is True
+
+
+def test_factory_emits_roman_and_raw_roman_for_unit9():
+    from apps.exercises.umto_factory import build_umto_payload
+    from apps.exercises.umto import InteractionMode
+    
+    with open(CIR_FIXTURES_DIR / "unit9_satb.json", "r") as f:
+        cir = json.load(f)
+        
+    payload = build_umto_payload(
+        exercise_id="TEST_U9",
+        source="Test",
+        key="G Major",
+        meter="4/4",
+        clef="keyboard",
+        complexity_score=9,
+        mode=InteractionMode.ANALYSIS_MATCH,
+        score_data=cir,
+        unit=9
+    )
+    
+    analysis = payload["score"]["umto"]["analysis"]
+    assert len(analysis) > 0
+    first = analysis[0]
+    assert "roman_numeral" in first["content"]
+    assert "raw_roman_numeral" in first["content"]
+    assert first["content"]["raw_roman_numeral"] in ["I", "iv"]
+    assert first["content"]["roman_numeral"] is None
+
+def test_factory_emits_pitch_names_for_unit1():
+    from apps.exercises.umto_factory import build_umto_payload
+    from apps.exercises.umto import InteractionMode
+    
+    with open(CIR_FIXTURES_DIR / "unit1_treble.json", "r") as f:
+        cir = json.load(f)
+        
+    payload = build_umto_payload(
+        exercise_id="TEST_U1",
+        source="Test",
+        key="C",
+        meter="4/4",
+        clef="treble",
+        complexity_score=1,
+        mode=InteractionMode.IDENTIFICATION,
+        score_data=cir,
+        target_voice="soprano",
+        unit=1
+    )
+    
+    analysis = payload["score"]["umto"]["analysis"]
+    assert len(analysis) > 0
+    # Unit 1 identification should have pitch names (e.g. "G") in roman_numeral slot for now 
+    # (or wherever the UI expects them)
+    assert analysis[0]["content"]["roman_numeral"] is not None

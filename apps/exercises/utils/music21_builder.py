@@ -82,6 +82,7 @@ def build_score_from_data(exercise_data):
             # (music21 doesn't require separate voice objects for analysis)
             for voice_idx, voice_data in enumerate(voices):
                 items = voice_data.get('items', [])
+                current_offset = 0.0 # offset WITHIN the measure
 
                 for item in items:
                     kind = item.get('kind', 'note')
@@ -94,19 +95,31 @@ def build_score_from_data(exercise_data):
                     if dots:
                         base_ql *= (2 - (0.5 ** dots))
 
+                    el = None
                     if kind == 'rest':
-                        r = note.Rest(quarterLength=base_ql)
-                        part.append(r)
+                        el = note.Rest(quarterLength=base_ql)
                     elif kind == 'note':
                         pitch_data = item.get('pitch', {})
                         midi = _pitch_to_midi(pitch_data)
-                        n = note.Note(midi=midi, quarterLength=base_ql)
-                        part.append(n)
+                        el = note.Note(midi=midi, quarterLength=base_ql)
                     elif kind == 'chord':
                         pitches = item.get('pitches', [])
                         midis = [_pitch_to_midi(p) for p in pitches]
-                        c = chord.Chord(midis, quarterLength=base_ql)
-                        part.append(c)
+                        el = chord.Chord(midis, quarterLength=base_ql)
+                    
+                    if el:
+                        # Insert at correct absolute offset (measure_idx * num_beats + current_offset)
+                        # Actually, music21 Part.append() in a measure loop is tricky.
+                        # It's better to insert into the PART at the absolute offset.
+                        # We need num_beats (default 4.0)
+                        num_beats = 4.0
+                        try:
+                            num_beats = float(meta.get('time_signature', '4/4').split('/')[0])
+                        except:
+                            pass
+                        
+                        part.insert(measure_idx * num_beats + current_offset, el)
+                        current_offset += base_ql
 
     # Add all parts to score
     for part in parts_by_staff.values():

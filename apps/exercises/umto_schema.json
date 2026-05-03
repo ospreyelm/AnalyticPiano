@@ -14,6 +14,30 @@
           "default": null,
           "title": "Roman Numeral"
         },
+        "raw_roman_numeral": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Roman Numeral"
+        },
+        "raw_figured_bass": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Figured Bass"
+        },
         "figured_bass": {
           "anyOf": [
             {
@@ -80,6 +104,11 @@
           },
           "title": "Unit Tags",
           "type": "array"
+        },
+        "is_target": {
+          "default": false,
+          "title": "Is Target",
+          "type": "boolean"
         }
       },
       "required": [
@@ -171,6 +200,18 @@
           ],
           "title": "Input Mode",
           "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
         }
       },
       "required": [

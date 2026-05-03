@@ -68,61 +68,597 @@
             "n": "9",
             "title": "Tonic & dominant",
             "feat": "I, V, V⁷ root position",
-            "tags": ["diatonic_triads", "tonic_dominant_exclusively", "Diatonic_Triads", "Dominant_Seventh"]
+            "tags": ["diatonic_triads", "tonic_dominant_exclusively", "Diatonic_Triads", "Dominant_Seventh"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",  "display": "I" },
+                  { "value": "i",  "display": "i" },
+                  { "value": "V",  "display": "V" },
+                  { "value": "V7", "display": "V⁷" }
+                ],
+                "new": [
+                  { "value": "I",  "display": "I" },
+                  { "value": "i",  "display": "i" },
+                  { "value": "V",  "display": "V" },
+                  { "value": "V7", "display": "V⁷" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7", "display": "7"}
+                ],
+                "new": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7", "display": "7"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"}
+                ],
+                "new": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"}
+                ]
+              }
+            }
           },
           {
             "n": "10",
             "title": "First inversions",
             "feat": "I⁶, V⁶, vii°⁶",
-            "tags": ["inversions_first", "Inversions_First"]
+            "tags": ["inversions_first", "Inversions_First"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",      "display": "I" },
+                  { "value": "i",      "display": "i" },
+                  { "value": "V",      "display": "V" },
+                  { "value": "V7",     "display": "V⁷" },
+                  { "value": "V65",    "display": "V⁶₅" },
+                  { "value": "I6",     "display": "I⁶" },
+                  { "value": "i6",     "display": "i⁶" },
+                  { "value": "V6",     "display": "V⁶" },
+                  { "value": "vii°6",  "display": "vii°⁶" }
+                ],
+                "new": [
+                  { "value": "I6",    "display": "I⁶" },
+                  { "value": "i6",    "display": "i⁶" },
+                  { "value": "V6",    "display": "V⁶" },
+                  { "value": "V65",   "display": "V⁶₅" },
+                  { "value": "vii°6", "display": "vii°⁶" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"}
+                ],
+                "new": [
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"}
+                ],
+                "new": [
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"}
+                ]
+              }
+            }
           },
           {
             "n": "11",
             "title": "Pre-dominants",
             "feat": "IV, ii, ii⁶, vi",
-            "tags": ["diatonic_predominant"]
+            "tags": ["diatonic_predominant"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",     "display": "I" },
+                  { "value": "i",     "display": "i" },
+                  { "value": "V",     "display": "V" },
+                  { "value": "V7",    "display": "V⁷" },
+                  { "value": "V65",   "display": "V⁶₅" },
+                  { "value": "I6",    "display": "I⁶" },
+                  { "value": "i6",    "display": "i⁶" },
+                  { "value": "V6",    "display": "V⁶" },
+                  { "value": "vii°6", "display": "vii°⁶" },
+                  { "value": "IV",    "display": "IV" },
+                  { "value": "iv",    "display": "iv" },
+                  { "value": "ii",    "display": "ii" },
+                  { "value": "ii6",   "display": "ii⁶" },
+                  { "value": "ii7",   "display": "ii⁷" },
+                  { "value": "ii65",  "display": "ii⁶₅" },
+                  { "value": "vi",    "display": "vi" },
+                  { "value": "VI",    "display": "VI" }
+                ],
+                "new": [
+                  { "value": "IV",   "display": "IV" },
+                  { "value": "iv",   "display": "iv" },
+                  { "value": "ii",   "display": "ii" },
+                  { "value": "ii6",  "display": "ii⁶" },
+                  { "value": "ii7",  "display": "ii⁷" },
+                  { "value": "ii65", "display": "ii⁶₅" },
+                  { "value": "vi",   "display": "vi" },
+                  { "value": "VI",   "display": "VI" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"}
+                ],
+                "new": []
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"}
+                ],
+                "new": []
+              }
+            }
           },
           {
             "n": "12",
             "title": "Second inversions",
             "feat": "Cadential, passing, pedal 6/4",
-            "tags": ["cadential_64", "inversions_second", "Inversions_Second"]
+            "tags": ["cadential_64", "inversions_second", "Inversions_Second"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",     "display": "I" },
+                  { "value": "i",     "display": "i" },
+                  { "value": "V",     "display": "V" },
+                  { "value": "V7",    "display": "V⁷" },
+                  { "value": "V65",   "display": "V⁶₅" },
+                  { "value": "V43",   "display": "V⁴₃" },
+                  { "value": "V42",   "display": "V⁴₂" },
+                  { "value": "I6",    "display": "I⁶" },
+                  { "value": "i6",    "display": "i⁶" },
+                  { "value": "V6",    "display": "V⁶" },
+                  { "value": "vii°6", "display": "vii°⁶" },
+                  { "value": "IV",    "display": "IV" },
+                  { "value": "iv",    "display": "iv" },
+                  { "value": "ii",    "display": "ii" },
+                  { "value": "ii6",   "display": "ii⁶" },
+                  { "value": "ii7",   "display": "ii⁷" },
+                  { "value": "ii65",  "display": "ii⁶₅" },
+                  { "value": "vi",    "display": "vi" },
+                  { "value": "VI",    "display": "VI" },
+                  { "value": "I64",   "display": "I⁶₄" },
+                  { "value": "V64",   "display": "V⁶₄" }
+                ],
+                "new": [
+                  { "value": "I64", "display": "I⁶₄" },
+                  { "value": "V64", "display": "V⁶₄" },
+                  { "value": "V43", "display": "V⁴₃" },
+                  { "value": "V42", "display": "V⁴₂" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"},
+                  {"value": "6/4", "display": "6/4"},
+                  {"value": "5/4", "display": "5/4"},
+                  {"value": "4/3", "display": "4/3"},
+                  {"value": "4/2", "display": "4/2"}
+                ],
+                "new": [
+                  {"value": "6/4", "display": "6/4"},
+                  {"value": "5/4", "display": "5/4"},
+                  {"value": "4/3", "display": "4/3"},
+                  {"value": "4/2", "display": "4/2"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"},
+                  {"value": "6/4",   "display": "6/4"},
+                  {"value": "6/4/3", "display": "6/4/3"},
+                  {"value": "6/4/2", "display": "6/4/2"}
+                ],
+                "new": [
+                  {"value": "6/4",   "display": "6/4"},
+                  {"value": "6/4/3", "display": "6/4/3"},
+                  {"value": "6/4/2", "display": "6/4/2"}
+                ]
+              }
+            }
           },
           {
             "n": "13",
             "title": "Rule of the octave",
             "feat": "Scalar bass + period harmony",
-            "tags": ["rule_of_the_octave"]
+            "tags": ["rule_of_the_octave"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",     "display": "I" },
+                  { "value": "i",     "display": "i" },
+                  { "value": "V",     "display": "V" },
+                  { "value": "V7",    "display": "V⁷" },
+                  { "value": "V65",   "display": "V⁶₅" },
+                  { "value": "V43",   "display": "V⁴₃" },
+                  { "value": "V42",   "display": "V⁴₂" },
+                  { "value": "I6",    "display": "I⁶" },
+                  { "value": "i6",    "display": "i⁶" },
+                  { "value": "V6",    "display": "V⁶" },
+                  { "value": "vii°6", "display": "vii°⁶" },
+                  { "value": "IV",    "display": "IV" },
+                  { "value": "iv",    "display": "iv" },
+                  { "value": "ii",    "display": "ii" },
+                  { "value": "ii6",   "display": "ii⁶" },
+                  { "value": "ii7",   "display": "ii⁷" },
+                  { "value": "ii65",  "display": "ii⁶₅" },
+                  { "value": "vi",    "display": "vi" },
+                  { "value": "VI",    "display": "VI" },
+                  { "value": "I64",   "display": "I⁶₄" },
+                  { "value": "V64",   "display": "V⁶₄" },
+                  { "value": "iii",   "display": "iii" },
+                  { "value": "III",   "display": "III" },
+                  { "value": "VII",   "display": "VII" }
+                ],
+                "new": [
+                  { "value": "iii", "display": "iii" },
+                  { "value": "III", "display": "III" },
+                  { "value": "VII", "display": "VII" },
+                  { "value": "V42", "display": "V⁴₂" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"},
+                  {"value": "6/4", "display": "6/4"},
+                  {"value": "5/4", "display": "5/4"},
+                  {"value": "4/3", "display": "4/3"},
+                  {"value": "4/2", "display": "4/2"}
+                ],
+                "new": [
+                  {"value": "4/2", "display": "4/2"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"},
+                  {"value": "6/4",   "display": "6/4"},
+                  {"value": "6/4/3", "display": "6/4/3"},
+                  {"value": "6/4/2", "display": "6/4/2"}
+                ],
+                "new": [
+                  {"value": "6/4/2", "display": "6/4/2"}
+                ]
+              }
+            }
           },
           {
             "n": "14",
             "title": "Diatonic seventh chords",
             "feat": "ii⁷, IV⁷, vi⁷, iii⁷",
-            "tags": ["diatonic_sevenths", "Diatonic_Sevenths"]
+            "tags": ["diatonic_sevenths", "Diatonic_Sevenths"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",      "display": "I" },
+                  { "value": "i",      "display": "i" },
+                  { "value": "V",      "display": "V" },
+                  { "value": "V7",     "display": "V⁷" },
+                  { "value": "I6",     "display": "I⁶" },
+                  { "value": "i6",     "display": "i⁶" },
+                  { "value": "V6",     "display": "V⁶" },
+                  { "value": "vii°6",  "display": "vii°⁶" },
+                  { "value": "IV",     "display": "IV" },
+                  { "value": "iv",     "display": "iv" },
+                  { "value": "ii",     "display": "ii" },
+                  { "value": "ii6",    "display": "ii⁶" },
+                  { "value": "vi",     "display": "vi" },
+                  { "value": "VI",     "display": "VI" },
+                  { "value": "I64",    "display": "I⁶₄" },
+                  { "value": "V64",    "display": "V⁶₄" },
+                  { "value": "iii",    "display": "iii" },
+                  { "value": "III",    "display": "III" },
+                  { "value": "VII",    "display": "VII" },
+                  { "value": "ii7",    "display": "ii⁷" },
+                  { "value": "ii°7",   "display": "ii°⁷" },
+                  { "value": "IV7",    "display": "IV⁷" },
+                  { "value": "vi7",    "display": "vi⁷" },
+                  { "value": "iii7",   "display": "iii⁷" },
+                  { "value": "vii°7",  "display": "vii°⁷" },
+                  { "value": "viio7",  "display": "vii°⁷" }
+                ],
+                "new": [
+                  { "value": "ii7",   "display": "ii⁷" },
+                  { "value": "ii°7",  "display": "ii°⁷" },
+                  { "value": "IV7",   "display": "IV⁷" },
+                  { "value": "vi7",   "display": "vi⁷" },
+                  { "value": "iii7",  "display": "iii⁷" },
+                  { "value": "vii°7", "display": "vii°⁷" },
+                  { "value": "viio7", "display": "vii°⁷" }
+                ]
+              }
+            }
           },
           {
             "n": "15",
             "title": "Sequences",
             "feat": "Descending 5ths, ascending 5–6, parallel 6ths",
-            "tags": ["sequence_descending_5ths", "sequence_ascending_56", "sequence_parallel_6ths"]
+            "tags": ["sequence_descending_5ths", "sequence_ascending_56", "sequence_parallel_6ths"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",      "display": "I" },
+                  { "value": "i",      "display": "i" },
+                  { "value": "V",      "display": "V" },
+                  { "value": "V7",     "display": "V⁷" },
+                  { "value": "I6",     "display": "I⁶" },
+                  { "value": "i6",     "display": "i⁶" },
+                  { "value": "V6",     "display": "V⁶" },
+                  { "value": "vii°6",  "display": "vii°⁶" },
+                  { "value": "IV",     "display": "IV" },
+                  { "value": "iv",     "display": "iv" },
+                  { "value": "ii",     "display": "ii" },
+                  { "value": "ii6",    "display": "ii⁶" },
+                  { "value": "vi",     "display": "vi" },
+                  { "value": "VI",     "display": "VI" },
+                  { "value": "I64",    "display": "I⁶₄" },
+                  { "value": "V64",    "display": "V⁶₄" },
+                  { "value": "iii",    "display": "iii" },
+                  { "value": "III",    "display": "III" },
+                  { "value": "VII",    "display": "VII" },
+                  { "value": "ii7",    "display": "ii⁷" },
+                  { "value": "ii°7",   "display": "ii°⁷" },
+                  { "value": "IV7",    "display": "IV⁷" },
+                  { "value": "vi7",    "display": "vi⁷" },
+                  { "value": "iii7",   "display": "iii⁷" },
+                  { "value": "vii°7",  "display": "vii°⁷" },
+                  { "value": "viio7",  "display": "vii°⁷" }
+                ],
+                "new": []
+              }
+            }
           },
           {
             "n": "16",
             "title": "Applied chords",
             "feat": "V⁷/x, vii°⁷/x",
-            "tags": ["secondary_dominant", "secondary_leading_tone", "Secondary_Dominant", "Secondary_Leading_Tone"]
+            "tags": ["secondary_dominant", "secondary_leading_tone", "Secondary_Dominant", "Secondary_Leading_Tone"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",        "display": "I" },
+                  { "value": "i",        "display": "i" },
+                  { "value": "V",        "display": "V" },
+                  { "value": "V7",       "display": "V⁷" },
+                  { "value": "I6",       "display": "I⁶" },
+                  { "value": "i6",       "display": "i⁶" },
+                  { "value": "V6",       "display": "V⁶" },
+                  { "value": "vii°6",    "display": "vii°⁶" },
+                  { "value": "IV",       "display": "IV" },
+                  { "value": "iv",       "display": "iv" },
+                  { "value": "ii",       "display": "ii" },
+                  { "value": "ii6",      "display": "ii⁶" },
+                  { "value": "vi",       "display": "vi" },
+                  { "value": "VI",       "display": "VI" },
+                  { "value": "I64",      "display": "I⁶₄" },
+                  { "value": "V64",      "display": "V⁶₄" },
+                  { "value": "iii",      "display": "iii" },
+                  { "value": "III",      "display": "III" },
+                  { "value": "VII",      "display": "VII" },
+                  { "value": "ii7",      "display": "ii⁷" },
+                  { "value": "ii°7",     "display": "ii°⁷" },
+                  { "value": "IV7",      "display": "IV⁷" },
+                  { "value": "vi7",      "display": "vi⁷" },
+                  { "value": "iii7",     "display": "iii⁷" },
+                  { "value": "vii°7",    "display": "vii°⁷" },
+                  { "value": "viio7",    "display": "vii°⁷" },
+                  { "value": "V/ii",     "display": "V/ii" },
+                  { "value": "V7/ii",    "display": "V⁷/ii" },
+                  { "value": "V/IV",     "display": "V/IV" },
+                  { "value": "V7/IV",    "display": "V⁷/IV" },
+                  { "value": "V/V",      "display": "V/V" },
+                  { "value": "V7/V",     "display": "V⁷/V" },
+                  { "value": "V/vi",     "display": "V/vi" },
+                  { "value": "V7/vi",    "display": "V⁷/vi" },
+                  { "value": "V/III",    "display": "V/III" },
+                  { "value": "V7/III",   "display": "V⁷/III" },
+                  { "value": "vii°/ii",  "display": "vii°/ii" },
+                  { "value": "vii°7/ii", "display": "vii°⁷/ii" },
+                  { "value": "vii°/V",   "display": "vii°/V" },
+                  { "value": "vii°7/V",  "display": "vii°⁷/V" },
+                  { "value": "vii°/vi",  "display": "vii°/vi" },
+                  { "value": "vii°7/vi", "display": "vii°⁷/vi" },
+                  { "value": "vii°/IV",  "display": "vii°/IV" },
+                  { "value": "vii°7/IV", "display": "vii°⁷/IV" }
+                ],
+                "new": [
+                  { "value": "V/ii",     "display": "V/ii" },
+                  { "value": "V7/ii",    "display": "V⁷/ii" },
+                  { "value": "V/IV",     "display": "V/IV" },
+                  { "value": "V7/IV",    "display": "V⁷/IV" },
+                  { "value": "V/V",      "display": "V/V" },
+                  { "value": "V7/V",     "display": "V⁷/V" },
+                  { "value": "V/vi",     "display": "V/vi" },
+                  { "value": "V7/vi",    "display": "V⁷/vi" },
+                  { "value": "V/III",    "display": "V/III" },
+                  { "value": "V7/III",   "display": "V⁷/III" },
+                  { "value": "vii°/ii",  "display": "vii°/ii" },
+                  { "value": "vii°7/ii", "display": "vii°⁷/ii" },
+                  { "value": "vii°/V",   "display": "vii°/V" },
+                  { "value": "vii°7/V",  "display": "vii°⁷/V" },
+                  { "value": "vii°/vi",  "display": "vii°/vi" },
+                  { "value": "vii°7/vi", "display": "vii°⁷/vi" },
+                  { "value": "vii°/IV",  "display": "vii°/IV" },
+                  { "value": "vii°7/IV", "display": "vii°⁷/IV" }
+                ]
+              }
+            }
           },
           {
             "n": "17",
             "title": "Modal mixture",
             "feat": "iv, ♭VI, ♭VII, Picardy third",
-            "tags": ["modal_mixture", "picardy_third", "Picardy_Third", "Modal_Mixture"]
+            "tags": ["modal_mixture", "picardy_third", "Picardy_Third", "Modal_Mixture"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",        "display": "I" },
+                  { "value": "i",        "display": "i" },
+                  { "value": "V",        "display": "V" },
+                  { "value": "V7",       "display": "V⁷" },
+                  { "value": "I6",       "display": "I⁶" },
+                  { "value": "i6",       "display": "i⁶" },
+                  { "value": "V6",       "display": "V⁶" },
+                  { "value": "vii°6",    "display": "vii°⁶" },
+                  { "value": "IV",       "display": "IV" },
+                  { "value": "iv",       "display": "iv" },
+                  { "value": "ii",       "display": "ii" },
+                  { "value": "ii6",      "display": "ii⁶" },
+                  { "value": "vi",       "display": "vi" },
+                  { "value": "VI",       "display": "VI" },
+                  { "value": "I64",      "display": "I⁶₄" },
+                  { "value": "V64",      "display": "V⁶₄" },
+                  { "value": "iii",      "display": "iii" },
+                  { "value": "III",      "display": "III" },
+                  { "value": "VII",      "display": "VII" },
+                  { "value": "ii7",      "display": "ii⁷" },
+                  { "value": "ii°7",     "display": "ii°⁷" },
+                  { "value": "IV7",      "display": "IV⁷" },
+                  { "value": "vi7",      "display": "vi⁷" },
+                  { "value": "iii7",     "display": "iii⁷" },
+                  { "value": "vii°7",    "display": "vii°⁷" },
+                  { "value": "viio7",    "display": "vii°⁷" },
+                  { "value": "V/ii",     "display": "V/ii" },
+                  { "value": "V7/ii",    "display": "V⁷/ii" },
+                  { "value": "V/IV",     "display": "V/IV" },
+                  { "value": "V7/IV",    "display": "V⁷/IV" },
+                  { "value": "V/V",      "display": "V/V" },
+                  { "value": "V7/V",     "display": "V⁷/V" },
+                  { "value": "V/vi",     "display": "V/vi" },
+                  { "value": "V7/vi",    "display": "V⁷/vi" },
+                  { "value": "V/III",    "display": "V/III" },
+                  { "value": "V7/III",   "display": "V⁷/III" },
+                  { "value": "vii°/ii",  "display": "vii°/ii" },
+                  { "value": "vii°7/ii", "display": "vii°⁷/ii" },
+                  { "value": "vii°/V",   "display": "vii°/V" },
+                  { "value": "vii°7/V",  "display": "vii°⁷/V" },
+                  { "value": "vii°/vi",  "display": "vii°/vi" },
+                  { "value": "vii°7/vi", "display": "vii°⁷/vi" },
+                  { "value": "vii°/IV",  "display": "vii°/IV" },
+                  { "value": "vii°7/IV", "display": "vii°⁷/IV" },
+                  { "value": "bVI",      "display": "♭VI" },
+                  { "value": "bVII",     "display": "♭VII" },
+                  { "value": "bIII",     "display": "♭III" },
+                  { "value": "ii°",      "display": "ii°" },
+                  { "value": "ii°6",     "display": "ii°⁶" }
+                ],
+                "new": [
+                  { "value": "bVI",  "display": "♭VI" },
+                  { "value": "bVII", "display": "♭VII" },
+                  { "value": "bIII", "display": "♭III" },
+                  { "value": "ii°",  "display": "ii°" },
+                  { "value": "ii°6", "display": "ii°⁶" }
+                ]
+              }
+            }
           },
           {
             "n": "18",
             "title": "Neapolitan & aug. sixths",
             "feat": "♭II⁶, It⁺⁶, Fr⁺⁶, Ger⁺⁶",
-            "tags": ["neapolitan_sixth", "augmented_sixth", "Neapolitan_Sixth", "Augmented_Sixth"]
+            "tags": ["neapolitan_sixth", "augmented_sixth", "Neapolitan_Sixth", "Augmented_Sixth"],
+            "analysis": {
+              "roman": {
+                "cumulative": [
+                  { "value": "I",        "display": "I" },
+                  { "value": "i",        "display": "i" },
+                  { "value": "V",        "display": "V" },
+                  { "value": "V7",       "display": "V⁷" },
+                  { "value": "I6",       "display": "I⁶" },
+                  { "value": "i6",       "display": "i⁶" },
+                  { "value": "V6",       "display": "V⁶" },
+                  { "value": "vii°6",    "display": "vii°⁶" },
+                  { "value": "IV",       "display": "IV" },
+                  { "value": "iv",       "display": "iv" },
+                  { "value": "ii",       "display": "ii" },
+                  { "value": "ii6",      "display": "ii⁶" },
+                  { "value": "vi",       "display": "vi" },
+                  { "value": "VI",       "display": "VI" },
+                  { "value": "I64",      "display": "I⁶₄" },
+                  { "value": "V64",      "display": "V⁶₄" },
+                  { "value": "iii",      "display": "iii" },
+                  { "value": "III",      "display": "III" },
+                  { "value": "VII",      "display": "VII" },
+                  { "value": "ii7",      "display": "ii⁷" },
+                  { "value": "ii°7",     "display": "ii°⁷" },
+                  { "value": "IV7",      "display": "IV⁷" },
+                  { "value": "vi7",      "display": "vi⁷" },
+                  { "value": "iii7",     "display": "iii⁷" },
+                  { "value": "vii°7",    "display": "vii°⁷" },
+                  { "value": "viio7",    "display": "vii°⁷" },
+                  { "value": "V/ii",     "display": "V/ii" },
+                  { "value": "V7/ii",    "display": "V⁷/ii" },
+                  { "value": "V/IV",     "display": "V/IV" },
+                  { "value": "V7/IV",    "display": "V⁷/IV" },
+                  { "value": "V/V",      "display": "V/V" },
+                  { "value": "V7/V",     "display": "V⁷/V" },
+                  { "value": "V/vi",     "display": "V/vi" },
+                  { "value": "V7/vi",    "display": "V⁷/vi" },
+                  { "value": "V/III",    "display": "V/III" },
+                  { "value": "V7/III",   "display": "V⁷/III" },
+                  { "value": "vii°/ii",  "display": "vii°/ii" },
+                  { "value": "vii°7/ii", "display": "vii°⁷/ii" },
+                  { "value": "vii°/V",   "display": "vii°/V" },
+                  { "value": "vii°7/V",  "display": "vii°⁷/V" },
+                  { "value": "vii°/vi",  "display": "vii°/vi" },
+                  { "value": "vii°7/vi", "display": "vii°⁷/vi" },
+                  { "value": "vii°/IV",  "display": "vii°/IV" },
+                  { "value": "vii°7/IV", "display": "vii°⁷/IV" },
+                  { "value": "bVI",      "display": "♭VI" },
+                  { "value": "bVII",     "display": "♭VII" },
+                  { "value": "bIII",     "display": "♭III" },
+                  { "value": "ii°",      "display": "ii°" },
+                  { "value": "ii°6",     "display": "ii°⁶" },
+                  { "value": "N6",       "display": "N⁶" },
+                  { "value": "It+6",     "display": "It⁺⁶" },
+                  { "value": "Ger+6",    "display": "Ger⁺⁶" },
+                  { "value": "Fr+6",     "display": "Fr⁺⁶" }
+                ],
+                "new": [
+                  { "value": "N6",   "display": "N⁶" },
+                  { "value": "It+6", "display": "It⁺⁶" },
+                  { "value": "Ger+6","display": "Ger⁺⁶" },
+                  { "value": "Fr+6", "display": "Fr⁺⁶" }
+                ]
+              }
+            }
           },
           {
             "n": "19",

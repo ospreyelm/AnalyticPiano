@@ -52,7 +52,9 @@ class Voices(BaseModel):
 
 class AnalysisLayer(BaseModel):
     roman_numeral: Optional[str] = None
-    figured_bass: Optional[str] = None
+    raw_roman_numeral: Optional[str] = None  # unfiltered music21 output; durable record
+    raw_figured_bass: Optional[str] = None   # unabbreviated stack: "8/5/3", "7/5/3"
+    figured_bass: Optional[str] = None       # abbreviated per Kellner: "", "7", "4/2"
     pop_symbol: Optional[str] = None
     functional_label: Optional[str] = None # e.g. "Predominant", "Dominant"
 
@@ -71,6 +73,7 @@ class AnalysisSlice(BaseModel):
     content: AnalysisLayer
     visual: Optional[VisualMetadata] = None
     unit_tags: List[int] = Field(default_factory=list) # e.g. [1, 9, 12] for unit focus
+    is_target: bool = False  # set at request time by targeting layer
 
 class GradingSlice(BaseModel):
     offset: float
@@ -87,6 +90,7 @@ class Metadata(BaseModel):
     mode: InteractionMode = InteractionMode.PLAYBACK
     is_umto: bool = True
     input_mode: Literal["dropdown", "text"] = "dropdown"
+    unit: Optional[int] = None
 
 class UMTO(BaseModel):
     """
@@ -167,10 +171,12 @@ class UMTO(BaseModel):
 
         return sorted(list(labels))
 
-    def to_frontend_payload(self, unit: Optional[int] = None) -> Dict[str, Any]:
+    def to_frontend_payload(self, unit: Optional[int] = None, analysis_type: Optional[str] = None) -> Dict[str, Any]:
         """
         Generates a payload ready for the ExerciseDefinition JS parser.
         """
+        if analysis_type is None:
+            analysis_type = "note_name" if self.metadata.complexity_score == 1 else "roman"
         return {
             "type": "umto_chorale",
             "isUMTO": True,
@@ -182,7 +188,7 @@ class UMTO(BaseModel):
             "meter": self.metadata.meter,
             "clef": self.metadata.clef,
             "semibrevesPerLine": 4,
-            "analysisType": "note_name" if self.metadata.complexity_score == 1 else "roman",
+            "analysisType": analysis_type,
             "introText": self.metadata.source,
             "reviewText": "Well done!",
             "inputMode": self.metadata.input_mode,
