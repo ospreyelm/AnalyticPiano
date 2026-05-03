@@ -43,6 +43,18 @@ No interval quality symbols (diminished, augmented) — only numbers and acciden
 
 Chromatic prefixes are preserved on the abbreviated form: `b6/5`, `#4/3`, `4+/2`, etc. Unrecognized stacks pass through unabbreviated (safe fallback — never lose data).
 
+**Suspension figures** — multi-beat figures spanning two chords are stored as a single slice value with a dash separator. The figure is attached to the onset of the dissonance, not the resolution:
+
+| Figure | Meaning |
+|--------|---------|
+| `4-3`  | `8/5/4` resolving to `8/5/3` |
+| `7-6`  | `8/7/3` resolving to `8/6/3` |
+| `9-8`  | `9/5/3` resolving to `8/5/3` |
+| `4+/3` | augmented sixth (aug. 6) |
+| `6/4+` | augmented second above bass (aug. 2) |
+
+The Python calculator detects these by comparing consecutive chords at adjacent offsets — if the interval resolves by step, emit the suspension figure as a single token on the first offset's slice.
+
 ---
 
 ## Architecture: Approach A (current sprint)
@@ -104,14 +116,23 @@ Each unit 9–18 gains two new analysis families alongside `analysis.roman`:
 
 **Proposed unit mapping for `figured_bass` family (to be hand-authored):**
 
-| Unit | New figures | Cumulative |
-|------|-------------|------------|
-| 9    | `""`, `7`   | `""`, `7` |
-| 10   | `6`, `6/5`, `4/3` | + `6`, `6/5`, `4/3` |
-| 11   | `6/4`       | + `6/4` |
-| 12   | `4/2`, `2`  | + `4/2`, `2` |
-| 13 (Rule of Octave) | full diatonic set | all diatonic figures |
-| 14–18 | chromatic: `b6`, `#4`, `4+`, `b6/5`, etc. | cumulative chromatic |
+| Unit | Title | New figures | Notes |
+|------|-------|-------------|-------|
+| 9  | Tonic & dominant | `""`, `7` | Root position triads + dom7 |
+| 10 | First inversions | `6`, `6/5` | `6` = first inversion triad; `6/5` = first inversion V7 |
+| 11 | Pre-dominants | *(none)* | Pre-dominant RNs (ii, IV, ii6) use figures already in cumulative (`""`, `6`) |
+| 12 | Second inversions | `6/4`, `4/3`, `4/2` | All three second-position seventh inversions + cadential 6/4 |
+| 13 | Rule of the Octave | `#6/4/3` | Chromatic figure for raised scale degree in Rule of Octave context |
+| 14–18 | Chromaticism | `b6`, `#4`, `4+`, `b6/5`, suspension figures (`4-3`, `7-6`, `9-8`) | Units 14–18 TBD in detail |
+
+**Parallel RN taxonomy corrections** (units 10–13 need updating alongside figured bass):
+
+| Unit | RN additions needed |
+|------|---------------------|
+| 10 | Add `V65` (`V6/5`) — first inversion dominant seventh |
+| 11 | Add `ii65` (`ii6/5`), `ii7` — pre-dominant seventh chords |
+| 12 | Add `Cad64` (cadential 6/4), `V43` (`V4/3`), `V42` (`V4/2`) |
+| 13 | Add `V43/V` (`V4/3` of V) — secondary dominant in Rule of Octave |
 
 `figured_bass_unabbreviated` entries mirror the same units but use raw stacks as values.
 
