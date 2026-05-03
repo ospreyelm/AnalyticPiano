@@ -422,14 +422,14 @@ define([
       if (windows && windows[idx]) {
         var win = windows[idx];
         var firstEv = win.events && win.events.length ? win.events[0] : null;
-        var minDur = firstEv && typeof firstEv.duration === "number" ? firstEv.duration : 1024;
+        var maxDur = firstEv && typeof firstEv.duration === "number" ? firstEv.duration : 1024;
         _.each(win.events, function(ev) {
-          if (typeof ev.duration === "number" && ev.duration < minDur) minDur = ev.duration;
+          if (typeof ev.duration === "number" && ev.duration > maxDur) maxDur = ev.duration;
         });
         return {
           measureIndex: firstEv && typeof firstEv.measureIndex === "number" ? firstEv.measureIndex : 0,
           onset: typeof win.onset === "number" ? win.onset : sliceOffset,
-          rhythm: ticksToRhythm(minDur),
+          rhythm: ticksToRhythm(maxDur),
           hasSlot: true,
         };
       }
