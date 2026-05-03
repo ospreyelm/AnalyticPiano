@@ -40,3 +40,28 @@ class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
         self.assertTrue(len(overrides) > 0)
         self.assertIsNotNone(overrides[0]["content"]["raw_roman_numeral"])
         self.assertIsNone(overrides[0]["content"]["roman_numeral"])
+
+    def test_build_figured_bass_overrides_returns_slices(self):
+        """_build_figured_bass_overrides produces slices with raw_figured_bass populated."""
+        from apps.exercises.management.commands.import_bach_phrases import (
+            _build_figured_bass_overrides,
+        )
+        from music21 import corpus, key as m21key
+        from music21.corpus import chorales
+
+        iterator = chorales.Iterator(1, 1, numberingSystem="riemenschneider")
+        score = list(iterator)[0]
+        # _build_figured_bass_overrides does its own chordify internally in the plan
+        global_key = score.analyze("key")
+
+        result = _build_figured_bass_overrides(score, global_key)
+        self.assertTrue(len(result) > 0)
+        first = result[0]
+        self.assertIn("offset", first)
+        self.assertIn("raw_figured_bass", first["content"])
+        self.assertIn("figured_bass", first["content"])
+        self.assertIsNone(first["content"]["roman_numeral"])
+        self.assertIsNone(first["content"]["raw_roman_numeral"])
+        # raw_figured_bass is a non-empty string
+        self.assertIsInstance(first["content"]["raw_figured_bass"], str)
+        self.assertTrue(len(first["content"]["raw_figured_bass"]) > 0)

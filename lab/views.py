@@ -327,10 +327,27 @@ def generate_exercise_context(
     _unit_n_for_policy = unit_n  # may be None if no unit tag found
 
     if _unit_n_for_policy:
-        _unit_analysis = TaxonomyReader.get_unit_analysis(_unit_n_for_policy, "roman")
+        # Determine family based on mode tag
+        _family = "roman"
+        _mode_tag = None
+        for _tag in playlist_skill_tags + fallback_skill_tags:
+            if _tag == "mode:figures":
+                _family = "figured_bass"
+                _mode_tag = _tag
+                break
+            elif _tag == "mode:figures_unabbreviated":
+                _family = "figured_bass_unabbreviated"
+                _mode_tag = _tag
+                break
+            elif _tag == "mode:roman":
+                _family = "roman"
+                _mode_tag = _tag
+                break
+
+        _unit_analysis = TaxonomyReader.get_unit_analysis(_unit_n_for_policy, _family)
         if _unit_analysis:
-            _cumulative = TaxonomyReader.get_cumulative_values(_unit_n_for_policy, "roman")
-            _new_vals = TaxonomyReader.get_new_values(_unit_n_for_policy, "roman")
+            _cumulative = TaxonomyReader.get_cumulative_values(_unit_n_for_policy, _family)
+            _new_vals = TaxonomyReader.get_new_values(_unit_n_for_policy, _family)
 
             # Build displayMap: only entries where display != value
             _display_map = {
@@ -340,7 +357,7 @@ def generate_exercise_context(
             }
 
             analysis_policy = {
-                "family": "roman",
+                "family": _family,
                 "unit": int(_unit_n_for_policy),
                 "mode": "targeted_slots",
                 "allowedValues": sorted(_cumulative),
@@ -352,37 +369,64 @@ def generate_exercise_context(
             _score = exercise_context.get("score", {})
             _umto_data = _score.get("umto", {}) if isinstance(_score, dict) else {}
             _slices = _umto_data.get("analysis", [])
+            
+            # Map family to content fields
+            # _raw_field: what we read from the stored slice
+            # _target_field: what we write the targeted value to
+            if _family == "roman":
+                _raw_field = "raw_roman_numeral"
+                _target_field = "roman_numeral"
+            elif _family == "figured_bass":
+                _raw_field = "raw_figured_bass"
+                _target_field = "figured_bass"
+            elif _family == "figured_bass_unabbreviated":
+                _raw_field = "raw_figured_bass"
+                _target_field = "raw_figured_bass"
+            else:
+                _raw_field = "raw_roman_numeral"
+                _target_field = "roman_numeral"
+
             for _sl in _slices:
-                _raw = _sl.get("content", {}).get("raw_roman_numeral")
-                if _raw and _raw in _cumulative:
-                    _sl["content"]["roman_numeral"] = _raw
+                _content = _sl.get("content", {})
+                _val = _content.get(_raw_field)
+
+                # For abbreviated figured bass, abbreviate the raw stack
+                # before comparing against cumulative values.
+                # e.g. raw "8/5/3" → abbreviated "" → check "" in cumulative
+                if _family == "figured_bass" and _val is not None:
+                    from apps.exercises.utils.figured_bass import abbreviate_figured_bass
+                    _compare = abbreviate_figured_bass(_val)
+                else:
+                    _compare = _val
+
+                # Note: abbreviated "" for root-position triads IS a valid
+                # value in cumulative — use `is not None`, not truthiness.
+                if _compare is not None and _compare in _cumulative:
+                    _content[_target_field] = _compare
                     _sl["is_target"] = True
                 else:
-                    _sl["content"]["roman_numeral"] = None
+                    _content[_target_field] = None
                     _sl["is_target"] = False
 
-            # ── Cadential 6/4 contextual rewrite ──
-            # Mirror the substitution logic from stave_notater.js drawRoman():
-            # If I64 (or i64) is immediately followed by V, V7, V65, or V43,
-            # rewrite the I64 label to V64 (cadential interpretation).
-            # This ensures identification exercises show the same label as
-            # the play-mode real-time display.
-            _CAD64_SOURCES = {"I64", "i64"}
-            _CAD64_TARGETS = {"V", "V7", "V65", "V43"}
-            for _i in range(len(_slices) - 1):
-                _cur = _slices[_i]
-                _nxt = _slices[_i + 1]
-                _cur_rn = _cur.get("content", {}).get("roman_numeral")
-                _nxt_rn = _nxt.get("content", {}).get("roman_numeral")
-                if _cur_rn in _CAD64_SOURCES and _nxt_rn in _CAD64_TARGETS:
-                    # V64 must also be in cumulative for the rewrite to be valid
-                    if "V64" in _cumulative:
-                        _cur["content"]["roman_numeral"] = "V64"
-                        _cur["is_target"] = True
-                    else:
-                        # V64 not in this unit's curriculum — hide the slot
-                        _cur["content"]["roman_numeral"] = None
-                        _cur["is_target"] = False
+            # ── Cadential 6/4 contextual rewrite (ROMAN ONLY) ──
+            if _family == "roman":
+                _CAD64_SOURCES = {"I64", "i64"}
+                _CAD64_TARGETS = {"V", "V7", "V65", "V43"}
+                for _i in range(len(_slices) - 1):
+                    _cur = _slices[_i]
+                    _nxt = _slices[_i + 1]
+                    _cur_rn = _cur.get("content", {}).get("roman_numeral")
+                    _nxt_rn = _nxt.get("content", {}).get("roman_numeral")
+                    if _cur_rn in _CAD64_SOURCES and _nxt_rn in _CAD64_TARGETS:
+                        if "V64" in _cumulative:
+                            _cur["content"]["roman_numeral"] = "V64"
+                            _cur["is_target"] = True
+                        else:
+                            _cur["content"]["roman_numeral"] = None
+                            _cur["is_target"] = False
+            
+            # Inject analysisType into the top-level payload for the frontend
+            exercise_context["analysisType"] = _family
 
     exercise_context.update(
         {

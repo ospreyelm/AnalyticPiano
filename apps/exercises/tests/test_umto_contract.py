@@ -182,6 +182,18 @@ def test_analysis_layer_raw_roman_numeral_defaults_none():
     layer = AnalysisLayer()
     assert layer.raw_roman_numeral is None
 
+def test_analysis_layer_has_raw_figured_bass():
+    from apps.exercises.umto import AnalysisLayer
+    layer = AnalysisLayer()
+    assert hasattr(layer, "raw_figured_bass")
+    assert layer.raw_figured_bass is None
+
+def test_analysis_layer_raw_figured_bass_stores_value():
+    from apps.exercises.umto import AnalysisLayer
+    layer = AnalysisLayer(raw_figured_bass="7/5/3", figured_bass="7")
+    assert layer.raw_figured_bass == "7/5/3"
+    assert layer.figured_bass == "7"
+
 def test_analysis_slice_has_is_target():
     from apps.exercises.umto import AnalysisSlice, AnalysisLayer
     sl = AnalysisSlice(offset=0.0, content=AnalysisLayer())

@@ -71,6 +71,59 @@ def _build_roman_analysis_overrides(phrase_score, global_key, unit_tags: list) -
     return overrides
 
 
+def _build_figured_bass_overrides(phrase_score, global_key) -> list:
+    """Analyze a phrase and return UMTO analysis_overrides with figured bass.
+
+    # TODO: suspension detection (4-3, 7-6, 9-8) — requires look-ahead
+    # over consecutive offsets. Deferred to a follow-on task.
+
+    Stores raw_figured_bass (unabbreviated stack) and figured_bass (Kellner-
+    abbreviated). roman_numeral and raw_roman_numeral are left null — this
+    function is only called for mode:figures and mode:figures_unabbreviated.
+    Targeting (curriculum filtering) happens at request time in
+    generate_exercise_context; nothing is filtered here.
+    """
+    from music21 import chord
+    from apps.exercises.utils.figured_bass import compute_figured_bass
+
+    chorded = phrase_score.chordify()
+    measures = list(chorded.getElementsByClass('Measure'))
+    if not measures:
+        return []
+
+    first_measure_offset = measures[0].offset
+    overrides = []
+    seen_offsets = set()
+
+    for m in measures:
+        measure_start = m.offset - first_measure_offset
+        for element in m.flat.notes:
+            if not isinstance(element, chord.Chord):
+                continue
+            abs_offset = round(measure_start + float(element.offset), 5)
+            if abs_offset in seen_offsets:
+                continue
+            seen_offsets.add(abs_offset)
+            try:
+                raw_fb, abbrev_fb = compute_figured_bass(element, global_key)
+            except Exception:
+                raw_fb, abbrev_fb = None, None
+
+            overrides.append({
+                "offset": abs_offset,
+                "content": {
+                    "roman_numeral": None,
+                    "raw_roman_numeral": None,
+                    "raw_figured_bass": raw_fb,
+                    "figured_bass": abbrev_fb,
+                    "pop_symbol": None,
+                    "functional_label": None,
+                },
+            })
+
+    return overrides
+
+
 class Command(BaseCommand):
     help = 'Import a Bach chorale and split it into phrases based on fermatas.'
 
@@ -79,7 +132,7 @@ class Command(BaseCommand):
         parser.add_argument('--movement', type=int, help='Movement number (e.g. 6)')
         parser.add_argument('--riemenschneider', type=int, help='Riemenschneider number (e.g. 1-371)')
         parser.add_argument('--author', type=str, required=True, help='Email of the exercise author')
-        parser.add_argument('--mode', type=str, choices=['play', 'roman', 'figures', 'matching'], default='play', help='Exercise mode')
+        parser.add_argument('--mode', type=str, choices=['play', 'roman', 'figures', 'figures_unabbreviated', 'matching'], default='play', help='Exercise mode')
         parser.add_argument('--min-measures', type=int, default=3, help='Minimum measures per phrase')
         parser.add_argument('--dry-run', action='store_true', help='Show phrase ranges without creating exercises')
         parser.add_argument('--public', action='store_true', help='Mark imported exercises as public')
@@ -308,16 +361,24 @@ class Command(BaseCommand):
                 if m2:
                     unit_nums.append(int(m2.group(1)))
 
-            # Build roman numeral analysis for label-entry modes
+            # Build analysis overrides based on mode
             analysis_overrides = None
-            if mode in ('roman', 'figures', 'matching'):
+            if mode in ('roman', 'matching'):
                 try:
                     analysis_overrides = _build_roman_analysis_overrides(
                         phrase_score, m21_key, unit_nums
                     )
-                    self.stdout.write(f"  Built {len(analysis_overrides)} analysis slices")
+                    self.stdout.write(f"  Built {len(analysis_overrides)} roman analysis slices")
                 except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"  Analysis overrides failed: {e}"))
+                    self.stdout.write(self.style.WARNING(f"  Roman analysis overrides failed: {e}"))
+            elif mode in ('figures', 'figures_unabbreviated'):
+                try:
+                    analysis_overrides = _build_figured_bass_overrides(
+                        phrase_score, m21_key
+                    )
+                    self.stdout.write(f"  Built {len(analysis_overrides)} figured bass slices")
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f"  Figured bass overrides failed: {e}"))
 
             umto_kwargs = dict(
                 exercise_id="TEMP",

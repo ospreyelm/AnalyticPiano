@@ -8,6 +8,12 @@
 
 **Tech Stack:** Python/Django, music21, Pydantic (UMTO schema), JavaScript (exercise_definition.js), JSON (taxonomy), pytest
 
+**Dependency:** This plan modifies `music_theory_taxonomy.json` (Task 5). Run AFTER the taxonomy-as-source-of-truth plan (`2026-05-02-taxonomy-as-source-of-truth.md`) is fully merged — both plans touch the same file.
+
+**Deferred items:**
+- **Suspension figures** (`4-3`, `7-6`, `9-8`): require look-ahead over consecutive offsets. Not implemented in this plan. Does not block Task 8 (smoke test).
+- **Stave notater rendering**: spec §5 says "draw figured_bass value below bass staff." Not implemented here — identification slots work without score-side rendering. Follow-on task.
+
 ---
 
 ## File Map
@@ -441,9 +447,10 @@ def compute_figured_bass(chord_element, key) -> tuple[str, str]:
         directed = itv.generic.directed  # e.g. 3, 5, 8, -3 ...
         generic = abs(directed)
 
-        # Collapse compound intervals: 9→2, 10→3, etc., but keep octave as 8
-        if generic > 8:
-            generic = generic - 7
+        # Reduce compound intervals but preserve 9ths (conventional in figured bass).
+        # 10→3, 11→4, 12→5, 13→6, 14→7, 15→8; keep 8 and 9 as-is.
+        if generic > 9:
+            generic = ((generic - 1) % 7) + 1
         if generic == 1:
             generic = 8  # unison above bass = octave
 
@@ -461,13 +468,7 @@ def compute_figured_bass(chord_element, key) -> tuple[str, str]:
         pitch_in_diatonic = (pitch.step, pitch.alter) in diatonic_step_alter
 
         if is_tritone:
-            prefix = "4+" if num_str == "4" else (
-                "#" + num_str if not pitch_in_diatonic and pitch.alter > 0 else num_str + "+"
-            )
-            # Simpler: always mark tritone with + on the interval number
-            prefix = "+"
-            intervals[num_str] = "+" + num_str  # e.g. "+4" stored as token
-            # Use conventional notation: append + after number
+            # Tritone always gets + suffix regardless of diatonicism (spec §2)
             intervals[num_str] = num_str + "+"
         elif pitch_in_diatonic:
             intervals[num_str] = num_str
@@ -566,6 +567,9 @@ Add this function after `_build_roman_analysis_overrides` (around line 71):
 ```python
 def _build_figured_bass_overrides(phrase_score, global_key) -> list:
     """Analyze a phrase and return UMTO analysis_overrides with figured bass.
+
+    # TODO: suspension detection (4-3, 7-6, 9-8) — requires look-ahead
+    # over consecutive offsets. Deferred to a follow-on task.
 
     Stores raw_figured_bass (unabbreviated stack) and figured_bass (Kellner-
     abbreviated). roman_numeral and raw_roman_numeral are left null — this
@@ -802,11 +806,13 @@ Unit 12 `analysis.figured_bass`:
     {"value": "6",   "display": "6"},
     {"value": "6/5", "display": "6/5"},
     {"value": "6/4", "display": "6/4"},
+    {"value": "5/4", "display": "5/4"},
     {"value": "4/3", "display": "4/3"},
     {"value": "4/2", "display": "4/2"}
   ],
   "new": [
     {"value": "6/4", "display": "6/4"},
+    {"value": "5/4", "display": "5/4"},
     {"value": "4/3", "display": "4/3"},
     {"value": "4/2", "display": "4/2"}
   ]
@@ -829,9 +835,8 @@ Unit 12 `analysis.figured_bass`:
 }
 ```
 
-Unit 12 `analysis.roman` — add to `cumulative` and `new`:
+Unit 12 `analysis.roman` — add to `cumulative` and `new` (note: `Cad64` is NOT added here — music21 never outputs it; the cadential 6/4 rewrite `I64 → V64` is handled at request time in `generate_exercise_context`):
 ```json
-{"value": "Cad64", "display": "Cad⁶₄"},
 {"value": "V43",   "display": "V⁴₃"},
 {"value": "V42",   "display": "V⁴₂"}
 ```
@@ -931,10 +936,10 @@ def test_roman_unit11_includes_ii65_and_ii7():
     assert "ii65" in vals
     assert "ii7" in vals
 
-def test_roman_unit12_includes_cad64_V43_V42():
+def test_roman_unit12_includes_V43_V42():
     from apps.exercises.taxonomy_reader import TaxonomyReader
     vals = TaxonomyReader.get_cumulative_values("12", "roman")
-    assert "Cad64" in vals
+    # Cad64 is NOT a taxonomy entry — cadential rewrite is handled at request time
     assert "V43" in vals
     assert "V42" in vals
 ```
@@ -1217,18 +1222,24 @@ In `exercise_definition.js` around line 447, the answer extraction block reads:
 Replace with:
 
 ```javascript
-      if (analysisType === "figured_bass_unabbreviated" && slice.content.raw_figured_bass) {
+      // figured_bass abbreviated value can be "" (root position = no figures),
+      // so use !== null/undefined checks instead of truthiness.
+      if (analysisType === "figured_bass_unabbreviated" && slice.content.raw_figured_bass != null) {
         answer = slice.content.raw_figured_bass;
+      } else if (analysisType === "figured_bass" && slice.content.figured_bass != null) {
+        answer = slice.content.figured_bass;
       } else if (slice.content.roman_numeral) {
         answer = stripFiguredBassTokens(slice.content.roman_numeral);
       } else if (slice.content.pop_symbol) {
         answer = slice.content.pop_symbol;
-      } else if (slice.content.figured_bass) {
+      } else if (slice.content.figured_bass != null) {
         answer = expandFiguredBassToken(slice.content.figured_bass);
       } else if (slice.content.functional_label) {
         answer = slice.content.functional_label;
       }
 ```
+
+> **Why `!= null` instead of truthiness?** The abbreviated figured bass for a root-position triad is `""` (empty string), which is the canonical Kellner abbreviation for 5/3. JS truthiness would skip this branch, leaving the slot blank. `!= null` correctly treats `""` as a valid answer while still rejecting `null` (no data) and `undefined` (field absent).
 
 - [ ] **Step 2: Update `allContentNull` check to include `raw_figured_bass`**
 

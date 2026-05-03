@@ -107,7 +107,7 @@ class Command(BaseCommand):
         parser.add_argument("--riemenschneider", type=str, required=True)
         parser.add_argument("--author", type=str, required=True)
         parser.add_argument("--mode", type=str,
-                            choices=["roman", "play", "figures", "matching"], default="roman")
+                            choices=["roman", "play", "figures", "figures_unabbreviated", "matching"], default="roman")
         parser.add_argument("--min-measures", type=int, default=3)
         parser.add_argument("--public", action="store_true")
         parser.add_argument("--dry-run", action="store_true")

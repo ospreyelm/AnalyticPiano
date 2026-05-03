@@ -142,3 +142,69 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertEqual(slices[0]["content"]["roman_numeral"], "I64")
         self.assertTrue(slices[0]["is_target"])
         self.assertEqual(slices[1]["content"]["roman_numeral"], "IV")
+
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
+    def test_analysis_policy_figured_bass(self, mock_reader, mock_perf):
+        """Verify that mode:figures produces a figured_bass policy family."""
+        cumulative = {"", "6", "6/4"}
+        mock_reader.get_cumulative_values.return_value = cumulative
+        mock_reader.get_new_values.return_value = {"6/4"}
+        mock_reader.get_unit_analysis.return_value = {
+            "cumulative": [{"value": v, "display": v or "5/3"} for v in sorted(cumulative)],
+            "new": [{"value": v, "display": v or "5/3"} for v in sorted({"6/4"})],
+        }
+        mock_reader.get_unit_for_tag.return_value = None
+        mock_perf.objects.filter.return_value.last.return_value = None
+
+        from apps.exercises.models import Exercise, Playlist
+        from lab.views import generate_exercise_context
+
+        ex = MagicMock(spec=Exercise)
+        # raw_figured_bass populated, figured_bass (abbreviated) populated
+        ex.data = self._make_exercise_data([]) # empty analysis for now
+        ex.data["score"]["umto"]["analysis"] = [
+            {
+                "offset": 0.0,
+                "content": {
+                    "roman_numeral": None,
+                    "raw_figured_bass": "8/5/3", # raw
+                    "figured_bass": "",         # abbreviated
+                },
+                "is_target": False
+            }
+        ]
+        ex.skill_tags = ["unit:12", "mode:figures"]
+        ex.id = "TESTFB"
+        ex.complexity = 9
+
+        pl = MagicMock(spec=Playlist)
+        pl.skill_tags = ["unit:12", "mode:figures"]
+        pl.is_adaptive = False
+        pl.is_dynamic = False
+        pl.tags = []
+        pl.feedback_mode = ""
+        pl.prev_num.return_value = None
+        pl.next_num.return_value = None
+        pl.get_exercise_obj_by_num.return_value = None
+        pl.get_exercise_url_by_num.return_value = None
+        pl.exercise_list = [ex]
+        pl.id = "PLFB"
+
+        ctx = generate_exercise_context(
+            exercise_num=1,
+            exercise=ex,
+            user=MagicMock(id=1),
+            playlist=pl,
+            course=None,
+        )
+
+        self.assertIn("analysisPolicy", ctx)
+        policy = ctx["analysisPolicy"]
+        self.assertEqual(policy["family"], "figured_bass")
+        self.assertEqual(ctx["analysisType"], "figured_bass")
+
+        slices = ctx["score"]["umto"]["analysis"]
+        # abbreviated value "" is in cumulative, so it should be target
+        self.assertTrue(slices[0]["is_target"])
+        self.assertEqual(slices[0]["content"]["figured_bass"], "")

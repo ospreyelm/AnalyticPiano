@@ -47,7 +47,7 @@ class TaxonomyReaderAnalysisTestCase(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_get_unit_analysis_returns_none_for_unknown_family(self):
-        result = TaxonomyReader.get_unit_analysis("11", "figured_bass")
+        result = TaxonomyReader.get_unit_analysis("11", "nonexistent_family")
         self.assertIsNone(result)
 
     def test_get_cumulative_values_returns_set_of_strings(self):

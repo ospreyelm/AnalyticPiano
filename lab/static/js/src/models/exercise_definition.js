@@ -317,7 +317,9 @@ define([
       return !!l && l !== correctLabel;
     }));
     var fallbacks = analysisType === "figured_bass"
-      ? ["5/3", "6", "6/4", "6/5", "7"]
+      ? ["", "6", "6/4", "7", "6/5", "4/3", "4/2"]
+      : analysisType === "figured_bass_unabbreviated"
+      ? ["8/5/3", "6/3", "6/4", "7/5/3", "6/5/3", "6/4/3", "6/4/2"]
       : analysisType === "note_name"
       ? ["C", "D", "E", "F", "G", "A", "B"]
       : (analysisType === "solfege" || analysisType === "do_based_solfege" || analysisType === "fixed_do")
@@ -443,11 +445,21 @@ define([
           isTarget = false;
       }
 
-      // Pedagogical Priority
-      if (slice.content.roman_numeral) answer = stripFiguredBassTokens(slice.content.roman_numeral);
-      else if (slice.content.pop_symbol) answer = slice.content.pop_symbol;
-      else if (slice.content.figured_bass) answer = expandFiguredBassToken(slice.content.figured_bass);
-      else if (slice.content.functional_label) answer = slice.content.functional_label;
+      // figured_bass abbreviated value can be "" (root position = no figures),
+      // so use !== null/undefined checks (not truthiness) for figured bass fields.
+      if (analysisType === "figured_bass_unabbreviated" && slice.content.raw_figured_bass != null) {
+        answer = slice.content.raw_figured_bass;
+      } else if (analysisType === "figured_bass" && slice.content.figured_bass != null) {
+        answer = slice.content.figured_bass;
+      } else if (slice.content.roman_numeral) {
+        answer = stripFiguredBassTokens(slice.content.roman_numeral);
+      } else if (slice.content.pop_symbol) {
+        answer = slice.content.pop_symbol;
+      } else if (slice.content.figured_bass != null) {
+        answer = slice.content.figured_bass;
+      } else if (slice.content.functional_label) {
+        answer = slice.content.functional_label;
+      }
 
       // Unit 1 Bridge: Note Names
       var isNoteNameEx = (exercise.analysisType === "note_name") || 
@@ -468,6 +480,7 @@ define([
       var allContentNull = slice.content.roman_numeral === null &&
         slice.content.pop_symbol === null &&
         slice.content.figured_bass === null &&
+        slice.content.raw_figured_bass === null &&
         slice.content.functional_label === null;
       if (!answer && allContentNull) {
         isTarget = false;
@@ -792,6 +805,9 @@ define([
      * @return {string}
      */
     getAnalysisType: function () {
+      if (this.exercise.analysisPolicy && this.exercise.analysisPolicy.family) {
+        return this.exercise.analysisPolicy.family;
+      }
       return this.exercise.analysisType || "roman";
     },
     /**

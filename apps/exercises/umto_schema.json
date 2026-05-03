@@ -26,6 +26,18 @@
           "default": null,
           "title": "Raw Roman Numeral"
         },
+        "raw_figured_bass": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Figured Bass"
+        },
         "figured_bass": {
           "anyOf": [
             {
@@ -188,6 +200,18 @@
           ],
           "title": "Input Mode",
           "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
         }
       },
       "required": [

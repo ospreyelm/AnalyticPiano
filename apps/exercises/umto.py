@@ -53,7 +53,8 @@ class Voices(BaseModel):
 class AnalysisLayer(BaseModel):
     roman_numeral: Optional[str] = None
     raw_roman_numeral: Optional[str] = None  # unfiltered music21 output; durable record
-    figured_bass: Optional[str] = None
+    raw_figured_bass: Optional[str] = None   # unabbreviated stack: "8/5/3", "7/5/3"
+    figured_bass: Optional[str] = None       # abbreviated per Kellner: "", "7", "4/2"
     pop_symbol: Optional[str] = None
     functional_label: Optional[str] = None # e.g. "Predominant", "Dominant"
 

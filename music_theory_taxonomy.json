@@ -83,6 +83,26 @@
                   { "value": "V",  "display": "V" },
                   { "value": "V7", "display": "V⁷" }
                 ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "",  "display": "5/3"},
+                  {"value": "7", "display": "7"}
+                ],
+                "new": [
+                  {"value": "",  "display": "5/3"},
+                  {"value": "7", "display": "7"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"}
+                ],
+                "new": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"}
+                ]
               }
             }
           },
@@ -98,6 +118,7 @@
                   { "value": "i",      "display": "i" },
                   { "value": "V",      "display": "V" },
                   { "value": "V7",     "display": "V⁷" },
+                  { "value": "V65",    "display": "V⁶₅" },
                   { "value": "I6",     "display": "I⁶" },
                   { "value": "i6",     "display": "i⁶" },
                   { "value": "V6",     "display": "V⁶" },
@@ -107,7 +128,32 @@
                   { "value": "I6",    "display": "I⁶" },
                   { "value": "i6",    "display": "i⁶" },
                   { "value": "V6",    "display": "V⁶" },
+                  { "value": "V65",   "display": "V⁶₅" },
                   { "value": "vii°6", "display": "vii°⁶" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "",    "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"}
+                ],
+                "new": [
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"}
+                ],
+                "new": [
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"}
                 ]
               }
             }
@@ -124,6 +170,7 @@
                   { "value": "i",     "display": "i" },
                   { "value": "V",     "display": "V" },
                   { "value": "V7",    "display": "V⁷" },
+                  { "value": "V65",   "display": "V⁶₅" },
                   { "value": "I6",    "display": "I⁶" },
                   { "value": "i6",    "display": "i⁶" },
                   { "value": "V6",    "display": "V⁶" },
@@ -132,17 +179,39 @@
                   { "value": "iv",    "display": "iv" },
                   { "value": "ii",    "display": "ii" },
                   { "value": "ii6",   "display": "ii⁶" },
+                  { "value": "ii7",   "display": "ii⁷" },
+                  { "value": "ii65",  "display": "ii⁶₅" },
                   { "value": "vi",    "display": "vi" },
                   { "value": "VI",    "display": "VI" }
                 ],
                 "new": [
-                  { "value": "IV",  "display": "IV" },
-                  { "value": "iv",  "display": "iv" },
-                  { "value": "ii",  "display": "ii" },
-                  { "value": "ii6", "display": "ii⁶" },
-                  { "value": "vi",  "display": "vi" },
-                  { "value": "VI",  "display": "VI" }
+                  { "value": "IV",   "display": "IV" },
+                  { "value": "iv",   "display": "iv" },
+                  { "value": "ii",   "display": "ii" },
+                  { "value": "ii6",  "display": "ii⁶" },
+                  { "value": "ii7",  "display": "ii⁷" },
+                  { "value": "ii65", "display": "ii⁶₅" },
+                  { "value": "vi",   "display": "vi" },
+                  { "value": "VI",   "display": "VI" }
                 ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "",    "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"}
+                ],
+                "new": []
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"}
+                ],
+                "new": []
               }
             }
           },
@@ -158,6 +227,9 @@
                   { "value": "i",     "display": "i" },
                   { "value": "V",     "display": "V" },
                   { "value": "V7",    "display": "V⁷" },
+                  { "value": "V65",   "display": "V⁶₅" },
+                  { "value": "V43",   "display": "V⁴₃" },
+                  { "value": "V42",   "display": "V⁴₂" },
                   { "value": "I6",    "display": "I⁶" },
                   { "value": "i6",    "display": "i⁶" },
                   { "value": "V6",    "display": "V⁶" },
@@ -166,6 +238,8 @@
                   { "value": "iv",    "display": "iv" },
                   { "value": "ii",    "display": "ii" },
                   { "value": "ii6",   "display": "ii⁶" },
+                  { "value": "ii7",   "display": "ii⁷" },
+                  { "value": "ii65",  "display": "ii⁶₅" },
                   { "value": "vi",    "display": "vi" },
                   { "value": "VI",    "display": "VI" },
                   { "value": "I64",   "display": "I⁶₄" },
@@ -173,7 +247,43 @@
                 ],
                 "new": [
                   { "value": "I64", "display": "I⁶₄" },
-                  { "value": "V64", "display": "V⁶₄" }
+                  { "value": "V64", "display": "V⁶₄" },
+                  { "value": "V43", "display": "V⁴₃" },
+                  { "value": "V42", "display": "V⁴₂" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "",    "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"},
+                  {"value": "6/4", "display": "6/4"},
+                  {"value": "5/4", "display": "5/4"},
+                  {"value": "4/3", "display": "4/3"},
+                  {"value": "4/2", "display": "4/2"}
+                ],
+                "new": [
+                  {"value": "6/4", "display": "6/4"},
+                  {"value": "5/4", "display": "5/4"},
+                  {"value": "4/3", "display": "4/3"},
+                  {"value": "4/2", "display": "4/2"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"},
+                  {"value": "6/4",   "display": "6/4"},
+                  {"value": "6/4/3", "display": "6/4/3"},
+                  {"value": "6/4/2", "display": "6/4/2"}
+                ],
+                "new": [
+                  {"value": "6/4",   "display": "6/4"},
+                  {"value": "6/4/3", "display": "6/4/3"},
+                  {"value": "6/4/2", "display": "6/4/2"}
                 ]
               }
             }
@@ -190,6 +300,9 @@
                   { "value": "i",     "display": "i" },
                   { "value": "V",     "display": "V" },
                   { "value": "V7",    "display": "V⁷" },
+                  { "value": "V65",   "display": "V⁶₅" },
+                  { "value": "V43",   "display": "V⁴₃" },
+                  { "value": "V42",   "display": "V⁴₂" },
                   { "value": "I6",    "display": "I⁶" },
                   { "value": "i6",    "display": "i⁶" },
                   { "value": "V6",    "display": "V⁶" },
@@ -198,6 +311,8 @@
                   { "value": "iv",    "display": "iv" },
                   { "value": "ii",    "display": "ii" },
                   { "value": "ii6",   "display": "ii⁶" },
+                  { "value": "ii7",   "display": "ii⁷" },
+                  { "value": "ii65",  "display": "ii⁶₅" },
                   { "value": "vi",    "display": "vi" },
                   { "value": "VI",    "display": "VI" },
                   { "value": "I64",   "display": "I⁶₄" },
@@ -209,7 +324,37 @@
                 "new": [
                   { "value": "iii", "display": "iii" },
                   { "value": "III", "display": "III" },
-                  { "value": "VII", "display": "VII" }
+                  { "value": "VII", "display": "VII" },
+                  { "value": "V42", "display": "V⁴₂" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "",    "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"},
+                  {"value": "6/4", "display": "6/4"},
+                  {"value": "5/4", "display": "5/4"},
+                  {"value": "4/3", "display": "4/3"},
+                  {"value": "4/2", "display": "4/2"}
+                ],
+                "new": [
+                  {"value": "4/2", "display": "4/2"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"},
+                  {"value": "6/4",   "display": "6/4"},
+                  {"value": "6/4/3", "display": "6/4/3"},
+                  {"value": "6/4/2", "display": "6/4/2"}
+                ],
+                "new": [
+                  {"value": "6/4/2", "display": "6/4/2"}
                 ]
               }
             }
