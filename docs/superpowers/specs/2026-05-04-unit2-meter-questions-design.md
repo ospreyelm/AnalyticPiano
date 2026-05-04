@@ -580,6 +580,24 @@ These must be resolved in the implementation plan before coding starts.
 - whether a single frontend renderer can cover all symbolic subtypes with only prompt/choice configuration; if not, split by renderer while keeping one backend content family
 - whether Phase 1 questions are fully generated from the canonical reference dataset, hand-authored against that schema, or a hybrid
 
+## Rendering Requirement
+
+Numeric time signatures must be rendered with a proper music notation font, not a generic text font.
+
+Preferred approach:
+
+- use a SMuFL-compliant music font if available in the existing stack
+
+Fallback:
+
+- use another dedicated music font that renders stacked time-signature numerals clearly and consistently
+
+Implications for implementation planning:
+
+- the symbolic renderer must support stacked time-signature display such as `6/4`, `9/8`, and `12/16`
+- font choice must be resolved before UI implementation begins
+- the renderer should not rely on default serif or sans-serif fonts for music-symbol presentation
+
 ## Recommendation
 
 Proceed with implementation planning for Phase 1 only:
