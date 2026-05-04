@@ -8,6 +8,7 @@ define([
   "app/components/piano",
   "app/components/music",
   "app/components/music/exercise_sheet",
+  "app/components/music/symbolic_question_sheet",
   "app/components/midi",
   // 'app/components/notifications',
   "app/components/input/shortcuts",
@@ -33,6 +34,7 @@ define([
   PianoComponent,
   MusicComponent,
   ExerciseSheetComponent,
+  SymbolicQuestionSheet,
   MidiComponent,
   // NotificationsComponent,
   KeyboardShortcutsComponent,
@@ -246,6 +248,16 @@ define([
       },
       function () {
         var definition = this.models.exerciseContext.getDefinition();
+
+        if (definition.isSymbolicMeterQuestion && definition.isSymbolicMeterQuestion()) {
+          var symbolicSheet = new SymbolicQuestionSheet({
+            exerciseContext: this.models.exerciseContext,
+          });
+          symbolicSheet.init(this);
+          symbolicSheet.renderTo("#staffwrapper");
+          this.addComponent(symbolicSheet);
+          return;
+        }
 
         var c = new MusicComponent({
           el: $("#staff-area"),

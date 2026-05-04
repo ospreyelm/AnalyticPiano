@@ -1,0 +1,32 @@
+(function (root, factory) {
+  if (typeof define === "function" && define.amd) {
+    define([], factory);
+  } else if (typeof module === "object" && module.exports) {
+    module.exports = factory();
+  } else {
+    root.SymbolicMeterRenderingLogic = factory();
+  }
+})(this, function () {
+  "use strict";
+
+  function getTimeSignatureFontStack() {
+    return '"Bravura Text","Finale Maestro Text","Petaluma Script","Noto Music",serif';
+  }
+
+  function renderTimeSignatureMarkup(text) {
+    var parts = String(text).split("/");
+    if (parts.length !== 2) {
+      return text;
+    }
+    return '<span class="meter-ts"><span class="meter-ts-top">' +
+      parts[0] +
+      '</span><span class="meter-ts-bottom">' +
+      parts[1] +
+      '</span></span>';
+  }
+
+  return {
+    getTimeSignatureFontStack: getTimeSignatureFontStack,
+    renderTimeSignatureMarkup: renderTimeSignatureMarkup,
+  };
+});
