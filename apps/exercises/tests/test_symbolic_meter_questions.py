@@ -1,10 +1,16 @@
-from django.test import SimpleTestCase
+from django.contrib.auth import get_user_model
+from django.test import SimpleTestCase, TestCase
 
+from apps.exercises.management.commands.generate_unit2_meter_reference import (
+    build_reference_entry,
+)
 from apps.exercises.symbolic_meter_questions import (
     build_symbolic_problem,
     build_symbolic_problem_set,
     load_reference_rows,
 )
+from apps.exercises.umto import InteractionMode
+from apps.exercises.umto_factory import save_umto_symbolic_exercise
 
 
 class SymbolicMeterQuestionTests(SimpleTestCase):
@@ -45,3 +51,27 @@ class SymbolicMeterQuestionTests(SimpleTestCase):
             [p["subtype"] for p in problems],
             ["ts_to_grouping", "ts_to_division_type"],
         )
+
+
+class SymbolicMeterExerciseSaveTests(TestCase):
+    def test_save_umto_symbolic_exercise_creates_umto_wrapped_payload(self):
+        user = get_user_model().objects.create_user(
+            email="meter@example.com",
+            password="pw",
+        )
+        ref = {"6/4": build_reference_entry("6/4")}
+        problem = build_symbolic_problem("ts_to_full_meter", "6/4", ref)
+        exercise = save_umto_symbolic_exercise(
+            description="Unit 2 meter question set",
+            author=user,
+            problems=[problem],
+            source="Unit 2 symbolic meter questions",
+            unit=2,
+        )
+        self.assertTrue(exercise.data["isUMTO"])
+        self.assertEqual(exercise.data["type"], "umto_symbolic_meter")
+        self.assertEqual(
+            exercise.data["mode"],
+            InteractionMode.IDENTIFICATION.value,
+        )
+        self.assertEqual(exercise.data["problems"][0]["answer"], "compound duple")

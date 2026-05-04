@@ -378,3 +378,79 @@ def save_umto_exercise(
     ex.data["exerciseId"] = ex.id
     ex.save()
     return ex
+
+
+def save_umto_symbolic_exercise(
+    *,
+    description: str,
+    author,
+    problems: list[dict],
+    source: str,
+    unit: int = 2,
+    is_public: bool = True,
+) -> Exercise:
+    umto = UMTO(
+        metadata=Metadata(
+            exercise_id="TEMP",
+            source=source,
+            key="C",
+            meter="4/4",
+            clef="treble",
+            complexity_score=unit,
+            mode=InteractionMode.IDENTIFICATION,
+            input_mode="dropdown",
+            unit=unit,
+        ),
+        voices=Voices(),
+        analysis=[],
+        grading=[],
+    )
+
+    payload = {
+        "type": "umto_symbolic_meter",
+        "isUMTO": True,
+        "mode": InteractionMode.IDENTIFICATION.value,
+        "analysisType": "unit2_symbolic_meter",
+        "inputMode": "dropdown",
+        "staffDistribution": "none",
+        "complexity_score": unit,
+        "key": "C",
+        "meter": "4/4",
+        "clef": "treble",
+        "introText": source,
+        "reviewText": "Well done!",
+        "allowed_answers": [],
+        "problems": problems,
+        "score": {
+            "meta": {
+                "key": "C",
+                "time": "4/4",
+                "clef": "treble",
+                "staffDistribution": "none",
+            },
+            "measures": [],
+            "umto": umto.model_dump(),
+        },
+        "grading": [],
+    }
+
+    UMTO.model_validate(payload["score"]["umto"])
+
+    ex = Exercise(
+        description=description,
+        data=payload,
+        authored_by=author,
+        is_public=is_public,
+        skill_tags=[
+            "unit:2",
+            "unit:2_rhythm",
+            "unit:2_meter_simple",
+            "unit:2_meter_compound",
+        ],
+        complexity=unit,
+    )
+    ex.save()
+    ex.data["exerciseId"] = ex.id
+    ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
+    ex.save(update_fields=["data"])
+    return ex
