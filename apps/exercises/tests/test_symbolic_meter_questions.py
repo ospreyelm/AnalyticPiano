@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
 
+from apps.exercises.models import Exercise
 from apps.exercises.management.commands.generate_unit2_meter_reference import (
     build_reference_entry,
 )
@@ -75,3 +77,17 @@ class SymbolicMeterExerciseSaveTests(TestCase):
             InteractionMode.IDENTIFICATION.value,
         )
         self.assertEqual(exercise.data["problems"][0]["answer"], "compound duple")
+
+
+class GenerateUnit2MeterExercisesCommandTests(TestCase):
+    def test_command_creates_symbolic_umto_exercise(self):
+        user = get_user_model().objects.create_user(
+            email="seed@example.com",
+            password="pw",
+        )
+        call_command("generate_unit2_meter_reference")
+        call_command("generate_unit2_meter_exercises", author=user.email)
+        exercise = Exercise.objects.latest("created")
+        self.assertEqual(exercise.data["type"], "umto_symbolic_meter")
+        self.assertTrue(exercise.data["isUMTO"])
+        self.assertGreater(len(exercise.data["problems"]), 0)

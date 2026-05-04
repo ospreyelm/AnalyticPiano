@@ -21,3 +21,9 @@ assertEqual(
   logic.getTimeSignatureFontStack().split(",")[0],
   '"Bravura Text"'
 );
+
+assertEqual(
+  "non time-signature labels pass through unchanged",
+  logic.renderTimeSignatureMarkup("compound triple"),
+  "compound triple"
+);
