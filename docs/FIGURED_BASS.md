@@ -6,7 +6,7 @@ Figured bass is a Baroque notation system where numbers (figures) written below 
 
 ```
   ┌──────────────────────────────┐
-  │  soprano  A4                 │
+  │  soprano  G4                 │
   │  alto     E4                 │
   │  tenor    C4                 │
   │  bass     C3  ← written out  │
