@@ -51,8 +51,8 @@ Figures introduced progressively. Students only see figures from their current a
 | 9 | Tonic & dominant | `5/3`, `7` | `5/3`, `7` |
 | 10 | First inversions | `6`, `6/5` | `5/3`, `7`, `6`, `6/5` |
 | 11 | Pre-dominants | _(none new)_ | same as unit 10 |
-| 12 | Second inversions | `6/4`, `5/4`, `4/3`, `4/2` | all of above |
-| 13 | Rule of the octave | _(none new)_ | same as unit 12 |
+| 12 | Second inversions | `6/4`, `4/3` | `5/3`, `7`, `6`, `6/5`, `6/4`, `4/3` |
+| 13 | Rule of the octave | `4/2` | `5/3`, `7`, `6`, `6/5`, `6/4`, `4/3`, `4/2` |
 
 Units 14+ (`figured_bass` entries in taxonomy) are TBD.
 
@@ -149,7 +149,7 @@ python manage.py create_unit_playlist \
 
 ## Known limitations and deferred work
 
-**Suspension detection** — `5/4` (4–3 suspension) requires looking ahead to the resolution note. Currently `compute_figured_bass()` only sees one chord at a time. Implemented stub in `_build_figured_bass_overrides()` in `import_bach_phrases.py` but not yet wired up for all suspension types.
+**Suspension detection** — `5/4` (4–3 suspension) requires looking ahead to the resolution note. Currently `compute_figured_bass()` only sees one chord at a time. Implemented stub in `_build_figured_bass_overrides()` in `import_bach_phrases.py` but not yet wired up for all suspension types, so `5/4` is intentionally excluded from units 9–13 for now.
 
 **Chromatic figures** — `#6` (Italian/French/German augmented sixths), `b7`, etc. are computed correctly by `compute_figured_bass()` but the taxonomy `new`/`cumulative` entries for units 14+ are not yet defined.
 

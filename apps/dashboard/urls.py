@@ -61,6 +61,7 @@ from apps.dashboard.views.api_workbench import (
     workbench_view,
     workbench_upload_view,
 )
+from apps.dashboard.views.taxonomy import taxonomy_debug_view
 
 app_name = "dashboard"
 
@@ -127,4 +128,5 @@ urlpatterns = [
     path("api/recent-imports/", api_recent_imports, name="api-recent-imports"),
     path("api/multiply-projection/", api_multiply_projection, name="api-multiply-projection"),
     path("api/exercises/bulk-delete/", api_bulk_delete_exercises, name="api-bulk-delete-exercises"),
+    path("debug/taxonomy/", taxonomy_debug_view, name="taxonomy-debug"),
 ]

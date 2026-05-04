@@ -83,6 +83,26 @@
                   { "value": "V",  "display": "V" },
                   { "value": "V7", "display": "V⁷" }
                 ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"}
+                ],
+                "new": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"}
+                ],
+                "new": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"}
+                ]
               }
             }
           },
@@ -108,6 +128,30 @@
                   { "value": "i6",    "display": "i⁶" },
                   { "value": "V6",    "display": "V⁶" },
                   { "value": "vii°6", "display": "vii°⁶" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"}
+                ],
+                "new": [
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"}
+                ],
+                "new": [
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"}
                 ]
               }
             }
@@ -143,6 +187,24 @@
                   { "value": "vi",  "display": "vi" },
                   { "value": "VI",  "display": "VI" }
                 ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"}
+                ],
+                "new": []
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"}
+                ],
+                "new": []
               }
             }
           },
@@ -174,6 +236,34 @@
                 "new": [
                   { "value": "I64", "display": "I⁶₄" },
                   { "value": "V64", "display": "V⁶₄" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"},
+                  {"value": "6/4", "display": "6/4"},
+                  {"value": "4/3", "display": "4/3"}
+                ],
+                "new": [
+                  {"value": "6/4", "display": "6/4"},
+                  {"value": "4/3", "display": "4/3"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"},
+                  {"value": "6/4",   "display": "6/4"},
+                  {"value": "6/4/3", "display": "6/4/3"}
+                ],
+                "new": [
+                  {"value": "6/4",   "display": "6/4"},
+                  {"value": "6/4/3", "display": "6/4/3"}
                 ]
               }
             }
@@ -210,6 +300,34 @@
                   { "value": "iii", "display": "iii" },
                   { "value": "III", "display": "III" },
                   { "value": "VII", "display": "VII" }
+                ]
+              },
+              "figured_bass": {
+                "cumulative": [
+                  {"value": "5/3", "display": "5/3"},
+                  {"value": "7",   "display": "7"},
+                  {"value": "6",   "display": "6"},
+                  {"value": "6/5", "display": "6/5"},
+                  {"value": "6/4", "display": "6/4"},
+                  {"value": "4/3", "display": "4/3"},
+                  {"value": "4/2", "display": "4/2"}
+                ],
+                "new": [
+                  {"value": "4/2", "display": "4/2"}
+                ]
+              },
+              "figured_bass_unabbreviated": {
+                "cumulative": [
+                  {"value": "8/5/3", "display": "8/5/3"},
+                  {"value": "7/5/3", "display": "7/5/3"},
+                  {"value": "6/3",   "display": "6/3"},
+                  {"value": "6/5/3", "display": "6/5/3"},
+                  {"value": "6/4",   "display": "6/4"},
+                  {"value": "6/4/3", "display": "6/4/3"},
+                  {"value": "6/4/2", "display": "6/4/2"}
+                ],
+                "new": [
+                  {"value": "6/4/2", "display": "6/4/2"}
                 ]
               }
             }
