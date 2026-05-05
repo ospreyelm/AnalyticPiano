@@ -1,4 +1,8 @@
-from music21 import roman, key
+try:
+    from music21 import roman, key
+    _MUSIC21_AVAILABLE = True
+except ImportError:
+    _MUSIC21_AVAILABLE = False
 import re
 
 # Maps internal unit-prefixed tags → canonical skill tag vocabulary.

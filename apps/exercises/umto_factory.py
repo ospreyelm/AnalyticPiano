@@ -28,7 +28,11 @@ from apps.exercises.umto import (
     InteractionMode,
 )
 from apps.exercises.utils.music21_builder import build_score_from_data
-from music21 import roman, key as m21_key
+try:
+    from music21 import roman, key as m21_key
+    _MUSIC21_AVAILABLE = True
+except ImportError:
+    _MUSIC21_AVAILABLE = False
 
 
 _DUR_QL = {"w": 4.0, "h": 2.0, "q": 1.0, "8": 0.5, "16": 0.25, "32": 0.125}
