@@ -5,7 +5,11 @@ Used by backfill_skill_tags and other analysis operations that need
 to convert stored exercise data back into analyzable music21 objects.
 """
 
-from music21 import stream, note, chord, meter, key, instrument, metadata as m21_metadata
+try:
+    from music21 import stream, note, chord, meter, key, instrument, metadata as m21_metadata
+    _MUSIC21_AVAILABLE = True
+except ImportError:
+    _MUSIC21_AVAILABLE = False
 
 
 def _serialize_key_name(k_obj):
