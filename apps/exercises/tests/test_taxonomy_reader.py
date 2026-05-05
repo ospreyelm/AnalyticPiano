@@ -72,3 +72,16 @@ class TaxonomyReaderAnalysisTestCase(unittest.TestCase):
     def test_get_new_values_returns_empty_for_no_analysis(self):
         result = TaxonomyReader.get_new_values("1", "roman")
         self.assertEqual(result, set())
+
+    def test_figured_bass_sequence_units_12_and_13_matches_curriculum_policy(self):
+        unit12_new = TaxonomyReader.get_new_values("12", "figured_bass")
+        unit12_cumulative = TaxonomyReader.get_cumulative_values("12", "figured_bass")
+        unit13_new = TaxonomyReader.get_new_values("13", "figured_bass")
+        unit13_cumulative = TaxonomyReader.get_cumulative_values("13", "figured_bass")
+
+        self.assertEqual(unit12_new, {"6/4", "4/3"})
+        self.assertEqual(unit12_cumulative, {"5/3", "7", "6", "6/5", "6/4", "4/3"})
+        self.assertEqual(unit13_new, {"4/2"})
+        self.assertEqual(unit13_cumulative, {"5/3", "7", "6", "6/5", "6/4", "4/3", "4/2"})
+        self.assertNotIn("5/4", unit12_cumulative)
+        self.assertNotIn("5/4", unit13_cumulative)

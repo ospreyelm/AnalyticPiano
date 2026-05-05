@@ -11,6 +11,7 @@ ANALYTIC PIANO (formerly HarmonyLab) is an open-source application for the study
 
 ### References
 *   [Unit 9 Bach Import Strategy](docs/unit_9_bach_import_strategy.md) - How we used frontend filtering to implement Unit 9 (Tonic/Dominant) Bach chorales.
+*   [Taxonomy Debug Page](docs/taxonomy_debug_page.md) - Staff-only Django page for browsing the live curriculum taxonomy by branch, tier, and unit.
 *   [Music21 Module Reference](https://music21.org/music21docs/moduleReference/index.html) - Official documentation for Bach corpus analysis and stream processing.
 
 # Supported Web Browsers

@@ -8,6 +8,7 @@ define([
   "app/components/piano",
   "app/components/music",
   "app/components/music/exercise_sheet",
+  "app/components/music/symbolic_question_sheet",
   "app/components/midi",
   // 'app/components/notifications',
   "app/components/input/shortcuts",
@@ -34,6 +35,7 @@ define([
   PianoComponent,
   MusicComponent,
   ExerciseSheetComponent,
+  SymbolicQuestionSheet,
   MidiComponent,
   // NotificationsComponent,
   KeyboardShortcutsComponent,
@@ -190,6 +192,7 @@ define([
   AppExerciseComponent.prototype.getComponentMethods = function () {
     var definition = this.getExerciseDefinition();
     var disableComputerKeyboardInput = !!definition.disableComputerKeyboardInput;
+    var isSymbolicMeterExercise = definition.type === "umto_symbolic_meter";
     var methods = [
       // function () {
       //  var c = new NotificationsComponent();
@@ -198,6 +201,9 @@ define([
       //  this.addComponent(c);
       // },
       function () {
+        if (isSymbolicMeterExercise) {
+          return;
+        }
         var c = new PianoComponent({
           toolbarConfig: { metronome: false },
           toolbarEnabled: false,
@@ -207,6 +213,9 @@ define([
         this.addComponent(c);
       },
       function () {
+        if (isSymbolicMeterExercise) {
+          return;
+        }
         var c = new MidiComponent({
           chords: this.models.inputChords,
           midiDevice: this.models.midiDevice,
@@ -215,7 +224,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise) {
           return;
         }
         var c = new KeyboardShortcutsComponent({
@@ -225,7 +234,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise) {
           return;
         }
         var c = new NoteNameInputComponent({
@@ -245,6 +254,9 @@ define([
         this.addComponent(c);
       },
       function () {
+        if (isSymbolicMeterExercise) {
+          return;
+        }
         var c = new MusicControlsComponent({
           headerEl: "#header",
           containerEl: "#mainmenu",
@@ -257,6 +269,16 @@ define([
       },
       function () {
         var definition = this.models.exerciseContext.getDefinition();
+
+        if (definition.isSymbolicMeterQuestion && definition.isSymbolicMeterQuestion()) {
+          var symbolicSheet = new SymbolicQuestionSheet({
+            exerciseContext: this.models.exerciseContext,
+          });
+          symbolicSheet.init(this);
+          symbolicSheet.renderTo("#staffwrapper");
+          this.addComponent(symbolicSheet);
+          return;
+        }
 
         var c = new MusicComponent({
           el: $("#staff-area"),

@@ -383,8 +383,7 @@ define([
       var context = sheetComponent && sheetComponent.exerciseContext;
       if (
         context &&
-        typeof context.goToNextExercise === "function" &&
-        context.sealed !== true
+        typeof context.goToNextExercise === "function"
       ) {
         var handled = context.goToNextExercise({ fromUI: true });
         if (handled) {
@@ -401,8 +400,7 @@ define([
       var context = sheetComponent && sheetComponent.exerciseContext;
       if (
         context &&
-        typeof context.goToPreviousExercise === "function" &&
-        context.sealed !== true
+        typeof context.goToPreviousExercise === "function"
       ) {
         var handled = context.goToPreviousExercise({ fromUI: true });
         if (handled) {

@@ -13,6 +13,7 @@ class InteractionMode(str, Enum):
     IDENTIFICATION = "identification"
     PLAYBACK = "playback"
     ANALYSIS_MATCH = "analysis_match"
+    SYMBOLIC_IDENTIFICATION = "symbolic_identification"
 
 class Pitch(BaseModel):
     step: str

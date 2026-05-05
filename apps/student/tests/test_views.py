@@ -727,6 +727,85 @@ class StudentHomeResumeTests(TransactionTestCase):
         )
 
 
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class StudentHomeUnitDiscoveryTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        self.client = Client()
+        self.student = User.objects.create_user(
+            id=38001,
+            email="unit-discovery-student@test.com",
+            password="testpass123",
+            is_staff=False,
+        )
+        self.author = User.objects.create_user(
+            id=38002,
+            email="unit-discovery-author@test.com",
+            password="x",
+            is_staff=True,
+        )
+        self.client.force_login(self.student)
+
+    def _make_playlist(self, pk, name, skill_tags):
+        return Playlist.objects.create(
+            _id=pk,
+            name=name,
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=skill_tags,
+            tags=skill_tags,
+        )
+
+    def test_home_discovers_units_with_accessible_playlists(self):
+        self._make_playlist(38100, "Unit 1 - Identify the Notes (Treble)", ["unit:1", "Note_Names"])
+        self._make_playlist(38101, "Unit 9 - Tonic & dominant", ["unit:9", "Tonic_Triad", "Dominant_Triad"])
+        self._make_playlist(38102, "Unit 11 - Pre-dominants", ["unit:11", "Predominant_Function"])
+        self._make_playlist(38103, "Unit 12 - Second inversions", ["unit:12", "Second_Inversion"])
+
+        response = self.client.get(reverse("student:home"))
+
+        self.assertEqual(response.status_code, 200)
+        units = response.context["units"]
+        by_num = {unit["num"]: unit for unit in units}
+
+        self.assertEqual([unit["num"] for unit in units], sorted(by_num.keys()))
+        self.assertFalse(by_num[1]["locked"])
+        self.assertFalse(by_num[9]["locked"])
+        self.assertFalse(by_num[11]["locked"])
+        self.assertFalse(by_num[12]["locked"])
+        self.assertTrue(by_num[2]["locked"])
+        self.assertIsNone(by_num[2]["url"])
+        self.assertEqual(
+            by_num[9]["url"],
+            reverse("student:unit-progress", kwargs={"unit_n": "9"}),
+        )
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class StudentUnitProgressBackLinkTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        self.client = Client()
+        self.student = User.objects.create_user(
+            id=39001,
+            email="unit-back-student@test.com",
+            password="testpass123",
+            is_staff=False,
+        )
+        self.client.force_login(self.student)
+
+    def test_unit_progress_back_url_always_points_to_home(self):
+        response = self.client.get(
+            reverse("student:unit-progress", kwargs={"unit_n": "9"}),
+            HTTP_REFERER=reverse("student:player", kwargs={"unit_num": 9}) + "?playlist=PA01DN&exercise_num=1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["back_url"], reverse("student:home"))
+
+
 class ChallengeGenerationConstraintTests(TransactionTestCase):
     def setUp(self):
         self.client = Client()

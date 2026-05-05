@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction to Meter - Reference Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../assets/css/course-styles.css">
+    <link rel="stylesheet" href="../../assets/styles/theme.css">
+    <style>
+        /* Override conflicting CSS for navbar */
+        #course-navbar a {
+            background: transparent !important;
+            box-shadow: none !important;
+            transform: none !important;
+            padding: 0.5rem !important;
+            border-radius: 0.375rem !important;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        header {
+            background-color: #003366;
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        header .subtitle {
+            font-size: 18px;
+            color: #cccccc;
+        }
+        
+        .credit {
+            background-color: #fff8f0;
+            border-left: 4px solid #FF6600;
+            padding: 20px 30px;
+            margin: 0;
+        }
+        
+        .credit p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        nav {
+            background-color: #f9f9f9;
+            padding: 20px 30px;
+            border-bottom: 2px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        nav h3 {
+            color: #003366;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        nav a {
+            color: #003366;
+            text-decoration: none;
+            margin-right: 20px;
+            font-size: 14px;
+        }
+        
+        nav a:hover {
+            color: #FF6600;
+            text-decoration: underline;
+        }
+        
+        section {
+            padding: 40px 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        section:last-of-type {
+            border-bottom: none;
+        }
+        
+        h2 {
+            color: #003366;
+            font-size: 32px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #FF6600;
+        }
+        
+        h3 {
+            color: #FF6600;
+            font-size: 24px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        ul {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+        
+        li {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .diagram {
+            background-color: #f9f9f9;
+            border: 2px solid #003366;
+            padding: 30px;
+            margin: 25px 0;
+            text-align: center;
+            border-radius: 5px;
+        }
+        
+        .diagram-title {
+            font-weight: bold;
+            font-size: 18px;
+            color: #003366;
+            margin-bottom: 20px;
+        }
+        
+        .pulse-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            gap: 10px;
+        }
+        
+        .pulse-label {
+            font-weight: bold;
+            font-size: 16px;
+            min-width: 150px;
+            text-align: right;
+            padding-right: 20px;
+        }
+        
+        .pulse-dots {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .dot {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .dot.beat {
+            background-color: #5A9FBC;
+        }
+        
+        .dot.division-simple-1 {
+            background-color: #D9534F;
+        }
+        
+        .dot.division-simple-2 {
+            background-color: #8BC34A;
+        }
+        
+        .dot.division-compound-1 {
+            background-color: #D9534F;
+        }
+        
+        .dot.division-compound-2 {
+            background-color: #8BC34A;
+        }
+        
+        .dot.division-compound-3 {
+            background-color: #FDD835;
+        }
+        
+        .dot.accent {
+            position: relative;
+        }
+        
+        .dot.accent::after {
+            content: '>';
+            position: absolute;
+            font-size: 24px;
+            color: white;
+        }
+        
+        .example-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #5A9FBC;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .example-box h4 {
+            color: #003366;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .example-box p {
+            margin-bottom: 10px;
+        }
+        
+        .tip-box {
+            background-color: #fff8f0;
+            border-left: 4px solid #FF6600;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .tip-box h4 {
+            color: #FF6600;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .meter-sig {
+            font-family: 'Georgia', serif;
+            font-size: 48px;
+            font-weight: bold;
+            color: #003366;
+            line-height: 0.8;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .meter-sig-top {
+            display: block;
+        }
+        
+        .meter-sig-bottom {
+            display: block;
+            border-top: 2px solid #333;
+            padding-top: 5px;
+        }
+        
+        .definition {
+            background-color: #f9f9f9;
+            padding: 15px 20px;
+            border-left: 4px solid #003366;
+            margin: 15px 0;
+            font-style: italic;
+        }
+
+        .meter-visual {
+            margin: 25px 0;
+        }
+
+        .meter-widget {
+            border: 3px solid #1f4f7a;
+            border-radius: 12px;
+            padding: 24px;
+            background: #ffffff;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            max-width: 960px;
+        }
+
+        .meter-widget__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .meter-widget__title {
+            font-family: 'Merriweather Sans', 'Segoe UI', Arial, sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f4f7a;
+        }
+
+        .meter-widget__controls label {
+            font-weight: 600;
+            color: #1f4f7a;
+            font-size: 15px;
+        }
+
+        .meter-widget__controls select {
+            margin-left: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid #cbd5f5;
+            font-size: 14px;
+            font-family: 'Merriweather Sans', 'Segoe UI', Arial, sans-serif;
+            background-color: #f4f7fb;
+        }
+
+        .meter-widget__row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .meter-widget__label {
+            width: 150px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.4;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .meter-widget__beats {
+            display: flex;
+        }
+
+        .meter-beat {
+            width: 58px;
+            height: 58px;
+            background: #4fa3c7;
+            border-radius: 50%;
+            position: relative;
+            flex-shrink: 0;
+            box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .meter-division-beat {
+            width: 58px;
+            height: 0;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .meter-division-group {
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: flex;
+            gap: 16px;
+            transform: translateY(8px);
+        }
+
+        .meter-division {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+        }
+
+        .division-red { background: #d9342b; }
+        .division-green { background: #6bb44b; }
+        .division-yellow { background: #f0cf4a; }
+
+        @media (max-width: 768px) {
+            .meter-widget {
+                padding: 20px;
+            }
+
+            .meter-widget__row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .meter-widget__label {
+                width: auto;
+            }
+
+            .meter-widget__beats {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .meter-beat {
+                width: 48px;
+                height: 48px;
+            }
+
+            .meter-division-beat {
+                width: 48px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 28px;
+            }
+            
+            h2 {
+                font-size: 24px;
+            }
+            
+            h3 {
+                font-size: 20px;
+            }
+            
+            .pulse-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .pulse-label {
+                text-align: center;
+                min-width: auto;
+                padding-right: 0;
+            }
+            
+            .dot {
+                width: 40px;
+                height: 40px;
+            }
+            
+            nav a {
+                display: block;
+                margin: 5px 0;
+            }
+        }
+        
+        footer {
+            background-color: #f9f9f9;
+            padding: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 2px solid #ddd;
+        }
+    
+        /* Menu toggle button - hidden on desktop, visible on mobile */
+        .nav-toggle {
+            display: none;
+            position: relative;
+            z-index: 100;
+            flex-shrink: 0;
+            background: transparent;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+        }
+
+        .nav-toggle:focus {
+            outline: 2px solid #003366;
+            outline-offset: 2px;
+        }
+
+        /* Main page layout with sidebar */
+        .page-layout {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        /* Left sidebar navigation */
+        .section-nav {
+            flex: 0 0 200px;
+            position: sticky;
+            top: 80px;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            padding: 1.5rem;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .section-nav h3 {
+            color: #003366;
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-nav a {
+            display: block;
+            color: #003366;
+            text-decoration: none;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+            border-left: 2px solid transparent;
+            padding-left: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .section-nav a:hover {
+            color: #FF6600;
+            border-left-color: #FF6600;
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Hide breadcrumbs and hide nav toggle on desktop */
+        @media (min-width: 1025px) {
+            .breadcrumbs {
+                display: none;
+            }
+        }
+
+        /* On tablets and smaller, switch to mobile layout */
+        @media (max-width: 1024px) {
+            .nav-toggle {
+                display: block;
+            }
+
+            .page-layout {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .section-nav {
+                flex: 1 1 auto;
+                position: static !important;
+                top: auto !important;
+                max-height: 0;
+                overflow: hidden;
+                padding: 0;
+                margin: 0;
+                background-color: transparent;
+                border: none;
+                transition: max-height 0.3s ease;
+            }
+
+            .section-nav.show {
+                max-height: 500px;
+                padding: 20px 30px;
+                background-color: #f9f9f9;
+                border: 1px solid #e0e0e0;
+                border-top: 2px solid #ddd;
+                margin-bottom: 1.5rem;
+            }
+
+            .section-nav h3 {
+                margin-top: 0;
+            }
+
+            .section-nav a {
+                display: block;
+                margin: 10px 0;
+                border-left: none;
+                padding: 0;
+            }
+
+            .main-content {
+                flex: 1;
+            }
+
+            .breadcrumbs {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .section-nav {
+                padding: 0;
+            }
+
+            .section-nav.show {
+                padding: 16px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav id="course-navbar" class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-14">
+            <a href="../../index.html" class="flex items-center text-blue-700 hover:text-orange-600 font-semibold transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                All Weeks
+            </a>
+            <div class="flex items-center space-x-4">
+                <div id="lesson-nav-controls"></div>
+                <span id="current-week-label" class="text-sm text-gray-600 hidden lg:block">Week 2 - Monday</span></div>
+        </div>
+    </div>
+</nav>
+<script src="../../dashboard-config.js"></script>
+
+<script src="../../assets/js/lesson-nav.js"></script>
+
+
+<div class="container">
+    <header>
+        <h1>Pulse, Beat, and Meter</h1>
+        <!-- <div class="subtitle">Reference Guide for Music Theory IV</div> -->
+    </header>
+
+      <nav class="breadcrumbs mt-4 mb-6"><a href="../../index.html">All Lessons</a> / <span>Pulse, Beat, and Meter</span></nav>
+    
+    <div class="breadcrumbs mt-4 mb-6"><a href="../../index.html">All Lessons</a> / <span>Pulse, Beat, and Meter</span></div>
+
+    <div class="page-layout">
+        <nav class="section-nav">
+            <h3>Jump to Section</h3>
+            <a href="#pulse-beat">Pulse & Beat</a>
+            <a href="#hierarchy">Metrical Hierarchy</a>
+            <a href="#simple">Simple Meter</a>
+            <a href="#compound">Compound Meter</a>
+            <a href="#accents">Pattern of Accents</a>
+            <a href="#signatures">Meter Signatures</a>
+        </nav>
+
+        <div class="main-content">
+            <div class="credit">
+                <p><strong>Original presentation by Dr. Amanda Heim</strong></p>
+                <p>Adapted for Music Theory IV by Dr. Avner Dorman | Spring 2026</p>
+                <!-- <p>Original presentation: MUS 141 Through Jazz and Popular Music</p> -->
+            </div>
+    
+    <!-- SECTION 1: PULSE AND BEAT -->
+    <!-- <section id="pulse-beat">
+        <h2>Defining Pulse and Beat</h2>
+        
+        <div class="definition">
+            In music, we can define a <strong>pulse</strong> in any given piece, whether looking at the score or listening to a song or recording.
+        </div>
+        
+        <p>We describe that pulse as the <strong>beat level</strong>.</p>
+        
+        <p>In music that is conducted, the conductor shows the beat level to the ensemble.</p>
+        
+        <div class="example-box">
+            <h4>Listening for Beat Level</h4>
+            <p><strong>Try this:</strong> Listen to music and tap the beat level. What musical characteristics allow you to detect the beat?</p>
+            
+            <p><strong>Example 1: The Beatles, "Back in the USSR"</strong></p>
+            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0;">
+                <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                    src="https://www.youtube.com/embed/nS5_EQgbuLc"
+              data-fallback="https://youtu.be/nS5_EQgbuLc" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div> -->
+            
+            <section id="pulse-beat">
+    <h2>Defining Pulse and Beat</h2>
+    
+    <div class="definition">
+        The <strong>pulse</strong> is a steady, repeating timing level we can feel or tap in a piece of music. Pulse is neutral and constant — it does not yet tell us how the music is grouped or accented.
+    </div>
+
+    <p>When we listen, we often notice several possible timing levels: a faster one, a slower one, and sometimes something in between. These layers form a <strong>hierarchy of timing levels</strong>.</p>
+
+    <p>The <strong>beat</strong> is the pulse level (or organization of pulse into hierarchical levels) that becomes metrically important - the level we most naturally move or tap along with. It emerges when pulse is organized into a hierarchical pattern of strong and weak positions, typically reinforced by accents, patterns, or the way the music is performed. In symmetric meters, the beat often directly corresponds to one pulse level; in asymmetric meters, the beat may group pulses of unequal duration (e.g., in 7/8, one beat might span three eighth notes while others span two).</p>
+
+    <p>In conducted music, the conductor shows the beat level to the ensemble. The conducting pattern tells performers which pulse layer should function as the beat.</p>
+
+    <div class="example-box">
+        <h4>Listening for Beat Level</h4>
+        <p>Identify the beat level by determining the primary hierarchical layer of temporal organization.</p>
+
+        <p><strong>Example 1: The Beatles, "Back in the USSR"</strong></p>
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0;">
+            <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                src="https://www.youtube.com/embed/nS5_EQgbuLc"
+              data-fallback="https://youtu.be/nS5_EQgbuLc" 
+                frameborder="0" 
+                allowfullscreen>
+            </iframe>
+        </div>
+
+            <p><strong>Example 2: The Duke Ellington Orchestra, "Ko-Ko"</strong></p>
+            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0;">
+                <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                    src="https://www.youtube.com/embed/LB86qD8Bino"
+              data-fallback="https://youtu.be/LB86qD8Bino" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+    </section>
+    
+    <!-- SECTION 2: METRICAL HIERARCHY -->
+
+
+<!--     
+        <section id="hierarchy">
+            <h2>Metrical Hierarchy</h2>
+            
+            <p>The beat level is not the only duration that we can detect in a given piece of music.</p>
+            
+            <p><strong>Question:</strong> When you listen to music and tap the beat level, are there different pulses you can tap as well? Faster? Slower?</p>
+            
+            <div class="definition">
+                When we detect different levels of pulse, we are defining a <strong>metrical hierarchy</strong>.
+            </div>
+            
+            <p>The beat level can be broken down into smaller durations, called the <strong>division level</strong>.</p>
+            
+            <div class="example-box">
+                <h4>Try It: Detecting Multiple Levels</h4>
+                <p><strong>Listen:</strong> Joni Mitchell, "Help Me"</p>
+                <p>Can you tap the beat level? Can you also tap faster divisions? Or slower groupings?</p>
+                
+                <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0;">
+                    <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                        src="https://www.youtube.com/embed/otPQDEbVsc4"
+              data-fallback="https://youtu.be/otPQDEbVsc4" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            </div>
+        </section> -->
+    <section id="hierarchy">
+    <h2>Metrical Hierarchy</h2>
+
+    <p>Once we feel the beat, we can often sense other steady layers. These may feel like smaller or larger durations, but they are all connected to the same pulse.</p>
+
+    <p>The metrical hierarchy comprises multiple timing levels, including the beat, divisions of the beat, and larger cycles (measures).</p>
+
+    <div class="definition">
+        A <strong>metrical hierarchy</strong> consists of several timing levels: 
+        the beat, smaller durations within it, and larger durations formed by several beats.
+    </div>
+
+    <p>The beat level can be broken down into <strong>smaller durations</strong> called the <strong>division level</strong>. </p>
+
+    <div class="example-box">
+        <h4>Try It: Detecting Multiple Levels</h4>
+        <p><strong>Listen:</strong> Joni Mitchell, "Help Me"</p>
+        <p>Identify the beat, then observe how smaller divisions articulate within it and how longer spans combine multiple beats into broader metrical cycles.</p>
+
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0;">
+            <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                src="https://www.youtube.com/embed/otPQDEbVsc4"
+              data-fallback="https://youtu.be/otPQDEbVsc4"
+                frameborder="0"
+                allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+</section>
+
+    <!-- SECTION 3: SIMPLE METER -->
+    <section id="simple">
+        <h2>Simple Meter</h2>
+        <p>Now that we understand the beat and its smaller durations (division level), we can describe how the music groups these beats into a repeating pattern. This pattern is the <strong>meter</strong>.</p>
+
+        <div class="definition">
+            When the division level occurs in <strong>groups of 2</strong>, we call that a <strong>simple meter</strong>.
+        </div>
+        
+        <div class="meter-visual">
+            <div class="meter-widget interactive-meter" data-meter-type="simple" data-default-beats="3"></div>
+        </div>
+        
+        <p><strong>Important:</strong> A simple meter can have <em>any number of beats</em>. The term "simple" describes that the beat level divides into <strong>two</strong> division level parts.</p>
+    </section>
+    
+    <!-- SECTION 4: COMPOUND METER -->
+    <section id="compound">
+        <h2>Compound Meter</h2>
+        
+        <p>Not all beat levels divide into groups of two.</p>
+        
+        <div class="definition">
+            When the division level occurs in <strong>groups of 3</strong>, we call that a <strong>compound meter</strong>.
+        </div>
+        
+        <div class="meter-visual">
+            <div class="meter-widget interactive-meter" data-meter-type="compound" data-default-beats="3"></div>
+        </div>
+        
+        <p><strong>Important:</strong> A compound meter can have <em>any number of beats</em>. The term "compound" describes that the beat level divides into <strong>three</strong> division level parts.</p>
+        
+        <div class="example-box">
+            <h4>Try It: Hearing Compound Meter</h4>
+            <p><strong>Listen:</strong> Horace Silver Quintet, "Señor Blues"</p>
+            <p>Tap the beat level, then determine the division level. Is it in groups of 2 or 3?</p>
+            
+            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0;">
+                <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                    src="https://www.youtube.com/embed/yKWphXfIsxs"
+              data-fallback="https://youtu.be/yKWphXfIsxs" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+    </section>
+    
+    <!-- SECTION 5: PATTERN OF ACCENTS -->
+    <section id="accents">
+        <h2>Pattern of Accents</h2>
+        <p>In Week 1, we grouped pulses. Now, we listen for groupings at the <strong>beat level</strong>, because this is what defines the meter.</p>
+
+        <p>Along with the division level, we must also determine the <strong>grouping of beats</strong> in music in order to determine the meter.</p>
+        
+        <p>Listen for the pattern of <strong>accented</strong> and <strong>unaccented</strong> beats.</p>
+        
+        <h3>Types of Accents</h3>
+        
+        <p>There are three types of accents: <strong>phenomenal</strong>, <strong>structural</strong>, and <strong>metrical</strong>.</p>
+        
+        <p>A <strong>phenomenal accent</strong> can occur in many ways:</p>
+        <ul>
+            <li>Written accent (>)</li>
+            <li>Extreme in register (very high or very low note)</li>
+            <li>Extreme in note length (very short or very long)</li>
+            <li>Change in instrumentation (added instrument)</li>
+        </ul>
+        
+        <h3>Duple Meter</h3>
+        
+        <p>In much jazz and popular music, we hear a regularly occurring phenomenal accent <strong>every other beat</strong>.</p>
+        
+        <p>This series of accents (accented-unaccented) illustrates that the meter is <strong>duple</strong>.</p>
+        
+        <div class="diagram">
+            <div class="diagram-title">Duple Meter Pattern</div>
+            <img src="../../assets/images/duple_meter_diagram.png" alt="Duple meter pattern showing beat level with five blue dots, every other one marked with accent symbol" style="max-width: 100%; height: auto;">
+        </div>
+        
+        <div class="tip-box">
+            <h4>Listening Tip</h4>
+            <p>In jazz and popular idioms, percussion patterns—specifically the placement of the snare and hi-hat—frequently delineate the metrical structure.</p>
+            <p>There is often a <strong>cymbal (hi-hat) or snare drum</strong> hit every other beat in a duple meter.</p>
+        </div>
+        
+        <div class="example-box">
+            <h4>Example: Duple Meter</h4>
+            <p><strong>Listen:</strong> Count Basie Orchestra, "That Warm Feeling"</p>
+            <p>Can you hear the snare/cymbal accenting every other beat?</p>
+            
+            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0;">
+                <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                    src="https://www.youtube.com/embed/JW1no8bQXyg"
+              data-fallback="https://youtu.be/JW1no8bQXyg" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+        
+        <h3>Triple Meter</h3>
+        
+        <p>Some music accents the beat level <strong>every third beat</strong>.</p>
+        
+        <p>We describe this meter as <strong>triple</strong>.</p>
+        
+        <div class="diagram">
+            <div class="diagram-title">Triple Meter Pattern</div>
+            <img src="../../assets/images/triple_meter_diagram.png" alt="Triple meter pattern showing beat level with six blue dots, every third one marked with accent symbol" style="max-width: 100%; height: auto;">
+        </div>
+        
+        <div class="example-box">
+            <h4>Example: Triple Meter</h4>
+            <p><strong>Listen:</strong> Jazz at Lincoln Center Orchestra, "Basque Song"</p>
+            <p>Can you feel the pattern of 3?</p>
+            
+            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0;">
+                <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                    src="https://www.youtube.com/embed/7JElnjAwqzY"
+              data-fallback="https://youtu.be/7JElnjAwqzY" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+        
+        <h3>Summary</h3>
+        
+        <div class="definition">
+            Consequently, a meter signature represents the intersection of a <strong>division structure</strong> (simple or compound) and a <strong>metrical structure</strong> (duple or triple).
+        </div>
+    </section>
+    
+    <!-- SECTION 6: METER SIGNATURES -->
+    <section id="signatures">
+        <h2>Meter Signatures</h2>
+        
+        <h3>In Simple Meters</h3>
+        
+        <div class="diagram">
+            <img src="../../assets/images/simple_sig_diagram.png" alt="Simple meter signature diagram showing 2/4 and 3/4 with explanation" style="max-width: 100%; height: auto; margin-bottom: 20px;">
+            
+            <p><strong>Top number:</strong> indicates the number of beats per measure.</p>
+            <p><strong>Bottom number:</strong> describes the <em>duration</em> of note that is at the beat level</p>
+        </div>
+        
+        <h3>In Compound Meters</h3>
+        
+        <div class="diagram">
+            <img src="../../assets/images/compound_sig_diagram.png" alt="Compound meter signature diagram showing 6/8 and 6/4 with explanation" style="max-width: 100%; height: auto; margin-bottom: 20px;">
+            
+            <p><strong>Top number:</strong> describes the number of <em>division level attacks</em> present in each measure</p>
+            <p><strong>Bottom number:</strong> describes the <em>duration</em> of note at the division level</p>
+        </div>
+        
+        <div class="tip-box">
+            <h4>Quick Reference</h4>
+            <p><strong>Simple meter:</strong> Top number = how many beats | Bottom number = what note gets the beat</p>
+            <p><strong>Compound meter:</strong> Top number = how many divisions | Bottom number = what note is one division</p>
+            <p>Meter signatures summarize both the division structure and the metrical structure we just explored.</p>
+
+        </div>
+    </section>
+        </div>
+    </div>
+
+    <footer class="bg-white border-t border-gray-200 mt-16">
+    <div class="container mx-auto px-4 py-6 text-center text-gray-600 text-sm">
+      <p>&copy; 2026 Dr. Avner Dorman · Gettysburg College</p>
+    </div>
+  </footer>
+</div>
+
+    <script>
+        (function () {
+            function renderDiagram(state) {
+                const { mode, beats, beatRow, divisionRow, divisionLabel } = state;
+                const isCompound = mode === 'compound';
+                const colors = isCompound
+                    ? ['division-red', 'division-green', 'division-yellow']
+                    : ['division-red', 'division-green'];
+                const gap = isCompound ? 90 : 55;
+
+                beatRow.innerHTML = '';
+                divisionRow.innerHTML = '';
+
+                beatRow.style.gap = gap + 'px';
+                divisionRow.style.gap = gap + 'px';
+
+                divisionLabel.innerHTML = isCompound
+                    ? 'DIVISION<br>LEVEL (COMPOUND)'
+                    : 'DIVISION<br>LEVEL (SIMPLE)';
+
+                for (let i = 0; i < beats; i += 1) {
+                    const beat = document.createElement('div');
+                    beat.className = 'meter-beat';
+                    beatRow.appendChild(beat);
+
+                    const divisionBeat = document.createElement('div');
+                    divisionBeat.className = 'meter-division-beat';
+                    const group = document.createElement('div');
+                    group.className = 'meter-division-group';
+
+                    colors.forEach((colorClass) => {
+                        const divisionDot = document.createElement('div');
+                        divisionDot.className = 'meter-division ' + colorClass;
+                        group.appendChild(divisionDot);
+                    });
+
+                    divisionBeat.appendChild(group);
+                    divisionRow.appendChild(divisionBeat);
+                }
+            }
+
+            function updateMeterTitle(state) {
+                const groupingNames = {
+                    2: 'Duple',
+                    3: 'Triple',
+                    4: 'Quadruple'
+                };
+                const grouping = groupingNames[state.beats] || `${state.beats}-Beat`;
+                const modeLabel = state.mode === 'compound' ? 'Compound' : 'Simple';
+                if (state.titleEl) {
+                    state.titleEl.textContent = `${modeLabel} ${grouping} Meter`;
+                }
+            }
+
+            function createWidget(container) {
+                const modeAttr = (container.dataset.meterType || 'simple').toLowerCase();
+                const mode = modeAttr === 'compound' ? 'compound' : 'simple';
+                const defaultBeats = parseInt(container.dataset.defaultBeats, 10);
+                const beats = [2, 3, 4].includes(defaultBeats) ? defaultBeats : 3;
+
+                const selectOptions = [2, 3, 4]
+                    .map((value) => `<option value="${value}">${value} beats</option>`)
+                    .join('');
+
+                container.innerHTML = `
+                    <div class="meter-widget__header">
+                        <div class="meter-widget__title" data-role="meter-title"></div>
+                        <div class="meter-widget__controls">
+                            <label>Beats:
+                                <select data-role="beats-select">
+                                    ${selectOptions}
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="meter-widget__body">
+                        <div class="meter-widget__row">
+                            <div class="meter-widget__label">BEAT<br>LEVEL</div>
+                            <div class="meter-widget__beats" data-role="beat-row"></div>
+                        </div>
+                        <div class="meter-widget__row">
+                            <div class="meter-widget__label" data-role="division-label"></div>
+                            <div class="meter-widget__beats" data-role="division-row"></div>
+                        </div>
+                    </div>
+                `;
+
+                const beatsSelect = container.querySelector('[data-role="beats-select"]');
+                const beatRow = container.querySelector('[data-role="beat-row"]');
+                const divisionRow = container.querySelector('[data-role="division-row"]');
+                const divisionLabel = container.querySelector('[data-role="division-label"]');
+                const titleEl = container.querySelector('[data-role="meter-title"]');
+
+                beatsSelect.value = String(beats);
+
+                const state = { mode, beats, beatRow, divisionRow, divisionLabel, titleEl };
+
+                beatsSelect.addEventListener('change', () => {
+                    state.beats = parseInt(beatsSelect.value, 10);
+                    renderDiagram(state);
+                    updateMeterTitle(state);
+                });
+
+                renderDiagram(state);
+                updateMeterTitle(state);
+            }
+
+            function initMeterVisuals() {
+                document.querySelectorAll('.interactive-meter').forEach(createWidget);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initMeterVisuals);
+            } else {
+                initMeterVisuals();
+            }
+        })();
+    </script>
+    <script src="../../assets/js/embed-fallback.js"></script>
+      <script>
+        const menuToggle = document.getElementById('menu-toggle');
+        const sectionNav = document.querySelector('.section-nav');
+
+        if (menuToggle && sectionNav) {
+            // Toggle menu visibility on button click
+            menuToggle.addEventListener('click', function() {
+                sectionNav.classList.toggle('show');
+            });
+
+            // Close menu when a section link is clicked
+            document.querySelectorAll('.section-nav a').forEach(link => {
+                link.addEventListener('click', function() {
+                    sectionNav.classList.remove('show');
+                });
+            });
+        }
+    </script>
+</body>
+</html>

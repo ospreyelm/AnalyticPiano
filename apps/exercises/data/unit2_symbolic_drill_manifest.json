@@ -1,0 +1,42 @@
+[
+  {
+    "subtype": "ts_to_grouping",
+    "source_signature": "3/4"
+  },
+  {
+    "subtype": "ts_to_grouping",
+    "source_signature": "6/8"
+  },
+  {
+    "subtype": "ts_to_division_type",
+    "source_signature": "6/4"
+  },
+  {
+    "subtype": "ts_to_beat_value",
+    "source_signature": "3/2"
+  },
+  {
+    "subtype": "ts_to_beat_value",
+    "source_signature": "6/2"
+  },
+  {
+    "subtype": "ts_to_division_value",
+    "source_signature": "6/4"
+  },
+  {
+    "subtype": "ts_to_beat_count",
+    "source_signature": "9/8"
+  },
+  {
+    "subtype": "ts_to_division_count",
+    "source_signature": "3/4"
+  },
+  {
+    "subtype": "ts_to_full_meter",
+    "source_signature": "12/8"
+  },
+  {
+    "subtype": "meter_to_ts",
+    "source_signature": "9/4"
+  }
+]

@@ -259,15 +259,11 @@
                   {"value": "6",   "display": "6"},
                   {"value": "6/5", "display": "6/5"},
                   {"value": "6/4", "display": "6/4"},
-                  {"value": "5/4", "display": "5/4"},
-                  {"value": "4/3", "display": "4/3"},
-                  {"value": "4/2", "display": "4/2"}
+                  {"value": "4/3", "display": "4/3"}
                 ],
                 "new": [
                   {"value": "6/4", "display": "6/4"},
-                  {"value": "5/4", "display": "5/4"},
-                  {"value": "4/3", "display": "4/3"},
-                  {"value": "4/2", "display": "4/2"}
+                  {"value": "4/3", "display": "4/3"}
                 ]
               },
               "figured_bass_unabbreviated": {
@@ -277,13 +273,11 @@
                   {"value": "6/3",   "display": "6/3"},
                   {"value": "6/5/3", "display": "6/5/3"},
                   {"value": "6/4",   "display": "6/4"},
-                  {"value": "6/4/3", "display": "6/4/3"},
-                  {"value": "6/4/2", "display": "6/4/2"}
+                  {"value": "6/4/3", "display": "6/4/3"}
                 ],
                 "new": [
                   {"value": "6/4",   "display": "6/4"},
-                  {"value": "6/4/3", "display": "6/4/3"},
-                  {"value": "6/4/2", "display": "6/4/2"}
+                  {"value": "6/4/3", "display": "6/4/3"}
                 ]
               }
             }
@@ -335,7 +329,6 @@
                   {"value": "6",   "display": "6"},
                   {"value": "6/5", "display": "6/5"},
                   {"value": "6/4", "display": "6/4"},
-                  {"value": "5/4", "display": "5/4"},
                   {"value": "4/3", "display": "4/3"},
                   {"value": "4/2", "display": "4/2"}
                 ],

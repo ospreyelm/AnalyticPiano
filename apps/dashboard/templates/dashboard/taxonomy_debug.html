@@ -1,0 +1,150 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Curriculum Taxonomy{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+  <h1>Curriculum Taxonomy</h1>
+  <p class="dashboard-tip">Live view of <code>music_theory_taxonomy_with_branches.json</code>.</p>
+
+  {% for branch in branches %}
+    <section class="taxonomy-branch">
+      <h2>{{ branch.label }}</h2>
+
+      {% for tier in branch.tiers %}
+        <details class="taxonomy-tier" {% if forloop.first %}open{% endif %}>
+          <summary>
+            {% if tier.badge %}<span class="taxonomy-badge">{{ tier.badge }}</span>{% endif %}
+            {{ tier.label|default:"Tier" }} · {{ tier.units|length }} units
+          </summary>
+
+          <div class="taxonomy-unit-grid">
+            {% for unit in tier.units %}
+              <article class="taxonomy-unit-card">
+                <h3>Unit {{ unit.n }} · {{ unit.title }}</h3>
+                {% if unit.feat %}
+                  <p class="taxonomy-feat">{{ unit.feat }}</p>
+                {% endif %}
+
+                {% if unit.analysis %}
+                  <div class="taxonomy-analysis">
+                    {% for family, payload in unit.analysis.items %}
+                      <div class="taxonomy-analysis-family">
+                        <strong>{{ family|cut:"_"|title }}</strong>
+                        {% if payload.new %}
+                          <div><span class="taxonomy-label">New:</span> {{ payload.new|join:", " }}</div>
+                        {% endif %}
+                        {% if payload.cumulative %}
+                          <div><span class="taxonomy-label">Cumulative:</span> {{ payload.cumulative|join:", " }}</div>
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+
+                {% if unit.tags %}
+                  <div class="taxonomy-tags">
+                    {% for tag in unit.tags %}
+                      <code>{{ tag }}</code>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+        </details>
+      {% endfor %}
+    </section>
+  {% endfor %}
+</div>
+
+<style>
+  .taxonomy-branch {
+    margin-bottom: 2rem;
+  }
+
+  .taxonomy-tier {
+    margin: 1rem 0;
+    border: 1px solid #d9e2ec;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .taxonomy-tier summary {
+    cursor: pointer;
+    padding: 0.9rem 1rem;
+    font-weight: 700;
+    list-style: none;
+  }
+
+  .taxonomy-tier summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .taxonomy-badge {
+    display: inline-block;
+    min-width: 2rem;
+    margin-right: 0.5rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: #e8f1f8;
+    color: #245a7a;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .taxonomy-unit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    padding: 0 1rem 1rem;
+  }
+
+  .taxonomy-unit-card {
+    border: 1px solid #e6edf3;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #fbfdff;
+  }
+
+  .taxonomy-unit-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+  }
+
+  .taxonomy-feat {
+    margin: 0 0 0.75rem;
+    color: #425466;
+  }
+
+  .taxonomy-analysis {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .taxonomy-analysis-family {
+    padding: 0.6rem 0.7rem;
+    border-radius: 6px;
+    background: #f3f7fb;
+  }
+
+  .taxonomy-label {
+    font-weight: 600;
+  }
+
+  .taxonomy-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .taxonomy-tags code {
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    background: #eef4f8;
+    color: #31475a;
+  }
+</style>
+{% endblock %}

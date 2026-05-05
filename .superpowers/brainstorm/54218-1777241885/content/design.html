@@ -1,0 +1,87 @@
+<h2>QWERTY Label Overlay — Design</h2>
+<p class="subtitle">HTML badge divs positioned over Raphael SVG. Active only in QWERTY mode.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Keyboard in QWERTY mode (49-key, partial view)</div>
+  <div class="mockup-body" style="background:#1a1a1a; padding:16px 12px 20px; overflow-x:auto;">
+    <div style="position:relative; display:inline-block; min-width:480px; width:100%;">
+      <svg width="100%" viewBox="0 0 560 110" style="display:block;">
+        <!-- White keys -->
+        <rect x="0"   y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="39"  y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="78"  y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="117" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="156" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="195" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="234" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="273" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="312" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="351" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="390" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="429" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="468" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <rect x="507" y="0" width="38" height="108" fill="white" stroke="#444" stroke-width="1"/>
+        <!-- Black keys -->
+        <rect x="24"  y="0" width="22" height="68" fill="#111" stroke="#111"/>
+        <rect x="63"  y="0" width="22" height="68" fill="#111" stroke="#111"/>
+        <rect x="141" y="0" width="22" height="68" fill="#111" stroke="#111"/>
+        <rect x="180" y="0" width="22" height="68" fill="#111" stroke="#111"/>
+        <rect x="219" y="0" width="22" height="68" fill="#111" stroke="#111"/>
+        <rect x="297" y="0" width="22" height="68" fill="#111" stroke="#111"/>
+        <rect x="336" y="0" width="22" height="68" fill="#111" stroke="#111"/>
+        <rect x="414" y="0" width="22" height="68" fill="#111" stroke="#111"/>
+        <rect x="453" y="0" width="22" height="68" fill="#111" stroke="#111"/>
+        <rect x="492" y="0" width="22" height="68" fill="#111" stroke="#111"/>
+
+        <!-- White key badges -->
+        <foreignObject x="4"   y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">Q</div></foreignObject>
+        <foreignObject x="43"  y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">W</div></foreignObject>
+        <foreignObject x="82"  y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">E</div></foreignObject>
+        <foreignObject x="121" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">R</div></foreignObject>
+        <foreignObject x="160" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">T</div></foreignObject>
+        <foreignObject x="199" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">Y</div></foreignObject>
+        <foreignObject x="238" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">U</div></foreignObject>
+        <foreignObject x="277" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">I</div></foreignObject>
+        <foreignObject x="316" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">O</div></foreignObject>
+        <foreignObject x="355" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">P</div></foreignObject>
+        <foreignObject x="394" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">Z</div></foreignObject>
+        <foreignObject x="433" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">X</div></foreignObject>
+        <foreignObject x="472" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">C</div></foreignObject>
+        <foreignObject x="511" y="86" width="30" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.13);border:1px solid #aaa;border-radius:3px;font-family:monospace;font-size:9px;color:#444;text-align:center;line-height:15px;font-weight:600;">V</div></foreignObject>
+
+        <!-- Black key badges -->
+        <foreignObject x="25"  y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">1</div></foreignObject>
+        <foreignObject x="64"  y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">2</div></foreignObject>
+        <foreignObject x="142" y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">4</div></foreignObject>
+        <foreignObject x="181" y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">5</div></foreignObject>
+        <foreignObject x="220" y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">7</div></foreignObject>
+        <foreignObject x="298" y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">8</div></foreignObject>
+        <foreignObject x="337" y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">9</div></foreignObject>
+        <foreignObject x="415" y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">S</div></foreignObject>
+        <foreignObject x="454" y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">D</div></foreignObject>
+        <foreignObject x="493" y="50" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.10);border:1px solid #666;border-radius:3px;font-family:monospace;font-size:8px;color:#bbb;text-align:center;line-height:13px;font-weight:600;">F</div></foreignObject>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Architecture</h3>
+  <ul>
+    <li><strong>keyboard.js</strong> — builds a <code>.qwerty-labels</code> div after <code>render()</code>, populates it with one badge per key using existing layout data. Show/hide on <code>INPUT_MODE</code> event.</li>
+    <li><strong>key.js</strong> — no changes needed (layout data already on each key component)</li>
+    <li><strong>keyboard_shortcuts.js</strong> — already has the note→key letter mapping, used to derive badge labels</li>
+    <li><strong>harmony.css</strong> — adds <code>.qwerty-labels</code>, <code>.qwerty-key-badge</code>, <code>.qwerty-key-badge.black</code> styles</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>Position math (per key)</h3>
+  <ul>
+    <li>White key badge: <code>left = key.calculateOffsetX() + 2px</code>, <code>bottom = 6px</code>, <code>width = keyWidth - 4px</code></li>
+    <li>Black key badge: <code>left = key.calculateOffsetX() + 1px</code>, <code>bottom = 8px</code> (from black key bottom = 66% height), <code>width = blackKeyWidth - 2px</code></li>
+    <li>Container: <code>position:absolute; top:0; left:0; pointer-events:none</code> so it doesn't block mouse on keys</li>
+  </ul>
+</div>
+
+<p class="subtitle">Does this look right? Reply in terminal.</p>

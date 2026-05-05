@@ -1,0 +1,123 @@
+<h2>Practice mode: live feedback as student types</h2>
+<p class="subtitle">Student has typed "C D" — 2 tokens matched, 6 remaining. How should answered vs unanswered slots look on the score?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f5f7fa;border-radius:8px;padding:16px;font-family:sans-serif;font-size:13px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:12px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:18px;min-height:80px;">
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:bold;color:#16a34a;">C</div>
+            <div style="font-size:10px;color:#16a34a;">✓</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:bold;color:#16a34a;">D</div>
+            <div style="font-size:10px;color:#16a34a;">✓</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;">?</div>
+            <div style="font-size:10px;color:#bbb;">—</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;">?</div>
+            <div style="font-size:10px;color:#bbb;">—</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;">?</div>
+            <div style="font-size:10px;color:#bbb;">—</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;">?</div>
+            <div style="font-size:10px;color:#bbb;">—</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:stretch;gap:0;border:2px solid #3b82f6;border-radius:6px;overflow:hidden;">
+          <input style="flex:1;padding:8px 12px;font-size:15px;border:none;outline:none;font-family:monospace;" value="C D |" readonly />
+          <button style="background:#3b82f6;color:#fff;border:none;padding:8px 16px;font-size:13px;">Check ↵</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Green check marks</h3>
+      <p>Answered slots show note name in green with ✓. Unanswered stay grey ?. Consistent with existing correct-note coloring.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f5f7fa;border-radius:8px;padding:16px;font-family:sans-serif;font-size:13px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:12px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:18px;min-height:80px;">
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:bold;color:#1e3a5f;background:#dbeafe;border-radius:4px;padding:2px 8px;">C</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:bold;color:#1e3a5f;background:#dbeafe;border-radius:4px;padding:2px 8px;">D</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;background:#f3f4f6;border-radius:4px;padding:2px 8px;">?</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;background:#f3f4f6;border-radius:4px;padding:2px 8px;">?</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;background:#f3f4f6;border-radius:4px;padding:2px 8px;">?</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;background:#f3f4f6;border-radius:4px;padding:2px 8px;">?</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:stretch;gap:0;border:2px solid #3b82f6;border-radius:6px;overflow:hidden;">
+          <input style="flex:1;padding:8px 12px;font-size:15px;border:none;outline:none;font-family:monospace;" value="C D |" readonly />
+          <button style="background:#3b82f6;color:#fff;border:none;padding:8px 16px;font-size:13px;">Check ↵</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Blue filled badges</h3>
+      <p>Answered slots get blue pill background (neutral, not yet graded). Defers green/red to final submit. Works for both practice and submit modes.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f5f7fa;border-radius:8px;padding:16px;font-family:sans-serif;font-size:13px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:12px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:18px;min-height:80px;">
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:bold;color:#111;">C</div>
+            <div style="width:24px;height:3px;background:#16a34a;border-radius:2px;margin:3px auto 0;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:bold;color:#111;">D</div>
+            <div style="width:24px;height:3px;background:#16a34a;border-radius:2px;margin:3px auto 0;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;">?</div>
+            <div style="width:24px;height:3px;background:#e5e7eb;border-radius:2px;margin:3px auto 0;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;">?</div>
+            <div style="width:24px;height:3px;background:#e5e7eb;border-radius:2px;margin:3px auto 0;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;">?</div>
+            <div style="width:24px;height:3px;background:#e5e7eb;border-radius:2px;margin:3px auto 0;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;color:#bbb;">?</div>
+            <div style="width:24px;height:3px;background:#e5e7eb;border-radius:2px;margin:3px auto 0;"></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:stretch;gap:0;border:2px solid #3b82f6;border-radius:6px;overflow:hidden;">
+          <input style="flex:1;padding:8px 12px;font-size:15px;border:none;outline:none;font-family:monospace;" value="C D |" readonly />
+          <button style="background:#3b82f6;color:#fff;border:none;padding:8px 16px;font-size:13px;">Check ↵</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Black label + green underline</h3>
+      <p>Answered slots render label in black (like played notes in chorale mode) with green underline indicator. Unanswered stay grey ?. Minimal change to existing label rendering.</p>
+    </div>
+  </div>
+
+</div>

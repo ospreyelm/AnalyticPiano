@@ -775,11 +775,22 @@ define([
      * @return {boolean}
      */
     isChoraleIdentification: function () {
+      if (this.isSymbolicMeterQuestion()) {
+        return false;
+      }
       var mode = this.getMode();
       if (mode) {
         return mode === "identification" || mode === "chorale_identification";
       }
       return this.exercise.type === "chorale_identification";
+    },
+    /**
+     * Returns true if this is a symbolic meter question exercise.
+     *
+     * @return {boolean}
+     */
+    isSymbolicMeterQuestion: function () {
+      return this.exercise.type === "umto_symbolic_meter";
     },
     /**
      * Returns true if this is an analysis match exercise.
@@ -798,16 +809,8 @@ define([
       return this.exercise.type === "musicxml";
     },
     /**
-     * Returns true if this is an identification exercise.
-     *
-     * @return {boolean}
-     */
     isIdentification: function () {
-      var mode = this.getMode();
-      if (mode) {
-        return mode === "identification" || mode === "chorale_identification";
-      }
-      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification";
+      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification" || this.isSymbolicMeterQuestion();
     },
     /**
      * Returns the feedback mode for identification exercises.
@@ -987,6 +990,19 @@ define([
             // Playback modes don't need problems structure; they use grading slices instead.
             exercise.problems = isPlayback ? [] : buildUMTOIdentificationProblems(exercise); 
           }
+        } else if (exercise.type === "umto_symbolic_meter") {
+          exercise.problems = _.map(definition.problems || [], function (problem) {
+            return _.assign({}, problem);
+          });
+          exercise.mode = definition.mode || "identification";
+          exercise.analysisType = definition.analysisType || "unit2_symbolic_meter";
+          exercise.inputMode = definition.inputMode || "dropdown";
+          exercise.staffDistribution = definition.staffDistribution || "none";
+          exercise.analysis = {
+            enabled: false,
+            mode: {}
+          };
+          exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
         }
         exercise.playlistTags = definition.playlistTags || [];
         exercise.playlistSkillTags = definition.playlistSkillTags || [];

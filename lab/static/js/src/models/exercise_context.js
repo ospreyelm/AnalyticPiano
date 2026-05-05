@@ -92,7 +92,7 @@ define([
     this.graded = false;
     this.timer = null;
     this._identPage = 0;
-    this._identPageSize = 4;
+    this._identPageSize = (this.definition.isSymbolicMeterQuestion && this.definition.isSymbolicMeterQuestion()) ? 1 : 4;
     this.displayChords = this.createDisplayChords();
     this.exerciseChords = this.createExerciseChords();
     this.timeSignature = this.definition.getTimeSignature();
@@ -1113,10 +1113,13 @@ define([
      */
     goToNextExercise: function (options) {
       var fromUI = options && options.fromUI === true;
+      var totalPages = this.getTotalIdentPages();
+      var isLastPage = this._identPage >= totalPages - 1;
+
       if (
         this._isIdentificationExercise() &&
-        this.getTotalIdentPages() > 1 &&
-        !fromUI &&
+        totalPages > 1 &&
+        !isLastPage &&
         this.sealed !== true
       ) {
         return this.submitIdentPage({
@@ -1143,9 +1146,7 @@ define([
       if (
         this._isIdentificationExercise() &&
         this.getTotalIdentPages() > 1 &&
-        !fromUI &&
-        this._identPage > 0 &&
-        this.sealed !== true
+        this._identPage > 0
       ) {
         this.goToIdentPage(this._identPage - 1);
         return { handled: true, completedExercise: false };

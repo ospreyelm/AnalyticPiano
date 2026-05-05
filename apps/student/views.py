@@ -13,6 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from apps.student.unit_progress import get_unit_progress_data
 from apps.student.unit1_curriculum import get_unit1_lane_groups
+from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.accounts.forms import CustomAuthenticationForm, RegistrationForm
 from apps.exercises.models import (
     Exercise,
@@ -114,6 +115,63 @@ def _summarize_unit_progress(data: dict) -> dict:
     }
 
 
+def _get_available_unit_numbers(user) -> set[int]:
+    available = set()
+    playlists = Playlist.objects.filter(Q(is_public=True) | Q(authored_by=user)).order_by("name")
+
+    for playlist in playlists:
+        tags = list(playlist.skill_tags or []) + list(playlist.tags or [])
+
+        for tag in tags:
+            if isinstance(tag, str) and tag.startswith("unit:"):
+                try:
+                    available.add(int(tag.split(":", 1)[1]))
+                    continue
+                except (TypeError, ValueError):
+                    pass
+
+            unit = TaxonomyReader.get_unit_for_tag(tag)
+            if unit:
+                try:
+                    available.add(int(unit["n"]))
+                except (KeyError, TypeError, ValueError):
+                    pass
+
+    return available
+
+
+def _build_home_units(user) -> list[dict]:
+    available_unit_numbers = _get_available_unit_numbers(user)
+    units = []
+
+    for unit in sorted(TaxonomyReader.get_all_units(), key=lambda item: int(item["n"])):
+        unit_num = int(unit["n"])
+        is_available = unit_num in available_unit_numbers
+        progress = _summarize_unit_progress(get_unit_progress_data(user, str(unit_num))) if is_available else {
+            "percent": 0,
+            "mastered_count": 0,
+        }
+
+        units.append(
+            {
+                "num": unit_num,
+                "title": unit.get("title", f"Unit {unit_num}"),
+                "feat": unit.get("feat", ""),
+                "percent": progress["percent"],
+                "mastered_count": progress["mastered_count"],
+                "total_skills": len(unit.get("tags", [])),
+                "locked": not is_available,
+                "url": (
+                    reverse("student:unit-progress", kwargs={"unit_n": str(unit_num)})
+                    if is_available
+                    else None
+                ),
+            }
+        )
+
+    return units
+
+
 class StudentLoginView(View):
     def get(self, request):
         if request.user.is_authenticated:
@@ -168,38 +226,14 @@ def _require_student(view_func):
 class HomeView(View):
     @_require_student
     def get(self, request):
-        unit_meta = _load_unit_meta(1)
         unit1_data = get_unit_progress_data(request.user, "1")
         if unit1_data is None:
             raise Http404("Unit not found")
         unit1_progress = _summarize_unit_progress(unit1_data)
         resume_url, resume_label = _get_unit1_resume_target(request.user)
 
-        units = [
-            {
-                "num": 1,
-                "title": unit_meta.get("title", "Pitch & Staff Notation"),
-                "feat": unit_meta.get("feat", ""),
-                "percent": unit1_progress["percent"],
-                "mastered_count": unit1_progress["mastered_count"],
-                "total_skills": len(unit1_data.get("bar_segments", [])),
-                "locked": False,
-                "url": reverse("student:unit-progress", kwargs={"unit_n": "1"}),
-            },
-            {
-                "num": 2,
-                "title": "Rhythm & Meter",
-                "feat": "Simple & compound, ties, dots",
-                "percent": 0,
-                "mastered_count": 0,
-                "total_skills": 0,
-                "locked": True,
-                "url": None,
-            },
-        ]
-
         return render(request, "student/home.html", {
-            "units": units,
+            "units": _build_home_units(request.user),
             "resume_url": resume_url,
             "resume_skill": resume_label,
             "unit1_progress": unit1_progress,
@@ -415,6 +449,19 @@ class PlayerView(View):
         if isinstance(exercise_context, HttpResponseRedirect):
             return exercise_context
 
+        if exercise_context.get("type") == "umto_symbolic_meter":
+            context = {
+                "unit_num": unit_num,
+                "playlist": playlist,
+                "playlist_name": playlist.name or playlist.id,
+                "exercise_num": exercise_num,
+                "total_exercises": playlist.exercise_count if playlist.exercise_count > 0 else exercise_num,
+                "is_review_mode": state.mode == "review",
+                "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
+                "exercise_config_json": json.dumps(exercise_context),
+            }
+            return render(request, "qa_player.html", context)
+
         rj_context = RequirejsContext(settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG)
         rj_context.set_app_module("app/components/app/exercise")
         rj_context.set_module_params("app/components/app/exercise", exercise_context)
@@ -538,11 +585,7 @@ class UnitProgressView(LoginRequiredMixin, View):
         if data is None:
             raise Http404("Unit not found")
 
-        data["back_url"] = (
-            reverse("student:home")
-            if str(unit_n) == "1"
-            else request.META.get("HTTP_REFERER") or reverse("student:home")
-        )
+        data["back_url"] = reverse("student:home")
         data["skills"] = data["skill_cards"]
         
         if str(unit_n) == "1":

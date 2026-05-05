@@ -1,0 +1,107 @@
+{% extends "__base.html" %}
+{% load static %}
+
+{% block css_extra %}
+<link href="{% static 'student/student.css' %}" rel="stylesheet" />
+<style>
+  body { background: #f7f8f8 !important; }
+
+  .qa-wrap { width: 100%; max-width: none; margin: 0; padding: 0 0 40px; }
+
+  /* ── Player header ─────────────────────────────────────────── */
+  .s-player-header {
+    height: 44px;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    position: relative;
+    z-index: 10;
+  }
+  .s-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--teal);
+    font-size: 0.8rem;
+    font-family: var(--font-body);
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: opacity 150ms;
+  }
+  .s-back-btn:hover { opacity: 0.75; text-decoration: none; }
+  .s-player-title {
+    flex: 1;
+    text-align: center;
+    font-family: var(--font-ui);
+    font-size: 0.92rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .s-player-title a { color: var(--teal); text-decoration: none; }
+  .s-player-title a:hover { text-decoration: underline; }
+  .s-title-sep { color: var(--text-muted); margin: 0 5px; }
+  .s-player-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .s-player-pos {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+
+  /* ── QA content area ───────────────────────────────────────── */
+  .qa-content {
+    max-width: 640px;
+    margin: 32px auto 0;
+    padding: 0 16px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="qa-wrap">
+
+  <!-- Top bar -->
+  <header class="s-player-header">
+    {% if unit_num %}
+      <a href="{% url 'student:unit' unit_num=unit_num %}" class="s-back-btn">← Back</a>
+    {% else %}
+      <a href="javascript:history.back()" class="s-back-btn">← Back</a>
+    {% endif %}
+
+    <div class="s-player-title">
+      {% if unit_num %}<a href="{% url 'student:unit-progress' unit_n=unit_num %}">Unit {{ unit_num }}</a><span class="s-title-sep">·</span>{% endif %}
+      {{ playlist_name|default:"Exercise" }}
+    </div>
+
+    <div class="s-player-right">
+      {% if exercise_num %}
+        <span class="s-player-pos">{{ exercise_num }}/{{ total_exercises|default:"—" }}</span>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- QA player mounts here -->
+  <div class="qa-content">
+    <div id="qa-root"></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block js_extra %}
+<script>
+  window.__EXERCISE_CONFIG__ = {{ exercise_config_json|safe }};
+</script>
+<script type="module" src="{% static 'js/src/qa_player.js' %}"></script>
+{% endblock %}

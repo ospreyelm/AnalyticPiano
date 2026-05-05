@@ -1,15 +1,81 @@
 WARNING:root:No DATABASE_URL environment variable set, and so no databases setup
-Creating test database for alias 'default'...
-System check identified some issues:
+============================= test session starts ==============================
+platform darwin -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0 -- /Users/adorman/.pyenv/versions/3.11.9/Library/Frameworks/Python.framework/Versions/3.11/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1
+plugins: cov-7.1.0, anyio-4.13.0
+collecting ... collected 20 items / 19 deselected / 1 selected
 
-WARNINGS:
-?: (ckeditor.W001) django-ckeditor bundles CKEditor 4.22.1 which isn't supported anymore and which does have unfixed security issues, see for example https://ckeditor.com/cke4/release/CKEditor-4.24.0-LTS . You should consider strongly switching to a different editor (maybe CKEditor 5 respectively django-ckeditor-5 after checking whether the CKEditor 5 license terms work for you) or switch to the non-free CKEditor 4 LTS package. See https://ckeditor.com/ckeditor-4-support/ for more on this. (Note! This notice has been added by the django-ckeditor developers and we are not affiliated with CKSource and were not involved in the licensing change, so please refrain from complaining to us. Thanks.)
+apps/exercises/tests/test_umto_contract.py::test_factory_emits_roman_and_raw_roman_for_unit9 
+DEBUG: Analysis: [
+  {
+    "offset": 0.0,
+    "content": {
+      "roman_numeral": "iv",
+      "raw_roman_numeral": "iv",
+      "figured_bass": null,
+      "pop_symbol": null,
+      "functional_label": null
+    },
+    "visual": null,
+    "unit_tags": [
+      9
+    ],
+    "is_target": false
+  }
+]
 
-System check identified 1 issue (0 silenced).
-................................
-----------------------------------------------------------------------
-Ran 32 tests in 45.379s
+DEBUG: Grading: [
+  {
+    "offset": 0.0,
+    "target_midi_pitches": [
+      43,
+      59,
+      62,
+      67
+    ],
+    "rhythmic_flexibility": false
+  }
+]
+FAILED
 
-OK
-Destroying test database for alias 'default'...
-Found 32 test(s).
+=================================== FAILURES ===================================
+_______________ test_factory_emits_roman_and_raw_roman_for_unit9 _______________
+
+    def test_factory_emits_roman_and_raw_roman_for_unit9():
+        from apps.exercises.umto_factory import build_umto_payload
+        from apps.exercises.umto import InteractionMode
+    
+        with open(CIR_FIXTURES_DIR / "unit9_satb.json", "r") as f:
+            cir = json.load(f)
+    
+        payload = build_umto_payload(
+            exercise_id="TEST_U9",
+            source="Test",
+            key="G",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=9,
+            mode=InteractionMode.ANALYSIS_MATCH,
+            score_data=cir,
+            unit=9
+        )
+    
+        analysis = payload["score"]["umto"]["analysis"]
+        assert len(analysis) > 0
+        # Check first slice
+        first = analysis[0]
+        print(f"\nDEBUG: Analysis: {json.dumps(analysis, indent=2)}")
+        print(f"\nDEBUG: Grading: {json.dumps(payload['score']['umto']['grading'], indent=2)}")
+        assert "roman_numeral" in first["content"]
+        assert "raw_roman_numeral" in first["content"]
+>       assert first["content"]["roman_numeral"] == "I"
+E       AssertionError: assert 'iv' == 'I'
+E         
+E         - I
+E         + iv
+
+apps/exercises/tests/test_umto_contract.py:223: AssertionError
+=========================== short test summary info ============================
+FAILED apps/exercises/tests/test_umto_contract.py::test_factory_emits_roman_and_raw_roman_for_unit9
+======================= 1 failed, 19 deselected in 0.53s =======================
