@@ -15,11 +15,11 @@ def load_manifest_rows():
 
 
 def _grouping_choices(correct):
-    return [x for x in ["duple", "triple", "quadruple", "single"] if x != correct]
+    return [x for x in ["duple", "triple", "quadruple"] if x != correct]
 
 
 def _division_type_choices(correct):
-    return [x for x in ["simple", "compound", "complex", "mixed"] if x != correct]
+    return [x for x in ["simple", "compound"] if x != correct]
 
 
 def _full_meter_choices(correct):
@@ -48,6 +48,21 @@ def _ensure_four(correct, distractors, fallback=None):
     return unique[:4]
 
 
+def _note_value_choices(correct):
+    ordered = [
+        "sixteenth",
+        "eighth",
+        "dotted eighth",
+        "quarter",
+        "dotted quarter",
+        "half",
+        "dotted half",
+        "whole",
+        "dotted whole",
+    ]
+    return [x for x in ordered if x != correct]
+
+
 def _build_explanation(subtype, source_signature, row):
     full_meter = row["full_meter"]
     if subtype == "meter_to_ts":
@@ -69,16 +84,17 @@ def build_symbolic_problem(subtype, source_signature, reference_map):
         prompt = {"kind": "time_signature", "text": source_signature}
     elif subtype == "ts_to_beat_value":
         answer = row["beat_value"]
+        choices = _ensure_four(answer, [row["division_value"]], fallback=_note_value_choices(answer))
+        prompt = {"kind": "time_signature", "text": source_signature}
+    elif subtype == "ts_to_division_value":
+        answer = row["division_value"]
+        choices = _ensure_four(answer, [row["beat_value"]], fallback=_note_value_choices(answer))
+        prompt = {"kind": "time_signature", "text": source_signature}
+    elif subtype == "ts_to_beat_count":
+        answer = str(row["beat_count"])
         choices = _ensure_four(
             answer,
-            [
-                row["division_value"],
-                "quarter",
-                "dotted quarter",
-                "half",
-                "dotted whole",
-                "eighth",
-            ],
+            [str(row["division_count"]), str(row["numerator"]), "2", "3", "4", "6", "9", "12"],
         )
         prompt = {"kind": "time_signature", "text": source_signature}
     elif subtype == "ts_to_division_count":

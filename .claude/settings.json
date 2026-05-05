@@ -2,7 +2,48 @@
   "permissions": {
     "allow": [
       "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local python manage.py test apps.exercises.tests.test_generate_unit1 apps.exercises.tests.test_music21_builder apps.student.tests.test_views apps.student.tests.test_unit1_curriculum_integration --verbosity=2)",
-      "Bash(grep -E \"ERROR|FAIL|ok$\")"
+      "Bash(grep -E \"ERROR|FAIL|ok$\")",
+      "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 log --oneline -8 -- apps/student/templates/student/player.html)",
+      "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 branch --show-current)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); units=[u for u in d if u.get\\('unit'\\)]; print\\(json.dumps\\(units[:5], indent=2\\)\\)\")",
+      "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 add docs/superpowers/specs/2026-04-29-platform-roadmap.md docs/superpowers/specs/2026-04-29-phase2-unit-factory-design.md)",
+      "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 commit -m ' *)",
+      "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 add docs/superpowers/specs/2026-04-29-platform-roadmap.md)",
+      "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 add docs/superpowers/plans/2026-04-30-phase2-unit-factory.md)",
+      "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 log master..HEAD --oneline)",
+      "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 push -u origin codex/unit1-identification-autosave)",
+      "Bash(gh pr create --title 'docs: platform roadmap + Phase 2 unit factory spec and plan' --body ' *)",
+      "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 push)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P)",
+      "Bash(awk '{print $1, $9}')",
+      "Bash(lsof -ti:8000)",
+      "Read(//Users/adorman/.local/share/virtualenvs/**)",
+      "Read(//Users/adorman/**)",
+      "Bash(fly postgres *)",
+      "Bash(python3)",
+      "Bash(python -m pytest apps/exercises/tests/test_taxonomy_reader.py apps/exercises/tests/test_generate_exercise_context.py apps/exercises/tests/test_import_bach_phrases.py apps/exercises/tests/test_create_unit_playlist.py -v --tb=short)",
+      "Bash(python manage.py backfill_raw_roman_numeral --dry-run)",
+      "Bash(pg_isready -h localhost -p 5432)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); u=d['units']; print\\(json.dumps\\([{'unit':x['unit'],'roman':x.get\\('analysis',{}\\).get\\('roman',{}\\)} for x in u if x['unit']>=9], indent=2\\)\\)\")",
+      "Bash(python3 -c \"import json; json.load\\(open\\('music_theory_taxonomy.json'\\)\\); print\\('JSON valid'\\)\")",
+      "Bash(python manage.py test apps.exercises.tests.test_generate_exercise_context apps.exercises.tests.test_umto_contract apps.exercises.tests.test_taxonomy_reader --verbosity=2)",
+      "Bash(python manage.py test apps.exercises --verbosity=1)",
+      "Bash(python manage.py test apps.exercises.tests.test_skills_analyzer --verbosity=2)",
+      "Bash(python manage.py test apps.exercises.tests.test_skills_analyzer --verbosity=1)",
+      "Bash(python manage.py create_unit_playlist --unit 9 --riemenschneider 1-10 --author avner-local2025@localhost --mode roman --public)",
+      "Bash(python manage.py create_unit_playlist --unit 9 --riemenschneider 1-10 --author avner-local2025@localhost --mode figures --public)",
+      "Bash(python manage.py create_unit_playlist --unit 11 --riemenschneider 1-10 --author avner-local2025@localhost --mode roman --public)",
+      "Bash(python manage.py create_unit_playlist --unit 11 --riemenschneider 1-10 --author avner-local2025@localhost --mode figures --public)",
+      "Bash(python manage.py create_unit_playlist --unit 12 --riemenschneider 1-10 --author avner-local2025@localhost --mode roman --public)",
+      "Bash(python manage.py create_unit_playlist --unit 12 --riemenschneider 1-10 --author avner-local2025@localhost --mode figures --public)",
+      "Bash(wait)",
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local python manage.py shell)",
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local python manage.py create_unit_playlist --unit 9 --riemenschneider 1-10 --mode figures --author avner-local2025@localhost --public)",
+      "Bash(gh pr *)"
+    ],
+    "additionalDirectories": [
+      "/Users/adorman"
     ]
   }
 }

@@ -1,0 +1,2058 @@
+    <!DOCTYPE html>
+    <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meter Signatures, Bar Lines, and Beaming - Music Theory IV</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/abcjs@6.2.3/dist/abcjs-midi.css">
+    <script src="https://cdn.jsdelivr.net/npm/abcjs@6.2.3/dist/abcjs-basic-min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../assets/css/course-styles.css">
+    <link rel="stylesheet" href="../../assets/styles/theme.css">
+
+    <style>
+        /* ... keep your existing styles ... */
+        /* Just adding this to ensure the cursor changes while loading audio */
+        .abc-controls button.loading {
+            opacity: 0.5;
+            cursor: wait;
+        }
+        /* Interactive Barline Addition */
+.abc-interactive-container {
+    position: relative;
+    display: inline-block;
+}
+
+.abc-click-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.barline-insertion-zone {
+    position: absolute;
+    width: 30px;
+    cursor: pointer;
+    pointer-events: auto;
+    background: rgba(100, 150, 255, 0);
+    transition: background 0.2s;
+    border-right: 2px dashed transparent;
+    transition: all 0.2s;
+}
+
+.barline-insertion-zone:hover {
+    background: rgba(100, 150, 255, 0.15);
+    border-right: 2px dashed rgba(100, 150, 255, 0.5);
+}
+
+.barline-insertion-zone.has-barline {
+    cursor: default;
+    background: rgba(200, 50, 50, 0.1);
+    border-right: 2px solid rgba(200, 50, 50, 0.5);
+}
+
+.barline-insertion-zone.has-barline:hover {
+    background: rgba(200, 50, 50, 0.15);
+}
+
+.irregular-abc {
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.irregular-abc .abc-sheet {
+    width: 100%;
+}
+
+.irregular-abc .abc-sheet svg {
+    width: 100%;
+    height: auto;
+}
+    
+        /* Menu toggle button - hidden on desktop, visible on mobile */
+        .nav-toggle {
+            display: none;
+            position: relative;
+            z-index: 100;
+            flex-shrink: 0;
+            background: transparent;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+        }
+
+        .nav-toggle:focus {
+            outline: 2px solid #003366;
+            outline-offset: 2px;
+        }
+
+        /* Main page layout with sidebar */
+        .page-layout {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        /* Left sidebar navigation */
+        .section-nav {
+            flex: 0 0 200px;
+            position: sticky;
+            top: 80px;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            padding: 1.5rem;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .section-nav h3 {
+            color: #003366;
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-nav a {
+            display: block;
+            color: #003366;
+            text-decoration: none;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+            border-left: 2px solid transparent;
+            padding-left: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .section-nav a:hover {
+            color: #FF6600;
+            border-left-color: #FF6600;
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Hide breadcrumbs and hide nav toggle on desktop */
+        @media (min-width: 1025px) {
+            .breadcrumbs {
+                display: none;
+            }
+        }
+
+        /* On tablets and smaller, switch to mobile layout */
+        @media (max-width: 1024px) {
+            .nav-toggle {
+                display: block;
+            }
+
+            .page-layout {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .section-nav {
+                flex: 1 1 auto;
+                position: static !important;
+                top: auto !important;
+                max-height: 0;
+                overflow: hidden;
+                padding: 0;
+                margin: 0;
+                background-color: transparent;
+                border: none;
+                transition: max-height 0.3s ease;
+            }
+
+            .section-nav.show {
+                max-height: 500px;
+                padding: 20px 30px;
+                background-color: #f9f9f9;
+                border: 1px solid #e0e0e0;
+                border-top: 2px solid #ddd;
+                margin-bottom: 1.5rem;
+            }
+
+            .section-nav h3 {
+                margin-top: 0;
+            }
+
+            .section-nav a {
+                display: block;
+                margin: 10px 0;
+                border-left: none;
+                padding: 0;
+            }
+
+            .main-content {
+                flex: 1;
+            }
+
+            .breadcrumbs {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .section-nav {
+                padding: 0;
+            }
+
+            .section-nav.show {
+                padding: 16px 20px;
+            }
+        }
+    </style>
+</head>
+
+    <style>
+            /* Override conflicting CSS for navbar */
+            #course-navbar a {
+                background: transparent !important;
+                box-shadow: none !important;
+                transform: none !important;
+                padding: 0.5rem !important;
+                border-radius: 0.375rem !important;
+            }
+
+            .abc-notation {
+                background-color: #f9f9f9;
+                border: 1px solid #ddd;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+            }
+
+            .abc-controls {
+                margin-bottom: 20px;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .abc-controls button {
+                background-color: #003366;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+                transition: background-color 0.2s;
+            }
+
+            .abc-controls button:hover {
+                background-color: #FF6600;
+            }
+
+            .tempo-display {
+                font-weight: bold;
+                color: #003366;
+                font-size: 16px;
+            }
+
+            .abc-sheet {
+                background: white;
+                padding: 30px 20px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                min-height: 200px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: auto;
+            }
+
+            /* Responsive sizing for ABCJS */
+            .abc-sheet svg {
+                max-width: 100%;
+                height: auto;
+            }
+
+            @media (max-width: 768px) {
+                .abc-sheet {
+                    min-height: 150px;
+                    padding: 20px 10px;
+                }
+
+                .abc-controls {
+                    gap: 8px;
+                }
+
+                .abc-controls button {
+                    padding: 8px 16px;
+                    font-size: 13px;
+                }
+
+                .tempo-display {
+                    font-size: 14px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .abc-notation {
+                    padding: 15px;
+                }
+
+                .abc-sheet {
+                    min-height: 120px;
+                    padding: 15px 10px;
+                }
+
+                .abc-controls {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .abc-controls button {
+                    width: 100%;
+                }
+            }
+
+            /* Collapsible Q&A Styling */
+            .collapsible-qa {
+                margin: 20px 0;
+                padding: 15px;
+                border: 1px solid #e0e0e0;
+                border-radius: 4px;
+                background-color: #f9f9f9;
+            }
+
+            .collapsible-qa summary {
+                cursor: pointer;
+                user-select: none;
+                padding: 5px 0;
+                transition: color 0.2s ease;
+            }
+
+            .collapsible-qa summary:hover {
+                color: #FF6600;
+            }
+
+            .collapsible-qa[open] summary {
+                color: #003366;
+                margin-bottom: 10px;
+            }
+
+            .collapsible-qa ul {
+                margin: 10px 0 0 20px;
+                padding: 0;
+            }
+
+            .collapsible-qa li {
+                margin: 8px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Navigation Bar -->
+        <nav id="course-navbar" class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+            <div class="container mx-auto px-4">
+                <div class="flex items-center justify-between h-14">
+                    <a href="../../index.html" class="flex items-center text-blue-700 hover:text-orange-600 font-semibold transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        All Weeks
+                    </a>
+                    <div class="flex items-center space-x-4">
+                        <div id="lesson-nav-controls"></div>
+                        <span id="current-week-label" class="text-sm text-gray-600 hidden lg:block">Week 3 - Monday</span></div>
+                </div>
+            </div>
+        </nav>
+        <script src="../../dashboard-config.js"></script>
+
+        <script src="../../assets/js/lesson-nav.js"></script>
+
+        <div class="container">
+            <!-- Header -->
+            <header>
+                <h1>Meter Signatures, Bar Lines, and Beaming</h1>
+            </header>
+
+      <nav class="breadcrumbs mt-4 mb-6"><a href="../../index.html">All Lessons</a> / <span>Week 3 - Monday - Meter Signatures, Bar Lines, and Beaming</span></nav>
+
+            <!-- Credit/Info Box -->
+            <div class="credit">
+                <p><strong>Adapted from a presentation originally created by Dr. Amanda Heim</strong></p>
+                <p><strong>Course:</strong> Music Theory IV</p>
+                <p><strong>Week 3 – Monday</strong></p>
+            </div>
+
+            <!-- Main Content Sections -->
+            <section>
+                <h2>Meter Review</h2>
+                <p>There are two classifications for every meter:</p>
+                <ul>
+                    <li><strong>Division structure</strong> – simple or compound</li>
+                    <li><strong>Metrical structure</strong> – duple or triple</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Division Structure</h2>
+
+                <h3>Simple vs. Compound Meter</h3>
+                <ul>
+                    <li><strong>Simple meter:</strong> every beat divides into <strong>two</strong> division level parts</li>
+                    <li><strong>Compound meter:</strong> every beat divides into <strong>three</strong> division level parts</li>
+                </ul>
+
+                <h3>What does simple meter look like on the page?</h3>
+                <p>Simple meter, with no meter signature:</p>
+
+                <div class="abc-notation">
+                    <div class="abc-controls">
+                        <button onclick="playAbc('simple-meter')">▶ Play</button>
+                        <button onclick="stopAbc('simple-meter')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="simple-meter-sheet"></div>
+                </div>
+
+                <details class="collapsible-qa">
+                    <summary><strong>How can you tell this is a simple meter?</strong></summary>
+                    <ul>
+                        <li>The beat level is the quarter note</li>
+                        <li>Each beat divides into two division-level units (eighth notes)</li>
+                    </ul>
+                </details>
+
+                <!-- <script>
+                    const simpleAbc = `X:1
+    L:1/8
+    M:
+    Q:1/4=100
+    K:C
+    c4 GF | E3 F G2| F2 E2 D2| C4 z2|]`;
+
+                    const simpleAbcForDisplay = `X:1
+    L:1/8
+    M:
+    K:C
+    c4 GF | E3 F G2| F2 E2 D2| C4 z2|]`;
+
+                    // Render the display version (without tempo)
+                    ABCJS.renderAbc("simple-meter-sheet", simpleAbcForDisplay);
+                </script> -->
+
+                <h3>We use beams in order to display the division structure</h3>
+                <p>Notice that the beat level is beamed together, rather than flagging every eighth note separately:</p>
+                <div class="abc-notation">
+                    <div class="abc-controls">
+                        <button onclick="playAbc('beamed-eighths-example')">▶ Play</button>
+                        <button onclick="stopAbc('beamed-eighths-example')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="beamed-eighths-example-sheet"></div>
+                </div>
+
+                <!-- <img src="../../../assets/images/beamed-eighths-example.png" alt="Beamed eighth notes example"> -->
+
+                <h3>What does a compound meter look like on the page?</h3>
+                <p>Compound meter, with no meter signature </p>
+
+                <div class="abc-notation">
+                    <div class="abc-controls">
+                        <button onclick="playAbc('compound-meter-example')">▶ Play</button>
+                        <button onclick="stopAbc('compound-meter-example')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="compound-meter-example-sheet"></div>
+                </div>
+
+                <!-- <img src="../../../assets/images/compound-meter-example.png" alt="Compound meter example"> -->
+
+                <details class="collapsible-qa">
+                    <summary><strong>How can you tell this is in compound meter?</strong></summary>
+                    <ul>
+                        <li>The beat level is the dotted quarter note</li>
+                        <li>Each beat level divides into three division-level units (eighth notes)</li>
+                    </ul>
+                </details>
+
+                <p><strong>Again, notice how each beat is beamed together, whenever possible, rather than flagging the division-level units separately</strong></p>
+            </section>
+
+            <section>
+                <h2>Metrical Structure</h2>
+
+                <p>The other component necessary for determining a meter signature is the <strong>metrical structure</strong></p>
+                <ul>
+                    <li>The metrical structure determines the hierarchical organization of beats within a measure.</li>
+                    <li>It does <strong>not</strong> determine what is the duration of the beat level, or how that beat level breaks down into division-level units</li>
+                </ul>
+
+                <h3>What does a duple meter look like on the page?</h3>
+                <p>First, determine the duration of the beat, then count how many beats are in a measure.</p>
+                <p><strong>If there are 2 (or a multiple of 2) beats in each measure, the meter is duple.</strong></p>
+                <!-- <img src="../../../assets/images/grouping-structure-example.png" alt="Grouping structure example"> -->
+                <div class="abc-notation">
+                    <div class="abc-controls">
+                        <button onclick="playAbc('grouping-structure-example')">▶ Play</button>
+                        <button onclick="stopAbc('grouping-structure-example')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="grouping-structure-example-sheet"></div>
+                </div>
+
+                <details class="collapsible-qa">
+                    <summary><strong>Analysis:</strong></summary>
+                    <ul>
+                        <li><strong>What is the beat level duration?</strong> Quarter note (we can tell by the beaming)</li>
+                        <li><strong>How many beats in every measure?</strong> 2 (we can tell by the bar lines)</li>
+                        <li><strong>Result:</strong> Duple meter</li>
+                    </ul>
+                </details>
+
+                <!-- <img src="../../../assets/images/grouping-structure-2-example.png" alt="Grouping structure 2 example"> -->
+                    <div class="abc-controls">
+                        <button onclick="playAbc('grouping-structure-2-example')">▶ Play</button>
+                        <button onclick="stopAbc('grouping-structure-2-example')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="grouping-structure-2-example-sheet"></div>
+                
+
+
+                <details class="collapsible-qa">
+                    <summary><strong>Analysis:</strong></summary>
+                    <ul>
+                        <li><strong>What is the beat level duration?</strong> Dotted quarter note (we can tell by the beaming)</li>
+                        <li><strong>How many beats in every measure?</strong> 2 (we can tell by the bar lines)</li>
+                        <li><strong>Result:</strong> Duple meter</li>
+                    </ul>
+                </details>
+                    <div class="abc-controls">
+                        <button onclick="playAbc('grouping-structure-3-example')">▶ Play</button>
+                        <button onclick="stopAbc('grouping-structure-3-example')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="grouping-structure-3-example-sheet"></div>
+
+                <!-- <img src="../../../assets/images/grouping-structure-3-example.png" alt="Grouping structure 3 example"> -->
+                <details class="collapsible-qa">
+                    <summary><strong>Analysis:</strong></summary>
+                    <ul>
+                        <li><strong>What is the beat level duration?</strong> Dotted quarter note (we can tell from the beaming)</li>
+                        <li><strong>How many beats in every measure?</strong> Three (we can tell from the bar lines)</li>
+                        <li><strong>Result:</strong> Triple meter</li>
+                    </ul>
+                </details>
+            </section>
+
+            <section>
+                <h2>Determining the Meter Signature</h2>
+
+                <p>After determining both the <strong>division</strong> and <strong>grouping</strong> structures, we can determine the meter signature.</p>
+
+                <h3>Simple Meters</h3>
+                <ul>
+                    <li><strong>Top number:</strong> describes the <strong>number</strong> of beats in a bar</li>
+                    <li><strong>Bottom number:</strong> describes the <strong>duration of note</strong> that is at the beat level</li>
+                </ul>
+
+                <div class="example-box">
+                    <h4>Example 1: Meter Signature 2/4</h4>
+                    <ul>
+                        <li>Simple or compound meter? <strong>Simple</strong></li>
+                        <li>What is the duration of the beat level? <strong>Quarter note</strong></li>
+                        <li>What is the metrical organization of beats in the measure? <strong>2 beats per measure</strong></li>
+                    </ul>
+                    <!-- <img src="../../../assets/images/determining-meter-signature-example.png" alt="Determining meter signature example"> -->
+                                    <div class="abc-controls">
+                        <button onclick="playAbc('meter-signature-1-example')">▶ Play</button>
+                        <button onclick="stopAbc('meter-signature-1-example')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="meter-signature-1-example-sheet"></div>
+                
+
+
+                </div>
+
+                <div class="example-box">
+                    <h4>Example 2: Meter Signature 4/4</h4>
+                    <ul>
+                        <li>Simple or compound? <strong>Simple</strong></li>
+                        <li>What is the duration of the beat level? <strong>Quarter note</strong></li>
+                        <li>What is the metrical organization of beats in the measure? <strong>4 beats per measure</strong></li>
+                    </ul>
+                    <!-- <img src="../../../assets/images/determining-meter-signature-2-example.png" alt="Determining meter signature 2 example"> -->
+                    <div class="abc-controls">
+                        <button onclick="playAbc('meter-signature-2-example')">▶ Play</button>
+                        <button onclick="stopAbc('meter-signature-2-example')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="meter-signature-2-example-sheet"></div>
+                
+
+                </div>
+
+                <h3>Compound Meters</h3>
+                <ul>
+                    <li><strong>Top number:</strong> describes the number of <strong>division-level</strong> (NOT beat level) durations per measure</li>
+                    <li><strong>Bottom number:</strong> describes the <strong>duration</strong> of note that is at the <strong>division level</strong> (NOT beat level)</li>
+                </ul>
+
+                <div class="example-box">
+                    <h4>Example 3: Meter Signature 9/8</h4>
+                    <ul>
+                        <li>Simple or compound? <strong>Compound</strong></li>
+                        <li>What is the duration of the division level? <strong>Eighth note</strong></li>
+                        <li>How many division-level units per measure? <strong>9</strong></li>
+                    </ul>
+                    <!-- <img src="../../../assets/images/determining-meter-signature-7-example.png" alt="Determining meter signature 7 example"> -->
+                    <div class="abc-controls">
+                        <button onclick="playAbc('meter-signature-3-example')">▶ Play</button>
+                        <button onclick="stopAbc('meter-signature-3-example')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="meter-signature-3-example-sheet"></div>
+                
+
+                </div>
+
+                <div class="example-box">
+                    <h4>Example 4: Meter Signature 6/8</h4>
+                    <ul>
+                        <li>Simple or compound? <strong>Compound</strong></li>
+                        <li>What is the duration of the division level? <strong>Eighth note</strong></li>
+                        <li>How many division-level units per measure? <strong>6</strong></li>
+                    </ul>
+                    <!-- <img src="../../../assets/images/determining-meter-signature 6-example.png" alt="Determining meter signature 6 example"> -->
+                    <div class="abc-controls">
+                        <button onclick="playAbc('meter-signature-4-example')">▶ Play</button>
+                        <button onclick="stopAbc('meter-signature-4-example')">⏹ Stop</button>
+                        <div class="tempo-display">♩ = 100</div>
+                    </div>
+                    <div class="abc-sheet" id="meter-signature-4-example-sheet"></div>
+                
+
+                </div>
+
+                <h3>Helpful Hint</h3>
+                <div class="tip-box">
+                    <p><strong>Note:</strong> A top number of 6 in a standard meter signature typically indicates a compound division structure.</p>
+                    <!-- <img src="../../../assets/images/determining-meter-signature-8-example.png" alt="Determining meter signature 8 example"> -->
+                    <div class="abc-controls">
+                        <button onclick="playAbc('helpful-hint-1-example')">▶ Play</button>
+                        <button onclick="stopAbc('helpful-hint-1-example')">⏹ Stop</button>
+                        <!-- <div class="tempo-display">𝅘𝅥. = 100</div> -->
+                    </div>
+                    <div class="abc-sheet" id="helpful-hint-1-example-sheet"></div>
+                
+                    <div class="abc-controls">
+                        <button onclick="playAbc('helpful-hint-2-example')">▶ Play</button>
+                        <button onclick="stopAbc('helpful-hint-2-example')">⏹ Stop</button>
+                        <!-- <div class="tempo-display">𝅘𝅥. = 100</div> -->
+                    </div>
+                    <div class="abc-sheet" id="helpful-hint-2-example-sheet"></div>
+                
+
+
+                </div>
+            </section>
+
+            <div class="theory-note" style="background-color: #f9f9f9; padding: 15px; border-left: 5px solid #ccc; margin: 20px 0;">
+                <p><strong>Note:</strong> What we called the "grouping of pulses" when studying Timelines is essentially what defines the <strong>division level</strong> here. While this division-level notation stems from the history of Western music notation, the grouping of pulses into larger cycles is a fundamental organizing structure found in musical styles around the world.</p>
+            </div>
+
+            <section>
+                <h2>Beaming</h2>
+
+                <p>Sometimes it is necessary to add beams in order to better clarify the division structure and the metrical structure:</p>
+                <ul>
+                    <li>If possible, beam together beat-level durations</li>
+                    <li>Be sure NOT to beam together durations that belong to different beats</li>
+                </ul>
+
+                <h3>Consider the following example</h3>
+                <!-- <img src="../../../assets/images/beaming-consider-example.png" alt="Beaming consider example"> -->
+                    <div class="abc-controls">
+                        <button onclick="playAbc('wrong-beaming-example')">▶ Play</button>
+                        <button onclick="stopAbc('wrong-beaming-example')">⏹ Stop</button>
+                        <!-- <div class="tempo-display">𝅘𝅥. = 100</div> -->
+                    </div>
+                    <div class="abc-sheet" id="wrong-beaming-example-sheet"></div>
+
+                <details class="collapsible-qa">
+                    <summary><strong>Questions:</strong></summary>
+                    <ul>
+                        <li>The beams should reflect the <strong>beat level</strong> while obscuring as few beats as possible</li>
+                        <li>What is the beat level?</li>
+                        <li>How can we rewrite this passage to better clarify the metrical and division structures?</li>
+                    </ul>
+                </details>
+
+                <h3>Corrected Beaming</h3>
+                <!-- <img src="../../../assets/images/beaming-clarity-example.png" alt="Beaming clarity example"> -->
+                    <div class="abc-controls">
+                        <button onclick="playAbc('correct-beaming-example')">▶ Play</button>
+                        <button onclick="stopAbc('correct-beaming-example')">⏹ Stop</button>
+                        <!-- <div class="tempo-display">𝅘𝅥. = 100</div> -->
+                    </div>
+                    <div class="abc-sheet" id="correct-beaming-example-sheet"></div>
+                <div class="emphasis-box">
+                    <p><strong>We have shown clarity on the beat level</strong> (every beat containing 2 eighth notes, or 4 sixteenth notes)</p>
+                    <p><strong>We have shown clarity on the division level</strong></p>
+                </div>
+
+                <h3>Compound meter example in need of repairs</h3>
+                <!-- <img src="../../../assets/images/compound-meter-repair-example.png" alt="Compound meter repair example"> -->
+                    <div class="abc-controls">
+                        <button onclick="playAbc('compound-meter-repair-example')">▶ Play</button>
+                        <button onclick="stopAbc('compound-meter-repair-example')">⏹ Stop</button>
+                        <!-- <div class="tempo-display">𝅘𝅥. = 100</div> -->
+                    </div>
+                    <div class="abc-sheet" id="compound-meter-repair-example-sheet"></div>
+                <details class="collapsible-qa">
+                    <summary><strong>Questions:</strong></summary>
+                    <ul>
+                        <li>What is the division level?</li>
+                        <li>How do we beam together division-level units in order to show the beat level?</li>
+                        <li>How do we minimize the number of ties?</li>
+                    </ul>
+                </details>
+
+                <h3>Fixed Compound Meter Beaming</h3>
+                <!-- <img src="../../../assets/images/compound-meter-repair-2-example.png" alt="Compound meter repair 2 example"> -->
+                    <div class="abc-controls">
+                        <button onclick="playAbc('compound-meter-repaired-example')">▶ Play</button>
+                        <button onclick="stopAbc('compound-meter-repaired-example')">⏹ Stop</button>
+                        <!-- <div class="tempo-display">𝅘𝅥. = 100</div> -->
+                    </div>
+                    <div class="abc-sheet" id="compound-meter-repaired-example-sheet"></div>
+                <details class="collapsible-qa">
+                <div class="emphasis-box">
+                    <p><strong>Now we clearly see two beats in every measure</strong></p>
+                    <ul>
+                        <li>Each one the duration of a dotted quarter note</li>
+                        <li>Groups of three division-level eighths are beamed together</li>
+                        <li>Unnecessary ties are eliminated</li>
+                    </ul>
+                </div>
+</details>
+
+                <div class="emphasis-box">
+                    <h3>Why Beaming Matters</h3>
+                    <p>Many rhythms can be beamed in different ways, but only some solutions keep the beat hierarchy obvious. If the notation hides the beat, performers struggle and misread.</p>
+                    <p><strong>Goal:</strong> always beam so the meter is visible at a glance. Good beaming reveals pulse; poor beaming hides it.</p>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="tip-box">
+                        <h3>Show the Beat Level</h3>
+                        <p><strong>Fundamental principle:</strong> beaming should reveal the metrical hierarchy.</p>
+                        <p class="mt-2">Think of stacked “levels” when you notate rhythm in 4/4:</p>
+                        <ul class="list-disc list-inside space-y-1 text-sm">
+                            <li><strong>Half-note level:</strong> events on beats 1 or 3 sit <em>one full level higher</em> than the quarter-note beat.</li>
+                            <li><strong>Quarter-note level:</strong> beats 2 and 4 are the beat level itself.</li>
+                            <li><strong>Eighth-note level:</strong> the “and” of the beat sits one level lower than the beat.</li>
+                            <li><strong>Sixteenth-note level:</strong> the 2nd or 4th sixteenth inside a beat is another level lower.</li>
+                        </ul>
+                        <p class="mt-3 text-sm text-gray-700"><strong>Two-level test:</strong> if a note begins or ends on a level <strong>two degrees lower</strong> than a beat that it sustains through (e.g., a sixteenth tied across a quarter), split that note and tie it so the higher-level beat stays visible.</p>
+                    </div>
+                    <div class="example-box">
+                        <h3>Don’t Contradict the Beat Level</h3>
+                        <p><strong>Principle:</strong> notation should clarify the meter, not obscure it.</p>
+                        <p>Use ties or regrouping any time a literal note value would hide the beat—a small tweak saves rehearsal time.</p>
+                    </div>
+                </div>
+
+                <div class="example-box">
+                    <h4>Quarter Notes in Compound Meters (6/8)</h4>
+                    <p>In compound meters, the beat is a dotted quarter (three eighths). Quarter notes can obscure that grouping if they are treated like independent beats.</p>
+                    <div class="abc-notation">
+                        <div class="abc-controls">
+                            <button onclick="playAbc('quarter-notes-68-example')">▶ Play</button>
+                            <button onclick="stopAbc('quarter-notes-68-example')">⏹ Stop</button>
+                        </div>
+                        <div class="abc-sheet" id="quarter-notes-68-example-sheet"></div>
+                    </div>
+                    <p><strong>Difference:</strong></p>
+                    <ul>
+                        <li>The “unusual” example obscures the dotted-quarter beat.</li>
+                        <li>The “good” example ties through the beat, making the dotted-quarter pulse visible.</li>
+                    </ul>
+                    <p><strong>When can quarter notes work?</strong> When context already shows the compound beat or when ties clarify the dotted-quarter structure.</p>
+                </div>
+
+                <div class="example-box">
+                    <h4>Example: Beaming Dotted Eighths in 4/4</h4>
+                    <p>Dotted eighth rhythms often hide the beat if the sixteenth component is grouped like a triplet instead of showing where the quarter-note beats fall.</p>
+                    <div class="abc-notation">
+                        <div class="abc-controls">
+                            <button onclick="playAbc('dotted-eighth-beaming-example')">▶ Play</button>
+                            <button onclick="stopAbc('dotted-eighth-beaming-example')">⏹ Stop</button>
+                        </div>
+                        <div class="abc-sheet" id="dotted-eighth-beaming-example-sheet"></div>
+                    </div>
+                    <p><strong>The problem:</strong> the “BAD” bar ties the sixteenth to the dotted eighth within one beam, disguising where the quarter-note beats fall in 4/4. The “GOOD” version breaks and ties the note right on the beat so performers see every quarter instantly.</p>
+                </div>
+
+                <div class="example-box">
+                    <h4>Rest Placement in Simple Meters (4/4)</h4>
+                    <p>Simple meters need visible beats, especially beat 3 in 4/4. Long rests that hide beat 3 disorient performers.</p>
+                    <div class="abc-notation">
+                        <div class="abc-controls">
+                            <button onclick="playAbc('rest-placement-44-example')">▶ Play</button>
+                            <button onclick="stopAbc('rest-placement-44-example')">⏹ Stop</button>
+                        </div>
+                        <div class="abc-sheet" id="rest-placement-44-example-sheet"></div>
+                    </div>
+                    <p><strong>Fixes:</strong></p>
+                    <ul>
+                        <li>Use rests that cover whole beats (half rest = beats 1-2) before switching values.</li>
+                        <li>Break longer rests so that beat 3 is still easy to spot.</li>
+                    </ul>
+                    <p>Beat 3 is a strong metrical position (half-note level). Hide it and the ensemble loses its reference point.</p>
+                </div>
+
+                <h3>The Golden Rule</h3>
+                <div class="emphasis-box">
+                    <p>It is not that certain note values are forbidden. The rule is: <strong>notation must make the metrical structure clear rather than obscuring it.</strong></p>
+                    <p><strong>Test yourself:</strong> can a performer immediately see the beats? If yes, great. If not, re-beam or re-notate.</p>
+                </div>
+
+                <h3>Summary: Beaming Principles</h3>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="example-box">
+                        <h4>Compound Meters (6/8, 9/8, 12/8)</h4>
+                        <ul>
+                            <li>Beat = dotted quarter (three eighths).</li>
+                            <li>Beam eighths in groups of three.</li>
+                            <li>Beam sixteenths in groups of six.</li>
+                            <li>Use ties if quarter notes threaten clarity.</li>
+                        </ul>
+                    </div>
+                    <div class="example-box">
+                        <h4>Simple Meters (2/4, 3/4, 4/4)</h4>
+                        <ul>
+                            <li>Beat = quarter note (two eighths).</li>
+                            <li>Beam eighths in pairs; beam sixteenths in fours.</li>
+                            <li>Make beat 3 visible in 4/4.</li>
+                        </ul>
+                    </div>
+                </div>
+                <p><strong>Good beaming helps performers</strong> see beats, understand the meter instantly, and play rhythms accurately.</p>
+            </section>
+
+            <section>
+                <h2>Adding Bar Lines</h2>
+
+                <p>Bar lines reflect the metrical hierarchy of the meter and contain only the intended number of beats per measure.</p>
+
+                <h3>Consider the following example</h3>
+                <p><strong>Click between note groups to add bar lines. Try to create the correct metrical organization of the measure for 4/4 time.</strong></p>
+                    <div class="abc-controls">
+                        <button onclick="playAbc('adding-barlines-example')">▶ Play</button>
+                        <button onclick="stopAbc('adding-barlines-example')">⏹ Stop</button>
+                        <!-- <div class="tempo-display">𝅘𝅥. = 100</div> -->
+                        <button onclick="resetBarlineExercise('adding-barlines-example')" style="background-color: #666;">Reset</button>
+                        <button onclick="checkBarlineAnswer('adding-barlines-example')" style="background-color: #00AA00;">Check Answer</button>
+                    </div>
+                    <div class="abc-notation" style="position: relative;">
+                        <div class="abc-sheet" id="adding-barlines-example-sheet"></div>
+                        <div id="adding-barlines-example-interactive" style="position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; z-index: 10;"></div>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 14px; color: #666;">Or edit the ABC notation directly:</p>
+                    <textarea id="adding-barlines-example-editor" style="width: 100%; height: 100px; font-family: monospace; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box;"></textarea>
+                    <button onclick="updateBarlineFromEditor('adding-barlines-example')" style="background-color: #0066cc; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-bottom: 15px;">Update Preview</button>
+                    <div id="adding-barlines-example-feedback" style="margin-top: 15px; padding: 10px; border-radius: 4px; display: none;"></div>
+                     <!-- <img src="../../../assets/images/bar-lines-grouping-example.png" alt="Bar lines grouping example"> -->
+                <details class="collapsible-qa">
+                    <summary><strong>Hint: How can we add bar lines to show the intended meter?</strong></summary>
+                    <ul>
+                        <li>The meter is 4/4, so you need 4 quarter-note beats per measure</li>
+                        <li>Look at the beaming to identify where the beats are grouped</li>
+                    </ul>
+                </details>
+
+                <h3>Steps to Add Bar Lines</h3>
+                <ul>
+                        <li>Determine the beat level and the metrical structure</li>
+                    <li>Ensure that the bar lines help to contain only the number of intended beats per measure</li>
+                </ul>
+                <!-- <img src="../../../assets/images/bar-lines-grouping-2-example.png" alt="Bar lines grouping 2 example"> -->
+
+                <h3>Try it yourself: We Gather Together</h3>
+                <p><strong>Add bar lines to the first 8 bars of this hymn in 3/4 time.</strong></p>
+                    <div class="abc-controls">
+                        <button onclick="playAbc('we-gather-together')">▶ Play</button>
+                        <button onclick="stopAbc('we-gather-together')">⏹ Stop</button>
+                        <button onclick="resetBarlineExercise('we-gather-together')" style="background-color: #666;">Reset</button>
+                        <button onclick="checkBarlineAnswer('we-gather-together')" style="background-color: #00AA00;">Check Answer</button>
+                    </div>
+                    <div class="abc-notation" style="position: relative;">
+                        <div class="abc-sheet" id="we-gather-together-sheet"></div>
+                        <div id="we-gather-together-interactive" style="position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; z-index: 10;"></div>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 14px; color: #666;">Or edit the ABC notation directly:</p>
+                    <textarea id="we-gather-together-editor" style="width: 100%; height: 100px; font-family: monospace; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box;"></textarea>
+                    <button onclick="updateBarlineFromEditor('we-gather-together')" style="background-color: #0066cc; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-bottom: 15px;">Update Preview</button>
+                    <div id="we-gather-together-feedback" style="margin-top: 15px; padding: 10px; border-radius: 4px; display: none;"></div>
+
+                <h3>Adding Bar Lines Without a Meter Signature</h3>
+                <!-- <img src="../../../assets/images/bar-lines-no-meter-signature-example.png" alt="Bar lines no meter signature example"> -->
+                <details class="collapsible-qa">
+                    <summary><strong>Questions:</strong></summary>
+                    <ul>
+                        <li>What is the beat level?</li>
+                        <li>How can we determine the grouping structure?</li>
+                        <li>What is a possible meter signature?</li>
+                        <li>Then add bar lines</li>
+                    </ul>
+                </details>
+
+                <div class="emphasis-box">
+                    <p><strong>Both the text and the note values imply a simple, triple meter</strong></p>
+                </div>
+                <!-- <img src="../../../assets/images/bar-lines-no-meter-signature-2-example.png" alt="Bar lines no meter signature 2 example"> -->
+            </section>
+
+            <section>
+                <h2>Irregular Meters</h2>
+                <h3>What Makes a Meter Irregular?</h3>
+                <p>So far we have focused on meters where the beats are equal: <strong>simple</strong> (beats divide into 2) and <strong>compound</strong> (beats divide into 3). But some meters mix <em>long</em> and <em>short</em> beats inside the same measure.</p>
+                <ul>
+                    <li><strong>Irregular (asymmetric) meters</strong> use beats of different lengths, usually in 3:2 or 2:1 ratios.</li>
+                    <li>Common top numbers: 5, 7, 9, 10 (eighth- or quarter-based).</li>
+                    <li>Examples: 5/8, 7/8, 5/4, 10/8 where the beaming shows how pulses are grouped.</li>
+                </ul>
+
+                <div class="example-box">
+                    <h4>5/8 = Unequal Beats</h4>
+                    <p>The measure contains five eighth notes. Since you cannot split 5 into equal halves, composers group the beats as <strong>2+3</strong> or <strong>3+2</strong>.</p>
+
+                    <div class="abc-notation irregular-abc">
+                        <div class="abc-sheet" id="irregular-58-two-three-sheet"></div>
+                    </div>
+                    <p><strong>Beat Structure 2 + 3:</strong> Beat 1 has two eighths (short) · Beat 2 has three eighths (long)</p>
+
+                    <div class="abc-notation irregular-abc" style="margin-top: 1.5rem;">
+                        <div class="abc-sheet" id="irregular-58-three-two-sheet"></div>
+                    </div>
+                    <p><strong>Beat Structure 3 + 2:</strong> Beat 1 is long (three eighths) while Beat 2 is short (two eighths).</p>
+                </div>
+
+                <div class="example-box">
+                    <h4>7/8 Possibilities</h4>
+                    <p>Seven eighths can be partitioned several ways. Each metrical arrangement produces a distinct feel, signaled entirely by the beaming.</p>
+                    <ul>
+                        <li><strong>2+2+3</strong> – two short beats followed by a long one.</li>
+                        <li><strong>3+2+2</strong> – long-short-short.</li>
+                        <li><strong>2+3+2</strong> – short-long-short.</li>
+                    </ul>
+                    <div class="abc-notation irregular-abc">
+                        <div class="abc-sheet" id="irregular-78-two-two-three-sheet"></div>
+                    </div>
+                    <p>Composers choose the grouping to match the patterns in the music.</p>
+                </div>
+
+                <h3>Link to Euclidean (Maximally Even) Rhythms</h3>
+                <p>The onset patterns we studied with Euclidean rhythms often become the backbone of irregular meters.</p>
+                <div class="grid gap-4 md:grid-cols-3">
+                    <div class="tip-box">
+                        <p class="font-semibold">E(3,7)</p>
+                        <p>Pattern: <code>x . x . x . .</code></p>
+                        <p>Bulgarian <em>ruchenitsa</em>, Pink Floyd’s “Money” → 7/8 grouped as 2+2+3.</p>
+                    </div>
+                    <div class="tip-box">
+                        <p class="font-semibold">E(4,9)</p>
+                        <p>Pattern: <code>x . x . x . x . .</code></p>
+                        <p>Turkish <em>aksak</em>, Brubeck’s “Rondo à la Turk” → 9/8 (2+2+2+3).</p>
+                    </div>
+                    <div class="tip-box">
+                        <p class="font-semibold">E(5,8)</p>
+                        <p>Pattern: <code>x . x x . x x .</code></p>
+                        <p>Cuban <em>cinquillo</em> → works naturally in 5/8.</p>
+                    </div>
+                </div>
+                <p><strong>Key idea:</strong> when a Euclidean onset pattern governs the entire measure, the music effectively lives in an irregular meter.</p>
+
+                    <div class="example-box">
+                        <h4>E(3,7) → 7/8</h4>
+                        <p>This pattern places three accents across seven pulses: short + short + long (2+2+3). The beaming spotlights those long/short beats.</p>
+                    <div class="abc-notation irregular-abc">
+                        <div class="abc-sheet" id="irregular-e37-example-sheet"></div>
+                    </div>
+                    </div>
+
+                <h3>Where You Hear Irregular Meters</h3>
+                <ul>
+                    <li><strong>Balkan/Eastern European folk:</strong> Bulgarian 7/8 &amp; 9/8 dances, Greek 5/8 and 7/8.</li>
+                    <li><strong>20th c. classical:</strong> Bartók’s string quartets, Stravinsky’s <em>Rite of Spring</em>.</li>
+                    <li><strong>Jazz/pop:</strong> Brubeck’s “Take Five” (5/4) and “Blue Rondo à la Turk” (9/8), Pink Floyd “Money” (7/4), Tool “Schism” (changing 6/8+7/8).</li>
+                </ul>
+
+                <h3>Reading Irregular Meter Signatures</h3>
+                <ul>
+                    <li>Top number = total pulses per measure.</li>
+                    <li>Bottom number = the note value of one pulse.</li>
+                    <li><strong>Look at the beaming:</strong> it reveals the long vs. short beats, just like our Euclidean diagrams.</li>
+                </ul>
+                <p>Common groupings to memorize:</p>
+                <ul>
+                    <li>5/8 → 2+3 or 3+2</li>
+                    <li>7/8 → 2+2+3, 3+2+2, 2+3+2</li>
+                    <li>9/8 → 2+2+2+3 (as in <em>Blue Rondo</em>) or other combinations</li>
+                </ul>
+
+                <div class="emphasis-box">
+                    <p><strong>Summary:</strong> Simple meters divide beats into 2, compound meters divide into 3, and irregular meters mix long and short beats (grouping pulses in 2 and 3). Many of these patterns are exactly the maximally even rhythms we graphed last week.</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Summary</h2>
+                <ul>
+                    <li>Meter signatures are determined by division and metrical structures.</li>
+                    <li>Beaming and bar lines clarify the meter in notation.</li>
+                    <li>Simple meters divide beats into two; compound meters into three.</li>
+                    <li>Duple and triple meters group beats per measure.</li>
+                    <li>Irregular meters mix long and short beats (3 and 2 groupings), expressed in the beaming structure.</li>
+                </ul>
+            </section>
+        </div>
+
+<!-- <script>
+    // Global storage for the active synthesizer instance
+    // We store the synth object itself so we can call .stop() on it later
+    const activeSynths = {};
+
+    function playAbc(id) {
+        const abcSheetId = id + '-sheet';
+
+        // 1. Define the ABC string
+        const abcStrings = {
+            'simple-meter': `X:1
+L:1/8
+M:2/4
+Q:1/4=100
+K:C
+c4 GF | E3 F G2| F2 E2 D2| C4 z2|]`
+        };
+
+        const abcString = abcStrings[id];
+        if (!abcString) return;
+
+        // 2. Stop any currently playing audio for this ID
+        stopAbc(id);
+
+        // 3. Render the visual notes (needed for the synth to know what to play)
+        const visualObj = ABCJS.renderAbc(abcSheetId, abcString, {
+            responsive: "resize"
+        });
+
+        // 4. Check if browser supports audio
+        if (ABCJS.synth.supportsAudio()) {
+            
+            // Create the synth instance
+            const synth = new ABCJS.synth.CreateSynth();
+
+            // Create an AudioContext (must be done on user click)
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Initialize the synth with the visual object we created above
+            synth.init({
+                audioContext: audioContext,
+                visualObj: visualObj[0]
+            }).then(function () {
+                // Prime the engine (load soundfonts)
+                return synth.prime();
+            }).then(function () {
+                // Start playing
+                synth.start();
+                // Store the synth so we can stop it later
+                activeSynths[id] = synth;
+            }).catch(function (error) {
+                console.warn("Audio problem:", error);
+            });
+        } else {
+            alert("Audio is not supported in this browser.");
+        }
+    }
+
+    function stopAbc(id) {
+        if (activeSynths[id]) {
+            activeSynths[id].stop();
+            delete activeSynths[id];
+        }
+    }
+</script> -->
+
+<script>
+    /* =========================================
+       1. CONFIGURATION & LIBRARY
+       Add all your examples here. 
+       Key = the ID used in your HTML buttons
+       Value = the ABC notation string
+    ========================================= */
+    const abcLibrary = {
+        'simple-meter': 
+        `        
+        %%measurenb 0
+X:1
+L:1/8
+K:C
+c4 GF | E3 F G2| F2 E2 D2| C4 z2|]`,
+
+        'beamed-eighths-example': `X:1
+L:1/8
+K:C
+CD E2 | G2 AG | FG E2 | D2 B,D | C4-|C4 |]`,
+
+        'compound-meter-example': `X:1
+L:1/8
+K:C
+CEG A2 B CDC | G3 EFG A2 G | E3 GFE D2 E | C6-C3 |]`,
+        
+
+        // Add as many as you want here...
+        'example-3': `X:1
+L:1/4
+M:4/4
+K:C
+C D E F | G A B c | c B A G | F E D C |]`,
+
+        'grouping-structure-example': `X:1
+L:1/8
+K:C
+CD E2 | G2 AG | FG E2 | D2 B,D | C4-|C4 |]`,
+
+        'grouping-structure-2-example': `X:1
+L:1/8
+K:C
+A,2 C DEF | E2 C A,3 | B,DB, E2 G#, | A6 |]`,
+        'grouping-structure-3-example': `X:1
+L:1/8
+K:C
+CEG A2 B CDC | G3 EFG A2 G | E3 GFE D2 E | C6-C3 |]`,
+
+        'meter-signature-1-example': `X:1
+L:1/8
+K:C
+CD E2 | G2 AG | FG E2 | D2 B,D | C4-|C4 |]`,
+        'meter-signature-2-example': `X:1
+L:1/8
+K:C
+CD E2 G2 AG | FG E2 D2 B,D | C2|]`,
+
+        'meter-signature-3-example': `X:1
+L:1/8
+K:C
+CEG A2 B CDC | G3 EFG A2 G | E3 GFE D2 E | C6-C3 |]`,
+        'meter-signature-4-example': `X:1
+L:1/8
+K:C
+A,2 C DEF | E2 C A,3 | B,DB, E2 G#, | A6 |]`,
+
+        'helpful-hint-1-example': `X:1
+L:1/8
+Q:3/8=100
+M:6/8
+K:C
+A,2 C DEF | E2 C A,3 | B,DB, E2 G#, | A6 |]`,
+
+        'helpful-hint-2-example': `X:1
+L:1/4
+Q:3/4=100
+M:6/4
+K:C
+A,2 C DEF | E2 C A,3 | B,DB, E2 G#, | A6 |]`,
+
+'wrong-beaming-example': `X:1
+L:1/16
+Q:1/4=120
+M:3/4
+V:1 clef=none
+B6 B2B2B2 | B2 B2B2B2 B4 | B2 BBB2B2 B4 | B2B BBBB B B4 |]`,
+
+'correct-beaming-example': `X:1
+L:1/16
+Q:1/4=120
+M:3/4
+V:1 clef=none
+B6 B2 B2B2 | B2B2 B2B2 B4 | B2BB B2B2 B4 | B2BB BBBB B4 |]`,
+
+
+'compound-meter-repair-example': `X:1
+L:1/8
+Q:3/8=84
+M:6/8
+V:1 clef=none
+B2 B BB B | B B B B-B-B | z B B B2-B | B>B B B2-B |]`,
+
+
+'compound-meter-repaired-example': `X:1
+L:1/8
+Q:3/8=84
+M:6/8
+V:1 clef=none
+B2 B BBB | BBB B3 | z BB B3 | B>BB B3 |]`,
+
+'quarter-notes-68-example': `X:1
+L:1/8
+M:6/8
+K:none clef=none
+V:1
+"Unusual (but happens)" B2 B2 B2 | "Good - shows beat" B2 B- B B2 |]`,
+
+'irregular-58-two-three': `X:1
+%%scale 1.6
+%%staffwidth 480
+T:grouping 2+3
+L:1/8
+K:none clef=none
+M:5/8
+V:1
+ BB BBB |]`,
+
+'irregular-58-three-two': `X:1
+%%scale 1.6
+%%staffwidth 480
+T:grouping 3+2
+L:1/8
+K:none clef=none
+M:5/8
+V:1
+ BBB BB |]`,
+
+'irregular-78-two-two-three': `X:1
+%%scale 1.4
+%%staffwidth 520
+T:groupings of 7/8
+L:1/8
+K:none clef=none
+M:7/8
+V:1
+ BB BB BBB | BB BBB BB | BBB BB BB |]`,
+
+'irregular-e37-example': `X:1
+%%scale 1.4
+%%staffwidth 520
+T:E(3,7)
+L:1/8
+K:none clef=none
+M:7/8
+V:1
+ BB BB BBB |]`,
+
+'dotted-eighth-beaming-example': `X:1
+T:Beaming Dotted Eighths in 4/4
+L:1/16
+M:4/4
+K:none clef=none
+V:1
+"BAD" B3B3B3B3 B4 | "GOOD" B3B- B2B2- BB3 B4|]`,
+
+'rest-placement-44-example': `X:1
+T:Rest Placement in 4/4
+L:1/16
+M:4/4
+K:none clef=none
+V:1
+"Confusing" z4 z4 z2 BB B2B2 | B4 z8 B4 || "Correct" z8 z2 BB B2B2 | B4 z4 z4 B4 |]`,
+
+'adding-barlines-example': `X:1
+L:1/4
+M:4/4
+B2 A G D2 z G A B A G A2 G z E E F F-F G3 |]`,
+
+'we-gather-together': `X:1
+M:3/4
+L:1/4
+%%staves (S1V1 S1V2) | (S2V1 S2V2)
+V:S1V1 clef=treble
+V:S1V2
+V:S2V1 clef=bass
+V:S2V2
+K:D
+[V:S1V1] A A3/2 B/ A F G A G3/2 F/ E F D A A3/2 B/ c d3/2 e/ c B3/2 A/ B A2 A |
+w: We ga- ther to- ge- ther to ask the Lord's bless- ing He cha- stens and ha- stens His will to make known The
+[V:S1V2] D D3/2 D/ D D D D D3/2 D/ C D D F E3/2 E/ E F E E F3/2 F/ ^G E2 E |
+[V:S2V1] F, F,3/2 G,/ F, A, A, A, B,3/2 B,/ C A, F, A, A,3/2 A,/ A, A, ^G, A, A,3/2 D/ D C2 C |
+[V:S2V2] D, D,3/2 D,/ D, D, E, F, E,3/2 E,/ A, D, D, D, C,3/2 C,/ C, B,, E, A,, D,3/2 B,,/ E, A,,2 A, |`
+
+};
+// Store the state of each exercise
+const barlineExercises = {
+    'adding-barlines-example': {
+        original: `X:1
+L:1/4
+M:4/4
+B2 A G D2 z G A B A G A2 G z E E F F-F G3 |]`,
+        correct: `X:1
+L:1/4
+M:4/4
+B2 A G | D2 z G | A B A G | A2 G z | E E F F-|F G3 |]`,
+        current: '',
+        insertionPoints: []
+    },
+    'we-gather-together': {
+        original: `X:1
+M:3/4
+L:1/4
+K:D
+A A3/2 B/ A F G A G3/2 F/ E F D A A3/2 B/ c d3/2 e/ c B3/2 A/ B A2 A |
+w: We ga- ther to- ge- ther to ask the Lord's bless- ing He cha- stens and ha- stens His will to make known The`,
+        correct: `X:1
+M:3/4
+L:1/4
+K:D
+A | A3/2 B/ A | F G A | G3/2 F/ E | F D A | A3/2 B/ c | d3/2 e/ c | B3/2 A/ B | A2 A |
+w: We ga- ther to- ge- ther to ask the Lord's bless- ing He cha- stens and ha- stens His will to make known The`,
+        current: '',
+        insertionPoints: []
+    }
+};
+
+    // Configuration for the "Nice" Soundfont (Musyng Kite)
+    const SOUNDFONT_URL = "https://paulrosen.github.io/midi-js-soundfonts/MusyngKite/";
+
+
+    /* =========================================
+       2. GLOBAL STATE MANAGEMENT
+    ========================================= */
+    const activeSynths = {}; // Tracks playing audio to stop it later
+    const visualObjs = {};   // Stores the rendered visual data
+
+
+    /* =========================================
+       3. INITIALIZATION (Runs on Page Load)
+    ========================================= */
+    document.addEventListener("DOMContentLoaded", function() {
+        renderAll();
+    });
+
+    function renderAll() {
+        // Loop through every entry in our library
+        for (const [id, abcString] of Object.entries(abcLibrary)) {
+            const sheetId = id + '-sheet';
+            const container = document.getElementById(sheetId);
+
+            // Only render if the HTML container exists
+            if (container) {
+                // Render the visual sheet music
+                const visualObj = ABCJS.renderAbc(sheetId, abcString, {
+                    responsive: "resize",
+                    add_classes: true
+                });
+
+                // Store the visual object for the player to use later
+                visualObjs[id] = visualObj[0];
+
+                // If this is a barline exercise, render clickable zones
+                if (barlineExercises[id]) {
+                    setTimeout(() => renderClickableZones(id), 100);
+                }
+            }
+        }
+    }
+
+
+    /* =========================================
+       4. PLAYBACK LOGIC
+    ========================================= */
+    function playAbc(id) {
+        // Stop any other sound playing currently
+        stopAll();
+
+        // 1. Get the visual object we created on page load
+        const visualObj = visualObjs[id];
+        if (!visualObj) {
+            console.error("No visual object found for id:", id);
+            return;
+        }
+
+        // 2. Check Audio Support
+        if (!ABCJS.synth.supportsAudio()) {
+            alert("Audio is not supported in this browser.");
+            return;
+        }
+
+        // 3. Initialize Audio Context (Must be done on user click)
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 4. Create the Synth
+        const synth = new ABCJS.synth.CreateSynth();
+
+        // 5. Initialize and Prime with High-Quality Soundfont
+        synth.init({
+            audioContext: audioContext,
+            visualObj: visualObj
+        }).then(function () {
+            // LOAD THE SOUNDFONT HERE
+            return synth.prime().then(function () {
+                return synth;
+            });
+        }).then(function () {
+            // Start Playing
+            synth.start();
+            activeSynths[id] = synth;
+        }).catch(function (error) {
+            console.warn("Audio problem:", error);
+        });
+    }
+
+    function stopAbc(id) {
+        if (activeSynths[id]) {
+            activeSynths[id].stop();
+            delete activeSynths[id];
+        }
+    }
+
+    function stopAll() {
+        for (const id in activeSynths) {
+            if (activeSynths[id]) {
+                activeSynths[id].stop();
+                delete activeSynths[id];
+            }
+        }
+    }
+
+    /* =========================================
+       5. BARLINE EXERCISE LOGIC
+    ========================================= */
+
+    // Initialize the barline exercise on page load
+    function initBarlineExercises() {
+        for (const [id, exercise] of Object.entries(barlineExercises)) {
+            exercise.current = exercise.original;
+            // Initialize the editor textarea with the original ABC
+            const editorEl = document.getElementById(id + '-editor');
+            if (editorEl) {
+                editorEl.value = exercise.original;
+            }
+        }
+    }
+
+    function updateBarlineFromEditor(id) {
+        const exercise = barlineExercises[id];
+        const editorEl = document.getElementById(id + '-editor');
+        if (!exercise || !editorEl) return;
+
+        // Get the user's input
+        exercise.current = editorEl.value;
+
+        // Re-render the ABC notation
+        const sheetId = id + '-sheet';
+        try {
+            visualObjs[id] = ABCJS.renderAbc(sheetId, exercise.current, {
+                responsive: "resize",
+                add_classes: true
+            })[0];
+            // Render clickable zones after rendering
+            renderClickableZones(id);
+        } catch (e) {
+            console.error("Invalid ABC notation:", e);
+        }
+
+        // Hide feedback on update
+        const feedbackEl = document.getElementById(id + '-feedback');
+        if (feedbackEl) {
+            feedbackEl.style.display = 'none';
+        }
+    }
+
+    function renderClickableZones(id) {
+        const sheetId = id + '-sheet';
+        const sheetEl = document.getElementById(sheetId);
+        const interactiveEl = document.getElementById(id + '-interactive');
+
+        if (!sheetEl || !interactiveEl) return;
+
+        // Clear previous zones
+        interactiveEl.innerHTML = '';
+
+        // Get all note elements from the rendered SVG
+        const svg = sheetEl.querySelector('svg');
+        if (!svg) return;
+
+        // Get the SVG's position and dimensions
+        const svgRect = svg.getBoundingClientRect();
+        const sheetRect = sheetEl.getBoundingClientRect();
+
+        // Get all notes with data-index attribute
+        const notes = Array.from(svg.querySelectorAll('[data-index]'));
+
+        if (notes.length === 0) return;
+
+        // For multi-voice exercises, we need to map SVG indices to single-voice indices
+        // Count how many notes are in the first voice only
+        const exercise = barlineExercises[id];
+        let firstVoiceNoteCount = 0;
+        if (exercise) {
+            const lines = exercise.current.split('\n');
+            const firstMusicLine = lines.find(line =>
+                !line.startsWith('X:') && !line.startsWith('L:') && !line.startsWith('M:') &&
+                !line.startsWith('K:') && !line.startsWith('Q:') && !line.startsWith('%%') &&
+                !line.startsWith('w:') && !line.startsWith('V:') && line.trim()
+            );
+            if (firstMusicLine) {
+                for (let i = 0; i < firstMusicLine.length; i++) {
+                    if (/[A-Ga-gz]/.test(firstMusicLine[i])) {
+                        firstVoiceNoteCount++;
+                        // Skip duration modifiers and commas
+                        i++;
+                        while (i < firstMusicLine.length && /[\d\/\-^_(),]/.test(firstMusicLine[i])) {
+                            i++;
+                        }
+                        i--;
+                    }
+                }
+            }
+        }
+
+        // Create clickable zones only for the first voice notes
+        let firstVoiceZoneCount = 0;
+        for (let i = 0; i < notes.length - 1; i++) {
+            const currentNote = notes[i];
+            const nextNote = notes[i + 1];
+
+            // For multi-voice, only create zones between first-voice notes
+            // If we have calculated firstVoiceNoteCount and we've reached that count, stop
+            if (firstVoiceNoteCount > 0 && firstVoiceZoneCount >= firstVoiceNoteCount - 1) {
+                break;
+            }
+
+            // Get bounding boxes in page coordinates
+            const currentBox = currentNote.getBoundingClientRect();
+            const nextBox = nextNote.getBoundingClientRect();
+
+            // Calculate position relative to the sheet container
+            const x1 = currentBox.right - sheetRect.left;
+            const x2 = nextBox.left - sheetRect.left;
+            const midX = (x1 + x2) / 2;
+            const width = 40;
+
+            // Get SVG height
+            const svgHeight = svgRect.height;
+
+            // Create a clickable zone
+            const zone = document.createElement('div');
+            zone.className = 'barline-insertion-zone';
+            zone.style.position = 'absolute';
+            zone.style.left = (midX - width / 2) + 'px';
+            zone.style.top = '0px';
+            zone.style.width = width + 'px';
+            zone.style.height = svgHeight + 'px';
+
+            // Store the note index for reference (single-voice index, not SVG index)
+            zone.dataset.noteIndex = firstVoiceZoneCount;
+            zone.dataset.currentNoteDataIndex = currentNote.getAttribute('data-index');
+            zone.dataset.nextNoteDataIndex = nextNote.getAttribute('data-index');
+
+            // Hover effect
+            zone.addEventListener('mouseenter', function() {
+                const noteIdx = parseInt(this.dataset.noteIndex);
+                const hasBarline = checkBarlineAtPosition(id, noteIdx);
+                if (hasBarline) {
+                    // For zones with barlines, just enhance the red
+                    this.style.backgroundColor = 'rgba(200, 50, 50, 0.2)';
+                } else {
+                    // For zones without barlines, show blue hover
+                    this.style.backgroundColor = 'rgba(100, 150, 255, 0.15)';
+                    this.style.borderRight = '2px dashed rgba(100, 150, 255, 0.5)';
+                }
+            });
+
+            zone.addEventListener('mouseleave', function() {
+                // Check if this position has a barline
+                const noteIdx = parseInt(this.dataset.noteIndex);
+                const hasBarline = checkBarlineAtPosition(id, noteIdx);
+                if (!hasBarline) {
+                    this.style.removeProperty('background-color');
+                    this.style.removeProperty('border-right');
+                } else {
+                    this.style.backgroundColor = 'rgba(200, 50, 50, 0.1)';
+                    this.style.borderRight = '2px solid rgba(200, 50, 50, 0.5)';
+                }
+            });
+
+            // Click handler
+            zone.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const noteIdx = parseInt(this.dataset.noteIndex);
+                const currentDataIdx = this.dataset.currentNoteDataIndex;
+                console.log(`Clicked zone ${noteIdx}, current note data-index: ${currentDataIdx}, next note data-index: ${this.dataset.nextNoteDataIndex}`);
+                toggleBarlineAtPosition(id, noteIdx);
+            });
+
+            interactiveEl.appendChild(zone);
+            firstVoiceZoneCount++;
+        }
+
+        // Update zone styles to reflect current barlines
+        updateZoneStyles(id);
+    }
+
+    function checkBarlineAtPosition(id, noteIndex) {
+        const exercise = barlineExercises[id];
+        if (!exercise) return false;
+
+        // Parse the ABC to find the first music line
+        const lines = exercise.current.split('\n');
+
+        let firstMusicLine = null;
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            // Find the first music line (either [V:...] or plain)
+            if (line.startsWith('[V:') || (!line.startsWith('X:') && !line.startsWith('L:') && !line.startsWith('M:') && !line.startsWith('K:') && !line.startsWith('Q:') && !line.startsWith('%%') && !line.startsWith('w:') && line.trim() && !line.startsWith('V:'))) {
+                firstMusicLine = line;
+                break;
+            }
+        }
+
+        if (!firstMusicLine) return false;
+
+        // Count notes to find if there's a barline after note N
+        let noteCount = 0;
+        let i = 0;
+
+        while (i < firstMusicLine.length) {
+            const char = firstMusicLine[i];
+
+            if (char === ']') break;
+
+            // Count notes and rests
+            if (/[A-Ga-gz]/.test(char)) {
+                if (noteCount === noteIndex) {
+                    // Skip duration modifiers and commas to find position after this note
+                    i++;
+                    while (i < firstMusicLine.length && /[\d\/\-^_(),]/.test(firstMusicLine[i])) {
+                        i++;
+                    }
+                    // Skip spaces
+                    while (i < firstMusicLine.length && firstMusicLine[i] === ' ') {
+                        i++;
+                    }
+                    // Check if next char is a barline
+                    return i < firstMusicLine.length && firstMusicLine[i] === '|';
+                }
+                noteCount++;
+                // Skip duration modifiers and commas
+                i++;
+                while (i < firstMusicLine.length && /[\d\/\-^_(),]/.test(firstMusicLine[i])) {
+                    i++;
+                }
+            } else {
+                i++;
+            }
+        }
+
+        return false;
+    }
+
+    function toggleBarlineAtPosition(id, noteIndex) {
+        const exercise = barlineExercises[id];
+        if (!exercise) return;
+
+        const editorEl = document.getElementById(id + '-editor');
+        if (!editorEl) return;
+
+        const lines = exercise.current.split('\n');
+
+        // Filter to get only header lines and the first voice (or single voice line)
+        // and any text lines (like lyrics)
+        let firstVoiceLineIndex = -1;
+        const relevantLines = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            // Keep header lines and text/lyrics lines
+            if (line.startsWith('X:') || line.startsWith('M:') || line.startsWith('L:') ||
+                line.startsWith('K:') || line.startsWith('Q:') || line.startsWith('%%') ||
+                line.startsWith('V:') || line.startsWith('w:')) {
+                relevantLines.push({index: i, line: line, isMusic: false});
+            }
+            // Keep the first music line (which could be [V:...] or plain)
+            else if ((line.startsWith('[V:') || line.trim()) && firstVoiceLineIndex === -1) {
+                firstVoiceLineIndex = i;
+                relevantLines.push({index: i, line: line, isMusic: true});
+            }
+        }
+
+        if (firstVoiceLineIndex === -1) return;
+
+        // Find the music line object
+        const musicLineObj = relevantLines.find(obj => obj.isMusic);
+        if (!musicLineObj) return;
+
+        const musicLine = musicLineObj.line;
+
+        // Count notes to find insertion position
+        let noteCount = 0;
+        let insertPos = -1;
+
+        for (let j = 0; j < musicLine.length; j++) {
+            const char = musicLine[j];
+
+            if (char === ']') break;
+
+            // Count notes and rests
+            if (/[A-Ga-gz]/.test(char)) {
+                if (noteCount === noteIndex) {
+                    // Find position after this note (skip duration modifiers)
+                    insertPos = j + 1;
+                    while (insertPos < musicLine.length && /[\d\/\-^_(),]/.test(musicLine[insertPos])) {
+                        insertPos++;
+                    }
+                    break;
+                }
+                noteCount++;
+            }
+        }
+
+        if (insertPos === -1) return;
+
+        // Check if there's already a barline at this position
+        let hasBarline = false;
+        let checkPos = insertPos;
+        while (checkPos < musicLine.length && musicLine[checkPos] === ' ') {
+            checkPos++;
+        }
+        hasBarline = checkPos < musicLine.length && musicLine[checkPos] === '|';
+
+        console.log(`toggleBarlineAtPosition: id=${id}, noteIndex=${noteIndex}, insertPos=${insertPos}, hasBarline=${hasBarline}`);
+
+        // Modify the music line
+        let newMusicLine;
+        if (hasBarline) {
+            // Remove the barline
+            let removePos = insertPos;
+            while (removePos < musicLine.length && musicLine[removePos] === ' ') {
+                removePos++;
+            }
+            if (removePos < musicLine.length && musicLine[removePos] === '|') {
+                let endPos = removePos + 1;
+                if (endPos < musicLine.length && musicLine[endPos] === ' ') {
+                    endPos++;
+                }
+                let startPos = insertPos;
+                while (startPos > 0 && musicLine[startPos - 1] === ' ') {
+                    startPos--;
+                }
+                newMusicLine = musicLine.slice(0, startPos) + ' ' + musicLine.slice(endPos);
+                console.log(`Removed barline`);
+            }
+        } else {
+            // Add the barline
+            newMusicLine = musicLine.slice(0, insertPos) + ' | ' + musicLine.slice(insertPos);
+            console.log(`Added barline at position ${insertPos}`);
+        }
+
+        // Update the line in the lines array
+        lines[firstVoiceLineIndex] = newMusicLine;
+
+        // Update the exercise and editor
+        exercise.current = lines.join('\n');
+        editorEl.value = exercise.current;
+
+        // Re-render
+        const sheetId = id + '-sheet';
+
+        // For multi-voice exercises (like we-gather-together), apply barlines to the display version
+        let renderAbc = exercise.current;
+        if (abcLibrary[id]) {
+            // Get the four-part version from abcLibrary
+            const displayVersion = abcLibrary[id];
+
+            // Check if this is a multi-voice piece (has [V: directives)
+            if (displayVersion.includes('[V:')) {
+                // Apply the same barlines to the first voice in the display version
+                const displayLines = displayVersion.split('\n');
+
+                // Find the first [V:...] line that has music content (after the [V:...] part)
+                let firstVoiceDisplayIndex = -1;
+                for (let i = 0; i < displayLines.length; i++) {
+                    const line = displayLines[i];
+                    if (line.startsWith('[V:')) {
+                        // Check if this line has music content after the [V:...] directive
+                        const closeBracketIndex = line.indexOf(']');
+                        if (closeBracketIndex !== -1 && closeBracketIndex < line.length - 1) {
+                            const afterDirective = line.substring(closeBracketIndex + 1).trim();
+                            if (afterDirective && afterDirective !== 'w:') {
+                                firstVoiceDisplayIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (firstVoiceDisplayIndex !== -1) {
+                    // Apply the same barlines from exercise.current to the display version
+                    // Extract barline positions from the updated single-voice version
+                    const updatedSingleVoice = newMusicLine;
+                    let noteCount = 0;
+                    const barlineIndices = [];
+
+                    for (let i = 0; i < updatedSingleVoice.length; i++) {
+                        if (/[A-Ga-gz]/.test(updatedSingleVoice[i])) {
+                            // Check if there's a barline after this note
+                            let checkPos = i + 1;
+                            while (checkPos < updatedSingleVoice.length && /[\d\/\-^_(),]/.test(updatedSingleVoice[checkPos])) {
+                                checkPos++;
+                            }
+                            while (checkPos < updatedSingleVoice.length && updatedSingleVoice[checkPos] === ' ') {
+                                checkPos++;
+                            }
+                            if (checkPos < updatedSingleVoice.length && updatedSingleVoice[checkPos] === '|') {
+                                barlineIndices.push(noteCount);
+                            }
+                            noteCount++;
+                            // Skip duration modifiers
+                            i++;
+                            while (i < updatedSingleVoice.length && /[\d\/\-^_(),]/.test(updatedSingleVoice[i])) {
+                                i++;
+                            }
+                            i--;
+                        }
+                    }
+
+                    // Now apply these barlines to the first voice in the display version
+                    const displayFirstVoiceLine = displayLines[firstVoiceDisplayIndex];
+                    const closeBracketIndex = displayFirstVoiceLine.indexOf(']');
+                    const voiceDirective = displayFirstVoiceLine.substring(0, closeBracketIndex + 1);
+                    const musicContent = displayFirstVoiceLine.substring(closeBracketIndex + 1);
+
+                    let displayNoteCount = 0;
+                    let displayResult = voiceDirective;
+
+                    for (let i = 0; i < musicContent.length; i++) {
+                        const char = musicContent[i];
+
+                        if (char === ']') {
+                            displayResult += char;
+                            break;
+                        }
+
+                        if (/[A-Ga-gz]/.test(char)) {
+                            displayResult += char;
+                            // Add duration modifiers
+                            i++;
+                            while (i < musicContent.length && /[\d\/\-^_(),]/.test(musicContent[i])) {
+                                displayResult += musicContent[i];
+                                i++;
+                            }
+                            i--;
+
+                            // Check if this note should have a barline after it
+                            // But not if this is the last note before the ]
+                            let checkNextPos = i + 1;
+                            while (checkNextPos < musicContent.length && (musicContent[checkNextPos] === ' ' || musicContent[checkNextPos] === '|')) {
+                                checkNextPos++;
+                            }
+                            if (barlineIndices.includes(displayNoteCount) && checkNextPos < musicContent.length && musicContent[checkNextPos] !== ']') {
+                                displayResult += ' | ';
+                            }
+                            displayNoteCount++;
+                        } else {
+                            displayResult += char;
+                        }
+                    }
+
+                    displayLines[firstVoiceDisplayIndex] = displayResult;
+                    renderAbc = displayLines.join('\n');
+                }
+            }
+        }
+
+        visualObjs[id] = ABCJS.renderAbc(sheetId, renderAbc, {
+            responsive: "resize",
+            add_classes: true
+        })[0];
+
+        // Update zones
+        renderClickableZones(id);
+
+        // Hide feedback
+        const feedbackEl = document.getElementById(id + '-feedback');
+        if (feedbackEl) {
+            feedbackEl.style.display = 'none';
+        }
+    }
+
+    function updateZoneStyles(id) {
+        const interactiveEl = document.getElementById(id + '-interactive');
+        if (!interactiveEl) return;
+
+        const zones = interactiveEl.querySelectorAll('.barline-insertion-zone');
+        zones.forEach((zone) => {
+            const noteIndex = parseInt(zone.dataset.noteIndex);
+            if (checkBarlineAtPosition(id, noteIndex)) {
+                zone.classList.add('has-barline');
+                zone.style.backgroundColor = 'rgba(200, 50, 50, 0.1)';
+                zone.style.borderRight = '2px solid rgba(200, 50, 50, 0.5)';
+                zone.style.cursor = 'pointer';
+            } else {
+                zone.classList.remove('has-barline');
+                zone.style.backgroundColor = 'rgba(100, 150, 255, 0)';
+                zone.style.borderRight = '2px dashed transparent';
+                zone.style.transition = 'all 0.2s';
+            }
+        });
+    }
+
+    function resetBarlineExercise(id) {
+        const exercise = barlineExercises[id];
+        if (exercise) {
+            exercise.current = exercise.original;
+
+            // Update the editor
+            const editorEl = document.getElementById(id + '-editor');
+            if (editorEl) {
+                editorEl.value = exercise.original;
+            }
+
+            // Re-render the ABC notation
+            const sheetId = id + '-sheet';
+
+            // For multi-voice exercises, render the display version instead
+            let renderAbc = exercise.current;
+            if (abcLibrary[id]) {
+                const displayVersion = abcLibrary[id];
+                if (displayVersion.includes('[V:')) {
+                    // This is a multi-voice piece - render the four-part display version
+                    renderAbc = displayVersion;
+                }
+            }
+
+            visualObjs[id] = ABCJS.renderAbc(sheetId, renderAbc, {
+                responsive: "resize",
+                add_classes: true
+            })[0];
+
+            // Re-render clickable zones
+            renderClickableZones(id);
+
+            // Hide feedback
+            const feedbackEl = document.getElementById(id + '-feedback');
+            if (feedbackEl) {
+                feedbackEl.style.display = 'none';
+            }
+        }
+    }
+
+    function checkBarlineAnswer(id) {
+        const exercise = barlineExercises[id];
+        if (!exercise) return;
+
+        const feedbackEl = document.getElementById(id + '-feedback');
+        if (!feedbackEl) return;
+
+        // Extract and normalize just the barline positions (not whitespace or newlines)
+        const extractBarlines = (str) => {
+            const lines = str.split('\n');
+            const musicLine = lines.find(line => !line.startsWith('X:') && !line.startsWith('L:') && !line.startsWith('M:') && !line.startsWith('K:') && !line.startsWith('Q:') && !line.startsWith('V:'));
+
+            if (!musicLine) return [];
+
+            // Extract just notes and barlines, remove all whitespace
+            let noteCount = 0;
+            const barlinePositions = [];
+
+            for (let i = 0; i < musicLine.length; i++) {
+                const char = musicLine[i];
+
+                if (char === '|') {
+                    barlinePositions.push(noteCount);
+                } else if (/[A-Ga-gz]/.test(char) || char === 'z') {
+                    // Skip duration modifiers
+                    let j = i + 1;
+                    while (j < musicLine.length && /[\d\/-]/.test(musicLine[j])) {
+                        j++;
+                    }
+                    i = j - 1;
+                    noteCount++;
+                } else if (char === ']') {
+                    break;
+                }
+            }
+
+            return barlinePositions;
+        };
+
+        const userBarlines = extractBarlines(exercise.current);
+        const correctBarlines = extractBarlines(exercise.correct);
+
+        feedbackEl.style.display = 'block';
+
+        // Compare barline positions
+        if (JSON.stringify(userBarlines) === JSON.stringify(correctBarlines)) {
+            feedbackEl.style.backgroundColor = '#d4edda';
+            feedbackEl.style.border = '1px solid #c3e6cb';
+            feedbackEl.style.color = '#155724';
+            feedbackEl.innerHTML = '<strong>✓ Correct!</strong> You have successfully added the bar lines in the right places.';
+        } else {
+            feedbackEl.style.backgroundColor = '#f8d7da';
+            feedbackEl.style.border = '1px solid #f5c6cb';
+            feedbackEl.style.color = '#721c24';
+            feedbackEl.innerHTML = `<strong>Not quite right.</strong> Try again!
+                <details style="margin-top: 10px; cursor: pointer;">
+                    <summary style="color: inherit; font-weight: bold;">Show correct answer</summary>
+                    <p style="margin-top: 10px; font-family: monospace; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 3px;">
+                        ${exercise.correct}
+                    </p>
+                </details>`;
+        }
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener("DOMContentLoaded", function() {
+        renderAll();
+        initBarlineExercises();
+    });
+</script>
+
+  <footer class="bg-white border-t border-gray-200 mt-16">
+    <div class="container mx-auto px-4 py-6 text-center text-gray-600 text-sm">
+      <p>&copy; 2026 Dr. Avner Dorman · Gettysburg College</p>
+    </div>
+  </footer>
+
+        <script>
+        const menuToggle = document.getElementById('menu-toggle');
+        const sectionNav = document.querySelector('.section-nav');
+
+        if (menuToggle && sectionNav) {
+            // Toggle menu visibility on button click
+            menuToggle.addEventListener('click', function() {
+                sectionNav.classList.toggle('show');
+            });
+
+            // Close menu when a section link is clicked
+            document.querySelectorAll('.section-nav a').forEach(link => {
+                link.addEventListener('click', function() {
+                    sectionNav.classList.remove('show');
+                });
+            });
+        }
+    </script>
+</body>
+    </html>

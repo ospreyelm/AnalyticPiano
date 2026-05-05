@@ -775,6 +775,9 @@ define([
      * @return {boolean}
      */
     isChoraleIdentification: function () {
+      if (this.isSymbolicMeterQuestion()) {
+        return false;
+      }
       var mode = this.getMode();
       if (mode) {
         return mode === "identification" || mode === "chorale_identification";
@@ -806,16 +809,8 @@ define([
       return this.exercise.type === "musicxml";
     },
     /**
-     * Returns true if this is an identification exercise.
-     *
-     * @return {boolean}
-     */
     isIdentification: function () {
-      var mode = this.getMode();
-      if (mode) {
-        return mode === "identification" || mode === "chorale_identification";
-      }
-      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification";
+      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification" || this.isSymbolicMeterQuestion();
     },
     /**
      * Returns the feedback mode for identification exercises.

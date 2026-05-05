@@ -181,6 +181,7 @@ define([
   AppExerciseComponent.prototype.getComponentMethods = function () {
     var definition = this.getExerciseDefinition();
     var disableComputerKeyboardInput = !!definition.disableComputerKeyboardInput;
+    var isSymbolicMeterExercise = definition.type === "umto_symbolic_meter";
     var methods = [
       // function () {
       //  var c = new NotificationsComponent();
@@ -189,6 +190,9 @@ define([
       //  this.addComponent(c);
       // },
       function () {
+        if (isSymbolicMeterExercise) {
+          return;
+        }
         var c = new PianoComponent({
           toolbarConfig: { metronome: false },
           toolbarEnabled: false,
@@ -198,6 +202,9 @@ define([
         this.addComponent(c);
       },
       function () {
+        if (isSymbolicMeterExercise) {
+          return;
+        }
         var c = new MidiComponent({
           chords: this.models.inputChords,
           midiDevice: this.models.midiDevice,
@@ -206,7 +213,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise) {
           return;
         }
         var c = new KeyboardShortcutsComponent({
@@ -216,7 +223,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise) {
           return;
         }
         var c = new NoteNameInputComponent({
@@ -236,6 +243,9 @@ define([
         this.addComponent(c);
       },
       function () {
+        if (isSymbolicMeterExercise) {
+          return;
+        }
         var c = new MusicControlsComponent({
           headerEl: "#header",
           containerEl: "#mainmenu",

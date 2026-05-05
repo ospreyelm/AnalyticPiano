@@ -1,0 +1,33 @@
+# fly.toml app configuration file generated for monteverdi on 2026-04-26T00:00:51-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'monteverdi'
+primary_region = 'ord'
+console_command = '/code/manage.py shell'
+
+[build]
+
+[deploy]
+  release_command = "sh -c 'python manage.py migrate --noinput && python manage.py createcachetable'"
+
+
+[env]
+  PORT = '8000'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  memory = '512mb'
+  cpus = 1
+  memory_mb = 512
+
+[[statics]]
+  guest_path = '/code/static'
+  url_prefix = '/static/'

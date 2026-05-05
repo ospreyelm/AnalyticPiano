@@ -1,0 +1,9 @@
+.git
+.env
+db.sqlite3
+__pycache__
+*.pyc
+*.pyo
+.superpowers
+scratch
+data/corpus

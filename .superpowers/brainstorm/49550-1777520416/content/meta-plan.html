@@ -1,0 +1,80 @@
+<h2>HarmonyLab — Platform Meta-Plan</h2>
+<p class="subtitle">5 phases, sequenced by dependency. Each phase ships independently.</p>
+
+<div style="display:flex;flex-direction:column;gap:16px;margin-top:24px;">
+
+  <!-- Phase 1 -->
+  <div style="border:2px solid #4ade80;border-radius:10px;padding:20px;background:#f0fdf4;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <span style="background:#4ade80;color:#14532d;font-weight:700;font-size:13px;padding:3px 10px;border-radius:20px;">PHASE 1 — UNBLOCK</span>
+      <span style="color:#555;font-size:13px;">~1 day · Pure backend · No UI</span>
+    </div>
+    <h3 style="margin:0 0 6px;">Fix <code>applySkillFilter</code> unit map</h3>
+    <p style="margin:0;color:#333;font-size:14px;">Replace hardcoded Unit 9 allowlist with a <code>UNIT_ALLOWED_ANSWERS</code> map derived from <code>music_theory_taxonomy_with_branches.json</code>. Gates all adaptive content for every unit.</p>
+    <div style="margin-top:10px;font-size:13px;color:#666;">
+      <strong>File:</strong> <code>exercise_definition.js:37–67</code> &nbsp;|&nbsp; <strong>Unblocks:</strong> Phases 2, 3, 4
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div style="border:2px solid #60a5fa;border-radius:10px;padding:20px;background:#eff6ff;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <span style="background:#60a5fa;color:#1e3a8a;font-weight:700;font-size:13px;padding:3px 10px;border-radius:20px;">PHASE 2 — CONTENT FACTORY</span>
+      <span style="color:#555;font-size:13px;">~2 days · CLI + DB</span>
+    </div>
+    <h3 style="margin:0 0 6px;"><code>create_unit_playlist</code> management command</h3>
+    <p style="margin:0;color:#333;font-size:14px;">Single idempotent command: reads taxonomy → imports Bach phrases → creates Playlist → links exercises. Replaces <code>batch_import_unit9.py</code> one-off scripts forever. Generates units 9–18 from Bach corpus.</p>
+    <div style="margin-top:10px;font-size:13px;color:#666;">
+      <strong>CLI:</strong> <code>manage.py create_unit_playlist --unit 11 --riemenschneider 21-30 --author admin@x.com --mode roman</code>
+      &nbsp;|&nbsp; <strong>Unblocks:</strong> Phase 3 workbench trigger
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div style="border:2px solid #a78bfa;border-radius:10px;padding:20px;background:#f5f3ff;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <span style="background:#a78bfa;color:#3b0764;font-weight:700;font-size:13px;padding:3px 10px;border-radius:20px;">PHASE 3 — WORKBENCH</span>
+      <span style="color:#555;font-size:13px;">~5 days · Django + HTMX + Alpine.js</span>
+    </div>
+    <h3 style="margin:0 0 6px;">Teacher Workbench — full authoring UI</h3>
+    <p style="margin:0;color:#333;font-size:14px;">Builds on existing <code>workbench.html</code> stub. Three panels: <strong>Import</strong> (MusicXML upload or corpus picker), <strong>Preview</strong> (rendered score + exercise test), <strong>Publish</strong> (unit assignment, key propagation, mode selection). HTMX for server-rendered fragments. Alpine.js for panel state only.</p>
+    <div style="margin-top:10px;font-size:13px;color:#666;">
+      <strong>Key feature:</strong> "Generate Unit N" button triggers <code>create_unit_playlist</code> via HTMX POST with live progress stream
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div style="border:2px solid #fb923c;border-radius:10px;padding:20px;background:#fff7ed;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <span style="background:#fb923c;color:#7c2d12;font-weight:700;font-size:13px;padding:3px 10px;border-radius:20px;">PHASE 4 — MOBILE</span>
+      <span style="color:#555;font-size:13px;">~3 days · CSS + JS · Student player only</span>
+    </div>
+    <h3 style="margin:0 0 6px;">Responsive student player</h3>
+    <p style="margin:0;color:#333;font-size:14px;">Student-facing only (teacher tools stay desktop). Score renders at mobile viewport, piano keyboard becomes touch-friendly strip, identification slots stack vertically. No HTMX needed — pure CSS breakpoints + touch event handlers.</p>
+    <div style="margin-top:10px;font-size:13px;color:#666;">
+      <strong>Target:</strong> iPhone 14, iPad. <strong>Not in scope:</strong> dashboard, workbench, admin
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <div style="border:2px solid #f472b6;border-radius:10px;padding:20px;background:#fdf4ff;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <span style="background:#f472b6;color:#701a75;font-weight:700;font-size:13px;padding:3px 10px;border-radius:20px;">PHASE 5 — HELP TEXT</span>
+      <span style="color:#555;font-size:13px;">~2 days · UMTO field + Claude API</span>
+    </div>
+    <h3 style="margin:0 0 6px;">Student help text system</h3>
+    <p style="margin:0;color:#333;font-size:14px;">Add <code>help_text</code> field to UMTO schema. Auto-generated placeholder at exercise creation via Claude API (reads score + tags → proposes text). Editable in workbench. Displayed in player as collapsible hint panel.</p>
+    <div style="margin-top:10px;font-size:13px;color:#666;">
+      <strong>AI draft:</strong> Claude Haiku, one call per exercise at generation time. Human override always wins.
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+  <h3 style="margin:0 0 8px;font-size:15px;">Dependency chain</h3>
+  <p style="margin:0;font-size:14px;color:#555;">
+    Phase 1 → Phase 2 → Phase 3 (workbench wraps CLI) → Phase 4 (parallel) → Phase 5 (additive)<br>
+    <strong>Phases 4 and 5 are independent</strong> — can run in parallel after Phase 2 ships.
+  </p>
+</div>

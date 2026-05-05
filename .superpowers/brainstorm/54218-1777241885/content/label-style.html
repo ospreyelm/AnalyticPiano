@@ -1,0 +1,94 @@
+<h2>QWERTY Label Style on Piano Keys</h2>
+<p class="subtitle">Both approaches shown at realistic scale. Which looks better?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="card-image" style="background:#1a1a1a; padding: 20px 12px 12px; border-radius:4px;">
+      <!-- SVG approach mockup -->
+      <svg width="100%" viewBox="0 0 320 100" style="display:block;">
+        <!-- White keys -->
+        <rect x="0"   y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="40"  y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="80"  y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="120" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="160" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="200" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="240" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="280" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <!-- Black keys -->
+        <rect x="25"  y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <rect x="65"  y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <rect x="145" y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <rect x="185" y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <rect x="225" y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <!-- SVG text labels on white keys -->
+        <text x="19"  y="90" text-anchor="middle" font-family="monospace" font-size="9" fill="#888">Q</text>
+        <text x="59"  y="90" text-anchor="middle" font-family="monospace" font-size="9" fill="#888">W</text>
+        <text x="99"  y="90" text-anchor="middle" font-family="monospace" font-size="9" fill="#888">E</text>
+        <text x="139" y="90" text-anchor="middle" font-family="monospace" font-size="9" fill="#888">R</text>
+        <text x="179" y="90" text-anchor="middle" font-family="monospace" font-size="9" fill="#888">T</text>
+        <text x="219" y="90" text-anchor="middle" font-family="monospace" font-size="9" fill="#888">Y</text>
+        <text x="259" y="90" text-anchor="middle" font-family="monospace" font-size="9" fill="#888">U</text>
+        <text x="299" y="90" text-anchor="middle" font-family="monospace" font-size="9" fill="#888">I</text>
+        <!-- SVG text labels on black keys -->
+        <text x="36"  y="57" text-anchor="middle" font-family="monospace" font-size="8" fill="#666">2</text>
+        <text x="76"  y="57" text-anchor="middle" font-family="monospace" font-size="8" fill="#666">3</text>
+        <text x="156" y="57" text-anchor="middle" font-family="monospace" font-size="8" fill="#666">5</text>
+        <text x="196" y="57" text-anchor="middle" font-family="monospace" font-size="8" fill="#666">6</text>
+        <text x="236" y="57" text-anchor="middle" font-family="monospace" font-size="8" fill="#666">7</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A — SVG text (Raphael)</h3>
+      <p>Plain text rendered directly in SVG. Simple, always aligned. Less styled — no box/badge.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="card-image" style="background:#1a1a1a; padding: 20px 12px 12px; border-radius:4px; position:relative;">
+      <!-- HTML badge approach mockup -->
+      <svg width="100%" viewBox="0 0 320 100" style="display:block;">
+        <!-- White keys -->
+        <rect x="0"   y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="40"  y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="80"  y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="120" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="160" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="200" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="240" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <rect x="280" y="0" width="39" height="98" fill="white" stroke="#333" stroke-width="1"/>
+        <!-- Black keys -->
+        <rect x="25"  y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <rect x="65"  y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <rect x="145" y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <rect x="185" y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <rect x="225" y="0" width="22" height="62" fill="#111" stroke="#111" stroke-width="1"/>
+        <!-- Badge labels on white keys via foreignObject -->
+        <foreignObject x="5"   y="76" width="28" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.18);border:1px solid #ccc;border-radius:3px;font-family:monospace;font-size:9px;color:#555;text-align:center;line-height:15px;">Q</div></foreignObject>
+        <foreignObject x="45"  y="76" width="28" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.18);border:1px solid #ccc;border-radius:3px;font-family:monospace;font-size:9px;color:#555;text-align:center;line-height:15px;">W</div></foreignObject>
+        <foreignObject x="85"  y="76" width="28" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.18);border:1px solid #ccc;border-radius:3px;font-family:monospace;font-size:9px;color:#555;text-align:center;line-height:15px;">E</div></foreignObject>
+        <foreignObject x="125" y="76" width="28" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.18);border:1px solid #ccc;border-radius:3px;font-family:monospace;font-size:9px;color:#555;text-align:center;line-height:15px;">R</div></foreignObject>
+        <foreignObject x="165" y="76" width="28" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.18);border:1px solid #ccc;border-radius:3px;font-family:monospace;font-size:9px;color:#555;text-align:center;line-height:15px;">T</div></foreignObject>
+        <foreignObject x="205" y="76" width="28" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.18);border:1px solid #ccc;border-radius:3px;font-family:monospace;font-size:9px;color:#555;text-align:center;line-height:15px;">Y</div></foreignObject>
+        <foreignObject x="245" y="76" width="28" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.18);border:1px solid #ccc;border-radius:3px;font-family:monospace;font-size:9px;color:#555;text-align:center;line-height:15px;">U</div></foreignObject>
+        <foreignObject x="285" y="76" width="28" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.18);border:1px solid #ccc;border-radius:3px;font-family:monospace;font-size:9px;color:#555;text-align:center;line-height:15px;">I</div></foreignObject>
+        <!-- Badge labels on black keys -->
+        <foreignObject x="26"  y="47" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.12);border:1px solid #555;border-radius:3px;font-family:monospace;font-size:8px;color:#aaa;text-align:center;line-height:13px;">2</div></foreignObject>
+        <foreignObject x="66"  y="47" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.12);border:1px solid #555;border-radius:3px;font-family:monospace;font-size:8px;color:#aaa;text-align:center;line-height:13px;">3</div></foreignObject>
+        <foreignObject x="146" y="47" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.12);border:1px solid #555;border-radius:3px;font-family:monospace;font-size:8px;color:#aaa;text-align:center;line-height:13px;">5</div></foreignObject>
+        <foreignObject x="186" y="47" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.12);border:1px solid #555;border-radius:3px;font-family:monospace;font-size:8px;color:#aaa;text-align:center;line-height:13px;">6</div></foreignObject>
+        <foreignObject x="226" y="47" width="20" height="14"><div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(255,255,255,0.12);border:1px solid #555;border-radius:3px;font-family:monospace;font-size:8px;color:#aaa;text-align:center;line-height:13px;">7</div></foreignObject>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B — HTML badges (div overlay)</h3>
+      <p>Styled pill/badge with border and background. Looks more like keyboard keycaps. More like the reference image.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Click a card to select, then reply in terminal.</p>

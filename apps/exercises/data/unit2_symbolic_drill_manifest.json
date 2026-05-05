@@ -20,6 +20,14 @@
     "source_signature": "6/2"
   },
   {
+    "subtype": "ts_to_division_value",
+    "source_signature": "6/4"
+  },
+  {
+    "subtype": "ts_to_beat_count",
+    "source_signature": "9/8"
+  },
+  {
     "subtype": "ts_to_division_count",
     "source_signature": "3/4"
   },
