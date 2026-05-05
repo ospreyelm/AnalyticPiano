@@ -571,6 +571,10 @@ class PlaylistView(RequirejsView):
             context["playlist_name"] = playlist.id
             # ^ misleading name for the url variable
 
+        if exercise_context.get("type") == "umto_symbolic_meter":
+            context["exercise_config_json"] = json.dumps(exercise_context)
+            return render(request, "qa_player.html", context)
+
         self.requirejs_context.set_app_module("app/components/app/exercise")
         self.requirejs_context.set_module_params(
             "app/components/app/exercise", exercise_context

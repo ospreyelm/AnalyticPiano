@@ -458,6 +458,19 @@ class PlayerView(View):
             exercise_context, playlist, exercise
         )
 
+        if exercise_context.get("type") == "umto_symbolic_meter":
+            context = {
+                "unit_num": unit_num,
+                "playlist": playlist,
+                "playlist_name": playlist.name or playlist.id,
+                "exercise_num": exercise_num,
+                "total_exercises": playlist.exercise_count if playlist.exercise_count > 0 else exercise_num,
+                "is_review_mode": state.mode == "review",
+                "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
+                "exercise_config_json": json.dumps(exercise_context),
+            }
+            return render(request, "qa_player.html", context)
+
         rj_context = RequirejsContext(settings.REQUIREJS_CONFIG, settings.REQUIREJS_DEBUG)
         rj_context.set_app_module("app/components/app/exercise")
         rj_context.set_module_params("app/components/app/exercise", exercise_context)
