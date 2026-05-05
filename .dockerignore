@@ -7,3 +7,7 @@ __pycache__
 .superpowers
 scratch
 data/corpus
+*.dump
+screenshots-april29-2026
+things-from-artusi
+reference-htmls
