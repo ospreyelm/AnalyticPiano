@@ -1,5 +1,51 @@
 # HarmonyLab Chorale Exercise System - Implementation Guide
 
+## ⚠️ DEPLOYMENT — READ BEFORE RUNNING `fly deploy`
+
+**NEVER run `fly deploy` from the main repo root or any worktree inside Dropbox.**
+
+The repo lives in Dropbox. `.worktrees/` contains multiple worktrees (400MB+). Docker
+build context from Dropbox is catastrophically slow (2000+ seconds) due to FUSE I/O.
+
+### Correct deploy procedure
+
+```bash
+# 1. Clone to fast local disk (do once; re-use thereafter)
+git clone /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 /tmp/harmonylab-deploy
+
+# 2. Pull latest master
+cd /tmp/harmonylab-deploy
+git checkout master
+git pull
+
+# 3. Deploy
+fly deploy
+```
+
+Re-use `/tmp/harmonylab-deploy` for all future deploys — just `git pull` then `fly deploy`.
+
+### Why
+
+- `.worktrees/` dir lives inside repo root and is 400MB+
+- Dropbox FUSE makes every file read a potential cloud fetch
+- Docker context from Dropbox = each file is a separate HTTP round-trip
+- From `/tmp` clone: build context is ~30MB, deploys in under 2 minutes
+
+### DB restore (if needed)
+
+```bash
+# Tunnel to Fly Postgres (use 5433 to avoid local postgres conflict)
+fly proxy 5433:5432 -a monteverdi-db
+
+# In another terminal — restore from local dump
+pg_restore -h localhost -p 5433 -U postgres -d postgres --clean --if-exists \
+  /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/local_db.dump
+# Password: (check fly secrets or 1Password)
+# Ignore "role adorman does not exist" warnings — harmless
+```
+
+---
+
 ## UMTO is the Canonical Exercise Representation
 
 **All new Exercise rows MUST be UMTO.** Legacy `chorale`, `chorale_identification`,
