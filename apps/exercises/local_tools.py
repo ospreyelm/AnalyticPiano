@@ -12,6 +12,6 @@ def get_database_target():
     return {
         "engine": database.get("ENGINE", ""),
         "host": database.get("HOST") or "localhost",
-        "port": str(database.get("PORT", "")),
+        "port": str(database.get("PORT", "") or ""),
         "name": database.get("NAME", ""),
     }
