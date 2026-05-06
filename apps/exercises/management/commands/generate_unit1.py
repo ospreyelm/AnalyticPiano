@@ -32,6 +32,45 @@ TARGET_TO_VOICES = {
     "bass": ["tenor", "bass"],
 }
 
+UNIT1_LANE_DEFS = (
+    {
+        "target": "treble",
+        "lane": "identification",
+        "playlist_name": "Unit 1 - Note Names (Treble)",
+        "description_token": "(id)",
+    },
+    {
+        "target": "bass",
+        "lane": "identification",
+        "playlist_name": "Unit 1 - Note Names (Bass)",
+        "description_token": "(id)",
+    },
+    {
+        "target": "treble",
+        "lane": "analysis",
+        "playlist_name": "Unit 1 - Note Names (Treble Name)",
+        "description_token": "(analysis)",
+    },
+    {
+        "target": "bass",
+        "lane": "analysis",
+        "playlist_name": "Unit 1 - Note Names (Bass Name)",
+        "description_token": "(analysis)",
+    },
+    {
+        "target": "treble",
+        "lane": "exact",
+        "playlist_name": "Unit 1 - Note Names (Treble Play)",
+        "description_token": "(exact)",
+    },
+    {
+        "target": "bass",
+        "lane": "exact",
+        "playlist_name": "Unit 1 - Note Names (Bass Play)",
+        "description_token": "(exact)",
+    },
+)
+
 
 # Signed diatonic index around C4 (C4=0), with room for extended interval work.
 DIATONIC_INDEX_LIMIT = 21
@@ -218,6 +257,11 @@ def _extract_stage_from_description(description):
 def _midi(step, octave, alter=0):
     semitones = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
     return ((int(octave) + 1) * 12) + semitones[step] + int(alter)
+
+
+def _lane_playlist_tags(target):
+    clef_tag = "Read_Treble_Clef" if target == "treble" else "Read_Bass_Clef"
+    return ["unit:1", "Note_Names", "enharmonic", "Enharmonic_Reading", clef_tag]
 
 
 def _voice_window_to_matching_chords(one_voice_score):
@@ -605,68 +649,88 @@ class Command(BaseCommand):
 
         self._wire_playlists_and_course(
             author,
-            created,
             lanes=lanes,
             max_per_playlist=max_per_playlist,
             max_per_stage=max_per_stage,
         )
         self.stdout.write(f"Generation complete. created={len(created)}")
 
-    def _wire_playlists_and_course(self, author, created, lanes="both", max_per_playlist=36, max_per_stage=12):
-        by_target_and_lane = defaultdict(list)
-        for target, lane, stage, complexity, ex in created:
-            by_target_and_lane[(target, lane)].append((stage, complexity, ex))
+    def _lane_rows_from_db(self, author, lane_def):
+        target = lane_def["target"]
+        clef_tag = "Read_Treble_Clef" if target == "treble" else "Read_Bass_Clef"
+        rows = (
+            Exercise.objects.filter(authored_by=author, description__icontains=lane_def["description_token"])
+            .filter(skill_tags__contains=["unit:1"])
+            .filter(skill_tags__contains=["Note_Names"])
+            .filter(skill_tags__contains=[clef_tag])
+            .order_by("complexity", "description", "_id")
+        )
 
-        for (target, lane), rows in by_target_and_lane.items():
-            clef_tag = "Read_Treble_Clef" if target == "treble" else "Read_Bass_Clef"
-            clef_label = "Treble" if target == "treble" else "Bass"
-            if lane == "exact":
-                playlist_name = f"Unit 1 - Note Names ({clef_label} Play)"
-            elif lane == "analysis":
-                playlist_name = f"Unit 1 - Note Names ({clef_label} Name)"
-            else:  # identification
-                playlist_name = f"Unit 1 - Note Names ({clef_label})"
-            playlist_tags = ["unit:1", "Note_Names", "enharmonic", "Enharmonic_Reading", clef_tag]
-            
-            try:
-                playlist = Playlist.objects.get(name=playlist_name, authored_by=author)
-                # Update playlist tags if needed
-                if playlist.skill_tags != playlist_tags:
-                    playlist.skill_tags = playlist_tags
-                    playlist.save()
-            except Playlist.DoesNotExist:
-                playlist = Playlist(
-                    name=playlist_name,
-                    authored_by=author,
+        stage_buckets = defaultdict(list)
+        for ex in rows:
+            stage_num = _extract_stage_from_description(ex.description) or 1
+            stage_buckets[(stage_num, ex.complexity % 10)].append(ex)
+
+        ordered = _weighted_interleave(stage_buckets)
+        return ordered
+
+    def _cap_lane_rows(self, ordered, max_per_playlist=36, max_per_stage=12):
+        if max_per_stage > 0:
+            stage_counts = defaultdict(int)
+            capped = []
+            for ex in ordered:
+                stage_num = _extract_stage_from_description(ex.description)
+                if stage_num is None:
+                    capped.append(ex)
+                    continue
+                if stage_counts[stage_num] >= max_per_stage:
+                    continue
+                stage_counts[stage_num] += 1
+                capped.append(ex)
+            ordered = capped
+
+        if max_per_playlist > 0:
+            ordered = ordered[:max_per_playlist]
+        return ordered
+
+    def _wire_playlists_and_course(self, author, lanes="both", max_per_playlist=36, max_per_stage=12):
+        allowed_lanes = {"all", "both"}
+        if lanes not in allowed_lanes:
+            allowed_lanes.add(lanes)
+
+        try:
+            course = Course.objects.get(title="Unit 1: Pitch & Staff Notation", authored_by=author)
+        except Course.DoesNotExist:
+            course = Course(
+                title="Unit 1: Pitch & Staff Notation",
+                authored_by=author,
+                is_public=True,
+            )
+            course.save()
+
+        ordered_playlists = []
+        for lane_def in UNIT1_LANE_DEFS:
+            if lane_def["lane"] not in allowed_lanes:
+                continue
+
+            ordered = self._lane_rows_from_db(author, lane_def)
+            ordered = self._cap_lane_rows(
+                ordered,
+                max_per_playlist=max_per_playlist,
+                max_per_stage=max_per_stage,
+            )
+
+            playlist, _ = Playlist.objects.get_or_create(
+                name=lane_def["playlist_name"],
+                authored_by=author,
+                defaults=dict(
                     is_public=True,
-                    skill_tags=playlist_tags,
-                )
-                playlist.save()
-
-            stage_buckets = defaultdict(list)
-            # Sort by complexity (Stage * 10 + NumAccidentals) then description
-            sorted_rows = sorted(rows, key=lambda x: (x[1], x[2].description))
-            for stage, complexity, ex in sorted_rows:
-                stage_buckets[(stage, complexity % 10)].append(ex)
-
-            ordered = _weighted_interleave(stage_buckets)
-
-            if max_per_stage > 0:
-                stage_counts = defaultdict(int)
-                stage_capped = []
-                for ex in ordered:
-                    stage_num = _extract_stage_from_description(ex.description)
-                    if stage_num is None:
-                        stage_capped.append(ex)
-                        continue
-                    if stage_counts[stage_num] >= max_per_stage:
-                        continue
-                    stage_counts[stage_num] += 1
-                    stage_capped.append(ex)
-                ordered = stage_capped
-
-            if max_per_playlist > 0:
-                ordered = ordered[:max_per_playlist]
+                    skill_tags=_lane_playlist_tags(lane_def["target"]),
+                ),
+            )
+            playlist.skill_tags = _lane_playlist_tags(lane_def["target"])
+            playlist.is_public = True
+            playlist.save()
 
             ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
             for idx, ex in enumerate(ordered, start=1):
@@ -676,34 +740,19 @@ class Command(BaseCommand):
                     diff_tier = 2
                 elif stage_num >= 4:
                     diff_tier = 3
-                
-                is_source = (stage_num >= 4)
-                
-                m = ExercisePlaylistOrdered(
-                    playlist=playlist, 
-                    exercise=ex, 
+
+                ExercisePlaylistOrdered.objects.create(
+                    playlist=playlist,
+                    exercise=ex,
                     order=idx,
                     difficulty_tier=diff_tier,
-                    is_mastery_challenge_source=is_source
+                    is_mastery_challenge_source=(stage_num >= 4),
                 )
-                m.save()
+            ordered_playlists.append(playlist)
 
-            try:
-                course = Course.objects.get(title="Unit 1: Pitch & Staff Notation", authored_by=author)
-            except Course.DoesNotExist:
-                course = Course(
-                    title="Unit 1: Pitch & Staff Notation",
-                    authored_by=author,
-                    is_public=True,
-                )
-                course.save()
-
-            existing_links = PlaylistCourseOrdered.objects.filter(course=course).order_by("order", "pk")
-            if not existing_links.filter(playlist=playlist).exists():
-                if existing_links.exists():
-                    last_link = existing_links.last()
-                    next_order = ((last_link.order or 0) + 1) if last_link else 1
-                else:
-                    next_order = 1
-                m = PlaylistCourseOrdered(course=course, playlist=playlist, order=next_order)
-                m.save()
+        for index, playlist in enumerate(ordered_playlists, start=1):
+            PlaylistCourseOrdered.objects.update_or_create(
+                course=course,
+                playlist=playlist,
+                defaults={"order": index},
+            )

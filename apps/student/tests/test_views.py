@@ -237,6 +237,30 @@ class PlayerViewTests(TransactionTestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    def test_player_returns_404_for_private_playlist_without_access(self):
+        self.playlist.is_public = False
+        self.playlist.save(update_fields=["is_public"])
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_player_allows_private_playlist_with_content_permit(self):
+        self.playlist.is_public = False
+        self.playlist.save(update_fields=["is_public"])
+        self.author.content_permits = [self.student.id]
+        self.author.save(update_fields=["content_permits"])
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+
     def test_player_redirects_future_step_to_current_pending_step(self):
         second_exercise = Exercise.objects.create(
             _id=21004,
@@ -779,6 +803,28 @@ class StudentHomeUnitDiscoveryTests(TransactionTestCase):
         self.assertEqual(
             by_num[9]["url"],
             reverse("student:unit-progress", kwargs={"unit_n": "9"}),
+        )
+
+    def test_home_discovers_teacher_shared_private_playlists(self):
+        self.author.content_permits = [self.student.id]
+        self.author.save(update_fields=["content_permits"])
+        Playlist.objects.create(
+            _id=38104,
+            name="Unit 16 - Applied chords",
+            authored_by=self.author,
+            is_public=False,
+            skill_tags=["unit:16", "Secondary_Dominant"],
+            tags=["unit:16", "Secondary_Dominant"],
+        )
+
+        response = self.client.get(reverse("student:home"))
+
+        self.assertEqual(response.status_code, 200)
+        by_num = {unit["num"]: unit for unit in response.context["units"]}
+        self.assertFalse(by_num[16]["locked"])
+        self.assertEqual(
+            by_num[16]["url"],
+            reverse("student:unit-progress", kwargs={"unit_n": "16"}),
         )
 
 

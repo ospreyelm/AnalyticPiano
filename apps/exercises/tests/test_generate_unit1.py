@@ -171,6 +171,46 @@ class GenerateUnit1Tests(TestCase):
         self.assertTrue(Course.objects.filter(title="Unit 1: Pitch & Staff Notation").exists())
         self.assertTrue(Playlist.objects.filter(name__icontains="Unit 1").exists())
 
+    def test_generate_unit1_creates_all_canonical_unit1_playlists(self):
+        call_command("generate_unit1", author=self.author.email, input_dir=self.test_dir, clef="both")
+
+        expected = {
+            "Unit 1 - Note Names (Treble)",
+            "Unit 1 - Note Names (Bass)",
+            "Unit 1 - Note Names (Treble Name)",
+            "Unit 1 - Note Names (Bass Name)",
+            "Unit 1 - Note Names (Treble Play)",
+            "Unit 1 - Note Names (Bass Play)",
+        }
+        actual = set(
+            Playlist.objects.filter(authored_by=self.author, name__in=expected).values_list("name", flat=True)
+        )
+        self.assertEqual(actual, expected)
+
+    def test_generate_unit1_recreates_missing_playlists_from_existing_exercises(self):
+        call_command("generate_unit1", author=self.author.email, input_dir=self.test_dir, clef="both")
+
+        Playlist.objects.filter(
+            authored_by=self.author,
+            name__in=[
+                "Unit 1 - Note Names (Treble)",
+                "Unit 1 - Note Names (Bass)",
+                "Unit 1 - Note Names (Treble Name)",
+                "Unit 1 - Note Names (Bass Name)",
+                "Unit 1 - Note Names (Treble Play)",
+                "Unit 1 - Note Names (Bass Play)",
+            ],
+        ).delete()
+
+        call_command("generate_unit1", author=self.author.email, input_dir=self.test_dir, clef="both")
+
+        self.assertTrue(Playlist.objects.filter(name="Unit 1 - Note Names (Treble)", authored_by=self.author).exists())
+        self.assertTrue(Playlist.objects.filter(name="Unit 1 - Note Names (Bass)", authored_by=self.author).exists())
+        self.assertTrue(Playlist.objects.filter(name="Unit 1 - Note Names (Treble Name)", authored_by=self.author).exists())
+        self.assertTrue(Playlist.objects.filter(name="Unit 1 - Note Names (Bass Name)", authored_by=self.author).exists())
+        self.assertTrue(Playlist.objects.filter(name="Unit 1 - Note Names (Treble Play)", authored_by=self.author).exists())
+        self.assertTrue(Playlist.objects.filter(name="Unit 1 - Note Names (Bass Play)", authored_by=self.author).exists())
+
     def test_generate_unit1_rejects_repeated_note_runs_and_extra_rests(self):
         call_command("generate_unit1", author=self.author.email, input_dir=self.test_dir, clef="treble")
 

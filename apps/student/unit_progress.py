@@ -15,6 +15,7 @@ from django.urls import reverse, NoReverseMatch
 from apps.exercises.models import PerformanceData, Playlist, StudentSkillMastery
 from apps.student.player_progression import is_completed_identification_attempt
 from apps.exercises.taxonomy_reader import TaxonomyReader
+from apps.student.access import accessible_playlist_queryset
 from apps.student.progress import TAG_ALIASES
 from apps.student.unit1_curriculum import get_unit1_lane_groups
 
@@ -51,7 +52,7 @@ def _get_skill_level(user, skill_tag: str) -> str:
     return StudentSkillMastery.LEVEL_NOT_STARTED
 
 
-def _get_playlists_for_unit(unit_tags: list[str], unit_n: str | None = None) -> list[Playlist]:
+def _get_playlists_for_unit(user, unit_tags: list[str], unit_n: str | None = None) -> list[Playlist]:
     """
     Return all Playlist rows tied to a unit by either:
     - overlap with taxonomy unit tags, or
@@ -64,7 +65,7 @@ def _get_playlists_for_unit(unit_tags: list[str], unit_n: str | None = None) -> 
     explicit_unit_tag = f"unit:{unit_n}" if unit_n is not None else None
     # Fetch all playlists that have at least one skill_tag (non-empty).
     # We then filter in Python to find those whose skill_tags intersect unit_tags.
-    candidate_playlists = Playlist.objects.exclude(skill_tags=[])
+    candidate_playlists = accessible_playlist_queryset(user).exclude(skill_tags=[])
     matching = [
         pl for pl in candidate_playlists
         if (
@@ -504,7 +505,7 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
     else:
         # --- Group playlists by skill tag ---
         matching_playlists = _dedupe_playlists_by_name(
-            _get_playlists_for_unit(unit_tags, unit_n=unit_n),
+            _get_playlists_for_unit(user, unit_tags, unit_n=unit_n),
             user,
         )
         explicit_unit_tag = f"unit:{unit_n}"
