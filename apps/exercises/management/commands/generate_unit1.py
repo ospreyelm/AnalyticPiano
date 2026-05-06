@@ -328,6 +328,11 @@ class Command(BaseCommand):
             default="dropdown",
             help="Default input mode for identification exercises (dropdown or text).",
         )
+        parser.add_argument(
+            "--playlist-only",
+            action="store_true",
+            help="Skip exercise generation; only rebuild playlists from already-imported exercises.",
+        )
 
     def handle(self, *args, **options):
         author_email = options["author"]
@@ -339,10 +344,29 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
         cleanup_legacy = options["cleanup_legacy"]
         target_file = options["file"]
+        playlist_only = options.get("playlist_only", False)
         exercise_created_count = 0
         exercise_updated_count = 0
 
         self.stdout.write(f"STARTED generate_unit1 author={author_email} clef={clef} lanes={lanes}")
+
+        if playlist_only:
+            self.stdout.write("--playlist-only: skipping exercise generation, rebuilding playlists only.")
+            try:
+                author = User.objects.get(email=author_email)
+            except User.DoesNotExist:
+                raise CommandError(f"Author not found: {author_email}")
+            playlist_stats = self._wire_playlists_and_course(
+                author,
+                lanes=lanes,
+                max_per_playlist=options["max_per_playlist"],
+                max_per_stage=options["max_per_stage"],
+            )
+            self.stdout.write(
+                f"COMPLETED (playlist-only) playlists_created={playlist_stats['created']} "
+                f"playlists_updated={playlist_stats['updated']}"
+            )
+            return
 
         try:
             author = User.objects.get(email=author_email)

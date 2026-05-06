@@ -164,6 +164,10 @@ class ExerciseAdmin(ImportExportModelAdmin):
                     call_command("generate_unit1", author=author, stdout=out)
                     messages.success(request, f"Unit 1 generated.\n{out.getvalue()}")
 
+                elif command == "generate_unit1_playlist_only":
+                    call_command("generate_unit1", author=author, playlist_only=True, stdout=out)
+                    messages.success(request, f"Unit 1 playlists rebuilt from existing exercises.\n{out.getvalue()}")
+
                 elif command == "generate_unit2_meter_exercises":
                     call_command("generate_unit2_meter_exercises", author=author, public=is_public, stdout=out)
                     messages.success(request, f"Unit 2 meter exercises generated.\n{out.getvalue()}")
