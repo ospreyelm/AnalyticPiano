@@ -1,0 +1,75 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Generate Content{% endblock %}
+
+{% block content %}
+<h1>Generate Content</h1>
+
+{% if messages %}
+<ul class="messagelist">
+    {% for message in messages %}
+    <li class="{{ message.tags }}"><pre>{{ message }}</pre></li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+
+    <fieldset class="module aligned">
+        <h2>Common fields</h2>
+        <div class="form-row">
+            <label for="author">Author email <span class="required">*</span></label>
+            <input type="email" name="author" id="author" required style="width:300px">
+        </div>
+        <div class="form-row">
+            <label for="is_public">Make exercises public</label>
+            <input type="checkbox" name="is_public" id="is_public" checked>
+        </div>
+    </fieldset>
+
+    <fieldset class="module aligned">
+        <h2>Unit 1 — Pitch &amp; Staff Notation</h2>
+        <div class="form-row">
+            <button type="submit" name="command" value="generate_unit1" class="button default">
+                Generate Unit 1 Exercises
+            </button>
+        </div>
+    </fieldset>
+
+    <fieldset class="module aligned">
+        <h2>Unit 2 — Rhythm &amp; Meter</h2>
+        <div class="form-row">
+            <button type="submit" name="command" value="generate_unit2_meter_exercises" class="button default">
+                Generate Unit 2 Meter Exercises
+            </button>
+        </div>
+    </fieldset>
+
+    <fieldset class="module aligned">
+        <h2>Units 9+ — Bach Corpus Playlist</h2>
+        <p class="help">Imports Bach phrases and creates an ordered adaptive playlist for the given unit.</p>
+        <div class="form-row">
+            <label for="unit">Unit number <span class="required">*</span></label>
+            <input type="number" name="unit" id="unit" min="9" max="20" style="width:80px" placeholder="9">
+        </div>
+        <div class="form-row">
+            <label for="riemenschneider">Riemenschneider range <span class="required">*</span></label>
+            <input type="text" name="riemenschneider" id="riemenschneider" style="width:120px" placeholder="1-30">
+            <p class="help">e.g. <code>1-30</code> or <code>5</code></p>
+        </div>
+        <div class="form-row">
+            <label for="mode">Mode</label>
+            <select name="mode" id="mode">
+                <option value="roman">Roman numerals</option>
+                <option value="figures">Figured bass</option>
+                <option value="play">Play (MIDI)</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <button type="submit" name="command" value="create_unit_playlist" class="button default">
+                Create Unit Playlist
+            </button>
+        </div>
+    </fieldset>
+</form>
+{% endblock %}

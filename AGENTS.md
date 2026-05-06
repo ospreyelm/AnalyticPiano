@@ -1,5 +1,43 @@
 # HarmonyLab Chorale Exercise System - Implementation Guide
 
+## ⚠️ DEPLOYMENT — READ BEFORE RUNNING `fly deploy`
+
+**NEVER run `fly deploy` from the main repo root.**
+
+`.worktrees/` (400MB+) sits inside the repo root. Without `.dockerignore` covering it,
+Docker sends the entire thing as build context.
+
+### Correct deploy procedure
+
+```bash
+cd /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/.worktrees/master-run
+git pull
+fly deploy
+```
+
+Deploy from the `master-run` worktree — `.worktrees/` is excluded from its Docker context.
+
+### Why not the main repo root
+
+- `.worktrees/` contains 5 worktrees (~400MB)
+- `.dockerignore` at root excludes it, but deploying from inside `master-run` is safer
+- Build context from `master-run` is ~30MB
+
+### DB restore (if needed)
+
+```bash
+# Tunnel to Fly Postgres (use 5433 to avoid local postgres conflict)
+fly proxy 5433:5432 -a monteverdi-db
+
+# In another terminal — restore from local dump
+pg_restore -h localhost -p 5433 -U postgres -d postgres --clean --if-exists \
+  /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/local_db.dump
+# Password: (check fly secrets or 1Password)
+# Ignore "role adorman does not exist" warnings — harmless
+```
+
+---
+
 ## UMTO is the Canonical Exercise Representation
 
 **All new Exercise rows MUST be UMTO.** Legacy `chorale`, `chorale_identification`,

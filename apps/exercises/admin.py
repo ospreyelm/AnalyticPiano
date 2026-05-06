@@ -5,6 +5,8 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django_better_admin_arrayfield.admin.mixins import DynamicArrayMixin
 from import_export.admin import ImportExportModelAdmin
+from django.core.management import call_command
+from io import StringIO
 
 from apps.exercises.forms import (
     ExerciseForm,
@@ -13,9 +15,9 @@ from apps.exercises.forms import (
     CourseForm,
 )
 from apps.exercises.models import (
-    Exercise, 
-    Playlist, 
-    PerformanceData, 
+    Exercise,
+    Playlist,
+    PerformanceData,
     Course,
     StudentSkillMastery,
     SkillPrerequisite,
@@ -27,6 +29,16 @@ import sys
 import os
 
 from apps.exercises.resources import ExerciseResource, PlaylistResource, CourseResource
+
+
+class GenerateContentAdminSite(admin.AdminSite):
+    pass
+
+
+def _run_command(name, stdout, **kwargs):
+    out = StringIO()
+    call_command(name, stdout=out, **kwargs)
+    stdout.write(out.getvalue())
 
 
 @admin.register(Exercise)
@@ -84,8 +96,63 @@ class ExerciseAdmin(ImportExportModelAdmin):
                 self.admin_site.admin_view(self.import_musicxml_view),
                 name='exercises_exercise_import_musicxml',
             ),
+            path(
+                'generate-content/',
+                self.admin_site.admin_view(self.generate_content_view),
+                name='exercises_exercise_generate_content',
+            ),
         ]
         return custom_urls + urls
+
+    def generate_content_view(self, request):
+        if request.method == "POST":
+            command = request.POST.get("command")
+            author = request.POST.get("author", "").strip()
+            is_public = request.POST.get("is_public") == "on"
+
+            if not author:
+                messages.error(request, "Author email is required.")
+                return render(request, "admin/exercises/exercise/generate_content.html")
+
+            out = StringIO()
+            try:
+                if command == "generate_unit1":
+                    call_command("generate_unit1", author=author, public=is_public, stdout=out)
+                    messages.success(request, f"Unit 1 generated.\n{out.getvalue()}")
+
+                elif command == "generate_unit2_meter_exercises":
+                    call_command("generate_unit2_meter_exercises", author=author, public=is_public, stdout=out)
+                    messages.success(request, f"Unit 2 meter exercises generated.\n{out.getvalue()}")
+
+                elif command == "create_unit_playlist":
+                    unit = request.POST.get("unit", "").strip()
+                    riemenschneider = request.POST.get("riemenschneider", "").strip()
+                    mode = request.POST.get("mode", "roman").strip()
+                    if not unit or not riemenschneider:
+                        messages.error(request, "Unit and Riemenschneider range are required.")
+                        return render(request, "admin/exercises/exercise/generate_content.html")
+                    call_command(
+                        "create_unit_playlist",
+                        unit=int(unit),
+                        riemenschneider=riemenschneider,
+                        author=author,
+                        mode=mode,
+                        public=is_public,
+                        stdout=out,
+                    )
+                    messages.success(request, f"Unit {unit} playlist created.\n{out.getvalue()}")
+
+                else:
+                    messages.error(request, f"Unknown command: {command}")
+
+            except Exception as e:
+                messages.error(request, f"Error running {command}: {e}")
+
+            return redirect("admin:exercises_exercise_generate_content")
+
+        return render(request, "admin/exercises/exercise/generate_content.html", {
+            "title": "Generate Content",
+        })
 
     def import_musicxml_view(self, request):
         if request.method == "POST":
