@@ -6,7 +6,7 @@ __pycache__
 *.pyo
 .superpowers
 scratch
-data/corpus
+# data/corpus is committed to git and must be in the image
 .worktrees
 *.dump
 screenshots-april29-2026
