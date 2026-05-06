@@ -339,6 +339,10 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
         cleanup_legacy = options["cleanup_legacy"]
         target_file = options["file"]
+        exercise_created_count = 0
+        exercise_updated_count = 0
+
+        self.stdout.write(f"STARTED generate_unit1 author={author_email} clef={clef} lanes={lanes}")
 
         try:
             author = User.objects.get(email=author_email)
@@ -521,7 +525,8 @@ class Command(BaseCommand):
                                             unit=1,
                                         ),
                                     )
-                                    print(f"Created {exact.id}: {exact_desc}")
+                                    self.stdout.write(f"CREATED exercise {exact.id}: {exact_desc}")
+                                    exercise_created_count += 1
                             else:
                                 if not dry_run:
                                     # Update via factory to ensure schema consistency
@@ -545,7 +550,8 @@ class Command(BaseCommand):
                                         ),
                                         overwrite=True
                                     )
-                                    print(f"Updated {exact.id}: {exact_desc}")
+                                    self.stdout.write(f"UPDATED exercise {exact.id}: {exact_desc}")
+                                    exercise_updated_count += 1
                             if exact is not None:
                                 created.append((target, "exact", stage, complexity, exact))
 
@@ -577,7 +583,8 @@ class Command(BaseCommand):
                                             unit=1,
                                         ),
                                     )
-                                    print(f"Created {analysis_ex.id}: {analysis_desc}")
+                                    self.stdout.write(f"CREATED exercise {analysis_ex.id}: {analysis_desc}")
+                                    exercise_created_count += 1
                             else:
                                 if not dry_run:
                                     analysis_ex = save_umto_exercise(
@@ -600,7 +607,8 @@ class Command(BaseCommand):
                                         ),
                                         overwrite=True
                                     )
-                                    print(f"Updated {analysis_ex.id}: {analysis_desc}")
+                                    self.stdout.write(f"UPDATED exercise {analysis_ex.id}: {analysis_desc}")
+                                    exercise_updated_count += 1
                             if analysis_ex is not None:
                                 created.append((target, "analysis", stage, complexity, analysis_ex))
 
@@ -633,7 +641,8 @@ class Command(BaseCommand):
                                             unit=1,
                                         ),
                                     )
-                                    print(f"Created {id_ex.id}: {id_desc}")
+                                    self.stdout.write(f"CREATED exercise {id_ex.id}: {id_desc}")
+                                    exercise_created_count += 1
                             else:
                                 if not dry_run:
                                     id_ex = save_umto_exercise(
@@ -657,7 +666,8 @@ class Command(BaseCommand):
                                         ),
                                         overwrite=True
                                     )
-                                    print(f"Updated {id_ex.id}: {id_desc}")
+                                    self.stdout.write(f"UPDATED exercise {id_ex.id}: {id_desc}")
+                                    exercise_updated_count += 1
                             if id_ex is not None:
                                 created.append((target, "identification", stage, complexity, id_ex))
 
@@ -665,11 +675,18 @@ class Command(BaseCommand):
             self.stdout.write("Dry-run complete")
             return
 
-        self._wire_playlists_and_course(
+        playlist_stats = self._wire_playlists_and_course(
             author,
             lanes=lanes,
             max_per_playlist=max_per_playlist,
             max_per_stage=max_per_stage,
+        )
+        self.stdout.write(
+            "COMPLETED generate_unit1 "
+            f"exercises_created={exercise_created_count} "
+            f"exercises_updated={exercise_updated_count} "
+            f"playlists_created={playlist_stats['created']} "
+            f"playlists_updated={playlist_stats['updated']}"
         )
         self.stdout.write(f"Generation complete. created={len(created)}")
 
@@ -715,6 +732,8 @@ class Command(BaseCommand):
         allowed_lanes = {"all", "both"}
         if lanes not in allowed_lanes:
             allowed_lanes.add(lanes)
+        playlist_created_count = 0
+        playlist_updated_count = 0
 
         try:
             course = Course.objects.get(title="Unit 1: Pitch & Staff Notation", authored_by=author)
@@ -738,7 +757,7 @@ class Command(BaseCommand):
                 max_per_stage=max_per_stage,
             )
 
-            playlist, _ = Playlist.objects.get_or_create(
+            playlist, was_created = Playlist.objects.get_or_create(
                 name=lane_def["playlist_name"],
                 authored_by=author,
                 defaults=dict(
@@ -746,6 +765,10 @@ class Command(BaseCommand):
                     skill_tags=_lane_playlist_tags(lane_def["target"]),
                 ),
             )
+            if was_created:
+                playlist_created_count += 1
+            else:
+                playlist_updated_count += 1
             playlist.skill_tags = _lane_playlist_tags(lane_def["target"])
             playlist.is_public = True
             playlist.save()
@@ -774,3 +797,4 @@ class Command(BaseCommand):
                 playlist=playlist,
                 defaults={"order": index},
             )
+        return {"created": playlist_created_count, "updated": playlist_updated_count}
