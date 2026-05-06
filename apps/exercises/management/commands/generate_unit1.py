@@ -504,6 +504,7 @@ class Command(BaseCommand):
                                         author=author,
                                         skill_tags=base_tags,
                                         complexity=complexity,
+                                        auto_playlist=False,
                                         umto_kwargs=dict(
                                             exercise_id="TEMP",
                                             source=f"Play the notes: {intro_text}",
@@ -526,6 +527,7 @@ class Command(BaseCommand):
                                         author=author,
                                         skill_tags=base_tags,
                                         complexity=complexity,
+                                        auto_playlist=False,
                                         umto_kwargs=dict(
                                             exercise_id=exact.id,
                                             source=f"Play the notes: {intro_text}",
@@ -554,6 +556,7 @@ class Command(BaseCommand):
                                         author=author,
                                         skill_tags=base_tags,
                                         complexity=complexity,
+                                        auto_playlist=False,
                                         umto_kwargs=dict(
                                             exercise_id="TEMP",
                                             source=f"Name the notes: {intro_text}",
@@ -575,6 +578,7 @@ class Command(BaseCommand):
                                         author=author,
                                         skill_tags=base_tags,
                                         complexity=complexity,
+                                        auto_playlist=False,
                                         umto_kwargs=dict(
                                             exercise_id=analysis_ex.id,
                                             source=f"Name the notes: {intro_text}",
@@ -603,6 +607,7 @@ class Command(BaseCommand):
                                         author=author,
                                         skill_tags=base_tags,
                                         complexity=complexity,
+                                        auto_playlist=False,
                                         umto_kwargs=dict(
                                             exercise_id="TEMP",
                                             source=f"Identify the notes: {intro_text}",
@@ -625,6 +630,7 @@ class Command(BaseCommand):
                                         author=author,
                                         skill_tags=base_tags,
                                         complexity=complexity,
+                                        auto_playlist=False,
                                         umto_kwargs=dict(
                                             exercise_id=id_ex.id,
                                             source=f"Identify the notes: {intro_text}",
