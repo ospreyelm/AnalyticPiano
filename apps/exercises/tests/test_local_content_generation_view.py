@@ -83,3 +83,134 @@ class LocalContentGenerationRenderTests(TestCase):
                 "mode": "roman",
             },
         )
+
+
+class LocalContentGenerationPostTests(TestCase):
+    @override_settings(ENABLE_LOCAL_CONTENT_TOOLS=True, ALLOWED_HOSTS=["testserver"])
+    @patch("apps.exercises.views_tools.call_command")
+    def test_post_missing_author_rerenders_with_error(self, call_command_mock):
+        response = self.client.post(
+            reverse("content-generation"),
+            {
+                "command": "generate_unit1",
+                "author": "",
+                "unit": "11",
+                "riemenschneider": "21-30",
+                "mode": "roman",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "tools/content_generation.html")
+        call_command_mock.assert_not_called()
+        self.assertTrue(response.context["messages"])
+        self.assertEqual(response.context["messages"][0]["level"], "error")
+        self.assertIn("Author email is required", response.context["messages"][0]["text"])
+        self.assertEqual(response.context["result"], None)
+        self.assertEqual(
+            response.context["form_data"],
+            {
+                "author": "",
+                "unit": "11",
+                "riemenschneider": "21-30",
+                "mode": "roman",
+            },
+        )
+
+    @override_settings(ENABLE_LOCAL_CONTENT_TOOLS=True, ALLOWED_HOSTS=["testserver"])
+    @patch("apps.exercises.views_tools.call_command")
+    def test_post_generate_unit1_dispatches_call_command(self, call_command_mock):
+        response = self.client.post(
+            reverse("content-generation"),
+            {
+                "command": "generate_unit1",
+                "author": "author@example.com",
+                "unit": "9",
+                "riemenschneider": "1-30",
+                "mode": "roman",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "tools/content_generation.html")
+        call_command_mock.assert_called_once_with("generate_unit1", author="author@example.com")
+        self.assertEqual(response.context["result"]["command"], "generate_unit1")
+        self.assertEqual(response.context["result"]["status"], "success")
+
+    @override_settings(ENABLE_LOCAL_CONTENT_TOOLS=True, ALLOWED_HOSTS=["testserver"])
+    @patch("apps.exercises.views_tools.call_command")
+    def test_post_generate_unit2_dispatches_with_public_true(self, call_command_mock):
+        response = self.client.post(
+            reverse("content-generation"),
+            {
+                "command": "generate_unit2_meter_exercises",
+                "author": "author@example.com",
+                "unit": "9",
+                "riemenschneider": "1-30",
+                "mode": "roman",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "tools/content_generation.html")
+        call_command_mock.assert_called_once_with(
+            "generate_unit2_meter_exercises",
+            author="author@example.com",
+            public=True,
+        )
+        self.assertEqual(response.context["result"]["command"], "generate_unit2_meter_exercises")
+        self.assertEqual(response.context["result"]["status"], "success")
+
+    @override_settings(ENABLE_LOCAL_CONTENT_TOOLS=True, ALLOWED_HOSTS=["testserver"])
+    @patch("apps.exercises.views_tools.call_command")
+    def test_post_create_unit_playlist_dispatches_with_parsed_fields(self, call_command_mock):
+        response = self.client.post(
+            reverse("content-generation"),
+            {
+                "command": "create_unit_playlist",
+                "author": "author@example.com",
+                "unit": "11",
+                "riemenschneider": "21-30",
+                "mode": "roman",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "tools/content_generation.html")
+        call_command_mock.assert_called_once_with(
+            "create_unit_playlist",
+            unit=11,
+            riemenschneider="21-30",
+            mode="roman",
+            author="author@example.com",
+            public=True,
+        )
+        self.assertEqual(response.context["result"]["command"], "create_unit_playlist")
+        self.assertEqual(response.context["result"]["status"], "success")
+
+    @override_settings(ENABLE_LOCAL_CONTENT_TOOLS=True, ALLOWED_HOSTS=["testserver"])
+    @patch("apps.exercises.views_tools.call_command")
+    def test_post_preserves_form_data_on_success(self, call_command_mock):
+        response = self.client.post(
+            reverse("content-generation"),
+            {
+                "command": "create_unit_playlist",
+                "author": "author@example.com",
+                "unit": "14",
+                "riemenschneider": "31-40",
+                "mode": "figures",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "tools/content_generation.html")
+        call_command_mock.assert_called_once()
+        self.assertEqual(
+            response.context["form_data"],
+            {
+                "author": "author@example.com",
+                "unit": "14",
+                "riemenschneider": "31-40",
+                "mode": "figures",
+            },
+        )

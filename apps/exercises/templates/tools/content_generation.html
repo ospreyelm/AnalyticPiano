@@ -70,6 +70,24 @@
             background: rgba(32, 93, 138, 0.07);
         }
 
+        .feedback {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #fff;
+        }
+
+        .feedback.error {
+            border-color: #c85e4f;
+            background: #fff4f2;
+        }
+
+        .feedback.success {
+            border-color: #4b9467;
+            background: #f2fff8;
+        }
+
         .banner strong {
             display: block;
             margin-bottom: 6px;
@@ -156,6 +174,16 @@
                 <strong>Database target</strong>
                 <div>{{ db_target.engine }} | host={{ db_target.host }} | port={{ db_target.port }} | name={{ db_target.name }}</div>
             </div>
+
+            {% for message in messages %}
+                <div class="feedback {{ message.level }}">{{ message.text }}</div>
+            {% endfor %}
+
+            {% if result %}
+                <div class="feedback">
+                    Last command: <strong>{{ result.command }}</strong> ({{ result.status }})
+                </div>
+            {% endif %}
 
             <form method="post">
                 {% csrf_token %}
