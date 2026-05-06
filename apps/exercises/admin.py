@@ -17,12 +17,14 @@ from apps.exercises.forms import (
 from apps.exercises.models import (
     Exercise,
     Playlist,
+    ExercisePlaylistOrdered,
     PerformanceData,
     Course,
     StudentSkillMastery,
     SkillPrerequisite,
     IdentificationAttempt
 )
+from apps.exercises.taxonomy_reader import TaxonomyReader
 
 import re
 import sys
@@ -39,6 +41,48 @@ def _run_command(name, stdout, **kwargs):
     out = StringIO()
     call_command(name, stdout=out, **kwargs)
     stdout.write(out.getvalue())
+
+
+def _playlist_unit_num(playlist):
+    tags = list(getattr(playlist, "skill_tags", []) or []) + list(getattr(playlist, "tags", []) or [])
+    for tag in tags:
+        if isinstance(tag, str) and tag.startswith("unit:"):
+            try:
+                return int(tag.split(":", 1)[1])
+            except (TypeError, ValueError):
+                continue
+    for tag in tags:
+        unit = TaxonomyReader.get_unit_for_tag(tag)
+        if unit:
+            try:
+                return int(unit["n"])
+            except (KeyError, TypeError, ValueError):
+                continue
+    return None
+
+
+def _student_playlist_url(playlist, exercise_num=1):
+    unit_num = _playlist_unit_num(playlist)
+    if unit_num is None:
+        return reverse("lab:playlist-view", kwargs={"playlist_id": playlist.id})
+    return (
+        reverse("student:player", kwargs={"unit_num": unit_num})
+        + f"?playlist={playlist.id}&exercise_num={exercise_num}"
+    )
+
+
+def _student_exercise_url(exercise):
+    epolist = (
+        ExercisePlaylistOrdered.objects.filter(exercise=exercise)
+        .select_related("playlist")
+        .order_by("-playlist__is_public", "playlist__name", "order", "_id")
+    )
+    for epo in epolist:
+        unit_num = _playlist_unit_num(epo.playlist)
+        if unit_num is None:
+            continue
+        return _student_playlist_url(epo.playlist, exercise_num=epo.order)
+    return exercise.lab_url
 
 
 @admin.register(Exercise)
@@ -108,7 +152,7 @@ class ExerciseAdmin(ImportExportModelAdmin):
         if request.method == "POST":
             command = request.POST.get("command")
             author = request.POST.get("author", "").strip()
-            is_public = request.POST.get("is_public") == "on"
+            is_public = True
 
             if not author:
                 messages.error(request, "Author email is required.")
@@ -307,7 +351,7 @@ class ExerciseAdmin(ImportExportModelAdmin):
     def show_on_site(self, obj):
         if not obj.pk:
             return ""
-        link = "<a href='%s' target='_blank'>Show On Site</a><br>" % obj.lab_url
+        link = "<a href='%s' target='_blank'>Show On Site</a><br>" % _student_exercise_url(obj)
         return mark_safe(link)
 
     show_on_site.short_description = "Link"
@@ -423,7 +467,7 @@ class PlaylistAdmin(DynamicArrayMixin, ImportExportModelAdmin):
     def show_on_site(self, obj):
         if not obj.pk:
             return ""
-        link = reverse("lab:playlist-view", kwargs={"playlist_id": obj.id})
+        link = _student_playlist_url(obj)
         link = "<a href='%s' target='_blank'>Show On Site</a><br>" % link
         return mark_safe(link)
 
@@ -564,4 +608,3 @@ class IdentificationAttemptAdmin(admin.ModelAdmin):
     list_filter = ("user__email", "exercise__id")
     search_fields = ("user__email", "exercise__id")
     readonly_fields = ("submitted_at",)
-

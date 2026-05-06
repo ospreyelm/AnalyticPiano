@@ -4,7 +4,6 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -14,6 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.student.unit_progress import get_unit_progress_data
 from apps.student.unit1_curriculum import get_unit1_lane_groups
 from apps.exercises.taxonomy_reader import TaxonomyReader
+from apps.student.access import accessible_playlist_queryset, user_can_access_playlist
 from apps.accounts.forms import CustomAuthenticationForm, RegistrationForm
 from apps.exercises.models import (
     Exercise,
@@ -121,7 +121,7 @@ def _summarize_unit_progress(data: dict) -> dict:
 
 def _get_available_unit_numbers(user) -> set[int]:
     available = set()
-    playlists = Playlist.objects.filter(Q(is_public=True) | Q(authored_by=user)).order_by("name")
+    playlists = accessible_playlist_queryset(user).order_by("name")
 
     for playlist in playlists:
         tags = list(playlist.skill_tags or []) + list(playlist.tags or [])
@@ -260,7 +260,7 @@ class UnitView(View):
         skills = unit_data.get("skill_cards", [])
 
         # Group playlists by unit
-        playlists_qs = Playlist.objects.filter(Q(is_public=True) | Q(authored_by=request.user)).order_by("name")
+        playlists_qs = accessible_playlist_queryset(request.user).order_by("name")
         unit_groups = {}
         ungrouped_playlists = []
 
@@ -317,6 +317,8 @@ class PlayerView(View):
             raise Http404("Playlist ID is required.")
 
         playlist = get_object_or_404(Playlist, id=playlist_id)
+        if not user_can_access_playlist(request.user, playlist):
+            raise Http404("Playlist not found.")
 
         # Verify playlist belongs to the requested unit.
         playlist_tags = (playlist.tags or []) + (playlist.skill_tags or [])
