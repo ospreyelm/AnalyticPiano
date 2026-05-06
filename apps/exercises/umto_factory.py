@@ -356,7 +356,11 @@ def save_umto_exercise(
 
     ex = None
     if overwrite:
-        ex = Exercise.objects.filter(description=description, authored_by=author).first()
+        ex = (
+            Exercise.objects.filter(description=description, authored_by=author)
+            .defer("data")
+            .first()
+        )
 
     if ex is None:
         ex = Exercise(
