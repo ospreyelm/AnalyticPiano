@@ -7,9 +7,9 @@ admin.autodiscover()
 import lab.urls
 from apps.dashboard.views.library import library_view, clone_course_view
 
-admin.site.site_header = "Analytic Piano • Admin Main Menu"
-admin.site.site_title = "Analytic Piano"
-admin.site.index_title = "Admin Main Menu"
+admin.site.site_header = "Admin"
+admin.site.site_title = "Admin"
+admin.site.index_title = "Admin"
 
 urlpatterns = [
     path("", RedirectView.as_view(url="/s/"), name="root-redirect"),
@@ -24,7 +24,7 @@ urlpatterns = [
     path("library/clone-course/<str:course_id>/", clone_course_view, name="clone-course"),
     path("ckeditor/", include("ckeditor_uploader.urls")),
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),# enable admin documentation
-    path("analytic-piano-app-admin/", admin.site.urls, name="admin"),# enable admin
+    path("admin/", admin.site.urls, name="admin"),
 ]
 
 handler404 = "harmony.views.error_404"
