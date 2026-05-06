@@ -483,6 +483,7 @@ define([
           if (gradingMatch && gradingMatch.target_midi_pitches.length > 0) {
               const midi = gradingMatch.target_midi_pitches[0];
               answer = analyzer.to_note_name([midi]);
+              isTarget = true;  // grading pitch confirms this note IS a target
           } else {
               isTarget = false;
           }
