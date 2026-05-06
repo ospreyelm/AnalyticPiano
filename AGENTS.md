@@ -10,19 +10,16 @@ build context from Dropbox is catastrophically slow (2000+ seconds) due to FUSE 
 ### Correct deploy procedure
 
 ```bash
-# 1. Clone to fast local disk (do once; re-use thereafter)
-git clone /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 /tmp/harmonylab-deploy
+# 1. Clone to fast local disk — ONE TIME ONLY, survives reboots
+git clone /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 ~/harmonylab-deploy
 
-# 2. Pull latest master
-cd /tmp/harmonylab-deploy
-git checkout master
-git pull
-
-# 3. Deploy
+# 2. Every deploy after that:
+cd ~/harmonylab-deploy
+git checkout master && git pull
 fly deploy
 ```
 
-Re-use `/tmp/harmonylab-deploy` for all future deploys — just `git pull` then `fly deploy`.
+Re-use `~/harmonylab-deploy` for all future deploys — just `git pull` then `fly deploy`.
 
 ### Why
 
