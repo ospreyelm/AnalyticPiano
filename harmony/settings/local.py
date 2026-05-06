@@ -1,6 +1,7 @@
 from harmony.settings.common import *  # NOQA
 
 DEBUG = True
+ENABLE_LOCAL_CONTENT_TOOLS = True
 
 # moved from common.py March 2023
 # this is not the most secure solution
