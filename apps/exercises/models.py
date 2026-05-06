@@ -1441,13 +1441,15 @@ class PerformanceData(models.Model):
 @receiver(post_save, sender=PerformanceData)
 def truncate_timestamps(sender, instance, *args, **kwargs):
     """Remove microseconds from 'created' and 'updated' fields"""
-    with connections["default"].cursor() as cursor:
+    connection = connections["default"]
+    table_name = connection.ops.quote_name(instance._meta.db_table)
+    pk_name = connection.ops.quote_name(instance._meta.pk.name)
+    with connection.cursor() as cursor:
         cursor.execute(
-            "UPDATE {} "
+            f"UPDATE {table_name} "
             "SET created = DATE_TRUNC('second', created), updated = DATE_TRUNC('second', updated) "
-            "WHERE {} = {}".format(
-                instance._meta.db_table, instance._meta.pk.name, instance.pk
-            )
+            f"WHERE {pk_name} = %s",
+            [instance.pk],
         )
 
 
