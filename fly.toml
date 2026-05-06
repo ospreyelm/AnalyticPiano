@@ -24,9 +24,9 @@ console_command = '/code/manage.py shell'
   min_machines_running = 0
 
 [[vm]]
-  memory = '512mb'
+  memory = '1gb'
   cpus = 1
-  memory_mb = 512
+  memory_mb = 1024
 
 [[statics]]
   guest_path = '/code/static'
