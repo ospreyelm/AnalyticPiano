@@ -18,7 +18,7 @@ WORKDIR /code
 
 RUN pip install pipenv
 COPY Pipfile Pipfile.lock /code/
-RUN pipenv install --system
+RUN pipenv install --deploy --system
 COPY . /code
 
 RUN DJANGO_SETTINGS_MODULE=harmony.settings.fly \
