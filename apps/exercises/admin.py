@@ -168,13 +168,14 @@ class ExerciseAdmin(ImportExportModelAdmin):
                     call_command("generate_unit2_meter_exercises", author=author, public=is_public, stdout=out)
                     messages.success(request, f"Unit 2 meter exercises generated.\n{out.getvalue()}")
 
-                elif command == "create_unit_playlist":
+                elif command in ("create_unit_playlist", "create_unit_playlist_only"):
                     unit = request.POST.get("unit", "").strip()
                     riemenschneider = request.POST.get("riemenschneider", "").strip()
                     mode = request.POST.get("mode", "roman").strip()
                     if not unit or not riemenschneider:
                         messages.error(request, "Unit and Riemenschneider range are required.")
                         return render(request, "admin/exercises/exercise/generate_content.html")
+                    playlist_only = (command == "create_unit_playlist_only")
                     call_command(
                         "create_unit_playlist",
                         unit=int(unit),
@@ -182,9 +183,11 @@ class ExerciseAdmin(ImportExportModelAdmin):
                         author=author,
                         mode=mode,
                         public=is_public,
+                        playlist_only=playlist_only,
                         stdout=out,
                     )
-                    messages.success(request, f"Unit {unit} playlist created.\n{out.getvalue()}")
+                    label = "playlist rebuilt from existing exercises" if playlist_only else "exercises imported and playlist created"
+                    messages.success(request, f"Unit {unit} {label}.\n{out.getvalue()}")
 
                 else:
                     messages.error(request, f"Unknown command: {command}")

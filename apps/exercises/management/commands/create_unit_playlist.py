@@ -124,6 +124,8 @@ class Command(BaseCommand):
                             help="Skip the new-chord requirement filter")
         parser.add_argument("--overwrite", action="store_true",
                             help="Overwrite existing exercises (re-import)")
+        parser.add_argument("--playlist-only", action="store_true",
+                            help="Skip import loop; only create/update playlist from already-imported exercises")
 
     def handle(self, *args, **options):
         unit_num = options["unit"]
@@ -151,15 +153,19 @@ class Command(BaseCommand):
         playlist_skill_tags = [unit_tag, mode_tag] + [
             tag for tag in unit_skill_tags if tag not in (unit_tag, mode_tag)
         ]
-        self.stdout.write(f"Importing Riemenschneider {riem_range[0]}–{riem_range[-1]} ({len(riem_range)} chorales)...")
-        for riem_num in riem_range:
-            self.stdout.write(f"  R{riem_num}...")
-            if not dry_run:
-                call_command("import_bach_phrases",
-                             riemenschneider=riem_num, author=author_email,
-                             mode=mode, min_measures=min_measures,
-                             extra_tags=[unit_tag, mode_tag], public=make_public,
-                             overwrite=options.get("overwrite", False))
+        playlist_only = options.get("playlist_only", False)
+        if playlist_only:
+            self.stdout.write("--playlist-only: skipping import, using existing exercises.")
+        else:
+            self.stdout.write(f"Importing Riemenschneider {riem_range[0]}\u2013{riem_range[-1]} ({len(riem_range)} chorales)...")
+            for riem_num in riem_range:
+                self.stdout.write(f"  R{riem_num}...")
+                if not dry_run:
+                    call_command("import_bach_phrases",
+                                 riemenschneider=riem_num, author=author_email,
+                                 mode=mode, min_measures=min_measures,
+                                 extra_tags=[unit_tag, mode_tag], public=make_public,
+                                 overwrite=options.get("overwrite", False))
 
         playlist_name = f"Unit {unit_num} — {title} ({mode})"
         if dry_run:
