@@ -753,9 +753,12 @@ class Command(BaseCommand):
         return ordered
 
     def _wire_playlists_and_course(self, author, lanes="both", max_per_playlist=36, max_per_stage=12):
-        allowed_lanes = {"all", "both"}
-        if lanes not in allowed_lanes:
-            allowed_lanes.add(lanes)
+        # "all" / "both" means every lane type is allowed; otherwise restrict to the named lane.
+        all_lane_types = {"identification", "analysis", "exact"}
+        if lanes in ("all", "both"):
+            allowed_lanes = all_lane_types
+        else:
+            allowed_lanes = {lanes}
         playlist_created_count = 0
         playlist_updated_count = 0
 
