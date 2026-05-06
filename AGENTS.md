@@ -2,31 +2,26 @@
 
 ## ⚠️ DEPLOYMENT — READ BEFORE RUNNING `fly deploy`
 
-**NEVER run `fly deploy` from the main repo root or any worktree inside Dropbox.**
+**NEVER run `fly deploy` from the main repo root.**
 
-The repo lives in Dropbox. `.worktrees/` contains multiple worktrees (400MB+). Docker
-build context from Dropbox is catastrophically slow (2000+ seconds) due to FUSE I/O.
+`.worktrees/` (400MB+) sits inside the repo root. Without `.dockerignore` covering it,
+Docker sends the entire thing as build context.
 
 ### Correct deploy procedure
 
 ```bash
-# 1. Clone to fast local disk — ONE TIME ONLY, survives reboots
-git clone /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1 ~/harmonylab-deploy
-
-# 2. Every deploy after that:
-cd ~/harmonylab-deploy
-git checkout master && git pull
+cd /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/.worktrees/master-run
+git pull
 fly deploy
 ```
 
-Re-use `~/harmonylab-deploy` for all future deploys — just `git pull` then `fly deploy`.
+Deploy from the `master-run` worktree — `.worktrees/` is excluded from its Docker context.
 
-### Why
+### Why not the main repo root
 
-- `.worktrees/` dir lives inside repo root and is 400MB+
-- Dropbox FUSE makes every file read a potential cloud fetch
-- Docker context from Dropbox = each file is a separate HTTP round-trip
-- From `/tmp` clone: build context is ~30MB, deploys in under 2 minutes
+- `.worktrees/` contains 5 worktrees (~400MB)
+- `.dockerignore` at root excludes it, but deploying from inside `master-run` is safer
+- Build context from `master-run` is ~30MB
 
 ### DB restore (if needed)
 
