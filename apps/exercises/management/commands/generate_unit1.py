@@ -495,7 +495,11 @@ class Command(BaseCommand):
 
                         if lanes in ("exact", "all", "both"):
                             exact_desc = f"{bwv.upper()} m.{human_start}-{human_end} {voice_name.title()} (exact) S{stage}"
-                            exact = Exercise.objects.filter(description=exact_desc).first()
+                            exact = (
+                                Exercise.objects.filter(description=exact_desc, authored_by=author)
+                                .defer("data")
+                                .first()
+                            )
                             if exact is None:
                                 if not dry_run:
                                     exact = save_umto_exercise(
@@ -547,7 +551,11 @@ class Command(BaseCommand):
 
                         if lanes in ("analysis", "all", "both"):
                             analysis_desc = f"{bwv.upper()} m.{human_start}-{human_end} {voice_name.title()} (analysis) S{stage}"
-                            analysis_ex = Exercise.objects.filter(description=analysis_desc).first()
+                            analysis_ex = (
+                                Exercise.objects.filter(description=analysis_desc, authored_by=author)
+                                .defer("data")
+                                .first()
+                            )
                             if analysis_ex is None:
                                 if not dry_run:
                                     analysis_ex = save_umto_exercise(
@@ -598,7 +606,11 @@ class Command(BaseCommand):
 
                         if lanes in ("identification", "all", "both"):
                             id_desc = f"{bwv.upper()} m.{human_start}-{human_end} {voice_name.title()} (id) S{stage}"
-                            id_ex = Exercise.objects.filter(description=id_desc).first()
+                            id_ex = (
+                                Exercise.objects.filter(description=id_desc, authored_by=author)
+                                .defer("data")
+                                .first()
+                            )
                             if id_ex is None:
                                 if not dry_run:
                                     id_ex = save_umto_exercise(
