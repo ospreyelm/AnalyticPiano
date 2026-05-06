@@ -5,6 +5,7 @@ from django.contrib import admin # enable admin
 admin.autodiscover()
 
 import lab.urls
+from apps.exercises.views_tools import content_generation_view
 from apps.dashboard.views.library import library_view, clone_course_view
 
 admin.site.site_header = "Admin"
@@ -14,6 +15,7 @@ admin.site.index_title = "Admin"
 urlpatterns = [
     path("", RedirectView.as_view(url="/s/"), name="root-redirect"),
     path("play/", RedirectView.as_view(url="/s/"), name="play-redirect"),
+    path("tools/content-generation/", content_generation_view, name="content-generation"),
 
     path("accounts/", include("apps.accounts.urls"), name="accounts"),
     path("dashboard/", include("apps.dashboard.urls")),
