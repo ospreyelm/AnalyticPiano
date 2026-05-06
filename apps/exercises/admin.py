@@ -117,7 +117,7 @@ class ExerciseAdmin(ImportExportModelAdmin):
             out = StringIO()
             try:
                 if command == "generate_unit1":
-                    call_command("generate_unit1", author=author, public=is_public, stdout=out)
+                    call_command("generate_unit1", author=author, stdout=out)
                     messages.success(request, f"Unit 1 generated.\n{out.getvalue()}")
 
                 elif command == "generate_unit2_meter_exercises":
