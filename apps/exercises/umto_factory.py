@@ -335,6 +335,7 @@ def save_umto_exercise(
     is_public: bool = True,
     umto_kwargs: dict,
     overwrite: bool = False,
+    auto_playlist: bool = True,
 ) -> Exercise:
     """Build a UMTO payload from score_data + umto_kwargs, validate, save Exercise,
     and backfill exercise_id in the stored payload.
@@ -372,7 +373,7 @@ def save_umto_exercise(
         ex.complexity = complexity
         ex.is_public = is_public
 
-    ex.save()
+    ex.save(skip_auto_playlist=not auto_playlist)
     # Backfill now that the DB-assigned id is known.
     ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
     ex.data["exerciseId"] = ex.id

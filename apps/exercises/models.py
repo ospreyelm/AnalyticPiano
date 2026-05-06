@@ -263,11 +263,13 @@ class Exercise(ClonableModelMixin, BaseContentModel):
 
     def save(self, *args, **kwargs):
         self.clean()
+        skip_auto_playlist = kwargs.pop("skip_auto_playlist", False)
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
             self.set_id(initial="E")
             self.save()
-            self.set_auto_playlist()
+            if not skip_auto_playlist:
+                self.set_auto_playlist()
 
         # self.validate_unique()
         self.set_id(initial="E")

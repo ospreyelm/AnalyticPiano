@@ -152,6 +152,37 @@ class UMTOFactoryTests(TestCase):
         self.assertEqual(ex.data["exerciseId"], 999)
         self.assertEqual(ex.data["score"]["umto"]["metadata"]["exercise_id"], 999)
 
+    @patch("apps.exercises.umto_factory.Exercise")
+    def test_save_umto_exercise_can_skip_legacy_auto_playlist(self, mock_exercise_class):
+        mock_author = MagicMock()
+        mock_instance = mock_exercise_class.return_value
+        mock_instance.id = 999
+        mock_instance.pk = 999
+        mock_instance.data = {"score": {"umto": {"metadata": {}}}}
+
+        save_umto_exercise(
+            description="Factory test",
+            score_data=SINGLE_VOICE_CIR,
+            author=mock_author,
+            skill_tags=["unit:1", "Note_Names"],
+            complexity=11,
+            auto_playlist=False,
+            umto_kwargs=dict(
+                exercise_id="TEMP",
+                source="Factory test",
+                key="C",
+                meter="4/4",
+                clef="treble",
+                complexity_score=1,
+                mode=InteractionMode.IDENTIFICATION,
+                target_voice="soprano",
+                unit=1,
+            ),
+        )
+
+        first_call = mock_instance.save.call_args_list[0]
+        self.assertEqual(first_call.kwargs, {"skip_auto_playlist": True})
+
     def test_save_umto_exercise_rejects_legacy_score_data(self):
         mock_author = MagicMock()
         with self.assertRaises(NonUMTOExerciseError):
