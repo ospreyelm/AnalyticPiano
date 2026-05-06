@@ -10,9 +10,9 @@ class LocalContentGenerationViewTests(SimpleTestCase):
 
         with override_settings(ENABLE_LOCAL_CONTENT_TOOLS=False):
             with self.assertRaises(Http404):
-                local_tools.require_local_content_tools_enabled()
+                local_tools.require_local_content_tools()
 
-    def test_local_db_target_uses_default_database_settings(self):
+    def test_local_db_target_normalizes_banner_contract(self):
         from apps.exercises import local_tools
 
         with override_settings(ENABLE_LOCAL_CONTENT_TOOLS=True), patch(
@@ -20,14 +20,14 @@ class LocalContentGenerationViewTests(SimpleTestCase):
             {
                 "default": {
                     "ENGINE": "django.db.backends.postgresql",
-                    "HOST": "localhost",
-                    "PORT": "5433",
+                    "HOST": "",
+                    "PORT": 5433,
                     "NAME": "postgres",
                 }
             },
         ):
             self.assertEqual(
-                local_tools.get_local_content_db_target(),
+                local_tools.get_database_target(),
                 {
                     "engine": "django.db.backends.postgresql",
                     "host": "localhost",
