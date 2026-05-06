@@ -190,7 +190,11 @@ class ExerciseAdmin(ImportExportModelAdmin):
                     messages.error(request, f"Unknown command: {command}")
 
             except Exception as e:
-                messages.error(request, f"Error running {command}: {e}")
+                details = out.getvalue().strip()
+                if details:
+                    messages.error(request, f"Error running {command}: {e}\n\nPartial output:\n{details}")
+                else:
+                    messages.error(request, f"Error running {command}: {e}")
 
             return redirect("admin:exercises_exercise_generate_content")
 

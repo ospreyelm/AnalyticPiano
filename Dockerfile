@@ -29,4 +29,4 @@ RUN DJANGO_SETTINGS_MODULE=harmony.settings.fly \
 EXPOSE 8000
 
 
-CMD ["gunicorn","--bind",":8000","--workers","2","harmony.wsgi"]
+CMD ["gunicorn","--bind",":8000","--workers","2","--timeout","300","--graceful-timeout","300","harmony.wsgi:application"]
