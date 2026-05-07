@@ -445,20 +445,31 @@ def save_umto_symbolic_exercise(
 
     UMTO.model_validate(payload["score"]["umto"])
 
-    ex = Exercise(
-        description=description,
-        data=payload,
-        authored_by=author,
-        is_public=is_public,
-        skill_tags=[
-            "unit:2",
-            "unit:2_rhythm",
-            "unit:2_meter_simple",
-            "unit:2_meter_compound",
-        ],
-        complexity=unit,
-    )
-    ex.save()
+    skill_tags = [
+        "unit:2",
+        "unit:2_rhythm",
+        "unit:2_meter_simple",
+        "unit:2_meter_compound",
+    ]
+
+    ex = Exercise.objects.filter(description=description, authored_by=author).first()
+    if ex is not None:
+        ex.data = payload
+        ex.is_public = is_public
+        ex.skill_tags = skill_tags
+        ex.complexity = unit
+        ex.save(update_fields=["data", "is_public", "skill_tags", "complexity"])
+    else:
+        ex = Exercise(
+            description=description,
+            data=payload,
+            authored_by=author,
+            is_public=is_public,
+            skill_tags=skill_tags,
+            complexity=unit,
+        )
+        ex.save()
+
     ex.data["exerciseId"] = ex.id
     ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
     ex.save(update_fields=["data"])
