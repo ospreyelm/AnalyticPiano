@@ -4,8 +4,7 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -24,8 +23,9 @@ from apps.exercises.models import (
     PlaylistCourseOrdered,
     StudentSkillMastery,
 )
-from lab.views import RequirejsContext, generate_exercise_context
+from lab.views import RequirejsContext, generate_exercise_context, get_adaptive_exercise_for_view
 from apps.student.player_progression import (
+    PlayerProgressState,
     get_completed_exercise_ids,
     is_completed_identification_attempt,
     resolve_requested_step,
@@ -35,16 +35,19 @@ TAXONOMY_PATH = Path(__file__).resolve().parent.parent.parent / "music_theory_ta
 
 
 def _disable_computer_keyboard_input(exercise_context: dict, playlist: Playlist, exercise: Exercise) -> bool:
-    playlist_tags = set((playlist.tags or []) + (playlist.skill_tags or []))
-    exercise_tags = set(exercise.skill_tags or [])
-    mode = exercise_context.get("mode")
-    analysis_type = exercise_context.get("analysisType")
-    return (
-        "unit:1" in playlist_tags
-        and "Note_Names" in (playlist_tags | exercise_tags)
-        and mode == "playback"
-        and analysis_type == "note_name"
+    tags = set((playlist.tags or []) + (playlist.skill_tags or []) + (exercise_context.get("skillTags") or []))
+    playlist_name = (playlist.name or "").lower()
+    description = (exercise.description or "").lower()
+    source = str(exercise_context.get("introText") or exercise_context.get("source") or "").lower()
+
+    is_play_from_name_lane = (
+        "play from name" in playlist_name
+        or " note names (" in playlist_name and " play)" in playlist_name
+        or "(exact)" in description
+        or source.startswith("play the notes:")
     )
+
+    return "unit:1" in tags and "Note_Names" in tags and is_play_from_name_lane
 
 
 def _load_unit_meta(unit_num: int) -> dict:
@@ -306,110 +309,6 @@ class UnitView(View):
         })
 
 
-def _student_player_url(unit_num: int, playlist: Playlist, exercise_num: int) -> str:
-    return (
-        reverse("student:player", kwargs={"unit_num": unit_num})
-        + f"?playlist={playlist.id}&exercise_num={exercise_num}"
-    )
-
-
-def _build_student_player_payload(request, unit_num: int, playlist: Playlist, course, exercise_num: int):
-    state = resolve_requested_step(request.user, playlist, exercise_num)
-    if state.should_redirect:
-        return redirect(_student_player_url(unit_num, playlist, state.exercise_num))
-
-    resolved_num = state.exercise_num
-    exercise = playlist.get_exercise_obj_by_num(resolved_num)
-    if not exercise:
-        return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
-
-    exercise_context = generate_exercise_context(
-        resolved_num,
-        exercise,
-        request.user,
-        playlist,
-        course,
-    )
-
-    exercise_context["reviewMode"] = state.mode == "review"
-    exercise_context["playerMode"] = state.mode
-    if state.mode == "review":
-        attempts = (
-            IdentificationAttempt.objects.filter(
-                user=request.user,
-                exercise=exercise,
-                playlist=playlist,
-            )
-            .order_by("submitted_at")
-        )
-        merged_answers = {}
-        for attempt in attempts:
-            if not is_completed_identification_attempt(attempt):
-                continue
-            if attempt.answers:
-                merged_answers.update(attempt.answers)
-
-        if merged_answers:
-            exercise_context["reviewAnswers"] = merged_answers
-
-    all_ids = list(playlist.untransposed_exercises_ids or [])
-    completed_ids = get_completed_exercise_ids(request.user, playlist)
-    completed_nums = [
-        index for index, exercise_id in enumerate(all_ids, 1)
-        if exercise_id in completed_ids
-    ]
-
-    if state.mode == "review":
-        earlier_completed = [n for n in completed_nums if n < resolved_num]
-        later_completed = [n for n in completed_nums if n > resolved_num]
-        prev_num = earlier_completed[-1] if earlier_completed else None
-
-        next_pending = next((i for i, x in enumerate(all_ids, 1) if x not in completed_ids), None)
-        if later_completed:
-            next_num = later_completed[0]
-        elif next_pending == resolved_num + 1:
-            next_num = next_pending
-        else:
-            next_num = None
-    else:
-        prev_num = resolved_num - 1 if resolved_num > 1 else None
-        next_num = resolved_num + 1 if resolved_num < playlist.exercise_count else None
-
-    is_challenge = playlist.name and playlist.name.startswith(f"_challenge_{request.user.id}_")
-    base_url = reverse("student:player", kwargs={"unit_num": unit_num}) + f"?playlist={playlist.id}"
-    if is_challenge:
-        base_url += "&mode=challenge"
-
-    exercise_context["courseId"] = course.id if course else None
-    exercise_context["playlistId"] = playlist.id
-    exercise_context["totalExercises"] = playlist.exercise_count
-    exercise_context["nextExercise"] = (
-        f"{base_url}&exercise_num={next_num}" if next_num else None
-    )
-    exercise_context["nextExerciseNum"] = next_num
-    exercise_context["nextExerciseId"] = (
-        all_ids[next_num - 1] if next_num and next_num <= len(all_ids) else False
-    )
-    exercise_context["previousExercise"] = (
-        f"{base_url}&exercise_num={prev_num}" if prev_num else None
-    )
-    exercise_context["previousExerciseNum"] = prev_num
-    exercise_context["previousExerciseId"] = (
-        all_ids[prev_num - 1] if prev_num and prev_num <= len(all_ids) else False
-    )
-    exercise_context["exerciseList"] = [
-        {
-            **item,
-            "url": f"{base_url}&exercise_num={index}",
-        }
-        for index, item in enumerate(exercise_context.get("exerciseList", []), 1)
-    ]
-    exercise_context["disableComputerKeyboardInput"] = _disable_computer_keyboard_input(
-        exercise_context, playlist, exercise
-    )
-    return exercise_context
-
-
 class PlayerView(View):
     @_require_student
     def get(self, request, unit_num):
@@ -443,14 +342,123 @@ class PlayerView(View):
         )
         course = playlist_course.course if playlist_course else None
 
-        if exercise_num > playlist.exercise_count:
+        is_dynamic_or_adaptive = bool(playlist.is_dynamic or playlist.is_adaptive)
+
+        if not is_dynamic_or_adaptive and exercise_num > playlist.exercise_count:
             return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
 
-        exercise_context = _build_student_player_payload(
-            request, unit_num, playlist, course, exercise_num
+        if is_dynamic_or_adaptive:
+            state = PlayerProgressState(exercise_num=exercise_num, mode="progression")
+        else:
+            state = resolve_requested_step(request.user, playlist, exercise_num)
+
+        if state.should_redirect:
+            return redirect(
+                reverse("student:player", kwargs={"unit_num": unit_num})
+                + f"?playlist={playlist.id}&exercise_num={state.exercise_num}"
+            )
+
+        resolved_num = state.exercise_num
+        exercise_num = resolved_num
+        if is_dynamic_or_adaptive:
+            exercise = get_adaptive_exercise_for_view(
+                request,
+                playlist,
+                exercise_num,
+                course.id if course else None,
+            )
+        else:
+            exercise = playlist.get_exercise_obj_by_num(exercise_num)
+
+        if not exercise:
+            return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
+
+        exercise_context = generate_exercise_context(
+            exercise_num,
+            exercise,
+            request.user,
+            playlist,
+            course,
         )
-        if isinstance(exercise_context, HttpResponseRedirect):
-            return exercise_context
+
+        exercise_context["reviewMode"] = state.mode == "review"
+        exercise_context["playerMode"] = state.mode
+        if state.mode == "review":
+            attempts = (
+                IdentificationAttempt.objects.filter(
+                    user=request.user,
+                    exercise=exercise,
+                    playlist=playlist,
+                )
+                .order_by("submitted_at")
+            )
+            merged_answers = {}
+            for attempt in attempts:
+                if not is_completed_identification_attempt(attempt):
+                    continue
+                if attempt.answers:
+                    merged_answers.update(attempt.answers)
+
+            if merged_answers:
+                exercise_context["reviewAnswers"] = merged_answers
+
+        all_ids = list(playlist.untransposed_exercises_ids or [])
+        completed_ids = get_completed_exercise_ids(request.user, playlist)
+        completed_nums = [
+            index for index, exercise_id in enumerate(all_ids, 1)
+            if exercise_id in completed_ids
+        ]
+
+        if state.mode == "review":
+            earlier_completed = [n for n in completed_nums if n < resolved_num]
+            later_completed = [n for n in completed_nums if n > resolved_num]
+            prev_num = earlier_completed[-1] if earlier_completed else None
+
+            next_pending = next((i for i, x in enumerate(all_ids, 1) if x not in completed_ids), None)
+            if later_completed:
+                next_num = later_completed[0]
+            elif next_pending == resolved_num + 1:
+                next_num = next_pending
+            else:
+                next_num = None
+        elif is_dynamic_or_adaptive:
+            prev_num = resolved_num - 1 if resolved_num > 1 else None
+            next_num = resolved_num + 1
+        else:
+            prev_num = resolved_num - 1 if resolved_num > 1 else None
+            next_num = resolved_num + 1 if resolved_num < playlist.exercise_count else None
+
+        is_challenge = playlist.name and playlist.name.startswith(f"_challenge_{request.user.id}_")
+        base_url = reverse("student:player", kwargs={"unit_num": unit_num}) + f"?playlist={playlist.id}"
+        if is_challenge:
+            base_url += "&mode=challenge"
+
+        exercise_context["courseId"] = course.id if course else None
+        exercise_context["nextExercise"] = (
+            f"{base_url}&exercise_num={next_num}" if next_num else None
+        )
+        exercise_context["nextExerciseNum"] = next_num
+        exercise_context["nextExerciseId"] = (
+            all_ids[next_num - 1] if next_num and next_num <= len(all_ids) else False
+        )
+        exercise_context["previousExercise"] = (
+            f"{base_url}&exercise_num={prev_num}" if prev_num else None
+        )
+        exercise_context["previousExerciseNum"] = prev_num
+        exercise_context["previousExerciseId"] = (
+            all_ids[prev_num - 1] if prev_num and prev_num <= len(all_ids) else False
+        )
+        exercise_context["forceRedirect"] = True
+        exercise_context["exerciseList"] = [
+            {
+                **item,
+                "url": f"{base_url}&exercise_num={index}",
+            }
+            for index, item in enumerate(exercise_context.get("exerciseList", []), 1)
+        ]
+        exercise_context["disableComputerKeyboardInput"] = _disable_computer_keyboard_input(
+            exercise_context, playlist, exercise
+        )
 
         if exercise_context.get("type") == "umto_symbolic_meter":
             context = {
@@ -472,55 +480,14 @@ class PlayerView(View):
         context = {
             "unit_num": unit_num,
             "playlist": playlist,
-            "exercise_num": exercise_context["exerciseNum"],
-            "total_exercises": playlist.exercise_count,
-            "is_review_mode": exercise_context["reviewMode"],
+            "exercise_num": exercise_num,
+            "total_exercises": playlist.exercise_count if playlist.exercise_count > 0 else exercise_num,
+            "is_review_mode": state.mode == "review",
             "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
         }
         rj_context.add_to_view(context)
 
         return render(request, "student/player.html", context)
-
-
-class PlayerDefinitionView(View):
-    @_require_student
-    def get(self, request, unit_num):
-        playlist_id = request.GET.get("playlist")
-        if not playlist_id:
-            raise Http404("Playlist ID is required.")
-
-        playlist = get_object_or_404(Playlist, id=playlist_id)
-
-        playlist_tags = (playlist.tags or []) + (playlist.skill_tags or [])
-        unit_tag = f"unit:{unit_num}"
-        if unit_tag not in playlist_tags:
-            raise Http404(f"Playlist not part of Unit {unit_num}.")
-
-        try:
-            exercise_num = int(request.GET.get("exercise_num", 1))
-        except (TypeError, ValueError):
-            raise Http404("Invalid exercise number.")
-
-        if exercise_num < 1:
-            raise Http404("Invalid exercise number.")
-
-        playlist_course = (
-            PlaylistCourseOrdered.objects.filter(playlist=playlist)
-            .select_related("course")
-            .order_by("order", "_id")
-            .first()
-        )
-        course = playlist_course.course if playlist_course else None
-
-        if exercise_num > playlist.exercise_count:
-            return JsonResponse(
-                {"redirect": reverse("student:unit", kwargs={"unit_num": unit_num})}
-            )
-
-        result = _build_student_player_payload(request, unit_num, playlist, course, exercise_num)
-        if isinstance(result, HttpResponseRedirect):
-            return JsonResponse({"redirect": result.url})
-        return JsonResponse(result)
 
 
 class ChallengeView(LoginRequiredMixin, View):
