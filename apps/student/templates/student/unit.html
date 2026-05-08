@@ -1,5 +1,6 @@
 {# apps/student/templates/student/unit.html #}
 {% extends "student/base.html" %}
+{% load static %}
 {% block title %}Unit {{ unit_num }} — Monteverdi{% endblock %}
 {% block content %}
 
@@ -38,5 +39,27 @@
     </div>
   {% endfor %}
 {% endfor %}
+
+{% if unit_num == 2 %}
+<h2 class="s-unit-group-heading" style="margin-top: 2rem; margin-bottom: 1rem; font-size: 1.5rem; font-weight: bold;">Reference Materials</h2>
+<div class="s-skill-row" style="margin-bottom: 0.5rem; padding: 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+  <div class="s-skill-info">
+    <div class="s-skill-name" style="font-weight: 600; color: #111827;">Introduction to Meter</div>
+    <div style="font-size: 0.8rem; color: #6b7280;">Overview of simple and compound meter</div>
+  </div>
+  <div class="s-skill-actions">
+    <a href="{% static 'reference/unit2/meter-reference-heim.html' %}" target="_blank" class="s-btn-secondary" style="padding: 0.5rem 1rem; background: #fff; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; text-decoration: none; color: #374151;">Read →</a>
+  </div>
+</div>
+<div class="s-skill-row" style="margin-bottom: 0.5rem; padding: 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+  <div class="s-skill-info">
+    <div class="s-skill-name" style="font-weight: 600; color: #111827;">Meter Signatures</div>
+    <div style="font-size: 0.8rem; color: #6b7280;">All time signatures with beat values and groupings</div>
+  </div>
+  <div class="s-skill-actions">
+    <a href="{% static 'reference/unit2/meter-signatures.html' %}" target="_blank" class="s-btn-secondary" style="padding: 0.5rem 1rem; background: #fff; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; text-decoration: none; color: #374151;">Read →</a>
+  </div>
+</div>
+{% endif %}
 
 {% endblock %}
