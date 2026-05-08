@@ -1,4 +1,5 @@
 {% extends "student/base.html" %}
+{% load static %}
 
 {% block title %}Unit {{ unit.n }} · {{ unit.title }}{% endblock %}
 
@@ -240,5 +241,32 @@
     .playlist-count { font-weight: 600; color: #444; }
     .playlist-score { color: #888; }
     .coming-soon { font-size: 0.85rem; color: #888; font-style: italic; padding: 0.5rem 0; }
+    .reference-section { margin-top: 2rem; }
+    .reference-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 0.5rem; text-decoration: none; color: #333; }
+    .reference-row:hover { background: #f0f4ff; }
+    .reference-title { font-weight: 600; color: #111827; font-size: 0.9rem; }
+    .reference-desc { font-size: 0.8rem; color: #6b7280; }
+    .reference-link { padding: 0.4rem 0.9rem; background: #fff; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; color: #374151; white-space: nowrap; }
   </style>
+
+  {% if unit.n == "2" %}
+  <div class="reference-section">
+    <h2 class="challenges-title">Reference Materials</h2>
+    <a href="{% static 'reference/unit2/meter-reference-heim.html' %}" target="_blank" class="reference-row">
+      <div>
+        <div class="reference-title">Introduction to Meter</div>
+        <div class="reference-desc">Overview of simple and compound meter</div>
+      </div>
+      <span class="reference-link">Read →</span>
+    </a>
+    <a href="{% static 'reference/unit2/meter-signatures.html' %}" target="_blank" class="reference-row">
+      <div>
+        <div class="reference-title">Meter Signatures</div>
+        <div class="reference-desc">All time signatures with beat values and groupings</div>
+      </div>
+      <span class="reference-link">Read →</span>
+    </a>
+  </div>
+  {% endif %}
+
 {% endblock %}
