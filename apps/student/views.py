@@ -4,7 +4,7 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -488,6 +488,60 @@ class PlayerView(View):
         rj_context.add_to_view(context)
 
         return render(request, "student/player.html", context)
+
+
+class PlayerDefinitionView(View):
+    @_require_student
+    def get(self, request, unit_num):
+        playlist_id = request.GET.get("playlist")
+        if not playlist_id:
+            raise Http404("Playlist ID is required.")
+
+        playlist = get_object_or_404(Playlist, id=playlist_id)
+
+        playlist_tags = (playlist.tags or []) + (playlist.skill_tags or [])
+        unit_tag = f"unit:{unit_num}"
+        if unit_tag not in playlist_tags:
+            raise Http404(f"Playlist not part of Unit {unit_num}.")
+
+        try:
+            exercise_num = int(request.GET.get("exercise_num", 1))
+        except (TypeError, ValueError):
+            raise Http404("Invalid exercise number.")
+
+        if exercise_num < 1:
+            raise Http404("Invalid exercise number.")
+
+        playlist_course = (
+            PlaylistCourseOrdered.objects.filter(playlist=playlist)
+            .select_related("course")
+            .order_by("order", "_id")
+            .first()
+        )
+        course = playlist_course.course if playlist_course else None
+
+        if exercise_num > playlist.exercise_count:
+            return JsonResponse(
+                {"redirect": reverse("student:unit", kwargs={"unit_num": unit_num})}
+            )
+
+        state = resolve_requested_step(request.user, playlist, exercise_num)
+        if state.should_redirect:
+            return JsonResponse(
+                {"redirect": reverse("student:player", kwargs={"unit_num": unit_num})
+                 + f"?playlist={playlist.id}&exercise_num={state.exercise_num}"}
+            )
+
+        exercise = playlist.get_exercise_obj_by_num(state.exercise_num)
+        if not exercise:
+            return JsonResponse(
+                {"redirect": reverse("student:unit", kwargs={"unit_num": unit_num})}
+            )
+
+        exercise_context = generate_exercise_context(
+            state.exercise_num, exercise, request.user, playlist, course
+        )
+        return JsonResponse(exercise_context)
 
 
 class ChallengeView(LoginRequiredMixin, View):
