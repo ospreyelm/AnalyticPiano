@@ -1,0 +1,123 @@
+/* Theory IV Design System */
+
+:root {
+  --color-primary-blue: #003366;
+  --color-primary-orange: #FF6600;
+  --color-success: #10b981;
+  --color-warning: #fbbf24;
+  --color-danger: #ef4444;
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-border: #e5e7eb;
+}
+
+/* Typography Scale */
+.page-title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.section-title {
+  font-size: clamp(1.25rem, 3vw, 1.875rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+
+.subsection-title {
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--color-text-primary);
+}
+
+/* Consistent Link Styles */
+a:not(.button):not(.nav-link) {
+  color: var(--color-primary-orange);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:not(.button):not(.nav-link):hover {
+  color: #cc5200;
+  text-decoration: underline;
+}
+
+/* Consistent Card Styles */
+.card {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Consistent Badge Styles */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.badge-theory {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-aural {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.badge-important {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-auto {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-manual {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Container responsive padding */
+.container {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Mobile Responsive Utilities */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .nav-link {
+    font-size: 0.875rem;
+  }
+
+  .page-title {
+    font-size: clamp(1.25rem, 3vw, 1.875rem);
+  }
+
+  .section-title {
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+  }
+}

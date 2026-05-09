@@ -1,0 +1,920 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;600;700&family=Merriweather+Sans:wght@500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Merriweather', 'Times New Roman', serif !important;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.content-wrapper {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+header {
+    background-color: #003366;
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+header h1 {
+    font-family: 'Merriweather Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 42px !important;
+    margin: 0 0 10px !important;
+    color: white !important;
+}
+
+header .subtitle {
+    font-size: 18px;
+    color: #cccccc;
+}
+
+.credit {
+    background-color: #fff8f0;
+    border-left: 4px solid #FF6600;
+    padding: 20px 30px;
+    margin: 0;
+    font-size: 14px;
+}
+
+.credit p {
+    margin: 5px 0;
+}
+
+nav {
+    background-color: #f9f9f9;
+    padding: 20px 30px;
+    border-bottom: 2px solid #ddd;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    font-family: 'Merriweather Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+nav h3 {
+    font-family: 'Merriweather Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+    color: #003366;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+nav a {
+    color: #003366;
+    text-decoration: none;
+    margin-right: 20px;
+    font-size: 14px;
+    font-family: 'Merriweather Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+nav a:hover {
+    color: #FF6600;
+    text-decoration: underline;
+}
+
+#course-navbar,
+#course-navbar a,
+#course-navbar span {
+    font-family: 'Merriweather Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+#course-navbar .container {
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+section {
+    padding: 40px 30px;
+    border-bottom: 1px solid #eee;
+}
+
+section:last-of-type {
+    border-bottom: none;
+}
+
+/* Unified heading styles - all headings use Merriweather Sans */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Merriweather Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+h2 {
+    color: #003366 !important;
+    font-size: 36px !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 3px solid #FF6600 !important;
+}
+
+h3 {
+    color: #FF6600 !important;
+    font-size: 28px !important;
+    margin-top: 30px !important;
+    margin-bottom: 15px !important;
+}
+
+h4 {
+    color: #003366 !important;
+    font-size: 22px !important;
+    margin-top: 20px !important;
+    margin-bottom: 10px !important;
+}
+
+p {
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+ul {
+    margin-left: 30px;
+    margin-bottom: 20px;
+}
+
+li {
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.definition {
+    background-color: #f9f9f9;
+    border-left: 4px solid #003366;
+    padding: 15px 20px;
+    margin: 15px 0;
+    font-style: italic;
+}
+
+.example-box {
+    background-color: #e8f4f8;
+    border-left: 4px solid #5A9FBC;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.example-box h4 {
+    color: #003366;
+    margin: 0 0 10px;
+    font-size: 18px;
+}
+
+.example-box p {
+    margin-bottom: 10px;
+}
+
+.tip-box {
+    background-color: #fff8f0;
+    border-left: 4px solid #FF6600;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.tip-box h4 {
+    color: #FF6600;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.intro-box {
+    background-color: #fff8f0;
+    border-left: 4px solid #FF6600;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.emphasis-box {
+    background-color: #e8f4f8;
+    border: 2px solid #003366;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 5px;
+}
+
+.section-box {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 25px;
+    margin: 20px 0;
+    border-radius: 5px;
+}
+
+.diagram {
+    background-color: #f9f9f9;
+    border: 2px solid #003366;
+    padding: 30px;
+    margin: 25px 0;
+    text-align: center;
+    border-radius: 5px;
+}
+
+.diagram-title {
+    font-weight: bold;
+    font-size: 18px;
+    color: #003366;
+    margin-bottom: 20px;
+}
+
+.pulse-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 15px 0;
+    gap: 10px;
+}
+
+.pulse-label {
+    font-weight: bold;
+    font-size: 16px;
+    min-width: 150px;
+    text-align: right;
+    padding-right: 20px;
+}
+
+.pulse-dots {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.dot {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.dot.beat {
+    background-color: #5A9FBC;
+}
+
+.dot.division-simple-1 {
+    background-color: #D9534F;
+}
+
+.dot.division-simple-2 {
+    background-color: #8BC34A;
+}
+
+.dot.division-compound-1 {
+    background-color: #D9534F;
+}
+
+.dot.division-compound-2 {
+    background-color: #8BC34A;
+}
+
+.dot.division-compound-3 {
+    background-color: #FDD835;
+}
+
+.dot.accent {
+    position: relative;
+}
+
+.dot.accent::after {
+    content: '>';
+    position: absolute;
+    font-size: 24px;
+    color: white;
+}
+
+.meter-sig {
+    font-family: 'Georgia', serif;
+    font-size: 48px;
+    font-weight: bold;
+    color: #003366;
+    line-height: 0.8;
+    display: inline-block;
+    text-align: center;
+}
+
+.meter-sig-top {
+    display: block;
+}
+
+.meter-sig-bottom {
+    display: block;
+    border-top: 2px solid #333;
+    padding-top: 5px;
+}
+
+details {
+    background: #fafafa;
+    border: 1px solid #ccc;
+    padding: 15px 20px;
+    border-radius: 5px;
+    margin-top: 30px;
+}
+
+summary {
+    cursor: pointer;
+    font-size: 18px;
+    color: #003366;
+    font-weight: bold;
+}
+
+#timeline-canvas-container {
+    text-align: center;
+    margin-top: 30px;
+}
+
+canvas {
+    display: block;
+    margin: 20px auto 0;
+}
+
+.counting-diagram {
+    background-color: #ffffff;
+    border: 2px solid #003366;
+    padding: 20px;
+    margin: 20px auto;
+    text-align: center;
+    border-radius: 5px;
+    max-width: 600px;
+}
+
+.counting-text {
+    font-size: 18px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+}
+
+label {
+    font-weight: bold;
+}
+
+input {
+    padding: 5px 10px;
+    margin: 5px;
+    font-size: 16px;
+}
+
+button {
+    padding: 8px 15px;
+    background: #003366;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+button:hover {
+    background: #FF6600;
+}
+
+table {
+    border-collapse: collapse;
+    margin: 20px auto;
+    width: 100%;
+    border: 1px solid #000;
+}
+
+th {
+    background-color: #bdc0bf;
+    border: 1px solid #000;
+    padding: 8px;
+    font-weight: bold;
+}
+
+td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: center;
+}
+
+tr:nth-child(even) td {
+    background-color: #eeeeee;
+}
+
+section img,
+section video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 20px auto;
+}
+
+section iframe {
+    width: 100%;
+    height: 600px;
+    border: none;
+    margin: 20px auto;
+    display: block;
+    aspect-ratio: 16 / 9;
+}
+
+.pulse-lab-embed {
+    min-height: 1200px;
+    height: 1200px;
+}
+
+figure {
+    margin: 20px auto;
+    text-align: center;
+}
+
+figcaption {
+    font-size: 14px;
+    color: #555;
+    margin-top: 8px;
+}
+
+.video-link {
+    display: inline-block;
+    background-color: #003366;
+    color: #ffffff;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.tip {
+    font-style: italic;
+    color: #666;
+    margin: 15px 0;
+    padding-left: 15px;
+    border-left: 3px solid #FF6600;
+}
+
+.formula {
+    font-family: 'Courier New', monospace;
+    background-color: #f5f5f5;
+    padding: 15px;
+    margin: 15px 0;
+    border-left: 4px solid #003366;
+}
+
+footer {
+    background-color: #f9f9f9;
+    padding: 30px;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    border-top: 2px solid #ddd;
+}
+
+/* ============================================================================ */
+/* INTERACTIVE COMPONENT STYLES - Used in weeks 3-4 interactive lessons */
+/* ============================================================================ */
+
+/* Euclidean Algorithm Visualization Components (Week 3) */
+.algorithm-container {
+    background: #f8f9fa;
+    border: 2px solid #003366;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.algorithm-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.algorithm-controls label {
+    font-weight: bold;
+    color: #003366;
+}
+
+.algorithm-controls input[type="number"] {
+    width: 60px;
+    padding: 5px 10px;
+    border: 1px solid #003366;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.algorithm-controls button {
+    background: #003366;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.algorithm-controls button:hover {
+    background: #004d99;
+}
+
+.algorithm-controls button:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+
+.step-display {
+    margin: 15px 0;
+    padding: 15px;
+    background: white;
+    border-radius: 4px;
+    min-height: 60px;
+}
+
+.step-label {
+    font-weight: bold;
+    color: #003366;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.cells-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.cell {
+    display: inline-flex;
+    gap: 3px;
+    padding: 8px 12px;
+    background: #e8f0f8;
+    border: 2px solid #003366;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.cell.remainder {
+    background: #fff3e0;
+    border-color: #FF6600;
+}
+
+.cell.merged {
+    background: #e0f0e8;
+    border-color: #2e8b57;
+}
+
+.bit {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+.bit.one {
+    background: #FF6600;
+    color: white;
+}
+
+.bit.zero {
+    background: #003366;
+    color: white;
+}
+
+.result-display {
+    margin-top: 20px;
+    padding: 15px;
+    background: #003366;
+    color: white;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.result-display .pattern {
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    letter-spacing: 4px;
+    margin: 10px 0;
+}
+
+.result-display .onsets {
+    font-size: 16px;
+    color: #FFD580;
+}
+
+@keyframes highlight {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 102, 0, 0.5); }
+    100% { transform: scale(1); }
+}
+
+.cell.animating {
+    animation: highlight 0.5s ease;
+}
+
+.timeline-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.timeline-item {
+    text-align: center;
+}
+
+.timeline-item h4 {
+    color: #003366;
+    margin-bottom: 10px;
+}
+
+.timeline-item p {
+    font-size: 14px;
+    color: #666;
+    max-width: 250px;
+    margin: 10px auto 0;
+}
+
+.step-counter {
+    font-size: 14px;
+    color: #666;
+    margin-left: auto;
+}
+
+.notation-placeholder {
+    background: #f0f0f0;
+    border: 2px dashed #003366;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    color: #666;
+    margin: 20px 0;
+}
+
+.key-insights {
+    background: #e8f4f8;
+    border-left: 4px solid #003366;
+    padding: 20px;
+    margin: 30px 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.key-insights h3 {
+    color: #003366;
+    margin-top: 0;
+}
+
+.key-insights ul {
+    margin-bottom: 0;
+}
+
+.key-insights li {
+    margin: 10px 0;
+}
+
+.status-bar {
+    display: flex;
+    gap: 20px;
+    margin-top: 15px;
+    padding: 12px 15px;
+    background: linear-gradient(to right, #e8f0f8 50%, #fff3e0 50%);
+    border-radius: 6px;
+    font-size: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-item.main {
+    color: #003366;
+    font-weight: bold;
+}
+
+.status-item.remainder {
+    color: #cc5200;
+    font-weight: bold;
+}
+
+/* ABC Music Notation Components (Week 4) */
+.abc-container {
+    margin: 30px 0;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+.abc-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #003366;
+}
+
+.abc-notation {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.abc-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.abc-controls button {
+    background-color: #003366;
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.abc-controls button:hover {
+    background-color: #004d99;
+}
+
+/* ============================================================================ */
+
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 28px;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
+
+    h3 {
+        font-size: 20px;
+    }
+
+    .pulse-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .pulse-label {
+        text-align: center;
+        min-width: auto;
+        padding-right: 0;
+    }
+
+    .dot {
+        width: 40px;
+        height: 40px;
+    }
+
+    nav a {
+        display: block;
+        margin: 5px 0;
+    }
+}
+
+/* Fix week label width to prevent layout shift from navigation buttons */
+#current-week-label {
+    min-width: 120px;
+    text-align: right;
+}
+
+/* ── Page layout: sidebar nav + main content ── */
+.page-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+}
+
+.main-content {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Jump to Section — sticky left sidebar */
+.section-nav {
+    flex: 0 0 190px;
+    position: sticky;
+    top: 56px;
+    max-height: calc(100vh - 56px);
+    overflow-y: auto;
+    background-color: #f9f9f9;
+    border-right: 1px solid #e0e0e0;
+    padding: 1.25rem 1rem;
+    z-index: 40;
+}
+
+.section-nav h3 {
+    color: #003366;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 0.75rem 0;
+}
+
+.section-nav a {
+    display: block;
+    color: #003366;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 0.25rem 0 0.25rem 0.6rem;
+    margin-bottom: 0.2rem;
+    border-left: 2px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.section-nav a:hover {
+    color: #FF6600;
+    border-left-color: #FF6600;
+}
+
+@media (max-width: 900px) {
+    .page-layout {
+        flex-direction: column;
+    }
+
+    .section-nav {
+        flex: none;
+        position: static;
+        width: 100%;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 0.75rem 1rem;
+    }
+
+    .section-nav a {
+        display: inline-block;
+        border-left: none;
+        padding-left: 0;
+        margin-right: 1rem;
+    }
+}
+
+/* Button styling for interactive lessons - match abc-controls */
+.controls button,
+#timeline-canvas-container button,
+#playBtn,
+#resetBtn {
+    background-color: #003366 !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 8px 18px !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.controls button:hover,
+#timeline-canvas-container button:hover,
+#playBtn:hover,
+#resetBtn:hover {
+    background-color: #004d99 !important;
+}
+
+/* ============================================================================
+   TEXTBOOK MODE OVERRIDES
+   Applied when lesson-nav.js sets class="textbook-mode" on <body>.
+   Hides course-calendar UI; shows chapter context instead.
+   ============================================================================ */
+
+/* Hide date/week lines in the credit block */
+body.textbook-mode .credit [data-lesson-week] {
+    /* replaced by chapter label injected by lesson-nav.js — keep visible */
+}
+body.textbook-mode .credit-date {
+    display: none;
+}
+
+/* Hide the week label chip in the navbar */
+body.textbook-mode #current-week-label {
+    display: none !important;
+}
+
