@@ -33,12 +33,12 @@
   function questionStem(problem) {
     var subtype = problem && (problem.subtype || problem.promptSubtype);
     var STEMS = {
-      ts_to_grouping: "What is the beat grouping?",
+      ts_to_grouping: "What is the grouping structure?",
       ts_to_division_type: "Is this meter simple or compound?",
       ts_to_beat_value: "What is the beat level?",
-      ts_to_division_value: "What is the division level?",
+      ts_to_division_value: "What is the duration of the division level pulses?",
       ts_to_beat_count: "How many beats are in this bar?",
-      ts_to_division_count: "How many divisions are in this bar?",
+      ts_to_division_count: "How many pulses are there at the division level of this type of bar?",
       ts_to_full_meter: "What type of meter is this?",
       meter_to_ts: "Which time signature represents this meter?"
     };
