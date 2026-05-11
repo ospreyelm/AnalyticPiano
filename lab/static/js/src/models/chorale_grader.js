@@ -61,10 +61,16 @@ define([
 
       this.timeline = ScoreTimeline.buildTimeline(score);
       var g = groupByOnset(this.timeline);
-      var rawGroups = g.groups;
+      // Sort groups by onset so the merge loop sees them in chronological order.
+      // The timeline is in insertion order (voice-by-voice), so rawGroups is NOT
+      // onset-ordered. Without sorting, the merge threshold check produces false
+      // positives when onset differences are negative (later group followed by
+      // earlier one), merging temporally distant notes into the same window.
+      var tl = this.timeline;
+      var rawGroups = g.groups.slice().sort(function(a, b) {
+        return tl[a[0]].onset - tl[b[0]].onset;
+      });
 
-      // Merge windows that are close together (within 1024 ticks = 1 beat)
-      // This groups passing tones with their beat-aligned chords
       this.windowGroups = [];
       var mergedGroup = [];
       var lastOnset = null;
@@ -212,7 +218,7 @@ define([
       var windowOnset = tl[idxs[0]].onset;
       
       // Find held notes: look back for the most recent event per voice that's still sounding
-      var heldNotes = this._getHeldNotesAtOnset(windowOnset);
+      var heldNotes = this._getHeldNotesAtOnset(windowOnset, idxs);
       var allExpected = windowMidis.concat(heldNotes.map(function(ev) { return ev.midi; }));
       console.log("[2. GRADE] Current window onset=" + windowOnset +
                   ", new attacks:", windowMidis,
@@ -281,19 +287,36 @@ define([
       return false;
     },
 
-    _getHeldNotesAtOnset: function(onset) {
+    _getHeldNotesAtOnset: function(onset, currentIdxs) {
       var tl = this.timeline;
       var held = [];
       var voiceSeen = {}; // track which voice/staff combos we've seen
-      
+
+      // Build set of voice keys already covered by new attacks in the current window.
+      // A held note from the same voice as a new attack is a split fragment — don't
+      // require the student to play it separately.
+      var attackVoices = {};
+      if (currentIdxs) {
+        for (var a = 0; a < currentIdxs.length; a++) {
+          var ae = tl[currentIdxs[a]];
+          attackVoices[ae.staff + "_" + ae.voiceIndex] = true;
+        }
+      }
+
       // Walk backwards through timeline to find most recent event per voice before this onset
       for (var i = tl.length - 1; i >= 0; i--) {
         var ev = tl[i];
         if (ev.onset >= onset) continue; // skip events at or after current onset
-        
+
         var key = ev.staff + "_" + ev.voiceIndex;
         if (voiceSeen[key]) continue; // already found most recent for this voice
-        
+
+        // Skip if this voice already has a new attack in the current window
+        if (attackVoices[key]) {
+          voiceSeen[key] = true;
+          continue;
+        }
+
         // Check if this note is still sounding at the target onset
         if (ev.onset + ev.duration > onset) {
           held.push(ev);
@@ -319,7 +342,7 @@ define([
         var onset = tl[idxs[0]].onset;
         
         // Include held notes in completion check
-        var heldNotes = this._getHeldNotesAtOnset(onset);
+        var heldNotes = this._getHeldNotesAtOnset(onset, idxs);
         var allRequired = idxs.concat(heldNotes.map(function(ev) { return tl.indexOf(ev); }).filter(function(idx) { return idx !== -1; }));
         
         // Is current window complete (all new attacks + held notes played)?

@@ -1237,13 +1237,23 @@ define([
     initChoraleMode: function () {
       var maxMeasures = 4;
       this._chorale = { maxMeasures: maxMeasures, startMeasure: 0 };
+      console.log("[Chorale] initChoraleMode called");
       try {
         var def = this.exerciseContext.getDefinition();
+        var score = def.getScore ? def.getScore() : null;
+        console.log("[Chorale] score keys:", score ? Object.keys(score) : "null", "has umto:", !!(score && score.umto));
+        if (score && score.umto) {
+          var converted = this._convertUMTOToProcessedScore(score.umto);
+          if (converted) {
+            def.exercise.score = converted;
+            console.log("[Chorale] Patched exercise.score from UMTO conversion:", converted.measures ? converted.measures.length : 0, "measures");
+          }
+        }
         if (def.isChorale && def.isChorale() && this.exerciseContext.grader && this.exerciseContext.grader.initFromDefinition) {
           this.exerciseContext.grader.initFromDefinition(def);
         }
       } catch (e) {
-        console.warn("[Chorale] initChoraleMode: failed to init grader", e);
+        console.error("[Chorale] initChoraleMode ERROR:", e && e.message, e);
       }
     },
     /**

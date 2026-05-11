@@ -285,6 +285,7 @@ define([
      */
     validateGradingAlignment: function () {
       if (!this.definition.isUMTO || !this.definition.isUMTO() || !this.definition.exercise.grading) return;
+      if (this.definition.isChorale && this.definition.isChorale()) return;
 
       const currentChord = this.inputChords.current();
       const playedPitches = _.sortBy(currentChord.getNoteNumbers());
