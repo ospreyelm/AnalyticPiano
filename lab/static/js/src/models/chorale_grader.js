@@ -245,8 +245,7 @@ define([
           this.playedNoteIds.add(heldNotes[j].id);
           matched = true;
           console.log("[2. GRADE] ✓ Matched held note " + midi + " (id=" + heldNotes[j].id + ")");
-            break;
-          }
+          break;
         }
       }
 
