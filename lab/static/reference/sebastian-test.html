@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sebastian Font — RN Rendering Test</title>
+<link href="/static/css/harmony.css" rel="stylesheet">
+<style>
+  body { font-family: "Alegreya Sans", sans-serif; background: #f5f3ee; padding: 24px; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  p.sub { color: #666; font-size: 13px; margin: 0 0 16px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 32px; }
+  .cell { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; text-align: center; min-width: 100px; }
+  .cell canvas { display: block; margin: 0 auto 4px; }
+  .cell .raw { font-size: 10px; color: #999; font-family: monospace; }
+  .cell .lbl { font-size: 11px; color: #555; margin-top: 2px; }
+  h2 { font-size: 14px; font-weight: bold; margin: 24px 0 8px; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+  #controls { margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 24px; }
+  .ctrl { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .ctrl span.name { width: 110px; flex-shrink: 0; color: #444; }
+  .ctrl input[type=range] { flex: 1; }
+  .ctrl .val { font-size: 12px; font-weight: bold; width: 36px; text-align: right; }
+  .ruler { margin-bottom: 32px; overflow-x: auto; }
+  .ruler canvas { border: 1px solid #eee; border-radius: 4px; background: #fff; }
+  .info { font-size: 11px; color: #888; margin-bottom: 4px; font-family: monospace; }
+  .seb-canvas-wrap { position: relative; }
+  .seb-anchor { width: 1px; height: 1px; position: absolute; background: red; }
+</style>
+</head>
+<body>
+
+<!-- Font warmup -->
+<div style="font-family:'Sebastian';position:absolute;visibility:hidden;top:-999px;">&nbsp;z4 u r</div>
+<div style="font-family:'MainSerifs';position:absolute;visibility:hidden;top:-999px;">&nbsp;</div>
+
+<h1>Sebastian Font — Roman Numeral Rendering Test</h1>
+<p class="sub">Live-tunable replica of <code>drawInlineRoman</code> in <code>vexflow_adapter.js</code>. Change any slider → all canvases update instantly.</p>
+
+<div id="controls"></div>
+
+<h2>Individual labels</h2>
+<div class="grid" id="grid"></div>
+
+<h2>Adaptive ruler — simulated measure at colGap spacing</h2>
+<div class="info" id="rulerInfo"></div>
+<div class="ruler"><canvas id="rulerCanvas"></canvas></div>
+
+<h2>Sebastian character map</h2>
+<div class="grid" id="sebGrid"></div>
+
+<script>
+// ── Parameters ────────────────────────────────────────────────────────────────
+
+var PARAMS = [
+  { id: "rSize",    label: "ROMAN_SIZE",    min: 8,  max: 32,  step: 1,   val: 20,   unit: "px",  desc: "Roman numeral font size" },
+  { id: "sSize",    label: "SEB_SIZE",      min: 12, max: 64,  step: 1,   val: 32,   unit: "px",  desc: "Sebastian font size" },
+  { id: "figRatio", label: "FIG ratio",     min: 10, max: 100, step: 1,   val: 62,   unit: "%",   desc: "Figure advance = ROMAN_SIZE × ratio/100" },
+  { id: "xOff",     label: "Sebastian xOff",min: -20,max: 20,  step: 1,   val: 6,    unit: "px",  desc: "Sebastian horizontal nudge from figure slot left edge" },
+  { id: "yOff",     label: "Sebastian yOff",min: -10,max: 20,  step: 1,   val: 3,    unit: "px",  desc: "Sebastian baseline nudge below numeral y" },
+  { id: "yShift",   label: "yShift",        min: 10, max: 70,  step: 1,   val: 30,   unit: "px",  desc: "Y from stave bottom to numeral baseline" },
+  { id: "colGap",   label: "colGap sim",    min: 20, max: 140, step: 1,   val: 60,   unit: "px",  desc: "Simulated distance between chord columns" },
+  { id: "gap36r",   label: "gap<36 RN",     min: 8,  max: 24,  step: 1,   val: 14,   unit: "px",  desc: "ROMAN_SIZE when colGap<36" },
+  { id: "gap50r",   label: "gap<50 RN",     min: 8,  max: 24,  step: 1,   val: 16,   unit: "px",  desc: "ROMAN_SIZE when colGap<50" },
+  { id: "gap36s",   label: "gap<36 SEB",    min: 12, max: 48,  step: 1,   val: 20,   unit: "px",  desc: "SEB_SIZE when colGap<36" },
+  { id: "gap50s",   label: "gap<50 SEB",    min: 12, max: 48,  step: 1,   val: 26,   unit: "px",  desc: "SEB_SIZE when colGap<50" },
+];
+
+function buildControls() {
+  var wrap = document.getElementById("controls");
+  PARAMS.forEach(function(p) {
+    var row = document.createElement("div");
+    row.className = "ctrl";
+    row.title = p.desc;
+    var nm = document.createElement("span");
+    nm.className = "name";
+    nm.textContent = p.label + ":";
+    var sl = document.createElement("input");
+    sl.type = "range"; sl.id = p.id;
+    sl.min = p.min; sl.max = p.max; sl.step = p.step; sl.value = p.val;
+    var vl = document.createElement("span");
+    vl.className = "val"; vl.id = p.id + "Val";
+    vl.textContent = p.val + p.unit;
+    sl.addEventListener("input", function() {
+      vl.textContent = sl.value + p.unit;
+      render();
+    });
+    row.appendChild(nm); row.appendChild(sl); row.appendChild(vl);
+    wrap.appendChild(row);
+  });
+}
+
+function getP() {
+  var o = {};
+  PARAMS.forEach(function(p) { o[p.id] = +document.getElementById(p.id).value; });
+  return o;
+}
+
+// ── Core draw function (mirrors vexflow_adapter.js exactly) ───────────────────
+
+function convertRomanSymbols(text) {
+  return String(text || "")
+    .replace(/bb/g, "𝄫").replace(/b/g, "♭")
+    .replace(/##/g, "𝄪").replace(/#/g, "♯")
+    .replace(/n/g, "♮");
+}
+
+function drawInlineRoman(ctx, label, columnX, y, ROMAN_SIZE, SEB_SIZE, figRatio, yOff, xOff) {
+  if (!ctx || !label) return;
+  var tokenRe = /([^{}]+)|(\{([^{}]+)\})/g;
+  var tokens = [], m;
+  while ((m = tokenRe.exec(label)) !== null) {
+    if (m[2]) tokens.push({ text: m[3], figured: true });
+    else if (m[1]) tokens.push({ text: m[1], figured: false });
+  }
+  if (!tokens.length) return;
+
+  var FIG_REF_SIZE = Math.round(ROMAN_SIZE * figRatio / 100);
+  var SUP_SIZE = Math.round(ROMAN_SIZE * 0.65);
+  var SUP_YOFF = -Math.round(ROMAN_SIZE * 0.40);
+  var SUP_RE   = /(°|⌀)/g;
+
+  ctx.save();
+  ctx.fillStyle = "#000";
+  ctx.font = ROMAN_SIZE + "px MainSerifs";
+
+  var tokenWidths = tokens.map(function(token) {
+    if (!token.figured) {
+      var text = convertRomanSymbols(token.text);
+      var parts = text.split(SUP_RE);
+      var total = 0;
+      parts.forEach(function(part) {
+        if (!part) return;
+        if (part === "°" || part === "⌀") {
+          ctx.font = SUP_SIZE + "px MainSerifs";
+          total += ctx.measureText(part).width;
+          ctx.font = ROMAN_SIZE + "px MainSerifs";
+        } else {
+          total += ctx.measureText(part).width;
+        }
+      });
+      return total;
+    }
+    var digits = token.text
+      .replace(/[zuZU]/g, "6").replace(/u/g, "7").replace(/r/g, "4")
+      .replace(/e/g, "3").replace(/t/g, "5").replace(/[CKBd']/g, "b")
+      .replace(/\s/g, "");
+    ctx.font = FIG_REF_SIZE + "px MainSerifs";
+    var w = ctx.measureText(digits).width;
+    ctx.font = ROMAN_SIZE + "px MainSerifs";
+    return Math.max(w, 5);
+  });
+
+  var totalWidth = tokenWidths.reduce(function(a, b) { return a + b; }, 0);
+  var curX = Math.round(columnX - totalWidth / 2);
+
+  tokens.forEach(function(token, i) {
+    if (!token.figured) {
+      var text = convertRomanSymbols(token.text);
+      var parts = text.split(SUP_RE);
+      var px = curX;
+      parts.forEach(function(part) {
+        if (!part) return;
+        if (part === "°" || part === "⌀") {
+          ctx.font = SUP_SIZE + "px MainSerifs";
+          ctx.textAlign = "left";
+          ctx.fillText(part, px, y + SUP_YOFF);
+          px += ctx.measureText(part).width;
+          ctx.font = ROMAN_SIZE + "px MainSerifs";
+        } else {
+          ctx.font = ROMAN_SIZE + "px MainSerifs";
+          ctx.textAlign = "left";
+          ctx.fillText(part, px, y);
+          px += ctx.measureText(part).width;
+        }
+      });
+    } else {
+      ctx.font = SEB_SIZE + "px Sebastian";
+      ctx.textAlign = "left";
+      ctx.fillText(token.text, curX + (xOff || 0), y + (yOff || 3));
+    }
+    curX += tokenWidths[i];
+  });
+  ctx.restore();
+}
+
+function getAdaptiveParams(colGap, p) {
+  var ROMAN_SIZE = colGap < 36 ? p.gap36r : colGap < 50 ? p.gap50r : p.rSize;
+  var SEB_SIZE   = colGap < 36 ? p.gap36s : colGap < 50 ? p.gap50s : p.sSize;
+  return { ROMAN_SIZE: ROMAN_SIZE, SEB_SIZE: SEB_SIZE };
+}
+
+// ── Labels ────────────────────────────────────────────────────────────────────
+
+var LABELS = [
+  { label: "i",          desc: "tonic" },
+  { label: "V",          desc: "dominant" },
+  { label: "IV",         desc: "subdominant" },
+  { label: "♭II",        desc: "Neapolitan" },
+  { label: "ii⌀",        desc: "half-dim" },
+  { label: "i{z}",       desc: "i⁶" },
+  { label: "V{u}",       desc: "V⁷" },
+  { label: "i{r}",       desc: "i⁴" },
+  { label: "V{z4}",      desc: "V⁶₄" },
+  { label: "i{r3}",      desc: "i⁴₃" },
+  { label: "V{r2}",      desc: "V⁴₂" },
+  { label: "ii⌀{z5}",    desc: "iiø⁶₅" },
+  { label: "ii⌀{u}",     desc: "iiø⁷" },
+  { label: "ii⌀{r3}",    desc: "iiø⁴₃" },
+  { label: "V{z}/iv",    desc: "V⁶/iv" },
+  { label: "V{z4}/iv",   desc: "V⁶₄/iv" },
+  { label: "V{u}/iv",    desc: "V⁷/iv" },
+  { label: "Cad{Cz4}",   desc: "Cad⁶₄" },
+  { label: "♭II{z}",     desc: "♭II⁶" },
+  { label: "i{d z}",     desc: "i°⁶" },
+  { label: "i{u}",       desc: "i⁷" },
+  { label: "i{z5}",      desc: "i⁶₅" },
+  { label: "VII",        desc: "VII" },
+  { label: "III{z}",     desc: "III⁶" },
+  { label: "iv{r3}",     desc: "iv⁴₃" },
+  { label: "V{u3}",      desc: "V 6/5" },
+];
+
+var SEB_CHARS = [
+  { ch: "z",   note: "main-row 6" },
+  { ch: "u",   note: "main-row 7" },
+  { ch: "r",   note: "main-row 4" },
+  { ch: "e",   note: "main-row 3" },
+  { ch: "t",   note: "main-row 5" },
+  { ch: "d",   note: "main-row +" },
+  { ch: "'",   note: "main-row #" },
+  { ch: "Z",   note: "upper-row 6" },
+  { ch: "U",   note: "upper-row 7" },
+  { ch: "2",   note: "lower-row 2" },
+  { ch: "3",   note: "lower-row 3" },
+  { ch: "4",   note: "lower-row 4" },
+  { ch: "5",   note: "lower-row 5" },
+  { ch: "C",   note: "flat sign" },
+  { ch: "K",   note: "sharp sign" },
+  { ch: "B",   note: "flat (figure)" },
+  { ch: "z4",  note: "6/4 stacked" },
+  { ch: "z5",  note: "6/5 stacked" },
+  { ch: "r3",  note: "4/3 stacked" },
+  { ch: "r2",  note: "4/2 stacked" },
+  { ch: "u3",  note: "7/3? stacked" },
+  { ch: "Cz4", note: "♭6/4 stacked" },
+  { ch: "d z", note: "+6 stacked" },
+];
+
+// ── Render functions ──────────────────────────────────────────────────────────
+
+function renderGrid() {
+  var p = getP();
+  var H = p.yShift + 24, W = 120;
+  var grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  LABELS.forEach(function(entry) {
+    var cell = document.createElement("div"); cell.className = "cell";
+    var c = document.createElement("canvas"); c.width = W; c.height = H;
+    var ctx = c.getContext("2d");
+    // guides
+    ctx.strokeStyle = "#e8e5df"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, p.yShift); ctx.lineTo(W, p.yShift); ctx.stroke();
+    ctx.strokeStyle = "#f0ede8";
+    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+    drawInlineRoman(ctx, entry.label, W/2, p.yShift, p.rSize, p.sSize, p.figRatio, p.yOff, p.xOff);
+    var raw = document.createElement("div"); raw.className = "raw"; raw.textContent = entry.label;
+    var lbl = document.createElement("div"); lbl.className = "lbl"; lbl.textContent = entry.desc;
+    cell.appendChild(c); cell.appendChild(raw); cell.appendChild(lbl);
+    grid.appendChild(cell);
+  });
+}
+
+function renderRuler() {
+  var p = getP();
+  var gap = p.colGap;
+  var ap = getAdaptiveParams(gap, p);
+  var labels = ["i", "i{z}", "V{z4}", "ii⌀{z5}", "Cad{Cz4}", "V{u}", "i{r3}", "I", "♭II{z}", "V{r2}", "VII", "i"];
+  var H = ap.ROMAN_SIZE + 30, W = labels.length * gap + 60;
+  document.getElementById("rulerInfo").textContent =
+    "colGap=" + gap + "px → ROMAN_SIZE=" + ap.ROMAN_SIZE + ", SEB_SIZE=" + ap.SEB_SIZE +
+    "  (FIG_REF_SIZE=" + Math.round(ap.ROMAN_SIZE * p.figRatio/100) + "px)";
+  var c = document.getElementById("rulerCanvas"); c.width = W; c.height = H + 10;
+  var ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, W, H + 10);
+  ctx.strokeStyle = "#e0ddd7"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, ap.ROMAN_SIZE + 10); ctx.lineTo(W, ap.ROMAN_SIZE + 10); ctx.stroke();
+  labels.forEach(function(label, i) {
+    var x = 30 + i * gap;
+    ctx.strokeStyle = "#ccc";
+    ctx.beginPath(); ctx.moveTo(x, ap.ROMAN_SIZE + 10); ctx.lineTo(x, ap.ROMAN_SIZE + 16); ctx.stroke();
+    drawInlineRoman(ctx, label, x, ap.ROMAN_SIZE + 10, ap.ROMAN_SIZE, ap.SEB_SIZE, p.figRatio, p.yOff, p.xOff);
+  });
+}
+
+function renderSebGrid() {
+  var p = getP();
+  var H = 55, W = 70;
+  var grid = document.getElementById("sebGrid");
+  grid.innerHTML = "";
+  SEB_CHARS.forEach(function(entry) {
+    var cell = document.createElement("div"); cell.className = "cell";
+    var c = document.createElement("canvas"); c.width = W; c.height = H;
+    var ctx = c.getContext("2d");
+    ctx.strokeStyle = "#e0ddd7"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, 38); ctx.lineTo(W, 38); ctx.stroke();
+    // draw at left with anchor point visible
+    ctx.fillStyle = "#bbb";
+    ctx.fillRect(W/2 - 1, 36, 2, 2); // anchor dot
+    ctx.fillStyle = "#000";
+    ctx.font = p.sSize + "px Sebastian";
+    ctx.textAlign = "left";
+    ctx.fillText(entry.ch, W/2 + (p.xOff || 0), 38 + p.yOff);
+    var raw = document.createElement("div"); raw.className = "raw"; raw.textContent = '"' + entry.ch + '"';
+    var lbl = document.createElement("div"); lbl.className = "lbl"; lbl.textContent = entry.note;
+    cell.appendChild(c); cell.appendChild(raw); cell.appendChild(lbl);
+    grid.appendChild(cell);
+  });
+}
+
+function render() {
+  renderGrid();
+  renderRuler();
+  renderSebGrid();
+}
+
+buildControls();
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(render);
+} else {
+  setTimeout(render, 400);
+}
+</script>
+</body>
+</html>

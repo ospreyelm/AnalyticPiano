@@ -20,36 +20,124 @@ define([
   // For example, F major (1 flat: Bb) returns { B: -1 }
   // For example, G major (1 sharp: F#) returns { F: 1 }
 
+  function convertRomanSymbols(text) {
+    return String(text || "")
+      .replace(/bb/g, "𝄫")
+      .replace(/b/g, "♭")
+      .replace(/##/g, "𝄪")
+      .replace(/#/g, "♯")
+      .replace(/n/g, "♮")
+      .replace(/⌀/g, "⌀");
+  }
+
+  // Sebastian is a zero-width figured-bass font. Each character's vertical position
+  // is baked into its glyph metrics (main-row, lower-row, upper-row). Drawing a
+  // token string like "z4" as a single fillText call renders a stacked 6/4 figure.
+  // measureText returns ~0, so we use a fixed advance width based on the "6" reference.
+
   function drawInlineRoman(ctx, label, columnX, stave, opts) {
     if (!ctx || !label) return;
-    var text = String(label);
-    var lines = text.split(/\n+/).filter(function (line) {
-      return line.length > 0;
-    });
-    if (!lines.length) {
-      return;
+    var raw = String(label);
+
+    // Split into alternating plain / {figured-bass} tokens
+    var tokenRe = /([^{}]+)|(\{([^{}]+)\})/g;
+    var tokens = [];
+    var m;
+    while ((m = tokenRe.exec(raw)) !== null) {
+      if (m[2]) {
+        tokens.push({ text: m[3], figured: true });
+      } else if (m[1]) {
+        tokens.push({ text: m[1], figured: false });
+      }
     }
+    if (!tokens.length) return;
+
     var yBase = (stave && stave.getBottomY) ? stave.getBottomY() : 100;
     var y = yBase + ((opts && opts.yShift) || 30);
-    ctx.save();
     var color = (opts && opts.color) || "#000";
+
+    // Adapt sizes to available column gap so labels don't collide.
+    var colGap = (opts && opts.colGap) || null;
+    var ROMAN_SIZE = (colGap && colGap < 36) ? 14 : (colGap && colGap < 50) ? 16 : 20;
+    var SEB_SIZE   = (colGap && colGap < 36) ? 20 : (colGap && colGap < 50) ? 26 : 32;
+    // Figure advance width: Sebastian glyphs are zero-width, so proxy via
+    // MainSerifs digit width at ~60% of ROMAN_SIZE (figures are superscript-sized).
+    var FIG_REF_SIZE = Math.round(ROMAN_SIZE * 0.62);
+
+    ctx.save();
     if (typeof ctx.setFillStyle === "function") ctx.setFillStyle(color);
     ctx.fillStyle = color;
-    ctx.font = "16px Arial, sans-serif";
-    ctx.textAlign = "left";
-    var lineHeight = (opts && opts.lineHeight) || 16;
 
-    lines.forEach(function (line, lineIdx) {
-      var glyphs = Array.from(line);
-      var midIndex = glyphs.length ? Math.floor((glyphs.length - 1) / 2) : 0;
-      var leftText =
-        midIndex > 0 ? glyphs.slice(0, midIndex).join("") : "";
-      var centerGlyph = glyphs[midIndex] || "";
-      var leftWidth = leftText ? ctx.measureText(leftText).width : 0;
-      var centerWidth = centerGlyph ? ctx.measureText(centerGlyph).width : 0;
-      var startX = Math.round(columnX - leftWidth - centerWidth / 2);
-      var lineY = y + lineIdx * lineHeight;
-      ctx.fillText(line, startX, lineY);
+    // Compute per-token widths up front so we can center the full label.
+    var SUP_SIZE  = Math.round(ROMAN_SIZE * 0.65);
+    var SUP_YOFF  = -Math.round(ROMAN_SIZE * 0.40);
+    var SUP_RE    = /(°|⌀)/g;
+    ctx.font = ROMAN_SIZE + "px MainSerifs";
+    var tokenWidths = tokens.map(function (token) {
+      if (!token.figured) {
+        // Measure char-by-char: °/⌀ draw at SUP_SIZE, rest at ROMAN_SIZE.
+        var text = convertRomanSymbols(token.text);
+        var parts = text.split(SUP_RE);
+        var total = 0;
+        parts.forEach(function(part) {
+          if (!part) return;
+          if (part === "°" || part === "⌀") {
+            ctx.font = SUP_SIZE + "px MainSerifs";
+            total += ctx.measureText(part).width;
+            ctx.font = ROMAN_SIZE + "px MainSerifs";
+          } else {
+            total += ctx.measureText(part).width;
+          }
+        });
+        return total;
+      }
+      // Proxy width: measure the digit equivalent in a small MainSerifs font.
+      // Map Sebastian codes to their digit strings for measurement.
+      var digits = token.text
+        .replace(/[zuZU]/g, "6")   // main/upper-row 6-ish
+        .replace(/[u]/g,    "7")   // main-row 7
+        .replace(/r/g,      "4")   // main-row 4
+        .replace(/e/g,      "3")   // main-row 3
+        .replace(/t/g,      "5")   // main-row 5
+        .replace(/[CKBd']/g, "b")  // accidentals — narrowish
+        .replace(/\s/g,     "");   // strip spaces
+      ctx.font = FIG_REF_SIZE + "px MainSerifs";
+      var w = ctx.measureText(digits).width;
+      ctx.font = ROMAN_SIZE + "px MainSerifs";
+      return Math.max(w, 5); // minimum 5px
+    });
+
+    var totalWidth = tokenWidths.reduce(function(a, b) { return a + b; }, 0);
+    var curX = Math.round(columnX - totalWidth / 2);
+
+    tokens.forEach(function (token, i) {
+      var w = tokenWidths[i];
+      if (!token.figured) {
+        var text = convertRomanSymbols(token.text);
+        // Draw °/⌀ as raised superscript; all other chars at normal size.
+        var parts = text.split(SUP_RE);
+        var px = curX;
+        parts.forEach(function(part) {
+          if (!part) return;
+          if (part === "°" || part === "⌀") {
+            ctx.font = SUP_SIZE + "px MainSerifs";
+            ctx.textAlign = "left";
+            ctx.fillText(part, px, y + SUP_YOFF);
+            px += ctx.measureText(part).width;
+          } else {
+            ctx.font = ROMAN_SIZE + "px MainSerifs";
+            ctx.textAlign = "left";
+            ctx.fillText(part, px, y);
+            px += ctx.measureText(part).width;
+          }
+        });
+      } else {
+        // Sebastian: draw at left edge of reserved figure slot, baseline y+3.
+        ctx.font = SEB_SIZE + "px Sebastian";
+        ctx.textAlign = "left";
+        ctx.fillText(token.text, curX + 6, y + 3);
+      }
+      curX += w;
     });
 
     ctx.restore();
@@ -264,16 +352,7 @@ define([
     try {
       var chordInfo = analyzer.to_chord(midi, "roman only");
       if (chordInfo && chordInfo.label) {
-        var label = chordInfo.label;
-        if (!label || label.indexOf("{") === -1) {
-          return label;
-        }
-        return label.replace(/\{([^}]+)\}/g, function (_, token) {
-          token = (token || "").trim();
-          if (!token) return "";
-          var mapped = FIGURE_TOKEN_MAP[token];
-          return mapped !== undefined ? mapped : "";
-        });
+        return chordInfo.label;
       }
     } catch (err) {
       return null;
@@ -820,7 +899,7 @@ define([
 
   function render(score, renderer, opts) {
     var ctx = renderer.getContext();
-    
+
     // Get canvas element - it's stored in ctx.canvas or ctx.element depending on VexFlow version
     var canvas = ctx.canvas || ctx.element;
     
@@ -1255,11 +1334,11 @@ define([
 
         if (isFirstMeasure && displayKey && activeStaveForLabel) {
           ctx.save();
-          ctx.font = "16px Arial, sans-serif";
+          ctx.font = "20px MainSerifs";
           ctx.fillStyle = (opts && opts.color) || "#000";
           ctx.textAlign = "left";
-          var labelX = currentX + 16; 
-          var labelY = activeStaveForLabel.getBottomY() + 22; 
+          var labelX = currentX + 16;
+          var labelY = activeStaveForLabel.getBottomY() + 22;
           ctx.fillText(displayKey, labelX, labelY);
           ctx.restore();
         }
@@ -1456,6 +1535,7 @@ define([
             }
 
             // Draw per onset column
+            var prevColX = null;
             groups.forEach(function(col){
               var midiSet = Object.create(null);
               col.notes.forEach(function(t){
@@ -1504,6 +1584,9 @@ define([
                 });
               }
 
+              var colGap = (prevColX !== null && columnCenterX !== null) ? (columnCenterX - prevColX) : null;
+              if (columnCenterX !== null) prevColX = columnCenterX;
+
               if (renderRomans && activeStaveForAnnotations) {
                 attachInlineRomanAnnotation(
                   col,
@@ -1512,7 +1595,7 @@ define([
                   inlineAnalyzer,
                   ctx,
                   activeStaveForAnnotations,
-                  { yShift: romanYOffset }
+                  { yShift: romanYOffset, colGap: colGap }
                 );
               } else if (renderFigured && activeStaveForAnnotations) {
                 var figureLabel = computeFiguredLabel(
