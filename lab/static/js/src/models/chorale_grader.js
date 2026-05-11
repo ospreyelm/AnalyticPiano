@@ -227,7 +227,8 @@ define([
                   }),
                   ", all expected:", allExpected);
 
-      // Attempt to match any unplayed event in window by MIDI
+      // Attempt to match all unplayed events in window with this MIDI pitch.
+      // Multiple voices may share the same pitch — mark all of them played.
       var matched = false;
       for (var i = 0; i < idxs.length; i++) {
         var ev = tl[idxs[i]];
@@ -235,17 +236,15 @@ define([
           this.playedNoteIds.add(ev.id);
           matched = true;
           console.log("[2. GRADE] ✓ Matched note " + midi + " in current window (id=" + ev.id + ")");
-          break;
         }
       }
 
       // Also check held notes
-      if (!matched) {
-        for (var j = 0; j < heldNotes.length; j++) {
-          if (!this.playedNoteIds.has(heldNotes[j].id) && this._matchPitch(heldNotes[j].midi, midi)) {
-            this.playedNoteIds.add(heldNotes[j].id);
-            matched = true;
-            console.log("[2. GRADE] ✓ Matched held note " + midi + " (id=" + heldNotes[j].id + ")");
+      for (var j = 0; j < heldNotes.length; j++) {
+        if (!this.playedNoteIds.has(heldNotes[j].id) && this._matchPitch(heldNotes[j].midi, midi)) {
+          this.playedNoteIds.add(heldNotes[j].id);
+          matched = true;
+          console.log("[2. GRADE] ✓ Matched held note " + midi + " (id=" + heldNotes[j].id + ")");
             break;
           }
         }
