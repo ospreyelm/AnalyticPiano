@@ -71,6 +71,50 @@ def _build_roman_analysis_overrides(phrase_score, global_key, unit_tags: list) -
     return overrides
 
 
+def _build_next_pitch_map(phrase_score) -> dict[float, dict[int, int]]:
+    """Build a per-offset map of {midi: next_midi} for each sounding pitch.
+
+    For each absolute offset in the score, maps each pitch's MIDI number to the
+    MIDI number of the next note in the same voice (part). Used by
+    compute_figured_bass to distinguish 9ths (resolve down) from 2nds (stay/rise).
+    Tied notes are treated as staying in place (next_midi == current_midi).
+    """
+    from music21 import note as m21note, chord as m21chord
+
+    # per_voice_timeline[part_index] = sorted list of (abs_offset, midi)
+    voice_timelines = []
+    for part in phrase_score.parts:
+        timeline = []
+        for el in part.flatten().notes:
+            abs_off = round(float(el.offset), 5)
+            if isinstance(el, m21note.Note):
+                # Tied-stop notes: voice is "staying" — treat as same pitch
+                midi = el.pitch.midi
+                timeline.append((abs_off, midi))
+            elif isinstance(el, m21chord.Chord):
+                for p in el.pitches:
+                    timeline.append((abs_off, p.midi))
+        timeline.sort(key=lambda x: x[0])
+        voice_timelines.append(timeline)
+
+    # For each (offset, midi) find the next different offset in the same part
+    # result[abs_offset][midi] = next_midi
+    result: dict[float, dict[int, int]] = {}
+    for timeline in voice_timelines:
+        for i, (off, midi) in enumerate(timeline):
+            # Find next entry in this part at a strictly later offset
+            next_midi = midi  # default: stays (tie or end of phrase)
+            for j in range(i + 1, len(timeline)):
+                if timeline[j][0] > off + 1e-6:
+                    next_midi = timeline[j][1]
+                    break
+            if off not in result:
+                result[off] = {}
+            result[off][midi] = next_midi
+
+    return result
+
+
 def _build_figured_bass_overrides(phrase_score, global_key) -> list:
     """Analyze a phrase and return UMTO analysis_overrides with figured bass.
 
@@ -91,13 +135,15 @@ def _build_figured_bass_overrides(phrase_score, global_key) -> list:
     if not measures:
         return []
 
+    next_pitch_context = _build_next_pitch_map(phrase_score)
+
     first_measure_offset = measures[0].offset
     overrides = []
     seen_offsets = set()
 
     for m in measures:
         measure_start = m.offset - first_measure_offset
-        for element in m.flat.notes:
+        for element in m.flatten().notes:
             if not isinstance(element, chord.Chord):
                 continue
             abs_offset = round(measure_start + float(element.offset), 5)
@@ -105,7 +151,9 @@ def _build_figured_bass_overrides(phrase_score, global_key) -> list:
                 continue
             seen_offsets.add(abs_offset)
             try:
-                raw_fb, abbrev_fb = compute_figured_bass(element, global_key)
+                next_map = next_pitch_context.get(abs_offset)
+                raw_fb, abbrev_fb = compute_figured_bass(element, global_key,
+                                                         next_pitch_map=next_map)
             except Exception:
                 raw_fb, abbrev_fb = None, None
 

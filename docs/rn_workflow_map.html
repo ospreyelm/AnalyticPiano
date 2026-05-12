@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RN Analysis & Exercise/Playlist Generation — Workflow Map</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f5f7; color: #1e1e2e; line-height: 1.5; }
+  h1 { font-size: 1.4rem; font-weight: 700; padding: 1.2rem 1.5rem 0.4rem; color: #1e1e2e; }
+  .subtitle { padding: 0 1.5rem 1.2rem; color: #555; font-size: 0.85rem; }
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; padding: 0 1.5rem 1.2rem; font-size: 0.78rem; }
+  .leg { display: flex; align-items: center; gap: 0.35rem; }
+  .dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+  /* Pipeline grid */
+  .pipeline { display: grid; grid-template-columns: 1fr; gap: 0; padding: 0 1.5rem 2rem; }
+  .phase { margin-bottom: 2rem; }
+  .phase-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 0.5rem; }
+  .steps { display: flex; align-items: flex-start; gap: 0; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.5rem; }
+  .step { position: relative; min-width: 190px; max-width: 230px; border-radius: 8px; padding: 0.8rem 1rem; flex-shrink: 0; }
+  .step + .step::before { content: "→"; position: absolute; left: -16px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; color: #aaa; pointer-events: none; }
+  .step h3 { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .step p { font-size: 0.74rem; color: #444; }
+  .step .file { font-size: 0.68rem; font-family: monospace; margin-top: 0.4rem; background: rgba(0,0,0,0.07); border-radius: 3px; padding: 0.15rem 0.35rem; display: inline-block; }
+  .step .tag { font-size: 0.66rem; border-radius: 3px; padding: 0.1rem 0.3rem; display: inline-block; margin-top: 0.25rem; font-weight: 600; }
+  .gap-note { font-size: 0.72rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 0.5rem 0.8rem; margin-top: 0.5rem; max-width: 600px; }
+
+  /* Colour palette per layer */
+  .col-corpus  { background: #e8f4fd; border: 1.5px solid #90caf9; }
+  .col-import  { background: #e8fce8; border: 1.5px solid #81c784; }
+  .col-analysis{ background: #fff8e1; border: 1.5px solid #ffd54f; }
+  .col-umto    { background: #ede7f6; border: 1.5px solid #ba68c8; }
+  .col-playlist{ background: #fce4ec; border: 1.5px solid #f48fb1; }
+  .col-frontend{ background: #e0f2f1; border: 1.5px solid #4db6ac; }
+  .col-problem { background: #ffebee; border: 1.5px solid #ef9a9a; }
+
+  .tag-corpus  { background: #bbdefb; color: #0d47a1; }
+  .tag-import  { background: #c8e6c9; color: #1b5e20; }
+  .tag-analysis{ background: #fff9c4; color: #5d4037; }
+  .tag-umto    { background: #e1bee7; color: #4a148c; }
+  .tag-playlist{ background: #fce4ec; color: #880e4f; }
+  .tag-frontend{ background: #b2dfdb; color: #004d40; }
+
+  /* Detail table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.77rem; margin-bottom: 2rem; margin-left: 1.5rem; margin-right: 1.5rem; max-width: calc(100% - 3rem); }
+  th { text-align: left; background: #e9ecef; padding: 0.4rem 0.6rem; font-weight: 700; border-bottom: 2px solid #ccc; }
+  td { padding: 0.35rem 0.6rem; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+  code { font-family: monospace; font-size: 0.78rem; background: #f0f0f0; padding: 0.05rem 0.25rem; border-radius: 3px; }
+
+  .section-head { font-size: 1.05rem; font-weight: 700; padding: 0.8rem 1.5rem 0.4rem; border-top: 2px solid #e0e0e0; margin-top: 1rem; color: #333; }
+
+  .callout { border-left: 4px solid #ef5350; background: #ffebee; border-radius: 0 6px 6px 0; padding: 0.7rem 1rem; margin: 0 1.5rem 1.5rem; font-size: 0.8rem; }
+  .callout strong { display: block; margin-bottom: 0.25rem; }
+  .callout.warn { border-color: #ffa726; background: #fff8e1; }
+  .callout.info { border-color: #42a5f5; background: #e3f2fd; }
+
+  @media (max-width: 700px) {
+    .steps { flex-wrap: wrap; }
+    .step + .step::before { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<h1>RN Analysis &amp; Exercise/Playlist Generation — Workflow Map</h1>
+<p class="subtitle">How a Bach chorale becomes a Roman-numeral exercise in a playlist. Covers import → analysis → UMTO → playlist → frontend.</p>
+
+<div class="legend">
+  <div class="leg"><div class="dot" style="background:#90caf9"></div> Corpus / input</div>
+  <div class="leg"><div class="dot" style="background:#81c784"></div> Import / segmentation</div>
+  <div class="leg"><div class="dot" style="background:#ffd54f"></div> Music analysis</div>
+  <div class="leg"><div class="dot" style="background:#ba68c8"></div> UMTO model / DB</div>
+  <div class="leg"><div class="dot" style="background:#f48fb1"></div> Playlist assembly</div>
+  <div class="leg"><div class="dot" style="background:#4db6ac"></div> Frontend / runtime</div>
+  <div class="leg"><div class="dot" style="background:#ef9a9a"></div> Known gap</div>
+</div>
+
+<!-- ===== PHASE 1 ===== -->
+<div class="pipeline">
+<div class="phase">
+  <div class="phase-title">Phase 1 — Load &amp; Segment (import_bach_phrases.py)</div>
+  <div class="steps">
+    <div class="step col-corpus">
+      <h3>music21 corpus</h3>
+      <p>Load chorale by <code>--riemenschneider N</code> or <code>--bwv/--movement</code></p>
+      <span class="file">music21.corpus.chorales.Iterator</span>
+    </div>
+    <div class="step col-import">
+      <h3>Global key detection</h3>
+      <p><code>score.analyze('key')</code> — one key used for ALL phrases (per-phrase detection unreliable)</p>
+      <span class="file">import_bach_phrases.py:191</span>
+    </div>
+    <div class="step col-import">
+      <h3>Cadence / fermata detection</h3>
+      <p>Walk measures; split on fermata + harmonic arrival (I/V) after ≥ min_measures. Produces phrase boundaries.</p>
+      <span class="file">import_bach_phrases.py:197–249</span>
+    </div>
+    <div class="step col-import">
+      <h3>Gap filter</h3>
+      <p>Skip phrases where any measure has &lt; 50% note fill (silent/rest-dominated)</p>
+      <span class="file">import_bach_phrases.py:284–296</span>
+    </div>
+    <div class="step col-import">
+      <h3>Slice score → CIR JSON</h3>
+      <p>Cut phrase out of full score, convert to Canonical Internal Representation: measures → staves → voices → items</p>
+      <span class="file">m21_cir_converter.py:m21_to_cir()</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PHASE 2 ===== -->
+<div class="phase">
+  <div class="phase-title">Phase 2 — Music Analysis (per phrase)</div>
+  <div class="steps">
+    <div class="step col-analysis">
+      <h3>Skills analysis</h3>
+      <p><code>analyze_chunk_skills()</code> — chordify the phrase, walk chords, detect diatonic triads, inversions, cadences, secondary dominants, etc. Returns <code>skill_tags[]</code> + <code>complexity</code> score.</p>
+      <span class="file">utils/skills_analyzer.py</span>
+      <span class="tag tag-analysis">16 canonical skill tags</span>
+    </div>
+    <div class="step col-analysis">
+      <h3>Roman numeral overrides</h3>
+      <p><code>_build_roman_analysis_overrides()</code> — chordify again, walk unique offsets, call <code>romanNumeralFromChord()</code> per chord. Stores <code>raw_roman_numeral</code> only; <code>roman_numeral</code> = null (targeted at request time).</p>
+      <span class="file">import_bach_phrases.py:26–71</span>
+      <span class="tag tag-analysis">mode=roman or matching</span>
+    </div>
+    <div class="step col-analysis">
+      <h3>Figured bass overrides</h3>
+      <p><code>_build_figured_bass_overrides()</code> + <code>compute_figured_bass()</code> — intervals above bass, chromatic prefix rules (§ diatonicism, tritone = +), Kellner abbreviation table.</p>
+      <span class="file">utils/figured_bass.py</span>
+      <span class="tag tag-analysis">mode=figures</span>
+    </div>
+    <div class="step col-problem">
+      <h3 style="color:#b71c1c">⚠ NCT problem</h3>
+      <p>Both RN and FB analysis use <strong>chordify</strong> — every note becomes a chord slice. Passing tones, suspensions, neighbors are all treated as harmonic events. No non-chord-tone detection exists.</p>
+      <span class="tag" style="background:#ffcdd2;color:#b71c1c">Gap</span>
+    </div>
+  </div>
+  <div class="gap-note">
+    <strong>Root cause of NCT pollution:</strong> <code>chordify()</code> merges every simultaneous pitch into a vertical chord at each time slice. A passing tone (D in a C→E soprano over an E bass chord) becomes part of a "chord" that music21 may misidentify as IV, II6, or worse. The RN label for that beat is therefore wrong. Suspension chains (7-6, 4-3, 9-8) get the same treatment — the suspended note is treated as a chord tone.
+  </div>
+</div>
+
+<!-- ===== PHASE 3 ===== -->
+<div class="phase">
+  <div class="phase-title">Phase 3 — UMTO Construction (umto_factory.py)</div>
+  <div class="steps">
+    <div class="step col-umto">
+      <h3>build_umto_payload()</h3>
+      <p>Converts CIR score_data → UMTO voices dict (S/A/T/B VoiceEvent lists) + GradingSlices (one per onset). If <code>analysis_overrides</code> provided, those replace auto-generated AnalysisSlices.</p>
+      <span class="file">umto_factory.py:build_umto_payload()</span>
+    </div>
+    <div class="step col-umto">
+      <h3>analysis_overrides injection</h3>
+      <p>Overrides from Phase 2 are passed as <code>umto_kwargs["analysis_overrides"]</code>. Each override: <code>{ offset, content: { raw_roman_numeral, raw_figured_bass, … }, unit_tags }</code></p>
+      <span class="file">umto_factory.py:~L230</span>
+    </div>
+    <div class="step col-umto">
+      <h3>Held-note splitting</h3>
+      <p><code>_split_voices_at_onsets()</code> — splits held notes at beat-boundary attack onsets so each slot renders correctly.</p>
+      <span class="file">umto_factory.py:_split_voices_at_onsets()</span>
+    </div>
+    <div class="step col-umto">
+      <h3>save_umto_exercise()</h3>
+      <p>Validates UMTO payload via Pydantic, writes <code>Exercise</code> row to DB, backfills <code>exercise_id</code>. Tags: <code>skill_tags</code> + <code>complexity</code> set here.</p>
+      <span class="file">umto_factory.py:save_umto_exercise()</span>
+      <span class="tag tag-umto">Exercise row created</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PHASE 4 ===== -->
+<div class="phase">
+  <div class="phase-title">Phase 4 — Playlist Assembly (create_unit_playlist.py)</div>
+  <div class="steps">
+    <div class="step col-playlist">
+      <h3>Import loop</h3>
+      <p>Calls <code>import_bach_phrases</code> for each Riemenschneider number in range. Tags each exercise with <code>unit:N</code> + <code>mode:roman</code>.</p>
+      <span class="file">create_unit_playlist.py:161–168</span>
+    </div>
+    <div class="step col-playlist">
+      <h3>New-chord filter</h3>
+      <p><code>_has_new_chord()</code> — reads <code>analysis[]</code> from stored UMTO, checks if any <code>raw_roman_numeral</code> appears in the unit's new-chord set (from taxonomy). Exercises with no new chords are excluded.</p>
+      <span class="file">create_unit_playlist.py:101–112</span>
+      <span class="tag tag-playlist">Requires NCT-clean labels</span>
+    </div>
+    <div class="step col-playlist">
+      <h3>Sort key</h3>
+      <p>Exercises ordered by: (1) out-of-scope ratio ↑, (2) new-chord event count ↓, (3) targetable-event ratio ↓, (4) complexity, (5) Riem# / phrase#.</p>
+      <span class="file">create_unit_playlist.py:77–86</span>
+    </div>
+    <div class="step col-playlist">
+      <h3>Playlist row + static order</h3>
+      <p>Creates or updates <code>Playlist</code>, deletes old <code>ExercisePlaylistOrdered</code> rows, writes new ones in computed order. Playlist tagged with <code>unit:N</code>, <code>mode:roman</code>, unit skill tags.</p>
+      <span class="file">create_unit_playlist.py:176–225</span>
+      <span class="tag tag-playlist">Playlist assembled</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PHASE 5 ===== -->
+<div class="phase">
+  <div class="phase-title">Phase 5 — Frontend / Runtime (exercise_definition.js)</div>
+  <div class="steps">
+    <div class="step col-frontend">
+      <h3>Deserialize UMTO payload</h3>
+      <p>Exercise JSON loaded from API. <code>isUMTO</code> flag checked; <code>analysis[]</code> slices read from <code>score.umto.analysis</code>.</p>
+      <span class="file">exercise_definition.js:~L960</span>
+    </div>
+    <div class="step col-frontend">
+      <h3>applySkillFilter()</h3>
+      <p>Converts each <code>AnalysisSlice</code> into a problem slot. For Roman mode: reads <code>raw_roman_numeral</code> (or <code>roman_numeral</code>) as the answer. Slot is "targetable" if the label is in the unit's cumulative allowed set.</p>
+      <span class="file">exercise_definition.js:15–67</span>
+      <span class="tag tag-frontend">Unit 9: hardcoded I/i/V/V7 only</span>
+    </div>
+    <div class="step col-frontend">
+      <h3>Allowed-answers map</h3>
+      <p>Unit 9 has hardcoded allowlist <code>["I","i","V","V7"]</code>. Other units fall through generic path (<code>answer.startsWith(cleanTag)</code>) — known broken for most tag names.</p>
+      <span class="file">exercise_definition.js:37–67</span>
+      <span class="tag tag-frontend" style="background:#ffcdd2;color:#b71c1c">Blocker: units 10+</span>
+    </div>
+    <div class="step col-frontend">
+      <h3>Student interaction</h3>
+      <p>Student clicks <code>?</code> slot, picks from popup of allowed answers. Correct answer is <code>roman_numeral</code> (targeted label) or falls back to <code>raw_roman_numeral</code>.</p>
+      <span class="file">exercise_sheet.js / vexflow_adapter.js</span>
+    </div>
+  </div>
+</div>
+</div><!-- end pipeline -->
+
+<!-- ===== Detail tables ===== -->
+<div class="section-head">Key Data Structures</div>
+<table>
+  <tr><th>Structure</th><th>Where produced</th><th>Fields relevant to RN</th></tr>
+  <tr>
+    <td><code>AnalysisSlice</code></td>
+    <td><code>umto.py</code>, populated in factory &amp; overrides</td>
+    <td><code>offset</code>, <code>content.roman_numeral</code> (null at import; set at request time), <code>content.raw_roman_numeral</code> (raw music21 figure, durable), <code>unit_tags[]</code>, <code>is_target</code></td>
+  </tr>
+  <tr>
+    <td><code>analysis_overrides</code> list</td>
+    <td><code>import_bach_phrases.py:_build_roman_analysis_overrides()</code></td>
+    <td>Same shape as AnalysisSlice. Replaces auto-generated slices in <code>build_umto_payload()</code>.</td>
+  </tr>
+  <tr>
+    <td><code>GradingSlice</code></td>
+    <td><code>umto_factory.py</code></td>
+    <td><code>offset</code>, <code>target_midi_pitches[]</code> — one per harmonic onset (after note splitting)</td>
+  </tr>
+  <tr>
+    <td><code>Exercise.skill_tags</code></td>
+    <td><code>save_umto_exercise()</code></td>
+    <td>ArrayField. Contains <code>unit:N</code>, <code>mode:roman</code>, canonical tags (Diatonic_Triads etc), plus unit-prefixed forms. Used by playlist query &amp; new-chord filter.</td>
+  </tr>
+</table>
+
+<div class="section-head">RN Analysis: What music21 <code>romanNumeralFromChord()</code> actually does</div>
+<table>
+  <tr><th>Input</th><th>Process</th><th>Output stored</th></tr>
+  <tr>
+    <td>A <code>music21.chord.Chord</code> object at a given offset (from <code>chordify()</code>)</td>
+    <td>Determines scale degree, quality (major/minor/dim/aug), inversion, seventh presence, applied chord target. Uses the global key for diatonic context.</td>
+    <td><code>raw_roman_numeral</code> = <code>rn.figure</code> e.g. <code>"V7"</code>, <code>"viio6/V"</code>, <code>"IV6"</code></td>
+  </tr>
+  <tr>
+    <td>Chord containing a passing tone (e.g. D in C-major chord)</td>
+    <td><strong>chordify() includes the PT</strong> — result is e.g. a <code>[C, D, E, G]</code> chord which may be labelled as something unexpected (e.g. G7/C, Cmaj9, or random secondary)</td>
+    <td>Wrong label stored in <code>raw_roman_numeral</code>. No flag that D is non-harmonic.</td>
+  </tr>
+  <tr>
+    <td>Suspension (e.g. 4-3: F held over G-B-D bass)</td>
+    <td>Chord at suspension onset = <code>[F, G, B, D]</code> — may read as <code>V7/IV</code> or <code>G9</code> rather than <code>V</code></td>
+    <td>Wrong label. No suspension flag.</td>
+  </tr>
+</table>
+
+<div class="section-head">Known Gaps</div>
+
+<div class="callout">
+  <strong>Gap 1: No non-chord-tone detection at any stage</strong>
+  Both <code>_build_roman_analysis_overrides()</code> and <code>analyze_chunk_skills()</code> use <code>chordify()</code> which verticalizes all voices at every 8th-note grid point. Passing tones, neighbor tones, suspensions, and anticipations are all included in the vertical slices and corrupt the RN label.
+</div>
+
+<div class="callout warn">
+  <strong>Gap 2: <code>applySkillFilter</code> generic path broken for units 10+</strong>
+  Unit 9 works because of a hardcoded allowlist. All other units fall through to <code>answer.startsWith(cleanTag)</code> which does not match e.g. "V7" against the tag "Dominant_Seventh". <br>
+  File: <code>exercise_definition.js:37–67</code>
+</div>
+
+<div class="callout warn">
+  <strong>Gap 3: Suspension detection deferred</strong>
+  A TODO in <code>import_bach_phrases.py:77</code> notes that 4-3, 7-6, 9-8 suspension detection requires look-ahead over consecutive offsets and is not yet implemented.
+</div>
+
+<div class="callout info">
+  <strong>Design invariant to preserve:</strong> <code>roman_numeral</code> is intentionally null at import time. Targeting (which slot gets revealed as a question vs shown as context) happens at request time in <code>generate_exercise_context</code>. Only <code>raw_roman_numeral</code> is the durable record. Any NCT improvement must write into <code>raw_roman_numeral</code> (or a new <code>is_non_chord_tone</code> flag), not into <code>roman_numeral</code>.
+</div>
+
+<div class="section-head">End-to-End Command Example</div>
+<pre style="background:#1e1e2e;color:#cdd6f4;padding:1rem 1.5rem;font-size:0.78rem;overflow-x:auto;margin:0 1.5rem 2rem;border-radius:8px;line-height:1.7">
+# Import Riemenschneider chorales 21-30 for Unit 9, roman mode, create playlist
+python manage.py create_unit_playlist \
+  --unit 9 \
+  --riemenschneider 21-30 \
+  --author admin@example.com \
+  --mode roman \
+  --public
+
+# What this does internally:
+# 1. For each R21..R30:
+#    a. import_bach_phrases → load score, detect key, segment on cadences, gap-filter
+#    b. _build_roman_analysis_overrides() → chordify + romanNumeralFromChord per offset
+#       ← NCTs pollute labels here
+#    c. analyze_chunk_skills() → skill_tags[] + complexity
+#    d. save_umto_exercise() → build_umto_payload() → Exercise DB row
+# 2. Query Exercise.objects.filter(skill_tags__contains=['unit:9', 'mode:roman'])
+# 3. _has_new_chord(): check raw_roman_numeral against Unit 9 new chords {I, i, V, V7}
+#    ← Wrong NCT labels can wrongly pass or wrongly fail this filter
+# 4. Sort, write ExercisePlaylistOrdered rows
+</pre>
+
+<p style="padding: 0 1.5rem 2rem; font-size:0.75rem; color:#888;">Generated 2026-05-11 · docs/rn_workflow_map.html</p>
+</body>
+</html>

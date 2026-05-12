@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RN Analysis Comparison — Riemenschneider 1 (BWV 269, G major)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f7; color: #1a1a2e; font-size: 14px; }
+h1 { padding: 1rem 1.5rem 0.2rem; font-size: 1.25rem; }
+.meta { padding: 0.2rem 1.5rem 0.8rem; color: #666; font-size: 0.8rem; }
+
+/* Legend */
+.legend { display: flex; gap: 1.2rem; flex-wrap: wrap; padding: 0.5rem 1.5rem 1rem; font-size: 0.75rem; }
+.leg { display: flex; align-items: center; gap: 0.3rem; }
+.lsq { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+
+/* Main table */
+.wrap { overflow-x: auto; padding: 0 1.5rem 2rem; }
+table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 0.76rem; }
+th { background: #2c2c54; color: #eee; padding: 0.45rem 0.6rem; text-align: left; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+th.sec { background: #3a3a6e; }
+td { padding: 0.35rem 0.6rem; border-bottom: 1px solid #e0e0e0; vertical-align: middle; white-space: nowrap; }
+tr.measure-start td { border-top: 2px solid #aaa; }
+tr.measure-start td:first-child { font-weight: 700; }
+tr:hover td { background: #f0f0ff; }
+
+/* Beat shading */
+tr.downbeat td { background: #fafafa; }
+tr.non-beat td { background: #f0f0f0; }
+
+/* Diff highlighting */
+.match  { }
+.diff   { background: #fff3cd !important; font-weight: 700; }
+.diff2  { background: #ffe0e0 !important; font-weight: 700; }
+.wir    { background: #e8f5e9; font-weight: 700; color: #2e7d32; }
+.wir-var{ background: #fff8e1; color: #6d4c00; font-style: italic; }
+.absent { color: #bbb; font-style: italic; }
+.nct    { background: #fce4ec !important; color: #880e4f; font-weight: 700; }
+
+/* Skills */
+.skills { padding: 0.5rem 1.5rem 1.5rem; font-size: 0.75rem; }
+.skills h3 { margin-bottom: 0.4rem; font-size: 0.85rem; }
+.tag { display: inline-block; background: #e8eaf6; border: 1px solid #9fa8da; border-radius: 3px; padding: 0.1rem 0.4rem; margin: 0.15rem; }
+.tag.canonical { background: #e3f2fd; border-color: #90caf9; font-weight: 700; }
+
+/* Note box */
+.note-box { margin: 0 1.5rem 1.5rem; background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 0.8rem 1rem; font-size: 0.78rem; line-height: 1.7; }
+.note-box h3 { font-size: 0.85rem; margin-bottom: 0.4rem; }
+code { font-family: monospace; background: #f0f0f0; padding: 0.05rem 0.25rem; border-radius: 2px; }
+
+/* Section header */
+.sh { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #888; padding: 0.8rem 1.5rem 0.3rem; border-top: 1px solid #ddd; }
+</style>
+</head>
+<body>
+
+<h1>RN Analysis Comparison — Riemenschneider 1 (BWV 269, G major, 3/4)</h1>
+<p class="meta">Aus meines Herzens Grunde · 21 measures · Generated 2026-05-12</p>
+
+<div class="legend">
+  <div class="leg"><div class="lsq" style="background:#e8f5e9;border:1px solid #81c784"></div> When in Rome (human analyst)</div>
+  <div class="leg"><div class="lsq" style="background:#fff8e1;border:1px solid #ffd54f"></div> When in Rome — variant reading</div>
+  <div class="leg"><div class="lsq" style="background:#fff3cd;border:1px solid #ffc107"></div> Differs from When in Rome</div>
+  <div class="leg"><div class="lsq" style="background:#ffe0e0;border:1px solid #ef9a9a"></div> Likely NCT pollution (suspect label)</div>
+  <div class="leg"><div class="lsq" style="background:#fce4ec;border:1px solid #f48fb1"></div> NCT beat (absent from WiR = non-harmonic)</div>
+  <div class="leg"><div class="lsq" style="background:#f5f5f5;border:1px solid #bbb"></div> Absent from WiR at this beat</div>
+</div>
+
+<div class="wrap">
+<table id="main">
+<thead>
+<tr>
+  <th>M</th>
+  <th>Beat</th>
+  <th>Pitches</th>
+  <th>FB (raw)</th>
+  <th>FB (abbrev)</th>
+  <th class="sec">RN: m21 global key</th>
+  <th class="sec">RN: m21 floatingKey</th>
+  <th class="sec">Float. key</th>
+  <th style="background:#2a5c2a;color:#eee">When in Rome</th>
+  <th style="background:#3a6c2a;color:#eee">WiR variant</th>
+</tr>
+</thead>
+<tbody id="tbody">
+</tbody>
+</table>
+</div>
+
+<div class="sh">Skills Analyzer Output (whole chorale as single chunk)</div>
+<div class="skills">
+  <h3>Detected skill tags — complexity: <strong id="complexity"></strong></h3>
+  <div id="tags"></div>
+</div>
+
+<div class="sh">When in Rome — Raw Analysis Text</div>
+<div class="note-box" style="font-family:monospace;white-space:pre;line-height:1.6;font-size:0.74rem" id="wir-raw"></div>
+
+<div class="sh">Notes on Discrepancies</div>
+<div class="note-box">
+  <h3>How to read this table</h3>
+  <p>
+    <strong>NCT beat</strong> (pink): music21 <code>chordify()</code> produced a vertical slice at this beat, but When in Rome has no chord label here — meaning the human analyst treated one or more notes at this moment as non-harmonic (passing tone, neighbor, suspension, etc.). The "chord" is an artefact of chordification, not a real harmonic event.
+  </p>
+  <p style="margin-top:0.6rem">
+    <strong>Differs from WiR</strong> (yellow): music21 produced a different label than the human analyst for what is genuinely a harmonic beat. This is the core RN analysis quality gap.
+  </p>
+  <p style="margin-top:0.6rem">
+    <strong>FB analysis</strong>: Figured bass is computed independently from bass + key — no RN reasoning involved. The raw stack (e.g. <code>8/5/3</code>) and abbreviated form (e.g. <code>5/3</code>) are always shown regardless of NCT status, because FB labels sounding intervals, not harmonic function.
+  </p>
+  <p style="margin-top:0.6rem">
+    <strong>WiR notation differences</strong>: When in Rome uses <code>6/5</code> where music21 uses <code>65</code>, <code>4/3</code> where music21 uses <code>43</code>, etc. These are the same chord — notation convention differs.
+  </p>
+</div>
+
+<script>
+// ---- Data ----
+const ROWS = [{"m": 0, "beat": 3.0, "pitches": "G2 B3 D4 G4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 1, "beat": 1.0, "pitches": "G3 B3 D4 G4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 1, "beat": 2.0, "pitches": "E3 C4 E4 G4", "fb_raw": "8/6/3", "fb": "6", "rn_global": "IV6", "rn_fk": "IV6", "fk_key": "G major"}, {"m": 1, "beat": 2.5, "pitches": "E3 B3 E4 G4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "vi", "rn_fk": "vi", "fk_key": "G major"}, {"m": 1, "beat": 3.0, "pitches": "F#3 A3 D4 D5", "fb_raw": "6/3", "fb": "6", "rn_global": "V6", "rn_fk": "V6", "fk_key": "G major"}, {"m": 2, "beat": 1.0, "pitches": "G3 D4 B4", "fb_raw": "5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 2, "beat": 2.0, "pitches": "D3 F#3 D4 B4", "fb_raw": "8/6/3", "fb": "6", "rn_global": "iii6", "rn_fk": "iii6", "fk_key": "G major"}, {"m": 2, "beat": 2.5, "pitches": "D3 F#3 D4 A4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "V", "rn_fk": "V", "fk_key": "G major"}, {"m": 2, "beat": 3.0, "pitches": "E3 G3 B3 G4", "fb_raw": "5/3", "fb": "5/3", "rn_global": "vi", "rn_fk": "vi", "fk_key": "G major"}, {"m": 3, "beat": 1.0, "pitches": "C3 C4 E4 G4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "IV", "rn_fk": "IV", "fk_key": "G major"}, {"m": 3, "beat": 1.5, "pitches": "C3 B3 D4 G4", "fb_raw": "7/5/2", "fb": "7/5/2", "rn_global": "I752", "rn_fk": "I752", "fk_key": "G major"}, {"m": 3, "beat": 2.0, "pitches": "B2 C4 E4 G4", "fb_raw": "6/4/2", "fb": "4/2", "rn_global": "IV42", "rn_fk": "IV42", "fk_key": "G major"}, {"m": 3, "beat": 2.5, "pitches": "A2 C4 F#4 A4", "fb_raw": "8/6/3", "fb": "6", "rn_global": "viio6", "rn_fk": "viio6", "fk_key": "G major"}, {"m": 3, "beat": 3.0, "pitches": "G2 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 4, "beat": 1.0, "pitches": "D3 D4 F#4 A4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "V", "rn_fk": "V", "fk_key": "G major"}, {"m": 4, "beat": 3.0, "pitches": "G2 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 5, "beat": 1.0, "pitches": "F#2 A3 D4 D5", "fb_raw": "6/3", "fb": "6", "rn_global": "V6", "rn_fk": "V6", "fk_key": "G major"}, {"m": 5, "beat": 2.0, "pitches": "G2 B3 E4 D5", "fb_raw": "6/5/3", "fb": "6/5", "rn_global": "vi65", "rn_fk": "vi65", "fk_key": "G major"}, {"m": 5, "beat": 3.0, "pitches": "A2 C4 F#4 C5", "fb_raw": "6/3", "fb": "6", "rn_global": "viio6", "rn_fk": "viio6", "fk_key": "G major"}, {"m": 6, "beat": 1.0, "pitches": "B2 D4 G4 B4", "fb_raw": "8/6/3", "fb": "6", "rn_global": "I6", "rn_fk": "I6", "fk_key": "G major"}, {"m": 6, "beat": 2.0, "pitches": "C3 E4 G4 A4", "fb_raw": "6/5/3", "fb": "6/5", "rn_global": "ii65", "rn_fk": "ii65", "fk_key": "G major"}, {"m": 6, "beat": 3.0, "pitches": "D3 D4 F#4 A4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "V", "rn_fk": "V", "fk_key": "G major"}, {"m": 6, "beat": 3.5, "pitches": "D3 C4 F#4 A4", "fb_raw": "7/5/3", "fb": "7", "rn_global": "V7", "rn_fk": "V7", "fk_key": "G major"}, {"m": 7, "beat": 1.0, "pitches": "G2 B3 D4 G4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 7, "beat": 3.0, "pitches": "G2 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 8, "beat": 1.0, "pitches": "G2 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 8, "beat": 1.5, "pitches": "G2 D4 F#4 B4", "fb_raw": "7/5/3", "fb": "7", "rn_global": "I7", "rn_fk": "I7", "fk_key": "G major"}, {"m": 8, "beat": 2.0, "pitches": "A2 C4 E4 C5", "fb_raw": "5/3", "fb": "5/3", "rn_global": "ii", "rn_fk": "ii", "fk_key": "G major"}, {"m": 8, "beat": 2.5, "pitches": "A2 C4 F#4 C5", "fb_raw": "6/3", "fb": "6", "rn_global": "viio6", "rn_fk": "viio6", "fk_key": "G major"}, {"m": 8, "beat": 3.0, "pitches": "B2 B3 G4 D5", "fb_raw": "8/6/3", "fb": "6", "rn_global": "I6", "rn_fk": "I6", "fk_key": "G major"}, {"m": 8, "beat": 3.5, "pitches": "B2 A3 G4 D5", "fb_raw": "7/6/3", "fb": "7/6/3", "rn_global": "I763", "rn_fk": "I763", "fk_key": "G major"}, {"m": 9, "beat": 1.0, "pitches": "B2 B3 G4 D5", "fb_raw": "8/6/3", "fb": "6", "rn_global": "I6", "rn_fk": "I6", "fk_key": "G major"}, {"m": 9, "beat": 1.5, "pitches": "B2 C4 A4 D5", "fb_raw": "7/3/2", "fb": "7/3/2", "rn_global": "iii732", "rn_fk": "iii732", "fk_key": "G major"}, {"m": 9, "beat": 2.0, "pitches": "B2 D4 G4 D5", "fb_raw": "6/3", "fb": "6", "rn_global": "I6", "rn_fk": "I6", "fk_key": "G major"}, {"m": 9, "beat": 2.5, "pitches": "A2 D4 F#4 C5", "fb_raw": "6/4/3", "fb": "4/3", "rn_global": "V43", "rn_fk": "V43", "fk_key": "G major"}, {"m": 9, "beat": 3.0, "pitches": "G2 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 10, "beat": 1.0, "pitches": "D3 D4 F#4 A4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "V", "rn_fk": "V", "fk_key": "G major"}, {"m": 10, "beat": 3.0, "pitches": "E3 B3 E4 G4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "vi", "rn_fk": "vi", "fk_key": "G major"}, {"m": 11, "beat": 1.0, "pitches": "E3 G3 E4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "vi", "rn_fk": "vi", "fk_key": "G major"}, {"m": 11, "beat": 2.0, "pitches": "D3 B3 F#4 B4", "fb_raw": "6/3", "fb": "6", "rn_global": "iii6", "rn_fk": "iii6", "fk_key": "G major"}, {"m": 11, "beat": 2.5, "pitches": "D3 B3 G4 B4", "fb_raw": "6/4", "fb": "6/4", "rn_global": "I64", "rn_fk": "I64", "fk_key": "G major"}, {"m": 11, "beat": 3.0, "pitches": "C3 E4 A4 C5", "fb_raw": "8/6/3", "fb": "6", "rn_global": "ii6", "rn_fk": "ii6", "fk_key": "G major"}, {"m": 12, "beat": 1.0, "pitches": "B2 D4 A4 D5", "fb_raw": "7/3", "fb": "7/3", "rn_global": "iii7", "rn_fk": "iii7", "fk_key": "G major"}, {"m": 12, "beat": 2.0, "pitches": "B2 D4 G4 D5", "fb_raw": "6/3", "fb": "6", "rn_global": "I6", "rn_fk": "I6", "fk_key": "G major"}, {"m": 12, "beat": 2.5, "pitches": "C3 D4 G4 D5", "fb_raw": "9/5/2", "fb": "9/5/2", "rn_global": "iv52", "rn_fk": "iv52", "fk_key": "G major"}, {"m": 12, "beat": 3.0, "pitches": "D3 D4 G4 C5", "fb_raw": "8/7/4", "fb": "8/7/4", "rn_global": "iv74", "rn_fk": "iv74", "fk_key": "G major"}, {"m": 12, "beat": 3.5, "pitches": "D3 D4 F#4 C5", "fb_raw": "8/7/3", "fb": "8/7/3", "rn_global": "V7", "rn_fk": "V7", "fk_key": "G major"}, {"m": 13, "beat": 1.0, "pitches": "G2 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 13, "beat": 1.5, "pitches": "A2 D4 G4 B4", "fb_raw": "7/4/2", "fb": "7/4/2", "rn_global": "I742", "rn_fk": "I742", "fk_key": "G major"}, {"m": 13, "beat": 2.0, "pitches": "B2 D4 G4 B4", "fb_raw": "8/6/3", "fb": "6", "rn_global": "I6", "rn_fk": "I6", "fk_key": "G major"}, {"m": 13, "beat": 3.0, "pitches": "G2 D4 F4 B4", "fb_raw": "b7/5/3", "fb": "b7", "rn_global": "Ib753", "rn_fk": "Ib753", "fk_key": "G major"}, {"m": 14, "beat": 1.0, "pitches": "C3 C4 E4 G4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "IV", "rn_fk": "IV", "fk_key": "G major"}, {"m": 14, "beat": 3.0, "pitches": "G2 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 15, "beat": 1.0, "pitches": "F#2 D4 A4 D5", "fb_raw": "6/3", "fb": "6", "rn_global": "V6", "rn_fk": "V6", "fk_key": "G major"}, {"m": 15, "beat": 1.5, "pitches": "F#2 C4 A4 D5", "fb_raw": "6/5+/3", "fb": "6/+5", "rn_global": "V65", "rn_fk": "V65", "fk_key": "G major"}, {"m": 15, "beat": 2.0, "pitches": "G2 B3 A4 D5", "fb_raw": "5/3/2", "fb": "5/3/2", "rn_global": "I532", "rn_fk": "I532", "fk_key": "G major"}, {"m": 15, "beat": 2.5, "pitches": "G2 B3 G4 D5", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 15, "beat": 3.0, "pitches": "A2 C4 F#4 C5", "fb_raw": "6/3", "fb": "6", "rn_global": "viio6", "rn_fk": "viio6", "fk_key": "G major"}, {"m": 16, "beat": 1.0, "pitches": "B2 D4 G4 B4", "fb_raw": "8/6/3", "fb": "6", "rn_global": "I6", "rn_fk": "I6", "fk_key": "G major"}, {"m": 16, "beat": 2.0, "pitches": "G2 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 16, "beat": 3.0, "pitches": "D3 D4 F#4 A4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "V", "rn_fk": "V", "fk_key": "G major"}, {"m": 16, "beat": 3.5, "pitches": "D3 C4 F#4 A4", "fb_raw": "7/5/3", "fb": "7", "rn_global": "V7", "rn_fk": "V7", "fk_key": "G major"}, {"m": 17, "beat": 1.0, "pitches": "E3 B3 F#4 G4", "fb_raw": "9/5/3", "fb": "9", "rn_global": "vi532", "rn_fk": "vi532", "fk_key": "G major"}, {"m": 17, "beat": 1.5, "pitches": "D3 B3 E4 G4", "fb_raw": "6/4/2", "fb": "4/2", "rn_global": "vi42", "rn_fk": "vi42", "fk_key": "G major"}, {"m": 17, "beat": 2.0, "pitches": "C3 C4 E4 G4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "IV", "rn_fk": "IV", "fk_key": "G major"}, {"m": 17, "beat": 2.5, "pitches": "B2 C4 F#4 A4", "fb_raw": "9/7/5", "fb": "9/7/5", "rn_global": "viio752", "rn_fk": "viio752", "fk_key": "G major"}, {"m": 17, "beat": 3.0, "pitches": "A2 D4 G4 B4", "fb_raw": "7/4/2", "fb": "7/4/2", "rn_global": "I742", "rn_fk": "I742", "fk_key": "G major"}, {"m": 17, "beat": 3.5, "pitches": "G2 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 18, "beat": 1.0, "pitches": "D3 D4 F#4 A4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "V", "rn_fk": "V", "fk_key": "G major"}, {"m": 18, "beat": 3.0, "pitches": "G3 D4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}, {"m": 19, "beat": 1.0, "pitches": "G3 D4 A4 D5", "fb_raw": "9/5", "fb": "9/5", "rn_global": "i52", "rn_fk": "i52", "fk_key": "G major"}, {"m": 19, "beat": 2.0, "pitches": "F#3 D4 A4 D5", "fb_raw": "6/3", "fb": "6", "rn_global": "V6", "rn_fk": "V6", "fk_key": "G major"}, {"m": 19, "beat": 3.0, "pitches": "E3 E4 G4 C5", "fb_raw": "8/6/3", "fb": "6", "rn_global": "IV6", "rn_fk": "IV6", "fk_key": "G major"}, {"m": 19, "beat": 3.5, "pitches": "E3 E4 F#4 C5", "fb_raw": "8/6/2", "fb": "8/6/2", "rn_global": "viiø62", "rn_fk": "viiø62", "fk_key": "G major"}, {"m": 20, "beat": 1.0, "pitches": "E3 E4 G4 B4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "vi", "rn_fk": "vi", "fk_key": "G major"}, {"m": 20, "beat": 1.5, "pitches": "D3 E4 G4 B4", "fb_raw": "9/6/4", "fb": "9/6/4", "rn_global": "vi42", "rn_fk": "vi42", "fk_key": "G major"}, {"m": 20, "beat": 2.0, "pitches": "C3 E4 G4 A4", "fb_raw": "6/5/3", "fb": "6/5", "rn_global": "ii65", "rn_fk": "ii65", "fk_key": "G major"}, {"m": 20, "beat": 3.0, "pitches": "D3 D4 F#4 A4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "V", "rn_fk": "V", "fk_key": "G major"}, {"m": 20, "beat": 3.5, "pitches": "D3 C4 F#4 A4", "fb_raw": "7/5/3", "fb": "7", "rn_global": "V7", "rn_fk": "V7", "fk_key": "G major"}, {"m": 21, "beat": 1.0, "pitches": "G2 B3 D4 G4", "fb_raw": "8/5/3", "fb": "5/3", "rn_global": "I", "rn_fk": "I", "fk_key": "G major"}];
+
+const SKILL_TAGS = ["Cadence_Perfect_Authentic","Diatonic_Triads","Dominant_Seventh","Inversions_First","Inversions_Second","Secondary_Dominant","unit:1","unit:10","unit:10_inversions_first","unit:11","unit:11_diatonic_predominant","unit:12","unit:12_inversions_second","unit:14","unit:14_diatonic_sevenths","unit:16","unit:16_secondary_dominant","unit:1_pitch_reading","unit:2","unit:2_rhythm","unit:3","unit:3_key_signature","unit:4","unit:4_interval_quality","unit:5","unit:5_triad_quality","unit:7","unit:7_Cadence_Perfect_Authentic","unit:7_cadence_authentic","unit:9","unit:9_Dominant_Seventh","unit:9_diatonic_triads"];
+const COMPLEXITY = 16;
+
+// When in Rome: parse into map of {measure: [{beat, rn, isVar}]}
+// m0 b3 G: I  => measure 0, beat 3, key change to G, label I
+const WIR_RAW = `Composer: J. S. Bach
+BWV: 269
+Title: Aus meines Herzens Grunde
+Analyst: Andrew Jones
+Proofreader: Dmitri Tymoczko and Hamish Robb
+Note: please email corrections to dmitri@princeton.edu
+
+Time Signature: 3/4
+
+Form: chorale
+m0 b3 G: I
+m1 b2 IV6 b3 V6
+m2 I b2 V b3 vi
+m3 IV b2.5 viio6 b3 I
+m4 V || b3 I
+m5 V6 b2 vi6/5 b3 viio6
+m6 I6 b2 ii6/5 b3 V b3.5 V7
+m7 I :|| b3 I
+m8 I b2 ii b2.5 viio6 b3 I6
+m9 I6 b2.5 V4/3 b3 I
+m10 V || b3 vi
+Note: consecutive first inversion triads
+m11 vi b2 iii6 b3 ii6
+m11var1 vi b2 I6/4 b3 ii6
+m12 I6 b3 V7
+m13 I b2 I6 b3 V7/IV
+m14 IV || b3 I
+m15 V6 b1.5 V6/5 b2 I b3 viio6
+m16 I6 b2 I b3 V b3.5 V7
+m17 vi b2 IV b3 I
+m17var1 vi b2 IV b2.5 viio6/4 b3.5 I
+m18 V || b3 I
+m19 V6 b3 IV6
+m20 vi b2 ii6/5 b3 V b3.5 V7
+m21 I`;
+
+// Parse WiR into lookup: wirMap[measure][beat] = {main, var1}
+// Beat markers: /^b\d/ (b1, b2, b2.5) — never confused with RN labels like bVI, bvii
+// Key-change tokens: /^[A-Ga-g][#b-]?:$/ — skipped (just context, not a label)
+// Repeat barlines: ||, :|| — skipped
+// All other tokens = RN label at current beat (curBeat defaults to 1.0)
+function parseWiR(text) {
+  const map = {};
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (/^(Note:|Composer:|BWV:|Title:|Analyst:|Proofreader:|Time Signature:|Form:)/.test(trimmed)) continue;
+
+    const mMatch = trimmed.match(/^m(\d+)(var\d+)?\s+(.*)/);
+    if (!mMatch) continue;
+    const mNum = parseInt(mMatch[1]);
+    const isVar = !!mMatch[2];
+    const rest  = mMatch[3];
+
+    if (!map[mNum]) map[mNum] = {};
+
+    const tokens = rest.trim().split(/\s+/);
+    let curBeat = 1.0;
+
+    for (const t of tokens) {
+      if (!t) continue;
+      // Beat marker: b followed immediately by digit(s) e.g. b1 b2 b2.5 b3 b3.5
+      if (/^b\d/.test(t)) { curBeat = parseFloat(t.slice(1)); continue; }
+      // Repeat barlines
+      if (t === '||' || t === ':||' || t === '|') continue;
+      // Key-change token: letter + optional accidental + colon  e.g. G:  d:  F#:  Bb:
+      if (/^[A-Ga-g][#b-]?:$/.test(t)) continue;
+
+      // RN label
+      const key = curBeat.toFixed(1);
+      if (!map[mNum][key]) map[mNum][key] = {main: null, var1: null};
+      if (isVar) { map[mNum][key].var1 = t; }
+      else       { map[mNum][key].main = t; }
+    }
+  }
+  return map;
+}
+
+const wirMap = parseWiR(WIR_RAW);
+
+function wirLookup(m, beat) {
+  const mb = wirMap[m];
+  if (!mb) return {main: null, var1: null};
+  const key = beat.toFixed(1);
+  if (mb[key]) return mb[key];
+  // Anacrusis / pickup: music21 reports beat 1.0 but WiR labels the actual metric
+  // position (e.g. b3 in 3/4). If exactly one beat exists in this measure, use it.
+  const beats = Object.keys(mb);
+  if (beats.length === 1) return mb[beats[0]];
+  return {main: null, var1: null};
+}
+
+// Normalise RN label for comparison: strip spaces, unify notation
+// WiR uses "6/5", music21 uses "65" etc.
+function norm(s) {
+  if (!s) return '';
+  return s.replace(/\s/g,'').replace(/6\/5/g,'65').replace(/4\/3/g,'43').replace(/4\/2/g,'42').replace(/6\/4/g,'64').replace(/7\/5/g,'75').replace(/6\/5/g,'65').replace(/V7\/IV/g,'V7/IV').toLowerCase();
+}
+
+function cellClass(rn, wir) {
+  if (!wir) return 'absent';
+  if (norm(rn) === norm(wir)) return 'match';
+  // Check if it's a known NCT-style weird label
+  if (/\d{3,}/.test(rn)) return 'diff2'; // e.g. I742, iv74
+  return 'diff';
+}
+
+// Render table
+const tbody = document.getElementById('tbody');
+let prevM = null;
+for (const r of ROWS) {
+  const tr = document.createElement('tr');
+  const isDownbeat = r.beat === 1.0;
+  const isHalfBeat = (r.beat * 10) % 10 === 5; // x.5
+  tr.className = r.m !== prevM ? 'measure-start' : (isHalfBeat ? 'non-beat' : 'downbeat');
+
+  const w = wirLookup(r.m, r.beat);
+  const wirMain = w.main;
+  const wirVar  = w.var1;
+
+  // Determine if this is likely an NCT beat (absent from WiR AND not on a beat boundary)
+  const isNCTBeat = !wirMain && (isHalfBeat || r.beat % 1 !== 0);
+
+  // RN global cell class
+  const rnGClass = isNCTBeat ? 'nct' : (wirMain ? cellClass(r.rn_global, wirMain) : 'absent');
+
+  tr.innerHTML = `
+    <td>${r.m !== prevM ? r.m : ''}</td>
+    <td>${r.beat}</td>
+    <td style="font-family:monospace;font-size:0.72rem">${r.pitches}</td>
+    <td style="font-family:monospace">${r.fb_raw}</td>
+    <td style="font-family:monospace;font-weight:700">${r.fb}</td>
+    <td class="${rnGClass}">${r.rn_global}</td>
+    <td class="${rnGClass}">${r.rn_fk}</td>
+    <td style="font-size:0.68rem;color:#666">${r.fk_key}</td>
+    <td class="${wirMain ? 'wir' : 'absent'}">${wirMain || '—'}</td>
+    <td class="${wirVar ? 'wir-var' : 'absent'}">${wirVar || ''}</td>
+  `;
+  tbody.appendChild(tr);
+  prevM = r.m;
+}
+
+// Skills
+document.getElementById('complexity').textContent = COMPLEXITY;
+const tagsDiv = document.getElementById('tags');
+const CANONICAL = new Set(['Cadence_Perfect_Authentic','Diatonic_Triads','Dominant_Seventh','Inversions_First','Inversions_Second','Secondary_Dominant']);
+for (const t of SKILL_TAGS) {
+  const span = document.createElement('span');
+  span.className = 'tag' + (CANONICAL.has(t) ? ' canonical' : '');
+  span.textContent = t;
+  tagsDiv.appendChild(span);
+}
+
+// WiR raw
+document.getElementById('wir-raw').textContent = WIR_RAW;
+</script>
+</body>
+</html>

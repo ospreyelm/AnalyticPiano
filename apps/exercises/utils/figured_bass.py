@@ -119,7 +119,7 @@ def abbreviate_figured_bass(raw: str) -> str:
     return "/".join(result_tokens)
 
 
-def compute_figured_bass(chord_element, key) -> tuple[str, str]:
+def compute_figured_bass(chord_element, key, next_pitch_map: dict | None = None) -> tuple[str, str]:
     """Compute raw and abbreviated figured bass from a music21 chord + key.
 
     Returns (raw_figured_bass, figured_bass).
@@ -131,6 +131,12 @@ def compute_figured_bass(chord_element, key) -> tuple[str, str]:
     - Pitch raised from diatonic → #
     - Pitch lowered from diatonic → b
     - Tritone interval (6 semitones, aug4/dim5) above bass → + marker
+
+    next_pitch_map (optional): {midi_of_current_pitch: midi_of_next_pitch_in_same_voice}.
+    Used for 9-vs-2 disambiguation:
+    - Generic 9th whose voice descends next → labelled 9 (resolves downward to 8).
+    - Generic 9th whose voice stays or ascends → labelled 2 (melodic passing 2nd).
+    Without next_pitch_map, a 9th is always labelled 9 (previous behaviour).
 
     Suspensions (multi-beat) are NOT detected here; that requires look-ahead
     over consecutive slices — handled in _build_figured_bass_overrides().
@@ -161,6 +167,13 @@ def compute_figured_bass(chord_element, key) -> tuple[str, str]:
             generic = ((generic - 1) % 7) + 1
         if generic == 1:
             generic = 8  # unison above bass = octave
+
+        # 9-vs-2 disambiguation: if voice context available and interval is a 9th,
+        # check whether the voice descends next. Descends → 9; stays/rises → 2.
+        if generic == 9 and next_pitch_map is not None:
+            next_midi = next_pitch_map.get(pitch.midi)
+            if next_midi is not None and next_midi >= pitch.midi:
+                generic = 2  # stays or rises → label as 2
 
         num_str = str(generic)
 

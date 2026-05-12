@@ -121,3 +121,56 @@ def test_tritone_marker():
     c, k = _make_chord("F3 B3 D4", "C")
     raw, abbrev = compute_figured_bass(c, k)
     assert "4+" in raw or "#4" in raw  # tritone above F is augmented 4th
+
+
+# ---------------------------------------------------------------------------
+# 9 vs 2 resolution rule:
+#   A pitch a 9th above bass is labelled 9 if it descends next (→ resolves to 8).
+#   If it stays or rises, it is a passing/melodic 2nd, labelled 2.
+# next_pitch_map: {midi_of_pitch_in_chord: midi_of_same_voice_next_note}
+# ---------------------------------------------------------------------------
+
+def test_ninth_labelled_9_when_pitch_descends():
+    # C3 bass, D4 a major 9th above. D4 moves down to C4 next → label 9.
+    c, k = _make_chord("C3 E3 G3 D4", "C")
+    next_map = {62: 60}  # D4 (midi 62) → C4 (midi 60), descends
+    raw, abbrev = compute_figured_bass(c, k, next_pitch_map=next_map)
+    assert "9" in raw
+    assert "2" not in raw.split("/")[0]  # top interval is 9 not 2
+
+
+def test_ninth_labelled_2_when_pitch_ascends():
+    # C3 bass, D4 a major 9th above. D4 moves up to E4 next → label 2.
+    c, k = _make_chord("C3 E3 G3 D4", "C")
+    next_map = {62: 64}  # D4 (midi 62) → E4 (midi 64), ascends
+    raw, abbrev = compute_figured_bass(c, k, next_pitch_map=next_map)
+    assert "2" in raw
+    assert "9" not in raw
+
+
+def test_ninth_labelled_2_when_pitch_stays():
+    # C3 bass, D4 a major 9th above. D4 stays on D4 next → label 2.
+    c, k = _make_chord("C3 E3 G3 D4", "C")
+    next_map = {62: 62}  # D4 stays
+    raw, abbrev = compute_figured_bass(c, k, next_pitch_map=next_map)
+    assert "2" in raw
+    assert "9" not in raw
+
+
+def test_ninth_defaults_to_9_without_context():
+    # No next_pitch_map supplied → keep existing behaviour (label 9).
+    c, k = _make_chord("C3 E3 G3 D4", "C")
+    raw, abbrev = compute_figured_bass(c, k)
+    assert "9" in raw
+
+
+def test_riemenschneider1_m3_beat1pt5_is_2_not_9():
+    # m3 b1.5: C3 B3 D4 G4 in G major.
+    # B3 is a 7th above C3 (already a 7), but G4 is a 12th → reduces to 5.
+    # The "9" we saw was the alto D4 (a 9th above C3 bass).
+    # Alto D4 next pitch = E4 (goes up) → should be 2.
+    c, k = _make_chord("C3 B3 D4 G4", "G")
+    next_map = {62: 64}  # D4 (midi 62) → E4 (midi 64), ascends
+    raw, abbrev = compute_figured_bass(c, k, next_pitch_map=next_map)
+    assert "2" in raw
+    assert "9" not in raw

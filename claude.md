@@ -12,15 +12,15 @@ from apps.exercises.umto_factory import save_umto_exercise
 from apps.exercises.umto import InteractionMode
 
 ex = save_umto_exercise(
-    description="BWV1.6 mm.1-2 — Soprano (identification) Stage 1",
+    description="R1 mm.1-2 — Soprano (identification) Stage 1",
     score_data=cir_score_dict,
     author=user,
     skill_tags=["unit:1", "Note_Names", "Read_Treble_Clef"],
     complexity=11,
     umto_kwargs=dict(
         exercise_id="TEMP",
-        source="BWV1.6 measures 1-2, Soprano voice.",
-        key="G", meter="4/4", clef="treble",
+        source="Riemenschneider 1 measures 1-2, Soprano voice.",
+        key="G", meter="3/4", clef="treble",
         complexity_score=1,
         mode=InteractionMode.IDENTIFICATION,
         target_voice="soprano",
@@ -100,7 +100,7 @@ Added detailed console logging for debugging (lines 89-110).
 **File:** `apps/exercises/management/commands/import_chorale.py` (lines 89-90)
 
 Students now see clear, actionable instructions:
-- "Play all four voices of BWV1.6, measures 1–4"
+- "Play all four voices of Riemenschneider 1, measures 1–4"
 - "Use the keyboard or MIDI controller to play each note as it appears"
 - "Notes turn black when played correctly"
 
@@ -150,7 +150,7 @@ Six pitch-oriented `analysisType` values (`note_name`, `solfege`, `do_based_solf
 
 **Dashboard flow:** Open a chorale exercise → click "Duplicate as Pitch Identification" → select voices, analysis type, and identification mode → one new `chorale_identification` exercise is created per selected voice.
 
-**CLI flow:** `python manage.py import_chorale bwv1.6.json --mode identify --analysis note_name --voice soprano --start 0 --end 4`
+**CLI flow:** `python manage.py import_bach_phrases --riemenschneider 1 --author admin@example.com --mode identify --analysis note_name --voice soprano`
 
 ### Knowledge Graph Tagging System ✅
 
