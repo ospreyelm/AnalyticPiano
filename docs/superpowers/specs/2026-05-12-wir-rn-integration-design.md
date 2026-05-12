@@ -8,7 +8,7 @@
 
 ## Summary
 
-Replace music21's `romanNumeralFromChord()` as the source of `roman_numeral` in `AnalysisSlice` objects with human-annotated labels from the When in Rome (WiR) corpus. WiR covers all 371 Riemenschneider chorales with beat-level RN labels by human analysts. music21 RN output is preserved in `raw_roman_numeral` for audit/comparison. No UMTO schema changes required.
+Replace music21's `romanNumeralFromChord()` as the source of `roman_numeral` in `AnalysisSlice` objects with human-annotated labels from the When in Rome (WiR) corpus. WiR covers all 371 Riemenschneider chorales with beat-level RN labels by human analysts. music21 RN output is preserved in `raw_roman_numeral` for audit/comparison. No UMTO schema changes required except adding `local_key` to `AnalysisLayer`.
 
 ---
 
@@ -23,18 +23,25 @@ WiR solves both: human analysts simply don't label NCT beats, and they write exp
 
 Figured bass is computed independently (bass + intervals, no RN reasoning) and is unaffected by this change.
 
+**Pedagogical value of omitting NCT slices:** NCT beats are shown in the score (student sees full musical context) but no analysis slot is rendered. Only harmonically meaningful beats get slots. Student learns implicitly which notes are structural vs. decorative, without being told explicitly. The human analyst already made that judgment call.
+
 ---
 
 ## Decisions
 
 | Question | Decision |
 |---|---|
-| What fills `roman_numeral`? | WiR label |
+| What fills `roman_numeral`? | WiR label (e.g. `"V6"`, `"i"`) |
+| What fills `local_key`? | Active key from WiR at that offset (e.g. `"d"`, `"G"`) |
 | What fills `raw_roman_numeral`? | music21 output (preserved for audit) |
-| New schema field for WiR? | No — `roman_numeral` was always intended for the curated label |
-| Missing WiR entry at import? | `CommandError` — abort, no silent fallback |
-| NCT slices (WiR has no label)? | `roman_numeral=None`; FB still populated |
+| New schema field for WiR? | Yes — `local_key: Optional[str]` added to `AnalysisLayer` |
+| Missing WiR entry (unknown BWV)? | `CommandError` — hard abort, no exercise created |
+| NCT slices (no WiR label at beat)? | Slice omitted entirely from overrides list |
+| `--riemenschneider N` provided? | Use directly — no map lookup needed |
+| BWV → Riemenschneider map? | Only used when loading by BWV; auto-derived from WiR headers |
+| Cantata movements (e.g. bwv1.6)? | Not in WiR's 371 — blocked by `CommandError` |
 | Variant readings? | Stored in JSON, not used at import time (future use) |
+| Existing `try/except` around override builder? | Removed for roman/matching modes — hard fail only |
 
 ---
 
@@ -44,14 +51,18 @@ Figured bass is computed independently (bass + intervals, no RN reasoning) and i
 - One-time WiR corpus download and JSON conversion
 - `bwv_to_riemenschneider.json` mapping (auto-derived from WiR `.txt` headers)
 - `apps/exercises/utils/wir_corpus.py` lookup module
+- `local_key` field added to `AnalysisLayer` in `umto.py`
 - Changes to `_build_roman_analysis_overrides()` in `import_bach_phrases.py`
+- Remove `try/except` swallow for roman/matching modes in import command
+- `data/when_in_rome/README.md` with provenance, license, citation
 - Tests for corpus module and conversion parser
 
 **Out of scope:**
 - WiR integration for non-chorale exercises
 - Using WiR variant readings at runtime
-- Dropping `raw_roman_numeral` from schema (deferred — do after WiR is proven in production)
-- Merging RN and FB override builders into a single pass (Approach 3 — future work)
+- Dropping `raw_roman_numeral` from schema (deferred — after WiR proven in production)
+- Merging RN and FB override builders into a single pass (future work)
+- NCT detection / labelling (separate future work)
 
 ---
 
@@ -61,7 +72,7 @@ Figured bass is computed independently (bass + intervals, no RN reasoning) and i
 
 **Location:** `data/when_in_rome/chorales.json`
 
-Keyed by Riemenschneider number (string). Built once by `scripts/convert_wir_corpus.py` from the downloaded WiR `.txt` files.
+Keyed by Riemenschneider number (string). Built once by `scripts/convert_wir_corpus.py`.
 
 ```json
 {
@@ -70,30 +81,37 @@ Keyed by Riemenschneider number (string). Built once by `scripts/convert_wir_cor
     "bwv": "269",
     "time_signature": "3/4",
     "labels": [
-      {"measure": 0, "beat": 3.0, "label": "I"},
-      {"measure": 1, "beat": 1.0, "label": "I"},
-      {"measure": 1, "beat": 2.0, "label": "IV6"},
-      {"measure": 1, "beat": 3.0, "label": "V6"},
-      ...
+      {"measure": 0, "beat": 3.0, "label": "I",    "local_key": "G"},
+      {"measure": 1, "beat": 1.0, "label": "I",    "local_key": "G"},
+      {"measure": 1, "beat": 2.0, "label": "IV6",  "local_key": "G"},
+      {"measure": 1, "beat": 3.0, "label": "V6",   "local_key": "G"}
     ]
   }
 }
 ```
 
-Variant readings stored as optional field on label objects:
+`local_key` is tracked as a running state across the parse: starts as the global key from the header, updates whenever a key-change token (e.g. `d:`) is encountered. Every label object carries the active key at its beat.
+
+Variant readings stored as optional field:
 ```json
-{"measure": 11, "beat": 2.0, "label": "iii6", "variant": "I6/4"}
+{"measure": 11, "beat": 2.0, "label": "iii6", "local_key": "G", "variant": "I6/4"}
 ```
 
 ### BWV → Riemenschneider map
 
 **Location:** `data/when_in_rome/bwv_to_riemenschneider.json`
 
-Flat object `{"269": 1, "253": 2, ...}`. Auto-derived from the `BWV:` header line in each WiR `.txt` file by the conversion script. No hand-curation.
+Flat object `{"269": 1, "253": 2, ...}`. Auto-derived from `BWV:` header in each `.txt` file. No hand-curation. Used only when importing by BWV — `--riemenschneider N` bypasses it entirely.
+
+### Provenance file
+
+**Location:** `data/when_in_rome/README.md`
+
+Must contain: source URL, commit SHA of downloaded WiR repo, license (CC BY-SA), citation per WiR README requirements, and date of conversion.
 
 ### WiR corpus source
 
-Download from `https://github.com/MarkGotham/When-in-Rome`, directory `Corpus/Bach_Chorales/`. 371 `.txt` files in RomanText format. License: CC BY-SA.
+`https://github.com/MarkGotham/When-in-Rome`, directory `Corpus/Bach_Chorales/`. 371 `.txt` files in RomanText format. License: CC BY-SA.
 
 ---
 
@@ -101,21 +119,50 @@ Download from `https://github.com/MarkGotham/When-in-Rome`, directory `Corpus/Ba
 
 **Location:** `scripts/convert_wir_corpus.py`
 
-One-time script. Not part of the regular import pipeline. Run once after downloading WiR, commit the resulting JSON.
+One-time script. Not part of regular import pipeline. Run once after downloading WiR, commit resulting JSON.
 
 **Responsibilities:**
-- Parse all 371 `.txt` files using the WiR parser (same logic as `rn_comparison_r1.html`, battle-tested)
-- Extract `BWV:`, `Title:`, `Time Signature:` from headers
-- Build label list: `{measure, beat, label}` per chord event
-- Store variant readings on the label object
+- Parse all 371 `.txt` files
+- Extract `BWV:`, `Title:`, `Time Signature:` from header lines
+- Track running `local_key` state across each file, updating on key-change tokens
+- Build label list: `{measure, beat, label, local_key}` per harmonic event
+- Store variant readings on label objects
 - Write `chorales.json` and `bwv_to_riemenschneider.json`
+- Validate output: exactly 371 chorales, no duplicate Riemenschneider keys, labels sorted by (measure, beat)
 
-**Parser rules (from `rn_comparison_r1.html`):**
-- Beat markers: `/^b\d/` — only `b` followed by digit(s), never confused with `bVI`, `bvii`
-- Key-change tokens: `/^[A-Ga-g][#b-]?:$/` — skipped (context only, not a label)
-- Repeat barlines `||`, `:||`, `|` — skipped
-- `Note:`, `Composer:`, `BWV:`, etc. header lines — skipped
-- Variant lines (`m11var1`) — stored as `variant` field, not as main label
+**Parser rules (fully specified):**
+
+| Pattern | Action |
+|---|---|
+| Lines matching `^(Note\|Composer\|BWV\|Title\|Analyst\|Proofreader\|Time Signature\|Form):` | Skip (header) |
+| Lines matching `^m(\d+)(var\d+)?\s+(.*)` | Parse as measure line |
+| Token matching `/^b\d/` | Beat marker — update `curBeat` (e.g. `b2.5` → 2.5) |
+| Token matching `/^[A-Ga-g][#b-]?:$/` | Key-change token — update `local_key`, do not emit label |
+| Token `\|\|`, `:\|\|`, `\|` | Repeat barline — skip |
+| Any other token | RN label at current `(measure, curBeat)` |
+| Line with `var\d+` suffix | Store as `variant` field, not main label |
+| `curBeat` default per measure line | 1.0 |
+
+---
+
+## Schema Change
+
+**File:** `apps/exercises/umto.py`
+
+Add one field to `AnalysisLayer`:
+
+```python
+class AnalysisLayer(BaseModel):
+    roman_numeral: Optional[str] = None
+    raw_roman_numeral: Optional[str] = None
+    local_key: Optional[str] = None          # NEW: active key at this slice, e.g. "G", "d"
+    raw_figured_bass: Optional[str] = None
+    figured_bass: Optional[str] = None
+    pop_symbol: Optional[str] = None
+    functional_label: Optional[str] = None
+```
+
+No migration — `Optional` with default `None`, backward compatible with all existing exercises.
 
 ---
 
@@ -126,15 +173,15 @@ One-time script. Not part of the regular import pipeline. Run once after downloa
 Loaded once at module level (JSON read on first import).
 
 ```python
-def lookup_rn(riemenschneider: int, measure: int, beat: float) -> str | None:
-    """Return WiR main label for closest beat at or before (measure, beat).
-    Returns None if chorale unknown or no label covers this offset."""
+def lookup(riemenschneider: int, measure: int, beat: float) -> dict | None:
+    """Return {label, local_key} for exact (measure, beat) match.
+    Returns None if chorale unknown or no label at this exact offset."""
 
 def bwv_to_riemenschneider(bwv: str) -> int | None:
     """Return Riemenschneider number for a BWV string, or None if not found."""
 ```
 
-**Lookup semantics:** within a measure, find the label whose beat is closest at or before the requested beat. This handles the case where chordify produces an offset that falls between two WiR label positions.
+**Lookup semantics: exact match only.** No "closest at or before" fallback. A beat not present in WiR returns `None` — that beat is an NCT and the slice is omitted.
 
 ---
 
@@ -142,58 +189,60 @@ def bwv_to_riemenschneider(bwv: str) -> int | None:
 
 **File:** `apps/exercises/management/commands/import_bach_phrases.py`
 
+### Remove `try/except` swallow
+
+The existing `try/except` around `_build_roman_analysis_overrides()` that logs a warning and continues must be removed for `roman` and `matching` modes. If WiR lookup fails, the command aborts with `CommandError`. No exercise is created.
+
 ### `_build_roman_analysis_overrides()` signature change
 
-Add `bwv: str` parameter.
+Add `riemenschneider: int` parameter (either from `--riemenschneider` arg directly, or derived via `bwv_to_riemenschneider(bwv)`).
 
-### Early abort
+### Early abort on unknown chorale
 
 ```python
-r_num = bwv_to_riemenschneider(bwv)
-if r_num is None:
+# riemenschneider is already known at this point (from --riemenschneider arg or BWV lookup)
+# Validate WiR has data for it before looping
+if wir_corpus.lookup(riemenschneider, 1, 1.0) is None and not wir_corpus.has_chorale(riemenschneider):
     raise CommandError(
-        f"BWV {bwv} has no Riemenschneider mapping — "
-        f"cannot import in roman mode. "
-        f"Only standalone chorales in the WiR corpus are supported."
+        f"Riemenschneider {riemenschneider} not found in When in Rome corpus. "
+        f"Only standalone chorales (1–371) are supported in roman mode."
     )
 ```
 
-### RN lookup per slice
+### RN lookup per slice — omit NCT slices
 
 ```python
-wir_label = lookup_rn(r_num, element.measureNumber, float(element.beat))
+result = wir_corpus.lookup(riemenschneider, element.measureNumber, float(element.beat))
+if result is None:
+    continue  # NCT beat — no WiR label — omit slice entirely
+
+wir_label = result["label"]
+local_key  = result["local_key"]
+
 # music21 RN preserved for audit
 m21_figure = romanNumeralFromChord(element, global_key).figure
 
 overrides.append({
     "offset": abs_offset,
-    "roman_numeral": wir_label,       # None for NCT slices
-    "raw_roman_numeral": m21_figure,  # always populated
+    "roman_numeral": wir_label,
+    "local_key": local_key,
+    "raw_roman_numeral": m21_figure,
     "raw_figured_bass": None,
     "figured_bass": None,
     ...
 })
 ```
 
-### NCT slices
+### `riemenschneider` derivation
 
-`roman_numeral=None` for beats where WiR has no label. Slice is still emitted so figured bass can be attached. Frontend renders nothing for null RN (existing behaviour).
-
-### `bwv` derivation
-
-The import command already derives the BWV from the music21 corpus filename (e.g. `bwv269.xml` → `"269"`). Pass this through to `_build_roman_analysis_overrides()`.
+- If `--riemenschneider N` provided: use directly (already the common case).
+- If loading by BWV: derive via `bwv_to_riemenschneider(bwv)`. If not found: `CommandError`.
 
 ---
 
-## No Schema Changes
+## No Frontend Changes Required
 
-`AnalysisLayer` in `apps/exercises/umto.py` already has:
-- `roman_numeral: Optional[str]` — WiR label (or None for NCT)
-- `raw_roman_numeral: Optional[str]` — music21 output
-- `raw_figured_bass: Optional[str]`
-- `figured_bass: Optional[str]`
-
-No migrations needed.
+NCT slices are omitted entirely — no slice emitted, no null `roman_numeral` reaching the frontend. The fallback chain in `exercise_definition.js` line 471 is never triggered because roman-mode exercises don't populate `figured_bass` fields anyway (separate builder).
 
 ---
 
@@ -201,34 +250,38 @@ No migrations needed.
 
 ### `apps/exercises/tests/test_wir_corpus.py`
 
-Tests against the real `chorales.json` (not mocked — the data file is the contract):
+Tests against the real `chorales.json`:
 
 | Test | Input | Expected |
 |---|---|---|
-| Anacrusis lookup | `lookup_rn(1, 0, 3.0)` | `"I"` |
-| Mid-measure label | `lookup_rn(1, 1, 2.0)` | `"IV6"` |
-| NCT beat | `lookup_rn(1, 3, 1.5)` | `None` |
-| Unknown chorale | `lookup_rn(999, 1, 1.0)` | `None` |
+| Anacrusis lookup | `lookup(1, 0, 3.0)` | `{"label": "I", "local_key": "G"}` |
+| Mid-measure label | `lookup(1, 1, 2.0)` | `{"label": "IV6", "local_key": "G"}` |
+| NCT beat (exact miss) | `lookup(1, 3, 1.5)` | `None` |
+| Unknown chorale | `lookup(999, 1, 1.0)` | `None` |
 | BWV lookup hit | `bwv_to_riemenschneider("269")` | `1` |
 | BWV lookup miss | `bwv_to_riemenschneider("99999")` | `None` |
+| Key change in chorale | lookup at tonicised beat | `local_key` reflects modulation |
 
 ### `scripts/tests/test_convert_wir_corpus.py`
 
 Parser unit tests (embedded WiR text, no filesystem):
 
-- Anacrusis `m0 b3 G: I` → `measure=0, beat=3.0, label="I"`
-- Half-beat `b2.5` parsed correctly
-- Key-change token `G:` skipped
+- `m0 b3 G: I` → `{measure:0, beat:3.0, label:"I", local_key:"G"}`
+- `b2.5` beat marker parsed correctly
+- Key-change token `G:` skipped as label, updates `local_key`
+- Key-change `d:` → subsequent labels carry `local_key: "d"`
 - Repeat barlines `||`, `:||` skipped
-- `bVI` label not confused with beat marker
-- Variant `m11var1` → stored as `variant` field
+- `bVI` not confused with beat marker (`/^b\d/` rule)
+- `m11var1` → stored as `variant`, not main label
+- Output: 371 chorales, sorted labels, no duplicate Riemenschneider keys
 
-### `apps/exercises/tests/test_import_bach_phrases.py` (extend existing)
+### `apps/exercises/tests/test_import_bach_phrases.py` (extend)
 
-- Import R1 in `roman` mode → first `AnalysisSlice.content.roman_numeral == "I"`
-- Import R1 → `AnalysisSlice.content.raw_roman_numeral` populated with music21 figure
-- NCT slice (m3 b1.5) → `roman_numeral=None`, `figured_bass` still populated
-- Import with unmapped BWV raises `CommandError`
+- Import R1 roman mode → first slice `roman_numeral="I"`, `local_key="G"`
+- Import R1 → `raw_roman_numeral` populated with music21 figure
+- NCT beat (m3 b1.5) → no `AnalysisSlice` emitted at that offset
+- Import with unmapped BWV → `CommandError`
+- Import with `--riemenschneider 999` (not in WiR) → `CommandError`
 
 ---
 
@@ -238,17 +291,20 @@ Parser unit tests (embedded WiR text, no filesystem):
 |---|---|
 | `scripts/convert_wir_corpus.py` | New — one-time conversion script |
 | `scripts/tests/test_convert_wir_corpus.py` | New — parser unit tests |
-| `data/when_in_rome/chorales.json` | New — generated by conversion script, checked in |
-| `data/when_in_rome/bwv_to_riemenschneider.json` | New — generated by conversion script, checked in |
+| `data/when_in_rome/chorales.json` | New — generated, checked in |
+| `data/when_in_rome/bwv_to_riemenschneider.json` | New — generated, checked in |
+| `data/when_in_rome/README.md` | New — provenance, license, citation |
 | `apps/exercises/utils/wir_corpus.py` | New — lookup module |
 | `apps/exercises/tests/test_wir_corpus.py` | New — lookup tests |
-| `apps/exercises/management/commands/import_bach_phrases.py` | Modified — `_build_roman_analysis_overrides()` uses WiR |
+| `apps/exercises/umto.py` | Modified — add `local_key` to `AnalysisLayer` |
+| `apps/exercises/management/commands/import_bach_phrases.py` | Modified — WiR lookup, remove try/except swallow |
 
 ---
 
 ## Future Work (Out of Scope Here)
 
-- **Approach 3:** Merge RN + FB builders into a single pass keyed on WiR label offsets (eliminates chordify for RN entirely)
-- **Drop `raw_roman_numeral`:** Once WiR is proven in production, remove the music21 audit field via migration
-- **Variant readings at runtime:** Expose `variant` field to let exercises show alternate analyst interpretations
-- **Non-chorale WiR corpora:** WiR also covers Mozart, Beethoven, etc. — same architecture applies
+- **NCT detection / labelling:** Now that NCT slices are clearly identified (no WiR label), a future pass can mark them explicitly for visual distinction in the score
+- **Approach 3:** Merge RN + FB builders into single pass keyed on WiR label offsets (eliminates chordify for RN entirely)
+- **Drop `raw_roman_numeral`:** After WiR proven in production, remove music21 audit field via migration
+- **Variant readings at runtime:** Expose `variant` field for alternate analyst interpretations
+- **Non-chorale WiR corpora:** WiR covers Mozart, Beethoven, etc. — same architecture applies
