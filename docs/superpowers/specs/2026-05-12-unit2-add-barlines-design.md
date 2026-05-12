@@ -140,9 +140,15 @@ Given `time_signature` and `notes`, compute:
 
 Use `music21` for duration arithmetic. Validate that total duration equals `measures × beats_per_measure` before writing the exercise.
 
+**Compound meter beat definition:** For 6/8, 9/8, 12/8, `beat_count` counts **dotted-quarter tactus beats** (not eighth-note pulses). `beats_per_measure` = 2, 3, 4 respectively. Division-level cursor (eighth pulses) is deferred to Phase 2.
+
+**Beat boundary rule:** A beat boundary exists at every dotted-quarter (compound) or quarter (simple) offset from the start of the passage. If no note begins exactly on a beat boundary (e.g. a tied note spans the boundary), the builder must still store that beat position in `beat_positions_ticks[]` so the cursor can render a slot there at runtime. `beat_positions_ticks` is stored alongside `notes` in the exercise JSON for compound meter exercises.
+
 #### 3. VexFlow renderer (JS, inside QA player)
 
-New rendering path in `qa_player.js` (or a companion module `barline_player.js`) activated when `problem.family === "unit2_add_barlines"`.
+New rendering path in `barline_player.js` (a sibling ES module to `qa_player.js`) activated when `config.type === "umto_barline_placement"`. `qa_player.js` is not touched — `qa_player.html` already loads scripts as `<script type="module">`, so `barline_player.js` is loaded via a second `<script type="module">` tag in `qa_player.html` and boots independently on `DOMContentLoaded` when `window.__EXERCISE_CONFIG__.type === "umto_barline_placement"`.
+
+VexFlow is not currently available in the QA player template. The spike must explicitly add `<script src="{% static 'js/lib/vexflow.js' %}">` to `qa_player.html` and verify `Vex.Flow` is accessible in the module context before any other work proceeds.
 
 Steps:
 1. Create VexFlow `Stave` with or without time signature glyph per `show_time_signature`.
@@ -221,24 +227,92 @@ Hand-authored or algorithmically generated note sequences. Useful for early exer
 
 ---
 
+## Phase 1 Frontend Contract
+
+This section defines the exact integration path so implementation needs no guesswork.
+
+### Exercise type string
+
+`type: "umto_barline_placement"` — this is the discriminator used at every layer.
+
+### `generate_exercise_context` in `lab/views.py`
+
+Add a branch alongside the existing `umto_symbolic_meter` branch:
+
+```python
+if exercise_context.get("type") == "umto_barline_placement":
+    context["exercise_config_json"] = json.dumps(exercise_context)
+    return render(request, "qa_player.html", context)
+```
+
+### `window.__EXERCISE_CONFIG__` shape
+
+The same `exercise_config_json` mechanism already used by `umto_symbolic_meter`. The config is a top-level object (not wrapped in `problems[]`):
+
+```json
+{
+  "type": "umto_barline_placement",
+  "time_signature": "3/4",
+  "show_time_signature": false,
+  "clef": "treble",
+  "measures": 3,
+  "pitch_mode": "rhythm_only",
+  "notes": [...],
+  "correct_barline_positions": [2, 5],
+  "beat_count": 9,
+  "source": "Essen Folk Song Collection, no. 42",
+  "tags": ["unit:2", "unit:2_meter_simple", "unit:2_meter_triple"],
+  "courseId": "...",
+  "playlistName": "...",
+  "exerciseNum": 1
+}
+```
+
+`problems[]` is not used — this is a single-problem exercise, not a paged MC set.
+
+### Result submission
+
+Reuse the existing `/ajax/identification-answers/` endpoint. Serialize result as:
+
+```json
+{
+  "course_ID": "...",
+  "playlist_ID": "...",
+  "exercise_num": 1,
+  "answers": { "barlines": [2, 5] },
+  "correctness": { "0": true },
+  "score": { "correct": 1, "incorrect": 0, "unanswered": 0 }
+}
+```
+
+### UMTO data storage
+
+Exercises stored as `Exercise` rows using `save_umto_exercise()` with a new `type: "umto_barline_placement"` field in the data payload. This is "UMTO-adjacent and migration-friendly" — the JSON is structurally compatible with UMTO conventions but does not declare a new `InteractionMode` until Phase 2. The `type` key in the stored data is the runtime discriminator.
+
+Phase 2: add `InteractionMode.BARLINE_PLACEMENT` to `apps/exercises/umto.py` and migrate.
+
+---
+
 ## Data Storage
 
-Phase 1: exercises stored as UMTO `Exercise` rows with `mode=InteractionMode.IDENTIFICATION` (closest existing mode) and `family` field in the UMTO data distinguishing them. The `family: "unit2_add_barlines"` key in `data` is the runtime discriminator.
+Phase 1: exercises stored as `Exercise` rows via `save_umto_exercise()`. The `data` payload uses `type: "umto_barline_placement"` as discriminator. `mode` is set to `InteractionMode.IDENTIFICATION` as the closest existing value until Phase 2 adds a dedicated mode.
 
-Phase 2: add `InteractionMode.BARLINE_PLACEMENT` to UMTO schema and migrate.
+Phase 2: add `InteractionMode.BARLINE_PLACEMENT` to `apps/exercises/umto.py` and `apps/exercises/umto_schema.json`; migrate existing rows.
 
 ---
 
 ## File Map
 
-| File | Role |
+| File | Change |
 |---|---|
-| `lab/static/js/src/qa_player.js` | Extend to detect `unit2_add_barlines` family and delegate to barline renderer |
-| `lab/static/js/src/barline_player.js` | New module: VexFlow rendering + cursor + grader for barline exercises |
-| `harmony/settings/requirejs.py` | Add `barline_player` path entry |
-| `apps/exercises/management/commands/import_barline_exercises.py` | New import command |
-| `apps/exercises/utils/barline_exercise_builder.py` | Beat structure computation, exercise JSON generation, validation |
-| `apps/exercises/tests/test_barline_exercise_builder.py` | Unit tests for builder |
+| `lab/static/js/src/barline_player.js` | **New** — ES module: VexFlow rendering + beat cursor + grader. Boots on `DOMContentLoaded` when `config.type === "umto_barline_placement"` |
+| `lab/templates/qa_player.html` | **Edit** — add `<script src="vexflow.js">` and `<script type="module" src="barline_player.js">` |
+| `lab/views.py` — `generate_exercise_context` caller | **Edit** — add `umto_barline_placement` branch alongside `umto_symbolic_meter` |
+| `apps/exercises/umto_factory.py` | **Edit** — add `save_umto_barline_exercise()` helper, mirroring `save_umto_symbolic_exercise()` |
+| `apps/exercises/management/commands/generate_unit2_barline_exercises.py` | **New** — sibling to `generate_unit2_meter_exercises.py`; imports from Essen corpus and hand-authored JSON |
+| `apps/exercises/utils/barline_exercise_builder.py` | **New** — beat structure computation, exercise JSON generation, validation |
+| `apps/exercises/tests/test_barline_exercise_builder.py` | **New** — unit tests for builder and grader logic |
+| `harmony/settings/requirejs.py` | **No change** — QA player uses ES modules, not RequireJS |
 
 ---
 
@@ -246,24 +320,28 @@ Phase 2: add `InteractionMode.BARLINE_PLACEMENT` to UMTO schema and migrate.
 
 | Risk | Mitigation |
 |---|---|
-| VexFlow `getAbsoluteX()` unreliable after single-stave render | Spike: render one unbarred passage, log note x-coords, verify they match visual positions |
-| Cursor overlay misaligns on resize | Re-read x-coords on `ResizeObserver` callback; use `%`-based positioning as fallback |
-| music21 Essen corpus parse failures | Wrap each parse in try/except, skip and log failures; validate beat totals before saving |
-| QA player surgery breaks existing MC exercises | Isolate barline path behind `if (family === 'unit2_add_barlines')` guard; no shared state |
+| VexFlow not accessible inside `<script type="module">` in qa_player.html | Spike step 1 — verify before anything else; fallback: load VexFlow as global script before the module |
+| VexFlow `getAbsoluteX()` unreliable after single-stave render | Spike step 3 — log and verify; fallback: uniform spacing from stave width ÷ beat_count |
+| Cursor overlay misaligns on resize | Re-read x-coords on `ResizeObserver` callback |
+| music21 Essen corpus parse failures | Wrap each parse in try/except, skip and log; validate beat totals before saving |
+| Tied note spans beat boundary — no note at beat position | Store `beat_positions_ticks[]` in exercise JSON; cursor slots come from that array, not note positions |
+| `barline_player.js` interferes with `qa_player.js` on same page | Both modules gate on `config.type` — only one boots per page; no shared state |
 
 ---
 
 ## Recommended Spike (Before Full Build)
 
 1-day spike before committing to full build:
-1. Render one unbarred 3/4 passage (9 quarter notes) in VexFlow inside qa_player.js
-2. Log `note.getAbsoluteX()` for each note
-3. Position a cursor overlay div using those values
-4. Move it left/right with arrow keys
-5. Confirm overlay tracks notes correctly on resize
 
-If spike works cleanly → proceed to full build.
-If VexFlow x-coord access is unreliable → reassess (fallback: compute beat widths from stave width ÷ beat count).
+1. Add `<script src="{% static 'js/lib/vexflow.js' %}">` to `qa_player.html` and confirm `Vex.Flow` is accessible inside a `<script type="module">` — this is the first unknown.
+2. In a new `barline_player.js`, render one unbarred 3/4 passage (9 quarter notes) on a single VexFlow `Stave` with no time signature and no measure barlines.
+3. Log `note.getAbsoluteX()` for each note after `Formatter.format()` + `Voice.draw()`.
+4. Position a cursor overlay `<div>` using those x-values.
+5. Move it left/right with arrow keys.
+6. Confirm overlay tracks notes correctly on window resize.
+
+If all 6 steps work cleanly → proceed to full build.
+If VexFlow x-coord access is unreliable → fallback: compute beat widths as `stave.getWidth() ÷ beat_count` (uniform spacing, less accurate but functional).
 
 ---
 
