@@ -87,3 +87,32 @@ def test_bwv_extracted_from_header():
 def test_title_extracted_from_header():
     result = _parse("Title: Aus meines Herzens Grunde\nBWV: 269\nTime Signature: 3/4\n\nm1 I\n")
     assert result["title"] == "Aus meines Herzens Grunde"
+
+
+def test_main_rejects_wrong_count(tmp_path):
+    """main() should raise AssertionError if fewer than 371 chorales found."""
+    import sys as _sys
+    import os as _os
+
+    # Create 2 fake .txt files — not 371
+    for i in [1, 2]:
+        f = tmp_path / f"{i}.txt"
+        f.write_text(f"BWV: {200+i}\nTime Signature: 3/4\n\nm1 G: I\n", encoding="utf-8")
+
+    sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..'))
+    from convert_wir_corpus import main
+
+    with pytest.raises(AssertionError, match="371"):
+        main(str(tmp_path))
+
+
+def test_all_repeat_barline_forms_skipped():
+    """Cover all three barline forms: ||, :||, |"""
+    result = _parse("BWV: 269\nTime Signature: 3/4\n\nm4 V :|| b2 I | b3 IV\n")
+    labels = result["labels"]
+    labels_only = [l["label"] for l in labels]
+    assert ":||" not in labels_only
+    assert "|" not in labels_only
+    assert "V" in labels_only
+    assert "I" in labels_only
+    assert "IV" in labels_only
