@@ -50,21 +50,32 @@ This is "Phase 3 / Repair Family" in the existing Unit 2 meter spec (`2026-05-04
 
 ## Interaction Model
 
-Student sees:
+### Beat-cursor approach (revised 2026-05-12)
+
+Rather than calculating pixel-precise hit zones over the VexFlow canvas, the interaction uses a **snapping cursor** that moves between discrete beat positions. This eliminates the need for a canvas hit-zone calculation engine and naturally trains beat-level counting.
+
+**Student sees:**
 - A single-voice passage rendered in VexFlow on a staff
 - No time signature shown
-- No barlines shown
-- Clickable zones between beat groups
+- No barlines shown initially
+- A cursor: rectangular highlight over the current beat + dashed vertical line at its left edge (barline preview)
+- Any already-placed barlines shown as solid vertical lines
 
-Student action:
-- Click a zone → barline appears at that position (toggled on)
-- Click again → barline removed (toggled off)
-- Submit when satisfied
+**Student action:**
+- ← / → arrow keys (or on-screen arrow buttons, or swipe on mobile) to move cursor left/right between beats
+- Enter / Space / on-screen "Place" button → toggle barline at current cursor position
+- All placed barlines visible as the student works
+- Submit button when satisfied
 
-Grader:
-- Pure set-equality: student barline positions vs correct positions
-- Score: 0 errors = correct; any wrong position or missing position = incorrect
+**Implementation note:** Beat x-positions come from VexFlow's formatter after rendering — `note.getAbsoluteX()` for each beat-onset note. Cursor rendering is a DOM/SVG overlay positioned using those x-values; no pixel math needed beyond reading note positions post-render.
+
+**Grader:**
+- State: `Set<int>` of beat indices where student placed barlines
+- Pure set-equality: student set vs correct set
+- Score: 0 errors = correct; any wrong or missing position = incorrect
 - Partial credit optional in Phase 2
+
+**Pedagogical bonus:** Moving the cursor forces students to count beats explicitly — that's the core skill, built into the navigation itself. Division-level cursor (between division pulses rather than beats) is a natural Phase 2 extension for compound meter practice.
 
 ---
 
@@ -154,19 +165,21 @@ Extract flat note list with durations, compute beat positions, determine correct
 | Work item | Effort |
 |---|---|
 | VexFlow unbarred rendering (suppress time sig + barlines) | Medium |
-| Beat-grid click-zone overlay (SVG hit targets over VexFlow) | Medium-high |
-| Grader (set-equality of barline positions) | Low |
+| Beat-cursor overlay (DOM/SVG positioned from note x-coords) | Low-medium |
+| Keyboard + on-screen arrow navigation | Low |
+| Mobile swipe support | Low |
+| Grader (Set&lt;int&gt; set-equality) | Low |
 | Kern → exercise JSON import pipeline | Medium |
 | QA player extension (VexFlow inside QA player) | Medium |
 | UMTO-compatible data schema | Low |
 | Django management command to import passages | Low |
 | Tests | Low-medium |
 
-**Total: ~3–4 weeks solo.** Biggest risk is VexFlow + click-zone interaction — no precedent in the codebase.
+**Total: ~2–3 weeks solo** (down from 3–4 weeks). Biggest risk reduced: beat-cursor overlay is much simpler than arbitrary hit-zone calculation. VexFlow unbarred rendering remains the main unknown.
 
 ### Recommended spike before committing
 
-1-day spike: render one unbarred passage in VexFlow, place one clickable zone, confirm the interaction feels right. If that works cleanly, proceed. If fiddly, reassess.
+1-day spike: render one unbarred passage in VexFlow (no time sig, no barlines), read beat x-positions from the formatter, render a cursor overlay at beat 0, move it left/right with arrow keys. If that feels clean, the hardest unknowns are solved. If VexFlow x-position access is unreliable or the overlay flickers on resize, reassess.
 
 ---
 
