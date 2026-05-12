@@ -460,7 +460,7 @@ class PlayerView(View):
             exercise_context, playlist, exercise
         )
 
-        if exercise_context.get("type") == "umto_symbolic_meter":
+        if exercise_context.get("type") in {"umto_symbolic_meter", "umto_barline_placement"}:
             context = {
                 "unit_num": unit_num,
                 "playlist": playlist,

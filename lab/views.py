@@ -277,36 +277,39 @@ def generate_exercise_context(
         exercise_is_performed = playlist_performance.exercise_is_performed(exercise.id)
         exercise_error_count = playlist_performance.exercise_error_count(exercise.id)
     
-    # UMTO Alignment: If the data follows the UMTO schema, use its frontend payload generator
-    is_umto = exercise.data.get("isUMTO", False) or ("metadata" in exercise.data and "voices" in exercise.data)
-    if is_umto:
-        try:
-            from apps.exercises.umto import UMTO
-            umto_obj = UMTO.model_validate(exercise.data)
-            
-            # Determine unit focus from playlist tags first; the request-time
-            # targeting layer owns curriculum scoping.
-            unit_focus = None
-            playlist_tags = playlist.skill_tags if playlist else []
-            fallback_tags = exercise.skill_tags or []
-            for tag in list(playlist_tags) + list(fallback_tags):
-                if isinstance(tag, str) and tag.startswith("unit:"):
-                    try:
-                        unit_focus = int(tag.split(":")[1])
-                    except (ValueError, IndexError):
-                        continue
-            
-            exercise_context.update(umto_obj.to_frontend_payload(unit=unit_focus))
-        except Exception as e:
-            # Fallback to raw data if UMTO validation fails
-            logger.warning(
-                "[LEGACY EXERCISE] Exercise %s failed UMTO validation: %s. "
-                "Falling back to raw data. Migrate via apps.exercises.umto_factory.",
-                exercise.id, e,
-            )
-            exercise_context.update(exercise.data)
-    else:
+    if exercise.data.get("type") == "umto_barline_placement":
         exercise_context.update(exercise.data)
+    else:
+        # UMTO Alignment: If the data follows the UMTO schema, use its frontend payload generator
+        is_umto = exercise.data.get("isUMTO", False) or ("metadata" in exercise.data and "voices" in exercise.data)
+        if is_umto:
+            try:
+                from apps.exercises.umto import UMTO
+                umto_obj = UMTO.model_validate(exercise.data)
+                
+                # Determine unit focus from playlist tags first; the request-time
+                # targeting layer owns curriculum scoping.
+                unit_focus = None
+                playlist_tags = playlist.skill_tags if playlist else []
+                fallback_tags = exercise.skill_tags or []
+                for tag in list(playlist_tags) + list(fallback_tags):
+                    if isinstance(tag, str) and tag.startswith("unit:"):
+                        try:
+                            unit_focus = int(tag.split(":")[1])
+                        except (ValueError, IndexError):
+                            continue
+                
+                exercise_context.update(umto_obj.to_frontend_payload(unit=unit_focus))
+            except Exception as e:
+                # Fallback to raw data if UMTO validation fails
+                logger.warning(
+                    "[LEGACY EXERCISE] Exercise %s failed UMTO validation: %s. "
+                    "Falling back to raw data. Migrate via apps.exercises.umto_factory.",
+                    exercise.id, e,
+                )
+                exercise_context.update(exercise.data)
+        else:
+            exercise_context.update(exercise.data)
     unit_n = None
     playlist_skill_tags = list(playlist.skill_tags or []) if playlist else []
     fallback_skill_tags = list(exercise.skill_tags or [])
@@ -571,7 +574,7 @@ class PlaylistView(RequirejsView):
             context["playlist_name"] = playlist.id
             # ^ misleading name for the url variable
 
-        if exercise_context.get("type") == "umto_symbolic_meter":
+        if exercise_context.get("type") in {"umto_symbolic_meter", "umto_barline_placement"}:
             context["exercise_config_json"] = json.dumps(exercise_context)
             return render(request, "qa_player.html", context)
 

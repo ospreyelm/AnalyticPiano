@@ -474,3 +474,45 @@ def save_umto_symbolic_exercise(
     ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
     ex.save(update_fields=["data"])
     return ex
+
+
+def save_umto_barline_exercise(
+    *,
+    description: str,
+    author,
+    payload: dict,
+    is_public: bool = True,
+    overwrite: bool = False,
+) -> Exercise:
+    data = dict(payload)
+    data["type"] = "umto_barline_placement"
+    data["isUMTO"] = True
+    data["mode"] = InteractionMode.IDENTIFICATION.value
+
+    skill_tags = list(data.get("tags") or ["unit:2", "unit:2_rhythm"])
+    ex = None
+    if overwrite:
+        ex = Exercise.objects.filter(description=description, authored_by=author).first()
+
+    if ex is None:
+        ex = Exercise(
+            description=description,
+            data=data,
+            authored_by=author,
+            is_public=is_public,
+            skill_tags=skill_tags,
+            complexity=2,
+        )
+    else:
+        ex.data = data
+        ex.skill_tags = skill_tags
+        ex.complexity = 2
+        ex.is_public = is_public
+
+    if ex._state.adding:
+        ex.save()
+    else:
+        ex.save(update_fields=["data", "skill_tags", "complexity", "is_public"])
+    ex.data["exerciseId"] = ex.id
+    ex.save(update_fields=["data"])
+    return ex

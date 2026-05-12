@@ -208,3 +208,71 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         # abbreviated value "" is in cumulative, so it should be target
         self.assertTrue(slices[0]["is_target"])
         self.assertEqual(slices[0]["content"]["figured_bass"], "")
+
+
+class GenerateExerciseContextBarlinePlacementTest(SimpleTestCase):
+    @patch("apps.exercises.umto.UMTO.model_validate")
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
+    def test_barline_payload_passes_through_without_umto_validation(
+        self,
+        mock_reader,
+        mock_perf,
+        mock_validate,
+    ):
+        from apps.exercises.models import Exercise, Playlist
+        from lab.views import generate_exercise_context
+
+        mock_reader.get_unit_for_tag.return_value = None
+        mock_perf.objects.filter.return_value.last.return_value = None
+
+        ex = MagicMock(spec=Exercise)
+        ex.id = "BAR01"
+        ex.data = {
+            "type": "umto_barline_placement",
+            "isUMTO": True,
+            "mode": "identification",
+            "time_signature": "3/4",
+            "show_time_signature": False,
+            "clef": "treble",
+            "measures": 1,
+            "pickup_beats": 0,
+            "pitch_mode": "rhythm_only",
+            "notes": [{"pitch": "B4", "duration": "q", "dots": 0}] * 3,
+            "note_beat_onsets": [0, 1, 2],
+            "correct_barline_positions": [],
+            "beat_count": 3,
+            "beat_positions_ticks": [0, 1, 2, 3],
+            "source": "test",
+            "tags": ["unit:2"],
+        }
+        ex.skill_tags = ["unit:2"]
+        ex.complexity = 2
+
+        pl = MagicMock(spec=Playlist)
+        pl.skill_tags = ["unit:2"]
+        pl.is_adaptive = False
+        pl.is_dynamic = False
+        pl.tags = []
+        pl.feedback_mode = ""
+        pl.exercise_list = [ex]
+        pl.id = "PLBAR"
+        pl.prev_num.return_value = None
+        pl.next_num.return_value = None
+        pl.get_exercise_obj_by_num.return_value = None
+        pl.get_exercise_url_by_num.return_value = None
+
+        ctx = generate_exercise_context(
+            exercise_num=1,
+            exercise=ex,
+            user=MagicMock(id=1),
+            playlist=pl,
+            course=None,
+        )
+
+        self.assertEqual(ctx["type"], "umto_barline_placement")
+        self.assertEqual(ctx["time_signature"], "3/4")
+        self.assertEqual(ctx["pickup_beats"], 0)
+        self.assertEqual(ctx["note_beat_onsets"], [0, 1, 2])
+        self.assertEqual(ctx["playlistName"], "PLBAR")
+        mock_validate.assert_not_called()

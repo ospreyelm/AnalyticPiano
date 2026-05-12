@@ -410,6 +410,37 @@ class PlayerViewTests(TransactionTestCase):
         self.assertIn(b"/s/units/1/play/?playlist=", response.content)
         self.assertNotIn(b"/lab/", response.content)
 
+    def test_player_renders_barline_placement_with_qa_template(self):
+        self.exercise.data = {
+            "type": "umto_barline_placement",
+            "isUMTO": True,
+            "mode": "identification",
+            "time_signature": "3/4",
+            "show_time_signature": False,
+            "clef": "treble",
+            "measures": 1,
+            "pickup_beats": 0,
+            "pitch_mode": "rhythm_only",
+            "notes": [{"pitch": "B4", "duration": "q", "dots": 0}] * 3,
+            "note_beat_onsets": [0, 1, 2],
+            "correct_barline_positions": [],
+            "beat_count": 3,
+            "beat_positions_ticks": [0, 1, 2, 3],
+            "source": "student barline test",
+            "tags": ["unit:1"],
+        }
+        self.exercise.save(update_fields=["data"])
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "qa_player.html")
+        self.assertIn("exercise_config_json", response.context)
+        self.assertIn(b'"type": "umto_barline_placement"', response.content)
+
     def test_player_initial_payload_includes_playlist_metadata_without_force_redirect(self):
         second_exercise = Exercise.objects.create(
             _id=21003,
