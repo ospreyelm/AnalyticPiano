@@ -140,7 +140,7 @@ One-time script. Not part of regular import pipeline. Run once after downloading
 | Token matching `/^[A-Ga-g][#b-]?:$/` | Key-change token — update `local_key`, do not emit label |
 | Token `\|\|`, `:\|\|`, `\|` | Repeat barline — skip |
 | Any other token | RN label at current `(measure, curBeat)` |
-| Line with `var\d+` suffix | Store as `variant` field, not main label |
+| Line with `var\d+` suffix | Store as `variant` field on the matching main label at same `(measure, curBeat)`. If no main label exists at that position, create a label object with `label: null, variant: "..."`. |
 | `curBeat` default per measure line | 1.0 |
 
 ---
@@ -175,13 +175,17 @@ Loaded once at module level (JSON read on first import).
 ```python
 def lookup(riemenschneider: int, measure: int, beat: float) -> dict | None:
     """Return {label, local_key} for exact (measure, beat) match.
-    Returns None if chorale unknown or no label at this exact offset."""
+    Returns None if chorale unknown or no label at this exact offset.
+    Beat comparison uses abs(stored_beat - beat) < 1e-6 to handle float imprecision."""
+
+def has_chorale(riemenschneider: int) -> bool:
+    """Return True if WiR corpus contains data for this Riemenschneider number."""
 
 def bwv_to_riemenschneider(bwv: str) -> int | None:
     """Return Riemenschneider number for a BWV string, or None if not found."""
 ```
 
-**Lookup semantics: exact match only.** No "closest at or before" fallback. A beat not present in WiR returns `None` — that beat is an NCT and the slice is omitted.
+**Lookup semantics: exact match only.** No "closest at or before" fallback. A beat not present in WiR returns `None` — that beat is an NCT and the slice is omitted. Float comparison uses `abs(stored_beat - beat) < 1e-6` throughout.
 
 ---
 
@@ -201,8 +205,7 @@ Add `riemenschneider: int` parameter (either from `--riemenschneider` arg direct
 
 ```python
 # riemenschneider is already known at this point (from --riemenschneider arg or BWV lookup)
-# Validate WiR has data for it before looping
-if wir_corpus.lookup(riemenschneider, 1, 1.0) is None and not wir_corpus.has_chorale(riemenschneider):
+if not wir_corpus.has_chorale(riemenschneider):
     raise CommandError(
         f"Riemenschneider {riemenschneider} not found in When in Rome corpus. "
         f"Only standalone chorales (1–371) are supported in roman mode."
@@ -224,12 +227,16 @@ m21_figure = romanNumeralFromChord(element, global_key).figure
 
 overrides.append({
     "offset": abs_offset,
-    "roman_numeral": wir_label,
-    "local_key": local_key,
-    "raw_roman_numeral": m21_figure,
-    "raw_figured_bass": None,
-    "figured_bass": None,
-    ...
+    "content": {
+        "roman_numeral": wir_label,
+        "local_key": local_key,
+        "raw_roman_numeral": m21_figure,
+        "raw_figured_bass": None,
+        "figured_bass": None,
+        "pop_symbol": None,
+        "functional_label": None,
+    },
+    "unit_tags": list(unit_tags),
 })
 ```
 
@@ -282,6 +289,7 @@ Parser unit tests (embedded WiR text, no filesystem):
 - NCT beat (m3 b1.5) → no `AnalysisSlice` emitted at that offset
 - Import with unmapped BWV → `CommandError`
 - Import with `--riemenschneider 999` (not in WiR) → `CommandError`
+- Import a chorale with a tonicisation (e.g. Riemenschneider 10, which modulates) → slice at tonicised beat has `roman_numeral` set to WiR label and `local_key` reflecting the secondary key, not the global key
 
 ---
 
@@ -297,6 +305,7 @@ Parser unit tests (embedded WiR text, no filesystem):
 | `apps/exercises/utils/wir_corpus.py` | New — lookup module |
 | `apps/exercises/tests/test_wir_corpus.py` | New — lookup tests |
 | `apps/exercises/umto.py` | Modified — add `local_key` to `AnalysisLayer` |
+| `apps/exercises/umto_schema.json` | Regenerated — run `python manage.py make_umto_schema` after adding `local_key` |
 | `apps/exercises/management/commands/import_bach_phrases.py` | Modified — WiR lookup, remove try/except swallow |
 
 ---
