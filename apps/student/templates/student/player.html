@@ -715,31 +715,29 @@
     #user-interaction-solicitation {
       position: absolute;
       left: 50%;
-      bottom: 14px;
+      top: 58px;
       transform: translateX(-50%);
       z-index: 5;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: min(700px, calc(100% - 24px));
-      max-width: calc(100% - 24px);
+      width: min(960px, calc(100% - 48px));
+      max-width: calc(100% - 48px);
       box-sizing: border-box;
-      padding: 9px 16px;
-      border: 1px solid rgba(110, 86, 61, 0.34);
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(252, 246, 236, 0.99) 0%, rgba(239, 227, 208, 0.98) 100%);
-      color: #241a12;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: rgba(44, 38, 34, 0.13);
       font-family: var(--font-ui);
-      font-size: 0.8rem;
-      font-weight: 700;
-      line-height: 1.2;
-      white-space: normal;
+      font-size: clamp(2.5rem, 5.8vw, 6.5rem);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0;
       text-align: center;
-      overflow-wrap: anywhere;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.82),
-        0 10px 24px rgba(34, 24, 16, 0.18);
-      cursor: pointer;
+      text-transform: uppercase;
+      pointer-events: none;
+      white-space: nowrap;
     }
 
     .harmony-ui {

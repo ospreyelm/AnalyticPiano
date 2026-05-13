@@ -870,6 +870,15 @@ define([
           if (gp.correct === true)  { fillStyle = '#28a745'; showCheck = true; }
           if (gp.correct === false) { fillStyle = '#dc3545'; showCross = true; }
         }
+        if (reviewMode && chosen && !showCheck && !showCross && problem) {
+          if (chosen === problem.answer) {
+            fillStyle = '#28a745';
+            showCheck = true;
+          } else {
+            fillStyle = '#dc3545';
+            showCross = true;
+          }
+        }
         if (reviewMode && !chosen && !showCross) {
           showCheck = true;
           fillStyle = '#28a745';
