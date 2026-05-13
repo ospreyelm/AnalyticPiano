@@ -1,5 +1,5 @@
 from django.test import SimpleTestCase
-from apps.exercises.utils.corpus_filter import assign_level, SMALLEST_VALUE_ORDER, is_valid_phrase
+from apps.exercises.utils.corpus_filter import assign_level, SMALLEST_VALUE_ORDER, is_valid_phrase, double_durations
 
 
 class CorpusFilterLevelAssignmentTests(SimpleTestCase):
@@ -69,3 +69,48 @@ class CorpusFilterValidityTests(SimpleTestCase):
     def test_unsupported_meter_fails(self):
         notes = self._notes(("q", 0), ("q", 0))
         self.assertFalse(is_valid_phrase("5/4", notes, measures=1))
+
+
+class CorpusFilterDoublingTests(SimpleTestCase):
+    def test_eighth_becomes_quarter(self):
+        notes = [{"pitch": "B4", "duration": "8", "dots": 0}]
+        self.assertEqual(double_durations(notes), [{"pitch": "B4", "duration": "q", "dots": 0}])
+
+    def test_dotted_eighth_becomes_dotted_quarter(self):
+        notes = [{"pitch": "B4", "duration": "8", "dots": 1}]
+        self.assertEqual(double_durations(notes), [{"pitch": "B4", "duration": "q", "dots": 1}])
+
+    def test_sixteenth_becomes_eighth(self):
+        notes = [{"pitch": "B4", "duration": "16", "dots": 0}]
+        self.assertEqual(double_durations(notes), [{"pitch": "B4", "duration": "8", "dots": 0}])
+
+    def test_quarter_becomes_half(self):
+        notes = [{"pitch": "B4", "duration": "q", "dots": 0}]
+        self.assertEqual(double_durations(notes), [{"pitch": "B4", "duration": "h", "dots": 0}])
+
+    def test_dotted_quarter_becomes_dotted_half(self):
+        notes = [{"pitch": "B4", "duration": "q", "dots": 1}]
+        self.assertEqual(double_durations(notes), [{"pitch": "B4", "duration": "h", "dots": 1}])
+
+    def test_half_becomes_whole(self):
+        notes = [{"pitch": "B4", "duration": "h", "dots": 0}]
+        self.assertEqual(double_durations(notes), [{"pitch": "B4", "duration": "w", "dots": 0}])
+
+    def test_whole_note_raises_overflow(self):
+        notes = [{"pitch": "B4", "duration": "w", "dots": 0}]
+        with self.assertRaises(ValueError):
+            double_durations(notes)
+
+    def test_dotted_half_raises_overflow(self):
+        notes = [{"pitch": "B4", "duration": "h", "dots": 1}]
+        with self.assertRaises(ValueError):
+            double_durations(notes)
+
+    def test_multiple_notes_all_doubled(self):
+        notes = [
+            {"pitch": "B4", "duration": "8", "dots": 0},
+            {"pitch": "C5", "duration": "q", "dots": 0},
+        ]
+        result = double_durations(notes)
+        self.assertEqual(result[0]["duration"], "q")
+        self.assertEqual(result[1]["duration"], "h")
