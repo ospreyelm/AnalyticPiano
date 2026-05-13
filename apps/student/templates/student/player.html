@@ -715,13 +715,13 @@
     #user-interaction-solicitation {
       position: absolute;
       left: 50%;
-      top: 42%;
-      transform: translate(-50%, -50%);
+      top: 58px;
+      transform: translateX(-50%);
       z-index: 5;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: auto;
+      width: min(960px, calc(100% - 48px));
       max-width: calc(100% - 48px);
       box-sizing: border-box;
       padding: 0;
@@ -730,7 +730,7 @@
       background: transparent;
       color: rgba(44, 38, 34, 0.13);
       font-family: var(--font-ui);
-      font-size: clamp(1.4rem, 3vw, 3.25rem);
+      font-size: clamp(2.5rem, 5.8vw, 6.5rem);
       font-weight: 900;
       line-height: 1;
       letter-spacing: 0;
