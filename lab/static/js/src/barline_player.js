@@ -2,6 +2,7 @@
   "use strict";
 
   var logic = window.barlinePlayerLogic;
+  var CURSOR_HORIZONTAL_INSET = 10;
 
   function getCookie(name) {
     var value = "; " + document.cookie;
@@ -27,7 +28,8 @@
   function renderShell(root) {
     root.innerHTML =
       '<div class="qa-card barline-card">' +
-      '<div class="qa-stem">Place the barlines.</div>' +
+      '<div class="qa-stem">Add barlines where they are needed.</div>' +
+      '<div class="barline-hint">Use arrows and Enter, or the on-screen buttons.</div>' +
       '<div class="barline-stage"></div>' +
       '<div class="barline-pips" aria-label="Beat positions"></div>' +
       '<div class="barline-actions">' +
@@ -73,29 +75,26 @@
       beatCount
     );
     var xByOnset = noteXByOnset(notes, config);
-    var beatX = [];
-    var beat;
 
-    for (beat = 0; beat <= beatCount; beat++) {
-      if (typeof xByOnset[beat] === "number") {
-        beatX.push(Math.round(xByOnset[beat]));
-      } else if (beat === beatCount) {
-        beatX.push(Math.round(stave.getX() + stave.getWidth()));
-      } else {
-        beatX.push(fallback[beat]);
-      }
-    }
-
-    return beatX;
+    return logic.beatBoundariesFromCenters(xByOnset, fallback, beatCount);
   }
 
-  function drawNotation(stage, config) {
+  function drawPlacedBarlines(VF, stave, beatX, placedAt) {
+    logic.barlineXPositions(beatX, Array.from(placedAt || [])).forEach(function (x) {
+      var barline = new VF.Barline(VF.Barline.type.SINGLE);
+      barline.setX(x);
+      barline.draw(stave);
+    });
+  }
+
+  function drawNotation(stage, config, placedAt) {
     var VF = vex();
     var width;
     var renderer;
     var context;
     var stave;
     var notes;
+    var beatX;
     var voice;
 
     if (!VF) {
@@ -127,7 +126,9 @@
       voice.draw(context, stave);
     }
 
-    return resolveBeatX(notes, stave, config);
+    beatX = resolveBeatX(notes, stave, config);
+    drawPlacedBarlines(VF, stave, beatX, placedAt);
+    return beatX;
   }
 
   function renderPips(root, state, config) {
@@ -156,18 +157,9 @@
 
     var x0 = state.beatX[state.cursorPos] || 0;
     var x1 = state.beatX[state.cursorPos + 1] || x0 + 20;
-    overlay.style.left = x0 + "px";
-    overlay.style.width = Math.max(12, x1 - x0) + "px";
-
-    stage.querySelectorAll(".placed-barline").forEach(function (element) {
-      element.remove();
-    });
-    Array.from(state.placedAt).forEach(function (position) {
-      var line = document.createElement("div");
-      line.className = "placed-barline";
-      line.style.left = (state.beatX[position + 1] || 0) + "px";
-      stage.appendChild(line);
-    });
+    var cursorInset = Math.min(CURSOR_HORIZONTAL_INSET, Math.max(0, (x1 - x0 - 12) / 2));
+    overlay.style.left = x0 + cursorInset + "px";
+    overlay.style.width = Math.max(12, x1 - x0 - cursorInset * 2) + "px";
 
     renderPips(root, state, config);
     if (submitButton) {
@@ -234,10 +226,11 @@
     state = {
       cursorPos: 0,
       placedAt: new Set(),
-      beatX: drawNotation(stage, config),
+      beatX: [],
       lastGrade: null,
       submitted: false,
     };
+    state.beatX = drawNotation(stage, config, state.placedAt);
     updateVisuals(root, state, config);
 
     function move(delta) {
@@ -253,6 +246,7 @@
       }
       state.lastGrade = null;
       state.submitted = false;
+      state.beatX = drawNotation(stage, config, state.placedAt);
       updateVisuals(root, state, config);
     }
 
@@ -290,7 +284,7 @@
     });
 
     window.addEventListener("resize", function () {
-      state.beatX = drawNotation(stage, config);
+      state.beatX = drawNotation(stage, config, state.placedAt);
       updateVisuals(root, state, config);
     });
   }

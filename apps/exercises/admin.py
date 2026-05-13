@@ -172,6 +172,27 @@ class ExerciseAdmin(ImportExportModelAdmin):
                     call_command("generate_unit2_meter_exercises", author=author, public=is_public, stdout=out)
                     messages.success(request, f"Unit 2 meter exercises generated.\n{out.getvalue()}")
 
+                elif command == "generate_unit2_barline_exercises":
+                    count = int(request.POST.get("barline_count") or 1)
+                    meter = request.POST.get("barline_meter", "3/4").strip() or "3/4"
+                    measures = int(request.POST.get("barline_measures") or 2)
+                    pitch_mode = (
+                        request.POST.get("barline_pitch_mode", "rhythm_only").strip()
+                        or "rhythm_only"
+                    )
+                    call_command(
+                        "generate_unit2_barline_exercises",
+                        author=author,
+                        public=is_public,
+                        count=count,
+                        meter=meter,
+                        measures=measures,
+                        pitch_mode=pitch_mode,
+                        source="manual",
+                        stdout=out,
+                    )
+                    messages.success(request, f"Unit 2 add-barlines exercises generated.\n{out.getvalue()}")
+
                 elif command in ("create_unit_playlist", "create_unit_playlist_only"):
                     unit = request.POST.get("unit", "").strip()
                     riemenschneider = request.POST.get("riemenschneider", "").strip()

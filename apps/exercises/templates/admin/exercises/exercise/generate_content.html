@@ -49,6 +49,39 @@
                 Generate Unit 2 Meter Exercises
             </button>
         </div>
+        <h3>Add Barlines</h3>
+        <p class="help">Creates deterministic manual seed exercises. Essen/Kern import is still a separate build step.</p>
+        <div class="form-row">
+            <label for="barline_count">Count</label>
+            <input type="number" name="barline_count" id="barline_count" min="1" value="1" style="width:80px">
+        </div>
+        <div class="form-row">
+            <label for="barline_meter">Meter</label>
+            <select name="barline_meter" id="barline_meter">
+                <option value="3/4">3/4</option>
+                <option value="2/4">2/4</option>
+                <option value="4/4">4/4</option>
+                <option value="6/8">6/8</option>
+                <option value="9/8">9/8</option>
+                <option value="12/8">12/8</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="barline_measures">Measures</label>
+            <input type="number" name="barline_measures" id="barline_measures" min="1" value="2" style="width:80px">
+        </div>
+        <div class="form-row">
+            <label for="barline_pitch_mode">Pitch mode</label>
+            <select name="barline_pitch_mode" id="barline_pitch_mode">
+                <option value="rhythm_only">Rhythm only</option>
+                <option value="melody">Melody</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <button type="submit" name="command" value="generate_unit2_barline_exercises" class="button default">
+                Generate Unit 2 Add-Barlines Exercises
+            </button>
+        </div>
     </fieldset>
 
     <fieldset class="module aligned">

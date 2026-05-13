@@ -88,11 +88,60 @@
     return xs;
   }
 
+  function beatBoundariesFromCenters(centerByBeat, fallbackBoundaries, beatCount) {
+    var count = parseInt(beatCount, 10) || 0;
+    var fallback = fallbackBoundaries || [];
+    var centers = centerByBeat || {};
+    var boundaries = [];
+    var beat;
+    var previousCenter;
+    var nextCenter;
+
+    for (beat = 0; beat <= count; beat++) {
+      if (beat === 0 || beat === count) {
+        boundaries.push(fallback[beat]);
+        continue;
+      }
+
+      previousCenter = centers[beat - 1];
+      nextCenter = centers[beat];
+      if (
+        typeof previousCenter === "number" &&
+        !isNaN(previousCenter) &&
+        typeof nextCenter === "number" &&
+        !isNaN(nextCenter)
+      ) {
+        boundaries.push(Math.round((previousCenter + nextCenter) / 2));
+      } else {
+        boundaries.push(fallback[beat]);
+      }
+    }
+
+    return boundaries;
+  }
+
+  function barlineXPositions(beatX, placedAt) {
+    var boundaries = beatX || [];
+    var positions = sortedNumbers(placedAt);
+    var xs = [];
+
+    positions.forEach(function (position) {
+      var x = boundaries[position + 1];
+      if (typeof x === "number" && !isNaN(x)) {
+        xs.push(x);
+      }
+    });
+
+    return xs;
+  }
+
   var api = {
     gradeBarlines: gradeBarlines,
     clampCursor: clampCursor,
     buildResultPayload: buildResultPayload,
     uniformBeatX: uniformBeatX,
+    beatBoundariesFromCenters: beatBoundariesFromCenters,
+    barlineXPositions: barlineXPositions,
   };
 
   if (typeof module !== "undefined" && module.exports) {

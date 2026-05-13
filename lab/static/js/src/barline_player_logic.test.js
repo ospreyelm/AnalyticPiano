@@ -112,6 +112,38 @@ assertEqual(
   [100, 200, 300, 400, 500]
 );
 
+assertEqual(
+  "beat boundaries use midpoints between adjacent note centers",
+  logic.beatBoundariesFromCenters(
+    { 0: 120, 1: 220, 2: 320, 3: 420 },
+    [80, 180, 280, 380, 480],
+    4
+  ),
+  [80, 170, 270, 370, 480]
+);
+
+assertEqual(
+  "beat boundaries fall back when either neighboring note center is missing",
+  logic.beatBoundariesFromCenters(
+    { 0: 120, 2: 320 },
+    [80, 180, 280, 380],
+    3
+  ),
+  [80, 180, 280, 380]
+);
+
+assertEqual(
+  "placed barlines resolve to already formatted beat boundary x positions",
+  logic.barlineXPositions([80, 170, 270, 370, 480], [2]),
+  [370]
+);
+
+assertEqual(
+  "placed barline x positions ignore malformed and out-of-range positions",
+  logic.barlineXPositions([80, 170, 270], ["1", "bad", 7]),
+  [270]
+);
+
 var browserLikeGlobal = {};
 browserLikeGlobal.globalThis = browserLikeGlobal;
 vm.runInNewContext(

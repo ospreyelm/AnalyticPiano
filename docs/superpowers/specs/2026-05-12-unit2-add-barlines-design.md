@@ -29,7 +29,7 @@ Strongest possible test of meter internalization. MC symbolic questions (Phase 1
 - Simple meters: 2/4, 3/4, 4/4
 - Compound meters: 6/8, 9/8, 12/8
 - 2–4 measures per exercise, variable
-- Rhythm-only passages (all notes on one pitch) OR real-pitch passages from Kern corpus — configurable per exercise
+- Rhythm-only passages (all notes on one pitch) OR real-pitch passages from Kern/Humdrum sources, especially the Essen Folk Song Collection via music21 — configurable per exercise
 - Time signature shown or hidden — configurable per exercise
 - Practice mode (retry with feedback) and test mode (reveal after submission)
 
@@ -90,7 +90,7 @@ Cursor navigates the **gaps between beats** — the `beat_count - 1` potential b
 
 ### Why QA player first
 
-This is a new interaction type with no precedent in the stack. Validating the interaction with real students before wiring into core infrastructure reduces risk. The data format is UMTO-compatible from day one so Phase 2 migration has zero throwaway cost.
+This is a new interaction type with no precedent in the stack. Validating the interaction with real students before wiring into core infrastructure reduces risk. The data format is UMTO-adjacent and migration-friendly from day one, so Phase 2 can promote the exercise without replacing the core payload shape.
 
 ### Components
 
@@ -117,17 +117,23 @@ This is a new interaction type with no precedent in the stack. Validating the in
   ],
   "correct_barline_positions": [2, 5],
   "beat_count": 9,
+  "pickup_beats": 0,
+  "beat_positions_ticks": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "note_beat_onsets": [0, 1, 2, 3, 5, 6, 7.5, 8],
   "source": "Essen Folk Song Collection, no. 42",
   "tags": ["unit:2", "unit:2_meter_simple", "unit:2_meter_triple"]
 }
 ```
 
 **Field rules:**
-- `correct_barline_positions`: 0-indexed beat indices **after which** a barline falls. Never includes 0 (before beat 0) or `beat_count - 1` (after last beat).
+- `correct_barline_positions`: 0-indexed cursor-slot indices **after which** a barline falls. Never includes the opening barline before slot 0 or the closing barline after the final slot. For pickup/anacrusis exercises, the pickup boundary is student-placeable and is represented as position `0`.
 - `pitch_mode`: `"rhythm_only"` (all notes use a fixed pitch, e.g. B4) or `"melodic"` (real pitches from corpus).
 - `show_time_signature`: controls whether VexFlow renders the time signature glyph.
-- `beat_count`: derived from notes + time_signature; stored for runtime convenience.
-- `measures`: must equal `len(correct_barline_positions) + 1`.
+- `beat_count`: integer cursor-slot count derived from notes + time_signature + optional pickup; stored for runtime convenience.
+- `measures`: count of full measures after any pickup. Without pickup, `measures == len(correct_barline_positions) + 1`; with pickup, `correct_barline_positions` also includes the pickup boundary at position `0`.
+- `pickup_beats`: optional anacrusis length in tactus beats. Must be non-negative and smaller than one full measure.
+- `beat_positions_ticks`: integer slot boundaries for cursor rendering; includes shortened pickup slot when present.
+- `note_beat_onsets`: note onset positions in tactus beats from passage start.
 - `pitch` field always present (B4 for rhythm-only); VexFlow requires pitch to render noteheads.
 
 #### 2. Beat structure computation (Python, import time)
@@ -142,7 +148,7 @@ Use `music21` for duration arithmetic. Validate that total duration equals `meas
 
 **Compound meter beat definition:** For 6/8, 9/8, 12/8, `beat_count` counts **dotted-quarter tactus beats** (not eighth-note pulses). `beats_per_measure` = 2, 3, 4 respectively. Division-level cursor (eighth pulses) is deferred to Phase 2.
 
-**Beat boundary rule:** A beat boundary exists at every dotted-quarter (compound) or quarter (simple) offset from the start of the passage. If no note begins exactly on a beat boundary (e.g. a tied note spans the boundary), the builder must still store that beat position in `beat_positions_ticks[]` so the cursor can render a slot there at runtime. `beat_positions_ticks` is stored alongside `notes` in the exercise JSON for compound meter exercises.
+**Beat boundary rule:** A beat boundary exists at every dotted-quarter (compound) or quarter (simple) offset from the start of the passage. If the passage has a pickup/anacrusis, the pickup is represented as one initial shortened cursor slot, followed by full-measure tactus slots. If no note begins exactly on a beat boundary (e.g. a tied note spans the boundary), the builder must still store that beat position in `beat_positions_ticks[]` so the cursor can render a slot there at runtime. `beat_positions_ticks` is stored alongside `notes` in the exercise JSON for all meters.
 
 #### 3. VexFlow renderer (JS, inside QA player)
 
@@ -196,8 +202,8 @@ python manage.py import_barline_exercises \
 ```
 
 Sources:
-- `essen`: Essen Folk Song Collection (via music21 corpus or local Kern files)
-- `kern`: arbitrary Kern file path
+- `essen`: Essen Folk Song Collection, a Kern/Humdrum-derived source exposed by music21
+- `kern`: arbitrary local Kern/Humdrum file path
 - `manual`: read from a hand-authored JSON file
 
 Command validates each generated exercise (total duration, barline count, note count) before saving.
@@ -206,11 +212,13 @@ Command validates each generated exercise (total duration, barline count, note c
 
 ## Corpus / Repertoire
 
-### Primary: Essen Folk Song Collection
+### Primary: Essen Folk Song Collection (Kern/Humdrum via music21)
 
-- Thousands of short monophonic folk melodies in music21's built-in corpus
+- Thousands of short monophonic folk melodies available through music21's built-in corpus
+- Kern/Humdrum-derived repertoire source
 - Public domain
 - Simple and compound meters naturally represented
+- Pickup/anacrusis examples are pedagogically important, though advanced
 - Short phrases (4–8 beats) easily extractable
 - Access via `music21.corpus.search('essenFolksong')`
 
@@ -260,6 +268,9 @@ The same `exercise_config_json` mechanism already used by `umto_symbolic_meter`.
   "notes": [...],
   "correct_barline_positions": [2, 5],
   "beat_count": 9,
+  "pickup_beats": 0,
+  "beat_positions_ticks": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "note_beat_onsets": [0, 1, 2, 3, 5, 6, 7.5, 8],
   "source": "Essen Folk Song Collection, no. 42",
   "tags": ["unit:2", "unit:2_meter_simple", "unit:2_meter_triple"],
   "courseId": "...",
@@ -287,7 +298,7 @@ Reuse the existing `/ajax/identification-answers/` endpoint. Serialize result as
 
 ### UMTO data storage
 
-Exercises stored as `Exercise` rows using `save_umto_exercise()` with a new `type: "umto_barline_placement"` field in the data payload. This is "UMTO-adjacent and migration-friendly" — the JSON is structurally compatible with UMTO conventions but does not declare a new `InteractionMode` until Phase 2. The `type` key in the stored data is the runtime discriminator.
+Exercises stored as `Exercise` rows using a new `save_umto_barline_exercise()` helper that mirrors the existing symbolic-meter save path, with a new `type: "umto_barline_placement"` field in the data payload. This is "UMTO-adjacent and migration-friendly" — the JSON is structurally compatible with UMTO conventions but does not declare a new `InteractionMode` until Phase 2. The `type` key in the stored data is the runtime discriminator.
 
 Phase 2: add `InteractionMode.BARLINE_PLACEMENT` to `apps/exercises/umto.py` and migrate.
 
@@ -295,7 +306,7 @@ Phase 2: add `InteractionMode.BARLINE_PLACEMENT` to `apps/exercises/umto.py` and
 
 ## Data Storage
 
-Phase 1: exercises stored as `Exercise` rows via `save_umto_exercise()`. The `data` payload uses `type: "umto_barline_placement"` as discriminator. `mode` is set to `InteractionMode.IDENTIFICATION` as the closest existing value until Phase 2 adds a dedicated mode.
+Phase 1: exercises stored as `Exercise` rows via `save_umto_barline_exercise()` in `apps/exercises/umto_factory.py`. The `data` payload uses `type: "umto_barline_placement"` as discriminator. `mode` is set to `InteractionMode.IDENTIFICATION` as the closest existing value until Phase 2 adds a dedicated mode.
 
 Phase 2: add `InteractionMode.BARLINE_PLACEMENT` to `apps/exercises/umto.py` and `apps/exercises/umto_schema.json`; migrate existing rows.
 
@@ -355,7 +366,7 @@ If VexFlow x-coord access is unreliable → fallback: compute beat widths as `st
 | Mobile swipe | Low |
 | Grader (set-equality, practice + test mode feedback) | Low |
 | Essen corpus import pipeline + builder | Medium |
-| QA player extension (family dispatch) | Low |
+| QA template/view routing for barline player | Low |
 | `barline_player.js` module | Medium |
 | Django import command | Low |
 | Tests (builder + grader) | Low-medium |
