@@ -29,14 +29,56 @@ class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
         self.assertEqual(first["content"]["roman_numeral"], "I")
         self.assertEqual(first["content"]["local_key"], "G")
 
-    def test_omits_beats_without_wir_labels(self):
+    def test_roman_mode_populates_figured_bass_fields(self):
         from music21.corpus import chorales
 
         score = list(chorales.Iterator(1, 1, numberingSystem="riemenschneider"))[0]
         global_key = score.analyze("key")
         overrides = self._call(score.measures(8, 12), global_key, [9])
-        self.assertTrue(len(overrides) > 0)
-        self.assertTrue(all(o["content"]["roman_numeral"] is not None for o in overrides))
+
+        computable = [
+            o for o in overrides
+            if o["content"]["roman_numeral"] is not None
+        ]
+        self.assertTrue(len(computable) > 0)
+        self.assertTrue(
+            all(o["content"]["raw_figured_bass"] is not None for o in computable)
+        )
+        self.assertTrue(
+            all(o["content"]["figured_bass"] is not None for o in computable)
+        )
+
+    def test_roman_mode_reconciles_wir_v7_with_4_3_suspension(self):
+        from music21.corpus import chorales
+
+        score = list(chorales.Iterator(1, 1, numberingSystem="riemenschneider"))[0]
+        global_key = score.analyze("key")
+        overrides = self._call(score.measures(8, 12), global_key, [9])
+
+        target = next(o for o in overrides if o["offset"] == 14.0)
+        content = target["content"]
+        self.assertEqual(content["roman_numeral"], "V7")
+        self.assertEqual(content["raw_roman_numeral"], "iv74")
+        self.assertEqual(content["raw_figured_bass"], "8/7/4")
+        self.assertEqual(content["figured_bass"], "7/4-3")
+
+    def test_emits_null_content_for_beats_without_wir_labels(self):
+        from music21.corpus import chorales
+
+        score = list(chorales.Iterator(1, 1, numberingSystem="riemenschneider"))[0]
+        global_key = score.analyze("key")
+        overrides = self._call(score.measures(8, 12), global_key, [9])
+        self.assertEqual(len(overrides), 22)
+
+        nct = next(o for o in overrides if o["offset"] == 0.5)
+        content = nct["content"]
+        self.assertIsNone(content["roman_numeral"])
+        self.assertIsNone(content["local_key"])
+        self.assertIsNotNone(content["raw_roman_numeral"])
+        self.assertIsNone(content["raw_figured_bass"])
+        self.assertIsNone(content["figured_bass"])
+        self.assertIsNone(content["pop_symbol"])
+        self.assertIsNone(content["functional_label"])
 
     def test_build_figured_bass_overrides_returns_slices(self):
         """_build_figured_bass_overrides produces slices with raw_figured_bass populated."""
@@ -104,7 +146,7 @@ class WiRImportIntegrationTests(TestCase):
         slices = ex.data["score"]["umto"]["analysis"]
         self.assertTrue(all(s["content"]["raw_roman_numeral"] is not None for s in slices))
 
-    def test_nct_slice_omitted(self):
+    def test_nct_slice_has_null_display_content(self):
         admin_user = _create_admin_user("wir-nct@example.test")
         call_command(
             "import_bach_phrases",
@@ -114,8 +156,16 @@ class WiRImportIntegrationTests(TestCase):
             extra_tags=["unit:wir_test3"],
         )
         ex = _first_wir_exercise("unit:wir_test3")
-        for s in ex.data["score"]["umto"]["analysis"]:
-            self.assertIsNotNone(s["content"]["roman_numeral"])
+        slices = ex.data["score"]["umto"]["analysis"]
+        self.assertTrue(any(s["content"]["roman_numeral"] is None for s in slices))
+        for s in slices:
+            content = s["content"]
+            if content["roman_numeral"] is None:
+                self.assertIsNone(content["local_key"])
+                self.assertIsNone(content["raw_figured_bass"])
+                self.assertIsNone(content["figured_bass"])
+                self.assertIsNone(content["pop_symbol"])
+                self.assertIsNone(content["functional_label"])
 
     def test_unknown_riemenschneider_raises(self):
         admin_user = _create_admin_user("wir-unknown@example.test")

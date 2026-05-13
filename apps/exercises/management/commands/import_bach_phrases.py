@@ -23,6 +23,32 @@ def _description_exists(description: str, authored_by=None) -> bool:
     return qs.exists()
 
 
+def _apply_suspension_figures(overrides: list, figured_by_offset: dict | None = None) -> list:
+    """Rewrite abbreviated figures for suspension/resolution pairs."""
+    ordered = sorted(overrides, key=lambda o: o["offset"])
+    figured_offsets = sorted(figured_by_offset) if figured_by_offset else []
+    for idx, current in enumerate(ordered):
+        current_content = current.get("content", {})
+        if figured_by_offset:
+            next_content = None
+            for offset in figured_offsets:
+                if offset > current["offset"] + 1e-6:
+                    next_content = figured_by_offset[offset]
+                    break
+            if next_content is None:
+                continue
+        elif idx + 1 < len(ordered):
+            next_content = ordered[idx + 1].get("content", {})
+        else:
+            continue
+        if (
+            current_content.get("raw_figured_bass") == "8/7/4"
+            and next_content.get("raw_figured_bass") == "8/7/3"
+        ):
+            current_content["figured_bass"] = "7/4-3"
+    return overrides
+
+
 def _build_roman_analysis_overrides(
     phrase_score,
     global_key,
@@ -53,6 +79,10 @@ def _build_roman_analysis_overrides(
     first_measure_offset = measures[0].offset
     overrides = []
     seen_offsets = set()
+    figured_by_offset = {
+        override["offset"]: override["content"]
+        for override in _build_figured_bass_overrides(phrase_score, global_key)
+    }
 
     for m in measures:
         measure_start = m.offset - first_measure_offset
@@ -76,19 +106,21 @@ def _build_roman_analysis_overrides(
             except Exception:
                 figure = None
 
+            figured_content = figured_by_offset.get(abs_offset, {})
+            raw_figured_bass = figured_content.get("raw_figured_bass")
+            figured_bass = figured_content.get("figured_bass")
+
             if wir_result is not None:
                 content = {
                     "roman_numeral": wir_result["label"],
                     "local_key": wir_result["local_key"],
                     "raw_roman_numeral": figure,
-                    "raw_figured_bass": None,
-                    "figured_bass": None,
+                    "raw_figured_bass": raw_figured_bass,
+                    "figured_bass": figured_bass,
                     "pop_symbol": None,
                     "functional_label": None,
                 }
             else:
-                # NCT beat — emit null content so frontend hides the slot
-                # while preserving score window alignment.
                 content = {
                     "roman_numeral": None,
                     "local_key": None,
@@ -105,7 +137,7 @@ def _build_roman_analysis_overrides(
                 "unit_tags": list(unit_tags),
             })
 
-    return overrides
+    return _apply_suspension_figures(overrides, figured_by_offset)
 
 
 def _build_next_pitch_map(phrase_score) -> dict[float, dict[int, int]]:
@@ -206,7 +238,7 @@ def _build_figured_bass_overrides(phrase_score, global_key) -> list:
                 },
             })
 
-    return overrides
+    return _apply_suspension_figures(overrides)
 
 
 class Command(BaseCommand):
