@@ -12,22 +12,29 @@ Extend the Unit 2 "Add Barlines" system from a single flat playlist of identical
 
 ## Level Taxonomy
 
-Levels are assigned by the **smallest note value present** in the phrase (less prescriptive than requiring exact vocabulary). A phrase qualifies for the lowest level whose ceiling it fits.
+Levels are assigned by the **smallest note value present** in the phrase. A phrase qualifies for the lowest level whose ceiling it fits.
 
 | Level | Meter family | Allowed meters | Smallest value ≤ | Phrase length | Source |
 |-------|-------------|----------------|-------------------|---------------|--------|
 | 1 | Simple | 3/4, 4/4 | quarter | 2 bars | corpus |
 | 2 | Simple | 2/4, 3/4, 4/4 | eighth | 2 bars | corpus |
-| 3 | Simple | 2/4, 3/4, 4/4 | sixteenth (+ dotted eighth, dotted quarter) | 2–4 bars | corpus |
+| 3 | Simple | 2/4, 3/4, 4/4 | sixteenth | 2–4 bars | corpus |
 | 4 | Compound | 6/8, 9/8, 12/8 | dotted quarter | 2 bars | corpus |
 | 5 | Compound | 6/8, 9/8, 12/8 | eighth | 2–4 bars | corpus |
-| 6 | Compound | 6/8, 9/8, 12/8 | sixteenth (+ dotted eighth) | 2–4 bars | corpus |
-| 7 | Derived simple | 2/2, 3/2, 4/2 | eighth (after doubling) | 2–4 bars | derived ×2 from L2+L3 |
-| 8 | Derived compound | 6/4, 9/4, 12/4 | sixteenth (after doubling) | 2–4 bars | derived ×2 from L5+L6 |
+| 6 | Compound | 6/8, 9/8, 12/8 | sixteenth | 2–4 bars | corpus |
+| 7 | Derived simple | 2/2, 3/2, 4/2 | eighth | 2–4 bars | derived ×2 from L2+L3 |
+| 8 | Derived compound | 6/4, 9/4, 12/4 | eighth | 2–4 bars | derived ×2 from L5+L6 |
+
+**Level 8 ceiling clarification:** Doubling L5/L6 source phrases (which contain sixteenths and dotted eighths) produces eighths and dotted quarters — not sixteenths. So L8's smallest value ceiling is **eighth** (in 6/4 notation), which is still harder than L7 due to compound meter.
 
 **Meter mapping for derived levels:**
 - 2/4 → 2/2, 3/4 → 3/2, 4/4 → 4/2 (double all durations)
 - 6/8 → 6/4, 9/8 → 9/4, 12/8 → 12/4 (double all durations)
+
+**Duration overflow rule:** If doubling a source note would exceed a whole note (e.g., a half note doubling to a breve), that phrase is rejected. The valid duration upscale map is:
+- 16th → 8th, dotted 16th → dotted 8th, 8th → quarter, dotted 8th → dotted quarter
+- quarter → half, dotted quarter → dotted half, half → whole
+- Anything that would exceed whole: **reject phrase**
 
 ---
 
@@ -47,15 +54,40 @@ A phrase extracted from the corpus is accepted only if ALL of the following hold
 
 ## Components
 
-### 1. `apps/exercises/utils/corpus_filter.py` (new)
+### 1. `apps/exercises/utils/barline_exercise_builder.py` (extended)
+
+**Pre-step required:** extend `SIMPLE_METERS` and `COMPOUND_METERS` to include derived meters:
+
+```python
+SIMPLE_METERS = {
+    "2/4": (2, Fraction(1, 1)),
+    "3/4": (3, Fraction(1, 1)),
+    "4/4": (4, Fraction(1, 1)),
+    "2/2": (2, Fraction(2, 1)),   # new
+    "3/2": (3, Fraction(2, 1)),   # new
+    "4/2": (4, Fraction(2, 1)),   # new
+}
+COMPOUND_METERS = {
+    "6/8":  (2, Fraction(3, 2)),
+    "9/8":  (3, Fraction(3, 2)),
+    "12/8": (4, Fraction(3, 2)),
+    "6/4":  (2, Fraction(3, 1)),  # new
+    "9/4":  (3, Fraction(3, 1)),  # new
+    "12/4": (4, Fraction(3, 1)),  # new
+}
+```
+
+No other changes to `build_barline_payload` — the rest of the builder is meter-agnostic.
+
+### 2. `apps/exercises/utils/corpus_filter.py` (new)
 
 Responsibilities:
 - Discover and parse abc/krn corpus files via music21
 - Extract N-bar phrases (4-bar preferred, 2-bar fallback) from monophonic parts
 - Classify each phrase: `(level: int, time_signature: str, notes: list[dict], measures: int)`
 - Apply all phrase validity rules
-- Generate derived-meter variants by doubling durations (L7, L8)
-- Deduplicate by `sha256(time_sig + json(note_sequence))` — skip already-seen fingerprints
+- Generate derived-meter variants by doubling durations (L7, L8), rejecting overflow
+- Yield phrases deduplicated by fingerprint (within a single run; DB-level dedup is handled by the command)
 
 **Public API:**
 ```python
@@ -65,41 +97,59 @@ def iter_phrases(levels: list[int] | None = None) -> Iterator[PhraseResult]:
 
 `notes` entries match `build_barline_payload` format: `{"pitch": "B4", "duration": "q", "dots": 0}`. Pitch is preserved from corpus (for future pitch-reading crossover) but rendered as rhythm-only by default (`pitch_mode="rhythm_only"`).
 
-### 2. `apps/exercises/management/commands/generate_unit2_barline_exercises.py` (extended)
+### 3. `apps/exercises/umto_factory.py` — `save_umto_barline_exercise` (extended)
+
+Add optional `complexity` parameter (currently hardcoded to `2`):
+
+```python
+def save_umto_barline_exercise(
+    *, description, author, payload, is_public=True, overwrite=False, complexity=2
+) -> Exercise:
+```
+
+Command passes `complexity=level` (1–8) per exercise.
+
+### 4. `apps/exercises/management/commands/generate_unit2_barline_exercises.py` (extended)
 
 New arguments:
 ```
---source  choices: manual (existing), corpus (new)
+--source  choices: manual (existing), corpus (new)  [essen/kern remain as errors — no change]
 --level   int 1-8, or omitted to generate all levels
 --limit   max phrases per level (default: unlimited)
 --dry-run print counts without saving
 ```
 
 Behaviour with `--source corpus`:
-1. Call `corpus_filter.iter_phrases(levels=[...])` 
-2. For each phrase, call `build_barline_payload(...)` then `save_umto_barline_exercise(...)`
-3. Create/update one playlist per level: `"Unit 2 — Add Barlines, Level N"`
+1. Call `corpus_filter.iter_phrases(levels=[...])`
+2. Collect all phrases per level into memory
+3. For each phrase: description = `"Unit 2 barline L{level} {fingerprint[:12]}"`, call `build_barline_payload(...)` then `save_umto_barline_exercise(..., overwrite=True, complexity=level)`
+4. Create/update one playlist per level: `"Unit 2 — Add Barlines, Level {N}"`
    - `skill_tags`: `["unit:2", "unit:2_rhythm", "unit:2_L{N}"]`
    - `is_dynamic=False`, `is_adaptive=True`
-   - `complexity` = level number (1–8)
-4. Link all exercises to their level playlist via `ExercisePlaylistOrdered` (ordered by fingerprint for reproducibility)
-5. Command is **idempotent**: re-running skips already-saved fingerprints (stored in exercise description or a dedupe field)
+5. **Rebuild playlist links**: delete all existing `ExercisePlaylistOrdered` for the playlist, then re-insert the full discovered set ordered by `(source_path, phrase_offset)` — alphabetical by source, then by position within source. This is deterministic and stable across re-runs.
+6. Mark `order=1` exercise as `is_adaptive_entry=True`; all others `is_adaptive_entry=False`
 
-### 3. Playlist structure
+### 5. Playlist structure
 
 8 playlists, one per level. Each playlist:
-- Named `"Unit 2 — Add Barlines, Level {N}"`  
-- `is_adaptive=True` — adaptive engine serves exercises within the level based on mastery
-- Exercises ordered deterministically (alphabetical by source path + phrase offset) so order is stable across re-runs
+- Named `"Unit 2 — Add Barlines, Level {N}"`
+- `is_adaptive=True` — adaptive engine serves exercises within the level based on student mastery
+- Exercises ordered by `(source_path, phrase_offset)` — stable across re-runs
+- First exercise (`order=1`) marked `is_adaptive_entry=True` as entry point for new students
 - Existing manual playlist (`"Unit 2 — Add Barlines"`) left untouched
 
 ---
 
 ## Deduplication Strategy
 
-Exercise description = `"Unit 2 barline L{level} {fingerprint[:12]}"` — unique per phrase. `save_umto_barline_exercise(..., overwrite=True)` matches on description+author, so re-runs update rather than duplicate.
+**Canonical dedupe key:** `description = "Unit 2 barline L{level} {fingerprint[:12]}"`, unique per phrase per level.
 
-Fingerprint = `sha256(time_sig + "|" + ",".join(f"{n['duration']}.{n['dots']}" for n in notes))` — rhythm only (pitch-agnostic so transposed variants don't create duplicates, though we don't transpose yet).
+**Fingerprint:** `sha256(time_sig + "|" + ",".join(f"{n['duration']}.{n['dots']}" for n in notes))` — rhythm-only, pitch-agnostic.
+
+**Command flow (idempotent):**
+1. `iter_phrases` yields all valid phrases (deduped within the run by fingerprint set)
+2. `save_umto_barline_exercise(..., overwrite=True)` upserts by description+author — creates on first run, updates data on re-run
+3. Playlist `ExercisePlaylistOrdered` links are fully rebuilt from the discovered set each run (delete-then-reinsert) — ensures playlist membership stays consistent even if phrases are added/removed
 
 ---
 
@@ -128,11 +178,11 @@ Expected yield per level (rough estimate before implementation):
 music21 corpus (abc/krn)
     ↓ corpus_filter.iter_phrases()
 PhraseResult(level, time_sig, notes, measures, fingerprint)
-    ↓ build_barline_payload()
+    ↓ build_barline_payload()   [after builder extended for derived meters]
 barline payload dict
-    ↓ save_umto_barline_exercise()
+    ↓ save_umto_barline_exercise(complexity=level)
 Exercise row (DB)
-    ↓ ExercisePlaylistOrdered
+    ↓ ExercisePlaylistOrdered (delete-then-reinsert, order=1 marked adaptive_entry)
 Playlist "Unit 2 — Add Barlines, Level N"
     ↓ adaptive engine (mastery.py)
 Student sees next exercise within their level
@@ -146,14 +196,14 @@ Student sees next exercise within their level
 - Ties across barlines
 - Pickup bars (anacrusis)
 - Beaming exercises
-- Cross-level adaptive progression (student auto-promoted from L1→L2 when L1 mastered) — playlists are independent for now; curriculum sequencing handles promotion via separate unit playlists
+- Cross-level adaptive progression (student auto-promoted from L1→L2 when L1 mastered)
 - Transposition of corpus phrases
 
 ---
 
 ## Testing
 
-- Unit tests for `corpus_filter.py`: validity rules, deduplication, derived-meter doubling, ending condition
-- Unit tests for level assignment: phrase with given smallest value → correct level
-- Integration test: `--dry-run` produces nonzero phrase counts for at least L1, L2, L4, L5
-- Existing `test_barline_exercise_builder.py` and `test_generate_unit2_barline_exercises.py` must continue to pass (manual source path unchanged)
+- **Unit tests for `corpus_filter.py`**: validity rules (each rule independently), deduplication, derived-meter doubling, overflow rejection, ending condition, level assignment (smallest value → correct level)
+- **Unit tests for `barline_exercise_builder.py`**: derived meter payloads (2/2, 3/2, 4/2, 6/4) produce correct `beat_count` and `correct_barline_positions`
+- **Integration test for command**: `--dry-run --source corpus` prints nonzero counts — guarded by `@pytest.mark.skipif(not CORPUS_AVAILABLE, reason="music21 corpus not present")` to avoid CI flakiness
+- **Regression**: existing `test_barline_exercise_builder.py` and `test_generate_unit2_barline_exercises.py` (manual source) pass unchanged
