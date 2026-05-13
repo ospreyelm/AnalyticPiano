@@ -128,22 +128,26 @@ def main(wir_dir: str) -> None:
         print(f"ERROR: {wir_dir} does not exist", file=sys.stderr)
         sys.exit(1)
 
-    # Find all .txt files named NNN.txt (Riemenschneider numbers)
-    txt_files = sorted(wir_path.glob("*.txt"))
-    if not txt_files:
-        print(f"ERROR: No .txt files found in {wir_dir}", file=sys.stderr)
+    # Support two layouts:
+    #   Legacy:  NNN.txt directly in wir_dir
+    #   Current: NNN/analysis.txt subdirectories (WiR corpus as of 2025)
+    flat_files = [(int(p.stem), p) for p in wir_path.glob("*.txt") if p.stem.isdigit()]
+    subdir_files = [
+        (int(d.name), d / "analysis.txt")
+        for d in wir_path.iterdir()
+        if d.is_dir() and d.name.isdigit() and (d / "analysis.txt").exists()
+    ]
+    file_pairs = flat_files or subdir_files
+    if not file_pairs:
+        print(f"ERROR: No WiR files found in {wir_dir}", file=sys.stderr)
         sys.exit(1)
+    file_pairs.sort()
 
     chorales: dict[str, dict] = {}
     bwv_map: dict[str, int] = {}
     errors = []
 
-    for path in txt_files:
-        # Filename should be NNN.txt
-        stem = path.stem
-        if not stem.isdigit():
-            continue
-        riem_num = int(stem)
+    for riem_num, path in file_pairs:
         text = path.read_text(encoding='utf-8')
         try:
             result = parse_wir_file(text, riem_num)
