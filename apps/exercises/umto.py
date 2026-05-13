@@ -203,9 +203,9 @@ class UMTO(BaseModel):
                     "staffDistribution": self.metadata.clef
                 },
                 "measures": self._to_legacy_measures(),
-                "umto": self.model_dump()
+                "umto": self.model_dump(mode='json')
             },
-            "grading": [s.model_dump() for s in self.grading]
+            "grading": [s.model_dump(mode='json') for s in self.grading]
         }
 
     def _to_legacy_measures(self) -> List[Dict[str, Any]]:

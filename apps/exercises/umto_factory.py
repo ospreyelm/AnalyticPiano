@@ -438,7 +438,7 @@ def save_umto_symbolic_exercise(
                 "staffDistribution": "none",
             },
             "measures": [],
-            "umto": umto.model_dump(),
+            "umto": umto.model_dump(mode='json'),
         },
         "grading": [],
     }
