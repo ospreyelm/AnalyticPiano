@@ -65,6 +65,90 @@
     margin: 32px auto 0;
     padding: 0 16px;
   }
+
+  .barline-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+  }
+  .barline-stage {
+    position: relative;
+    min-height: 180px;
+    overflow: hidden;
+  }
+  .barline-stage svg {
+    display: block;
+    max-width: 100%;
+  }
+  .barline-cursor {
+    position: absolute;
+    top: 30px;
+    height: 96px;
+    border: 1px dashed #1976d2;
+    background: rgba(25, 118, 210, 0.12);
+    pointer-events: none;
+  }
+  .placed-barline {
+    position: absolute;
+    top: 31px;
+    height: 94px;
+    border-left: 3px solid #111;
+    pointer-events: none;
+  }
+  .barline-pips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 14px;
+  }
+  .barline-pip {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ccd4d8;
+  }
+  .barline-pip.is-active { background: var(--teal); }
+  .barline-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .barline-icon-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+  .barline-toggle-btn,
+  .barline-submit-btn {
+    min-height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 14px;
+    background: #fff;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 700;
+  }
+  .barline-submit-btn {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+    margin-left: auto;
+  }
+  .barline-feedback {
+    min-height: 22px;
+    margin-top: 12px;
+    font-weight: 700;
+  }
+  .barline-feedback.is-correct { color: #237a46; }
+  .barline-feedback.is-incorrect { color: #b33a2e; }
 </style>
 {% endblock %}
 
@@ -103,6 +187,16 @@
 <script>
   window.__EXERCISE_CONFIG__ = {{ exercise_config_json|safe }};
 </script>
+<script>
+  window.__barlineRequireDefine__ = window.define;
+  window.define = undefined;
+</script>
+<script src="{% static 'js/lib/vexflow.js' %}"></script>
+<script>
+  window.define = window.__barlineRequireDefine__;
+  delete window.__barlineRequireDefine__;
+</script>
+<script src="{% static 'js/src/barline_player_logic.js' %}"></script>
 <script type="module" src="{% static 'js/src/qa_player.js' %}"></script>
 <script type="module" src="{% static 'js/src/barline_player.js' %}"></script>
 {% endblock %}

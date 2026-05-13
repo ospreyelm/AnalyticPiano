@@ -68,7 +68,7 @@
       },
       page_num: 0,
       is_page_submit: false,
-      mode: "barline_placement",
+      mode: config.identMode || "submit",
       attempt_type: "practice",
     };
   }

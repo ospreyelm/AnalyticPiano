@@ -74,9 +74,19 @@ assertEqual(
     score: { correct: 1, incorrect: 0, unanswered: 0 },
     page_num: 0,
     is_page_submit: false,
-    mode: "barline_placement",
+    mode: "submit",
     attempt_type: "practice",
   }
+);
+
+assertEqual(
+  "result payload uses configured feedback mode",
+  logic.buildResultPayload({
+    config: { identMode: "practice" },
+    placedAt: [],
+    correct: false,
+  }).mode,
+  "practice"
 );
 
 assertEqual(
@@ -91,7 +101,7 @@ assertEqual(
     score: { correct: 0, incorrect: 1, unanswered: 0 },
     page_num: 0,
     is_page_submit: false,
-    mode: "barline_placement",
+    mode: "submit",
     attempt_type: "practice",
   }
 );
