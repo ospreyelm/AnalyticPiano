@@ -391,7 +391,13 @@ def generate_exercise_context(
 
             for _sl in _slices:
                 _content = _sl.get("content", {})
-                _val = _content.get(_raw_field)
+                if _family == "roman":
+                    if _target_field in _content:
+                        _val = _content.get(_target_field)
+                    else:
+                        _val = _content.get(_raw_field)
+                else:
+                    _val = _content.get(_raw_field)
 
                 # For abbreviated figured bass, abbreviate the raw stack
                 # before comparing against cumulative values.

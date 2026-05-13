@@ -13,7 +13,6 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
                 {
                     "offset": float(i),
                     "content": {
-                        "roman_numeral": None,
                         "raw_roman_numeral": raw_rn,
                         "figured_bass": None,
                         "pop_symbol": None,
@@ -145,9 +144,43 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
 
     @patch("lab.views.PerformanceData")
     @patch("lab.views.TaxonomyReader")
+    def test_roman_targeting_uses_stored_wir_label_not_raw_music21_label(self, mock_reader, mock_perf):
+        cumulative = {"I", "V", "V7"}
+        self._make_mocks(cumulative, {"V7"}, mock_reader, mock_perf)
+        data = self._make_exercise_data("iv74", unit_tags=[9])
+        content = data["score"]["umto"]["analysis"][0]["content"]
+        content["roman_numeral"] = "V7"
+        content["local_key"] = "G"
+
+        ctx = self._run_context(data, unit_n="9")
+
+        target = ctx["score"]["umto"]["analysis"][0]
+        self.assertTrue(target["is_target"])
+        self.assertEqual(target["content"]["roman_numeral"], "V7")
+        self.assertEqual(target["content"]["raw_roman_numeral"], "iv74")
+
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
+    def test_roman_targeting_preserves_explicit_null_wir_label_on_nct_slice(self, mock_reader, mock_perf):
+        cumulative = {"I", "V", "V7"}
+        self._make_mocks(cumulative, {"V7"}, mock_reader, mock_perf)
+        data = self._make_exercise_data("V7", unit_tags=[9])
+        content = data["score"]["umto"]["analysis"][0]["content"]
+        content["roman_numeral"] = None
+        content["local_key"] = None
+
+        ctx = self._run_context(data, unit_n="9")
+
+        target = ctx["score"]["umto"]["analysis"][0]
+        self.assertFalse(target["is_target"])
+        self.assertIsNone(target["content"]["roman_numeral"])
+        self.assertEqual(target["content"]["raw_roman_numeral"], "V7")
+
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
     def test_analysis_policy_figured_bass(self, mock_reader, mock_perf):
         """Verify that mode:figures produces a figured_bass policy family."""
-        cumulative = {"", "6", "6/4"}
+        cumulative = {"5/3", "6", "6/4"}
         mock_reader.get_cumulative_values.return_value = cumulative
         mock_reader.get_new_values.return_value = {"6/4"}
         mock_reader.get_unit_analysis.return_value = {
@@ -205,9 +238,9 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertEqual(ctx["analysisType"], "figured_bass")
 
         slices = ctx["score"]["umto"]["analysis"]
-        # abbreviated value "" is in cumulative, so it should be target
+        # abbreviated value "5/3" is in cumulative, so it should be target
         self.assertTrue(slices[0]["is_target"])
-        self.assertEqual(slices[0]["content"]["figured_bass"], "")
+        self.assertEqual(slices[0]["content"]["figured_bass"], "5/3")
 
 
 class GenerateExerciseContextBarlinePlacementTest(SimpleTestCase):
