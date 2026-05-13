@@ -409,6 +409,15 @@ define([
       : [];
     const windows = buildAnalysisWindows(timeline);
 
+    // Index windows by onset (ticks) for O(1) lookup by slice offset.
+    // Analysis slice offsets are in quarter-note units; timeline onsets are in ticks.
+    // 1 quarter = 1024 ticks.
+    const TICKS_PER_QUARTER = 1024;
+    const windowsByOnset = Object.create(null);
+    _.each(windows, function(win) {
+      windowsByOnset[win.onset] = win;
+    });
+
     function ticksToRhythm(ticks) {
       if (ticks >= 4096) return "w";
       if (ticks >= 2048) return "h";
@@ -419,8 +428,15 @@ define([
     }
 
     function getWindowMeta(sliceOffset, idx) {
-      if (windows && windows[idx]) {
-        var win = windows[idx];
+      // Look up by offset (converted to ticks) first — correct when NCT beats
+      // create windows that have no analysis slice (slices are a subset of windows).
+      var tickOnset = Math.round(sliceOffset * TICKS_PER_QUARTER);
+      var win = windowsByOnset[tickOnset];
+      if (!win) {
+        // Fallback: try index-based lookup for exercises where offsets are pre-ticked
+        win = windows && windows[idx];
+      }
+      if (win) {
         var firstEv = win.events && win.events.length ? win.events[0] : null;
         var maxDur = firstEv && typeof firstEv.duration === "number" ? firstEv.duration : 1024;
         _.each(win.events, function(ev) {
@@ -437,7 +453,7 @@ define([
         measureIndex: 0,
         onset: sliceOffset,
         rhythm: "q",
-          hasSlot: false,
+        hasSlot: false,
       };
     }
 
