@@ -487,6 +487,7 @@ def save_umto_barline_exercise(
     payload: dict,
     is_public: bool = True,
     overwrite: bool = False,
+    complexity: int = 2,
 ) -> Exercise:
     data = dict(payload)
     data["type"] = "umto_barline_placement"
@@ -505,12 +506,12 @@ def save_umto_barline_exercise(
             authored_by=author,
             is_public=is_public,
             skill_tags=skill_tags,
-            complexity=2,
+            complexity=complexity,
         )
     else:
         ex.data = data
         ex.skill_tags = skill_tags
-        ex.complexity = 2
+        ex.complexity = complexity
         ex.is_public = is_public
 
     if ex._state.adding:

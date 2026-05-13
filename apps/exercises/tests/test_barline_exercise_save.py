@@ -71,3 +71,16 @@ class BarlineExerciseSaveTests(TestCase):
         self.assertEqual(updated.complexity, 2)
         self.assertEqual(updated.data["source"], "updated")
         self.assertEqual(updated.data["exerciseId"], exercise.id)
+
+    def test_save_umto_barline_exercise_uses_provided_complexity(self):
+        user = get_user_model().objects.create_user(
+            email="barline-complexity@test.com",
+            password="pw",
+        )
+        exercise = save_umto_barline_exercise(
+            description="complexity test",
+            author=user,
+            payload=self._payload(),
+            complexity=5,
+        )
+        self.assertEqual(exercise.complexity, 5)
