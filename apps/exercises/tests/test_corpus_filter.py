@@ -1,5 +1,5 @@
 from django.test import SimpleTestCase
-from apps.exercises.utils.corpus_filter import assign_level, SMALLEST_VALUE_ORDER
+from apps.exercises.utils.corpus_filter import assign_level, SMALLEST_VALUE_ORDER, is_valid_phrase
 
 
 class CorpusFilterLevelAssignmentTests(SimpleTestCase):
@@ -40,3 +40,32 @@ class CorpusFilterLevelAssignmentTests(SimpleTestCase):
 
     def test_whole_note_in_simple_is_level_1(self):
         self.assertEqual(assign_level("4/4", "w"), 1)
+
+
+class CorpusFilterValidityTests(SimpleTestCase):
+    def _notes(self, *specs):
+        return [{"pitch": "B4", "duration": d, "dots": dot} for d, dot in specs]
+
+    def test_valid_phrase_passes(self):
+        notes = self._notes(("q", 0), ("q", 0), ("q", 0), ("q", 0), ("q", 0), ("h", 0))
+        self.assertTrue(is_valid_phrase("3/4", notes, measures=2))
+
+    def test_last_note_shorter_than_preceding_fails(self):
+        notes = self._notes(("h", 0), ("q", 0), ("q", 0), ("q", 0), ("q", 0), ("8", 0))
+        self.assertFalse(is_valid_phrase("3/4", notes, measures=2))
+
+    def test_wrong_total_duration_fails(self):
+        notes = self._notes(("q", 0), ("q", 0), ("q", 0), ("q", 0))
+        self.assertFalse(is_valid_phrase("3/4", notes, measures=2))
+
+    def test_single_note_phrase_is_valid(self):
+        notes = self._notes(("h", 0), ("h", 0))
+        self.assertTrue(is_valid_phrase("2/2", notes, measures=1))
+
+    def test_compound_meter_valid(self):
+        notes = self._notes(("q", 1), ("q", 1))
+        self.assertTrue(is_valid_phrase("6/8", notes, measures=1))
+
+    def test_unsupported_meter_fails(self):
+        notes = self._notes(("q", 0), ("q", 0))
+        self.assertFalse(is_valid_phrase("5/4", notes, measures=1))
