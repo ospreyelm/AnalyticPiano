@@ -389,6 +389,17 @@ def generate_exercise_context(
                 _raw_field = "raw_roman_numeral"
                 _target_field = "roman_numeral"
 
+            _figure_cumulative = set()
+            if _family == "roman":
+                try:
+                    _figure_cumulative = set(
+                        TaxonomyReader.get_cumulative_values(_unit_n_for_policy, "figured_bass")
+                        or []
+                    )
+                except Exception:
+                    _figure_cumulative = set()
+            _pending_resolution_label = None
+
             for _sl in _slices:
                 _content = _sl.get("content", {})
                 if _family == "roman":
@@ -408,11 +419,37 @@ def generate_exercise_context(
                 else:
                     _compare = _val
 
+                if (
+                    _family == "roman"
+                    and _compare is None
+                    and _pending_resolution_label is not None
+                    and _content.get(_raw_field) == _pending_resolution_label
+                ):
+                    _compare = _pending_resolution_label
+                    _pending_resolution_label = None
+
+                _figure_allowed = True
+                if (
+                    _family == "roman"
+                    and _compare is not None
+                    and _figure_cumulative
+                    and _content.get("figured_bass") not in (None, "")
+                    and _content.get("figured_bass") not in _figure_cumulative
+                ):
+                    _figure_allowed = False
+
                 # Note: use `is not None`, not truthiness — "5/3" is a valid cumulative value.
-                if _compare is not None and _compare in _cumulative:
+                if _compare is not None and _compare in _cumulative and _figure_allowed:
                     _content[_target_field] = _compare
                     _sl["is_target"] = True
                 else:
+                    if (
+                        _family == "roman"
+                        and _compare is not None
+                        and _compare in _cumulative
+                        and not _figure_allowed
+                    ):
+                        _pending_resolution_label = _compare
                     _content[_target_field] = None
                     _sl["is_target"] = False
 

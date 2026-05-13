@@ -178,6 +178,47 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
 
     @patch("lab.views.PerformanceData")
     @patch("lab.views.TaxonomyReader")
+    def test_roman_targeting_moves_suspension_label_to_resolution_for_unit_figures(self, mock_reader, mock_perf):
+        def cumulative_for(unit, family):
+            if family == "figured_bass":
+                return {"5/3", "7"}
+            return {"I", "V", "V7"}
+
+        mock_reader.get_cumulative_values.side_effect = cumulative_for
+        mock_reader.get_new_values.return_value = {"V7"}
+        mock_reader.get_unit_analysis.return_value = {
+            "cumulative": [
+                {"value": "I", "display": "I"},
+                {"value": "V", "display": "V"},
+                {"value": "V7", "display": "V7"},
+            ],
+            "new": [{"value": "V7", "display": "V7"}],
+        }
+        mock_reader.get_unit_for_tag.return_value = None
+        mock_perf.objects.filter.return_value.last.return_value = None
+
+        data = self._make_exercise_data(["iv74", "V7"], unit_tags=[9])
+        suspension = data["score"]["umto"]["analysis"][0]["content"]
+        suspension["roman_numeral"] = "V7"
+        suspension["local_key"] = "G"
+        suspension["figured_bass"] = "7/4-3"
+        suspension["raw_figured_bass"] = "8/7/4"
+        resolution = data["score"]["umto"]["analysis"][1]["content"]
+        resolution["roman_numeral"] = None
+        resolution["local_key"] = None
+        resolution["figured_bass"] = None
+        resolution["raw_figured_bass"] = None
+
+        ctx = self._run_context(data, unit_n="9")
+
+        slices = ctx["score"]["umto"]["analysis"]
+        self.assertFalse(slices[0]["is_target"])
+        self.assertIsNone(slices[0]["content"]["roman_numeral"])
+        self.assertTrue(slices[1]["is_target"])
+        self.assertEqual(slices[1]["content"]["roman_numeral"], "V7")
+
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
     def test_analysis_policy_figured_bass(self, mock_reader, mock_perf):
         """Verify that mode:figures produces a figured_bass policy family."""
         cumulative = {"5/3", "6", "6/4"}
