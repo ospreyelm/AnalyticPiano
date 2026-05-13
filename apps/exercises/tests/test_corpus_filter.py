@@ -1,5 +1,5 @@
 from django.test import SimpleTestCase
-from apps.exercises.utils.corpus_filter import assign_level, SMALLEST_VALUE_ORDER, is_valid_phrase, double_durations
+from apps.exercises.utils.corpus_filter import assign_level, SMALLEST_VALUE_ORDER, is_valid_phrase, double_durations, phrase_fingerprint
 
 
 class CorpusFilterLevelAssignmentTests(SimpleTestCase):
@@ -114,3 +114,28 @@ class CorpusFilterDoublingTests(SimpleTestCase):
         result = double_durations(notes)
         self.assertEqual(result[0]["duration"], "q")
         self.assertEqual(result[1]["duration"], "h")
+
+
+class CorpusFilterFingerprintTests(SimpleTestCase):
+    def _notes(self, *specs):
+        return [{"pitch": p, "duration": d, "dots": dot} for p, d, dot in specs]
+
+    def test_same_rhythm_different_pitch_same_fingerprint(self):
+        n1 = self._notes(("B4", "q", 0), ("C5", "h", 0))
+        n2 = self._notes(("G4", "q", 0), ("A4", "h", 0))
+        self.assertEqual(phrase_fingerprint("3/4", n1), phrase_fingerprint("3/4", n2))
+
+    def test_different_rhythm_different_fingerprint(self):
+        n1 = self._notes(("B4", "q", 0), ("B4", "h", 0))
+        n2 = self._notes(("B4", "h", 0), ("B4", "q", 0))
+        self.assertNotEqual(phrase_fingerprint("3/4", n1), phrase_fingerprint("3/4", n2))
+
+    def test_different_meter_different_fingerprint(self):
+        n1 = self._notes(("B4", "q", 0), ("B4", "q", 0))
+        self.assertNotEqual(phrase_fingerprint("3/4", n1), phrase_fingerprint("4/4", n1))
+
+    def test_fingerprint_is_12_char_hex(self):
+        n = self._notes(("B4", "q", 0))
+        fp = phrase_fingerprint("3/4", n)
+        self.assertEqual(len(fp), 12)
+        self.assertTrue(all(c in "0123456789abcdef" for c in fp))
