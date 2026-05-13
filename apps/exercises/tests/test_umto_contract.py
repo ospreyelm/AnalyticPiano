@@ -182,6 +182,11 @@ def test_analysis_layer_raw_roman_numeral_defaults_none():
     layer = AnalysisLayer()
     assert layer.raw_roman_numeral is None
 
+def test_analysis_layer_has_local_key():
+    from apps.exercises.umto import AnalysisLayer
+    layer = AnalysisLayer(local_key="d")
+    assert layer.local_key == "d"
+
 def test_analysis_layer_has_raw_figured_bass():
     from apps.exercises.umto import AnalysisLayer
     layer = AnalysisLayer()

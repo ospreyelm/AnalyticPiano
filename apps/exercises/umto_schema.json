@@ -26,6 +26,18 @@
           "default": null,
           "title": "Raw Roman Numeral"
         },
+        "local_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Local Key"
+        },
         "raw_figured_bass": {
           "anyOf": [
             {
@@ -148,7 +160,8 @@
       "enum": [
         "identification",
         "playback",
-        "analysis_match"
+        "analysis_match",
+        "symbolic_identification"
       ],
       "title": "InteractionMode",
       "type": "string"
