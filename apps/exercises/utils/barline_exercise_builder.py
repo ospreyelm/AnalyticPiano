@@ -5,11 +5,17 @@ SIMPLE_METERS = {
     "2/4": (2, Fraction(1, 1)),
     "3/4": (3, Fraction(1, 1)),
     "4/4": (4, Fraction(1, 1)),
+    "2/2": (2, Fraction(2, 1)),
+    "3/2": (3, Fraction(2, 1)),
+    "4/2": (4, Fraction(2, 1)),
 }
 COMPOUND_METERS = {
     "6/8": (2, Fraction(3, 2)),
     "9/8": (3, Fraction(3, 2)),
     "12/8": (4, Fraction(3, 2)),
+    "6/4": (2, Fraction(3, 1)),
+    "9/4": (3, Fraction(3, 1)),
+    "12/4": (4, Fraction(3, 1)),
 }
 DURATION_TO_QUARTERS = {
     "w": Fraction(4, 1),

@@ -233,3 +233,64 @@ class BarlineExerciseBuilderTests(SimpleTestCase):
                 pitch_mode="rhythm_only",
                 source="invalid full-measure pickup",
             )
+
+    def test_simple_derived_meter_2_2(self):
+        payload = build_barline_payload(
+            time_signature="2/2",
+            clef="treble",
+            notes=[
+                {"pitch": "B4", "duration": "h", "dots": 0},
+                {"pitch": "B4", "duration": "h", "dots": 0},
+                {"pitch": "B4", "duration": "h", "dots": 0},
+                {"pitch": "B4", "duration": "h", "dots": 0},
+            ],
+            measures=2,
+            show_time_signature=True,
+            pitch_mode="rhythm_only",
+            source="test",
+        )
+        self.assertEqual(payload["type"], "umto_barline_placement")
+        self.assertEqual(payload["beat_count"], 4)
+        self.assertEqual(payload["correct_barline_positions"], [1])
+
+    def test_simple_derived_meter_3_2(self):
+        payload = build_barline_payload(
+            time_signature="3/2",
+            clef="treble",
+            notes=[
+                {"pitch": "B4", "duration": "h", "dots": 0},
+                {"pitch": "B4", "duration": "h", "dots": 0},
+                {"pitch": "B4", "duration": "h", "dots": 0},
+                {"pitch": "B4", "duration": "h", "dots": 0},
+                {"pitch": "B4", "duration": "h", "dots": 0},
+                {"pitch": "B4", "duration": "h", "dots": 0},
+            ],
+            measures=2,
+            show_time_signature=True,
+            pitch_mode="rhythm_only",
+            source="test",
+        )
+        self.assertEqual(payload["beat_count"], 6)
+        self.assertEqual(payload["correct_barline_positions"], [2])
+
+    def test_compound_derived_meter_6_4(self):
+        payload = build_barline_payload(
+            time_signature="6/4",
+            clef="treble",
+            notes=[
+                {"pitch": "B4", "duration": "q", "dots": 1},
+                {"pitch": "B4", "duration": "q", "dots": 1},
+                {"pitch": "B4", "duration": "q", "dots": 1},
+                {"pitch": "B4", "duration": "q", "dots": 1},
+                {"pitch": "B4", "duration": "q", "dots": 1},
+                {"pitch": "B4", "duration": "q", "dots": 1},
+                {"pitch": "B4", "duration": "q", "dots": 1},
+                {"pitch": "B4", "duration": "q", "dots": 1},
+            ],
+            measures=2,
+            show_time_signature=True,
+            pitch_mode="rhythm_only",
+            source="test",
+        )
+        self.assertEqual(payload["beat_count"], 4)
+        self.assertEqual(payload["correct_barline_positions"], [1])
