@@ -142,6 +142,7 @@ def build_umto_payload(
     unit: Optional[int] = None,
     analysis_overrides: Optional[list] = None,
     analysis_type: Optional[str] = None,
+    display: Optional[dict] = None,
 ) -> dict:
     """Build a UMTO frontend payload from CIR-shaped score_data.
 
@@ -317,7 +318,10 @@ def build_umto_payload(
         analysis=analysis_slices,
         grading=grading_slices,
     )
-    return umto.to_frontend_payload(unit=unit, analysis_type=analysis_type)
+    payload = umto.to_frontend_payload(unit=unit, analysis_type=analysis_type)
+    if display is not None:
+        payload["display"] = display
+    return payload
 
 
 import os

@@ -81,6 +81,7 @@ class LocalContentGenerationRenderTests(TestCase):
                 "unit": "9",
                 "riemenschneider": "1-30",
                 "mode": "roman",
+                "overwrite": False,
             },
         )
 
@@ -97,6 +98,7 @@ class LocalContentGenerationPostTests(TestCase):
                 "unit": "11",
                 "riemenschneider": "21-30",
                 "mode": "roman",
+                "overwrite": False,
             },
         )
 
@@ -114,6 +116,7 @@ class LocalContentGenerationPostTests(TestCase):
                 "unit": "11",
                 "riemenschneider": "21-30",
                 "mode": "roman",
+                "overwrite": False,
             },
         )
 
@@ -184,6 +187,7 @@ class LocalContentGenerationPostTests(TestCase):
             mode="roman",
             author="author@example.com",
             public=True,
+            overwrite=False,
         )
         self.assertEqual(response.context["result"]["command"], "create_unit_playlist")
         self.assertEqual(response.context["result"]["status"], "success")
@@ -212,5 +216,33 @@ class LocalContentGenerationPostTests(TestCase):
                 "unit": "14",
                 "riemenschneider": "31-40",
                 "mode": "figures",
+                "overwrite": False,
             },
         )
+
+    @override_settings(ENABLE_LOCAL_CONTENT_TOOLS=True, ALLOWED_HOSTS=["testserver"])
+    @patch("apps.exercises.views_tools.call_command")
+    def test_post_create_unit_playlist_forwards_overwrite_option(self, call_command_mock):
+        response = self.client.post(
+            reverse("content-generation"),
+            {
+                "command": "create_unit_playlist",
+                "author": "author@example.com",
+                "unit": "11",
+                "riemenschneider": "21-30",
+                "mode": "roman",
+                "overwrite": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        call_command_mock.assert_called_once_with(
+            "create_unit_playlist",
+            unit=11,
+            riemenschneider="21-30",
+            mode="roman",
+            author="author@example.com",
+            public=True,
+            overwrite=True,
+        )
+        self.assertTrue(response.context["form_data"]["overwrite"])

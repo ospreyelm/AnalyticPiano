@@ -39,3 +39,30 @@ class ExerciseAdminGenerateContentTests(TestCase):
             source="manual",
             stdout=ANY,
         )
+
+    @patch("apps.exercises.admin.call_command")
+    def test_post_create_unit_playlist_forwards_overwrite_option(self, call_command_mock):
+        response = self.client.post(
+            reverse("admin:exercises_exercise_generate_content"),
+            {
+                "command": "create_unit_playlist",
+                "author": "author@example.com",
+                "unit": "9",
+                "riemenschneider": "1-3",
+                "mode": "roman",
+                "overwrite": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        call_command_mock.assert_called_once_with(
+            "create_unit_playlist",
+            unit=9,
+            riemenschneider="1-3",
+            author="author@example.com",
+            mode="roman",
+            public=True,
+            playlist_only=False,
+            overwrite=True,
+            stdout=ANY,
+        )

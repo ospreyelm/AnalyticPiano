@@ -197,6 +197,7 @@ class ExerciseAdmin(ImportExportModelAdmin):
                     unit = request.POST.get("unit", "").strip()
                     riemenschneider = request.POST.get("riemenschneider", "").strip()
                     mode = request.POST.get("mode", "roman").strip()
+                    overwrite = request.POST.get("overwrite") == "on"
                     if not unit or not riemenschneider:
                         messages.error(request, "Unit and Riemenschneider range are required.")
                         return render(request, "admin/exercises/exercise/generate_content.html")
@@ -209,6 +210,7 @@ class ExerciseAdmin(ImportExportModelAdmin):
                         mode=mode,
                         public=is_public,
                         playlist_only=playlist_only,
+                        overwrite=overwrite,
                         stdout=out,
                     )
                     label = "playlist rebuilt from existing exercises" if playlist_only else "exercises imported and playlist created"

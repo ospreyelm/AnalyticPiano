@@ -102,7 +102,15 @@
                 <option value="roman">Roman numerals</option>
                 <option value="figures">Figured bass</option>
                 <option value="play">Play (MIDI)</option>
+                <option value="play_figures">Play with figured bass</option>
             </select>
+        </div>
+        <div class="form-row">
+            <label for="overwrite">
+                <input type="checkbox" name="overwrite" id="overwrite">
+                Overwrite existing exercises
+            </label>
+            <p class="help">Updates existing exercises matched by description and author instead of skipping them.</p>
         </div>
         <div class="form-row">
             <button type="submit" name="command" value="create_unit_playlist" class="button default">

@@ -249,7 +249,7 @@ class Command(BaseCommand):
         parser.add_argument('--movement', type=int, help='Movement number (e.g. 6)')
         parser.add_argument('--riemenschneider', type=int, help='Riemenschneider number (e.g. 1-371)')
         parser.add_argument('--author', type=str, required=True, help='Email of the exercise author')
-        parser.add_argument('--mode', type=str, choices=['play', 'roman', 'figures', 'figures_unabbreviated', 'matching'], default='play', help='Exercise mode')
+        parser.add_argument('--mode', type=str, choices=['play', 'play_figures', 'roman', 'figures', 'figures_unabbreviated', 'matching'], default='play', help='Exercise mode')
         parser.add_argument('--min-measures', type=int, default=3, help='Minimum measures per phrase')
         parser.add_argument('--dry-run', action='store_true', help='Show phrase ranges without creating exercises')
         parser.add_argument('--public', action='store_true', help='Mark imported exercises as public')
@@ -268,13 +268,13 @@ class Command(BaseCommand):
         dry_run = options['dry_run']
         overwrite = options['overwrite']
 
-        if mode in ('roman', 'matching'):
+        if mode in ('roman', 'matching', 'play', 'play_figures'):
             from apps.exercises.utils import wir_corpus
             if riem_num is not None:
                 if not wir_corpus.has_chorale(riem_num):
                     raise CommandError(
                         f"Riemenschneider {riem_num} not found in When in Rome corpus. "
-                        f"Only standalone chorales (1-371) are supported in roman mode."
+                        f"Only standalone chorales (1-371) are supported in WiR-backed modes."
                     )
             elif bwv_num is not None:
                 riem_num = wir_corpus.bwv_to_riemenschneider(str(bwv_num))
@@ -462,7 +462,7 @@ class Command(BaseCommand):
             # 4. Map to UMTO Interaction Mode
             # `roman` and `figures` are label-entry exercises (show prompts/slots),
             # while `matching` is the inverse mode (label shown, play the pitch).
-            if mode == 'play':
+            if mode in ('play', 'play_figures'):
                 umto_mode = InteractionMode.PLAYBACK
             elif mode == 'matching':
                 umto_mode = InteractionMode.ANALYSIS_MATCH
@@ -493,11 +493,11 @@ class Command(BaseCommand):
 
             # Build analysis overrides based on mode
             analysis_overrides = None
-            if mode in ('roman', 'matching'):
+            if mode in ('roman', 'matching', 'play', 'play_figures'):
                 analysis_overrides = _build_roman_analysis_overrides(
                     phrase_score, m21_key, unit_nums, riem_num
                 )
-                self.stdout.write(f"  Built {len(analysis_overrides)} roman analysis slices")
+                self.stdout.write(f"  Built {len(analysis_overrides)} WiR analysis slices")
             elif mode in ('figures', 'figures_unabbreviated'):
                 try:
                     analysis_overrides = _build_figured_bass_overrides(
@@ -507,10 +507,18 @@ class Command(BaseCommand):
                 except Exception as e:
                     self.stdout.write(self.style.WARNING(f"  Figured bass overrides failed: {e}"))
 
+            display = None
             if mode == 'figures':
                 analysis_type = 'figured_bass'
             elif mode == 'figures_unabbreviated':
                 analysis_type = 'figured_bass_unabbreviated'
+            elif mode == 'play_figures':
+                analysis_type = 'figured_bass'
+                display = {
+                    "showFigures": True,
+                    "figureStyle": "figures_abbrev",
+                    "analysisRenderer": "notater",
+                }
             else:
                 analysis_type = 'roman'
 
@@ -526,6 +534,8 @@ class Command(BaseCommand):
             )
             if analysis_overrides is not None:
                 umto_kwargs["analysis_overrides"] = analysis_overrides
+            if display is not None:
+                umto_kwargs["display"] = display
 
             # Create the Exercise via UMTO factory
             ex = save_umto_exercise(

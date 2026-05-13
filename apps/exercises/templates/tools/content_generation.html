@@ -241,7 +241,14 @@
                                 <option value="roman"{% if form_data.mode == "roman" %} selected{% endif %}>Roman numerals</option>
                                 <option value="figures"{% if form_data.mode == "figures" %} selected{% endif %}>Figured bass</option>
                                 <option value="play"{% if form_data.mode == "play" %} selected{% endif %}>Play</option>
+                                <option value="play_figures"{% if form_data.mode == "play_figures" %} selected{% endif %}>Play with figured bass</option>
                             </select>
+                        </div>
+                        <div class="field checkbox-field">
+                            <label>
+                                <input type="checkbox" name="overwrite"{% if form_data.overwrite %} checked{% endif %}>
+                                Overwrite existing exercises
+                            </label>
                         </div>
                         <div class="actions">
                             <button type="submit" name="command" value="create_unit_playlist">Create Unit Playlist</button>

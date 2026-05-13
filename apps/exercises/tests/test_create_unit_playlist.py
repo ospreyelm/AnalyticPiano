@@ -172,6 +172,13 @@ class CreateUnitPlaylistCommandTest(TestCase):
         import_call = next(c for c in mock_call.call_args_list if c.args and c.args[0] == "import_bach_phrases")
         self.assertTrue(import_call.kwargs.get("public", False))
 
+    @patch("apps.exercises.management.commands.create_unit_playlist.call_command")
+    def test_overwrite_passthrough(self, mock_call):
+        call_command("create_unit_playlist", unit=11, riemenschneider="21",
+                     author="teacher@example.com", mode="roman", overwrite=True)
+        import_call = next(c for c in mock_call.call_args_list if c.args and c.args[0] == "import_bach_phrases")
+        self.assertTrue(import_call.kwargs.get("overwrite", False))
+
     def test_fails_on_unknown_unit(self):
         with self.assertRaises(CommandError):
             call_command("create_unit_playlist", unit=999, riemenschneider="1",

@@ -953,6 +953,7 @@ define([
         exercise.staffDistribution = definition.staffDistribution || "chorale";
         exercise.complexity_score = definition.complexity_score || 0;
         exercise.semibrevesPerLine = definition.semibrevesPerLine || 4;
+        exercise.display = definition.display || {};
         exercise.mode = definition.mode || (definition.score && definition.score.umto && definition.score.umto.metadata && definition.score.umto.metadata.mode) || "play";
         exercise.analysisType = definition.analysisType || (exercise.complexity_score === 1 ? "note_name" : "roman");
         exercise.inputMode = definition.inputMode ||

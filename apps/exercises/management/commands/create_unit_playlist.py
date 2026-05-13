@@ -13,7 +13,7 @@ def _unit_new_chords(unit_num: int, family: str = "roman") -> set[str]:
 
 
 def _mode_to_family(mode: str) -> str:
-    if mode in ("figures", "figures_unabbreviated"):
+    if mode in ("figures", "figures_unabbreviated", "play_figures"):
         return "figured_bass"
     return "roman"
 
@@ -116,7 +116,7 @@ class Command(BaseCommand):
         parser.add_argument("--riemenschneider", type=str, required=True)
         parser.add_argument("--author", type=str, required=True)
         parser.add_argument("--mode", type=str,
-                            choices=["roman", "play", "figures", "figures_unabbreviated", "matching"], default="roman")
+                            choices=["roman", "play", "play_figures", "figures", "figures_unabbreviated", "matching"], default="roman")
         parser.add_argument("--min-measures", type=int, default=3)
         parser.add_argument("--public", action="store_true")
         parser.add_argument("--dry-run", action="store_true")
@@ -203,7 +203,7 @@ class Command(BaseCommand):
             )
 
             family = _mode_to_family(mode)
-            require_new_chords = not options.get("no_chord_filter", False) and mode in ("roman", "figures", "matching")
+            require_new_chords = not options.get("no_chord_filter", False) and mode in ("roman", "figures", "play_figures", "matching")
             selected = []
             for ex in candidates:
                 riem_num, _ = Command._extract_riem_phrase(ex.description or "")

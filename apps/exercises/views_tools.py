@@ -9,6 +9,7 @@ DEFAULT_FORM_DATA = {
     "unit": "9",
     "riemenschneider": "1-30",
     "mode": "roman",
+    "overwrite": False,
 }
 
 
@@ -24,6 +25,7 @@ def _get_form_data(request):
             DEFAULT_FORM_DATA["riemenschneider"],
         ).strip(),
         "mode": request.POST.get("mode", DEFAULT_FORM_DATA["mode"]).strip(),
+        "overwrite": request.POST.get("overwrite") == "on",
     }
 
 
@@ -92,6 +94,7 @@ def content_generation_view(request):
                             mode=form_data["mode"],
                             author=author,
                             public=True,
+                            overwrite=form_data["overwrite"],
                         )
                 else:
                     messages.append(

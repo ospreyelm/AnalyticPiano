@@ -176,3 +176,51 @@ class WiRImportIntegrationTests(TestCase):
                 author=admin_user.email,
                 mode="roman",
             )
+
+    def test_play_mode_stores_wir_roman_and_figured_bass_analysis(self):
+        admin_user = _create_admin_user("wir-play@example.test")
+        call_command(
+            "import_bach_phrases",
+            riemenschneider=1,
+            author=admin_user.email,
+            mode="play",
+            extra_tags=["unit:wir_play"],
+        )
+        ex = _first_wir_exercise("unit:wir_play")
+        self.assertIsNotNone(ex)
+        self.assertEqual(ex.data["mode"], "playback")
+        self.assertEqual(ex.data["analysisType"], "roman")
+
+        target = next(
+            s for s in ex.data["score"]["umto"]["analysis"]
+            if s["offset"] == 14.0
+        )
+        content = target["content"]
+        self.assertEqual(content["roman_numeral"], "V7")
+        self.assertEqual(content["local_key"], "G")
+        self.assertEqual(content["raw_roman_numeral"], "iv74")
+        self.assertEqual(content["raw_figured_bass"], "8/7/4")
+        self.assertEqual(content["figured_bass"], "7/4-3")
+
+    def test_play_figures_mode_is_playback_with_figured_bass_display(self):
+        admin_user = _create_admin_user("wir-play-figures@example.test")
+        call_command(
+            "import_bach_phrases",
+            riemenschneider=1,
+            author=admin_user.email,
+            mode="play_figures",
+            extra_tags=["unit:wir_play_figures"],
+        )
+        ex = _first_wir_exercise("unit:wir_play_figures")
+        self.assertIsNotNone(ex)
+        self.assertEqual(ex.data["mode"], "playback")
+        self.assertEqual(ex.data["analysisType"], "figured_bass")
+        self.assertEqual(ex.data["display"]["showFigures"], True)
+        self.assertEqual(ex.data["display"]["figureStyle"], "figures_abbrev")
+
+        target = next(
+            s for s in ex.data["score"]["umto"]["analysis"]
+            if s["offset"] == 14.0
+        )
+        self.assertEqual(target["content"]["roman_numeral"], "V7")
+        self.assertEqual(target["content"]["figured_bass"], "7/4-3")
