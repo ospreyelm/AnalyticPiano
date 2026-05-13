@@ -119,10 +119,16 @@ The engine uses a sophisticated harmonic-rhythmic heuristic to find logical phra
 
 ### Multi-Mode Generation
 From a single chorale, the factory can generate multiple distinct curriculum tracks:
-- **Performance (`play`)**: Traditional chorale performance tasks.
-- **Roman Numeral (`roman`)**: Identification of harmonic functions.
+- **Performance (`play`)**: Traditional chorale performance tasks. WiR Roman labels and figured-bass analysis are stored in UMTO analysis for overlays/debugging.
+- **Performance with figures (`play_figures`)**: Playback tasks with figured-bass display defaults.
+- **Roman Numeral (`roman`)**: Identification of harmonic functions using When in Rome labels as canonical answers.
 - **Figured Bass (`figures`)**: Identification of inversions and chord types.
-- **Matching (`matching`)**: Specialized challenges linking notation to harmonic symbols.
+- **Figured Bass, unabbreviated (`figures_unabbreviated`)**: Identification using raw figured-bass stacks.
+- **Matching (`matching`)**: Specialized challenges linking notation to harmonic symbols, backed by the same WiR analysis as Roman mode.
+
+### Refreshing Imported Content
+
+`create_unit_playlist` is idempotent by default: if matching exercises already exist for the same author and description, they are skipped. Use `--overwrite`, or the "Overwrite existing exercises" checkbox in the admin/local content-generation UI, to refresh existing rows after importer changes.
 
 ### Skill Integration
 Every slice is automatically processed by the `analyze_chunk_skills` engine. This ensures that every Bach phrase is immediately "plugged in" to the student's Adaptive Skill Map, allowing the software to recommend specific Bach slices that target a student's personal areas of weakness.

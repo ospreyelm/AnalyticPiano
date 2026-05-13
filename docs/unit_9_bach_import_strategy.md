@@ -1,6 +1,6 @@
 # Unit 9 Bach Chorale Import Strategy
 
-This document describes how the Unit 9 Bach Chorale playlist (**PA01TO**) was created and the technical rationale behind its implementation.
+This document describes the current Unit 9 Bach chorale import strategy and the technical rationale behind it. Earlier Unit 9 playlists were created with one-off scripts; new imports should use `create_unit_playlist`.
 
 ## Objective
 
@@ -14,17 +14,29 @@ Create a playlist of Bach chorale phrases for **Unit 9** of the HarmonyLab curri
 
 ### 1. Playlist Creation
 
-Playlist **PA01TO** was created via `scratch/batch_import_unit9.py`. That script:
+Current playlist generation uses `create_unit_playlist`, which imports a Riemenschneider range, tags each exercise, filters/ordering by the unit taxonomy, and links the result into a static adaptive playlist.
 
-1. Deletes any stale playlist named `"Unit 9 Bach Phrases (R11-20)"`.
-2. Creates a new `Playlist` with `skill_tags=['unit:9']` and `is_dynamic=False`.
-3. Calls `import_bach_phrases --riemenschneider N --author ... --mode roman` for Riemenschneider numbers 11–20.
-4. Sorts newly created exercises by R-number and phrase number, then links them to the playlist via `ExercisePlaylistOrdered`.
-
-To recreate the playlist from scratch:
 ```bash
-python scratch/batch_import_unit9.py
+python manage.py create_unit_playlist \
+  --unit 9 \
+  --riemenschneider 1-30 \
+  --author admin@example.com \
+  --mode roman \
+  --public
 ```
+
+To refresh existing exercises after importer fixes, pass `--overwrite` or use the "Overwrite existing exercises" checkbox in the Django admin/local content-generation UI.
+
+```bash
+python manage.py create_unit_playlist \
+  --unit 9 \
+  --riemenschneider 1-30 \
+  --author admin@example.com \
+  --mode roman \
+  --overwrite
+```
+
+Supported Bach playlist modes include `roman`, `matching`, `figures`, `figures_unabbreviated`, `play`, and `play_figures`.
 
 ### 2. Tag Vocabulary
 
@@ -44,55 +56,64 @@ All valid tags for Unit 9 are declared in `apps/exercises/skill_graph.py:39`:
 "unit:9_Diatonic_Triads", "unit:9_Dominant_Seventh",
 ```
 
-### 3. Data Flow: Playlist Tag → Frontend Filter
+### 3. Data Flow: Playlist Tag → Request-Time Filter
 
 ```
 Playlist.skill_tags = ['unit:9']
     ↓
-lab/views.py:288  generate_exercise_context()
-    "playlistSkillTags": getattr(playlist, "skill_tags", [])
+lab/views.py  generate_exercise_context()
+    TaxonomyReader gets Unit 9 cumulative answers
     ↓
-JSON context sent to browser
+analysisPolicy + allowed_answers sent to browser
     ↓
-exercise_definition.js:759  ExerciseDefinition.parse()
-    exercise.playlistSkillTags = definition.playlistSkillTags || []
-    ↓
-exercise_definition.js:762  buildChoraleIdentificationProblems()
-    exercise.problems = applySkillFilter(problems, playlistSkillTags.concat(playlistTags))
-    ↓
-exercise_definition.js:37  applySkillFilter()
-    Detects 'unit:9' → hides all problems where answer ∉ {I, i, V, V7}
+exercise_definition.js  buildUMTOIdentificationProblems()
+    hides out-of-scope/null-content slots
 ```
 
-### 4. `applySkillFilter()` Behavior
+### 4. WiR Analysis Behavior
 
-**Location:** [lab/static/js/src/models/exercise_definition.js:37–67](lab/static/js/src/models/exercise_definition.js#L37-L67)
+`import_bach_phrases` uses When in Rome labels for WiR-backed modes:
 
-The function receives the full `problems` array (one entry per Roman numeral slot in the score) and the combined `playlistSkillTags + playlistTags` array.
+- `roman`
+- `matching`
+- `play`
+- `play_figures`
 
-**Unit 9 path (lines 43–54):** Triggered when any tag matches `unit:9`, `unit:9_diatonic_triads`, or `unit:9_Dominant_Seventh`. Sets `p.hidden = true` on every problem whose `answer` is not exactly `I`, `i`, `V`, or `V7`. Root-position only — no inversions.
+For each music21 chordify beat, the importer emits one UMTO analysis slice. Structural WiR beats get `roman_numeral`, `local_key`, `raw_roman_numeral`, `raw_figured_bass`, and `figured_bass`. Beats absent from WiR are retained as null-content slices so frontend slots stay aligned with score windows, but the student does not see a target.
 
-**Generic path (lines 56–59):** For other units, strips the `unit:N_` prefix from each tag and hides problems whose `answer` does not start with the cleaned tag string.
+WiR Roman labels are authoritative. music21 labels are preserved only in `raw_roman_numeral` for audit/debugging.
 
-**Effect:** Hidden problems render as greyed-out slots the student cannot interact with. The underlying exercise data is unchanged.
+### 5. Figured-Bass Reconciliation
 
-### 5. Why Frontend Filtering (Not Backend Import)
+WiR-backed imports also compute figured bass. For R1 mm.8-12, the suspension at offset `14.0` is stored as:
+
+```text
+roman_numeral: V7
+raw_roman_numeral: iv74
+raw_figured_bass: 8/7/4
+figured_bass: 7/4-3
+```
+
+For Unit 9 targeting, out-of-scope suspension figures such as `7/4-3` are not asked as Unit 9 answers. The request-time targeting layer can move a target to a nearby resolution slice when the resolution is in scope.
+
+### 6. Why Request-Time Filtering (Not Destructive Import)
 
 1. **Data preservation** — the full chorale stays in the DB; no information is discarded.
 2. **Reusability** — the same exercises appear in later units (e.g., Unit 11 for Pre-Dominants) simply by changing playlist tags.
 3. **Consistency** — students see a real Bach score but are only challenged on learned functions.
+4. **Alignment** — null-content WiR/NCT slices keep the analysis array aligned with rendered score windows.
 
 ---
 
-## Future / Planned (Not Yet Wired)
+## Future / Planned
 
 These features are modelled in the DB but not yet active:
 
 | Feature | What exists | What's missing |
 |---|---|---|
 | **Mastery gating** | `StudentSkillMastery` model, `SkillPrerequisite` DAG model, `Course.mastery_threshold` | `IdentificationAttempt.save()` → mastery update hook; `SkillPrerequisite` rows seeded; `PlaylistView` prereq check |
-| **Adaptive serving** | `Playlist.is_dynamic`, `get_adaptive_exercise_for_view` in `lab/views.py:134` | Fully works for dynamic playlists; Unit 9 playlist is currently `is_dynamic=False` (curated) |
-| **Bulk curriculum generator** | `import_bach_phrases` command | `generate_curriculum.py` management command (sliding window × mode matrix) |
+| **Adaptive serving** | `Playlist.is_dynamic`, `get_adaptive_exercise_for_view` in `lab/views.py` | Works for dynamic playlists; Bach playlists are usually generated as ordered/static playlists |
+| **Bulk curriculum generator** | `create_unit_playlist` command | Higher-level matrix command for many units/modes at once |
 
 See [docs/superpowers/specs/2026-04-18-curriculum-architecture.md](superpowers/specs/2026-04-18-curriculum-architecture.md) for the full roadmap.
 
@@ -100,9 +121,10 @@ See [docs/superpowers/specs/2026-04-18-curriculum-architecture.md](superpowers/s
 
 ## Reference Links
 
-- **Playlist ID:** `PA01TO`
-- **Batch import script:** [scratch/batch_import_unit9.py](../scratch/batch_import_unit9.py)
+- **WiR import reference:** [WHEN_IN_ROME_IMPORT.md](WHEN_IN_ROME_IMPORT.md)
+- **Playlist command:** [create_unit_playlist.py](../apps/exercises/management/commands/create_unit_playlist.py)
+- **Import command:** [import_bach_phrases.py](../apps/exercises/management/commands/import_bach_phrases.py)
 - **Frontend filter:** [exercise_definition.js:37](../lab/static/js/src/models/exercise_definition.js#L37)
-- **Backend tag injection:** [lab/views.py:288](../lab/views.py#L288)
+- **Request-time targeting:** [lab/views.py](../lab/views.py)
 - **Tag vocabulary:** [apps/exercises/skill_graph.py:39](../apps/exercises/skill_graph.py#L39)
 - **Mastery tag set:** [apps/exercises/skill_graph.py:156](../apps/exercises/skill_graph.py#L156)

@@ -71,12 +71,16 @@ This directory contains comprehensive documentation for the HarmonyLab system, i
 - **Audience:** Instructors and agents rebuilding or extending the Note Names unit
 
 ### **[unit_9_bach_import_strategy.md](unit_9_bach_import_strategy.md)** - Unit 9 Implementation
-- **Focus:** How we implemented Tonic/Dominant filtering for Bach chorales
-- **Key finding:** Uses `skill_tags: ["unit:9"]` on a Playlist to trigger frontend filtering in `exercise_definition.js`
+- **Focus:** How we implemented Tonic/Dominant targeting for Bach chorales
+- **Key finding:** Uses `create_unit_playlist`, When in Rome labels, and request-time taxonomy targeting to keep full chorales while asking only in-scope labels
 - **Content:**
-  - Rationale for using frontend filtering instead of data destructive imports
+  - Rationale for request-time targeting instead of destructive imports
   - How to create curriculum-aligned playlists using the standard Bach importer
 - **Audience:** Instructors and agents building new curriculum units
+
+### **[WHEN_IN_ROME_IMPORT.md](WHEN_IN_ROME_IMPORT.md)** - WiR Bach Import Reference
+- **Focus:** Current `import_bach_phrases`/`create_unit_playlist` behavior for WiR Roman labels, figured bass, play imports, and overwrite refreshes
+- **Audience:** Agents and instructors importing or regenerating Bach chorale content
 
 ---
 
@@ -150,8 +154,9 @@ docs/
 ├── claude.md                              (main implementation guide)
 ├── chorale_analysis.md                    (harmonic analysis pipeline — computed on the fly)
 ├── chorale_future_improvements.md         (chorale feature roadmap)
+├── WHEN_IN_ROME_IMPORT.md                 (WiR-backed Bach import reference)
 ├── unit_1_note_reading_strategy.md        (Curriculum strategy: diatonic Note Names for Unit 1)
-├── unit_9_bach_import_strategy.md        (Curriculum strategy: frontend filtering for Unit 9)
+├── unit_9_bach_import_strategy.md         (Curriculum strategy: WiR + Unit 9 targeting)
 └── lms_student_ux_assessment.md          (LMS/student experience evaluation)
 ```
 

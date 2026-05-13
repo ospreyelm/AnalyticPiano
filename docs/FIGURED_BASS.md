@@ -117,7 +117,7 @@ Bach MIDI/MusicXML
 | `apps/exercises/utils/figured_bass.py` | `compute_figured_bass()` + `abbreviate_figured_bass()` |
 | `apps/exercises/umto.py` | `AnalysisLayer` model, `to_frontend_payload()` |
 | `apps/exercises/umto_factory.py` | CIR→UMTO conversion, note splitting at beat boundaries |
-| `apps/exercises/management/commands/import_bach_phrases.py` | Sets `analysis_type="figured_bass"`, calls `build_umto_payload()` |
+| `apps/exercises/management/commands/import_bach_phrases.py` | Builds figured-bass overrides; stores figures in `figures`, `figures_unabbreviated`, `roman`, `matching`, `play`, and `play_figures` imports |
 | `apps/exercises/management/commands/create_unit_playlist.py` | End-to-end import + playlist creation for a unit |
 | `music_theory_taxonomy.json` | Cumulative/new figure sets per unit (source of truth) |
 | `lab/static/js/src/models/exercise_definition.js` | `buildUMTOIdentificationProblems()`, `applySkillFilter()`, `buildChoices()` |
@@ -135,6 +135,23 @@ python manage.py create_unit_playlist \
   --public
 ```
 
+## Creating play exercises with figured bass
+
+`play_figures` creates playback exercises, not identification exercises. Students play the chorale, while the UMTO payload stores WiR Roman labels and reconciled figured bass. The payload sets `analysisType="figured_bass"` and display defaults for abbreviated figured-bass overlays.
+
+```bash
+python manage.py create_unit_playlist \
+  --unit 10 \
+  --riemenschneider 1-40 \
+  --author admin@example.com \
+  --mode play_figures \
+  --public
+```
+
+Plain `play` imports also store WiR Roman labels and figured-bass fields in `score.umto.analysis`; they simply do not default to showing figured-bass overlays.
+
+The Django admin and local content-generation UI expose both `play` and `play_figures`, plus an "Overwrite existing exercises" checkbox that forwards `--overwrite`.
+
 To regenerate existing exercises (e.g. after a bug fix):
 
 ```bash
@@ -149,7 +166,7 @@ python manage.py create_unit_playlist \
 
 ## Known limitations and deferred work
 
-**Suspension detection** — `5/4` (4–3 suspension) requires looking ahead to the resolution note. Currently `compute_figured_bass()` only sees one chord at a time. Implemented stub in `_build_figured_bass_overrides()` in `import_bach_phrases.py` but not yet wired up for all suspension types, so `5/4` is intentionally excluded from units 9–13 for now.
+**Suspension detection** — the importer recognizes the current Bach/WiR case `8/7/4 -> 8/7/3` and stores the abbreviated pedagogical answer `7/4-3`. Broader suspension families, such as generic `5/4` handling and other resolutions, are still deferred.
 
 **Chromatic figures** — `#6` (Italian/French/German augmented sixths), `b7`, etc. are computed correctly by `compute_figured_bass()` but the taxonomy `new`/`cumulative` entries for units 14+ are not yet defined.
 

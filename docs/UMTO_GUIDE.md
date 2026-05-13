@@ -52,7 +52,9 @@ absolute duration in quarter-lengths.
 ## Analysis slices vs. grading slices
 
 - `analysis[]` — pedagogical content (Roman numerals, figured bass, etc.) shown
-  to the student. Drives label choices and correct-answer logic.
+  to the student. Drives label choices and correct-answer logic for
+  identification/analysis modes, and can also provide overlays/debugging data
+  for playback modes.
 - `grading[]` — target MIDI pitches at each onset. Drives MIDI input grading.
 
 Same `offset` in both arrays represents the same musical moment. Keep them

@@ -121,9 +121,9 @@
     </div>
     <div class="step col-analysis">
       <h3>Roman numeral overrides</h3>
-      <p><code>_build_roman_analysis_overrides()</code> — chordify again, walk unique offsets, call <code>romanNumeralFromChord()</code> per chord. Stores <code>raw_roman_numeral</code> only; <code>roman_numeral</code> = null (targeted at request time).</p>
+      <p><code>_build_roman_analysis_overrides()</code> — chordify again, walk unique offsets, use When in Rome for canonical <code>roman_numeral</code> + <code>local_key</code>, and preserve music21 as <code>raw_roman_numeral</code>. Also stores reconciled figured bass.</p>
       <span class="file">import_bach_phrases.py:26–71</span>
-      <span class="tag tag-analysis">mode=roman or matching</span>
+      <span class="tag tag-analysis">mode=roman, matching, play, play_figures</span>
     </div>
     <div class="step col-analysis">
       <h3>Figured bass overrides</h3>
@@ -132,8 +132,8 @@
       <span class="tag tag-analysis">mode=figures</span>
     </div>
     <div class="step col-problem">
-      <h3 style="color:#b71c1c">⚠ NCT problem</h3>
-      <p>Both RN and FB analysis use <strong>chordify</strong> — every note becomes a chord slice. Passing tones, suspensions, neighbors are all treated as harmonic events. No non-chord-tone detection exists.</p>
+      <h3 style="color:#b71c1c">NCT alignment</h3>
+      <p>Chordify still creates a slice at every beat. Beats absent from WiR are retained with null display content so frontend slots stay aligned with score windows while non-chord-tone beats remain hidden from students.</p>
       <span class="tag" style="background:#ffcdd2;color:#b71c1c">Gap</span>
     </div>
   </div>
@@ -283,14 +283,14 @@
 </div>
 
 <div class="callout warn">
-  <strong>Gap 2: <code>applySkillFilter</code> generic path broken for units 10+</strong>
-  Unit 9 works because of a hardcoded allowlist. All other units fall through to <code>answer.startsWith(cleanTag)</code> which does not match e.g. "V7" against the tag "Dominant_Seventh". <br>
-  File: <code>exercise_definition.js:37–67</code>
+  <strong>Gap 2: legacy <code>applySkillFilter</code> path</strong>
+  UMTO Bach playlists now use request-time taxonomy targeting through <code>lab/views.py</code>. The older frontend fallback still exists for legacy/non-UMTO flows and should not be treated as the source of truth for new Bach imports. <br>
+  File: <code>lab/views.py</code>, <code>exercise_definition.js</code>
 </div>
 
 <div class="callout warn">
-  <strong>Gap 3: Suspension detection deferred</strong>
-  A TODO in <code>import_bach_phrases.py:77</code> notes that 4-3, 7-6, 9-8 suspension detection requires look-ahead over consecutive offsets and is not yet implemented.
+  <strong>Gap 3: broader suspension detection deferred</strong>
+  The importer now recognizes the Bach/WiR <code>8/7/4 → 8/7/3</code> case and stores <code>7/4-3</code>. Broader suspension families still require additional look-ahead rules.
 </div>
 
 <div class="callout info">
@@ -310,13 +310,12 @@ python manage.py create_unit_playlist \
 # What this does internally:
 # 1. For each R21..R30:
 #    a. import_bach_phrases → load score, detect key, segment on cadences, gap-filter
-#    b. _build_roman_analysis_overrides() → chordify + romanNumeralFromChord per offset
-#       ← NCTs pollute labels here
+#    b. _build_roman_analysis_overrides() → chordify offsets + WiR labels + raw music21 audit labels
+#       NCT beats are retained as null-content slices for score-window alignment
 #    c. analyze_chunk_skills() → skill_tags[] + complexity
 #    d. save_umto_exercise() → build_umto_payload() → Exercise DB row
 # 2. Query Exercise.objects.filter(skill_tags__contains=['unit:9', 'mode:roman'])
-# 3. _has_new_chord(): check raw_roman_numeral against Unit 9 new chords {I, i, V, V7}
-#    ← Wrong NCT labels can wrongly pass or wrongly fail this filter
+# 3. Request-time targeting checks stored WiR labels against Unit 9 cumulative answers
 # 4. Sort, write ExercisePlaylistOrdered rows
 </pre>
 
