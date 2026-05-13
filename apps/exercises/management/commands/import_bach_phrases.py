@@ -31,9 +31,10 @@ def _build_roman_analysis_overrides(
 ) -> list:
     """Analyze a phrase and return UMTO analysis_overrides with WiR Roman numerals.
 
-    Stores the curated When in Rome label in roman_numeral and the raw music21
-    figure in raw_roman_numeral for audit. Beats without a WiR label are treated
-    as non-chord tones and omitted.
+    Emits a slice for every chordify beat (matching the score window grid).
+    WiR label used when available; NCT beats get all-null content so the
+    frontend's allContentNull check hides them without breaking slot alignment.
+    Raises CommandError if the chorale is not in the WiR corpus.
     """
     from music21.roman import romanNumeralFromChord
     from apps.exercises.utils import wir_corpus
@@ -62,13 +63,12 @@ def _build_roman_analysis_overrides(
             if abs_offset in seen_offsets:
                 continue
             seen_offsets.add(abs_offset)
+
             wir_result = wir_corpus.lookup(
                 riemenschneider,
                 element.measureNumber,
                 float(element.beat),
             )
-            if wir_result is None:
-                continue
 
             try:
                 rn = romanNumeralFromChord(element, global_key)
@@ -76,9 +76,8 @@ def _build_roman_analysis_overrides(
             except Exception:
                 figure = None
 
-            overrides.append({
-                "offset": abs_offset,
-                "content": {
+            if wir_result is not None:
+                content = {
                     "roman_numeral": wir_result["label"],
                     "local_key": wir_result["local_key"],
                     "raw_roman_numeral": figure,
@@ -86,7 +85,23 @@ def _build_roman_analysis_overrides(
                     "figured_bass": None,
                     "pop_symbol": None,
                     "functional_label": None,
-                },
+                }
+            else:
+                # NCT beat — emit null content so frontend hides the slot
+                # while preserving score window alignment.
+                content = {
+                    "roman_numeral": None,
+                    "local_key": None,
+                    "raw_roman_numeral": figure,
+                    "raw_figured_bass": None,
+                    "figured_bass": None,
+                    "pop_symbol": None,
+                    "functional_label": None,
+                }
+
+            overrides.append({
+                "offset": abs_offset,
+                "content": content,
                 "unit_tags": list(unit_tags),
             })
 
