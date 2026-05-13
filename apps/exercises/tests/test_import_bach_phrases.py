@@ -1,5 +1,12 @@
 import unittest
 
+from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.core.management.base import CommandError
+from django.test import TestCase
+
+from apps.exercises.models import Exercise
+
 
 class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
     def _call(self, phrase_score, global_key, unit_tags):
@@ -65,3 +72,67 @@ class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
         # raw_figured_bass is a non-empty string
         self.assertIsInstance(first["content"]["raw_figured_bass"], str)
         self.assertTrue(len(first["content"]["raw_figured_bass"]) > 0)
+
+
+def _create_admin_user(email: str):
+    return get_user_model().objects.create_superuser(
+        email=email,
+        password="test-password",
+    )
+
+
+def _first_wir_exercise(tag: str):
+    return Exercise.objects.filter(skill_tags__contains=[tag]).first()
+
+
+class WiRImportIntegrationTests(TestCase):
+    def test_wir_roman_first_slice_r1(self):
+        admin_user = _create_admin_user("wir-r1@example.test")
+        call_command(
+            "import_bach_phrases",
+            riemenschneider=1,
+            author=admin_user.email,
+            mode="roman",
+            extra_tags=["unit:wir_test"],
+        )
+        ex = _first_wir_exercise("unit:wir_test")
+        self.assertIsNotNone(ex)
+        first = ex.data["score"]["umto"]["analysis"][0]["content"]
+        self.assertEqual(first["roman_numeral"], "I")
+        self.assertEqual(first["local_key"], "G")
+
+    def test_wir_raw_rn_populated(self):
+        admin_user = _create_admin_user("wir-raw@example.test")
+        call_command(
+            "import_bach_phrases",
+            riemenschneider=1,
+            author=admin_user.email,
+            mode="roman",
+            extra_tags=["unit:wir_test2"],
+        )
+        ex = _first_wir_exercise("unit:wir_test2")
+        slices = ex.data["score"]["umto"]["analysis"]
+        self.assertTrue(all(s["content"]["raw_roman_numeral"] is not None for s in slices))
+
+    def test_nct_slice_omitted(self):
+        admin_user = _create_admin_user("wir-nct@example.test")
+        call_command(
+            "import_bach_phrases",
+            riemenschneider=1,
+            author=admin_user.email,
+            mode="roman",
+            extra_tags=["unit:wir_test3"],
+        )
+        ex = _first_wir_exercise("unit:wir_test3")
+        for s in ex.data["score"]["umto"]["analysis"]:
+            self.assertIsNotNone(s["content"]["roman_numeral"])
+
+    def test_unknown_riemenschneider_raises(self):
+        admin_user = _create_admin_user("wir-unknown@example.test")
+        with self.assertRaises((CommandError, SystemExit)):
+            call_command(
+                "import_bach_phrases",
+                riemenschneider=999,
+                author=admin_user.email,
+                mode="roman",
+            )
