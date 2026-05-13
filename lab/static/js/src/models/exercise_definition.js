@@ -962,10 +962,15 @@ define([
           enabled: true,
           mode: {}
         };
-        if (exercise.analysisType === "note_name") {
-          exercise.analysis.mode.note_names = true;
-        } else {
-          exercise.analysis.mode.roman_numerals = true;
+        // Identification exercises: overlays are off — student provides the labels.
+        // Non-identification (playback, analysis_match): show analysis overlays.
+        var _isIdentMode = definition.mode === "identification" || definition.mode === "chorale_identification";
+        if (!_isIdentMode) {
+          if (exercise.analysisType === "note_name") {
+            exercise.analysis.mode.note_names = true;
+          } else {
+            exercise.analysis.mode.roman_numerals = true;
+          }
         }
 
         console.log("[UMTO-DEBUG] parsed exercise:", {
