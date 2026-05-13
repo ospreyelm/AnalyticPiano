@@ -10,7 +10,6 @@ Writes:
 """
 from __future__ import annotations
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -152,6 +151,11 @@ def main(wir_dir: str) -> None:
             errors.append(f"R{riem_num}: {e}")
             continue
 
+        # Two files with the same stem (e.g. "001.txt" and "1.txt") could both map to R1.
+        # Detect and report rather than silently overwriting.
+        if str(riem_num) in chorales:
+            errors.append(f"R{riem_num}: duplicate Riemenschneider number")
+            continue
         chorales[str(riem_num)] = result
         if result["bwv"]:
             bwv_map[result["bwv"]] = riem_num
@@ -163,7 +167,6 @@ def main(wir_dir: str) -> None:
 
     # Validate
     assert len(chorales) == 371, f"Expected 371 chorales, got {len(chorales)}"
-    assert len(set(chorales.keys())) == len(chorales), "Duplicate Riemenschneider keys"
 
     out_dir = Path(__file__).parent.parent / "data" / "when_in_rome"
     out_dir.mkdir(parents=True, exist_ok=True)
