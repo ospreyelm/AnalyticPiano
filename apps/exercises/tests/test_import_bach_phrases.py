@@ -9,44 +9,34 @@ from apps.exercises.models import Exercise
 
 
 class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
-    def _call(self, phrase_score, global_key, unit_tags):
+    def _call(self, phrase_score, global_key, unit_tags, riemenschneider=1):
         from apps.exercises.management.commands.import_bach_phrases import (
             _build_roman_analysis_overrides,
         )
 
-        return _build_roman_analysis_overrides(phrase_score, global_key, unit_tags)
+        return _build_roman_analysis_overrides(phrase_score, global_key, unit_tags, riemenschneider)
 
-    def test_stores_raw_roman_numeral_not_targeted(self):
-        from music21 import chord, key as m21key, stream
+    def test_stores_wir_roman_and_raw_roman_numeral(self):
+        from music21.corpus import chorales
 
-        s = stream.Score()
-        part = stream.Part()
-        m = stream.Measure()
-        m.append(chord.Chord(["C4", "E4", "G4"]))
-        part.append(m)
-        s.append(part)
-        global_key = m21key.Key("C")
-        overrides = self._call(s, global_key, [9])
+        score = list(chorales.Iterator(1, 1, numberingSystem="riemenschneider"))[0]
+        global_key = score.analyze("key")
+        overrides = self._call(score.measures(8, 12), global_key, [9])
         self.assertTrue(len(overrides) > 0)
         first = overrides[0]
         self.assertIn("raw_roman_numeral", first["content"])
         self.assertIsNotNone(first["content"]["raw_roman_numeral"])
-        self.assertIsNone(first["content"]["roman_numeral"])
+        self.assertEqual(first["content"]["roman_numeral"], "I")
+        self.assertEqual(first["content"]["local_key"], "G")
 
-    def test_no_filter_applied_for_out_of_scope_chord(self):
-        from music21 import chord, key as m21key, stream
+    def test_omits_beats_without_wir_labels(self):
+        from music21.corpus import chorales
 
-        s = stream.Score()
-        part = stream.Part()
-        m = stream.Measure()
-        m.append(chord.Chord(["D4", "F4", "A4"]))
-        part.append(m)
-        s.append(part)
-        global_key = m21key.Key("C")
-        overrides = self._call(s, global_key, [9])
+        score = list(chorales.Iterator(1, 1, numberingSystem="riemenschneider"))[0]
+        global_key = score.analyze("key")
+        overrides = self._call(score.measures(8, 12), global_key, [9])
         self.assertTrue(len(overrides) > 0)
-        self.assertIsNotNone(overrides[0]["content"]["raw_roman_numeral"])
-        self.assertIsNone(overrides[0]["content"]["roman_numeral"])
+        self.assertTrue(all(o["content"]["roman_numeral"] is not None for o in overrides))
 
     def test_build_figured_bass_overrides_returns_slices(self):
         """_build_figured_bass_overrides produces slices with raw_figured_bass populated."""

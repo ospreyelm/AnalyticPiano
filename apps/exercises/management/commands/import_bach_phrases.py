@@ -23,14 +23,26 @@ def _description_exists(description: str, authored_by=None) -> bool:
     return qs.exists()
 
 
-def _build_roman_analysis_overrides(phrase_score, global_key, unit_tags: list) -> list:
-    """Analyze a phrase and return UMTO analysis_overrides with raw Roman numerals.
+def _build_roman_analysis_overrides(
+    phrase_score,
+    global_key,
+    unit_tags: list,
+    riemenschneider: int,
+) -> list:
+    """Analyze a phrase and return UMTO analysis_overrides with WiR Roman numerals.
 
-    Stores the raw music21 figure in raw_roman_numeral. Targeting (curriculum
-    filtering) happens at request time in generate_exercise_context; nothing is
-    filtered here.
+    Stores the curated When in Rome label in roman_numeral and the raw music21
+    figure in raw_roman_numeral for audit. Beats without a WiR label are treated
+    as non-chord tones and omitted.
     """
     from music21.roman import romanNumeralFromChord
+    from apps.exercises.utils import wir_corpus
+
+    if not wir_corpus.has_chorale(riemenschneider):
+        raise CommandError(
+            f"Riemenschneider {riemenschneider} not found in When in Rome corpus. "
+            f"Only standalone chorales (1-371) are supported in roman mode."
+        )
 
     chorded = phrase_score.chordify()
     measures = list(chorded.getElementsByClass('Measure'))
@@ -50,6 +62,14 @@ def _build_roman_analysis_overrides(phrase_score, global_key, unit_tags: list) -
             if abs_offset in seen_offsets:
                 continue
             seen_offsets.add(abs_offset)
+            wir_result = wir_corpus.lookup(
+                riemenschneider,
+                element.measureNumber,
+                float(element.beat),
+            )
+            if wir_result is None:
+                continue
+
             try:
                 rn = romanNumeralFromChord(element, global_key)
                 figure = rn.figure
@@ -59,8 +79,10 @@ def _build_roman_analysis_overrides(phrase_score, global_key, unit_tags: list) -
             overrides.append({
                 "offset": abs_offset,
                 "content": {
-                    "roman_numeral": None, # targeting happens at request time
+                    "roman_numeral": wir_result["label"],
+                    "local_key": wir_result["local_key"],
                     "raw_roman_numeral": figure,
+                    "raw_figured_bass": None,
                     "figured_bass": None,
                     "pop_symbol": None,
                     "functional_label": None,
@@ -198,6 +220,19 @@ class Command(BaseCommand):
         min_measures = options['min_measures']
         dry_run = options['dry_run']
         overwrite = options['overwrite']
+
+        if mode in ('roman', 'matching'):
+            from apps.exercises.utils import wir_corpus
+            if riem_num is not None:
+                if not wir_corpus.has_chorale(riem_num):
+                    raise CommandError(
+                        f"Riemenschneider {riem_num} not found in When in Rome corpus. "
+                        f"Only standalone chorales (1-371) are supported in roman mode."
+                    )
+            elif bwv_num is not None:
+                riem_num = wir_corpus.bwv_to_riemenschneider(str(bwv_num))
+                if riem_num is None:
+                    raise CommandError(f"BWV {bwv_num} not in When in Rome corpus.")
 
         # 1. Load the score
         from music21 import corpus
@@ -412,13 +447,10 @@ class Command(BaseCommand):
             # Build analysis overrides based on mode
             analysis_overrides = None
             if mode in ('roman', 'matching'):
-                try:
-                    analysis_overrides = _build_roman_analysis_overrides(
-                        phrase_score, m21_key, unit_nums
-                    )
-                    self.stdout.write(f"  Built {len(analysis_overrides)} roman analysis slices")
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"  Roman analysis overrides failed: {e}"))
+                analysis_overrides = _build_roman_analysis_overrides(
+                    phrase_score, m21_key, unit_nums, riem_num
+                )
+                self.stdout.write(f"  Built {len(analysis_overrides)} roman analysis slices")
             elif mode in ('figures', 'figures_unabbreviated'):
                 try:
                     analysis_overrides = _build_figured_bass_overrides(
