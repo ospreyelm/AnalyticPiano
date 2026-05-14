@@ -49,7 +49,8 @@ class CorpusFilterValidityTests(SimpleTestCase):
         return [{"pitch": "B4", "duration": d, "dots": dot} for d, dot in specs]
 
     def test_valid_phrase_passes(self):
-        notes = self._notes(("q", 0), ("q", 0), ("q", 0), ("q", 0), ("q", 0), ("h", 0))
+        # 4 quarters + 1 half = 6 quarter-values = 2 bars of 3/4
+        notes = self._notes(("q", 0), ("q", 0), ("q", 0), ("q", 0), ("h", 0))
         self.assertTrue(is_valid_phrase("3/4", notes, measures=2))
 
     def test_last_note_shorter_than_preceding_fails(self):
@@ -67,6 +68,11 @@ class CorpusFilterValidityTests(SimpleTestCase):
     def test_compound_meter_valid(self):
         notes = self._notes(("q", 1), ("q", 1))
         self.assertTrue(is_valid_phrase("6/8", notes, measures=1))
+
+    def test_over_filled_phrase_fails(self):
+        # 7 quarters in 2 bars of 3/4 (expected 6) — must reject, not silently pass
+        notes = self._notes(("q", 0), ("q", 0), ("q", 0), ("q", 0), ("q", 0), ("q", 0), ("q", 0))
+        self.assertFalse(is_valid_phrase("3/4", notes, measures=2))
 
     def test_unsupported_meter_fails(self):
         notes = self._notes(("q", 0), ("q", 0))
@@ -174,16 +180,17 @@ def _make_m21_stream(notes, time_sig_str="3/4"):
 class CorpusFilterIterPhrasesTests(SimpleTestCase):
     @patch("apps.exercises.utils.corpus_filter._iter_corpus_streams")
     def test_yields_valid_level1_phrase(self, mock_streams):
+        # 4 quarters + 1 half = 6 quarter-values = 2 bars of 3/4
         notes = [
             _make_m21_note("quarter"), _make_m21_note("quarter"), _make_m21_note("quarter"),
-            _make_m21_note("quarter"), _make_m21_note("quarter"), _make_m21_note("half"),
+            _make_m21_note("quarter"), _make_m21_note("half"),
         ]
         mock_streams.return_value = [("fake/path.abc", _make_m21_stream(notes, "3/4"))]
         results = list(iter_phrases(levels=[1]))
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].level, 1)
         self.assertEqual(results[0].time_signature, "3/4")
-        self.assertEqual(len(results[0].notes), 6)
+        self.assertEqual(len(results[0].notes), 5)
         self.assertEqual(results[0].measures, 2)
 
     @patch("apps.exercises.utils.corpus_filter._iter_corpus_streams")

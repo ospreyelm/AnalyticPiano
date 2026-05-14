@@ -67,7 +67,7 @@ def is_valid_phrase(time_signature: str, notes: list[dict], measures: int) -> bo
 
     expected = _total_bars_quarters(time_signature, measures)
     actual = sum(duration_quarters(n["duration"], n.get("dots", 0)) for n in notes)
-    if actual < expected:
+    if actual != expected:
         return False
 
     if len(notes) >= 2:
