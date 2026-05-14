@@ -794,6 +794,14 @@ define([
       return this.exercise.type === "umto_symbolic_meter";
     },
     /**
+     * Returns true if this is a key signature exercise.
+     *
+     * @return {boolean}
+     */
+    isKeySignatureExercise: function () {
+      return this.exercise.type === "umto_key_signature";
+    },
+    /**
      * Returns true if this is an analysis match exercise.
      *
      * @return {boolean}
@@ -811,7 +819,7 @@ define([
     },
     /**
     isIdentification: function () {
-      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification" || this.isSymbolicMeterQuestion();
+      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification" || this.isSymbolicMeterQuestion() || this.isKeySignatureExercise();
     },
     /**
      * Returns the feedback mode for identification exercises.
@@ -1004,6 +1012,19 @@ define([
           exercise.mode = definition.mode || "identification";
           exercise.analysisType = definition.analysisType || "unit2_symbolic_meter";
           exercise.inputMode = definition.inputMode || "dropdown";
+          exercise.staffDistribution = definition.staffDistribution || "none";
+          exercise.analysis = {
+            enabled: false,
+            mode: {}
+          };
+          exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
+        } else if (exercise.type === "umto_key_signature") {
+          exercise.problems = _.map(definition.problems || [], function (problem) {
+            return _.assign({}, problem);
+          });
+          exercise.mode = definition.mode || "identification";
+          exercise.analysisType = definition.analysisType || "unit3_key_signature";
+          exercise.inputMode = definition.inputMode || "text";
           exercise.staffDistribution = definition.staffDistribution || "none";
           exercise.analysis = {
             enabled: false,
