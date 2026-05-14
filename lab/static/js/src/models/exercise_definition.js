@@ -819,7 +819,7 @@ define([
     },
     /**
     isIdentification: function () {
-      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification" || this.isSymbolicMeterQuestion() || this.isKeySignatureExercise();
+      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification" || this.isSymbolicMeterQuestion();
     },
     /**
      * Returns the feedback mode for identification exercises.
