@@ -74,18 +74,16 @@
     return base;
   }
 
-  // Beat size in eighths: compound meters use 3 eighths per beat, simple use den/8*2 (= 1 quarter = 2 eighths for /4).
+  // Beat size in eighths. Compound meters (6/8, 9/8, 12/8, 6/4, 9/4, 12/4):
+  // beat = dotted quarter = 3 denominator units. Simple: beat = 1 denominator unit.
+  // Compound detection: numerator divisible by 3 (covers 6, 9, 12).
   function beatEighths(timeSig) {
     var parts = (timeSig || "4/4").split("/");
     var num = parseInt(parts[0], 10);
     var den = parseInt(parts[1], 10);
-    // Compound: numerator divisible by 3 but not 2 (6/8, 9/8, 12/8, 6/4, 9/4, 12/4)
-    if (num % 3 === 0 && num % 2 !== 0) {
-      // Beat = dotted quarter = 3 units of denominator; in eighths:
-      // denominator /4 means 1 unit = 2 eighths; /8 means 1 unit = 1 eighth
+    if (num % 3 === 0 && num > 3) {
       return 3 * (8 / den);
     }
-    // Simple: beat = 1 unit of denominator
     return 8 / den;
   }
 
