@@ -42,10 +42,11 @@ BEAMABLE_DURATIONS = {"8", "16", "32"}
 
 
 def beaming_is_clean(notes, time_signature):
-    """Return True if every beamable note (8th, 16th, 32nd) starts on an exact
-    eighth-note subdivision within its beat group.  Phrases where a non-beamable
-    note (e.g. quarter) ends mid-beat leave the next eighth starting at an
-    off-grid position that VexFlow cannot beam correctly (issue #467)."""
+    """Return True if every beamable note (8th, 16th, 32nd) can be correctly
+    beamed by a beat-boundary algorithm.  Fails when a non-beamable note ends
+    mid-beat (e.g. quarter in 6/8), leaving fewer than 'beat' eighths before
+    the next boundary — any isolated beamable note in that remainder cannot
+    form a group of 2+ and renders unbeamed (VexFlow issue #467)."""
     try:
         _, beat_quarters = meter_info(time_signature)
     except ValueError:
@@ -55,10 +56,22 @@ def beaming_is_clean(notes, time_signature):
     elapsed = Fraction(0)
     for note in notes:
         dur = duration_quarters(note["duration"], note.get("dots", 0))
+        pos_in_beat = elapsed % beat
         if note["duration"] in BEAMABLE_DURATIONS:
-            pos_in_beat = elapsed % beat
+            # Beamable note must start on an exact eighth subdivision
             if pos_in_beat % eighth != 0:
                 return False
+        else:
+            # Non-beamable note: if it ends mid-beat, the remaining partial
+            # beat slot may leave an isolated eighth with no beam partner.
+            end_pos = (elapsed + dur) % beat
+            if end_pos != 0:
+                # There are 'remaining' eighths left in this beat after the note ends.
+                # Those eighths cannot be beamed with the next beat's eighths.
+                # If there's only 1 such eighth slot, any note there is stranded.
+                remaining = beat - end_pos
+                if remaining < beat and remaining > 0:
+                    return False
         elapsed += dur
     return True
 
