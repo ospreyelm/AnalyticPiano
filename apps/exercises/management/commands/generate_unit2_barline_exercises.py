@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.exercises.models import ExercisePlaylistOrdered, Playlist
 from apps.exercises.umto_factory import save_umto_barline_exercise
-from apps.exercises.utils.barline_exercise_builder import build_barline_payload
+from apps.exercises.utils.barline_exercise_builder import build_barline_payload, beaming_is_clean
 from apps.exercises.utils.corpus_filter import iter_phrases
 
 PLAYLIST_NAME = "Unit 2 — Add Barlines"
@@ -214,7 +214,9 @@ class Command(BaseCommand):
                 )
                 expected_barlines = phrase.measures - 1
                 if len(payload.get("correct_barline_positions") or []) != expected_barlines:
-                    continue  # phrase missing note-aligned barlines (syncopation across barline)
+                    continue  # syncopation crosses barline — unplaceable
+                if not beaming_is_clean(phrase.notes, phrase.time_signature):
+                    continue  # quarter/non-beamable ends mid-beat; VexFlow can't beam correctly
                 ex = save_umto_barline_exercise(
                     description=description,
                     author=author,

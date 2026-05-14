@@ -38,6 +38,31 @@ def duration_quarters(duration, dots=0):
     return total
 
 
+BEAMABLE_DURATIONS = {"8", "16", "32"}
+
+
+def beaming_is_clean(notes, time_signature):
+    """Return True if every beamable note (8th, 16th, 32nd) starts on an exact
+    eighth-note subdivision within its beat group.  Phrases where a non-beamable
+    note (e.g. quarter) ends mid-beat leave the next eighth starting at an
+    off-grid position that VexFlow cannot beam correctly (issue #467)."""
+    try:
+        _, beat_quarters = meter_info(time_signature)
+    except ValueError:
+        return True  # unknown meter — don't filter
+    beat = beat_quarters  # beat size in quarter-note units
+    eighth = Fraction(1, 2)
+    elapsed = Fraction(0)
+    for note in notes:
+        dur = duration_quarters(note["duration"], note.get("dots", 0))
+        if note["duration"] in BEAMABLE_DURATIONS:
+            pos_in_beat = elapsed % beat
+            if pos_in_beat % eighth != 0:
+                return False
+        elapsed += dur
+    return True
+
+
 def meter_info(time_signature):
     if time_signature in SIMPLE_METERS:
         beats_per_measure, beat_quarters = SIMPLE_METERS[time_signature]

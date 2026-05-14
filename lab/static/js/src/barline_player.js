@@ -2,7 +2,6 @@
   "use strict";
 
   var logic = window.barlinePlayerLogic;
-  var CURSOR_HORIZONTAL_INSET = 10;
 
   function getCookie(name) {
     var value = "; " + document.cookie;
@@ -207,10 +206,6 @@
     var submitButton = root.querySelector('[data-action="submit"]');
     var overlay = stage.querySelector(".barline-cursor");
     var noteCount = (config.notes || []).length;
-    var boundaries;
-    var x0;
-    var x1;
-    var cursorInset;
 
     if (!overlay) {
       overlay = document.createElement("div");
@@ -218,18 +213,15 @@
       stage.appendChild(overlay);
     }
 
-    // Compute boundaries between notes for cursor positioning
-    boundaries = logic.noteBoundaries(
-      state.noteXs,
-      staveLeft(stage),
-      staveRight(stage, config)
-    );
-
-    x0 = boundaries[state.cursorPos + 1] || 0;
-    x1 = boundaries[state.cursorPos + 2] || x0 + 20;
-    cursorInset = Math.min(CURSOR_HORIZONTAL_INSET, Math.max(0, (x1 - x0 - 12) / 2));
-    overlay.style.left = x0 + cursorInset + "px";
-    overlay.style.width = Math.max(12, x1 - x0 - cursorInset * 2) + "px";
+    // Position cursor line at midpoint between note cursorPos and cursorPos+1,
+    // exactly where the barline would be drawn.
+    var nx0 = state.noteXs[state.cursorPos];
+    var nx1 = state.noteXs[state.cursorPos + 1];
+    var lineX = (typeof nx0 === "number" && typeof nx1 === "number")
+      ? Math.round((nx0 + nx1) / 2)
+      : 0;
+    overlay.style.left = (lineX - 1) + "px";
+    overlay.style.width = "2px";
 
     renderPips(root, state, config);
     if (submitButton) {
