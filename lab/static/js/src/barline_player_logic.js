@@ -128,7 +128,7 @@
       var x1 = centers[noteIdx + 1];
       if (typeof x0 === "number" && !isNaN(x0) &&
           typeof x1 === "number" && !isNaN(x1)) {
-        xs.push(Math.round((x0 + x1) / 2));
+        xs.push(Math.round((x0 + x1) / 2) + 4);
       }
     });
 
