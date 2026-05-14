@@ -521,3 +521,84 @@ def save_umto_barline_exercise(
     ex.data["exerciseId"] = ex.id
     ex.save(update_fields=["data"])
     return ex
+
+
+def save_umto_key_sig_exercise(
+    *,
+    description: str,
+    author,
+    problems: list[dict],
+    level: int = 1,
+    is_public: bool = True,
+    overwrite: bool = False,
+) -> "Exercise":
+    umto = UMTO(
+        metadata=Metadata(
+            exercise_id="TEMP",
+            source=f"Unit 3 Key Signatures — Level {level}",
+            key="C",
+            meter="4/4",
+            clef="treble",
+            complexity_score=3,
+            mode=InteractionMode.IDENTIFICATION,
+            input_mode="text",
+            unit=3,
+        ),
+        voices=Voices(),
+        analysis=[],
+        grading=[],
+    )
+
+    skill_tags = ["unit:3", "unit:3_key_signature"]
+
+    payload = {
+        "type": "umto_key_signature",
+        "isUMTO": True,
+        "mode": InteractionMode.IDENTIFICATION.value,
+        "analysisType": "unit3_key_signature",
+        "inputMode": "text",
+        "staffDistribution": "none",
+        "complexity_score": 3,
+        "level": level,
+        "key": "C",
+        "meter": "4/4",
+        "clef": "treble",
+        "introText": f"Identify the following key signatures. Level {level}.",
+        "reviewText": "Well done!",
+        "allowed_answers": [],
+        "problems": problems,
+        "score": {
+            "meta": {"key": "C", "time": "4/4", "clef": "treble", "staffDistribution": "none"},
+            "measures": [],
+            "umto": umto.model_dump(mode="json"),
+        },
+        "grading": [],
+    }
+
+    UMTO.model_validate(payload["score"]["umto"])
+
+    ex = None
+    if overwrite:
+        ex = Exercise.objects.filter(description=description, authored_by=author).first()
+
+    if ex is None:
+        ex = Exercise(
+            description=description,
+            data=payload,
+            authored_by=author,
+            is_public=is_public,
+            skill_tags=skill_tags,
+            complexity=3,
+        )
+        ex.save()
+    else:
+        ex.data = payload
+        ex.is_public = is_public
+        ex.skill_tags = skill_tags
+        ex.complexity = 3
+        ex.save(update_fields=["data", "is_public", "skill_tags", "complexity"])
+
+    ex.data["exerciseId"] = ex.id
+    ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
+    ex.save(update_fields=["data"])
+    return ex

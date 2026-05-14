@@ -193,6 +193,7 @@ define([
     var definition = this.getExerciseDefinition();
     var disableComputerKeyboardInput = !!definition.disableComputerKeyboardInput;
     var isSymbolicMeterExercise = definition.type === "umto_symbolic_meter";
+    var isKeySignatureExercise = definition.type === "umto_key_signature";
     var methods = [
       // function () {
       //  var c = new NotificationsComponent();
@@ -201,7 +202,7 @@ define([
       //  this.addComponent(c);
       // },
       function () {
-        if (isSymbolicMeterExercise) {
+        if (isSymbolicMeterExercise || isKeySignatureExercise) {
           return;
         }
         var c = new PianoComponent({
@@ -213,7 +214,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (isSymbolicMeterExercise) {
+        if (isSymbolicMeterExercise || isKeySignatureExercise) {
           return;
         }
         var c = new MidiComponent({
@@ -224,7 +225,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput || isSymbolicMeterExercise) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
           return;
         }
         var c = new KeyboardShortcutsComponent({
@@ -234,7 +235,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput || isSymbolicMeterExercise) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
           return;
         }
         var c = new NoteNameInputComponent({
@@ -254,7 +255,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (isSymbolicMeterExercise) {
+        if (isSymbolicMeterExercise || isKeySignatureExercise) {
           return;
         }
         var c = new MusicControlsComponent({
@@ -277,6 +278,24 @@ define([
           symbolicSheet.init(this);
           symbolicSheet.renderTo("#staffwrapper");
           this.addComponent(symbolicSheet);
+          return;
+        }
+
+        if (definition.isKeySignatureExercise && definition.isKeySignatureExercise()) {
+          var self = this;
+          require(["models/key_sig_exercise"], function (KeySigMod) {
+            var keySigEx = new KeySigMod.KeySigExercise(definition, {
+              staffContainer: document.querySelector(".key-sig-staff-container"),
+              inputEl: document.querySelector(".key-sig-input"),
+              onComplete: function (grade) {
+                self.models.exerciseContext.trigger("complete", grade);
+              },
+              onAdvance: function (info) {
+                self.models.exerciseContext.trigger("advance", info);
+              },
+            });
+            keySigEx.start();
+          });
           return;
         }
 
