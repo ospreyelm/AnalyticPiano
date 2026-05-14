@@ -1,5 +1,7 @@
+from unittest.mock import patch, MagicMock
+
 from django.test import SimpleTestCase
-from apps.exercises.utils.corpus_filter import assign_level, SMALLEST_VALUE_ORDER, is_valid_phrase, double_durations, phrase_fingerprint
+from apps.exercises.utils.corpus_filter import assign_level, SMALLEST_VALUE_ORDER, is_valid_phrase, double_durations, phrase_fingerprint, iter_phrases, PhraseResult
 
 
 class CorpusFilterLevelAssignmentTests(SimpleTestCase):
@@ -139,3 +141,85 @@ class CorpusFilterFingerprintTests(SimpleTestCase):
         fp = phrase_fingerprint("3/4", n)
         self.assertEqual(len(fp), 12)
         self.assertTrue(all(c in "0123456789abcdef" for c in fp))
+
+
+def _make_m21_note(dur_type, dots=0, pitch_name="B", pitch_octave=4):
+    n = MagicMock()
+    n.isNote = True
+    n.isRest = False
+    n.tie = None
+    n.duration.type = dur_type
+    n.duration.dots = dots
+    n.duration.quarterLength = float(
+        {"whole": 4, "half": 2, "quarter": 1, "eighth": 0.5, "16th": 0.25}[dur_type]
+        * (1.5 ** dots)
+    )
+    n.pitch.step = pitch_name
+    n.pitch.octave = pitch_octave
+    n.pitch.accidental = None
+    return n
+
+
+def _make_m21_stream(notes, time_sig_str="3/4"):
+    stream = MagicMock()
+    num, den = map(int, time_sig_str.split("/"))
+    ts = MagicMock()
+    ts.numerator = num
+    ts.denominator = den
+    stream.recurse.return_value.getElementsByClass.return_value = [ts]
+    stream.flatten.return_value.notesAndRests = notes
+    return stream
+
+
+class CorpusFilterIterPhrasesTests(SimpleTestCase):
+    @patch("apps.exercises.utils.corpus_filter._iter_corpus_streams")
+    def test_yields_valid_level1_phrase(self, mock_streams):
+        notes = [
+            _make_m21_note("quarter"), _make_m21_note("quarter"), _make_m21_note("quarter"),
+            _make_m21_note("quarter"), _make_m21_note("quarter"), _make_m21_note("half"),
+        ]
+        mock_streams.return_value = [("fake/path.abc", _make_m21_stream(notes, "3/4"))]
+        results = list(iter_phrases(levels=[1]))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].level, 1)
+        self.assertEqual(results[0].time_signature, "3/4")
+        self.assertEqual(len(results[0].notes), 6)
+        self.assertEqual(results[0].measures, 2)
+
+    @patch("apps.exercises.utils.corpus_filter._iter_corpus_streams")
+    def test_skips_phrase_with_rest(self, mock_streams):
+        rest = MagicMock()
+        rest.isNote = False
+        rest.isRest = True
+        notes = [
+            _make_m21_note("quarter"), rest, _make_m21_note("quarter"),
+            _make_m21_note("quarter"), _make_m21_note("quarter"), _make_m21_note("half"),
+        ]
+        mock_streams.return_value = [("fake/path.abc", _make_m21_stream(notes, "3/4"))]
+        results = list(iter_phrases(levels=[1]))
+        self.assertEqual(results, [])
+
+    @patch("apps.exercises.utils.corpus_filter._iter_corpus_streams")
+    def test_deduplicates_identical_rhythm(self, mock_streams):
+        notes = [
+            _make_m21_note("quarter"), _make_m21_note("quarter"), _make_m21_note("half"),
+            _make_m21_note("quarter"), _make_m21_note("quarter"), _make_m21_note("half"),
+        ]
+        stream = _make_m21_stream(notes, "3/4")
+        mock_streams.return_value = [("a.abc", stream), ("b.abc", stream)]
+        results = list(iter_phrases(levels=[1]))
+        self.assertEqual(len(results), 1)
+
+    @patch("apps.exercises.utils.corpus_filter._iter_corpus_streams")
+    def test_yields_derived_level7_from_simple_source(self, mock_streams):
+        notes = [
+            _make_m21_note("quarter"), _make_m21_note("eighth"), _make_m21_note("eighth"),
+            _make_m21_note("quarter"), _make_m21_note("quarter"), _make_m21_note("half"),
+        ]
+        mock_streams.return_value = [("fake/path.abc", _make_m21_stream(notes, "3/4"))]
+        results = list(iter_phrases(levels=[7]))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].level, 7)
+        self.assertEqual(results[0].time_signature, "3/2")
+        dur_types = [n["duration"] for n in results[0].notes]
+        self.assertEqual(dur_types, ["h", "q", "q", "h", "h", "w"])

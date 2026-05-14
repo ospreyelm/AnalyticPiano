@@ -256,11 +256,30 @@ def iter_phrases(levels: list[int] | None = None) -> Iterator[PhraseResult]:
 
         if direct_level in source_levels:
             prefer = 4 if direct_level in {3, 5, 6} else 2
-            for phrase, offset in _slice_phrases(all_notes, time_sig, prefer, 2):
-                measures = _compute_measures(phrase, time_sig)
-                result = _emit(direct_level, time_sig, phrase, measures, source_path, offset)
-                if result:
-                    yield result
+            whole_measures = _compute_measures(all_notes, time_sig)
+            whole_fp = phrase_fingerprint(time_sig, all_notes)
+            if whole_fp in seen_fingerprints:
+                # Duplicate stream: skip entirely (don't even try slicing)
+                continue
+            if is_valid_phrase(time_sig, all_notes, whole_measures):
+                # Emit the whole stream as one phrase; skip slicing
+                seen_fingerprints.add(whole_fp)
+                yield PhraseResult(
+                    level=direct_level,
+                    time_signature=time_sig,
+                    notes=all_notes,
+                    measures=whole_measures,
+                    source_path=source_path,
+                    phrase_offset=0,
+                    fingerprint=whole_fp,
+                )
+            else:
+                # Whole stream not valid as a phrase: try slicing instead
+                for phrase, offset in _slice_phrases(all_notes, time_sig, prefer, 2):
+                    measures = _compute_measures(phrase, time_sig)
+                    result = _emit(direct_level, time_sig, phrase, measures, source_path, offset)
+                    if result:
+                        yield result
 
         derived_ts = _DERIVE_METER.get(time_sig)
         derived_target = None
