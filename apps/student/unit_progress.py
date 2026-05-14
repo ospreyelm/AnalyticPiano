@@ -206,6 +206,7 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
         "name": playlist.name,
         "done": done,
         "total": playlist.exercise_count,
+        "is_adaptive": bool(playlist.is_adaptive),
         "last_score_pct": last_score_pct,
         "url": url,
     }

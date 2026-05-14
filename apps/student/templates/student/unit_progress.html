@@ -84,9 +84,9 @@
                 </div>
                 <div class="playlist-progress-info">
                   <div class="mini-progress-bar">
-                    <div class="mini-progress-fill" style="width: {% if row.total > 0 %}{% widthratio row.done row.total 100 %}{% else %}0{% endif %}%"></div>
+                    <div class="mini-progress-fill" style="width: {% if row.is_adaptive %}0{% elif row.total > 0 %}{% widthratio row.done row.total 100 %}{% else %}0{% endif %}%"></div>
                   </div>
-                  <span class="playlist-count">{{ row.done }}/{{ row.total }}</span>
+                  <span class="playlist-count">{% if row.is_adaptive %}{{ row.done }}{% else %}{{ row.done }}/{{ row.total }}{% endif %}</span>
                   {% if row.last_score_pct is not None %}
                     <span class="playlist-score">· Last: {{ row.last_score_pct }}%</span>
                   {% endif %}
@@ -109,9 +109,9 @@
                 <span class="playlist-name">{{ playlist.name }}</span>
                 <div class="playlist-progress-info">
                   <div class="mini-progress-bar">
-                    <div class="mini-progress-fill" style="width: {% if playlist.total > 0 %}{% widthratio playlist.done playlist.total 100 %}{% else %}0{% endif %}%"></div>
+                    <div class="mini-progress-fill" style="width: {% if playlist.is_adaptive %}0{% elif playlist.total > 0 %}{% widthratio playlist.done playlist.total 100 %}{% else %}0{% endif %}%"></div>
                   </div>
-                  <span class="playlist-count">{{ playlist.done }}/{{ playlist.total }}</span>
+                  <span class="playlist-count">{% if playlist.is_adaptive %}{{ playlist.done }}{% else %}{{ playlist.done }}/{{ playlist.total }}{% endif %}</span>
                   {% if playlist.last_score_pct is not None %}
                     <span class="playlist-score">· Last: {{ playlist.last_score_pct }}%</span>
                   {% endif %}
