@@ -62,6 +62,76 @@
     });
   }
 
+  // Duration in units of an eighth note (so we can do integer arithmetic).
+  // Returns null for note types that are never beamed (quarter and longer).
+  var BEAMABLE_EIGHTHS = { "8": 1, "16": 0.5, "32": 0.25 };
+  var DUR_EIGHTHS = { "w": 8, "h": 4, "q": 2, "8": 1, "16": 0.5, "32": 0.25 };
+
+  function durEighths(duration, dots) {
+    var base = DUR_EIGHTHS[duration] || 2;
+    var add = base;
+    var i;
+    for (i = 0; i < (dots || 0); i++) { add /= 2; base += add; }
+    return base;
+  }
+
+  // Beat size in eighths: compound meters use 3 eighths per beat, simple use den/8*2 (= 1 quarter = 2 eighths for /4).
+  function beatEighths(timeSig) {
+    var parts = (timeSig || "4/4").split("/");
+    var num = parseInt(parts[0], 10);
+    var den = parseInt(parts[1], 10);
+    // Compound: numerator divisible by 3 but not 2 (6/8, 9/8, 12/8, 6/4, 9/4, 12/4)
+    if (num % 3 === 0 && num % 2 !== 0) {
+      // Beat = dotted quarter = 3 units of denominator; in eighths:
+      // denominator /4 means 1 unit = 2 eighths; /8 means 1 unit = 1 eighth
+      return 3 * (8 / den);
+    }
+    // Simple: beat = 1 unit of denominator
+    return 8 / den;
+  }
+
+  // Build beams manually to work around VexFlow generateBeams bug (issue #467):
+  // generateBeams fails when a non-beamable note (e.g. dotted-quarter) doesn't
+  // fill a complete beat group — it loses track of remaining time, causing
+  // subsequent eighth notes to be left unbeamed. We scan notes ourselves,
+  // track elapsed eighths, and group consecutive beamable notes within one beat.
+  function buildBeams(VF, vfNotes, configNotes, timeSig) {
+    var beat = beatEighths(timeSig);
+    var beams = [];
+    var groupNotes = [];
+    var elapsed = 0;
+
+    function flushGroup() {
+      if (groupNotes.length >= 2) {
+        beams.push(new VF.Beam(groupNotes.slice()));
+      }
+      groupNotes = [];
+    }
+
+    var i, item, noteEighths, posInBeat;
+
+    for (i = 0; i < configNotes.length; i++) {
+      item = configNotes[i];
+      noteEighths = durEighths(item.duration, item.dots);
+
+      // Beat boundary: flush if this note starts at a new beat.
+      posInBeat = Math.round((elapsed % beat) * 10000) / 10000;
+      if (posInBeat < 1e-9 && groupNotes.length > 0) {
+        flushGroup();
+      }
+
+      if (BEAMABLE_EIGHTHS.hasOwnProperty(item.duration)) {
+        groupNotes.push(vfNotes[i]);
+      } else {
+        flushGroup();
+      }
+
+      elapsed = Math.round((elapsed + noteEighths) * 10000) / 10000;
+    }
+    flushGroup();
+    return beams;
+  }
+
   function drawPlacedBarlines(VF, stave, noteXs, placedAt) {
     logic.barlineXPositions(noteXs, Array.from(placedAt || [])).forEach(function (x) {
       var barline = new VF.Barline(VF.Barline.type.SINGLE);
@@ -109,7 +179,7 @@
       voice.setMode(VF.Voice.Mode.SOFT);
       voice.addTickables(vfNotes);
       new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
-      var beams = VF.Beam.generateBeams(vfNotes);
+      var beams = buildBeams(VF, vfNotes, config.notes || [], config.time_signature);
       voice.draw(context, stave);
       beams.forEach(function (b) { b.setContext(context).draw(); });
     }
@@ -248,6 +318,7 @@
       submitted: false,
     };
     state.noteXs = drawNotation(stage, config, state.placedAt);
+    console.log("[BARLINE] id=" + config.exerciseId + " ts=" + config.time_signature + " measures=" + config.measures + " correct=" + JSON.stringify(config.correct_barline_positions) + " notes=" + (config.notes||[]).map(function(n){return n.duration+(n.dots?'.':'')}));
     updateVisuals(root, state, config);
 
     function move(delta) {
