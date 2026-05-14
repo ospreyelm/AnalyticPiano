@@ -212,6 +212,9 @@ class Command(BaseCommand):
                     source=phrase.source_path,
                     tags=skill_tags,
                 )
+                expected_barlines = phrase.measures - 1
+                if len(payload.get("correct_barline_positions") or []) != expected_barlines:
+                    continue  # phrase missing note-aligned barlines (syncopation across barline)
                 ex = save_umto_barline_exercise(
                     description=description,
                     author=author,

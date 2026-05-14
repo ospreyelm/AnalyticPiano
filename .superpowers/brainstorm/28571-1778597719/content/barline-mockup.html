@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Barlines — Interaction Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 2rem;
+  }
+
+  h2 { font-size: 1.2rem; font-weight: 500; color: #aaa; letter-spacing: 0.05em; text-transform: uppercase; }
+
+  .exercise-card {
+    background: #16213e;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 2rem 2.5rem;
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .prompt {
+    font-size: 1rem;
+    color: #9090c0;
+    text-align: center;
+  }
+  .prompt strong { color: #c0c0ff; }
+
+  /* ── Score area ── */
+  .score-wrap {
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.5rem 1rem 1rem;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  svg#score {
+    display: block;
+    width: 100%;
+    height: 110px;
+  }
+
+  /* Beat cursor overlay */
+  .cursor-overlay {
+    position: absolute;
+    top: 0; bottom: 0;
+    pointer-events: none;
+    transition: left 0.12s ease, width 0.12s ease;
+  }
+  .cursor-box {
+    position: absolute;
+    top: 14px; bottom: 8px;
+    border-radius: 4px;
+    background: rgba(100, 140, 255, 0.18);
+    border: 1.5px dashed rgba(100, 140, 255, 0.7);
+  }
+  .cursor-vline {
+    position: absolute;
+    top: 14px; bottom: 8px;
+    width: 2px;
+    background: rgba(100,140,255,0.85);
+    left: 0;
+  }
+
+  /* Placed barlines */
+  .placed-barline {
+    position: absolute;
+    top: 14px; bottom: 8px;
+    width: 2px;
+    background: #222;
+    pointer-events: none;
+  }
+
+  /* ── Arrow controls ── */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+  .arrow-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 1.5px solid #3a3a6a;
+    background: #1e1e3a;
+    color: #c0c0ff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .arrow-btn:hover { background: #2a2a5a; border-color: #6060c0; }
+  .arrow-btn:active { background: #3a3a7a; }
+
+  .beat-indicator {
+    font-size: 0.85rem;
+    color: #7070a0;
+    min-width: 80px;
+    text-align: center;
+  }
+  .beat-indicator span { color: #c0c0ff; font-weight: 600; }
+
+  .place-btn {
+    padding: 0.5rem 1.4rem;
+    border-radius: 6px;
+    border: 1.5px solid #5060c0;
+    background: #1e1e3a;
+    color: #c0c0ff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .place-btn:hover { background: #2a2a5a; }
+  .place-btn.placed { border-color: #c06060; color: #ff9090; }
+
+  /* ── Status / feedback ── */
+  .status-row {
+    display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;
+    min-height: 1.5rem;
+  }
+  .beat-pip {
+    width: 28px; height: 28px; border-radius: 4px;
+    border: 1.5px solid #3a3a6a;
+    background: #1e1e3a;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; color: #6060a0;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .beat-pip.barlined { border-color: #5050a0; background: #2a2a5a; color: #c0c0ff; }
+  .beat-pip.barlined::after {
+    content: '|';
+    position: absolute; right: -2px; top: 50%; transform: translateY(-50%);
+    color: #8080d0; font-size: 0.8rem;
+  }
+  .beat-pip.active { border-color: #6080ff; background: #1e2a5a; }
+  .beat-pip.correct { border-color: #40c080; background: #1a3a2a; color: #60e0a0; }
+  .beat-pip.incorrect { border-color: #c04040; background: #3a1a1a; color: #ff8080; }
+
+  .submit-btn {
+    padding: 0.6rem 2rem;
+    border-radius: 8px;
+    border: none;
+    background: #4060c0;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 0 auto;
+    display: block;
+    transition: background 0.1s;
+  }
+  .submit-btn:hover { background: #5070d0; }
+
+  .feedback {
+    text-align: center;
+    font-size: 1rem;
+    min-height: 1.4rem;
+    font-weight: 600;
+  }
+  .feedback.correct { color: #60e0a0; }
+  .feedback.incorrect { color: #ff8080; }
+
+  .hint { font-size: 0.78rem; color: #5050a0; text-align: center; }
+</style>
+</head>
+<body>
+
+<h2>Add Barlines — Interaction Mockup</h2>
+
+<div class="exercise-card">
+  <div class="prompt">Add barlines to complete <strong>3 measures</strong>. Use ← → to move, Enter to place.</div>
+
+  <!-- Score -->
+  <div class="score-wrap" id="scoreWrap">
+    <svg id="score" viewBox="0 0 580 110" xmlns="http://www.w3.org/2000/svg">
+      <!-- Staff lines -->
+      <g stroke="#999" stroke-width="1">
+        <line x1="30" y1="30" x2="570" y2="30"/>
+        <line x1="30" y1="40" x2="570" y2="40"/>
+        <line x1="30" y1="50" x2="570" y2="50"/>
+        <line x1="30" y1="60" x2="570" y2="60"/>
+        <line x1="30" y1="70" x2="570" y2="70"/>
+      </g>
+      <!-- Opening barline -->
+      <line x1="30" y1="30" x2="30" y2="70" stroke="#333" stroke-width="2"/>
+      <!-- Closing double barline -->
+      <line x1="566" y1="30" x2="566" y2="70" stroke="#333" stroke-width="2.5"/>
+      <line x1="570" y1="30" x2="570" y2="70" stroke="#333" stroke-width="4"/>
+
+      <!-- Treble clef (simplified glyph via text) -->
+      <text x="34" y="68" font-family="Bravura,serif" font-size="72" fill="#333">𝄞</text>
+
+      <!-- Notes: 9 quarter notes = 3 measures of 3/4 -->
+      <!-- Beat 1 -->
+      <g transform="translate(90,0)">
+        <ellipse cx="0" cy="55" rx="7" ry="5" fill="#222" transform="rotate(-15,0,55)"/>
+        <line x1="6" y1="55" x2="6" y2="25" stroke="#222" stroke-width="2"/>
+      </g>
+      <!-- Beat 2 -->
+      <g transform="translate(145,0)">
+        <ellipse cx="0" cy="50" rx="7" ry="5" fill="#222" transform="rotate(-15,0,50)"/>
+        <line x1="6" y1="50" x2="6" y2="20" stroke="#222" stroke-width="2"/>
+      </g>
+      <!-- Beat 3 -->
+      <g transform="translate(200,0)">
+        <ellipse cx="0" cy="55" rx="7" ry="5" fill="#222" transform="rotate(-15,0,55)"/>
+        <line x1="6" y1="55" x2="6" y2="25" stroke="#222" stroke-width="2"/>
+      </g>
+      <!-- Beat 4 -->
+      <g transform="translate(255,0)">
+        <ellipse cx="0" cy="45" rx="7" ry="5" fill="#222" transform="rotate(-15,0,45)"/>
+        <line x1="6" y1="45" x2="6" y2="15" stroke="#222" stroke-width="2"/>
+      </g>
+      <!-- Beat 5 -->
+      <g transform="translate(310,0)">
+        <ellipse cx="0" cy="50" rx="7" ry="5" fill="#222" transform="rotate(-15,0,50)"/>
+        <line x1="6" y1="50" x2="6" y2="20" stroke="#222" stroke-width="2"/>
+      </g>
+      <!-- Beat 6 (dotted quarter) -->
+      <g transform="translate(365,0)">
+        <ellipse cx="0" cy="55" rx="7" ry="5" fill="#222" transform="rotate(-15,0,55)"/>
+        <line x1="6" y1="55" x2="6" y2="25" stroke="#222" stroke-width="2"/>
+        <circle cx="12" cy="55" r="2.5" fill="#222"/>
+      </g>
+      <!-- Beat 7 (eighth) -->
+      <g transform="translate(415,0)">
+        <ellipse cx="0" cy="50" rx="6" ry="4.5" fill="#222" transform="rotate(-15,0,50)"/>
+        <line x1="5" y1="50" x2="5" y2="22" stroke="#222" stroke-width="1.8"/>
+        <path d="M5,22 Q18,28 16,36" stroke="#222" stroke-width="1.8" fill="none"/>
+      </g>
+      <!-- Beat 8 -->
+      <g transform="translate(455,0)">
+        <ellipse cx="0" cy="55" rx="7" ry="5" fill="#222" transform="rotate(-15,0,55)"/>
+        <line x1="6" y1="55" x2="6" y2="25" stroke="#222" stroke-width="2"/>
+      </g>
+      <!-- Beat 9 -->
+      <g transform="translate(510,0)">
+        <ellipse cx="0" cy="50" rx="7" ry="5" fill="#222" transform="rotate(-15,0,50)"/>
+        <line x1="6" y1="50" x2="6" y2="20" stroke="#222" stroke-width="2"/>
+      </g>
+    </svg>
+
+    <!-- Cursor overlay (positioned by JS) -->
+    <div class="cursor-overlay" id="cursorOverlay">
+      <div class="cursor-box" id="cursorBox"></div>
+      <div class="cursor-vline" id="cursorVline"></div>
+    </div>
+
+    <!-- Placed barlines container -->
+    <div id="placedBarlines"></div>
+  </div>
+
+  <!-- Arrow controls -->
+  <div class="controls">
+    <button class="arrow-btn" id="btnLeft" title="← Previous beat">←</button>
+    <div class="beat-indicator">Beat <span id="beatNum">1</span> / 9</div>
+    <button class="arrow-btn" id="btnRight" title="→ Next beat">→</button>
+    <button class="place-btn" id="btnPlace">Place barline</button>
+  </div>
+
+  <!-- Beat pips -->
+  <div class="status-row" id="beatPips"></div>
+
+  <button class="submit-btn" id="btnSubmit">Check Answer</button>
+  <div class="feedback" id="feedback"></div>
+  <div class="hint">← → arrow keys · Enter to place/remove · Space = place</div>
+</div>
+
+<script>
+(function() {
+  // Beat x-positions (left edge of each beat in the SVG viewBox, scaled to %)
+  // SVG viewBox width = 580. Score wrap natural width drives scaling.
+  // We'll work in % of scoreWrap width for overlay positioning.
+  var VB_W = 580;
+
+  // x-centers of each note (from SVG above)
+  var noteX = [90, 145, 200, 255, 310, 365, 415, 455, 510];
+  var N = noteX.length; // 9 beats
+
+  // Width of each beat cell (to next note or to end barline)
+  var endX = 566;
+  function beatLeft(i) { return noteX[i] - 14; }
+  function beatWidth(i) {
+    var next = (i + 1 < N) ? noteX[i+1] - 14 : endX;
+    return next - beatLeft(i);
+  }
+
+  // Correct barlines fall AFTER beats 3 and 6 (0-indexed: after index 2 and 5)
+  var CORRECT = new Set([2, 5]);
+
+  var cursor = 0;
+  var placed = new Set();
+  var submitted = false;
+
+  // Build pips
+  var pipsEl = document.getElementById('beatPips');
+  for (var i = 0; i < N; i++) {
+    var pip = document.createElement('div');
+    pip.className = 'beat-pip';
+    pip.id = 'pip' + i;
+    pip.textContent = i + 1;
+    pipsEl.appendChild(pip);
+  }
+
+  function pct(x) { return (x / VB_W * 100).toFixed(3) + '%'; }
+
+  function render() {
+    // Cursor
+    var wrap = document.getElementById('scoreWrap');
+    var svgEl = document.getElementById('score');
+    // We use % positioning so it scales with SVG
+    var overlay = document.getElementById('cursorOverlay');
+    var box = document.getElementById('cursorBox');
+    var vline = document.getElementById('cursorVline');
+
+    overlay.style.left = pct(beatLeft(cursor));
+    overlay.style.width = pct(beatWidth(cursor));
+    box.style.left = '0';
+    box.style.right = '0';
+    vline.style.left = '0';
+
+    // Beat number
+    document.getElementById('beatNum').textContent = cursor + 1;
+
+    // Place button label
+    var placeBtn = document.getElementById('btnPlace');
+    if (placed.has(cursor)) {
+      placeBtn.textContent = 'Remove barline';
+      placeBtn.classList.add('placed');
+    } else {
+      placeBtn.textContent = 'Place barline';
+      placeBtn.classList.remove('placed');
+    }
+
+    // Pips
+    for (var i = 0; i < N; i++) {
+      var pip = document.getElementById('pip' + i);
+      pip.className = 'beat-pip';
+      if (submitted) {
+        // After beat N-1, a barline is after beat i = between beat i and i+1
+        if (CORRECT.has(i)) {
+          pip.classList.add(placed.has(i) ? 'correct' : 'incorrect');
+        } else if (placed.has(i)) {
+          pip.classList.add('incorrect');
+        }
+      } else {
+        if (placed.has(i)) pip.classList.add('barlined');
+        if (i === cursor) pip.classList.add('active');
+      }
+    }
+
+    // Placed barlines overlay
+    var container = document.getElementById('placedBarlines');
+    container.innerHTML = '';
+    placed.forEach(function(bi) {
+      var div = document.createElement('div');
+      div.className = 'placed-barline';
+      // Position at right edge of beat bi
+      var x = beatLeft(bi) + beatWidth(bi);
+      div.style.left = pct(x);
+      container.appendChild(div);
+    });
+
+    // Feedback
+    var fb = document.getElementById('feedback');
+    if (submitted) {
+      var allCorrect = true;
+      CORRECT.forEach(function(i) { if (!placed.has(i)) allCorrect = false; });
+      placed.forEach(function(i) { if (!CORRECT.has(i)) allCorrect = false; });
+      fb.textContent = allCorrect ? '✓ Correct!' : '✗ Not quite — try again';
+      fb.className = 'feedback ' + (allCorrect ? 'correct' : 'incorrect');
+    } else {
+      fb.textContent = '';
+      fb.className = 'feedback';
+    }
+  }
+
+  function moveCursor(dir) {
+    if (submitted) return;
+    cursor = Math.max(0, Math.min(N - 1, cursor + dir));
+    render();
+  }
+
+  function togglePlace() {
+    if (submitted) return;
+    if (placed.has(cursor)) placed.delete(cursor);
+    else placed.add(cursor);
+    render();
+  }
+
+  document.getElementById('btnLeft').addEventListener('click', function() { moveCursor(-1); });
+  document.getElementById('btnRight').addEventListener('click', function() { moveCursor(1); });
+  document.getElementById('btnPlace').addEventListener('click', togglePlace);
+  document.getElementById('btnSubmit').addEventListener('click', function() {
+    submitted = true;
+    render();
+    // Allow retry
+    setTimeout(function() {
+      document.getElementById('btnSubmit').textContent = 'Try again';
+      document.getElementById('btnSubmit').onclick = function() {
+        placed.clear(); submitted = false; cursor = 0;
+        document.getElementById('btnSubmit').textContent = 'Check Answer';
+        document.getElementById('btnSubmit').onclick = null;
+        document.getElementById('btnSubmit').addEventListener('click', arguments.callee);
+        render();
+      };
+    }, 100);
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); moveCursor(-1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); moveCursor(1); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePlace(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
