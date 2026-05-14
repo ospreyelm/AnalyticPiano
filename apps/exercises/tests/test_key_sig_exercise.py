@@ -58,3 +58,32 @@ def test_enharmonic_exclusion_at_level2():
     assert "jC#" in level3_ids
     assert "jGb" in level3_ids
     assert "jCb" in level3_ids
+
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+
+from apps.exercises.umto_factory import save_umto_key_sig_exercise
+
+
+class KeySigExerciseSaveTests(TestCase):
+    def test_save_umto_key_sig_exercise_creates_exercise(self):
+        from apps.exercises.key_signature_problems import build_key_sig_problem_set
+
+        author = get_user_model().objects.create_user(
+            email="kstest@example.com", password="x"
+        )
+        problems = build_key_sig_problem_set(level=1)
+        ex = save_umto_key_sig_exercise(
+            description="Unit 3 Key Sig Level 1",
+            author=author,
+            problems=problems,
+            level=1,
+            is_public=False,
+        )
+        self.assertIsNotNone(ex.pk)
+        self.assertEqual(ex.data["type"], "umto_key_signature")
+        self.assertEqual(ex.data["analysisType"], "unit3_key_signature")
+        self.assertEqual(len(ex.data["problems"]), 7)
+        self.assertIn("unit:3", ex.skill_tags)
+        self.assertIn("unit:3_key_signature", ex.skill_tags)
