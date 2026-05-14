@@ -283,6 +283,17 @@ define([
 
         if (definition.isKeySignatureExercise && definition.isKeySignatureExercise()) {
           var self = this;
+          var wrapper = document.getElementById("staffwrapper");
+          if (wrapper) {
+            wrapper.innerHTML =
+              '<div class="key-sig-staff-container"></div>' +
+              '<div style="margin-top:12px">' +
+              '<input class="key-sig-input" type="text" placeholder="e.g. D or Bb" ' +
+              'style="font-size:1.2em;padding:6px 10px;border:2px solid #ccc;border-radius:6px;width:160px" />' +
+              '<button class="key-sig-submit simple-button" style="margin-left:8px">Check</button>' +
+              '<span class="key-sig-feedback" style="margin-left:10px;font-size:1em"></span>' +
+              '</div>';
+          }
           require(["app/models/key_sig_exercise"], function (KeySigMod) {
             var keySigEx = new KeySigMod.KeySigExercise(definition, {
               staffContainer: document.querySelector(".key-sig-staff-container"),
@@ -295,6 +306,24 @@ define([
               },
             });
             keySigEx.start();
+
+            var submitBtn = document.querySelector(".key-sig-submit");
+            var inputEl = document.querySelector(".key-sig-input");
+            var feedbackEl = document.querySelector(".key-sig-feedback");
+            function doSubmit() {
+              var result = keySigEx.submit(inputEl.value);
+              if (result && !result.correct) {
+                feedbackEl.textContent = result.message || "Try again.";
+                feedbackEl.style.color = "#c00";
+                inputEl.select();
+              } else if (result && result.correct) {
+                feedbackEl.textContent = "";
+              }
+            }
+            if (submitBtn) submitBtn.addEventListener("click", doSubmit);
+            if (inputEl) inputEl.addEventListener("keydown", function (e) {
+              if (e.key === "Enter") doSubmit();
+            });
           });
           return;
         }
