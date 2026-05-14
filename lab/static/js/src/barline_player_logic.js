@@ -23,7 +23,8 @@
 
   // Grade barlines where placedAt is note-index positions and correctAt is beat positions.
   // noteBeatOnsets maps note index → beat onset value.
-  // A barline placed after note index N is at beat = noteBeatOnsets[N+1].
+  // A barline placed after note index N is at beat = noteBeatOnsets[N]
+  // (the onset of the last note before the barline).
   function gradeBarlines(placedAt, correctAt, noteBeatOnsets) {
     var placed = sortedNumbers(placedAt);
     var correct = sortedNumbers(correctAt);
@@ -31,7 +32,7 @@
 
     // Convert placed note-index positions to beat positions
     var placedBeats = placed.map(function (noteIdx) {
-      return (noteIdx + 1 < onsets.length) ? onsets[noteIdx + 1] : NaN;
+      return (noteIdx < onsets.length) ? onsets[noteIdx] : NaN;
     }).filter(function (b) { return !isNaN(b); });
     placedBeats.sort(function (a, b) { return a - b; });
 
@@ -125,16 +126,19 @@
   }
 
   // X positions for placed barlines (note-index based).
-  // A barline placed after note index N renders at noteXCenters[N+1].
+  // A barline placed after note index N renders at the midpoint between
+  // centers[N] and centers[N+1].
   function barlineXPositions(noteXCenters, placedAt) {
     var centers = noteXCenters || [];
     var positions = sortedNumbers(placedAt);
     var xs = [];
 
     positions.forEach(function (noteIdx) {
-      var x = centers[noteIdx + 1];
-      if (typeof x === "number" && !isNaN(x)) {
-        xs.push(x);
+      var x0 = centers[noteIdx];
+      var x1 = centers[noteIdx + 1];
+      if (typeof x0 === "number" && !isNaN(x0) &&
+          typeof x1 === "number" && !isNaN(x1)) {
+        xs.push(Math.round((x0 + x1) / 2));
       }
     });
 

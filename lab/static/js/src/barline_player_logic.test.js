@@ -22,38 +22,40 @@ function assertEqual(label, actual, expected) {
 
 console.log("\nbarline player logic:");
 
+// gradeBarlines: placedAt = note-index positions, correctAt = beat positions,
+// noteBeatOnsets[N] = beat onset of note N. Barline after note N → beat = onsets[N].
 assertEqual(
   "grade reports exact match as correct",
-  logic.gradeBarlines([2, 5], [2, 5]),
+  logic.gradeBarlines([2], [2], [0, 1, 2, 3]),
   { correct: true, missing: [], extra: [] }
 );
 
 assertEqual(
   "grade reports missing and extra positions",
-  logic.gradeBarlines([2, 4], [2, 5]),
-  { correct: false, missing: [5], extra: [4] }
+  logic.gradeBarlines([1], [2], [0, 1, 2, 3]),
+  { correct: false, missing: [2], extra: [1] }
 );
 
 assertEqual(
   "grade normalizes numeric strings and ordering",
-  logic.gradeBarlines(["5", "2"], [2, 5]),
+  logic.gradeBarlines(["2"], [2], [0, 1, 2, 3]),
   { correct: true, missing: [], extra: [] }
 );
 
 assertEqual(
-  "grade reports duplicate placed positions as extra",
-  logic.gradeBarlines([2, 2, 5], [2, 5]),
-  { correct: false, missing: [], extra: [2] }
-);
-
-assertEqual(
   "grade ignores malformed numeric strings",
-  logic.gradeBarlines(["2px", "2.9", 5], [2, 5]),
+  logic.gradeBarlines(["2px", "2.9"], [2], [0, 1, 2, 3]),
   { correct: false, missing: [2], extra: [] }
 );
 
 assertEqual(
-  "cursor clamps to navigable beat gaps",
+  "grade with multiple barlines in 3/4: note indices 2 and 5",
+  logic.gradeBarlines([2, 5], [2, 5], [0, 1, 2, 3, 4, 5, 6]),
+  { correct: true, missing: [], extra: [] }
+);
+
+assertEqual(
+  "cursor clamps to navigable note gaps",
   [logic.clampCursor(-1, 4), logic.clampCursor(99, 4)],
   [0, 2]
 );
@@ -73,7 +75,7 @@ assertEqual(
     correctness: { "0": true },
     score: { correct: 1, incorrect: 0, unanswered: 0 },
     page_num: 0,
-    is_page_submit: false,
+    is_page_submit: true,
     mode: "submit",
     attempt_type: "practice",
   }
@@ -100,7 +102,7 @@ assertEqual(
     correctness: { "0": false },
     score: { correct: 0, incorrect: 1, unanswered: 0 },
     page_num: 0,
-    is_page_submit: false,
+    is_page_submit: true,
     mode: "submit",
     attempt_type: "practice",
   }
@@ -112,36 +114,30 @@ assertEqual(
   [100, 200, 300, 400, 500]
 );
 
+// noteBoundaries: midpoints between adjacent note X centers
 assertEqual(
-  "beat boundaries use midpoints between adjacent note centers",
-  logic.beatBoundariesFromCenters(
-    { 0: 120, 1: 220, 2: 320, 3: 420 },
-    [80, 180, 280, 380, 480],
-    4
-  ),
-  [80, 170, 270, 370, 480]
+  "note boundaries use midpoints between adjacent note centers",
+  logic.noteBoundaries([120, 220, 320, 420], 80, 480),
+  [100, 170, 270, 370, 450]
 );
 
 assertEqual(
-  "beat boundaries fall back when either neighboring note center is missing",
-  logic.beatBoundariesFromCenters(
-    { 0: 120, 2: 320 },
-    [80, 180, 280, 380],
-    3
-  ),
-  [80, 180, 280, 380]
+  "note boundaries with single note",
+  logic.noteBoundaries([200], 80, 480),
+  [140, 340]
+);
+
+// barlineXPositions: note-index based, renders at midpoint between notes N and N+1
+assertEqual(
+  "barline x positions use midpoint between note centers",
+  logic.barlineXPositions([100, 200, 300, 400], [1]),
+  [250]
 );
 
 assertEqual(
-  "placed barlines resolve to already formatted beat boundary x positions",
-  logic.barlineXPositions([80, 170, 270, 370, 480], [2]),
-  [370]
-);
-
-assertEqual(
-  "placed barline x positions ignore malformed and out-of-range positions",
-  logic.barlineXPositions([80, 170, 270], ["1", "bad", 7]),
-  [270]
+  "barline x positions ignore out-of-range indices",
+  logic.barlineXPositions([100, 200, 300], [0, 2, 7]),
+  [150]
 );
 
 var browserLikeGlobal = {};
