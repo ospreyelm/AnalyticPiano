@@ -265,6 +265,11 @@
         submit(config, state);
         state.submitted = state.lastGrade && state.lastGrade.correct;
         updateVisuals(root, state, config);
+        if (state.submitted && config.nextExercise) {
+          window.setTimeout(function () {
+            window.location.href = config.nextExercise;
+          }, 1000);
+        }
       }
     });
 

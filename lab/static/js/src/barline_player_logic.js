@@ -67,7 +67,7 @@
         unanswered: 0,
       },
       page_num: 0,
-      is_page_submit: false,
+      is_page_submit: true,
       mode: config.identMode || "submit",
       attempt_type: "practice",
     };
