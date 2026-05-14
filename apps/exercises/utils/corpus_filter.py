@@ -125,7 +125,7 @@ _L7_SOURCES = {2, 3}
 _L8_SOURCES = {5, 6}
 
 MAX_NOTES = 16
-MAX_MEASURES = 4
+MAX_QUARTER_DURATIONS = Fraction(12, 1)
 
 
 @dataclass
@@ -230,7 +230,8 @@ def iter_phrases(levels: list[int] | None = None) -> Iterator[PhraseResult]:
     seen_fingerprints: set[str] = set()
 
     def _emit(level, time_sig, notes, measures, source_path, offset) -> PhraseResult | None:
-        if len(notes) > MAX_NOTES or measures > MAX_MEASURES:
+        phrase_qd = sum(duration_quarters(n["duration"], n.get("dots", 0)) for n in notes)
+        if len(notes) > MAX_NOTES or phrase_qd > MAX_QUARTER_DURATIONS:
             return None
         fp = phrase_fingerprint(time_sig, notes)
         if fp in seen_fingerprints:
@@ -266,7 +267,8 @@ def iter_phrases(levels: list[int] | None = None) -> Iterator[PhraseResult]:
             if whole_fp in seen_fingerprints:
                 # Duplicate stream: skip entirely (don't even try slicing)
                 continue
-            if (len(all_notes) <= MAX_NOTES and whole_measures <= MAX_MEASURES
+            whole_qd = sum(duration_quarters(n["duration"], n.get("dots", 0)) for n in all_notes)
+            if (len(all_notes) <= MAX_NOTES and whole_qd <= MAX_QUARTER_DURATIONS
                     and is_valid_phrase(time_sig, all_notes, whole_measures)):
                 # Emit the whole stream as one phrase; skip slicing
                 seen_fingerprints.add(whole_fp)
