@@ -124,10 +124,10 @@ class GenerateUnit3ScaleCommandTests(TestCase):
         )
         import os
         # The MXL lives in docs/ at the repo root. Resolve relative to this test file's
-        # location — from apps/exercises/tests/ we go up 5 levels to the repo root then into docs/.
+        # location — from apps/exercises/tests/ we go up 3 levels to the repo root then into docs/.
         _here = os.path.dirname(os.path.abspath(__file__))
         mxl_path = os.path.normpath(
-            os.path.join(_here, "../../../../../docs/scales-key-signatures/piano-major-scales-fingerings.mxl")
+            os.path.join(_here, "../../../docs/scales-key-signatures/piano-major-scales-fingerings.mxl")
         )
         self.assertTrue(os.path.exists(mxl_path), f"MXL not found at {mxl_path}")
         call_command(
