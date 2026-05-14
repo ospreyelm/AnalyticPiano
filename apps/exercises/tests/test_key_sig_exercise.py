@@ -100,10 +100,16 @@ class GenerateUnit3KeySigCommandTests(TestCase):
         )
         call_command("generate_unit3_key_sig_exercises", author="cmd3@example.com")
 
-        exercises = Exercise.objects.filter(description__startswith="Unit 3 Key Sig")
+        exercises = Exercise.objects.filter(
+            description__startswith="Unit 3 Key Sig",
+            authored_by=author,
+        )
         self.assertEqual(exercises.count(), 3)  # levels 1, 2, 3
 
-        playlists = Playlist.objects.filter(name__startswith="Unit 3 — Key Signatures")
+        playlists = Playlist.objects.filter(
+            name__startswith="Unit 3 — Key Signatures",
+            authored_by=author,
+        )
         self.assertEqual(playlists.count(), 3)
 
 
@@ -130,13 +136,22 @@ class GenerateUnit3ScaleCommandTests(TestCase):
             mxl=mxl_path,
         )
 
-        exercises = Exercise.objects.filter(skill_tags__contains=["unit:3_major_scale"])
+        exercises = Exercise.objects.filter(
+            skill_tags__contains=["unit:3_major_scale"],
+            authored_by=author,
+        )
         self.assertEqual(exercises.count(), 15)
 
-        playlists = Playlist.objects.filter(name__startswith="Unit 3 — Major Scales")
+        playlists = Playlist.objects.filter(
+            name__startswith="Unit 3 — Major Scales",
+            authored_by=author,
+        )
         self.assertEqual(playlists.count(), 3)
 
         # Level 1 has ≤3 accidentals → 7 keys (C, F, G, Bb, D, Eb, A)
         from apps.exercises.models import ExercisePlaylistOrdered
-        level1 = Playlist.objects.get(name="Unit 3 — Major Scales, Level 1")
+        level1 = Playlist.objects.get(
+            name="Unit 3 — Major Scales, Level 1",
+            authored_by=author,
+        )
         self.assertEqual(ExercisePlaylistOrdered.objects.filter(playlist=level1).count(), 7)
