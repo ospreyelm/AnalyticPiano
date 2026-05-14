@@ -41,3 +41,20 @@ def test_problem_structure():
     assert "accepted_answers" in p
     assert "choices" in p
     assert len(p["choices"]) == 4
+    # Load-bearing invariants for exercise to function:
+    assert p["answer"] in p["choices"]
+    assert len(p["accepted_answers"]) > 0  # Must have at least one accepted answer
+
+def test_enharmonic_exclusion_at_level2():
+    level2 = build_key_sig_problem_set(level=2)
+    level3 = build_key_sig_problem_set(level=3)
+    level2_ids = {p["key_id"] for p in level2}
+    level3_ids = {p["key_id"] for p in level3}
+    # These keys have 6-7 accidentals and are excluded at level 2 (≤5)
+    assert "jC#" not in level2_ids   # 7 accidentals, excluded by limit
+    assert "jGb" not in level2_ids   # 6 accidentals, excluded by limit
+    assert "jCb" not in level2_ids   # 7 accidentals, excluded by limit
+    # At level 3, all are included (limit raised to 7)
+    assert "jC#" in level3_ids
+    assert "jGb" in level3_ids
+    assert "jCb" in level3_ids
