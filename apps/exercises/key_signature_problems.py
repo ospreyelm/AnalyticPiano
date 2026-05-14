@@ -3,21 +3,21 @@
 # Ordered by circle of fifths (sharps ascending, then flats ascending).
 # key_id uses HarmonyLab internal format: 'j'=major; '_' = natural.
 KEY_TABLE = [
-    {"key_id": "jC_",  "accidentals": 0, "sharps": 0, "flats": 0, "display_name": "C major",  "accepted_answers": ["C"]},
-    {"key_id": "jG_",  "accidentals": 1, "sharps": 1, "flats": 0, "display_name": "G major",  "accepted_answers": ["G"]},
-    {"key_id": "jD_",  "accidentals": 2, "sharps": 2, "flats": 0, "display_name": "D major",  "accepted_answers": ["D"]},
-    {"key_id": "jA_",  "accidentals": 3, "sharps": 3, "flats": 0, "display_name": "A major",  "accepted_answers": ["A"]},
-    {"key_id": "jE_",  "accidentals": 4, "sharps": 4, "flats": 0, "display_name": "E major",  "accepted_answers": ["E"]},
-    {"key_id": "jB_",  "accidentals": 5, "sharps": 5, "flats": 0, "display_name": "B major",  "accepted_answers": ["B"]},
-    {"key_id": "jF#",  "accidentals": 6, "sharps": 6, "flats": 0, "display_name": "F# major", "accepted_answers": ["F#", "Gb"]},
-    {"key_id": "jF_",  "accidentals": 1, "sharps": 0, "flats": 1, "display_name": "F major",  "accepted_answers": ["F"]},
-    {"key_id": "jBb",  "accidentals": 2, "sharps": 0, "flats": 2, "display_name": "Bb major", "accepted_answers": ["Bb", "A#"]},
-    {"key_id": "jEb",  "accidentals": 3, "sharps": 0, "flats": 3, "display_name": "Eb major", "accepted_answers": ["Eb", "D#"]},
-    {"key_id": "jAb",  "accidentals": 4, "sharps": 0, "flats": 4, "display_name": "Ab major", "accepted_answers": ["Ab", "G#"]},
-    {"key_id": "jDb",  "accidentals": 5, "sharps": 0, "flats": 5, "display_name": "Db major", "accepted_answers": ["Db", "C#"]},
-    {"key_id": "jGb",  "accidentals": 6, "sharps": 0, "flats": 6, "display_name": "Gb major", "accepted_answers": ["Gb", "F#"]},
-    {"key_id": "jC#",  "accidentals": 7, "sharps": 7, "flats": 0, "display_name": "C# major", "accepted_answers": ["C#", "Db"]},
-    {"key_id": "jCb",  "accidentals": 7, "sharps": 0, "flats": 7, "display_name": "Cb major", "accepted_answers": ["Cb", "B"]},
+    {"key_id": "jC_",  "accidentals": 0, "sharps": 0, "flats": 0, "display_name": "C major",  "accepted_answers": ["C", "C major"]},
+    {"key_id": "jG_",  "accidentals": 1, "sharps": 1, "flats": 0, "display_name": "G major",  "accepted_answers": ["G", "G major"]},
+    {"key_id": "jD_",  "accidentals": 2, "sharps": 2, "flats": 0, "display_name": "D major",  "accepted_answers": ["D", "D major"]},
+    {"key_id": "jA_",  "accidentals": 3, "sharps": 3, "flats": 0, "display_name": "A major",  "accepted_answers": ["A", "A major"]},
+    {"key_id": "jE_",  "accidentals": 4, "sharps": 4, "flats": 0, "display_name": "E major",  "accepted_answers": ["E", "E major"]},
+    {"key_id": "jB_",  "accidentals": 5, "sharps": 5, "flats": 0, "display_name": "B major",  "accepted_answers": ["B", "B major"]},
+    {"key_id": "jF#",  "accidentals": 6, "sharps": 6, "flats": 0, "display_name": "F# major", "accepted_answers": ["F#", "F# major", "Gb", "Gb major"]},
+    {"key_id": "jF_",  "accidentals": 1, "sharps": 0, "flats": 1, "display_name": "F major",  "accepted_answers": ["F", "F major"]},
+    {"key_id": "jBb",  "accidentals": 2, "sharps": 0, "flats": 2, "display_name": "Bb major", "accepted_answers": ["Bb", "Bb major", "A#", "A# major"]},
+    {"key_id": "jEb",  "accidentals": 3, "sharps": 0, "flats": 3, "display_name": "Eb major", "accepted_answers": ["Eb", "Eb major", "D#", "D# major"]},
+    {"key_id": "jAb",  "accidentals": 4, "sharps": 0, "flats": 4, "display_name": "Ab major", "accepted_answers": ["Ab", "Ab major", "G#", "G# major"]},
+    {"key_id": "jDb",  "accidentals": 5, "sharps": 0, "flats": 5, "display_name": "Db major", "accepted_answers": ["Db", "Db major", "C#", "C# major"]},
+    {"key_id": "jGb",  "accidentals": 6, "sharps": 0, "flats": 6, "display_name": "Gb major", "accepted_answers": ["Gb", "Gb major", "F#", "F# major"]},
+    {"key_id": "jC#",  "accidentals": 7, "sharps": 7, "flats": 0, "display_name": "C# major", "accepted_answers": ["C#", "C# major", "Db", "Db major"]},
+    {"key_id": "jCb",  "accidentals": 7, "sharps": 0, "flats": 7, "display_name": "Cb major", "accepted_answers": ["Cb", "Cb major", "B", "B major"]},
 ]
 
 LEVEL_ACCIDENTAL_LIMIT = {1: 3, 2: 5, 3: 7}
