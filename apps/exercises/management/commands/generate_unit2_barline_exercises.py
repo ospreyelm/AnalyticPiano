@@ -1,9 +1,12 @@
+from collections import defaultdict
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.exercises.models import ExercisePlaylistOrdered, Playlist
 from apps.exercises.umto_factory import save_umto_barline_exercise
 from apps.exercises.utils.barline_exercise_builder import build_barline_payload
+from apps.exercises.utils.corpus_filter import iter_phrases
 
 PLAYLIST_NAME = "Unit 2 — Add Barlines"
 PLAYLIST_SKILL_TAGS = [
@@ -33,38 +36,64 @@ def _manual_notes(meter, measures):
     raise CommandError(f"Unsupported meter: {meter}")
 
 
+def _level_playlist_name(level: int) -> str:
+    return f"Unit 2 — Add Barlines, Level {level}"
+
+
+def _level_skill_tags(level: int) -> list:
+    return ["unit:2", "unit:2_rhythm", f"unit:2_L{level}"]
+
+
 class Command(BaseCommand):
     help = "Create Unit 2 add-barlines exercises"
 
     def add_arguments(self, parser):
         parser.add_argument("--author", required=True)
         parser.add_argument("--public", action="store_true")
+        # manual-only args
         parser.add_argument("--count", type=int, default=1)
         parser.add_argument("--meter", default="3/4")
         parser.add_argument("--measures", type=int, default=2)
         parser.add_argument("--pitch-mode", default="rhythm_only")
         parser.add_argument(
             "--source",
-            choices=["manual", "essen", "kern"],
+            choices=["manual", "corpus", "essen", "kern"],
             default="manual",
+        )
+        # corpus-only args
+        parser.add_argument(
+            "--level", type=int, default=None, help="Level 1-8; omit for all levels"
+        )
+        parser.add_argument(
+            "--limit", type=int, default=None, help="Max phrases per level (default: unlimited)"
+        )
+        parser.add_argument(
+            "--dry-run", action="store_true", help="Print counts without saving"
         )
 
     def handle(self, *args, **options):
-        if options["count"] < 1:
-            raise CommandError("--count must be at least 1")
+        source = options["source"]
 
-        user_model = get_user_model()
-        author_email = options["author"]
-        try:
-            author = user_model.objects.get(email=author_email)
-        except user_model.DoesNotExist as exc:
-            raise CommandError(f"Unknown author: {author_email}") from exc
-
-        if options["source"] != "manual":
+        if source in ("essen", "kern"):
             raise CommandError(
                 "Essen/Kern import is not implemented yet; "
-                "use --source manual for deterministic dev seed"
+                "use --source manual or --source corpus"
             )
+
+        user_model = get_user_model()
+        try:
+            author = user_model.objects.get(email=options["author"])
+        except user_model.DoesNotExist as exc:
+            raise CommandError(f"Unknown author: {options['author']}") from exc
+
+        if source == "corpus":
+            self._handle_corpus(author, options)
+        else:
+            self._handle_manual(author, options)
+
+    def _handle_manual(self, author, options):
+        if options["count"] < 1:
+            raise CommandError("--count must be at least 1")
 
         notes = _manual_notes(options["meter"], options["measures"])
 
@@ -121,3 +150,89 @@ class Command(BaseCommand):
                 f"Created {options['count']} barline exercise(s) in '{playlist.name}'"
             )
         )
+
+    def _handle_corpus(self, author, options):
+        is_public = options["public"]
+        dry_run = options["dry_run"]
+        limit = options["limit"]
+        target_levels = [options["level"]] if options["level"] else list(range(1, 9))
+
+        by_level: dict = defaultdict(list)
+        seen_per_level: dict = defaultdict(set)
+
+        for phrase in iter_phrases(levels=target_levels):
+            level = phrase.level
+            if limit and len(by_level[level]) >= limit:
+                continue
+            if phrase.fingerprint in seen_per_level[level]:
+                continue
+            seen_per_level[level].add(phrase.fingerprint)
+            by_level[level].append(phrase)
+
+        for level in by_level:
+            by_level[level].sort(key=lambda p: (p.source_path, p.phrase_offset))
+
+        if dry_run:
+            for level in sorted(by_level):
+                self.stdout.write(f"Level {level}: {len(by_level[level])} phrase(s) (dry run)")
+            return
+
+        for level in sorted(by_level):
+            phrases = by_level[level]
+            skill_tags = _level_skill_tags(level)
+            playlist_name = _level_playlist_name(level)
+
+            playlist, _ = Playlist.objects.get_or_create(
+                name=playlist_name,
+                authored_by=author,
+                defaults=dict(
+                    is_dynamic=False,
+                    is_adaptive=True,
+                    is_public=is_public,
+                    skill_tags=skill_tags,
+                ),
+            )
+            playlist.is_dynamic = False
+            playlist.is_adaptive = True
+            playlist.skill_tags = skill_tags
+            if is_public:
+                playlist.is_public = True
+            playlist.save()
+
+            exercises = []
+            for phrase in phrases:
+                description = f"Unit 2 barline L{level} {phrase.fingerprint}"
+                payload = build_barline_payload(
+                    time_signature=phrase.time_signature,
+                    clef="treble",
+                    notes=phrase.notes,
+                    measures=phrase.measures,
+                    show_time_signature=True,
+                    pitch_mode="rhythm_only",
+                    source=phrase.source_path,
+                    tags=skill_tags,
+                )
+                ex = save_umto_barline_exercise(
+                    description=description,
+                    author=author,
+                    payload=payload,
+                    is_public=is_public,
+                    overwrite=True,
+                    complexity=level,
+                )
+                exercises.append(ex)
+
+            ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
+            for order, ex in enumerate(exercises, 1):
+                ExercisePlaylistOrdered.objects.create(
+                    playlist=playlist,
+                    exercise=ex,
+                    order=order,
+                    is_adaptive_entry=(order == 1),
+                )
+
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Level {level}: {len(exercises)} exercise(s) in '{playlist_name}'"
+                )
+            )
