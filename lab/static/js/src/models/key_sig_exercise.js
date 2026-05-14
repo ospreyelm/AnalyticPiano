@@ -1,6 +1,6 @@
 /* global define: false */
 define(
-  ["models/key_sig_exercise_logic", "vexflow", "jquery"],
+  ["app/models/key_sig_exercise_logic", "vexflow", "jquery"],
   function (logic, Vex, $) {
     "use strict";
 

@@ -283,7 +283,7 @@ define([
 
         if (definition.isKeySignatureExercise && definition.isKeySignatureExercise()) {
           var self = this;
-          require(["models/key_sig_exercise"], function (KeySigMod) {
+          require(["app/models/key_sig_exercise"], function (KeySigMod) {
             var keySigEx = new KeySigMod.KeySigExercise(definition, {
               staffContainer: document.querySelector(".key-sig-staff-container"),
               inputEl: document.querySelector(".key-sig-input"),
