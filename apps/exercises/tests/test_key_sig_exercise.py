@@ -87,3 +87,21 @@ class KeySigExerciseSaveTests(TestCase):
         self.assertEqual(len(ex.data["problems"]), 7)
         self.assertIn("unit:3", ex.skill_tags)
         self.assertIn("unit:3_key_signature", ex.skill_tags)
+
+
+class GenerateUnit3KeySigCommandTests(TestCase):
+    def test_command_creates_exercises_and_playlists(self):
+        from django.core.management import call_command
+        from apps.exercises.models import Exercise, Playlist
+
+        User = get_user_model()
+        author = User.objects.create_user(
+            email="cmd3@example.com", password="x"
+        )
+        call_command("generate_unit3_key_sig_exercises", author="cmd3@example.com")
+
+        exercises = Exercise.objects.filter(description__startswith="Unit 3 Key Sig")
+        self.assertEqual(exercises.count(), 3)  # levels 1, 2, 3
+
+        playlists = Playlist.objects.filter(name__startswith="Unit 3 — Key Signatures")
+        self.assertEqual(playlists.count(), 3)
