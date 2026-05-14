@@ -225,8 +225,8 @@
       staveRight(stage, config)
     );
 
-    x0 = boundaries[state.cursorPos] || 0;
-    x1 = boundaries[state.cursorPos + 1] || x0 + 20;
+    x0 = boundaries[state.cursorPos + 1] || 0;
+    x1 = boundaries[state.cursorPos + 2] || x0 + 20;
     cursorInset = Math.min(CURSOR_HORIZONTAL_INSET, Math.max(0, (x1 - x0 - 12) / 2));
     overlay.style.left = x0 + cursorInset + "px";
     overlay.style.width = Math.max(12, x1 - x0 - cursorInset * 2) + "px";
@@ -321,12 +321,30 @@
     console.log("[BARLINE] id=" + config.exerciseId + " ts=" + config.time_signature + " measures=" + config.measures + " correct=" + JSON.stringify(config.correct_barline_positions) + " notes=" + (config.notes||[]).map(function(n){return n.duration+(n.dots?'.':'')}));
     updateVisuals(root, state, config);
 
+    var history = []; // stack of {placedAt: Set, cursorPos}
+
+    function saveHistory() {
+      history.push({ placedAt: new Set(state.placedAt), cursorPos: state.cursorPos });
+    }
+
+    function undo() {
+      if (history.length === 0) return;
+      var prev = history.pop();
+      state.placedAt = prev.placedAt;
+      state.cursorPos = prev.cursorPos;
+      state.lastGrade = null;
+      state.submitted = false;
+      state.noteXs = drawNotation(stage, config, state.placedAt);
+      updateVisuals(root, state, config);
+    }
+
     function move(delta) {
       state.cursorPos = logic.clampCursor(state.cursorPos + delta, noteCount);
       updateVisuals(root, state, config);
     }
 
     function toggle() {
+      saveHistory();
       if (state.placedAt.has(state.cursorPos)) {
         state.placedAt.delete(state.cursorPos);
       } else {
@@ -373,6 +391,10 @@
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         toggle();
+      }
+      if (event.key === "z" && (event.metaKey || event.ctrlKey) && !event.shiftKey) {
+        event.preventDefault();
+        undo();
       }
     });
 
