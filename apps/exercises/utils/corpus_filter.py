@@ -125,6 +125,7 @@ _L7_SOURCES = {2, 3}
 _L8_SOURCES = {5, 6}
 
 MAX_NOTES = 16
+MAX_MEASURES = 4
 
 
 @dataclass
@@ -229,7 +230,7 @@ def iter_phrases(levels: list[int] | None = None) -> Iterator[PhraseResult]:
     seen_fingerprints: set[str] = set()
 
     def _emit(level, time_sig, notes, measures, source_path, offset) -> PhraseResult | None:
-        if len(notes) > MAX_NOTES:
+        if len(notes) > MAX_NOTES or measures > MAX_MEASURES:
             return None
         fp = phrase_fingerprint(time_sig, notes)
         if fp in seen_fingerprints:
@@ -265,7 +266,8 @@ def iter_phrases(levels: list[int] | None = None) -> Iterator[PhraseResult]:
             if whole_fp in seen_fingerprints:
                 # Duplicate stream: skip entirely (don't even try slicing)
                 continue
-            if len(all_notes) <= MAX_NOTES and is_valid_phrase(time_sig, all_notes, whole_measures):
+            if (len(all_notes) <= MAX_NOTES and whole_measures <= MAX_MEASURES
+                    and is_valid_phrase(time_sig, all_notes, whole_measures)):
                 # Emit the whole stream as one phrase; skip slicing
                 seen_fingerprints.add(whole_fp)
                 yield PhraseResult(
@@ -278,7 +280,7 @@ def iter_phrases(levels: list[int] | None = None) -> Iterator[PhraseResult]:
                     fingerprint=whole_fp,
                 )
             else:
-                # Whole stream not valid as a phrase: try slicing instead
+                # Whole stream too long or not valid: try slicing instead
                 for phrase, offset in _slice_phrases(all_notes, time_sig, prefer, 2):
                     measures = _compute_measures(phrase, time_sig)
                     result = _emit(direct_level, time_sig, phrase, measures, source_path, offset)
