@@ -108,17 +108,24 @@ def build_barline_payload(
     for slot_width in slot_widths:
         elapsed_ticks += slot_width * scale
         beat_positions_ticks.append(int(elapsed_ticks))
-    pickup_slot_count = 1 if has_pickup else 0
-    correct_barline_positions = [0] if has_pickup else []
-    correct_barline_positions.extend(
-        pickup_slot_count + (measure_index * beats_per_measure) - 1
-        for measure_index in range(1, measures)
-    )
+    # Compute note-index based barline positions: index of last note before each barline.
+    # A barline after note index N means the cursor is placed at position N.
+    bar_quarters = Fraction(beats_per_measure) * beat_quarters
+    pickup_q = pickup_beats_fraction * beat_quarters
     note_beat_onsets = []
+    correct_barline_positions = [0] if has_pickup else []
     elapsed_quarters = Fraction(0, 1)
-    for note in notes:
+    for note_idx, note in enumerate(notes):
         note_beat_onsets.append(_payload_number(elapsed_quarters / beat_quarters))
         elapsed_quarters += duration_quarters(note["duration"], note.get("dots", 0))
+        # If elapsed (from note start, not pickup) hits a measure boundary, barline here.
+        # Measure boundaries in note-time: pickup_q, pickup_q + bar_q, pickup_q + 2*bar_q ...
+        note_elapsed = elapsed_quarters  # total from note 0 (no pickup offset)
+        measures_elapsed = (note_elapsed - pickup_q) / bar_quarters
+        if (measures_elapsed == int(measures_elapsed)
+                and int(measures_elapsed) > 0
+                and int(measures_elapsed) < measures):
+            correct_barline_positions.append(note_idx)
 
     return {
         "type": "umto_barline_placement",

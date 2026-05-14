@@ -30,7 +30,7 @@ class BarlineExerciseBuilderTests(SimpleTestCase):
         self.assertEqual(payload["type"], "umto_barline_placement")
         self.assertEqual(payload["pickup_beats"], 0)
         self.assertEqual(payload["beat_count"], 9)
-        self.assertEqual(payload["correct_barline_positions"], [2, 5])
+        self.assertEqual(payload["correct_barline_positions"], [2, 4])
         self.assertEqual(payload["beat_positions_ticks"], list(range(10)))
         self.assertEqual(payload["note_beat_onsets"], [0, 1, 2, 3, 5, 6, 7.5, 8])
 
@@ -176,7 +176,7 @@ class BarlineExerciseBuilderTests(SimpleTestCase):
         )
 
         self.assertEqual(payload["beat_count"], 4)
-        self.assertEqual(payload["correct_barline_positions"], [1])
+        self.assertEqual(payload["correct_barline_positions"], [0])
         self.assertEqual(payload["beat_positions_ticks"], [0, 1, 2, 3, 4])
 
     def test_rejects_duration_total_that_does_not_fill_measures(self):
@@ -293,4 +293,4 @@ class BarlineExerciseBuilderTests(SimpleTestCase):
             source="test",
         )
         self.assertEqual(payload["beat_count"], 4)
-        self.assertEqual(payload["correct_barline_positions"], [1])
+        self.assertEqual(payload["correct_barline_positions"], [3])

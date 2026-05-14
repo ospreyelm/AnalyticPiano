@@ -22,42 +22,40 @@ function assertEqual(label, actual, expected) {
 
 console.log("\nbarline player logic:");
 
-// gradeBarlines: placedAt = note-index positions, correctAt = beat positions,
-// noteBeatOnsets[N] = beat onset of note N. Barline after note N → beat = onsets[N+1]-1
-// (last beat slot occupied by note N, matching the correct_barline_positions formula).
+// gradeBarlines: both placedAt and correctAt are note-index positions — direct comparison.
 assertEqual(
-  "grade 3/4 quarter notes: after note 2 maps to slot 2",
-  logic.gradeBarlines([2], [2], [0, 1, 2, 3]),
+  "grade exact match correct",
+  logic.gradeBarlines([2], [2]),
   { correct: true, missing: [], extra: [] }
 );
 
 assertEqual(
-  "grade 4/4 half notes: after note 1 (h h q q h) maps to slot 3",
-  logic.gradeBarlines([1], [3], [0, 2, 4, 5, 6]),
+  "grade works with dotted notes (index 3 in q q q q. 8 q. 8 q)",
+  logic.gradeBarlines([3], [3]),
   { correct: true, missing: [], extra: [] }
 );
 
 assertEqual(
   "grade reports missing and extra positions",
-  logic.gradeBarlines([0], [2], [0, 1, 2, 3]),
+  logic.gradeBarlines([0], [2]),
   { correct: false, missing: [2], extra: [0] }
 );
 
 assertEqual(
-  "grade normalizes numeric strings and ordering",
-  logic.gradeBarlines(["2"], [2], [0, 1, 2, 3]),
+  "grade normalizes numeric strings",
+  logic.gradeBarlines(["2"], [2]),
   { correct: true, missing: [], extra: [] }
 );
 
 assertEqual(
   "grade ignores malformed numeric strings",
-  logic.gradeBarlines(["2px", "2.9"], [2], [0, 1, 2, 3]),
+  logic.gradeBarlines(["2px", "2.9"], [2]),
   { correct: false, missing: [2], extra: [] }
 );
 
 assertEqual(
-  "grade 3/4 three measures: note indices 2 and 5 → slots 2 and 5",
-  logic.gradeBarlines([2, 5], [2, 5], [0, 1, 2, 3, 4, 5, 6]),
+  "grade multiple barlines",
+  logic.gradeBarlines([2, 5], [2, 5]),
   { correct: true, missing: [], extra: [] }
 );
 

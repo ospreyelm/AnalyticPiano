@@ -104,11 +104,14 @@
 
     if (vfNotes.length) {
       var tsParts = (config.time_signature || "4/4").split("/");
-      voice = new VF.Voice({ num_beats: parseInt(tsParts[0], 10), beat_value: parseInt(tsParts[1], 10) });
+      var measures = parseInt(config.measures, 10) || 1;
+      voice = new VF.Voice({ num_beats: parseInt(tsParts[0], 10) * measures, beat_value: parseInt(tsParts[1], 10) });
       voice.setMode(VF.Voice.Mode.SOFT);
       voice.addTickables(vfNotes);
       new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
+      var beams = VF.Beam.generateBeams(vfNotes);
       voice.draw(context, stave);
+      beams.forEach(function (b) { b.setContext(context).draw(); });
     }
 
     centers = noteXCenters(vfNotes);
@@ -190,8 +193,7 @@
   function submit(config, state) {
     var grade = logic.gradeBarlines(
       Array.from(state.placedAt),
-      config.correct_barline_positions || [],
-      config.note_beat_onsets || []
+      config.correct_barline_positions || []
     );
     var payload;
 
