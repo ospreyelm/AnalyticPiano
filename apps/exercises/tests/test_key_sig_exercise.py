@@ -105,3 +105,38 @@ class GenerateUnit3KeySigCommandTests(TestCase):
 
         playlists = Playlist.objects.filter(name__startswith="Unit 3 — Key Signatures")
         self.assertEqual(playlists.count(), 3)
+
+
+class GenerateUnit3ScaleCommandTests(TestCase):
+    def test_command_creates_scale_exercises_and_playlists(self):
+        from django.core.management import call_command
+        from apps.exercises.models import Exercise, Playlist
+
+        User = get_user_model()
+        author = User.objects.create_user(
+            email="scale3@example.com", password="x"
+        )
+        import os
+        # The MXL lives in docs/ at the repo root. Resolve relative to this test file's
+        # location — from apps/exercises/tests/ we go up 5 levels to the repo root then into docs/.
+        _here = os.path.dirname(os.path.abspath(__file__))
+        mxl_path = os.path.normpath(
+            os.path.join(_here, "../../../../../docs/scales-key-signatures/piano-major-scales-fingerings.mxl")
+        )
+        self.assertTrue(os.path.exists(mxl_path), f"MXL not found at {mxl_path}")
+        call_command(
+            "generate_unit3_scale_exercises",
+            author="scale3@example.com",
+            mxl=mxl_path,
+        )
+
+        exercises = Exercise.objects.filter(skill_tags__contains=["unit:3_major_scale"])
+        self.assertEqual(exercises.count(), 15)
+
+        playlists = Playlist.objects.filter(name__startswith="Unit 3 — Major Scales")
+        self.assertEqual(playlists.count(), 3)
+
+        # Level 1 has ≤3 accidentals → 7 keys (C, F, G, Bb, D, Eb, A)
+        from apps.exercises.models import ExercisePlaylistOrdered
+        level1 = Playlist.objects.get(name="Unit 3 — Major Scales, Level 1")
+        self.assertEqual(ExercisePlaylistOrdered.objects.filter(playlist=level1).count(), 7)
