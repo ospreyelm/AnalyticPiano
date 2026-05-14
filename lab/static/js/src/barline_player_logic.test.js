@@ -23,17 +23,24 @@ function assertEqual(label, actual, expected) {
 console.log("\nbarline player logic:");
 
 // gradeBarlines: placedAt = note-index positions, correctAt = beat positions,
-// noteBeatOnsets[N] = beat onset of note N. Barline after note N → beat = onsets[N].
+// noteBeatOnsets[N] = beat onset of note N. Barline after note N → beat = onsets[N+1]-1
+// (last beat slot occupied by note N, matching the correct_barline_positions formula).
 assertEqual(
-  "grade reports exact match as correct",
+  "grade 3/4 quarter notes: after note 2 maps to slot 2",
   logic.gradeBarlines([2], [2], [0, 1, 2, 3]),
   { correct: true, missing: [], extra: [] }
 );
 
 assertEqual(
+  "grade 4/4 half notes: after note 1 (h h q q h) maps to slot 3",
+  logic.gradeBarlines([1], [3], [0, 2, 4, 5, 6]),
+  { correct: true, missing: [], extra: [] }
+);
+
+assertEqual(
   "grade reports missing and extra positions",
-  logic.gradeBarlines([1], [2], [0, 1, 2, 3]),
-  { correct: false, missing: [2], extra: [1] }
+  logic.gradeBarlines([0], [2], [0, 1, 2, 3]),
+  { correct: false, missing: [2], extra: [0] }
 );
 
 assertEqual(
@@ -49,7 +56,7 @@ assertEqual(
 );
 
 assertEqual(
-  "grade with multiple barlines in 3/4: note indices 2 and 5",
+  "grade 3/4 three measures: note indices 2 and 5 → slots 2 and 5",
   logic.gradeBarlines([2, 5], [2, 5], [0, 1, 2, 3, 4, 5, 6]),
   { correct: true, missing: [], extra: [] }
 );

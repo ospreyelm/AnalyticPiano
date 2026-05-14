@@ -22,9 +22,9 @@
   }
 
   // Grade barlines where placedAt is note-index positions and correctAt is beat positions.
-  // noteBeatOnsets maps note index → beat onset value.
-  // A barline placed after note index N is at beat = noteBeatOnsets[N]
-  // (the onset of the last note before the barline).
+  // noteBeatOnsets maps note index → beat onset value (in tactus beats, 0-indexed).
+  // correct_barline_positions uses the last beat slot of the measure (onsets[N+1] - 1).
+  // A barline placed after note index N maps to beat = onsets[N+1] - 1.
   function gradeBarlines(placedAt, correctAt, noteBeatOnsets) {
     var placed = sortedNumbers(placedAt);
     var correct = sortedNumbers(correctAt);
@@ -32,7 +32,7 @@
 
     // Convert placed note-index positions to beat positions
     var placedBeats = placed.map(function (noteIdx) {
-      return (noteIdx < onsets.length) ? onsets[noteIdx] : NaN;
+      return (noteIdx + 1 < onsets.length) ? onsets[noteIdx + 1] - 1 : NaN;
     }).filter(function (b) { return !isNaN(b); });
     placedBeats.sort(function (a, b) { return a - b; });
 
