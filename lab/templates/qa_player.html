@@ -196,6 +196,15 @@
   window.define = window.__barlineRequireDefine__;
   delete window.__barlineRequireDefine__;
 </script>
+<script>
+  window.__barlineRequireDefine__ = window.define;
+  window.define = undefined;
+</script>
+<script src="{% static 'js/lib/Tone.js' %}"></script>
+<script>
+  window.define = window.__barlineRequireDefine__;
+  delete window.__barlineRequireDefine__;
+</script>
 <script src="{% static 'js/src/barline_player_logic.js' %}"></script>
 <script type="module" src="{% static 'js/src/qa_player.js' %}"></script>
 <script type="module" src="{% static 'js/src/barline_player.js' %}"></script>

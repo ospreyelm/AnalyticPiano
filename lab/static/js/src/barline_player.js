@@ -32,6 +32,7 @@
       '<div class="barline-stage"></div>' +
       '<div class="barline-pips" aria-label="Note positions"></div>' +
       '<div class="barline-actions">' +
+      '<button type="button" class="barline-icon-btn" data-action="listen" aria-label="Listen">&#9654;</button>' +
       '<button type="button" class="barline-icon-btn" data-action="left" aria-label="Move left">&larr;</button>' +
       '<button type="button" class="barline-toggle-btn" data-action="toggle">Place / Remove</button>' +
       '<button type="button" class="barline-icon-btn" data-action="right" aria-label="Move right">&rarr;</button>' +
@@ -85,6 +86,54 @@
       return 3 * (8 / den);
     }
     return 8 / den;
+  }
+
+  // ── Audio playback ──────────────────────────────────────────────────────────
+
+  var STEP_SEMITONE = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+
+  function pitchStringToMidi(pitch) {
+    var m = String(pitch).match(/^([A-G])([#b]?)(\d)$/);
+    if (!m) return 60;
+    var semi = STEP_SEMITONE[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0);
+    return (parseInt(m[3], 10) + 1) * 12 + semi;
+  }
+
+  var MIDI_NOTE_NAMES = ["C","C#","D","Eb","E","F","F#","G","G#","A","Bb","B"];
+  function midiToNoteName(midi) {
+    return MIDI_NOTE_NAMES[(midi + 12) % 12] + (Math.floor(midi / 12) - 1).toString();
+  }
+
+  var sampler = null;
+
+  function getSampler() {
+    if (sampler) return sampler;
+    sampler = new Tone.Sampler({
+      urls: {
+        A0: "A0.ogg", C1: "C1.ogg", "D#1": "Ds1.ogg", "F#1": "Fs1.ogg",
+        A1: "A1.ogg", C2: "C2.ogg", "D#2": "Ds2.ogg", "F#2": "Fs2.ogg",
+        A2: "A2.ogg", C3: "C3.ogg", "D#3": "Ds3.ogg", "F#3": "Fs3.ogg",
+        A3: "A3.ogg", C4: "C4.ogg", "D#4": "Ds4.ogg", "F#4": "Fs4.ogg",
+        A4: "A4.ogg", C5: "C5.ogg", "D#5": "Ds5.ogg", "F#5": "Fs5.ogg",
+        A5: "A5.ogg", C6: "C6.ogg", "D#6": "Ds6.ogg", "F#6": "Fs6.ogg",
+        A6: "A6.ogg", C7: "C7.ogg", "D#7": "Ds7.ogg", "F#7": "Fs7.ogg",
+        A7: "A7.ogg", C8: "C8.ogg"
+      },
+      release: 1,
+      baseUrl: "/static/audio/",
+    }).toDestination();
+    return sampler;
+  }
+
+  function buildPlaybackTimeline(notes, bpm) {
+    var timeline = [];
+    var t = 0;
+    notes.forEach(function (note) {
+      var dur = durEighths(note.duration, note.dots) * 0.5 * (60 / bpm);
+      timeline.push({ time: t, midi: pitchStringToMidi(note.pitch), dur: dur });
+      t += dur;
+    });
+    return timeline;
   }
 
   // Build beams manually to work around VexFlow generateBeams bug (issue #467):
@@ -313,6 +362,41 @@
 
     var history = []; // stack of {placedAt: Set, cursorPos}
 
+    var playing = false;
+    var stopTimerId = null;
+
+    function listenBtn() {
+      return root.querySelector('[data-action="listen"]');
+    }
+
+    function stopPlayback(btn) {
+      if (stopTimerId !== null) { window.clearTimeout(stopTimerId); stopTimerId = null; }
+      if (sampler) { sampler.releaseAll(); }
+      playing = false;
+      var b = btn || listenBtn();
+      if (b) b.innerHTML = "&#9654;";
+    }
+
+    function startPlayback(btn) {
+      if (playing) { stopPlayback(btn); return; }
+      Tone.start().then(function () {
+        var s = getSampler();
+        var bpm = 80;
+        var timeline = buildPlaybackTimeline(config.notes || [], bpm);
+        if (!timeline.length) return;
+        playing = true;
+        btn.innerHTML = "&#9632;";
+        var startTime = Tone.now() + 0.1;
+        timeline.forEach(function (ev) {
+          s.triggerAttackRelease(midiToNoteName(ev.midi), ev.dur, startTime + ev.time);
+        });
+        var totalDur = timeline[timeline.length - 1].time + timeline[timeline.length - 1].dur;
+        stopTimerId = window.setTimeout(function () {
+          stopPlayback(null);
+        }, (totalDur + 0.3) * 1000);
+      });
+    }
+
     function saveHistory() {
       history.push({ placedAt: new Set(state.placedAt), cursorPos: state.cursorPos });
     }
@@ -351,6 +435,7 @@
       if (!button) {
         return;
       }
+      if (button.dataset.action === "listen") startPlayback(button);
       if (button.dataset.action === "left") move(-1);
       if (button.dataset.action === "right") move(1);
       if (button.dataset.action === "toggle") toggle();
@@ -363,6 +448,7 @@
         updateVisuals(root, state, config);
         if (state.submitted && config.nextExercise) {
           window.setTimeout(function () {
+            stopPlayback(null);
             window.location.href = config.nextExercise;
           }, 1000);
         }
