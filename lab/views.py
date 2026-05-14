@@ -153,7 +153,8 @@ def get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id=No
 
     if exercise_obj:
         # Only invoke transposition if a target_key is explicitly requested (not None)
-        if target_key:
+        # and the exercise has a keySignature (barline/rhythm exercises do not)
+        if target_key and isinstance(exercise_obj.data, dict) and exercise_obj.data.get("keySignature") is not None:
             from apps.exercises.constants import pseudo_key_to_sig
             staff_sig = pseudo_key_to_sig.get(target_key)
             if staff_sig:
