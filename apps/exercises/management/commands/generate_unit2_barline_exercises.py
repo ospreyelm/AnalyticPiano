@@ -3,7 +3,7 @@ from collections import defaultdict
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.exercises.models import ExercisePlaylistOrdered, Playlist
+from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
 from apps.exercises.umto_factory import save_umto_barline_exercise
 from apps.exercises.utils.barline_exercise_builder import build_barline_payload, beaming_is_clean
 from apps.exercises.utils.corpus_filter import iter_phrases
@@ -14,6 +14,25 @@ PLAYLIST_SKILL_TAGS = [
     "unit:2_rhythm",
     "unit:2_meter_simple",
     "unit:2_meter_compound",
+]
+
+# Three student-facing grouped playlists spanning the level playlists.
+GROUPED_PLAYLISTS = [
+    {
+        "name": "Unit 2 — Add Barlines: Simple Meters",
+        "levels": [1, 2, 3],
+        "skill_tags": ["unit:2", "unit:2_rhythm", "unit:2_meter_simple"],
+    },
+    {
+        "name": "Unit 2 — Add Barlines: Compound Meters",
+        "levels": [5, 6],
+        "skill_tags": ["unit:2", "unit:2_rhythm", "unit:2_meter_compound"],
+    },
+    {
+        "name": "Unit 2 — Add Barlines: Half-note Meters",
+        "levels": [7, 8],
+        "skill_tags": ["unit:2", "unit:2_rhythm", "unit:2_meter_half_note"],
+    },
 ]
 
 SIMPLE_METERS = {"2/4", "3/4", "4/4"}
@@ -70,6 +89,10 @@ class Command(BaseCommand):
         parser.add_argument(
             "--dry-run", action="store_true", help="Print counts without saving"
         )
+        parser.add_argument(
+            "--grouped", action="store_true",
+            help="Create 3 student-facing grouped playlists from already-generated level exercises"
+        )
 
     def handle(self, *args, **options):
         source = options["source"]
@@ -85,6 +108,10 @@ class Command(BaseCommand):
             author = user_model.objects.get(email=options["author"])
         except user_model.DoesNotExist as exc:
             raise CommandError(f"Unknown author: {options['author']}") from exc
+
+        if options.get("grouped"):
+            self._handle_grouped(author, options)
+            return
 
         if source == "corpus":
             self._handle_corpus(author, options)
@@ -239,5 +266,46 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Level {level}: {len(exercises)} exercise(s) in '{playlist_name}'"
+                )
+            )
+
+    def _handle_grouped(self, author, options):
+        is_public = options["public"]
+        for group in GROUPED_PLAYLISTS:
+            level_playlist_names = [_level_playlist_name(lvl) for lvl in group["levels"]]
+            exercises = [
+                epo.exercise for epo in ExercisePlaylistOrdered.objects.filter(
+                    playlist__name__in=level_playlist_names,
+                    playlist__authored_by=author,
+                ).select_related("exercise", "playlist").order_by("playlist__name", "order")
+            ]
+            playlist, _ = Playlist.objects.get_or_create(
+                name=group["name"],
+                authored_by=author,
+                defaults=dict(
+                    is_dynamic=False,
+                    is_adaptive=True,
+                    is_public=is_public,
+                    skill_tags=group["skill_tags"],
+                ),
+            )
+            playlist.is_dynamic = False
+            playlist.is_adaptive = True
+            playlist.skill_tags = group["skill_tags"]
+            if is_public:
+                playlist.is_public = True
+            playlist.save()
+
+            ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
+            for order, ex in enumerate(exercises, 1):
+                ExercisePlaylistOrdered.objects.create(
+                    playlist=playlist,
+                    exercise=ex,
+                    order=order,
+                    is_adaptive_entry=(order == 1),
+                )
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"'{group['name']}': {len(exercises)} exercise(s) (levels {group['levels']})"
                 )
             )
