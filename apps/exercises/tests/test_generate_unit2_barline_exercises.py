@@ -216,7 +216,10 @@ class GenerateUnit2BarlineCorpusTests(TestCase):
             dry_run=True,
         )
         self.assertFalse(
-            Playlist.objects.filter(name__startswith="Unit 2 — Add Barlines, Level").exists()
+            Playlist.objects.filter(
+                name__startswith="Unit 2 — Add Barlines, Level",
+                authored_by=user,
+            ).exists()
         )
 
     @patch("apps.exercises.management.commands.generate_unit2_barline_exercises.iter_phrases")
@@ -226,7 +229,13 @@ class GenerateUnit2BarlineCorpusTests(TestCase):
         mock_iter.side_effect = [iter([phrase]), iter([phrase])]
         call_command("generate_unit2_barline_exercises", author=user.email, source="corpus", level=1)
         call_command("generate_unit2_barline_exercises", author=user.email, source="corpus", level=1)
-        self.assertEqual(Exercise.objects.filter(description__startswith="Unit 2 barline L1").count(), 1)
+        self.assertEqual(
+            ExercisePlaylistOrdered.objects.filter(
+                playlist__name="Unit 2 — Add Barlines, Level 1",
+                playlist__authored_by=user,
+            ).count(),
+            1,
+        )
 
     @patch("apps.exercises.management.commands.generate_unit2_barline_exercises.iter_phrases")
     def test_corpus_source_limit_restricts_count(self, mock_iter):
@@ -243,7 +252,8 @@ class GenerateUnit2BarlineCorpusTests(TestCase):
         )
         self.assertEqual(
             ExercisePlaylistOrdered.objects.filter(
-                playlist__name="Unit 2 — Add Barlines, Level 1"
+                playlist__name="Unit 2 — Add Barlines, Level 1",
+                playlist__authored_by=user,
             ).count(),
             2,
         )

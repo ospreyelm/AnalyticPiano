@@ -21,10 +21,21 @@
       });
   }
 
-  function gradeBarlines(placedAt, correctAt) {
+  // Grade barlines where placedAt is note-index positions and correctAt is beat positions.
+  // noteBeatOnsets maps note index → beat onset value.
+  // A barline placed after note index N is at beat = noteBeatOnsets[N+1].
+  function gradeBarlines(placedAt, correctAt, noteBeatOnsets) {
     var placed = sortedNumbers(placedAt);
     var correct = sortedNumbers(correctAt);
-    var remainingPlaced = placed.slice();
+    var onsets = noteBeatOnsets || [];
+
+    // Convert placed note-index positions to beat positions
+    var placedBeats = placed.map(function (noteIdx) {
+      return (noteIdx + 1 < onsets.length) ? onsets[noteIdx + 1] : NaN;
+    }).filter(function (b) { return !isNaN(b); });
+    placedBeats.sort(function (a, b) { return a - b; });
+
+    var remainingPlaced = placedBeats.slice();
     var missing = [];
     var extra;
 
@@ -45,8 +56,9 @@
     };
   }
 
-  function clampCursor(cursorPos, beatCount) {
-    var max = Math.max(0, (parseInt(beatCount, 10) || 1) - 2);
+  // Cursor ranges over note-index slots: 0 .. noteCount-2 (can't place after last note)
+  function clampCursor(cursorPos, noteCount) {
+    var max = Math.max(0, (parseInt(noteCount, 10) || 1) - 2);
     var cursor = parseInt(cursorPos, 10) || 0;
     return Math.min(Math.max(cursor, 0), max);
   }
@@ -88,45 +100,39 @@
     return xs;
   }
 
-  function beatBoundariesFromCenters(centerByBeat, fallbackBoundaries, beatCount) {
-    var count = parseInt(beatCount, 10) || 0;
-    var fallback = fallbackBoundaries || [];
-    var centers = centerByBeat || {};
+  // Returns X boundaries between notes (length = noteCount + 1).
+  // noteXCenters: array of X center per note (from VexFlow getAbsoluteX).
+  // fallbackStart, fallbackEnd: stave left/right edges.
+  function noteBoundaries(noteXCenters, fallbackStart, fallbackEnd) {
+    var centers = noteXCenters || [];
+    var n = centers.length;
     var boundaries = [];
-    var beat;
-    var previousCenter;
-    var nextCenter;
+    var i;
 
-    for (beat = 0; beat <= count; beat++) {
-      if (beat === 0 || beat === count) {
-        boundaries.push(fallback[beat]);
-        continue;
-      }
+    if (n === 0) return [];
 
-      previousCenter = centers[beat - 1];
-      nextCenter = centers[beat];
-      if (
-        typeof previousCenter === "number" &&
-        !isNaN(previousCenter) &&
-        typeof nextCenter === "number" &&
-        !isNaN(nextCenter)
-      ) {
-        boundaries.push(Math.round((previousCenter + nextCenter) / 2));
-      } else {
-        boundaries.push(fallback[beat]);
-      }
+    // Left edge: midpoint before first note
+    boundaries.push(Math.round((fallbackStart + centers[0]) / 2));
+
+    for (i = 0; i < n - 1; i++) {
+      boundaries.push(Math.round((centers[i] + centers[i + 1]) / 2));
     }
+
+    // Right edge: midpoint after last note
+    boundaries.push(Math.round((centers[n - 1] + fallbackEnd) / 2));
 
     return boundaries;
   }
 
-  function barlineXPositions(beatX, placedAt) {
-    var boundaries = beatX || [];
+  // X positions for placed barlines (note-index based).
+  // A barline placed after note index N renders at noteXCenters[N+1].
+  function barlineXPositions(noteXCenters, placedAt) {
+    var centers = noteXCenters || [];
     var positions = sortedNumbers(placedAt);
     var xs = [];
 
-    positions.forEach(function (position) {
-      var x = boundaries[position + 1];
+    positions.forEach(function (noteIdx) {
+      var x = centers[noteIdx + 1];
       if (typeof x === "number" && !isNaN(x)) {
         xs.push(x);
       }
@@ -140,7 +146,7 @@
     clampCursor: clampCursor,
     buildResultPayload: buildResultPayload,
     uniformBeatX: uniformBeatX,
-    beatBoundariesFromCenters: beatBoundariesFromCenters,
+    noteBoundaries: noteBoundaries,
     barlineXPositions: barlineXPositions,
   };
 

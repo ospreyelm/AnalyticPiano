@@ -31,7 +31,7 @@
       '<div class="qa-stem">Add barlines where they are needed.</div>' +
       '<div class="barline-hint">Use arrows and Enter, or the on-screen buttons.</div>' +
       '<div class="barline-stage"></div>' +
-      '<div class="barline-pips" aria-label="Beat positions"></div>' +
+      '<div class="barline-pips" aria-label="Note positions"></div>' +
       '<div class="barline-actions">' +
       '<button type="button" class="barline-icon-btn" data-action="left" aria-label="Move left">&larr;</button>' +
       '<button type="button" class="barline-toggle-btn" data-action="toggle">Place / Remove</button>' +
@@ -54,33 +54,16 @@
     return note;
   }
 
-  function noteXByOnset(notes, config) {
-    var onsets = config.note_beat_onsets || [];
-    var byOnset = {};
-    notes.forEach(function (note, index) {
+  // Returns array of X center per note index (same order as config.notes).
+  function noteXCenters(vfNotes) {
+    return vfNotes.map(function (note) {
       var x = note.getAbsoluteX && note.getAbsoluteX();
-      var onset = onsets[index];
-      if (typeof x === "number" && !isNaN(x) && typeof onset === "number") {
-        byOnset[onset] = x;
-      }
+      return (typeof x === "number" && !isNaN(x)) ? x : null;
     });
-    return byOnset;
   }
 
-  function resolveBeatX(notes, stave, config) {
-    var beatCount = parseInt(config.beat_count, 10) || 0;
-    var fallback = logic.uniformBeatX(
-      stave.getX() + 45,
-      stave.getX() + stave.getWidth(),
-      beatCount
-    );
-    var xByOnset = noteXByOnset(notes, config);
-
-    return logic.beatBoundariesFromCenters(xByOnset, fallback, beatCount);
-  }
-
-  function drawPlacedBarlines(VF, stave, beatX, placedAt) {
-    logic.barlineXPositions(beatX, Array.from(placedAt || [])).forEach(function (x) {
+  function drawPlacedBarlines(VF, stave, noteXs, placedAt) {
+    logic.barlineXPositions(noteXs, Array.from(placedAt || [])).forEach(function (x) {
       var barline = new VF.Barline(VF.Barline.type.SINGLE);
       barline.setX(x);
       barline.draw(stave);
@@ -93,9 +76,9 @@
     var renderer;
     var context;
     var stave;
-    var notes;
-    var beatX;
+    var vfNotes;
     var voice;
+    var centers;
 
     if (!VF) {
       throw new Error("VexFlow is not loaded");
@@ -115,29 +98,31 @@
     stave.setEndBarType(VF.Barline.type.SINGLE);
     stave.setContext(context).draw();
 
-    notes = (config.notes || []).map(function (item) {
+    vfNotes = (config.notes || []).map(function (item) {
       return makeStaveNote(VF, config, item);
     });
-    if (notes.length) {
-      voice = new VF.Voice({ num_beats: 4, beat_value: 4 });
+
+    if (vfNotes.length) {
+      var tsParts = (config.time_signature || "4/4").split("/");
+      voice = new VF.Voice({ num_beats: parseInt(tsParts[0], 10), beat_value: parseInt(tsParts[1], 10) });
       voice.setMode(VF.Voice.Mode.SOFT);
-      voice.addTickables(notes);
-      new VF.Formatter().joinVoices([voice]).format([voice], width - 100);
+      voice.addTickables(vfNotes);
+      new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
       voice.draw(context, stave);
     }
 
-    beatX = resolveBeatX(notes, stave, config);
-    drawPlacedBarlines(VF, stave, beatX, placedAt);
-    return beatX;
+    centers = noteXCenters(vfNotes);
+    drawPlacedBarlines(VF, stave, centers, placedAt);
+    return centers;
   }
 
   function renderPips(root, state, config) {
     var pipRoot = root.querySelector(".barline-pips");
-    var beatCount = parseInt(config.beat_count, 10) || 0;
+    var noteCount = (config.notes || []).length;
     var html = "";
     var i;
 
-    for (i = 0; i < Math.max(0, beatCount - 1); i++) {
+    for (i = 0; i < Math.max(0, noteCount - 1); i++) {
       html += '<span class="barline-pip' + (i === state.cursorPos ? " is-active" : "") + '"></span>';
     }
     pipRoot.innerHTML = html;
@@ -148,6 +133,11 @@
     var feedback = root.querySelector(".barline-feedback");
     var submitButton = root.querySelector('[data-action="submit"]');
     var overlay = stage.querySelector(".barline-cursor");
+    var noteCount = (config.notes || []).length;
+    var boundaries;
+    var x0;
+    var x1;
+    var cursorInset;
 
     if (!overlay) {
       overlay = document.createElement("div");
@@ -155,9 +145,16 @@
       stage.appendChild(overlay);
     }
 
-    var x0 = state.beatX[state.cursorPos] || 0;
-    var x1 = state.beatX[state.cursorPos + 1] || x0 + 20;
-    var cursorInset = Math.min(CURSOR_HORIZONTAL_INSET, Math.max(0, (x1 - x0 - 12) / 2));
+    // Compute boundaries between notes for cursor positioning
+    boundaries = logic.noteBoundaries(
+      state.noteXs,
+      staveLeft(stage),
+      staveRight(stage, config)
+    );
+
+    x0 = boundaries[state.cursorPos] || 0;
+    x1 = boundaries[state.cursorPos + 1] || x0 + 20;
+    cursorInset = Math.min(CURSOR_HORIZONTAL_INSET, Math.max(0, (x1 - x0 - 12) / 2));
     overlay.style.left = x0 + cursorInset + "px";
     overlay.style.width = Math.max(12, x1 - x0 - cursorInset * 2) + "px";
 
@@ -176,10 +173,25 @@
       "barline-feedback " + (state.lastGrade.correct ? "is-correct" : "is-incorrect");
   }
 
+  function staveLeft(stage) {
+    // Approximate stave note area left edge (after clef/time sig)
+    var svg = stage.querySelector("svg");
+    return svg ? 65 : 65;
+  }
+
+  function staveRight(stage, config) {
+    var svg = stage.querySelector("svg");
+    if (svg) {
+      return parseInt(svg.getAttribute("width"), 10) - 20;
+    }
+    return (stage.clientWidth || 600) - 20;
+  }
+
   function submit(config, state) {
     var grade = logic.gradeBarlines(
       Array.from(state.placedAt),
-      config.correct_barline_positions || []
+      config.correct_barline_positions || [],
+      config.note_beat_onsets || []
     );
     var payload;
 
@@ -208,6 +220,7 @@
     var root;
     var stage;
     var state;
+    var noteCount;
 
     if (!config || config.type !== "umto_barline_placement") {
       return;
@@ -221,20 +234,22 @@
       return;
     }
 
+    noteCount = (config.notes || []).length;
+
     renderShell(root);
     stage = root.querySelector(".barline-stage");
     state = {
       cursorPos: 0,
       placedAt: new Set(),
-      beatX: [],
+      noteXs: [],
       lastGrade: null,
       submitted: false,
     };
-    state.beatX = drawNotation(stage, config, state.placedAt);
+    state.noteXs = drawNotation(stage, config, state.placedAt);
     updateVisuals(root, state, config);
 
     function move(delta) {
-      state.cursorPos = logic.clampCursor(state.cursorPos + delta, config.beat_count);
+      state.cursorPos = logic.clampCursor(state.cursorPos + delta, noteCount);
       updateVisuals(root, state, config);
     }
 
@@ -246,7 +261,7 @@
       }
       state.lastGrade = null;
       state.submitted = false;
-      state.beatX = drawNotation(stage, config, state.placedAt);
+      state.noteXs = drawNotation(stage, config, state.placedAt);
       updateVisuals(root, state, config);
     }
 
@@ -289,7 +304,7 @@
     });
 
     window.addEventListener("resize", function () {
-      state.beatX = drawNotation(stage, config, state.placedAt);
+      state.noteXs = drawNotation(stage, config, state.placedAt);
       updateVisuals(root, state, config);
     });
   }
