@@ -124,6 +124,8 @@ _DERIVED_LEVELS = {7, 8}
 _L7_SOURCES = {2, 3}
 _L8_SOURCES = {5, 6}
 
+MAX_NOTES = 16
+
 
 @dataclass
 class PhraseResult:
@@ -227,6 +229,8 @@ def iter_phrases(levels: list[int] | None = None) -> Iterator[PhraseResult]:
     seen_fingerprints: set[str] = set()
 
     def _emit(level, time_sig, notes, measures, source_path, offset) -> PhraseResult | None:
+        if len(notes) > MAX_NOTES:
+            return None
         fp = phrase_fingerprint(time_sig, notes)
         if fp in seen_fingerprints:
             return None
@@ -261,7 +265,7 @@ def iter_phrases(levels: list[int] | None = None) -> Iterator[PhraseResult]:
             if whole_fp in seen_fingerprints:
                 # Duplicate stream: skip entirely (don't even try slicing)
                 continue
-            if is_valid_phrase(time_sig, all_notes, whole_measures):
+            if len(all_notes) <= MAX_NOTES and is_valid_phrase(time_sig, all_notes, whole_measures):
                 # Emit the whole stream as one phrase; skip slicing
                 seen_fingerprints.add(whole_fp)
                 yield PhraseResult(

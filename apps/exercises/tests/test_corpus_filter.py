@@ -210,6 +210,14 @@ class CorpusFilterIterPhrasesTests(SimpleTestCase):
         self.assertEqual(results, [])
 
     @patch("apps.exercises.utils.corpus_filter._iter_corpus_streams")
+    def test_skips_phrase_exceeding_max_notes(self, mock_streams):
+        # 32 sixteenth notes = 2 bars of 4/4, but 32 > MAX_NOTES=16, so rejected
+        notes = [_make_m21_note("16th")] * 32
+        mock_streams.return_value = [("fake/path.abc", _make_m21_stream(notes, "4/4"))]
+        results = list(iter_phrases(levels=[3]))
+        self.assertEqual(results, [])
+
+    @patch("apps.exercises.utils.corpus_filter._iter_corpus_streams")
     def test_deduplicates_identical_rhythm(self, mock_streams):
         notes = [
             _make_m21_note("quarter"), _make_m21_note("quarter"), _make_m21_note("half"),
