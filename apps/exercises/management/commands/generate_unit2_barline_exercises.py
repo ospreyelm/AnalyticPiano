@@ -60,7 +60,8 @@ def _level_playlist_name(level: int) -> str:
 
 
 def _level_skill_tags(level: int) -> list:
-    return ["unit:2", "unit:2_rhythm", f"unit:2_L{level}"]
+    # No "unit:2" tag — level playlists are internal source pools, not student-facing.
+    return [f"unit:2_L{level}"]
 
 
 class Command(BaseCommand):
