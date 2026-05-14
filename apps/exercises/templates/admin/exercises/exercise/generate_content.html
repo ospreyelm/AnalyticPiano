@@ -85,6 +85,25 @@
     </fieldset>
 
     <fieldset class="module aligned">
+        <h2>Add Barlines — Corpus Levels (L1–L8)</h2>
+        <p class="help">Generates levelled playlists from the music21 folk corpus. Takes several minutes. Idempotent — safe to re-run.</p>
+        <div class="form-row">
+            <label for="corpus_level">Level (1–8)</label>
+            <input type="number" name="corpus_level" id="corpus_level" min="1" max="8" style="width:60px" placeholder="all">
+            <p class="help">Leave blank to generate all levels.</p>
+        </div>
+        <div class="form-row">
+            <label for="corpus_limit">Limit per level</label>
+            <input type="number" name="corpus_limit" id="corpus_limit" min="1" style="width:80px" placeholder="unlimited">
+        </div>
+        <div class="form-row">
+            <button type="submit" name="command" value="generate_unit2_barline_exercises_corpus" class="button default">
+                Generate Corpus Barline Exercises
+            </button>
+        </div>
+    </fieldset>
+
+    <fieldset class="module aligned">
         <h2>Units 9+ — Bach Corpus Playlist</h2>
         <p class="help">Imports Bach phrases and creates an ordered adaptive playlist for the given unit.</p>
         <div class="form-row">

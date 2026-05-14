@@ -193,6 +193,17 @@ class ExerciseAdmin(ImportExportModelAdmin):
                     )
                     messages.success(request, f"Unit 2 add-barlines exercises generated.\n{out.getvalue()}")
 
+                elif command == "generate_unit2_barline_exercises_corpus":
+                    level_raw = request.POST.get("corpus_level", "").strip()
+                    limit_raw = request.POST.get("corpus_limit", "").strip()
+                    kwargs = dict(author=author, public=is_public, source="corpus", stdout=out)
+                    if level_raw:
+                        kwargs["level"] = int(level_raw)
+                    if limit_raw:
+                        kwargs["limit"] = int(limit_raw)
+                    call_command("generate_unit2_barline_exercises", **kwargs)
+                    messages.success(request, f"Unit 2 corpus barline exercises generated.\n{out.getvalue()}")
+
                 elif command in ("create_unit_playlist", "create_unit_playlist_only"):
                     unit = request.POST.get("unit", "").strip()
                     riemenschneider = request.POST.get("riemenschneider", "").strip()
