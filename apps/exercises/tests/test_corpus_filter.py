@@ -1,5 +1,8 @@
+import os
+from collections import Counter
 from unittest.mock import patch, MagicMock
 
+import pytest
 from django.test import SimpleTestCase
 from apps.exercises.utils.corpus_filter import assign_level, SMALLEST_VALUE_ORDER, is_valid_phrase, double_durations, phrase_fingerprint, iter_phrases, PhraseResult
 
@@ -230,3 +233,18 @@ class CorpusFilterIterPhrasesTests(SimpleTestCase):
         self.assertEqual(results[0].time_signature, "3/2")
         dur_types = [n["duration"] for n in results[0].notes]
         self.assertEqual(dur_types, ["h", "q", "q", "h", "h", "w"])
+
+
+@pytest.mark.skipif(
+    not os.environ.get("HARMONYLAB_CORPUS_SMOKE"),
+    reason="Set HARMONYLAB_CORPUS_SMOKE=1 to run live corpus test",
+)
+class CorpusFilterSmokeTests(SimpleTestCase):
+    def test_live_corpus_yields_phrases_for_all_direct_levels(self):
+        counts = Counter()
+        for phrase in iter_phrases(levels=[1, 2, 3, 4, 5, 6]):
+            counts[phrase.level] += 1
+            if all(counts[l] >= 5 for l in [1, 2, 4, 5]):
+                break
+        for level in [1, 2, 4, 5]:
+            self.assertGreater(counts[level], 0, f"Level {level} yielded no phrases")
