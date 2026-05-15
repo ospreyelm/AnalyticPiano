@@ -267,9 +267,14 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         if not self._id:
             super(Exercise, self).save(*args, **kwargs)
             self.set_id(initial="E")
-            self.save()
+            self.sort_data()
+            self.set_rhythm_values()
+            update_kwargs = kwargs.copy()
+            update_kwargs.pop("force_insert", None)
+            super(Exercise, self).save(*args, **update_kwargs)
             if not skip_auto_playlist:
                 self.set_auto_playlist()
+            return
 
         # self.validate_unique()
         self.set_id(initial="E")
