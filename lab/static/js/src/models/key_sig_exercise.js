@@ -38,10 +38,12 @@ define(
     }
 
     var KeySigExercise = function (definition, options) {
-      this.problems = shuffle(definition.exercise.problems || []);
-      this.index    = 0;
-      this.mistakes = 0;
-      this.options  = options || {};
+      this.problems         = shuffle(definition.exercise.problems || []);
+      this.index            = 0;
+      this.mistakes         = 0;
+      this._mistakeThisProblem = false;
+      this._correctFirstTry    = 0;
+      this.options          = options || {};
     };
 
     KeySigExercise.prototype = {
@@ -53,8 +55,51 @@ define(
         if (this.options.staffContainer) {
           renderKeySignatureStaff(this.options.staffContainer, p.prompt);
         }
-        if (this.options.inputEl) {
-          $(this.options.inputEl).val("").focus();
+        this._renderChoices(p);
+      },
+
+      _renderChoices: function (p) {
+        var self = this;
+        var el = this.options.choicesEl;
+        if (!el) return;
+        $(el).empty();
+        var shuffledChoices = shuffle(p.choices || []);
+        shuffledChoices.forEach(function (label) {
+          var btn = $('<button>')
+            .addClass('key-sig-choice simple-button')
+            .css({
+              'font-size': '1.1em',
+              'padding': '8px 18px',
+              'border-radius': '6px',
+              'cursor': 'pointer',
+            })
+            .text(label);
+          btn.on('click', function () {
+            self._handleChoice(label);
+          });
+          $(el).append(btn);
+        });
+      },
+
+      _handleChoice: function (label) {
+        var p = this.problems[this.index];
+        if (!p) return;
+        // Submit the display_name directly — it IS in accepted_answers
+        var result = this.submit(label);
+        if (result && !result.correct) {
+          if (this.options.onWrong) {
+            this.options.onWrong("Not quite — try again.");
+          }
+          // Briefly flash the wrong button red
+          var self = this;
+          $(this.options.choicesEl).find('.key-sig-choice').filter(function () {
+            return $(this).text() === label;
+          }).css('background-color', '#fdd').one('transitionend click', function () {
+            $(this).css('background-color', '');
+          });
+          setTimeout(function () {
+            $(self.options.choicesEl).find('.key-sig-choice').css('background-color', '');
+          }, 600);
         }
       },
 
@@ -63,12 +108,21 @@ define(
         if (!p) return;
         if (!logic.checkKeyAnswer(rawAnswer, p)) {
           this.mistakes++;
+          this._mistakeThisProblem = true;
           return { correct: false, message: "Try again." };
         }
+        if (!this._mistakeThisProblem) {
+          this._correctFirstTry++;
+        }
+        this._mistakeThisProblem = false;
         this.index++;
         if (this.index >= this.problems.length) {
           if (this.options.onComplete) {
-            this.options.onComplete({ score: this.mistakes === 0 ? 0 : 1 });
+            this.options.onComplete({
+              score: this.mistakes === 0 ? 0 : 1,
+              numerator: this._correctFirstTry,
+              denominator: this.problems.length,
+            });
           }
         } else {
           if (this.options.onAdvance) {

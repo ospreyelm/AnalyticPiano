@@ -54,9 +54,17 @@ class TaxonomyReader:
                         return tier
         return None
 
+    _SKILL_LABEL_OVERRIDES: dict = {
+        "major_scale": "Play Major Scales",
+        "minor_scale": "Play Minor Scales",
+        "key_signature": "Key Signature Identification",
+    }
+
     @classmethod
     def get_skill_label(cls, tag: str) -> str:
         """Converts "Note_Names" -> "Note Names" (replace underscores, title-case)."""
+        if tag in cls._SKILL_LABEL_OVERRIDES:
+            return cls._SKILL_LABEL_OVERRIDES[tag]
         return tag.replace("_", " ").title()
 
     @classmethod

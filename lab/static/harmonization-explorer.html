@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Harmonization Exercise — Spec Explorer</title>
+<script src="js/lib/vexflow.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f8f9fa; color: #222; }
+  h1 { font-size: 1.3rem; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+
+  .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1300px; }
+  .panel { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .panel h2 { font-size: 1rem; margin: 0 0 12px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+
+  #score-canvas { width: 100%; overflow-x: auto; }
+  #score-canvas svg { display: block; }
+
+  label { display: block; font-size: 0.82rem; font-weight: 600; color: #555; margin-bottom: 4px; }
+  .btn { background: #2563eb; color: white; border: none; border-radius: 4px; padding: 7px 16px; font-size: 0.85rem; cursor: pointer; margin-right: 8px; }
+  .btn:hover { background: #1d4ed8; }
+  .btn.secondary { background: #6b7280; }
+  .btn.secondary:hover { background: #4b5563; }
+  .ex-btn { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer; }
+  .ex-btn:hover { background: #e5e7eb; }
+  .ex-btn.active { background: #dbeafe; border-color: #93c5fd; }
+  .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; align-items: center; }
+
+  .settings-row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .settings-row label { font-size: 0.78rem; font-weight: 600; color: #555; margin-bottom: 0; display: flex; align-items: center; gap: 6px; }
+  .settings-row input[type=number] { width: 56px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.82rem; }
+  .settings-row select { padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.82rem; }
+
+  .chord-input-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; }
+  .chord-input-group { flex: 1; min-width: 120px; }
+  .chord-input-group label { font-size: 0.75rem; }
+  .chord-input-group input { width: 100%; font-family: monospace; font-size: 0.82rem; padding: 5px 7px; border: 1px solid #ddd; border-radius: 4px; }
+  .hint { font-size: 0.7rem; color: #9ca3af; margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { background: #f3f4f6; text-align: left; padding: 6px 8px; font-weight: 600; }
+  td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  .correct { color: #16a34a; font-weight: 600; }
+  .partial  { color: #d97706; font-weight: 600; }
+  .incorrect{ color: #dc2626; font-weight: 600; }
+
+  .grade-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; }
+  .grade-excellent  { background: #dcfce7; color: #15803d; }
+  .grade-proficient { background: #dbeafe; color: #1d4ed8; }
+  .grade-developing { background: #fef9c3; color: #a16207; }
+  .grade-attempting { background: #fee2e2; color: #b91c1c; }
+
+  .flag { color: #dc2626; }
+  .ok   { color: #16a34a; }
+  #log  { font-size: 0.75rem; color: #666; font-family: monospace; max-height: 100px; overflow-y: auto;
+          background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px; margin-top: 8px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>Harmonization Exercise — Spec Explorer</h1>
+<p class="subtitle">Validate grading tiers and voice leading logic. Score shows bass (+ soprano if checked).</p>
+
+<div class="layout">
+
+  <!-- LEFT -->
+  <div>
+    <div class="panel">
+      <h2>Score</h2>
+      <div id="score-canvas"></div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h2>Exercise Configuration</h2>
+      <div class="settings-row">
+        <label>Key:
+          <select id="keySelect" onchange="renderAll()">
+            <option value="G">G major</option>
+            <option value="C">C major</option>
+            <option value="D">D major</option>
+            <option value="F">F major</option>
+            <option value="Bb">Bb major</option>
+            <option value="d">d minor</option>
+            <option value="a">a minor</option>
+            <option value="e">e minor</option>
+          </select>
+        </label>
+        <label>Max disp/voice:
+          <input type="number" id="maxDisp" value="4" min="1" max="12" onchange="grade()">
+        </label>
+        <label><input type="checkbox" id="showSoprano" onchange="renderAll()"> Show soprano</label>
+      </div>
+
+      <div class="examples">
+        <span style="font-size:0.78rem;color:#888">Presets:</span>
+        <button class="ex-btn active" onclick="loadPreset('gMajor4',this)">G major I–V7–I6–IV</button>
+        <button class="ex-btn" onclick="loadPreset('cMajor4',this)">C major I–IV–V–I</button>
+        <button class="ex-btn" onclick="loadPreset('dMinor4',this)">d minor i–V6–i–iv</button>
+        <button class="ex-btn" onclick="loadPreset('rough',this)">Rough VL example</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h2>Expected Chords (UMTO grading slices)</h2>
+      <div id="expectedChords"></div>
+      <button class="btn secondary" onclick="addExpected()" style="margin-top:8px;font-size:0.78rem;padding:5px 12px">+ Add</button>
+      <p class="hint" style="margin-top:6px">MIDI numbers comma-separated. Bass = lowest note.</p>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div>
+    <div class="panel">
+      <h2>Student Input</h2>
+      <div id="studentChords"></div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn" onclick="grade()">Grade</button>
+        <button class="btn secondary" onclick="copyExpected()">Copy expected → student</button>
+        <button class="btn secondary" onclick="addStudent()">+ Add chord</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h2>Grading Result</h2>
+      <div id="gradeOutput"><p style="color:#aaa;font-size:0.85rem">Press Grade.</p></div>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── VexFlow 4 aliases ────────────────────────────────────────────────────────
+const { Renderer, Stave, StaveNote, Formatter, Accidental, StaveText, Annotation } = Vex.Flow;
+
+// ── Key signature → VexFlow key string ───────────────────────────────────────
+const KEY_TO_VF = {
+  'C':'C','G':'G','D':'D','A':'A','E':'E','B':'B','F#':'F#','Bb':'Bb','Eb':'Eb','Ab':'Ab','Db':'Db','F':'F',
+  'd':'Dm','a':'Am','e':'Em','b':'Bm','g':'Gm','c':'Cm'
+};
+
+// ── MIDI → VexFlow note string ────────────────────────────────────────────────
+const STEPS  = ['c','d','e','f','g','a','b'];
+const ALTERS = [0,0,1,1,2,2,2,3,3,4,4,5,5,6,6,7]; // semitone → diatonic step index (rough)
+// Better: explicit semitone → pitch mapping (no enharmonics needed for display)
+function midiToVF(midi) {
+  const oct  = Math.floor(midi / 12) - 1;
+  const semi = midi % 12;
+  const map  = ['c','c#','d','eb','e','f','f#','g','ab','a','bb','b'];
+  return map[semi] + '/' + oct;
+}
+function midiName(midi) {
+  const names = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+  return names[midi % 12] + (Math.floor(midi/12)-1);
+}
+function pc(midi) { return midi % 12; }
+const PC_NAMES = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+
+// ── Presets ───────────────────────────────────────────────────────────────────
+const PRESETS = {
+  gMajor4: {
+    key: 'G',
+    expected: [
+      { midi:[43,47,50,55], label:'I',   figure:'—'  },
+      { midi:[38,42,45,48], label:'V⁷',  figure:'7'  },
+      { midi:[35,38,43,47], label:'I⁶',  figure:'6'  },
+      { midi:[36,40,43,48], label:'IV',  figure:'—'  },
+    ],
+    student: [[43,47,50,55],[38,42,45,48],[35,38,43,47],[36,40,43,48]],
+  },
+  cMajor4: {
+    key: 'C',
+    expected: [
+      { midi:[36,40,43,48], label:'I',  figure:'—' },
+      { midi:[29,33,36,41], label:'IV', figure:'—' },
+      { midi:[31,38,43,47], label:'V',  figure:'—' },
+      { midi:[36,40,43,48], label:'I',  figure:'—' },
+    ],
+    student: [[36,40,43,48],[29,33,36,41],[31,38,43,47],[36,40,43,48]],
+  },
+  dMinor4: {
+    key: 'd',
+    expected: [
+      { midi:[38,41,45,50], label:'i',  figure:'—' },
+      { midi:[37,40,45,49], label:'V⁶', figure:'6' },
+      { midi:[38,41,45,50], label:'i',  figure:'—' },
+      { midi:[31,38,41,50], label:'iv', figure:'—' },
+    ],
+    student: [[38,41,45,50],[37,40,45,49],[38,41,45,50],[31,38,41,50]],
+  },
+  rough: {
+    key: 'G',
+    expected: [
+      { midi:[43,47,50,55], label:'I',  figure:'—' },
+      { midi:[38,42,45,48], label:'V⁷', figure:'7' },
+      { midi:[35,38,43,47], label:'I⁶', figure:'6' },
+      { midi:[36,40,43,48], label:'IV', figure:'—' },
+    ],
+    // Student plays same chords but jumps an octave on tenor in slot 1 → rough VL
+    student: [[43,47,50,55],[38,42,57,48],[35,38,43,47],[36,40,43,48]],
+  },
+};
+
+let expectedData = [];
+let studentData  = [];
+
+// ── Load preset ───────────────────────────────────────────────────────────────
+function loadPreset(name, btn) {
+  document.querySelectorAll('.ex-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const p = PRESETS[name];
+  document.getElementById('keySelect').value = p.key;
+  expectedData = p.expected.map(ch => ({ midi:[...ch.midi], label:ch.label, figure:ch.figure }));
+  studentData  = p.student.map(ch => [...ch]);
+  renderAll();
+}
+
+// ── Render everything ─────────────────────────────────────────────────────────
+function renderAll() {
+  renderScore();
+  renderExpectedUI();
+  renderStudentUI();
+  grade();
+}
+
+// ── Score rendering (VexFlow 4) ───────────────────────────────────────────────
+function renderScore() {
+  const container = document.getElementById('score-canvas');
+  container.innerHTML = '';
+
+  const showSoprano = document.getElementById('showSoprano').checked;
+  const key         = document.getElementById('keySelect').value;
+  const vfKey       = KEY_TO_VF[key] || 'C';
+  const n           = expectedData.length;
+  if (n === 0) return;
+
+  const staveW  = 130;
+  const firstW  = staveW + 60;   // extra room for clef + key sig
+  const margin  = 20;
+  const totalW  = margin + firstW + staveW * (n - 1) + margin;
+  const bassY   = showSoprano ? 170 : 60;
+  const trebleY = 20;
+  const svgH    = showSoprano ? 290 : 180;
+
+  const renderer = new Renderer(container, Renderer.Backends.SVG);
+  renderer.resize(totalW, svgH);
+  const ctx = renderer.getContext();
+
+  // Compute stave x-positions once, share between both staves and labels
+  const staveX = [];
+  let x = margin;
+  for (let i = 0; i < n; i++) {
+    staveX.push(x);
+    x += (i === 0 ? firstW : staveW);
+  }
+
+  function buildNote(clef, midiArr) {
+    const sorted = [...midiArr].sort((a,b)=>a-b);
+    const keys   = sorted.map(midiToVF);
+    const note   = new StaveNote({ clef, keys, duration: 'w' });
+    keys.forEach((k, idx) => {
+      const pitch = k.split('/')[0]; // e.g. "bb", "f#", "eb", "b", "c"
+      if      (pitch.endsWith('#'))  note.addModifier(new Accidental('#'), idx);
+      else if (pitch.endsWith('b') && pitch.length > 1) note.addModifier(new Accidental('b'), idx);
+    });
+    return note;
+  }
+
+  function drawStaff(clef, y, notes) {
+    for (let i = 0; i < n; i++) {
+      const w     = i === 0 ? firstW : staveW;
+      const stave = new Stave(staveX[i], y, w);
+      if (i === 0) stave.addClef(clef).addKeySignature(vfKey);
+      stave.setContext(ctx).draw();
+      const voice = new Vex.Flow.Voice({ num_beats: 4, beat_value: 4 }).setMode(Vex.Flow.Voice.Mode.SOFT);
+      voice.addTickables([notes[i]]);
+      const formatter = new Formatter();
+      formatter.joinVoices([voice]).format([voice], w - 30);
+      voice.draw(ctx, stave);
+    }
+  }
+
+  // Bass staff — always show single bass note
+  drawStaff('bass', bassY,
+    expectedData.map(ch => buildNote('bass', [Math.min(...ch.midi)])));
+
+  // Soprano staff — show if checkbox set
+  if (showSoprano) {
+    drawStaff('treble', trebleY,
+      expectedData.map(ch => buildNote('treble', [Math.max(...ch.midi)])));
+  }
+
+  // Figured bass labels — centered under each stave slot
+  const svg   = container.querySelector('svg');
+  const labelY = bassY + 112;   // below the bass staff bottom line
+  const svgNS  = 'http://www.w3.org/2000/svg';
+
+  function svgText(x, y, text, size, fill, family) {
+    const el = document.createElementNS(svgNS, 'text');
+    el.setAttribute('x', x);
+    el.setAttribute('y', y);
+    el.setAttribute('text-anchor', 'middle');
+    el.setAttribute('font-size', size);
+    el.setAttribute('font-family', family || 'serif');
+    el.setAttribute('fill', fill);
+    el.textContent = text;
+    svg.appendChild(el);
+  }
+
+  expectedData.forEach((ch, i) => {
+    const w   = i === 0 ? firstW : staveW;
+    // Noteheads land roughly 2/3 into the stave after clef/keysig on first stave
+    const noteX = i === 0 ? staveX[i] + firstW * 0.7 : staveX[i] + staveW * 0.5;
+    const fig   = (ch.figure && ch.figure !== '—') ? ch.figure : '';
+    if (fig) svgText(noteX, labelY, fig, 13, '#333', 'serif');
+  });
+}
+
+// ── Expected chords UI ────────────────────────────────────────────────────────
+function pitchHint(midiArr) {
+  return midiArr.map(midiName).join(' · ');
+}
+
+function renderExpectedUI() {
+  const c = document.getElementById('expectedChords');
+  c.innerHTML = '';
+  expectedData.forEach((ch, i) => {
+    const row = document.createElement('div');
+    row.className = 'chord-input-row';
+    row.innerHTML = `
+      <div class="chord-input-group" style="flex:0.25;min-width:30px">
+        <label>#${i+1}</label>
+        <div style="padding-top:5px;font-weight:700;color:#6366f1;font-size:0.85rem">${ch.label}</div>
+      </div>
+      <div class="chord-input-group">
+        <label>MIDI</label>
+        <input type="text" value="${ch.midi.join(',')}" oninput="updExp(${i},'midi',this.value)">
+        <div class="hint" id="exp-hint-${i}">${pitchHint(ch.midi)}</div>
+      </div>
+      <div class="chord-input-group" style="flex:0.5;min-width:70px">
+        <label>Label</label>
+        <input type="text" value="${ch.label}" oninput="updExp(${i},'label',this.value)">
+      </div>
+      <div class="chord-input-group" style="flex:0.4;min-width:60px">
+        <label>Figure</label>
+        <input type="text" value="${ch.figure}" oninput="updExp(${i},'figure',this.value)">
+      </div>
+      <button onclick="rmExp(${i})" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:1.1rem;padding-top:18px">×</button>`;
+    c.appendChild(row);
+  });
+}
+function updExp(i, field, val) {
+  if (field === 'midi') {
+    const m = val.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));
+    if (m.length) {
+      expectedData[i].midi = m;
+      const hint = document.getElementById(`exp-hint-${i}`);
+      if (hint) hint.textContent = pitchHint(m);
+      renderScore(); grade();
+    }
+  } else {
+    expectedData[i][field] = val;
+    renderExpectedUI(); renderScore();
+  }
+}
+function rmExp(i) { expectedData.splice(i,1); studentData.splice(i,1); renderAll(); }
+function addExpected() {
+  expectedData.push({ midi:[36,40,43,48], label:'?', figure:'—' });
+  studentData.push([36,40,43,48]);
+  renderAll();
+}
+
+// ── Student chords UI ─────────────────────────────────────────────────────────
+function renderStudentUI() {
+  const c = document.getElementById('studentChords');
+  c.innerHTML = '';
+  studentData.forEach((ch, i) => {
+    const lbl = expectedData[i] ? expectedData[i].label : `#${i+1}`;
+    const row = document.createElement('div');
+    row.className = 'chord-input-row';
+    row.innerHTML = `
+      <div class="chord-input-group" style="flex:0.25;min-width:30px">
+        <label>#${i+1}</label>
+        <div style="padding-top:5px;font-size:0.8rem;color:#888">${lbl}</div>
+      </div>
+      <div class="chord-input-group">
+        <label>Played MIDI</label>
+        <input type="text" value="${ch.join(',')}" oninput="updStu(${i},this.value)">
+        <div class="hint" id="stu-hint-${i}">${ch.length ? pitchHint(ch) : 'no notes'}</div>
+      </div>
+      <button onclick="rmStu(${i})" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:1.1rem;padding-top:18px">×</button>`;
+    c.appendChild(row);
+  });
+}
+function updStu(i, val) {
+  const m = val.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));
+  if (m.length) {
+    studentData[i] = m;
+    const hint = document.getElementById(`stu-hint-${i}`);
+    if (hint) hint.textContent = pitchHint(m);
+    grade();
+  }
+}
+function rmStu(i) { studentData.splice(i,1); renderStudentUI(); grade(); }
+function addStudent() { studentData.push([]); renderStudentUI(); }
+function copyExpected() { studentData = expectedData.map(ch=>[...ch.midi]); renderStudentUI(); grade(); }
+
+// ── Grading ───────────────────────────────────────────────────────────────────
+const KEY_LT = {
+  'C':11,'G':6,'D':1,'A':8,'E':3,'B':10,'F#':6,'Bb':10,'Eb':3,'Ab':8,'Db':1,'F':5,
+  'd':1,'a':0,'e':7,'b':2,'g':5,'c':8  // raised 7th of natural minor
+};
+
+function gradeChord(expMidi, delMidi, showSoprano) {
+  const log = [];
+  if (!delMidi || delMidi.length === 0) return { state:'partial', log:['no notes'] };
+  const expS = [...expMidi].sort((a,b)=>a-b);
+  const delS = [...delMidi].sort((a,b)=>a-b);
+  const expBass = expS[0], delBass = delS[0];
+
+  if (delBass !== expBass) {
+    log.push(`✗ Bass: want ${midiName(expBass)}, got ${midiName(delBass)}`);
+    return { state:'incorrect', log };
+  }
+  log.push(`✓ Bass: ${midiName(expBass)}`);
+
+  if (showSoprano) {
+    const expSop = expS[expS.length-1], delSop = delS[delS.length-1];
+    if (delSop !== expSop) {
+      log.push(`✗ Soprano: want ${midiName(expSop)}, got ${midiName(delSop)}`);
+      return { state:'incorrect', log };
+    }
+    log.push(`✓ Soprano: ${midiName(expSop)}`);
+  }
+
+  const upperDel = delS.slice(1).filter(m => m > expBass);
+  const belowBass = delS.slice(1).filter(m => m <= expBass);
+  if (belowBass.length) {
+    log.push(`✗ Voice below bass: ${belowBass.map(midiName).join(', ')}`);
+    return { state:'incorrect', log };
+  }
+
+  const expPCs = new Set(expS.slice(1).map(pc));
+  const delPCs = new Set(upperDel.map(pc));
+  const missing = [...expPCs].filter(p => !delPCs.has(p));
+  const extra   = [...delPCs].filter(p => !expPCs.has(p));
+  if (missing.length) { log.push(`✗ Missing: ${missing.map(p=>PC_NAMES[p]).join(',')}`); return { state:'incorrect', log }; }
+  if (extra.length)   { log.push(`✗ Extra PCs: ${extra.map(p=>PC_NAMES[p]).join(',')}`); return { state:'incorrect', log }; }
+  log.push(`✓ Upper PCs: ${[...expPCs].map(p=>PC_NAMES[p]).join(' ')}`);
+
+  if (delMidi.length < expMidi.length) {
+    log.push(`⚠ ${delMidi.length}/${expMidi.length} notes — partial`);
+    return { state:'partial', log };
+  }
+  return { state:'correct', log };
+}
+
+function permutations(arr) {
+  if (arr.length <= 1) return [arr];
+  const out = [];
+  arr.forEach((v,i) => {
+    const rest = [...arr.slice(0,i),...arr.slice(i+1)];
+    permutations(rest).forEach(p => out.push([v,...p]));
+  });
+  return out;
+}
+function bestMap(from, to) {
+  if (!from.length || !to.length) return { maxDisp:0, totalDisp:0, pairs:[] };
+  let a=[...from].sort((x,y)=>x-y), b=[...to].sort((x,y)=>x-y);
+  while (a.length < b.length) a.push(a[a.length-1]);
+  while (b.length < a.length) b.push(b[b.length-1]);
+  let best = null;
+  for (const perm of permutations(b)) {
+    const disps = a.map((n,i)=>Math.abs(n-perm[i]));
+    const total = disps.reduce((s,d)=>s+d,0);
+    const max   = Math.max(...disps);
+    if (!best || total < best.totalDisp) best = { maxDisp:max, totalDisp:total, pairs:a.map((n,i)=>[n,perm[i]]) };
+  }
+  return best;
+}
+
+function checkParallels(prevFull, curFull) {
+  const issues = [];
+  const n = Math.min(prevFull.length, curFull.length);
+  for (let i=0;i<n;i++) for (let j=i+1;j<n;j++) {
+    const i1 = Math.abs(prevFull[i]-prevFull[j]) % 12;
+    const i2 = Math.abs(curFull[i]-curFull[j])  % 12;
+    if ((i1===0||i1===7) && i1===i2 && prevFull[i]!==curFull[i])
+      issues.push(`P${i1===0?'8':'5'} v${i+1}↔v${j+1}`);
+  }
+  return issues;
+}
+
+function grade() {
+  const maxDisp    = parseInt(document.getElementById('maxDisp').value)||4;
+  const showSoprano= document.getElementById('showSoprano').checked;
+  const key        = document.getElementById('keySelect').value;
+  const lt         = KEY_LT[key];
+  const n          = Math.min(expectedData.length, studentData.length);
+  const logEl      = document.getElementById('log');
+  const output     = document.getElementById('gradeOutput');
+  if (!n) { output.innerHTML='<p style="color:#aaa">No chords.</p>'; return; }
+
+  let allCorrect=true, anyIncorrect=false, smoothOK=true, noParallels=true, noDoubledLT=true;
+  const rows=[], logs=[];
+
+  for (let i=0;i<n;i++) {
+    const exp = expectedData[i].midi;
+    const del = studentData[i];
+    const lbl = expectedData[i].label || `#${i+1}`;
+    const { state, log:clog } = gradeChord(exp, del, showSoprano);
+    if (state!=='correct') allCorrect=false;
+    if (state==='incorrect') anyIncorrect=true;
+
+    let vlParts=[], parallels=[];
+    let doubledLT=false;
+
+    if (state==='correct' && i>0 && studentData[i-1].length) {
+      const prev=[...studentData[i-1]].sort((a,b)=>a-b);
+      const cur =[...del].sort((a,b)=>a-b);
+      const { maxDisp:md, totalDisp:td } = bestMap(prev.slice(1), cur.slice(1));
+      vlParts.push(`max ${md}st, total ${td}st`);
+      if (md > maxDisp) { smoothOK=false; vlParts.push(`⚠ > ${maxDisp}`); }
+      logs.push(`VL ${i-1}→${i}: max=${md} total=${td}`);
+
+      parallels = checkParallels(prev, cur);
+      if (parallels.length) { noParallels=false; vlParts.push(...parallels.map(p=>`⚠ ${p}`)); }
+
+      if (lt !== undefined) {
+        const ltCount = cur.filter(m=>m%12===lt).length;
+        if (ltCount>1) { noDoubledLT=false; doubledLT=true; vlParts.push('⚠ doubled LT'); }
+      }
+    }
+
+    const badge = state==='correct' ? `<span class="correct">✓ correct</span>`
+                : state==='partial'  ? `<span class="partial">◑ partial</span>`
+                :                      `<span class="incorrect">✗ incorrect</span>`;
+
+    const vlHtml = vlParts.length
+      ? vlParts.map(p=>`<span class="${p.startsWith('⚠')?'flag':'ok'}">${p}</span>`).join(' ')
+      : i===0 ? '—' : '<span class="ok">smooth</span>';
+
+    rows.push(`<tr>
+      <td><strong>${lbl}</strong></td>
+      <td>${badge}</td>
+      <td style="font-size:0.75rem;color:#555">${clog.join('<br>')}</td>
+      <td style="font-size:0.75rem">${vlHtml}</td>
+    </tr>`);
+  }
+
+  let tier, tierClass, pct;
+  if (!allCorrect || anyIncorrect) {
+    const any = studentData.some(ch=>ch.length>0);
+    tier=any?'Developing':'Attempting'; tierClass=any?'grade-developing':'grade-attempting'; pct=any?'60–79%':'<60%';
+  } else if (!smoothOK || !noParallels) {
+    tier='Developing'; tierClass='grade-developing'; pct='70–79%';
+  } else if (!noDoubledLT) {
+    tier='Proficient'; tierClass='grade-proficient'; pct='80–89%';
+  } else {
+    tier='Excellent'; tierClass='grade-excellent'; pct='90–100%';
+  }
+
+  const legend=`<div style="font-size:0.74rem;color:#666;margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap">
+    <span><span class="grade-badge grade-attempting">Attempting</span> wrong chords</span>
+    <span><span class="grade-badge grade-developing">Developing</span> correct, rough VL/parallels</span>
+    <span><span class="grade-badge grade-proficient">Proficient</span> smooth, no parallels, doubled LT</span>
+    <span><span class="grade-badge grade-excellent">Excellent</span> all VL rules satisfied</span>
+  </div>`;
+
+  const flags=`<span style="font-size:0.74rem;color:#888;margin-left:10px">
+    ${allCorrect?'✓ chords':'✗ chords'} |
+    ${smoothOK?'✓ smooth':'✗ smooth'} |
+    ${noParallels?'✓ parallels':'✗ parallels'} |
+    ${noDoubledLT?'✓ LT':'✗ LT'}
+  </span>`;
+
+  output.innerHTML=`${legend}
+    <div style="margin-bottom:12px">
+      <span class="grade-badge ${tierClass}" style="font-size:1rem;padding:6px 18px">${tier}</span>
+      <span style="font-size:0.85rem;color:#666;margin-left:8px">${pct}</span>
+      ${flags}
+    </div>
+    <table>
+      <thead><tr><th>Chord</th><th>Chord</th><th>Detail</th><th>Voice leading</th></tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>`;
+
+  logEl.textContent = logs.join('\n') || '(need ≥2 correct chords for VL log)';
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+loadPreset('gMajor4', document.querySelector('.ex-btn.active'));
+</script>
+</body>
+</html>

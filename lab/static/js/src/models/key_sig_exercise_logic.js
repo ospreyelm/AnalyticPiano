@@ -17,8 +17,9 @@
 
   function checkKeyAnswer(raw, problem) {
     var norm = normalizeKeyAnswer(raw);
+    var normLower = norm.toLowerCase();
     return (problem.accepted_answers || []).some(function (a) {
-      return a === norm;
+      return a === norm || a.toLowerCase() === normLower;
     });
   }
 

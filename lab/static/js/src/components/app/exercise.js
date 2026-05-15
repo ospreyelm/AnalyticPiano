@@ -283,47 +283,62 @@ define([
 
         if (definition.isKeySignatureExercise && definition.isKeySignatureExercise()) {
           var self = this;
+          var toolbar = document.getElementById("staff-toolbar");
+          if (toolbar) toolbar.style.display = "none";
           var wrapper = document.getElementById("staffwrapper");
           if (wrapper) {
+            wrapper.style.display = "flex";
+            wrapper.style.flexDirection = "column";
+            wrapper.style.alignItems = "center";
+            wrapper.style.paddingTop = "32px";
             wrapper.innerHTML =
               '<div class="key-sig-staff-container"></div>' +
-              '<div style="margin-top:12px">' +
-              '<input class="key-sig-input" type="text" placeholder="e.g. D or Bb" ' +
-              'style="font-size:1.2em;padding:6px 10px;border:2px solid #ccc;border-radius:6px;width:160px" />' +
-              '<button class="key-sig-submit simple-button" style="margin-left:8px">Check</button>' +
-              '<span class="key-sig-feedback" style="margin-left:10px;font-size:1em"></span>' +
-              '</div>';
+              '<div class="key-sig-choices" style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;"></div>' +
+              '<span class="key-sig-feedback" style="display:block;margin-top:10px;font-size:1em;min-height:1.4em;text-align:center"></span>';
           }
           require(["app/models/key_sig_exercise"], function (KeySigMod) {
+            var exc = self.models.exerciseContext;
+            var feedbackEl = document.querySelector(".key-sig-feedback");
+            var choicesEl = document.querySelector(".key-sig-choices");
+
             var keySigEx = new KeySigMod.KeySigExercise(definition, {
               staffContainer: document.querySelector(".key-sig-staff-container"),
-              inputEl: document.querySelector(".key-sig-input"),
-              onComplete: function (grade) {
-                self.models.exerciseContext.trigger("complete", grade);
+              choicesEl: choicesEl,
+              onComplete: function (gradeData) {
+                if (exc.sealed) return;
+                // Patch the grader so submitExerciseReport reports the real score.
+                if (gradeData && exc.grader) {
+                  var n = gradeData.numerator != null ? gradeData.numerator : gradeData.denominator;
+                  var d = gradeData.denominator || 0;
+                  exc.grader.getScore = function () {
+                    return { numerator: n, denominator: d };
+                  };
+                }
+                exc.makeTimestamp();
+                exc.done = true;
+                if (!exc.timer) { exc.triggerTimer(); }
+                exc.endTimer();
+                exc.submitExerciseReport();
+                exc.state = exc.constructor.STATE.CORRECT;
+                exc.sealed = true;
+                if (exc.exercise && typeof exc.exercise.trigger === "function") {
+                  exc.exercise.trigger("change");
+                }
+                exc.trigger("graded");
+                exc.triggerNextExercise();
+                $(".playlist-nav-links").css("display", "inline-flex");
               },
-              onAdvance: function (info) {
-                self.models.exerciseContext.trigger("advance", info);
+              onAdvance: function () {
+                if (feedbackEl) feedbackEl.textContent = "";
+              },
+              onWrong: function (msg) {
+                if (feedbackEl) {
+                  feedbackEl.textContent = msg || "Try again.";
+                  feedbackEl.style.color = "#c00";
+                }
               },
             });
             keySigEx.start();
-
-            var submitBtn = document.querySelector(".key-sig-submit");
-            var inputEl = document.querySelector(".key-sig-input");
-            var feedbackEl = document.querySelector(".key-sig-feedback");
-            function doSubmit() {
-              var result = keySigEx.submit(inputEl.value);
-              if (result && !result.correct) {
-                feedbackEl.textContent = result.message || "Try again.";
-                feedbackEl.style.color = "#c00";
-                inputEl.select();
-              } else if (result && result.correct) {
-                feedbackEl.textContent = "";
-              }
-            }
-            if (submitBtn) submitBtn.addEventListener("click", doSubmit);
-            if (inputEl) inputEl.addEventListener("keydown", function (e) {
-              if (e.key === "Enter") doSubmit();
-            });
           });
           return;
         }

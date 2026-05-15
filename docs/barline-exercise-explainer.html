@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Barline Exercise — How It Works</title>
+<style>
+  body { font-family: monospace; font-size: 14px; max-width: 900px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+  h1 { font-size: 18px; }
+  h2 { font-size: 15px; margin-top: 2em; border-bottom: 1px solid #ccc; }
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+  td, th { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background: #f0f0f0; }
+  .note { display: inline-block; padding: 2px 6px; margin: 1px; border-radius: 3px; }
+  .barline-here { background: #d4edda; border: 2px solid #28a745; font-weight: bold; }
+  .normal { background: #e9ecef; }
+  .bad { background: #f8d7da; border: 1px solid #dc3545; }
+  .pipe { color: #28a745; font-weight: bold; font-size: 18px; margin: 0 4px; }
+  .formula { background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin: 1em 0; }
+  pre { background: #f8f9fa; padding: 12px; overflow-x: auto; }
+  .example { background: #f8f9fa; padding: 12px; margin: 1em 0; }
+</style>
+</head>
+<body>
+
+<h1>Barline Exercise — How It's Built</h1>
+
+<p>Each exercise comes from a folk tune (ABC notation corpus). The pipeline extracts a phrase, computes where barlines go, and stores everything as note indices.</p>
+
+<h2>Step 1: Phrase from corpus</h2>
+<p>Example: 6/8, 2 measures, from ballad20.abc</p>
+<div class="example">
+  <strong>Notes (by index):</strong><br>
+  <span class="note normal">0: 8</span>
+  <span class="note barline-here">1: q</span>
+  <span class="note normal">2: 8</span>
+  <span class="note barline-here">3: q</span>
+  <span class="note normal">4: 8</span>
+  <span class="note barline-here">5: q ← barline here</span>
+  <span class="note normal">6: 8</span>
+  <span class="note normal">7: q</span>
+  <span style="color:#28a745; font-weight:bold; font-size:16px;"> |</span>
+  <br><br>
+  <strong>In musical notation:</strong>
+  <code>8 q 8 q 8 q | 8 q</code>
+  <br>
+  <strong>Cumulative quarter-beats after each note:</strong><br>
+  <code>0.5, 1.5, 2.0, 3.0, 3.5, 4.5 ← hits 3.0? NO. hits... </code>
+</div>
+
+<h2>Step 2: Measure boundary detection</h2>
+
+<div class="formula">
+<strong>Formula:</strong><br>
+bar_quarters = beats_per_measure × beat_quarters<br>
+<br>
+For 6/8: beats_per_measure=2, beat_quarters=3/2 → bar_quarters = 3.0 quarter notes<br>
+For 4/4: beats_per_measure=4, beat_quarters=1   → bar_quarters = 4.0 quarter notes<br>
+For 9/8: beats_per_measure=3, beat_quarters=3/2 → bar_quarters = 4.5 quarter notes<br>
+For 3/4: beats_per_measure=3, beat_quarters=1   → bar_quarters = 3.0 quarter notes<br>
+</div>
+
+<p>After each note, check: <code>elapsed_quarters / bar_quarters == integer</code><br>
+If yes → barline goes AFTER this note index. Store that index in <code>correct_barline_positions</code>.</p>
+
+<h2>Step 3: The three examples from the screen</h2>
+
+<table>
+  <tr><th>Exercise</th><th>Time sig</th><th>Measures</th><th>Notes (rhythm)</th><th>correct_barline_positions</th><th>Valid?</th></tr>
+  <tr>
+    <td>EB45TT</td><td>6/8</td><td>2</td>
+    <td><code>8 q 8 q 8 q 8 q</code></td>
+    <td>[3] — after 4th note, elapsed=3.0q ✓</td>
+    <td>✅ 1 barline = measures-1</td>
+  </tr>
+  <tr>
+    <td>EB22UC</td><td>6/8</td><td>4</td>
+    <td><code>8 q × 8</code></td>
+    <td>[3, 7, 11] — every 4th note ✓</td>
+    <td>✅ 3 barlines = measures-1</td>
+  </tr>
+  <tr class="bad">
+    <td>EB22YO (old, filtered)</td><td>6/8</td><td>4</td>
+    <td><code>q q 8 q 8 q 8 q 8 q 8 8 8 8 8 q.</code></td>
+    <td>[11] — only 1 of 3 barlines note-aligned</td>
+    <td>❌ FILTERED OUT — syncopation crosses barlines</td>
+  </tr>
+</table>
+
+<h2>Step 4: Grading (note-index comparison)</h2>
+
+<div class="formula">
+<strong>No beat conversion needed — pure note index comparison:</strong><br><br>
+Student places cursor at note index 3 → placedAt = [3]<br>
+correct_barline_positions = [3]<br>
+→ CORRECT ✓<br><br>
+Student places cursor at note index 2 → placedAt = [2]<br>
+correct_barline_positions = [3]<br>
+→ missing: [3], extra: [2] → INCORRECT
+</div>
+
+<h2>Step 5: Beaming</h2>
+<p>VexFlow <code>generateBeams</code> takes explicit beat groups so beaming matches the meter:</p>
+<table>
+  <tr><th>Meter</th><th>Beam groups</th><th>Effect</th></tr>
+  <tr><td>4/4</td><td>4 × [1/4]</td><td>Group eighths within each quarter beat</td></tr>
+  <tr><td>3/4</td><td>3 × [1/4]</td><td>Group eighths within each quarter beat</td></tr>
+  <tr><td>6/8</td><td>2 × [3/8]</td><td>Group 3 eighths per dotted-quarter beat</td></tr>
+  <tr><td>9/8</td><td>3 × [3/8]</td><td>Group 3 eighths per dotted-quarter beat</td></tr>
+  <tr><td>12/8</td><td>4 × [3/8]</td><td>Group 3 eighths per dotted-quarter beat</td></tr>
+</table>
+
+<h2>Known remaining issue</h2>
+<p>Beaming within a single beam group works correctly. But VexFlow sometimes draws beam stems going wrong direction for notes outside the staff. This is a VexFlow rendering quirk, not a data issue.</p>
+
+<h2>Filter logic (in generate command)</h2>
+<pre>
+# Skip phrases where any barline crosses a note (syncopation):
+expected_barlines = phrase.measures - 1
+if len(payload["correct_barline_positions"]) != expected_barlines:
+    continue
+</pre>
+
+<h2>Data flow summary</h2>
+<pre>
+ABC corpus file
+  → music21 parse → notes list (duration, dots, pitch)
+  → corpus_filter.py: slice phrases, filter by level/meter/length
+  → barline_exercise_builder.py:
+      - compute elapsed quarters per note
+      - detect measure boundaries → correct_barline_positions (note indices)
+      - store note_beat_onsets (kept for reference, not used in grading)
+  → save_umto_barline_exercise() → Exercise DB row
+  → ExercisePlaylistOrdered → Playlist
+
+Browser:
+  → barline_player.js renders notes via VexFlow
+  → cursor moves between note gaps (note indices 0..noteCount-2)
+  → on submit: gradeBarlines(placedAt, correct_barline_positions)
+      → direct Set comparison, no conversion
+</pre>
+
+</body>
+</html>

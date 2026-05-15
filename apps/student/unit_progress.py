@@ -82,6 +82,38 @@ def _get_playlists_for_unit(user, unit_tags: list[str], unit_n: str | None = Non
     return matching
 
 
+def get_next_unit_playlist(user, unit_n: str | int, current_playlist: Playlist) -> Playlist | None:
+    """Return the next playlist in the unit after current_playlist (same ordering as the unit page)."""
+    unit_n_str = str(unit_n)
+    unit = TaxonomyReader.get_unit(unit_n_str)
+    if not unit:
+        return None
+    unit_tags = unit.get("tags", [])
+    if not unit_tags:
+        return None
+
+    all_playlists = _get_playlists_for_unit(user, unit_tags, unit_n=unit_n_str)
+
+    explicit_unit_tag = f"unit:{unit_n_str}"
+    tag_to_playlists: dict[str, list[Playlist]] = {tag: [] for tag in unit_tags}
+    for pl in all_playlists:
+        primary = _playlist_primary_tag(pl, unit_tags)
+        if primary is None:
+            if explicit_unit_tag in (pl.skill_tags or []) or explicit_unit_tag in (pl.tags or []):
+                primary = unit_tags[0]
+        if primary:
+            tag_to_playlists[primary].append(pl)
+
+    ordered: list[Playlist] = []
+    for tag in unit_tags:
+        ordered.extend(sorted(tag_to_playlists[tag], key=lambda p: p.name or ""))
+
+    for i, pl in enumerate(ordered):
+        if pl.id == current_playlist.id:
+            return ordered[i + 1] if i + 1 < len(ordered) else None
+    return None
+
+
 def _playlist_primary_tag(playlist: Playlist, unit_tags: list[str]) -> str | None:
     """Return the first unit tag that appears in the playlist's skill_tags list."""
     unit_tag_set = set(unit_tags)

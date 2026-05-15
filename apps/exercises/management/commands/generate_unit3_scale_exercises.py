@@ -35,6 +35,10 @@ SCALE_MEASURE_MAP = [
 
 LEVEL_MAX_ACC = {1: 3, 2: 5, 3: 7}
 
+# Treble right-hand part shifted down an octave for these keys so the top
+# note stays within a 5-octave keyboard.
+TREBLE_OCTAVE_DOWN_KEYS = {"F", "G", "A", "Bb", "B", "Ab", "F#"}
+
 TYPE_MAP = {
     "whole": "w",
     "half": "h",
@@ -79,8 +83,21 @@ def _voice_items_from_measure(m21_measure):
     return items
 
 
-def _measure_to_cir(treble_measure, bass_measure, display_name):
+def _shift_octave(items, delta):
+    """Return a copy of voice items with every note's octave shifted by delta."""
+    result = []
+    for item in items:
+        if item.get("kind") == "note" and "pitch" in item:
+            item = dict(item, pitch=dict(item["pitch"], octave=item["pitch"]["octave"] + delta))
+        result.append(item)
+    return result
+
+
+def _measure_to_cir(treble_measure, bass_measure, display_name, treble_octave_shift=0):
     """Convert a pair of music21 Measures (treble + bass) to a CIR dict."""
+    treble_items = _voice_items_from_measure(treble_measure)
+    if treble_octave_shift:
+        treble_items = _shift_octave(treble_items, treble_octave_shift)
     return {
         "meta": {"key": display_name, "time": "4/4"},
         "measures": [
@@ -89,7 +106,7 @@ def _measure_to_cir(treble_measure, bass_measure, display_name):
                     "treble": {
                         "clef": "treble",
                         "voices": [
-                            {"items": _voice_items_from_measure(treble_measure), "direction": "up"},
+                            {"items": treble_items, "direction": "up"},
                             {"items": [], "direction": "down"},
                         ],
                     },
@@ -151,7 +168,8 @@ class Command(BaseCommand):
                 )
                 continue
 
-            cir = _measure_to_cir(treble_measures[m_idx], bass_measures[m_idx], display_name)
+            treble_shift = -1 if key_id in TREBLE_OCTAVE_DOWN_KEYS else 0
+            cir = _measure_to_cir(treble_measures[m_idx], bass_measures[m_idx], display_name, treble_octave_shift=treble_shift)
             desc = f"Unit 3 Scale — {display_name}"
             skill_tags = ["unit:3", "unit:3_major_scale"]
 
@@ -180,7 +198,7 @@ class Command(BaseCommand):
         # Build level playlists
         for level, max_acc in LEVEL_MAX_ACC.items():
             playlist_name = f"Unit 3 — Major Scales, Level {level}"
-            playlist_tags = ["unit:3", "unit:3_major_scale", f"unit:3_L{level}"]
+            playlist_tags = ["unit:3", "major_scale", "unit:3_major_scale", f"unit:3_L{level}"]
 
             playlist, created = Playlist.objects.get_or_create(
                 name=playlist_name,

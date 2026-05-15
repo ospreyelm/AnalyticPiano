@@ -63,6 +63,17 @@ def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num,
     next_exercise_url = None
     if next_num and unit_n:
         next_exercise_url = f"/s/units/{unit_n}/play/?playlist={playlist.id}&exercise_num={next_num}"
+    elif not next_num and unit_n and user_id:
+        from django.contrib.auth import get_user_model as _get_user_model
+        from apps.student.unit_progress import get_next_unit_playlist
+        _User = _get_user_model()
+        try:
+            _user = _User.objects.get(pk=user_id)
+            next_pl = get_next_unit_playlist(_user, unit_n, playlist)
+            if next_pl:
+                next_exercise_url = f"/s/units/{unit_n}/play/?playlist={next_pl.id}&exercise_num=1"
+        except _User.DoesNotExist:
+            pass
 
     # Build skill_name: for figured bass, show the new figures (e.g. "5/3 and 7 figures")
     playlist_tags = list(getattr(playlist, "skill_tags", None) or [])

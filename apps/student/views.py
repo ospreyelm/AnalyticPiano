@@ -10,7 +10,7 @@ from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from apps.student.unit_progress import get_unit_progress_data
+from apps.student.unit_progress import get_unit_progress_data, get_next_unit_playlist
 from apps.student.unit1_curriculum import get_unit1_lane_groups
 from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.student.access import accessible_playlist_queryset, user_can_access_playlist
@@ -433,9 +433,17 @@ class PlayerView(View):
         if is_challenge:
             base_url += "&mode=challenge"
 
+        # When last exercise in playlist, link to first exercise of next unit playlist.
+        next_playlist_first_url = None
+        if not next_num and not is_challenge:
+            next_pl = get_next_unit_playlist(request.user, unit_num, playlist)
+            if next_pl:
+                next_pl_base = reverse("student:player", kwargs={"unit_num": unit_num}) + f"?playlist={next_pl.id}"
+                next_playlist_first_url = f"{next_pl_base}&exercise_num=1"
+
         exercise_context["courseId"] = course.id if course else None
         exercise_context["nextExercise"] = (
-            f"{base_url}&exercise_num={next_num}" if next_num else None
+            f"{base_url}&exercise_num={next_num}" if next_num else next_playlist_first_url
         )
         exercise_context["nextExerciseNum"] = next_num
         exercise_context["nextExerciseId"] = (

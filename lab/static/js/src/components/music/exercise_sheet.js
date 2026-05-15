@@ -1674,11 +1674,9 @@ define([
             // Analysis wiring for chorale path (Notater bridge inside adapter)
             analyzeConfig: analyzeConfig,
 
-            // Use the score's own key when present; fall back to the app-level
-            // keySignature only when the score has no meta.key.
-            keySignature: (score && score.meta && score.meta.key)
-              ? null
-              : this.keySignature,
+            // Always use the definition's already-converted KeySignature model.
+            // score.meta.key is raw (e.g. "C") and may not be a valid HL key string.
+            keySignature: this.keySignature,
             analysisRenderer: display.analysisRenderer || "notater", // notater|adapter|none
             staffYOffset: staffYOffset,
             isAnalysisMatch: isAnalysisMatchMode,

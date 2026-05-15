@@ -204,6 +204,15 @@ class ExerciseAdmin(ImportExportModelAdmin):
                     call_command("generate_unit2_barline_exercises", **kwargs)
                     messages.success(request, f"Unit 2 corpus barline exercises generated.\n{out.getvalue()}")
 
+                elif command in ("generate_unit3_key_sig_exercises", "generate_unit3_scale_exercises", "generate_unit3_both"):
+                    run_key_sig = command in ("generate_unit3_key_sig_exercises", "generate_unit3_both")
+                    run_scales  = command in ("generate_unit3_scale_exercises",  "generate_unit3_both")
+                    if run_key_sig:
+                        call_command("generate_unit3_key_sig_exercises", author=author, public=is_public, overwrite=True, stdout=out)
+                    if run_scales:
+                        call_command("generate_unit3_scale_exercises", author=author, public=is_public, overwrite=True, stdout=out)
+                    messages.success(request, f"Unit 3 content generated.\n{out.getvalue()}")
+
                 elif command in ("create_unit_playlist", "create_unit_playlist_only"):
                     unit = request.POST.get("unit", "").strip()
                     riemenschneider = request.POST.get("riemenschneider", "").strip()

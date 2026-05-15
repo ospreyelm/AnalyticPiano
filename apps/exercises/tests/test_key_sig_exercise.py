@@ -104,13 +104,13 @@ class GenerateUnit3KeySigCommandTests(TestCase):
             description__startswith="Unit 3 Key Sig",
             authored_by=author,
         )
-        self.assertEqual(exercises.count(), 3)  # levels 1, 2, 3
+        self.assertEqual(exercises.count(), 6)  # 3 levels × major + minor
 
         playlists = Playlist.objects.filter(
             name__startswith="Unit 3 — Key Signatures",
             authored_by=author,
         )
-        self.assertEqual(playlists.count(), 3)
+        self.assertEqual(playlists.count(), 6)
 
 
 class GenerateUnit3ScaleCommandTests(TestCase):
