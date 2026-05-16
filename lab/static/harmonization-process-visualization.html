@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Harmonization Exercise Flow</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #627086;
+      --line: #d8dee9;
+      --panel: #ffffff;
+      --bg: #f5f7fb;
+      --blue: #2563eb;
+      --green: #17803d;
+      --amber: #a16207;
+      --red: #b91c1c;
+      --purple: #7c3aed;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
+    }
+
+    main {
+      width: min(1240px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      margin: 0;
+      max-width: 820px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .tabs {
+      display: inline-flex;
+      gap: 2px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #eef2f8;
+      flex: 0 0 auto;
+    }
+
+    .tabs button {
+      border: 0;
+      border-radius: 6px;
+      padding: 8px 11px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+      background: white;
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(19, 33, 68, 0.12);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(19, 33, 68, 0.05);
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .step {
+      position: relative;
+      min-height: 154px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      background: #fbfcff;
+    }
+
+    .step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      right: -8px;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid #9aa7bb;
+      border-right: 2px solid #9aa7bb;
+      transform: translateY(-50%) rotate(45deg);
+      background: var(--bg);
+      z-index: 2;
+    }
+
+    .step-number {
+      width: 26px;
+      height: 26px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e7efff;
+      color: #174ea6;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .step h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .score-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .slot {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcff;
+    }
+
+    .slot strong {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .staff {
+      height: 58px;
+      border-top: 1px solid #9aa7bb;
+      border-bottom: 1px solid #9aa7bb;
+      background:
+        linear-gradient(#9aa7bb, #9aa7bb) 0 14px / 100% 1px no-repeat,
+        linear-gradient(#9aa7bb, #9aa7bb) 0 28px / 100% 1px no-repeat,
+        linear-gradient(#9aa7bb, #9aa7bb) 0 42px / 100% 1px no-repeat;
+      position: relative;
+    }
+
+    .note {
+      position: absolute;
+      width: 16px;
+      height: 11px;
+      border-radius: 50%;
+      transform: rotate(-18deg);
+      background: #172033;
+      border: 1px solid #172033;
+    }
+
+    .note.hidden {
+      background: transparent;
+      border-color: rgba(23, 32, 51, 0.18);
+    }
+
+    .note.red { background: #dc2626; border-color: #dc2626; }
+    .n1 { left: 18%; bottom: 12px; }
+    .n2 { left: 42%; bottom: 28px; }
+    .n3 { left: 57%; bottom: 35px; }
+    .n4 { left: 72%; bottom: 47px; }
+
+    .label {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .decision {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .rule {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      align-items: start;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+    }
+
+    .rule .badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+      background: #edf2ff;
+      color: #174ea6;
+    }
+
+    .rule h3 {
+      margin: 0 0 3px;
+      font-size: 13px;
+    }
+
+    .rule p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status {
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status.ok { color: var(--green); }
+    .status.warn { color: var(--amber); }
+    .status.bad { color: var(--red); }
+
+    .tier-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .tier {
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      min-height: 112px;
+    }
+
+    .tier h3 {
+      margin: 0 0 4px;
+      font-size: 14px;
+    }
+
+    .tier p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .excellent { border-color: #86efac; background: #f0fdf4; }
+    .proficient { border-color: #93c5fd; background: #eff6ff; }
+    .developing { border-color: #fde68a; background: #fffbeb; }
+    .attempting { border-color: #fecaca; background: #fef2f2; }
+
+    .concerns {
+      display: grid;
+      gap: 8px;
+    }
+
+    .concern {
+      border-left: 4px solid var(--amber);
+      background: #fffaf0;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .concern strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      header, .grid { display: block; }
+      .tabs { margin-top: 16px; }
+      .panel { margin-bottom: 16px; }
+      .flow, .score-strip, .tier-grid { grid-template-columns: 1fr 1fr; }
+      .step:not(:last-child)::after { display: none; }
+    }
+
+    @media (max-width: 620px) {
+      main { width: min(100vw - 20px, 1240px); padding-top: 18px; }
+      .flow, .score-strip, .tier-grid { grid-template-columns: 1fr; }
+      .rule { grid-template-columns: 28px 1fr; }
+      .status { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Harmonization Exercise Flow</h1>
+      <p class="lede">This page turns the design spec into an inspectable process: UMTO source data becomes visible bass/label slots, each slot is graded for chord correctness, then the completed phrase receives a voice-leading tier.</p>
+    </div>
+    <nav class="tabs" aria-label="Scenario">
+      <button class="active" data-scenario="bass">Bass Only</button>
+      <button data-scenario="soprano">Bass + Soprano</button>
+      <button data-scenario="error">Wrong Bass</button>
+    </nav>
+  </header>
+
+  <section class="panel">
+    <h2>End-To-End Data Flow</h2>
+    <div class="flow">
+      <article class="step">
+        <div class="step-number">1</div>
+        <h3>Source UMTO Chorale</h3>
+        <p>Use existing four-voice Bach UMTO data: voices, analysis slices, grading slices, key, meter, and source metadata.</p>
+      </article>
+      <article class="step">
+        <div class="step-number">2</div>
+        <h3>Derive Harmonization Exercise</h3>
+        <p>Clone the UMTO payload, set mode to <strong>harmonization</strong>, choose visible voices, and choose figured bass or Roman labels.</p>
+      </article>
+      <article class="step">
+        <div class="step-number">3</div>
+        <h3>Student Plays Chord Slots</h3>
+        <p>The chord bank advances per grading slice. Bass and optional soprano are locked; inner voices are supplied by the student.</p>
+      </article>
+      <article class="step">
+        <div class="step-number">4</div>
+        <h3>Chord Then Voice Leading</h3>
+        <p>Each slot must be chord-correct first. When all slots are correct, a phrase-level pass assigns Developing, Proficient, or Excellent.</p>
+      </article>
+    </div>
+  </section>
+
+  <div class="grid" style="margin-top:18px">
+    <section class="panel">
+      <h2>Rendered Student View</h2>
+      <p class="small" id="scenarioCopy"></p>
+      <div class="score-strip" id="scoreStrip"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Per-Slot Chord Gate</h2>
+      <div class="decision" id="decisionList"></div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:18px">
+    <h2>Completion Tier</h2>
+    <div class="tier-grid">
+      <article class="tier attempting">
+        <h3>Attempting - 50</h3>
+        <p>At least one chord slot is still wrong. Voice leading is not evaluated yet.</p>
+      </article>
+      <article class="tier developing">
+        <h3>Developing - 70</h3>
+        <p>All chords are correct, but smoothness or parallel perfect intervals fail.</p>
+      </article>
+      <article class="tier proficient">
+        <h3>Proficient - 85</h3>
+        <p>Chords, smoothness, and parallels pass. Doubled leading tone is the only remaining issue.</p>
+      </article>
+      <article class="tier excellent">
+        <h3>Excellent - 95</h3>
+        <p>All chords are correct and the voice-leading checks all pass.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:18px">
+    <h2>Spec Review Concerns To Resolve Before Planning</h2>
+    <div class="concerns">
+      <div class="concern">
+        <strong>Mode routing needs a precise frontend contract.</strong>
+        The spec says <code>isChorale()</code> returns false for harmonization, but current rendering relies on the chorale-like VexFlow branch for UMTO notation. The plan needs an explicit <code>isHarmonization()</code> render path.
+      </div>
+      <div class="concern">
+        <strong>Slot derivation may duplicate existing UMTO windows.</strong>
+        The spec says slots come from analysis slices and match grading slices. The implementation should define which array is authoritative when analysis and grading offsets diverge.
+      </div>
+      <div class="concern">
+        <strong>Figure parsing is now the highest-risk music-theory logic.</strong>
+        Shorthand expansion, altered intervals, local-key defaults, and accidental-only figures need focused tests before UI work.
+      </div>
+      <div class="concern">
+        <strong>Held-note timing is the behavioral core.</strong>
+        The grader needs a settle window and release grace so normal MIDI asynchrony is not misread as a wrong or incomplete sonority.
+      </div>
+      <div class="concern">
+        <strong>Score submission does not currently carry a numeric score field.</strong>
+        Existing reports send numerator and denominator. The plan should specify where tier score, attempt counts, accepted sonorities, and <code>vl_score</code> are attached.
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const scenarios = {
+    bass: {
+      copy: "Bass-only mode: bass noteheads and labels are visible; soprano, alto, and tenor are hidden until played.",
+      visibleSoprano: false,
+      wrongBass: false,
+      decisions: [
+        ["Bass exact", "Lowest delivered MIDI must equal the target bass.", "pass"],
+        ["Register", "All upper notes must sit above the bass.", "pass"],
+        ["Pitch-class set", "Upper voices must contain the expected chord tones; octave choices are allowed.", "pass"],
+        ["Count", "Enough notes are present to complete the four-voice sonority.", "pass"]
+      ]
+    },
+    soprano: {
+      copy: "Bass + soprano mode: outer voices are visible and locked; inner voices are hidden and checked by pitch class.",
+      visibleSoprano: true,
+      wrongBass: false,
+      decisions: [
+        ["Bass exact", "Lowest delivered MIDI must equal the target bass.", "pass"],
+        ["Soprano exact", "Highest delivered MIDI must equal the visible soprano.", "pass"],
+        ["Inner register", "Inner voices must stay between bass and soprano.", "pass"],
+        ["Inner pitch classes", "Alto and tenor must supply the remaining expected pitch classes.", "pass"]
+      ]
+    },
+    error: {
+      copy: "Wrong-bass example: the chord cannot pass even if the upper pitch classes imply the expected harmony.",
+      visibleSoprano: false,
+      wrongBass: true,
+      decisions: [
+        ["Bass exact", "Lowest delivered MIDI is not the target bass.", "fail"],
+        ["Register", "Skipped because the bass gate already failed.", "warn"],
+        ["Pitch-class set", "Skipped until the bass is corrected.", "warn"],
+        ["Voice leading", "Not evaluated until every chord slot is chord-correct.", "warn"]
+      ]
+    }
+  };
+
+  const slots = [
+    { rn: "I", fig: "5/3", bass: "G2", upper: ["B2", "D3", "G3"] },
+    { rn: "V7", fig: "7", bass: "D2", upper: ["F#2", "A2", "C3"] },
+    { rn: "I6", fig: "6", bass: "B1", upper: ["D2", "G2", "B2"] },
+    { rn: "IV", fig: "5/3", bass: "C2", upper: ["E2", "G2", "C3"] }
+  ];
+
+  function renderScenario(name) {
+    const scenario = scenarios[name];
+    document.getElementById("scenarioCopy").textContent = scenario.copy;
+    renderScoreStrip(scenario);
+    renderDecisions(scenario);
+  }
+
+  function renderScoreStrip(scenario) {
+    const container = document.getElementById("scoreStrip");
+    container.innerHTML = slots.map((slot, index) => {
+      const hiddenClass = scenario.visibleSoprano ? "hidden" : "hidden";
+      const bassClass = scenario.wrongBass && index === 0 ? "note red n1" : "note n1";
+      const sopranoClass = scenario.visibleSoprano ? "note n4" : "note hidden n4";
+      return `
+        <article class="slot">
+          <strong><span>Slot ${index + 1}</span><span>${slot.rn}</span></strong>
+          <div class="staff" aria-label="${slot.rn} ${slot.fig}">
+            <span class="${bassClass}" title="Visible bass: ${slot.bass}"></span>
+            <span class="note ${hiddenClass} n2" title="Hidden inner voice"></span>
+            <span class="note ${hiddenClass} n3" title="Hidden inner voice"></span>
+            <span class="${sopranoClass}" title="${scenario.visibleSoprano ? "Visible soprano" : "Hidden soprano"}"></span>
+          </div>
+          <div class="label">Bass ${slot.bass} - ${slot.fig}</div>
+        </article>`;
+    }).join("");
+  }
+
+  function renderDecisions(scenario) {
+    const list = document.getElementById("decisionList");
+    list.innerHTML = scenario.decisions.map((item, index) => {
+      const [title, text, state] = item;
+      const status = state === "pass" ? "PASS" : state === "fail" ? "FAIL" : "WAIT";
+      const statusClass = state === "pass" ? "ok" : state === "fail" ? "bad" : "warn";
+      return `
+        <article class="rule">
+          <div class="badge">${index + 1}</div>
+          <div>
+            <h3>${title}</h3>
+            <p>${text}</p>
+          </div>
+          <div class="status ${statusClass}">${status}</div>
+        </article>`;
+    }).join("");
+  }
+
+  document.querySelectorAll(".tabs button").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".tabs button").forEach((b) => b.classList.remove("active"));
+      button.classList.add("active");
+      renderScenario(button.dataset.scenario);
+    });
+  });
+
+  renderScenario("bass");
+</script>
+</body>
+</html>

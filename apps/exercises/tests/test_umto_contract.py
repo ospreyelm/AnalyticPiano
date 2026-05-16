@@ -32,6 +32,36 @@ def test_umto_fixture_validation_and_roundtrip(fixture_path):
         assert len(roundtripped_data["grading"]) == len(original_data["grading"])
 
 
+def test_interaction_mode_has_harmonization():
+    from apps.exercises.umto import InteractionMode
+
+    assert InteractionMode.HARMONIZATION.value == "harmonization"
+
+
+def test_metadata_has_harmonization_defaults():
+    from apps.exercises.umto import Metadata, InteractionMode
+
+    meta = Metadata(
+        exercise_id="TEMP",
+        source="Test",
+        key="C",
+        meter="4/4",
+        clef="keyboard",
+        complexity_score=9,
+        mode=InteractionMode.HARMONIZATION,
+    )
+
+    assert meta.locked_voices == ["B"]
+    assert meta.voice_count_policy.min == 3
+    assert meta.voice_count_policy.max == 4
+    assert meta.voice_count_policy.expected is None
+    assert meta.harmonization_target_policy.source == "figured_bass"
+    assert meta.harmonization_target_policy.midi_uses_pitch_class is True
+    assert meta.chord_settle_ms == 150
+    assert meta.release_grace_ms == 120
+    assert meta.max_voice_displacement == 4
+
+
 def test_factory_idempotence_unit1_treble():
     """
     Contract test: Factory must transform CIR input into EXACT golden fixture shape.

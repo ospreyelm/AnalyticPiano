@@ -1,246 +1,601 @@
-# Harmonization Exercise — Design Spec
+# Harmonization Exercise - Design Spec
 
 **Date:** 2026-05-15  
-**Status:** Approved  
+**Status:** Revised after pedagogical review
 
 ---
 
 ## Overview
 
-A new exercise mode (`HARMONIZATION`) in which the student is given a bass line with figured bass (or Roman numeral) labels and must realize the upper voices at the keyboard. The exercise is derived from existing Bach chorale UMTO data — no new score data is required. Grading is tiered: chord correctness first, then voice leading quality.
+Harmonization exercises train students to realize a bass with figures. The
+canonical grading representation is always:
 
-This is the inverse of `analysis_match` (which shows notes and asks for the label). Here, the label is shown and the student plays the notes.
+```text
+bass + figures -> required intervals above bass -> required pitch classes
+```
+
+Roman numerals, Bach chorale analysis, generated drills, and future repertoire
+sources are input formats. They must be normalized to bass+figures before
+grading. The fundamental question is not "did the student reproduce Bach's
+four-voice realization?" It is "did the student correctly decode the bass and
+figures into the required sonority?"
+
+The exercise is training-oriented. Students receive immediate feedback and only
+advance from a slice after producing a valid sonority for that bass+figure
+target. Attempts and errors are still recorded for grading and analytics, but
+the interaction should help students find the sound in real time.
+
+Figured bass should be treated as shorthand notation, not as a special-purpose
+grading trick. Once a bass and figures are expanded into ordinary musical
+intervals and notes, the rest of the system is just checking whether the
+student produced the notation implied by that shorthand.
+
+---
+
+## Pedagogical Principles
+
+1. **Bass+figures are canonical.** Every harmonization target reduces to a bass
+   and one or more intervals above that bass.
+2. **Roman numerals are not a grading layer.** They are normalized into
+   bass+figures using key and inversion information.
+3. **Source repertoire is not the answer key.** Bach chorales, Josquin motets,
+   Bartok excerpts, and generated drills can all supply targets, but chord
+   correctness is derived from the normalized bass+figure target.
+4. **Pitch correctness comes before style.** Wrong pitch classes are wrong.
+   Voice leading, spacing, doublings, and stylistic constraints are later
+   quality layers.
+5. **Held notes matter.** At each slice, the grader evaluates the complete
+   active sonority, including held notes, not only newly attacked notes.
+6. **Feedback is immediate.** A slice advances only when the active sonority is
+   valid for the current target.
+7. **Reuse existing theory machinery.** The app already contains much of the
+   required theory logic in legacy figured-bass grading, generic interval
+   analysis, UMTO analysis layers, music21 builders/analyzers, and hand-authored
+   Bach chorale Roman analyses. Implementation should draw from these sources
+   before adding new theory code.
+
+---
+
+## Initial Exercise Modes
+
+### Basic Figured Bass
+
+The student sees a bass line and figures. They play the bass plus upper notes.
+The exercise may specify a flexible or strict voice count.
+
+Example:
+
+```text
+Bass: C
+Figure: 6
+Expanded figure: 6/3
+Required upper pitch classes in C major: E and A
+```
+
+Any realization with C in the bass and E/A above it is harmonically correct,
+subject to the exercise's voice-count policy.
+
+### Two-Part Interval Above Bass
+
+The student sees a bass and one figure. They play exactly two voices: bass plus
+the indicated interval above the bass.
+
+Example:
+
+```text
+Bass: C
+Figure: 6
+Expected active sonority: C + A
+Voice count policy: min=2, max=2
+```
+
+More advanced two-part "choose the best note" exercises are out of scope for
+the first implementation.
+
+### Soprano-Bass Chorale Realization
+
+The student sees bass, soprano, and figures. They must play or hold the locked
+outer voices exactly and supply valid inner voices.
+
+This is the advanced traditional exercise: given soprano + bass + figures,
+realize the middle of the texture. The harmonic target still comes from
+bass+figures. The visible soprano is an additional locked-voice constraint, not
+the source of the chord answer.
 
 ---
 
 ## Scope
 
 - New `InteractionMode.HARMONIZATION` in Python UMTO model
-- New metadata fields: `visible_voices`, `max_voice_displacement`
-- New JS problem builder: `buildUMTOHarmonizationProblems()`
-- New JS grader method: `harmonizationMatch()`
-- New JS voice leading post-pass: `scoreVoiceLeading()`
-- New JS completion overlay: tier badge shown on exercise complete
-- New Python management command option: generate harmonization exercises from existing UMTO chorales
-- No new DB migrations (no new model fields beyond what UMTO metadata already carries as JSON)
+- New harmonization metadata:
+  - `harmonization_target_policy`
+  - `locked_voices`
+  - `voice_count_policy`
+  - `chord_settle_ms`
+  - `release_grace_ms`
+  - `max_voice_displacement`
+- New normalized JS target builder:
+  - `buildUMTOHarmonizationProblems()`
+  - `normalizeHarmonizationTarget()`
+  - `deriveFiguresFromRoman()`
+  - `deriveRequiredPcsFromBassFigures()`
+- New JS active-sonority grader:
+  - `harmonizationMatch()`
+  - held-note state and debounced evaluation
+- New JS voice-leading post-pass:
+  - `scoreVoiceLeading()`
+- New completion overlay:
+  - tier badge and feedback after final accepted slice
+- New Python management command:
+  - generate harmonization exercises from existing UMTO sources
+- No Django model migration: new fields live in UMTO JSON metadata and submitted
+  performance JSON
 
 ---
 
 ## Data Model
 
-### `InteractionMode` (Python, `apps/exercises/umto.py`)
+### `InteractionMode` (`apps/exercises/umto.py`)
 
 ```python
 class InteractionMode(str, Enum):
-    IDENTIFICATION     = "identification"
-    PLAYBACK           = "playback"
-    ANALYSIS_MATCH     = "analysis_match"
+    IDENTIFICATION = "identification"
+    PLAYBACK = "playback"
+    ANALYSIS_MATCH = "analysis_match"
     SYMBOLIC_IDENTIFICATION = "symbolic_identification"
-    HARMONIZATION      = "harmonization"        # NEW
+    HARMONIZATION = "harmonization"
 ```
 
-### `Metadata` additions (Python, `apps/exercises/umto.py`)
+### Metadata Additions
 
 ```python
+class VoiceCountPolicy(BaseModel):
+    expected: Optional[int] = None
+    min: int = 3
+    max: Optional[int] = 4
+
+class HarmonizationTargetPolicy(BaseModel):
+    source: Literal["figured_bass", "roman", "analysis_slice"] = "figured_bass"
+    written_spelling_required: bool = False
+    midi_uses_pitch_class: bool = True
+
 class Metadata(BaseModel):
-    # ... existing fields ...
-    visible_voices: List[str] = Field(default_factory=lambda: ["B"])
-    # e.g. ["B"] = bass only shown; ["B","S"] = bass + soprano locked
+    # existing fields...
+    locked_voices: List[str] = Field(default_factory=lambda: ["B"])
+    voice_count_policy: VoiceCountPolicy = Field(default_factory=VoiceCountPolicy)
+    harmonization_target_policy: HarmonizationTargetPolicy = Field(
+        default_factory=HarmonizationTargetPolicy
+    )
+    chord_settle_ms: int = 150
+    release_grace_ms: int = 120
     max_voice_displacement: int = 4
-    # semitones per voice, Tymoczko threshold; calibrated per exercise/unit
 ```
 
-`visible_voices` controls what is shown as notation and locked in grading:
-- `"B"` always present — bass notehead visible, bass MIDI must match exactly
-- `"S"` optional — soprano notehead visible, soprano MIDI must match exactly (pitch class)
+`locked_voices` means the voice is visible and must be included correctly:
 
-### `GradingSlice` — unchanged
+- `"B"` is normally locked and must be played.
+- `"S"` may be locked for soprano-bass chorale realization.
 
-`target_midi_pitches` already holds the full 4-voice stack. The harmonization grader derives:
+For MIDI exercises:
 
-| Voice | Rule |
-|-------|------|
-| Bass | Exact MIDI match: `delivered_bass == min(target_midi_pitches)` |
-| Soprano (if visible) | Exact MIDI match: `delivered_soprano == max(target_midi_pitches)` |
-| Inner voices | PC match: `delivered_midi % 12 in {m % 12 for m in target if m != bass [and m != sop]}`, and `bass_midi < delivered_midi [< soprano_midi if shown]` |
-| Count | `len(delivered) >= len(target)` for CORRECT; `len(delivered) < len(target)` → PARTIAL (incomplete chord, not wrong) |
+- Bass is exact MIDI when displayed.
+- Locked soprano is exact MIDI when displayed.
+- Unlocked upper voices are graded by pitch class.
 
-Doubling (two voices on same pitch class, e.g. two Gs) is **not** a chord error — it is flagged only at the voice leading tier.
+For future written-entry exercises:
 
-### `AnalysisSlice` — unchanged
-
-`figured_bass`, `raw_figured_bass`, and `roman_numeral` are already present. Display label chosen at render time by `analysisType` (`"figured_bass"` or `"roman"`).
+- Spelling may matter. `F#` and `Gb` can be distinct if the exercise enables
+  `written_spelling_required`.
 
 ---
 
-## Slot Boundaries
+## Canonical Harmonization Target
 
-Each `GradingSlice` offset = one chord-bank slot. Slots are derived from UMTO analysis slices: every new onset (any voice moves) creates a new slot. This means:
+Every rendered prompt is normalized to a deterministic target:
 
-- A bass holding C while soprano moves G→A = two slots with different soprano notes
-- A V8-7 suspension = two consecutive slots on the same bass/RN
-- Slot count matches `AnalysisSlice` count in the UMTO object
+```javascript
+{
+  offset: 2.0,
+  bassMidi: 41,
+  bassPc: 5,
+  bassSpelling: "F",
+  figures: ["3", "6"],
+  requiredUpperPcs: [9, 2],
+  allowedPcs: [5, 9, 2],
+  lockedVoices: {
+    B: { midi: 41, pc: 5, spelling: "F" },
+    S: { midi: 62, pc: 2, spelling: "D" }
+  },
+  voiceCountPolicy: { expected: 4, min: 3, max: 4 },
+  source: {
+    kind: "roman",
+    label: "ii6",
+    key: "C"
+  }
+}
+```
 
-The student must play each slot explicitly (no auto-advance on repeated notes).
+The grader consumes this normalized target. It does not directly grade Roman
+numerals, source labels, or Bach's exact realization.
 
 ---
 
-## Chord-Bank Flow
+## Figures And Interval Expansion
 
-Harmonization uses the **chord-bank** flow (same as `analytical` / `figured_bass` types), not the chorale window flow. The student plays all notes of a chord simultaneously; the grader fires on each chord change; the chord bank advances automatically on CORRECT.
+Figures are generic intervals above the bass.
 
-`isChorale()` returns `false` for `HARMONIZATION`. A new `isHarmonization()` method gates the harmonization grader path.
+Common shorthands are encoded, but the general mechanism is the same for all
+interval stacks:
+
+| Input | Expanded |
+|-------|----------|
+| blank | `5/3` |
+| `6` | `6/3` |
+| `6/4` | `6/4` |
+| `7` | `7/5/3` |
+| `6/5` | `6/5/3` |
+| `4/3` | `6/4/3` |
+| `4/2` or `2` | `6/4/2` |
+| `9/7/5/3` | `9/7/5/3` |
+| `8/5/3` | `8/5/3` |
+
+Any arbitrary stack is valid as long as each token can be interpreted as a
+generic interval with optional accidental.
+
+Accidental rules:
+
+- The key/local key supplies the default diatonic spelling.
+- A sharp, flat, or natural next to a number alters that numbered interval.
+- A sharp, flat, or natural with no number means altered third.
+
+Examples:
+
+```text
+#6  -> raised sixth above the bass
+b5  -> lowered fifth above the bass
+#   -> raised third above the bass
+n   -> natural third above the bass
+```
+
+---
+
+## Roman Numeral Normalization
+
+Roman numerals are optional prompt syntax. They normalize to bass+figures before
+grading.
+
+Example in C major:
+
+```text
+Prompt: ii6
+Roman layer: D minor triad in first inversion
+Normalized bass: F
+Normalized figure: 6/3
+Required upper pitch classes: A and D
+```
+
+After normalization, the grader does not care that the source label was `ii6`.
+It grades `F + 6/3`.
+
+---
+
+## Slot Boundaries And Active Sonorities
+
+Each harmonization slice has:
+
+- an offset
+- a normalized bass+figure target
+- optional locked voices
+- a voice-count policy
+
+Slots are derived from UMTO analysis/grading offsets or authored drill offsets.
+Every change of harmonic target creates a new slot, including cases where only
+one voice moves.
+
+The grader evaluates the complete active sonority at the current slot:
+
+```text
+Slot 1 active sonority: G B D G
+Student holds B D G and moves bass G -> F
+Slot 2 active sonority: F B D G
+```
+
+Slot 2 is graded as `F B D G`, even though only the bass was newly attacked.
+
+This is the main advantage over the legacy figured-bass model: voices may move
+independently and have different durations.
+
+---
+
+## MIDI Timing Model
+
+MIDI chord entry is naturally asynchronous. Notes that are intended as one
+sonority may arrive tens of milliseconds apart.
+
+The harmonization grader maintains held-note state and uses debounced
+evaluation:
+
+```javascript
+timing = {
+  chordSettleMs: 150,
+  releaseGraceMs: 120
+}
+```
+
+Rules:
+
+1. Any note-on or note-off updates the held-note state.
+2. A note event schedules grading after `chordSettleMs`.
+3. Additional note activity resets the timer.
+4. Tiny release/re-attack gaps are tolerated by `releaseGraceMs`.
+5. When the timer expires, the current active sonority is graded.
+
+During the settle window, incomplete sonorities are not counted as wrong. After
+the settle window:
+
+- missing required tones keep the student on the slice
+- illegal pitch classes are wrong and increment attempt/error data
+- valid sonorities advance the slice
+
+---
+
+## Advancement Model
+
+Harmonization advances only after a valid sonority for the current slice.
+
+Loop:
+
+1. Current slice exposes bass+figure target.
+2. Student plays or holds notes.
+3. The held-note state settles.
+4. `harmonizationMatch()` grades the active sonority.
+5. If invalid, the UI shows immediate feedback and stays on the slice.
+6. If valid, accepted notes turn black, the sonority is recorded, and the
+   exercise advances to the next slice.
+7. At completion, voice-leading/style scoring runs over accepted sonorities.
+
+This preserves the legacy figured-bass training behavior while supporting
+polyphonic motion.
+
+---
+
+## Chord-Level Grading
+
+### Inputs
+
+```javascript
+harmonizationMatch(target, activeMidi, options)
+```
+
+`target` is the normalized harmonization target. `activeMidi` is the currently
+held sonority after the settle window.
+
+### Gates
+
+#### 1. Locked Voice Gate
+
+- Bass must be present and exact MIDI when locked.
+- Soprano must be present and exact MIDI when locked.
+- Future written-entry modes may require exact spelling.
+
+#### 2. Harmonic Pitch-Class Gate
+
+- Required upper pitch classes derived from the figures must be present.
+- Bass pitch class must be present.
+- No unlicensed pitch classes may be sounding.
+- Doublings of licensed pitch classes are allowed.
+
+#### 3. Voice Count Gate
+
+Voice count is independent of harmonic pitch correctness.
+
+Examples:
+
+| Context | Policy |
+|---------|--------|
+| Four-part chorale, flexible | `{ expected: 4, min: 3, max: 4 }` |
+| Strict four-part writing | `{ expected: 4, min: 4, max: 4 }` |
+| Two-part interval drill | `{ expected: 2, min: 2, max: 2 }` |
+| Open keyboard realization | `{ expected: null, min: 2, max: null }` |
+
+Voice count counts distinct sounding MIDI notes, not pitch classes. Doublings
+therefore count as additional voices.
+
+### Result States
+
+```javascript
+{
+  state: "correct" | "partial" | "incorrect",
+  reasons: [
+    "missing_required_pc",
+    "illegal_pc",
+    "wrong_bass",
+    "wrong_locked_soprano",
+    "too_few_voices",
+    "too_many_voices"
+  ],
+  accepted: false,
+  activeMidi: [41, 45, 50, 62],
+  target: HarmonizationTarget
+}
+```
+
+In practice mode:
+
+- `partial` means the sonority is not complete enough to advance.
+- `incorrect` means an illegal or locked-voice error occurred.
+- Only `correct` advances.
+
+On submit/analytics:
+
+- repeated partial attempts and incorrect attempts are both recorded
+- the final accepted sonority is stored for the voice-leading pass
 
 ---
 
 ## Rendering
 
-### Score display
+### Score Display
 
-Bass clef staff always rendered. If `visible_voices` includes `"S"`, a treble clef staff is rendered above. Noteheads for visible voices drawn normally (black). All other voices (A, T, and optionally S) rendered **transparent** — student must supply them.
+The bass staff is always shown for standard harmonization. If `"S"` is in
+`locked_voices`, a treble staff is rendered above with soprano noteheads.
 
-Figured bass labels (or RN labels) rendered below the bass staff at each slot, using the existing analysis overlay pipeline. Label type follows `analysisType` field.
+Unlocked voices are hidden or transparent. They may appear as black noteheads
+only after the student supplies an accepted sonority.
 
-### Existing `vexflow_adapter.js` hook
+Figures or Roman-numeral prompts are displayed according to exercise
+configuration, but all prompts are normalized to bass+figures for grading.
 
-The adapter already supports `isAnalysisMatch` to render noteheads transparent. A parallel `isHarmonization` flag will suppress inner-voice noteheads (and soprano if not in `visible_voices`).
+### Feedback
 
-### Played note feedback
-
-Played notes turn black as the student builds the chord (same as existing chord-bank feedback). Wrong-pitch notes turn red.
+- Correct/accepted notes turn black.
+- Illegal notes can turn red or be shown in an error overlay.
+- Missing required notes should be treated as "not there yet" rather than as a
+  punitive error while the student is still searching.
+- Attempt counts still record how many settled sonorities were needed before
+  success.
 
 ---
 
-## Grading
+## Voice-Leading And Style Layer
 
-### Chord tier (per slot, JS — `exercise_grader.js`)
+Voice-leading scoring runs only after every slice has an accepted sonority.
 
-New method `harmonizationMatch(expected, delivered, options)`:
+It does not determine fundamental chord correctness. It produces feedback and a
+quality tier.
 
-```
-options = {
-  showSoprano: bool,
-  bassMidi: int,        // min(expected)
-  sopMidi: int,         // max(expected), only if showSoprano
-}
-```
-
-Logic:
-1. **Bass check** (exact): `sort(delivered)[0] === bassMidi` → INCORRECT if wrong
-2. **Soprano check** (exact, if shown): `sort(delivered)[-1] === sopMidi` → INCORRECT if wrong
-3. **Register check**: all upper voices `> bassMidi` (and `< sopMidi` if shown) → INCORRECT if violated
-4. **PC completeness**: `{d%12 for d in delivered[1:]} ⊇ {e%12 for e in expected[1:]}` → INCORRECT if missing PCs; INCORRECT if extra PCs
-5. **Count**: `len(delivered) >= len(expected)` → PARTIAL if short (PCs correct but incomplete)
-6. → CORRECT
-
-### Voice leading post-pass (JS — new `voice_leading.js` module)
-
-Runs **once at exercise completion** over the full sequence of played chords. Returns a `VLScore` object.
-
-#### Smoothness: `bestMapping(prevUpper, curUpper)`
-
-Exhaustive permutation bijection (≤4 voices, ≤24 permutations — negligible cost). Pads shorter array by repeating nearest note to handle voice count changes.
-
-Returns:
-- `maxDisp`: maximum semitone displacement of any single voice pair
-- `totalDisp`: sum of all displacements
-
-A voice count change (4→3→4 voices) is handled gracefully — the missing voice is absorbed by the nearest mapping.
-
-#### Parallels: `checkParallels(prevFull, curFull)`
-
-For each pair of voices (6 pairs in 4-voice texture), checks consecutive chords:
-- Interval at chord N: `|v_i - v_j| % 12`
-- Interval at chord N+1: same formula
-- **Parallel** if both intervals are P5 (7 semitones) or P8 (0 semitones), AND both voices actually move (not a unison repetition)
-- Only **perfect** intervals flagged (no parallel thirds/sixths)
-
-#### Doubled leading tone: `checkDoubledLT(chord, key)`
-
-Leading tone PC = raised 7th of key. Flag if that PC appears in more than one voice of the chord.
-
-#### `VLScore` object
+### `scoreVoiceLeading()`
 
 ```javascript
-{
-  smoothOK: bool,          // all inter-chord max displacements <= max_voice_displacement
-  noParallels: bool,       // no parallel P5/P8 found
-  noDoubledLT: bool,       // no doubled leading tone
-  details: [               // one entry per consecutive chord pair
-    {
-      slotPair: [i, i+1],
-      maxDisp: 4,
-      totalDisp: 9,
-      parallels: [],        // e.g. ["P5 v1↔v3"]
-      doubledLT: false,
-    }
-  ]
-}
+scoreVoiceLeading(acceptedSonorities, options)
 ```
 
-### Grading tiers
+Inputs:
 
-| Tier | Chord correctness | `smoothOK` | `noParallels` | `noDoubledLT` | Score |
-|------|---|---|---|---|---|
-| Attempting | any chord wrong | — | — | — | < 60% |
-| Developing | all correct | ✗ | any | any | 60–79% |
-| Proficient | all correct | ✓ | ✓ | ✗ | 80–89% |
-| Excellent | all correct | ✓ | ✓ | ✓ | 90–100% |
+- accepted active MIDI sonority per slice
+- locked voice information
+- voice-count policy
+- `max_voice_displacement`
+- key/local key for doubled leading-tone checks
 
-Note: parallel errors → Developing regardless of smoothness. Doubled LT alone (with smooth VL, no parallels) → Proficient not Developing. This matches standard pedagogical weighting.
+Checks:
 
-### Score submission
+- smoothness / maximum voice displacement
+- parallel perfect fifths/octaves
+- doubled leading tone
+- optional future style checks
 
-Tier maps to numeric score: Attempting=50, Developing=70, Proficient=85, Excellent=95. Submitted via existing `submitExerciseReport()`. VL detail stored in `performanceData.vl_score` for analytics.
+Parallel detection must use stable voice mapping, not raw sorted-pitch indexes.
+The implementation can reuse the same best-mapping result used for smoothness,
+while respecting locked bass and soprano identities when present.
 
----
+### Tiers
 
-## Worked Example
+| Tier | Harmonic decoding | Voice-leading/style | Score |
+|------|-------------------|---------------------|-------|
+| Attempting | not all slices accepted | not evaluated | 50 |
+| Developing | all slices accepted | major VL/style issues | 70 |
+| Proficient | all slices accepted | mostly clean, minor issues | 85 |
+| Excellent | all slices accepted | all checks pass | 95 |
 
-**Key:** G major. **Mode:** bass only shown. **`max_voice_displacement`:** 4. **Leading tone:** F# (PC 6).
-
-| Slot | RN | Bass MIDI | Full chord | Expected upper PCs |
-|------|----|-----------|------------|-------------------|
-| 0 | I | G2=43 | 43,47,50,55 | {11=B, 2=D, 7=G} |
-| 1 | V⁷ | D2=38 | 38,42,45,48 | {6=F#, 9=A, 0=C} |
-| 2 | I⁶ | B1=35 | 35,38,43,47 | {2=D, 7=G, 11=B} |
-| 3 | IV | C2=36 | 36,40,43,48 | {4=E, 7=G, 0=C} |
-
-**Student plays chords correctly (exact expected MIDIs).**
-
-VL post-pass, slot 0→1, upper voices `[47,50,55]` → `[42,45,48]`:
-
-Best mapping (exhaustive): 47→48 (+1), 50→45 (−5), 55→42 (−13). Trying all permutations, best total is 47→42 (+5), 50→45 (−5), 55→48 (−7) → total=17, max=7. Max exceeds threshold of 4.
-
-→ `smoothOK = false` → **Developing** (70–79%).
-
-If student instead voices slot 0 as `[43,47,55,59]` (G2,B2,G3,B3), upper=`[47,55,59]`:
-
-Best mapping to `[42,45,48]`: 47→48(+1), 55→45(−10), 59→42(−17) — still rough. V7 in root position after I in root position almost always requires a leap in some voice. This is musically correct behavior — the threshold is pedagogically intentional.
-
-Parallel check slot 1→2 (student plays `[38,42,45,48]` → `[35,38,43,47]`):
-
-Voice pairs: bass(38→35), upper1(42→43 +1), upper2(45→43 −2), upper3(48→47 −1). No pair moves in parallel P5 or P8. ✓
-
-Doubled LT slot 1 (V⁷): upper PCs `{6,9,0}`. F# (PC 6) appears once. ✓
+The exact tier thresholds can evolve, but harmonic decoding remains the gate.
 
 ---
 
-## Files Changed
+## Source Material
 
-| File | Change |
-|------|--------|
-| `apps/exercises/umto.py` | Add `HARMONIZATION` to `InteractionMode`; add `visible_voices`, `max_voice_displacement` to `Metadata` |
-| `apps/exercises/umto_factory.py` | Add `harmonization` kwarg support to `save_umto_exercise()` |
-| `apps/exercises/management/commands/generate_harmonization.py` | New command: derive harmonization exercise from existing UMTO chorale exercise ID |
-| `lab/static/js/src/models/exercise_definition.js` | Add `buildUMTOHarmonizationProblems()`; add `isHarmonization()` method; wire into `parse()` switch |
-| `lab/static/js/src/models/exercise_grader.js` | Add `harmonizationMatch()` method; route `umto_chorale + harmonization` to it |
-| `lab/static/js/src/models/voice_leading.js` | New module: `bestMapping()`, `checkParallels()`, `checkDoubledLT()`, `scoreVoiceLeading()` |
-| `lab/static/js/src/models/exercise_context.js` | On CORRECT for harmonization: run `scoreVoiceLeading()`, compute tier, submit with VL data |
-| `lab/static/js/src/components/music/rendering/vexflow_adapter.js` | Add `isHarmonization` flag: render inner voices (and optionally soprano) transparent |
-| `lab/static/js/src/components/app/exercise.js` | Show tier badge overlay on harmonization completion |
+### Bach UMTO Sources
 
-No Django migrations required. No new URL patterns. No new templates.
+Bach chorale UMTO data can generate harmonization exercises by extracting:
+
+- bass voice
+- optional soprano locked voice
+- analysis slice figures / Roman labels
+- local key
+- offset grid
+- a reference realization
+
+The reference realization is useful for display, analytics, and optional style
+comparison. It is not the primary chord answer key.
+
+### Non-Bach Sources
+
+The same model supports generated drills, Renaissance counterpoint, modern
+repertoire, or hand-authored exercises because all targets reduce to
+bass+figures.
+
+Non-chorale and synthetic material should enter the system through the same
+normalization layer. Likely source paths:
+
+- MusicXML files imported directly by the app
+- music21 corpus sources, including non-Bach corpora that music21 can parse
+- downloaded symbolic corpora that music21 can import or convert
+- hand-authored generated drills stored directly as bass+figure targets
+
+For MusicXML/corpus imports, the importer should first produce UMTO-like voices,
+offsets, key/local-key context, and analysis/figure data. Harmonization target
+generation then proceeds exactly as it does for Bach chorales:
+
+```text
+imported score -> voices + offsets + key/local key + figures -> bass+figure targets
+```
+
+This keeps source ingestion separate from grading. A Bach chorale, a Josquin
+motet, a Bartok excerpt, a MusicXML classroom exercise, and a synthetic drill
+all become the same kind of harmonization exercise once normalized.
+
+---
+
+## Existing Theory Sources To Reuse
+
+The implementation should not start from a blank theory model. HarmonyLab
+already has several layers that can supply or verify parts of the
+bass+figures-to-notes pipeline:
+
+- legacy figured-bass grading already treats figures as intervals above a bass
+- existing generic interval logic can help derive interval names and pitch
+  relationships
+- UMTO analysis slices already carry Roman numerals, figured bass,
+  raw figured bass, local key, offsets, and voice data
+- music21 import and analysis code can parse or derive symbolic score data from
+  multiple corpora and MusicXML sources
+- hand-authored Bach chorale Roman analyses provide a trusted source for Bach
+  examples
+
+These sources should be used as references and fallback layers, but the final
+grading target should still be normalized to bass+figures. The app should
+understand figured bass the way musicians do: as compact notation for ordinary
+intervals above a bass.
+
+---
+
+## Musical Review Artifacts
+
+Automated tests are required, but they are not enough for this feature. Musical
+correctness should also be validated through human-readable artifacts that can
+be reviewed by a musician before the next stage is implemented.
+
+Required review artifacts:
+
+1. **Figure parser table**
+   - input: key, bass, figure
+   - output: expanded intervals, note spellings, pitch classes
+2. **Roman normalization table**
+   - input: key, Roman numeral
+   - output: bass, figure, required notes
+3. **Active-sonority grading table**
+   - input: target, held notes, voice-count policy
+   - output: correct / partial / incorrect with reasons
+4. **Rendered staff artifact**
+   - shows bass, figures, optional locked soprano, hidden voices, and accepted
+     notes on a staff
+5. **End-to-end prototype exercise**
+   - one real exercise in the app, preferably with MIDI, before broad content
+     generation
+
+Each development stage should have both automated tests and a review artifact.
+The implementation plan should include these musician review checkpoints as
+formal gates.
 
 ---
 
@@ -248,68 +603,88 @@ No Django migrations required. No new URL patterns. No new templates.
 
 ```bash
 python manage.py generate_harmonization \
-  --source EA88AI \          # existing UMTO playback exercise to derive from
-  --visible-voices B \       # "B" or "B,S"
-  --analysis figured_bass \  # or "roman"
+  --source EA88AI \
+  --locked-voices B \
+  --prompt figured_bass \
+  --voice-count 4 \
+  --min-voices 3 \
+  --max-voices 4 \
   --max-displacement 4 \
   --author admin@example.com \
   --public
 ```
 
-Internally:
-1. Load source exercise, validate it is UMTO with `voices` and `grading`
-2. Clone UMTO object, set `metadata.mode = HARMONIZATION`
-3. Set `metadata.visible_voices`, `metadata.max_voice_displacement`
-4. Set `metadata.analysisType` from `--analysis`
-5. Save via `save_umto_exercise()`
+Soprano-bass realization:
 
-Idempotent: if an exercise with same source ID + mode + visible_voices exists, skip.
-
----
-
-## Voice Leading Module Interface
-
-`lab/static/js/src/models/voice_leading.js` — standalone, no RequireJS dependencies beyond lodash.
-
-```javascript
-define(['lodash'], function(_) {
-
-  function bestMapping(fromUpper, toUpper) { ... }
-  // Returns { maxDisp, totalDisp, pairs }
-
-  function checkParallels(prevFull, curFull) { ... }
-  // Returns array of strings e.g. ["P5 v1↔v3"]
-
-  function checkDoubledLT(chord, leadingTonePC) { ... }
-  // Returns bool
-
-  function scoreVoiceLeading(chordSequence, options) { ... }
-  // chordSequence: array of sorted MIDI arrays (one per slot, as played)
-  // options: { maxDisplacement, leadingTonePC, showSoprano }
-  // Returns VLScore object
-
-  return { bestMapping, checkParallels, checkDoubledLT, scoreVoiceLeading };
-});
+```bash
+python manage.py generate_harmonization \
+  --source EA88AI \
+  --locked-voices B,S \
+  --prompt figured_bass \
+  --voice-count 4 \
+  --min-voices 4 \
+  --max-voices 4 \
+  --author admin@example.com \
+  --public
 ```
 
-This module is self-contained and testable independently of the exercise system.
+Internally:
+
+1. Load source exercise.
+2. Validate source has UMTO voices and analysis.
+3. Build normalized harmonization targets for each slot.
+4. Store locked voices and voice-count policy in metadata.
+5. Save via `save_umto_exercise()`.
+
+Idempotency key:
+
+```text
+source exercise id + mode + locked voices + prompt type + voice count policy
+```
 
 ---
 
-## Spec Explorer
+## Files Changed
 
-A standalone validation tool was built during brainstorming at:
+| File | Change |
+|------|--------|
+| `apps/exercises/umto.py` | Add `HARMONIZATION`; add harmonization metadata models |
+| `apps/exercises/umto_factory.py` | Add harmonization save support |
+| `apps/exercises/management/commands/generate_harmonization.py` | New command |
+| `lab/static/js/src/models/exercise_definition.js` | Add `isHarmonization()`, target builder, and parse routing |
+| `lab/static/js/src/models/exercise_grader.js` | Add active-sonority `harmonizationMatch()` |
+| `lab/static/js/src/models/harmonization_targets.js` | New normalization module |
+| `lab/static/js/src/models/voice_leading.js` | New quality scoring module |
+| `lab/static/js/src/models/exercise_context.js` | Add settle-window grading and accepted-sonority recording |
+| `lab/static/js/src/components/music/rendering/vexflow_adapter.js` | Hide unlocked voices; show locked voices |
+| `lab/static/js/src/components/app/exercise.js` | Show completion tier and feedback |
 
-`lab/static/harmonization-explorer.html` (served at `http://localhost:8000/static/harmonization-explorer.html`)
+No Django database migration is required.
 
-Implements the full grading logic (chord check + VL tiers) in browser JS. Used to validate the design before implementation. Can be used during development to test edge cases with arbitrary MIDI input.
+---
+
+## Technical Risks To Resolve In Implementation Plan
+
+1. `exercise_definition.js` currently defines `getMode()` twice. The
+   implementation should collapse this into one authoritative method before
+   adding `isHarmonization()`.
+2. The current chorale renderer path depends on `isChoraleLike`. Harmonization
+   needs an explicit render path that uses UMTO notation without invoking
+   chorale playback grading.
+3. Score submission currently sends numerator/denominator data. The plan must
+   specify how tier score, attempt counts, accepted sonorities, and
+   `vl_score` are attached to performance data.
+4. Held-note state, settle windows, and release grace need focused JS tests
+   because they are the behavioral core of the exercise.
+5. Figure parsing must be test-driven. Accidentals, shorthand expansion, and
+   local-key defaults are the highest-risk music-theory logic.
 
 ---
 
 ## What Is Not Changed
 
-- `ChoraleGrader` — not used by `HARMONIZATION` mode
-- Existing `playback`, `identification`, `analysis_match` modes — unchanged
-- `figuredBassMatch` / `figuredBassPcsMatch` — still used by legacy exercise types
-- Python UMTO schema validation (`umto_schema.json`) — regenerated via `make_umto_schema` after `umto.py` changes
-- Django Exercise model — `data` is JSON, no migration needed
+- Legacy figured-bass exercises remain unchanged.
+- Existing chorale playback and chorale identification modes remain unchanged.
+- `ChoraleGrader` is not reused as the harmonization grader, though the new
+  grader may borrow its held-note concepts.
+- UMTO remains the canonical exercise data container.
