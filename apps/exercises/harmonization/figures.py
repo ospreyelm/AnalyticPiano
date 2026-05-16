@@ -10,15 +10,33 @@ from music21 import scale as m21_scale
 
 
 _SHORTHANDS = {
+    # Root-position triads
     "": ["5", "3"],
     "5/3": ["5", "3"],
+    # First-inversion triad
     "6": ["6", "3"],
+    # Second-inversion triad
     "6/4": ["6", "4"],
+    # Root-position seventh
     "7": ["7", "5", "3"],
+    # First-inversion seventh
     "6/5": ["6", "5", "3"],
+    # Second-inversion seventh
     "4/3": ["6", "4", "3"],
+    # Third-inversion seventh (also abbreviated as "2")
     "4/2": ["6", "4", "2"],
     "2": ["6", "4", "2"],
+    # Suspension chords
+    "4": ["8", "5", "4"],      # 4-3 suspension (add 8/5 to the 4)
+    "4+": ["6", "4+", "2"],    # augmented-sixth / aug-2 suspension
+    "5/2": ["5", "2"],         # 5-6 motion over bass
+    # Seventh + sixth (over bass, e.g. 7-6 suspension)
+    "7/6": ["7", "6", "3"],
+    # Ninth chords
+    "9": ["9", "5", "3"],
+    "9/6": ["9", "6", "3"],
+    # Suspension pairs (6-5, 4-3, 9-8) are display labels only —
+    # they appear as two consecutive analysis slices, not a single figure to expand.
 }
 
 
