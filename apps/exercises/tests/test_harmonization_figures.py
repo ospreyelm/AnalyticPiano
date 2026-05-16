@@ -1,0 +1,53 @@
+from apps.exercises.harmonization.figures import (
+    expand_figure_string,
+    derive_required_notes,
+)
+
+
+def test_blank_figure_expands_to_five_three():
+    assert expand_figure_string("") == ["5", "3"]
+
+
+def test_six_expands_to_six_three():
+    assert expand_figure_string("6") == ["6", "3"]
+
+
+def test_seven_expands_to_seven_five_three():
+    assert expand_figure_string("7") == ["7", "5", "3"]
+
+
+def test_arbitrary_stack_passes_through():
+    assert expand_figure_string("9/7/5/3") == ["9", "7", "5", "3"]
+
+
+def test_accidental_without_number_means_third():
+    assert expand_figure_string("#") == ["#3", "5"]
+    assert expand_figure_string("b") == ["b3", "5"]
+    assert expand_figure_string("n") == ["n3", "5"]
+
+
+def test_c_major_c_six_derives_e_and_a():
+    result = derive_required_notes(key_name="C", bass_name="C", figure="6")
+    assert result["expanded_figures"] == ["6", "3"]
+    assert result["required_note_names"] == ["A", "E"]
+    assert result["required_upper_pcs"] == [9, 4]
+    assert result["allowed_pcs"] == [0, 9, 4]
+
+
+def test_c_major_f_six_derives_d_and_a():
+    result = derive_required_notes(key_name="C", bass_name="F", figure="6")
+    assert result["required_note_names"] == ["D", "A"]
+    assert result["required_upper_pcs"] == [2, 9]
+
+
+def test_c_major_f_sharp_alters_third():
+    result = derive_required_notes(key_name="C", bass_name="F", figure="#")
+    assert result["expanded_figures"] == ["#3", "5"]
+    assert result["required_note_names"] == ["A#", "C"]
+    assert result["required_upper_pcs"] == [10, 0]
+
+
+def test_c_major_b_natural_six_uses_key_default():
+    result = derive_required_notes(key_name="C", bass_name="B", figure="6")
+    assert result["required_note_names"] == ["G", "D"]
+    assert result["required_upper_pcs"] == [7, 2]
