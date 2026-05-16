@@ -61,11 +61,24 @@ class FigureToken:
 
 
 def _normalize_key_name(key_name: str) -> str:
+    """Convert HarmonyLab key encoding to music21 Key string.
+
+    Prefix: 'j' = major, 'i' = minor.
+    Accidental: '#' = sharp, '_' = flat (HarmonyLab convention).
+    music21 Key() infers mode from case (uppercase=major, lowercase=minor)
+    and uses '-' for flat. Examples:
+      'jG_' → 'G-'   (G-flat major)
+      'iF#' → 'f#'   (F-sharp minor)
+      'jC'  → 'C'    (C major)
+    """
     text = (key_name or "C").strip()
     if text.startswith(("j", "i")) and len(text) >= 2:
-        mode = "minor" if text.startswith("i") else "major"
-        tonic = text[1:].replace("_", "")
-        return f"{tonic} {mode}"
+        is_minor = text.startswith("i")
+        tonic = text[1:].replace("_", "-")
+        # music21 uses uppercase for major, lowercase for minor
+        tonic = tonic.lower() if is_minor else tonic[0].upper() + tonic[1:]
+        return tonic
+    # Already a plain name — return as-is
     return text
 
 
