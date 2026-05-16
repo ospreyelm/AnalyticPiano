@@ -1602,11 +1602,11 @@ define([
                 if (displayFig && columnCenterX !== null) {
                   var figLines = displayFig.split("/").map(function(s) { return s.trim(); }).filter(Boolean);
                   var yBase = activeStaveForAnnotations.getBottomY ? activeStaveForAnnotations.getBottomY() : 0;
-                  var figStartY = yBase + 14;
-                  var lineH = 13;
+                  var figStartY = yBase + 20;
+                  var lineH = 16;
                   ctx.save();
                   ctx.fillStyle = "#000";
-                  ctx.font = "13px MainSerifs";
+                  ctx.font = "bold 16px MainSerifs";
                   ctx.textAlign = "center";
                   figLines.forEach(function(line, idx) {
                     ctx.fillText(line, columnCenterX, figStartY + idx * lineH);
