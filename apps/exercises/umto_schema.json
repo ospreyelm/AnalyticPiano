@@ -156,12 +156,39 @@
       "title": "GradingSlice",
       "type": "object"
     },
+    "HarmonizationTargetPolicy": {
+      "properties": {
+        "source": {
+          "default": "figured_bass",
+          "enum": [
+            "figured_bass",
+            "roman",
+            "analysis_slice"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "written_spelling_required": {
+          "default": false,
+          "title": "Written Spelling Required",
+          "type": "boolean"
+        },
+        "midi_uses_pitch_class": {
+          "default": true,
+          "title": "Midi Uses Pitch Class",
+          "type": "boolean"
+        }
+      },
+      "title": "HarmonizationTargetPolicy",
+      "type": "object"
+    },
     "InteractionMode": {
       "enum": [
         "identification",
         "playback",
         "analysis_match",
-        "symbolic_identification"
+        "symbolic_identification",
+        "harmonization"
       ],
       "title": "InteractionMode",
       "type": "string"
@@ -225,6 +252,40 @@
           ],
           "default": null,
           "title": "Unit"
+        },
+        "locked_voices": {
+          "items": {
+            "enum": [
+              "S",
+              "A",
+              "T",
+              "B"
+            ],
+            "type": "string"
+          },
+          "title": "Locked Voices",
+          "type": "array"
+        },
+        "voice_count_policy": {
+          "$ref": "#/$defs/VoiceCountPolicy"
+        },
+        "harmonization_target_policy": {
+          "$ref": "#/$defs/HarmonizationTargetPolicy"
+        },
+        "chord_settle_ms": {
+          "default": 150,
+          "title": "Chord Settle Ms",
+          "type": "integer"
+        },
+        "release_grace_ms": {
+          "default": 120,
+          "title": "Release Grace Ms",
+          "type": "integer"
+        },
+        "max_voice_displacement": {
+          "default": 4,
+          "title": "Max Voice Displacement",
+          "type": "integer"
         }
       },
       "required": [
@@ -318,6 +379,44 @@
         }
       },
       "title": "VisualMetadata",
+      "type": "object"
+    },
+    "VoiceCountPolicy": {
+      "properties": {
+        "expected": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected"
+        },
+        "min": {
+          "default": 3,
+          "minimum": 0,
+          "title": "Min",
+          "type": "integer"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 4,
+          "title": "Max"
+        }
+      },
+      "title": "VoiceCountPolicy",
       "type": "object"
     },
     "VoiceEvent": {
