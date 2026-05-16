@@ -727,9 +727,11 @@ define([
     return windows;
   }
 
-  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation, isAnalysisMatch) {
+  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation, isAnalysisMatch, harmonizationOptions) {
     if (showNotation === undefined) showNotation = true;
     if (isAnalysisMatch === undefined) isAnalysisMatch = false;
+    harmonizationOptions = harmonizationOptions || {};
+    var hideForHarmonization = !!(harmonizationOptions.isHarmonization && harmonizationOptions.hideCurrentVoice);
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
@@ -783,10 +785,8 @@ define([
       if (note.setStyle) {
         if (played) {
           note.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
-        } else if (!showNotation) {
+        } else if (!showNotation || isAnalysisMatch || hideForHarmonization) {
           note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
-        } else if (isAnalysisMatch) {
-          note.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
         } else {
           note.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
         }
@@ -828,9 +828,7 @@ define([
         var playedAny = idState && idState.playedNoteIds && idState.playedNoteIds.has(idState.nextId || 0);
         if (playedAny) {
           chord.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
-        } else if (!showNotation) {
-          chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
-        } else if (isAnalysisMatch) {
+        } else if (!showNotation || isAnalysisMatch || hideForHarmonization) {
           chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
         } else {
           chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
@@ -1022,6 +1020,11 @@ define([
         }
       }
 
+      // SATB voice id map: [staffId][voiceIndex] → voice label
+      var SATB_MAP = { treble: ["S", "A"], bass: ["T", "B"] };
+      var isHarmonization = !!(opts && opts.isHarmonization);
+      var lockedVoices = (opts && opts.lockedVoices) || [];
+
       function staffVoices(staffId, staff, clef, idState, keySignatureAlterations, measureStartTick) {
         if (!staff) return [];
         // Optional filtering: opts.selectVoices = { treble: [0], bass: [1] }
@@ -1031,15 +1034,20 @@ define([
         // Note playing state across this render; keep shared across entire piece for consistent IDs
         idState = idState || { nextId: 0, playedNoteIds: (opts && opts.playedNoteIds) || null };
         var measStartTick = measureStartTick || 0;
+        var staffSatbLabels = SATB_MAP[staffId] || [];
         return (staff.voices || [])
           .map(function (v, vIdx) {
             if (select && select.indexOf(vIdx) === -1) return null; // filter out
+
+            var satbLabel = staffSatbLabels[vIdx] || null;
+            var hideCurrentVoice = isHarmonization && satbLabel && lockedVoices.indexOf(satbLabel) === -1;
+            var harmonizationOptions = { isHarmonization: isHarmonization, hideCurrentVoice: hideCurrentVoice };
 
             var localOnset = 0;
             var tickables = v.items.map(function (it) {
               var onsetToUse = measStartTick + localOnset;
               localOnset += durationToTicks(it.duration);
-              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex, showNotation, isAnalysisMatch);
+              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex, showNotation, isAnalysisMatch, harmonizationOptions);
             }).filter(Boolean);
             
             var stemDir = v.direction === "up" ? 1 : v.direction === "down" ? -1 : 1;

@@ -1552,7 +1552,8 @@ define([
       exercise_midi_nums = exercise_midi_nums || false;
       var definition = this.exerciseContext.getDefinition();
       var score = definition.getScore();
-      var isChoraleLike = (definition.isChorale() || definition.isChoraleIdentification());
+      var isHarmonization = !!(definition.isHarmonization && definition.isHarmonization());
+      var isChoraleLike = (definition.isChorale() || definition.isChoraleIdentification() || isHarmonization);
       
       // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
       // This fixes cases where the database might have a single 'blob' measure.
@@ -1609,6 +1610,16 @@ define([
             analyzeConfig.mode.thoroughbass = false;
             analyzeConfig.mode.chord_labels = false;
             analyzeConfig.mode.note_names = false;
+          }
+
+          if (isHarmonization) {
+            analyzeConfig.enabled = true;
+            analyzeConfig.mode = analyzeConfig.mode || {};
+            if (definition.getAnalysisType && definition.getAnalysisType() === "figured_bass") {
+              analyzeConfig.mode.thoroughbass = true;
+            } else {
+              analyzeConfig.mode.roman_numerals = true;
+            }
           }
 
           var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsNoteNames;
@@ -1680,6 +1691,10 @@ define([
             analysisRenderer: display.analysisRenderer || "notater", // notater|adapter|none
             staffYOffset: staffYOffset,
             isAnalysisMatch: isAnalysisMatchMode,
+            isHarmonization: isHarmonization,
+            lockedVoices: isHarmonization && definition.exercise && definition.exercise.score && definition.exercise.score.umto
+              ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
+              : null,
             onWindowPosition: function (slot) {
               if (!slot || typeof slot.windowIndex !== "number") {
                 return;
@@ -2387,15 +2402,31 @@ define([
       return tl;
     },
     /**
-     * Handle MIDI note events in chorale mode by delegating to the ChoraleGrader
+     * Handle MIDI note events in chorale and harmonization modes.
      */
     onMidiNote: function (state, noteNum) {
       var definition = this.exerciseContext.getDefinition();
-      if (!definition.isChorale()) return;
+      var isChorale = definition.isChorale && definition.isChorale();
+      var isHarmonization = definition.isHarmonization && definition.isHarmonization();
+      if (!isChorale && !isHarmonization) return;
 
       // Start timer on first interaction
       if (state === "on") {
         this.exerciseContext.triggerTimer();
+      }
+
+      if (isHarmonization) {
+        var tracker = this.exerciseContext._harmonizationHeldTracker;
+        if (tracker) {
+          if (state === "on") {
+            tracker.noteOn(noteNum);
+          } else if (state === "off") {
+            tracker.noteOff(noteNum, Date.now());
+          }
+        }
+        this.exerciseContext.grade();
+        this.render();
+        return;
       }
 
       var grader = this.exerciseContext.grader;

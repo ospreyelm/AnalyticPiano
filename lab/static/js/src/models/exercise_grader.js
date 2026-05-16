@@ -1,4 +1,4 @@
-define(["lodash", "app/utils/analyze"], function (_, Analyze) {
+define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"], function (_, Analyze, HarmonizationGraderLogic) {
   /**
    * ExerciseGrader object is responsible for grading a given inputChords for
    * an exercise.
@@ -128,7 +128,12 @@ define(["lodash", "app/utils/analyze"], function (_, Analyze) {
         console.log("[UMTO-DEBUG] grading exercise. type:", definition.exercise.type, "mode:", mode);
         switch (definition.exercise.type) {
           case "umto_chorale":
-            if (mode === "analysis_match") {
+            if (mode === "harmonization") {
+              // problems[i] is a harmonization target; actual_notes comes from held-note
+              // tracker snapshot (wired via exercise_context in Task 9).
+              result = HarmonizationGraderLogic.harmonizationMatch(problems[i], actual_notes);
+              console.log("[UMTO-DEBUG] harmonizationMatch result:", result.state);
+            } else if (mode === "analysis_match") {
               result = this.analysisMatch(expected_notes, actual_notes, analysis_types);
               console.log("[UMTO-DEBUG] analysisMatch result:", result.state);
             } else {

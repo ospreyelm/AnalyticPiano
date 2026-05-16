@@ -806,6 +806,16 @@ define([
      *
      * @return {boolean}
      */
+    isHarmonization: function () {
+      return this.getMode() === "harmonization";
+    },
+    getHarmonizationTargets: function () {
+      return this.exercise.harmonizationTargets || [];
+    },
+    getHarmonizationMetadata: function () {
+      var score = this.exercise.score;
+      return (score && score.umto && score.umto.metadata) || {};
+    },
     isAnalysisMatch: function () {
       return this.getMode() === "analysis_match";
     },
@@ -990,9 +1000,21 @@ define([
         });
 
         if (exercise.type === "umto_chorale") {
+          exercise.harmonizationTargets = definition.harmonizationTargets || [];
           var isIdent = exercise.mode === "identification" || exercise.mode === "chorale_identification";
-          console.log("[UMTO-DEBUG] isIdent:", isIdent, "mode:", exercise.mode);
-          if (isIdent) {
+          var isHarm = exercise.mode === "harmonization";
+          console.log("[UMTO-DEBUG] isIdent:", isIdent, "isHarm:", isHarm, "mode:", exercise.mode);
+          if (isHarm) {
+            // Harmonization: targets are pre-built by generate_harmonization command.
+            exercise.problems = exercise.harmonizationTargets;
+            // Show figured bass or roman numeral overlays per analysisType.
+            exercise.analysis = { enabled: true, mode: {} };
+            if (exercise.analysisType === "figured_bass") {
+              exercise.analysis.mode.thoroughbass = true;
+            } else {
+              exercise.analysis.mode.roman_numerals = true;
+            }
+          } else if (isIdent) {
             exercise.problems = applySkillFilter(
               buildUMTOIdentificationProblems(exercise),
               (definition.playlistSkillTags || []).concat(definition.playlistTags || []),
@@ -1003,7 +1025,7 @@ define([
             var isPlayback = exercise.mode === "playback" || exercise.mode === "analysis_match" || exercise.mode === "play-all-voices";
             console.log("[UMTO-DEBUG] using fallback problems for non-ident mode. isPlayback:", isPlayback);
             // Playback modes don't need problems structure; they use grading slices instead.
-            exercise.problems = isPlayback ? [] : buildUMTOIdentificationProblems(exercise); 
+            exercise.problems = isPlayback ? [] : buildUMTOIdentificationProblems(exercise);
           }
         } else if (exercise.type === "umto_symbolic_meter") {
           exercise.problems = _.map(definition.problems || [], function (problem) {
