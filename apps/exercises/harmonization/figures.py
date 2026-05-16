@@ -4,9 +4,9 @@ import re
 from dataclasses import dataclass
 from typing import TypedDict
 
-from music21 import interval as m21_interval
 from music21 import key as m21_key
 from music21 import pitch as m21_pitch
+from music21 import scale as m21_scale
 
 
 _SHORTHANDS = {
@@ -22,9 +22,6 @@ _SHORTHANDS = {
 }
 
 
-_STEP_TO_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
-
-
 class DerivedNotes(TypedDict):
     bass_name: str
     bass_pc: int
@@ -36,7 +33,7 @@ class DerivedNotes(TypedDict):
 
 @dataclass(frozen=True)
 class FigureToken:
-    accidental: str
+    accidental: str  # "", "#", "b", "n"
     number: int
 
 
@@ -72,31 +69,53 @@ def expand_figure_string(figure: str | None) -> list[str]:
     return tokens
 
 
-def _pitch_class_from_name(name: str) -> int:
-    p = m21_pitch.Pitch(name)
-    return int(p.pitchClass)
+def _scale_pitches_for_key(key_obj: m21_key.Key) -> list[m21_pitch.Pitch]:
+    """Return pitches for the key's natural minor (or major) scale spanning ~4 octaves."""
+    tonic = key_obj.tonic.name
+    if key_obj.mode == "minor":
+        sc = m21_scale.MinorScale(tonic)
+    else:
+        sc = m21_scale.MajorScale(tonic)
+    return list(sc.getPitches(f"{tonic}2", f"{tonic}6"))
 
 
-def _apply_accidental(default_pitch: m21_pitch.Pitch, accidental: str, key_obj: m21_key.Key) -> m21_pitch.Pitch:
+def _diatonic_pitch_above(
+    scale_pitches: list[m21_pitch.Pitch],
+    bass: m21_pitch.Pitch,
+    number: int,
+) -> m21_pitch.Pitch:
+    """Return the scale pitch that is (number-1) diatonic steps above bass."""
+    # Find bass in scale by step + alter; fall back to step-only for chromatic bass notes
+    idx = next(
+        (i for i, p in enumerate(scale_pitches) if p.step == bass.step and p.alter == bass.alter),
+        None,
+    )
+    if idx is None:
+        idx = next(
+            (i for i, p in enumerate(scale_pitches) if p.step == bass.step),
+            0,
+        )
+    target_idx = idx + (number - 1)
+    # Clamp to list bounds (scale spans 4 octaves so this rarely fires)
+    target_idx = min(target_idx, len(scale_pitches) - 1)
+    return scale_pitches[target_idx]
+
+
+def _apply_accidental_to_pitch(base: m21_pitch.Pitch, accidental: str) -> m21_pitch.Pitch:
+    """Raise (#), lower (b), or naturalize (n) a diatonic pitch by 1 semitone."""
     if accidental == "":
-        return default_pitch
-
-    step = default_pitch.step
-    octave = default_pitch.octave
-
+        return base
+    result = m21_pitch.Pitch()
+    result.step = base.step
+    result.octave = base.octave
     if accidental == "#":
-        acc_obj = m21_pitch.Accidental("#")
+        result.accidental = m21_pitch.Accidental(base.alter + 1)
     elif accidental == "b":
-        acc_obj = m21_pitch.Accidental("flat")
+        result.accidental = m21_pitch.Accidental(base.alter - 1)
     elif accidental == "n":
-        acc_obj = m21_pitch.Accidental("natural")
+        result.accidental = m21_pitch.Accidental(0)
     else:
         raise ValueError(f"Unsupported accidental: {accidental!r}")
-
-    result = m21_pitch.Pitch()
-    result.step = step
-    result.octave = octave
-    result.accidental = acc_obj
     return result
 
 
@@ -106,23 +125,22 @@ def derive_required_notes(*, key_name: str, bass_name: str, figure: str | None) 
     if bass_pitch.octave is None:
         bass_pitch.octave = 3
 
+    scale_pitches = _scale_pitches_for_key(key_obj)
     expanded = expand_figure_string(figure)
     note_names: list[str] = []
     pcs: list[int] = []
 
     for raw_token in expanded:
         token = _parse_token(raw_token)
-        # Use GenericInterval for diatonic (step-wise) transposition; accidentals
-        # are applied separately so that "#3 above F" gives A# rather than A.
-        derived = m21_interval.GenericInterval(token.number).transposePitch(bass_pitch)
-        derived = _apply_accidental(derived, token.accidental, key_obj)
+        diatonic = _diatonic_pitch_above(scale_pitches, bass_pitch, token.number)
+        derived = _apply_accidental_to_pitch(diatonic, token.accidental)
         note_name = derived.name.replace("-", "b")
         pc = int(derived.pitchClass)
         if pc not in pcs:
             note_names.append(note_name)
             pcs.append(pc)
 
-    bass_pc = _pitch_class_from_name(bass_name)
+    bass_pc = int(bass_pitch.pitchClass)
     return {
         "bass_name": bass_name,
         "bass_pc": bass_pc,

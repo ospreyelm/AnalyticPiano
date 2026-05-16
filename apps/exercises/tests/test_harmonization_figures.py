@@ -51,3 +51,24 @@ def test_c_major_b_natural_six_uses_key_default():
     result = derive_required_notes(key_name="C", bass_name="B", figure="6")
     assert result["required_note_names"] == ["G", "D"]
     assert result["required_upper_pcs"] == [7, 2]
+
+
+def test_g_major_f_sharp_six_five_derives_d_c_a():
+    # G major, F# bass, 6/5 expands to [6, 5, 3]
+    # Diatonic above F# in G major: 6th=D, 5th=C, 3rd=A
+    result = derive_required_notes(key_name="G", bass_name="F#", figure="6/5")
+    assert result["expanded_figures"] == ["6", "5", "3"]
+    assert result["required_note_names"] == ["D", "C", "A"]
+    assert result["required_upper_pcs"] == [2, 0, 9]
+
+
+def test_review_artifact_command_writes_html(tmp_path):
+    from django.core.management import call_command
+
+    out = tmp_path / "harmonization-review.html"
+    call_command("render_harmonization_review", output=str(out))
+
+    html = out.read_text()
+    assert "Figure Parser Review" in html
+    assert "C + 6" in html
+    assert "F + #" in html
