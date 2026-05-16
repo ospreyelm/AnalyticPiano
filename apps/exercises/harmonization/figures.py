@@ -169,7 +169,15 @@ def derive_required_notes(*, key_name: str, bass_name: str, figure: str | None) 
         diatonic = _diatonic_pitch_above(scale_pitches, bass_pitch, token.number)
         derived = _apply_accidental_to_pitch(diatonic, token.accidental)
         if token.quality_alter:
-            derived = _apply_accidental_to_pitch(derived, token.quality_alter)
+            # quality_alter marks a tritone interval (aug4 or dim5) — adjust to exactly
+            # 6 semitones from bass rather than blindly raising/lowering the diatonic step.
+            bass_pc = int(bass_pitch.pitchClass)
+            current_dist = (int(derived.pitchClass) - bass_pc) % 12
+            delta = 6 - current_dist
+            if delta > 0:
+                derived = _apply_accidental_to_pitch(derived, "#")
+            elif delta < 0:
+                derived = _apply_accidental_to_pitch(derived, "b")
         note_name = derived.name.replace("-", "b")
         pc = int(derived.pitchClass)
         if pc not in pcs:
