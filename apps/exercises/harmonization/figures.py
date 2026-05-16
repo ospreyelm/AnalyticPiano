@@ -15,12 +15,16 @@ _SHORTHANDS = {
     "5/3": ["5", "3"],
     # First-inversion triad
     "6": ["6", "3"],
+    "#6": ["#6", "3"],
+    "b6": ["b6", "3"],
     # Second-inversion triad
     "6/4": ["6", "4"],
     # Root-position seventh
     "7": ["7", "5", "3"],
     # First-inversion seventh
     "6/5": ["6", "5", "3"],
+    "#6/5°": ["#6", "5°", "3"],
+    "#6/5": ["#6", "5", "3"],
     # Second-inversion seventh
     "4/3": ["6", "4", "3"],
     # Third-inversion seventh (also abbreviated as "2")
@@ -53,6 +57,7 @@ class DerivedNotes(TypedDict):
 class FigureToken:
     accidental: str  # "", "#", "b", "n"
     number: int
+    quality_alter: str = ""  # "b" for °(dim), "#" for +(aug), applied after diatonic step
 
 
 def _normalize_key_name(key_name: str) -> str:
@@ -68,11 +73,22 @@ def _parse_token(token: str) -> FigureToken:
     token = token.strip()
     if token in {"#", "b", "n"}:
         token = token + "3"
+    # Handle quality suffixes before the main parse:
+    # '°' = diminished (lower by 1 semitone from diatonic) → prepend 'b'
+    # '+' = augmented (raise by 1 semitone from diatonic) → prepend '#'
+    # These only apply when there is no explicit accidental prefix already.
+    quality_alter = ""
+    if token.endswith("°"):
+        token = token[:-1]
+        quality_alter = "b"  # diminished: lower diatonic pitch by 1 semitone
+    elif token.endswith("+"):
+        token = token[:-1]
+        quality_alter = "#"  # augmented: raise diatonic pitch by 1 semitone
     match = re.fullmatch(r"([#bn]?)(\d+)", token)
     if not match:
         raise ValueError(f"Invalid figure token: {token!r}")
     accidental, number = match.groups()
-    return FigureToken(accidental=accidental, number=int(number))
+    return FigureToken(accidental=accidental, number=int(number), quality_alter=quality_alter)
 
 
 def expand_figure_string(figure: str | None) -> list[str]:
@@ -152,6 +168,8 @@ def derive_required_notes(*, key_name: str, bass_name: str, figure: str | None) 
         token = _parse_token(raw_token)
         diatonic = _diatonic_pitch_above(scale_pitches, bass_pitch, token.number)
         derived = _apply_accidental_to_pitch(diatonic, token.accidental)
+        if token.quality_alter:
+            derived = _apply_accidental_to_pitch(derived, token.quality_alter)
         note_name = derived.name.replace("-", "b")
         pc = int(derived.pitchClass)
         if pc not in pcs:
