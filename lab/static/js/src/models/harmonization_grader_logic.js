@@ -115,7 +115,13 @@ function createHeldNoteTracker(options) {
   };
 }
 
-module.exports = {
+var exports = {
   harmonizationMatch: harmonizationMatch,
   createHeldNoteTracker: createHeldNoteTracker
 };
+
+if (typeof define === "function" && define.amd) {
+  define([], function () { return exports; });
+} else if (typeof module !== "undefined") {
+  module.exports = exports;
+}

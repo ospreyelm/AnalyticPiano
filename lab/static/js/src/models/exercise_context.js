@@ -108,6 +108,7 @@ define([
     this.sealed = false; /* will be used to ignore input post-completion */
 
     this._harmonizationHeldTracker = null;
+    this._harmonizationPointer = 0;
     this.acceptedHarmonizationSonorities = [];
     this.harmonizationVLScore = null;
     this.harmonizationTier = null;
@@ -155,9 +156,11 @@ define([
         var meta = this.definition.getHarmonizationMetadata
           ? this.definition.getHarmonizationMetadata()
           : {};
-        var settleMs = meta.chord_settle_ms || 120;
+        var releaseGraceMs = meta.release_grace_ms || 120;
+        this._harmonizationChordSettleMs = meta.chord_settle_ms || 150;
+        this._harmonizationSettleTimer = null;
         this._harmonizationHeldTracker = HarmonizationGraderLogic.createHeldNoteTracker({
-          releaseGraceMs: settleMs,
+          releaseGraceMs: releaseGraceMs,
         });
       } else if (!this._isIdentificationExercise()) {
         this.inputChords.bind("change", this.triggerTimer);
@@ -221,14 +224,24 @@ define([
       } else if (isHarmonizationExercise) {
         var tracker = this._harmonizationHeldTracker;
         var activeMidi = tracker ? tracker.activeMidi(Date.now()) : [];
-        graded = this.grader.grade(this.definition, activeMidi);
-        if (graded && graded.result === this.grader.STATE.CORRECT) {
+        var targets = this.definition.getHarmonizationTargets ? this.definition.getHarmonizationTargets() : [];
+        var ptr = this._harmonizationPointer;
+        var matchResult = HarmonizationGraderLogic.harmonizationMatch(targets[ptr] || {}, activeMidi);
+        if (matchResult.state === "correct") {
           this.acceptedHarmonizationSonorities.push({
             midi: activeMidi.slice(),
-            targetIndex: graded.activeIndex,
+            targetIndex: ptr,
             ts: Date.now(),
           });
+          this._harmonizationPointer = ptr + 1;
         }
+        var allDone = this._harmonizationPointer >= targets.length && targets.length > 0;
+        graded = {
+          result: allDone ? this.grader.STATE.CORRECT : (matchResult.state === "incorrect" ? this.grader.STATE.INCORRECT : this.grader.STATE.PARTIAL),
+          score: allDone ? 0 : (matchResult.state === "incorrect" ? 2 : 1),
+          activeIndex: this._harmonizationPointer,
+          problems: [matchResult],
+        };
       } else {
         graded = this.grader.grade(this.definition, this.inputChords);
       }

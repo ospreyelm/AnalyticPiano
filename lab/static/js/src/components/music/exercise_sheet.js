@@ -2416,7 +2416,8 @@ define([
       }
 
       if (isHarmonization) {
-        var tracker = this.exerciseContext._harmonizationHeldTracker;
+        var ctx = this.exerciseContext;
+        var tracker = ctx._harmonizationHeldTracker;
         if (tracker) {
           if (state === "on") {
             tracker.noteOn(noteNum);
@@ -2424,8 +2425,16 @@ define([
             tracker.noteOff(noteNum, Date.now());
           }
         }
-        this.exerciseContext.grade();
-        this.render();
+        var self = this;
+        var settleMs = ctx._harmonizationChordSettleMs || 150;
+        if (ctx._harmonizationSettleTimer) {
+          clearTimeout(ctx._harmonizationSettleTimer);
+        }
+        ctx._harmonizationSettleTimer = setTimeout(function () {
+          ctx._harmonizationSettleTimer = null;
+          ctx.grade();
+          self.render();
+        }, settleMs);
         return;
       }
 
