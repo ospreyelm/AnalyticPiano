@@ -2521,6 +2521,22 @@ define([
         this.initChoraleMode();
       }
 
+      // Reset harmonization state
+      if (definition.isHarmonization && definition.isHarmonization()) {
+        var ctx = this.exerciseContext;
+        if (ctx._harmonizationSettleTimer) {
+          clearTimeout(ctx._harmonizationSettleTimer);
+          ctx._harmonizationSettleTimer = null;
+        }
+        if (ctx._harmonizationHeldTracker) {
+          ctx._harmonizationHeldTracker.reset();
+        }
+        ctx._harmonizationPointer = 0;
+        ctx.acceptedHarmonizationSonorities = [];
+        ctx.harmonizationVLScore = null;
+        ctx.harmonizationTier = null;
+      }
+
       // Reset exercise context state
       this.exerciseContext.done = false;
       this.exerciseContext.sealed = false;
