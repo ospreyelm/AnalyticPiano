@@ -1692,9 +1692,23 @@ define([
             staffYOffset: staffYOffset,
             isAnalysisMatch: isAnalysisMatchMode,
             isHarmonization: isHarmonization,
+            harmonizationTargets: isHarmonization ? (definition.getHarmonizationTargets ? definition.getHarmonizationTargets() : []) : null,
             lockedVoices: isHarmonization && definition.exercise && definition.exercise.score && definition.exercise.score.umto
               ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
               : null,
+            selectVoices: isHarmonization ? (function() {
+              var lv = definition.exercise && definition.exercise.score && definition.exercise.score.umto
+                ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
+                : ["B"];
+              // SATB: treble=[S(0),A(1)], bass=[T(0),B(1)]
+              var trebleIdx = [];
+              var bassIdx = [];
+              if (lv.indexOf("S") !== -1) trebleIdx.push(0);
+              if (lv.indexOf("A") !== -1) trebleIdx.push(1);
+              if (lv.indexOf("T") !== -1) bassIdx.push(0);
+              if (lv.indexOf("B") !== -1) bassIdx.push(1);
+              return { treble: trebleIdx, bass: bassIdx };
+            })() : null,
             onWindowPosition: function (slot) {
               if (!slot || typeof slot.windowIndex !== "number") {
                 return;

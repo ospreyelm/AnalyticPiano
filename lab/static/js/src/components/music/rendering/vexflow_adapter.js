@@ -935,6 +935,7 @@ define([
       }
       var showNotation = opts && opts.showNotation !== undefined ? opts.showNotation : true;
       var isAnalysisMatch = !!(opts && opts.isAnalysisMatch);
+      var harmonizationTargets = (opts && opts.harmonizationTargets) || null;
 
       var systemGap = (opts && opts.systemGap) || 150; // vertical spacing between treble and bass staves
       var staffYOffset = (opts && opts.staffYOffset) || 0;
@@ -1595,7 +1596,24 @@ define([
               var colGap = (prevColX !== null && columnCenterX !== null) ? (columnCenterX - prevColX) : null;
               if (columnCenterX !== null) prevColX = columnCenterX;
 
-              if (renderRomans && activeStaveForAnnotations) {
+              if (isHarmonization && harmonizationTargets && matchedIndex >= 0 && matchedIndex < harmonizationTargets.length && activeStaveForAnnotations) {
+                var harmTarget = harmonizationTargets[matchedIndex];
+                var displayFig = harmTarget && (harmTarget.displayFigure || (harmTarget.figures && harmTarget.figures.join("/")));
+                if (displayFig && columnCenterX !== null) {
+                  var figLines = displayFig.split("/").map(function(s) { return s.trim(); }).filter(Boolean);
+                  var yBase = activeStaveForAnnotations.getBottomY ? activeStaveForAnnotations.getBottomY() : 0;
+                  var figStartY = yBase + 14;
+                  var lineH = 13;
+                  ctx.save();
+                  ctx.fillStyle = "#000";
+                  ctx.font = "13px MainSerifs";
+                  ctx.textAlign = "center";
+                  figLines.forEach(function(line, idx) {
+                    ctx.fillText(line, columnCenterX, figStartY + idx * lineH);
+                  });
+                  ctx.restore();
+                }
+              } else if (renderRomans && activeStaveForAnnotations) {
                 attachInlineRomanAnnotation(
                   col,
                   midi,
