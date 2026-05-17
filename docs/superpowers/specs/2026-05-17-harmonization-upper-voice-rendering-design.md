@@ -83,10 +83,19 @@ fallback is needed for this spec.
 
 ### Source-spelling lookup (pc-match)
 
-`HarmonizationRealizationLogic.buildPcSpellingMap(score, measureIndex, onset)`
-walks `score.measures[measureIndex].staves.{treble,bass}.voices[*].items` and
-collects all non-rest pitches sounding at that beat (including held notes
-from earlier in the measure that overlap this onset). Returns
+`HarmonizationRealizationLogic.buildPcSpellingMap(score, targetOffsetQb)`
+walks **all** voices in the score with absolute (cross-measure) offsets and
+collects every non-rest pitch sounding at `targetOffsetQb`. It must consider:
+
+1. Notes whose `[onset, onset+duration)` window contains `targetOffsetQb`,
+   even when the note started in a previous measure (tied/held over the
+   barline).
+2. Notes that begin exactly at `targetOffsetQb` (the new attacks).
+
+Implementation: convert the CIR score to a flat per-voice event list with
+absolute quarter-beat offsets (the existing `ScoreTimeline.buildTimeline`
+already does this for the whole score — reuse it, then filter by
+`ev.onset <= targetQb && ev.onset + ev.durationQb > targetQb`). Returns
 `{ pc: {step, alter} }`. The realization builder uses this map to spell each
 student midi:
 
@@ -129,7 +138,11 @@ returns its (empty-for-harmonization) array, build the overlay voice:
    current measure.
 2. Sort by `onset`.
 3. Walk ticks from 0 to `measureTotalTicks`. For each gap before/between
-   entries, emit a rest. At each entry's onset, emit a `StaveNote`:
+   entries, emit one or more transparent rests via `ticksToDurationChunks(gap)`.
+   At each entry's onset, split the entry's `durationTicks` into chunks via
+   `ticksToDurationChunks(entry.durationTicks)`. The **first chunk** becomes
+   the chord StaveNote; every subsequent chunk becomes a transparent rest at
+   the same chunk duration so the Voice tick math stays exact.
 
    ```js
    var keys = entry.midiNotes.map(function (m, i) {
@@ -141,20 +154,29 @@ returns its (empty-for-harmonization) array, build the overlay voice:
              : "";
      return sp.step.toLowerCase() + acc + "/" + sp.octave;
    });
+   var chunks = ticksToDurationChunks(entry.durationTicks);
+   if (!chunks || !chunks.length) return; // unsplittable — skip this measure
+   var headChunk = chunks[0];
    var note = new Vex.Flow.StaveNote({
      clef: "treble",
      keys: keys,
-     duration: ticksToDuration(entry.durationTicks),
+     duration: durToVF(headChunk),     // {type, dots} → VF duration string
+     dots: headChunk.dots,
      auto_stem: false,
    });
    note.setStemDirection(1); // stems up
    note.setStyle({ fillStyle: "#000000", strokeStyle: "#000000" });
    // Accidentals: add for any spelling.alter !== keySigAlter[step]
+   tickables.push(note);
+   // Remaining chunks as transparent rests to fill durationTicks exactly
+   for (var ci = 1; ci < chunks.length; ci++) {
+     tickables.push(makeTransparentRest(chunks[ci]));
+   }
    ```
 
 4. Wrap tickables in a `Vex.Flow.Voice` with the same time signature as the
    measure's bass voice. Voice tick total **must equal** measure tick total —
-   validate in dev mode, throw if mismatched.
+   validate in dev mode, log warn and skip overlay for that measure if not.
 5. Push the overlay voice onto `trebleVoices` before
    `Formatter.joinVoices`. Formatter aligns columns automatically.
 
@@ -226,8 +248,12 @@ Steps:
       (preserves prior behavior; should not happen with current target
       builder).
    d. Skip if `upperMidi.length === 0`.
-   e. Build pc-spelling map from source score at (measureIndex, onsetTicks).
-   f. Spell each `upperMidi[i]`.
+   e. Build pc-spelling map from source score at the target's **absolute**
+      quarter-beat offset (`target.offset`), via
+      `buildPcSpellingMap(score, target.offset)`. The lookup must include
+      notes held over from prior measures (ties / suspensions extending
+      across barlines).
+   f. Spell each `upperMidi[i]` via `spellMidi(midi, pcMap)`.
 3. Compute `durationTicks` per entry: ticks to next target's onset (same
    measure) or measure end, whichever is first.
 4. Sort output by `measureIndex` then `onsetTicks`.
@@ -278,13 +304,24 @@ every accepted target. No new event wiring.
 
 - `buildRealization` with one accepted target → one entry with correct
   measureIndex, onset, durationTicks, midiNotes, spellings.
-- Bass pc dedupe: student plays `[36, 60, 64, 67]` with bass pc=0 →
-  `midiNotes` = `[64, 67]`.
+- Locked-bass instance dedupe: student plays `[36, 60, 64, 67]` with
+  `target.lockedVoices.B.midi = 36` → `midiNotes` = `[60, 64, 67]` (C4
+  doubling of bass pc is preserved; only the bass MIDI 36 is dropped).
+- Locked-bass octave double: student plays `[36, 48, 60, 64]` with bass
+  MIDI 36 → `midiNotes` = `[48, 60, 64]` (both 48 and 60 are pc=0 but
+  neither equals 36; only the bass instance is dropped).
+- Bass MIDI absent fallback: `target.lockedVoices.B.midi` undefined,
+  `target.lockedVoices.B.pc = 0`, student plays `[60, 64, 67]` → drop one
+  pc=0 instance → `midiNotes` = `[64, 67]`.
 - Duplicate `targetIndex` entries → keeps most recent.
 - Multi-measure: two accepted targets in different measures → two entries
   with correct `measureIndex` values.
 - Source-spelling lookup: target landing on a chord with F♯ in source →
   midi 66 spelled `{step: "F", alter: 1}`.
+- Tied-over barline: source soprano holds D5 (alter=0) from m1 beat 4 into
+  m2 beat 1. Target at m2 beat 1 with student MIDI 74 → spelled
+  `{step: "D", alter: 0, octave: 5}` (lookup must see the held D, not just
+  notes that attack at m2 beat 1).
 
 **Adapter integration:**
 
