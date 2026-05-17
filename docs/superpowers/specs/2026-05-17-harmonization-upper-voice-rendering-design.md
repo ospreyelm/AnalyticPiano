@@ -62,19 +62,24 @@ chord, scoped to its containing measure:
 
 ```js
 {
-  measureIndex: 0,            // absolute index of containing measure
-  onset: 0,                   // ticks within measure (matches existing bass note _onset)
-  durationTicks: 1024,        // ticks until next target's onset (in same measure) or measure end
-  midiNotes: [62, 67, 71],    // student-played MIDI, bass pc removed, sorted ascending
-  spellings: ["D", "G", "B"]  // canonical step + alter from source UMTO, parallel to midiNotes
+  measureIndex: 0,                  // absolute index of containing measure
+  onset: 0,                         // ticks within measure (matches existing bass note _onset)
+  durationTicks: 1024,              // ticks until next target's onset (in same measure) or measure end
+  midiNotes: [62, 67, 71],          // student-played MIDI, locked-bass note removed, sorted ascending
+  spellings: [                      // canonical step+alter+octave from source UMTO, parallel to midiNotes
+    { step: "D", alter: 0, octave: 4 },
+    { step: "G", alter: 0, octave: 4 },
+    { step: "B", alter: 0, octave: 4 }
+  ]
 }
 ```
 
-`spellings[i]` is the source UMTO spelling for `midiNotes[i]`, looked up by
-pitch class against the source score's upper voices at that target's offset.
-Because acceptance requires every played pc to be in `target.allowedPcs` (which
-derives from the source slice), every accepted midi note has a pc match in the
-source — no key-signature fallback path is needed for this spec.
+`spellings[i]` is the source UMTO spelling for `midiNotes[i]`, computed by
+`spellMidi` (see below) from a pc-keyed lookup against the source score's
+non-rest pitches at the target's offset. Because acceptance requires every
+played pc to be in `target.allowedPcs` (which derives from the source slice),
+every accepted midi note has a pc match in the source — no key-signature
+fallback is needed for this spec.
 
 ### Source-spelling lookup (pc-match)
 
@@ -129,7 +134,11 @@ returns its (empty-for-harmonization) array, build the overlay voice:
    ```js
    var keys = entry.midiNotes.map(function (m, i) {
      var sp = entry.spellings[i];
-     var acc = sp.alter === 1 ? "#" : sp.alter === -1 ? "b" : "";
+     var acc = sp.alter === 1 ? "#"
+             : sp.alter === -1 ? "b"
+             : sp.alter === 2 ? "##"
+             : sp.alter === -2 ? "bb"
+             : "";
      return sp.step.toLowerCase() + acc + "/" + sp.octave;
    });
    var note = new Vex.Flow.StaveNote({
@@ -157,9 +166,26 @@ but the Voice tick math is satisfied).
 nothing — treble stays as today.
 
 **Duration mapping (`ticksToDuration`):** Existing `durToVF` works from CIR
-`{type, dots}`. Need an inverse: `ticksToDuration(ticks)` → `{type, dots}`.
-Cover `w/h/q/8/16` plus dotted half / dotted quarter / dotted eighth. Anything
-else: pick nearest representable duration and log a warning.
+`{type, dots}`. Need an inverse: `ticksToDurationChunks(ticks)` → ordered list
+of `{type, dots, ticks}` chunks summing to `ticks` exactly. Use a greedy
+descent through the supported duration set:
+
+- Supported atoms: `w (4096), h. (3072), h (2048), q. (1536), q (1024), 8. (768), 8 (512), 16. (384), 16 (256), 32 (128)`.
+- Greedy: subtract the largest atom ≤ remaining ticks; repeat until 0.
+
+For a notehead with `durationTicks = D`:
+- Emit the first chunk as a `StaveNote` with that duration.
+- Emit remaining chunks **as transparent rests** (not tied notes) — visually
+  the chord shows only as the first head; the rests carry the rest of the
+  tick total so the Voice still sums to `measureTotalTicks`.
+
+This avoids the original "nearest duration + drift" problem: the head is
+drawn at the correct duration that the greedy step picks; any leftover ticks
+become invisible rests rather than warping subsequent column alignment.
+
+If the greedy descent cannot zero out `ticks` (only possible for non-power-of-2
+remainders smaller than 128), log `console.warn` and skip this measure's
+overlay rather than emitting a mismatched Voice.
 
 ### Realization builder (`harmonization_realization_logic.js`)
 
@@ -182,8 +208,23 @@ Steps:
    a. Look up `target = targets[targetIndex]`.
    b. Compute (measureIndex, onsetTicks) from `target.offset` (quarter-beats)
       using the meter.
-   c. Strip bass pc: `bassPc = target.lockedVoices.B.pc`;
-      `upperMidi = entry.midi.filter(m => m % 12 !== bassPc)`.
+   c. Remove the **locked-bass note instance** (not all pc matches): take
+      `bassMidi = target.lockedVoices.B.midi` and drop one occurrence of
+      exactly that MIDI from `entry.midi`. If the student doubles the bass pc
+      in an upper octave (e.g. bass C2 + soprano C4), the C4 is kept and
+      drawn. Drop-one logic:
+      ```js
+      var bassMidi = target.lockedVoices.B.midi;
+      var dropped = false;
+      var upperMidi = entry.midi.filter(function (m) {
+        if (!dropped && m === bassMidi) { dropped = true; return false; }
+        return true;
+      });
+      ```
+      If `target.lockedVoices.B.midi` is absent, fall back to dropping one
+      occurrence of any MIDI whose pc matches `target.lockedVoices.B.pc`
+      (preserves prior behavior; should not happen with current target
+      builder).
    d. Skip if `upperMidi.length === 0`.
    e. Build pc-spelling map from source score at (measureIndex, onsetTicks).
    f. Spell each `upperMidi[i]`.
@@ -200,7 +241,10 @@ if (isHarmonization && this.exerciseContext) {
   // ... existing acceptedPtr / acceptedOffsetTicks / playedNoteIdsForRender code ...
 
   var accepted = this.exerciseContext.acceptedHarmonizationSonorities || [];
-  var tsParts = (score.meta && score.meta.time_signature || "4/4").split("/");
+  // CIR stores meter as score.meta.time ("4/4"); legacy paths may have
+  // score.meta.meter or score.meta.time_signature. Read all three.
+  var tsRaw = (score.meta && (score.meta.time || score.meta.meter || score.meta.time_signature)) || "4/4";
+  var tsParts = String(tsRaw).split("/");
   var meter = { numerator: parseInt(tsParts[0], 10), denominator: parseInt(tsParts[1], 10) };
   harmonizationRealizationPayload = HarmonizationRealizationLogic.buildRealization(
     accepted, harmTargets, score, meter
@@ -218,12 +262,13 @@ every accepted target. No new event wiring.
 
 | Case | Handling |
 |------|---------|
-| Bass pc duplicated in student's chord (octave-bass) | Filtered out by `m % 12 !== bassPc`. Bass note already shown on bass stave. |
+| Locked-bass MIDI present in student's chord | Drop **one** occurrence of exactly that MIDI; keep upper-octave doublings of the same pc (e.g. bass C2 + soprano C4 → C4 still drawn). |
 | Multi-measure span between accepted targets | Each entry capped at end of its own measure. No cross-measure StaveNote. |
 | Last accepted target before end of phrase | `durationTicks` = ticks to end of containing measure. |
 | Duplicate accepted entries (same targetIndex) | Builder dedupes by targetIndex, keeping most recent. |
 | Empty `acceptedHarmonizationSonorities` | Builder returns `[]`. Adapter skips overlay path. Treble blank. |
-| Voice tick mismatch (rests + notes ≠ measure total) | Dev-mode `console.error`. Skip overlay for that measure rather than crash. |
+| `durationTicks` not representable as a single VexFlow duration | Split into a head + transparent-rest chunks via `ticksToDurationChunks` (greedy). Sum of chunk ticks equals `durationTicks` exactly. |
+| Voice tick total still ≠ measure total after chunking | Greedy descent failed (remainder <128 not a power of 2 atom). `console.warn` and skip overlay for that measure. |
 | Target offset that doesn't land on a clean tick boundary | Use `Math.round(offsetQb * 1024)` consistent with existing harmonization code. |
 | Source UMTO has no upper-voice note at the target offset | Should not occur for accepted targets (acceptance implies match). If it does, log warning + fall back to key-sig spelling (defensive only). |
 
