@@ -90,15 +90,28 @@ function spellMidi(midi, pcMap) {
   var pc = ((midi % 12) + 12) % 12;
   var entry = pcMap[pc];
   if (!entry) return null; // should never happen for accepted notes
-  var octave = Math.floor(midi / 12) - 1;
-  // Adjust octave if alter pushes step across boundary (e.g. cb5 vs b4)
+  // Octave label follows the natural letter, not the sounding pitch.
+  // Subtract alter to land on the letter's natural MIDI, then take
+  // its standard octave label. Handles B#/Cb (and double accidentals)
+  // across octave boundaries.
+  var letterBaseMidi = midi - entry.alter;
+  var octave = Math.floor(letterBaseMidi / 12) - 1;
   return { step: entry.step, alter: entry.alter, octave: octave };
 }
 ```
 
-Octave-boundary correction: when `step="C"` and `alter=-1` and student midi is
-59, the spelling is `Cb/5` not `Cb/4`. Use a small lookup of (step, alter) →
-semitone-from-C and reconcile.
+Verified for boundary cases:
+- MIDI 71, spelled `Cb` (step=C, alter=-1): `letterBase = 72`, octave = 5 → `Cb5` ✓
+- MIDI 72, spelled `B#` (step=B, alter=+1): `letterBase = 71`, octave = 4 → `B#4` ✓
+- MIDI 70, spelled `Cbb` (alter=-2): octave 5 ✓
+- MIDI 73, spelled `B##` (alter=+2): octave 4 ✓
+
+**Tonal.js note:** The codebase already loads `tonal` (used in
+`exercise_definition.js` for interval naming). For spelling, tonal exposes
+`Note.fromMidi` / `Note.fromMidiSharps`, but both guess the spelling — they
+have no API for "spell with this specific step+alter and give me the octave."
+Since we already have the canonical step+alter from the source UMTO, the
+2-line `letterBaseMidi` formula above is more direct than wrapping tonal.
 
 ### Adapter changes (`vexflow_adapter.js`)
 
