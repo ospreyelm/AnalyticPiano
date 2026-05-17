@@ -226,6 +226,16 @@ define([
         var activeMidi = tracker ? tracker.activeMidi(Date.now()) : [];
         var targets = this.definition.getHarmonizationTargets ? this.definition.getHarmonizationTargets() : [];
         var ptr = this._harmonizationPointer;
+        // Don't evaluate an empty sonority — it just means all notes were released.
+        // Treat as partial (waiting) rather than incorrect.
+        if (!activeMidi.length) {
+          graded = {
+            result: this.grader.STATE.PARTIAL,
+            score: 1,
+            activeIndex: ptr,
+            problems: [],
+          };
+        } else {
         var matchResult = HarmonizationGraderLogic.harmonizationMatch(targets[ptr] || {}, activeMidi);
         if (matchResult.state === "correct") {
           this.acceptedHarmonizationSonorities.push({
@@ -242,6 +252,7 @@ define([
           activeIndex: this._harmonizationPointer,
           problems: [matchResult],
         };
+        } // end else (activeMidi non-empty)
       } else {
         graded = this.grader.grade(this.definition, this.inputChords);
       }

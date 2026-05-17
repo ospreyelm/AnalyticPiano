@@ -9,6 +9,14 @@ from apps.exercises.harmonization.targets import build_targets_from_umto
 from apps.exercises.models import Exercise
 
 
+def _harmonization_instruction(source_text: str | None) -> str:
+    text = (source_text or "this phrase").strip()
+    old_prefix = "Provide the Figured Bass for "
+    if text.startswith(old_prefix):
+        text = text[len(old_prefix):]
+    return f"Realize the Figured Bass of {text}"
+
+
 class Command(BaseCommand):
     help = "Generate a harmonization exercise from an existing UMTO source exercise."
 
@@ -59,6 +67,8 @@ class Command(BaseCommand):
         umto["metadata"]["max_voice_displacement"] = options["max_displacement"]
         umto["metadata"]["chord_settle_ms"] = 150
         umto["metadata"]["release_grace_ms"] = 120
+        instruction = _harmonization_instruction(umto["metadata"].get("source"))
+        umto["metadata"]["source"] = instruction
 
         targets = build_targets_from_umto(umto)
         if not targets:
@@ -80,6 +90,7 @@ class Command(BaseCommand):
         data["analysisType"] = options["prompt"]
         data["score"]["umto"] = umto
         data["harmonizationTargets"] = targets
+        data["introText"] = instruction
 
         ex = Exercise.objects.create(
             description=desc,

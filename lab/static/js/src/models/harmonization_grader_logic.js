@@ -28,10 +28,10 @@ function harmonizationMatch(target, activeMidi) {
   var locked = target.lockedVoices || {};
   var policy = target.voiceCountPolicy || { min: 3, max: 4 };
 
-  if (locked.B && !includes(active, locked.B.midi)) {
+  if (locked.B && !includes(activePcs, locked.B.pc)) {
     reasons.push("wrong_bass");
   }
-  if (locked.S && !includes(active, locked.S.midi)) {
+  if (locked.S && !includes(activePcs, locked.S.pc)) {
     reasons.push("wrong_locked_soprano");
   }
 

@@ -64,17 +64,19 @@ def _normalize_key_name(key_name: str) -> str:
     """Convert HarmonyLab key encoding to music21 Key string.
 
     Prefix: 'j' = major, 'i' = minor.
-    Accidental: '#' = sharp, '_' = flat (HarmonyLab convention).
-    music21 Key() infers mode from case (uppercase=major, lowercase=minor)
-    and uses '-' for flat. Examples:
-      'jG_' → 'G-'   (G-flat major)
+    HarmonyLab uses a trailing '_' for natural key names; flats are encoded
+    with 'b' and sharps with '#'. music21 Key() infers mode from case.
+    Examples:
+      'jG_' → 'G'    (G major)
+      'jBb' → 'Bb'   (B-flat major)
       'iF#' → 'f#'   (F-sharp minor)
-      'jC'  → 'C'    (C major)
     """
     text = (key_name or "C").strip()
     if text.startswith(("j", "i")) and len(text) >= 2:
         is_minor = text.startswith("i")
-        tonic = text[1:].replace("_", "-")
+        tonic = text[1:]
+        if tonic.endswith("_"):
+            tonic = tonic[:-1]
         # music21 uses uppercase for major, lowercase for minor
         tonic = tonic.lower() if is_minor else tonic[0].upper() + tonic[1:]
         return tonic

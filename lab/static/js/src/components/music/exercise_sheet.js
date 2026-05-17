@@ -1664,11 +1664,45 @@ define([
               ? this.exerciseContext.grader.getPlayedNoteIds()
               : null;
 
-          // In chorale-identification mode we want notation rendered in black from the start.
+          // In chorale-identification mode, render all notation in black from the start.
           if (isChoraleIdentification) {
             playedNoteIdsForRender = new Set();
             _.each(ScoreTimeline.buildTimeline(score) || [], function (ev) {
               if (ev && typeof ev.id === 'number') {
+                playedNoteIdsForRender.add(ev.id);
+              }
+            });
+          }
+
+          // For harmonization: compute selectVoices once (used for both timeline and render).
+          var harmonizationSelectVoices = null;
+          if (isHarmonization) {
+            var lv = definition.exercise && definition.exercise.score && definition.exercise.score.umto
+              ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
+              : ["B"];
+            var hvTreble = [], hvBass = [];
+            if (lv.indexOf("S") !== -1) hvTreble.push(0);
+            if (lv.indexOf("A") !== -1) hvTreble.push(1);
+            if (lv.indexOf("T") !== -1) hvBass.push(0);
+            if (lv.indexOf("B") !== -1) hvBass.push(1);
+            harmonizationSelectVoices = { treble: hvTreble, bass: hvBass };
+          }
+
+          // For harmonization: bass notes at accepted target offsets turn black.
+          // Build timeline with same selectVoices as renderer so IDs align.
+          if (isHarmonization && this.exerciseContext) {
+            var acceptedPtr = this.exerciseContext._harmonizationPointer || 0;
+            var harmTargets = definition.getHarmonizationTargets ? definition.getHarmonizationTargets() : [];
+            var acceptedOffsetTicks = {};
+            for (var ai = 0; ai < acceptedPtr && ai < harmTargets.length; ai++) {
+              var tOff = harmTargets[ai].offset;
+              if (typeof tOff === "number") {
+                acceptedOffsetTicks[Math.round(tOff * 1024)] = true;
+              }
+            }
+            playedNoteIdsForRender = new Set();
+            _.each(ScoreTimeline.buildTimeline(score, { selectVoices: harmonizationSelectVoices }) || [], function (ev) {
+              if (ev && typeof ev.id === 'number' && acceptedOffsetTicks[ev.onset]) {
                 playedNoteIdsForRender.add(ev.id);
               }
             });
@@ -1696,19 +1730,7 @@ define([
             lockedVoices: isHarmonization && definition.exercise && definition.exercise.score && definition.exercise.score.umto
               ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
               : null,
-            selectVoices: isHarmonization ? (function() {
-              var lv = definition.exercise && definition.exercise.score && definition.exercise.score.umto
-                ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
-                : ["B"];
-              // SATB: treble=[S(0),A(1)], bass=[T(0),B(1)]
-              var trebleIdx = [];
-              var bassIdx = [];
-              if (lv.indexOf("S") !== -1) trebleIdx.push(0);
-              if (lv.indexOf("A") !== -1) trebleIdx.push(1);
-              if (lv.indexOf("T") !== -1) bassIdx.push(0);
-              if (lv.indexOf("B") !== -1) bassIdx.push(1);
-              return { treble: trebleIdx, bass: bassIdx };
-            })() : null,
+            selectVoices: harmonizationSelectVoices,
             onWindowPosition: function (slot) {
               if (!slot || typeof slot.windowIndex !== "number") {
                 return;
@@ -2430,6 +2452,7 @@ define([
       }
 
       if (isHarmonization) {
+        console.log("[HARM-DEBUG] onMidiNote harmonization branch. state:", state, "note:", noteNum);
         var ctx = this.exerciseContext;
         var tracker = ctx._harmonizationHeldTracker;
         if (tracker) {

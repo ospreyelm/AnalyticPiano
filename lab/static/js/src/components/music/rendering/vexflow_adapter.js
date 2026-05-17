@@ -936,6 +936,18 @@ define([
       var showNotation = opts && opts.showNotation !== undefined ? opts.showNotation : true;
       var isAnalysisMatch = !!(opts && opts.isAnalysisMatch);
       var harmonizationTargets = (opts && opts.harmonizationTargets) || null;
+      // Build offset-keyed lookup so columns match targets by musical position,
+      // not by coincidental array index.
+      var harmonizationTargetByOffset = null;
+      if (harmonizationTargets && harmonizationTargets.length) {
+        harmonizationTargetByOffset = Object.create(null);
+        for (var hti = 0; hti < harmonizationTargets.length; hti++) {
+          var htOff = harmonizationTargets[hti].offset;
+          if (typeof htOff === "number") {
+            harmonizationTargetByOffset[String(Math.round(htOff * 1000))] = harmonizationTargets[hti];
+          }
+        }
+      }
 
       var systemGap = (opts && opts.systemGap) || 150; // vertical spacing between treble and bass staves
       var staffYOffset = (opts && opts.staffYOffset) || 0;
@@ -1596,8 +1608,16 @@ define([
               var colGap = (prevColX !== null && columnCenterX !== null) ? (columnCenterX - prevColX) : null;
               if (columnCenterX !== null) prevColX = columnCenterX;
 
-              if (isHarmonization && harmonizationTargets && matchedIndex >= 0 && matchedIndex < harmonizationTargets.length && activeStaveForAnnotations) {
-                var harmTarget = harmonizationTargets[matchedIndex];
+              // Look up harmonization target by musical offset (ticks/1024 = quarter beats),
+              // not by array index, so figure display is always position-correct.
+              var harmTargetByOffset = null;
+              if (isHarmonization && harmonizationTargetByOffset && typeof noteOnset === "number") {
+                var colOffsetQb = noteOnset / 1024;
+                var colOffsetKey = String(Math.round(colOffsetQb * 1000));
+                harmTargetByOffset = harmonizationTargetByOffset[colOffsetKey] || null;
+              }
+              if (isHarmonization && harmTargetByOffset && columnCenterX !== null && activeStaveForAnnotations) {
+                var harmTarget = harmTargetByOffset;
                 var displayFig = harmTarget && (harmTarget.displayFigure || (harmTarget.figures && harmTarget.figures.join("/")));
                 if (displayFig && columnCenterX !== null) {
                   var figLines = displayFig.split("/").map(function(s) { return s.trim(); }).filter(Boolean);

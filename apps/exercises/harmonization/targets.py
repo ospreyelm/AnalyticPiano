@@ -17,6 +17,19 @@ def _voice_event_at_offset(
     return None
 
 
+def _voice_attacks_at_offset(events: list[dict[str, Any]], offset: float) -> bool:
+    """True when a new note event begins at exactly this offset (not held from earlier)."""
+    t = 0.0
+    for event in events:
+        if abs(t - offset) < 0.0001:
+            return event.get("kind") == "note"
+        dur = float(event.get("duration") or 0)
+        t += dur
+        if t > offset + 0.0001:
+            break
+    return False
+
+
 def _pitch_name(pitch: dict[str, Any]) -> str:
     alter = int(pitch.get("alter") or 0)
     acc = {0: "", 1: "#", -1: "b", 2: "##", -2: "bb"}.get(alter, "")
@@ -51,10 +64,17 @@ def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
         "max": vcp.get("max", 4),
     }
 
+    bass_events = umto.get("voices", {}).get("B", [])
     targets = []
     for analysis in umto.get("analysis", []):
         offset = float(analysis["offset"])
         content = analysis.get("content", {})
+
+        # Skip slices where the bass is held (inner-voice passing tones/suspensions).
+        # Keep slices where the bass itself attacks a new note — this naturally
+        # handles compound figures like 4-3 where the bass steps under a suspension.
+        if not _voice_attacks_at_offset(bass_events, offset):
+            continue
 
         bass = _locked_voice_payload(umto, "B", offset)
         if bass is None:

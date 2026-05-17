@@ -85,6 +85,8 @@ class GenerateHarmonizationCommandTests(TestCase):
         umto = created.data["score"]["umto"]
         assert umto["metadata"]["mode"] == "harmonization"
         assert umto["metadata"]["locked_voices"] == ["B"]
+        assert created.data["introText"].startswith("Realize the Figured Bass of ")
+        assert umto["metadata"]["source"].startswith("Realize the Figured Bass of ")
         assert created.data["harmonizationTargets"][0]["figures"] == ["6", "3"]
 
     def test_command_sets_voice_count_policy(self):

@@ -62,6 +62,20 @@ def test_g_major_f_sharp_six_five_derives_d_c_a():
     assert result["required_upper_pcs"] == [2, 0, 9]
 
 
+def test_harmonylab_natural_major_key_id_derives_major_scale_notes():
+    result = derive_required_notes(key_name="jG_", bass_name="G", figure="5/3")
+    assert result["required_note_names"] == ["D", "B"]
+    assert result["required_upper_pcs"] == [2, 11]
+    assert result["allowed_pcs"] == [7, 2, 11]
+
+
+def test_harmonylab_natural_minor_key_id_derives_minor_scale_notes():
+    result = derive_required_notes(key_name="iA_", bass_name="A", figure="5/3")
+    assert result["required_note_names"] == ["E", "C"]
+    assert result["required_upper_pcs"] == [4, 0]
+    assert result["allowed_pcs"] == [9, 4, 0]
+
+
 def test_review_artifact_command_writes_html(tmp_path):
     from django.core.management import call_command
 
