@@ -87,17 +87,30 @@ fallback is needed for this spec.
 walks **all** voices in the score with absolute (cross-measure) offsets and
 collects every non-rest pitch sounding at `targetOffsetQb`. It must consider:
 
-1. Notes whose `[onset, onset+duration)` window contains `targetOffsetQb`,
-   even when the note started in a previous measure (tied/held over the
-   barline).
-2. Notes that begin exactly at `targetOffsetQb` (the new attacks).
+1. Notes whose sounding window contains the target offset, even when the
+   note started in a previous measure (tied/held over the barline).
+2. Notes that begin exactly at the target offset (the new attacks).
 
-Implementation: convert the CIR score to a flat per-voice event list with
-absolute quarter-beat offsets (the existing `ScoreTimeline.buildTimeline`
-already does this for the whole score — reuse it, then filter by
-`ev.onset <= targetQb && ev.onset + ev.durationQb > targetQb`). Returns
-`{ pc: {step, alter} }`. The realization builder uses this map to spell each
-student midi:
+Implementation: reuse `ScoreTimeline.buildTimeline(score)`, which emits a
+flat event list with `{ onset, duration, midi, staff, voiceIndex, ... }`
+where **both `onset` and `duration` are in ticks at 1024 ticks per quarter**
+(see `score_timeline.js`). The target's `offset` field is in quarter-beats,
+so the realization builder must convert:
+
+```js
+var targetTick = Math.round(targetOffsetQb * 1024);
+var sounding = timeline.filter(function (ev) {
+  return ev.onset <= targetTick && ev.onset + ev.duration > targetTick;
+});
+```
+
+Build the pcMap from `sounding` by reading each event's source CIR pitch
+(`{step, alter, octave}`). The timeline already carries `staff`,
+`voiceIndex`, `measureIndex`, `itemIndex`, `headIndex` — use those to index
+back into `score.measures[m].staves[staff].voices[v].items[itemIndex]` (and
+`.notes[headIndex]` for chord items) to get the original pitch spelling.
+Returns `{ pc: {step, alter} }`. The realization builder uses this map to
+spell each student midi:
 
 ```js
 function spellMidi(midi, pcMap) {
