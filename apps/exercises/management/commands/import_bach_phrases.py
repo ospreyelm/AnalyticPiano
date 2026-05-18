@@ -132,12 +132,17 @@ def _build_roman_analysis_overrides(
                     "functional_label": None,
                 }
             else:
+                # No WiR label at this beat (NCT / passing-tone). Preserve the
+                # derived figured-bass values so the harmonization grader can
+                # build an accurate target from the actual sounding chord.
+                # Display-side filtering of non-standard figures is the
+                # frontend's job — do not null these here.
                 content = {
                     "roman_numeral": None,
                     "local_key": None,
                     "raw_roman_numeral": figure,
-                    "raw_figured_bass": None,
-                    "figured_bass": None,
+                    "raw_figured_bass": raw_figured_bass,
+                    "figured_bass": figured_bass,
                     "pop_symbol": None,
                     "functional_label": None,
                 }
