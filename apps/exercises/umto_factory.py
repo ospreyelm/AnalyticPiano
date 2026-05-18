@@ -59,11 +59,26 @@ def _resolve_voice_id(target_voice: Optional[str], clef: str) -> str:
     return "S" if clef == "treble" else "B"
 
 
-_QL_TO_DUR_TYPE = {4.0: "w", 2.0: "h", 1.0: "q", 0.5: "8", 0.25: "16", 0.125: "32"}
+_QL_TO_DURATION = {
+    4.0: ("w", 0),
+    3.0: ("h", 1),
+    2.0: ("h", 0),
+    1.5: ("q", 1),
+    1.0: ("q", 0),
+    0.75: ("8", 1),
+    0.5: ("8", 0),
+    0.375: ("16", 1),
+    0.25: ("16", 0),
+    0.125: ("32", 0),
+}
 
 
 def _ql_to_dur_type(ql: float) -> str:
-    return _QL_TO_DUR_TYPE.get(round(ql, 6), "q")
+    return _QL_TO_DURATION.get(round(ql, 6), ("q", 0))[0]
+
+
+def _ql_to_duration_parts(ql: float) -> tuple[str, int]:
+    return _QL_TO_DURATION.get(round(ql, 6), ("q", 0))
 
 
 def _split_voices_at_onsets(
@@ -112,6 +127,61 @@ def _split_voices_at_onsets(
                 ))
             t += ev.duration
         result[vid] = new_events
+    return result
+
+
+def _event_onsets(events: list[VoiceEvent]) -> list[float]:
+    out: list[float] = []
+    t = 0.0
+    for ev in events:
+        out.append(round(t, 5))
+        t += ev.duration
+    return out
+
+
+def _absorb_trailing_rests_after_final_attack(
+    voices_dict: dict[str, list[VoiceEvent]],
+) -> dict[str, list[VoiceEvent]]:
+    final_attack = None
+    for events in voices_dict.values():
+        t = 0.0
+        for ev in events:
+            if ev.kind == "note":
+                final_attack = max(final_attack if final_attack is not None else t, t)
+            t += ev.duration
+
+    if final_attack is None:
+        return voices_dict
+
+    result: dict[str, list[VoiceEvent]] = {}
+    for vid, events in voices_dict.items():
+        onsets = _event_onsets(events)
+        target_index = next(
+            (
+                idx for idx, ev in enumerate(events)
+                if ev.kind == "note" and abs(onsets[idx] - final_attack) < 0.0001
+            ),
+            None,
+        )
+        if target_index is None:
+            result[vid] = events
+            continue
+
+        trailing = events[target_index + 1:]
+        if not trailing or any(ev.kind != "rest" for ev in trailing):
+            result[vid] = events
+            continue
+
+        new_events = list(events[:target_index])
+        final_note = events[target_index].copy(deep=True)
+        final_note.duration = round(
+            final_note.duration + sum(ev.duration for ev in trailing),
+            6,
+        )
+        final_note.duration_type, final_note.dots = _ql_to_duration_parts(final_note.duration)
+        new_events.append(final_note)
+        result[vid] = new_events
+
     return result
 
 
@@ -255,6 +325,7 @@ def build_umto_payload(
 
         # Split held notes at interior onsets so each slot gets the correct notehead
         voices_dict = _split_voices_at_onsets(voices_dict, onsets)
+        voices_dict = _absorb_trailing_rests_after_final_attack(voices_dict)
 
         # Recompute onsets after splitting (new attack points may have been added)
         onsets = set()
