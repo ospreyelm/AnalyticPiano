@@ -224,3 +224,50 @@ class WiRImportIntegrationTests(TestCase):
         )
         self.assertEqual(target["content"]["roman_numeral"], "V7")
         self.assertEqual(target["content"]["figured_bass"], "7/4-3")
+
+
+class PhraseHasSilentMeasureTestCase(unittest.TestCase):
+    """Unit tests for the gap filter, especially anacrusis (pickup) handling."""
+
+    def _helper(self):
+        from apps.exercises.management.commands.import_bach_phrases import (
+            _phrase_has_silent_measure,
+        )
+        return _phrase_has_silent_measure
+
+    def test_anacrusis_pickup_does_not_trip_filter(self):
+        """Riemenschneider 1 begins with a quarter-note pickup in 3/4
+        (paddingLeft=2.0, notes_ql=1.0, bar_ql=3.0). The half-bar threshold
+        would mark it silent. The filter must skip the check for measures
+        that music21 has flagged as anacrusis via paddingLeft."""
+        from music21.corpus import chorales
+        score = list(chorales.Iterator(1, 1, numberingSystem="riemenschneider"))[0]
+        phrase = score.measures(0, 4)
+        self.assertFalse(self._helper()(phrase))
+
+    def test_genuinely_silent_internal_measure_still_trips(self):
+        """A real silent (mostly-rest) internal measure should still be caught."""
+        from music21 import stream, note, meter as m21meter
+        s = stream.Score()
+        p = stream.Part()
+        m1 = stream.Measure(number=1)
+        m1.timeSignature = m21meter.TimeSignature("4/4")
+        m1.append(note.Note("C4", quarterLength=4))
+        m2 = stream.Measure(number=2)
+        m2.append(note.Rest(quarterLength=4))  # silent
+        p.append([m1, m2])
+        s.append(p)
+        self.assertTrue(self._helper()(s))
+
+    def test_full_measures_pass(self):
+        from music21 import stream, note, meter as m21meter
+        s = stream.Score()
+        p = stream.Part()
+        m1 = stream.Measure(number=1)
+        m1.timeSignature = m21meter.TimeSignature("4/4")
+        m1.append(note.Note("C4", quarterLength=4))
+        m2 = stream.Measure(number=2)
+        m2.append(note.Note("D4", quarterLength=4))
+        p.append([m1, m2])
+        s.append(p)
+        self.assertFalse(self._helper()(s))
