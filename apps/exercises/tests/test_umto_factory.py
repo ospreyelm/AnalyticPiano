@@ -49,6 +49,48 @@ SATB_CIR = {
     ],
 }
 
+SATB_FINAL_REST_CIR = {
+    "meta": {"key": "G", "time": "3/4"},
+    "measures": [
+        {
+            "staves": {
+                "treble": {
+                    "voices": [
+                        {
+                            "items": [
+                                {"kind": "note", "pitch": {"step": "B", "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}},
+                                {"kind": "rest", "duration": {"type": "h", "dots": 0}},
+                            ]
+                        },
+                        {
+                            "items": [
+                                {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}},
+                                {"kind": "rest", "duration": {"type": "h", "dots": 0}},
+                            ]
+                        },
+                    ]
+                },
+                "bass": {
+                    "voices": [
+                        {
+                            "items": [
+                                {"kind": "note", "pitch": {"step": "D", "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}},
+                                {"kind": "rest", "duration": {"type": "h", "dots": 0}},
+                            ]
+                        },
+                        {
+                            "items": [
+                                {"kind": "note", "pitch": {"step": "G", "alter": 0, "octave": 2}, "duration": {"type": "q", "dots": 0}},
+                                {"kind": "rest", "duration": {"type": "h", "dots": 0}},
+                            ]
+                        },
+                    ]
+                },
+            }
+        }
+    ],
+}
+
 
 class UMTOFactoryTests(TestCase):
     def test_non_umto_exercise_error_is_value_error_subclass(self):
@@ -120,6 +162,29 @@ class UMTOFactoryTests(TestCase):
         self.assertEqual(umto["voices"]["A"][0]["pitch"]["midi"], 62)
         self.assertEqual(umto["voices"]["T"][0]["pitch"]["midi"], 59)
         self.assertEqual(umto["voices"]["B"][0]["pitch"]["midi"], 43)
+
+    def test_build_umto_payload_absorbs_trailing_rests_into_final_satb_attack(self):
+        payload = build_umto_payload(
+            exercise_id="TEMP",
+            source="Cadence",
+            key="G",
+            meter="3/4",
+            clef="keyboard",
+            complexity_score=9,
+            mode=InteractionMode.PLAYBACK,
+            score_data=SATB_FINAL_REST_CIR,
+            target_voice=None,
+            unit=9,
+        )
+
+        umto = payload["score"]["umto"]
+        for voice_id in ("S", "A", "T", "B"):
+            self.assertEqual(len(umto["voices"][voice_id]), 1)
+            self.assertEqual(umto["voices"][voice_id][0]["duration"], 3.0)
+            self.assertEqual(umto["voices"][voice_id][0]["duration_type"], "h")
+            self.assertEqual(umto["voices"][voice_id][0]["dots"], 1)
+        self.assertEqual(len(umto["grading"]), 1)
+        self.assertEqual(umto["grading"][0]["offset"], 0.0)
 
     @patch("apps.exercises.umto_factory.Exercise")
     def test_save_umto_exercise_logic_flows(self, mock_exercise_class):

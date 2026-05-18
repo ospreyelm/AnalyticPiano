@@ -244,6 +244,32 @@ assertEqual("buildRealization: F# spelled from source",
   sharpOut[0].spellings, [{ step: "F", alter: 1, octave: 4 }]);
 
 ScoreTimelineStub.events = [
+  { onset: 8704, duration: 512, midi: 72, step: "C", alter: 0, staff: "treble", voiceIndex: 1, measureIndex: 2, itemIndex: 3, headIndex: 0 },
+  { onset: 8704, duration: 512, midi: 45, step: "A", alter: 0, staff: "bass",   voiceIndex: 1, measureIndex: 2, itemIndex: 3, headIndex: 0 }
+];
+var targetSpellingOut = logic.buildRealization(
+  [{ midi: [45, 57, 66, 72], targetIndex: 0, ts: 1 }],
+  [{
+    offset: 8.5,
+    lockedVoices: { B: { midi: 45, pc: 9, spelling: "A" } },
+    requiredNoteNames: ["A", "F#", "C"]
+  }],
+  {}, { numerator: 3, denominator: 4 });
+assertEqual("buildRealization: target note names spell accepted chord tones missing from source timeline",
+  targetSpellingOut,
+  [{
+    measureIndex: 2,
+    onset: 2560,
+    midiNotes: [57, 66, 72],
+    spellings: [
+      { step: "A", alter: 0, octave: 3 },
+      { step: "F", alter: 1, octave: 4 },
+      { step: "C", alter: 0, octave: 5 }
+    ],
+    durationTicks: 512
+  }]);
+
+ScoreTimelineStub.events = [
   { onset: 0, duration: 4096, midi: 36, step: "C", alter: 0, staff: "bass", voiceIndex: 1, measureIndex: 0, itemIndex: 0, headIndex: 0 }
 ];
 assertEqual("buildRealization: skips entry when no upper voices remain",

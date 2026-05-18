@@ -176,6 +176,57 @@ def test_multiple_slices_produce_multiple_targets():
     assert targets[1]["figures"] == ["7", "5", "3"]
 
 
+def test_misaligned_analysis_slice_uses_local_grading_offset_for_bass_attack():
+    umto = {
+        "metadata": {
+            "key": "G",
+            "locked_voices": ["B"],
+            "voice_count_policy": {"expected": None, "min": 3, "max": 4},
+        },
+        "voices": {
+            "B": [
+                _event(42, "F", 2, duration=1.0, alter=1),
+                _event(43, "G", 2, duration=1.0),
+            ],
+        },
+        "analysis": [
+            {
+                "offset": 0.0,
+                "content": {
+                    "figured_bass": "6",
+                    "raw_figured_bass": "6/3",
+                    "local_key": "G",
+                    "roman_numeral": None, "raw_roman_numeral": None,
+                    "pop_symbol": None, "functional_label": None,
+                },
+            },
+            {
+                # Imported phrase analysis can retain a later source-score offset
+                # even though voices/grading have been clipped to local offsets.
+                "offset": 3.0,
+                "content": {
+                    "figured_bass": "5/3",
+                    "raw_figured_bass": "8/5/3",
+                    "local_key": "G",
+                    "roman_numeral": None, "raw_roman_numeral": None,
+                    "pop_symbol": None, "functional_label": None,
+                },
+            },
+        ],
+        "grading": [
+            {"offset": 0.0, "target_midi_pitches": [42, 57, 62]},
+            {"offset": 1.0, "target_midi_pitches": [43, 62, 67, 71]},
+        ],
+    }
+
+    targets = build_targets_from_umto(umto)
+
+    assert [t["offset"] for t in targets] == [0.0, 1.0]
+    assert targets[1]["bassMidi"] == 43
+    assert targets[1]["displayFigure"] == "5/3"
+    assert targets[1]["requiredNoteNames"] == ["G", "D", "B"]
+
+
 def test_empty_analysis_returns_empty_targets():
     umto = {
         "metadata": {"key": "C", "locked_voices": ["B"],

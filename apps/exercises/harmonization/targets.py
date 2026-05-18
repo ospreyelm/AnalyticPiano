@@ -30,6 +30,16 @@ def _voice_attacks_at_offset(events: list[dict[str, Any]], offset: float) -> boo
     return False
 
 
+def _voice_attack_offsets(events: list[dict[str, Any]]) -> list[float]:
+    offsets = []
+    t = 0.0
+    for event in events:
+        if event.get("kind") == "note":
+            offsets.append(round(t, 5))
+        t += float(event.get("duration") or 0)
+    return offsets
+
+
 def _pitch_name(pitch: dict[str, Any]) -> str:
     alter = int(pitch.get("alter") or 0)
     acc = {0: "", 1: "#", -1: "b", 2: "##", -2: "bb"}.get(alter, "")
@@ -53,6 +63,78 @@ def _locked_voice_payload(
     }
 
 
+def _grading_pcs_by_offset(umto: dict[str, Any]) -> dict[float, set[int]]:
+    out: dict[float, set[int]] = {}
+    for grading in umto.get("grading", []):
+        try:
+            offset = round(float(grading["offset"]), 5)
+        except (KeyError, TypeError, ValueError):
+            continue
+        pcs = {
+            int(midi) % 12
+            for midi in grading.get("target_midi_pitches", [])
+            if midi is not None
+        }
+        if pcs:
+            out[offset] = pcs
+    return out
+
+
+def _analysis_matches_grading(
+    *,
+    analysis: dict[str, Any],
+    key_name: str,
+    bass: dict[str, Any],
+    grading_pcs: set[int],
+) -> bool:
+    if not grading_pcs:
+        return False
+    content = analysis.get("content", {})
+    raw_figure = content.get("raw_figured_bass") or content.get("figured_bass") or "5/3"
+    local_key = content.get("local_key") or key_name
+    try:
+        derived = derive_required_notes(
+            key_name=local_key,
+            bass_name=bass["spelling"],
+            figure=raw_figure,
+        )
+    except Exception:
+        return False
+    return set(derived["allowed_pcs"]) == grading_pcs
+
+
+def _analysis_for_target_offset(
+    *,
+    analyses: list[dict[str, Any]],
+    used_analysis_indexes: set[int],
+    offset: float,
+    key_name: str,
+    bass: dict[str, Any],
+    grading_pcs: set[int],
+) -> tuple[int, dict[str, Any]] | tuple[None, None]:
+    for idx, analysis in enumerate(analyses):
+        if idx in used_analysis_indexes:
+            continue
+        if abs(round(float(analysis["offset"]), 5) - offset) < 0.0001:
+            return idx, analysis
+
+    for idx, analysis in enumerate(analyses):
+        if idx in used_analysis_indexes:
+            continue
+        analysis_offset = round(float(analysis["offset"]), 5)
+        if analysis_offset <= offset + 0.0001:
+            continue
+        if _analysis_matches_grading(
+            analysis=analysis,
+            key_name=key_name,
+            bass=bass,
+            grading_pcs=grading_pcs,
+        ):
+            return idx, analysis
+
+    return None, None
+
+
 def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
     metadata = umto.get("metadata", {})
     key_name = metadata.get("key") or "C"
@@ -65,20 +147,28 @@ def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
     }
 
     bass_events = umto.get("voices", {}).get("B", [])
+    analyses = list(umto.get("analysis", []))
+    grading_pcs_by_offset = _grading_pcs_by_offset(umto)
+    used_analysis_indexes: set[int] = set()
     targets = []
-    for analysis in umto.get("analysis", []):
-        offset = float(analysis["offset"])
-        content = analysis.get("content", {})
-
-        # Skip slices where the bass is held (inner-voice passing tones/suspensions).
-        # Keep slices where the bass itself attacks a new note — this naturally
-        # handles compound figures like 4-3 where the bass steps under a suspension.
-        if not _voice_attacks_at_offset(bass_events, offset):
-            continue
-
+    for offset in _voice_attack_offsets(bass_events):
         bass = _locked_voice_payload(umto, "B", offset)
         if bass is None:
             continue
+
+        analysis_idx, analysis = _analysis_for_target_offset(
+            analyses=analyses,
+            used_analysis_indexes=used_analysis_indexes,
+            offset=offset,
+            key_name=key_name,
+            bass=bass,
+            grading_pcs=grading_pcs_by_offset.get(offset, set()),
+        )
+        if analysis_idx is None or analysis is None:
+            continue
+        used_analysis_indexes.add(analysis_idx)
+
+        content = analysis.get("content", {})
 
         # raw_figured_bass drives pitch derivation (full interval stack, no dropped intervals).
         # figured_bass (abbreviated) is display-only.

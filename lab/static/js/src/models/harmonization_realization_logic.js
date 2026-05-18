@@ -19,6 +19,25 @@ function pitchClassForMidi(midi) {
   return ((midi % 12) + 12) % 12;
 }
 
+function pitchClassForSpelling(step, alter) {
+  var base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[String(step || "").toUpperCase()];
+  if (typeof base !== "number") return null;
+  return ((base + (alter || 0)) % 12 + 12) % 12;
+}
+
+function parseNoteNameSpelling(name) {
+  var match = String(name || "").match(/^([A-Ga-g])([#b]*)/);
+  if (!match) return null;
+
+  var acc = match[2] || "";
+  var alter = 0;
+  for (var i = 0; i < acc.length; i += 1) {
+    alter += acc.charAt(i) === "#" ? 1 : -1;
+  }
+
+  return { step: match[1].toUpperCase(), alter: alter };
+}
+
 function ticksToDurationChunks(ticks) {
   if (ticks === 0) return [];
   var remaining = ticks;
@@ -87,6 +106,54 @@ function buildPcSpellingMap(score, targetOffsetQb) {
   }
 
   return pcMap;
+}
+
+function addSpellingToPcMap(pcMap, spelling) {
+  if (!spelling) return;
+  var pc = pitchClassForSpelling(spelling.step, spelling.alter || 0);
+  if (pc === null || pcMap[pc]) return;
+  pcMap[pc] = { step: spelling.step, alter: spelling.alter || 0 };
+}
+
+function addSpellingNameToPcMap(pcMap, name) {
+  addSpellingToPcMap(pcMap, parseNoteNameSpelling(name));
+}
+
+function buildTargetPcSpellingMap(target) {
+  var pcMap = {};
+  if (!target) return pcMap;
+
+  addSpellingNameToPcMap(pcMap, target.bassSpelling);
+
+  var lockedVoices = target.lockedVoices || {};
+  Object.keys(lockedVoices).forEach(function (voiceId) {
+    addSpellingNameToPcMap(pcMap, lockedVoices[voiceId] && lockedVoices[voiceId].spelling);
+  });
+
+  (target.requiredNoteNames || []).forEach(function (name) {
+    addSpellingNameToPcMap(pcMap, name);
+  });
+
+  return pcMap;
+}
+
+function mergePcSpellingMaps(primary, fallback) {
+  var out = {};
+  var key;
+  primary = primary || {};
+  fallback = fallback || {};
+
+  for (key in primary) {
+    if (Object.prototype.hasOwnProperty.call(primary, key)) {
+      out[key] = primary[key];
+    }
+  }
+  for (key in fallback) {
+    if (Object.prototype.hasOwnProperty.call(fallback, key) && !out[key]) {
+      out[key] = fallback[key];
+    }
+  }
+  return out;
 }
 
 function measureTickTotal(meter) {
@@ -158,7 +225,10 @@ function buildRealization(accepted, targets, score, meter) {
     if (!upperMidi.length) continue;
     upperMidi = upperMidi.slice().sort(function (a, b) { return a - b; });
 
-    var pcMap = buildPcSpellingMap(score, absOffsetQb);
+    var pcMap = mergePcSpellingMaps(
+      buildPcSpellingMap(score, absOffsetQb),
+      buildTargetPcSpellingMap(target)
+    );
     var spellings = upperMidi.map(function (m) { return spellMidi(m, pcMap); });
     if (spellings.indexOf(null) !== -1) continue;
 
