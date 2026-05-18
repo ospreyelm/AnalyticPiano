@@ -40,8 +40,8 @@ def operations_view(request):
                     else:
                         kwargs[key] = value
 
-            # Add author email if applicable
-            if command_name in ['import_bach_phrases', 'generate_harmonization'] and 'author' not in kwargs:
+            # Add author email to any generator command that creates exercises
+            if 'author' not in kwargs:
                 kwargs['author'] = request.user.email
 
             # Document limitation for long commands
