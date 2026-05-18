@@ -39,6 +39,65 @@ define([
       ? true
       : false;
 
+  // ---------------------------------------------------------------------------
+  // Figured-bass display filter
+  // Only shapes in this set are rendered below bass notes.  Ornamental figures
+  // (e.g. 9/7/5 from a passing-tone bass) are suppressed at the visual layer;
+  // grading / target-builder code is unaffected.
+  // ---------------------------------------------------------------------------
+  var STANDARD_SHAPES = {
+    // root-pos triad
+    "5/3": 1, "8/5/3": 1,
+    // first-inv triad (and abbreviated "6")
+    "6/3": 1, "8/6/3": 1, "6": 1,
+    // second-inv triad
+    "6/4": 1, "8/6/4": 1,
+    // root-pos 7th (and "7")
+    "7/5/3": 1, "8/7/5/3": 1, "7": 1,
+    // first-inv 7th
+    "6/5/3": 1, "6/5": 1,
+    // second-inv 7th
+    "6/4/3": 1, "4/3": 1,
+    // third-inv 7th
+    "6/4/2": 1, "4/2": 1, "2": 1,
+    // 4-3 suspension family
+    "8/5/4": 1, "5/4/3": 1, "5/4": 1, "4": 1,
+    // 7-6 suspension
+    "7/6/3": 1, "7/6": 1,
+    // 5-6 motion
+    "5/2": 1,
+    // 9ths
+    "9/5/3": 1, "9": 1, "9/7/3": 1, "9/7": 1, "9/6/3": 1, "9/6": 1,
+    // bass suspension forms
+    "7/5/2": 1, "7/4/2": 1,
+    // full-stack bass suspensions
+    "8/7/5/2": 1, "8/7/4/2": 1
+  };
+
+  /**
+   * Returns true iff the figured-bass figure string matches a standard shape.
+   * Accidental prefixes (#, b, n, ##, bb) and quality markers (+, °) are
+   * stripped from each token before the lookup so that, e.g., "#6/4" matches
+   * the "6/4" shape.
+   *
+   * @param  {string} figure  e.g. "#6/4" or "9/7/5"
+   * @return {boolean}
+   */
+  function isStandardFigure(figure) {
+    if (!figure) return false;
+    var bare = figure
+      .split("/")
+      .map(function (token) {
+        // strip leading accidentals: ##, bb, #, b, n
+        return token
+          .replace(/^(##|bb|#|b|n)/, "")
+          // strip trailing quality markers: + or °
+          .replace(/[+°]+$/, "");
+      })
+      .join("/");
+    return Object.prototype.hasOwnProperty.call(STANDARD_SHAPES, bare);
+  }
+
   /**
    * Defines an image of a metronome that may be rendered to a canvas element.
    * @type {Image}
@@ -542,6 +601,10 @@ define([
       var figure = this.analyzeConfig.mode.abbreviate_thoroughbass
         ? this.getAnalyzer().abbrev_thoroughbass_figure(midi_nums)
         : this.getAnalyzer().full_thoroughbass_figure(midi_nums);
+
+      if (!isStandardFigure(figure)) {
+        return null; // suppress non-standard ornamental figures
+      }
 
       var ctx = this.getContext();
 
