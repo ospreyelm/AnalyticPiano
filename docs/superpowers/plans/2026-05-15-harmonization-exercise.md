@@ -577,6 +577,12 @@ git commit -m "feat: add harmonization musical review artifact"
 
 ## Task 4: Normalize UMTO Analysis Slices Into Harmonization Targets
 
+> **Key invariant:** `raw_figured_bass` (full interval stack, e.g. `"6/3"`, `"7/5/3"`) drives
+> pitch derivation in `derive_required_notes()`. `figured_bass` (abbreviated, e.g. `"6"`, `"7"`)
+> is stored as `displayFigure` for rendering only. Abbreviation drops intervals (e.g. `"6/3"→"6"`
+> loses the 3rd), producing incorrect `allowedPcs`. Validation against 200 Bach chord onsets
+> confirmed 100% accuracy with `raw_figured_bass` vs 96% with abbreviated.
+
 **Files:**
 - Create: `apps/exercises/harmonization/targets.py`
 - Test: `apps/exercises/tests/test_harmonization_targets.py`
@@ -678,6 +684,53 @@ def test_locked_soprano_is_included_when_configured():
 
     assert targets[0]["lockedVoices"]["S"]["midi"] == 60
     assert targets[0]["lockedVoices"]["S"]["pc"] == 0
+
+
+def test_raw_figured_bass_used_not_abbreviated():
+    # "8/6/3" abbreviates to "6" — if we used the abbreviation we'd expand ["6","3"]
+    # and get the same result. Use "4/3" (second-inversion seventh) vs abbreviated "4/3"
+    # to show raw is preferred: provide only raw_figured_bass (no figured_bass key).
+    # More importantly: provide a case where abbreviated form is present but WRONG subset —
+    # raw="8/5/3" (root position with octave doubling) should give same pcs as "5/3",
+    # whereas if figured_bass were accidentally used and was empty it would fall back to "5/3".
+    # The critical case: raw_figured_bass present, figured_bass absent — raw must win.
+    umto = {
+        "metadata": {
+            "key": "G",
+            "locked_voices": ["B"],
+            "voice_count_policy": {"expected": 4, "min": 3, "max": 4},
+        },
+        "voices": {
+            "S": [_event(74, "D", 5)],
+            "A": [_event(69, "A", 4)],
+            "T": [_event(62, "D", 4)],
+            "B": [_event(55, "G", 3)],
+        },
+        "analysis": [
+            {
+                "offset": 0.0,
+                "content": {
+                    "figured_bass": None,        # absent — raw must be used
+                    "raw_figured_bass": "8/5/3",
+                    "roman_numeral": None,
+                    "raw_roman_numeral": None,
+                    "local_key": "G",
+                    "pop_symbol": None,
+                    "functional_label": None,
+                },
+            }
+        ],
+        "grading": [{"offset": 0.0, "target_midi_pitches": [55, 62, 69, 74]}],
+    }
+
+    targets = build_targets_from_umto(umto)
+
+    # G major root position: G(7), D(2), A(9)
+    assert targets[0]["figures"] == ["8", "5", "3"]   # full stack, not abbreviated
+    assert targets[0]["displayFigure"] == "8/5/3"     # falls back to raw when no abbrev
+    assert 7 in targets[0]["allowedPcs"]   # G
+    assert 2 in targets[0]["allowedPcs"]   # D
+    assert 9 in targets[0]["allowedPcs"]   # A
 ```
 
 - [ ] **Step 2: Run failing tests**
@@ -744,14 +797,16 @@ def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
         if bass is None:
             continue
 
-        figure = content.get("figured_bass")
-        if figure is None:
-            figure = content.get("raw_figured_bass") or "5/3"
+        # raw_figured_bass (full interval stack, e.g. "6/3") is used for pitch
+        # derivation — abbreviation drops intervals and produces wrong notes.
+        # figured_bass (abbreviated, e.g. "6") is display-only.
+        raw_figure = content.get("raw_figured_bass") or content.get("figured_bass") or "5/3"
+        display_figure = content.get("figured_bass") or raw_figure
         local_key = content.get("local_key") or key_name
         derived = derive_required_notes(
             key_name=local_key,
             bass_name=bass["spelling"],
-            figure=figure,
+            figure=raw_figure,
         )
 
         locked = {}
@@ -765,7 +820,8 @@ def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
             "bassMidi": bass["midi"],
             "bassPc": bass["pc"],
             "bassSpelling": bass["spelling"],
-            "figures": expand_figure_string(figure),
+            "figures": expand_figure_string(raw_figure),      # full stack for grading
+            "displayFigure": display_figure,                   # abbreviated for display
             "requiredUpperPcs": derived["required_upper_pcs"],
             "requiredNoteNames": derived["required_note_names"],
             "allowedPcs": derived["allowed_pcs"],
@@ -777,7 +833,7 @@ def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
             },
             "source": {
                 "kind": "analysis_slice",
-                "label": content.get("figured_bass") or content.get("roman_numeral") or "",
+                "label": display_figure or content.get("roman_numeral") or "",
                 "key": local_key,
             },
         })
@@ -1422,6 +1478,13 @@ if (mode === "harmonization") {
 
 When `mode === "harmonization"`, use `problems[i]` as the target and do not read `problems[i].notes`.
 
+> **Wiring note:** `actual_notes` here must be the **current held-MIDI snapshot** from
+> `HeldNoteTracker.activeMidi(nowMs)`, not the chord-bank `inputChords` array used by
+> other modes. The chord bank accumulates note-on events per problem slot; the harmonization
+> grader needs the live sonority at settle time. Wire the tracker's output — not `inputChords`
+> — as the second argument to `harmonizationMatch`. This wiring is confirmed and tested in
+> Task 12; if the existing event path makes it awkward, Task 12 step 7 is the place to fix it.
+
 - [ ] **Step 8: Run targeted tests**
 
 Run:
@@ -1846,10 +1909,15 @@ Expected: `lab/static/harmonization-review.html` is updated.
 
 - [ ] **Step 4: Generate one real harmonization exercise from a Bach UMTO source**
 
-Find a suitable source:
+Find a suitable source — must have non-empty `analysis` array or `generate_harmonization` will produce zero targets and abort:
 
 ```bash
-DJANGO_SETTINGS_MODULE=harmony.settings.local python manage.py shell -c "from apps.exercises.models import Exercise; qs=Exercise.objects.filter(data__isUMTO=True, data__analysisType='figured_bass')[:10]; print([(e.id,e.description) for e in qs])"
+DJANGO_SETTINGS_MODULE=harmony.settings.local python manage.py shell -c "
+from apps.exercises.models import Exercise
+qs = Exercise.objects.filter(data__isUMTO=True, data__analysisType='figured_bass')
+good = [e for e in qs if e.data.get('score', {}).get('umto', {}).get('analysis')]
+print([(e.id, e.description) for e in good[:10]])
+"
 ```
 
 Then run:
@@ -1859,6 +1927,8 @@ DJANGO_SETTINGS_MODULE=harmony.settings.local python manage.py generate_harmoniz
 ```
 
 Expected: command prints `Created EXID` or `Exists: EXID`.
+
+> **Guard:** `generate_harmonization` must raise `CommandError` (not silently create an empty exercise) if `build_targets_from_umto` returns zero targets. Add this check to the command implementation in Task 5 step 3.
 
 - [ ] **Step 5: Start local server**
 

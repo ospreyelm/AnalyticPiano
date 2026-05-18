@@ -136,6 +136,7 @@ def abbreviate_figured_bass(raw: str) -> str:
     for abbrev_tok in abbrev_tokens:
         _, abbrev_num = _split_interval(abbrev_tok)
         abbrev_nums_used.add(abbrev_num)
+        # Find the prefix for this number in the original stack
         original_prefix = ""
         for i, num in enumerate(nums):
             if num == abbrev_num:
@@ -143,13 +144,13 @@ def abbreviate_figured_bass(raw: str) -> str:
                 break
         result_tokens.append(_normalize_tritone(original_prefix + abbrev_tok))
 
-    # Preserve any interval with a chromatic prefix dropped by abbreviation
-    # e.g. #6 in #6/4/3→4/3, or #3 in 8/6/#3→6.
+    # Preserve any interval that had a chromatic prefix but was dropped by
+    # abbreviation — e.g. #6 in #6/4/3 abbreviated to 4/3, or #3 in 8/6/#3→6.
     for i, num in enumerate(nums):
         if prefixes[i] and num not in abbrev_nums_used and num != "8":
             result_tokens.append(_normalize_tritone(prefixes[i] + num))
 
-    # Re-sort descending by interval number
+    # Re-sort entire output descending by interval number
     result_tokens.sort(key=lambda t: int(_split_interval(t)[1]), reverse=True)
     return "/".join(result_tokens)
 
