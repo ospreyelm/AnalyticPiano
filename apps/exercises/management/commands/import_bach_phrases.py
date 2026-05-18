@@ -140,6 +140,22 @@ def _build_roman_analysis_overrides(
     return _apply_suspension_figures(overrides, figured_by_offset)
 
 
+def _phrase_has_silent_measure(phrase_score) -> bool:
+    """True when phrase contains a measure whose notes fill less than
+    half its bar duration. Anacrusis (pickup) measures are exempted —
+    music21 marks them with paddingLeft > 0 and their content is
+    intentionally shorter than the bar.
+    """
+    for m_test in phrase_score.parts[0].getElementsByClass(stream.Measure):
+        if m_test.paddingLeft and m_test.paddingLeft > 0:
+            continue
+        notes_ql = sum(n.quarterLength for n in m_test.flatten().notes)
+        bar_ql = m_test.barDuration.quarterLength
+        if bar_ql > 0 and notes_ql < bar_ql * 0.5:
+            return True
+    return False
+
+
 def _build_next_pitch_map(phrase_score) -> dict[float, dict[int, int]]:
     """Build a per-offset map of {midi: next_midi} for each sounding pitch.
 
@@ -411,16 +427,8 @@ class Command(BaseCommand):
             # GAP FILTER: Skip phrases with silent or rest-dominated measures.
             # music21 uses implicit rests (no Rest objects), so we compare
             # filled duration (notes_ql) against the full bar duration.
-            has_silent_measure = False
-            for m_test in phrase_score.parts[0].getElementsByClass(stream.Measure):
-                notes_ql = sum(n.quarterLength for n in m_test.flatten().notes)
-                bar_ql = m_test.barDuration.quarterLength
-                # Skip if less than half the measure is filled with notes
-                if bar_ql > 0 and notes_ql < bar_ql * 0.5:
-                    has_silent_measure = True
-                    break
-
-            if has_silent_measure:
+            # Anacrusis (pickup) measures are exempted — see _phrase_has_silent_measure.
+            if _phrase_has_silent_measure(phrase_score):
                 self.stdout.write(self.style.WARNING(f"  Skipping Phrase {idx+1} (mm. {start_m}-{end_m}): Contains silent/rest-heavy measures (Gap Filter)."))
                 start_m = end_m + 1
                 continue
