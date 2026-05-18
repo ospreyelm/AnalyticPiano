@@ -81,7 +81,13 @@ class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
         self.assertEqual(content["raw_figured_bass"], "8/7/4")
         self.assertEqual(content["figured_bass"], "7/4-3")
 
-    def test_emits_null_content_for_beats_without_wir_labels(self):
+    def test_emits_null_roman_for_beats_without_wir_labels_but_preserves_figured_bass(self):
+        """At NCT beats (no WiR label), the roman_numeral / local_key are null
+        (so the analysis UI can suppress the chord label), but the derived
+        figured_bass values are preserved so the harmonization grader can
+        build an accurate target from the actual sounding chord. Display-side
+        suppression of non-standard figures is the frontend's responsibility.
+        """
         from music21.corpus import chorales
 
         score = list(chorales.Iterator(1, 1, numberingSystem="riemenschneider"))[0]
@@ -94,8 +100,8 @@ class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
         self.assertIsNone(content["roman_numeral"])
         self.assertIsNone(content["local_key"])
         self.assertIsNotNone(content["raw_roman_numeral"])
-        self.assertIsNone(content["raw_figured_bass"])
-        self.assertIsNone(content["figured_bass"])
+        self.assertIsNotNone(content["raw_figured_bass"])
+        self.assertIsNotNone(content["figured_bass"])
         self.assertIsNone(content["pop_symbol"])
         self.assertIsNone(content["functional_label"])
 

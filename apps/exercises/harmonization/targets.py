@@ -172,13 +172,7 @@ def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
 
         # raw_figured_bass drives pitch derivation (full interval stack, no dropped intervals).
         # figured_bass (abbreviated) is display-only.
-        raw_figure = content.get("raw_figured_bass") or content.get("figured_bass")
-        if not raw_figure:
-            # NCT slice (passing-tone bass): WiR gating zeroed out both figure fields
-            # to signal "no real chord here." Skip — do not default to "5/3", which
-            # would invent a triad rooted on the passing bass note and let the grader
-            # accept a phantom chord (e.g. a passing D being accepted as D-major).
-            continue
+        raw_figure = content.get("raw_figured_bass") or content.get("figured_bass") or "5/3"
         display_figure = content.get("figured_bass") or raw_figure
         local_key = content.get("local_key") or key_name
 
