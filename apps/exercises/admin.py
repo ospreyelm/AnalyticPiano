@@ -7,6 +7,7 @@ from django_better_admin_arrayfield.admin.mixins import DynamicArrayMixin
 from import_export.admin import ImportExportModelAdmin
 from django.core.management import call_command
 from io import StringIO
+from django.utils.html import format_html
 
 from apps.exercises.forms import (
     ExerciseForm,
@@ -31,6 +32,44 @@ import sys
 import os
 
 from apps.exercises.resources import ExerciseResource, PlaylistResource, CourseResource
+
+
+class ModeFilter(admin.SimpleListFilter):
+    title = 'Mode'
+    parameter_name = 'data__mode'
+    def lookups(self, request, model_admin):
+        qs = model_admin.get_queryset(request).exclude(data__mode__isnull=True)
+        modes = set(qs.values_list('data__mode', flat=True))
+        return [(m, m) for m in sorted(list(modes)) if m]
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(data__mode=self.value())
+        return queryset
+
+class AnalysisTypeFilter(admin.SimpleListFilter):
+    title = 'Analysis Type'
+    parameter_name = 'data__analysisType'
+    def lookups(self, request, model_admin):
+        qs = model_admin.get_queryset(request).exclude(data__analysisType__isnull=True)
+        types = set(qs.values_list('data__analysisType', flat=True))
+        return [(t, t) for t in sorted(list(types)) if t]
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(data__analysisType=self.value())
+        return queryset
+
+class SkillTagFilter(admin.SimpleListFilter):
+    title = 'Skill Tag'
+    parameter_name = 'skill_tag'
+    def lookups(self, request, model_admin):
+        from django.db.models import Func, F
+        qs = model_admin.get_queryset(request).annotate(tag=Func(F('skill_tags'), function='unnest')).values_list('tag', flat=True).distinct()
+        return [(t, t) for t in sorted(list(qs)) if t]
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(skill_tags__contains=[self.value()])
+        return queryset
+
 
 
 class GenerateContentAdminSite(admin.AdminSite):
@@ -90,16 +129,19 @@ class ExerciseAdmin(ImportExportModelAdmin):
     form = ExerciseForm
     list_display = (
         "id",
+        "preview_mode",
+        "preview_analysis_type",
+        "preview_skill_tags",
         "show_on_site",
         "authored_by",
         "is_public",
-        "created",
         "updated",
     )
-    list_filter = ("authored_by__email", "is_public")
+    list_filter = ("authored_by__email", "is_public", ModeFilter, AnalysisTypeFilter, SkillTagFilter)
     search_fields = ("id",)
     readonly_fields = ("id", "authored_by", "created", "updated", "show_on_site")
     raw_id_fields = ("authored_by",)
+    actions = ["refresh_selected"]
     fieldsets = (
         (
             "Exercise Information",
@@ -134,6 +176,7 @@ class ExerciseAdmin(ImportExportModelAdmin):
 
     def get_urls(self):
         urls = super().get_urls()
+        from apps.exercises.admin_views import operations_view
         custom_urls = [
             path(
                 'import-musicxml/',
@@ -144,6 +187,11 @@ class ExerciseAdmin(ImportExportModelAdmin):
                 'generate-content/',
                 self.admin_site.admin_view(self.generate_content_view),
                 name='exercises_exercise_generate_content',
+            ),
+            path(
+                'operations/',
+                self.admin_site.admin_view(operations_view),
+                name='exercises_exercise_operations',
             ),
         ]
         return custom_urls + urls
@@ -409,6 +457,41 @@ class ExerciseAdmin(ImportExportModelAdmin):
         return mark_safe(link)
 
     show_on_site.short_description = "Link"
+
+    def preview_mode(self, obj):
+        return obj.data.get('mode') if obj.data else None
+    preview_mode.short_description = 'Mode'
+
+    def preview_analysis_type(self, obj):
+        return obj.data.get('analysisType') if obj.data else None
+    preview_analysis_type.short_description = 'Analysis Type'
+
+    def preview_skill_tags(self, obj):
+        if not obj.skill_tags: return ""
+        chips = [f"<span style='display:inline-block; padding:2px 6px; margin:2px; background-color:#e0e0e0; border-radius:12px; font-size:11px;'>{t}</span>" for t in obj.skill_tags]
+        return format_html("".join(chips))
+    preview_skill_tags.short_description = 'Skill Tags'
+    
+    def refresh_selected(self, request, queryset):
+        tags = set()
+        for obj in queryset:
+            if obj.skill_tags:
+                tags.update(obj.skill_tags)
+        
+        if not tags:
+            self.message_user(request, "No skill tags found in selected exercises.", level='warning')
+            return
+            
+        out = StringIO()
+        for tag in tags:
+            try:
+                call_command('recompute_chorale_analysis', tag=tag, stdout=out)
+                call_command('recompute_harmonization_targets', tag=tag, stdout=out)
+            except Exception as e:
+                self.message_user(request, f"Error refreshing tag {tag}: {e}", level='error')
+                return
+        self.message_user(request, f"Successfully refreshed for tags: {', '.join(tags)}", level='success')
+    refresh_selected.short_description = "Refresh selected (runs recompute commands scoped to their tags)"
 
 
 class PlaylistInlineAdmin(admin.TabularInline):

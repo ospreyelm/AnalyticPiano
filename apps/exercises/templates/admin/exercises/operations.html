@@ -1,0 +1,246 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .op-section { margin-bottom: 2rem; padding: 1rem; background: #fff; border: 1px solid #ccc; border-radius: 4px; }
+  .op-section h2 { margin-top: 0; }
+  .form-row { margin-bottom: 1rem; }
+  .form-row label { display: inline-block; width: 150px; font-weight: bold; }
+  .form-row input[type="text"], .form-row input[type="number"], .form-row select { width: 300px; padding: 4px; }
+  .btn { padding: 6px 12px; background: #417690; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  .btn:hover { background: #2c5d77; }
+  .btn-secondary { background: #79aec8; }
+  .btn-secondary:hover { background: #609ab6; }
+  .output-box { background: #f8f9fa; padding: 1rem; border-left: 4px solid #417690; margin-top: 1rem; font-family: monospace; white-space: pre-wrap; }
+  table.catalog-table { width: 100%; border-collapse: collapse; }
+  table.catalog-table th, table.catalog-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  table.catalog-table th { background-color: #f2f2f2; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+
+  {% if command_output %}
+  <div class="op-section">
+    <h2>Command Output</h2>
+    <div class="output-box">{{ command_output }}</div>
+  </div>
+  {% endif %}
+
+  <div class="op-section">
+    <h2>Generate New Exercises</h2>
+    <p>Warning: Long-running commands (like import_bach_phrases) may take several minutes to complete.</p>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Import Bach Phrases</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="import_bach_phrases">
+      <div class="form-row">
+        <label>Riemenschneider N:</label>
+        <input type="text" name="riemenschneider" placeholder="e.g. 1-10">
+      </div>
+      <div class="form-row">
+        <label>Mode:</label>
+        <select name="mode">
+          <option value="roman">Roman</option>
+          <option value="figures">Figures</option>
+          <option value="play">Play</option>
+          <option value="play_figures">Play Figures</option>
+          <option value="matching">Matching</option>
+          <option value="figures_unabbreviated">Figures Unabbreviated</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label>Extra Tags:</label>
+        <input type="text" name="extra_tags" placeholder="Space separated tags">
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Harmonization</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_harmonization">
+      <div class="form-row">
+        <label>Source Exercise ID:</label>
+        <input type="text" name="source" required>
+      </div>
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label>Locked Voices:</label>
+        <input type="text" name="locked_voices" placeholder="e.g. B">
+      </div>
+      <div class="form-row">
+        <label>Prompt:</label>
+        <select name="prompt">
+          <option value="figured_bass">Figured Bass</option>
+          <option value="roman">Roman</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Min Voices:</label>
+        <input type="number" name="min_voices" value="3">
+      </div>
+      <div class="form-row">
+        <label>Max Voices:</label>
+        <input type="number" name="max_voices" value="4">
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Unit 1</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_unit1">
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Unit 2 Meter Exercises</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_unit2_meter_exercises">
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Unit 2 Barline Exercises</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_unit2_barline_exercises">
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+    
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Unit 3 Key Sig Exercises</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_unit3_key_sig_exercises">
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Unit 3 Scale Exercises</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_unit3_scale_exercises">
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Create Unit Playlist</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="create_unit_playlist">
+      <div class="form-row">
+        <label>Unit N:</label>
+        <input type="number" name="unit" required>
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Create Smart Playlist</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="create_smart_playlist">
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post">
+      {% csrf_token %}
+      <h3>Duplicate Chorale as Identification</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="duplicate_chorale_as_identification">
+      <div class="form-row">
+        <label>Source Exercise ID:</label>
+        <input type="text" name="source" required>
+      </div>
+      <div class="form-row">
+        <label>Voices List:</label>
+        <input type="text" name="voices" placeholder="e.g. S,A,T,B">
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+  </div>
+
+  <div class="op-section">
+    <h2>Refresh Existing Exercises</h2>
+    
+    <form method="post" style="display:inline-block; margin-right: 1rem;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="refresh">
+      <input type="hidden" name="command_name" value="refresh_all_exercises">
+      <label><input type="checkbox" name="dry_run" checked> Dry Run</label><br><br>
+      <button type="submit" class="btn btn-secondary">Refresh All Exercises</button>
+    </form>
+
+    <form method="post" style="display:inline-block; margin-right: 1rem; border-left: 1px solid #ccc; padding-left: 1rem;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="refresh">
+      <input type="hidden" name="command_name" value="recompute_chorale_analysis">
+      <label><input type="checkbox" name="dry_run" checked> Dry Run</label><br>
+      <input type="text" name="tag" placeholder="Tag (optional)" style="width:100px; margin-top:5px;"><br>
+      <input type="text" name="riem" placeholder="Riem N (optional)" style="width:100px; margin-top:5px;"><br>
+      <button type="submit" class="btn btn-secondary" style="margin-top:5px;">Recompute Chorale</button>
+    </form>
+
+    <form method="post" style="display:inline-block; margin-right: 1rem; border-left: 1px solid #ccc; padding-left: 1rem;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="refresh">
+      <input type="hidden" name="command_name" value="recompute_harmonization_targets">
+      <label><input type="checkbox" name="dry_run" checked> Dry Run</label><br>
+      <label><input type="checkbox" name="resync_from_source"> Resync from source</label><br>
+      <input type="text" name="tag" placeholder="Tag (optional)" style="width:100px; margin-top:5px;"><br>
+      <button type="submit" class="btn btn-secondary" style="margin-top:5px;">Recompute Harmonization</button>
+    </form>
+
+    <form method="post" style="display:inline-block; border-left: 1px solid #ccc; padding-left: 1rem;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="refresh">
+      <input type="hidden" name="command_name" value="backfill_skill_tags">
+      <label><input type="checkbox" name="all"> All (overwrite)</label><br><br>
+      <button type="submit" class="btn btn-secondary">Backfill Skill Tags</button>
+    </form>
+  </div>
+
+  <div class="op-section">
+    <h2>Exercise Catalog</h2>
+    <table class="catalog-table">
+      <thead>
+        <tr>
+          <th>Mode</th>
+          <th>Analysis Type</th>
+          <th>Count</th>
+          <th>Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in catalog %}
+        <tr>
+          <td>{{ item.mode|default:"None" }}</td>
+          <td>{{ item.analysis_type|default:"None" }}</td>
+          <td>{{ item.count }}</td>
+          <td>
+            <a href="{% url 'admin:exercises_exercise_changelist' %}?data__mode={{ item.mode|default:'' }}&data__analysisType={{ item.analysis_type|default:'' }}">View Exercises</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
