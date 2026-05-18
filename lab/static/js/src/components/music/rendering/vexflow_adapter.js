@@ -874,6 +874,7 @@ define([
       if (chunk.dots > 0) Vex.Flow.Dot.buildAndAttach([rest], { all: true });
       if (rest.setStyle) rest.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
       rest._isHarmonizationOverlay = true;
+      rest._isOverlayRest = true;
       return rest;
     }
 
@@ -942,7 +943,20 @@ define([
 
     if (cursor > measureTotalTicks) return null;
     if (!emitTransparentRests(measureTotalTicks - cursor)) return null;
-    return buildVoice(voiceTime, tickables);
+    var voice = buildVoice(voiceTime, tickables);
+    // Beam overlay noteheads per beat — mirrors the per-beat grouping used by
+    // staffVoices for outer voices. Transparent rests are excluded so beams
+    // span only adjacent noteheads within a beat.
+    var notesOnly = tickables.filter(function (t) { return !t._isOverlayRest; });
+    try {
+      voice.beams = Vex.Flow.Beam.generateBeams(notesOnly, {
+        beam_rests: false,
+        stem_direction: 1,
+      });
+    } catch (e) {
+      voice.beams = [];
+    }
+    return voice;
   }
 
   // Add a key signature with a minor->relative-major fallback for older VexFlow builds
