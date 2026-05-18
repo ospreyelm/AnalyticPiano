@@ -48,6 +48,25 @@ class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
             all(o["content"]["figured_bass"] is not None for o in computable)
         )
 
+    def test_roman_mode_figured_bass_uses_declared_chorale_key_not_phrase_analysis(self):
+        from music21.corpus import chorales
+        from apps.exercises.management.commands.import_bach_phrases import (
+            _declared_score_key,
+        )
+
+        score = list(chorales.Iterator(3, 3, numberingSystem="riemenschneider"))[0]
+        global_key = _declared_score_key(score)
+        self.assertEqual(global_key.tonic.name, "E")
+        self.assertEqual(global_key.mode, "minor")
+
+        overrides = self._call(score.measures(5, 10), global_key, [], riemenschneider=3)
+        target = next(o for o in overrides if o["offset"] == 2.0)
+        content = target["content"]
+        self.assertEqual(content["roman_numeral"], "V")
+        self.assertEqual(content["local_key"], "e")
+        self.assertEqual(content["raw_figured_bass"], "5/#3")
+        self.assertEqual(content["figured_bass"], "#")
+
     def test_roman_mode_reconciles_wir_v7_with_4_3_suspension(self):
         from music21.corpus import chorales
 
@@ -225,6 +244,29 @@ class WiRImportIntegrationTests(TestCase):
         self.assertEqual(target["content"]["roman_numeral"], "V7")
         self.assertEqual(target["content"]["figured_bass"], "7/4-3")
 
+    def test_r3_import_uses_declared_e_minor_key_for_figures_without_breaking_slices(self):
+        admin_user = _create_admin_user("wir-r3-key@example.test")
+        call_command(
+            "import_bach_phrases",
+            riemenschneider=3,
+            author=admin_user.email,
+            mode="roman",
+            extra_tags=["unit:wir_r3_key"],
+        )
+        ex = Exercise.objects.get(
+            authored_by=admin_user,
+            description__contains="Phrase 2",
+        )
+        self.assertEqual(ex.data["score"]["umto"]["metadata"]["key"], "iE_")
+
+        target = next(
+            s for s in ex.data["score"]["umto"]["analysis"]
+            if s["offset"] == 2.0
+        )
+        self.assertEqual(target["content"]["roman_numeral"], "V")
+        self.assertEqual(target["content"]["local_key"], "e")
+        self.assertEqual(target["content"]["raw_figured_bass"], "5/#3")
+        self.assertEqual(target["content"]["figured_bass"], "#")
 
 class PhraseHasSilentMeasureTestCase(unittest.TestCase):
     """Unit tests for the gap filter, especially anacrusis (pickup) handling."""

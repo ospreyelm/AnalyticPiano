@@ -23,6 +23,17 @@ def _description_exists(description: str, authored_by=None) -> bool:
     return qs.exists()
 
 
+def _declared_score_key(score):
+    """Return the chorale's declared key before falling back to analysis."""
+    declared = sorted(
+        score.recurse().getElementsByClass(key.Key),
+        key=lambda k: k.getOffsetInHierarchy(score),
+    )
+    if declared:
+        return declared[0]
+    return score.analyze('key')
+
+
 def _apply_suspension_figures(overrides: list, figured_by_offset: dict | None = None) -> list:
     """Rewrite abbreviated figures for suspension/resolution pairs."""
     ordered = sorted(overrides, key=lambda o: o["offset"])
@@ -334,7 +345,8 @@ class Command(BaseCommand):
         # 2. Cadence Detection (Harmonic + Rhythmic Heuristic)
         self.stdout.write("Analyzing harmonic arrivals and rhythmic cadences...")
         try:
-            global_key = score.analyze('key')
+            score_key = _declared_score_key(score)
+            cadence_key = score.analyze('key')
             # chordify is heavy, but necessary for vertical analysis
             chorded = score.chordify()
         except Exception as e:
@@ -358,7 +370,7 @@ class Command(BaseCommand):
             
             # Harmonic Check
             from music21.roman import romanNumeralFromChord
-            rn = romanNumeralFromChord(last_chord, global_key)
+            rn = romanNumeralFromChord(last_chord, cadence_key)
             chord_type = rn.figure.replace('7', '').replace('6', '')
             
             # Secondary Dominant Check: V/V -> V
@@ -367,7 +379,7 @@ class Command(BaseCommand):
                 prev_chord = measures[i-1].flat.notes[-1]
                 if isinstance(prev_chord, chord.Chord):
                     # Simple check: Is previous chord a Major triad on the 2nd degree?
-                    prev_rn = romanNumeralFromChord(prev_chord, global_key)
+                    prev_rn = romanNumeralFromChord(prev_chord, cadence_key)
                     if prev_rn.figure.startswith('II') or prev_rn.figure.startswith('V/V'):
                         if chord_type in ['V', 'v']:
                             is_v_of_v = True
@@ -436,7 +448,7 @@ class Command(BaseCommand):
             # 3. Detect Key and Mode
             try:
                 # FORCE GLOBAL KEY FOR ALL PHRASES (per-phrase detection unreliable for short phrases)
-                m21_key = global_key
+                m21_key = score_key
 
                 # Build HarmonyLab key format: "iA_", "jC_", "iD_", "jBb", "jF#" etc.
                 tonic = m21_key.tonic.name  # e.g. "A", "B-", "F#"
