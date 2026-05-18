@@ -12,7 +12,7 @@ function uniq(arr) {
   return result;
 }
 
-function pc(midi) {
+function pitchClassForMidi(midi) {
   return ((midi % 12) + 12) % 12;
 }
 
@@ -24,19 +24,23 @@ function harmonizationMatch(target, activeMidi) {
   var active = (activeMidi || []).slice().sort(function (a, b) { return a - b; });
   var reasons = [];
   var note = {};
-  var activePcs = uniq(active.map(pc));
+  var activePcs = uniq(active.map(pitchClassForMidi));
   var locked = target.lockedVoices || {};
   var policy = target.voiceCountPolicy || { min: 3, max: 4 };
 
   if (locked.B && !includes(activePcs, locked.B.pc)) {
     reasons.push("wrong_bass");
   }
-  if (locked.S && !includes(activePcs, locked.S.pc)) {
-    reasons.push("wrong_locked_soprano");
+  if (locked.S) {
+    if (typeof locked.S.midi === "number") {
+      if (!includes(active, locked.S.midi)) reasons.push("wrong_locked_soprano");
+    } else if (!includes(activePcs, locked.S.pc)) {
+      reasons.push("wrong_locked_soprano");
+    }
   }
 
   for (var i = 0; i < active.length; i += 1) {
-    if (!includes(target.allowedPcs || [], pc(active[i]))) {
+    if (!includes(target.allowedPcs || [], pitchClassForMidi(active[i]))) {
       reasons.push("illegal_pc");
       note[active[i]] = "incorrect";
     } else {

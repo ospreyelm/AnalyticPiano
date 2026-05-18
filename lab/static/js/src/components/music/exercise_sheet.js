@@ -19,6 +19,7 @@ define([
   "app/models/identification_submit_flow_logic",
   "app/components/music/playback_controls",
   "app/utils/measure_engine",
+  "app/models/harmonization_realization_logic",
 ], function (
   $,
   $UI,
@@ -38,7 +39,8 @@ define([
   ScorePlayer,
   IdentificationSubmitFlow,
   renderPlaybackControls,
-  MeasureEngine
+  MeasureEngine,
+  HarmonizationRealizationLogic
 ) {
   "use strict";
 
@@ -1690,6 +1692,7 @@ define([
 
           // For harmonization: bass notes at accepted target offsets turn black.
           // Build timeline with same selectVoices as renderer so IDs align.
+          var harmonizationRealizationPayload = null;
           if (isHarmonization && this.exerciseContext) {
             var acceptedPtr = this.exerciseContext._harmonizationPointer || 0;
             var harmTargets = definition.getHarmonizationTargets ? definition.getHarmonizationTargets() : [];
@@ -1706,6 +1709,19 @@ define([
                 playedNoteIdsForRender.add(ev.id);
               }
             });
+            var accepted = this.exerciseContext.acceptedHarmonizationSonorities || [];
+            var tsRaw = (score.meta && (score.meta.time || score.meta.meter || score.meta.time_signature)) || "4/4";
+            var tsParts = String(tsRaw).split("/");
+            var meter = {
+              numerator: parseInt(tsParts[0], 10),
+              denominator: parseInt(tsParts[1], 10)
+            };
+            harmonizationRealizationPayload = HarmonizationRealizationLogic.buildRealization(
+              accepted,
+              harmTargets,
+              score,
+              meter
+            );
           }
 
           console.log("[ID] Calling VexFlowAdapter.render with score:", score, "analyzeConfig:", analyzeConfig);
@@ -1727,6 +1743,7 @@ define([
             isAnalysisMatch: isAnalysisMatchMode,
             isHarmonization: isHarmonization,
             harmonizationTargets: isHarmonization ? (definition.getHarmonizationTargets ? definition.getHarmonizationTargets() : []) : null,
+            harmonizationRealization: isHarmonization ? harmonizationRealizationPayload : null,
             lockedVoices: isHarmonization && definition.exercise && definition.exercise.score && definition.exercise.score.umto
               ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
               : null,
