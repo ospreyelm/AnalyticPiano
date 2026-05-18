@@ -9,6 +9,8 @@ define([
   "simple-statistics.min",
   "./exercise_completion_flow_logic",
   "./identification_submit_flow_logic",
+  "app/models/harmonization_grader_logic",
+  "app/models/voice_leading_logic",
 ], function (
   _,
   $,
@@ -19,7 +21,9 @@ define([
   EVENTS,
   SimpleStatistics,
   ExerciseCompletionFlow,
-  IdentificationSubmitFlow
+  IdentificationSubmitFlow,
+  HarmonizationGraderLogic,
+  VoiceLeadingLogic
 ) {
   var AUTO_ADVANCE = Config.get("general.autoAdvance");
   var AUTO_ADVANCE_DELAY = Config.get("general.autoAdvanceDelay");
@@ -103,6 +107,12 @@ define([
 
     this.sealed = false; /* will be used to ignore input post-completion */
 
+    this._harmonizationHeldTracker = null;
+    this._harmonizationPointer = 0;
+    this.acceptedHarmonizationSonorities = [];
+    this.harmonizationVLScore = null;
+    this.harmonizationTier = null;
+
     _.bindAll(this, ["grade", "triggerTimer", "validateGradingAlignment"]);
 
     this.init();
@@ -142,7 +152,17 @@ define([
         $(".js-play-view-controls").hide();
         $("#mainmenu").hide();
       }
-      if (!this._isIdentificationExercise()) {
+      if (this._isHarmonizationExercise()) {
+        var meta = this.definition.getHarmonizationMetadata
+          ? this.definition.getHarmonizationMetadata()
+          : {};
+        var releaseGraceMs = meta.release_grace_ms || 120;
+        this._harmonizationChordSettleMs = meta.chord_settle_ms || 150;
+        this._harmonizationSettleTimer = null;
+        this._harmonizationHeldTracker = HarmonizationGraderLogic.createHeldNoteTracker({
+          releaseGraceMs: releaseGraceMs,
+        });
+      } else if (!this._isIdentificationExercise()) {
         this.inputChords.bind("change", this.triggerTimer);
         this.inputChords.bind("change", this.grade);
         this.inputChords.bind("change", this.validateGradingAlignment);
@@ -188,7 +208,8 @@ define([
       var isChoraleExercise =
         typeof this.definition.isChorale === "function" &&
         this.definition.isChorale();
-      var isIdentificationExercise = 
+      var isHarmonizationExercise = this._isHarmonizationExercise();
+      var isIdentificationExercise =
         typeof this.definition.isIdentification === "function" &&
         this.definition.isIdentification();
       var isChoraleIdentificationExercise =
@@ -200,6 +221,38 @@ define([
       if (isAnyIdentificationExercise) {
         this.submitIdentPage({ fromGrade: true });
         return;
+      } else if (isHarmonizationExercise) {
+        var tracker = this._harmonizationHeldTracker;
+        var activeMidi = tracker ? tracker.activeMidi(Date.now()) : [];
+        var targets = this.definition.getHarmonizationTargets ? this.definition.getHarmonizationTargets() : [];
+        var ptr = this._harmonizationPointer;
+        // Don't evaluate an empty sonority — it just means all notes were released.
+        // Treat as partial (waiting) rather than incorrect.
+        if (!activeMidi.length) {
+          graded = {
+            result: this.grader.STATE.PARTIAL,
+            score: 1,
+            activeIndex: ptr,
+            problems: [],
+          };
+        } else {
+        var matchResult = HarmonizationGraderLogic.harmonizationMatch(targets[ptr] || {}, activeMidi);
+        if (matchResult.state === "correct") {
+          this.acceptedHarmonizationSonorities.push({
+            midi: activeMidi.slice(),
+            targetIndex: ptr,
+            ts: Date.now(),
+          });
+          this._harmonizationPointer = ptr + 1;
+        }
+        var allDone = this._harmonizationPointer >= targets.length && targets.length > 0;
+        graded = {
+          result: allDone ? this.grader.STATE.CORRECT : (matchResult.state === "incorrect" ? this.grader.STATE.INCORRECT : this.grader.STATE.PARTIAL),
+          score: allDone ? 0 : (matchResult.state === "incorrect" ? 2 : 1),
+          activeIndex: this._harmonizationPointer,
+          problems: [matchResult],
+        };
+        } // end else (activeMidi non-empty)
       } else {
         graded = this.grader.grade(this.definition, this.inputChords);
       }
@@ -217,14 +270,27 @@ define([
 
             this.endTimer();
 
+            if (this.sealed != true && isHarmonizationExercise) {
+              var vlMeta = (this.definition.exercise && this.definition.exercise.score &&
+                this.definition.exercise.score.umto && this.definition.exercise.score.umto.metadata) || {};
+              this.harmonizationVLScore = VoiceLeadingLogic.scoreVoiceLeading(
+                this.acceptedHarmonizationSonorities || [],
+                { maxDisplacement: vlMeta.max_voice_displacement || 4 }
+              );
+              this.harmonizationTier = (this.harmonizationVLScore.smoothOK &&
+                this.harmonizationVLScore.noParallels &&
+                this.harmonizationVLScore.noDoubledLT)
+                ? "excellent" : "developing";
+            }
+
             if (this.sealed != true) {
               // For one-time function calls
               this.submitExerciseReport();
             }
 
-            var treatAsFlawless = this.flawless === true || isChoraleExercise || isAnyIdentificationExercise;
+            var treatAsFlawless = this.flawless === true || isChoraleExercise || isHarmonizationExercise || isAnyIdentificationExercise;
             var treatAsFinishedWithErrors =
-              this.flawless === false && !isChoraleExercise && !isAnyIdentificationExercise;
+              this.flawless === false && !isChoraleExercise && !isHarmonizationExercise && !isAnyIdentificationExercise;
 
             if (treatAsFlawless) {
               state = ExerciseContext.STATE.CORRECT;
@@ -274,7 +340,7 @@ define([
       this.state = state;
 
       this.updateDisplayChords();
-      if (!isChoraleExercise && !isAnyIdentificationExercise) {
+      if (!isChoraleExercise && !isHarmonizationExercise && !isAnyIdentificationExercise) {
         this.inputChords.goTo(graded.activeIndex);
       }
 
@@ -603,6 +669,15 @@ define([
           report.score_numerator = scoreData.numerator;
           report.score_denominator = scoreData.denominator;
         }
+
+        if (this._isHarmonizationExercise()) {
+          report.harmonization_accepted_sonorities = this.acceptedHarmonizationSonorities;
+          report.harmonization_target_count = this.definition.getHarmonizationTargets
+            ? this.definition.getHarmonizationTargets().length
+            : null;
+          report.harmonization_tier = this.harmonizationTier || null;
+          report.vl_score = this.harmonizationVLScore || null;
+        }
       } catch {
         return null;
       }
@@ -870,6 +945,12 @@ define([
           this.definition.isIdentification()) ||
         (typeof this.definition.isChoraleIdentification === "function" &&
           this.definition.isChoraleIdentification())
+      );
+    },
+    _isHarmonizationExercise: function () {
+      return (
+        typeof this.definition.isHarmonization === "function" &&
+        this.definition.isHarmonization()
       );
     },
     /**

@@ -19,6 +19,7 @@ define([
   "app/models/identification_submit_flow_logic",
   "app/components/music/playback_controls",
   "app/utils/measure_engine",
+  "app/models/harmonization_realization_logic",
 ], function (
   $,
   $UI,
@@ -38,7 +39,8 @@ define([
   ScorePlayer,
   IdentificationSubmitFlow,
   renderPlaybackControls,
-  MeasureEngine
+  MeasureEngine,
+  HarmonizationRealizationLogic
 ) {
   "use strict";
 
@@ -1552,7 +1554,8 @@ define([
       exercise_midi_nums = exercise_midi_nums || false;
       var definition = this.exerciseContext.getDefinition();
       var score = definition.getScore();
-      var isChoraleLike = (definition.isChorale() || definition.isChoraleIdentification());
+      var isHarmonization = !!(definition.isHarmonization && definition.isHarmonization());
+      var isChoraleLike = (definition.isChorale() || definition.isChoraleIdentification() || isHarmonization);
       
       // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
       // This fixes cases where the database might have a single 'blob' measure.
@@ -1611,6 +1614,16 @@ define([
             analyzeConfig.mode.note_names = false;
           }
 
+          if (isHarmonization) {
+            analyzeConfig.enabled = true;
+            analyzeConfig.mode = analyzeConfig.mode || {};
+            if (definition.getAnalysisType && definition.getAnalysisType() === "figured_bass") {
+              analyzeConfig.mode.thoroughbass = true;
+            } else {
+              analyzeConfig.mode.roman_numerals = true;
+            }
+          }
+
           var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsNoteNames;
 
           // Preserve legacy chorale behavior that force-enables roman numerals,
@@ -1653,7 +1666,7 @@ define([
               ? this.exerciseContext.grader.getPlayedNoteIds()
               : null;
 
-          // In chorale-identification mode we want notation rendered in black from the start.
+          // In chorale-identification mode, render all notation in black from the start.
           if (isChoraleIdentification) {
             playedNoteIdsForRender = new Set();
             _.each(ScoreTimeline.buildTimeline(score) || [], function (ev) {
@@ -1661,6 +1674,54 @@ define([
                 playedNoteIdsForRender.add(ev.id);
               }
             });
+          }
+
+          // For harmonization: compute selectVoices once (used for both timeline and render).
+          var harmonizationSelectVoices = null;
+          if (isHarmonization) {
+            var lv = definition.exercise && definition.exercise.score && definition.exercise.score.umto
+              ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
+              : ["B"];
+            var hvTreble = [], hvBass = [];
+            if (lv.indexOf("S") !== -1) hvTreble.push(0);
+            if (lv.indexOf("A") !== -1) hvTreble.push(1);
+            if (lv.indexOf("T") !== -1) hvBass.push(0);
+            if (lv.indexOf("B") !== -1) hvBass.push(1);
+            harmonizationSelectVoices = { treble: hvTreble, bass: hvBass };
+          }
+
+          // For harmonization: bass notes at accepted target offsets turn black.
+          // Build timeline with same selectVoices as renderer so IDs align.
+          var harmonizationRealizationPayload = null;
+          if (isHarmonization && this.exerciseContext) {
+            var acceptedPtr = this.exerciseContext._harmonizationPointer || 0;
+            var harmTargets = definition.getHarmonizationTargets ? definition.getHarmonizationTargets() : [];
+            var acceptedOffsetTicks = {};
+            for (var ai = 0; ai < acceptedPtr && ai < harmTargets.length; ai++) {
+              var tOff = harmTargets[ai].offset;
+              if (typeof tOff === "number") {
+                acceptedOffsetTicks[Math.round(tOff * 1024)] = true;
+              }
+            }
+            playedNoteIdsForRender = new Set();
+            _.each(ScoreTimeline.buildTimeline(score, { selectVoices: harmonizationSelectVoices }) || [], function (ev) {
+              if (ev && typeof ev.id === 'number' && acceptedOffsetTicks[ev.onset]) {
+                playedNoteIdsForRender.add(ev.id);
+              }
+            });
+            var accepted = this.exerciseContext.acceptedHarmonizationSonorities || [];
+            var tsRaw = (score.meta && (score.meta.time || score.meta.meter || score.meta.time_signature)) || "4/4";
+            var tsParts = String(tsRaw).split("/");
+            var meter = {
+              numerator: parseInt(tsParts[0], 10),
+              denominator: parseInt(tsParts[1], 10)
+            };
+            harmonizationRealizationPayload = HarmonizationRealizationLogic.buildRealization(
+              accepted,
+              harmTargets,
+              score,
+              meter
+            );
           }
 
           console.log("[ID] Calling VexFlowAdapter.render with score:", score, "analyzeConfig:", analyzeConfig);
@@ -1680,6 +1741,13 @@ define([
             analysisRenderer: display.analysisRenderer || "notater", // notater|adapter|none
             staffYOffset: staffYOffset,
             isAnalysisMatch: isAnalysisMatchMode,
+            isHarmonization: isHarmonization,
+            harmonizationTargets: isHarmonization ? (definition.getHarmonizationTargets ? definition.getHarmonizationTargets() : []) : null,
+            harmonizationRealization: isHarmonization ? harmonizationRealizationPayload : null,
+            lockedVoices: isHarmonization && definition.exercise && definition.exercise.score && definition.exercise.score.umto
+              ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
+              : null,
+            selectVoices: harmonizationSelectVoices,
             onWindowPosition: function (slot) {
               if (!slot || typeof slot.windowIndex !== "number") {
                 return;
@@ -2387,15 +2455,41 @@ define([
       return tl;
     },
     /**
-     * Handle MIDI note events in chorale mode by delegating to the ChoraleGrader
+     * Handle MIDI note events in chorale and harmonization modes.
      */
     onMidiNote: function (state, noteNum) {
       var definition = this.exerciseContext.getDefinition();
-      if (!definition.isChorale()) return;
+      var isChorale = definition.isChorale && definition.isChorale();
+      var isHarmonization = definition.isHarmonization && definition.isHarmonization();
+      if (!isChorale && !isHarmonization) return;
 
       // Start timer on first interaction
       if (state === "on") {
         this.exerciseContext.triggerTimer();
+      }
+
+      if (isHarmonization) {
+        console.log("[HARM-DEBUG] onMidiNote harmonization branch. state:", state, "note:", noteNum);
+        var ctx = this.exerciseContext;
+        var tracker = ctx._harmonizationHeldTracker;
+        if (tracker) {
+          if (state === "on") {
+            tracker.noteOn(noteNum);
+          } else if (state === "off") {
+            tracker.noteOff(noteNum, Date.now());
+          }
+        }
+        var self = this;
+        var settleMs = ctx._harmonizationChordSettleMs || 150;
+        if (ctx._harmonizationSettleTimer) {
+          clearTimeout(ctx._harmonizationSettleTimer);
+        }
+        ctx._harmonizationSettleTimer = setTimeout(function () {
+          ctx._harmonizationSettleTimer = null;
+          ctx.grade();
+          self.render();
+        }, settleMs);
+        return;
       }
 
       var grader = this.exerciseContext.grader;
@@ -2479,6 +2573,22 @@ define([
       // Reset chorale state if in chorale mode
       if (definition.isChorale()) {
         this.initChoraleMode();
+      }
+
+      // Reset harmonization state
+      if (definition.isHarmonization && definition.isHarmonization()) {
+        var ctx = this.exerciseContext;
+        if (ctx._harmonizationSettleTimer) {
+          clearTimeout(ctx._harmonizationSettleTimer);
+          ctx._harmonizationSettleTimer = null;
+        }
+        if (ctx._harmonizationHeldTracker) {
+          ctx._harmonizationHeldTracker.reset();
+        }
+        ctx._harmonizationPointer = 0;
+        ctx.acceptedHarmonizationSonorities = [];
+        ctx.harmonizationVLScore = null;
+        ctx.harmonizationTier = null;
       }
 
       // Reset exercise context state

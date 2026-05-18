@@ -1,7 +1,9 @@
 from enum import Enum
 from typing import List, Optional, Dict, Any, Union, Literal
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 import json
+
+VoiceName = Literal["S", "A", "T", "B"]
 
 class VoiceID(str, Enum):
     SOPRANO = "S"
@@ -14,6 +16,7 @@ class InteractionMode(str, Enum):
     PLAYBACK = "playback"
     ANALYSIS_MATCH = "analysis_match"
     SYMBOLIC_IDENTIFICATION = "symbolic_identification"
+    HARMONIZATION = "harmonization"
 
 class Pitch(BaseModel):
     step: str
@@ -82,6 +85,22 @@ class GradingSlice(BaseModel):
     target_midi_pitches: List[int]
     rhythmic_flexibility: bool = False
 
+class VoiceCountPolicy(BaseModel):
+    expected: Optional[int] = Field(default=None, ge=0)
+    min: int = Field(default=3, ge=0)
+    max: Optional[int] = Field(default=4, ge=0)
+
+    @model_validator(mode="after")
+    def validate_range(self):
+        if self.max is not None and self.max < self.min:
+            raise ValueError("max must be greater than or equal to min")
+        return self
+
+class HarmonizationTargetPolicy(BaseModel):
+    source: Literal["figured_bass", "roman", "analysis_slice"] = "figured_bass"
+    written_spelling_required: bool = False
+    midi_uses_pitch_class: bool = True
+
 class Metadata(BaseModel):
     exercise_id: str
     source: str # e.g. "Bach Chorale BWV 269", "Sonata K.331"
@@ -93,6 +112,14 @@ class Metadata(BaseModel):
     is_umto: bool = True
     input_mode: Literal["dropdown", "text"] = "dropdown"
     unit: Optional[int] = None
+    locked_voices: List[VoiceName] = Field(default_factory=lambda: ["B"])
+    voice_count_policy: VoiceCountPolicy = Field(default_factory=VoiceCountPolicy)
+    harmonization_target_policy: HarmonizationTargetPolicy = Field(
+        default_factory=HarmonizationTargetPolicy
+    )
+    chord_settle_ms: int = 150
+    release_grace_ms: int = 120
+    max_voice_displacement: int = 4
 
 class UMTO(BaseModel):
     """

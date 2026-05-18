@@ -55,12 +55,37 @@ _ABBREV_MAP = {k: v for k, v in _ABBREV_TABLE}
 
 
 def _split_interval(token: str) -> tuple[str, str]:
-    """Split a token like 'b6', '#4', '4+', '3' into (prefix, num_str)."""
-    m = re.match(r'^([#b+]*)(\d+)([+]?)$', token)
+    """Split a token like 'b6', '#4', '4+', '3', '5°' into (prefix, num_str)."""
+    m = re.match(r'^([#b+]*)(\d+)([+°]?)$', token)
     if not m:
         return "", token
     prefix = m.group(1) + m.group(3)
     return prefix, m.group(2)
+
+
+def _normalize_tritone(token: str) -> str:
+    """Convert tritone marker '+' suffix to standard quality notation.
+
+    '5+' → '5°' (diminished fifth), '4+' → '4+' (augmented fourth, keep as-is).
+    Prefix-style '+5' is also normalised.
+    """
+    token = token.strip()
+    # Handle prefix-style: '+5'
+    if token.startswith("+") and token[1:].isdigit():
+        n = int(token[1:])
+        return f"{n}°" if n >= 5 else f"{n}+"
+    # Handle suffix-style: '5+'
+    if token.endswith("+") and token[:-1].isdigit():
+        n = int(token[:-1])
+        return f"{n}°" if n >= 5 else f"{n}+"
+    # Handle compound: prefix '#'/'b' + digit + '+' suffix e.g. '#5+'
+    m = re.fullmatch(r"([#b]?)(\d+)\+", token)
+    if m:
+        prefix, num = m.groups()
+        n = int(num)
+        suffix = "°" if n >= 5 else "+"
+        return f"{prefix}{n}{suffix}"
+    return token
 
 
 def abbreviate_figured_bass(raw: str) -> str:
@@ -117,17 +142,13 @@ def abbreviate_figured_bass(raw: str) -> str:
             if num == abbrev_num:
                 original_prefix = prefixes[i]
                 break
-        result_tokens.append(original_prefix + abbrev_tok)
+        result_tokens.append(_normalize_tritone(original_prefix + abbrev_tok))
 
     # Preserve any interval that had a chromatic prefix but was dropped by
     # abbreviation — e.g. #6 in #6/4/3 abbreviated to 4/3, or #3 in 8/6/#3→6.
-    # Insert them in descending numeric order within the result.
-    extra = []
     for i, num in enumerate(nums):
         if prefixes[i] and num not in abbrev_nums_used and num != "8":
-            extra.append((int(num), prefixes[i] + num))
-    for _, tok in sorted(extra, reverse=True):
-        result_tokens.append(tok)
+            result_tokens.append(_normalize_tritone(prefixes[i] + num))
 
     # Re-sort entire output descending by interval number
     result_tokens.sort(key=lambda t: int(_split_interval(t)[1]), reverse=True)
