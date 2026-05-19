@@ -31,6 +31,7 @@ class Command(BaseCommand):
             authored_by=author,
             is_adaptive=is_adaptive,
             is_dynamic=True, # This makes it a "Smart Assignment"
+            is_public=True,
             tags=[tag]
         )
         

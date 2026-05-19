@@ -51,7 +51,7 @@ class Command(BaseCommand):
                     defaults=dict(
                         is_dynamic=False,
                         is_adaptive=False,
-                        is_public=options["public"],
+                        is_public=True,
                         skill_tags=playlist_tags,
                     ),
                 )

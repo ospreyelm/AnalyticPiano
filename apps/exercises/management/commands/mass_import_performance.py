@@ -119,7 +119,7 @@ class Command(BaseCommand):
         if course_title:
             from apps.exercises.models import Playlist
             name = f"Recent Imports ({timezone.now().strftime('%Y-%m-%d')}) - {course_title}"
-            playlist = Playlist.objects.create(name=name, authored_by=author)
+            playlist = Playlist.objects.create(name=name, authored_by=author, is_public=True)
             self.stdout.write(f"Created/Using Playlist: {name}")
 
         # 5. The Translation & DB Injection logic

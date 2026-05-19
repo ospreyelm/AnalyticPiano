@@ -177,7 +177,7 @@ class Command(BaseCommand):
             name=playlist_name,
             authored_by=author,
             defaults=dict(is_dynamic=False, is_adaptive=True,
-                          skill_tags=playlist_skill_tags, is_public=make_public),
+                          skill_tags=playlist_skill_tags, is_public=True),
         )
         if not created:
             playlist.is_dynamic = False
