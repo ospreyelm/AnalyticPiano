@@ -1,10 +1,14 @@
-"""Import piano major scales from MusicXML and create Unit 3 play exercises."""
+"""Generate Unit 3 scale play exercises.
+
+Major scales are read from a MusicXML file (preserves fingering/register choices).
+Minor scales (natural, harmonic, melodic) are generated programmatically via music21.
+"""
 import os
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
+from apps.exercises.models import ExercisePlaylistOrdered, Playlist
 from apps.exercises.umto import InteractionMode
 from apps.exercises.umto_factory import save_umto_exercise
 
@@ -33,10 +37,32 @@ SCALE_MEASURE_MAP = [
     (14, "C#", 7, "C# major"),
 ]
 
+# Maps (root_for_music21, key_id_for_display, accidentals, root_display_name).
+# root_for_music21 uses music21 flat notation (e.g. "B-" for Bb).
+# Ordered by circle of fifths (sharps then flats, ascending accidental count).
+MINOR_SCALE_MAP = [
+    ("A",   "A",   0, "A"),
+    ("E",   "E",   1, "E"),
+    ("D",   "D",   1, "D"),
+    ("B",   "B",   2, "B"),
+    ("G",   "G",   2, "G"),
+    ("F#",  "F#",  3, "F#"),
+    ("C",   "C",   3, "C"),
+    ("C#",  "C#",  4, "C#"),
+    ("F",   "F",   4, "F"),
+    ("G#",  "G#",  5, "G#"),
+    ("B-",  "Bb",  5, "Bb"),
+    ("D#",  "D#",  6, "D#"),
+    ("E-",  "Eb",  6, "Eb"),
+    ("A#",  "A#",  7, "A#"),
+    ("A-",  "Ab",  7, "Ab"),
+]
+
 LEVEL_MAX_ACC = {1: 3, 2: 5, 3: 7}
 
-# Treble right-hand part shifted down an octave for these keys so the top
-# note stays within a 5-octave keyboard.
+# Treble right-hand part shifted down an octave for these major-scale keys so
+# the top note stays within a 5-octave keyboard. (Major mode only — minor scales
+# start at octave 4 and stay within range for all keys.)
 TREBLE_OCTAVE_DOWN_KEYS = {"F", "G", "A", "Bb", "B", "Ab", "F#"}
 
 TYPE_MAP = {
@@ -46,6 +72,32 @@ TYPE_MAP = {
     "eighth": "8",
     "16th": "16",
     "32nd": "32",
+}
+
+# Configuration for each minor scale form.
+# scale_class: music21 scale class name to instantiate.
+# playlist_label: used in playlist name, e.g. "Unit 3 — Minor Scales (Natural)".
+# skill_tag: exercise/playlist skill tag.
+# display_suffix: appended to root name for exercise description, e.g. "A natural minor".
+MINOR_FORM_CONFIG = {
+    "natural": {
+        "scale_class": "MinorScale",
+        "playlist_label": "Natural",
+        "skill_tag": "unit:3_minor_scale_natural",
+        "display_suffix": "natural minor",
+    },
+    "harmonic": {
+        "scale_class": "HarmonicMinorScale",
+        "playlist_label": "Harmonic",
+        "skill_tag": "unit:3_minor_scale_harmonic",
+        "display_suffix": "harmonic minor",
+    },
+    "melodic": {
+        "scale_class": "MelodicMinorScale",
+        "playlist_label": "Melodic",
+        "skill_tag": "unit:3_minor_scale_melodic",
+        "display_suffix": "melodic minor",
+    },
 }
 
 
@@ -123,26 +175,99 @@ def _measure_to_cir(treble_measure, bass_measure, display_name, treble_octave_sh
     }
 
 
+def _pitch_to_cir_item(p):
+    """Convert a music21 Pitch to a CIR note item (eighth note)."""
+    return {
+        "kind": "note",
+        "pitch": {
+            "step": p.step,
+            "alter": int(p.alter),
+            "octave": p.octave,
+        },
+        "duration": {"type": "8", "dots": 0},
+    }
+
+
+def _build_minor_scale_cir(root, display_name, scale_class_name):
+    """Build CIR for a one-octave minor scale (8 eighth notes, ascending).
+
+    Treble (RH): root4 → root5.  Bass (LH): root3 → root4.
+    root uses music21 pitch notation (e.g. "B-" for Bb, "F#" for F#).
+    scale_class_name: music21 scale class, e.g. "MinorScale", "HarmonicMinorScale".
+    For MelodicMinorScale, music21 returns the ascending (raised 6th+7th) form.
+    """
+    from music21 import scale as m21_scale
+
+    sc = getattr(m21_scale, scale_class_name)(root)
+    treble_pitches = sc.getPitches(f"{root}4", f"{root}5")
+    bass_pitches = sc.getPitches(f"{root}3", f"{root}4")
+
+    return {
+        "meta": {"key": display_name, "time": "4/4"},
+        "measures": [
+            {
+                "staves": {
+                    "treble": {
+                        "clef": "treble",
+                        "voices": [
+                            {"items": [_pitch_to_cir_item(p) for p in treble_pitches], "direction": "up"},
+                            {"items": [], "direction": "down"},
+                        ],
+                    },
+                    "bass": {
+                        "clef": "bass",
+                        "voices": [
+                            {"items": [_pitch_to_cir_item(p) for p in bass_pitches], "direction": "up"},
+                            {"items": [], "direction": "down"},
+                        ],
+                    },
+                }
+            }
+        ],
+    }
+
+
 class Command(BaseCommand):
-    help = "Create Unit 3 major scale play exercises from MusicXML (one per key, 3 playlists)"
+    help = "Create Unit 3 scale play exercises (major from MusicXML, minor via music21)"
 
     def add_arguments(self, parser):
         parser.add_argument("--author", required=True, help="Email of exercise author")
         parser.add_argument(
             "--mxl",
             default="docs/scales-key-signatures/piano-major-scales-fingerings.mxl",
-            help="Path to MusicXML file",
+            help="Path to MusicXML file (major mode only)",
         )
         parser.add_argument("--public", action="store_true", help="Make exercises public")
         parser.add_argument("--overwrite", action="store_true", help="Overwrite existing exercises")
+        parser.add_argument(
+            "--mode",
+            choices=["major", "minor", "both"],
+            default="major",
+            help="Which scales to generate (default: major)",
+        )
+        parser.add_argument(
+            "--minor-forms",
+            nargs="+",
+            choices=["natural", "harmonic", "melodic"],
+            default=["natural", "harmonic", "melodic"],
+            help="Which minor scale forms to generate when --mode includes minor (default: all three)",
+        )
 
     def handle(self, *args, **options):
-        from music21 import converter
-
         try:
             author = User.objects.get(email=options["author"])
         except User.DoesNotExist as exc:
             raise CommandError(f"Unknown author: {options['author']}") from exc
+
+        mode = options["mode"]
+        if mode in ("major", "both"):
+            self._handle_major(author, options)
+        if mode in ("minor", "both"):
+            for form in options["minor_forms"]:
+                self._handle_minor(author, options, form)
+
+    def _handle_major(self, author, options):
+        from music21 import converter
 
         mxl_path = options["mxl"]
         if not os.path.exists(mxl_path):
@@ -169,7 +294,12 @@ class Command(BaseCommand):
                 continue
 
             treble_shift = -1 if key_id in TREBLE_OCTAVE_DOWN_KEYS else 0
-            cir = _measure_to_cir(treble_measures[m_idx], bass_measures[m_idx], display_name, treble_octave_shift=treble_shift)
+            cir = _measure_to_cir(
+                treble_measures[m_idx],
+                bass_measures[m_idx],
+                display_name,
+                treble_octave_shift=treble_shift,
+            )
             desc = f"Unit 3 Scale — {display_name}"
             skill_tags = ["unit:3", "unit:3_major_scale"]
 
@@ -195,10 +325,60 @@ class Command(BaseCommand):
             created_exercises.append((ex, n_acc))
             self.stdout.write(f"  Created: {desc} (id={ex.id})")
 
-        # Build level playlists
+        self._build_playlists(
+            author=author,
+            exercises=created_exercises,
+            playlist_prefix="Unit 3 — Major Scales",
+            skill_tags=["unit:3", "major_scale", "unit:3_major_scale"],
+            is_public=options["public"],
+        )
+
+    def _handle_minor(self, author, options, form):
+        cfg = MINOR_FORM_CONFIG[form]
+        self.stdout.write(f"Generating {form} minor scales...")
+
+        created_exercises = []  # list of (Exercise, n_acc)
+        for root, key_id, n_acc, root_display in MINOR_SCALE_MAP:
+            display_name = f"{root_display} {cfg['display_suffix']}"
+            cir = _build_minor_scale_cir(root, display_name, cfg["scale_class"])
+            desc = f"Unit 3 Scale — {display_name}"
+            skill_tags = ["unit:3", "unit:3_minor_scale", cfg["skill_tag"]]
+
+            ex = save_umto_exercise(
+                description=desc,
+                score_data=cir,
+                author=author,
+                skill_tags=skill_tags,
+                complexity=3,
+                is_public=options["public"],
+                overwrite=options["overwrite"],
+                umto_kwargs=dict(
+                    exercise_id="TEMP",
+                    source=f"Play the {display_name} scale on the keyboard.",
+                    key=key_id,
+                    meter="4/4",
+                    clef="keyboard",
+                    complexity_score=3,
+                    mode=InteractionMode.PLAYBACK,
+                    unit=3,
+                ),
+            )
+            created_exercises.append((ex, n_acc))
+            self.stdout.write(f"  Created: {desc} (id={ex.id})")
+
+        self._build_playlists(
+            author=author,
+            exercises=created_exercises,
+            playlist_prefix=f"Unit 3 — Minor Scales ({cfg['playlist_label']})",
+            skill_tags=["unit:3", "minor_scale", "unit:3_minor_scale", cfg["skill_tag"]],
+            is_public=options["public"],
+        )
+
+    def _build_playlists(self, author, exercises, playlist_prefix, skill_tags, is_public):
+        """Create the three level playlists from a list of (Exercise, n_acc) pairs."""
         for level, max_acc in LEVEL_MAX_ACC.items():
-            playlist_name = f"Unit 3 — Major Scales, Level {level}"
-            playlist_tags = ["unit:3", "major_scale", "unit:3_major_scale", f"unit:3_L{level}"]
+            playlist_name = f"{playlist_prefix}, Level {level}"
+            level_tags = skill_tags + [f"unit:3_L{level}"]
 
             playlist, created = Playlist.objects.get_or_create(
                 name=playlist_name,
@@ -207,17 +387,17 @@ class Command(BaseCommand):
                     is_dynamic=False,
                     is_adaptive=False,
                     is_public=True,
-                    skill_tags=playlist_tags,
+                    skill_tags=level_tags,
                 ),
             )
             if not created:
-                playlist.skill_tags = playlist_tags
-                if options["public"]:
+                playlist.skill_tags = level_tags
+                if is_public:
                     playlist.is_public = True
                 playlist.save()
 
             ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
-            level_exercises = [ex for ex, n_acc in created_exercises if n_acc <= max_acc]
+            level_exercises = [ex for ex, n_acc in exercises if n_acc <= max_acc]
             for order, ex in enumerate(level_exercises, start=1):
                 ExercisePlaylistOrdered.objects.create(
                     playlist=playlist, exercise=ex, order=order
