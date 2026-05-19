@@ -114,7 +114,7 @@ Static chord identification. Student sees a set of notated chords on the staff. 
 }
 ```
 
-**Paging:** Not yet implemented for `identification` (only `chorale_identification` has paging today), but the infrastructure in `exerciseContext` is type-agnostic and could be enabled.
+**Paging:** Implemented on the `feature/music21_builder` branch but not yet merged to master. `chorale_identification` has paging on master. The paging infrastructure in `exerciseContext` is type-agnostic and would enable it for `identification` once merged.
 
 ---
 
@@ -197,5 +197,5 @@ Currently wired only for `chorale_identification`. The same methods would work f
 | `figured_bass` | MIDI | `ExerciseGrader.figuredBassMatch` | No | |
 | `figured_bass_pcs` | MIDI | `ExerciseGrader.figuredBassPcsMatch` | No | |
 | `chorale` | MIDI | `ChoraleGrader` | No | Score-based, onset windows |
-| `identification` | Click | `IdentificationGrader` | Not yet | Static chords |
+| `identification` | Click | `IdentificationGrader` | On feature branch | Static chords |
 | `chorale_identification` | Click | `IdentificationGrader` | Yes (4/page) | Score-based, analysisType variants |

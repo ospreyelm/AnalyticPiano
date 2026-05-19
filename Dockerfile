@@ -1,4 +1,3 @@
-# TODO: Change to an officially released version of Python before deploying to production.
 ARG PYTHON_VERSION=3.12-slim
 
 FROM python:${PYTHON_VERSION}

@@ -55,13 +55,13 @@ This makes it easier to inspect the current curriculum structure without opening
 
 Files added for this debug page:
 
-- [apps/dashboard/views/taxonomy.py](/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/views/taxonomy.py)
-- [apps/dashboard/templates/dashboard/taxonomy_debug.html](/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/templates/dashboard/taxonomy_debug.html)
-- [apps/dashboard/tests/test_taxonomy_debug_view.py](/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/tests/test_taxonomy_debug_view.py)
+- [apps/dashboard/views/taxonomy.py](../apps/dashboard/views/taxonomy.py)
+- [apps/dashboard/templates/dashboard/taxonomy_debug.html](../apps/dashboard/templates/dashboard/taxonomy_debug.html)
+- [apps/dashboard/tests/test_taxonomy_debug_view.py](../apps/dashboard/tests/test_taxonomy_debug_view.py)
 
 Routing entry:
 
-- [apps/dashboard/urls.py](/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/urls.py)
+- [apps/dashboard/urls.py](../apps/dashboard/urls.py)
 
 ## Notes
 

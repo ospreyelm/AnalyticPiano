@@ -1,5 +1,7 @@
 # Changelog
 
+All notable changes to the HarmonyLab codebase will be documented in this file.
+
 ## [2026-04-23]
 ### Added
 - **Analysis Match Mode**: A new interactive exercise type where students play from analytical labels.
@@ -12,8 +14,6 @@
 - Fixed coordinate synchronization for playhead in invisible notation mode.
 - Fixed `ExerciseForm` bug where `showNoteNames` was being incorrectly reset.
 - Fixed `skill_tags` vs `tags` field mismatch for dashboard categorization.
-
-All notable changes to the HarmonyLab codebase will be documented in this file.
 
 ## [Unreleased] - 2026-04-16
 

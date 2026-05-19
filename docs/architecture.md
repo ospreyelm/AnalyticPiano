@@ -313,7 +313,7 @@ curricular contexts to reuse the same exercise differently.
 
 ## Mastery & Adaptive System
 
-For a deep dive into the pedagogical algorithms, see [Adaptive Learning Guide](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/docs/adaptive_learning.md).
+For a deep dive into the pedagogical algorithms, see [Adaptive Learning Guide](adaptive_learning.md).
 
 ### Skill Graph (`apps/exercises/skill_graph.py`)
 Defines the `ALL_SKILL_TAGS` taxonomy and the `DEFAULT_PREREQUISITES` DAG. This module is pure Python and acts as the source of truth for the curriculum structure.

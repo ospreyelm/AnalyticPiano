@@ -70,6 +70,6 @@ The command automatically creates/updates:
 ---
 
 ## Reference
-- **Generation Command**: [generate_unit1.py](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/generate_unit1.py)
-- **Diatonicality Logic**: [music21_builder.py](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/utils/music21_builder.py)
+- **Generation Command**: [generate_unit1.py](../apps/exercises/management/commands/generate_unit1.py)
+- **Diatonicality Logic**: [music21_builder.py](../apps/exercises/utils/music21_builder.py)
 - **Unit 9 Strategy**: [unit_9_bach_import_strategy.md](unit_9_bach_import_strategy.md) (for comparison)
