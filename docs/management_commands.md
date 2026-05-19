@@ -1,0 +1,189 @@
+# Management Commands Reference
+
+Quick reference for all exercise-generation, refresh, and curriculum-wiring commands.
+
+Run `python manage.py list_exercise_generators` for a live version of this list.
+
+---
+
+## Admin UI
+
+The Django admin at `/admin/` includes an **Operations** panel at `/admin/exercises/operations/`.
+
+It provides:
+- **Exercise catalog** — live counts of exercises grouped by mode/type (matching, harmonization, identification, etc.) and by analysis type
+- **Generation forms** — web UI equivalents for the most common management commands; useful for one-off operations without SSH access
+- **Refresh dispatcher** — button to run `refresh_all_exercises` against a scoped tag
+
+The admin site uses a custom `GenerateContentAdminSite` (see `apps/exercises/admin.py`).
+
+---
+
+## Command catalog
+
+### Bach chorale phrases (Riemenschneider)
+
+**`import_bach_phrases`** — Import a single Riemenschneider phrase as identification / playback / match / figures / harmonization-source exercises.
+```
+python manage.py import_bach_phrases --riemenschneider 3 --author admin@example.com \
+  --mode roman --extra-tags unit:9
+```
+
+**`generate_harmonization`** — Derive a harmonization exercise from an existing UMTO source (locks bass, builds figured-bass targets).
+```
+python manage.py generate_harmonization --source EB16DF --author admin@example.com \
+  --locked-voices B --prompt figured_bass --min-voices 3 --max-voices 4 --public
+```
+
+**`render_harmonization_review`** — Render a static HTML review page for a harmonization exercise (debug/QA).
+```
+python manage.py render_harmonization_review --source EB57LQ
+```
+
+---
+
+### Pitch identification (Unit 1)
+
+**`generate_unit1`** — Generate the Unit 1 pitch-identification curriculum from the local Bach CIR corpus.
+```
+python manage.py generate_unit1 --author admin@example.com
+```
+
+**`duplicate_chorale_as_identification`** — Spin a chorale exercise into single-voice pitch-identification variants.
+```
+python manage.py duplicate_chorale_as_identification --source EB16DF --voices soprano alto
+```
+
+---
+
+### Rhythm and meter (Unit 2)
+
+**`generate_unit2_barline_exercises`** — Generate Unit 2 barline-placement exercises from the Bach corpus.
+```
+# Corpus-level playlists (internal, levels 1–8)
+python manage.py generate_unit2_barline_exercises --author admin@example.com --source corpus --public
+
+# Student-facing adaptive grouped playlists (run after corpus step)
+python manage.py generate_unit2_barline_exercises --author admin@example.com --grouped --public
+```
+
+**`generate_unit2_meter_exercises`** — Generate Unit 2 symbolic meter identification exercises from manifest.
+```
+python manage.py generate_unit2_meter_exercises --author admin@example.com --public
+```
+
+**`generate_unit2_meter_reference`** — Pre-generate the `unit2_meter_reference.json` data file (run once; commit result).
+```
+python manage.py generate_unit2_meter_reference
+```
+
+---
+
+### Scales and key signatures (Unit 3)
+
+**`generate_unit3_key_sig_exercises`** — Generate key signature identification exercises (3 levels × major + minor).
+```
+python manage.py generate_unit3_key_sig_exercises --author admin@example.com --public
+```
+
+**`generate_unit3_scale_exercises`** — Generate scale play exercises (major from MusicXML; minor programmatically via music21).
+```
+# Major only (default)
+python manage.py generate_unit3_scale_exercises --author admin@example.com --public
+
+# All minor forms
+python manage.py generate_unit3_scale_exercises --author admin@example.com --mode minor --public
+
+# Everything at once
+python manage.py generate_unit3_scale_exercises --author admin@example.com --mode both --public
+```
+
+**`fix_unit3_playlists`** — One-shot idempotent fixer for Unit 3 playlist taxonomy tags. Safe to re-run.
+```
+python manage.py fix_unit3_playlists
+```
+
+---
+
+### Triads and seventh chords (Unit 5)
+
+**`generate_unit5`** — Generate chord quality identification exercises (root position, staged choices).
+```
+python manage.py generate_unit5 --type both --author admin@example.com --public
+```
+
+---
+
+### Playlists and curriculum wiring
+
+**`create_unit_playlist`** — Create a per-unit Playlist that bundles existing exercises by skill tag.
+```
+python manage.py create_unit_playlist --unit 9
+```
+
+**`create_smart_playlist`** — Create an adaptive playlist seeded from skill-tag filters.
+```
+python manage.py create_smart_playlist --name 'My adaptive set' --tags I V V7
+```
+
+**`rebuild_unit1_playlists`** — Rebuild Unit 1 playlists from current taxonomy.
+```
+python manage.py rebuild_unit1_playlists
+```
+
+---
+
+## Refresh / recompute commands
+
+These update existing exercise rows in-place. They do **not** create new rows. Safe to re-run (all idempotent).
+
+> **When to use:** After fixing a bug in the analysis pipeline (e.g. figured bass derivation, key detection), run `refresh_all_exercises` to propagate the fix to all affected rows without re-importing from source files.
+
+**`refresh_all_exercises`** — Dispatcher: runs `recompute_chorale_analysis` then `recompute_harmonization_targets --resync-from-source` in sequence. The safest way to refresh everything after a pipeline change.
+```
+python manage.py refresh_all_exercises
+python manage.py refresh_all_exercises --tag qa:some_tag   # scope to a tag
+python manage.py refresh_all_exercises --dry-run           # preview only
+```
+
+**`recompute_chorale_analysis`** — Rebuilds `score.umto.analysis` on chorale-derived rows (tagged `riem:N`) by re-running the analysis pipeline against the stored score. Does not re-import from music21 corpus files.
+```
+python manage.py recompute_chorale_analysis
+python manage.py recompute_chorale_analysis --tag qa:some_tag
+python manage.py recompute_chorale_analysis --dry-run
+```
+
+**`recompute_harmonization_targets`** — Rebuilds `harmonizationTargets` on harmonization rows from their stored `score.umto.analysis`. Pass `--resync-from-source` (required after running `recompute_chorale_analysis`) to first copy refreshed analysis from the source exercise into the harmonization row.
+```
+python manage.py recompute_harmonization_targets
+python manage.py recompute_harmonization_targets --resync-from-source
+python manage.py recompute_harmonization_targets --tag qa:some_tag --dry-run
+```
+
+**`backfill_skill_tags`** — Re-run `skills_analyzer` over all UMTO rows and write `skill_tags` + `complexity`.
+```
+python manage.py backfill_skill_tags --all
+```
+
+**`backfill_raw_roman_numeral`** — Backfill `raw_roman_numeral` on existing UMTO analysis slices.
+```
+python manage.py backfill_raw_roman_numeral
+```
+
+**`reanalyze_knowledge_graph`** — Recompute knowledge-graph edges from current exercise tags.
+```
+python manage.py reanalyze_knowledge_graph
+```
+
+---
+
+## Skipped by refresh_all_exercises
+
+The following exercise types are **not** refreshed automatically — re-run their generators if the pipeline changed:
+
+| Unit | Command |
+|------|---------|
+| Unit 1 pitch identification | `generate_unit1` |
+| Unit 2 meter / barline | `generate_unit2_*` |
+| Unit 3 key sig / scales | `generate_unit3_*` |
+| Unit 5 chord quality | `generate_unit5` |
