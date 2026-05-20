@@ -79,6 +79,28 @@ Spec: [docs/superpowers/specs/2026-04-23-umto-consistency-design.md](docs/superp
 
 ---
 
+## Documentation Requirements
+
+Every PR must include documentation updates for the following categories of change:
+
+**New or modified exercise type** — update `docs/exercise_types.md`:
+- Add/update the type's entry under Play types or Identify types
+- Update the "All exercise types at a glance" summary table at the bottom
+
+**New management command** — do both:
+1. Add an entry to `docs/management_commands.md` under the appropriate category
+2. Register the command in `apps/exercises/management/commands/list_exercise_generators.py` (add a tuple to `CATALOG`)
+
+**Significant new feature** (spanning more than one file or more than one session) — create a superpowers plan *before* implementing:
+- Plan: `docs/superpowers/plans/YYYY-MM-DD-feature-name.md`
+- Design spec (if architecture decisions are involved): `docs/superpowers/specs/YYYY-MM-DD-feature-name-design.md`
+- Plans use `- [ ]` checkbox tasks; specs capture the why and data shapes
+- If a feature was implemented without a plan, create the plan retrospectively and mark completed tasks `- [x]`
+
+These rules apply to all agents working in this repo.
+
+---
+
 ## ⚠️ HIGH PRIORITY: Multi-Unit Playlist System (Not Yet Built)
 
 Two blockers prevent replicating the Unit 9 Bach playlist strategy for other units:
