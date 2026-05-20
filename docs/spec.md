@@ -28,14 +28,14 @@ HarmonyLab is a music theory practice platform with MIDI grading, staff notation
 
 | Layer | Current | Notes |
 |---|---|---|
-| Backend | Django 2.2 (EOL) | Must upgrade to 5.2 LTS |
-| Python | 3.10 | Must upgrade to 3.12 before Oct 2026 |
+| Backend | Django 5.2 LTS | Supported until April 2028 |
+| Python | 3.12 | |
 | Database | PostgreSQL | Good, keep |
 | Frontend | jQuery + RequireJS + Bootstrap 4 | Dated but functional |
 | Music notation | VexFlow | Core, keep |
 | Audio | Tone.js | Core, keep |
 | Static files | WhiteNoise | Good, keep |
-| Hosting | Heroku (collaborator's account) | Must migrate |
+| Hosting | Fly.io | Deployed; CI/CD via GitHub Actions |
 
 ---
 
@@ -75,54 +75,17 @@ The classroom relationship, grading weights, and per-student performance data ar
 
 ---
 
-## Phase 1 — Deployment
+## Phase 1 — Deployment ✅ COMPLETE
 
 **Goal:** Get the app running on infrastructure the owner controls.
 
-### 1.1 Hosting Migration
+### 1.1 Hosting Migration ✅
 
-Two options, in priority order:
+Deployed to **Fly.io** (`monteverdi`, `ord` region). CI/CD via GitHub Actions (`fly-deploy.yml`) auto-deploys on push to `main`. `Dockerfile` and `fly.toml` are in the repo root. Estimated cost: ~$5–8/mo.
 
-**Option A: Heroku (fastest)**
-- Create new Heroku app + Postgres addon
-- Set env vars: `SECRET_KEY`, `DJANGO_SETTINGS_MODULE=harmony.settings.heroku`, `ALLOWED_HOSTS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `SENTRY_DSN`
-- `git push heroku master` — migrations run automatically via Procfile:
-  ```
-  release: python manage.py migrate && python manage.py createcachetable
-  web: gunicorn harmony.wsgi:application --log-file -
-  ```
-- Estimated cost: ~$12–16/mo
+### 1.2 Django + Python Upgrade ✅
 
-**Option B: Fly.io (cheaper, recommended long-term)**
-- Write `Dockerfile` (Python 3.10, Pipfile deps, gunicorn)
-- Write `fly.toml` with `[deploy] release_command` for migrations + createcachetable
-- `fly postgres create` + `fly deploy`
-- Same env vars as Heroku
-- Estimated cost: ~$5–8/mo
-
-**One-time tasks either way:**
-- `pg_dump` / `pg_restore` to transfer existing database
-- Update DNS
-- Verify email (password reset flow)
-- Test MIDI in Chrome/Edge
-
-### 1.2 Django + Python Upgrade
-
-**Critical — Django 2.2 is end-of-life with no security updates.**
-
-Target: Django 5.2 LTS (supported until April 2028) + Python 3.12.
-
-Dependencies requiring attention during upgrade:
-
-| Package | Pinned | Action |
-|---|---|---|
-| `whitenoise` | 5.1.0 | Upgrade to 6.x (known issues with Django 4+) |
-| `dj-database-url` | 0.5.0 | Upgrade to 1.x (API changed) |
-| `psycopg2-binary` | 2.8.6 | Upgrade to 2.9.x |
-| `pytz` | 2020.1 | Replace with `zoneinfo` (built into Python 3.9+) |
-| `chardet` | 3.0.4 | Update, check transitive conflicts |
-
-Estimated effort: 1–2 weeks. Test each major version step (2.2 → 3.2 → 4.2 → 5.2) rather than jumping directly.
+Upgraded to Django 5.2 LTS (supported until April 2028) + Python 3.12. All breaking dependencies updated (whitenoise ≥6.0, dj-database-url ≥2.0, psycopg2-binary ≥2.9, chardet ≥5.0).
 
 ---
 

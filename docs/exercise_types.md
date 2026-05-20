@@ -70,6 +70,34 @@ Same as `figured_bass` but pitch-class-based (octave-independent).
 
 ---
 
+### `harmonization`
+
+Score-based figured-bass realization exercise. The student sees a bass line with figured bass (or Roman numeral) overlays on a grand staff. One or more voices are locked (typically the bass); the student plays the remaining upper voices to complete the sonority at each onset window.
+
+**Interaction model:** Slice-by-slice — the exercise advances to the next slice only when the active sonority (held + attacked notes) satisfies the current target. Immediate feedback is given per slice; attempts and errors are recorded.
+
+**Grading:** `HarmonizationGrader` — `harmonizationMatch()` in `harmonization_grader_logic.js`. At each slice, checks:
+1. Locked voices are present (e.g. bass pitch class matches)
+2. All played pitch classes are in the `allowedPcs` set (no illegal notes)
+3. All `requiredUpperPcs` are covered
+4. Voice count is within `[min, max]` from the exercise's `voiceCountPolicy`
+
+**Overlay:** Controlled by `analysisType`:
+- `"figured_bass"` → shows `thoroughbass` overlays (figures below the staff)
+- `"roman"` → shows Roman numeral overlays
+
+**Source:** Derived from any UMTO chorale exercise. Targets are pre-computed by `generate_harmonization` from the source exercise's `analysis` slices (bass + figured bass from each UMTO analysis slice). NCT (non-chord-tone) slices are skipped.
+
+**Generation:**
+```
+python manage.py generate_harmonization --source <exercise_id> --author <email> \
+  --locked-voices B --prompt figured_bass --min-voices 3 --max-voices 4 --public
+```
+
+**Key files:** `harmonization_grader_logic.js`, `harmonization_targets_logic.js`, `harmonization_realization_logic.js`, `apps/exercises/harmonization/targets.py`, `apps/exercises/management/commands/generate_harmonization.py`
+
+---
+
 ### `chorale`
 
 Score-based play exercise using Bach chorale CIR JSON. Student plays through the score note-by-note in onset windows. Requires exactly the voices specified; handles held/tied notes.
@@ -114,7 +142,7 @@ Static chord identification. Student sees a set of notated chords on the staff. 
 }
 ```
 
-**Paging:** Not yet implemented for `identification` (only `chorale_identification` has paging today), but the infrastructure in `exerciseContext` is type-agnostic and could be enabled.
+**Paging:** Implemented on the `feature/music21_builder` branch but not yet merged to master. `chorale_identification` has paging on master. The paging infrastructure in `exerciseContext` is type-agnostic and would enable it for `identification` once merged.
 
 ---
 
@@ -196,6 +224,7 @@ Currently wired only for `chorale_identification`. The same methods would work f
 | `analytical_pcs` | MIDI | `ExerciseGrader.analysisPcsMatch` | No | |
 | `figured_bass` | MIDI | `ExerciseGrader.figuredBassMatch` | No | |
 | `figured_bass_pcs` | MIDI | `ExerciseGrader.figuredBassPcsMatch` | No | |
+| `harmonization` | MIDI | `HarmonizationGrader` | No | Slice-by-slice FB realization, locked voices |
 | `chorale` | MIDI | `ChoraleGrader` | No | Score-based, onset windows |
-| `identification` | Click | `IdentificationGrader` | Not yet | Static chords |
+| `identification` | Click | `IdentificationGrader` | On feature branch | Static chords |
 | `chorale_identification` | Click | `IdentificationGrader` | Yes (4/page) | Score-based, analysisType variants |

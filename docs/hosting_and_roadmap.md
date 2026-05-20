@@ -63,14 +63,15 @@ The app is already Heroku-ready:
    - `SENTRY_DSN` (optional)
 3. `git push heroku master` — migrations run automatically
 
-### Fly.io (Cheaper Path)
+### Fly.io (Cheaper Path) ✅ Active Deployment
 
-Same env vars, plus:
-1. Write a `Dockerfile` (Python 3.10, install Pipfile deps, run gunicorn)
-2. Write `fly.toml` (app name, region, port, health check)
-   - Use the `[deploy] release_command` field to run migrations and `createcachetable` — this is the Fly.io equivalent of Heroku's `release` dyno
-3. Create Fly Postgres cluster: `fly postgres create`
-4. `fly deploy`
+Fly.io is the current production host (`monteverdi`, `ord` region). `Dockerfile` and `fly.toml` are already in the repo. GitHub Actions (`fly-deploy.yml`) auto-deploys on push to `main`. To re-deploy manually:
+
+```bash
+fly deploy
+```
+
+The `[deploy] release_command` in `fly.toml` runs migrations and `createcachetable` automatically on each deploy.
 
 ### One-Time Tasks Either Way
 
@@ -94,7 +95,7 @@ HarmonyLab is not a traditional LMS — it is a **music theory practice platform
 | Module system | RequireJS (2013) | ES modules / Vite |
 | Frontend interaction | jQuery + full page reloads | React/Vue SPA or htmx |
 | CSS framework | Bootstrap 4 (EOL) | Bootstrap 5 or Tailwind |
-| Django version | 2.2 (EOL, no security updates) | 5.2 LTS (supported until April 2028) |
+| Django version | 5.2 LTS | Supported until April 2028 |
 | Auth options | Email/password only | + Google/SSO |
 | Student dashboard | None | Progress, completion, streaks |
 | Mobile support | None (WebMIDI is desktop-only) | Responsive UI at minimum |
@@ -103,7 +104,7 @@ HarmonyLab is not a traditional LMS — it is a **music theory practice platform
 ### Modernization Options
 
 **Option A: Incremental improvement (recommended)**
-- Upgrade Django to 5.2 LTS (current LTS, supported until April 2028) — critical for security
+- ~~Upgrade Django to 5.2 LTS~~ ✅ Done (Django 5.2 + Python 3.12)
 - Replace RequireJS with Vite — big developer experience improvement
 - Add a modern student dashboard (progress bars, completion rates, history)
 - Add htmx for partial-page updates without a full SPA rewrite
@@ -124,17 +125,7 @@ HarmonyLab is not a traditional LMS — it is a **music theory practice platform
 
 Start with **Option A**. The Django upgrade alone (2.2 → 5.2) removes a meaningful security risk and unlocks modern Django features. Then layer in UX improvements. Reserve a full SPA rewrite for a later phase when the course library and user base justify it.
 
-**Note on the Django upgrade:** The jump from 2.2 to 5.2 spans three major versions and will require updating several pinned dependencies that have had breaking changes:
-
-| Package | Pinned version | Issue |
-|---|---|---|
-| `whitenoise` | 5.1.0 | Known issues with Django 4+; upgrade to 6.x |
-| `dj-database-url` | 0.5.0 | API changed significantly in 1.x |
-| `psycopg2-binary` | 2.8.6 | Update to 2.9.x |
-| `pytz` | 2020.1 | Superseded by Python 3.9+ built-in `zoneinfo` |
-| `chardet` | 3.0.4 | Very old; may have transitive conflicts |
-
-Factor this dependency chain into the effort estimate — the actual upgrade is closer to **1–2 weeks** than a few days. Python 3.10 security support also ends October 2026, so a Python upgrade (3.10 → 3.12) is worth bundling with the Django upgrade.
+**Django + Python upgrade:** ✅ Complete. The app now runs Django 5.2 LTS + Python 3.12. All breaking dependencies have been updated (whitenoise ≥6.0, dj-database-url ≥2.0, psycopg2-binary ≥2.9, chardet ≥5.0).
 
 ---
 
@@ -314,11 +305,11 @@ The classroom relationship, grading weights, and per-student performance data ar
 
 ## Prioritized Next Steps
 
-### Phase 1 — Get Running (Now)
-| Priority | Task | Effort |
+### Phase 1 — Get Running ✅ Complete
+| Priority | Task | Status |
 |---|---|---|
-| Critical | Deploy to new hosting (Heroku fastest, Fly.io cheaper) | 1–2 days |
-| Critical | Upgrade Django 2.2 → 5.2 LTS + Python 3.10 → 3.12 | 1–2 weeks |
+| ~~Critical~~ | ~~Deploy to new hosting~~ | ✅ Fly.io live (`monteverdi`) |
+| ~~Critical~~ | ~~Upgrade Django 2.2 → 5.2 LTS + Python 3.10 → 3.12~~ | ✅ Done |
 
 ### Phase 2 — College Pilot (Before charging anyone)
 | Priority | Task | Effort |

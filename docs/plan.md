@@ -8,7 +8,7 @@ Actionable steps in order. Check off as completed.
 
 ## Current state (2026-04-10)
 
-- App runs locally. Hosting not yet deployed (Phase 1 still pending).
+- App deployed to Fly.io (`monteverdi`). Django 5.2 + Python 3.12. Phase 1 complete.
 - Pilot with college approaching — teacher onboarding is the critical path.
 - **The real blocker is content.** A starter curriculum needs to exist in the public library before teachers can onboard. But creating content is painful because the tooling is missing — exercises are hard to browse, creation takes 3 pages, and transposition is broken. Fix the tools first (2.19–2.21), then create content (2.12).
 - Recurring assignments (2.14) is fully implemented and merged.
@@ -32,13 +32,13 @@ Actionable steps in order. Check off as completed.
 - [x] Upgrade all breaking dependencies (whitenoise, dj-database-url, psycopg2, pytz → zoneinfo, chardet)
 - [ ] Verify all pages work end-to-end locally
 
-### 1.2 Deploy to hosting
+### 1.2 Deploy to hosting ✅
 
-- [ ] Choose hosting: Heroku (fastest) or Fly.io (~$5–8/mo)
-- [ ] **If Heroku:** create app, add Postgres addon, set env vars (`SECRET_KEY`, `DJANGO_SETTINGS_MODULE=harmony.settings.heroku`, `ALLOWED_HOSTS`, `EMAIL_HOST_*`, `SENTRY_DSN`), `git push heroku master`
-- [ ] **If Fly.io:** write `Dockerfile` + `fly.toml`, `fly postgres create`, set same env vars, `fly deploy`
-- [ ] Transfer existing database: `pg_dump` old host → `pg_restore` new host
-- [ ] Update DNS, verify password reset email, verify MIDI in Chrome/Edge
+- [x] Deployed to Fly.io (`monteverdi`, `ord` region) — `Dockerfile` + `fly.toml` in repo root
+- [x] GitHub Actions CI/CD auto-deploys on push to `main` (`fly-deploy.yml`)
+- [ ] Transfer existing database: `pg_dump` old host → `pg_restore` new host (if migrating production data)
+- [ ] Verify password reset email works end-to-end
+- [ ] Verify MIDI in Chrome/Edge post-deploy
 
 ---
 
