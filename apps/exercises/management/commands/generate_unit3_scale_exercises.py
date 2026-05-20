@@ -37,25 +37,27 @@ SCALE_MEASURE_MAP = [
     (14, "C#", 7, "C# major"),
 ]
 
-# Maps (root_for_music21, key_id_for_display, accidentals, root_display_name).
-# root_for_music21 uses music21 flat notation (e.g. "B-" for Bb).
+# Maps (root_for_music21, key_id, accidentals, root_display_name, rh_start_octave).
+# root_for_music21: music21 pitch notation ("B-" for Bb, "F#" for F#).
+# key_id: HarmonyLab minor key string ("i" prefix + letter + "_"/"#"/"b").
+# rh_start_octave: RH starting octave, matching the parallel major scale register.
 # Ordered by circle of fifths (sharps then flats, ascending accidental count).
 MINOR_SCALE_MAP = [
-    ("A",   "A",   0, "A"),
-    ("E",   "E",   1, "E"),
-    ("D",   "D",   1, "D"),
-    ("B",   "B",   2, "B"),
-    ("G",   "G",   2, "G"),
-    ("F#",  "F#",  3, "F#"),
-    ("C",   "C",   3, "C"),
-    ("C#",  "C#",  4, "C#"),
-    ("F",   "F",   4, "F"),
-    ("G#",  "G#",  5, "G#"),
-    ("B-",  "Bb",  5, "Bb"),
-    ("D#",  "D#",  6, "D#"),
-    ("E-",  "Eb",  6, "Eb"),
-    ("A#",  "A#",  7, "A#"),
-    ("A-",  "Ab",  7, "Ab"),
+    ("A",   "iA_", 0, "A",   3),
+    ("E",   "iE_", 1, "E",   4),
+    ("D",   "iD_", 1, "D",   4),
+    ("B",   "iB_", 2, "B",   3),
+    ("G",   "iG_", 2, "G",   3),
+    ("F#",  "iF#", 3, "F#",  3),
+    ("C",   "iC_", 3, "C",   4),
+    ("C#",  "iC#", 4, "C#",  4),
+    ("F",   "iF_", 4, "F",   3),
+    ("G#",  "iG#", 5, "G#",  3),  # parallel = Ab major, oct 3
+    ("B-",  "iBb", 5, "Bb",  3),
+    ("D#",  "iD#", 6, "D#",  4),  # parallel = Eb major, oct 4
+    ("E-",  "iEb", 6, "Eb",  4),
+    ("A#",  "iA#", 7, "A#",  3),  # parallel = Bb major, oct 3
+    ("A-",  "iAb", 7, "Ab",  3),
 ]
 
 LEVEL_MAX_ACC = {1: 3, 2: 5, 3: 7}
@@ -176,7 +178,7 @@ def _measure_to_cir(treble_measure, bass_measure, display_name, treble_octave_sh
 
 
 def _pitch_to_cir_item(p):
-    """Convert a music21 Pitch to a CIR note item (eighth note)."""
+    """Convert a music21 Pitch to a CIR note item (quarter note)."""
     return {
         "kind": "note",
         "pitch": {
@@ -184,23 +186,37 @@ def _pitch_to_cir_item(p):
             "alter": int(p.alter),
             "octave": p.octave,
         },
-        "duration": {"type": "8", "dots": 0},
+        "duration": {"type": "q", "dots": 0},
     }
 
 
-def _build_minor_scale_cir(root, display_name, scale_class_name):
-    """Build CIR for a one-octave minor scale (8 eighth notes, ascending).
+def _build_minor_scale_cir(root, display_name, scale_class_name, rh_start_octave=4):
+    """Build CIR for a two-octave minor scale (quarter notes, up then down).
 
-    Treble (RH): root4 → root5.  Bass (LH): root3 → root4.
-    root uses music21 pitch notation (e.g. "B-" for Bb, "F#" for F#).
-    scale_class_name: music21 scale class, e.g. "MinorScale", "HarmonicMinorScale".
-    For MelodicMinorScale, music21 returns the ascending (raised 6th+7th) form.
+    Treble (RH): root{rh_start_octave} → root{rh_start_octave+2} ascending, then descending.
+    Bass   (LH): root2 → root4 ascending, then descending.
+    For MelodicMinorScale, ascending uses raised 6th+7th; descending uses natural minor.
     """
     from music21 import scale as m21_scale
 
+    lh_start = 2
+    rh_end = rh_start_octave + 2
+
     sc = getattr(m21_scale, scale_class_name)(root)
-    treble_pitches = sc.getPitches(f"{root}4", f"{root}5")
-    bass_pitches = sc.getPitches(f"{root}3", f"{root}4")
+    treble_up = sc.getPitches(f"{root}{rh_start_octave}", f"{root}{rh_end}")
+    bass_up = sc.getPitches(f"{root}{lh_start}", f"{root}{lh_start + 2}")
+
+    if scale_class_name == "MelodicMinorScale":
+        # Descending uses natural minor (lowered 6th+7th)
+        nat = m21_scale.MinorScale(root)
+        treble_down = list(reversed(nat.getPitches(f"{root}{rh_start_octave}", f"{root}{rh_end}")))[1:]
+        bass_down = list(reversed(nat.getPitches(f"{root}{lh_start}", f"{root}{lh_start + 2}")))[1:]
+    else:
+        treble_down = list(reversed(treble_up))[1:]
+        bass_down = list(reversed(bass_up))[1:]
+
+    treble_items = [_pitch_to_cir_item(p) for p in treble_up + treble_down]
+    bass_items = [_pitch_to_cir_item(p) for p in bass_up + bass_down]
 
     return {
         "meta": {"key": display_name, "time": "4/4"},
@@ -210,14 +226,14 @@ def _build_minor_scale_cir(root, display_name, scale_class_name):
                     "treble": {
                         "clef": "treble",
                         "voices": [
-                            {"items": [_pitch_to_cir_item(p) for p in treble_pitches], "direction": "up"},
+                            {"items": treble_items, "direction": "up"},
                             {"items": [], "direction": "down"},
                         ],
                     },
                     "bass": {
                         "clef": "bass",
                         "voices": [
-                            {"items": [_pitch_to_cir_item(p) for p in bass_pitches], "direction": "up"},
+                            {"items": bass_items, "direction": "up"},
                             {"items": [], "direction": "down"},
                         ],
                     },
@@ -338,9 +354,9 @@ class Command(BaseCommand):
         self.stdout.write(f"Generating {form} minor scales...")
 
         created_exercises = []  # list of (Exercise, n_acc)
-        for root, key_id, n_acc, root_display in MINOR_SCALE_MAP:
+        for root, key_id, n_acc, root_display, rh_oct in MINOR_SCALE_MAP:
             display_name = f"{root_display} {cfg['display_suffix']}"
-            cir = _build_minor_scale_cir(root, display_name, cfg["scale_class"])
+            cir = _build_minor_scale_cir(root, display_name, cfg["scale_class"], rh_oct)
             desc = f"Unit 3 Scale — {display_name}"
             skill_tags = ["unit:3", "unit:3_minor_scale", cfg["skill_tag"]]
 
