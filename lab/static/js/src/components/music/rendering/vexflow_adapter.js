@@ -728,10 +728,14 @@ define([
     return windows;
   }
 
-  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation, isAnalysisMatch, harmonizationOptions) {
+  // barAlterations: mutable {step+octave → alter} tracking within one measure.
+  // Pass a shared object across all itemToTickable calls in the same measure+staff
+  // so that G# earlier in the bar causes G♮ later to render an explicit natural.
+  function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation, isAnalysisMatch, harmonizationOptions, barAlterations) {
     if (showNotation === undefined) showNotation = true;
     if (isAnalysisMatch === undefined) isAnalysisMatch = false;
     harmonizationOptions = harmonizationOptions || {};
+    barAlterations = barAlterations || {};
     var hideForHarmonization = !!(harmonizationOptions.isHarmonization && harmonizationOptions.hideCurrentVoice);
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
@@ -770,16 +774,18 @@ define([
       note._onset = onset;
       note._measureIndex = measureIndex;
 
-      // Only show accidental if it contradicts the key signature
+      // Only show accidental if it contradicts the key signature or a prior note in the bar.
       var keyAlters = keySignatureAlterations || {};
       var step = item.pitch.step.toUpperCase();
       var keyAlter = keyAlters[step] || 0;
-      
-      // If the note's alteration differs from the key signature, show an accidental
-      if (alter !== keyAlter) {
+      var barKey = step + (item.pitch.octave + (octaveShift || 0));
+      var effectiveAlter = barKey in barAlterations ? barAlterations[barKey] : keyAlter;
+
+      if (alter !== effectiveAlter) {
         var accType = alter === 1 ? "#" : alter === -1 ? "b" : alter === 2 ? "##" : alter === -2 ? "bb" : "n";
         note.addModifier(new Vex.Flow.Accidental(accType), 0);
       }
+      barAlterations[barKey] = alter;
       
       // Default: gray until played (will be set to black by matcher later)
       var played = idState && idState.playedNoteIds && idState.playedNoteIds.has(idState.nextId || 0);
@@ -806,18 +812,20 @@ define([
       var chord = new Vex.Flow.StaveNote({ clef: clef, keys: keys, duration: durToVF(item.duration), dots: numDots });
       if (numDots > 0) Vex.Flow.Dot.buildAndAttach([chord], { all: true });
 
-      // Only show accidentals that contradict the key signature
+      // Only show accidentals that contradict the key signature or a prior note in the bar.
       var keyAlters = keySignatureAlterations || {};
       for (var i = 0; i < item.notes.length; i++) {
         var alter = item.notes[i].pitch.alter || 0;
         var step = item.notes[i].pitch.step.toUpperCase();
         var keyAlter = keyAlters[step] || 0;
-        
-        // If the note's alteration differs from the key signature, show an accidental
-        if (alter !== keyAlter) {
+        var barKey = step + (item.notes[i].pitch.octave + (octaveShift || 0));
+        var effectiveAlter = barKey in barAlterations ? barAlterations[barKey] : keyAlter;
+
+        if (alter !== effectiveAlter) {
           var accType = alter === 1 ? "#" : alter === -1 ? "b" : alter === 2 ? "##" : alter === -2 ? "bb" : "n";
           chord.addModifier(new Vex.Flow.Accidental(accType), i);
         }
+        barAlterations[barKey] = alter;
       }
       
       // Tag with musical position
@@ -1151,6 +1159,9 @@ define([
         idState = idState || { nextId: 0, playedNoteIds: (opts && opts.playedNoteIds) || null };
         var measStartTick = measureStartTick || 0;
         var staffSatbLabels = SATB_MAP[staffId] || [];
+        // Shared within-measure alteration tracker — reset per measure per staff,
+        // shared across all voices so G# in one voice makes G♮ in another show a natural.
+        var barAlterations = {};
         return (staff.voices || [])
           .map(function (v, vIdx) {
             if (select && select.indexOf(vIdx) === -1) return null; // filter out
@@ -1163,7 +1174,7 @@ define([
             var tickables = v.items.map(function (it) {
               var onsetToUse = measStartTick + localOnset;
               localOnset += durationToTicks(it.duration);
-              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex, showNotation, isAnalysisMatch, harmonizationOptions);
+              return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex, showNotation, isAnalysisMatch, harmonizationOptions, barAlterations);
             }).filter(Boolean);
             
             var stemDir = v.direction === "up" ? 1 : v.direction === "down" ? -1 : 1;

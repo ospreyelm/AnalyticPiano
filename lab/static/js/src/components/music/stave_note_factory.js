@@ -262,6 +262,10 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         natural_found_idx,
         is_doubled;
 
+      // Local copy so within-chord alterations are visible to later notes in
+      // the same chord without mutating the caller's activeAlterations object.
+      let localAlterations = Object.assign(Object.create(null), activeAlterations);
+
       for (var i = 0, len = noteKeys.length; i < len; i++) {
         accidentals.push("");
       }
@@ -298,9 +302,9 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
         const is_diatonic = keySignature.isDiatonic(note_spelling);
 
         if (is_diatonic) {
-          if (activeAlterations[staff_line] == undefined) {
+          if (localAlterations[staff_line] == undefined) {
             accidentals[i] = "";
-          } else if (activeAlterations[staff_line] != quality) {
+          } else if (localAlterations[staff_line] != quality) {
             if (quality == "") {
               accidentals[i] = "n";
             } else {
@@ -309,18 +313,21 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
           }
         } else {
           // chromatic
-          if (activeAlterations[staff_line] == quality) {
+          if (localAlterations[staff_line] == quality) {
             accidentals[i] = "";
-          } else if (activeAlterations[staff_line] == undefined) {
+          } else if (localAlterations[staff_line] == undefined) {
             if (quality == "") {
               accidentals[i] = "n";
             }
-          } else if (activeAlterations[staff_line] !== quality) {
+          } else if (localAlterations[staff_line] !== quality) {
             if (quality == "") {
               accidentals[i] = "n";
             }
           }
         }
+
+        // Update local tracker so subsequent notes in this chord see this alteration.
+        localAlterations[staff_line] = quality;
       }
 
       return accidentals;
