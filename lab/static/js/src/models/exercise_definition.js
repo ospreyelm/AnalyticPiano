@@ -1053,6 +1053,25 @@ define([
             mode: {}
           };
           exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
+        } else if (exercise.type === "identification") {
+          exercise.problems = _.map(definition.chord || [], function (chord) {
+            var notes = ExerciseDefinition.sortNotes(chord.notes || []);
+            return {
+              visible: notes.slice(),
+              hidden: [],
+              notes: notes,
+              answer: chord.answer || "",
+              choices: chord.choices || [],
+              unison_idx: null,
+              rhythm: chord.rhythmValue || "w",
+            };
+          });
+          exercise.mode = "identification";
+          exercise.identMode = definition.identMode || "practice";
+          exercise.analysisType = definition.analysisType || "chord_quality";
+          exercise.inputMode = definition.inputMode || "dropdown";
+          exercise.staffDistribution = definition.staffDistribution || "keyboard";
+          exercise.analysis = { enabled: false, mode: {} };
         }
         exercise.playlistTags = definition.playlistTags || [];
         exercise.playlistSkillTags = definition.playlistSkillTags || [];

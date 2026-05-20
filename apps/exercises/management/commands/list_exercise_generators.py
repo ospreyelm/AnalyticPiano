@@ -68,6 +68,13 @@ CATALOG = [
             "python manage.py generate_unit3_scale_exercises --author admin@example.com",
         ),
     ]),
+    ("Triads and seventh chords (Unit 5)", [
+        (
+            "generate_unit5",
+            "Generate Unit 5 chord-quality identification exercises (triads and/or seventh chords, staged choice counts).",
+            "python manage.py generate_unit5 --type both --author admin@example.com --public",
+        ),
+    ]),
     ("Playlists and curriculum wiring", [
         (
             "create_unit_playlist",

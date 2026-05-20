@@ -551,6 +551,106 @@ def save_umto_symbolic_exercise(
     return ex
 
 
+def save_umto_chord_id_exercise(
+    *,
+    description: str,
+    author,
+    chord_key: str,
+    midi_notes: list,
+    answer: str,
+    choices: list,
+    skill_tags: list,
+    complexity: int,
+    is_public: bool = True,
+    overwrite: bool = False,
+) -> "Exercise":
+    """Save a single root-position chord quality identification exercise.
+
+    chord_key: HarmonyLab key string (e.g. "jG_") used for staff rendering/accidental display.
+    midi_notes: sorted list of MIDI integers for the chord.
+    answer: quality display label (e.g. "major", "dominant 7").
+    choices: ordered list of answer choices shown to the student.
+    """
+    umto = UMTO(
+        metadata=Metadata(
+            exercise_id="TEMP",
+            source="Identify the chord quality.",
+            key=chord_key,
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=complexity,
+            mode=InteractionMode.IDENTIFICATION,
+            input_mode="dropdown",
+            unit=5,
+        ),
+        voices=Voices(),
+        analysis=[],
+        grading=[],
+    )
+
+    payload = {
+        "type": "identification",
+        "isUMTO": True,
+        "mode": InteractionMode.IDENTIFICATION.value,
+        "analysisType": "chord_quality",
+        "inputMode": "dropdown",
+        "identMode": "practice",
+        "staffDistribution": "keyboard",
+        "key": chord_key,
+        "meter": "4/4",
+        "complexity_score": complexity,
+        "introText": "Identify the chord quality.",
+        "reviewText": "Well done!",
+        "chord": [
+            {
+                "notes": sorted(midi_notes),
+                "answer": answer,
+                "choices": choices,
+                "rhythmValue": "w",
+            }
+        ],
+        "score": {
+            "meta": {
+                "key": chord_key,
+                "time": "4/4",
+                "clef": "keyboard",
+                "staffDistribution": "keyboard",
+            },
+            "measures": [],
+            "umto": umto.model_dump(mode="json"),
+        },
+        "grading": [],
+    }
+
+    UMTO.model_validate(payload["score"]["umto"])
+
+    ex = None
+    if overwrite:
+        ex = Exercise.objects.filter(description=description, authored_by=author).first()
+
+    if ex is None:
+        ex = Exercise(
+            description=description,
+            data=payload,
+            authored_by=author,
+            is_public=is_public,
+            skill_tags=list(skill_tags),
+            complexity=complexity,
+        )
+        ex.save()
+    else:
+        ex.data = payload
+        ex.skill_tags = list(skill_tags)
+        ex.complexity = complexity
+        ex.is_public = is_public
+        ex.save(update_fields=["data", "skill_tags", "complexity", "is_public"])
+
+    ex.data["exerciseId"] = ex.id
+    ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
+    ex.save(update_fields=["data"])
+    return ex
+
+
 def save_umto_barline_exercise(
     *,
     description: str,
