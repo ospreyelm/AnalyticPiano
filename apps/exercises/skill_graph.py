@@ -30,7 +30,7 @@ ALL_SKILL_TAGS = LITERACY_TAGS + [
     # CORE SEQUENCE (Tier 1-5)
     "unit:1", "unit:1_pitch_reading", "unit:1_clefs", "unit:1_enharmonic", "unit:1_Note_Names", "unit:1_Ledger_Lines",
     "unit:2", "unit:2_rhythm", "unit:2_meter_simple", "unit:2_meter_compound",
-    "unit:3", "unit:3_major_scale", "unit:3_minor_scale", "unit:3_key_signature", "unit:3_Scale_Degrees", "unit:3_Pitch_Class",
+    "unit:3", "unit:3_major_scale", "unit:3_minor_scale", "unit:3_minor_scale_natural", "unit:3_minor_scale_harmonic", "unit:3_minor_scale_melodic", "unit:3_key_signature", "unit:3_Scale_Degrees", "unit:3_Pitch_Class",
     "unit:4", "unit:4_interval_quality", "unit:4_interval_inversion", "unit:4_Interval_Generic", "unit:4_Interval_Specific", "unit:4_Interval_Compound",
     "unit:5", "unit:5_triad_quality", "unit:5_seventh_chord_quality", "unit:5_figured_bass_intro", "unit:5_Diatonic_Sevenths",
     "unit:6", "unit:6_voice_leading", "unit:6_satb_spacing", "unit:6_parallel_motion",
@@ -195,7 +195,7 @@ DEFAULT_PREREQUISITES = {
     # Sub-tag mapping (Automated generation)
     "unit:1_pitch_reading": ["unit:1"], "unit:1_clefs": ["unit:1"], "unit:1_enharmonic": ["unit:1"], "unit:1_Note_Names": ["unit:1"], "unit:1_Ledger_Lines": ["unit:1"],
     "unit:2_rhythm": ["unit:2"], "unit:2_meter_simple": ["unit:2"], "unit:2_meter_compound": ["unit:2"],
-    "unit:3_major_scale": ["unit:3"], "unit:3_minor_scale": ["unit:3"], "unit:3_key_signature": ["unit:3"], "unit:3_Scale_Degrees": ["unit:3"], "unit:3_Pitch_Class": ["unit:3"],
+    "unit:3_major_scale": ["unit:3"], "unit:3_minor_scale": ["unit:3"], "unit:3_minor_scale_natural": ["unit:3_minor_scale"], "unit:3_minor_scale_harmonic": ["unit:3_minor_scale_natural"], "unit:3_minor_scale_melodic": ["unit:3_minor_scale_natural"], "unit:3_key_signature": ["unit:3"], "unit:3_Scale_Degrees": ["unit:3"], "unit:3_Pitch_Class": ["unit:3"],
     "unit:4_interval_quality": ["unit:4"], "unit:4_interval_inversion": ["unit:4"], "unit:4_Interval_Generic": ["unit:4"], "unit:4_Interval_Specific": ["unit:4"], "unit:4_Interval_Compound": ["unit:4"],
     "unit:5_triad_quality": ["unit:5"], "unit:5_seventh_chord_quality": ["unit:5"], "unit:5_figured_bass_intro": ["unit:5"], "unit:5_Diatonic_Sevenths": ["unit:5"],
     "unit:6_voice_leading": ["unit:6"], "unit:6_satb_spacing": ["unit:6"], "unit:6_parallel_motion": ["unit:6"],
