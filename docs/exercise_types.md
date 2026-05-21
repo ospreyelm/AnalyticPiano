@@ -181,7 +181,7 @@ Score-based identification exercise using Bach chorale CIR JSON. Student sees me
 }
 ```
 
-**Unit 4 synthetic worksheets:** `generate_unit4` creates score-backed interval worksheets in this UMTO identification shape. They render one interval per measure, use treble-only notation, hide the no-accidental key label for this synthetic content, and place `?` slots under each notated interval column. Defaults are six one-page worksheets per lane/stage, with eight prompts per worksheet.
+**Unit 4 synthetic worksheets:** `generate_unit4` creates score-backed interval worksheets in this UMTO identification shape. They render one interval per measure, use treble-only notation, hide the no-accidental key label for this synthetic content, and place `?` slots under each notated interval column. Defaults are six one-page worksheets per lane/stage, with eight prompts per worksheet. Unit 4 also uses `display.noteXShift` to keep sparse whole-note intervals and labels visually centered in their measures.
 
 **Grading:** `IdentificationGrader` — same grader as `identification`, extended with `pageOffset` support so absolute answer indices work across pages.
 

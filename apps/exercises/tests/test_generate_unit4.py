@@ -62,6 +62,7 @@ class GenerateUnit4CommandTest(TestCase):
         self.assertTrue(sample.data["display"]["hideKeyLabel"])
         self.assertEqual(sample.data["display"]["maxMeasures"], 8)
         self.assertGreater(sample.data["display"]["firstMeasureExtraWidth"], 0)
+        self.assertEqual(sample.data["display"]["noteXShift"], 8)
         self.assertEqual(sample.data["score"]["umto"]["metadata"]["unit"], 4)
         self.assertEqual(sample.data["score"]["umto"]["metadata"]["clef"], "treble")
         self.assertIn("unit:4_L1", sample.skill_tags)

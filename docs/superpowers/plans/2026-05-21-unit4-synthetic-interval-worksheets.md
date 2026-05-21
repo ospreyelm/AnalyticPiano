@@ -20,6 +20,7 @@ Replace the earlier Unit 4 interval prototype with a score-backed synthetic work
 - [x] Scope key-label suppression to Unit 4 synthetic worksheets so chorale key labels still render.
 - [x] Change the default output to six one-page worksheets per lane/stage with eight intervals per worksheet.
 - [x] Add Unit 4 display metadata for one-page rendering and extra first-measure spacing.
+- [x] Add a Unit 4 note/label X-shift so sparse interval worksheets are visually centered.
 
 ## Notes
 

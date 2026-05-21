@@ -166,6 +166,7 @@ def _build_worksheet_payload(*, problems, choices, analysis_type, stage):
         "hideKeyLabel": True,
         "maxMeasures": len(problems),
         "firstMeasureExtraWidth": 28,
+        "noteXShift": 8,
     }
     payload["allowed_answers"] = list(choices)
     payload["analysisPolicy"] = {"allowedValues": list(choices)}

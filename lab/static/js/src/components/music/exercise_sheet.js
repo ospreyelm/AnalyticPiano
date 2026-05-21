@@ -1736,6 +1736,7 @@ define([
             showNotation: display.showNotation !== undefined ? display.showNotation : true,
             hideKeyLabel: !!display.hideKeyLabel,
             firstMeasureExtraWidth: parseInt(display.firstMeasureExtraWidth, 10) || 0,
+            noteXShift: parseInt(display.noteXShift, 10) || 0,
             // Analysis wiring for chorale path (Notater bridge inside adapter)
             analyzeConfig: analyzeConfig,
 

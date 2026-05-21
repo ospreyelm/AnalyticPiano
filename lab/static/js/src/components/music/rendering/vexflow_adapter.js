@@ -1557,6 +1557,20 @@ define([
           var notesWidth = Math.max(0, measureWidth - leftPad - rightPad);
           
           formatter.format(allVoices, notesWidth);
+
+          var noteXShift = parseInt(opts && opts.noteXShift, 10) || 0;
+          if (noteXShift) {
+            allVoices.forEach(function(voice) {
+              var tickables = Array.isArray(voice.tickables)
+                ? voice.tickables
+                : (typeof voice.getTickables === "function" ? voice.getTickables() : []);
+              tickables.forEach(function(tickable) {
+                if (!tickable || typeof tickable.setXShift !== "function") return;
+                var currentShift = typeof tickable.getXShift === "function" ? tickable.getXShift() : (tickable.x_shift || 0);
+                tickable.setXShift((parseInt(currentShift, 10) || 0) + noteXShift);
+              });
+            });
+          }
         }
 
         // In VexFlow, format() calculates layout. We don't need to draw unplayed notes if showNotation is false.
@@ -1733,6 +1747,9 @@ define([
 
               var activeStaveForAnnotations = bassStave || trebleStave;
               var columnCenterX = getColumnCenterX(col);
+              if (columnCenterX !== null) {
+                columnCenterX += parseInt(opts && opts.noteXShift, 10) || 0;
+              }
               if (opts && typeof opts.onWindowPosition === "function" && typeof matchedIndex === "number" && columnCenterX !== null && activeStaveForAnnotations) {
                 opts.onWindowPosition({
                   windowIndex: absoluteWindowOffset + matchedIndex,
