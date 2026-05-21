@@ -981,7 +981,7 @@ define([
          var targetMeasure = this._identPage * maxMeasures;
          var lastPossibleStart = Math.max(0, totalMeasures - maxMeasures);
          if (targetMeasure > lastPossibleStart) targetMeasure = lastPossibleStart;
-         var problems = this.definition.getProblems();
+         var problems = this.definition.getProblems() || [];
          for (var i = 0; i < problems.length; i++) {
             if (problems[i].measureIndex >= targetMeasure) return i;
          }
@@ -995,7 +995,7 @@ define([
      * @return {number}
      */
     getTotalIdentPages: function () {
-      var allProblems = this.definition.getProblems();
+      var allProblems = this.definition.getProblems() || [];
       if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
           if (!allProblems || !allProblems.length) return 1;
           var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;

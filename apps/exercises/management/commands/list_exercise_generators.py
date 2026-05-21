@@ -68,6 +68,13 @@ CATALOG = [
             "python manage.py generate_unit3_scale_exercises --author admin@example.com",
         ),
     ]),
+    ("Intervals (Unit 4)", [
+        (
+            "generate_unit4",
+            "Generate Unit 4 staged synthetic interval worksheet exercises.",
+            "python manage.py generate_unit4 --author admin@example.com --public",
+        ),
+    ]),
     ("Triads and seventh chords (Unit 5)", [
         (
             "generate_unit5",
