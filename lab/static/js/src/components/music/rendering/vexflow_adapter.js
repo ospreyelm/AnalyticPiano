@@ -1355,8 +1355,8 @@ define([
         var pickupMinMeasureFromNotes = pickupNotesMinWidth > 0 ? (pickupNotesMinWidth / 0.8) : 0;
         baseWidths[0] = dynamicOverhead + Math.max(minPartialMeasureWidth, pickupMinMeasureFromNotes);
       } else {
-        // No pickup: compensate for clef/key/time so first full bar's notesWidth is not penalized
-        baseWidths[0] = firstBarCompensation;
+        // No pickup: compensate for clef/key/time so first full bar's notesWidth is not penalized.
+        baseWidths[0] = firstBarCompensation + ((opts && opts.firstMeasureExtraWidth) || 0);
       }
 
       var availableWidth = width - margin.left - margin.right;
@@ -1467,7 +1467,7 @@ define([
             ? formatKeyForDisplay(opts.keySignature.getKey())
             : formatKeyForDisplay(meta && meta.key));
 
-        if (isFirstMeasure && displayKey && activeStaveForLabel) {
+        if (isFirstMeasure && displayKey && activeStaveForLabel && !(opts && opts.hideKeyLabel)) {
           ctx.save();
           ctx.font = "20px MainSerifs";
           ctx.fillStyle = (opts && opts.color) || "#000";
@@ -1557,6 +1557,28 @@ define([
           var notesWidth = Math.max(0, measureWidth - leftPad - rightPad);
           
           formatter.format(allVoices, notesWidth);
+
+          var noteXShift = parseInt(opts && opts.noteXShift, 10) || 0;
+          if (noteXShift) {
+            var shiftedTickContexts = [];
+            allVoices.forEach(function(voice) {
+              var tickables = Array.isArray(voice.tickables)
+                ? voice.tickables
+                : (typeof voice.getTickables === "function" ? voice.getTickables() : []);
+              tickables.forEach(function(tickable) {
+                if (!tickable || typeof tickable.getTickContext !== "function") return;
+                var tickContext = tickable.getTickContext();
+                if (!tickContext ||
+                    shiftedTickContexts.indexOf(tickContext) !== -1 ||
+                    typeof tickContext.getX !== "function" ||
+                    typeof tickContext.setX !== "function") {
+                  return;
+                }
+                tickContext.setX(tickContext.getX() + noteXShift);
+                shiftedTickContexts.push(tickContext);
+              });
+            });
+          }
         }
 
         // In VexFlow, format() calculates layout. We don't need to draw unplayed notes if showNotation is false.

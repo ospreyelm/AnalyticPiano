@@ -5,7 +5,7 @@ HarmonyLab has two fundamental interaction modes:
 | Mode | Student action | Examples |
 |------|---------------|---------|
 | **Play** | Sees notation/labels, plays matching notes on MIDI | `matching`, `analytical`, `figured_bass`, `chorale` |
-| **Identify** | Sees notation, labels each item by clicking | `identification`, `chorale_identification` |
+| **Identify** | Sees notation, labels each item by clicking | `identification`, `chorale_identification`, `umto_chorale` (`mode: "identification"`) |
 
 ---
 
@@ -175,7 +175,9 @@ Static chord identification. Student sees a set of notated chords on the staff. 
 
 Score-based identification exercise using Bach chorale CIR JSON. Student sees measures of a chorale and labels each onset window (chord position) by clicking a `?` below the staff and selecting from a popup.
 
-**Paging:** Exercises are split into pages of 4 problems each. Students navigate with Next/Previous; a slide animation signals the page turn. Page indicator shown in the instruction text box.
+**Current runtime note:** new score-based identification content is increasingly emitted as `type: "umto_chorale"` with `mode: "identification"`. The frontend treats that UMTO shape as the modern equivalent of `chorale_identification`. Legacy `chorale_identification` rows are still supported.
+
+**Paging:** Exercises are split into pages of 4 problems each by default. `display.maxMeasures` can override this for synthetic worksheets that should remain on a single page. Students navigate with Next/Previous; a slide animation signals the page turn. Page indicator shown in the instruction text box.
 
 **`analysisType` controls what is being identified:**
 
@@ -195,13 +197,16 @@ Score-based identification exercise using Bach chorale CIR JSON. Student sees me
 **Example JSON:**
 ```json
 {
-  "type": "chorale_identification",
+  "type": "umto_chorale",
+  "mode": "identification",
   "analysisType": "interval_specific",
   "compoundIntervals": false,
   "identMode": "practice",
   "score": { ... }
 }
 ```
+
+**Unit 4 synthetic worksheets:** `generate_unit4` creates score-backed interval worksheets in this UMTO identification shape. They render one interval per measure, use treble-only notation, hide the no-accidental key label for this synthetic content, and place `?` slots under each notated interval column. Defaults are six one-page worksheets per lane/stage, with eight prompts per worksheet. Unit 4 also uses `display.noteXShift` to keep sparse whole-note intervals, accidentals, and labels visually centered in their measures. Text-input mode accepts interval numbers for generic intervals and case-sensitive quality+number tokens for specific intervals, such as `M2`, `m2`, `P4`, `A4`, and `d5`.
 
 **Grading:** `IdentificationGrader` — same grader as `identification`, extended with `pageOffset` support so absolute answer indices work across pages.
 
@@ -236,7 +241,7 @@ Paging state lives on `exerciseContext`, not on the grader or definition:
 | `goToIdentPage(n)` | Navigate to page n; triggers slide animation + delayed re-render |
 | `submitIdentPage(options)` | Grade current page; advance if `fromUI=true` and not last page |
 
-Currently wired only for `chorale_identification`. The same methods would work for `identification` by simply enabling them.
+Currently wired for score-based identification exercises (`chorale_identification` and `umto_chorale` with `mode: "identification"`). The same methods would work for static `identification` by simply enabling them.
 
 ---
 
@@ -254,3 +259,4 @@ Currently wired only for `chorale_identification`. The same methods would work f
 | `umto_chorale` (playback) | MIDI | `ChoraleGrader` | No | UMTO scale exercises; hand_mode selector planned |
 | `identification` | Click | `IdentificationGrader` | On feature branch | Static chords |
 | `chorale_identification` | Click | `IdentificationGrader` | Yes (4/page) | Score-based, analysisType variants |
+| `umto_chorale` (`mode: "identification"`) | Click | `IdentificationGrader` | Yes (4/page) | Modern UMTO form of score-based identification; used by Unit 4 synthetic interval worksheets |

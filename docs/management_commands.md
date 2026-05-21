@@ -105,6 +105,17 @@ python manage.py fix_unit3_playlists
 
 ---
 
+### Intervals (Unit 4)
+
+**`generate_unit4`** — Generate staged synthetic interval worksheet exercises.
+```
+python manage.py generate_unit4 --author admin@example.com --public
+python manage.py generate_unit4 --author admin@example.com --lane specific --max-per-stage 6 --intervals-per-exercise 8 --public
+```
+Default output is six one-page worksheets per lane/stage, with eight interval prompts per worksheet.
+
+---
+
 ### Triads and seventh chords (Unit 5)
 
 **`generate_unit5`** — Generate chord quality identification exercises (root position, staged choices).
@@ -186,4 +197,5 @@ The following exercise types are **not** refreshed automatically — re-run thei
 | Unit 1 pitch identification | `generate_unit1` |
 | Unit 2 meter / barline | `generate_unit2_*` |
 | Unit 3 key sig / scales | `generate_unit3_*` |
+| Unit 4 intervals | `generate_unit4` |
 | Unit 5 chord quality | `generate_unit5` |

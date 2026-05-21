@@ -779,11 +779,10 @@ define([
       if (this.isSymbolicMeterQuestion()) {
         return false;
       }
+      var type = this.exercise.type;
       var mode = this.getMode();
-      if (mode) {
-        return mode === "identification" || mode === "chorale_identification";
-      }
-      return this.exercise.type === "chorale_identification";
+      return type === "chorale_identification" ||
+        (type === "umto_chorale" && (mode === "identification" || mode === "chorale_identification"));
     },
     /**
      * Returns true if this is a symbolic meter question exercise.

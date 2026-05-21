@@ -26,9 +26,10 @@ define([
     this.settings = settings || {};
     this.containerEl = this.settings.containerEl;
     this.problems = this.settings.problems || [];
-   this.problemCount = this.settings.problemCount || this.problems.length || 0;
-   this.feedbackMode = this.settings.feedbackMode || "submit";
-   this.onAnswer = this.settings.onAnswer || function () {};
+    this.problemCount = this.settings.problemCount || this.problems.length || 0;
+    this.analysisType = this.settings.analysisType || "note_name";
+    this.feedbackMode = this.settings.feedbackMode || "submit";
+    this.onAnswer = this.settings.onAnswer || function () {};
     this.onSubmit = this.settings.onSubmit || function () {};
     this._didSeedInitialAnswers = false;
     this._prevAnswers = this._resolveInitialAnswers();
@@ -63,12 +64,23 @@ define([
         return null;
       }
 
-      var match = trimmed.toLowerCase().match(VALID_NOTE_RE);
-      if (!match) {
-        return null;
+      if (this.analysisType === "interval_generic") {
+        return /^[1-8]$/.test(trimmed) ? trimmed : null;
       }
 
-      return match[1].toUpperCase() + (match[2] || "");
+      if (this.analysisType === "interval_specific") {
+        return /^[PMmAd][1-8]$/.test(trimmed) ? trimmed : null;
+      }
+
+      if (this.analysisType === "note_name") {
+        var match = trimmed.toLowerCase().match(VALID_NOTE_RE);
+        if (!match) {
+          return null;
+        }
+        return match[1].toUpperCase() + (match[2] || "");
+      }
+
+      return trimmed;
     },
 
     /**
@@ -231,9 +243,21 @@ define([
       var pill = $('<div class="text-id-pill"></div>');
       var field = $('<input type="text" class="text-id-field" autocomplete="off" spellcheck="false" />');
       var button = $('<button type="button" class="text-id-check">Check ↵</button>');
-      var hint = $('<div class="text-id-hint">Space-separated note names. Bb and F# work.</div>');
+      var hintText = this.analysisType === "interval_generic"
+        ? "Space-separated interval numbers. 2 3 5 work."
+        : this.analysisType === "interval_specific"
+          ? "Space-separated intervals. Case matters: M2 m2 P4 A4 d5."
+          : "Space-separated note names. Bb and F# work.";
+      var hint = $('<div class="text-id-hint"></div>').text(hintText);
 
-      field.attr("placeholder", "e.g. C D E F");
+      field.attr(
+        "placeholder",
+        this.analysisType === "interval_generic"
+          ? "e.g. 5 8 3 6"
+          : this.analysisType === "interval_specific"
+            ? "e.g. P5 M3 m6 A4"
+            : "e.g. C D E F"
+      );
 
       pill.append(field).append(button);
       wrap.append(pill).append(hint);

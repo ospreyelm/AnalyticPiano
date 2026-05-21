@@ -637,6 +637,7 @@ class RefreshExerciseDefinition(RequirejsView):
         playlist_id=None,
         course_id=None,
         exercise_id=None,
+        exercise_num=None,
         *args,
         **kwargs,
     ):
@@ -644,8 +645,8 @@ class RefreshExerciseDefinition(RequirejsView):
         playlist = get_object_or_404(Playlist, id=playlist_id) if playlist_id else None
         if not playlist_id:
             print("Preview")
-        exercise_num = request.GET.get("exercise_num")
-        exercise_num = int(exercise_num) if exercise_num != "" else None
+        exercise_num = request.GET.get("exercise_num", exercise_num)
+        exercise_num = int(exercise_num) if exercise_num not in ("", None) else None
 
         exercise = (
             Exercise.objects.filter(id=exercise_id).first()
