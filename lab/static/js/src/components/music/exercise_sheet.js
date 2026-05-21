@@ -393,7 +393,41 @@ define([
       component._prevAnswers = answersClone;
 
       if (component._fieldEl && component._fieldEl.length) {
+        if (document.activeElement === component._fieldEl[0]) {
+          return;
+        }
         component._fieldEl.val(serializedAnswers);
+      }
+    },
+
+    _captureFocusedTextInput: function () {
+      var component = this._inputComponent;
+      if (!component || !component._fieldEl || !component._fieldEl.length) {
+        return null;
+      }
+      var field = component._fieldEl[0];
+      if (document.activeElement !== field) {
+        return null;
+      }
+      return {
+        value: component._fieldEl.val(),
+        selectionStart: field.selectionStart,
+        selectionEnd: field.selectionEnd,
+      };
+    },
+
+    _restoreFocusedTextInput: function (snapshot) {
+      var component = this._inputComponent;
+      if (!snapshot || !component || !component._fieldEl || !component._fieldEl.length) {
+        return;
+      }
+      var field = component._fieldEl[0];
+      component._fieldEl.val(snapshot.value);
+      component._fieldEl.focus();
+      if (typeof field.setSelectionRange === "function" &&
+          typeof snapshot.selectionStart === "number" &&
+          typeof snapshot.selectionEnd === "number") {
+        field.setSelectionRange(snapshot.selectionStart, snapshot.selectionEnd);
       }
     },
 
@@ -417,10 +451,13 @@ define([
       var textInputState = this._getTextInputState(definition, problems, currentAnswers);
       var feedbackMode = this._getActiveIdentificationMode();
       var inputMode = textInputState.effectiveMode;
+      var analysisType = definition && definition.getAnalysisType
+        ? definition.getAnalysisType()
+        : "roman";
       var pageOffset = this.exerciseContext.getIdentPageOffset
         ? this.exerciseContext.getIdentPageOffset()
         : 0;
-      var signature = [inputMode, feedbackMode, pageOffset, problems.length].join(":");
+      var signature = [inputMode, analysisType, feedbackMode, pageOffset, problems.length].join(":");
       var $container = this._getIdentificationInputContainer();
       var self = this;
 
@@ -537,6 +574,7 @@ define([
       }
 
       if (currentMode === "practice") {
+        var textInputSnapshot = this._captureFocusedTextInput();
         var visibleProblems = this._getVisibleIdentificationProblems(this.exerciseContext.getDefinition());
         var practicePageOffset = this.exerciseContext.getIdentPageOffset
           ? this.exerciseContext.getIdentPageOffset()
@@ -544,6 +582,7 @@ define([
         var graded = grdr.grade(this.exerciseContext.getDefinition(), visibleProblems, practicePageOffset);
         this.exerciseContext.graded = graded;
         this.render();
+        this._restoreFocusedTextInput(textInputSnapshot);
         if (graded.result === "correct") {
           setTimeout(_.bind(function () {
             this.exerciseContext.grade();
