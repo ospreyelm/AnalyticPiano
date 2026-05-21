@@ -110,6 +110,31 @@ Score-based play exercise using Bach chorale CIR JSON. Student plays through the
 
 ---
 
+### `umto_chorale` (UMTO playback mode)
+
+UMTO-format score-based play exercise. Used for Unit 3 scale exercises (and any other UMTO exercise with `mode: "playback"`). Student sees a grand staff and plays through it note-by-note in onset windows using `ChoraleGrader`.
+
+**Grading:** `ChoraleGrader` — same onset-window engine as `chorale`.
+
+**UMTO metadata fields relevant to playback:**
+
+| Field | Values | Notes |
+|---|---|---|
+| `mode` | `"playback"` | Selects ChoraleGrader path |
+| `clef` | `"keyboard"` | Grand staff (treble + bass) |
+| `hand_mode` | `"both"` \| `"rh"` \| `"lh"` | _(planned)_ Which hand(s) student must play |
+
+**`hand_mode` (planned — not yet implemented):** Controls which staff the grader requires. `"rh"` = treble only, `"lh"` = bass only, `"both"` = all notes (default). Teacher sets default via `--hand-mode` flag on `generate_unit3_scale_exercises`; student can override per-session via a RH/LH/Both toggle in the instruction bar. Spec: [`docs/superpowers/specs/2026-05-21-hand-mode-selector-design.md`](superpowers/specs/2026-05-21-hand-mode-selector-design.md).
+
+**Generation:**
+```bash
+python manage.py generate_unit3_scale_exercises --author <email> --mode both --public
+```
+
+**Key files:** `chorale_grader.js`, `score_timeline.js`, `exercise_definition.js`, `generate_unit3_scale_exercises.py`
+
+---
+
 ## Identify types (student labels notation by clicking)
 
 ### `identification`
@@ -226,5 +251,6 @@ Currently wired only for `chorale_identification`. The same methods would work f
 | `figured_bass_pcs` | MIDI | `ExerciseGrader.figuredBassPcsMatch` | No | |
 | `harmonization` | MIDI | `HarmonizationGrader` | No | Slice-by-slice FB realization, locked voices |
 | `chorale` | MIDI | `ChoraleGrader` | No | Score-based, onset windows |
+| `umto_chorale` (playback) | MIDI | `ChoraleGrader` | No | UMTO scale exercises; hand_mode selector planned |
 | `identification` | Click | `IdentificationGrader` | On feature branch | Static chords |
 | `chorale_identification` | Click | `IdentificationGrader` | Yes (4/page) | Score-based, analysisType variants |

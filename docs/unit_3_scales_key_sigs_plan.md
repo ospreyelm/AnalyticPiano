@@ -145,6 +145,7 @@ Course: "Unit 3: Scales & Key Signatures"
 | Concept | Gap | Notes |
 |---|---|---|
 | Minor scale play exercises | ✅ Done | Natural, harmonic, and melodic minor generated programmatically via music21 (`--mode minor`) |
+| Hand mode selector (RH / LH / Both) | Not yet | Spec: [`docs/superpowers/specs/2026-05-21-hand-mode-selector-design.md`](superpowers/specs/2026-05-21-hand-mode-selector-design.md) |
 | Scale degree / solfège identification | Not yet | Could use `identification` type with scale degree labels as choices |
 | Circle of fifths drill | Not yet | Could be hand-authored `identification` exercises (e.g. "how many sharps in D major?") |
 | Key signature spelling (write it) | Not yet — no construct exercise type | Out of scope |
