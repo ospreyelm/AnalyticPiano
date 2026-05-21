@@ -1568,6 +1568,13 @@ define([
                 if (!tickable || typeof tickable.setXShift !== "function") return;
                 var currentShift = typeof tickable.getXShift === "function" ? tickable.getXShift() : (tickable.x_shift || 0);
                 tickable.setXShift((parseInt(currentShift, 10) || 0) + noteXShift);
+                var modifiers = typeof tickable.getModifiers === "function" ? tickable.getModifiers() : [];
+                modifiers = modifiers || [];
+                modifiers.forEach(function(modifier) {
+                  if (!modifier || typeof modifier.setXShift !== "function") return;
+                  var modifierShift = typeof modifier.getXShift === "function" ? modifier.getXShift() : (modifier.x_shift || 0);
+                  modifier.setXShift((parseInt(modifierShift, 10) || 0) + noteXShift);
+                });
               });
             });
           }

@@ -76,4 +76,7 @@ class GenerateUnit4CommandTest(TestCase):
                 for analysis in sample.data["score"]["umto"]["analysis"]
             )
         )
+
+        stage4 = exercises.get(description="Unit 4 Specific Intervals Worksheet - Stage 4 Set 1")
+        self.assertIn("P4", stage4.data["allowed_answers"])
         self.assertEqual(sample.data["allowed_answers"], ["P5", "P8"])

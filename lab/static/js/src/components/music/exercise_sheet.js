@@ -205,7 +205,11 @@ define([
       var analysisType = definition && definition.getAnalysisType
         ? definition.getAnalysisType()
         : "roman";
-      return analysisType === "note_name" || analysisType === "roman" || analysisType === "figured_bass";
+      return analysisType === "note_name" ||
+        analysisType === "roman" ||
+        analysisType === "figured_bass" ||
+        analysisType === "interval_generic" ||
+        analysisType === "interval_specific";
     },
 
     _getRepresentableTextHydrationAnswers: function (answers) {
@@ -279,6 +283,7 @@ define([
         containerEl: containerEl,
         problems: problems,
         problemCount: problems.length,
+        analysisType: this.exerciseContext.getDefinition().getAnalysisType(),
         feedbackMode: feedbackMode,
         onAnswer: onAnswer,
         onSubmit: function () {
