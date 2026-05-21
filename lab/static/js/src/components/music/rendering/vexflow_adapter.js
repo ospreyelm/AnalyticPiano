@@ -1560,21 +1560,22 @@ define([
 
           var noteXShift = parseInt(opts && opts.noteXShift, 10) || 0;
           if (noteXShift) {
+            var shiftedTickContexts = [];
             allVoices.forEach(function(voice) {
               var tickables = Array.isArray(voice.tickables)
                 ? voice.tickables
                 : (typeof voice.getTickables === "function" ? voice.getTickables() : []);
               tickables.forEach(function(tickable) {
-                if (!tickable || typeof tickable.setXShift !== "function") return;
-                var currentShift = typeof tickable.getXShift === "function" ? tickable.getXShift() : (tickable.x_shift || 0);
-                tickable.setXShift((parseInt(currentShift, 10) || 0) + noteXShift);
-                var modifiers = typeof tickable.getModifiers === "function" ? tickable.getModifiers() : [];
-                modifiers = modifiers || [];
-                modifiers.forEach(function(modifier) {
-                  if (!modifier || typeof modifier.setXShift !== "function") return;
-                  var modifierShift = typeof modifier.getXShift === "function" ? modifier.getXShift() : (modifier.x_shift || 0);
-                  modifier.setXShift((parseInt(modifierShift, 10) || 0) + noteXShift);
-                });
+                if (!tickable || typeof tickable.getTickContext !== "function") return;
+                var tickContext = tickable.getTickContext();
+                if (!tickContext ||
+                    shiftedTickContexts.indexOf(tickContext) !== -1 ||
+                    typeof tickContext.getX !== "function" ||
+                    typeof tickContext.setX !== "function") {
+                  return;
+                }
+                tickContext.setX(tickContext.getX() + noteXShift);
+                shiftedTickContexts.push(tickContext);
               });
             });
           }
@@ -1754,9 +1755,6 @@ define([
 
               var activeStaveForAnnotations = bassStave || trebleStave;
               var columnCenterX = getColumnCenterX(col);
-              if (columnCenterX !== null) {
-                columnCenterX += parseInt(opts && opts.noteXShift, 10) || 0;
-              }
               if (opts && typeof opts.onWindowPosition === "function" && typeof matchedIndex === "number" && columnCenterX !== null && activeStaveForAnnotations) {
                 opts.onWindowPosition({
                   windowIndex: absoluteWindowOffset + matchedIndex,
