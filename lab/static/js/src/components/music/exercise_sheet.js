@@ -1246,11 +1246,13 @@ define([
      * Chorale mode setup: ensure grader is initialized; keep display settings
      */
     initChoraleMode: function () {
-      var maxMeasures = 4;
+      var def = this.exerciseContext.getDefinition();
+      var display = def && def.getDisplay ? def.getDisplay() : {};
+      var configuredMaxMeasures = parseInt(display && display.maxMeasures, 10);
+      var maxMeasures = configuredMaxMeasures > 0 ? configuredMaxMeasures : 4;
       this._chorale = { maxMeasures: maxMeasures, startMeasure: 0 };
       console.log("[Chorale] initChoraleMode called");
       try {
-        var def = this.exerciseContext.getDefinition();
         var score = def.getScore ? def.getScore() : null;
         console.log("[Chorale] score keys:", score ? Object.keys(score) : "null", "has umto:", !!(score && score.umto));
         if (score && score.umto) {
@@ -1732,6 +1734,8 @@ define([
             startMeasure: startMeasure,
             playedNoteIds: playedNoteIdsForRender,
             showNotation: display.showNotation !== undefined ? display.showNotation : true,
+            hideKeyLabel: !!display.hideKeyLabel,
+            firstMeasureExtraWidth: parseInt(display.firstMeasureExtraWidth, 10) || 0,
             // Analysis wiring for chorale path (Notater bridge inside adapter)
             analyzeConfig: analyzeConfig,
 

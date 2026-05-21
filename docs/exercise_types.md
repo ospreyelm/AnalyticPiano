@@ -152,7 +152,7 @@ Score-based identification exercise using Bach chorale CIR JSON. Student sees me
 
 **Current runtime note:** new score-based identification content is increasingly emitted as `type: "umto_chorale"` with `mode: "identification"`. The frontend treats that UMTO shape as the modern equivalent of `chorale_identification`. Legacy `chorale_identification` rows are still supported.
 
-**Paging:** Exercises are split into pages of 4 problems each. Students navigate with Next/Previous; a slide animation signals the page turn. Page indicator shown in the instruction text box.
+**Paging:** Exercises are split into pages of 4 problems each by default. `display.maxMeasures` can override this for synthetic worksheets that should remain on a single page. Students navigate with Next/Previous; a slide animation signals the page turn. Page indicator shown in the instruction text box.
 
 **`analysisType` controls what is being identified:**
 
@@ -181,7 +181,7 @@ Score-based identification exercise using Bach chorale CIR JSON. Student sees me
 }
 ```
 
-**Unit 4 synthetic worksheets:** `generate_unit4` creates score-backed interval worksheets in this UMTO identification shape. They render one interval per measure, use treble-only notation, and place `?` slots under each notated interval column.
+**Unit 4 synthetic worksheets:** `generate_unit4` creates score-backed interval worksheets in this UMTO identification shape. They render one interval per measure, use treble-only notation, hide the no-accidental key label for this synthetic content, and place `?` slots under each notated interval column. Defaults are six one-page worksheets per lane/stage, with eight prompts per worksheet.
 
 **Grading:** `IdentificationGrader` — same grader as `identification`, extended with `pageOffset` support so absolute answer indices work across pages.
 

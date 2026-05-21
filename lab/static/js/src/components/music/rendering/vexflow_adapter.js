@@ -1355,8 +1355,8 @@ define([
         var pickupMinMeasureFromNotes = pickupNotesMinWidth > 0 ? (pickupNotesMinWidth / 0.8) : 0;
         baseWidths[0] = dynamicOverhead + Math.max(minPartialMeasureWidth, pickupMinMeasureFromNotes);
       } else {
-        // No pickup: compensate for clef/key/time so first full bar's notesWidth is not penalized
-        baseWidths[0] = firstBarCompensation;
+        // No pickup: compensate for clef/key/time so first full bar's notesWidth is not penalized.
+        baseWidths[0] = firstBarCompensation + ((opts && opts.firstMeasureExtraWidth) || 0);
       }
 
       var availableWidth = width - margin.left - margin.right;
@@ -1467,7 +1467,7 @@ define([
             ? formatKeyForDisplay(opts.keySignature.getKey())
             : formatKeyForDisplay(meta && meta.key));
 
-        if (isFirstMeasure && displayKey && activeStaveForLabel) {
+        if (isFirstMeasure && displayKey && activeStaveForLabel && !(opts && opts.hideKeyLabel)) {
           ctx.save();
           ctx.font = "20px MainSerifs";
           ctx.fillStyle = (opts && opts.color) || "#000";

@@ -17,6 +17,9 @@ Replace the earlier Unit 4 interval prototype with a score-backed synthetic work
 - [x] Register the command in `list_exercise_generators.py`.
 - [x] Document the command in `docs/management_commands.md`.
 - [x] Document the score-based identification runtime shape in `docs/exercise_types.md`.
+- [x] Scope key-label suppression to Unit 4 synthetic worksheets so chorale key labels still render.
+- [x] Change the default output to six one-page worksheets per lane/stage with eight intervals per worksheet.
+- [x] Add Unit 4 display metadata for one-page rendering and extra first-measure spacing.
 
 ## Notes
 

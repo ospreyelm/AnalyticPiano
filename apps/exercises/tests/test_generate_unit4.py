@@ -18,7 +18,8 @@ class GenerateUnit4CommandTest(TestCase):
         call_command(
             "generate_unit4",
             author="teacher@example.com",
-            max_per_stage=6,
+            max_per_stage=2,
+            intervals_per_exercise=8,
         )
 
         generic = Playlist.objects.filter(
@@ -32,38 +33,42 @@ class GenerateUnit4CommandTest(TestCase):
 
         self.assertEqual(generic.count(), 4)
         self.assertEqual(specific.count(), 4)
-        self.assertTrue(all(ExercisePlaylistOrdered.objects.filter(playlist=p).count() == 1 for p in generic))
-        self.assertTrue(all(ExercisePlaylistOrdered.objects.filter(playlist=p).count() == 1 for p in specific))
+        self.assertTrue(all(ExercisePlaylistOrdered.objects.filter(playlist=p).count() == 2 for p in generic))
+        self.assertTrue(all(ExercisePlaylistOrdered.objects.filter(playlist=p).count() == 2 for p in specific))
 
     def test_created_exercise_is_synthetic_interval_worksheet(self):
         call_command(
             "generate_unit4",
             author="teacher@example.com",
             lane="specific",
-            max_per_stage=6,
+            max_per_stage=2,
+            intervals_per_exercise=8,
         )
 
         exercises = Exercise.objects.filter(
             authored_by=self.author,
             skill_tags__contains=["unit:4", "Interval_Specific"],
         )
-        self.assertEqual(exercises.count(), 4)
+        self.assertEqual(exercises.count(), 8)
 
         sample = exercises.order_by("description").first()
-        self.assertEqual(sample.description, "Unit 4 Specific Intervals Worksheet - Stage 1")
+        self.assertEqual(sample.description, "Unit 4 Specific Intervals Worksheet - Stage 1 Set 1")
         self.assertEqual(sample.data["type"], "umto_chorale")
         self.assertEqual(sample.data["mode"], "identification")
         self.assertEqual(sample.data["analysisType"], "interval_specific")
         self.assertEqual(sample.data["inputMode"], "dropdown")
         self.assertEqual(sample.data["staffDistribution"], "treble")
         self.assertTrue(sample.data["disableComputerKeyboardInput"])
+        self.assertTrue(sample.data["display"]["hideKeyLabel"])
+        self.assertEqual(sample.data["display"]["maxMeasures"], 8)
+        self.assertGreater(sample.data["display"]["firstMeasureExtraWidth"], 0)
         self.assertEqual(sample.data["score"]["umto"]["metadata"]["unit"], 4)
         self.assertEqual(sample.data["score"]["umto"]["metadata"]["clef"], "treble")
         self.assertIn("unit:4_L1", sample.skill_tags)
-        self.assertEqual(len(sample.data["score"]["measures"]), 6)
+        self.assertEqual(len(sample.data["score"]["measures"]), 8)
         self.assertTrue(all("treble" in measure["staves"] for measure in sample.data["score"]["measures"]))
         self.assertTrue(all("bass" not in measure["staves"] or not measure["staves"]["bass"]["voices"] for measure in sample.data["score"]["measures"]))
-        self.assertEqual(len(sample.data["score"]["umto"]["analysis"]), 6)
+        self.assertEqual(len(sample.data["score"]["umto"]["analysis"]), 8)
         self.assertTrue(
             all(
                 analysis["content"]["functional_label"] in ["P5", "P8"]

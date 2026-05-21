@@ -22,7 +22,8 @@ from apps.exercises.umto import (
 
 User = get_user_model()
 
-EXERCISES_PER_PLAYLIST = 12
+WORKSHEETS_PER_STAGE = 6
+INTERVALS_PER_WORKSHEET = 8
 
 ROOTS = [
     ("C4", "C"),
@@ -32,22 +33,6 @@ ROOTS = [
     ("G4", "G"),
     ("A4", "A"),
 ]
-
-INTERVALS = {
-    "m2": 1,
-    "M2": 2,
-    "m3": 3,
-    "M3": 4,
-    "P4": 5,
-    "A4": 6,
-    "d5": 6,
-    "P5": 7,
-    "m6": 8,
-    "M6": 9,
-    "m7": 10,
-    "M7": 11,
-    "P8": 12,
-}
 
 GENERIC_DISPLAY = {
     "m2": "2",
@@ -176,7 +161,12 @@ def _build_worksheet_payload(*, problems, choices, analysis_type, stage):
     payload["inputMode"] = "dropdown"
     payload["staffDistribution"] = "treble"
     payload["disableComputerKeyboardInput"] = True
-    payload["display"] = {"showNotation": True}
+    payload["display"] = {
+        "showNotation": True,
+        "hideKeyLabel": True,
+        "maxMeasures": len(problems),
+        "firstMeasureExtraWidth": 28,
+    }
     payload["allowed_answers"] = list(choices)
     payload["analysisPolicy"] = {"allowedValues": list(choices)}
     return payload
@@ -190,7 +180,18 @@ class Command(BaseCommand):
         parser.add_argument("--public", action="store_true", help="Make exercises public")
         parser.add_argument("--overwrite", action="store_true", help="Overwrite existing exercises")
         parser.add_argument("--lane", choices=["generic", "specific", "both"], default="both")
-        parser.add_argument("--max-per-stage", type=int, default=EXERCISES_PER_PLAYLIST)
+        parser.add_argument(
+            "--max-per-stage",
+            type=int,
+            default=WORKSHEETS_PER_STAGE,
+            help="Number of worksheet exercises to create per stage",
+        )
+        parser.add_argument(
+            "--intervals-per-exercise",
+            type=int,
+            default=INTERVALS_PER_WORKSHEET,
+            help="Number of interval prompts in each worksheet exercise",
+        )
         # Kept for compatibility with the earlier Unit 4 plan/admin form.
         parser.add_argument("--voice-pair", default="soprano-alto")
         parser.add_argument("--riemenschneider", default=None)
@@ -203,6 +204,8 @@ class Command(BaseCommand):
             raise CommandError(f"Unknown author: {options['author']}") from exc
         if options["max_per_stage"] < 1:
             raise CommandError("--max-per-stage must be at least 1")
+        if options["intervals_per_exercise"] < 1:
+            raise CommandError("--intervals-per-exercise must be at least 1")
 
         lanes = ["generic", "specific"] if options["lane"] == "both" else [options["lane"]]
         for lane in lanes:
@@ -211,45 +214,50 @@ class Command(BaseCommand):
     def _handle_lane(self, author, lane, options):
         lane_def = LANES[lane]
         for stage, choices, interval_pool in lane_def["stages"]:
-            problems = []
-            descriptions = []
-            for idx in range(options["max_per_stage"]):
-                interval_label = interval_pool[idx % len(interval_pool)]
-                root_scientific, root_label = ROOTS[idx % len(ROOTS)]
-                lower_pitch, upper_pitch = _interval_pitches(root_scientific, interval_label)
-                answer = GENERIC_DISPLAY[interval_label] if lane == "generic" else interval_label
-                problem = {
-                    "lower_pitch": lower_pitch,
-                    "upper_pitch": upper_pitch,
-                    "answer": answer,
-                }
-                problems.append(problem)
-                descriptions.append(f"{root_label} {interval_label}->{answer}")
-
-            desc = f"Unit 4 {lane.title()} Intervals Worksheet - Stage {stage}"
             skill_tags = lane_def["skill_tags"] + [f"unit:4_L{stage}"]
-            ex = self._save_exercise(
-                author=author,
-                description=desc,
-                payload=_build_worksheet_payload(
-                    problems=problems,
-                    choices=choices,
-                    analysis_type=lane_def["analysis_type"],
-                    stage=stage,
-                ),
-                skill_tags=skill_tags,
-                complexity=stage * 10,
-                is_public=options["public"],
-                overwrite=options["overwrite"],
-            )
-            self.stdout.write(
-                f"  {desc}: {len(problems)} prompts ({', '.join(descriptions[:4])}...) (id={ex.id})"
-            )
+            created_exercises = []
+
+            for worksheet_idx in range(options["max_per_stage"]):
+                problems = []
+                descriptions = []
+                for prompt_idx in range(options["intervals_per_exercise"]):
+                    global_idx = worksheet_idx * options["intervals_per_exercise"] + prompt_idx
+                    interval_label = interval_pool[global_idx % len(interval_pool)]
+                    root_scientific, root_label = ROOTS[global_idx % len(ROOTS)]
+                    lower_pitch, upper_pitch = _interval_pitches(root_scientific, interval_label)
+                    answer = GENERIC_DISPLAY[interval_label] if lane == "generic" else interval_label
+                    problem = {
+                        "lower_pitch": lower_pitch,
+                        "upper_pitch": upper_pitch,
+                        "answer": answer,
+                    }
+                    problems.append(problem)
+                    descriptions.append(f"{root_label} {interval_label}->{answer}")
+
+                desc = f"Unit 4 {lane.title()} Intervals Worksheet - Stage {stage} Set {worksheet_idx + 1}"
+                ex = self._save_exercise(
+                    author=author,
+                    description=desc,
+                    payload=_build_worksheet_payload(
+                        problems=problems,
+                        choices=choices,
+                        analysis_type=lane_def["analysis_type"],
+                        stage=stage,
+                    ),
+                    skill_tags=skill_tags,
+                    complexity=stage * 10,
+                    is_public=options["public"],
+                    overwrite=options["overwrite"],
+                )
+                created_exercises.append(ex)
+                self.stdout.write(
+                    f"  {desc}: {len(problems)} prompts ({', '.join(descriptions[:4])}...) (id={ex.id})"
+                )
 
             self._build_playlist(
                 author=author,
                 playlist_name=f"{lane_def['playlist_prefix']}: Stage {stage}",
-                exercises=[ex],
+                exercises=created_exercises,
                 skill_tags=lane_def["skill_tags"] + [f"unit:4_L{stage}"],
                 is_public=options["public"],
                 stage=stage,

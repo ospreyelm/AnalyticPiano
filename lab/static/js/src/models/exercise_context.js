@@ -969,6 +969,13 @@ define([
     getIdentPageSize: function () {
       return this._identPageSize;
     },
+    _getChoraleIdentPageMeasureCount: function () {
+      var display = this.definition && this.definition.getDisplay
+        ? this.definition.getDisplay()
+        : {};
+      var maxMeasures = parseInt(display && display.maxMeasures, 10);
+      return maxMeasures > 0 ? maxMeasures : 4;
+    },
     /**
      * Returns the absolute index of the first problem on the active page.
      *
@@ -976,7 +983,7 @@ define([
      */
     getIdentPageOffset: function () {
       if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
-         var maxMeasures = 4; // Matches chorale maxMeasures default
+         var maxMeasures = this._getChoraleIdentPageMeasureCount();
          var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;
          var targetMeasure = this._identPage * maxMeasures;
          var lastPossibleStart = Math.max(0, totalMeasures - maxMeasures);
@@ -999,7 +1006,7 @@ define([
       if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
           if (!allProblems || !allProblems.length) return 1;
           var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;
-          var maxMeasures = 4;
+          var maxMeasures = this._getChoraleIdentPageMeasureCount();
           return Math.ceil(totalMeasures / maxMeasures);
       }
       return Math.ceil(allProblems.length / this._identPageSize);
@@ -1012,7 +1019,7 @@ define([
     getVisibleProblems: function () {
       var allProblems = this.definition.getProblems() || [];
       if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
-          var maxMeasures = 4;
+          var maxMeasures = this._getChoraleIdentPageMeasureCount();
           var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;
           var startMeasure = this._identPage * maxMeasures;
           var lastPossibleStart = Math.max(0, totalMeasures - maxMeasures);
