@@ -80,3 +80,23 @@ class GenerateUnit4CommandTest(TestCase):
         stage4 = exercises.get(description="Unit 4 Specific Intervals Worksheet - Stage 4 Set 1")
         self.assertIn("P4", stage4.data["allowed_answers"])
         self.assertEqual(sample.data["allowed_answers"], ["P5", "P8"])
+
+    def test_default_generation_creates_24_worksheets_per_stage(self):
+        call_command(
+            "generate_unit4",
+            author="teacher@example.com",
+        )
+
+        generic = Playlist.objects.filter(
+            name__startswith="Unit 4 - Generic Intervals: Stage",
+            authored_by=self.author,
+        )
+        specific = Playlist.objects.filter(
+            name__startswith="Unit 4 - Specific Intervals: Stage",
+            authored_by=self.author,
+        )
+
+        self.assertEqual(generic.count(), 4)
+        self.assertEqual(specific.count(), 4)
+        self.assertTrue(all(ExercisePlaylistOrdered.objects.filter(playlist=p).count() == 24 for p in generic))
+        self.assertTrue(all(ExercisePlaylistOrdered.objects.filter(playlist=p).count() == 24 for p in specific))

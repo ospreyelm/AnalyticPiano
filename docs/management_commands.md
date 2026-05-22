@@ -110,9 +110,9 @@ python manage.py fix_unit3_playlists
 **`generate_unit4`** — Generate staged synthetic interval worksheet exercises.
 ```
 python manage.py generate_unit4 --author admin@example.com --public
-python manage.py generate_unit4 --author admin@example.com --lane specific --max-per-stage 6 --intervals-per-exercise 8 --public
+python manage.py generate_unit4 --author admin@example.com --lane specific --max-per-stage 24 --intervals-per-exercise 8 --public
 ```
-Default output is six one-page worksheets per lane/stage, with eight interval prompts per worksheet.
+Default output is twenty-four one-page worksheets per lane/stage, with eight interval prompts per worksheet. Student playback still serves existing Exercise rows, but Unit 4 interval playlists now use a deterministic per-student seeded order so different students see the same bank in different stable sequences. Only six worksheets are exposed to any one student at a time; the larger bank remains in reserve for variety.
 
 ---
 

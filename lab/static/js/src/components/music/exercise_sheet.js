@@ -715,6 +715,7 @@ define([
       this.el.off('mousemove.identification').on('mousemove.identification', function (e) {
         if (!self._isIdentificationLikeExercise()) { return; }
         if (self._getIdentInputMode(definition) === "text") {
+          self.el.attr('title', '');
           self.el.css('cursor', '');
           return;
         }
@@ -741,6 +742,7 @@ define([
             break;
           }
         }
+        self.el.attr('title', over ? 'Click to choose an answer. Use Type above for keyboard entry.' : '');
         self.el.css('cursor', over ? 'pointer' : '');
       });
     },
@@ -845,6 +847,17 @@ define([
       console.log("[ID] drawIdentificationLabels slots count:", slots.length);
       var definition = this.exerciseContext.getDefinition();
       var inputMode = this._getIdentInputMode(definition);
+      if (inputMode === 'text') {
+        if (this._currentMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
+          var textProblems = this._getVisibleIdentificationProblems(definition);
+          var textAnswers = this._getVisibleIdentificationAnswers(textProblems);
+          var answeredInTextMode = _.filter(textAnswers, function (answer) {
+            return answer !== undefined && answer !== null && answer !== '';
+          }).length;
+          this._updateIdentificationProgressUI(answeredInTextMode, textProblems.length);
+        }
+        return;
+      }
       var grader = this.exerciseContext.grader;
       var identMode = this._currentMode;
 
@@ -1524,11 +1537,23 @@ define([
       var html = "";
       var tpl_data = {};
 
-      tpl_data.prompt_text = FontParser.parseHTMLFiguredBass(
-        exc.definition.getExerciseText
-          ? exc.definition.getExerciseText()
-          : (exc.definition.getIntro ? exc.definition.getIntro() : "")
-      );
+      var promptText = exc.definition.getExerciseText
+        ? exc.definition.getExerciseText()
+        : (exc.definition.getIntro ? exc.definition.getIntro() : "");
+      var analysisType = definition && definition.getAnalysisType
+        ? definition.getAnalysisType()
+        : "roman";
+      var inputMode = this._isIdentificationLikeExercise && this._isIdentificationLikeExercise()
+        ? this._getIdentInputMode(definition)
+        : "dropdown";
+      if (
+        inputMode === "text" &&
+        (analysisType === "interval_generic" || analysisType === "interval_specific")
+      ) {
+        promptText = "Input the intervals in this text box with a space between them.";
+      }
+
+      tpl_data.prompt_text = FontParser.parseHTMLFiguredBass(promptText);
 
       html = tpl(tpl_data);
 

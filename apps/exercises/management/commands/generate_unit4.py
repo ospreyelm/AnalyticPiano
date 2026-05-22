@@ -22,7 +22,7 @@ from apps.exercises.umto import (
 
 User = get_user_model()
 
-WORKSHEETS_PER_STAGE = 6
+WORKSHEETS_PER_STAGE = 24
 INTERVALS_PER_WORKSHEET = 8
 
 ROOTS = [
