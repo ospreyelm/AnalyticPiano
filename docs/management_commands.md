@@ -157,9 +157,18 @@ python manage.py refresh_all_exercises --tag qa:some_tag   # scope to a tag
 python manage.py refresh_all_exercises --dry-run           # preview only
 ```
 
-**`recompute_chorale_analysis`** — Rebuilds `score.umto.analysis` on chorale-derived rows (tagged `riem:N`) by re-running the analysis pipeline against the stored score. Does not re-import from music21 corpus files.
+**`audit_wir_local_key_shifts`** — Scans WiR-backed Bach rows (tagged `riem:N`) and reports the inferred semitone shift needed to align WiR local keys to the rendered music21 score.
+```
+python manage.py audit_wir_local_key_shifts
+python manage.py audit_wir_local_key_shifts --riem 17
+python manage.py audit_wir_local_key_shifts --tag unit:11
+# Example output: R17 +2 rows=4
+```
+
+**`recompute_chorale_analysis`** — Rebuilds `score.umto.analysis` on chorale-derived rows (tagged `riem:N`) by re-running the analysis pipeline against the stored score. Applies the same WiR local-key transposition logic reported by `audit_wir_local_key_shifts`. Does not re-import from music21 corpus files.
 ```
 python manage.py recompute_chorale_analysis
+python manage.py recompute_chorale_analysis --riem 17
 python manage.py recompute_chorale_analysis --tag qa:some_tag
 python manage.py recompute_chorale_analysis --dry-run
 ```
