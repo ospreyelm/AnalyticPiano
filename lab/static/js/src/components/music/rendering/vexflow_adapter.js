@@ -7,8 +7,9 @@ define([
   "app/utils/analyze",
   "app/utils/measure_engine",
   "app/models/key_signature",
+  "app/models/key_context_logic",
   "app/models/harmonization_realization_logic",
-], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine, KeySignature, HarmonizationRealizationLogic) {
+], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine, KeySignature, KeyContext, HarmonizationRealizationLogic) {
   "use strict";
 
   function durToVF(d) {
@@ -1111,6 +1112,21 @@ define([
         }
       }
 
+      var startingLocalKeyContext = null;
+      if (score && score.umto && score.umto.analysis && score.umto.analysis.length && KeyContext && KeyContext.getKeyContext) {
+        for (var keyIdx = absoluteWindowOffset; keyIdx < score.umto.analysis.length; keyIdx++) {
+          var keySlice = score.umto.analysis[keyIdx];
+          var localKey = keySlice && keySlice.content ? keySlice.content.local_key : null;
+          if (!localKey) {
+            continue;
+          }
+          startingLocalKeyContext = KeyContext.getKeyContext(localKey);
+          if (startingLocalKeyContext) {
+            break;
+          }
+        }
+      }
+
       var analysisWindows = buildAnalysisWindows(timeline);
       var analysisWindowIdx = 0;
       var staffDistribution = (opts && opts.staffDistribution) || (meta && meta.staffDistribution) || "grand_staff";
@@ -1458,14 +1474,15 @@ define([
           return tonic + " " + (mode === "i" ? "minor" : "major");
         }
 
-        var displayKey =
-          (opts &&
-            opts.keySignature &&
-            typeof opts.keySignature.getKeyName === "function" &&
-            opts.keySignature.getKeyName()) ||
-          ((opts && opts.keySignature && typeof opts.keySignature.getKey === "function")
-            ? formatKeyForDisplay(opts.keySignature.getKey())
-            : formatKeyForDisplay(meta && meta.key));
+        var displayKey = startingLocalKeyContext
+          ? startingLocalKeyContext.displayName
+          : ((opts &&
+              opts.keySignature &&
+              typeof opts.keySignature.getKeyName === "function" &&
+              opts.keySignature.getKeyName()) ||
+            ((opts && opts.keySignature && typeof opts.keySignature.getKey === "function")
+              ? formatKeyForDisplay(opts.keySignature.getKey())
+              : formatKeyForDisplay(meta && meta.key)));
 
         if (isFirstMeasure && displayKey && activeStaveForLabel && !(opts && opts.hideKeyLabel)) {
           ctx.save();

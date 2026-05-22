@@ -67,6 +67,25 @@ class BuildRomanAnalysisOverridesTestCase(unittest.TestCase):
         self.assertEqual(content["raw_figured_bass"], "5/#3")
         self.assertEqual(content["figured_bass"], "#")
 
+    def test_roman_mode_transposes_wir_local_keys_to_music21_score_key(self):
+        from music21.corpus import chorales
+        from apps.exercises.management.commands.import_bach_phrases import (
+            _declared_score_key,
+        )
+
+        score = list(chorales.Iterator(17, 17, numberingSystem="riemenschneider"))[0]
+        global_key = _declared_score_key(score)
+        self.assertEqual(global_key.tonic.name, "B")
+        self.assertEqual(global_key.mode, "minor")
+
+        overrides = self._call(score.measures(1, 6), global_key, [11], riemenschneider=17)
+        first = next(o for o in overrides if o["offset"] == 0.0)
+        bar_two = next(o for o in overrides if o["offset"] == 3.0)
+        self.assertEqual(first["content"]["roman_numeral"], "i")
+        self.assertEqual(first["content"]["local_key"], "f#")
+        self.assertEqual(bar_two["content"]["roman_numeral"], "ii2")
+        self.assertEqual(bar_two["content"]["local_key"], "B")
+
     def test_roman_mode_reconciles_wir_v7_with_4_3_suspension(self):
         from music21.corpus import chorales
 

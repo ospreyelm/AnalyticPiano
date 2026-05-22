@@ -60,6 +60,93 @@ def _apply_suspension_figures(overrides: list, figured_by_offset: dict | None = 
     return overrides
 
 
+def _normalise_roman_for_key_alignment(label: str | None) -> str:
+    return (label or "").replace("/", "").replace("ø", "o").replace("°", "o")
+
+
+def _music21_key_from_wir_local_key(local_key: str):
+    from music21 import key as m21_key
+
+    text = (local_key or "").strip()
+    if not text:
+        return None
+    is_minor = text[0].islower() or text.endswith("m")
+    tonic = text[:-1] if text.endswith("m") else text
+    tonic = tonic[0].upper() + tonic[1:].replace("b", "-")
+    return m21_key.Key(tonic, "minor" if is_minor else "major")
+
+
+def _format_wir_local_key(m21_key_obj) -> str:
+    tonic = m21_key_obj.tonic.name.replace("-", "b")
+    if m21_key_obj.mode == "minor":
+        return tonic[0].lower() + tonic[1:]
+    return tonic[0].upper() + tonic[1:]
+
+
+def _transpose_wir_local_key(local_key: str | None, semitones: int) -> str | None:
+    if local_key is None or semitones == 0:
+        return local_key
+    from music21 import interval
+
+    key_obj = _music21_key_from_wir_local_key(local_key)
+    if key_obj is None:
+        return local_key
+    transposed = interval.Interval(semitones).transposePitch(key_obj.tonic)
+    from music21 import key as m21_key
+    return _format_wir_local_key(m21_key.Key(transposed, key_obj.mode))
+
+
+def _infer_wir_local_key_transposition(phrase_score, riemenschneider: int) -> int:
+    """Infer semitone shift between WiR local keys and the music21 score.
+
+    Some music21 chorales are stored in a different transposition than the
+    local When in Rome labels. Roman numerals remain valid, but local keys need
+    to be shifted into the rendered score's key space.
+    """
+    from music21 import chord
+    from music21.roman import romanNumeralFromChord
+    from apps.exercises.utils import wir_corpus
+
+    candidates = {semitones: 0 for semitones in range(-6, 7)}
+    chorded = phrase_score.chordify()
+    measures = list(chorded.getElementsByClass("Measure"))
+    checked = 0
+
+    for m in measures:
+        for element in m.flat.notes:
+            if not isinstance(element, chord.Chord):
+                continue
+            wir_result = wir_corpus.lookup(
+                riemenschneider,
+                element.measureNumber,
+                float(element.beat),
+            )
+            if not wir_result or not wir_result.get("local_key") or not wir_result.get("label"):
+                continue
+            expected = _normalise_roman_for_key_alignment(wir_result["label"])
+            for semitones in candidates:
+                shifted_local_key = _transpose_wir_local_key(wir_result["local_key"], semitones)
+                key_obj = _music21_key_from_wir_local_key(shifted_local_key)
+                if key_obj is None:
+                    continue
+                try:
+                    actual = _normalise_roman_for_key_alignment(
+                        romanNumeralFromChord(element, key_obj).figure
+                    )
+                except Exception:
+                    continue
+                if actual == expected:
+                    candidates[semitones] += 1
+            checked += 1
+            if checked >= 12:
+                break
+        if checked >= 12:
+            break
+
+    best_shift, best_score = max(candidates.items(), key=lambda item: (item[1], -abs(item[0])))
+    return best_shift if best_score > 0 else 0
+
+
 def _build_roman_analysis_overrides(
     phrase_score,
     global_key,
@@ -94,6 +181,7 @@ def _build_roman_analysis_overrides(
         override["offset"]: override["content"]
         for override in _build_figured_bass_overrides(phrase_score, global_key)
     }
+    local_key_transposition = _infer_wir_local_key_transposition(phrase_score, riemenschneider)
 
     for m in measures:
         measure_start = m.offset - first_measure_offset
@@ -124,7 +212,10 @@ def _build_roman_analysis_overrides(
             if wir_result is not None:
                 content = {
                     "roman_numeral": wir_result["label"],
-                    "local_key": wir_result["local_key"],
+                    "local_key": _transpose_wir_local_key(
+                        wir_result["local_key"],
+                        local_key_transposition,
+                    ),
                     "raw_roman_numeral": figure,
                     "raw_figured_bass": raw_figured_bass,
                     "figured_bass": figured_bass,

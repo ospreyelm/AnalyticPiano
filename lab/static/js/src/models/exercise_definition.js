@@ -4,8 +4,9 @@ define([
   "app/components/music/score_timeline",
   "app/utils/analyze",
   "app/models/key_signature",
+  "app/models/key_context_logic",
   "tonal",
-], function (_, Config, ScoreTimeline, Analyze, KeySignature, Tonal) {
+], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, Tonal) {
   var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
@@ -525,7 +526,8 @@ define([
         hidden: !answer || !isTarget || !winMeta.hasSlot,
         visible: (gradingMatch && gradingMatch.target_midi_pitches) ? gradingMatch.target_midi_pitches : [],
         notes: pitchesAtOffset.map(p => p.midi),
-        rhythm: winMeta.rhythm || "q"
+        rhythm: winMeta.rhythm || "q",
+        localKey: slice.content ? slice.content.local_key : null
       });
     });
 
@@ -572,6 +574,12 @@ define([
    * @return {string} Key in HarmonyLab format
    */
   function convertCIRKeyToHarmonyLabKey(cirKey) {
+    var context = KeyContext && KeyContext.getKeyContext
+      ? KeyContext.getKeyContext(cirKey)
+      : null;
+    if (context) {
+      return context.harmonyLabKey;
+    }
     if (!cirKey || typeof cirKey !== 'string') {
       return 'jC_'; // default to C major
     }

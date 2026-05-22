@@ -17,6 +17,7 @@ define([
   "app/components/input/text_input",
   "app/models/score_player",
   "app/models/identification_submit_flow_logic",
+  "app/models/key_context_logic",
   "app/components/music/playback_controls",
   "app/utils/measure_engine",
   "app/models/harmonization_realization_logic",
@@ -38,6 +39,7 @@ define([
   TextInput,
   ScorePlayer,
   IdentificationSubmitFlow,
+  KeyContext,
   renderPlaybackControls,
   MeasureEngine,
   HarmonizationRealizationLogic
@@ -883,6 +885,43 @@ define([
       ctx.textBaseline = 'alphabetic';
       var answeredCount = 0;
       var visibleSlotCount = 0;
+      var pageOffset = this.exerciseContext && this.exerciseContext.getIdentPageOffset
+        ? this.exerciseContext.getIdentPageOffset() : 0;
+      var problems = definition.getProblems ? definition.getProblems() : [];
+      var analysisType = definition.getAnalysisType ? definition.getAnalysisType() : 'roman';
+
+      function drawKeyChangeLabel(ctx, text, x, y) {
+        ctx.save();
+        ctx.font = '16px MainSerifs';
+        ctx.fillStyle = '#444444';
+        ctx.textAlign = 'center';
+        var keyChangeY = y + 28;
+        if (ctx.canvas && typeof ctx.canvas.height === 'number') {
+          keyChangeY = Math.min(keyChangeY, ctx.canvas.height - 10);
+        }
+        ctx.fillText(text, x, keyChangeY);
+        ctx.restore();
+        ctx.textAlign = 'center';
+      }
+
+      if (analysisType === 'roman' && KeyContext && KeyContext.getKeyContext) {
+        var priorContext = null;
+        for (var ks = 0; ks < slots.length; ks++) {
+          var keySlot = slots[ks];
+          var keyProblem = problems[pageOffset + keySlot.index];
+          if (!keyProblem || !keyProblem.localKey) {
+            continue;
+          }
+          var currentContext = KeyContext.getKeyContext(keyProblem.localKey);
+          if (!currentContext) {
+            continue;
+          }
+          if (priorContext && !(KeyContext.sameKeyContext && KeyContext.sameKeyContext(currentContext.harmonyLabKey, priorContext.harmonyLabKey))) {
+            drawKeyChangeLabel(ctx, currentContext.displayName, keySlot.x, keySlot.y);
+          }
+          priorContext = currentContext;
+        }
+      }
 
       for (var i = 0; i < slots.length; i++) {
         var slot = slots[i];
@@ -890,14 +929,15 @@ define([
         var ly = slot.y;
 
         var localIndex = slot.index;
-        var pageOffset = this.exerciseContext && this.exerciseContext.getIdentPageOffset
-          ? this.exerciseContext.getIdentPageOffset() : 0;
         var absoluteIndex = pageOffset + localIndex;
 
-        var problems = definition.getProblems ? definition.getProblems() : [];
         var problem = problems[absoluteIndex];
         if (problem && problem.hidden) { continue; } // LEAVE A SPACE
         visibleSlotCount++;
+        var keyContext = null;
+        if (analysisType === 'roman' && problem && problem.localKey && KeyContext && KeyContext.getKeyContext) {
+          keyContext = KeyContext.getKeyContext(problem.localKey);
+        }
 
         // AUTO-SCROLL LOGIC: Scroll the active problem into view
         var activeIndex = grader && grader.activeIndex !== undefined ? grader.activeIndex : 0;
@@ -948,7 +988,9 @@ define([
           reviewMode: reviewMode,
           showCheck: showCheck,
         });
-        var hasDisplayAnswer = label !== '?';
+        var baseLabel = label;
+        var hasDisplayAnswer = baseLabel !== '?';
+        label = baseLabel;
         var shouldRenderPlaceholder = IdentificationSubmitFlow._shouldRenderIdentificationPlaceholder({
           reviewMode: reviewMode,
           hasAnswer: hasDisplayAnswer,
@@ -1001,7 +1043,6 @@ define([
           ctx.fillText(label, lx, labelY);
         } else {
           // Answered slot — render properly based on analysis type
-          var analysisType = definition.getAnalysisType ? definition.getAnalysisType() : 'roman';
           if (analysisType === 'figured_bass') {
             // Convert to Sebastian font display format (mirrors stave_notater.drawThoroughbass)
             var lines = label.split('/').map(function(line) {
@@ -2809,7 +2850,8 @@ define([
       
       var processed = {
         meta: meta,
-        measures: measures
+        measures: measures,
+        umto: umto
       };
       console.log("[ID] Processed score built via MeasureEngine:", processed);
       return processed;
