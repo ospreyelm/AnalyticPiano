@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TransactionTestCase, override_settings
 from django.urls import reverse
 import json
+import random
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,6 +15,8 @@ from apps.exercises.models import (
     Playlist,
     PlaylistCourseOrdered,
 )
+from apps.exercises.tests.umto_test_helpers import make_umto_exercise
+from apps.exercises.umto import InteractionMode
 
 
 User = get_user_model()
@@ -588,6 +591,100 @@ class PlayerViewTests(TransactionTestCase):
         self.assertIn(b'"disableComputerKeyboardInput": true', response.content)
         self.assertIn(b'"mode": "playback"', response.content)
         self.assertIn(b'"analysisType": "note_name"', response.content)
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class Unit4PersonalizedServingViewTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        self.client = Client()
+        self.student = User.objects.create_user(
+            id=26001,
+            email="unit4-student@test.com",
+            password="testpass123",
+            is_staff=False,
+        )
+        self.author = User.objects.create_user(
+            id=26002,
+            email="unit4-author@test.com",
+            password="x",
+            is_staff=True,
+        )
+        self.playlist = Playlist.objects.create(
+            name="Unit 4 - Specific Intervals: Stage 4",
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:4", "Interval_Specific", "unit:4_L4"],
+            tags=["unit:4", "Interval_Specific", "unit:4_L4"],
+        )
+        self.exercises = []
+        for idx in range(1, 9):
+            exercise = make_umto_exercise(
+                self.author,
+                description=f"Unit 4 Specific Worksheet {idx}",
+                skill_tags=["unit:4", "Interval_Specific", "unit:4_L4"],
+                unit=4,
+                mode=InteractionMode.IDENTIFICATION,
+                input_mode="dropdown",
+            )
+            exercise.data["analysisType"] = "interval_specific"
+            exercise.save(update_fields=["data"])
+            ExercisePlaylistOrdered.objects.create(
+                playlist=self.playlist,
+                exercise=exercise,
+                order=idx,
+            )
+            self.exercises.append(exercise)
+        self.client.force_login(self.student)
+
+    def _expected_first_exercise(self):
+        ordered_ids = [exercise.id for exercise in self.exercises]
+        rng = random.Random(f"{self.student.id}:{self.playlist.id}:unit4")
+        rng.shuffle(ordered_ids)
+        return ordered_ids[0]
+
+    def test_player_view_caps_unit4_total_exercises_at_six(self):
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 4})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_exercises"], 6)
+
+    def test_player_definition_uses_personalized_unit4_order(self):
+        response = self.client.get(
+            reverse("student:player-definition", kwargs={"unit_num": 4})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["exerciseId"], self._expected_first_exercise())
+
+    def test_identification_submission_uses_personalized_unit4_order(self):
+        payload = {
+            "course_ID": None,
+            "playlist_ID": self.playlist.id,
+            "exercise_num": 1,
+            "answers": {"0": "P5"},
+            "correctness": {"0": True},
+            "score": {"correct": 1, "incorrect": 0, "unanswered": 0},
+            "correct_answers": {"0": "P5"},
+            "page_num": 0,
+            "is_page_submit": True,
+            "mode": "practice",
+            "attempt_type": "practice",
+        }
+
+        response = self.client.post(
+            reverse("lab:identification-answers"),
+            {"data": json.dumps(payload)},
+        )
+
+        self.assertEqual(response.status_code, 201)
+        attempt = IdentificationAttempt.objects.get(user=self.student, playlist=self.playlist)
+        self.assertEqual(attempt.exercise.id, self._expected_first_exercise())
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])

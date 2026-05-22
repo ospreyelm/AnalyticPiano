@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import random
 
 from apps.exercises.models import IdentificationAttempt, PerformanceData, Playlist
+
+UNIT4_SERVED_EXERCISE_COUNT = 6
 
 
 @dataclass(frozen=True)
@@ -40,6 +43,29 @@ def _ordered_exercise_ids(playlist: Playlist) -> list[str]:
     return list(playlist.untransposed_exercises_ids or [])
 
 
+def _is_unit4_personalized_playlist(playlist: Playlist) -> bool:
+    tags = set((playlist.tags or []) + (playlist.skill_tags or []))
+    return "unit:4" in tags and bool(tags.intersection({"Interval_Generic", "Interval_Specific"}))
+
+
+def get_ordered_exercise_ids_for_serving(user, playlist: Playlist) -> list[str]:
+    ordered_ids = _ordered_exercise_ids(playlist)
+    if not user or not getattr(user, "id", None) or not _is_unit4_personalized_playlist(playlist):
+        return ordered_ids
+
+    shuffled_ids = list(ordered_ids)
+    rng = random.Random(f"{user.id}:{playlist.id}:unit4")
+    rng.shuffle(shuffled_ids)
+    return shuffled_ids[:UNIT4_SERVED_EXERCISE_COUNT]
+
+
+def get_served_exercise_id(user, playlist: Playlist, exercise_num: int) -> str | None:
+    ordered_ids = get_ordered_exercise_ids_for_serving(user, playlist)
+    if exercise_num < 1 or exercise_num > len(ordered_ids):
+        return None
+    return ordered_ids[exercise_num - 1]
+
+
 def _next_pending_num(ordered_ids: list[str], completed_ids: set[str]) -> int | None:
     for index, exercise_id in enumerate(ordered_ids, 1):
         if exercise_id not in completed_ids:
@@ -48,7 +74,7 @@ def _next_pending_num(ordered_ids: list[str], completed_ids: set[str]) -> int | 
 
 
 def resolve_lane_launch(user, playlist: Playlist) -> PlayerProgressState:
-    ordered_ids = _ordered_exercise_ids(playlist)
+    ordered_ids = get_ordered_exercise_ids_for_serving(user, playlist)
     completed_ids = get_completed_exercise_ids(user, playlist)
     next_pending = _next_pending_num(ordered_ids, completed_ids)
     if next_pending is not None:
@@ -57,7 +83,7 @@ def resolve_lane_launch(user, playlist: Playlist) -> PlayerProgressState:
 
 
 def resolve_requested_step(user, playlist: Playlist, requested_num: int) -> PlayerProgressState:
-    ordered_ids = _ordered_exercise_ids(playlist)
+    ordered_ids = get_ordered_exercise_ids_for_serving(user, playlist)
     completed_ids = get_completed_exercise_ids(user, playlist)
     next_pending = _next_pending_num(ordered_ids, completed_ids)
 

@@ -20,7 +20,7 @@ from apps.exercises.models import (
     Playlist,
     StudentSkillMastery,
 )
-from apps.student.unit_progress import get_unit_progress_data
+from apps.student.unit_progress import _playlist_stats_by_id, get_unit_progress_data
 
 User = get_user_model()
 
@@ -386,6 +386,36 @@ class PlaylistStatsUniqueExercisesTest(TestCase):
         pl_stats = note_names_card["playlists"][0]
         # ex1 appears twice but should count as 1; ex2 once = total 2
         self.assertEqual(pl_stats["done"], 2)
+
+    def test_unit4_playlist_stats_use_six_served_slots_not_full_bank(self):
+        playlist = _make_playlist(
+            pk=52040,
+            author=self.author,
+            skill_tags=["unit:4", "Interval_Generic", "unit:4_L1"],
+            name="Unit 4 - Generic Intervals: Stage 1",
+        )
+        exercises = []
+        for idx in range(8):
+            exercise = _make_exercise(52050 + idx, self.author)
+            exercise.skill_tags = ["unit:4", "Interval_Generic", "unit:4_L1"]
+            exercise.save(update_fields=["skill_tags"])
+            ExercisePlaylistOrdered.objects.create(
+                _id=52100 + idx,
+                playlist=playlist,
+                exercise=exercise,
+                order=idx + 1,
+            )
+            exercises.append(exercise)
+
+        _make_pd(
+            user=self.student,
+            playlist=playlist,
+            data=[{"id": exercises[0].id, "score_numerator": 1, "score_denominator": 1}],
+        )
+
+        stats = _playlist_stats_by_id(self.student, playlist.id)
+
+        self.assertEqual(stats["total"], 6)
 
 
 class LastScorePctTest(TestCase):

@@ -22,7 +22,13 @@ Replace the earlier Unit 4 interval prototype with a score-backed synthetic work
 - [x] Add Unit 4 display metadata for one-page rendering and extra first-measure spacing.
 - [x] Add a Unit 4 note/label X-shift so sparse interval worksheets are visually centered.
 - [x] Extend text-input mode to Unit 4 generic and specific interval worksheets.
+- [x] Increase the default Unit 4 worksheet bank from 6 to 24 variants per lane/stage.
+- [x] Personalize Unit 4 playlist serving order per student while keeping the exercise bank static.
+- [x] Use the personalized Unit 4 order consistently in player progression, definition refresh, and submission writes.
+- [x] Update Unit 4 docs to describe the larger worksheet bank and per-student seeded ordering.
 
 ## Notes
 
 The shipped Unit 4 worksheets now use `type: "umto_chorale"` with `mode: "identification"`. That keeps them on the modern UMTO path while still using the existing score-identification renderer and grader.
+
+The serving model is intentionally different from a true adaptive playlist. Unit 4 keeps a 24-item worksheet bank per stage in the database, but the student app exposes only 6 seeded slots from that bank for any given student. This keeps progress and assignment semantics finite (`1/6`, `2/6`, etc.) while still producing per-student variation from a larger pool. By contrast, Unit 1's normal lane playlists remain fixed curated sequences; only Unit 1 challenge playlists are assembled per-user.

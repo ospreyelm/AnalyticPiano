@@ -12,6 +12,7 @@ from apps.exercises.models import Course, Playlist, PerformanceData, User as Per
 from apps.exercises.tables import PlaylistActivityTable
 from apps.exercises.mastery import record_attempt
 from apps.exercises.taxonomy_reader import TaxonomyReader
+from apps.student.player_progression import get_served_exercise_id
 
 User = get_user_model()
 
@@ -195,7 +196,9 @@ def _submit_exercise_performance(request):
     # Convoluted procedure because the Playlist object is not imported to exercise_context.js
     # so the accuracy of this database write depends on the playlist not having changed since
     # the call of compileExerciseReport
-    exercise_id = playlist_obj.get_exercise_obj_by_num(int(data_exercise_num)).id
+    exercise_id = get_served_exercise_id(request.user, playlist_obj, int(data_exercise_num))
+    if exercise_id is None:
+        return JsonResponse({"error": "Invalid exercise number"}, status=400)
 
     # Intercept this meaningless prop from being written to the database
     performance_data.pop("exercise_num")
@@ -241,9 +244,13 @@ def identification_answers_view(request):
         try:
             course = Course.objects.get(id=data_course_id) if data_course_id else None
             playlist = Playlist.objects.get(id=data_playlist_id)
-            exercise = playlist.get_exercise_obj_by_num(int(data_exercise_num))
+            exercise_id = get_served_exercise_id(request.user, playlist, int(data_exercise_num))
+            exercise = Exercise.objects.get(id=exercise_id) if exercise_id else None
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
+
+        if exercise is None:
+            return JsonResponse({"error": "Invalid exercise number"}, status=400)
 
         IdentificationAttempt.objects.create(
             user=request.user,

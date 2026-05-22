@@ -13,7 +13,10 @@ from __future__ import annotations
 from django.urls import reverse, NoReverseMatch
 
 from apps.exercises.models import PerformanceData, Playlist, StudentSkillMastery
-from apps.student.player_progression import is_completed_identification_attempt
+from apps.student.player_progression import (
+    get_ordered_exercise_ids_for_serving,
+    is_completed_identification_attempt,
+)
 from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.student.access import accessible_playlist_queryset
 from apps.student.progress import TAG_ALIASES
@@ -222,7 +225,7 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
 
     # Determine the next uncompleted exercise number
     next_exercise_num = 1
-    ex_ids = playlist.untransposed_exercises_ids
+    ex_ids = get_ordered_exercise_ids_for_serving(user, playlist)
     for idx, ex_id in enumerate(ex_ids, 1):
         if ex_id not in completed_ids:
             next_exercise_num = idx
@@ -237,7 +240,7 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
         "id": playlist.id,
         "name": playlist.name,
         "done": done,
-        "total": playlist.exercise_count,
+        "total": len(ex_ids),
         "is_adaptive": bool(playlist.is_adaptive),
         "last_score_pct": last_score_pct,
         "url": url,

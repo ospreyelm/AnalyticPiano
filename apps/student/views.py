@@ -27,6 +27,8 @@ from lab.views import RequirejsContext, generate_exercise_context, get_adaptive_
 from apps.student.player_progression import (
     PlayerProgressState,
     get_completed_exercise_ids,
+    get_ordered_exercise_ids_for_serving,
+    get_served_exercise_id,
     is_completed_identification_attempt,
     resolve_requested_step,
 )
@@ -343,8 +345,10 @@ class PlayerView(View):
         course = playlist_course.course if playlist_course else None
 
         is_dynamic_or_adaptive = bool(playlist.is_dynamic or playlist.is_adaptive)
+        served_ids = get_ordered_exercise_ids_for_serving(request.user, playlist)
+        served_count = len(served_ids)
 
-        if not is_dynamic_or_adaptive and exercise_num > playlist.exercise_count:
+        if not is_dynamic_or_adaptive and exercise_num > served_count:
             return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
 
         if is_dynamic_or_adaptive:
@@ -368,7 +372,8 @@ class PlayerView(View):
                 course.id if course else None,
             )
         else:
-            exercise = playlist.get_exercise_obj_by_num(exercise_num)
+            exercise_id = get_served_exercise_id(request.user, playlist, exercise_num)
+            exercise = Exercise.objects.filter(id=exercise_id).first() if exercise_id else None
 
         if not exercise:
             return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
@@ -402,7 +407,7 @@ class PlayerView(View):
             if merged_answers:
                 exercise_context["reviewAnswers"] = merged_answers
 
-        all_ids = list(playlist.untransposed_exercises_ids or [])
+        all_ids = served_ids
         completed_ids = get_completed_exercise_ids(request.user, playlist)
         completed_nums = [
             index for index, exercise_id in enumerate(all_ids, 1)
@@ -474,7 +479,7 @@ class PlayerView(View):
                 "playlist": playlist,
                 "playlist_name": playlist.name or playlist.id,
                 "exercise_num": exercise_num,
-                "total_exercises": playlist.exercise_count if playlist.exercise_count > 0 else exercise_num,
+                "total_exercises": served_count if served_count > 0 else exercise_num,
                 "is_review_mode": state.mode == "review",
                 "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
                 "exercise_config_json": json.dumps(exercise_context),
@@ -489,7 +494,7 @@ class PlayerView(View):
             "unit_num": unit_num,
             "playlist": playlist,
             "exercise_num": exercise_num,
-            "total_exercises": playlist.exercise_count if playlist.exercise_count > 0 else exercise_num,
+            "total_exercises": served_count if served_count > 0 else exercise_num,
             "is_review_mode": state.mode == "review",
             "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
         }
@@ -528,7 +533,8 @@ class PlayerDefinitionView(View):
         )
         course = playlist_course.course if playlist_course else None
 
-        if exercise_num > playlist.exercise_count:
+        served_count = len(get_ordered_exercise_ids_for_serving(request.user, playlist))
+        if exercise_num > served_count:
             return JsonResponse(
                 {"redirect": reverse("student:unit", kwargs={"unit_num": unit_num})}
             )
@@ -540,7 +546,8 @@ class PlayerDefinitionView(View):
                  + f"?playlist={playlist.id}&exercise_num={state.exercise_num}"}
             )
 
-        exercise = playlist.get_exercise_obj_by_num(state.exercise_num)
+        exercise_id = get_served_exercise_id(request.user, playlist, state.exercise_num)
+        exercise = Exercise.objects.filter(id=exercise_id).first() if exercise_id else None
         if not exercise:
             return JsonResponse(
                 {"redirect": reverse("student:unit", kwargs={"unit_num": unit_num})}
