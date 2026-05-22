@@ -1,5 +1,12 @@
 # HarmonyLab Chorale Exercise System - Implementation Guide
 
+> [!IMPORTANT]
+> **HIGH PRIORITY TECHNICAL DEBT & REDUNDANCY WARNING**
+> A comprehensive analysis of cross-language algorithmic duplication (Python vs. JavaScript figured bass abbreviation stack rules, key normalization routines, pitch-spelling-to-MIDI conversions, and rhythmic duration coordinates) and parallel view routing structure technical debt has been compiled and committed to [docs/redundancy_analysis_report.md](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/docs/redundancy_analysis_report.md). 
+> 
+> All agents working on features, controllers, or refactoring in this repository MUST review the findings and phased cleanup roadmap in the redundancy report before modifying code.
+
+
 ## UMTO is the Canonical Exercise Representation
 
 **All new Exercise rows MUST be UMTO.** Legacy `chorale`, `chorale_identification`,
