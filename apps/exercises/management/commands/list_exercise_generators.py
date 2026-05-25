@@ -82,6 +82,13 @@ CATALOG = [
             "python manage.py generate_unit5 --type both --author admin@example.com --public",
         ),
     ]),
+    ("Branch B (Clausulae)", [
+        (
+            "generate_clausulae_b1",
+            "Generate Branch B Units B1–B2: formal clausulae and simple 2-voice cadences.",
+            "python manage.py generate_clausulae_b1 --author admin@example.com --public",
+        ),
+    ]),
     ("Playlists and curriculum wiring", [
         (
             "create_unit_playlist",
