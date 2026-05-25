@@ -14,34 +14,123 @@
   </a>
 {% endif %}
 
-{% for section in sections %}
-  <div class="s-section-label" {% if not forloop.first %}style="margin-top: 32px;"{% endif %}>{{ section.label }}</div>
-  {% if section.desc %}
-    <div class="s-section-desc" style="font-size: 0.85rem; color: #6b7280; margin: -10px 0 16px 0; line-height: 1.4;">{{ section.desc }}</div>
-  {% endif %}
+<style>
+  .s-tab-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+  }
+  .s-tab-bar::-webkit-scrollbar {
+    height: 4px;
+  }
+  .s-tab-bar::-webkit-scrollbar-thumb {
+    background-color: var(--teal-mid);
+    border-radius: 4px;
+  }
+  .s-tab-item {
+    padding: 6px 14px;
+    border-radius: 18px;
+    border: 1px solid var(--teal-mid);
+    background: var(--surface-2);
+    color: var(--teal);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.78rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 150ms ease;
+  }
+  .s-tab-item:hover {
+    background: var(--teal-pale);
+    border-color: var(--teal);
+  }
+  .s-tab-item.active {
+    background: var(--teal);
+    color: white;
+    border-color: var(--teal);
+  }
+  .s-section-content {
+    display: none;
+  }
+  .s-section-content.active {
+    display: block;
+    animation: fadeIn 200ms ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
 
-  {% for unit in section.units %}
-    {% if unit.locked %}
-      <div class="s-unit-card locked">
-        <div class="s-unit-card-row">
-          <span class="s-unit-title" style="color:#999">Unit {{ unit.num }} · {{ unit.title }}</span>
-          <span style="font-size:0.8rem;color:#ccc">🔒</span>
-        </div>
-      </div>
-    {% else %}
-      <a class="s-unit-card active" href="{{ unit.url }}">
-        <div class="s-unit-card-row">
-          <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
-          <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
-        </div>
-        {% if unit.percent > 0 %}
-          <div class="s-progress-bar-track">
-            <div class="s-progress-bar-fill" style="width: {{ unit.percent }}%"></div>
-          </div>
-        {% endif %}
-      </a>
-    {% endif %}
+<div class="s-tab-bar">
+  {% for section in sections %}
+    <button class="s-tab-item {% if forloop.first %}active{% endif %}" data-target="section-{{ forloop.index0 }}">
+      {{ section.label }}
+    </button>
   {% endfor %}
+</div>
+
+{% for section in sections %}
+  <div class="s-section-content {% if forloop.first %}active{% endif %}" id="section-{{ forloop.index0 }}">
+    {% if section.desc %}
+      <div class="s-section-desc" style="font-size: 0.85rem; color: var(--text); margin-bottom: 20px; line-height: 1.45; padding: 12px 16px; background: var(--teal-pale); border-radius: var(--radius); border-left: 4px solid var(--teal);">
+        {{ section.desc }}
+      </div>
+    {% endif %}
+
+    {% for unit in section.units %}
+      {% if unit.locked %}
+        <div class="s-unit-card locked">
+          <div class="s-unit-card-row">
+            <span class="s-unit-title" style="color:#999">Unit {{ unit.num }} · {{ unit.title }}</span>
+            <span style="font-size:0.8rem;color:#ccc">🔒</span>
+          </div>
+        </div>
+      {% else %}
+        <a class="s-unit-card active" href="{{ unit.url }}">
+          <div class="s-unit-card-row">
+            <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
+            <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
+          </div>
+          {% if unit.percent > 0 %}
+            <div class="s-progress-bar-track">
+              <div class="s-progress-bar-fill" style="width: {{ unit.percent }}%"></div>
+            </div>
+          {% endif %}
+        </a>
+      {% endif %}
+    {% endfor %}
+  </div>
 {% endfor %}
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var tabs = document.querySelectorAll(".s-tab-item");
+    var contents = document.querySelectorAll(".s-section-content");
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        var targetId = this.getAttribute("data-target");
+
+        // Toggle active tabs
+        tabs.forEach(function (t) { t.classList.remove("active"); });
+        this.classList.add("active");
+
+        // Toggle active sections
+        contents.forEach(function (c) {
+          if (c.id === targetId) {
+            c.classList.add("active");
+          } else {
+            c.classList.remove("active");
+          }
+        });
+      });
+    });
+  });
+</script>
 
 {% endblock %}

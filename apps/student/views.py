@@ -189,7 +189,7 @@ def _build_home_sections(user) -> list[dict]:
     # We will build 5 sections: Core, Branch A, Branch B, Branch C, Branch D
     sections_map = {
         "core": {
-            "label": "Core Sequence",
+            "label": "Standard Sequence",
             "desc": "The universal trunk: Fundamentals → Common Practice → Chromaticism → Post-Tonal.",
             "units": [],
         },
