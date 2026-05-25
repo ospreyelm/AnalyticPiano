@@ -313,7 +313,7 @@ define([
     
     var isMasteredCta = (cta.indexOf("Start ") === 0);
     if (isMasteredCta && data.unit_n) {
-      nextUrl = "/student/units/" + data.unit_n + "/";
+      nextUrl = "/s/units/" + data.unit_n + "/";
     }
 
     var tryAgainBtn = '<button class="esc-btn esc-btn-secondary js-esc-try-again">Try Again</button>';
@@ -354,15 +354,31 @@ define([
         self.hide();
         var resetLink = document.querySelector(".js-btn-pristine");
         if (resetLink) {
-          resetLink.click();
+          $(resetLink).trigger("click");
         }
       });
     }
-    // CTA button without href (no next URL, non-low score): hide card and let auto-advance handle it
+
     var ctaEl = this._el.querySelector(".js-esc-cta");
-    if (ctaEl && !nextUrl && !isLow) {
-      ctaEl.addEventListener("click", function () {
-        self.hide();
+    if (ctaEl) {
+      ctaEl.addEventListener("click", function (e) {
+        if (isLow) {
+          e.preventDefault();
+          self.hide();
+          var resetLink = document.querySelector(".js-btn-pristine");
+          if (resetLink) {
+            $(resetLink).trigger("click");
+          }
+        } else if (nextUrl && nextUrl.indexOf("/play/") !== -1) {
+          e.preventDefault();
+          self.hide();
+          var nextLink = document.querySelector(".js-btn-nextexercise");
+          if (nextLink) {
+            $(nextLink).trigger("click");
+          }
+        } else {
+          self.hide();
+        }
       });
     }
 
