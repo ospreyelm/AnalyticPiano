@@ -345,6 +345,29 @@ define([
           /* could add use of listeners here to update the menu */
 
           scex.inputChords.staffDistribution = newData.staffDistribution;
+
+          // Reset stateful grading modes before creating display and exercise chords
+          if ((scex.definition.isChorale && scex.definition.isChorale()) || 
+              (scex.definition.isChoraleIdentification && scex.definition.isChoraleIdentification())) {
+            if (typeof sheetComponent.initChoraleMode === "function") {
+              sheetComponent.initChoraleMode();
+            }
+          }
+
+          if (scex._isHarmonizationExercise && scex._isHarmonizationExercise()) {
+            if (scex._harmonizationSettleTimer) {
+              clearTimeout(scex._harmonizationSettleTimer);
+              scex._harmonizationSettleTimer = null;
+            }
+            if (scex._harmonizationHeldTracker) {
+              scex._harmonizationHeldTracker.reset();
+            }
+            scex._harmonizationPointer = 0;
+            scex.acceptedHarmonizationSonorities = [];
+            scex.harmonizationVLScore = null;
+            scex.harmonizationTier = null;
+          }
+
           scex.displayChords = scex.createDisplayChords();
           scex.exerciseChords = scex.createExerciseChords();
 

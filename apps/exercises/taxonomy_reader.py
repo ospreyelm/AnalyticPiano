@@ -10,7 +10,7 @@ class TaxonomyReader:
         if cls._data is None:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             root_dir = os.path.dirname(os.path.dirname(current_dir))
-            file_path = os.path.join(root_dir, "music_theory_taxonomy.json")
+            file_path = os.path.join(root_dir, "music_theory_taxonomy_with_branches.json")
             with open(file_path, "r") as f:
                 cls._data = json.load(f)
         return cls._data

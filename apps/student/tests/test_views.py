@@ -921,15 +921,16 @@ class StudentHomeUnitDiscoveryTests(TransactionTestCase):
         units = response.context["units"]
         by_num = {unit["num"]: unit for unit in units}
 
-        self.assertEqual([unit["num"] for unit in units], sorted(by_num.keys()))
-        self.assertFalse(by_num[1]["locked"])
-        self.assertFalse(by_num[9]["locked"])
-        self.assertFalse(by_num[11]["locked"])
-        self.assertFalse(by_num[12]["locked"])
-        self.assertTrue(by_num[2]["locked"])
-        self.assertIsNone(by_num[2]["url"])
+        from apps.student.views import unit_sort_key
+        self.assertEqual([unit["num"] for unit in units], sorted(by_num.keys(), key=unit_sort_key))
+        self.assertFalse(by_num["1"]["locked"])
+        self.assertFalse(by_num["9"]["locked"])
+        self.assertFalse(by_num["11"]["locked"])
+        self.assertFalse(by_num["12"]["locked"])
+        self.assertTrue(by_num["2"]["locked"])
+        self.assertIsNone(by_num["2"]["url"])
         self.assertEqual(
-            by_num[9]["url"],
+            by_num["9"]["url"],
             reverse("student:unit-progress", kwargs={"unit_n": "9"}),
         )
 
@@ -949,9 +950,9 @@ class StudentHomeUnitDiscoveryTests(TransactionTestCase):
 
         self.assertEqual(response.status_code, 200)
         by_num = {unit["num"]: unit for unit in response.context["units"]}
-        self.assertFalse(by_num[16]["locked"])
+        self.assertFalse(by_num["16"]["locked"])
         self.assertEqual(
-            by_num[16]["url"],
+            by_num["16"]["url"],
             reverse("student:unit-progress", kwargs={"unit_n": "16"}),
         )
 

@@ -73,7 +73,7 @@ class Unit1CurriculumIntegrationTests(TransactionTestCase):
         self.assertContains(response, "Play the Notes")
         self.assertContains(response, "Reading Treble and Bass Clefs.")
         self.assertContains(response, 'class="skill-card"', count=3, html=False)
-        self.assertContains(response, 'class="playlist-row"', count=6, html=False)
+        self.assertContains(response, 'class="playlist-row', count=6, html=False)
         self.assertContains(
             response,
             f'playlist={self.identify_treble.id}&amp;exercise_num=1',

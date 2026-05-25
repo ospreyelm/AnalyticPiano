@@ -36,6 +36,16 @@ from apps.student.player_progression import (
 TAXONOMY_PATH = Path(__file__).resolve().parent.parent.parent / "music_theory_taxonomy_with_branches.json"
 
 
+def unit_sort_key(n_str: str) -> tuple[str, int]:
+    """Sort unit strings alphanumerically, e.g. "1" -> ("", 1), "B2" -> ("B", 2)"""
+    import re
+    match = re.match(r'^([a-zA-Z]*)(\d+)$', n_str)
+    if match:
+        prefix, num = match.groups()
+        return (prefix, int(num))
+    return (n_str, 0)
+
+
 def _disable_computer_keyboard_input(exercise_context: dict, playlist: Playlist, exercise: Exercise) -> bool:
     tags = set((playlist.tags or []) + (playlist.skill_tags or []) + (exercise_context.get("skillTags") or []))
     playlist_name = (playlist.name or "").lower()
@@ -121,7 +131,7 @@ def _summarize_unit_progress(data: dict) -> dict:
     }
 
 
-def _get_available_unit_numbers(user) -> set[int]:
+def _get_available_unit_numbers(user) -> set[str]:
     available = set()
     playlists = accessible_playlist_queryset(user).order_by("name")
 
@@ -130,18 +140,12 @@ def _get_available_unit_numbers(user) -> set[int]:
 
         for tag in tags:
             if isinstance(tag, str) and tag.startswith("unit:"):
-                try:
-                    available.add(int(tag.split(":", 1)[1]))
-                    continue
-                except (TypeError, ValueError):
-                    pass
+                available.add(tag.split(":", 1)[1])
+                continue
 
             unit = TaxonomyReader.get_unit_for_tag(tag)
             if unit:
-                try:
-                    available.add(int(unit["n"]))
-                except (KeyError, TypeError, ValueError):
-                    pass
+                available.add(str(unit["n"]))
 
     return available
 
@@ -150,25 +154,26 @@ def _build_home_units(user) -> list[dict]:
     available_unit_numbers = _get_available_unit_numbers(user)
     units = []
 
-    for unit in sorted(TaxonomyReader.get_all_units(), key=lambda item: int(item["n"])):
-        unit_num = int(unit["n"])
-        is_available = unit_num in available_unit_numbers
-        progress = _summarize_unit_progress(get_unit_progress_data(user, str(unit_num))) if is_available else {
+    sorted_units = sorted(TaxonomyReader.get_all_units(), key=lambda item: unit_sort_key(str(item["n"])))
+    for unit in sorted_units:
+        unit_n = str(unit["n"])
+        is_available = unit_n in available_unit_numbers
+        progress = _summarize_unit_progress(get_unit_progress_data(user, unit_n)) if is_available else {
             "percent": 0,
             "mastered_count": 0,
         }
 
         units.append(
             {
-                "num": unit_num,
-                "title": unit.get("title", f"Unit {unit_num}"),
+                "num": unit_n,
+                "title": unit.get("title", f"Unit {unit_n}"),
                 "feat": unit.get("feat", ""),
                 "percent": progress["percent"],
                 "mastered_count": progress["mastered_count"],
                 "total_skills": len(unit.get("tags", [])),
                 "locked": not is_available,
                 "url": (
-                    reverse("student:unit-progress", kwargs={"unit_n": str(unit_num)})
+                    reverse("student:unit-progress", kwargs={"unit_n": unit_n})
                     if is_available
                     else None
                 ),
@@ -293,7 +298,7 @@ class UnitView(View):
                 ungrouped_playlists.append(pl_data)
 
         sorted_groups = []
-        for n_str in sorted(unit_groups.keys(), key=lambda k: int(k)):
+        for n_str in sorted(unit_groups.keys(), key=unit_sort_key):
             sorted_groups.append(unit_groups[n_str])
             
         if ungrouped_playlists:
@@ -386,6 +391,8 @@ class PlayerView(View):
             course,
         )
 
+        exercise_context["playlistId"] = playlist.id
+        exercise_context["totalExercises"] = served_count
         exercise_context["reviewMode"] = state.mode == "review"
         exercise_context["playerMode"] = state.mode
         if state.mode == "review":
@@ -461,7 +468,6 @@ class PlayerView(View):
         exercise_context["previousExerciseId"] = (
             all_ids[prev_num - 1] if prev_num and prev_num <= len(all_ids) else False
         )
-        exercise_context["forceRedirect"] = True
         exercise_context["exerciseList"] = [
             {
                 **item,
@@ -556,6 +562,28 @@ class PlayerDefinitionView(View):
         exercise_context = generate_exercise_context(
             state.exercise_num, exercise, request.user, playlist, course
         )
+        exercise_context["playlistId"] = playlist.id
+        exercise_context["totalExercises"] = served_count
+        exercise_context["reviewMode"] = state.mode == "review"
+        if state.mode == "review":
+            attempts = (
+                IdentificationAttempt.objects.filter(
+                    user=request.user,
+                    exercise=exercise,
+                    playlist=playlist,
+                )
+                .order_by("submitted_at")
+            )
+            merged_answers = {}
+            for attempt in attempts:
+                if not is_completed_identification_attempt(attempt):
+                    continue
+                if attempt.answers:
+                    merged_answers.update(attempt.answers)
+
+            if merged_answers:
+                exercise_context["reviewAnswers"] = merged_answers
+
         return JsonResponse(exercise_context)
 
 

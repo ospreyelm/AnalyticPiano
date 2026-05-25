@@ -203,24 +203,21 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
 
     # Build playlist URL targeting the student exercise player
     from apps.exercises.taxonomy_reader import TaxonomyReader
-    unit_num = 1  # Default fallback
+    unit_num = "1"  # Default fallback
     playlist_tags = list(playlist.tags or []) + list(playlist.skill_tags or [])
 
     # First prefer explicit unit tags (e.g., unit:11), which are common on
     # generated dynamic playlists.
     for tag in playlist_tags:
         if isinstance(tag, str) and tag.startswith("unit:"):
-            try:
-                unit_num = int(tag.split(":", 1)[1])
-                break
-            except (TypeError, ValueError):
-                continue
+            unit_num = tag.split(":", 1)[1]
+            break
     else:
         # Fallback to taxonomy lookup for non-unit tags.
         for tag in playlist_tags:
             unit = TaxonomyReader.get_unit_for_tag(tag)
             if unit:
-                unit_num = int(unit.get("n", 1))
+                unit_num = str(unit.get("n", "1"))
                 break
 
     # Determine the next uncompleted exercise number
