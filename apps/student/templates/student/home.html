@@ -14,29 +14,34 @@
   </a>
 {% endif %}
 
-<div class="s-section-label">Your Units</div>
-
-{% for unit in units %}
-  {% if unit.locked %}
-    <div class="s-unit-card locked">
-      <div class="s-unit-card-row">
-        <span class="s-unit-title" style="color:#999">Unit {{ unit.num }} · {{ unit.title }}</span>
-        <span style="font-size:0.8rem;color:#ccc">🔒</span>
-      </div>
-    </div>
-  {% else %}
-    <a class="s-unit-card active" href="{{ unit.url }}">
-      <div class="s-unit-card-row">
-        <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
-        <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
-      </div>
-      {% if unit.percent > 0 %}
-        <div class="s-progress-bar-track">
-          <div class="s-progress-bar-fill" style="width: {{ unit.percent }}%"></div>
-        </div>
-      {% endif %}
-    </a>
+{% for section in sections %}
+  <div class="s-section-label" {% if not forloop.first %}style="margin-top: 32px;"{% endif %}>{{ section.label }}</div>
+  {% if section.desc %}
+    <div class="s-section-desc" style="font-size: 0.85rem; color: #6b7280; margin: -10px 0 16px 0; line-height: 1.4;">{{ section.desc }}</div>
   {% endif %}
+
+  {% for unit in section.units %}
+    {% if unit.locked %}
+      <div class="s-unit-card locked">
+        <div class="s-unit-card-row">
+          <span class="s-unit-title" style="color:#999">Unit {{ unit.num }} · {{ unit.title }}</span>
+          <span style="font-size:0.8rem;color:#ccc">🔒</span>
+        </div>
+      </div>
+    {% else %}
+      <a class="s-unit-card active" href="{{ unit.url }}">
+        <div class="s-unit-card-row">
+          <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
+          <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
+        </div>
+        {% if unit.percent > 0 %}
+          <div class="s-progress-bar-track">
+            <div class="s-progress-bar-fill" style="width: {{ unit.percent }}%"></div>
+          </div>
+        {% endif %}
+      </a>
+    {% endif %}
+  {% endfor %}
 {% endfor %}
 
 {% endblock %}

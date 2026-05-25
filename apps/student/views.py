@@ -183,6 +183,86 @@ def _build_home_units(user) -> list[dict]:
     return units
 
 
+def _build_home_sections(user) -> list[dict]:
+    available_unit_numbers = _get_available_unit_numbers(user)
+    
+    # We will build 5 sections: Core, Branch A, Branch B, Branch C, Branch D
+    sections_map = {
+        "core": {
+            "label": "Core Sequence",
+            "desc": "The universal trunk: Fundamentals → Common Practice → Chromaticism → Post-Tonal.",
+            "units": [],
+        },
+        "branch_a": {
+            "label": "Branch A — Figured Bass (Handel model)",
+            "desc": "Optional parallel thoroughbass track.",
+            "units": [],
+        },
+        "branch_b": {
+            "label": "Branch B — Clausulae, Schemas & Partimenti",
+            "desc": "Historical contrapuntal approach à la Fenaroli.",
+            "units": [],
+        },
+        "branch_c": {
+            "label": "Branch C — Interval Cycles & Slonimsky",
+            "desc": "Post-tonal optional branch.",
+            "units": [],
+        },
+        "branch_d": {
+            "label": "Branch D — Neo-Riemannian Theory",
+            "desc": "Triadic transformations, Tonnetz, and voice-leading geometry.",
+            "units": [],
+        },
+    }
+
+    sorted_units = sorted(TaxonomyReader.get_all_units(), key=lambda item: unit_sort_key(str(item["n"])))
+    for unit in sorted_units:
+        unit_n = str(unit["n"])
+        is_available = unit_n in available_unit_numbers
+        progress = _summarize_unit_progress(get_unit_progress_data(user, unit_n)) if is_available else {
+            "percent": 0,
+            "mastered_count": 0,
+        }
+
+        unit_data = {
+            "num": unit_n,
+            "title": unit.get("title", f"Unit {unit_n}"),
+            "feat": unit.get("feat", ""),
+            "percent": progress["percent"],
+            "mastered_count": progress["mastered_count"],
+            "total_skills": len(unit.get("tags", [])),
+            "locked": not is_available,
+            "url": (
+                reverse("student:unit-progress", kwargs={"unit_n": unit_n})
+                if is_available
+                else None
+            ),
+        }
+
+        # Classify by prefix
+        if unit_n.startswith("A"):
+            sections_map["branch_a"]["units"].append(unit_data)
+        elif unit_n.startswith("B"):
+            sections_map["branch_b"]["units"].append(unit_data)
+        elif unit_n.startswith("C"):
+            sections_map["branch_c"]["units"].append(unit_data)
+        elif unit_n.startswith("D"):
+            sections_map["branch_d"]["units"].append(unit_data)
+        else:
+            sections_map["core"]["units"].append(unit_data)
+
+    # Only include sections that are either the Core Sequence OR have at least one unlocked unit
+    active_sections = []
+    for key in ["core", "branch_a", "branch_b", "branch_c", "branch_d"]:
+        section = sections_map[key]
+        is_core = key == "core"
+        has_unlocked = any(not u["locked"] for u in section["units"])
+        if is_core or has_unlocked:
+            active_sections.append(section)
+
+    return active_sections
+
+
 class StudentLoginView(View):
     def get(self, request):
         if request.user.is_authenticated:
@@ -245,6 +325,7 @@ class HomeView(View):
 
         return render(request, "student/home.html", {
             "units": _build_home_units(request.user),
+            "sections": _build_home_sections(request.user),
             "resume_url": resume_url,
             "resume_skill": resume_label,
             "unit1_progress": unit1_progress,
