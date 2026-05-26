@@ -1942,7 +1942,7 @@ define([
                 );
               } else if (renderScaleDegrees) {
                 var degStave = trebleStave || activeStaveForAnnotations;
-                if (degStave) {
+                if (degStave && !isClausula) {
                   // Build MIDI→label map from stored scale_degrees in UMTO analysis slices.
                   var sdMap = null;
                   if (score && score.umto && score.umto.analysis && score.umto.analysis.length) {
@@ -1960,6 +1960,15 @@ define([
                     }
                   }
                   drawScaleDegreeAbove(ctx, attackList, columnCenterX, degStave, inlineAnalyzer, col.notes, bassStave, sdMap);
+                }
+                if (isClausula && bassStave && score && score.umto && score.umto.analysis) {
+                  var bassQL = noteOnset / 1024;
+                  var bassLabel = VexflowAdapterLogic
+                    ? VexflowAdapterLogic.getBassLabelAtOffset(score.umto.analysis, bassQL)
+                    : null;
+                  if (bassLabel) {
+                    drawBassScaleDegreeBelow(ctx, bassStave, bassLabel, columnCenterX);
+                  }
                 }
               }
 
