@@ -522,9 +522,11 @@ define([
     }
 
     if (!hasSplit) {
-      // Single voice \u2014 labels above stave, cleared past stem tips
+      // Single voice \u2014 labels above stave, cleared past stem tips.
+      // Use treble-filtered list if colNotes was provided (avoids drawing bass note above treble).
+      var singleVoiceMidi = topVoiceMidi.length ? topVoiceMidi : midiNotes;
       var topY = (trebleStave.getYForLine ? trebleStave.getYForLine(0) : trebleStave.getY()) - 30;
-      _drawScaleDegreeList(ctx, midiNotes, columnX, topY, -1, analyzer, sdMap);
+      _drawScaleDegreeList(ctx, singleVoiceMidi, columnX, topY, -1, analyzer, sdMap);
       return;
     }
 
@@ -1942,7 +1944,7 @@ define([
                 );
               } else if (renderScaleDegrees) {
                 var degStave = trebleStave || activeStaveForAnnotations;
-                if (degStave && !isClausula) {
+                if (degStave) {
                   // Build MIDI→label map from stored scale_degrees in UMTO analysis slices.
                   var sdMap = null;
                   if (score && score.umto && score.umto.analysis && score.umto.analysis.length) {
