@@ -48,7 +48,7 @@ if _CLAUSULAE_ROOT not in sys.path:
 try:
     from clausulae.realize import key_realize
     from clausulae.generate import enumerate_simple
-    from clausulae.core import CLAUSULAE
+    from clausulae.core import CLAUSULAE, CLAUSULA_COLOR
     _CLAUSULAE_AVAILABLE = True
 except ImportError as _e:
     _CLAUSULAE_AVAILABLE = False
@@ -82,6 +82,42 @@ ALTO_LABELS  = ["Sol–Sol–Sol", "Sol–Fa–Mi", "Sol–La–Sol"]
 # Duration values: ANT=half (2.0 ql), PEN=half, ULT=whole (4.0 ql)
 _DUR = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
 
+# SATB_MAP mirrors vexflow_adapter.js: treble[0]="S", treble[1]="A", bass[0]="T", bass[1]="B"
+_SATB_MAP = {"treble": ["S", "A"], "bass": ["T", "B"]}
+
+
+def _render_voice_colors(voice_events_by_id: dict, clausula_color_by_vid: dict) -> dict:
+    """
+    Compute voiceColors keyed by the SATB labels that _convertUMTOToProcessedScore
+    (exercise_sheet.js) assigns at render time.  It compacts voices: non-empty
+    voices are pushed in [S,A] / [T,B] order so the first present voice always
+    lands at index 0 regardless of its semantic name.
+    """
+    treble_present = [v for v in ["S", "A"] if voice_events_by_id.get(v)]
+    bass_present   = [v for v in ["T", "B"] if voice_events_by_id.get(v)]
+    result = {}
+    for idx, vid in enumerate(treble_present[:2]):
+        result[_SATB_MAP["treble"][idx]] = clausula_color_by_vid[vid]
+    for idx, vid in enumerate(bass_present[:2]):
+        result[_SATB_MAP["bass"][idx]] = clausula_color_by_vid[vid]
+    return result
+
+
+def _scale_degree_label(pitch: Pitch, key: str) -> str:
+    """Return scale degree numeral (e.g. '3', '#4', 'b7') for a Pitch in the given key."""
+    from music21 import key as m21key, pitch as m21pitch
+    acc_str = {1: "#", -1: "b", 2: "##", -2: "bb", 0: ""}.get(pitch.alter, "")
+    m21p = m21pitch.Pitch(f"{pitch.step}{acc_str}{pitch.octave}")
+    k = m21key.Key(key)
+    degree, accidental = k.getScaleDegreeAndAccidentalFromPitch(m21p)
+    if degree is None:
+        return ""
+    acc_label = ""
+    if accidental is not None:
+        # music21 modifier: "-" = flat, "--" = double-flat, "#" = sharp, "##" = double-sharp
+        acc_label = accidental.modifier.replace("-", "b")
+    return f"{acc_label}{degree}"
+
 
 def _m21_note_to_pitch(n) -> Pitch:
     """Convert a music21 Note to a UMTO Pitch."""
@@ -114,7 +150,8 @@ def _clausula_to_voice_events(triple, key: str, voice_id: str) -> list[VoiceEven
 
 def _grading_and_analysis(voice_events_by_id: dict[str, list[VoiceEvent]],
                            labels: dict[str, str],
-                           unit_tags: list[int]) -> tuple[list[GradingSlice], list[AnalysisSlice]]:
+                           unit_tags: list[int],
+                           key: str = "C") -> tuple[list[GradingSlice], list[AnalysisSlice]]:
     """Build grading + analysis slices from realized voice events."""
     # Offsets: ANT=0.0, PEN=2.0, ULT=4.0 (half=2 ql in 2/2)
     offsets = [0.0, 2.0, 4.0]
@@ -124,16 +161,24 @@ def _grading_and_analysis(voice_events_by_id: dict[str, list[VoiceEvent]],
     analysis = []
     for pos_i, (offset, pos_name) in enumerate(zip(offsets, pos_names)):
         midi_pitches = []
+        scale_degrees = []
         for vid, events in voice_events_by_id.items():
             if pos_i < len(events) and events[pos_i].pitch:
-                midi_pitches.append(events[pos_i].pitch.midi)
+                p = events[pos_i].pitch
+                midi_pitches.append(p.midi)
+                label = _scale_degree_label(p, key)
+                if label:
+                    scale_degrees.append({"midi": p.midi, "label": label})
 
         grading.append(GradingSlice(offset=offset, target_midi_pitches=sorted(midi_pitches)))
 
         label_parts = [f"{name}: {pos_name}" for name, _ in labels.items()]
         analysis.append(AnalysisSlice(
             offset=offset,
-            content=AnalysisLayer(functional_label=" / ".join(label_parts)),
+            content=AnalysisLayer(
+                functional_label=" / ".join(label_parts),
+                scale_degrees=scale_degrees or None,
+            ),
             unit_tags=unit_tags,
         ))
 
@@ -143,7 +188,8 @@ def _grading_and_analysis(voice_events_by_id: dict[str, list[VoiceEvent]],
 def _build_umto(voice_events_by_id: dict[str, list[VoiceEvent]],
                 labels: dict[str, str],
                 key: str,
-                description: str) -> dict:
+                description: str,
+                voice_colors: dict[str, str] | None = None) -> dict:
     """Assemble a complete UMTO frontend payload for a clausulae exercise."""
     voices = Voices(
         S=voice_events_by_id.get("S", []),
@@ -152,7 +198,7 @@ def _build_umto(voice_events_by_id: dict[str, list[VoiceEvent]],
         B=voice_events_by_id.get("B", []),
     )
 
-    grading, analysis = _grading_and_analysis(voice_events_by_id, labels, unit_tags=[])
+    grading, analysis = _grading_and_analysis(voice_events_by_id, labels, unit_tags=[], key=key)
 
     vids = set(voice_events_by_id.keys())
     has_bass = "B" in vids
@@ -188,6 +234,8 @@ def _build_umto(voice_events_by_id: dict[str, list[VoiceEvent]],
     payload["display"] = {
         "showNotation": True,
         "hideKeyLabel": False,
+        "showScaleDegrees": True,
+        "voiceColors": voice_colors or {},
         "maxMeasures": 2,
     }
     return payload
@@ -288,11 +336,16 @@ class Command(BaseCommand):
                     desc = f"B1 — {display_name} clausula ({solfege}) in {key}"
                     events = _clausula_to_voice_events(triple, key, voice_id)
                     labels = {display_name: solfege}
+                    clausula_color = CLAUSULA_COLOR.get(clausula_name, "#9aa0a6")
                     payload = _build_umto(
                         voice_events_by_id={voice_id: events},
                         labels=labels,
                         key=key,
                         description=desc,
+                        voice_colors=_render_voice_colors(
+                            {voice_id: events},
+                            {voice_id: clausula_color},
+                        ),
                     )
                     skill_tags = [
                         "branch_b", "unit:B1",
@@ -313,10 +366,9 @@ class Command(BaseCommand):
 
         playlist = _build_playlist(
             author=author,
-            playlist_name="B1 — Formal Clausulae",
+            playlist_name="B1 — One-Part Clausulae",
             exercises=all_exercises,
-            skill_tags=["branch_b", "unit:B1", "clausula_discant",
-                        "clausula_tenor", "clausula_alto", "clausula_bass"],
+            skill_tags=["branch_b", "unit:B1", "one_part_clausulae"],
             is_public=options["public"],
         )
         self.stdout.write(self.style.SUCCESS(
@@ -347,6 +399,11 @@ class Command(BaseCommand):
                     labels=labels,
                     key=key,
                     description=desc,
+                    voice_colors=_render_voice_colors(
+                        {"S": d_events, "A": t_events},
+                        {"S": CLAUSULA_COLOR.get("Discant", "#F9141B"),
+                         "A": CLAUSULA_COLOR.get("Tenor", "#108040")},
+                    ),
                 )
                 skill_tags = [
                     "branch_b", "unit:B2",

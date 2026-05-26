@@ -466,6 +466,86 @@ define([
     return !!(analyzeConfig.note_names || mode.note_names);
   }
 
+  function shouldRenderScaleDegrees(analyzeConfig) {
+    if (!analyzeConfig) return false;
+    var mode = analyzeConfig.mode || {};
+    return !!(analyzeConfig.scale_degrees || mode.scale_degrees);
+  }
+
+  function _drawScaleDegreeList(ctx, midiNotes, columnX, anchorY, stackDir, analyzer, sdMap) {
+    // stackDir: -1 = stack upward (above anchor), +1 = stack downward (below anchor)
+    var sorted = midiNotes.slice().sort(function(a, b) { return stackDir === -1 ? b - a : a - b; });
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000';
+    sorted.forEach(function(midi, i) {
+      var numeral = (sdMap && sdMap[midi] !== undefined)
+        ? sdMap[midi]
+        : (analyzer ? analyzer.to_scale_degree([midi]) : '');
+      if (!numeral) return;
+      numeral = numeral.replace(/b/g, '\u266d').replace(/#/g, '\u266f');
+      var numeralY = anchorY + stackDir * (16 + i * 20);
+      var caretY   = numeralY - 13;
+      ctx.font = '17px MainSerifs';
+      ctx.fillText(numeral, columnX, numeralY);
+      ctx.font = '13px MainSerifs';
+      ctx.fillText('^', columnX, caretY);
+    });
+    ctx.restore();
+  }
+
+  function drawScaleDegreeAbove(ctx, midiNotes, columnX, trebleStave, analyzer, colNotes, bassStave, sdMap) {
+    if (!ctx || !analyzer || !trebleStave || !midiNotes || !midiNotes.length) return;
+
+    // Split notes by voice when two voices share the treble staff.
+    // Top voice (voiceIdx 0, stems up) \u2192 labels above stave top line.
+    // Bottom voice (voiceIdx 1, stems down) \u2192 labels below stave bottom line.
+    var topVoiceMidi = [];
+    var bottomVoiceMidi = [];
+    var hasSplit = false;
+
+    if (colNotes && colNotes.length) {
+      colNotes.forEach(function(t) {
+        var vIdx = t._sdVoiceIdx;
+        var sId  = t._sdStaffId;
+        if (sId !== 'treble' && sId !== undefined) return; // skip bass staff tickables
+        var keys = typeof t.getKeys === 'function' ? t.getKeys() : [];
+        keys.forEach(function(k) {
+          var m = (function(keyStr) {
+            if (!keyStr) return null;
+            var parts = keyStr.split('/');
+            if (parts.length < 2) return null;
+            var noteMap = { c:0, d:2, e:4, f:5, g:7, a:9, b:11 };
+            var step = parts[0].replace(/[^a-g]/g,'').toLowerCase();
+            var alter = (parts[0].match(/#/g)||[]).length - (parts[0].match(/b/g)||[]).length;
+            var oct = parseInt(parts[1], 10);
+            if (isNaN(oct) || !(step in noteMap)) return null;
+            return (oct + 1) * 12 + noteMap[step] + alter;
+          })(k);
+          if (m === null) return;
+          if (vIdx === 1) { bottomVoiceMidi.push(m); hasSplit = true; }
+          else topVoiceMidi.push(m);
+        });
+      });
+    }
+
+    if (!hasSplit) {
+      // Single voice \u2014 labels above stave, cleared past stem tips
+      var topY = (trebleStave.getYForLine ? trebleStave.getYForLine(0) : trebleStave.getY()) - 30;
+      _drawScaleDegreeList(ctx, midiNotes, columnX, topY, -1, analyzer, sdMap);
+      return;
+    }
+
+    if (topVoiceMidi.length) {
+      var topY = (trebleStave.getYForLine ? trebleStave.getYForLine(0) : trebleStave.getY()) - 30;
+      _drawScaleDegreeList(ctx, topVoiceMidi, columnX, topY, -1, analyzer, sdMap);
+    }
+    if (bottomVoiceMidi.length) {
+      var botY = trebleStave.getBottomY ? trebleStave.getBottomY() : (trebleStave.getY() + 40);
+      _drawScaleDegreeList(ctx, bottomVoiceMidi, columnX, botY, 1, analyzer, sdMap);
+    }
+  }
+
   function formatExplicitNoteNames(spellings) {
     if (!spellings || !spellings.length) return "";
     var accidentalMap = {
@@ -738,6 +818,9 @@ define([
     harmonizationOptions = harmonizationOptions || {};
     barAlterations = barAlterations || {};
     var hideForHarmonization = !!(harmonizationOptions.isHarmonization && harmonizationOptions.hideCurrentVoice);
+    var voiceSlot = harmonizationOptions.voiceSlot || null;
+    var voiceColors = harmonizationOptions.voiceColors || null;
+    var voiceColor = (voiceSlot && voiceColors && voiceColors[voiceSlot]) || '#9aa0a6';
     if (item.kind === "rest") {
       var dur = durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
@@ -796,7 +879,7 @@ define([
         } else if (!showNotation || isAnalysisMatch || hideForHarmonization) {
           note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
         } else {
-          note.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
+          note.setStyle({ fillStyle: voiceColor, strokeStyle: voiceColor });
         }
       }
       if (idState) idState.nextId = (idState.nextId || 0) + 1;
@@ -841,7 +924,7 @@ define([
         } else if (!showNotation || isAnalysisMatch || hideForHarmonization) {
           chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
         } else {
-          chord.setStyle({ fillStyle: '#9aa0a6', strokeStyle: '#9aa0a6' });
+          chord.setStyle({ fillStyle: voiceColor, strokeStyle: voiceColor });
         }
       }
       if (idState) {
@@ -1038,11 +1121,13 @@ define([
       var renderFigured = !renderRomans && shouldRenderFigured(analyzeConfig);
       var renderRomanExp = !renderRomans && !renderFigured && shouldRenderRomanExp(analyzeConfig);
       var renderNoteNames = !renderRomans && !renderFigured && !renderRomanExp && shouldRenderNoteNames(analyzeConfig);
+      var renderScaleDegrees = !renderRomans && !renderFigured && !renderRomanExp && !renderNoteNames && shouldRenderScaleDegrees(analyzeConfig);
       if (!inlineAnalyzer) {
         renderRomans = false;
         renderFigured = false;
         renderRomanExp = false;
         renderNoteNames = false;
+        renderScaleDegrees = false;
       }
       var showNotation = opts && opts.showNotation !== undefined ? opts.showNotation : true;
       var isAnalysisMatch = !!(opts && opts.isAnalysisMatch);
@@ -1130,6 +1215,7 @@ define([
       var analysisWindows = buildAnalysisWindows(timeline);
       var analysisWindowIdx = 0;
       var staffDistribution = (opts && opts.staffDistribution) || (meta && meta.staffDistribution) || "grand_staff";
+      var voiceColors = (opts && opts.voiceColors) || null;
       var showTreble = staffDistribution !== "bass";
       var showBass = staffDistribution !== "treble";
 
@@ -1184,7 +1270,12 @@ define([
 
             var satbLabel = staffSatbLabels[vIdx] || null;
             var hideCurrentVoice = isHarmonization && satbLabel && lockedVoices.indexOf(satbLabel) === -1;
-            var harmonizationOptions = { isHarmonization: isHarmonization, hideCurrentVoice: hideCurrentVoice };
+            var harmonizationOptions = {
+              isHarmonization: isHarmonization,
+              hideCurrentVoice: hideCurrentVoice,
+              voiceSlot: satbLabel,
+              voiceColors: voiceColors,
+            };
 
             var localOnset = 0;
             var tickables = v.items.map(function (it) {
@@ -1678,8 +1769,8 @@ define([
               (opts && typeof opts.onWindowPosition === "function")) {
             // Collect all tickables in this measure after formatting to get absolute X positions
             var allTickables = [];
-            function addVoiceTickables(arr) {
-              arr.forEach(function(voice){
+            function addVoiceTickables(arr, staffId) {
+              arr.forEach(function(voice, vIdx){
                 if (!voice || !voice.tickables) return;
                 var tks = Array.isArray(voice.tickables)
                   ? voice.tickables
@@ -1688,16 +1779,18 @@ define([
 	                  if (!t || typeof t.getAbsoluteX !== 'function') return;
 	                  if (t._isHarmonizationOverlay) return;
 	                  var dur = String(t.duration || '');
-                  // Rests don't create identification columns, 
+                  // Rests don't create identification columns,
                   // but we still want their onsets for playback if needed?
                   // Actually, for id mode, we only care about columns with notes.
-                  if (dur.indexOf('r') !== -1) return; 
+                  if (dur.indexOf('r') !== -1) return;
+                  t._sdStaffId = staffId;
+                  t._sdVoiceIdx = vIdx; 
                   allTickables.push(t);
                 });
               });
             }
-            addVoiceTickables(trebleVoices);
-            addVoiceTickables(bassVoices);
+            addVoiceTickables(trebleVoices, 'treble');
+            addVoiceTickables(bassVoices, 'bass');
 
             // Group by X position (pixel) with small tolerance
             var groups = [];
@@ -1859,6 +1952,27 @@ define([
                   { yShift: romanYOffset },
                   explicitLabel
                 );
+              } else if (renderScaleDegrees) {
+                var degStave = trebleStave || activeStaveForAnnotations;
+                if (degStave) {
+                  // Build MIDI→label map from stored scale_degrees in UMTO analysis slices.
+                  var sdMap = null;
+                  if (score && score.umto && score.umto.analysis && score.umto.analysis.length) {
+                    var absQL = (cumulativeMeasureTick + noteOnset) / 1024;
+                    for (var sdi = 0; sdi < score.umto.analysis.length; sdi++) {
+                      var sdSlice = score.umto.analysis[sdi];
+                      if (Math.abs(sdSlice.offset - absQL) < 0.05 &&
+                          sdSlice.content && sdSlice.content.scale_degrees && sdSlice.content.scale_degrees.length) {
+                        sdMap = Object.create(null);
+                        sdSlice.content.scale_degrees.forEach(function(sd) {
+                          sdMap[sd.midi] = sd.label;
+                        });
+                        break;
+                      }
+                    }
+                  }
+                  drawScaleDegreeAbove(ctx, attackList, columnCenterX, degStave, inlineAnalyzer, col.notes, bassStave, sdMap);
+                }
               }
 
 

@@ -62,6 +62,7 @@ class AnalysisLayer(BaseModel):
     figured_bass: Optional[str] = None       # abbreviated per Kellner: "", "7", "4/2"
     pop_symbol: Optional[str] = None
     functional_label: Optional[str] = None # e.g. "Predominant", "Dominant"
+    scale_degrees: Optional[List[Dict[str, Any]]] = None  # [{"midi": 71, "label": "3"}, ...]
 
 class VisualMetadata(BaseModel):
     """
@@ -256,7 +257,8 @@ class UMTO(BaseModel):
             
             if staff_mode in ["treble", "bass"]:
                 target_staff = staff_mode
-                v_idx = {"S": 0, "A": 1, "T": 2, "B": 3}[vid]
+                # Treble mode: S→0, A→1; Bass mode: T→0, B→1 (matches SATB_MAP in vexflow_adapter)
+                v_idx = {"S": 0, "A": 1, "T": 0, "B": 1}[vid]
             else:
                 target_staff = "treble" if vid in ["S", "A"] else "bass"
                 v_idx = 0 if vid in ["S", "T"] else 1

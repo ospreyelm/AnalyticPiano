@@ -1,7 +1,7 @@
 [
   {
     "id": "core",
-    "label": "Core Sequence",
+    "label": "Standard Sequence",
     "desc": "The universal trunk: Fundamentals → Common Practice → Chromaticism → Post-Tonal. All students follow this spine.",
     "tiers": [
       {
@@ -2353,7 +2353,7 @@
   },
   {
     "id": "branch_b",
-    "label": "Branch B — Clausulae, Schemas & Partimenti",
+    "label": "Branch B — Clausulae, Schemata & Partimenti",
     "desc": "Historical contrapuntal approach à la Fenaroli. Based on Avner Dorman's Gettysburg counterpoint curriculum. Uses partimento terminology throughout; runs parallel to or before Tier 2.",
     "prereq": "Tier 1 complete. Can run concurrently with early Tier 2. P-4 aligns with Tier 2 Units 13–15.",
     "tiers": [
@@ -2367,9 +2367,7 @@
             "title": "Formal clausulae",
             "feat": "Discant (7-8 / 2-1), tenor, bass (1-5-1)",
             "tags": [
-              "clausula_discant",
-              "clausula_tenor",
-              "clausula_bass"
+              "one_part_clausulae"
             ]
           },
           {
@@ -2464,7 +2462,7 @@
         ]
       },
       {
-        "label": "P-3 — Compound cadences & schemas",
+        "label": "P-3 — Compound cadences & schemata",
         "badge": "P3",
         "desc": "Double cadences, quiescenza, opening formulae, hexachordal system.",
         "units": [

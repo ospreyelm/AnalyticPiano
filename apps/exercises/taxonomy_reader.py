@@ -63,6 +63,7 @@ class TaxonomyReader:
         "major_scale": "Play Major Scales",
         "minor_scale": "Play Minor Scales",
         "key_signature": "Key Signature Identification",
+        "one_part_clausulae": "One-Part Clausulae",
     }
 
     @classmethod

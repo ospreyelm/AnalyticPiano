@@ -235,7 +235,7 @@ class WiRImportIntegrationTests(TestCase):
         )
         ex = Exercise.objects.get(
             authored_by=admin_user,
-            description__contains="Phrase 3",
+            description__contains="Phrase 4",
         )
         self.assertIsNotNone(ex)
         self.assertEqual(ex.data["mode"], "playback")
@@ -243,7 +243,7 @@ class WiRImportIntegrationTests(TestCase):
 
         target = next(
             s for s in ex.data["score"]["umto"]["analysis"]
-            if s["offset"] == 14.0
+            if s["offset"] == 5.0
         )
         content = target["content"]
         self.assertEqual(content["roman_numeral"], "V7")
@@ -263,7 +263,7 @@ class WiRImportIntegrationTests(TestCase):
         )
         ex = Exercise.objects.get(
             authored_by=admin_user,
-            description__contains="Phrase 3",
+            description__contains="Phrase 4",
         )
         self.assertIsNotNone(ex)
         self.assertEqual(ex.data["mode"], "playback")
@@ -273,7 +273,7 @@ class WiRImportIntegrationTests(TestCase):
 
         target = next(
             s for s in ex.data["score"]["umto"]["analysis"]
-            if s["offset"] == 14.0
+            if s["offset"] == 5.0
         )
         self.assertEqual(target["content"]["roman_numeral"], "V7")
         self.assertEqual(target["content"]["figured_bass"], "7/4-3")
@@ -295,7 +295,7 @@ class WiRImportIntegrationTests(TestCase):
 
         target = next(
             s for s in ex.data["score"]["umto"]["analysis"]
-            if s["offset"] == 2.0
+            if s["offset"] == 10.0
         )
         self.assertEqual(target["content"]["roman_numeral"], "V")
         self.assertEqual(target["content"]["local_key"], "e")

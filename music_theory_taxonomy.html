@@ -93,7 +93,7 @@ body { font-family: system-ui, sans-serif; background: #fff; color: #1a1a1a; pad
 <script>
 const branches = [
   {
-    id:"core", label:"Core Sequence", hdrClass:"hdr-core", activeClass:"active-core",
+    id:"core", label:"Standard Sequence", hdrClass:"hdr-core", activeClass:"active-core",
     desc:"The universal trunk: Fundamentals → Common Practice → Chromaticism → Post-Tonal. All students follow this spine.",
     tiers:[
       { label:"Tier 1 — Fundamentals & pitch reading", badge:"T1", hdr:"hdr-core",
@@ -234,7 +234,7 @@ const branches = [
           {n:"B10", title:"Syncopated diminution",     feat:"Syncopation, arpeggiation, compound melody",     tags:["diminution_syncopated","diminution_arpeggiation"]},
         ]
       },
-      { label:"P-3 — Compound cadences & schemas", badge:"P3", hdr:"hdr-b",
+      { label:"P-3 — Compound cadences & schemata", badge:"P3", hdr:"hdr-b",
         desc:"Double cadences, quiescenza, opening formulae, hexachordal system.",
         units:[
           {n:"B11", title:"Compound cadence (2 parts)",feat:"Simple + compound; 7-6 delayed discant",        tags:["cadence_compound_2pt"]},
@@ -390,6 +390,7 @@ function switchBranch(id, activeClass) {
   });
   document.getElementById('panel-' + id).classList.add('visible');
   document.getElementById('btn-' + id).classList.add(activeClass);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
 </body>

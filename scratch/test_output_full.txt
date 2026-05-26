@@ -1,0 +1,1014 @@
+Loading .env environment variables...
+WARNING:root:No DATABASE_URL environment variable set, and so no databases setup
+Creating test database for alias 'default'...
+System check identified some issues:
+
+WARNINGS:
+?: (ckeditor.W001) django-ckeditor bundles CKEditor 4.22.1 which isn't supported anymore and which does have unfixed security issues, see for example https://ckeditor.com/cke4/release/CKEditor-4.24.0-LTS . You should consider strongly switching to a different editor (maybe CKEditor 5 respectively django-ckeditor-5 after checking whether the CKEditor 5 license terms work for you) or switch to the non-free CKEditor 4 LTS package. See https://ckeditor.com/ckeditor-4-support/ for more on this. (Note! This notice has been added by the django-ckeditor developers and we are not affiliated with CKSource and were not involved in the licensing change, so please refrain from complaining to us. Thanks.)
+
+System check identified 1 issue (0 silenced).
+EEEEEEEEEEEEEEEEEEE.......Internal Server Error: /dashboard/courses/CA00AI/activity/
+Traceback (most recent call last):
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/views/courses.py", line 526, in course_activity_view
+    "has_identification_exercises": course_has_identification_exercises(course),
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/views/courses.py", line 41, in course_has_identification_exercises
+    return course.exercise_set.filter(
+           ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Course' object has no attribute 'exercise_set'
+E......................
+======================================================================
+KNOWLEDGE GRAPH QUERY TESTS
+======================================================================
+
+TEST 1: Exercises with skill tags
+  Total with tags: 48902
+  Total without tags: 0
+  Total exercises: 48902
+
+TEST 2: Filter by single skill (Diatonic_Triads)
+  Count: 208
+  Example: EB16DD - Bach R1 - Phrase 3 (mm.8-12) [roman]
+    Skills: ['unit:11_diatonic_predominant', 'unit:2', 'unit:9_Dominant_Seventh', 'unit:4_interval_quality', 'unit:1_pitch_reading', 'Inversions_Second', 'unit:14', 'unit:1', 'Dominant_Seventh', 'riem:1', 'unit:9', 'qa:harm_fb_audit_2026_05_18_declared_key', 'unit:12_inversions_second', 'unit:5_triad_quality', 'unit:3_key_signature', 'unit:2_rhythm', 'unit:14_diatonic_sevenths', 'unit:9_diatonic_triads', 'unit:10_inversions_first', 'unit:5', 'unit:11', 'unit:4', 'Diatonic_Triads', 'unit:12', 'unit:10', 'unit:3', 'Inversions_First']
+    Complexity: 10
+
+TEST 3: Filter by multiple skills (Diatonic_Triads AND Cadence_Perfect_Authentic)
+  Count: 76
+  - EB16DE: ['unit:11_diatonic_predominant', 'unit:2', 'Cadence_Perfect_Authentic', 'unit:7', 'unit:9_Dominant_Seventh', 'unit:4_interval_quality', 'unit:1_pitch_reading', 'unit:14', 'unit:1', 'Dominant_Seventh', 'riem:1', 'unit:9', 'qa:harm_fb_audit_2026_05_18_declared_key', 'unit:5_triad_quality', 'unit:3_key_signature', 'unit:2_rhythm', 'unit:14_diatonic_sevenths', 'unit:9_diatonic_triads', 'unit:10_inversions_first', 'unit:5', 'unit:11', 'unit:4', 'Diatonic_Triads', 'unit:10', 'unit:3', 'unit:7_Cadence_Perfect_Authentic', 'unit:7_cadence_authentic', 'Inversions_First']
+  - EB16FA: ['unit:5_triad_quality', 'unit:10', 'unit:7_Cadence_Perfect_Authentic', 'Inversions_First', 'unit:11_diatonic_predominant', 'unit:1', 'unit:4', 'unit:9_diatonic_triads', 'unit:14', 'unit:12', 'mode:figures', 'unit:10_inversions_first', 'unit:1_pitch_reading', 'Dominant_Seventh', 'unit:3_key_signature', 'unit:4_interval_quality', 'unit:5', 'unit:7_cadence_authentic', 'unit:2', 'Diatonic_Triads', 'unit:9_Dominant_Seventh', 'unit:11', 'Cadence_Perfect_Authentic', 'unit:9', 'unit:7', 'unit:14_diatonic_sevenths', 'unit:3', 'unit:2_rhythm']
+
+TEST 4: Filter by complexity range (complexity <= 3)
+  Count: 10309
+    Complexity 1: 142 exercises
+    Complexity 2: 1825 exercises
+    Complexity 3: 8342 exercises
+
+TEST 5: Filter by skill with complexity (Secondary_Dominant, complexity >= 5)
+  Count: 156
+  - EB16DF: skills=['unit:16_diminished_seventh', 'unit:3_key_signature', 'unit:14', 'Diminished_Seventh', 'unit:1', 'unit:12', 'Inversions_Second', 'unit:12_inversions_second', 'unit:9_diatonic_triads', 'Dominant_Seventh', 'unit:1_pitch_reading', 'unit:2', 'unit:4', 'Secondary_Leading_Tone', 'unit:10', 'unit:10_inversions_first', 'unit:14_diatonic_sevenths', 'unit:5_triad_quality', 'qa:harm_fb_audit_2026_05_18_declared_key', 'unit:9', 'Diatonic_Triads', 'unit:4_interval_quality', 'unit:18', 'unit:16_secondary_leading_tone', 'riem:3', 'Half_Diminished_Seventh', 'Inversions_First', 'Neapolitan_Sixth', 'unit:2_rhythm', 'unit:3', 'unit:5', 'unit:9_Dominant_Seventh', 'Secondary_Dominant', 'unit:16', 'unit:16_secondary_dominant', 'unit:18_neapolitan_sixth', 'unit:11', 'unit:16_half_diminished_seventh', 'unit:11_diatonic_predominant'], complexity=10
+  - EB16DM: skills=['unit:11_diatonic_predominant', 'unit:2', 'unit:7', 'unit:9_Dominant_Seventh', 'unit:7_cadence_half', 'unit:4_interval_quality', 'unit:1_pitch_reading', 'Inversions_Second', 'unit:14', 'unit:1', 'Dominant_Seventh', 'Secondary_Dominant', 'unit:9', 'qa:harm_fb_audit_2026_05_18_declared_key', 'unit:12_inversions_second', 'unit:16_secondary_dominant', 'unit:5_triad_quality', 'unit:3_key_signature', 'unit:16', 'unit:2_rhythm', 'unit:14_diatonic_sevenths', 'Cadence_Half', 'unit:9_diatonic_triads', 'unit:10_inversions_first', 'unit:5', 'unit:11', 'unit:4', 'Diatonic_Triads', 'unit:12', 'unit:10', 'unit:3', 'riem:10', 'Inversions_First'], complexity=10
+
+TEST 6: Distribution of all skill tags
+  Unique skills found: 89
+    unit:2: 26701
+    unit:2_rhythm: 26701
+    unit:1: 22368
+    Note_Names: 22158
+    enharmonic: 22158
+    Enharmonic_Reading: 22158
+    Read_Treble_Clef: 13110
+    unit:2_L7: 9283
+    Read_Bass_Clef: 9048
+    unit:2_L3: 8300
+    unit:2_L8: 4258
+    unit:2_L6: 2053
+    unit:2_L2: 1813
+    unit:2_L5: 632
+    unit:3: 251
+    unit:3_key_signature: 221
+    unit:11_diatonic_predominant: 209
+    unit:4_interval_quality: 209
+    unit:1_pitch_reading: 209
+    unit:11: 209
+    unit:4: 209
+    unit:9: 208
+    unit:5_triad_quality: 208
+    unit:9_diatonic_triads: 208
+    unit:10_inversions_first: 208
+    unit:5: 208
+    Diatonic_Triads: 208
+    unit:10: 208
+    Inversions_First: 208
+    unit:14: 206
+    unit:14_diatonic_sevenths: 206
+    unit:9_Dominant_Seventh: 188
+    Dominant_Seventh: 188
+    unit:12: 188
+    Inversions_Second: 186
+    unit:12_inversions_second: 186
+    unit:16: 162
+    Secondary_Dominant: 156
+    unit:16_secondary_dominant: 156
+    unit:2_L1: 141
+    unit:7: 127
+    Secondary_Leading_Tone: 78
+    unit:16_secondary_leading_tone: 78
+    Cadence_Perfect_Authentic: 76
+    unit:7_Cadence_Perfect_Authentic: 76
+    unit:7_cadence_authentic: 76
+    qa:harm_fb_audit_2026_05_17: 57
+    Half_Diminished_Seventh: 53
+    unit:16_half_diminished_seventh: 53
+    mode:harmonization: 52
+    mode:figures: 47
+    qa:harm_fb_audit_2026_05_18_declared_key: 43
+    unit:16_diminished_seventh: 43
+    Diminished_Seventh: 43
+    unit:7_cadence_half: 43
+    Cadence_Half: 43
+    mode:play: 34
+    unit:3_major_scale: 30
+    mode:roman: 25
+    unit:18: 15
+    riem:7: 14
+    Neapolitan_Sixth: 13
+    unit:18_neapolitan_sixth: 13
+    unit:2_meter_simple: 12
+    unit:2_meter_compound: 12
+    riem:1: 10
+    riem:10: 6
+    riem:17: 6
+    riem:18: 6
+    Cadence_Plagal: 6
+    unit:7_cadence_plagal: 6
+    riem:8: 6
+    riem:13: 6
+    riem:3: 4
+    riem:16: 4
+    riem:2: 4
+    riem:4: 4
+    riem:5: 4
+    riem:6: 4
+    riem:9: 4
+    riem:12: 4
+    riem:14: 4
+    riem:19: 4
+    riem:20: 4
+    unit:7_cadence_deceptive: 2
+    Cadence_Deceptive: 2
+    Augmented_Sixth: 2
+    unit:18_augmented_sixth: 2
+    riem:15: 2
+
+TEST 7: Complexity distribution
+  Complexity 1: 142 exercises
+  Complexity 2: 1825 exercises
+  Complexity 3: 8342 exercises
+  Complexity 5: 632 exercises
+  Complexity 6: 2053 exercises
+  Complexity 7: 9283 exercises
+  Complexity 8: 4258 exercises
+  Complexity 10: 208 exercises
+  Complexity 11: 1 exercises
+  Complexity 20: 381 exercises
+  Complexity 21: 2082 exercises
+  Complexity 22: 2076 exercises
+  Complexity 23: 969 exercises
+  Complexity 24: 261 exercises
+  Complexity 25: 273 exercises
+  Complexity 26: 162 exercises
+  Complexity 30: 1515 exercises
+  Complexity 31: 3006 exercises
+  Complexity 32: 4401 exercises
+  Complexity 33: 3279 exercises
+  Complexity 34: 696 exercises
+  Complexity 35: 675 exercises
+  Complexity 36: 276 exercises
+  Complexity 40: 285 exercises
+  Complexity 41: 489 exercises
+  Complexity 42: 555 exercises
+  Complexity 43: 585 exercises
+  Complexity 44: 102 exercises
+  Complexity 45: 66 exercises
+  Complexity 46: 24 exercises
+
+TEST 8: Exercises with empty skill tags (backfill failures)
+  Count: 0
+
+======================================================================
+TESTS COMPLETE
+======================================================================
+
+Found 273 test(s).
+Unit 11: Pre-dominants
+Importing Riemenschneider 21–23 (3 chorales)...
+  R21...
+  R22...
+  R23...
+Linked 0 exercises to playlist 'Unit 11 — Pre-dominants (roman)' in static order.
+Playlist 'Unit 11 — Pre-dominants (roman)' (PA00BA) — created
+Unit 11: Pre-dominants
+Importing Riemenschneider 21–22 (2 chorales)...
+  R21...
+  R22...
+Linked 0 exercises to playlist 'Unit 11 — Pre-dominants (roman)' in static order.
+Playlist 'Unit 11 — Pre-dominants (roman)' (PA00BB) — created
+Unit 11: Pre-dominants
+Importing Riemenschneider 21–21 (1 chorales)...
+  R21...
+Linked 0 exercises to playlist 'Unit 11 — Pre-dominants (roman)' in static order.
+Playlist 'Unit 11 — Pre-dominants (roman)' (PA00BC) — created
+Unit 11: Pre-dominants
+Unit 11: Pre-dominants
+Importing Riemenschneider 21–22 (2 chorales)...
+  R21...
+...E..F..........EEEEEEEFFEE........................E................................................................F.....EE..F..................................EEEEEEEEEE....................................................
+======================================================================
+ERROR: apps.exercises.tests.test_corpus_filter (unittest.loader._FailedTest.apps.exercises.tests.test_corpus_filter)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_corpus_filter
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_corpus_filter.py", line 5, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_figured_bass (unittest.loader._FailedTest.apps.exercises.tests.test_figured_bass)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_figured_bass
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_figured_bass.py", line 1, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_generate_harmonization (unittest.loader._FailedTest.apps.exercises.tests.test_generate_harmonization)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_generate_harmonization
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_generate_harmonization.py", line 1, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_generate_unit1 (unittest.loader._FailedTest.apps.exercises.tests.test_generate_unit1)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_generate_unit1
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_generate_unit1.py", line 9, in <module>
+    from apps.exercises.management.commands import generate_unit1
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/generate_unit1.py", line 9, in <module>
+    from music21 import key
+ModuleNotFoundError: No module named 'music21'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_generate_unit1_args (unittest.loader._FailedTest.apps.exercises.tests.test_generate_unit1_args)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_generate_unit1_args
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_generate_unit1_args.py", line 1, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_generate_unit2_meter_reference (unittest.loader._FailedTest.apps.exercises.tests.test_generate_unit2_meter_reference)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_generate_unit2_meter_reference
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_generate_unit2_meter_reference.py", line 4, in <module>
+    from apps.exercises.management.commands.generate_unit2_meter_reference import (
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/generate_unit2_meter_reference.py", line 5, in <module>
+    from music21 import meter
+ModuleNotFoundError: No module named 'music21'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_harmonization_figures (unittest.loader._FailedTest.apps.exercises.tests.test_harmonization_figures)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_harmonization_figures
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_harmonization_figures.py", line 1, in <module>
+    from apps.exercises.harmonization.figures import (
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/harmonization/figures.py", line 7, in <module>
+    from music21 import key as m21_key
+ModuleNotFoundError: No module named 'music21'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_harmonization_targets (unittest.loader._FailedTest.apps.exercises.tests.test_harmonization_targets)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_harmonization_targets
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_harmonization_targets.py", line 1, in <module>
+    from apps.exercises.harmonization.targets import build_targets_from_umto
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/harmonization/targets.py", line 5, in <module>
+    from apps.exercises.harmonization.figures import derive_required_notes, expand_figure_string
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/harmonization/figures.py", line 7, in <module>
+    from music21 import key as m21_key
+ModuleNotFoundError: No module named 'music21'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_key_sig_exercise (unittest.loader._FailedTest.apps.exercises.tests.test_key_sig_exercise)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_key_sig_exercise
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_key_sig_exercise.py", line 1, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_mass_import_chunking (unittest.loader._FailedTest.apps.exercises.tests.test_mass_import_chunking)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_mass_import_chunking
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_mass_import_chunking.py", line 2, in <module>
+    import music21
+ModuleNotFoundError: No module named 'music21'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_music21_builder (unittest.loader._FailedTest.apps.exercises.tests.test_music21_builder)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_music21_builder
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_music21_builder.py", line 16, in <module>
+    from apps.exercises.generation import music21_builder as mb
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/generation/music21_builder.py", line 1, in <module>
+    from music21 import key as m21_key, interval as m21_interval, pitch, scale as m21_scale, roman
+ModuleNotFoundError: No module named 'music21'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_skills_analyzer (unittest.loader._FailedTest.apps.exercises.tests.test_skills_analyzer)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_skills_analyzer
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_skills_analyzer.py", line 2, in <module>
+    from music21 import stream, chord, pitch
+ModuleNotFoundError: No module named 'music21'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_symbolic_meter_questions (unittest.loader._FailedTest.apps.exercises.tests.test_symbolic_meter_questions)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_symbolic_meter_questions
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_symbolic_meter_questions.py", line 9, in <module>
+    from apps.exercises.management.commands.generate_unit2_meter_reference import (
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/generate_unit2_meter_reference.py", line 5, in <module>
+    from music21 import meter
+ModuleNotFoundError: No module named 'music21'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_umto_contract (unittest.loader._FailedTest.apps.exercises.tests.test_umto_contract)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_umto_contract
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_umto_contract.py", line 4, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: apps.exercises.tests.test_wir_corpus (unittest.loader._FailedTest.apps.exercises.tests.test_wir_corpus)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.exercises.tests.test_wir_corpus
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_wir_corpus.py", line 2, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: apps.student.tests.test_progress (unittest.loader._FailedTest.apps.student.tests.test_progress)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: apps.student.tests.test_progress
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/student/tests/test_progress.py", line 2, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: scripts.tests.test_convert_wir_corpus (unittest.loader._FailedTest.scripts.tests.test_convert_wir_corpus)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: scripts.tests.test_convert_wir_corpus
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/scripts/tests/test_convert_wir_corpus.py", line 2, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: test_pitch_duplication_creates_one_identification_per_voice (apps.dashboard.tests.test_exercise_pitch_duplication.DashboardPitchDuplicationTests.test_pitch_duplication_creates_one_identification_per_voice)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/tests/test_exercise_pitch_duplication.py", line 37, in test_pitch_duplication_creates_one_identification_per_voice
+    **self._base_post_data(),
+      ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DashboardPitchDuplicationTests' object has no attribute '_base_post_data'
+
+======================================================================
+ERROR: test_pitch_duplication_rolls_back_all_clones_on_invalid_voice (apps.dashboard.tests.test_exercise_pitch_duplication.DashboardPitchDuplicationTests.test_pitch_duplication_rolls_back_all_clones_on_invalid_voice)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/tests/test_exercise_pitch_duplication.py", line 67, in test_pitch_duplication_rolls_back_all_clones_on_invalid_voice
+    **self._base_post_data(),
+      ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DashboardPitchDuplicationTests' object has no attribute '_base_post_data'
+
+======================================================================
+ERROR: test_non_recurring_rows_still_use_mark_codes_in_gradebook (apps.dashboard.tests.test_recurring_playlist_views.LegacyPlaylistRegressionTests.test_non_recurring_rows_still_use_mark_codes_in_gradebook)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/tests/test_recurring_playlist_views.py", line 313, in test_non_recurring_rows_still_use_mark_codes_in_gradebook
+    response = self.client.get(reverse("dashboard:course-activity", args=[self.course.id]))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/test/client.py", line 1127, in get
+    response = super().get(
+               ^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/test/client.py", line 475, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/test/client.py", line 671, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/test/client.py", line 1090, in request
+    self.check_exception(response)
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/test/client.py", line 805, in check_exception
+    raise exc_value
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/views/courses.py", line 526, in course_activity_view
+    "has_identification_exercises": course_has_identification_exercises(course),
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/dashboard/views/courses.py", line 41, in course_has_identification_exercises
+    return course.exercise_set.filter(
+           ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Course' object has no attribute 'exercise_set'
+
+======================================================================
+ERROR: test_skips_existing_description (apps.exercises.tests.test_create_unit_playlist.ImportBachPhrasesIdempotencyTest.test_skips_existing_description)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_create_unit_playlist.py", line 96, in test_skips_existing_description
+    from apps.exercises.management.commands.import_bach_phrases import _description_exists
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/import_bach_phrases.py", line 7, in <module>
+    from music21 import corpus, stream, note, chord, meter, key
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_nct_slice_has_null_display_content (apps.exercises.tests.test_import_bach_phrases.WiRImportIntegrationTests.test_nct_slice_has_null_display_content)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 176, in test_nct_slice_has_null_display_content
+    call_command(
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 118, in call_command
+    command = load_command_class(app_name, command_name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 48, in load_command_class
+    module = import_module("%s.management.commands.%s" % (app_name, name))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/import_bach_phrases.py", line 7, in <module>
+    from music21 import corpus, stream, note, chord, meter, key
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_play_figures_mode_is_playback_with_figured_bass_display (apps.exercises.tests.test_import_bach_phrases.WiRImportIntegrationTests.test_play_figures_mode_is_playback_with_figured_bass_display)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 232, in test_play_figures_mode_is_playback_with_figured_bass_display
+    call_command(
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 118, in call_command
+    command = load_command_class(app_name, command_name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 48, in load_command_class
+    module = import_module("%s.management.commands.%s" % (app_name, name))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/import_bach_phrases.py", line 7, in <module>
+    from music21 import corpus, stream, note, chord, meter, key
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_play_mode_stores_wir_roman_and_figured_bass_analysis (apps.exercises.tests.test_import_bach_phrases.WiRImportIntegrationTests.test_play_mode_stores_wir_roman_and_figured_bass_analysis)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 207, in test_play_mode_stores_wir_roman_and_figured_bass_analysis
+    call_command(
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 118, in call_command
+    command = load_command_class(app_name, command_name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 48, in load_command_class
+    module = import_module("%s.management.commands.%s" % (app_name, name))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/import_bach_phrases.py", line 7, in <module>
+    from music21 import corpus, stream, note, chord, meter, key
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_r3_import_uses_declared_e_minor_key_for_figures_without_breaking_slices (apps.exercises.tests.test_import_bach_phrases.WiRImportIntegrationTests.test_r3_import_uses_declared_e_minor_key_for_figures_without_breaking_slices)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 255, in test_r3_import_uses_declared_e_minor_key_for_figures_without_breaking_slices
+    call_command(
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 118, in call_command
+    command = load_command_class(app_name, command_name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 48, in load_command_class
+    module = import_module("%s.management.commands.%s" % (app_name, name))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/import_bach_phrases.py", line 7, in <module>
+    from music21 import corpus, stream, note, chord, meter, key
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_unknown_riemenschneider_raises (apps.exercises.tests.test_import_bach_phrases.WiRImportIntegrationTests.test_unknown_riemenschneider_raises)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 198, in test_unknown_riemenschneider_raises
+    call_command(
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 118, in call_command
+    command = load_command_class(app_name, command_name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 48, in load_command_class
+    module = import_module("%s.management.commands.%s" % (app_name, name))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/import_bach_phrases.py", line 7, in <module>
+    from music21 import corpus, stream, note, chord, meter, key
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_wir_raw_rn_populated (apps.exercises.tests.test_import_bach_phrases.WiRImportIntegrationTests.test_wir_raw_rn_populated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 163, in test_wir_raw_rn_populated
+    call_command(
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 118, in call_command
+    command = load_command_class(app_name, command_name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 48, in load_command_class
+    module = import_module("%s.management.commands.%s" % (app_name, name))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/import_bach_phrases.py", line 7, in <module>
+    from music21 import corpus, stream, note, chord, meter, key
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_wir_roman_first_slice_r1 (apps.exercises.tests.test_import_bach_phrases.WiRImportIntegrationTests.test_wir_roman_first_slice_r1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 148, in test_wir_roman_first_slice_r1
+    call_command(
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 118, in call_command
+    command = load_command_class(app_name, command_name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/core/management/__init__.py", line 48, in load_command_class
+    module = import_module("%s.management.commands.%s" % (app_name, name))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/import_bach_phrases.py", line 7, in <module>
+    from music21 import corpus, stream, note, chord, meter, key
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_dry_run_reports_without_writing (apps.exercises.tests.test_import_music21_corpus.ImportMusic21CorpusTests.test_dry_run_reports_without_writing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py", line 1393, in patched
+    with self.decoration_helper(patched,
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py", line 1375, in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 526, in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py", line 1451, in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'apps.exercises.management.commands' has no attribute 'import_music21_corpus'
+
+======================================================================
+ERROR: test_idempotent_skips_existing_file (apps.exercises.tests.test_import_music21_corpus.ImportMusic21CorpusTests.test_idempotent_skips_existing_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py", line 1393, in patched
+    with self.decoration_helper(patched,
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py", line 1375, in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 526, in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py", line 1451, in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'apps.exercises.management.commands' has no attribute 'import_music21_corpus'
+
+======================================================================
+ERROR: test_legacy_exercise_emits_warning_log (apps.exercises.tests.test_views_umto_logging.ViewUMTOLoggingTests.test_legacy_exercise_emits_warning_log)
+Verifies that loading an exercise that claims to be UMTO but fails validation
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_views_umto_logging.py", line 28, in test_legacy_exercise_emits_warning_log
+    url = reverse("exercise_view", kwargs={"exercise_id": ex.id})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/urls/base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adorman/.local/share/virtualenvs/HarmonyLab-1-36k9kuP_/lib/python3.12/site-packages/django/urls/resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'exercise_view' not found. 'exercise_view' is not a valid view function or pattern name.
+
+======================================================================
+ERROR: test_player_definition_includes_review_answers_in_review_mode (apps.student.tests.test_views.PlayerViewTests.test_player_definition_includes_review_answers_in_review_mode)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/student/tests/test_views.py", line 532, in test_player_definition_includes_review_answers_in_review_mode
+    self.assertTrue(payload["reviewMode"])
+                    ~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'reviewMode'
+
+======================================================================
+ERROR: test_player_definition_returns_json_payload_for_current_step (apps.student.tests.test_views.PlayerViewTests.test_player_definition_returns_json_payload_for_current_step)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/student/tests/test_views.py", line 479, in test_player_definition_returns_json_payload_for_current_step
+    self.assertEqual(payload["playlistId"], self.playlist.id)
+                     ~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'playlistId'
+
+======================================================================
+ERROR: test_skips_registration_for_non_psycopg2_connections (apps.exercises.tests.test_db_connection_hook.TestRegisterJsonCasting.test_skips_registration_for_non_psycopg2_connections)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_db_connection_hook.py", line 43, in test_skips_registration_for_non_psycopg2_connections
+    ) as register_jsonb, mock.patch("psycopg.types.json.set_json_loads") as set_json_loads:
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py", line 1451, in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pkgutil.py", line 513, in resolve_name
+    mod = importlib.import_module(modname)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'psycopg'
+
+======================================================================
+ERROR: test_build_figured_bass_overrides_returns_slices (apps.exercises.tests.test_import_bach_phrases.BuildRomanAnalysisOverridesTestCase.test_build_figured_bass_overrides_returns_slices)
+_build_figured_bass_overrides produces slices with raw_figured_bass populated.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 110, in test_build_figured_bass_overrides_returns_slices
+    from apps.exercises.management.commands.import_bach_phrases import (
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/management/commands/import_bach_phrases.py", line 7, in <module>
+    from music21 import corpus, stream, note, chord, meter, key
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_emits_null_roman_for_beats_without_wir_labels_but_preserves_figured_bass (apps.exercises.tests.test_import_bach_phrases.BuildRomanAnalysisOverridesTestCase.test_emits_null_roman_for_beats_without_wir_labels_but_preserves_figured_bass)
+At NCT beats (no WiR label), the roman_numeral / local_key are null
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 91, in test_emits_null_roman_for_beats_without_wir_labels_but_preserves_figured_bass
+    from music21.corpus import chorales
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_roman_mode_figured_bass_uses_declared_chorale_key_not_phrase_analysis (apps.exercises.tests.test_import_bach_phrases.BuildRomanAnalysisOverridesTestCase.test_roman_mode_figured_bass_uses_declared_chorale_key_not_phrase_analysis)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 52, in test_roman_mode_figured_bass_uses_declared_chorale_key_not_phrase_analysis
+    from music21.corpus import chorales
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_roman_mode_populates_figured_bass_fields (apps.exercises.tests.test_import_bach_phrases.BuildRomanAnalysisOverridesTestCase.test_roman_mode_populates_figured_bass_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 33, in test_roman_mode_populates_figured_bass_fields
+    from music21.corpus import chorales
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_roman_mode_reconciles_wir_v7_with_4_3_suspension (apps.exercises.tests.test_import_bach_phrases.BuildRomanAnalysisOverridesTestCase.test_roman_mode_reconciles_wir_v7_with_4_3_suspension)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 71, in test_roman_mode_reconciles_wir_v7_with_4_3_suspension
+    from music21.corpus import chorales
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_stores_wir_roman_and_raw_roman_numeral (apps.exercises.tests.test_import_bach_phrases.BuildRomanAnalysisOverridesTestCase.test_stores_wir_roman_and_raw_roman_numeral)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 20, in test_stores_wir_roman_and_raw_roman_numeral
+    from music21.corpus import chorales
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_anacrusis_pickup_does_not_trip_filter (apps.exercises.tests.test_import_bach_phrases.PhraseHasSilentMeasureTestCase.test_anacrusis_pickup_does_not_trip_filter)
+Riemenschneider 1 begins with a quarter-note pickup in 3/4
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 291, in test_anacrusis_pickup_does_not_trip_filter
+    from music21.corpus import chorales
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_full_measures_pass (apps.exercises.tests.test_import_bach_phrases.PhraseHasSilentMeasureTestCase.test_full_measures_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 311, in test_full_measures_pass
+    from music21 import stream, note, meter as m21meter
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+ERROR: test_genuinely_silent_internal_measure_still_trips (apps.exercises.tests.test_import_bach_phrases.PhraseHasSilentMeasureTestCase.test_genuinely_silent_internal_measure_still_trips)
+A real silent (mostly-rest) internal measure should still be caught.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_bach_phrases.py", line 298, in test_genuinely_silent_internal_measure_still_trips
+    from music21 import stream, note, meter as m21meter
+ModuleNotFoundError: No module named 'music21'
+
+======================================================================
+FAIL: test_creates_identification_copy_from_chorale (apps.exercises.tests.test_duplicate_chorale_as_identification.DuplicateChoraleAsIdentificationTests.test_creates_identification_copy_from_chorale)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_duplicate_chorale_as_identification.py", line 34, in test_creates_identification_copy_from_chorale
+    self.assertEqual(clone.data["score"]["umto"]["voices"]["S"][0]["pitch"]["midi"], 67)
+AssertionError: 60 != 67
+
+======================================================================
+FAIL: test_pitch_analysis_requires_voice_in_identify_mode (apps.exercises.tests.test_import_chorale_pitch_identification.ImportChoralePitchIdentificationTests.test_pitch_analysis_requires_voice_in_identify_mode)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_chorale_pitch_identification.py", line 53, in test_pitch_analysis_requires_voice_in_identify_mode
+    with self.assertRaises(CommandError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: CommandError not raised
+
+======================================================================
+FAIL: test_pitch_analysis_with_voice_creates_identification (apps.exercises.tests.test_import_chorale_pitch_identification.ImportChoralePitchIdentificationTests.test_pitch_analysis_with_voice_creates_identification)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/tests/test_import_chorale_pitch_identification.py", line 77, in test_pitch_analysis_with_voice_creates_identification
+    self.assertEqual(ex.data["type"], "chorale_identification")
+AssertionError: 'umto_chorale' != 'chorale_identification'
+- umto_chorale
++ chorale_identification
+
+
+======================================================================
+FAIL: test_unit1_page_shows_all_skill_lanes (apps.student.tests.test_unit1_curriculum_integration.Unit1CurriculumIntegrationTests.test_unit1_page_shows_all_skill_lanes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/student/tests/test_unit1_curriculum_integration.py", line 76, in test_unit1_page_shows_all_skill_lanes
+    self.assertContains(response, 'class="playlist-row"', count=6, html=False)
+AssertionError: 0 != 6 : Found 0 instances of 'class="playlist-row"' (expected 6) in the following response
+b'\n<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1">\n  <title>Unit 1 \xc2\xb7 Pitch &amp; staff notation</title>\n  \n  <link href="/static/student/student.css" rel="stylesheet">\n</head>\n<body>\n  <header class="s-header">\n    <span class="s-header-brand">Monteverdi</span>\n    \n      <div style="display: flex; align-items: center; gap: 10px;">\n        <span class="s-header-user">unit1-integration-student@test.com</span>\n        <a href="/s/logout/" style="font-size: 0.8rem; color: #e74c3c; text-decoration: none;">Sign out</a>\n      </div>\n    \n  </header>\n  <main class="s-main">\n    \n  <a href="/s/" class="s-back">\xe2\x86\x90 Back</a>\n\n  <div class="unit-header">\n    <span class="tier-badge">T1</span>\n    <h1 class="unit-title">Unit 1 \xc2\xb7 Pitch &amp; staff notation</h1>\n    \n      <p class="unit-desc">Reading Treble and Bass Clefs.</p>\n    \n  </div>\n\n  <!-- Segmented Mastery Bar -->\n  <div class="segmented-mastery-bar">\n    \n      <div\n        class="bar-segment tier-not_started tier-not_started not_started"\n        tabindex="0"\n        aria-label="Identify Treble: Not_Started"\n        data-tooltip="Identify Treble \xe2\x80\x94 Not_Started"\n        \n      ></div>\n    \n      <div\n        class="bar-segment tier-not_started tier-not_started not_started"\n        tabindex="0"\n        aria-label="Identify Bass: Not_Started"\n        data-tooltip="Identify Bass \xe2\x80\x94 Not_Started"\n        \n      ></div>\n    \n      <div\n        class="bar-segment tier-not_started tier-not_started not_started"\n        tabindex="0"\n        aria-label="Play from Name Treble: Not_Started"\n        data-tooltip="Play from Name Treble \xe2\x80\x94 Not_Started"\n        \n      ></div>\n    \n      <div\n        class="bar-segment tier-not_started tier-not_started not_started"\n        tabindex="0"\n        aria-label="Play from Name Bass: Not_Started"\n        data-tooltip="Play from Name Bass \xe2\x80\x94 Not_Started"\n        \n      ></div>\n    \n      <div\n        class="bar-segment tier-not_started tier-not_started not_started"\n        tabindex="0"\n        aria-label="Play the Notes Treble: Not_Started"\n        data-tooltip="Play the Notes Treble \xe2\x80\x94 Not_Started"\n        \n      ></div>\n    \n      <div\n        class="bar-segment tier-not_started tier-not_started not_started"\n        tabindex="0"\n        aria-label="Play the Notes Bass: Not_Started"\n        data-tooltip="Play the Notes Bass \xe2\x80\x94 Not_Started"\n        \n      ></div>\n    \n  </div>\n\n  \n    <!-- Mastery Challenges -->\n    <div class="challenges-section">\n      <h2 class="challenges-title">Mastery Challenges</h2>\n      <div class="challenges-grid">\n        \n          <div class="challenge-card locked">\n            <div class="challenge-body">\n              <h3 class="challenge-name">Treble Mastery Challenge</h3>\n              <div class="challenge-status">\n                \n                  <span class="status-badge locked">Locked</span>\n                \n              </div>\n              \n                <p class="challenge-help">Achieve "Proficient" in all 3 treble lanes to unlock.</p>\n              \n            </div>\n            \n          </div>\n        \n          <div class="challenge-card locked">\n            <div class="challenge-body">\n              <h3 class="challenge-name">Bass Mastery Challenge</h3>\n              <div class="challenge-status">\n                \n                  <span class="status-badge locked">Locked</span>\n                \n              </div>\n              \n                <p class="challenge-help">Achieve "Proficient" in all 3 bass lanes to unlock.</p>\n              \n            </div>\n            \n          </div>\n        \n      </div>\n    </div>\n  \n\n  <!-- Skill Cards -->\n  <div class="skill-cards-container">\n    \n      \n        <div class="skill-card">\n          <div class="skill-card-header">\n            <h2 class="skill-card-title">Identify</h2>\n          </div>\n          <div class="skill-playlists">\n            \n              <a href="/s/units/1/play/?playlist=PA53KM&amp;exercise_num=1" class="playlist-row band-not_started">\n                <div class="playlist-info">\n                  <span class="playlist-name">Treble</span>\n                  \n                    <span class="mastery-badge tier-not_started">Not_Started</span>\n                  \n                  \n                </div>\n                <div class="playlist-progress-info">\n                  <div class="mini-progress-bar">\n                    <div class="mini-progress-fill" style="width: 0%"></div>\n                  </div>\n                  <span class="playlist-count">0/1</span>\n                  \n                </div>\n              </a>\n            \n              <a href="/s/units/1/play/?playlist=PA53OI&amp;exercise_num=1" class="playlist-row band-not_started">\n                <div class="playlist-info">\n                  <span class="playlist-name">Bass</span>\n                  \n                    <span class="mastery-badge tier-not_started">Not_Started</span>\n                  \n                  \n                </div>\n                <div class="playlist-progress-info">\n                  <div class="mini-progress-bar">\n                    <div class="mini-progress-fill" style="width: 0%"></div>\n                  </div>\n                  <span class="playlist-count">0/1</span>\n                  \n                </div>\n              </a>\n            \n          </div>\n        </div>\n      \n        <div class="skill-card">\n          <div class="skill-card-header">\n            <h2 class="skill-card-title">Play from Name</h2>\n          </div>\n          <div class="skill-playlists">\n            \n              <a href="/s/units/1/play/?playlist=PA53SE&amp;exercise_num=1" class="playlist-row band-not_started">\n                <div class="playlist-info">\n                  <span class="playlist-name">Treble</span>\n                  \n                    <span class="mastery-badge tier-not_started">Not_Started</span>\n                  \n                  \n                </div>\n                <div class="playlist-progress-info">\n                  <div class="mini-progress-bar">\n                    <div class="mini-progress-fill" style="width: 0%"></div>\n                  </div>\n                  <span class="playlist-count">0/1</span>\n                  \n                </div>\n              </a>\n            \n              <a href="/s/units/1/play/?playlist=PA53WA&amp;exercise_num=1" class="playlist-row band-not_started">\n                <div class="playlist-info">\n                  <span class="playlist-name">Bass</span>\n                  \n                    <span class="mastery-badge tier-not_started">Not_Started</span>\n                  \n                  \n                </div>\n                <div class="playlist-progress-info">\n                  <div class="mini-progress-bar">\n                    <div class="mini-progress-fill" style="width: 0%"></div>\n                  </div>\n                  <span class="playlist-count">0/1</span>\n                  \n                </div>\n              </a>\n            \n          </div>\n        </div>\n      \n        <div class="skill-card">\n          <div class="skill-card-header">\n            <h2 class="skill-card-title">Play the Notes</h2>\n          </div>\n          <div class="skill-playlists">\n            \n              <a href="/s/units/1/play/?playlist=PA53ZW&amp;exercise_num=1" class="playlist-row band-not_started">\n                <div class="playlist-info">\n                  <span class="playlist-name">Treble</span>\n                  \n                    <span class="mastery-badge tier-not_started">Not_Started</span>\n                  \n                  \n                </div>\n                <div class="playlist-progress-info">\n                  <div class="mini-progress-bar">\n                    <div class="mini-progress-fill" style="width: 0%"></div>\n                  </div>\n                  <span class="playlist-count">0/1</span>\n                  \n                </div>\n              </a>\n            \n              <a href="/s/units/1/play/?playlist=PA54DS&amp;exercise_num=1" class="playlist-row band-not_started">\n                <div class="playlist-info">\n                  <span class="playlist-name">Bass</span>\n                  \n                    <span class="mastery-badge tier-not_started">Not_Started</span>\n                  \n                  \n                </div>\n                <div class="playlist-progress-info">\n                  <div class="mini-progress-bar">\n                    <div class="mini-progress-fill" style="width: 0%"></div>\n                  </div>\n                  <span class="playlist-count">0/1</span>\n                  \n                </div>\n              </a>\n            \n          </div>\n        </div>\n      \n    \n  </div>\n\n  <style>\n    /* Unit Header */\n    .unit-header { margin-bottom: 1.5rem; }\n    .tier-badge { background: #e0e0e0; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 0.5rem; display: inline-block; }\n    .unit-title { font-size: 1.5rem; font-weight: bold; margin: 0.25rem 0; }\n    .unit-desc { font-size: 0.95rem; color: #666; margin: 0; }\n\n    /* Segmented Mastery Bar */\n    .segmented-mastery-bar { display: flex; gap: 4px; height: 12px; width: 100%; margin-bottom: 2rem; background: transparent; border-radius: 6px; overflow: visible; }\n    .bar-segment { flex: 1; height: 100%; border-radius: 2px; transition: opacity 0.2s; position: relative; outline: none; }\n    .bar-segment:hover { opacity: 0.8; }\n    .bar-segment:focus-visible {\n      box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.35);\n    }\n    .bar-segment::after {\n      content: attr(data-tooltip);\n      position: absolute;\n      left: 50%;\n      bottom: calc(100% + 10px);\n      transform: translateX(-50%);\n      padding: 0.45rem 0.65rem;\n      border-radius: 8px;\n      background: rgba(15, 23, 42, 0.96);\n      color: #fff;\n      font-size: 0.75rem;\n      line-height: 1.2;\n      font-weight: 600;\n      white-space: nowrap;\n      pointer-events: none;\n      opacity: 0;\n      visibility: hidden;\n      transition: opacity 0.16s ease, visibility 0.16s ease;\n      z-index: 20;\n      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);\n    }\n    .bar-segment::before {\n      content: "";\n      position: absolute;\n      left: 50%;\n      bottom: calc(100% + 4px);\n      transform: translateX(-50%);\n      border-left: 5px solid transparent;\n      border-right: 5px solid transparent;\n      border-top: 6px solid rgba(15, 23, 42, 0.96);\n      opacity: 0;\n      visibility: hidden;\n      transition: opacity 0.16s ease, visibility 0.16s ease;\n      z-index: 20;\n    }\n    .bar-segment:hover::after,\n    .bar-segment:hover::before,\n    .bar-segment:focus-visible::after,\n    .bar-segment:focus-visible::before {\n      opacity: 1;\n      visibility: visible;\n    }\n    \n    /* Challenges Section */\n    .challenges-section { margin-bottom: 2rem; }\n    .challenges-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem; color: #222; }\n    .challenges-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }\n    .challenge-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; background: #fff; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s; }\n    .challenge-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }\n    .challenge-card.locked { opacity: 0.6; background: #f8fafc; }\n    .challenge-card.mastered { border-color: #4CAF50; }\n    .challenge-name { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem 0; color: #1e293b; }\n    .challenge-status { margin: 0 0 0.75rem 0; }\n    .status-badge { font-size: 0.7rem; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase; }\n    .status-badge.mastered { background: #4CAF50; color: white; }\n    .status-badge.unlocked { background: #4A90D9; color: white; }\n    .status-badge.locked { background: #94a3b8; color: white; }\n    .challenge-help { font-size: 0.8rem; color: #64748b; margin: 0; }\n    .challenge-btn { display: inline-block; text-align: center; background: #4A90D9; color: white; text-decoration: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; margin-top: 1rem; }\n    .challenge-btn:hover { background: #357abd; }\n    .challenge-btn.retry { background: #fff; color: #4CAF50; border: 1px solid #4CAF50; }\n    .challenge-btn.retry:hover { background: #e8f5e9; }\n\n    /* Mastery Colors for Bar Segments and Badges */\n    .tier-mastered, .mastered { background-color: #4CAF50 !important; color: white !important; }\n    .tier-proficient, .proficient { background-color: #4A90D9 !important; color: white !important; }\n    .tier-familiar, .familiar { background-color: #FF9800 !important; color: white !important; }\n    .tier-attempted, .attempted { background-color: #FFD28A !important; color: #6b4e16 !important; }\n    .tier-not-started, .tier-not_started, .not_started, .not-started { background-color: #e0e0e0 !important; color: #666 !important; }\n\n    /* Skill Cards */\n    .skill-cards-container { display: flex; flex-direction: column; gap: 1.5rem; }\n    .skill-card { border: 1px solid #eee; border-radius: 8px; padding: 1.25rem; background: #fff; }\n    .skill-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f0f0f0; padding-bottom: 0.5rem; }\n    .skill-card-title { font-size: 1.1rem; font-weight: bold; margin: 0; color: #222; }\n    .skill-mastery-badge { font-size: 0.75rem; font-weight: bold; padding: 0.25rem 0.6rem; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.05em; }\n\n    /* Playlist Rows with Practice Bands */\n    .skill-playlists { display: flex; flex-direction: column; gap: 0.5rem; }\n    .playlist-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #fcfcfc; border: 1px solid #f0f0f0; border-left: 4px solid #e0e0e0; border-radius: 6px; text-decoration: none; color: #333; transition: background 0.2s, border-color 0.2s; }\n    .playlist-row:hover { background: #f5f9ff; border-color: #4A90D9; }\n    \n    .playlist-row.band-not_started { border-left-color: #cbd5e1; }\n    .playlist-row.band-getting_started { border-left-color: #fbd38d; }\n    .playlist-row.band-learning { border-left-color: #f6ad55; }\n    .playlist-row.band-practicing { border-left-color: #63b3ed; }\n    .playlist-row.band-fluency_building { border-left-color: #4299e1; }\n    .playlist-row.band-polishing { border-left-color: #68d391; }\n    .playlist-row.band-completed { border-left-color: #48bb78; }\n\n    .playlist-info { display: flex; align-items: center; gap: 0.75rem; }\n    .playlist-name { font-size: 0.9rem; font-weight: 500; }\n    .mastery-badge { font-size: 0.7rem; font-weight: bold; padding: 0.15rem 0.4rem; border-radius: 4px; text-transform: uppercase; }\n    .practice-label { font-size: 0.7rem; font-weight: 600; background: #f1f5f9; color: #475569; padding: 0.15rem 0.4rem; border-radius: 4px; }\n\n    .playlist-progress-info { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: #666; }\n\n    /* Mini Progress Bar */\n    .mini-progress-bar { background: #e0e0e0; width: 60px; height: 6px; border-radius: 3px; overflow: hidden; }\n    .mini-progress-fill { background: #4A90D9; height: 100%; border-radius: 3px; }\n    .playlist-count { font-weight: 600; color: #444; }\n    .playlist-score { color: #888; }\n    .coming-soon { font-size: 0.85rem; color: #888; font-style: italic; padding: 0.5rem 0; }\n    .reference-section { margin-top: 2rem; }\n    .reference-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 0.5rem; text-decoration: none; color: #333; }\n    .reference-row:hover { background: #f0f4ff; }\n    .reference-title { font-weight: 600; color: #111827; font-size: 0.9rem; }\n    .reference-desc { font-size: 0.8rem; color: #6b7280; }\n    .reference-link { padding: 0.4rem 0.9rem; background: #fff; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; color: #374151; white-space: nowrap; }\n  </style>\n\n  \n\n\n  </main>\n</body>\n</html>\n'
+
+======================================================================
+FAIL: test_player_initial_payload_includes_playlist_metadata_without_force_redirect (apps.student.tests.test_views.PlayerViewTests.test_player_initial_payload_includes_playlist_metadata_without_force_redirect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/student/tests/test_views.py", line 466, in test_player_initial_payload_includes_playlist_metadata_without_force_redirect
+    self.assertIn(f'"playlistId": "{self.playlist.id}"'.encode(), response.content)
+AssertionError: b'"playlistId": "PA32OF"' not found in b'\n<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="utf-8">\n    \n    <link href="/static/css/ionicons-needed.css" type="text/css" rel="stylesheet" />\n    <link href="/static/css/harmony.css" type="text/css" rel="stylesheet" />\n    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">\n    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">\n    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">\n    <link rel="manifest" href="/static/site.webmanifest">\n    \n  \n  <link href="/static/student/student.css" rel="stylesheet">\n  <style>\n    /* \xe2\x94\x80\xe2\x94\x80 Page shell \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    body { background: #f7f8f8 !important; }\n\n    #container {\n      opacity: 1 !important;\n      background: transparent;\n      margin: 0;\n      padding: 0;\n    }\n\n    .s-player-wrap {\n      width: 100%;\n      max-width: none;\n      margin: 0;\n      padding: 0 0 12px;\n    }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Player top bar \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    .s-player-header {\n      width: 100%;\n      max-width: none;\n      margin: 0;\n      padding: 0 16px;\n      height: 44px;\n      border-bottom: 1px solid rgba(125, 101, 74, 0.22);\n      background: linear-gradient(180deg, #faf6ef 0%, #f1eadf 100%);\n      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 1px 0 rgba(255, 255, 255, 0.35);\n      display: flex;\n      align-items: center;\n      gap: 10px;\n      position: relative;\n      z-index: 10;\n    }\n\n    .s-back-btn {\n      display: inline-flex;\n      align-items: center;\n      gap: 4px;\n      font-family: var(--font-body);\n      font-size: 0.78rem;\n      font-weight: 600;\n      color: var(--text-muted);\n      text-decoration: none;\n      padding: 4px 8px;\n      border-radius: 4px;\n      transition: color 150ms, background 150ms;\n      flex-shrink: 0;\n      white-space: nowrap;\n    }\n    .s-back-btn:hover { color: var(--teal); background: var(--teal-pale); }\n    .s-back-arrow { font-size: 0.9rem; }\n\n    .s-player-title {\n      font-family: var(--font-ui);\n      font-size: 0.9rem;\n      color: #2d251d;\n      font-weight: 700;\n      flex: 1;\n      text-align: center;\n      white-space: nowrap;\n      overflow: hidden;\n      text-overflow: ellipsis;\n      padding: 0 8px;\n    }\n    .s-player-title a { color: inherit; text-decoration: none; }\n    .s-player-title a:hover { color: #1f6c7a; }\n    .s-title-sep { color: var(--text-muted); margin: 0 4px; }\n\n    .s-player-right {\n      display: flex;\n      align-items: center;\n      gap: 6px;\n      flex-shrink: 0;\n    }\n\n    .s-player-pos {\n      font-size: 0.72rem;\n      color: var(--text-muted);\n      white-space: nowrap;\n      font-family: var(--font-body);\n      font-weight: 600;\n    }\n\n    /* Settings gear button */\n    .s-settings-btn {\n      display: inline-flex;\n      align-items: center;\n      justify-content: center;\n      width: 32px;\n      height: 32px;\n      border: 1px solid var(--border);\n      border-radius: 6px;\n      background: transparent;\n      color: var(--text-muted);\n      cursor: pointer;\n      transition: border-color 150ms, color 150ms, background 150ms;\n      flex-shrink: 0;\n    }\n    .s-settings-btn:hover,\n    .s-settings-btn.active {\n      border-color: var(--teal-mid);\n      color: var(--teal);\n      background: var(--teal-pale);\n    }\n    .s-settings-btn svg { display: block; }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Settings drawer \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    .s-settings-overlay {\n      display: none;\n      position: fixed;\n      inset: 0;\n      z-index: 100;\n    }\n    .s-settings-overlay.open { display: block; }\n\n    .s-settings-backdrop {\n      position: absolute;\n      inset: 0;\n      background: rgba(15, 30, 35, 0.18);\n      backdrop-filter: blur(1px);\n    }\n\n    .s-settings-panel {\n      position: absolute;\n      top: 0;\n      right: 0;\n      bottom: 0;\n      width: 280px;\n      background: #fff;\n      border-left: 1px solid var(--border);\n      box-shadow: -4px 0 24px rgba(0,0,0,0.08);\n      display: flex;\n      flex-direction: column;\n      transform: translateX(100%);\n      transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);\n      overflow-y: auto;\n    }\n    .s-settings-overlay.open .s-settings-panel {\n      transform: translateX(0);\n    }\n\n    .s-settings-head {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      padding: 14px 16px 12px;\n      border-bottom: 1px solid var(--border);\n      flex-shrink: 0;\n    }\n    .s-settings-title {\n      font-family: var(--font-ui);\n      font-size: 0.95rem;\n      color: var(--text);\n    }\n    .s-settings-close {\n      display: inline-flex;\n      align-items: center;\n      justify-content: center;\n      width: 28px;\n      height: 28px;\n      border: none;\n      background: none;\n      color: var(--text-muted);\n      cursor: pointer;\n      border-radius: 4px;\n      font-size: 1.1rem;\n      transition: color 150ms, background 150ms;\n    }\n    .s-settings-close:hover { color: var(--text); background: var(--surface); }\n\n    .s-settings-body {\n      padding: 12px 16px 20px;\n      display: flex;\n      flex-direction: column;\n      gap: 20px;\n    }\n\n    .s-settings-group {}\n\n    .s-settings-group-label {\n      font-family: var(--font-body);\n      font-size: 0.62rem;\n      font-weight: 700;\n      text-transform: uppercase;\n      letter-spacing: 0.1em;\n      color: var(--text-muted);\n      margin-bottom: 8px;\n    }\n\n    .s-settings-row {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      gap: 8px;\n      padding: 6px 0;\n    }\n    .s-settings-row + .s-settings-row {\n      border-top: 1px solid var(--border);\n    }\n\n    .s-settings-row-label {\n      font-family: var(--font-body);\n      font-size: 0.82rem;\n      color: var(--text);\n    }\n\n    /* Reuse the existing ctrl btn style inside drawer */\n    .s-drawer-btn {\n      display: inline-flex;\n      align-items: center;\n      justify-content: center;\n      padding: 4px 12px;\n      border: 1px solid var(--border);\n      border-radius: 4px;\n      background: var(--surface);\n      color: var(--text);\n      font-size: 0.78rem;\n      font-family: var(--font-body);\n      font-weight: 600;\n      cursor: pointer;\n      min-width: 48px;\n      transition: border-color 150ms, color 150ms, background 150ms;\n    }\n    .s-drawer-btn:hover { border-color: var(--teal-mid); background: var(--teal-pale); }\n    .s-drawer-btn.muted { color: var(--danger); border-color: var(--danger); background: #fde8e8; }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Hint banner \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    .s-player-input-hint {\n      width: 95vw;\n      max-width: 900px;\n      margin: 8px auto;\n      padding: 10px 18px;\n      border: 1px solid rgba(125, 101, 74, 0.24);\n      border-radius: 16px;\n      background: linear-gradient(180deg, #f7f1e7 0%, #ede3d4 100%);\n      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);\n      color: #4a3b30;\n      font-size: 0.82rem;\n      line-height: 1.4;\n    }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Nav toolbar \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    #staff-toolbar {\n      margin: 8px auto;\n      display: flex;\n      justify-content: center;\n      align-items: center;\n      gap: 6px;\n      flex-wrap: wrap;\n      width: 100%;\n    }\n\n    /* Slot in toolbar for mode toggles (Click/Type \xc2\xb7 Practice/Submit).\n     * JS renders #ident-toggle-row into #identification-actions; we move\n     * it here via MutationObserver without touching exercise_sheet.js. */\n    #ident-toolbar-slot {\n      display: flex;\n      align-items: center;\n      gap: 6px;\n      flex-wrap: nowrap;\n    }\n\n    /* Separator between nav buttons and mode toggles */\n    .s-toolbar-sep {\n      width: 1px;\n      height: 20px;\n      background: var(--border);\n      flex-shrink: 0;\n    }\n\n    .s-toolbar-btn {\n      display: inline-flex;\n      align-items: center;\n      gap: 5px;\n      padding: 5px 14px;\n      border: 1px solid rgba(125, 101, 74, 0.24);\n      border-radius: 999px;\n      background: linear-gradient(180deg, #f8f3ea 0%, #ece4d6 100%);\n      color: #2f281f;\n      cursor: pointer;\n      font-size: 0.8rem;\n      font-family: var(--font-ui);\n      font-weight: 600;\n      text-decoration: none;\n      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 1px 0 rgba(255, 255, 255, 0.35);\n      transition: border-color 150ms, background 150ms, color 150ms, box-shadow 150ms;\n    }\n    .s-toolbar-btn:hover {\n      border-color: rgba(125, 101, 74, 0.38);\n      background: linear-gradient(180deg, #fcf8f0 0%, #f0e8db 100%);\n      color: #211a14;\n      text-decoration: none;\n    }\n\n    .s-toolbar-btn-primary {\n      background: linear-gradient(180deg, #3d352d 0%, #1a1410 100%);\n      border-color: #0f0c0a;\n      color: #f5efe5;\n      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 10px rgba(0, 0, 0, 0.18);\n    }\n    .s-toolbar-btn-primary:hover {\n      background: linear-gradient(180deg, #4a4138 0%, #221a16 100%);\n      border-color: #1b1511;\n      color: #fff;\n    }\n\n    .s-toolbar-icon { display: inline-block; flex: 0 0 20px; }\n    .s-toolbar-icon.previous-icon,\n    .s-toolbar-icon.next-icon,\n    .s-toolbar-icon.refresh-icon { margin: 0; float: none; }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Staff area \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    #staff-area {\n      width: 100%;\n      max-width: none;\n      margin: 0 auto;\n      padding: 0 12px;\n      box-sizing: border-box;\n    }\n\n    #staffwrapper {\n      position: relative;\n      background: #fff;\n      border: 1px solid var(--border);\n      border-radius: var(--radius);\n      margin-bottom: 8px;\n      height: 400px;\n      overflow-x: auto;\n      overflow-y: hidden;\n    }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Instruction panel \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    .instruction-panel { border: none !important; background: transparent !important; padding: 0 !important; min-height: 0 !important; }\n    .instruction-panel-header { display: none; }\n    #instruction-panel { min-height: 0 !important; margin: 0 !important; margin-bottom: 0 !important; }\n    #instruction-panel p { padding: 0 !important; margin: 0 !important; }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Persistent answer bar (always below staff for ident exercises) \xe2\x94\x80\xe2\x94\x80 */\n    /*\n     * #s-answer-bar is always in the DOM at fixed height. The text field and\n     * Check button live here permanently. JS\'s #identification-actions and\n     * #ident-input-container are hidden; the Check button (#identification-submit)\n     * is physically placed inside #s-answer-bar so the JS still finds it by id.\n     * In Click mode the field is disabled/grayed; in Type mode it\'s active.\n     */\n    /* \xe2\x94\x80\xe2\x94\x80 Persistent answer bar \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    /* Always present below the staff for identification exercises.\n     * Contains: progress bar (full row), then text input + Check button.\n     * JS\'s TextInputComponent renders into #ident-input-container which we\n     * move here via MutationObserver \xe2\x80\x94 its .text-id-field / .text-id-check\n     * remain the real inputs so all onAnswer callbacks work unchanged. */\n    #s-answer-bar {\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      flex-wrap: wrap;\n      gap: 8px;\n      width: 100%;\n      padding: 6px 12px 8px;\n      box-sizing: border-box;\n      min-height: 52px;\n    }\n\n    /* Progress bar \xe2\x80\x94 spans full row above field+button */\n    #ident-progress-container {\n      width: 100% !important;\n      max-width: 480px !important;\n      height: 8px !important;\n      border-radius: 4px !important;\n      margin: 0 auto !important;\n      flex: 0 0 100%;          /* own row */\n      order: -1;\n      display: block !important;\n    }\n    #ident-progress-bar {\n      height: 100% !important;\n      border-radius: 4px !important;\n    }\n\n    /* #ident-input-container is moved into #s-answer-bar by observer.\n     * Do NOT force display \xe2\x80\x94 JS\'s .show()/.hide() must still work.\n     * In Click mode JS calls .hide() (display:none inline).\n     * In Text mode JS sets display:block inline \xe2\x80\x94 we upgrade to flex. */\n    #ident-input-container {\n      align-items: center;\n      justify-content: center;\n      gap: 0;\n      flex: 1;\n      max-width: 480px;\n      margin: 0 !important;\n    }\n    /* Upgrade JS\'s display:block to flex without fighting display:none */\n    #s-answer-bar #ident-input-container:not([style*="none"]) {\n      display: flex !important;\n    }\n\n    /* The .text-id-input wrapper \xe2\x80\x94 remove default margins */\n    #ident-input-container .text-id-input {\n      margin: 0 !important;\n      width: 100%;\n    }\n\n    /* Restyle the pill to match our design system */\n    #ident-input-container .text-id-pill {\n      display: flex;\n      border: 1px solid var(--border) !important;\n      border-radius: 4px !important;\n      overflow: hidden;\n      background: #fff;\n    }\n    #ident-input-container .text-id-field {\n      flex: 1;\n      padding: 6px 12px !important;\n      font-size: 0.88rem !important;\n      font-family: var(--font-body) !important;\n      border: none !important;\n      outline: none !important;\n      background: transparent;\n      color: var(--text);\n      min-width: 0;\n    }\n    #ident-input-container .text-id-field:focus {\n      box-shadow: none !important;\n    }\n    #ident-input-container .text-id-pill:focus-within {\n      border-color: var(--teal) !important;\n      box-shadow: 0 0 0 3px rgba(42,126,148,0.12);\n    }\n    /* Click mode: field disabled \xe2\x80\x94 JS sets .text-id-field[disabled] */\n    #ident-input-container .text-id-field:disabled {\n      background: var(--surface) !important;\n      color: var(--text-muted) !important;\n      cursor: not-allowed;\n      opacity: 0.55;\n      pointer-events: none;\n      user-select: none;\n    }\n    #ident-input-container .text-id-field::placeholder {\n      color: var(--text-muted);\n      font-size: 0.8rem;\n    }\n    /* Hide the "Check \xe2\x86\xb5" button inside the pill \xe2\x80\x94 #identification-submit is our button */\n    #ident-input-container .text-id-check { display: none !important; }\n    /* Hide the hint text below the pill */\n    #ident-input-container .text-id-hint  { display: none !important; }\n\n    /* #identification-submit \xe2\x80\x94 the Check button beside the field.\n     * JS finds it by id, sets text "Check"/"Next Page", toggles .ready. */\n    #identification-submit {\n      flex-shrink: 0;\n      padding: 6px 18px !important;\n      font-size: 0.82rem !important;\n      border-radius: 4px !important;\n      font-family: var(--font-body) !important;\n      font-weight: 600 !important;\n      cursor: pointer !important;\n      border: 1px solid var(--teal) !important;\n      background: var(--teal) !important;\n      color: #fff !important;\n      transition: background 150ms, box-shadow 150ms, opacity 150ms !important;\n      opacity: 0.45;\n      box-shadow: none !important;\n      animation: none !important;\n    }\n    #identification-submit.ready {\n      opacity: 1 !important;\n      box-shadow: 0 2px 8px rgba(42,126,148,0.3) !important;\n    }\n    #identification-submit.ready:hover {\n      background: var(--teal-dark) !important;\n      box-shadow: 0 3px 12px rgba(42,126,148,0.45) !important;\n    }\n    #identification-submit.hint-pulse {\n      animation: ident-hint-teal 1.4s ease-in-out infinite !important;\n    }\n    @keyframes ident-hint-teal {\n      0%,100% { box-shadow: 0 2px 8px rgba(42,126,148,0.3); }\n      50%      { box-shadow: 0 0 20px 4px rgba(42,126,148,0.6); }\n    }\n    /* Override JS-injected blue gradient style */\n    #s-answer-bar #identification-submit { background: var(--teal) !important; border-color: var(--teal) !important; }\n    #s-answer-bar #identification-submit.ready:hover { background: var(--teal-dark) !important; }\n\n    /* \xe2\x94\x80\xe2\x94\x80 #identification-actions \xe2\x80\x94 zero-height anchor for JS \xe2\x94\x80\xe2\x94\x80 */\n    #identification-actions {\n      display: block !important;\n      height: 0;\n      overflow: visible;\n      margin: 0 !important;\n      padding: 0 !important;\n    }\n\n    #ident-mode-container { margin-top: 0 !important; }\n    .ident-mode-toggle { margin-top: 0 !important; }\n\n    /* \xe2\x94\x80\xe2\x94\x80 .s-control-bar: holds #identification-actions (zero-height) + instruction panel \xe2\x94\x80\xe2\x94\x80 */\n    .s-control-bar {\n      display: flex;\n      flex-direction: column;\n      align-items: center;\n      width: 100%;\n      margin: 2px 0 0;\n      padding: 0 12px;\n      box-sizing: border-box;\n    }\n\n    #instruction-panel {\n      width: 100%;\n      text-align: center;\n      min-height: 0 !important;\n      margin: 0 !important;\n      padding: 10px 18px 8px;\n      border: 1px solid rgba(255, 255, 255, 0.08);\n      border-radius: 20px;\n      background: linear-gradient(180deg, rgba(57, 45, 36, 0.98) 0%, rgba(28, 22, 18, 0.98) 100%);\n      box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.06),\n        0 14px 26px rgba(22, 14, 10, 0.18);\n      box-sizing: border-box;\n    }\n\n    #exercise-text {\n      font-family: var(--font-body);\n      font-size: 0.9rem;\n      color: #f4eadc;\n      margin: 0;\n      text-align: center;\n      width: 100%;\n      white-space: normal;\n      font-weight: 600;\n    }\n\n    #exercise-status-and-tempo {\n      display: flex;\n      justify-content: center;\n      align-items: center;\n      gap: 6px;\n      flex-wrap: wrap;\n      margin-top: 4px;\n      margin-bottom: 0;\n    }\n\n    #exercise-status-and-tempo p { margin: 0 !important; padding: 0 !important; }\n\n    #exercise-status {\n      font-size: 0.72rem !important;\n      padding: 3px 10px !important;\n      border-radius: 999px !important;\n      font-family: var(--font-body);\n      letter-spacing: 0.06em;\n      white-space: nowrap;\n      background: linear-gradient(180deg, #84715f 0%, #5f4d3f 100%);\n      color: #f8f0e5;\n      border: 1px solid rgba(255, 255, 255, 0.08);\n      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);\n    }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Playback controls moved into drawer / hidden from bar \xe2\x94\x80\xe2\x94\x80 */\n    #playback-play-btn {\n      font-size: 0.75rem !important;\n      padding: 4px 12px !important;\n      border: 1px solid var(--border) !important;\n      border-radius: 4px !important;\n      background: var(--surface-2) !important;\n      color: var(--text) !important;\n      cursor: pointer !important;\n      font-family: var(--font-body) !important;\n      transition: border-color 150ms, background 150ms !important;\n    }\n    #playback-play-btn:hover {\n      border-color: var(--teal) !important;\n      background: var(--teal-pale) !important;\n    }\n    #playback-controls { gap: 6px !important; margin-left: 0 !important; }\n    #playback-tempo-label { font-size: 0.72rem !important; color: var(--text-muted) !important; }\n    #playback-tempo-slider { width: 60px !important; }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Piano \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    #piano {\n      width: 100%;\n      max-width: none;\n      margin: 6px auto 0;\n      padding: 10px 8px 10px;\n      box-sizing: border-box;\n      overflow-x: auto;   /* scroll if keyboard wider than viewport */\n      position: relative;\n      border-radius: 24px;\n      background: linear-gradient(180deg, #241c17 0%, #15100d 100%);\n      border: 1px solid rgba(0, 0, 0, 0.34);\n      box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.04),\n        inset 0 -16px 24px rgba(255, 255, 255, 0.03),\n        0 18px 34px rgba(0, 0, 0, 0.22);\n    }\n\n    #piano::before {\n      content: "";\n      position: absolute;\n      left: 18px;\n      right: 18px;\n      top: 0;\n      height: 2px;\n      border-radius: 999px;\n      background: linear-gradient(90deg, rgba(158, 46, 46, 0.2), rgba(187, 57, 57, 0.95), rgba(158, 46, 46, 0.2));\n    }\n\n    /* Do NOT force keyboard-wrapper to 100% \xe2\x80\x94 it renders the SVG at a fixed\n     * pixel width, and the QWERTY badge positions are calculated from those\n     * same pixels. Stretching the wrapper misaligns the badges. */\n    .keyboard-wrapper { margin: 0 auto !important; }\n    .keyboard-input-mode { max-width: 100%; }\n    .keyboard-area {\n      display: flex;\n      justify-content: center;\n      align-items: flex-start;\n    }\n\n    /* QWERTY badge overlay */\n    .keyboard .qwerty-labels {\n      z-index: 4;\n    }\n\n    .keyboard .qwerty-key-badge {\n      display: inline-flex;\n      align-items: center;\n      justify-content: center;\n      box-sizing: border-box;\n      padding: 0 3px;\n      border-radius: 7px;\n      border: 1px solid rgba(115, 91, 64, 0.38);\n      background: linear-gradient(180deg, rgba(251, 246, 238, 0.98) 0%, rgba(232, 220, 202, 0.98) 100%);\n      box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.82),\n        0 1px 2px rgba(36, 26, 18, 0.14);\n      color: #2e2217;\n      font-family: var(--font-ui);\n      font-size: 0.68rem;\n      font-weight: 700;\n      letter-spacing: 0.02em;\n      line-height: 1;\n      text-transform: uppercase;\n      pointer-events: none;\n      user-select: none;\n      -webkit-font-smoothing: antialiased;\n    }\n\n    .keyboard .qwerty-key-badge.black {\n      padding: 0 2px;\n      border-color: rgba(255, 255, 255, 0.18);\n      background: linear-gradient(180deg, rgba(71, 64, 59, 0.96) 0%, rgba(26, 22, 20, 0.96) 100%);\n      box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.1),\n        0 2px 4px rgba(0, 0, 0, 0.28);\n      color: rgba(255, 248, 238, 0.96);\n    }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Input mode hint (replaces always-visible toggle bar) \xe2\x94\x80\xe2\x94\x80 */\n    /*\n     * The QWERTY/Note Name toggle rendered by NoteNameInputComponent is kept in\n     * the DOM for JS wiring, but collapsed by default. Students can access it\n     * via the Settings drawer. A one-line hint nudges them there.\n     */\n    .keyboard-input-mode .input-mode-toggle {\n      display: none !important;   /* hidden \xe2\x80\x94 accessible from \xe2\x9a\x99 drawer */\n    }\n    .keyboard-input-mode .qwerty-help-panel,\n    .keyboard-input-mode .notename-panel {\n      display: none !important;   /* status/guide also hidden by default */\n    }\n\n    /* Input mode controls inside drawer */\n    .s-drawer-input-mode {\n      display: flex;\n      gap: 6px;\n    }\n    .s-drawer-input-mode .s-drawer-btn.active {\n      border-color: var(--teal);\n      background: var(--teal-pale);\n      color: var(--teal);\n    }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Drawer widget selects \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    #mainmenu label {\n      font-family: var(--font-body);\n      font-size: 0.8rem;\n      color: var(--text);\n      display: flex;\n      align-items: center;\n      gap: 6px;\n      padding: 4px 0;\n    }\n    #mainmenu select {\n      padding: 3px 6px;\n      border: 1px solid var(--border);\n      border-radius: 4px;\n      font-family: var(--font-body);\n      font-size: 0.8rem;\n      background: var(--surface);\n      color: var(--text);\n    }\n    #mainmenu input[type="checkbox"] {\n      accent-color: var(--teal);\n      cursor: pointer;\n    }\n\n    /* \xe2\x94\x80\xe2\x94\x80 Hide legacy clutter \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 */\n    .icon-btn-camera, .startover-icon { display: none !important; }\n    #user-interaction-solicitation {\n      position: absolute;\n      left: 50%;\n      top: 58px;\n      transform: translateX(-50%);\n      z-index: 5;\n      display: inline-flex;\n      align-items: center;\n      justify-content: center;\n      width: min(960px, calc(100% - 48px));\n      max-width: calc(100% - 48px);\n      box-sizing: border-box;\n      padding: 0;\n      border: 0;\n      border-radius: 0;\n      background: transparent;\n      color: rgba(44, 38, 34, 0.13);\n      font-family: var(--font-ui);\n      font-size: clamp(2.5rem, 5.8vw, 6.5rem);\n      font-weight: 900;\n      line-height: 1;\n      letter-spacing: 0;\n      text-align: center;\n      text-transform: uppercase;\n      pointer-events: none;\n      white-space: nowrap;\n    }\n\n    .harmony-ui {\n      width: calc(100% - 24px);\n      max-width: none;\n      margin: 10px auto 0;\n      padding: 14px 12px 16px;\n      box-sizing: border-box;\n      background: linear-gradient(180deg, #fbf7ef 0%, #f1e8db 100%);\n      border: 1px solid rgba(125, 101, 74, 0.14);\n      border-radius: 28px;\n      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 18px 40px rgba(38, 27, 17, 0.08);\n    }\n\n    #piano .slick-dots li,\n    #piano .flickity-page-dots .dot,\n    #piano .swiper-pagination-bullet {\n      transform: scale(0.62);\n      opacity: 0.5;\n    }\n\n    #piano .slick-dots li button:before,\n    #piano .flickity-page-dots .dot,\n    #piano .swiper-pagination-bullet {\n      color: rgba(237, 226, 209, 0.6) !important;\n      background: rgba(237, 226, 209, 0.6) !important;\n      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);\n    }\n  </style>\n\n</head>\n<body>\n\n\n<div style="font-family: \'Sebastian\'; position: absolute; visibility: hidden;">&nbsp;</div>\n<div id="container" class="js-fade-in fade" style="opacity: 0;">\n  <div class="s-player-wrap">\n\n    <!-- Top bar -->\n    <header class="s-player-header">\n      <a href="/s/units/1/" class="s-back-btn">\n        <span class="s-back-arrow">\xe2\x86\x90</span> Back\n      </a>\n\n      <div class="s-player-title">\n        <a href="/s/units/1/">Unit 1</a>\n        <span class="s-title-sep">\xc2\xb7</span>\n        Unit 1 - Note Names (Treble)\n      </div>\n\n      <div class="s-player-right">\n        <span class="s-player-pos">\n          <span id="js-player-current">1</span>/<span id="js-player-total">2</span>\n        </span>\n        <button class="s-settings-btn js-settings-toggle" aria-label="Settings" title="Settings">\n          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">\n            <path d="M8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>\n            <path fill-rule="evenodd" d="M6.746 1.137a1.5 1.5 0 0 1 2.508 0l.31.477a1 1 0 0 0 1.263.34l.527-.244a1.5 1.5 0 0 1 1.973 1.972l-.243.528a1 1 0 0 0 .34 1.263l.476.31a1.5 1.5 0 0 1 0 2.508l-.477.31a1 1 0 0 0-.34 1.263l.244.527a1.5 1.5 0 0 1-1.972 1.973l-.528-.243a1 1 0 0 0-1.263.34l-.31.476a1.5 1.5 0 0 1-2.508 0l-.31-.477a1 1 0 0 0-1.263-.34l-.527.244a1.5 1.5 0 0 1-1.973-1.972l.243-.528a1 1 0 0 0-.34-1.263l-.476-.31a1.5 1.5 0 0 1 0-2.508l.477-.31a1 1 0 0 0 .34-1.263l-.244-.527A1.5 1.5 0 0 1 2.904 1.88l.528.243a1 1 0 0 0 1.263-.34l.31-.476ZM8 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>\n          </svg>\n        </button>\n      </div>\n    </header>\n\n    <!-- Settings drawer overlay -->\n    <div class="s-settings-overlay js-settings-overlay">\n      <div class="s-settings-backdrop js-settings-backdrop"></div>\n      <aside class="s-settings-panel">\n        <div class="s-settings-head">\n          <span class="s-settings-title">Settings</span>\n          <button class="s-settings-close js-settings-close" aria-label="Close settings">\xe2\x9c\x95</button>\n        </div>\n        <div class="s-settings-body">\n\n          <!-- Sound group -->\n          <div class="s-settings-group">\n            <div class="s-settings-group-label">Sound</div>\n            <div class="s-settings-row">\n              <span class="s-settings-row-label">Mute</span>\n              <button id="mute-toggle" class="s-drawer-btn">Mute</button>\n            </div>\n            <div class="s-settings-row">\n              <span class="s-settings-row-label">Volume</span>\n              <button id="volume" class="s-drawer-btn" style="font-weight:700;">mf</button>\n            </div>\n          </div>\n\n          <!-- Input group -->\n          <div class="s-settings-group">\n            <div class="s-settings-group-label">Keyboard input</div>\n            <div class="s-settings-row">\n              <span class="s-settings-row-label">Mode</span>\n              <div class="s-drawer-input-mode" id="s-drawer-input-mode">\n                <button class="s-drawer-btn active" id="s-drawer-btn-qwerty">QWERTY</button>\n                <button class="s-drawer-btn" id="s-drawer-btn-notename">Note Name</button>\n              </div>\n            </div>\n          </div>\n\n          <!-- MIDI group -->\n          <div class="s-settings-group">\n            <div class="s-settings-group-label">MIDI</div>\n            <div class="s-settings-row">\n              <span class="s-settings-row-label">MIDI device</span>\n              <button id="midi-switch" class="s-drawer-btn">MIDI</button>\n            </div>\n            <!-- MusicControls renders widget divs into #mainmenu by selector -->\n            <div id="mainmenu" style="margin-top: 8px;">\n              <div class="js-keyboardsize settings-inline" style="margin-bottom: 6px;"></div>\n              <div class="js-octaveadjustment settings-inline" style="margin-bottom: 6px;"></div>\n              <div class="js-keyboardshortcuts settings-inline"></div>\n            </div>\n          </div>\n\n        </div>\n      </aside>\n    </div>\n\n    <!-- Hint banners -->\n    \n\n    \n\n    <div class="harmony-ui">\n      <div id="staff-area">\n\n        <div id="staff-toolbar">\n          <!-- Mode toggles (Click/Type \xc2\xb7 Practice/Submit) land here via MutationObserver -->\n          <div id="ident-toolbar-slot"></div>\n          <span class="s-toolbar-sep" id="ident-toolbar-sep" style="display:none;"></span>\n\n          <a class="s-toolbar-btn js-btn-previousexercise" title="Previous exercise" href="#">\n            <span class="s-toolbar-icon previous-icon" aria-hidden="true"></span>\n            <span>Previous</span>\n          </a>\n          <a class="s-toolbar-btn js-btn-pristine" title="Reset" href="#">\n            <span class="s-toolbar-icon refresh-icon" aria-hidden="true"></span>\n            <span>Reset</span>\n          </a>\n          <a class="s-toolbar-btn s-toolbar-btn-primary js-btn-nextexercise" title="Next exercise" href="#">\n            <span class="s-toolbar-icon next-icon" aria-hidden="true"></span>\n            <span>Next</span>\n          </a>\n        </div>\n\n        <div id="staffwrapper">\n          <div id="user-interaction-solicitation">CLICK TO START AUDIO</div>\n          <canvas id="staff"></canvas>\n        </div>\n\n        <!-- Persistent answer bar: always visible for identification exercises.\n             #ident-input-container (the real JS TextInputComponent) is moved\n             here by MutationObserver once JS creates it.\n             #identification-submit lives here so JS finds it by id. -->\n        <div id="s-answer-bar" style="display:none;">\n          <!-- JS moves #ident-input-container here -->\n          <button id="identification-submit" type="button">Check</button>\n        </div>\n\n        <!-- #identification-actions: JS appends #ident-toggle-row and\n             #ident-progress-container here. Zero-height; we relocate children. -->\n        <div class="s-control-bar">\n          <div id="identification-actions"></div>\n          <div id="instruction-panel">\n            <div id="exercise-text"></div>\n            <div id="exercise-status-and-tempo"></div>\n          </div>\n        </div>\n\n      </div>\n      <div id="piano"></div>\n    </div>\n\n  </div>\n</div>\n\n\n\n\n\n\n<script src="/static/js/lib/require.js"></script>\n<script>requirejs.config({ enforceDefine: true, waitSeconds: 0 });</script>\n<script>requirejs.config({"baseUrl": "/static/js/lib", "paths": {"app": "/static/js/src", "tonal": "/static/js/lib/tonal.min", "canvas-confetti": "/static/js/lib/canvas-confetti"}, "shim": {"tonal": {"exports": "Tonal"}, "canvas-confetti": {"exports": "confetti"}}, "config": {"app/main": {"app_module": "app/components/app/exercise"}, "app/components/app/exercise": {"chord": [], "analysisPolicy": null, "unit_n": "1", "nextExercise": "/s/units/1/play/?playlist=PA32OF&exercise_num=2", "nextExerciseId": "EA31BV", "nextExerciseNum": 2, "previousExercise": null, "previousExerciseId": false, "previousExerciseNum": null, "firstExerciseId": null, "exerciseList": [{"id": "PA32OF/1", "name": "1", "url": "/s/units/1/play/?playlist=PA32OF&exercise_num=1", "selected": true}, {"id": "PA32OF/2", "name": "2", "url": "/s/units/1/play/?playlist=PA32OF&exercise_num=2", "selected": false}], "exerciseId": "EA31BT", "exerciseNum": 1, "isAdaptive": false, "isDynamic": false, "playlistTags": ["unit:1", "Note_Names"], "skillTags": ["unit:1", "Note_Names"], "playlistSkillTags": ["unit:1", "Note_Names"], "minComplexity": 1, "maxComplexity": 10, "exerciseIsPerformed": false, "exerciseErrorCount": 0, "playlistName": "PA32OF", "courseId": "CA35ND", "forceRedirect": true, "identMode": "submit", "modeLocked": false, "complexity_score": 1, "reviewMode": false, "playerMode": "progression", "disableComputerKeyboardInput": false}}});</script>\n<script>window.appStaticUrl = \'/static/\';</script>\n\n<script>requirejs.config({\'urlArgs\': \'t=\'+(new Date().getTime())});</script>\n\n\n\n\n\n\n  <script>require([\'app/main\']);</script>\n  <script>\n    window.PLAYER_DEFINITION_URL = "/s/units/1/play/definition/";\n    window.refreshPlayerChrome = function (newData) {\n      var cur = document.getElementById(\'js-player-current\');\n      var tot = document.getElementById(\'js-player-total\');\n      var wrap = document.querySelector(\'.s-player-wrap\');\n      var harmonyUi = document.querySelector(\'.harmony-ui\');\n\n      if (cur && newData && newData.exerciseNum != null) {\n        cur.innerText = String(newData.exerciseNum);\n      }\n      if (tot && newData && newData.totalExercises != null) {\n        tot.innerText = String(newData.totalExercises);\n      }\n\n      document.querySelectorAll(\'.s-player-input-hint[data-player-hint]\').forEach(function (node) {\n        node.remove();\n      });\n\n      if (!wrap || !harmonyUi || !newData) {\n        return;\n      }\n\n      if (newData.disableComputerKeyboardInput) {\n        var midiHint = document.createElement(\'div\');\n        midiHint.className = \'s-player-input-hint\';\n        midiHint.setAttribute(\'data-player-hint\', \'midi\');\n        midiHint.innerText = \'Play using your MIDI keyboard or click the piano below. Any octave works.\';\n        wrap.insertBefore(midiHint, harmonyUi);\n      }\n\n      if (newData.reviewMode) {\n        var reviewHint = document.createElement(\'div\');\n        reviewHint.className = \'s-player-input-hint\';\n        reviewHint.setAttribute(\'data-player-hint\', \'review\');\n        reviewHint.innerText = \'Review mode \xe2\x80\x94 your result is preserved, practice freely.\';\n        wrap.insertBefore(reviewHint, harmonyUi);\n      }\n    };\n\n    window.addEventListener(\'load\', function () {\n\n      // \xe2\x94\x80\xe2\x94\x80 Settings drawer \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\n      var overlay  = document.querySelector(\'.js-settings-overlay\');\n      var backdrop = document.querySelector(\'.js-settings-backdrop\');\n      var openBtns = document.querySelectorAll(\'.js-settings-toggle\');\n      var closeBtn = document.querySelector(\'.js-settings-close\');\n      var gearBtn  = document.querySelector(\'.s-settings-btn\');\n\n      function openDrawer() {\n        overlay.classList.add(\'open\');\n        gearBtn && gearBtn.classList.add(\'active\');\n        document.body.style.overflow = \'hidden\';\n      }\n      function closeDrawer() {\n        overlay.classList.remove(\'open\');\n        gearBtn && gearBtn.classList.remove(\'active\');\n        document.body.style.overflow = \'\';\n      }\n\n      openBtns.forEach(function(btn) { btn.addEventListener(\'click\', openDrawer); });\n      closeBtn && closeBtn.addEventListener(\'click\', closeDrawer);\n      backdrop && backdrop.addEventListener(\'click\', closeDrawer);\n      document.addEventListener(\'keydown\', function(e) {\n        if (e.key === \'Escape\') closeDrawer();\n      });\n\n      // \xe2\x94\x80\xe2\x94\x80 Drawer input mode buttons \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\n      var btnQwerty   = document.getElementById(\'s-drawer-btn-qwerty\');\n      var btnNoteName = document.getElementById(\'s-drawer-btn-notename\');\n\n      function setDrawerInputMode(mode) {\n        if (!btnQwerty || !btnNoteName) return;\n        if (mode === \'notename\') {\n          btnQwerty.classList.remove(\'active\');\n          btnNoteName.classList.add(\'active\');\n        } else {\n          btnNoteName.classList.remove(\'active\');\n          btnQwerty.classList.add(\'active\');\n        }\n      }\n\n      if (btnQwerty) {\n        btnQwerty.addEventListener(\'click\', function() {\n          var inner = document.querySelector(\'.input-mode-btn:first-child\');\n          if (inner) inner.click();\n          setDrawerInputMode(\'qwerty\');\n        });\n      }\n      if (btnNoteName) {\n        btnNoteName.addEventListener(\'click\', function() {\n          var inner = document.querySelector(\'.input-mode-btn:last-child\');\n          if (inner) inner.click();\n          setDrawerInputMode(\'notename\');\n        });\n      }\n\n      // \xe2\x94\x80\xe2\x94\x80 Identification layout orchestration \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\n      //\n      // exercise_sheet.js renders:\n      //   \xe2\x80\xa2 #ident-toggle-row  \xe2\x86\x92 appended into #identification-actions\n      //   \xe2\x80\xa2 #ident-input-container \xe2\x86\x92 inserted as sibling AFTER #identification-actions\n      //       \xe2\x94\x94\xe2\x94\x80 TextInputComponent: .text-id-field + .text-id-check (the REAL inputs)\n      //   \xe2\x80\xa2 #ident-progress-container \xe2\x86\x92 prepended into #identification-actions\n      //\n      // We move:\n      //   \xe2\x80\xa2 #ident-toggle-row        \xe2\x86\x92 #ident-toolbar-slot (toolbar row)\n      //   \xe2\x80\xa2 #ident-input-container   \xe2\x86\x92 into #s-answer-bar (before #identification-submit)\n      //   \xe2\x80\xa2 #ident-progress-container \xe2\x86\x92 into #s-answer-bar (first, as own row)\n      //\n      // The .text-id-field IS the real input \xe2\x80\x94 we never proxy it.\n      // In Click mode we set .text-id-field[disabled] to block typing.\n\n      var answerBar    = document.getElementById(\'s-answer-bar\');\n      var submitBtn    = document.getElementById(\'identification-submit\');\n      var toolbarSlot  = document.getElementById(\'ident-toolbar-slot\');\n      var toolbarSep   = document.getElementById(\'ident-toolbar-sep\');\n      var identActions = document.getElementById(\'identification-actions\');\n      var controlBar   = document.querySelector(\'.s-control-bar\');\n\n      // In submit mode, TextInputComponent only fires onAnswer on Enter or the\n      // internal .text-id-check button click \xe2\x80\x94 not on keystroke alone.\n      // Our external #identification-submit button\'s onclick = onSubmitIdentification,\n      // which reads answers already committed to the grader. If the student never\n      // pressed Enter, the field value hasn\'t been committed yet.\n      //\n      // Fix: intercept the click in capture phase, click the hidden .text-id-check\n      // button (commits answers + calls onSubmit=onSubmitIdentification), then\n      // stop propagation so the outer onclick doesn\'t double-submit.\n      // If there\'s no .text-id-check (Click mode / no text component), fall through.\n      if (submitBtn) {\n        submitBtn.addEventListener(\'click\', function (e) {\n          var checkBtn = document.querySelector(\'#ident-input-container .text-id-check\');\n          if (checkBtn) {\n            e.stopImmediatePropagation(); // prevent outer onclick from also calling submit\n            checkBtn.click();             // commits answers + calls onSubmitIdentification\n          }\n          // No checkBtn = Click mode; outer onclick handles it normally.\n        }, true); // capture phase runs before onclick\n      }\n\n      var answerBarShown = false;\n      function showAnswerBar() {\n        if (answerBarShown) return;\n        answerBarShown = true;\n        answerBar.style.display = \'flex\';\n      }\n\n      // \xe2\x94\x80\xe2\x94\x80 Move #ident-toggle-row to toolbar, #ident-progress-container to answer bar \xe2\x94\x80\xe2\x94\x80\n      if (identActions && toolbarSlot) {\n        var actionsObs = new MutationObserver(function(mutations) {\n          mutations.forEach(function(m) {\n            m.addedNodes.forEach(function(node) {\n              if (!node.id) return;\n              if (node.id === \'ident-toggle-row\') {\n                toolbarSlot.appendChild(node);\n                toolbarSep.style.display = \'\';\n                showAnswerBar();\n              }\n              if (node.id === \'ident-progress-container\') {\n                // Insert at front of answer bar (before the submit button)\n                answerBar.insertBefore(node, answerBar.firstChild);\n                showAnswerBar();\n              }\n            });\n          });\n        });\n        actionsObs.observe(identActions, { childList: true });\n      }\n\n      // \xe2\x94\x80\xe2\x94\x80 Watch for #ident-input-container inserted after #identification-actions \xe2\x94\x80\xe2\x94\x80\n      // JS does: $(\'#identification-actions\').after($container)\n      // So it lands as a sibling inside .s-control-bar. We move it into #s-answer-bar.\n      if (controlBar && answerBar) {\n        var controlObs = new MutationObserver(function(mutations) {\n          mutations.forEach(function(m) {\n            m.addedNodes.forEach(function(node) {\n              if (node.id === \'ident-input-container\') {\n                // Move into answer bar, before the submit button\n                answerBar.insertBefore(node, submitBtn);\n                showAnswerBar();\n              }\n            });\n          });\n        });\n        controlObs.observe(controlBar, { childList: true });\n      }\n\n      // \xe2\x94\x80\xe2\x94\x80 Click/Type mode: disable .text-id-field in Click mode \xe2\x94\x80\xe2\x94\x80\n      function getCurrentInputMode() {\n        var container = document.querySelector(\'#ident-toolbar-slot #ident-input-toggle-container\');\n        if (!container) return \'dropdown\';\n        var active = container.querySelector(\'.mode-option.active\');\n        var text = active ? (active.textContent || \'\').trim().toLowerCase() : \'\';\n        return text === \'type\' ? \'text\' : \'dropdown\';\n      }\n\n      function syncTextFieldDisabled() {\n        var field = document.querySelector(\'#ident-input-container .text-id-field\');\n        if (!field) return;\n        var isClick = getCurrentInputMode() === \'dropdown\';\n        field.disabled = isClick;\n        if (isClick) {\n          field.setAttribute(\'placeholder\', \'Click the ? labels on the score\');\n        } else {\n          field.setAttribute(\'placeholder\', \'e.g. C D E F\');\n        }\n      }\n\n      // Sync disabled state whenever Click/Type toggle changes active class\n      if (toolbarSlot) {\n        new MutationObserver(syncTextFieldDisabled)\n          .observe(toolbarSlot, { attributes: true, subtree: true, attributeFilter: [\'class\'] });\n      }\n      // Sync whenever answer bar children change (e.g. #ident-input-container moves in)\n      // or when .text-id-field is (re)built inside the container\n      if (answerBar) {\n        new MutationObserver(syncTextFieldDisabled)\n          .observe(answerBar, { childList: true, subtree: true });\n      }\n\n\n      // \xe2\x94\x80\xe2\x94\x80 Hint: settings nudge \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\n      var hintShown = sessionStorage.getItem(\'hl_settings_hint_shown\');\n      if (!hintShown) {\n        var hintTimer = setTimeout(function() {\n          if (overlay.classList.contains(\'open\')) return;\n          var piano = document.getElementById(\'piano\');\n          if (!piano) return;\n          var hint = document.createElement(\'div\');\n          hint.id = \'s-settings-hint\';\n          hint.style.cssText = [\n            \'margin: 6px 12px 0\',\n            \'padding: 6px 12px\',\n            \'border: 1px solid var(--teal-mid)\',\n            \'border-radius: var(--radius)\',\n            \'background: var(--teal-pale)\',\n            \'color: #1a4a56\',\n            \'font-size: 0.78rem\',\n            \'font-family: var(--font-body)\',\n            \'display: flex\',\n            \'align-items: center\',\n            \'justify-content: space-between\',\n            \'gap: 8px\',\n          ].join(\';\');\n          hint.innerHTML = \'<span>Tip: use <strong>\xe2\x9a\x99 Settings</strong> to change keyboard input mode or adjust volume.</span>\'\n            + \'<button style="background:none;border:none;color:#1a4a56;cursor:pointer;font-size:1rem;padding:0;line-height:1;" aria-label="Dismiss">\xe2\x9c\x95</button>\';\n          piano.after(hint);\n          hint.querySelector(\'button\').addEventListener(\'click\', function() {\n            hint.remove();\n            sessionStorage.setItem(\'hl_settings_hint_shown\', \'1\');\n          });\n          sessionStorage.setItem(\'hl_settings_hint_shown\', \'1\');\n        }, 8000);\n\n        openBtns.forEach(function(btn) {\n          btn.addEventListener(\'click\', function() {\n            clearTimeout(hintTimer);\n            sessionStorage.setItem(\'hl_settings_hint_shown\', \'1\');\n          });\n        });\n      }\n\n    });\n  </script>\n\n\n</body>\n</html>\n'
+
+----------------------------------------------------------------------
+Ran 273 tests in 98.799s
+
+FAILED (failures=5, errors=43)
+Destroying test database for alias 'default'...
+  R22...
+Linked 0 exercises to playlist 'Unit 11 — Pre-dominants (roman)' in static order.
+Playlist 'Unit 11 — Pre-dominants (roman)' (PA00BD) — created
+Unit 11: Pre-dominants
+Importing Riemenschneider 21–22 (2 chorales)...
+  R21...
+  R22...
+Linked 0 exercises to playlist 'Unit 11 — Pre-dominants (roman)' in static order.
+Playlist 'Unit 11 — Pre-dominants (roman)' (PA00BD) — updated
+Unit 11: Pre-dominants
+Importing Riemenschneider 21–21 (1 chorales)...
+  R21...
+Linked 0 exercises to playlist 'Unit 11 — Pre-dominants (roman)' in static order.
+Playlist 'Unit 11 — Pre-dominants (roman)' (PA00BE) — created
+Unit 11: Pre-dominants
+Importing Riemenschneider 21–21 (1 chorales)...
+  R21...
+Linked 0 exercises to playlist 'Unit 11 — Pre-dominants (roman)' in static order.
+Playlist 'Unit 11 — Pre-dominants (roman)' (PA00BF) — created
+Created UMTO identification exercise EA00BB from source EA00BA
+Level 1: 1 exercise(s) in 'Unit 2 — Add Barlines, Level 1'
+Level 1: 1 phrase(s) (dry run)
+Level 1: 1 exercise(s) in 'Unit 2 — Add Barlines, Level 1'
+Level 1: 1 exercise(s) in 'Unit 2 — Add Barlines, Level 1'
+Level 1: 2 exercise(s) in 'Unit 2 — Add Barlines, Level 1'
+Created 1 barline exercise(s) in 'Unit 2 — Add Barlines'
+Created 1 barline exercise(s) in 'Unit 2 — Add Barlines'
+Created 1 barline exercise(s) in 'Unit 2 — Add Barlines'
+Created 1 barline exercise(s) in 'Unit 2 — Add Barlines'
+Created 1 barline exercise(s) in 'Unit 2 — Add Barlines'
+  Warning: Skills analysis failed: name 'stream' is not defined
+Successfully created UMTO exercise EA00BK: TPI (mm. 1–1)
+  Mode: InteractionMode.IDENTIFICATION
+  Measures: 1
+  Key: C
+  Time: 4/4
+  Warning: Skills analysis failed: name 'stream' is not defined
+Successfully created UMTO exercise EA00BL: TPI (mm. 1–1)
+  Mode: InteractionMode.IDENTIFICATION
+  Measures: 1
+  Key: C
+  Time: 4/4
+Found 1 legacy Unit 1 exercises to migrate.
+Successfully migrated 1 exercises.
+
+
+CA00AM len(pd.data): 1
+
+
+CA00AN len(pd.data): 1
+
+
+CA00AN len(pd.data): 2
+
+
+CA00AO len(pd.data): 1
+
+
+CA00AP len(pd.data): 1
+Warning: music21 analysis failed for TEMP: name 'stream' is not defined
+Warning: music21 analysis failed for TEMP: name 'stream' is not defined

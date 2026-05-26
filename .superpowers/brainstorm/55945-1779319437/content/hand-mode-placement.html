@@ -1,0 +1,84 @@
+<h2>Where should the hand mode selector live?</h2>
+<p class="subtitle">All three show a RH / LH / Both toggle. The question is placement.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:monospace;font-size:13px;background:#1a1a2e;color:#e0e0e0;padding:16px;border-radius:6px;line-height:1.6">
+        <div style="text-align:center;margin-bottom:12px;color:#aaa;font-size:11px">─── EXERCISE HEADER ───</div>
+        <div style="text-align:center;margin-bottom:8px;font-size:14px;color:#fff">C major scale</div>
+        <div style="display:flex;justify-content:center;gap:0;margin-bottom:12px">
+          <span style="background:#4a90d9;color:#fff;padding:4px 14px;border-radius:4px 0 0 4px;font-size:12px;font-weight:bold">RH</span>
+          <span style="background:#333;color:#888;padding:4px 14px;font-size:12px">LH</span>
+          <span style="background:#333;color:#888;padding:4px 14px;border-radius:0 4px 4px 0;font-size:12px">Both</span>
+        </div>
+        <div style="background:#111;border-radius:4px;padding:10px;text-align:center;color:#666;font-size:11px">
+          [ grand staff score ]
+        </div>
+        <div style="display:flex;justify-content:center;gap:8px;margin-top:10px">
+          <span style="background:#333;color:#888;padding:4px 12px;border-radius:4px;font-size:11px">▶ Play</span>
+          <span style="background:#333;color:#888;padding:4px 12px;border-radius:4px;font-size:11px">↺ Reset</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Above the score</h3>
+      <p>Selector sits between exercise title and staff. Always visible, prominent. Student picks mode before playing.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:monospace;font-size:13px;background:#1a1a2e;color:#e0e0e0;padding:16px;border-radius:6px;line-height:1.6">
+        <div style="text-align:center;margin-bottom:12px;color:#aaa;font-size:11px">─── EXERCISE HEADER ───</div>
+        <div style="text-align:center;margin-bottom:8px;font-size:14px;color:#fff">C major scale</div>
+        <div style="background:#111;border-radius:4px;padding:10px;text-align:center;color:#666;font-size:11px;margin-bottom:10px">
+          [ grand staff score ]
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;gap:0">
+            <span style="background:#4a90d9;color:#fff;padding:4px 14px;border-radius:4px 0 0 4px;font-size:12px;font-weight:bold">RH</span>
+            <span style="background:#333;color:#888;padding:4px 14px;font-size:12px">LH</span>
+            <span style="background:#333;color:#888;padding:4px 14px;border-radius:0 4px 4px 0;font-size:12px">Both</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <span style="background:#333;color:#888;padding:4px 12px;border-radius:4px;font-size:11px">▶ Play</span>
+            <span style="background:#333;color:#888;padding:4px 12px;border-radius:4px;font-size:11px">↺ Reset</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Below the score, inline with controls</h3>
+      <p>Selector sits in the control bar alongside Play/Reset. Compact. Mode change resets exercise automatically.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:monospace;font-size:13px;background:#1a1a2e;color:#e0e0e0;padding:16px;border-radius:6px;line-height:1.6">
+        <div style="text-align:center;margin-bottom:12px;color:#aaa;font-size:11px">─── EXERCISE HEADER ───</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:14px;color:#fff">C major scale</span>
+          <span style="background:#555;color:#ccc;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer">⚙ RH ▾</span>
+        </div>
+        <div style="background:#111;border-radius:4px;padding:10px;text-align:center;color:#666;font-size:11px;margin-bottom:10px">
+          [ grand staff score ]
+        </div>
+        <div style="display:flex;justify-content:center;gap:8px">
+          <span style="background:#333;color:#888;padding:4px 12px;border-radius:4px;font-size:11px">▶ Play</span>
+          <span style="background:#333;color:#888;padding:4px 12px;border-radius:4px;font-size:11px">↺ Reset</span>
+        </div>
+        <div style="background:#2a2a3e;border:1px solid #444;border-radius:4px;padding:6px;margin-top:6px;font-size:11px;color:#ccc">
+          ▸ dropdown open: RH · LH · Both
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Title bar dropdown</h3>
+      <p>Small gear/label in top-right of exercise header. Opens a dropdown. Less prominent — student may not discover it easily.</p>
+    </div>
+  </div>
+
+</div>

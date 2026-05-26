@@ -537,7 +537,13 @@ class Command(BaseCommand):
                 # 1. Must have passed min_measures
                 # 2. Must hit a harmonic arrival (I/V) OR a fermata
                 
+                # Check for fermatas on notes/chords in this measure, falling back to stream-level Fermata elements
                 has_fermata = len(m.flat.getElementsByClass(Fermata)) > 0
+                if not has_fermata:
+                    for note_or_chord in m.flat.notes:
+                        if any(isinstance(expr, Fermata) for expr in note_or_chord.expressions):
+                            has_fermata = True
+                            break
                 is_long = last_chord.quarterLength >= 2.0
                 is_harmonic_arrival = chord_type in ['I', 'V', 'i', 'v'] or is_v_of_v
                 
@@ -576,14 +582,26 @@ class Command(BaseCommand):
                     for m in list(part.getElementsByClass(stream.Measure)):
                         if m.number > end_m:
                             part.remove(m)
-                    # Remove first-ending duplicates: when a chorale has repeat brackets,
-                    # music21 stores both endings with the same measure number.
-                    # Keep only the last occurrence (second ending = cadential measure).
-                    seen_nums = {}
+                    # Resolve duplicate measure numbers cleanly.
+                    measures_by_number = {}
                     for m in list(part.getElementsByClass(stream.Measure)):
-                        if m.number in seen_nums:
-                            part.remove(seen_nums[m.number])  # remove earlier occurrence
-                        seen_nums[m.number] = m
+                        measures_by_number.setdefault(m.number, []).append(m)
+
+                    for num, ms in list(measures_by_number.items()):
+                        if len(ms) > 1:
+                            if num == end_m:
+                                # Phrase ends at end_m. Keep the FIRST occurrence, discard others.
+                                for extra in ms[1:]:
+                                    part.remove(extra)
+                            elif num == start_m:
+                                # Phrase starts at start_m. Keep the LAST occurrence, discard others.
+                                for extra in ms[:-1]:
+                                    part.remove(extra)
+                            else:
+                                # Standard duplicate resolution inside the phrase.
+                                # Keep only the last occurrence (e.g. second ending).
+                                for extra in ms[:-1]:
+                                    part.remove(extra)
 
                 # GAP FILTER: Skip phrases with silent or rest-dominated measures.
                 # music21 uses implicit rests (no Rest objects), so we compare

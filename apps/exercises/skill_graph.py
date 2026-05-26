@@ -98,7 +98,7 @@ ALL_SKILL_TAGS = LITERACY_TAGS + [
     "unit:A15", "unit:A15_fb_to_roman_numerals", "unit:A15_fb_analysis_bridge",
 
     # BRANCH B — Partimenti
-    "unit:B1", "unit:B1_clausula_discant", "unit:B1_clausula_tenor", "unit:B1_clausula_bass",
+    "unit:B1", "unit:B1_one_part_clausulae",
     "unit:B2", "unit:B2_cadence_simple_2pt", "unit:B2_clausula_combination",
     "unit:B3", "unit:B3_cadence_simple_3pt", "unit:B3_clausula_bass",
     "unit:B4", "unit:B4_clausula_alto", "unit:B4_cadence_4pt",
@@ -259,7 +259,7 @@ DEFAULT_PREREQUISITES = {
     "unit:A13_fb_partial_figuring": ["unit:A13"], "unit:A13_fb_implied": ["unit:A13"],
     "unit:A14_fb_keyboard_realization": ["unit:A14"], "unit:A14_fb_voice_exchange": ["unit:A14"],
     "unit:A15_fb_to_roman_numerals": ["unit:A15"], "unit:A15_fb_analysis_bridge": ["unit:A15"],
-    "unit:B1_clausula_discant": ["unit:B1"], "unit:B1_clausula_tenor": ["unit:B1"], "unit:B1_clausula_bass": ["unit:B1"],
+    "unit:B1_one_part_clausulae": ["unit:B1"],
     "unit:B2_cadence_simple_2pt": ["unit:B2"], "unit:B2_clausula_combination": ["unit:B2"],
     "unit:B3_cadence_simple_3pt": ["unit:B3"], "unit:B3_clausula_bass": ["unit:B3"],
     "unit:B4_clausula_alto": ["unit:B4"], "unit:B4_cadence_4pt": ["unit:B4"],
