@@ -111,6 +111,26 @@ def _vpart(name: str, sol: str) -> str:
     """Short voice:sol token, e.g. 'B:D-S-D'."""
     return f"{_NAME_ABBR.get(name, name[0])}:{_abbr(sol)}"
 
+# Z₇ degree (0=Do … 6=Ti) → circled Arabic numeral (Baroque bass-degree convention)
+_CIRCLED = {0: "①", 1: "②", 2: "③", 3: "④", 4: "⑤", 5: "⑥", 6: "⑦"}
+
+def _bass_labels(triple: tuple) -> list[str]:
+    """Circled scale-degree label for each position in a bass triple."""
+    return [_CIRCLED[z % 7] for z in triple]
+
+def _analysis_labels_from_slots(slots: dict, n_offsets: int = 3) -> list[str]:
+    """Circled-degree labels for simple cadence (offsets 0,2,4 = ANT,PEN,ULT)."""
+    if "B" in slots:
+        _, _, triple = slots["B"]
+        labels = _bass_labels(triple)
+        return (labels + [""] * n_offsets)[:n_offsets]
+    return [""] * n_offsets
+
+def _analysis_labels_compound(bass_triple: tuple) -> list[str]:
+    """Circled-degree labels for compound offsets [0,1,2,4]: bass attacks at 0,2,4 only."""
+    ant, pen, ult = [_CIRCLED[z % 7] for z in bass_triple]
+    return [ant, "", pen, ult]
+
 # Voice slot → octave
 _OCTAVE = {"S": 5, "A": 4, "T": 4, "B": 3}
 
@@ -183,9 +203,12 @@ def _build_umto(voice_events_by_id: dict[str, list[VoiceEvent]],
                 key: str,
                 description: str,
                 voice_colors: dict | None = None,
-                offsets: list[float] | None = None) -> dict:
+                offsets: list[float] | None = None,
+                analysis_labels: list[str] | None = None) -> dict:
     if offsets is None:
         offsets = [0.0, 2.0, 4.0]
+    if analysis_labels is None:
+        analysis_labels = [""] * len(offsets)
     vids = set(voice_events_by_id.keys())
     staff_dist = _staff_dist(vids)
     hl_key = HL_KEY.get(key, "jC_")
@@ -211,10 +234,10 @@ def _build_umto(voice_events_by_id: dict[str, list[VoiceEvent]],
         analysis=[
             AnalysisSlice(
                 offset=off,
-                content=AnalysisLayer(functional_label=""),
+                content=AnalysisLayer(functional_label=label),
                 unit_tags=[],
             )
-            for off in offsets
+            for off, label in zip(offsets, analysis_labels)
         ],
         grading=_grading(voice_events_by_id, offsets),
     )
@@ -405,6 +428,7 @@ def _generate_b3(author, options, stdout, style):
             payload = _build_umto(
                 vmap, key, desc,
                 voice_colors=_render_voice_colors(vmap, colors),
+                analysis_labels=_analysis_labels_from_slots(slots),
             )
             ex = _save_exercise(
                 author=author, description=desc, payload=payload,
@@ -444,6 +468,7 @@ def _generate_b4(author, options, stdout, style):
             payload = _build_umto(
                 vmap, key, desc,
                 voice_colors=_render_voice_colors(vmap, colors),
+                analysis_labels=_analysis_labels_from_slots(slots),
             )
             ex = _save_exercise(
                 author=author, description=desc, payload=payload,
@@ -472,7 +497,7 @@ def _compound_events(triple, key: str, vid: str, tau: int) -> list[VoiceEvent]:
     if tau == 0:
         return _realize_events(triple, key, vid, dur_scheme=_DUR_COMPOUND_EARLY)
     else:
-        rest = VoiceEvent(kind="rest", duration=1.0, duration_type="q", dots=0)
+        rest = VoiceEvent(kind="rest", duration=1.0, duration_type="q", dots=0, is_target=False)
         notes = _realize_events(triple, key, vid, dur_scheme=_DUR_COMPOUND_LATE)
         return [rest] + notes
 
@@ -504,10 +529,12 @@ def _generate_b11(author, options, stdout, style):
             }
             # Compound offsets: τ=0 attacks at 0,2,4; τ=1 rest+attacks at 0,1,2,4 (rest=0)
             offsets = [0.0, 1.0, 2.0, 4.0]
+            b11_labels = _analysis_labels_compound(e_triple) if e_name == "Bass" else [""] * 4
             payload = _build_umto(
                 vmap, key, desc,
                 voice_colors=_render_voice_colors(vmap, colors),
                 offsets=offsets,
+                analysis_labels=b11_labels,
             )
             ex = _save_exercise(
                 author=author, description=desc, payload=payload,
@@ -562,6 +589,7 @@ def _generate_b12(author, options, stdout, style):
                 vmap, key, desc,
                 voice_colors=_render_voice_colors(vmap, colors),
                 offsets=[0.0, 1.0, 2.0, 4.0],
+                analysis_labels=_analysis_labels_compound(b_triple),
             )
             ex = _save_exercise(
                 author=author, description=desc, payload=payload,
@@ -609,6 +637,7 @@ def _generate_b12(author, options, stdout, style):
                 vmap, key, desc,
                 voice_colors=_render_voice_colors(vmap, colors),
                 offsets=[0.0, 1.0, 2.0, 4.0],
+                analysis_labels=_analysis_labels_compound(b_triple),
             )
             ex = _save_exercise(
                 author=author, description=desc, payload=payload,
