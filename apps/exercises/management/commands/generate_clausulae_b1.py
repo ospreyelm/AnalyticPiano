@@ -1,7 +1,11 @@
-"""Generate Branch B Units B1–B2: formal clausulae and simple 2-voice cadences.
+"""Generate Branch B Units B1–B4 and B11–B12: clausulae and cadence exercises.
 
-B1 — individual clausulae as playback/identification exercises (one voice at a time).
-B2 — 2-voice cadence combinations (Discant + Tenor variant) as playback exercises.
+B1  — individual clausulae (one voice)
+B2  — simple 2-voice cadences (Discant + Tenor variants)
+B3  — simple 3-voice cadences (Bass + upper pair)
+B4  — simple 4-voice cadences (Bass + Alto + Tenor + Discant)
+B11 — compound 2-voice cadences (Discant τ=1 + Tenor τ=0)
+B12 — compound 3-voice (bass τ=0 + upper pair) and 4-voice compound
 
 Clausula triples in Z₇ (Do=0 … Ti=6):
   Discant:    (0, 6, 0)   Do–Ti–Do
@@ -9,14 +13,17 @@ Clausula triples in Z₇ (Do=0 … Ti=6):
   Tenor var1: (0, 1, 2)   Do–Re–Mi
   Tenor var2: (2, 1, 0)   Mi–Re–Do
   Tenor var3: (2, 1, 2)   Mi–Re–Mi
-  Alto var0:  (4, 4, 4)   Sol–Sol–Sol (Fa position)
+  Alto var0:  (4, 4, 4)   Sol–Sol–Sol
   Alto var1:  (4, 3, 2)   Sol–Fa–Mi
   Alto var2:  (4, 5, 4)   Sol–La–Sol
   Bass:       (0, 4, 0)   Do–Sol–Do
 
-Voices map to SATB: Discant=S, Tenor=A (treble staff), Alto=A, Bass=B.
-For 2-voice (Discant+Tenor), both voices on treble staff (S+A). Bass clausula always bass staff.
+Voice → SATB slot:
+  1/2/3-voice: Discant=S, Tenor/Alto=A (treble), Bass=B (bass)
+  4-voice:     Discant=S, Alto=A, Tenor=T, Bass=B (keyboard)
+
 Compound rhythm (authentic): ANT=half, PEN=half, ULT=whole in 2/2.
+Compound cadence grid: τ=0: off0/off2/off4; τ=1: off1/off3/off4 (whole note ULT).
 """
 from __future__ import annotations
 
@@ -39,7 +46,6 @@ from apps.exercises.umto import (
     Voices,
 )
 
-# Locate clausulae library (one level up from HarmonyLab-1)
 _HERE = os.path.dirname(__file__)
 _CLAUSULAE_ROOT = os.path.abspath(os.path.join(_HERE, "../../../../../clausulae-project"))
 if _CLAUSULAE_ROOT not in sys.path:
@@ -47,8 +53,14 @@ if _CLAUSULAE_ROOT not in sys.path:
 
 try:
     from clausulae.realize import key_realize
-    from clausulae.generate import enumerate_simple
-    from clausulae.core import CLAUSULAE, CLAUSULA_COLOR
+    from clausulae.generate import (
+        enumerate_simple,
+        enumerate_compound,
+        enumerate_compound_3voice,
+        enumerate_compound_3voice_double_tau1,
+        enumerate_compound_4voice,
+    )
+    from clausulae.core import CLAUSULAE, CLAUSULA_COLOR, SOLFEGE
     _CLAUSULAE_AVAILABLE = True
 except ImportError as _e:
     _CLAUSULAE_AVAILABLE = False
@@ -56,160 +68,126 @@ except ImportError as _e:
 
 User = get_user_model()
 
-# HarmonyLab key string for each key center
 HL_KEY = {
     "C": "jC_", "G": "jG_", "F": "jF_", "D": "jD_", "Bb": "jBb",
     "A": "jA_", "Eb": "jEb", "E": "jE_", "Ab": "jAb",
 }
 
-# Keys to generate exercises in (C and G cover the pedagogical basics for B1/B2)
 TARGET_KEYS = ["C", "G", "F"]
 
-# Clausula label → SATB voice id + display name
-# Tenor goes to A (alto slot, treble staff) — it's a middle voice, not bass clef.
-# Bass is the only clausula that belongs on the bass staff.
-CLAUSULA_VOICE = {
-    "Discant": ("S", "Discant"),
-    "Tenor":   ("A", "Tenor"),
-    "Alto":    ("A", "Alto"),
-    "Bass":    ("B", "Bass"),
-}
-
-# Variant index → solfège label for display
 TENOR_LABELS = ["Do–Re–Do", "Do–Re–Mi", "Mi–Re–Do", "Mi–Re–Mi"]
 ALTO_LABELS  = ["Sol–Sol–Sol", "Sol–Fa–Mi", "Sol–La–Sol"]
+SOLFEGE_LABELS = {
+    "Discant": ["Do–Ti–Do"],
+    "Tenor":   TENOR_LABELS,
+    "Alto":    ALTO_LABELS,
+    "Bass":    ["Do–Sol–Do"],
+}
 
-# Duration values: ANT=half (2.0 ql), PEN=half, ULT=whole (4.0 ql)
-_DUR = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
+# Duration: ANT=half, PEN=half, ULT=whole
+_DUR_SIMPLE = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
 
-# SATB_MAP mirrors vexflow_adapter.js: treble[0]="S", treble[1]="A", bass[0]="T", bass[1]="B"
+# Compound: τ=0 (early): half/half/whole over 5 beats
+# τ=1 (late): qtr-rest, then qtr/qtr/whole — represented as rest+3 notes
+_DUR_COMPOUND_EARLY = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
+_DUR_COMPOUND_LATE  = [("q", 1.0), ("q", 1.0), ("w", 4.0)]  # after leading rest
+
+# SATB maps for voice slots
 _SATB_MAP = {"treble": ["S", "A"], "bass": ["T", "B"]}
 
+# Compact solfège abbreviations for descriptions (fit varchar(60))
+_SOL_ABBR = {
+    "Do–Ti–Do": "D-T-D", "Do–Re–Do": "D-R-D", "Do–Re–Mi": "D-R-M",
+    "Mi–Re–Do": "M-R-D", "Mi–Re–Mi": "M-R-M",
+    "Sol–Sol–Sol": "S-S-S", "Sol–Fa–Mi": "S-F-M", "Sol–La–Sol": "S-L-S",
+    "Do–Sol–Do": "D-S-D",
+}
+_NAME_ABBR = {"Discant": "D", "Tenor": "T", "Alto": "A", "Bass": "B"}
 
-def _render_voice_colors(voice_events_by_id: dict, clausula_color_by_vid: dict) -> dict:
-    """
-    Compute voiceColors keyed by the SATB labels that _convertUMTOToProcessedScore
-    (exercise_sheet.js) assigns at render time.  It compacts voices: non-empty
-    voices are pushed in [S,A] / [T,B] order so the first present voice always
-    lands at index 0 regardless of its semantic name.
-    """
-    treble_present = [v for v in ["S", "A"] if voice_events_by_id.get(v)]
-    bass_present   = [v for v in ["T", "B"] if voice_events_by_id.get(v)]
-    result = {}
-    for idx, vid in enumerate(treble_present[:2]):
-        result[_SATB_MAP["treble"][idx]] = clausula_color_by_vid[vid]
-    for idx, vid in enumerate(bass_present[:2]):
-        result[_SATB_MAP["bass"][idx]] = clausula_color_by_vid[vid]
-    return result
+def _abbr(sol: str) -> str:
+    return _SOL_ABBR.get(sol, sol)
+
+def _vpart(name: str, sol: str) -> str:
+    """Short voice:sol token, e.g. 'B:D-S-D'."""
+    return f"{_NAME_ABBR.get(name, name[0])}:{_abbr(sol)}"
+
+# Voice slot → octave
+_OCTAVE = {"S": 5, "A": 4, "T": 4, "B": 3}
 
 
-def _scale_degree_label(pitch: Pitch, key: str) -> str:
-    """Return scale degree numeral (e.g. '3', '#4', 'b7') for a Pitch in the given key."""
-    from music21 import key as m21key, pitch as m21pitch
-    acc_str = {1: "#", -1: "b", 2: "##", -2: "bb", 0: ""}.get(pitch.alter, "")
-    m21p = m21pitch.Pitch(f"{pitch.step}{acc_str}{pitch.octave}")
-    k = m21key.Key(key)
-    degree, accidental = k.getScaleDegreeAndAccidentalFromPitch(m21p)
-    if degree is None:
-        return ""
-    acc_label = ""
-    if accidental is not None:
-        # music21 modifier: "-" = flat, "--" = double-flat, "#" = sharp, "##" = double-sharp
-        acc_label = accidental.modifier.replace("-", "b")
-    return f"{acc_label}{degree}"
+# ── Utilities ─────────────────────────────────────────────────────────────────
+
+def _solfege_label(clausula_name: str, var_idx: int) -> str:
+    labels = SOLFEGE_LABELS.get(clausula_name, [])
+    return labels[var_idx] if var_idx < len(labels) else str(var_idx)
 
 
 def _m21_note_to_pitch(n) -> Pitch:
-    """Convert a music21 Note to a UMTO Pitch."""
     p = n.pitch
     alter_map = {None: 0, "sharp": 1, "flat": -1, "double-sharp": 2, "double-flat": -2}
     alter = alter_map.get(p.accidental.name if p.accidental else None, 0)
-    midi = p.midi
-    return Pitch(step=p.step, alter=alter, octave=p.octave, midi=midi)
+    return Pitch(step=p.step, alter=alter, octave=p.octave, midi=p.midi)
 
 
-def _clausula_to_voice_events(triple, key: str, voice_id: str) -> list[VoiceEvent]:
-    """Realize a Z₇ triple in the given key and return UMTO VoiceEvents (ANT, PEN, ULT)."""
-    # Choose octave by voice: Bass=3, Tenor=4, Alto=4, Soprano/Discant=5
-    octave_map = {"B": 3, "T": 4, "A": 4, "S": 5}
-    octave = octave_map.get(voice_id, 4)
-    notes = key_realize(triple, key, octave=octave)
-    events = []
-    for n, (dur_type, dur_ql) in zip(notes, _DUR):
-        pitch = _m21_note_to_pitch(n)
-        events.append(VoiceEvent(
+def _realize_events(triple, key: str, voice_id: str,
+                    dur_scheme=None) -> list[VoiceEvent]:
+    """Realize Z₇ triple → VoiceEvents using given duration scheme."""
+    if dur_scheme is None:
+        dur_scheme = _DUR_SIMPLE
+    notes = key_realize(triple, key, octave=_OCTAVE[voice_id])
+    return [
+        VoiceEvent(
             kind="note",
-            pitch=pitch,
-            duration=dur_ql,
-            duration_type=dur_type,
+            pitch=_m21_note_to_pitch(n),
+            duration=ql,
+            duration_type=dt,
             dots=0,
             is_target=True,
-        ))
-    return events
+        )
+        for n, (dt, ql) in zip(notes, dur_scheme)
+    ]
 
 
-def _grading_and_analysis(voice_events_by_id: dict[str, list[VoiceEvent]],
-                           labels: dict[str, str],
-                           unit_tags: list[int],
-                           key: str = "C") -> tuple[list[GradingSlice], list[AnalysisSlice]]:
-    """Build grading + analysis slices from realized voice events."""
-    # Offsets: ANT=0.0, PEN=2.0, ULT=4.0 (half=2 ql in 2/2)
-    offsets = [0.0, 2.0, 4.0]
-    pos_names = ["ANT", "PEN", "ULT"]
+def _render_voice_colors(voice_events_by_id: dict, color_by_vid: dict) -> dict:
+    """Map semantic voice ids → slot-indexed colors matching VexFlow compaction."""
+    treble = [v for v in ["S", "A"] if voice_events_by_id.get(v)]
+    bass   = [v for v in ["T", "B"] if voice_events_by_id.get(v)]
+    result = {}
+    for idx, vid in enumerate(treble[:2]):
+        result[_SATB_MAP["treble"][idx]] = color_by_vid.get(vid, "#000000")
+    for idx, vid in enumerate(bass[:2]):
+        result[_SATB_MAP["bass"][idx]] = color_by_vid.get(vid, "#000000")
+    return result
 
-    grading = []
-    analysis = []
-    for pos_i, (offset, pos_name) in enumerate(zip(offsets, pos_names)):
-        midi_pitches = []
-        scale_degrees = []
-        for vid, events in voice_events_by_id.items():
-            if pos_i < len(events) and events[pos_i].pitch:
-                p = events[pos_i].pitch
-                midi_pitches.append(p.midi)
-                label = _scale_degree_label(p, key)
-                if label:
-                    scale_degrees.append({"midi": p.midi, "label": label})
 
-        grading.append(GradingSlice(offset=offset, target_midi_pitches=sorted(midi_pitches)))
+def _staff_dist(vids: set) -> str:
+    has_bass   = bool(vids & {"T", "B"})
+    has_treble = bool(vids & {"S", "A"})
+    if has_bass and has_treble:
+        return "keyboard"
+    return "bass" if has_bass else "treble"
 
-        label_parts = [f"{name}: {pos_name}" for name, _ in labels.items()]
-        analysis.append(AnalysisSlice(
-            offset=offset,
-            content=AnalysisLayer(
-                functional_label=" / ".join(label_parts),
-                scale_degrees=scale_degrees or None,
-            ),
-            unit_tags=unit_tags,
-        ))
 
-    return grading, analysis
+def _grading(voice_events_by_id: dict, offsets: list[float]) -> list[GradingSlice]:
+    slices = []
+    for offset_i, offset in enumerate(offsets):
+        midi = []
+        for events in voice_events_by_id.values():
+            if offset_i < len(events) and events[offset_i].pitch:
+                midi.append(events[offset_i].pitch.midi)
+        slices.append(GradingSlice(offset=offset, target_midi_pitches=sorted(midi)))
+    return slices
 
 
 def _build_umto(voice_events_by_id: dict[str, list[VoiceEvent]],
-                labels: dict[str, str],
                 key: str,
                 description: str,
-                voice_colors: dict[str, str] | None = None) -> dict:
-    """Assemble a complete UMTO frontend payload for a clausulae exercise."""
-    voices = Voices(
-        S=voice_events_by_id.get("S", []),
-        A=voice_events_by_id.get("A", []),
-        T=voice_events_by_id.get("T", []),
-        B=voice_events_by_id.get("B", []),
-    )
-
-    grading, analysis = _grading_and_analysis(voice_events_by_id, labels, unit_tags=[], key=key)
-
+                voice_colors: dict | None = None,
+                offsets: list[float] | None = None) -> dict:
+    if offsets is None:
+        offsets = [0.0, 2.0, 4.0]
     vids = set(voice_events_by_id.keys())
-    has_bass = "B" in vids
-    has_treble = vids & {"S", "A"}
-    if has_bass and has_treble:
-        staff_dist = "keyboard"
-    elif has_bass:
-        staff_dist = "bass"
-    else:
-        staff_dist = "treble"
-
+    staff_dist = _staff_dist(vids)
     hl_key = HL_KEY.get(key, "jC_")
 
     umto = UMTO(
@@ -224,9 +202,21 @@ def _build_umto(voice_events_by_id: dict[str, list[VoiceEvent]],
             input_mode="dropdown",
             unit=None,
         ),
-        voices=voices,
-        analysis=analysis,
-        grading=grading,
+        voices=Voices(
+            S=voice_events_by_id.get("S", []),
+            A=voice_events_by_id.get("A", []),
+            T=voice_events_by_id.get("T", []),
+            B=voice_events_by_id.get("B", []),
+        ),
+        analysis=[
+            AnalysisSlice(
+                offset=off,
+                content=AnalysisLayer(functional_label=""),
+                unit_tags=[],
+            )
+            for off in offsets
+        ],
+        grading=_grading(voice_events_by_id, offsets),
     )
 
     payload = umto.to_frontend_payload(unit=None, analysis_type="clausula")
@@ -236,7 +226,7 @@ def _build_umto(voice_events_by_id: dict[str, list[VoiceEvent]],
         "hideKeyLabel": False,
         "showScaleDegrees": True,
         "voiceColors": voice_colors or {},
-        "maxMeasures": 2,
+        "maxMeasures": 3 if max(offsets, default=4) > 4 else 2,
     }
     return payload
 
@@ -246,12 +236,8 @@ def _save_exercise(*, author, description, payload, skill_tags, complexity,
     ex = Exercise.objects.filter(description=description, authored_by=author).first() if overwrite else None
     if ex is None:
         ex = Exercise(
-            description=description,
-            data=payload,
-            authored_by=author,
-            is_public=is_public,
-            skill_tags=list(skill_tags),
-            complexity=complexity,
+            description=description, data=payload, authored_by=author,
+            is_public=is_public, skill_tags=list(skill_tags), complexity=complexity,
         )
         ex.save()
     else:
@@ -268,8 +254,7 @@ def _save_exercise(*, author, description, payload, skill_tags, complexity,
 
 def _build_playlist(*, author, playlist_name, exercises, skill_tags, is_public):
     playlist, _ = Playlist.objects.get_or_create(
-        name=playlist_name,
-        authored_by=author,
+        name=playlist_name, authored_by=author,
         defaults=dict(is_dynamic=False, is_adaptive=False,
                       is_public=is_public, skill_tags=skill_tags),
     )
@@ -277,23 +262,394 @@ def _build_playlist(*, author, playlist_name, exercises, skill_tags, is_public):
     if is_public:
         playlist.is_public = True
     playlist.save()
-
     ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
     for order, ex in enumerate(exercises, start=1):
         ExercisePlaylistOrdered.objects.create(playlist=playlist, exercise=ex, order=order)
     return playlist
 
 
+# ── Voice assignment helpers ──────────────────────────────────────────────────
+
+def _assign_slots_simple(combo: tuple) -> dict[str, tuple]:
+    """
+    Assign SATB slots for a simple-cadence combo (2–4 voices).
+    Returns {voice_id: (clausula_name, var_idx, triple)}.
+    1/2/3-voice: Discant=S, Tenor/Alto=A, Bass=B
+    4-voice: Discant=S, Alto=A, Tenor=T, Bass=B
+    """
+    by_name = {}
+    for name, idx, triple in combo:
+        by_name.setdefault(name, []).append((idx, triple))
+
+    n = len(combo)
+    result = {}
+    names_present = {c[0] for c in combo}
+
+    _simple_vid = {"Discant": "S", "Tenor": "A", "Alto": "A", "Bass": "B"}
+
+    if n == 1:
+        name, idx, triple = combo[0]
+        result[_simple_vid[name]] = (name, idx, triple)
+
+    elif n <= 3:
+        for name, idx, triple in combo:
+            vid = _simple_vid[name]
+            result[vid] = (name, idx, triple)
+
+    elif n == 4:
+        # Full SATB: Discant=S, Alto=A, Tenor=T, Bass=B
+        for name, idx, triple in combo:
+            vid = {"Discant": "S", "Alto": "A", "Tenor": "T", "Bass": "B"}[name]
+            # Handle duplicate Tenor — second one goes to A if A free
+            if vid in result and vid == "T":
+                vid = "A"
+            result[vid] = (name, idx, triple)
+
+    return result
+
+
+# ── B1: individual clausulae ──────────────────────────────────────────────────
+
+def _generate_b1(author, options, stdout, style):
+    stdout.write(style.MIGRATE_HEADING("B1 — Formal Clausulae (one voice)"))
+    exs = []
+    for key in TARGET_KEYS:
+        for clausula_name, variants in CLAUSULAE.items():
+            color = CLAUSULA_COLOR.get(clausula_name, "#000000")
+            vid = {"Discant": "S", "Tenor": "A", "Alto": "A", "Bass": "B"}[clausula_name]
+            for var_idx, triple in enumerate(variants):
+                sol = _solfege_label(clausula_name, var_idx)
+                desc = f"B1 — {clausula_name} clausula ({sol}) in {key}"
+                events = _realize_events(triple, key, vid)
+                vmap = {vid: events}
+                payload = _build_umto(
+                    vmap, key, desc,
+                    voice_colors=_render_voice_colors(vmap, {vid: color}),
+                )
+                ex = _save_exercise(
+                    author=author, description=desc, payload=payload,
+                    skill_tags=["branch_b", "unit:B1",
+                                f"clausula_{clausula_name.lower()}",
+                                f"clausula_var{var_idx}"],
+                    complexity=1, is_public=options["public"], overwrite=options["overwrite"],
+                )
+                exs.append(ex)
+                stdout.write(f"  {desc}")
+    pl = _build_playlist(
+        author=author, playlist_name="B1 — Formal Clausulae",
+        exercises=exs,
+        skill_tags=["branch_b", "unit:B1"],
+        is_public=options["public"],
+    )
+    stdout.write(style.SUCCESS(f"B1: {len(exs)} exercises → '{pl.name}'"))
+
+
+# ── B2: 2-voice simple cadences ───────────────────────────────────────────────
+
+def _generate_b2(author, options, stdout, style):
+    stdout.write(style.MIGRATE_HEADING("B2 — Simple Cadence (2 voices)"))
+    exs = []
+    combos = [c for c in enumerate_simple(n_voices=2)
+              if any(n == "Discant" for n, i, t in c)
+              and not any(n == "Bass" for n, i, t in c)]
+    for key in TARGET_KEYS:
+        for combo in combos:
+            slots = _assign_slots_simple(combo)
+            parts = []
+            colors = {}
+            vmap = {}
+            for vid, (name, var_idx, triple) in slots.items():
+                sol = _solfege_label(name, var_idx)
+                parts.append(_vpart(name, sol))
+                vmap[vid] = _realize_events(triple, key, vid)
+                colors[vid] = CLAUSULA_COLOR.get(name, "#000000")
+            desc = f"B2 — {' '.join(parts)} [{key}]"
+            payload = _build_umto(
+                vmap, key, desc,
+                voice_colors=_render_voice_colors(vmap, colors),
+            )
+            ex = _save_exercise(
+                author=author, description=desc, payload=payload,
+                skill_tags=["branch_b", "unit:B2", "cadence_simple_2pt"],
+                complexity=2, is_public=options["public"], overwrite=options["overwrite"],
+            )
+            exs.append(ex)
+            stdout.write(f"  {desc}")
+    pl = _build_playlist(
+        author=author, playlist_name="B2 — Simple Cadence (2 parts)",
+        exercises=exs, skill_tags=["branch_b", "unit:B2", "cadence_simple_2pt"],
+        is_public=options["public"],
+    )
+    stdout.write(style.SUCCESS(f"B2: {len(exs)} exercises → '{pl.name}'"))
+
+
+# ── B3: 3-voice simple cadences (with bass) ───────────────────────────────────
+
+def _generate_b3(author, options, stdout, style):
+    stdout.write(style.MIGRATE_HEADING("B3 — Simple Cadence (3 voices, with bass)"))
+    exs = []
+    combos = [c for c in enumerate_simple(n_voices=3, require_bass=True)
+              if any(n == "Discant" for n, i, t in c)]
+    for key in TARGET_KEYS:
+        for combo in combos:
+            slots = _assign_slots_simple(combo)
+            parts = []
+            colors = {}
+            vmap = {}
+            for vid, (name, var_idx, triple) in slots.items():
+                sol = _solfege_label(name, var_idx)
+                parts.append(_vpart(name, sol))
+                vmap[vid] = _realize_events(triple, key, vid)
+                colors[vid] = CLAUSULA_COLOR.get(name, "#000000")
+            desc = f"B3 — {' '.join(parts)} [{key}]"
+            payload = _build_umto(
+                vmap, key, desc,
+                voice_colors=_render_voice_colors(vmap, colors),
+            )
+            ex = _save_exercise(
+                author=author, description=desc, payload=payload,
+                skill_tags=["branch_b", "unit:B3", "cadence_simple_3pt",
+                            "clausula_bass"],
+                complexity=3, is_public=options["public"], overwrite=options["overwrite"],
+            )
+            exs.append(ex)
+            stdout.write(f"  {desc}")
+    pl = _build_playlist(
+        author=author, playlist_name="B3 — Simple Cadence (3 parts)",
+        exercises=exs, skill_tags=["branch_b", "unit:B3", "cadence_simple_3pt"],
+        is_public=options["public"],
+    )
+    stdout.write(style.SUCCESS(f"B3: {len(exs)} exercises → '{pl.name}'"))
+
+
+# ── B4: 4-voice simple cadences ───────────────────────────────────────────────
+
+def _generate_b4(author, options, stdout, style):
+    stdout.write(style.MIGRATE_HEADING("B4 — Simple Cadence (4 voices)"))
+    exs = []
+    combos = [c for c in enumerate_simple(n_voices=4, require_bass=True)
+              if any(n == "Discant" for n, i, t in c)]
+    for key in TARGET_KEYS:
+        for combo in combos:
+            slots = _assign_slots_simple(combo)
+            parts = []
+            colors = {}
+            vmap = {}
+            for vid, (name, var_idx, triple) in slots.items():
+                sol = _solfege_label(name, var_idx)
+                parts.append(_vpart(name, sol))
+                vmap[vid] = _realize_events(triple, key, vid)
+                colors[vid] = CLAUSULA_COLOR.get(name, "#000000")
+            desc = f"B4 — {' '.join(parts)} [{key}]"
+            payload = _build_umto(
+                vmap, key, desc,
+                voice_colors=_render_voice_colors(vmap, colors),
+            )
+            ex = _save_exercise(
+                author=author, description=desc, payload=payload,
+                skill_tags=["branch_b", "unit:B4", "cadence_4pt",
+                            "clausula_alto"],
+                complexity=4, is_public=options["public"], overwrite=options["overwrite"],
+            )
+            exs.append(ex)
+            stdout.write(f"  {desc}")
+    pl = _build_playlist(
+        author=author, playlist_name="B4 — Simple Cadence (4 parts)",
+        exercises=exs, skill_tags=["branch_b", "unit:B4", "cadence_4pt"],
+        is_public=options["public"],
+    )
+    stdout.write(style.SUCCESS(f"B4: {len(exs)} exercises → '{pl.name}'"))
+
+
+# ── B11: compound 2-voice cadences ────────────────────────────────────────────
+
+def _compound_events(triple, key: str, vid: str, tau: int) -> list[VoiceEvent]:
+    """
+    Build VoiceEvents for a compound cadence voice.
+    τ=0 (early): half/half/whole, starting beat 0.
+    τ=1 (late):  quarter rest + quarter/quarter/whole, starting beat 0.
+    """
+    if tau == 0:
+        return _realize_events(triple, key, vid, dur_scheme=_DUR_COMPOUND_EARLY)
+    else:
+        rest = VoiceEvent(kind="rest", duration=1.0, duration_type="q", dots=0)
+        notes = _realize_events(triple, key, vid, dur_scheme=_DUR_COMPOUND_LATE)
+        return [rest] + notes
+
+
+def _generate_b11(author, options, stdout, style):
+    stdout.write(style.MIGRATE_HEADING("B11 — Compound Cadence (2 voices)"))
+    exs = []
+    # enumerate_compound returns (early, late, interval_profile)
+    # early/late = (name, var_idx, triple)
+    combos = list(enumerate_compound(require_discant=False))
+    for key in TARGET_KEYS:
+        for c_early, c_late, _ in combos:
+            e_name, e_idx, e_triple = c_early
+            l_name, l_idx, l_triple = c_late
+            e_sol = _solfege_label(e_name, e_idx)
+            l_sol = _solfege_label(l_name, l_idx)
+            # early (τ=0) voice: use A (treble) unless it's Bass
+            e_vid = "B" if e_name == "Bass" else "A"
+            # late (τ=1) voice: Discant=S, others=A (but don't collide with early)
+            l_vid = "S" if l_name == "Discant" else ("A" if e_vid != "A" else "S")
+
+            desc = f"B11 — τ0 {_vpart(e_name, e_sol)} τ1 {_vpart(l_name, l_sol)} [{key}]"
+            e_events = _compound_events(e_triple, key, e_vid, tau=0)
+            l_events = _compound_events(l_triple, key, l_vid, tau=1)
+            vmap = {e_vid: e_events, l_vid: l_events}
+            colors = {
+                e_vid: CLAUSULA_COLOR.get(e_name, "#000000"),
+                l_vid: CLAUSULA_COLOR.get(l_name, "#000000"),
+            }
+            # Compound offsets: τ=0 attacks at 0,2,4; τ=1 rest+attacks at 0,1,2,4 (rest=0)
+            offsets = [0.0, 1.0, 2.0, 4.0]
+            payload = _build_umto(
+                vmap, key, desc,
+                voice_colors=_render_voice_colors(vmap, colors),
+                offsets=offsets,
+            )
+            ex = _save_exercise(
+                author=author, description=desc, payload=payload,
+                skill_tags=["branch_b", "unit:B11", "cadence_compound_2pt"],
+                complexity=5, is_public=options["public"], overwrite=options["overwrite"],
+            )
+            exs.append(ex)
+            stdout.write(f"  {desc}")
+    pl = _build_playlist(
+        author=author, playlist_name="B11 — Compound Cadence (2 parts)",
+        exercises=exs, skill_tags=["branch_b", "unit:B11", "cadence_compound_2pt"],
+        is_public=options["public"],
+    )
+    stdout.write(style.SUCCESS(f"B11: {len(exs)} exercises → '{pl.name}'"))
+
+
+# ── B12: compound 3-voice and 4-voice cadences ────────────────────────────────
+
+def _generate_b12(author, options, stdout, style):
+    stdout.write(style.MIGRATE_HEADING("B12 — Compound Cadence (3–4 voices)"))
+    exs = []
+
+    # 3-voice standard: bass(τ=0) + upper-τ=0 + Discant(τ=1)
+    for key in TARGET_KEYS:
+        for c_bass, c_early, c_late, _ in enumerate_compound_3voice(
+                require_discant=False, require_bass=False):
+            b_name, b_idx, b_triple = c_bass
+            e_name, e_idx, e_triple = c_early
+            l_name, l_idx, l_triple = c_late
+            b_sol = _solfege_label(b_name, b_idx)
+            e_sol = _solfege_label(e_name, e_idx)
+            l_sol = _solfege_label(l_name, l_idx)
+
+            b_vid = "B"
+            e_vid = "A"
+            l_vid = "S"
+
+            desc = f"B12 — {_vpart(b_name, b_sol)} τ0 {_vpart(e_name, e_sol)} τ1 {_vpart(l_name, l_sol)} [{key}]"
+            vmap = {
+                b_vid: _compound_events(b_triple, key, b_vid, tau=0),
+                e_vid: _compound_events(e_triple, key, e_vid, tau=0),
+                l_vid: _compound_events(l_triple, key, l_vid, tau=1),
+            }
+            colors = {
+                b_vid: CLAUSULA_COLOR.get(b_name, "#000000"),
+                e_vid: CLAUSULA_COLOR.get(e_name, "#000000"),
+                l_vid: CLAUSULA_COLOR.get(l_name, "#000000"),
+            }
+            payload = _build_umto(
+                vmap, key, desc,
+                voice_colors=_render_voice_colors(vmap, colors),
+                offsets=[0.0, 1.0, 2.0, 4.0],
+            )
+            ex = _save_exercise(
+                author=author, description=desc, payload=payload,
+                skill_tags=["branch_b", "unit:B12", "cadence_compound_3pt"],
+                complexity=6, is_public=options["public"], overwrite=options["overwrite"],
+            )
+            exs.append(ex)
+            stdout.write(f"  {desc}")
+
+    # 4-voice compound: bass(τ=0) + 2 upper(τ=0) + Discant(τ=1)
+    for key in TARGET_KEYS:
+        for c_bass, c_u1, c_u2, c_late in enumerate_compound_4voice(
+                require_discant=True, require_bass=True):
+            b_name, b_idx, b_triple = c_bass
+            u1_name, u1_idx, u1_triple = c_u1
+            u2_name, u2_idx, u2_triple = c_u2
+            l_name, l_idx, l_triple = c_late
+
+            b_sol  = _solfege_label(b_name, b_idx)
+            u1_sol = _solfege_label(u1_name, u1_idx)
+            u2_sol = _solfege_label(u2_name, u2_idx)
+            l_sol  = _solfege_label(l_name, l_idx)
+
+            # 4-voice slots: Bass=B, lower-upper=T, upper-upper=A, Discant=S
+            b_vid  = "B"
+            u1_vid = "T"
+            u2_vid = "A"
+            l_vid  = "S"
+
+            desc = (f"B12 4v — {_vpart(b_name, b_sol)} {_vpart(u1_name, u1_sol)}"
+                    f" {_vpart(u2_name, u2_sol)} τ1 {_vpart(l_name, l_sol)} [{key}]")
+            vmap = {
+                b_vid:  _compound_events(b_triple,  key, b_vid,  tau=0),
+                u1_vid: _compound_events(u1_triple, key, u1_vid, tau=0),
+                u2_vid: _compound_events(u2_triple, key, u2_vid, tau=0),
+                l_vid:  _compound_events(l_triple,  key, l_vid,  tau=1),
+            }
+            colors = {
+                b_vid:  CLAUSULA_COLOR.get(b_name,  "#000000"),
+                u1_vid: CLAUSULA_COLOR.get(u1_name, "#000000"),
+                u2_vid: CLAUSULA_COLOR.get(u2_name, "#000000"),
+                l_vid:  CLAUSULA_COLOR.get(l_name,  "#000000"),
+            }
+            payload = _build_umto(
+                vmap, key, desc,
+                voice_colors=_render_voice_colors(vmap, colors),
+                offsets=[0.0, 1.0, 2.0, 4.0],
+            )
+            ex = _save_exercise(
+                author=author, description=desc, payload=payload,
+                skill_tags=["branch_b", "unit:B12", "cadence_compound_4pt"],
+                complexity=7, is_public=options["public"], overwrite=options["overwrite"],
+            )
+            exs.append(ex)
+            stdout.write(f"  {desc}")
+
+    pl = _build_playlist(
+        author=author, playlist_name="B12 — Compound Cadence (3–4 parts)",
+        exercises=exs, skill_tags=["branch_b", "unit:B12", "cadence_compound_3pt",
+                                    "cadence_compound_4pt"],
+        is_public=options["public"],
+    )
+    stdout.write(style.SUCCESS(f"B12: {len(exs)} exercises → '{pl.name}'"))
+
+
+# ── Management command ────────────────────────────────────────────────────────
+
+ALL_UNITS = ["B1", "B2", "B3", "B4", "B11", "B12"]
+_GENERATORS = {
+    "B1":  _generate_b1,
+    "B2":  _generate_b2,
+    "B3":  _generate_b3,
+    "B4":  _generate_b4,
+    "B11": _generate_b11,
+    "B12": _generate_b12,
+}
+
+
 class Command(BaseCommand):
-    help = "Generate Branch B Units B1–B2: clausulae playback exercises."
+    help = "Generate Branch B clausulae exercises: B1–B4 (simple) and B11–B12 (compound)."
 
     def add_arguments(self, parser):
         parser.add_argument("--author", required=True, help="Email of exercise author")
-        parser.add_argument("--public", action="store_true", help="Make exercises public")
-        parser.add_argument("--overwrite", action="store_true", help="Overwrite existing exercises")
+        parser.add_argument("--public", action="store_true")
+        parser.add_argument("--overwrite", action="store_true")
         parser.add_argument(
-            "--unit", choices=["B1", "B2", "both"], default="both",
-            help="Which units to generate (default: both)",
+            "--unit",
+            choices=ALL_UNITS + ["all"],
+            default="all",
+            help="Which unit to generate (default: all)",
         )
 
     def handle(self, *args, **options):
@@ -303,134 +659,11 @@ class Command(BaseCommand):
                 f"Error: {_CLAUSULAE_IMPORT_ERROR}\n"
                 "Run: pip install -e ../clausulae-project"
             )
-
         try:
             author = User.objects.get(email=options["author"])
         except User.DoesNotExist as exc:
             raise CommandError(f"Unknown author: {options['author']}") from exc
 
-        unit = options["unit"]
-        if unit in ("B1", "both"):
-            self._generate_b1(author, options)
-        if unit in ("B2", "both"):
-            self._generate_b2(author, options)
-
-    # ── B1: individual clausulae ──────────────────────────────────────────────
-
-    def _generate_b1(self, author, options):
-        self.stdout.write(self.style.MIGRATE_HEADING("Generating B1 — Formal Clausulae"))
-        all_exercises = []
-
-        for key in TARGET_KEYS:
-            for clausula_name, variants in CLAUSULAE.items():
-                voice_id, display_name = CLAUSULA_VOICE[clausula_name]
-                for var_idx, triple in enumerate(variants):
-                    var_labels = {
-                        "Discant": ["Do–Ti–Do"],
-                        "Tenor":   TENOR_LABELS,
-                        "Alto":    ALTO_LABELS,
-                        "Bass":    ["Do–Sol–Do"],
-                    }[clausula_name]
-                    solfege = var_labels[var_idx] if var_idx < len(var_labels) else str(triple)
-
-                    desc = f"B1 — {display_name} clausula ({solfege}) in {key}"
-                    events = _clausula_to_voice_events(triple, key, voice_id)
-                    labels = {display_name: solfege}
-                    clausula_color = CLAUSULA_COLOR.get(clausula_name, "#9aa0a6")
-                    payload = _build_umto(
-                        voice_events_by_id={voice_id: events},
-                        labels=labels,
-                        key=key,
-                        description=desc,
-                        voice_colors=_render_voice_colors(
-                            {voice_id: events},
-                            {voice_id: clausula_color},
-                        ),
-                    )
-                    skill_tags = [
-                        "branch_b", "unit:B1",
-                        f"clausula_{clausula_name.lower()}",
-                        f"clausula_var{var_idx}",
-                    ]
-                    ex = _save_exercise(
-                        author=author,
-                        description=desc,
-                        payload=payload,
-                        skill_tags=skill_tags,
-                        complexity=1,
-                        is_public=options["public"],
-                        overwrite=options["overwrite"],
-                    )
-                    all_exercises.append(ex)
-                    self.stdout.write(f"  {desc}")
-
-        playlist = _build_playlist(
-            author=author,
-            playlist_name="B1 — One-Part Clausulae",
-            exercises=all_exercises,
-            skill_tags=["branch_b", "unit:B1", "one_part_clausulae"],
-            is_public=options["public"],
-        )
-        self.stdout.write(self.style.SUCCESS(
-            f"B1: {len(all_exercises)} exercises → playlist '{playlist.name}'"
-        ))
-
-    # ── B2: 2-voice Discant + Tenor combinations ──────────────────────────────
-
-    def _generate_b2(self, author, options):
-        self.stdout.write(self.style.MIGRATE_HEADING("Generating B2 — Simple Cadence (2 parts)"))
-        all_exercises = []
-
-        discant_triple = CLAUSULAE["Discant"][0]  # (0, 6, 0)
-        tenor_variants = list(enumerate(CLAUSULAE["Tenor"]))
-
-        for key in TARGET_KEYS:
-            for var_idx, tenor_triple in tenor_variants:
-                tenor_labels = TENOR_LABELS
-                solfege = tenor_labels[var_idx] if var_idx < len(tenor_labels) else str(tenor_triple)
-
-                desc = f"B2 — Discant + Tenor {solfege} in {key}"
-                d_events = _clausula_to_voice_events(discant_triple, key, "S")
-                t_events = _clausula_to_voice_events(tenor_triple, key, "A")
-
-                labels = {"Discant": "Do–Ti–Do", "Tenor": solfege}
-                payload = _build_umto(
-                    voice_events_by_id={"S": d_events, "A": t_events},
-                    labels=labels,
-                    key=key,
-                    description=desc,
-                    voice_colors=_render_voice_colors(
-                        {"S": d_events, "A": t_events},
-                        {"S": CLAUSULA_COLOR.get("Discant", "#F9141B"),
-                         "A": CLAUSULA_COLOR.get("Tenor", "#108040")},
-                    ),
-                )
-                skill_tags = [
-                    "branch_b", "unit:B2",
-                    "clausula_discant", "clausula_tenor",
-                    "cadence_simple_2pt", "clausula_combination",
-                    f"clausula_tenor_var{var_idx}",
-                ]
-                ex = _save_exercise(
-                    author=author,
-                    description=desc,
-                    payload=payload,
-                    skill_tags=skill_tags,
-                    complexity=2,
-                    is_public=options["public"],
-                    overwrite=options["overwrite"],
-                )
-                all_exercises.append(ex)
-                self.stdout.write(f"  {desc}")
-
-        playlist = _build_playlist(
-            author=author,
-            playlist_name="B2 — Simple Cadence (2 parts)",
-            exercises=all_exercises,
-            skill_tags=["branch_b", "unit:B2", "cadence_simple_2pt",
-                        "clausula_combination"],
-            is_public=options["public"],
-        )
-        self.stdout.write(self.style.SUCCESS(
-            f"B2: {len(all_exercises)} exercises → playlist '{playlist.name}'"
-        ))
+        units = ALL_UNITS if options["unit"] == "all" else [options["unit"]]
+        for unit in units:
+            _GENERATORS[unit](author, options, self.stdout, self.style)
