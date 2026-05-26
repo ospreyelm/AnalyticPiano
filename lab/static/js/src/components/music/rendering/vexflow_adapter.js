@@ -522,9 +522,11 @@ define([
     }
 
     if (!hasSplit) {
-      // Single voice \u2014 labels above stave, cleared past stem tips
+      // Single voice \u2014 labels above stave, cleared past stem tips.
+      // Use treble-filtered list if colNotes was provided (avoids drawing bass note above treble).
+      var singleVoiceMidi = topVoiceMidi.length ? topVoiceMidi : midiNotes;
       var topY = (trebleStave.getYForLine ? trebleStave.getYForLine(0) : trebleStave.getY()) - 30;
-      _drawScaleDegreeList(ctx, midiNotes, columnX, topY, -1, analyzer, sdMap);
+      _drawScaleDegreeList(ctx, singleVoiceMidi, columnX, topY, -1, analyzer, sdMap);
       return;
     }
 
@@ -536,6 +538,17 @@ define([
       var botY = trebleStave.getBottomY ? trebleStave.getBottomY() : (trebleStave.getY() + 40);
       _drawScaleDegreeList(ctx, bottomVoiceMidi, columnX, botY, 1, analyzer, sdMap);
     }
+  }
+
+  function drawBassScaleDegreeBelow(ctx, bassStave, label, columnX) {
+    if (!ctx || !bassStave || !label) return;
+    var y = bassStave.getBottomY() + 22;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000';
+    ctx.font = '18px MainSerifs';
+    ctx.fillText(label, columnX, y);
+    ctx.restore();
   }
 
   function formatExplicitNoteNames(spellings) {
@@ -1125,6 +1138,8 @@ define([
         renderScaleDegrees = false;
       }
       var showNotation = opts && opts.showNotation !== undefined ? opts.showNotation : true;
+      var analysisType = (opts && opts.analysisType) || null;
+      var isClausula = analysisType === "clausula";
       var isAnalysisMatch = !!(opts && opts.isAnalysisMatch);
       var harmonizationTargets = (opts && opts.harmonizationTargets) || null;
       var harmonizationRealization = (opts && opts.harmonizationRealization) || null;
@@ -1947,6 +1962,15 @@ define([
                     }
                   }
                   drawScaleDegreeAbove(ctx, attackList, columnCenterX, degStave, inlineAnalyzer, col.notes, bassStave, sdMap);
+                }
+                if (isClausula && bassStave && score && score.umto && score.umto.analysis) {
+                  var bassQL = noteOnset / 1024;
+                  var bassLabel = VexflowAdapterLogic
+                    ? VexflowAdapterLogic.getBassLabelAtOffset(score.umto.analysis, bassQL)
+                    : null;
+                  if (bassLabel) {
+                    drawBassScaleDegreeBelow(ctx, bassStave, bassLabel, columnCenterX);
+                  }
                 }
               }
 

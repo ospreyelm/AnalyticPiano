@@ -55,9 +55,31 @@
     return midi;
   }
 
+  /**
+   * Returns the functional_label from the UMTO analysis slice whose offset
+   * is within 0.05 quarter-lengths of `quarterLength`, or null if none found.
+   * Used by the clausula renderer to draw circled bass scale-degree numerals.
+   *
+   * @param {Array} analysisSlices  - score.umto.analysis array
+   * @param {number} quarterLength  - noteOnset / 1024
+   * @returns {string|null}
+   */
+  function getBassLabelAtOffset(analysisSlices, quarterLength) {
+    if (!analysisSlices || !analysisSlices.length) return null;
+    for (var i = 0; i < analysisSlices.length; i++) {
+      var sl = analysisSlices[i];
+      if (Math.abs(sl.offset - quarterLength) < 0.05 &&
+          sl.content && sl.content.functional_label) {
+        return sl.content.functional_label;
+      }
+    }
+    return null;
+  }
+
   return {
     isRestTickable: isRestTickable,
     keyToMidi: keyToMidi,
     tickableToScaleDegreeMidi: tickableToScaleDegreeMidi,
+    getBassLabelAtOffset: getBassLabelAtOffset,
   };
 });
