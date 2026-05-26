@@ -185,6 +185,32 @@
       <button type="submit" class="btn">Run Generator</button>
     </form>
 
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Branch B Clausulae (B1 + B2)</h3>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_clausulae_b1">
+      <div class="form-row">
+        <label>Author email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label>Unit:</label>
+        <select name="unit">
+          <option value="both">Both (B1 + B2)</option>
+          <option value="B1">B1 only</option>
+          <option value="B2">B2 only</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="overwrite"> Overwrite existing</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="public"> Make public</label>
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
     <form method="post">
       {% csrf_token %}
       <h3>Duplicate Chorale as Identification</h3>

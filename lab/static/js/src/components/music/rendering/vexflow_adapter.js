@@ -516,8 +516,9 @@ define([
             var parts = keyStr.split('/');
             if (parts.length < 2) return null;
             var noteMap = { c:0, d:2, e:4, f:5, g:7, a:9, b:11 };
-            var step = parts[0].replace(/[^a-g]/g,'').toLowerCase();
-            var alter = (parts[0].match(/#/g)||[]).length - (parts[0].match(/b/g)||[]).length;
+            var step = parts[0].charAt(0).toLowerCase();
+            var accStr = parts[0].slice(1); // accidentals only, no step letter
+            var alter = (accStr.match(/#/g)||[]).length - (accStr.match(/b/g)||[]).length;
             var oct = parseInt(parts[1], 10);
             if (isNaN(oct) || !(step in noteMap)) return null;
             return (oct + 1) * 12 + noteMap[step] + alter;
@@ -1958,7 +1959,7 @@ define([
                   // Build MIDI→label map from stored scale_degrees in UMTO analysis slices.
                   var sdMap = null;
                   if (score && score.umto && score.umto.analysis && score.umto.analysis.length) {
-                    var absQL = (cumulativeMeasureTick + noteOnset) / 1024;
+                    var absQL = noteOnset / 1024;
                     for (var sdi = 0; sdi < score.umto.analysis.length; sdi++) {
                       var sdSlice = score.umto.analysis[sdi];
                       if (Math.abs(sdSlice.offset - absQL) < 0.05 &&
