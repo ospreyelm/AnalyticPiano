@@ -1125,6 +1125,8 @@ define([
         renderScaleDegrees = false;
       }
       var showNotation = opts && opts.showNotation !== undefined ? opts.showNotation : true;
+      var analysisType = (opts && opts.analysisType) || null;
+      var isClausula = analysisType === "clausula";
       var isAnalysisMatch = !!(opts && opts.isAnalysisMatch);
       var harmonizationTargets = (opts && opts.harmonizationTargets) || null;
       var harmonizationRealization = (opts && opts.harmonizationRealization) || null;

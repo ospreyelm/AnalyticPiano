@@ -1876,6 +1876,7 @@ define([
               ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
               : null,
             selectVoices: harmonizationSelectVoices,
+            analysisType: definition.getAnalysisType ? definition.getAnalysisType() : null,
             onWindowPosition: function (slot) {
               if (!slot || typeof slot.windowIndex !== "number") {
                 return;
