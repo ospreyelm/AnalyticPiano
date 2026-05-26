@@ -831,9 +831,12 @@ define([
         alto: "c/4",
         tenor: "e/3",
       };
+      // Top voice (S slot) on treble: raise rest above staff to avoid colliding with lower voice
+      var restKey = restKeyByClef[clef] || "b/4";
+      if (clef === "treble" && voiceSlot === "S") restKey = "d/5";
       var rest = new Vex.Flow.StaveNote({
         clef: clef,
-        keys: [restKeyByClef[clef] || "b/4"],
+        keys: [restKey],
         duration: dur,
         dots: numDots
       });
@@ -1831,6 +1834,7 @@ define([
             groups.forEach(function(col){
               var midiSet = Object.create(null);
               col.notes.forEach(function(t){
+                if (t._isRest) return;
                 var keys = (typeof t.getKeys === 'function') ? t.getKeys() : [];
                 for (var i=0;i<keys.length;i++) {
                   var m = keyToMidi(keys[i]);
