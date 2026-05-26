@@ -3,8 +3,10 @@
 **Date:** 2026-05-26  
 **Scope:** Branch B clausulae exercises only (`analysisType === "clausula"`)  
 **Files changed:**
-- `lab/static/js/src/components/music/rendering/vexflow_adapter.js` — 1 helper added, ~15 lines in existing branch
-- `lab/static/js/src/components/music/exercise_sheet.js` — pass `analysisType` opt to `VexFlowAdapter.render()`
+- `lab/static/js/src/components/music/rendering/vexflow_adapter_logic.js` — add `getBassLabelAtOffset()` pure helper
+- `lab/static/js/src/components/music/rendering/vexflow_adapter_logic.test.js` — 4 unit tests for the helper
+- `lab/static/js/src/components/music/rendering/vexflow_adapter.js` — import helper; add `drawBassScaleDegreeBelow`; suppress treble-above for clausula; call bass-below draw
+- `lab/static/js/src/components/music/exercise_sheet.js` — pass `analysisType` opt to `VexFlowAdapter.render()` at line 1852
 
 ---
 
