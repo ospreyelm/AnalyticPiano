@@ -1,12 +1,111 @@
-import io
+import html
+import time
 import threading
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.http import StreamingHttpResponse
 from django.core.management import call_command
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db import transaction
 from apps.exercises.models import Exercise
-from django.db.models import Count, F
+from django.db.models import Count
+
+
+class StreamingBuffer:
+    """Thread-safe output buffer that captures stdout/stderr and HTML-escapes it."""
+    def __init__(self):
+        self.queue = []
+        self.lock = threading.Lock()
+
+    def write(self, data):
+        with self.lock:
+            self.queue.append(html.escape(data))
+
+    def flush(self):
+        pass
+
+    def read_and_clear(self) -> str:
+        with self.lock:
+            chunks = self.queue[:]
+            self.queue.clear()
+            return "".join(chunks)
+
+
+def command_stream_generator(command_name: str, **kwargs):
+    buffer = StreamingBuffer()
+    error_container = []
+
+    # Yield HTML header and styles first so the browser starts rendering immediately
+    yield "<!DOCTYPE html>\n"
+    yield "<html>\n"
+    yield "<head>\n"
+    yield f"  <title>Runner: {command_name} — HarmonyLab Admin</title>\n"
+    yield "  <style>\n"
+    yield "    body { background-color: #0b0f19; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 2rem; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }\n"
+    yield "    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }\n"
+    yield "    .title { font-size: 1.5rem; font-weight: 700; color: #38bdf8; margin: 0; }\n"
+    yield "    .status-badge { background-color: #1e293b; color: #94a3b8; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: background-color 0.3s; }\n"
+    yield "    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; animation: pulse 2s infinite; }\n"
+    yield "    .console { flex: 1; background-color: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 1.5rem; font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; font-size: 0.9rem; line-height: 1.5; overflow-y: auto; white-space: pre-wrap; word-break: break-all; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }\n"
+    yield "    .footer { margin-top: 1.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; color: #64748b; }\n"
+    yield "    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; background-color: #0284c7; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; transition: background-color 0.2s; cursor: pointer; }\n"
+    yield "    .btn:hover { background-color: #0369a1; }\n"
+    yield "    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }\n"
+    yield "  </style>\n"
+    yield "</head>\n"
+    yield "<body>\n"
+    
+    yield "  <div class='header'>\n"
+    yield f"    <h1 class='title'>Executing: {command_name}</h1>\n"
+    yield "    <div class='status-badge' id='status-badge'><div class='status-dot'></div><span>RUNNING</span></div>\n"
+    yield "  </div>\n"
+    
+    yield "  <div class='console' id='console-box'>\n"
+
+    # Start the command in a background thread
+    def run_command_thread():
+        try:
+            call_command(command_name, stdout=buffer, stderr=buffer, **kwargs)
+        except Exception as e:
+            error_container.append(e)
+
+    thread = threading.Thread(target=run_command_thread)
+    thread.start()
+
+    # Loop while the thread runs or there are unconsumed messages in the buffer
+    while thread.is_alive() or buffer.queue:
+        output = buffer.read_and_clear()
+        if output:
+            yield output
+            # Output JS snippet to keep the console scrolled down
+            yield "\n<script>const c = document.getElementById('console-box'); c.scrollTop = c.scrollHeight;</script>"
+        time.sleep(0.05)
+
+    thread.join()
+
+    yield "  </div>\n"
+    
+    yield "  <div class='footer' id='footer-section'>\n"
+    if error_container:
+        err_msg = html.escape(str(error_container[0]))
+        yield f"    <span style='color: #ef4444; font-weight: 600;'>Command failed: {err_msg}</span>\n"
+        yield "    <script>\n"
+        yield "      document.getElementById('status-badge').innerHTML = '<span style=\"color:#ef4444;\">●</span> FAILED';\n"
+        yield "      document.getElementById('status-badge').style.backgroundColor = '#450a0a';\n"
+        yield "      document.getElementById('status-badge').style.color = '#ef4444';\n"
+        yield "    </script>\n"
+    else:
+        yield "    <span>All tasks finished successfully.</span>\n"
+        yield "    <script>\n"
+        yield "      document.getElementById('status-badge').innerHTML = '<span style=\"color:#10b981;\">●</span> COMPLETED';\n"
+        yield "      document.getElementById('status-badge').style.backgroundColor = '#064e3b';\n"
+        yield "      document.getElementById('status-badge').style.color = '#34d399';\n"
+        yield "    </script>\n"
+        
+    yield "    <a href='.' class='btn'>Return to Operations</a>\n"
+    yield "  </div>\n"
+    yield "</body>\n"
+    yield "</html>\n"
+
 
 @staff_member_required
 def operations_view(request):
@@ -23,16 +122,12 @@ def operations_view(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         command_name = request.POST.get('command_name')
-        
-        out = io.StringIO()
-        err = io.StringIO()
 
         if action == 'generate':
             # Collect kwargs
             kwargs = {}
             for key, value in request.POST.items():
                 if key not in ['csrfmiddlewaretoken', 'action', 'command_name'] and value.strip():
-                    # Handle lists (like extra-tags which might be space-separated)
                     if key == 'extra_tags':
                         kwargs['extra_tags'] = value.split()
                     elif value == 'on':
@@ -44,17 +139,11 @@ def operations_view(request):
             if 'author' not in kwargs:
                 kwargs['author'] = request.user.email
 
-            # Document limitation for long commands
-            if command_name in ['import_bach_phrases', 'generate_harmonization']:
-                messages.warning(request, f"Running {command_name}. This may take several minutes.")
-
-            try:
-                # Some management commands expect certain arg names
-                call_command(command_name, stdout=out, stderr=err, **kwargs)
-                msg = out.getvalue() or f"Command {command_name} completed successfully."
-                messages.success(request, msg)
-            except Exception as e:
-                messages.error(request, f"Error running {command_name}: {str(e)}\n{err.getvalue()}")
+            # Stream response in real-time
+            return StreamingHttpResponse(
+                command_stream_generator(command_name, **kwargs),
+                content_type="text/html"
+            )
 
         elif action == 'refresh':
             kwargs = {}
@@ -69,13 +158,12 @@ def operations_view(request):
                 if request.POST.get('resync_from_source'): kwargs['resync_from_source'] = True
             elif command_name == 'backfill_skill_tags':
                 if request.POST.get('all'): kwargs['all'] = True
-            
-            try:
-                call_command(command_name, stdout=out, stderr=err, **kwargs)
-                context['command_output'] = out.getvalue() + err.getvalue()
-                messages.success(request, f"Executed {command_name}.")
-            except Exception as e:
-                messages.error(request, f"Error running {command_name}: {str(e)}\n{err.getvalue()}")
+
+            # Stream response in real-time
+            return StreamingHttpResponse(
+                command_stream_generator(command_name, **kwargs),
+                content_type="text/html"
+            )
 
     # Build catalog
     from django.db.models.fields.json import KeyTextTransform
