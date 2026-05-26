@@ -1705,6 +1705,7 @@ define([
           var wantsRomans = !!display.showRomans;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
+          var wantsScaleDegrees = !!display.showScaleDegrees;
           var isAnalysisMatchMode = !!(definition.isAnalysisMatch && definition.isAnalysisMatch());
           var wantsNoteNames = !!display.showNoteNames || isAnalysisMatchMode;
           var isChoraleIdentification = this._isChoraleIdentificationExercise();
@@ -1717,12 +1718,14 @@ define([
             wantsRomans = false;
             wantsFigures = false;
             wantsChordLabels = false;
+            wantsScaleDegrees = false;
             wantsNoteNames = false;
             analyzeConfig.enabled = false;
             analyzeConfig.mode = analyzeConfig.mode || {};
             analyzeConfig.mode.roman_numerals = false;
             analyzeConfig.mode.thoroughbass = false;
             analyzeConfig.mode.chord_labels = false;
+            analyzeConfig.mode.scale_degrees = false;
             analyzeConfig.mode.note_names = false;
           }
 
@@ -1736,7 +1739,7 @@ define([
             }
           }
 
-          var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsNoteNames;
+          var wantsAnalysis = wantsRomans || wantsFigures || wantsChordLabels || wantsScaleDegrees || wantsNoteNames;
 
           // Preserve legacy chorale behavior that force-enables roman numerals,
           // but do not force overlays for chorale_identification.
@@ -1762,6 +1765,15 @@ define([
             }
             if (wantsChordLabels) {
               analyzeConfig.mode.chord_labels = true;
+            }
+            if (wantsScaleDegrees) {
+              analyzeConfig.mode.scale_degrees = true;
+              // scale_degrees is mutually exclusive with roman_numerals/note_names/thoroughbass.
+              // The inherited analyzeConfig from ANALYSIS_SETTINGS may have those enabled;
+              // silence them so renderScaleDegrees isn't blocked in vexflow_adapter.
+              if (!wantsRomans) analyzeConfig.mode.roman_numerals = false;
+              if (!wantsFigures) analyzeConfig.mode.thoroughbass = false;
+              if (!wantsNoteNames) analyzeConfig.mode.note_names = false;
             }
             if (wantsNoteNames) {
               analyzeConfig.mode.note_names = true;
@@ -1847,6 +1859,7 @@ define([
             hideKeyLabel: !!display.hideKeyLabel,
             firstMeasureExtraWidth: parseInt(display.firstMeasureExtraWidth, 10) || 0,
             noteXShift: parseInt(display.noteXShift, 10) || 0,
+            voiceColors: display.voiceColors || null,
             // Analysis wiring for chorale path (Notater bridge inside adapter)
             analyzeConfig: analyzeConfig,
 
