@@ -480,19 +480,19 @@ def _compound_events(triple, key: str, vid: str, tau: int) -> list[VoiceEvent]:
 def _generate_b11(author, options, stdout, style):
     stdout.write(style.MIGRATE_HEADING("B11 — Compound Cadence (2 voices)"))
     exs = []
-    # enumerate_compound returns (early, late, interval_profile)
-    # early/late = (name, var_idx, triple)
-    combos = list(enumerate_compound(require_discant=False))
+    # enumerate_compound: c_early=τ=0, c_late=τ=1. Corpus always has Discant as τ=1.
+    combos = [(e, l, pi) for e, l, pi in enumerate_compound(require_discant=True)
+              if l[0] == "Discant"]
     for key in TARGET_KEYS:
         for c_early, c_late, _ in combos:
             e_name, e_idx, e_triple = c_early
             l_name, l_idx, l_triple = c_late
             e_sol = _solfege_label(e_name, e_idx)
             l_sol = _solfege_label(l_name, l_idx)
-            # early (τ=0) voice: use A (treble) unless it's Bass
+            # τ=0 voice: Bass=B, others=A (treble)
             e_vid = "B" if e_name == "Bass" else "A"
-            # late (τ=1) voice: Discant=S, others=A (but don't collide with early)
-            l_vid = "S" if l_name == "Discant" else ("A" if e_vid != "A" else "S")
+            # τ=1 Discant always S
+            l_vid = "S"
 
             desc = f"B11 — τ0 {_vpart(e_name, e_sol)} τ1 {_vpart(l_name, l_sol)} [{key}]"
             e_events = _compound_events(e_triple, key, e_vid, tau=0)
@@ -531,9 +531,11 @@ def _generate_b12(author, options, stdout, style):
     exs = []
 
     # 3-voice standard: bass(τ=0) + upper-τ=0 + Discant(τ=1)
+    combos_3v = [(b, e, l, pi) for b, e, l, pi in enumerate_compound_3voice(
+                     require_discant=True, require_bass=True)
+                 if l[0] == "Discant"]
     for key in TARGET_KEYS:
-        for c_bass, c_early, c_late, _ in enumerate_compound_3voice(
-                require_discant=False, require_bass=False):
+        for c_bass, c_early, c_late, _ in combos_3v:
             b_name, b_idx, b_triple = c_bass
             e_name, e_idx, e_triple = c_early
             l_name, l_idx, l_triple = c_late
