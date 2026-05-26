@@ -90,7 +90,7 @@ _DUR_SIMPLE = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
 # Compound: τ=0 (early): half/half/whole over 5 beats
 # τ=1 (late): qtr-rest, then qtr/qtr/whole — represented as rest+3 notes
 _DUR_COMPOUND_EARLY = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
-_DUR_COMPOUND_LATE  = [("q", 1.0), ("h", 2.0), ("w", 4.0)]  # after leading rest; ANT=qtr, PEN=half, ULT=whole
+_DUR_COMPOUND_LATE  = [("h", 2.0), ("q", 1.0), ("w", 4.0)]  # after leading rest; ANT=half, PEN=qtr, ULT=whole
 
 # SATB maps for voice slots
 _SATB_MAP = {"treble": ["S", "A"], "bass": ["T", "B"]}
