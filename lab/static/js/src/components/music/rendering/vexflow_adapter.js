@@ -538,6 +538,17 @@ define([
     }
   }
 
+  function drawBassScaleDegreeBelow(ctx, bassStave, label, columnX) {
+    if (!ctx || !bassStave || !label) return;
+    var y = bassStave.getBottomY() + 22;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000';
+    ctx.font = '18px MainSerifs';
+    ctx.fillText(label, columnX, y);
+    ctx.restore();
+  }
+
   function formatExplicitNoteNames(spellings) {
     if (!spellings || !spellings.length) return "";
     var accidentalMap = {
