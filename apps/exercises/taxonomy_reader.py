@@ -16,6 +16,11 @@ class TaxonomyReader:
         return cls._data
 
     @classmethod
+    def get_branches(cls) -> list[dict]:
+        """Returns the full taxonomy: list of branches, each with tiers and units."""
+        return cls._load()
+
+    @classmethod
     def get_all_units(cls) -> list[dict]:
         """Returns all unit dicts across all tiers."""
         data = cls._load()

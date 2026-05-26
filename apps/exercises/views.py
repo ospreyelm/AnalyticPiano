@@ -33,7 +33,7 @@ def _build_completion_response(*, user_id, playlist, exercise_obj, exercise_num,
     # music21 analysis and the first one is often not the target unit.
     tag_sources = list(getattr(playlist, "skill_tags", None) or []) + list(exercise_obj.skill_tags or [])
     for t in tag_sources:
-        m = _re.match(r'^unit:(\d+)$', t)
+        m = _re.match(r'^unit:([a-zA-Z0-9]+)$', t)
         if m:
             u = TaxonomyReader.get_unit(m.group(1))
             if u:

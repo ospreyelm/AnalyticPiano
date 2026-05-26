@@ -6,130 +6,484 @@
 {% if resume_url %}
   <a class="s-resume-card" href="{{ resume_url }}">
     <div class="s-resume-label">Pick up where you left off</div>
-    <div class="s-resume-title">Unit 1 · {{ resume_skill|default:"Note Names" }}</div>
+    <div class="s-resume-title">{{ resume_skill|default:"Start learning" }}</div>
     <div class="s-resume-progress">
-      <div class="s-resume-progress-bar" style="width: {{ unit1_progress.percent }}%"></div>
+      <div class="s-resume-progress-bar" style="width: {{ resume_progress.percent }}%"></div>
     </div>
-    <div class="s-resume-meta">{{ unit1_progress.mastered_count }} of 4 skills mastered</div>
+    <div class="s-resume-meta">{{ resume_progress.percent }}% complete</div>
   </a>
 {% endif %}
 
 <style>
-  .s-tab-bar {
+  /* ── Resume card linear gradient & shadow ────────────────── */
+  .s-resume-card {
+    background: linear-gradient(135deg, var(--teal) 0%, #1f6070 100%) !important;
+    box-shadow: 0 4px 14px rgba(42, 126, 148, 0.25) !important;
+    transition: all 250ms ease !important;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .s-resume-card:hover {
+    background: linear-gradient(135deg, #2f8ea7 0%, #1a5260 100%) !important;
+    box-shadow: 0 6px 20px rgba(42, 126, 148, 0.35) !important;
+    transform: translateY(-2px);
+  }
+
+  /* ── Course catalog grid ─────────────────────────────────── */
+  .s-catalog {
     display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-    -webkit-overflow-scrolling: touch;
+    flex-direction: column;
+    gap: 16px;
   }
-  .s-tab-bar::-webkit-scrollbar {
-    height: 4px;
-  }
-  .s-tab-bar::-webkit-scrollbar-thumb {
-    background-color: var(--teal-mid);
-    border-radius: 4px;
-  }
-  .s-tab-item {
-    padding: 6px 14px;
-    border-radius: 18px;
-    border: 1px solid var(--teal-mid);
+
+  /* ── Branch card (top-level) ─────────────────────────────── */
+  .s-branch-card {
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--teal);
+    border-radius: 12px;
     background: var(--surface-2);
-    color: var(--teal);
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 0.78rem;
+    overflow: hidden;
+    transition: box-shadow 250ms ease, transform 250ms ease;
+  }
+  .s-branch-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+
+  /* Branch Theme Colors */
+  .s-branch-card[class*="s-branch-core"] {
+    border-top-color: #2a7e94; /* Teal */
+    --theme-color: #2a7e94;
+    --theme-bg: #e8f4f7;
+  }
+  .s-branch-card.s-branch-branch_a {
+    border-top-color: #2563eb; /* Royal Blue */
+    --theme-color: #2563eb;
+    --theme-bg: #eff6ff;
+  }
+  .s-branch-card.s-branch-branch_b {
+    border-top-color: #d97706; /* Historical Amber */
+    --theme-color: #d97706;
+    --theme-bg: #fffbeb;
+  }
+  .s-branch-card.s-branch-branch_c {
+    border-top-color: #7c3aed; /* Slonimsky Violet */
+    --theme-color: #7c3aed;
+    --theme-bg: #f5f3ff;
+  }
+  .s-branch-card.s-branch-branch_d {
+    border-top-color: #db2777; /* Neo-Riemannian Pink */
+    --theme-color: #db2777;
+    --theme-bg: #fdf2f8;
+  }
+
+  .s-branch-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    width: 100%;
+    padding: 18px 20px;
+    border: none;
+    background: none;
     cursor: pointer;
+    text-align: left;
+    font-family: var(--font-body);
+    color: var(--text);
+    transition: background 150ms ease;
+  }
+  .s-branch-header:hover {
+    background: rgba(42, 126, 148, 0.03);
+  }
+
+  .s-branch-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--theme-bg, var(--teal-pale));
+    color: var(--theme-color, var(--teal));
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
+                background 200ms ease, color 200ms ease;
+  }
+  .s-branch-card.expanded .s-branch-chevron {
+    transform: rotate(90deg);
+    background: var(--theme-color, var(--teal));
+    color: white;
+  }
+
+  .s-branch-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .s-branch-label {
+    display: block;
+    font-family: var(--font-ui);
+    font-weight: 400;
+    font-size: 1.1rem;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .s-branch-desc {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  .s-branch-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .s-branch-tier-count {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
     white-space: nowrap;
+  }
+  .s-branch-progress-dots {
+    display: flex;
+    gap: 3px;
+  }
+  .s-branch-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .s-branch-progress-dot.active {
+    background: var(--theme-color, var(--teal));
+  }
+  .s-branch-progress-dot.complete {
+    background: var(--success);
+  }
+
+  /* Branch body — collapsible */
+  .s-branch-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .s-branch-card.expanded .s-branch-body {
+    max-height: 5000px;
+  }
+  .s-branch-body-inner {
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Tier accordion (inside branch) ──────────────────────── */
+  .s-tier-group {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 10px;
+    background: var(--surface);
+    overflow: hidden;
+    transition: box-shadow 200ms ease;
+  }
+  .s-tier-group:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .s-tier-group.dimmed {
+    opacity: 0.5;
+  }
+  .s-tier-group.dimmed:hover {
+    opacity: 0.65;
+  }
+
+  .s-tier-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-body);
+    color: var(--text);
+    transition: background 150ms ease;
+  }
+  .s-tier-header:hover {
+    background: rgba(42, 126, 148, 0.04);
+  }
+
+  .s-tier-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+  }
+  .s-tier-group.expanded .s-tier-chevron {
+    transform: rotate(90deg);
+  }
+
+  .s-tier-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: 5px;
+    background: var(--theme-bg, var(--teal-pale));
+    color: var(--theme-color, var(--teal));
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+  .s-tier-group.dimmed .s-tier-badge {
+    background: #eee;
+    color: #999;
+  }
+
+  .s-tier-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .s-tier-label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.84rem;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .s-tier-desc {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+    margin-top: 1px;
+  }
+
+  .s-tier-stat {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .s-tier-stat-active {
+    color: var(--theme-color, var(--teal)) !important;
+  }
+
+  /* Tier body — collapsible */
+  .s-tier-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 350ms cubic-bezier(0.4, 0, 0.2, 1),
+                padding 250ms ease;
+    padding: 0 14px;
+  }
+  .s-tier-group.expanded .s-tier-body {
+    max-height: 2000px;
+    padding: 2px 14px 14px;
+  }
+
+  /* ── Unit cards inside tiers ─────────────────────────────── */
+  .s-tier-body .s-unit-card {
+    margin-bottom: 5px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    border-color: var(--border);
     transition: all 150ms ease;
   }
-  .s-tab-item:hover {
-    background: var(--teal-pale);
-    border-color: var(--teal);
+  .s-tier-body .s-unit-card.active:hover {
+    border-color: var(--theme-color, var(--teal));
+    box-shadow: 0 0 0 3px var(--theme-bg, rgba(42,126,148,0.1));
   }
-  .s-tab-item.active {
-    background: var(--teal);
-    color: white;
-    border-color: var(--teal);
+  .s-tier-body .s-unit-pct {
+    font-size: 0.75rem;
+    color: var(--theme-color, var(--teal));
+    font-weight: 600;
   }
-  .s-section-content {
-    display: none;
+  .s-tier-body .s-progress-bar-fill {
+    background: var(--theme-color, var(--teal));
   }
-  .s-section-content.active {
-    display: block;
-    animation: fadeIn 200ms ease;
+  .s-tier-body .s-unit-card:last-child {
+    margin-bottom: 0;
   }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+
+  /* ── Responsive: 2-column grid for branches on wider screens ── */
+  @media (min-width: 680px) {
+    .s-catalog {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    /* Expanded branch takes full width */
+    .s-branch-card.expanded {
+      grid-column: 1 / -1;
+    }
   }
 </style>
 
-<div class="s-tab-bar">
+<!-- Course catalog — all branches equal -->
+<div class="s-catalog">
   {% for section in sections %}
-    <button class="s-tab-item {% if forloop.first %}active{% endif %}" data-target="section-{{ forloop.index0 }}">
-      {{ section.label }}
-    </button>
+    <div class="s-branch-card s-branch-{{ section.id }}" data-branch>
+      <button class="s-branch-header" data-branch-toggle>
+        <span class="s-branch-chevron">▶</span>
+        <div class="s-branch-info">
+          <span class="s-branch-label">{{ section.label }}</span>
+          <span class="s-branch-desc">{{ section.desc|truncatewords:25 }}</span>
+        </div>
+        <div class="s-branch-meta">
+          <span class="s-branch-tier-count">
+            {% if section.tier_count > 1 %}
+              {{ section.tier_count }} tiers ·
+            {% endif %}
+            {{ section.unit_count }} units
+          </span>
+          <div class="s-branch-progress-dots">
+            {% for tier in section.tiers %}
+              <span class="s-branch-progress-dot {% if tier.stats.mastered == tier.stats.total and tier.stats.total > 0 %}complete{% elif tier.stats.started > 0 %}active{% endif %}"></span>
+            {% endfor %}
+          </div>
+        </div>
+      </button>
+
+      <div class="s-branch-body">
+        <div class="s-branch-body-inner">
+          {% if section.tier_count == 1 %}
+            <!-- Single-tier section: Render units directly without redundant nested accordion -->
+            {% with tier=section.tiers|first %}
+              <div style="margin-top: 10px;">
+                {% for unit in tier.units %}
+                  {% if unit.locked %}
+                    <div class="s-unit-card locked">
+                      <div class="s-unit-card-row">
+                        <span class="s-unit-title" style="color:#999">Unit {{ unit.num }} · {{ unit.title }}</span>
+                        <span style="font-size:0.8rem;color:#ccc">🔒</span>
+                      </div>
+                    </div>
+                  {% else %}
+                    <a class="s-unit-card active" href="{{ unit.url }}">
+                      <div class="s-unit-card-row">
+                        <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
+                        <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
+                      </div>
+                      {% if unit.percent > 0 %}
+                        <div class="s-progress-bar-track">
+                          <div class="s-progress-bar-fill" style="width: {{ unit.percent }}%"></div>
+                        </div>
+                      {% endif %}
+                    </a>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endwith %}
+          {% else %}
+            <!-- Multi-tier branch: Render nested tier accordions -->
+            {% for tier in section.tiers %}
+              <div class="s-tier-group {% if tier.has_active %}expanded{% endif %}">
+                <button class="s-tier-header" data-tier-toggle>
+                  <span class="s-tier-chevron">▶</span>
+                  {% if tier.badge %}
+                    <span class="s-tier-badge">{{ tier.badge }}</span>
+                  {% endif %}
+                  <div class="s-tier-info">
+                    <span class="s-tier-label">{{ tier.label }}</span>
+                    {% if tier.desc %}
+                      <span class="s-tier-desc">{{ tier.desc }}</span>
+                    {% endif %}
+                  </div>
+                  <span class="s-tier-stat {% if tier.stats.started > 0 %}s-tier-stat-active{% endif %}">
+                    {% if tier.stats.started > 0 %}
+                      {{ tier.stats.started }}/{{ tier.stats.total }}
+                    {% else %}
+                      {{ tier.stats.total }} units
+                    {% endif %}
+                  </span>
+                </button>
+                <div class="s-tier-body">
+                  {% for unit in tier.units %}
+                    {% if unit.locked %}
+                      <div class="s-unit-card locked">
+                        <div class="s-unit-card-row">
+                          <span class="s-unit-title" style="color:#999">Unit {{ unit.num }} · {{ unit.title }}</span>
+                          <span style="font-size:0.8rem;color:#ccc">🔒</span>
+                        </div>
+                      </div>
+                    {% else %}
+                      <a class="s-unit-card active" href="{{ unit.url }}">
+                        <div class="s-unit-card-row">
+                          <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
+                          <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
+                        </div>
+                        {% if unit.percent > 0 %}
+                          <div class="s-progress-bar-track">
+                            <div class="s-progress-bar-fill" style="width: {{ unit.percent }}%"></div>
+                          </div>
+                        {% endif %}
+                      </a>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
   {% endfor %}
 </div>
 
-{% for section in sections %}
-  <div class="s-section-content {% if forloop.first %}active{% endif %}" id="section-{{ forloop.index0 }}">
-    {% if section.desc %}
-      <div class="s-section-desc" style="font-size: 0.85rem; color: var(--text); margin-bottom: 20px; line-height: 1.45; padding: 12px 16px; background: var(--teal-pale); border-radius: var(--radius); border-left: 4px solid var(--teal);">
-        {{ section.desc }}
-      </div>
-    {% endif %}
-
-    {% for unit in section.units %}
-      {% if unit.locked %}
-        <div class="s-unit-card locked">
-          <div class="s-unit-card-row">
-            <span class="s-unit-title" style="color:#999">Unit {{ unit.num }} · {{ unit.title }}</span>
-            <span style="font-size:0.8rem;color:#ccc">🔒</span>
-          </div>
-        </div>
-      {% else %}
-        <a class="s-unit-card active" href="{{ unit.url }}">
-          <div class="s-unit-card-row">
-            <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
-            <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
-          </div>
-          {% if unit.percent > 0 %}
-            <div class="s-progress-bar-track">
-              <div class="s-progress-bar-fill" style="width: {{ unit.percent }}%"></div>
-            </div>
-          {% endif %}
-        </a>
-      {% endif %}
-    {% endfor %}
-  </div>
-{% endfor %}
-
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    var tabs = document.querySelectorAll(".s-tab-item");
-    var contents = document.querySelectorAll(".s-section-content");
-
-    tabs.forEach(function (tab) {
-      tab.addEventListener("click", function () {
-        var targetId = this.getAttribute("data-target");
-
-        // Toggle active tabs
-        tabs.forEach(function (t) { t.classList.remove("active"); });
-        this.classList.add("active");
-
-        // Toggle active sections
-        contents.forEach(function (c) {
-          if (c.id === targetId) {
-            c.classList.add("active");
-          } else {
-            c.classList.remove("active");
-          }
-        });
+    // ── Branch card toggle ────────────────────────────────────
+    document.querySelectorAll("[data-branch-toggle]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var card = this.closest(".s-branch-card");
+        card.classList.toggle("expanded");
       });
     });
+
+    // ── Tier accordion toggle ─────────────────────────────────
+    document.querySelectorAll("[data-tier-toggle]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var group = this.closest(".s-tier-group");
+        group.classList.toggle("expanded");
+      });
+    });
+
+    // ── Dim all-locked tiers ──────────────────────────────────
+    document.querySelectorAll(".s-tier-group").forEach(function (group) {
+      var units = group.querySelectorAll(".s-unit-card");
+      var allLocked = true;
+      units.forEach(function (u) {
+        if (!u.classList.contains("locked")) {
+          allLocked = false;
+        }
+      });
+      if (allLocked && units.length > 0) {
+        group.classList.add("dimmed");
+      }
+    });
+
+    // ── Auto-scroll to expanded branch ────────────────────────
+    var activeBranch = document.querySelector(".s-branch-card.expanded");
+    if (activeBranch) {
+      setTimeout(function () {
+        activeBranch.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 150);
+    }
   });
 </script>
 

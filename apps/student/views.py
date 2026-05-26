@@ -184,83 +184,156 @@ def _build_home_units(user) -> list[dict]:
 
 
 def _build_home_sections(user) -> list[dict]:
+    """Build sections → tiers → units structure from taxonomy, preserving tier metadata.
+    Splits standard sequence (core) tiers into individual top-level sections for balanced grid layout.
+    """
     available_unit_numbers = _get_available_unit_numbers(user)
-    
-    # We will build 5 sections: Core, Branch A, Branch B, Branch C, Branch D
-    sections_map = {
-        "core": {
-            "label": "Standard Sequence",
-            "desc": "The universal trunk: Fundamentals → Common Practice → Chromaticism → Post-Tonal.",
-            "units": [],
-        },
-        "branch_a": {
-            "label": "Branch A — Figured Bass (Handel model)",
-            "desc": "Optional parallel thoroughbass track.",
-            "units": [],
-        },
-        "branch_b": {
-            "label": "Branch B — Clausulae, Schemas & Partimenti",
-            "desc": "Historical contrapuntal approach à la Fenaroli.",
-            "units": [],
-        },
-        "branch_c": {
-            "label": "Branch C — Interval Cycles & Slonimsky",
-            "desc": "Post-tonal optional branch.",
-            "units": [],
-        },
-        "branch_d": {
-            "label": "Branch D — Neo-Riemannian Theory",
-            "desc": "Triadic transformations, Tonnetz, and voice-leading geometry.",
-            "units": [],
-        },
+    branches = TaxonomyReader.get_branches()
+
+    # Track whether we've found the student's active tier yet (first tier
+    # containing an unlocked unit with progress < 100%).
+    found_active = False
+
+    sections = []
+    for branch in branches:
+        branch_id = branch.get("id", "core")
+        is_core = branch_id == "core"
+
+        branch_tiers = branch.get("tiers", [])
+        for tier_index, tier in enumerate(branch_tiers):
+            tier_units = []
+            started_count = 0
+            mastered_count = 0
+
+            sorted_units = sorted(
+                tier.get("units", []),
+                key=lambda u: unit_sort_key(str(u["n"])),
+            )
+            for unit in sorted_units:
+                unit_n = str(unit["n"])
+                is_available = unit_n in available_unit_numbers
+                progress = (
+                    _summarize_unit_progress(get_unit_progress_data(user, unit_n))
+                    if is_available
+                    else {"percent": 0, "mastered_count": 0}
+                )
+
+                if is_available and progress["percent"] > 0:
+                    started_count += 1
+                if progress["percent"] >= 100:
+                    mastered_count += 1
+
+                tier_units.append({
+                    "num": unit_n,
+                    "title": unit.get("title", f"Unit {unit_n}"),
+                    "feat": unit.get("feat", ""),
+                    "percent": progress["percent"],
+                    "mastered_count": progress["mastered_count"],
+                    "total_skills": len(unit.get("tags", [])),
+                    "locked": not is_available,
+                    "url": (
+                        reverse("student:unit-progress", kwargs={"unit_n": unit_n})
+                        if is_available
+                        else None
+                    ),
+                })
+
+            # A tier is "active" if it's the first one we encounter that has an
+            # unlocked unit with percent < 100 (i.e. the student should be here).
+            has_active = False
+            if not found_active:
+                for u in tier_units:
+                    if not u["locked"] and u["percent"] < 100:
+                        has_active = True
+                        found_active = True
+                        break
+
+            total_units = len(tier_units)
+            tier_data = {
+                "label": tier.get("label", ""),
+                "badge": tier.get("badge", ""),
+                "desc": tier.get("desc", ""),
+                "units": tier_units,
+                "has_active": has_active,
+                "stats": {
+                    "total": total_units,
+                    "started": started_count,
+                    "mastered": mastered_count,
+                },
+            }
+
+            if is_core:
+                # For Core, each tier becomes a separate top-level section/card
+                sections.append({
+                    "id": f"core_{tier_index}",
+                    "label": tier.get("label", f"Standard {tier_index + 1}"),
+                    "desc": tier.get("desc", ""),
+                    "tiers": [tier_data],
+                    "tier_count": 1,
+                    "unit_count": total_units,
+                    "has_active": has_active,
+                })
+            else:
+                # For other branches, group tiers inside the branch section
+                if tier_index == 0:
+                    sections.append({
+                        "id": branch_id,
+                        "label": branch.get("label", branch_id),
+                        "desc": branch.get("desc", ""),
+                        "tiers": [],
+                    })
+                sections[-1]["tiers"].append(tier_data)
+
+    # For non-core branches, compute section-level stats
+    for section in sections:
+        if not section["id"].startswith("core_"):
+            section["tier_count"] = len(section["tiers"])
+            section["unit_count"] = sum(t["stats"]["total"] for t in section["tiers"])
+            section["has_active"] = any(t["has_active"] for t in section["tiers"])
+
+    return sections
+
+
+def _get_resume_target(user) -> tuple[str | None, str | None, dict]:
+    """Find the first incomplete unlocked unit across all branches/tiers.
+
+    Returns (resume_url, resume_label, progress_summary).
+    Falls back to Unit 1 if nothing else is found.
+    """
+    branches = TaxonomyReader.get_branches()
+    available = _get_available_unit_numbers(user)
+
+    for branch in branches:
+        for tier in branch.get("tiers", []):
+            sorted_units = sorted(
+                tier.get("units", []),
+                key=lambda u: unit_sort_key(str(u["n"])),
+            )
+            for unit in sorted_units:
+                unit_n = str(unit["n"])
+                if unit_n not in available:
+                    continue
+                progress = _summarize_unit_progress(
+                    get_unit_progress_data(user, unit_n)
+                )
+                if progress["percent"] < 100:
+                    # For Unit 1 use the lane-level resume logic
+                    if unit_n == "1":
+                        url, label = _get_unit1_resume_target(user)
+                        return url, label, progress
+                    url = reverse(
+                        "student:unit-progress", kwargs={"unit_n": unit_n}
+                    )
+                    label = f"Unit {unit_n} · {unit.get('title', '')}"
+                    return url, label, progress
+
+    # Fallback: Unit 1
+    unit1_data = get_unit_progress_data(user, "1")
+    progress = _summarize_unit_progress(unit1_data) if unit1_data else {
+        "percent": 0, "mastered_count": 0,
     }
-
-    sorted_units = sorted(TaxonomyReader.get_all_units(), key=lambda item: unit_sort_key(str(item["n"])))
-    for unit in sorted_units:
-        unit_n = str(unit["n"])
-        is_available = unit_n in available_unit_numbers
-        progress = _summarize_unit_progress(get_unit_progress_data(user, unit_n)) if is_available else {
-            "percent": 0,
-            "mastered_count": 0,
-        }
-
-        unit_data = {
-            "num": unit_n,
-            "title": unit.get("title", f"Unit {unit_n}"),
-            "feat": unit.get("feat", ""),
-            "percent": progress["percent"],
-            "mastered_count": progress["mastered_count"],
-            "total_skills": len(unit.get("tags", [])),
-            "locked": not is_available,
-            "url": (
-                reverse("student:unit-progress", kwargs={"unit_n": unit_n})
-                if is_available
-                else None
-            ),
-        }
-
-        # Classify by prefix
-        if unit_n.startswith("A"):
-            sections_map["branch_a"]["units"].append(unit_data)
-        elif unit_n.startswith("B"):
-            sections_map["branch_b"]["units"].append(unit_data)
-        elif unit_n.startswith("C"):
-            sections_map["branch_c"]["units"].append(unit_data)
-        elif unit_n.startswith("D"):
-            sections_map["branch_d"]["units"].append(unit_data)
-        else:
-            sections_map["core"]["units"].append(unit_data)
-
-    # Only include sections that are either the Core Sequence OR have at least one unlocked unit
-    active_sections = []
-    for key in ["core", "branch_a", "branch_b", "branch_c", "branch_d"]:
-        section = sections_map[key]
-        is_core = key == "core"
-        has_unlocked = any(not u["locked"] for u in section["units"])
-        if is_core or has_unlocked:
-            active_sections.append(section)
-
-    return active_sections
+    url = reverse("student:unit-progress", kwargs={"unit_n": "1"})
+    return url, "Unit 1 · Pitch & staff notation", progress
 
 
 class StudentLoginView(View):
@@ -317,18 +390,13 @@ def _require_student(view_func):
 class HomeView(View):
     @_require_student
     def get(self, request):
-        unit1_data = get_unit_progress_data(request.user, "1")
-        if unit1_data is None:
-            raise Http404("Unit not found")
-        unit1_progress = _summarize_unit_progress(unit1_data)
-        resume_url, resume_label = _get_unit1_resume_target(request.user)
+        resume_url, resume_label, resume_progress = _get_resume_target(request.user)
 
         return render(request, "student/home.html", {
-            "units": _build_home_units(request.user),
             "sections": _build_home_sections(request.user),
             "resume_url": resume_url,
             "resume_skill": resume_label,
-            "unit1_progress": unit1_progress,
+            "resume_progress": resume_progress,
         })
 
 

@@ -51,7 +51,7 @@ body {
 .s-header-user { font-size: 0.8rem; color: var(--text-muted); }
 
 /* ── Main ────────────────────────────────────────────────── */
-.s-main { max-width: 600px; margin: 0 auto; padding: 24px 16px; }
+.s-main { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
 
 /* ── Login ───────────────────────────────────────────────── */
 .s-login-wrap { max-width: 360px; margin: 48px auto; }
