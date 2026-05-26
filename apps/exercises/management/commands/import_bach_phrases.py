@@ -364,13 +364,38 @@ def _build_figured_bass_overrides(phrase_score, global_key) -> list:
     return _apply_suspension_figures(overrides)
 
 
+def _parse_riemenschneider_arg(value) -> list[int]:
+    if value is None:
+        return []
+    # Strip any R/r prefix (e.g., "R1" -> "1", "r1-r10" -> "1-10")
+    val_str = str(value).strip().lower().replace('r', '')
+    if "-" in val_str:
+        parts = val_str.split("-", 1)
+        try:
+            start = int(parts[0].strip())
+            end = int(parts[1].strip())
+            return list(range(start, end + 1))
+        except ValueError:
+            raise CommandError(f"Invalid Riemenschneider range: {value}")
+    elif "," in val_str:
+        try:
+            return [int(x.strip()) for x in val_str.split(",")]
+        except ValueError:
+            raise CommandError(f"Invalid Riemenschneider list: {value}")
+    else:
+        try:
+            return [int(val_str)]
+        except ValueError:
+            raise CommandError(f"Invalid Riemenschneider number: {value}")
+
+
 class Command(BaseCommand):
     help = 'Import a Bach chorale and split it into phrases based on fermatas.'
 
     def add_arguments(self, parser):
         parser.add_argument('--bwv', type=int, help='BWV number (e.g. 1)')
         parser.add_argument('--movement', type=int, help='Movement number (e.g. 6)')
-        parser.add_argument('--riemenschneider', type=int, help='Riemenschneider number (e.g. 1-371)')
+        parser.add_argument('--riemenschneider', type=str, help='Riemenschneider number, range, or list (e.g. 1, 1-30, R1-R10)')
         parser.add_argument('--author', type=str, required=True, help='Email of the exercise author')
         parser.add_argument('--mode', type=str, choices=['play', 'play_figures', 'roman', 'figures', 'figures_unabbreviated', 'matching'], default='play', help='Exercise mode')
         parser.add_argument('--min-measures', type=int, default=3, help='Minimum measures per phrase')
@@ -391,283 +416,315 @@ class Command(BaseCommand):
         dry_run = options['dry_run']
         overwrite = options['overwrite']
 
-        if mode in ('roman', 'matching', 'play', 'play_figures'):
-            from apps.exercises.utils import wir_corpus
-            if riem_num is not None:
-                if not wir_corpus.has_chorale(riem_num):
-                    raise CommandError(
-                        f"Riemenschneider {riem_num} not found in When in Rome corpus. "
-                        f"Only standalone chorales (1-371) are supported in WiR-backed modes."
-                    )
-            elif bwv_num is not None:
-                riem_num = wir_corpus.bwv_to_riemenschneider(str(bwv_num))
-                if riem_num is None:
-                    raise CommandError(f"BWV {bwv_num} not in When in Rome corpus.")
-
-        # 1. Load the score
-        from music21 import corpus
-        if riem_num:
-            self.stdout.write(f"Loading Riemenschneider Chorale #{riem_num}...")
-            # Use the Iterator to get the stream for the specific number
-            from music21.corpus import chorales
-            iterator = chorales.Iterator(riem_num, riem_num, numberingSystem='riemenschneider')
-            # The iterator behaves like a list where you might need to convert to list or iterate
-            score = list(iterator)[0]
-            bwv_display = f"R{riem_num}"
-            # Extract actual BWV number if available in metadata
-            try:
-                actual_bwv = score.metadata.number if hasattr(score.metadata, 'number') else None
-                if actual_bwv:
-                    bwv_num = int(actual_bwv)
-            except:
-                pass
-        elif bwv_num and movement_num:
-            self.stdout.write(f"Loading BWV {bwv_num}.{movement_num}...")
-            score = corpus.parse('bach/bwv' + str(bwv_num) + '.' + str(movement_num))
-            bwv_display = str(bwv_num)
-        else:
-            raise CommandError("Must provide either --riemenschneider OR both --bwv and --movement")
-
-        # 1. Validate Author
+        # Validate Author first
         User = get_user_model()
         try:
             author = User.objects.get(email=author_email)
         except User.DoesNotExist:
             raise CommandError(f'User with email "{author_email}" not found')
 
-        if not score:
-            raise CommandError("Could not load score")
+        # Determine tasks to import
+        tasks = []
+        from apps.exercises.utils import wir_corpus
 
-        # 2. Cadence Detection (Harmonic + Rhythmic Heuristic)
-        self.stdout.write("Analyzing harmonic arrivals and rhythmic cadences...")
-        try:
-            score_key = _declared_score_key(score)
-            cadence_key = score.analyze('key')
-            # chordify is heavy, but necessary for vertical analysis
-            chorded = score.chordify()
-        except Exception as e:
-            raise CommandError(f"Analysis failed: {e}")
-
-        fermata_measures = []
-        measures = list(chorded.getElementsByClass('Measure'))
-        
-        last_split_m = measures[0].number - 1
-        for i, m in enumerate(measures):
-            m_notes = m.flat.notes
-            if not m_notes:
-                continue
-                
-            last_chord = m_notes[-1]
-            if not isinstance(last_chord, chord.Chord):
-                continue
-
-            # How long since the last split?
-            measures_since_split = m.number - last_split_m
-            
-            # Harmonic Check
-            from music21.roman import romanNumeralFromChord
-            rn = romanNumeralFromChord(last_chord, cadence_key)
-            chord_type = rn.figure.replace('7', '').replace('6', '')
-            
-            # Secondary Dominant Check: V/V -> V
-            is_v_of_v = False
-            if i > 0 and len(measures[i-1].flat.notes) > 0:
-                prev_chord = measures[i-1].flat.notes[-1]
-                if isinstance(prev_chord, chord.Chord):
-                    # Simple check: Is previous chord a Major triad on the 2nd degree?
-                    prev_rn = romanNumeralFromChord(prev_chord, cadence_key)
-                    if prev_rn.figure.startswith('II') or prev_rn.figure.startswith('V/V'):
-                        if chord_type in ['V', 'v']:
-                            is_v_of_v = True
-
-            # Split Logic:
-            # 1. Must have passed min_measures
-            # 2. Must hit a harmonic arrival (I/V) OR a fermata
-            
-            has_fermata = len(m.flat.getElementsByClass(Fermata)) > 0
-            is_long = last_chord.quarterLength >= 2.0
-            is_harmonic_arrival = chord_type in ['I', 'V', 'i', 'v'] or is_v_of_v
-            
-            should_split = False
-            if measures_since_split >= min_measures:
-                if has_fermata:
-                    should_split = True
-                elif is_harmonic_arrival and is_long:
-                    should_split = True
-                elif measures_since_split >= (min_measures + 2) and is_harmonic_arrival:
-                    # Don't let phrases get TOO long without an arrival
-                    should_split = True
-
-            if should_split:
-                fermata_measures.append(m.number)
-                last_split_m = m.number
-
-        self.stdout.write(self.style.SUCCESS(f"Detected {len(fermata_measures)} phrases based on cadences."))
-
-        # 3. Slicing and Creation
-        start_m = measures[0].number
-        for idx, end_m in enumerate(fermata_measures):
-            self.stdout.write(f"Phrase {idx+1}: Measures {start_m} to {end_m}")
-            
-            if dry_run:
-                start_m = end_m + 1
-                continue
-
-            # Extract measure range
-            # Note: music21.measures(start, end) is inclusive but also returns
-            # the following measure for tie/slur resolution. Remove any measures
-            # with number > end_m to avoid leaking the pickup to the next phrase.
-            phrase_score = score.measures(start_m, end_m)
-            for part in phrase_score.parts:
-                # Remove trailing overflow measures (music21 includes one extra for tie resolution)
-                for m in list(part.getElementsByClass(stream.Measure)):
-                    if m.number > end_m:
-                        part.remove(m)
-                # Remove first-ending duplicates: when a chorale has repeat brackets,
-                # music21 stores both endings with the same measure number.
-                # Keep only the last occurrence (second ending = cadential measure).
-                seen_nums = {}
-                for m in list(part.getElementsByClass(stream.Measure)):
-                    if m.number in seen_nums:
-                        part.remove(seen_nums[m.number])  # remove earlier occurrence
-                    seen_nums[m.number] = m
-
-            # GAP FILTER: Skip phrases with silent or rest-dominated measures.
-            # music21 uses implicit rests (no Rest objects), so we compare
-            # filled duration (notes_ql) against the full bar duration.
-            # Anacrusis (pickup) measures are exempted — see _phrase_has_silent_measure.
-            if _phrase_has_silent_measure(phrase_score):
-                self.stdout.write(self.style.WARNING(f"  Skipping Phrase {idx+1} (mm. {start_m}-{end_m}): Contains silent/rest-heavy measures (Gap Filter)."))
-                start_m = end_m + 1
-                continue
-            
-            # 3. Detect Key and Mode
-            try:
-                # FORCE GLOBAL KEY FOR ALL PHRASES (per-phrase detection unreliable for short phrases)
-                m21_key = score_key
-
-                # Build HarmonyLab key format: "iA_", "jC_", "iD_", "jBb", "jF#" etc.
-                tonic = m21_key.tonic.name  # e.g. "A", "B-", "F#"
-                if "-" in tonic:
-                    hl_tonic = tonic[0] + "b"   # "B-" → "Bb"
-                elif "#" in tonic:
-                    hl_tonic = tonic             # "F#" → "F#"
-                else:
-                    hl_tonic = tonic + "_"       # "A" → "A_"
-                mode_prefix = "j" if m21_key.mode == "major" else "i"
-                harmony_key = mode_prefix + hl_tonic   # e.g. "iA_", "jC_"
-
-                # Build sharps/flats string for staff key signature ("", "#", "b", "##", etc.)
-                sharps = m21_key.sharps
-                harmony_sig = "#" * sharps if sharps > 0 else "b" * abs(sharps)
-            except Exception:
-                harmony_sig = ""      # no accidentals (C major / A minor)
-                harmony_key = "jC_"  # default to C major
-
-            try:
-                detected_skills, detected_complexity = analyze_chunk_skills(phrase_score, m21_key.tonicPitchNameWithCase)
-                detected_complexity = max(1, min(12, detected_complexity))
-                playlist_complexity = max(1, min(10, detected_complexity))
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f"  Skills analysis failed: {e}"))
-                detected_skills, detected_complexity, playlist_complexity = [], 1, 1
-
-            # Convert to CIR JSON
-            cir_data = m21_to_cir(phrase_score, key_override=harmony_key)
-            
-            # 4. Map to UMTO Interaction Mode
-            # `roman` and `figures` are label-entry exercises (show prompts/slots),
-            # while `matching` is the inverse mode (label shown, play the pitch).
-            if mode in ('play', 'play_figures'):
-                umto_mode = InteractionMode.PLAYBACK
-            elif mode == 'matching':
-                umto_mode = InteractionMode.ANALYSIS_MATCH
+        if riem_num is not None:
+            riem_list = _parse_riemenschneider_arg(riem_num)
+            for r_id in riem_list:
+                if mode in ('roman', 'matching', 'play', 'play_figures'):
+                    if not wir_corpus.has_chorale(r_id):
+                        raise CommandError(
+                            f"Riemenschneider {r_id} not found in When in Rome corpus. "
+                            f"Only standalone chorales (1-371) are supported in WiR-backed modes."
+                        )
+                tasks.append({"riem": r_id})
+        elif bwv_num is not None:
+            if movement_num is not None:
+                tasks.append({"bwv": bwv_num, "movement": movement_num})
             else:
-                umto_mode = InteractionMode.IDENTIFICATION
-            
-            # 5. Build Intro Text
-            if mode == 'figures':
-                intro_text = f"Provide the Figured Bass for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
-            elif mode == 'matching' or mode == 'roman':
-                intro_text = f"Analyze the Roman Numerals for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
-            else:
-                intro_text = f"Play all four voices of this Bach phrase (BWV {bwv_display}, mm. {start_m}-{end_m})."
+                r_id = wir_corpus.bwv_to_riemenschneider(str(bwv_num))
+                if r_id is None:
+                    raise CommandError(f"BWV {bwv_num} not in When in Rome corpus.")
+                if mode in ('roman', 'matching', 'play', 'play_figures'):
+                    if not wir_corpus.has_chorale(r_id):
+                        raise CommandError(
+                            f"Riemenschneider {r_id} not found in When in Rome corpus. "
+                            f"Only standalone chorales (1-371) are supported in WiR-backed modes."
+                        )
+                tasks.append({"riem": r_id})
+        else:
+            raise CommandError("Must provide either --riemenschneider OR both --bwv and --movement")
 
-            description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m}) [{mode}]"
+        total_imported_exercises = 0
 
-            if _description_exists(description[:60], authored_by=author) and not overwrite:
-                self.stdout.write(self.style.WARNING(f"  Skipping (exists): {description[:60]}"))
-                start_m = end_m + 1
-                continue
-
-            # Extract unit number from extra_tags for analysis tagging
-            unit_nums = []
-            for tag in options['extra_tags']:
-                m2 = re.match(r'^unit:(\d+)$', tag)
-                if m2:
-                    unit_nums.append(int(m2.group(1)))
-
-            # Build analysis overrides based on mode
-            analysis_overrides = None
-            if mode in ('roman', 'matching', 'play', 'play_figures'):
-                analysis_overrides = _build_roman_analysis_overrides(
-                    phrase_score, m21_key, unit_nums, riem_num
-                )
-                self.stdout.write(f"  Built {len(analysis_overrides)} WiR analysis slices")
-            elif mode in ('figures', 'figures_unabbreviated'):
+        for task in tasks:
+            # 1. Load the score
+            from music21 import corpus
+            if "riem" in task:
+                r_id = task["riem"]
+                self.stdout.write(f"Loading Riemenschneider Chorale #{r_id}...")
+                from music21.corpus import chorales
+                iterator = chorales.Iterator(r_id, r_id, numberingSystem='riemenschneider')
+                score = list(iterator)[0]
+                bwv_display = f"R{r_id}"
+                current_riem_num = r_id
+                # Extract actual BWV number if available in metadata
                 try:
-                    analysis_overrides = _build_figured_bass_overrides(
-                        phrase_score, m21_key
-                    )
-                    self.stdout.write(f"  Built {len(analysis_overrides)} figured bass slices")
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"  Figured bass overrides failed: {e}"))
-
-            display = None
-            if mode == 'figures':
-                analysis_type = 'figured_bass'
-            elif mode == 'figures_unabbreviated':
-                analysis_type = 'figured_bass_unabbreviated'
-            elif mode == 'play_figures':
-                analysis_type = 'figured_bass'
-                display = {
-                    "showFigures": True,
-                    "figureStyle": "figures_abbrev",
-                    "analysisRenderer": "notater",
-                }
+                    actual_bwv = score.metadata.number if hasattr(score.metadata, 'number') else None
+                    if actual_bwv:
+                        bwv_num = int(actual_bwv)
+                except:
+                    pass
             else:
-                analysis_type = 'roman'
+                b_num = task["bwv"]
+                m_num = task["movement"]
+                self.stdout.write(f"Loading BWV {b_num}.{m_num}...")
+                score = corpus.parse('bach/bwv' + str(b_num) + '.' + str(m_num))
+                bwv_display = str(b_num)
+                current_riem_num = None
 
-            umto_kwargs = dict(
-                exercise_id="TEMP",
-                source=intro_text,
-                key=harmony_key,
-                meter=cir_data.get("meta", {}).get("time", "4/4"),
-                clef="keyboard",
-                complexity_score=detected_complexity,
-                mode=umto_mode,
-                analysis_type=analysis_type,
-            )
-            if analysis_overrides is not None:
-                umto_kwargs["analysis_overrides"] = analysis_overrides
-            if display is not None:
-                umto_kwargs["display"] = display
+            if not score:
+                raise CommandError("Could not load score")
 
-            # Create the Exercise via UMTO factory
-            ex = save_umto_exercise(
-                description=description[:60],
-                score_data=cir_data,
-                author=author,
-                skill_tags=list(set(detected_skills + options['extra_tags'])),
-                complexity=playlist_complexity,
-                is_public=options['public'],
-                umto_kwargs=umto_kwargs,
-                overwrite=overwrite,
-            )
-            self.stdout.write(self.style.SUCCESS(f"  Created UMTO Exercise {ex.id}"))
+            # 2. Cadence Detection (Harmonic + Rhythmic Heuristic)
+            self.stdout.write("Analyzing harmonic arrivals and rhythmic cadences...")
+            try:
+                score_key = _declared_score_key(score)
+                cadence_key = score.analyze('key')
+                # chordify is heavy, but necessary for vertical analysis
+                chorded = score.chordify()
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Analysis failed for {bwv_display}: {e}"))
+                continue
 
-            # Update start for next phrase
-            start_m = end_m + 1
+            fermata_measures = []
+            measures = list(chorded.getElementsByClass('Measure'))
+            
+            last_split_m = measures[0].number - 1
+            for i, m in enumerate(measures):
+                m_notes = m.flat.notes
+                if not m_notes:
+                    continue
+                    
+                last_chord = m_notes[-1]
+                if not isinstance(last_chord, chord.Chord):
+                    continue
+
+                # How long since the last split?
+                measures_since_split = m.number - last_split_m
+                
+                # Harmonic Check
+                from music21.roman import romanNumeralFromChord
+                try:
+                    rn = romanNumeralFromChord(last_chord, cadence_key)
+                    chord_type = rn.figure.replace('7', '').replace('6', '')
+                except:
+                    chord_type = ""
+                
+                # Secondary Dominant Check: V/V -> V
+                is_v_of_v = False
+                if i > 0 and len(measures[i-1].flat.notes) > 0:
+                    prev_chord = measures[i-1].flat.notes[-1]
+                    if isinstance(prev_chord, chord.Chord):
+                        try:
+                            prev_rn = romanNumeralFromChord(prev_chord, cadence_key)
+                            if prev_rn.figure.startswith('II') or prev_rn.figure.startswith('V/V'):
+                                if chord_type in ['V', 'v']:
+                                    is_v_of_v = True
+                        except:
+                            pass
+
+                # Split Logic:
+                # 1. Must have passed min_measures
+                # 2. Must hit a harmonic arrival (I/V) OR a fermata
+                
+                has_fermata = len(m.flat.getElementsByClass(Fermata)) > 0
+                is_long = last_chord.quarterLength >= 2.0
+                is_harmonic_arrival = chord_type in ['I', 'V', 'i', 'v'] or is_v_of_v
+                
+                should_split = False
+                if measures_since_split >= min_measures:
+                    if has_fermata:
+                        should_split = True
+                    elif is_harmonic_arrival and is_long:
+                        should_split = True
+                    elif measures_since_split >= (min_measures + 2) and is_harmonic_arrival:
+                        # Don't let phrases get TOO long without an arrival
+                        should_split = True
+
+                if should_split:
+                    fermata_measures.append(m.number)
+                    last_split_m = m.number
+
+            self.stdout.write(self.style.SUCCESS(f"Detected {len(fermata_measures)} phrases based on cadences."))
+
+            # 3. Slicing and Creation
+            start_m = measures[0].number
+            for idx, end_m in enumerate(fermata_measures):
+                self.stdout.write(f"Phrase {idx+1}: Measures {start_m} to {end_m}")
+                
+                if dry_run:
+                    start_m = end_m + 1
+                    continue
+
+                # Extract measure range
+                # Note: music21.measures(start, end) is inclusive but also returns
+                # the following measure for tie/slur resolution. Remove any measures
+                # with number > end_m to avoid leaking the pickup to the next phrase.
+                phrase_score = score.measures(start_m, end_m)
+                for part in phrase_score.parts:
+                    # Remove trailing overflow measures (music21 includes one extra for tie resolution)
+                    for m in list(part.getElementsByClass(stream.Measure)):
+                        if m.number > end_m:
+                            part.remove(m)
+                    # Remove first-ending duplicates: when a chorale has repeat brackets,
+                    # music21 stores both endings with the same measure number.
+                    # Keep only the last occurrence (second ending = cadential measure).
+                    seen_nums = {}
+                    for m in list(part.getElementsByClass(stream.Measure)):
+                        if m.number in seen_nums:
+                            part.remove(seen_nums[m.number])  # remove earlier occurrence
+                        seen_nums[m.number] = m
+
+                # GAP FILTER: Skip phrases with silent or rest-dominated measures.
+                # music21 uses implicit rests (no Rest objects), so we compare
+                # filled duration (notes_ql) against the full bar duration.
+                # Anacrusis (pickup) measures are exempted — see _phrase_has_silent_measure.
+                if _phrase_has_silent_measure(phrase_score):
+                    self.stdout.write(self.style.WARNING(f"  Skipping Phrase {idx+1} (mm. {start_m}-{end_m}): Contains silent/rest-heavy measures (Gap Filter)."))
+                    start_m = end_m + 1
+                    continue
+                
+                # 3. Detect Key and Mode
+                try:
+                    # FORCE GLOBAL KEY FOR ALL PHRASES (per-phrase detection unreliable for short phrases)
+                    m21_key = score_key
+
+                    # Build HarmonyLab key format: "iA_", "jC_", "iD_", "jBb", "jF#" etc.
+                    tonic = m21_key.tonic.name  # e.g. "A", "B-", "F#"
+                    if "-" in tonic:
+                        hl_tonic = tonic[0] + "b"   # "B-" → "Bb"
+                    elif "#" in tonic:
+                        hl_tonic = tonic             # "F#" → "F#"
+                    else:
+                        hl_tonic = tonic + "_"       # "A" → "A_"
+                    mode_prefix = "j" if m21_key.mode == "major" else "i"
+                    harmony_key = mode_prefix + hl_tonic   # e.g. "iA_", "jC_"
+
+                    # Build sharps/flats string for staff key signature ("", "#", "b", "##", etc.)
+                    sharps = m21_key.sharps
+                    harmony_sig = "#" * sharps if sharps > 0 else "b" * abs(sharps)
+                except Exception:
+                    harmony_sig = ""      # no accidentals (C major / A minor)
+                    harmony_key = "jC_"  # default to C major
+
+                try:
+                    detected_skills, detected_complexity = analyze_chunk_skills(phrase_score, m21_key.tonicPitchNameWithCase)
+                    detected_complexity = max(1, min(12, detected_complexity))
+                    playlist_complexity = max(1, min(10, detected_complexity))
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f"  Skills analysis failed: {e}"))
+                    detected_skills, detected_complexity, playlist_complexity = [], 1, 1
+
+                # Convert to CIR JSON
+                cir_data = m21_to_cir(phrase_score, key_override=harmony_key)
+                
+                # 4. Map to UMTO Interaction Mode
+                # `roman` and `figures` are label-entry exercises (show prompts/slots),
+                # while `matching` is the inverse mode (label shown, play the pitch).
+                if mode in ('play', 'play_figures'):
+                    umto_mode = InteractionMode.PLAYBACK
+                elif mode == 'matching':
+                    umto_mode = InteractionMode.ANALYSIS_MATCH
+                else:
+                    umto_mode = InteractionMode.IDENTIFICATION
+                
+                # 5. Build Intro Text
+                if mode == 'figures':
+                    intro_text = f"Provide the Figured Bass for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
+                elif mode == 'matching' or mode == 'roman':
+                    intro_text = f"Analyze the Roman Numerals for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
+                else:
+                    intro_text = f"Play all four voices of this Bach phrase (BWV {bwv_display}, mm. {start_m}-{end_m})."
+
+                description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m}) [{mode}]"
+
+                if _description_exists(description[:60], authored_by=author) and not overwrite:
+                    self.stdout.write(self.style.WARNING(f"  Skipping (exists): {description[:60]}"))
+                    start_m = end_m + 1
+                    continue
+
+                # Extract unit number from extra_tags for analysis tagging
+                unit_nums = []
+                for tag in options['extra_tags']:
+                    m2 = re.match(r'^unit:(\d+)$', tag)
+                    if m2:
+                        unit_nums.append(int(m2.group(1)))
+
+                # Build analysis overrides based on mode
+                analysis_overrides = None
+                if mode in ('roman', 'matching', 'play', 'play_figures'):
+                    if current_riem_num is not None:
+                        analysis_overrides = _build_roman_analysis_overrides(
+                            phrase_score, m21_key, unit_nums, current_riem_num
+                        )
+                        self.stdout.write(f"  Built {len(analysis_overrides)} WiR analysis slices")
+                    else:
+                        self.stdout.write(self.style.WARNING(f"  Skipping Roman/WiR overrides for non-Riemenschneider task"))
+                elif mode in ('figures', 'figures_unabbreviated'):
+                    try:
+                        analysis_overrides = _build_figured_bass_overrides(
+                            phrase_score, m21_key
+                        )
+                        self.stdout.write(f"  Built {len(analysis_overrides)} figured bass slices")
+                    except Exception as e:
+                        self.stdout.write(self.style.WARNING(f"  Figured bass overrides failed: {e}"))
+
+                display = None
+                if mode == 'figures':
+                    analysis_type = 'figured_bass'
+                elif mode == 'figures_unabbreviated':
+                    analysis_type = 'figured_bass_unabbreviated'
+                elif mode == 'play_figures':
+                    analysis_type = 'figured_bass'
+                    display = {
+                        "showFigures": True,
+                        "figureStyle": "figures_abbrev",
+                        "analysisRenderer": "notater",
+                    }
+                else:
+                    analysis_type = 'roman'
+
+                umto_kwargs = dict(
+                    exercise_id="TEMP",
+                    source=intro_text,
+                    key=harmony_key,
+                    meter=cir_data.get("meta", {}).get("time", "4/4"),
+                    clef="keyboard",
+                    complexity_score=detected_complexity,
+                    mode=umto_mode,
+                    analysis_type=analysis_type,
+                )
+                if analysis_overrides is not None:
+                    umto_kwargs["analysis_overrides"] = analysis_overrides
+                if display is not None:
+                    umto_kwargs["display"] = display
+
+                # Create the Exercise via UMTO factory
+                ex = save_umto_exercise(
+                    description=description[:60],
+                    score_data=cir_data,
+                    author=author,
+                    skill_tags=list(set(detected_skills + options['extra_tags'])),
+                    complexity=playlist_complexity,
+                    is_public=options['public'],
+                    umto_kwargs=umto_kwargs,
+                    overwrite=overwrite,
+                )
+                self.stdout.write(self.style.SUCCESS(f"  Created UMTO Exercise {ex.id}"))
+                total_imported_exercises += 1
+
+                # Update start for next phrase
+                start_m = end_m + 1
 
         if not dry_run:
-            self.stdout.write(self.style.SUCCESS(f"\nSuccessfully imported {len(fermata_measures)} phrases as exercises."))
+            self.stdout.write(self.style.SUCCESS(f"\nSuccessfully imported {total_imported_exercises} phrases as exercises."))

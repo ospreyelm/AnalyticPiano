@@ -13,8 +13,8 @@ CATALOG = [
     ("Bach chorale phrases (Riemenschneider)", [
         (
             "import_bach_phrases",
-            "Import a single Riemenschneider phrase as identification/playback/match/figures/harmonization-source exercises.",
-            "python manage.py import_bach_phrases --riemenschneider 3 --author admin@example.com --mode roman --extra-tags unit:9",
+            "Import single, range, or list of Riemenschneider phrases as identification/playback/match/figures/harmonization-source exercises.",
+            "python manage.py import_bach_phrases --riemenschneider 1-10 --author admin@example.com --mode roman --extra-tags unit:9",
         ),
         (
             "generate_harmonization",

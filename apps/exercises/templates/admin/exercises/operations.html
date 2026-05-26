@@ -149,6 +149,31 @@
         <label>Unit N:</label>
         <input type="number" name="unit" required>
       </div>
+      <div class="form-row">
+        <label>Riemenschneider range:</label>
+        <input type="text" name="riemenschneider" placeholder="e.g. 21-30" required>
+      </div>
+      <div class="form-row">
+        <label>Mode:</label>
+        <select name="mode">
+          <option value="roman">Roman</option>
+          <option value="figures">Figures</option>
+          <option value="play">Play</option>
+          <option value="play_figures">Play Figures</option>
+          <option value="matching">Matching</option>
+          <option value="figures_unabbreviated">Figures Unabbreviated</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="public" checked> Public</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="overwrite"> Overwrite existing</label>
+      </div>
       <button type="submit" class="btn">Run Generator</button>
     </form>
 

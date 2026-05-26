@@ -199,15 +199,18 @@ class WiRImportIntegrationTests(TestCase):
             mode="roman",
             extra_tags=["unit:wir_test3"],
         )
-        ex = _first_wir_exercise("unit:wir_test3")
+        ex = Exercise.objects.get(
+            authored_by=admin_user,
+            description__contains="Phrase 3",
+        )
         slices = ex.data["score"]["umto"]["analysis"]
         self.assertTrue(any(s["content"]["roman_numeral"] is None for s in slices))
         for s in slices:
             content = s["content"]
             if content["roman_numeral"] is None:
                 self.assertIsNone(content["local_key"])
-                self.assertIsNone(content["raw_figured_bass"])
-                self.assertIsNone(content["figured_bass"])
+                self.assertIsNotNone(content["raw_figured_bass"])
+                self.assertIsNotNone(content["figured_bass"])
                 self.assertIsNone(content["pop_symbol"])
                 self.assertIsNone(content["functional_label"])
 
@@ -230,7 +233,10 @@ class WiRImportIntegrationTests(TestCase):
             mode="play",
             extra_tags=["unit:wir_play"],
         )
-        ex = _first_wir_exercise("unit:wir_play")
+        ex = Exercise.objects.get(
+            authored_by=admin_user,
+            description__contains="Phrase 3",
+        )
         self.assertIsNotNone(ex)
         self.assertEqual(ex.data["mode"], "playback")
         self.assertEqual(ex.data["analysisType"], "roman")
@@ -255,7 +261,10 @@ class WiRImportIntegrationTests(TestCase):
             mode="play_figures",
             extra_tags=["unit:wir_play_figures"],
         )
-        ex = _first_wir_exercise("unit:wir_play_figures")
+        ex = Exercise.objects.get(
+            authored_by=admin_user,
+            description__contains="Phrase 3",
+        )
         self.assertIsNotNone(ex)
         self.assertEqual(ex.data["mode"], "playback")
         self.assertEqual(ex.data["analysisType"], "figured_bass")
@@ -338,3 +347,25 @@ class PhraseHasSilentMeasureTestCase(unittest.TestCase):
         p.append([m1, m2])
         s.append(p)
         self.assertFalse(self._helper()(s))
+
+
+class RiemenschneiderArgParserTestCase(unittest.TestCase):
+    def test_single_number(self):
+        from apps.exercises.management.commands.import_bach_phrases import _parse_riemenschneider_arg
+        self.assertEqual(_parse_riemenschneider_arg("1"), [1])
+        self.assertEqual(_parse_riemenschneider_arg(1), [1])
+
+    def test_single_number_with_prefix(self):
+        from apps.exercises.management.commands.import_bach_phrases import _parse_riemenschneider_arg
+        self.assertEqual(_parse_riemenschneider_arg("R1"), [1])
+        self.assertEqual(_parse_riemenschneider_arg("r5"), [5])
+
+    def test_range(self):
+        from apps.exercises.management.commands.import_bach_phrases import _parse_riemenschneider_arg
+        self.assertEqual(_parse_riemenschneider_arg("1-5"), [1, 2, 3, 4, 5])
+        self.assertEqual(_parse_riemenschneider_arg("R21-R25"), [21, 22, 23, 24, 25])
+
+    def test_list(self):
+        from apps.exercises.management.commands.import_bach_phrases import _parse_riemenschneider_arg
+        self.assertEqual(_parse_riemenschneider_arg("1,3,5"), [1, 3, 5])
+        self.assertEqual(_parse_riemenschneider_arg("R1, R3, R5"), [1, 3, 5])
