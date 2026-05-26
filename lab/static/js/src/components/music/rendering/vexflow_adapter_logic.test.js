@@ -47,4 +47,40 @@ testRestPlacementKeysDoNotBecomeScaleDegrees();
 testNotesStillBecomeScaleDegreeMidi();
 testVexFlowIsRestMethodFalseDoesNotFilterNotes();
 
+function testGetBassLabelAtOffsetReturnsLabel() {
+  var slices = [
+    { offset: 0.0, content: { functional_label: "①" } },
+    { offset: 2.0, content: { functional_label: "⑤" } },
+    { offset: 4.0, content: { functional_label: "①" } },
+  ];
+  assert.strictEqual(Logic.getBassLabelAtOffset(slices, 2.0), "⑤");
+}
+
+function testGetBassLabelAtOffsetToleratesSmallDrift() {
+  var slices = [
+    { offset: 2.0, content: { functional_label: "⑤" } },
+  ];
+  // 0.04 is within the 0.05 tolerance
+  assert.strictEqual(Logic.getBassLabelAtOffset(slices, 2.04), "⑤");
+}
+
+function testGetBassLabelAtOffsetReturnsNullForEmptyLabel() {
+  var slices = [
+    { offset: 1.0, content: { functional_label: "" } },
+  ];
+  assert.strictEqual(Logic.getBassLabelAtOffset(slices, 1.0), null);
+}
+
+function testGetBassLabelAtOffsetReturnsNullForNoMatch() {
+  var slices = [
+    { offset: 0.0, content: { functional_label: "①" } },
+  ];
+  assert.strictEqual(Logic.getBassLabelAtOffset(slices, 9.0), null);
+}
+
+testGetBassLabelAtOffsetReturnsLabel();
+testGetBassLabelAtOffsetToleratesSmallDrift();
+testGetBassLabelAtOffsetReturnsNullForEmptyLabel();
+testGetBassLabelAtOffsetReturnsNullForNoMatch();
+
 console.log("vexflow_adapter_logic tests passed");
