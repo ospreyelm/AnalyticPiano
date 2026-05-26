@@ -6,6 +6,18 @@
 > 
 > All agents working on features, controllers, or refactoring in this repository MUST review the findings and phased cleanup roadmap in the redundancy report before modifying code.
 
+## ⚠️ ROMAN NUMERALS FROM CLAUSULAE — READ BEFORE IMPLEMENTING
+
+Before implementing, regenerating, or modifying Roman numeral exercises sourced from
+Clausulae material, read
+[docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md](docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md).
+
+The corrected direction is a distinct `roman_from_clausulae` exercise type generated
+through the same working Clausulae generation/rendering path, with Roman numeral
+target slices added on top. Do **not** revive the exploratory compendium
+MusicXML-to-derived-CIR corpus path for student-facing exercises; that produced
+musically meaningless student exercises even when tests passed.
+
 ## ⚠️ GITHUB PR TARGET — USE AVNER'S REPO, NOT UPSTREAM
 
 When creating pull requests or using `gh pr create`, ALWAYS target:

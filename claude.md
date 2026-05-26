@@ -6,6 +6,18 @@
 > 
 > All agents working on features, controllers, or refactoring in this repository MUST review the findings and phased cleanup roadmap in the redundancy report before modifying code.
 
+## ⚠️ ROMAN NUMERALS FROM CLAUSULAE — READ BEFORE IMPLEMENTING
+
+Before implementing, regenerating, or modifying Roman numeral exercises sourced from
+Clausulae material, read
+[docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md](docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md).
+
+The corrected direction is a distinct `roman_from_clausulae` exercise type generated
+through the same working Clausulae generation/rendering path, with Roman numeral
+target slices added on top. Do **not** revive the exploratory compendium
+MusicXML-to-derived-CIR corpus path for student-facing exercises; that produced
+musically meaningless student exercises even when tests passed.
+
 
 ## UMTO is the Canonical Exercise Representation
 
@@ -700,4 +712,3 @@ See [chorale_future_improvements.md](docs/chorale_future_improvements.md) for th
 - Future Improvements: [docs/chorale_future_improvements.md](docs/chorale_future_improvements.md) (roadmap with 5 pending features)
 - Unit 9 Import Strategy: [docs/unit_9_bach_import_strategy.md](docs/unit_9_bach_import_strategy.md) (Curriculum-driven frontend filtering)
 - Import Script: [apps/exercises/management/commands/import_chorale.py](apps/exercises/management/commands/import_chorale.py)
-
