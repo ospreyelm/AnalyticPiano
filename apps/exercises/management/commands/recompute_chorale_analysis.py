@@ -4,8 +4,8 @@ music21 corpus + analysis pipeline. Does NOT regenerate the Exercise row;
 only overwrites the analysis array in stored UMTO.
 
 Use after fixes to the analysis pipeline (e.g. NCT figured-bass preservation,
-suspension reconciliation) to refresh existing rows without re-importing
-each phrase end-to-end.
+suspension reconciliation, WiR local-key transposition) to refresh existing
+rows without re-importing each phrase end-to-end.
 
 Usage:
     python manage.py recompute_chorale_analysis
@@ -57,6 +57,8 @@ class Command(BaseCommand):
         from music21.corpus import chorales
         from apps.exercises.management.commands.import_bach_phrases import (
             _build_roman_analysis_overrides,
+            _declared_score_key,
+            _infer_wir_local_key_transposition,
         )
 
         qs = Exercise.objects.all()
@@ -99,9 +101,13 @@ class Command(BaseCommand):
                     score_cache[riem_num] = score
                 global_key = key_cache.get(riem_num)
                 if global_key is None:
-                    global_key = score.analyze("key")
+                    global_key = _declared_score_key(score)
                     key_cache[riem_num] = global_key
                 phrase_score = score.measures(start_m, end_m)
+                local_key_shift = _infer_wir_local_key_transposition(
+                    phrase_score,
+                    riem_num,
+                )
             except Exception as e:
                 skipped += 1
                 self.stdout.write(self.style.ERROR(
@@ -145,7 +151,10 @@ class Command(BaseCommand):
                 unchanged += 1
                 continue
 
-            diff_msg = f"{len(old_overrides)} → {len(new_overrides)} slices"
+            diff_msg = (
+                f"{len(old_overrides)} → {len(new_overrides)} slices; "
+                f"local-key shift {self._format_shift(local_key_shift)}"
+            )
             if options["dry_run"]:
                 self.stdout.write(f"  WOULD UPDATE {ex.id} (R{riem_num} mm.{start_m}-{end_m}): {diff_msg}")
                 updated += 1
@@ -177,3 +186,9 @@ class Command(BaseCommand):
         if not m:
             return None
         return (int(m.group(1)), int(m.group(2)))
+
+    @staticmethod
+    def _format_shift(shift: int) -> str:
+        if shift > 0:
+            return f"+{shift}"
+        return str(shift)

@@ -118,8 +118,13 @@ CATALOG = [
             "python manage.py refresh_all_exercises --dry-run",
         ),
         (
+            "audit_wir_local_key_shifts",
+            "Report inferred WiR local-key transpositions by Riemenschneider number for existing Bach rows.",
+            "python manage.py audit_wir_local_key_shifts --tag unit:11",
+        ),
+        (
             "recompute_chorale_analysis",
-            "Rebuild score.umto.analysis on chorale-derived rows (tagged riem:N) without re-importing music21.",
+            "Rebuild score.umto.analysis on chorale-derived rows (tagged riem:N), including WiR local-key transposition, without re-importing rows.",
             "python manage.py recompute_chorale_analysis --tag qa:harm_fb_audit_2026_05_18_declared_key",
         ),
         (
