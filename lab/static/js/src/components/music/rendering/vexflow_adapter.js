@@ -9,7 +9,8 @@ define([
   "app/models/key_signature",
   "app/models/key_context_logic",
   "app/models/harmonization_realization_logic",
-], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine, KeySignature, KeyContext, HarmonizationRealizationLogic) {
+  "app/components/music/rendering/vexflow_adapter_logic",
+], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine, KeySignature, KeyContext, HarmonizationRealizationLogic, VexflowAdapterLogic) {
   "use strict";
 
   function durToVF(d) {
@@ -506,24 +507,14 @@ define([
 
     if (colNotes && colNotes.length) {
       colNotes.forEach(function(t) {
+        if (VexflowAdapterLogic && VexflowAdapterLogic.isRestTickable(t)) return;
         var vIdx = t._sdVoiceIdx;
         var sId  = t._sdStaffId;
         if (sId !== 'treble' && sId !== undefined) return; // skip bass staff tickables
-        var keys = typeof t.getKeys === 'function' ? t.getKeys() : [];
-        keys.forEach(function(k) {
-          var m = (function(keyStr) {
-            if (!keyStr) return null;
-            var parts = keyStr.split('/');
-            if (parts.length < 2) return null;
-            var noteMap = { c:0, d:2, e:4, f:5, g:7, a:9, b:11 };
-            var step = parts[0].charAt(0).toLowerCase();
-            var accStr = parts[0].slice(1); // accidentals only, no step letter
-            var alter = (accStr.match(/#/g)||[]).length - (accStr.match(/b/g)||[]).length;
-            var oct = parseInt(parts[1], 10);
-            if (isNaN(oct) || !(step in noteMap)) return null;
-            return (oct + 1) * 12 + noteMap[step] + alter;
-          })(k);
-          if (m === null) return;
+        var midiValues = VexflowAdapterLogic
+          ? VexflowAdapterLogic.tickableToScaleDegreeMidi(t)
+          : [];
+        (midiValues || []).forEach(function(m) {
           if (vIdx === 1) { bottomVoiceMidi.push(m); hasSplit = true; }
           else topVoiceMidi.push(m);
         });
@@ -1782,11 +1773,8 @@ define([
 	                tks.forEach(function(t){
 	                  if (!t || typeof t.getAbsoluteX !== 'function') return;
 	                  if (t._isHarmonizationOverlay) return;
-	                  var dur = String(t.duration || '');
-                  // Rests don't create identification columns,
-                  // but we still want their onsets for playback if needed?
-                  // Actually, for id mode, we only care about columns with notes.
-                  if (dur.indexOf('r') !== -1) return;
+                  // Rests don't create identification/analysis columns.
+                  if (VexflowAdapterLogic && VexflowAdapterLogic.isRestTickable(t)) return;
                   t._sdStaffId = staffId;
                   t._sdVoiceIdx = vIdx; 
                   allTickables.push(t);
@@ -1811,33 +1799,15 @@ define([
             });
 
             // Helpers
-            function keyToMidi(keyStr) {
-              // key like 'c#/4' or 'bb/3'
-              var parts = String(keyStr).split('/');
-              if (parts.length !== 2) return null;
-              var name = parts[0];
-              var octave = parseInt(parts[1], 10);
-              var step = name.charAt(0).toLowerCase();
-              var acc = name.slice(1);
-              var base = { c:0, d:2, e:4, f:5, g:7, a:9, b:11 }[step];
-              if (typeof base !== 'number' || isNaN(octave)) return null;
-              var delta = 0;
-              if (acc === '#') delta = 1; else if (acc === '##') delta = 2;
-              else if (acc === 'b') delta = -1; else if (acc === 'bb') delta = -2;
-              else if (acc === 'n') delta = 0; // explicit natural
-              var midi = 12 * (octave + 1) + base + delta;
-              return midi;
-            }
-
             // Draw per onset column
             var prevColX = null;
             groups.forEach(function(col){
               var midiSet = Object.create(null);
               col.notes.forEach(function(t){
-                if (t._isRest) return;
+                if (VexflowAdapterLogic && VexflowAdapterLogic.isRestTickable(t)) return;
                 var keys = (typeof t.getKeys === 'function') ? t.getKeys() : [];
                 for (var i=0;i<keys.length;i++) {
-                  var m = keyToMidi(keys[i]);
+                  var m = VexflowAdapterLogic ? VexflowAdapterLogic.keyToMidi(keys[i]) : null;
                   if (m !== null) midiSet[m] = true;
                 }
               });
