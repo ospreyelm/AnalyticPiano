@@ -6,6 +6,19 @@
 > 
 > All agents working on features, controllers, or refactoring in this repository MUST review the findings and phased cleanup roadmap in the redundancy report before modifying code.
 
+## ⚠️ GITHUB PR TARGET — USE AVNER'S REPO, NOT UPSTREAM
+
+When creating pull requests or using `gh pr create`, ALWAYS target:
+
+```bash
+--repo avnerdorman/HarmonyLab
+```
+
+Do NOT let GitHub CLI infer the repository from `upstream`. This checkout may also have
+`upstream` configured as `ospreyelm/AnalyticPiano`, but PRs for this project must be
+created against `avnerdorman/HarmonyLab` with base `master` unless the user explicitly
+requests a different target.
+
 
 ## ⚠️ DEPLOYMENT — READ BEFORE RUNNING `fly deploy`
 
@@ -738,4 +751,3 @@ See [chorale_future_improvements.md](docs/chorale_future_improvements.md) for th
 - Future Improvements: [docs/chorale_future_improvements.md](docs/chorale_future_improvements.md) (roadmap with 5 pending features)
 - Unit 9 Import Strategy: [docs/unit_9_bach_import_strategy.md](docs/unit_9_bach_import_strategy.md) (Curriculum-driven frontend filtering)
 - Import Script: [apps/exercises/management/commands/import_chorale.py](apps/exercises/management/commands/import_chorale.py)
-
