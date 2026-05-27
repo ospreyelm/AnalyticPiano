@@ -354,6 +354,124 @@ def test_factory_emits_pitch_names_for_unit1():
     
     analysis = payload["score"]["umto"]["analysis"]
     assert len(analysis) > 0
-    # Unit 1 identification should have pitch names (e.g. "G") in roman_numeral slot for now 
+    # Unit 1 identification should have pitch names (e.g. "G") in roman_numeral slot for now
     # (or wherever the UI expects them)
     assert analysis[0]["content"]["roman_numeral"] is not None
+
+
+# ---------------------------------------------------------------------------
+# Meter calculation in _to_legacy_measures
+# ---------------------------------------------------------------------------
+
+def _make_umto_2_2(pitches):
+    """
+    Build a minimal UMTO in 2/2 with one soprano voice.
+    pitches is a list of (step, octave, duration_ql, duration_type) tuples.
+    """
+    from apps.exercises.umto import UMTO, Metadata, Voices, VoiceEvent, Pitch, InteractionMode
+
+    events = [
+        VoiceEvent(
+            kind="note",
+            pitch=Pitch(step=step, alter=0, octave=octave, midi=60),
+            duration=dur_ql,
+            duration_type=dur_type,
+        )
+        for step, octave, dur_ql, dur_type in pitches
+    ]
+    return UMTO(
+        metadata=Metadata(
+            exercise_id="TEST_2_2",
+            source="test",
+            key="C Major",
+            meter="2/2",
+            clef="treble",
+            complexity_score=9,
+            mode=InteractionMode.PLAYBACK,
+        ),
+        voices=Voices(S=events),
+    )
+
+
+def test_to_legacy_measures_2_2_clausula_shape():
+    """
+    A simple clausula (ANT half + PEN half + ULT whole) in 2/2 must produce
+    exactly 2 measures: the two halves together in m0, the whole in m1.
+
+    Bug guard: the old code used only the numerator of the time signature
+    (num_beats = 2.0 for "2/2") which gave 4 QL-per-measure instead of the
+    correct 4 QL-per-measure for alla breve.  The note split was wrong:
+    ANT ended up alone in m0, PEN alone in m1, ULT alone in m2, with an
+    empty m3.
+    """
+    # ANT = half (2 QL), PEN = half (2 QL), ULT = whole (4 QL) → total 8 QL
+    umto = _make_umto_2_2([
+        ("C", 5, 2.0, "h"),  # ANT — offset 0
+        ("D", 5, 2.0, "h"),  # PEN — offset 2
+        ("E", 5, 4.0, "w"),  # ULT — offset 4
+    ])
+
+    measures = umto._to_legacy_measures()
+
+    # 2/2: 4 QL per measure → 8 QL total = exactly 2 measures
+    assert len(measures) == 2, (
+        f"Expected 2 measures for 2/2 clausula shape, got {len(measures)}. "
+        "Check that _to_legacy_measures uses quarter-lengths-per-measure, "
+        "not just the meter numerator."
+    )
+
+    treble_m0 = measures[0]["staves"]["treble"]["voices"]
+    treble_m1 = measures[1]["staves"]["treble"]["voices"]
+
+    # Measure 0 should have 2 items (ANT + PEN)
+    assert treble_m0, "Measure 0 treble voice is empty"
+    items_m0 = treble_m0[0]["items"]
+    assert len(items_m0) == 2, (
+        f"Expected ANT + PEN in measure 0, got {len(items_m0)} items"
+    )
+
+    # Measure 1 should have 1 item (ULT)
+    assert treble_m1, "Measure 1 treble voice is empty"
+    items_m1 = treble_m1[0]["items"]
+    assert len(items_m1) == 1, (
+        f"Expected ULT alone in measure 1, got {len(items_m1)} items"
+    )
+
+
+def test_to_legacy_measures_meter_formula_spot_check():
+    """
+    Quarter-lengths-per-measure must be correct for common time signatures.
+    We verify by checking measure count for a known total duration.
+    """
+    from apps.exercises.umto import UMTO, Metadata, Voices, VoiceEvent, Pitch, InteractionMode
+
+    cases = [
+        # (meter,  note_ql, note_type, count, expected_measures)
+        ("4/4",  1.0, "q", 8, 2),   # 8 quarters = 2 measures of 4/4
+        ("3/4",  1.0, "q", 6, 2),   # 6 quarters = 2 measures of 3/4
+        ("2/2",  2.0, "h", 4, 2),   # 4 halves  = 2 measures of 2/2
+        ("6/8",  0.5, "8", 12, 2),  # 12 eighths = 2 measures of 6/8
+    ]
+
+    for meter, ql, dtype, count, expected in cases:
+        events = [
+            VoiceEvent(kind="note", pitch=Pitch(step="C", alter=0, octave=5, midi=72),
+                       duration=ql, duration_type=dtype)
+            for _ in range(count)
+        ]
+        umto = UMTO(
+            metadata=Metadata(
+                exercise_id="METER_TEST",
+                source="test",
+                key="C Major",
+                meter=meter,
+                clef="treble",
+                complexity_score=1,
+                mode=InteractionMode.PLAYBACK,
+            ),
+            voices=Voices(S=events),
+        )
+        measures = umto._to_legacy_measures()
+        assert len(measures) == expected, (
+            f"meter={meter}: expected {expected} measures, got {len(measures)}"
+        )

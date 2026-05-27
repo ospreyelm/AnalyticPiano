@@ -118,8 +118,10 @@ def build_score_from_data(exercise_data):
                         # We need num_beats (default 4.0)
                         num_beats = 4.0
                         try:
-                            num_beats = float(meta.get('time_signature', '4/4').split('/')[0])
-                        except:
+                            ts = meta.get('time_signature', '4/4')
+                            _n, _d = map(int, ts.split('/'))
+                            num_beats = _n * (4.0 / _d)  # quarter-lengths per measure
+                        except Exception:
                             pass
                         
                         part.insert(measure_idx * num_beats + current_offset, el)
