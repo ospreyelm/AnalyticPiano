@@ -142,6 +142,50 @@ The following exploratory pieces should not be carried forward as the production
 - Derived files under `data/corpus/standard_exercises_from_clausulae/`.
 - Student exercises titled by source measure numbers such as `m033-034`.
 
+## Tonal Sonority Filter (Baroque / Classical / Early Romantic)
+
+Clausulae are valid contrapuntal constructs on their own terms. When used to
+generate *tonal-music exercises* (Roman numeral identification, harmonization
+practice), some clausula combinations produce sonorities that are structurally
+correct as counterpoint but **pedagogically misleading as tonal chords**.
+
+The following filter is implemented in
+`clausulae/constraints.py: tonal_sonority_ok()` and applied in
+`generate_roman_from_clausulae.py: _tonal_valid()`.
+
+### The Rule
+
+Scale degrees in Z₇: **0 = Do, 2 = Mi, 4 = Sol**
+
+```
+Let ANT = { triple[0] for each voice }   — first-position (opening tonic)
+Let ULT = { triple[2] for each voice }   — last-position (closing tonic)
+
+KEEP combo if:
+  (1)  2 ∈ ANT
+       First sonority must contain the third (Mi).
+       Bare octaves or octave+fifth at the opening chord are not complete
+       tonic sonorities in common-practice tonal music.
+
+  (2)  NOT (4 ∈ ULT AND 2 ∉ ULT)
+       Final sonority may not be bare fifth/octave (Sol without Mi).
+       {0} alone, {0,2}, {0,2,4} are all acceptable closings.
+       {0,4} — Sol without Mi — is the disallowed shape.
+```
+
+### Why ANT and ULT Only?
+
+PEN (the dominant passing moment) is intentionally incomplete in many clausulae
+and is excluded from this check — an open dominant sonority at the penultimate
+position is normal contrapuntal practice.
+
+### Not Enforced by Default
+
+This filter is **opt-in**. The clausulae engine itself does not apply it — it
+would reject valid counterpoint that happens to lack a third. Apply it only when
+the target context is tonal-music pedagogy where incomplete sonorities at
+structural positions would mislead students.
+
 ## Verification Standard
 
 For `roman_from_clausulae`, passing tests is not enough. Before considering the implementation successful:
