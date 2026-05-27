@@ -204,6 +204,12 @@ define([
     },
 
     _supportsTextInputMode: function (definition) {
+      // Exercises can opt out of text input mode by setting inputModeFixed: "dropdown".
+      // This preserves the visual slot UI (? circles under each beat), which is part
+      // of the pedagogical design for chorale identification exercises.
+      if (definition && definition.exercise && definition.exercise.inputModeFixed === "dropdown") {
+        return false;
+      }
       var analysisType = definition && definition.getAnalysisType
         ? definition.getAnalysisType()
         : "roman";
@@ -847,9 +853,12 @@ define([
     drawIdentificationLabels: function () {
       var slots = this._getIdentificationSlots();
       console.log("[ID] drawIdentificationLabels slots count:", slots.length);
+      console.log("[ID] _identWindowLayout keys:", Object.keys(this._identWindowLayout || {}));
       var definition = this.exerciseContext.getDefinition();
       var inputMode = this._getIdentInputMode(definition);
+      console.log("[ID] inputMode:", inputMode, "identMode:", this._currentMode);
       if (inputMode === 'text') {
+        console.log("[ID] EARLY RETURN: text input mode active (user may have 'text' in localStorage).");
         if (this._currentMode === 'submit' && typeof this._updateIdentificationProgressUI === 'function') {
           var textProblems = this._getVisibleIdentificationProblems(definition);
           var textAnswers = this._getVisibleIdentificationAnswers(textProblems);
@@ -889,6 +898,10 @@ define([
         ? this.exerciseContext.getIdentPageOffset() : 0;
       var problems = definition.getProblems ? definition.getProblems() : [];
       var analysisType = definition.getAnalysisType ? definition.getAnalysisType() : 'roman';
+      console.log("[ID] problems count:", problems.length, "pageOffset:", pageOffset);
+      problems.forEach(function(p, i) {
+        console.log("[ID] problem[" + i + "] hidden:", p && p.hidden, "windowIndex:", p && p.windowIndex, "measureIndex:", p && p.measureIndex, "answer:", p && p.answer);
+      });
 
       function drawKeyChangeLabel(ctx, text, x, y) {
         ctx.save();

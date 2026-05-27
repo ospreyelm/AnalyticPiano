@@ -243,8 +243,10 @@ class UMTO(BaseModel):
         """
         import math
         try:
-            num_beats = float(self.metadata.meter.split("/")[0])
-        except:
+            num, denom = map(int, self.metadata.meter.split("/"))
+            num_beats = num * (4.0 / denom)  # quarter-lengths per measure
+            # e.g. 4/4 → 4.0, 3/4 → 3.0, 2/2 → 4.0, 6/8 → 3.0
+        except Exception:
             num_beats = 4.0
         
         staff_mode = self.metadata.clef # "treble", "bass", or "keyboard"
