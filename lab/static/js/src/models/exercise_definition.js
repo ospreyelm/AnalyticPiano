@@ -1091,6 +1091,10 @@ define([
         exercise.inputMode = definition.inputMode ||
           (definition.score && definition.score.umto && definition.score.umto.metadata && definition.score.umto.metadata.input_mode) ||
           "dropdown";
+        // inputModeFixed: when set to "dropdown", disables text-input mode even if
+        // the analysisType would normally support it (e.g. roman, note_name).
+        // This preserves the ? slot UI for chorale identification exercises.
+        exercise.inputModeFixed = definition.inputModeFixed || null;
         exercise.analysis = {
           enabled: true,
           mode: {}

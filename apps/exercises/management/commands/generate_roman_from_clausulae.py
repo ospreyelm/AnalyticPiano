@@ -270,6 +270,9 @@ def _build_identification_payload(
         "showScaleDegrees": False,
         "maxMeasures":     2,
     }
+    # Force dropdown UI so ? slots always render regardless of what the student
+    # has stored in localStorage for their preferred input mode.
+    payload["inputModeFixed"] = "dropdown"
     return payload
 
 
