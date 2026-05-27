@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HarmonyLab Legacy Exercise Types (CSV Snapshot)</title>
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --paper: #fffdf8;
+      --ink: #1f2228;
+      --muted: #5d646f;
+      --line: #ddd3c3;
+      --accent: #5c3d2e;
+      --accent-soft: #efe7db;
+      --ok: #245f2f;
+      --lock: #7a2630;
+      --radius: 14px;
+      --shadow: 0 12px 24px rgba(31, 34, 40, 0.07);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 20% 20%, #fffaf1 0%, transparent 40%),
+        radial-gradient(circle at 80% 0%, #f1e7d8 0%, transparent 35%),
+        var(--bg);
+      line-height: 1.45;
+    }
+
+    .wrap {
+      width: min(1100px, 94vw);
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 2.9vw, 2.6rem);
+      letter-spacing: 0.01em;
+    }
+
+    .lede {
+      margin-top: 0.7rem;
+      max-width: 75ch;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .meta {
+      margin-top: 1rem;
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 0.6rem 0.8rem;
+      background: var(--accent-soft);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.92rem;
+      color: #42372d;
+    }
+
+    .summary {
+      margin-top: 1.25rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .metric {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.75rem 0.9rem;
+      box-shadow: var(--shadow);
+    }
+
+    .metric .label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .metric .value {
+      display: block;
+      font-size: 1.35rem;
+      margin-top: 0.15rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .grid {
+      margin-top: 1.4rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      color: var(--accent);
+    }
+
+    .count {
+      margin-top: 0.3rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.8rem;
+      font-size: 0.93rem;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 0.55rem 0.45rem;
+      border-bottom: 1px solid #ece4d8;
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .id {
+      font-weight: 700;
+      color: #262a31;
+      white-space: nowrap;
+    }
+
+    .flags {
+      display: inline-flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .flag {
+      display: inline-block;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      padding: 0.15rem 0.45rem;
+      border: 1px solid #cfc5b6;
+      background: #f8f2e8;
+      color: #574c3f;
+    }
+
+    .flag.public {
+      border-color: #b8d8bd;
+      background: #e9f5ec;
+      color: var(--ok);
+    }
+
+    .flag.locked {
+      border-color: #e4c4ca;
+      background: #fbedef;
+      color: var(--lock);
+    }
+
+    footer {
+      margin-top: 1.4rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 720px) {
+      .wrap {
+        padding-top: 1.3rem;
+      }
+
+      table {
+        font-size: 0.9rem;
+      }
+
+      th:nth-child(4),
+      td:nth-child(4) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Legacy Exercise Types in HarmonyLab (CSV Snapshot)</h1>
+    <p class="lede">
+      This page lists every legacy exercise type found in <strong>exercises_2026-04-03.csv</strong>,
+      with real exercise rows (IDs, titles, dates, and lock/public flags) pulled from that file.
+    </p>
+
+    <div class="meta">
+      <span>Source: exercises_2026-04-03.csv</span>
+      <span>Snapshot date in file name: 2026-04-03</span>
+      <span>Total rows parsed: 390</span>
+      <span>Legacy types found: 4</span>
+    </div>
+
+    <section class="summary" aria-label="Type counts">
+      <article class="metric">
+        <span class="label">matching</span>
+        <span class="value">301</span>
+      </article>
+      <article class="metric">
+        <span class="label">figured_bass</span>
+        <span class="value">60</span>
+      </article>
+      <article class="metric">
+        <span class="label">analytical</span>
+        <span class="value">24</span>
+      </article>
+      <article class="metric">
+        <span class="label">analytical_pcs</span>
+        <span class="value">5</span>
+      </article>
+    </section>
+
+    <section class="grid" aria-label="Legacy type details and examples">
+      <article class="card">
+        <h2>matching</h2>
+        <p class="count">301 exercises in CSV</p>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Example title/intro</th>
+              <th>Created</th>
+              <th>Flags</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="id">EA00WI</td>
+              <td>Arpeggiating 6/4</td>
+              <td>2021.09.10</td>
+              <td><span class="flags"><span class="flag public">public</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00WJ</td>
+              <td>Passing 6/4 chords</td>
+              <td>2021.09.10</td>
+              <td><span class="flags"><span class="flag public">public</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA01BA</td>
+              <td>Omnibus Progression</td>
+              <td>2021.11.10</td>
+              <td><span class="flags"><span class="flag public">public</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00GG</td>
+              <td>3. Minor 7th Chords</td>
+              <td>2021.02.02</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00HW</td>
+              <td>Play the following intervals. The number below the grand staff indicates the number of half steps between the two pitches.</td>
+              <td>2021.02.07</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h2>figured_bass</h2>
+        <p class="count">60 exercises in CSV</p>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Example title/intro</th>
+              <th>Created</th>
+              <th>Flags</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="id">EA02LN</td>
+              <td>ROTO Asc Minor FB</td>
+              <td>2024.09.30</td>
+              <td><span class="flags"><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00VX</td>
+              <td>Simple Cadence figured bass</td>
+              <td>2021.09.10</td>
+              <td><span class="flags"><span class="flag public">public</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00WX</td>
+              <td>Mixture progression 1 as figured bass</td>
+              <td>2021.09.16</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00XA</td>
+              <td>Mixture 2 as figured bass</td>
+              <td>2021.09.16</td>
+              <td><span class="flags"><span class="flag public">public</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA01RZ</td>
+              <td>Rule of the Octave Ascending and Descending</td>
+              <td>2022.11.11</td>
+              <td><span class="flags"><span class="flag public">public</span></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h2>analytical</h2>
+        <p class="count">24 exercises in CSV</p>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Example title/intro</th>
+              <th>Created</th>
+              <th>Flags</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="id">EA00OH</td>
+              <td>Play Octatonic 02</td>
+              <td>2021.03.21</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00OJ</td>
+              <td>Play Hexatonic 01</td>
+              <td>2021.03.21</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00IZ</td>
+              <td>Play pitches that match the following pitch classes</td>
+              <td>2021.02.14</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00XB</td>
+              <td>Mixture 2 as Roman Numerals</td>
+              <td>2021.09.16</td>
+              <td><span class="flags"><span class="flag public">public</span></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h2>analytical_pcs</h2>
+        <p class="count">5 exercises in CSV</p>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Example title/intro</th>
+              <th>Created</th>
+              <th>Flags</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="id">EA00HV</td>
+              <td>Play the following pitches (notice the pitch-class notation)</td>
+              <td>2021.02.07</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00DP</td>
+              <td>WT0 as pc only</td>
+              <td>2021.01.21</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00CY</td>
+              <td>rising chromatic scale PCs</td>
+              <td>2021.01.20</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00HO</td>
+              <td>More notes with Pitch Class notation</td>
+              <td>2021.02.07</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+            <tr>
+              <td class="id">EA00HT</td>
+              <td>Play the following pitches (notice the pitch-class notation)</td>
+              <td>2021.02.07</td>
+              <td><span class="flags"><span class="flag public">public</span><span class="flag locked">locked</span></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <footer>
+      Notes: examples are direct rows from the CSV. Legacy here is interpreted as non-UMTO exercise rows from the historical export.
+    </footer>
+  </main>
+</body>
+</html>

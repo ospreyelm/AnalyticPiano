@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HarmonyLab Legacy Exercise Formal Schema</title>
+  <style>
+    :root {
+      --bg: #f6f3ed;
+      --panel: #fffdf9;
+      --ink: #1d2430;
+      --muted: #5f6977;
+      --line: #ddd6c9;
+      --accent: #6a3f2b;
+      --accent-soft: #f2e9de;
+      --ok: #1f6a35;
+      --warn: #8b2f2f;
+      --radius: 12px;
+      --shadow: 0 12px 26px rgba(24, 26, 30, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+      line-height: 1.5;
+      background:
+        radial-gradient(circle at 10% 0%, #fff7ec 0%, transparent 40%),
+        radial-gradient(circle at 90% 20%, #ece4d7 0%, transparent 35%),
+        var(--bg);
+    }
+
+    .wrap {
+      width: min(1180px, 94vw);
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 3vw, 2.5rem);
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      margin-top: 0.75rem;
+      max-width: 80ch;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .meta {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--accent-soft);
+      padding: 0.35rem 0.72rem;
+      font-size: 0.85rem;
+      color: #4d3f36;
+      white-space: nowrap;
+    }
+
+    .note {
+      margin-top: 1rem;
+      border-left: 4px solid var(--accent);
+      background: #f9f3eb;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0.8rem 0.9rem;
+      font-size: 0.94rem;
+    }
+
+    .grid {
+      margin-top: 1.25rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1rem;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: var(--accent);
+    }
+
+    .card h3 {
+      margin: 0.9rem 0 0.45rem;
+      font-size: 1rem;
+      color: #2d3643;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.6rem;
+      font-size: 0.92rem;
+    }
+
+    th, td {
+      border-bottom: 1px solid #ebe4d8;
+      text-align: left;
+      padding: 0.5rem 0.45rem;
+      vertical-align: top;
+    }
+
+    th {
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    pre {
+      margin: 0.7rem 0 0;
+      overflow-x: auto;
+      background: #141b22;
+      color: #e7edf7;
+      border-radius: 10px;
+      border: 1px solid #273241;
+      padding: 0.8rem;
+      font-size: 0.84rem;
+      line-height: 1.35;
+      font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    }
+
+    code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    .status {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 0.14rem 0.5rem;
+      font-size: 0.76rem;
+      border: 1px solid;
+      margin-right: 0.35rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .status.frozen {
+      color: var(--warn);
+      border-color: #e4c4c4;
+      background: #faeeee;
+    }
+
+    .status.readonly {
+      color: #855f17;
+      border-color: #e7d9b4;
+      background: #fbf5e4;
+    }
+
+    .status.current {
+      color: var(--ok);
+      border-color: #b8dcc4;
+      background: #ebf7ef;
+    }
+
+    .legend {
+      margin-top: 0.7rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .tight {
+      margin-top: 0.45rem;
+    }
+
+    @media (max-width: 760px) {
+      .wrap { padding-top: 1.3rem; }
+      table { font-size: 0.88rem; }
+      th:nth-child(3), td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>HarmonyLab Legacy Exercise Formal Schema</h1>
+    <p class="subtitle">
+      Technical schema reference for legacy exercise payloads stored in <code>Exercise.data</code>, with parser normalization rules,
+      grader routing, and generation/storage behavior.
+    </p>
+
+    <div class="meta">
+      <span class="pill">Model: apps/exercises/models.py</span>
+      <span class="pill">Parser: lab/static/js/src/models/exercise_definition.js</span>
+      <span class="pill">Grader: lab/static/js/src/models/exercise_grader.js</span>
+      <span class="pill">View payload assembly: lab/views.py</span>
+      <span class="pill">Date: 2026-05-26</span>
+    </div>
+
+    <div class="note">
+      <span class="status frozen">legacy writes frozen</span>
+      <span class="status readonly">legacy rows readable</span>
+      <span class="status current">new writes use UMTO factory</span>
+      <div class="legend">
+        New non-UMTO rows are blocked by model validation unless <code>HARMONYLAB_ALLOW_LEGACY_EXERCISE=1</code> is set.
+      </div>
+    </div>
+
+    <section class="grid">
+      <article class="card">
+        <h2>1. Storage Contract</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Django model</td>
+              <td><code>Exercise.data</code></td>
+              <td>JSON (RawJSONField)</td>
+              <td>Holds the entire exercise payload for both legacy and UMTO rows.</td>
+            </tr>
+            <tr>
+              <td>Model guard</td>
+              <td><code>Exercise.clean()</code></td>
+              <td>Validation hook</td>
+              <td>Blocks creation of non-UMTO new rows; allows existing legacy rows to continue saving.</td>
+            </tr>
+            <tr>
+              <td>Frontend entry</td>
+              <td><code>ExerciseDefinition.parse(definition)</code></td>
+              <td>Runtime parser</td>
+              <td>Normalizes payload into internal <code>exercise.problems</code> and type-specific behavior.</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h2>2. Shared Legacy Envelope (Chord-Based)</h2>
+        <h3>Top-level keys</h3>
+        <pre>{
+  "type": "matching|analytical|analytical_pcs|figured_bass|figured_bass_pcs|identification",
+  "introText": "...",            // optional
+  "reviewText": "...",           // optional
+  "staffDistribution": "keyboard|...",
+  "key": "jC_ | iA_ | h | ...",  // HarmonyLab key string
+  "keySignature": "",            // optional
+  "analysis": {
+    "enabled": true,
+    "mode": { "roman_numerals": false, "thoroughbass": false, ... }
+  },
+  "highlight": {
+    "enabled": false,
+    "mode": { "roothighlight": true, ... }
+  },
+  "chord": [ ... ],
+  "timeSignature": "4/4",        // optional
+  "semibrevesPerLine": 4          // optional
+}</pre>
+
+        <h3>Chord item schema</h3>
+        <pre>{
+  "visible": [60, 64, 67],    // required for most legacy play types
+  "hidden": [72],             // required for most legacy play types
+  "rhythmValue": "w|h|q|8|16|32",   // optional
+  "unison_idx": 0,            // optional
+  "notes": [60, 64, 67],      // optional input, parser recomputes normalized notes
+  "answer": "V7",            // identification only
+  "choices": ["I", "V", "V7"]  // identification only
+}</pre>
+      </article>
+
+      <article class="card">
+        <h2>3. Type: matching</h2>
+        <table>
+          <thead>
+            <tr><th>Aspect</th><th>Rule</th><th>Source</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Input shape</td><td><code>chord[i].visible</code> + <code>chord[i].hidden</code></td><td>Legacy parser</td></tr>
+            <tr><td>Normalization</td><td>Keeps visibility as given, computes <code>notes = unique(visible + hidden)</code></td><td>ExerciseDefinition.parse</td></tr>
+            <tr><td>Grading</td><td><code>notesMatch()</code> exact MIDI match</td><td>ExerciseGrader</td></tr>
+          </tbody>
+        </table>
+        <pre>{
+  "type": "matching",
+  "staffDistribution": "keyboard",
+  "key": "jC_",
+  "analysis": { "enabled": true, "mode": { "note_names": true } },
+  "highlight": { "enabled": false, "mode": { "roothighlight": true } },
+  "chord": [
+    { "rhythmValue": "w", "visible": [60, 64, 67], "hidden": [] }
+  ]
+}</pre>
+      </article>
+
+      <article class="card">
+        <h2>4. Type: analytical and analytical_pcs</h2>
+        <table>
+          <thead>
+            <tr><th>Aspect</th><th>Rule</th><th>Source</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Input shape</td><td>Same as matching chord entries</td><td>Legacy parser</td></tr>
+            <tr><td>Normalization</td><td>For each problem: <code>visible=[]</code>, <code>hidden=notes</code></td><td>ExerciseDefinition.parse</td></tr>
+            <tr><td>Grading</td><td><code>analytical</code> uses <code>analysisMatch()</code>; <code>analytical_pcs</code> uses <code>analysisPcsMatch()</code></td><td>ExerciseGrader</td></tr>
+          </tbody>
+        </table>
+        <pre>{
+  "type": "analytical_pcs",
+  "analysis": {
+    "enabled": true,
+    "mode": { "pitch_class": true }
+  },
+  "chord": [
+    { "visible": [48], "hidden": [] }
+  ]
+}</pre>
+      </article>
+
+      <article class="card">
+        <h2>5. Type: figured_bass and figured_bass_pcs</h2>
+        <table>
+          <thead>
+            <tr><th>Aspect</th><th>Rule</th><th>Source</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Normalization</td><td>Parser rewrites each problem to bass-led split: <code>visible = notes.slice(0,1)</code>, <code>hidden = notes.slice(1)</code></td><td>ExerciseDefinition.parse</td></tr>
+            <tr><td>Grading</td><td><code>figured_bass</code> => <code>figuredBassMatch()</code>; <code>figured_bass_pcs</code> => <code>figuredBassPcsMatch()</code></td><td>ExerciseGrader</td></tr>
+          </tbody>
+        </table>
+        <pre>{
+  "type": "figured_bass",
+  "analysis": {
+    "enabled": true,
+    "mode": { "thoroughbass": true, "abbreviate_thoroughbass": true }
+  },
+  "chord": [
+    { "visible": [48, 64, 67, 72], "hidden": [] }
+  ]
+}</pre>
+      </article>
+
+      <article class="card">
+        <h2>6. Type: identification (legacy static chord ID)</h2>
+        <table>
+          <thead>
+            <tr><th>Aspect</th><th>Rule</th><th>Source</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Input shape</td><td>Each chord carries <code>notes</code>, <code>answer</code>, <code>choices</code></td><td>ExerciseDefinition.parse</td></tr>
+            <tr><td>Normalization</td><td><code>visible=notes</code>, <code>hidden=[]</code>, answer/choices retained</td><td>ExerciseDefinition.parse</td></tr>
+            <tr><td>Feedback mode</td><td><code>identMode</code> = submit | practice | test</td><td>forms + lab view injection</td></tr>
+            <tr><td>Grading</td><td><code>IdentificationGrader</code> compares chosen label vs answer per slot</td><td>identification_grader.js</td></tr>
+          </tbody>
+        </table>
+        <pre>{
+  "type": "identification",
+  "identMode": "submit",
+  "analysisType": "chord_quality",
+  "inputMode": "dropdown",
+  "chord": [
+    {
+      "notes": [60, 64, 67],
+      "answer": "I",
+      "choices": ["I", "ii", "IV", "V"]
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="card">
+        <h2>7. Type: chorale (legacy score playback)</h2>
+        <table>
+          <thead>
+            <tr><th>Aspect</th><th>Rule</th><th>Source</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Score payload</td><td>Uses CIR score with <code>score.meta</code> + <code>score.measures[*].staves.*.voices[*].items[*]</code></td><td>ExerciseDefinition.parse + score_timeline.js</td></tr>
+            <tr><td>Problems</td><td>Empty at parse time; timeline windows are derived from score events</td><td>ExerciseDefinition.parse</td></tr>
+            <tr><td>Settings</td><td><code>mode</code>, <code>targetVoices</code>, <code>display</code>, <code>grading</code>, <code>excerpt</code></td><td>forms.py chorale settings</td></tr>
+          </tbody>
+        </table>
+        <pre>{
+  "type": "chorale",
+  "mode": "play-all-voices",
+  "score": {
+    "meta": { "key": "C", "time": "4/4" },
+    "measures": [
+      {
+        "number": 1,
+        "staves": {
+          "treble": {
+            "clef": "treble",
+            "voices": [
+              {
+                "items": [
+                  {
+                    "kind": "note",
+                    "pitch": { "step": "C", "alter": 0, "octave": 4 },
+                    "duration": { "type": "q", "dots": 0 }
+                  }
+                ]
+              }
+            ]
+          },
+          "bass": {
+            "clef": "bass",
+            "voices": [ { "items": [ { "kind": "rest", "duration": { "type": "q", "dots": 0 } } ] } ]
+          }
+        }
+      }
+    ]
+  },
+  "display": { "showNotation": true },
+  "grading": { "onsetWindowMs": 150 }
+}</pre>
+      </article>
+
+      <article class="card">
+        <h2>8. Type: chorale_identification (legacy score identification)</h2>
+        <table>
+          <thead>
+            <tr><th>Aspect</th><th>Rule</th><th>Source</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Core fields</td><td><code>score</code>, <code>analysisType</code>, <code>identMode</code>, optional <code>compoundIntervals</code>, <code>display</code></td><td>ExerciseDefinition.parse</td></tr>
+            <tr><td>Problem generation</td><td>Runtime builds one problem per onset window from timeline</td><td>buildChoraleIdentificationProblems</td></tr>
+            <tr><td>Grading</td><td>IdentificationGrader with page offset support</td><td>identification_grader.js + exercise_context.js</td></tr>
+          </tbody>
+        </table>
+        <pre>{
+  "type": "chorale_identification",
+  "analysisType": "roman",   // or figured_bass, interval_generic, interval_specific
+  "identMode": "practice",
+  "compoundIntervals": false,
+  "score": { "meta": { "key": "C", "time": "4/4" }, "measures": [ ... ] },
+  "display": { "maxMeasures": 4 }
+}</pre>
+      </article>
+
+      <article class="card">
+        <h2>9. Formal Type Matrix</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Required top-level keys</th>
+              <th>Problem source</th>
+              <th>Grader route</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>matching</code></td>
+              <td><code>type, chord</code></td>
+              <td>Stored <code>chord[]</code></td>
+              <td><code>notesMatch</code></td>
+            </tr>
+            <tr>
+              <td><code>analytical</code></td>
+              <td><code>type, chord, analysis.mode.*</code></td>
+              <td>Stored <code>chord[]</code> normalized</td>
+              <td><code>analysisMatch</code></td>
+            </tr>
+            <tr>
+              <td><code>analytical_pcs</code></td>
+              <td><code>type, chord, analysis.mode.*</code></td>
+              <td>Stored <code>chord[]</code> normalized</td>
+              <td><code>analysisPcsMatch</code></td>
+            </tr>
+            <tr>
+              <td><code>figured_bass</code></td>
+              <td><code>type, chord</code></td>
+              <td>Stored <code>chord[]</code> normalized to bass + upper</td>
+              <td><code>figuredBassMatch</code></td>
+            </tr>
+            <tr>
+              <td><code>figured_bass_pcs</code></td>
+              <td><code>type, chord</code></td>
+              <td>Stored <code>chord[]</code> normalized to bass + upper</td>
+              <td><code>figuredBassPcsMatch</code></td>
+            </tr>
+            <tr>
+              <td><code>identification</code></td>
+              <td><code>type, chord[*].answer, chord[*].choices</code></td>
+              <td>Stored <code>chord[]</code> with labels</td>
+              <td><code>IdentificationGrader</code></td>
+            </tr>
+            <tr>
+              <td><code>chorale</code></td>
+              <td><code>type, score</code></td>
+              <td>Derived from score timeline windows</td>
+              <td>Chorale path in context/grader flow</td>
+            </tr>
+            <tr>
+              <td><code>chorale_identification</code></td>
+              <td><code>type, score, analysisType</code></td>
+              <td>Derived from score timeline windows</td>
+              <td><code>IdentificationGrader</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h2>10. Generation Path (Current vs Legacy)</h2>
+        <h3>Current production generation</h3>
+        <pre>management command -> build CIR / analysis overrides -> save_umto_exercise(...) -> Exercise.data (isUMTO=true)</pre>
+
+        <h3 class="tight">Legacy generation status</h3>
+        <p class="tight">
+          Legacy exercise shapes remain readable and editable for grandfathered rows.
+          New legacy rows are blocked by model guard and should not be generated in normal paths.
+          One-shot migration scripts may use <code>HARMONYLAB_ALLOW_LEGACY_EXERCISE=1</code>.
+        </p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
