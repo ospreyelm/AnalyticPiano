@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./analytical.schema.json",
+  "title": "Legacy Analytical Exercise",
+  "type": "object",
+  "required": ["type", "chord", "analysis"],
+  "properties": {
+    "type": { "const": "analytical" },
+    "introText": { "type": "string" },
+    "reviewText": { "type": "string" },
+    "staffDistribution": { "type": "string" },
+    "key": { "type": "string" },
+    "keySignature": { "type": ["string", "boolean"] },
+    "analysis": { "$ref": "./common.schema.json#/$defs/analysis" },
+    "highlight": { "$ref": "./common.schema.json#/$defs/highlight" },
+    "timeSignature": { "type": "string" },
+    "semibrevesPerLine": { "type": "integer", "minimum": 1 },
+    "chord": {
+      "type": "array",
+      "items": { "$ref": "./common.schema.json#/$defs/legacyChordItem" },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": true
+}

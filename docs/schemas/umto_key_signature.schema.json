@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "umto_key_signature",
+  "title": "umto_key_signature — identification mode",
+  "description": "Unit 3 key signature recognition exercise. Student sees a key signature (sharps/flats on staff, no notes) and identifies the key from a 4-choice popup. Problems are packed into a single Exercise row as problems[]. No MIDI. No score.umto — uses a flat problems list.",
+  "type": "object",
+  "required": ["type", "mode", "isUMTO", "clef", "problems"],
+  "properties": {
+    "type":    { "const": "umto_key_signature" },
+    "mode":    { "const": "identification" },
+    "isUMTO": { "const": true },
+    "exerciseId": { "type": "string", "examples": ["EB56TQ"] },
+    "clef": {
+      "type": "string",
+      "enum": ["treble", "bass"],
+      "description": "Staff clef used to display the key signature."
+    },
+    "key": {
+      "type": "string",
+      "description": "Default key context (may not match problems — used for staff rendering baseline).",
+      "examples": ["C"]
+    },
+    "meter": {
+      "type": "string",
+      "description": "Not musically relevant for this type but present for rendering consistency.",
+      "examples": ["4/4"]
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Difficulty level. Level 1 = 0–2 accidentals. Higher levels introduce more sharps/flats and include minor keys.",
+      "examples": [1, 2, 3]
+    },
+    "grading": {
+      "type": "array",
+      "description": "Empty for this type — no MIDI grading.",
+      "maxItems": 0
+    },
+    "problems": {
+      "type": "array",
+      "description": "Ordered list of key-signature problems within this exercise row. Each is one identification question.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["prompt", "answer", "choices"],
+        "properties": {
+          "prompt": {
+            "type": "object",
+            "required": ["kind"],
+            "properties": {
+              "kind": {
+                "const": "key_signature",
+                "description": "Prompt renderer draws a staff with this key signature."
+              },
+              "sharps": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 7,
+                "description": "Number of sharps in the key signature."
+              },
+              "flats": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 7,
+                "description": "Number of flats in the key signature. One of sharps/flats will be 0."
+              }
+            }
+          },
+          "answer": {
+            "type": "string",
+            "description": "Canonical correct answer string shown to student after grading.",
+            "examples": ["C major", "G major", "D minor", "Bb major"]
+          },
+          "accepted_answers": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Alternative answer strings also marked correct (e.g. bare tonic letter 'G' alongside 'G major'). IdentificationGrader checks both answer and accepted_answers.",
+            "examples": [["G"], ["C"], ["d"]]
+          },
+          "choices": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 4,
+            "maxItems": 4,
+            "description": "Four options shown in popup. The correct answer is always among them.",
+            "examples": [["C major", "G major", "D major", "A major"]]
+          },
+          "accidentals": {
+            "type": "integer",
+            "description": "Count of accidentals (positive=sharps, negative convention may vary). Used for filtering by level.",
+            "examples": [0, 1, 2, -1, -2]
+          },
+          "key_id": {
+            "type": "string",
+            "description": "HarmonyLab internal key identifier for this problem.",
+            "examples": ["jC_", "jG_", "jD_", "id_"]
+          }
+        }
+      }
+    }
+  },
+
+  "x-generation": "python manage.py generate_unit3_key_sig_exercises --author <email> --public",
+  "x-grading-note": "IdentificationGrader checks student answer against problem.answer and problem.accepted_answers. Case-sensitive.",
+
+  "examples": [
+    {
+      "type": "umto_key_signature",
+      "mode": "identification",
+      "isUMTO": true,
+      "exerciseId": "EB56TQ",
+      "clef": "treble",
+      "key": "C",
+      "meter": "4/4",
+      "level": 1,
+      "grading": [],
+      "problems": [
+        {
+          "prompt": { "kind": "key_signature", "sharps": 0, "flats": 0 },
+          "answer": "C major",
+          "accepted_answers": ["C"],
+          "choices": ["C major", "G major", "D major", "A major"],
+          "accidentals": 0,
+          "key_id": "jC_"
+        },
+        {
+          "prompt": { "kind": "key_signature", "sharps": 1, "flats": 0 },
+          "answer": "G major",
+          "accepted_answers": ["G"],
+          "choices": ["G major", "F major", "C major", "D major"],
+          "accidentals": 1,
+          "key_id": "jG_"
+        },
+        {
+          "prompt": { "kind": "key_signature", "sharps": 2, "flats": 0 },
+          "answer": "D major",
+          "accepted_answers": ["D"],
+          "choices": ["D major", "Bb major", "C major", "G major"],
+          "accidentals": 2,
+          "key_id": "jD_"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./identification.schema.json",
+  "title": "Legacy Identification Exercise",
+  "type": "object",
+  "required": ["type", "chord"],
+  "properties": {
+    "type": { "const": "identification" },
+    "introText": { "type": "string" },
+    "reviewText": { "type": "string" },
+    "identMode": { "type": "string", "enum": ["submit", "practice", "test"] },
+    "analysisType": { "type": "string" },
+    "inputMode": { "type": "string", "enum": ["dropdown", "text"] },
+    "staffDistribution": { "type": "string" },
+    "key": { "type": "string" },
+    "keySignature": { "type": ["string", "boolean"] },
+    "analysis": { "$ref": "./common.schema.json#/$defs/analysis" },
+    "highlight": { "$ref": "./common.schema.json#/$defs/highlight" },
+    "timeSignature": { "type": "string" },
+    "semibrevesPerLine": { "type": "integer", "minimum": 1 },
+    "chord": {
+      "type": "array",
+      "items": { "$ref": "./common.schema.json#/$defs/identificationChordItem" },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": true
+}

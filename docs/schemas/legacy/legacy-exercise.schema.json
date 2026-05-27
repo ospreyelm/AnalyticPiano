@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./legacy-exercise.schema.json",
+  "title": "HarmonyLab Legacy Exercise (Any Type)",
+  "oneOf": [
+    { "$ref": "./matching.schema.json" },
+    { "$ref": "./analytical.schema.json" },
+    { "$ref": "./analytical_pcs.schema.json" },
+    { "$ref": "./figured_bass.schema.json" },
+    { "$ref": "./figured_bass_pcs.schema.json" },
+    { "$ref": "./identification.schema.json" },
+    { "$ref": "./chorale.schema.json" },
+    { "$ref": "./chorale_identification.schema.json" }
+  ]
+}

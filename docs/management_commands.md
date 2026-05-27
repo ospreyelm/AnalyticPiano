@@ -127,9 +127,19 @@ python manage.py generate_unit5 --type both --author admin@example.com --public
 
 ### Branch B (Clausulae)
 
-**`generate_clausulae_b1`** — Generate Branch B Units B1–B2: formal clausulae and simple 2-voice cadences.
+**`generate_clausulae_b1`** — Generate Branch B Units B1–B4 and B11–B12: formal clausulae and cadence exercises (playback mode).
 ```
 python manage.py generate_clausulae_b1 --author admin@example.com --public
+```
+
+**`generate_roman_from_clausulae`** — Generate `roman_from_clausulae` exercises: Roman numeral identification (I–V–I) over clausula authentic cadences. Student-friendly descriptions, no Branch B tags. Analysis slices have `is_target:true` and `roman_numeral` populated.
+```
+python manage.py generate_roman_from_clausulae \
+  --author admin@example.com \
+  --voices 3 4 \
+  --cadence simple compound \
+  --unit 9 \
+  --public --overwrite
 ```
 
 ---

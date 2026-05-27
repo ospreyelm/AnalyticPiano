@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HarmonyLab Exercise Types Reference</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #21263a;
+    --border: #2e3347;
+    --text: #e2e8f0;
+    --muted: #8b95b0;
+    --accent-blue: #4a90d9;
+    --accent-green: #48bb78;
+    --accent-amber: #f6ad55;
+    --accent-red: #fc8181;
+    --accent-purple: #b794f4;
+    --accent-cyan: #76e4f7;
+    --accent-pink: #f687b3;
+    --play-color: #48bb78;
+    --identify-color: #4a90d9;
+    --clausula-color: #b794f4;
+    --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2.5rem;
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .page-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+
+  .page-header .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+  }
+
+  /* Nav */
+  .toc {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 3rem;
+  }
+
+  .toc a {
+    display: block;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  .toc a:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  .toc a.play  { background: rgba(72,187,120,0.1); border-color: rgba(72,187,120,0.3); color: var(--play-color); }
+  .toc a.identify { background: rgba(74,144,217,0.1); border-color: rgba(74,144,217,0.3); color: var(--identify-color); }
+  .toc a.clausula { background: rgba(183,148,244,0.1); border-color: rgba(183,148,244,0.3); color: var(--clausula-color); }
+
+  /* Section headers */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2.5rem 0 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-header h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+
+  .mode-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .mode-badge.play { background: rgba(72,187,120,0.2); color: var(--play-color); }
+  .mode-badge.identify { background: rgba(74,144,217,0.2); color: var(--identify-color); }
+  .mode-badge.clausula { background: rgba(183,148,244,0.2); color: var(--clausula-color); }
+
+  /* Exercise cards */
+  .exercise-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+  }
+
+  .card-header-left h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .card-header-left .type-id {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--accent-cyan);
+    background: rgba(118,228,247,0.08);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .card-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .grader-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: rgba(255,255,255,0.05);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .card-body {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .card-body { grid-template-columns: 1fr; }
+    body { padding: 1rem; }
+  }
+
+  .card-full { padding: 1.5rem; }
+
+  /* Info sections */
+  .info-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .info-block {
+    margin-bottom: 1.25rem;
+  }
+
+  .desc-text {
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Field table */
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .field-table th {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field-table td {
+    padding: 0.45rem 0.6rem;
+    vertical-align: top;
+    border-bottom: 1px solid rgba(46,51,71,0.5);
+  }
+
+  .field-table tr:last-child td { border-bottom: none; }
+
+  .field-name {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent-amber);
+    white-space: nowrap;
+  }
+
+  .field-type {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--accent-purple);
+    white-space: nowrap;
+  }
+
+  .field-desc {
+    color: var(--text);
+    font-size: 0.85rem;
+  }
+
+  .field-required {
+    font-size: 0.72rem;
+    color: var(--accent-red);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Code blocks */
+  .code-block {
+    background: #0a0c14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: #a8c0e0;
+  }
+
+  .code-block .key   { color: #f6ad55; }
+  .code-block .str   { color: #68d391; }
+  .code-block .num   { color: #76e4f7; }
+  .code-block .bool  { color: #b794f4; }
+  .code-block .cmt   { color: #4a5568; font-style: italic; }
+  .code-block .anno  { color: #f687b3; }
+
+  /* Tags */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  .tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+  }
+
+  .tag.unit  { background: rgba(74,144,217,0.15); color: #90cdf4; }
+  .tag.skill { background: rgba(72,187,120,0.12); color: #9ae6b4; }
+  .tag.mode  { background: rgba(246,173,85,0.12); color: #fbd38d; }
+  .tag.branch { background: rgba(183,148,244,0.12); color: #d6bcfa; }
+
+  /* Flow diagram */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+    margin: 0.5rem 0;
+  }
+
+  .flow-step {
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .flow-arrow { color: var(--muted); font-size: 1rem; }
+
+  .flow-step.source  { background: rgba(246,173,85,0.15); color: var(--accent-amber); border: 1px solid rgba(246,173,85,0.2); }
+  .flow-step.process { background: rgba(74,144,217,0.15); color: var(--accent-blue); border: 1px solid rgba(74,144,217,0.2); }
+  .flow-step.grade   { background: rgba(72,187,120,0.15); color: var(--accent-green); border: 1px solid rgba(72,187,120,0.2); }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+  /* DB example chip */
+  .db-example-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--accent-cyan);
+    background: rgba(118,228,247,0.08);
+    border: 1px solid rgba(118,228,247,0.2);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.6rem;
+  }
+
+  /* Summary table */
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+  }
+
+  .summary-table th {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    background: var(--surface2);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .summary-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .summary-table tr:last-child td { border-bottom: none; }
+  .summary-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .count-chip {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.07);
+    color: var(--muted);
+  }
+
+  /* Accordion sections */
+  details summary {
+    cursor: pointer;
+    user-select: none;
+    padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 500;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  details summary::before { content: "▶"; font-size: 0.65rem; transition: transform 0.2s; }
+  details[open] summary::before { transform: rotate(90deg); }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] summary { color: var(--text); }
+
+  details .details-body { padding: 1rem 1rem 1.25rem; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>HarmonyLab Exercise Types</h1>
+  <p class="subtitle">Complete structural reference — UMTO exercises &amp; Clausula exercises — with real DB examples</p>
+</div>
+
+<!-- Quick nav -->
+<div class="toc">
+  <a class="play" href="#umto-playback">▶ UMTO Playback</a>
+  <a class="identify" href="#umto-identification">◉ UMTO Identification</a>
+  <a class="play" href="#umto-analysis-match">⌨ Analysis Match</a>
+  <a class="play" href="#umto-harmonization">♪ Harmonization</a>
+  <a class="identify" href="#umto-barline">| Barline Placement</a>
+  <a class="identify" href="#umto-key-sig">♭♯ Key Signature</a>
+  <a class="identify" href="#umto-symbolic-meter">⏱ Symbolic Meter</a>
+  <a class="clausula" href="#clausula-playback">⊙ Clausula Playback</a>
+</div>
+
+<!-- ===================== ARCHITECTURE OVERVIEW ===================== -->
+<div class="section-header">
+  <h2>Architecture Overview</h2>
+</div>
+
+<div class="exercise-card">
+  <div class="card-full">
+    <div class="info-block">
+      <div class="info-label">UMTO — Universal Music Theory Object</div>
+      <p class="desc-text">
+        All exercise rows stored in the <code style="font-family:var(--font-mono);color:var(--accent-cyan)">Exercise.data</code> JSON field are UMTO.
+        Every UMTO payload has a top-level <code style="font-family:var(--font-mono);color:var(--accent-amber)">type</code> (which data shape it uses)
+        and a <code style="font-family:var(--font-mono);color:var(--accent-amber)">mode</code> (how the student interacts).
+        Score-based exercises additionally embed a full UMTO object inside
+        <code style="font-family:var(--font-mono);color:var(--accent-amber)">score.umto</code>.
+      </p>
+    </div>
+
+    <div class="info-block">
+      <div class="info-label">Two fundamental interaction modes</div>
+      <table class="field-table">
+        <tr>
+          <th>Mode</th><th>Student action</th><th>Grader</th><th>Types that use it</th>
+        </tr>
+        <tr>
+          <td><span class="field-name">playback</span></td>
+          <td class="field-desc">Sees notation → plays matching notes on MIDI</td>
+          <td><span class="field-type">ChoraleGrader / ExerciseGrader</span></td>
+          <td class="field-desc">umto_chorale (playback), clausula playback</td>
+        </tr>
+        <tr>
+          <td><span class="field-name">identification</span></td>
+          <td class="field-desc">Sees notation → clicks <code style="font-family:var(--font-mono)">?</code> → picks answer from popup</td>
+          <td><span class="field-type">IdentificationGrader</span></td>
+          <td class="field-desc">umto_chorale (id), umto_barline_placement, umto_key_signature, umto_symbolic_meter</td>
+        </tr>
+        <tr>
+          <td><span class="field-name">analysis_match</span></td>
+          <td class="field-desc">Sees a label → plays matching pitch (octave-flexible)</td>
+          <td><span class="field-type">ChoraleGrader (pitch-class mode)</span></td>
+          <td class="field-desc">umto_chorale (analysis_match)</td>
+        </tr>
+        <tr>
+          <td><span class="field-name">harmonization</span></td>
+          <td class="field-desc">Sees bass + figures → plays upper voices to complete each slice</td>
+          <td><span class="field-type">HarmonizationGrader</span></td>
+          <td class="field-desc">umto_chorale (harmonization)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="info-block">
+      <div class="info-label">Core UMTO structure (inside score.umto for score-based exercises)</div>
+      <div class="code-block">
+{
+  <span class="key">"metadata"</span>: {
+    <span class="key">"exercise_id"</span>: <span class="str">"EA80OV"</span>,          <span class="cmt">// DB-assigned after save</span>
+    <span class="key">"source"</span>: <span class="str">"BWV10.7, measures 6-7"</span>,  <span class="cmt">// human-readable origin</span>
+    <span class="key">"key"</span>: <span class="str">"jG_"</span>,                    <span class="cmt">// HarmonyLab key id</span>
+    <span class="key">"meter"</span>: <span class="str">"4/4"</span>,
+    <span class="key">"clef"</span>: <span class="str">"treble"</span>,              <span class="cmt">// "treble" | "bass" | "keyboard"</span>
+    <span class="key">"mode"</span>: <span class="str">"playback"</span>,            <span class="cmt">// InteractionMode enum value</span>
+    <span class="key">"complexity_score"</span>: <span class="num">1</span>,        <span class="cmt">// 1-12 (unit rank)</span>
+    <span class="key">"locked_voices"</span>: [<span class="str">"B"</span>],        <span class="cmt">// voices grader won't require student to play</span>
+    <span class="key">"voice_count_policy"</span>: { <span class="key">"min"</span>: <span class="num">3</span>, <span class="key">"max"</span>: <span class="num">4</span> }
+  },
+  <span class="key">"voices"</span>: {                       <span class="cmt">// SATB event streams</span>
+    <span class="key">"S"</span>: [ <span class="cmt">/* VoiceEvent[] */</span> ],
+    <span class="key">"A"</span>: [], <span class="key">"T"</span>: [], <span class="key">"B"</span>: []
+  },
+  <span class="key">"analysis"</span>: [                      <span class="cmt">// pedagogical labels, one per musical moment</span>
+    {
+      <span class="key">"offset"</span>: <span class="num">0.0</span>,               <span class="cmt">// quarter-lengths from exercise start</span>
+      <span class="key">"content"</span>: {
+        <span class="key">"roman_numeral"</span>: <span class="str">"I"</span>,
+        <span class="key">"figured_bass"</span>: <span class="str">"5/3"</span>,
+        <span class="key">"scale_degrees"</span>: [{ <span class="key">"midi"</span>: <span class="num">60</span>, <span class="key">"label"</span>: <span class="str">"1"</span> }]
+      },
+      <span class="key">"is_target"</span>: <span class="bool">true</span>,           <span class="cmt">// student must answer this slot</span>
+      <span class="key">"unit_tags"</span>: [<span class="num">9</span>]               <span class="cmt">// which curriculum units this serves</span>
+    }
+  ],
+  <span class="key">"grading"</span>: [                       <span class="cmt">// MIDI targets, one per onset</span>
+    {
+      <span class="key">"offset"</span>: <span class="num">0.0</span>,
+      <span class="key">"target_midi_pitches"</span>: [<span class="num">60</span>, <span class="num">64</span>, <span class="num">67</span>, <span class="num">43</span>],
+      <span class="key">"rhythmic_flexibility"</span>: <span class="bool">false</span>
+    }
+  ]
+}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== UMTO PLAYBACK ===================== -->
+<div class="section-header" id="umto-playback">
+  <span class="mode-badge play">Play</span>
+  <h2>umto_chorale — Playback</h2>
+</div>
+
+<div class="exercise-card">
+  <div class="card-header">
+    <div class="card-header-left">
+      <h3>Score-based MIDI playback</h3>
+      <span class="type-id">type: "umto_chorale" · mode: "playback"</span>
+    </div>
+    <div class="card-header-right">
+      <span class="grader-badge">ChoraleGrader</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <div>
+      <div class="info-block">
+        <div class="info-label">What the student does</div>
+        <p class="desc-text">
+          Sees notated score (one or more voices on treble/bass/keyboard staff).
+          Plays each note or chord in onset-window order on MIDI keyboard.
+          Notes turn black when correctly played. Exercise advances window by window.
+        </p>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">Grading flow</div>
+        <div class="flow">
+          <span class="flow-step source">MIDI noteOn</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step process">ChoraleGrader.noteOn()</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step process">match against grading[].target_midi_pitches</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step grade">CORRECT / PARTIAL / INCORRECT</span>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">Key payload fields</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+          <tr>
+            <td class="field-name">type</td>
+            <td class="field-type">"umto_chorale"</td>
+            <td class="field-desc">Score-based exercise type</td>
+          </tr>
+          <tr>
+            <td class="field-name">mode</td>
+            <td class="field-type">"playback"</td>
+            <td class="field-desc">Activates ChoraleGrader onset-window path</td>
+          </tr>
+          <tr>
+            <td class="field-name">clef</td>
+            <td class="field-type">"treble" | "bass" | "keyboard"</td>
+            <td class="field-desc">Staff layout. "keyboard" = grand staff (SATB)</td>
+          </tr>
+          <tr>
+            <td class="field-name">grading[]</td>
+            <td class="field-type">GradingSlice[]</td>
+            <td class="field-desc">One entry per onset. Each holds target MIDI pitches student must play</td>
+          </tr>
+          <tr>
+            <td class="field-name">score.umto.voices</td>
+            <td class="field-type">Voices (S/A/T/B)</td>
+            <td class="field-desc">Note events. Drives rendering AND onset-window construction</td>
+          </tr>
+          <tr>
+            <td class="field-name">analysisType</td>
+            <td class="field-type">string</td>
+            <td class="field-desc">What label overlay shows above/below score (e.g. "note_name", "roman")</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="db-example-label">⬤ Real DB example — id: EA80OV</div>
+      <div class="code-block">
+{
+  <span class="key">"type"</span>: <span class="str">"umto_chorale"</span>,
+  <span class="key">"mode"</span>: <span class="str">"playback"</span>,
+  <span class="key">"clef"</span>: <span class="str">"treble"</span>,
+  <span class="key">"key"</span>: <span class="str">"iG_"</span>,
+  <span class="key">"meter"</span>: <span class="str">"4/4"</span>,
+  <span class="key">"isUMTO"</span>: <span class="bool">true</span>,
+  <span class="key">"analysisType"</span>: <span class="str">"note_name"</span>,
+  <span class="key">"complexity_score"</span>: <span class="num">1</span>,
+  <span class="key">"introText"</span>: <span class="str">"Play the notes: BWV10.7, mm.6-7, Soprano."</span>,
+  <span class="key">"allowed_answers"</span>: [<span class="str">"C"</span>,<span class="str">"D"</span>,<span class="str">"F"</span>,<span class="str">"G"</span>],
+  <span class="key">"grading"</span>: [
+    { <span class="key">"offset"</span>: <span class="num">0.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">74</span>] },
+    { <span class="key">"offset"</span>: <span class="num">2.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">77</span>] },
+    { <span class="key">"offset"</span>: <span class="num">4.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">72</span>] }
+  ],
+  <span class="key">"score"</span>: { <span class="cmt">/* CIR measures + score.umto */</span> }
+}
+      </div>
+      <div style="margin-top:0.75rem">
+        <div class="info-label">Skill tags</div>
+        <div class="tag-list">
+          <span class="tag unit">unit:1</span>
+          <span class="tag skill">Note_Names</span>
+          <span class="tag skill">Read_Treble_Clef</span>
+          <span class="tag skill">Enharmonic_Reading</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <details>
+    <summary>VoiceEvent structure (inside score.umto.voices.S)</summary>
+    <div class="details-body">
+      <div class="code-block">
+<span class="cmt">// One note event in the soprano voice stream</span>
+{
+  <span class="key">"kind"</span>: <span class="str">"note"</span>,            <span class="cmt">// "note" | "rest"</span>
+  <span class="key">"pitch"</span>: {
+    <span class="key">"step"</span>: <span class="str">"D"</span>,            <span class="cmt">// pitch class letter</span>
+    <span class="key">"alter"</span>: <span class="num">0</span>,             <span class="cmt">// semitone inflection: 1=#, -1=b, 0=natural</span>
+    <span class="key">"octave"</span>: <span class="num">5</span>,            <span class="cmt">// scientific octave</span>
+    <span class="key">"midi"</span>: <span class="num">74</span>              <span class="cmt">// precomputed MIDI number</span>
+  },
+  <span class="key">"duration"</span>: <span class="num">2.0</span>,          <span class="cmt">// quarter-lengths (2.0 = half note)</span>
+  <span class="key">"duration_type"</span>: <span class="str">"h"</span>,    <span class="cmt">// "w"|"h"|"q"|"8"|"16"|"32"</span>
+  <span class="key">"dots"</span>: <span class="num">0</span>,
+  <span class="key">"is_tied_start"</span>: <span class="bool">false</span>,
+  <span class="key">"is_tied_stop"</span>: <span class="bool">false</span>,
+  <span class="key">"is_target"</span>: <span class="bool">true</span>         <span class="cmt">// false = context note, not graded</span>
+}
+      </div>
+    </div>
+  </details>
+</div>
+
+
+<!-- ===================== UMTO IDENTIFICATION ===================== -->
+<div class="section-header" id="umto-identification">
+  <span class="mode-badge identify">Identify</span>
+  <h2>umto_chorale — Identification</h2>
+</div>
+
+<div class="exercise-card">
+  <div class="card-header">
+    <div class="card-header-left">
+      <h3>Score-based click-to-identify</h3>
+      <span class="type-id">type: "umto_chorale" · mode: "identification"</span>
+    </div>
+    <div class="card-header-right">
+      <span class="grader-badge">IdentificationGrader</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <div>
+      <div class="info-block">
+        <div class="info-label">What the student does</div>
+        <p class="desc-text">
+          Sees score notation with <code style="font-family:var(--font-mono)">?</code> slots below each target onset.
+          Clicks a slot → popup of 4–5 choices → picks the correct label.
+          Exercises are paginated (4 problems/page by default).
+          <code style="font-family:var(--font-mono)">identMode</code> controls whether feedback is immediate ("practice"),
+          deferred to Submit ("submit"), or locked without color ("test").
+        </p>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">analysisType controls what is identified</div>
+        <table class="field-table">
+          <tr><th>analysisType</th><th>What student labels</th><th>Answer format</th></tr>
+          <tr>
+            <td class="field-name">note_name</td>
+            <td class="field-desc">Pitch name of the note</td>
+            <td class="field-type">"C", "F#", "Bb"</td>
+          </tr>
+          <tr>
+            <td class="field-name">roman_numeral</td>
+            <td class="field-desc">Chord function in key</td>
+            <td class="field-type">"I", "V7", "ii6"</td>
+          </tr>
+          <tr>
+            <td class="field-name">figured_bass</td>
+            <td class="field-desc">Thoroughbass inversion figures</td>
+            <td class="field-type">"6/4", "7", ""</td>
+          </tr>
+          <tr>
+            <td class="field-name">interval_specific</td>
+            <td class="field-desc">Interval quality + size</td>
+            <td class="field-type">"M3", "m6", "P5"</td>
+          </tr>
+          <tr>
+            <td class="field-name">interval_generic</td>
+            <td class="field-desc">Interval size only</td>
+            <td class="field-type">"3", "6", "8"</td>
+          </tr>
+          <tr>
+            <td class="field-name">scale_degree</td>
+            <td class="field-desc">Scale degree number</td>
+            <td class="field-type">"1", "5", "♭7"</td>
+          </tr>
+          <tr>
+            <td class="field-name">solfege</td>
+            <td class="field-desc">Movable-Do solfège syllable</td>
+            <td class="field-type">"Do", "Sol", "Ti"</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="db-example-label">⬤ Real DB example — id: EA80OX</div>
+      <div class="code-block">
+{
+  <span class="key">"type"</span>: <span class="str">"umto_chorale"</span>,
+  <span class="key">"mode"</span>: <span class="str">"identification"</span>,
+  <span class="key">"clef"</span>: <span class="str">"treble"</span>,
+  <span class="key">"analysisType"</span>: <span class="str">"note_name"</span>,
+  <span class="key">"allowed_answers"</span>: [<span class="str">"C"</span>, <span class="str">"D"</span>, <span class="str">"F"</span>, <span class="str">"G"</span>],
+  <span class="key">"grading"</span>: [
+    { <span class="key">"offset"</span>: <span class="num">0.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">74</span>] },
+    { <span class="key">"offset"</span>: <span class="num">2.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">77</span>] }
+  ],
+  <span class="anno">// analysis[] entries drive the ? slots:</span>
+  <span class="cmt">// Each slice with is_target:true generates one ? button</span>
+  <span class="cmt">// score.umto.analysis[].content.roman_numeral (or note_name)</span>
+  <span class="cmt">// is the correct answer checked by IdentificationGrader</span>
+  <span class="key">"score"</span>: {
+    <span class="key">"umto"</span>: {
+      <span class="key">"analysis"</span>: [
+        {
+          <span class="key">"offset"</span>: <span class="num">0.0</span>,
+          <span class="key">"content"</span>: { <span class="key">"roman_numeral"</span>: <span class="str">"D"</span> },
+          <span class="key">"is_target"</span>: <span class="bool">true</span>,
+          <span class="key">"unit_tags"</span>: [<span class="num">1</span>]
+        }
+      ]
+    }
+  }
+}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== ANALYSIS MATCH ===================== -->
+<div class="section-header" id="umto-analysis-match">
+  <span class="mode-badge play">Play</span>
+  <h2>umto_chorale — Analysis Match</h2>
+</div>
+
+<div class="exercise-card">
+  <div class="card-header">
+    <div class="card-header-left">
+      <h3>Label → MIDI (octave-flexible)</h3>
+      <span class="type-id">type: "umto_chorale" · mode: "analysis_match"</span>
+    </div>
+    <div class="card-header-right">
+      <span class="grader-badge">ChoraleGrader (pitch-class)</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <div>
+      <div class="info-block">
+        <div class="info-label">What the student does</div>
+        <p class="desc-text">
+          Sees a label (e.g. a note name like "D" or a solfège syllable like "Re")
+          and plays the corresponding note on MIDI in any octave.
+          Grading is pitch-class-based — octave does not matter.
+          Contrast with <em>playback</em> (exact pitch) and <em>identification</em> (click, no MIDI).
+        </p>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">Key structural difference from playback</div>
+        <p class="desc-text">
+          Same UMTO shape, same grading slices, but
+          <code style="font-family:var(--font-mono);color:var(--accent-amber)">ChoraleGrader</code>
+          checks <code style="font-family:var(--font-mono);color:var(--accent-amber)">midi % 12</code>
+          instead of exact MIDI number. Analysis labels in
+          <code style="font-family:var(--font-mono)">score.umto.analysis[]</code>
+          are shown as the question prompt instead of the rendered score.
+        </p>
+      </div>
+    </div>
+
+    <div>
+      <div class="db-example-label">⬤ Real DB example — id: EA80OW</div>
+      <div class="code-block">
+{
+  <span class="key">"type"</span>: <span class="str">"umto_chorale"</span>,
+  <span class="key">"mode"</span>: <span class="str">"analysis_match"</span>,
+  <span class="key">"clef"</span>: <span class="str">"treble"</span>,
+  <span class="key">"analysisType"</span>: <span class="str">"note_name"</span>,
+  <span class="key">"introText"</span>: <span class="str">"Name the notes: BWV10.7, mm.6-7, Soprano."</span>,
+  <span class="key">"allowed_answers"</span>: [<span class="str">"C"</span>, <span class="str">"D"</span>, <span class="str">"F"</span>, <span class="str">"G"</span>],
+  <span class="key">"grading"</span>: [
+    { <span class="key">"offset"</span>: <span class="num">0.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">74</span>] },
+    <span class="cmt">// same grading[] as playback sibling EA80OV</span>
+    <span class="cmt">// but grader matches pitch class (74 % 12 = 2 = D)</span>
+  ]
+}
+      </div>
+      <p style="margin-top:0.75rem;font-size:0.85rem;color:var(--muted)">
+        This exercise is typically generated alongside a playback sibling from the same source measure range (same grading slices, different mode).
+      </p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== HARMONIZATION ===================== -->
+<div class="section-header" id="umto-harmonization">
+  <span class="mode-badge play">Play</span>
+  <h2>umto_chorale — Harmonization</h2>
+</div>
+
+<div class="exercise-card">
+  <div class="card-header">
+    <div class="card-header-left">
+      <h3>Figured-bass / Roman numeral realization</h3>
+      <span class="type-id">type: "umto_chorale" · mode: "harmonization"</span>
+    </div>
+    <div class="card-header-right">
+      <span class="grader-badge">HarmonizationGrader</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <div>
+      <div class="info-block">
+        <div class="info-label">What the student does</div>
+        <p class="desc-text">
+          Sees grand staff with a bass line and figured bass (or Roman numeral) overlays.
+          Bass voice is <em>locked</em> — student plays only the upper voices.
+          At each onset window, student holds/attacks the upper voices that complete the sonority.
+          Exercise advances window by window, giving immediate feedback per slice.
+        </p>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">Grading logic (slice-by-slice)</div>
+        <p class="desc-text">At each grading slice, <code style="font-family:var(--font-mono)">HarmonizationGrader</code> checks:</p>
+        <ol style="font-size:0.88rem;margin:0.5rem 0 0 1.2rem;color:var(--text);line-height:1.8">
+          <li>Locked voices present (bass pitch-class matches)</li>
+          <li>All played pitch-classes are in <code style="font-family:var(--font-mono);color:var(--accent-amber)">allowedPcs</code> (no illegal notes)</li>
+          <li>All <code style="font-family:var(--font-mono);color:var(--accent-amber)">requiredUpperPcs</code> covered</li>
+          <li>Voice count within <code style="font-family:var(--font-mono);color:var(--accent-amber)">voice_count_policy [min, max]</code></li>
+        </ol>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">metadata fields unique to harmonization</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Description</th></tr>
+          <tr>
+            <td class="field-name">locked_voices</td>
+            <td class="field-desc">Voices grader provides automatically (typically ["B"])</td>
+          </tr>
+          <tr>
+            <td class="field-name">voice_count_policy</td>
+            <td class="field-desc">min/max/expected upper voices student must play</td>
+          </tr>
+          <tr>
+            <td class="field-name">harmonization_target_policy.source</td>
+            <td class="field-desc">"figured_bass" | "roman" | "analysis_slice" — which label type drives target computation</td>
+          </tr>
+          <tr>
+            <td class="field-name">chord_settle_ms</td>
+            <td class="field-desc">Milliseconds before a held sonority is evaluated (default 150)</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="db-example-label">⬤ Real DB example — id: EB57GR</div>
+      <div class="code-block">
+{
+  <span class="key">"type"</span>: <span class="str">"umto_chorale"</span>,
+  <span class="key">"mode"</span>: <span class="str">"harmonization"</span>,
+  <span class="key">"clef"</span>: <span class="str">"keyboard"</span>,
+  <span class="key">"key"</span>: <span class="str">"jG_"</span>,
+  <span class="key">"meter"</span>: <span class="str">"3/4"</span>,
+  <span class="key">"grading"</span>: [
+    { <span class="key">"offset"</span>: <span class="num">0.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">43</span>,<span class="num">62</span>,<span class="num">67</span>,<span class="num">71</span>] },
+    { <span class="key">"offset"</span>: <span class="num">0.5</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">66</span>] },
+    { <span class="key">"offset"</span>: <span class="num">1.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">45</span>,<span class="num">60</span>,<span class="num">64</span>,<span class="num">72</span>] }
+  ],
+  <span class="key">"score"</span>: {
+    <span class="key">"umto"</span>: {
+      <span class="key">"metadata"</span>: {
+        <span class="key">"locked_voices"</span>: [<span class="str">"B"</span>],
+        <span class="key">"voice_count_policy"</span>: { <span class="key">"min"</span>:<span class="num">3</span>, <span class="key">"max"</span>:<span class="num">4</span>, <span class="key">"expected"</span>:<span class="num">4</span> },
+        <span class="key">"harmonization_target_policy"</span>: {
+          <span class="key">"source"</span>: <span class="str">"analysis_slice"</span>,
+          <span class="key">"midi_uses_pitch_class"</span>: <span class="bool">true</span>
+        }
+      },
+      <span class="key">"analysis"</span>: [
+        { <span class="key">"offset"</span>: <span class="num">0.0</span>, <span class="key">"content"</span>: { <span class="key">"figured_bass"</span>: <span class="str">"5/3"</span> } },
+        { <span class="key">"offset"</span>: <span class="num">0.5</span>, <span class="key">"content"</span>: { <span class="key">"figured_bass"</span>: <span class="str">"7"</span> } }
+      ]
+    }
+  }
+}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== BARLINE PLACEMENT ===================== -->
+<div class="section-header" id="umto-barline">
+  <span class="mode-badge identify">Identify</span>
+  <h2>umto_barline_placement — Identification</h2>
+</div>
+
+<div class="exercise-card">
+  <div class="card-header">
+    <div class="card-header-left">
+      <h3>Drag-to-place barlines</h3>
+      <span class="type-id">type: "umto_barline_placement" · mode: "identification"</span>
+    </div>
+    <div class="card-header-right">
+      <span class="grader-badge">BarlineGrader</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <div>
+      <div class="info-block">
+        <div class="info-label">What the student does</div>
+        <p class="desc-text">
+          Sees a sequence of notes without barlines (given a time signature).
+          Clicks between notes to place barlines where the measure boundaries fall.
+          Goal: demonstrate understanding of beat grouping and meter.
+        </p>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">Unique fields</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+          <tr>
+            <td class="field-name">notes[]</td>
+            <td class="field-type">object[]</td>
+            <td class="field-desc">Each note: pitch, duration, dots. pitch_mode:"rhythm_only" hides noteheads</td>
+          </tr>
+          <tr>
+            <td class="field-name">time_signature</td>
+            <td class="field-type">string</td>
+            <td class="field-desc">e.g. "3/4", "6/8" — shown at left of staff</td>
+          </tr>
+          <tr>
+            <td class="field-name">correct_barline_positions</td>
+            <td class="field-type">number[]</td>
+            <td class="field-desc">Zero-indexed note positions where barlines belong</td>
+          </tr>
+          <tr>
+            <td class="field-name">beat_count</td>
+            <td class="field-type">number</td>
+            <td class="field-desc">Total beats in the exercise (= measures × beats per measure)</td>
+          </tr>
+          <tr>
+            <td class="field-name">pickup_beats</td>
+            <td class="field-type">number</td>
+            <td class="field-desc">Anacrusis beats before first full measure (0 if no pickup)</td>
+          </tr>
+          <tr>
+            <td class="field-name">show_time_signature</td>
+            <td class="field-type">boolean</td>
+            <td class="field-desc">Whether to render the time signature as a visual hint</td>
+          </tr>
+          <tr>
+            <td class="field-name">pitch_mode</td>
+            <td class="field-type">"rhythm_only" | "pitched"</td>
+            <td class="field-desc">"rhythm_only" renders noteheads as rhythm slashes</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="db-example-label">⬤ Real DB example — id: EB16ZT</div>
+      <div class="code-block">
+{
+  <span class="key">"type"</span>: <span class="str">"umto_barline_placement"</span>,
+  <span class="key">"mode"</span>: <span class="str">"identification"</span>,
+  <span class="key">"clef"</span>: <span class="str">"treble"</span>,
+  <span class="key">"time_signature"</span>: <span class="str">"3/4"</span>,
+  <span class="key">"measures"</span>: <span class="num">2</span>,
+  <span class="key">"beat_count"</span>: <span class="num">6</span>,
+  <span class="key">"pickup_beats"</span>: <span class="num">0</span>,
+  <span class="key">"pitch_mode"</span>: <span class="str">"rhythm_only"</span>,
+  <span class="key">"show_time_signature"</span>: <span class="bool">true</span>,
+  <span class="key">"notes"</span>: [
+    { <span class="key">"pitch"</span>: <span class="str">"B4"</span>, <span class="key">"duration"</span>: <span class="str">"q"</span>, <span class="key">"dots"</span>: <span class="num">0</span> },
+    { <span class="key">"pitch"</span>: <span class="str">"B4"</span>, <span class="key">"duration"</span>: <span class="str">"q"</span>, <span class="key">"dots"</span>: <span class="num">0</span> },
+    <span class="cmt">// × 6 total quarter notes</span>
+  ],
+  <span class="key">"note_beat_onsets"</span>: [<span class="num">0</span>,<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>,<span class="num">5</span>],
+  <span class="key">"correct_barline_positions"</span>: [<span class="num">2</span>],
+  <span class="cmt">// barline after index 2 = between beat 3 and beat 4</span>
+  <span class="key">"isUMTO"</span>: <span class="bool">true</span>
+}
+      </div>
+      <div style="margin-top:0.75rem">
+        <div class="info-label">Skill tags</div>
+        <div class="tag-list">
+          <span class="tag unit">unit:2</span>
+          <span class="tag skill">unit:2_rhythm</span>
+          <span class="tag skill">unit:2_meter_simple</span>
+          <span class="tag skill">unit:2_meter_compound</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== KEY SIGNATURE ===================== -->
+<div class="section-header" id="umto-key-sig">
+  <span class="mode-badge identify">Identify</span>
+  <h2>umto_key_signature — Identification</h2>
+</div>
+
+<div class="exercise-card">
+  <div class="card-header">
+    <div class="card-header-left">
+      <h3>Key signature recognition</h3>
+      <span class="type-id">type: "umto_key_signature" · mode: "identification"</span>
+    </div>
+    <div class="card-header-right">
+      <span class="grader-badge">IdentificationGrader</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <div>
+      <div class="info-block">
+        <div class="info-label">What the student does</div>
+        <p class="desc-text">
+          Sees a key signature (sharps/flats displayed on a staff, no notes).
+          Picks the matching key name from a popup of 4 choices.
+          Problems are presented as a paginated list within a single exercise row.
+        </p>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">Problem structure</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Description</th></tr>
+          <tr>
+            <td class="field-name">problems[].prompt</td>
+            <td class="field-desc">{ kind:"key_signature", sharps: N, flats: N } — drives rendering</td>
+          </tr>
+          <tr>
+            <td class="field-name">problems[].answer</td>
+            <td class="field-desc">Canonical correct answer, e.g. "G major"</td>
+          </tr>
+          <tr>
+            <td class="field-name">problems[].accepted_answers</td>
+            <td class="field-desc">Aliases also accepted (e.g. ["G"] alongside "G major")</td>
+          </tr>
+          <tr>
+            <td class="field-name">problems[].choices[]</td>
+            <td class="field-desc">Four distractors shown in popup</td>
+          </tr>
+          <tr>
+            <td class="field-name">problems[].accidentals</td>
+            <td class="field-desc">Count of sharps or flats (positive = sharps, negative convention = flats here)</td>
+          </tr>
+          <tr>
+            <td class="field-name">level</td>
+            <td class="field-desc">Difficulty tier (1 = 0–2 accidentals, higher = more)</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="db-example-label">⬤ Real DB example — id: EB56TQ</div>
+      <div class="code-block">
+{
+  <span class="key">"type"</span>: <span class="str">"umto_key_signature"</span>,
+  <span class="key">"mode"</span>: <span class="str">"identification"</span>,
+  <span class="key">"clef"</span>: <span class="str">"treble"</span>,
+  <span class="key">"key"</span>: <span class="str">"C"</span>,
+  <span class="key">"level"</span>: <span class="num">1</span>,
+  <span class="key">"isUMTO"</span>: <span class="bool">true</span>,
+  <span class="key">"problems"</span>: [
+    {
+      <span class="key">"prompt"</span>: { <span class="key">"kind"</span>: <span class="str">"key_signature"</span>, <span class="key">"sharps"</span>: <span class="num">0</span>, <span class="key">"flats"</span>: <span class="num">0</span> },
+      <span class="key">"answer"</span>: <span class="str">"C major"</span>,
+      <span class="key">"accepted_answers"</span>: [<span class="str">"C"</span>],
+      <span class="key">"choices"</span>: [<span class="str">"C major"</span>,<span class="str">"G major"</span>,<span class="str">"D major"</span>,<span class="str">"A major"</span>],
+      <span class="key">"accidentals"</span>: <span class="num">0</span>
+    },
+    {
+      <span class="key">"prompt"</span>: { <span class="key">"kind"</span>: <span class="str">"key_signature"</span>, <span class="key">"sharps"</span>: <span class="num">1</span>, <span class="key">"flats"</span>: <span class="num">0</span> },
+      <span class="key">"answer"</span>: <span class="str">"G major"</span>,
+      <span class="key">"accepted_answers"</span>: [<span class="str">"G"</span>],
+      <span class="key">"choices"</span>: [<span class="str">"G major"</span>,<span class="str">"F major"</span>,<span class="str">"C major"</span>,<span class="str">"D major"</span>]
+    }
+  ],
+  <span class="key">"grading"</span>: []
+}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== SYMBOLIC METER ===================== -->
+<div class="section-header" id="umto-symbolic-meter">
+  <span class="mode-badge identify">Identify</span>
+  <h2>umto_symbolic_meter — Identification</h2>
+</div>
+
+<div class="exercise-card">
+  <div class="card-header">
+    <div class="card-header-left">
+      <h3>Meter concept questions</h3>
+      <span class="type-id">type: "umto_symbolic_meter" · mode: "identification"</span>
+    </div>
+    <div class="card-header-right">
+      <span class="grader-badge">IdentificationGrader</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <div>
+      <div class="info-block">
+        <div class="info-label">What the student does</div>
+        <p class="desc-text">
+          Sees a prompt (a time signature symbol, a grouping label, or a beat-division description).
+          Picks the correct conceptual answer from a multiple-choice popup.
+          No MIDI, no staff notation — pure symbol → concept mapping.
+        </p>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">Subtypes (problems[].subtype)</div>
+        <table class="field-table">
+          <tr><th>subtype</th><th>Prompt example</th><th>Answer example</th></tr>
+          <tr>
+            <td class="field-name">ts_to_grouping</td>
+            <td class="field-desc">Time sig "3/4"</td>
+            <td class="field-type">"triple"</td>
+          </tr>
+          <tr>
+            <td class="field-name">ts_to_division_type</td>
+            <td class="field-desc">Time sig "6/8"</td>
+            <td class="field-type">"compound"</td>
+          </tr>
+          <tr>
+            <td class="field-name">grouping_to_ts</td>
+            <td class="field-desc">"simple duple"</td>
+            <td class="field-type">"2/4"</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="db-example-label">⬤ Real DB example — id: EB16IB</div>
+      <div class="code-block">
+{
+  <span class="key">"type"</span>: <span class="str">"umto_symbolic_meter"</span>,
+  <span class="key">"mode"</span>: <span class="str">"identification"</span>,
+  <span class="key">"isUMTO"</span>: <span class="bool">true</span>,
+  <span class="key">"grading"</span>: [],
+  <span class="key">"problems"</span>: [
+    {
+      <span class="key">"subtype"</span>: <span class="str">"ts_to_grouping"</span>,
+      <span class="key">"prompt"</span>: { <span class="key">"kind"</span>: <span class="str">"time_signature"</span>, <span class="key">"text"</span>: <span class="str">"3/4"</span> },
+      <span class="key">"answer"</span>: <span class="str">"triple"</span>,
+      <span class="key">"choices"</span>: [<span class="str">"triple"</span>,<span class="str">"duple"</span>,<span class="str">"quadruple"</span>,<span class="str">"single"</span>],
+      <span class="key">"correct_index"</span>: <span class="num">0</span>,
+      <span class="key">"explanation"</span>: <span class="str">"3/4 maps to simple triple."</span>
+    },
+    {
+      <span class="key">"subtype"</span>: <span class="str">"ts_to_division_type"</span>,
+      <span class="key">"prompt"</span>: { <span class="key">"kind"</span>: <span class="str">"time_signature"</span>, <span class="key">"text"</span>: <span class="str">"6/8"</span> },
+      <span class="key">"answer"</span>: <span class="str">"compound"</span>,
+      <span class="key">"choices"</span>: [<span class="str">"compound"</span>,<span class="str">"simple"</span>,<span class="str">"triple"</span>,<span class="str">"duple"</span>]
+    }
+  ]
+}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<hr class="divider">
+
+<!-- ===================== CLAUSULAE SECTION ===================== -->
+<div class="section-header" id="clausula-playback">
+  <span class="mode-badge clausula">Clausula</span>
+  <h2>Clausula Exercises</h2>
+</div>
+
+<div class="exercise-card" style="border-color: rgba(183,148,244,0.3)">
+  <div class="card-header" style="background: rgba(183,148,244,0.07)">
+    <div class="card-header-left">
+      <h3>Branch B — Clausula Playback</h3>
+      <span class="type-id">type: "umto_chorale" · mode: "playback" · tags: branch_b</span>
+    </div>
+    <div class="card-header-right">
+      <span class="grader-badge">ChoraleGrader</span>
+    </div>
+  </div>
+
+  <div class="card-full">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+      <div>
+        <div class="info-block">
+          <div class="info-label">What clausulae are</div>
+          <p class="desc-text">
+            Clausulae are Renaissance-era voice-leading formulas that define cadential motion.
+            Each voice follows a three-note <em>clausula triple</em> (ANTecipatio–PENultima–ULTima).
+            The system uses Z₇ arithmetic (diatonic pitch classes 0–6) to enumerate and validate
+            all possible multi-voice combinations. These are a core pedagogical unit in HarmonyLab's
+            Branch B curriculum (distinct from Branch A Bach chorales).
+          </p>
+        </div>
+
+        <div class="info-block">
+          <div class="info-label">Four clausula types (from clausulae/core.py)</div>
+          <table class="field-table">
+            <tr><th>Type</th><th>Triple(s)</th><th>Solfège</th><th>Color</th></tr>
+            <tr>
+              <td class="field-name">Discant</td>
+              <td class="field-type">(0,6,0)</td>
+              <td class="field-desc">Do–Ti–Do</td>
+              <td><span style="color:#F9141B;font-weight:700">■</span> Red</td>
+            </tr>
+            <tr>
+              <td class="field-name">Tenor</td>
+              <td class="field-type">(0,1,0) (0,1,2) (2,1,0) (2,1,2)</td>
+              <td class="field-desc">Do/Mi ↔ Re ↔ Do/Mi</td>
+              <td><span style="color:#108040;font-weight:700">■</span> Green</td>
+            </tr>
+            <tr>
+              <td class="field-name">Alto</td>
+              <td class="field-type">(4,4,4) (4,3,2) (4,5,4)</td>
+              <td class="field-desc">Sol–Fa–Mi etc.</td>
+              <td><span style="color:#1B4FD8;font-weight:700">■</span> Blue</td>
+            </tr>
+            <tr>
+              <td class="field-name">Bass</td>
+              <td class="field-type">(0,4,0)</td>
+              <td class="field-desc">Do–Sol–Do</td>
+              <td><span style="color:#888;font-weight:700">■</span> Black</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="info-block">
+          <div class="info-label">Cadence types (from enumerate_* in clausulae/generate.py)</div>
+          <table class="field-table">
+            <tr><th>Type</th><th>Voices</th><th>Description</th></tr>
+            <tr>
+              <td class="field-name">Simple (τ=0)</td>
+              <td class="field-desc">2–4</td>
+              <td class="field-desc">All voices move simultaneously, ANT–PEN–ULT on same grid</td>
+            </tr>
+            <tr>
+              <td class="field-name">Compound (τ=1)</td>
+              <td class="field-desc">2–4</td>
+              <td class="field-desc">Late voice (Discant) enters half-beat after early voices, creating a suspension dissonance at PEN</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="db-example-label">⬤ Real DB example — id: EB58BM</div>
+        <div class="code-block">
+{
+  <span class="key">"type"</span>: <span class="str">"umto_chorale"</span>,
+  <span class="key">"mode"</span>: <span class="str">"playback"</span>,
+  <span class="key">"clef"</span>: <span class="str">"treble"</span>,
+  <span class="key">"key"</span>: <span class="str">"jC_"</span>,
+  <span class="key">"meter"</span>: <span class="str">"2/2"</span>,
+  <span class="key">"isUMTO"</span>: <span class="bool">true</span>,
+  <span class="key">"grading"</span>: [
+    { <span class="key">"offset"</span>: <span class="num">0.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">72</span>] },
+    { <span class="key">"offset"</span>: <span class="num">2.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">71</span>] },
+    { <span class="key">"offset"</span>: <span class="num">4.0</span>, <span class="key">"target_midi_pitches"</span>: [<span class="num">72</span>] }
+  ],
+  <span class="cmt">// score.umto.voices.S encodes the clausula triple:</span>
+  <span class="cmt">// C5(Do) half → B4(Ti) half → C5(Do) whole</span>
+  <span class="key">"score"</span>: {
+    <span class="key">"umto"</span>: {
+      <span class="key">"metadata"</span>: {
+        <span class="key">"clef"</span>: <span class="str">"treble"</span>,
+        <span class="key">"meter"</span>: <span class="str">"2/2"</span>,
+        <span class="key">"source"</span>: <span class="str">"B1 — Discant clausula (Do–Ti–Do) in C"</span>,
+        <span class="key">"complexity_score"</span>: <span class="num">1</span>
+      },
+      <span class="key">"voices"</span>: {
+        <span class="key">"S"</span>: [
+          { <span class="key">"kind"</span>:<span class="str">"note"</span>, <span class="key">"pitch"</span>:{ <span class="key">"step"</span>:<span class="str">"C"</span>,<span class="key">"alter"</span>:<span class="num">0</span>,<span class="key">"octave"</span>:<span class="num">5</span>,<span class="key">"midi"</span>:<span class="num">72</span> }, <span class="key">"duration"</span>:<span class="num">2.0</span>, <span class="key">"duration_type"</span>:<span class="str">"h"</span> },
+          { <span class="key">"kind"</span>:<span class="str">"note"</span>, <span class="key">"pitch"</span>:{ <span class="key">"step"</span>:<span class="str">"B"</span>,<span class="key">"alter"</span>:<span class="num">0</span>,<span class="key">"octave"</span>:<span class="num">4</span>,<span class="key">"midi"</span>:<span class="num">71</span> }, <span class="key">"duration"</span>:<span class="num">2.0</span>, <span class="key">"duration_type"</span>:<span class="str">"h"</span> },
+          { <span class="key">"kind"</span>:<span class="str">"note"</span>, <span class="key">"pitch"</span>:{ <span class="key">"step"</span>:<span class="str">"C"</span>,<span class="key">"alter"</span>:<span class="num">0</span>,<span class="key">"octave"</span>:<span class="num">5</span>,<span class="key">"midi"</span>:<span class="num">72</span> }, <span class="key">"duration"</span>:<span class="num">4.0</span>, <span class="key">"duration_type"</span>:<span class="str">"w"</span> }
+        ],
+        <span class="key">"A"</span>: [], <span class="key">"T"</span>: [], <span class="key">"B"</span>: []
+      },
+      <span class="key">"analysis"</span>: [
+        <span class="cmt">// analysis slices present but content.functional_label="" (empty)</span>
+        <span class="cmt">// No roman_numeral targets in playback-only clausula exercises</span>
+      ]
+    }
+  }
+}
+        </div>
+        <div style="margin-top:0.75rem">
+          <div class="info-label">Distinguishing skill tags</div>
+          <div class="tag-list">
+            <span class="tag branch">branch_b</span>
+            <span class="tag unit">unit:B1</span>
+            <span class="tag skill">clausula_discant</span>
+            <span class="tag skill">clausula_var0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <details style="margin-top:1rem">
+      <summary>Clausula math: Z₇ pitch-class system explained</summary>
+      <div class="details-body">
+        <p class="desc-text" style="margin-bottom:1rem">
+          All clausula logic operates in Z₇ — integers mod 7 representing the seven diatonic pitch classes (0=Do, 1=Re, 2=Mi, 3=Fa, 4=Sol, 5=La, 6=Ti). No chromatic alterations, no octave numbers — just scale-step identities. This is sufficient to define voice-leading formulas because clausulae are transposable and scale-degree-based.
+        </p>
+        <div class="code-block">
+<span class="cmt"># clausulae/core.py</span>
+SOLFEGE = { <span class="num">0</span>:<span class="str">"Do"</span>, <span class="num">1</span>:<span class="str">"Re"</span>, <span class="num">2</span>:<span class="str">"Mi"</span>, <span class="num">3</span>:<span class="str">"Fa"</span>, <span class="num">4</span>:<span class="str">"Sol"</span>, <span class="num">5</span>:<span class="str">"La"</span>, <span class="num">6</span>:<span class="str">"Ti"</span> }
+
+CLAUSULAE = {
+    <span class="str">"Discant"</span>: [(0, 6, 0)],                     <span class="cmt"># Do–Ti–Do  (leading-tone resolution)</span>
+    <span class="str">"Tenor"</span>:   [(0,1,0),(0,1,2),(2,1,0),(2,1,2)], <span class="cmt"># supertonic neighbor motions</span>
+    <span class="str">"Alto"</span>:    [(4,4,4),(4,3,2),(4,5,4)],           <span class="cmt"># Sol neighbors</span>
+    <span class="str">"Bass"</span>:    [(0,4,0)],                           <span class="cmt"># Do–Sol–Do (octave/fifth bass)</span>
+}
+
+<span class="cmt"># Validation checks (clausulae/constraints.py):</span>
+<span class="cmt">#   consonant_vertical(pcs)     — no dissonant intervals at ULT</span>
+<span class="cmt">#   parallel_perfect(v1, v2)    — no parallel 5ths/8ths into ULT</span>
+<span class="cmt">#   distinctness_ok(triples)    — no two voices same triple</span>
+<span class="cmt">#   bass_constraint_ok(combo)   — Bass always lowest at ULT</span>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Compound clausula temporal grid</summary>
+      <div class="details-body">
+        <p class="desc-text" style="margin-bottom:0.75rem">
+          In compound cadences, the Discant voice enters half a beat late (τ=1), creating a suspension at beat 1.
+        </p>
+        <div class="code-block">
+Beat:   0       0.5     1       1.5     2
+Early:  ANT ─────────── PEN ─────────── ULT   (τ=0, e.g. Bass, Tenor, Alto)
+Late:   (π)             ANT ──── PEN ── ULT   (τ=1, Discant)
+                ↑                ↑
+           π consonant       suspension
+           with early ANT    dissonance
+           at beat 0         (intrinsic)
+        </div>
+        <p class="desc-text" style="margin-top:0.75rem">
+          π (pronounced "pi") is the passing note the late voice plays at beat 0.5, consonant with the early ANT.
+          Valid π values are enumerated by <code style="font-family:var(--font-mono)">enumerate_compound()</code> in <code style="font-family:var(--font-mono)">clausulae/generate.py</code>.
+        </p>
+      </div>
+    </details>
+
+    <details>
+      <summary>roman_from_clausulae (planned — not yet implemented)</summary>
+      <div class="details-body">
+        <p class="desc-text" style="margin-bottom:0.75rem">
+          A future exercise type that adds Roman numeral identification targets on top of the existing Clausula score rendering path.
+          Currently documented in <code style="font-family:var(--font-mono)">docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md</code>.
+          Unlike the Branch B playback exercises above, <code style="font-family:var(--font-mono)">roman_from_clausulae</code> exercises will have
+          <code style="font-family:var(--font-mono)">is_target: true</code> analysis slices and expose <code style="font-family:var(--font-mono)">?</code> buttons for student Roman numeral identification.
+        </p>
+        <div class="code-block">
+<span class="cmt">// Planned analysis slices for a simple authentic cadence:</span>
+<span class="key">"analysis"</span>: [
+  { <span class="key">"offset"</span>: <span class="num">0.0</span>, <span class="key">"content"</span>: { <span class="key">"roman_numeral"</span>: <span class="str">"I"</span>  }, <span class="key">"is_target"</span>: <span class="bool">true</span>, <span class="key">"unit_tags"</span>: [<span class="num">9</span>] },
+  { <span class="key">"offset"</span>: <span class="num">2.0</span>, <span class="key">"content"</span>: { <span class="key">"roman_numeral"</span>: <span class="str">"V"</span>  }, <span class="key">"is_target"</span>: <span class="bool">true</span>, <span class="key">"unit_tags"</span>: [<span class="num">9</span>] },
+  { <span class="key">"offset"</span>: <span class="num">4.0</span>, <span class="key">"content"</span>: { <span class="key">"roman_numeral"</span>: <span class="str">"I"</span>  }, <span class="key">"is_target"</span>: <span class="bool">true</span>, <span class="key">"unit_tags"</span>: [<span class="num">9</span>] }
+]
+        </div>
+        <div style="margin-top:0.75rem">
+          <div class="info-label">Planned skill tags</div>
+          <div class="tag-list">
+            <span class="tag skill">exercise_type:roman_from_clausulae</span>
+            <span class="tag skill">corpus:standard_exercises_from_clausulae</span>
+            <span class="tag unit">unit:9</span>
+            <span class="tag skill">Cadence_Perfect_Authentic</span>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+
+<!-- ===================== SUMMARY TABLE ===================== -->
+<hr class="divider">
+<div class="section-header">
+  <h2>All Types at a Glance</h2>
+</div>
+
+<div class="exercise-card">
+  <div style="overflow-x:auto; padding: 0.5rem">
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>type</th>
+          <th>mode</th>
+          <th>Input</th>
+          <th>Grader</th>
+          <th>Paging</th>
+          <th>DB count</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="field-name">umto_chorale</span></td>
+          <td><span class="field-type">playback</span></td>
+          <td>MIDI</td>
+          <td class="field-desc">ChoraleGrader (exact pitch)</td>
+          <td>No</td>
+          <td><span class="count-chip">~23k</span></td>
+          <td class="field-desc">Bach chorales, scale exercises, clausula playback</td>
+        </tr>
+        <tr>
+          <td><span class="field-name">umto_chorale</span></td>
+          <td><span class="field-type">identification</span></td>
+          <td>Click</td>
+          <td class="field-desc">IdentificationGrader</td>
+          <td>Yes (4/page)</td>
+          <td><span class="count-chip">~23k</span></td>
+          <td class="field-desc">analysisType selects label kind</td>
+        </tr>
+        <tr>
+          <td><span class="field-name">umto_chorale</span></td>
+          <td><span class="field-type">analysis_match</span></td>
+          <td>MIDI</td>
+          <td class="field-desc">ChoraleGrader (pitch-class)</td>
+          <td>No</td>
+          <td><span class="count-chip">~23k</span></td>
+          <td class="field-desc">Sees label, plays any octave</td>
+        </tr>
+        <tr>
+          <td><span class="field-name">umto_chorale</span></td>
+          <td><span class="field-type">harmonization</span></td>
+          <td>MIDI</td>
+          <td class="field-desc">HarmonizationGrader</td>
+          <td>No</td>
+          <td><span class="count-chip">~23k</span></td>
+          <td class="field-desc">Locked bass, student plays upper voices</td>
+        </tr>
+        <tr>
+          <td><span class="field-name">umto_barline_placement</span></td>
+          <td><span class="field-type">identification</span></td>
+          <td>Click</td>
+          <td class="field-desc">BarlineGrader</td>
+          <td>No</td>
+          <td><span class="count-chip">26,490</span></td>
+          <td class="field-desc">Unit 2 rhythm/meter. Drag barlines into sequence</td>
+        </tr>
+        <tr>
+          <td><span class="field-name">umto_key_signature</span></td>
+          <td><span class="field-type">identification</span></td>
+          <td>Click</td>
+          <td class="field-desc">IdentificationGrader</td>
+          <td>Yes (internal problems[])</td>
+          <td><span class="count-chip">12</span></td>
+          <td class="field-desc">Unit 3 key sig recognition</td>
+        </tr>
+        <tr>
+          <td><span class="field-name">umto_symbolic_meter</span></td>
+          <td><span class="field-type">identification</span></td>
+          <td>Click</td>
+          <td class="field-desc">IdentificationGrader</td>
+          <td>Yes (internal problems[])</td>
+          <td><span class="count-chip">2</span></td>
+          <td class="field-desc">Unit 2 meter concept questions</td>
+        </tr>
+        <tr style="background: rgba(183,148,244,0.04)">
+          <td><span class="field-name">umto_chorale</span></td>
+          <td><span class="field-type">playback + branch_b tag</span></td>
+          <td>MIDI</td>
+          <td class="field-desc">ChoraleGrader</td>
+          <td>No</td>
+          <td><span class="count-chip">varies</span></td>
+          <td class="field-desc">Clausula exercises. Identified by skill tag branch_b, not by type field</td>
+        </tr>
+        <tr style="background: rgba(183,148,244,0.04); opacity:0.6">
+          <td><span class="field-name">umto_chorale</span></td>
+          <td><span class="field-type">identification (planned)</span></td>
+          <td>Click</td>
+          <td class="field-desc">IdentificationGrader</td>
+          <td>Yes</td>
+          <td><span class="count-chip">0</span></td>
+          <td class="field-desc">roman_from_clausulae — not yet implemented</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="text-align:center;color:var(--muted);font-size:0.8rem;margin-top:2rem;padding-bottom:2rem">
+  Generated 2026-05-26 · HarmonyLab-1 · All DB counts from local development database
+</div>
+
+</body>
+</html>

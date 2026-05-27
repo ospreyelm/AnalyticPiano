@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "umto_chorale_harmonization",
+  "title": "umto_chorale — harmonization mode",
+  "description": "Figured-bass/Roman-numeral realization exercise. Student sees a grand staff with bass line and analysis overlays (figured bass or Roman numerals). Bass voice is locked — grader provides it automatically. Student plays the upper voices to complete each sonority. Graded slice-by-slice by HarmonizationGrader: checks allowed pitch classes, required upper pitch classes, and voice count policy.",
+  "type": "object",
+  "required": ["type", "mode", "isUMTO", "clef", "key", "meter", "grading", "score"],
+  "properties": {
+    "type":    { "const": "umto_chorale" },
+    "mode":    { "const": "harmonization" },
+    "isUMTO": { "const": true },
+    "exerciseId": { "type": "string", "examples": ["EB57GR"] },
+    "clef": {
+      "type": "string",
+      "enum": ["keyboard"],
+      "description": "Harmonization exercises always use grand staff (keyboard) layout: bass on bass staff, upper voices on treble."
+    },
+    "key":   { "type": "string", "examples": ["jG_"] },
+    "meter": { "type": "string", "examples": ["3/4", "4/4"] },
+    "analysisType": {
+      "type": "string",
+      "enum": ["figured_bass", "roman"],
+      "description": "Controls overlay type. 'figured_bass' shows thoroughbass figures. 'roman' shows Roman numerals."
+    },
+    "complexity_score": { "type": "integer", "minimum": 1, "maximum": 12 },
+    "introText":  { "type": "string" },
+    "reviewText": { "type": "string" },
+    "grading": {
+      "type": "array",
+      "description": "One GradingSlice per onset window. Each slice holds all four SATB MIDI pitches of the target sonority (including bass). HarmonizationGrader extracts locked voices and derives allowedPcs/requiredUpperPcs from analysis slices.",
+      "items": {
+        "type": "object",
+        "required": ["offset", "target_midi_pitches"],
+        "properties": {
+          "offset": {
+            "type": "number",
+            "description": "Quarter-lengths from exercise start."
+          },
+          "target_midi_pitches": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0, "maximum": 127 },
+            "description": "Full SATB sonority at this onset. Includes locked-voice pitches. Non-chord-tone (NCT) slices are skipped during generation."
+          },
+          "rhythmic_flexibility": { "type": "boolean", "default": false }
+        }
+      },
+      "minItems": 1
+    },
+    "score": {
+      "type": "object",
+      "required": ["umto"],
+      "properties": {
+        "meta":     { "type": "object" },
+        "measures": { "type": "array" },
+        "umto": {
+          "type": "object",
+          "required": ["metadata", "voices", "analysis", "grading"],
+          "properties": {
+            "metadata": {
+              "type": "object",
+              "description": "Harmonization-specific metadata fields.",
+              "required": ["locked_voices", "voice_count_policy", "harmonization_target_policy"],
+              "properties": {
+                "exercise_id": { "type": "string" },
+                "source":      { "type": "string" },
+                "key":         { "type": "string" },
+                "meter":       { "type": "string" },
+                "clef":        { "const": "keyboard" },
+                "mode":        { "const": "harmonization" },
+                "complexity_score": { "type": "integer" },
+                "locked_voices": {
+                  "type": "array",
+                  "items": { "type": "string", "enum": ["S","A","T","B"] },
+                  "description": "Voices the grader provides. Student does not play these. Typically ['B'].",
+                  "examples": [["B"]]
+                },
+                "voice_count_policy": {
+                  "type": "object",
+                  "required": ["min"],
+                  "properties": {
+                    "min":      { "type": "integer", "description": "Minimum voices student must play simultaneously." },
+                    "max":      { "type": ["integer","null"], "description": "Maximum voices allowed. null = unlimited." },
+                    "expected": { "type": ["integer","null"], "description": "Exact voice count if strict voicing is required." }
+                  },
+                  "examples": [{ "min": 3, "max": 4, "expected": 4 }]
+                },
+                "harmonization_target_policy": {
+                  "type": "object",
+                  "required": ["source"],
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": ["figured_bass", "roman", "analysis_slice"],
+                      "description": "Which label type in analysis[].content drives target computation in harmonization_targets_logic.js. 'analysis_slice' means the full AnalysisSlice is used."
+                    },
+                    "written_spelling_required": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "If true, student must play specific enharmonic spellings, not just pitch classes."
+                    },
+                    "midi_uses_pitch_class": {
+                      "type": "boolean",
+                      "default": true,
+                      "description": "If true, grader compares played notes as pitch classes (mod 12) against target. Allows any octave register."
+                    }
+                  }
+                },
+                "chord_settle_ms":        { "type": "integer", "default": 150, "description": "Milliseconds a held sonority must be stable before grader evaluates it." },
+                "release_grace_ms":       { "type": "integer", "default": 120 },
+                "max_voice_displacement": { "type": "integer", "default": 4 }
+              }
+            },
+            "voices": {
+              "type": "object",
+              "description": "Full SATB voice streams. Bass voice is rendered but locked during grading.",
+              "properties": {
+                "S": { "type": "array" },
+                "A": { "type": "array" },
+                "T": { "type": "array" },
+                "B": { "type": "array", "description": "Bass line with figured bass or Roman numeral overlays. Locked." }
+              }
+            },
+            "analysis": {
+              "type": "array",
+              "description": "One AnalysisSlice per harmonic onset. Content drives the overlay shown to student AND the allowedPcs/requiredUpperPcs computation. NCT slices (non-chord-tone offsets) are skipped during generation.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "offset":   { "type": "number" },
+                  "content": {
+                    "type": "object",
+                    "properties": {
+                      "figured_bass":     { "type": ["string","null"], "description": "Abbreviated Kellner figure shown to student (e.g. '', '7', '6', '4/2')." },
+                      "raw_figured_bass": { "type": ["string","null"], "description": "Full unabbreviated stack (e.g. '8/5/3', '7/5/3'). Used internally for allowedPcs derivation." },
+                      "roman_numeral":    { "type": ["string","null"] }
+                    }
+                  },
+                  "is_target": { "type": "boolean", "default": false }
+                }
+              }
+            },
+            "grading": { "type": "array" }
+          }
+        }
+      }
+    }
+  },
+
+  "x-grading-algorithm": {
+    "description": "HarmonizationGrader slice evaluation (harmonization_grader_logic.js). At each onset window:",
+    "steps": [
+      "1. Extract locked-voice pitch classes from grading slice target_midi_pitches.",
+      "2. Derive allowedPcs from analysis[offset].content (all chord tones at this harmony).",
+      "3. Derive requiredUpperPcs = allowedPcs minus locked-voice pitch classes.",
+      "4. When student releases notes, check: (a) locked pcs present, (b) no illegal pcs played, (c) all requiredUpperPcs covered, (d) voice count in [min, max].",
+      "5. If all pass: advance to next window. Else: flash error, stay on window."
+    ]
+  },
+
+  "x-generation": "python manage.py generate_harmonization --source <exercise_id> --author <email> --locked-voices B --prompt figured_bass --min-voices 3 --max-voices 4 --public",
+
+  "examples": [
+    {
+      "type": "umto_chorale",
+      "mode": "harmonization",
+      "isUMTO": true,
+      "exerciseId": "EB57GR",
+      "clef": "keyboard",
+      "key": "jG_",
+      "meter": "3/4",
+      "analysisType": "figured_bass",
+      "grading": [
+        { "offset": 0.0, "target_midi_pitches": [43, 62, 67, 71], "rhythmic_flexibility": false },
+        { "offset": 0.5, "target_midi_pitches": [66],             "rhythmic_flexibility": false },
+        { "offset": 1.0, "target_midi_pitches": [45, 60, 64, 72], "rhythmic_flexibility": false }
+      ],
+      "score": {
+        "umto": {
+          "metadata": {
+            "locked_voices": ["B"],
+            "voice_count_policy": { "min": 3, "max": 4, "expected": 4 },
+            "harmonization_target_policy": {
+              "source": "analysis_slice",
+              "midi_uses_pitch_class": true,
+              "written_spelling_required": false
+            },
+            "chord_settle_ms": 150,
+            "release_grace_ms": 120
+          },
+          "analysis": [
+            { "offset": 0.0, "content": { "figured_bass": "5/3", "raw_figured_bass": "8/5/3" }, "is_target": false },
+            { "offset": 0.5, "content": { "figured_bass": "7",   "raw_figured_bass": "7/5/3" }, "is_target": false },
+            { "offset": 1.0, "content": { "figured_bass": "5/3", "raw_figured_bass": "5/3"   }, "is_target": false }
+          ]
+        }
+      }
+    }
+  ]
+}

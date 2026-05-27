@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./common.schema.json",
+  "title": "HarmonyLab Legacy Common",
+  "type": "object",
+  "$defs": {
+    "midi": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 127
+    },
+    "midiArray": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/midi" }
+    },
+    "analysis": {
+      "type": "object",
+      "required": ["enabled", "mode"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "tempo": { "type": "boolean" },
+        "mode": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "highlight": {
+      "type": "object",
+      "required": ["enabled", "mode"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "mode": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "legacyChordItem": {
+      "type": "object",
+      "required": ["visible", "hidden"],
+      "properties": {
+        "visible": { "$ref": "#/$defs/midiArray" },
+        "hidden": { "$ref": "#/$defs/midiArray" },
+        "notes": { "$ref": "#/$defs/midiArray" },
+        "rhythmValue": {
+          "type": "string",
+          "enum": ["w", "W", "h", "H", "q", "Q", "8", "16", "32", "1", "2", "4"]
+        },
+        "unison_idx": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "identificationChordItem": {
+      "type": "object",
+      "required": ["notes", "answer", "choices"],
+      "properties": {
+        "notes": { "$ref": "#/$defs/midiArray" },
+        "visible": { "$ref": "#/$defs/midiArray" },
+        "hidden": { "$ref": "#/$defs/midiArray" },
+        "answer": { "type": "string" },
+        "choices": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "rhythmValue": {
+          "type": "string",
+          "enum": ["w", "W", "h", "H", "q", "Q", "8", "16", "32", "1", "2", "4"]
+        },
+        "unison_idx": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "duration": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "enum": ["w", "h", "q", "8", "16", "32"] },
+        "dots": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "pitch": {
+      "type": "object",
+      "required": ["step", "octave"],
+      "properties": {
+        "step": { "type": "string", "enum": ["A", "B", "C", "D", "E", "F", "G"] },
+        "alter": { "type": "integer", "minimum": -2, "maximum": 2 },
+        "octave": { "type": "integer", "minimum": -1, "maximum": 9 }
+      },
+      "additionalProperties": true
+    },
+    "itemNote": {
+      "type": "object",
+      "required": ["kind", "pitch", "duration"],
+      "properties": {
+        "kind": { "const": "note" },
+        "pitch": { "$ref": "#/$defs/pitch" },
+        "duration": { "$ref": "#/$defs/duration" }
+      },
+      "additionalProperties": true
+    },
+    "itemChord": {
+      "type": "object",
+      "required": ["kind", "notes", "duration"],
+      "properties": {
+        "kind": { "const": "chord" },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["pitch"],
+            "properties": {
+              "pitch": { "$ref": "#/$defs/pitch" }
+            },
+            "additionalProperties": true
+          },
+          "minItems": 1
+        },
+        "duration": { "$ref": "#/$defs/duration" }
+      },
+      "additionalProperties": true
+    },
+    "itemRest": {
+      "type": "object",
+      "required": ["kind", "duration"],
+      "properties": {
+        "kind": { "const": "rest" },
+        "duration": { "$ref": "#/$defs/duration" }
+      },
+      "additionalProperties": true
+    },
+    "voice": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "direction": { "type": ["integer", "string"] },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/itemNote" },
+              { "$ref": "#/$defs/itemChord" },
+              { "$ref": "#/$defs/itemRest" }
+            ]
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "staff": {
+      "type": "object",
+      "required": ["voices"],
+      "properties": {
+        "clef": { "type": "string" },
+        "voices": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/voice" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "measure": {
+      "type": "object",
+      "required": ["staves"],
+      "properties": {
+        "number": { "type": ["integer", "string"] },
+        "staves": {
+          "type": "object",
+          "properties": {
+            "treble": { "$ref": "#/$defs/staff" },
+            "bass": { "$ref": "#/$defs/staff" }
+          },
+          "additionalProperties": true,
+          "minProperties": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "score": {
+      "type": "object",
+      "required": ["meta", "measures"],
+      "properties": {
+        "meta": {
+          "type": "object",
+          "properties": {
+            "key": { "type": "string" },
+            "time": { "type": "string" }
+          },
+          "additionalProperties": true
+        },
+        "measures": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/measure" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

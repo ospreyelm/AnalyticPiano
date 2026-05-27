@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "umto_chorale_identification",
+  "title": "umto_chorale — identification mode",
+  "description": "Score-based click-to-identify exercise. Student sees notation with ? slots below each target onset, clicks to open a popup, and picks the correct label. Graded by IdentificationGrader. Paginated (4 problems/page by default). The correct answer is taken from score.umto.analysis[].content based on analysisType.",
+  "type": "object",
+  "required": ["type", "mode", "isUMTO", "clef", "key", "meter", "analysisType", "allowed_answers", "grading", "score"],
+  "properties": {
+    "type":    { "const": "umto_chorale" },
+    "mode":    { "const": "identification" },
+    "isUMTO": { "const": true },
+    "exerciseId": { "type": "string", "examples": ["EA80OX"] },
+    "clef": {
+      "type": "string",
+      "enum": ["treble", "bass", "keyboard"],
+      "description": "Staff layout. Single-voice exercises use 'treble' or 'bass'. SATB use 'keyboard'."
+    },
+    "key":   { "type": "string", "examples": ["jC_", "iG_"] },
+    "meter": { "type": "string", "examples": ["4/4", "3/4"] },
+    "analysisType": {
+      "type": "string",
+      "enum": [
+        "note_name",
+        "solfege",
+        "do_based_solfege",
+        "scale_degree",
+        "fixed_do",
+        "pitch_class",
+        "roman_numeral",
+        "figured_bass",
+        "interval_specific",
+        "interval_generic"
+      ],
+      "description": "Determines what the ? slot asks and which AnalysisLayer field holds the answer. See analysisType→field mapping below."
+    },
+    "identMode": {
+      "type": "string",
+      "enum": ["practice", "submit", "test"],
+      "default": "practice",
+      "description": "practice=immediate feedback per slot, submit=reveal on Submit button, test=no color feedback."
+    },
+    "compoundIntervals": {
+      "type": "boolean",
+      "default": false,
+      "description": "For interval_* analysisTypes: if false, intervals >octave are simplified (10th→3rd). Enforced at import time."
+    },
+    "inputMode": {
+      "type": "string",
+      "enum": ["dropdown", "text"],
+      "default": "dropdown",
+      "description": "dropdown=popup list, text=typed input (accepts case-sensitive tokens like 'M3', 'm6', 'P5')."
+    },
+    "complexity_score": { "type": "integer", "minimum": 1, "maximum": 12 },
+    "introText":  { "type": "string" },
+    "reviewText": { "type": "string" },
+    "semibrevesPerLine": { "type": "integer" },
+    "staffDistribution": { "type": "string" },
+    "allowed_answers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Full set of answer strings shown in popup choices. Subset of these appears per slot as choices[].",
+      "examples": [["C","D","F","G"], ["I","ii","IV","V","V7"], ["M3","m3","P5","m6","M6"]]
+    },
+    "grading": {
+      "type": "array",
+      "description": "Grading slices present in payload even for click-based exercises. Used by IdentificationGrader to resolve absolute answer indices.",
+      "items": {
+        "type": "object",
+        "required": ["offset", "target_midi_pitches"],
+        "properties": {
+          "offset":                { "type": "number" },
+          "target_midi_pitches":   { "type": "array", "items": { "type": "integer" } },
+          "rhythmic_flexibility":  { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "score": {
+      "type": "object",
+      "description": "Contains CIR measures (for rendering) and score.umto (canonical UMTO with analysis slices that drive ? targets).",
+      "properties": {
+        "meta":     { "type": "object" },
+        "measures": { "type": "array" },
+        "umto": {
+          "type": "object",
+          "description": "score.umto.analysis[] entries with is_target:true generate ? slots. The correct answer is resolved from content based on analysisType.",
+          "properties": {
+            "metadata": { "type": "object" },
+            "voices":   { "type": "object" },
+            "analysis": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "offset":    { "type": "number" },
+                  "content": {
+                    "type": "object",
+                    "description": "AnalysisLayer. Which field is used as the answer depends on analysisType.",
+                    "properties": {
+                      "roman_numeral":    { "type": ["string","null"] },
+                      "raw_roman_numeral":{ "type": ["string","null"] },
+                      "local_key":        { "type": ["string","null"] },
+                      "figured_bass":     { "type": ["string","null"] },
+                      "raw_figured_bass": { "type": ["string","null"] },
+                      "scale_degrees":    { "type": ["array","null"] },
+                      "functional_label": { "type": ["string","null"] },
+                      "pop_symbol":       { "type": ["string","null"] }
+                    }
+                  },
+                  "is_target":  { "type": "boolean", "description": "true = renders a ? button at this offset." },
+                  "unit_tags":  { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            },
+            "grading": { "type": "array" }
+          }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "analysisType_to_answer_field": {
+      "description": "NOT a JSON Schema constraint — documents which AnalysisLayer field provides the correct answer for each analysisType. Implemented in exercise_definition.js computeWindowLabel().",
+      "type": "object",
+      "properties": {
+        "note_name":        { "const": "pitch name derived from VoiceEvent.pitch at this offset (e.g. 'D', 'F#')" },
+        "solfege":          { "const": "scale-degree solfège (movable-Do): 'Do','Re','Mi'..." },
+        "do_based_solfege": { "const": "same as solfege but always relative to tonic" },
+        "scale_degree":     { "const": "numeric degree: '1','2','#4'" },
+        "fixed_do":         { "const": "Italian fixed-do: 'Do','Re'... regardless of key" },
+        "pitch_class":      { "const": "0–11 pitch-class integer" },
+        "roman_numeral":    { "const": "content.roman_numeral" },
+        "figured_bass":     { "const": "content.figured_bass" },
+        "interval_specific":{ "const": "interval quality+size computed from top two voices via Tonal.js: 'M3','m6','P5'" },
+        "interval_generic": { "const": "interval size only: '3','6','8'. compoundIntervals controls simplification." }
+      }
+    }
+  },
+
+  "examples": [
+    {
+      "type": "umto_chorale",
+      "mode": "identification",
+      "isUMTO": true,
+      "exerciseId": "EA80OX",
+      "clef": "treble",
+      "key": "iG_",
+      "meter": "4/4",
+      "analysisType": "note_name",
+      "identMode": "practice",
+      "inputMode": "dropdown",
+      "complexity_score": 1,
+      "introText": "Identify the notes: BWV10.7, measures 6-7, Soprano voice.",
+      "reviewText": "Well done!",
+      "allowed_answers": ["C", "D", "F", "G"],
+      "grading": [
+        { "offset": 0.0, "target_midi_pitches": [74], "rhythmic_flexibility": false },
+        { "offset": 2.0, "target_midi_pitches": [77], "rhythmic_flexibility": false }
+      ],
+      "score": {
+        "umto": {
+          "analysis": [
+            { "offset": 0.0, "content": { "roman_numeral": "D" }, "is_target": true,  "unit_tags": [1] },
+            { "offset": 2.0, "content": { "roman_numeral": "F" }, "is_target": true,  "unit_tags": [1] }
+          ]
+        }
+      }
+    }
+  ]
+}

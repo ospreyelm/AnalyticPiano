@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./chorale_identification.schema.json",
+  "title": "Legacy Chorale Identification Exercise",
+  "type": "object",
+  "required": ["type", "score"],
+  "properties": {
+    "type": { "const": "chorale_identification" },
+    "introText": { "type": "string" },
+    "reviewText": { "type": "string" },
+    "identMode": { "type": "string", "enum": ["submit", "practice", "test"] },
+    "analysisType": {
+      "type": "string",
+      "enum": [
+        "roman",
+        "roman_numeral",
+        "figured_bass",
+        "interval_specific",
+        "interval_generic",
+        "note_name",
+        "solfege",
+        "do_based_solfege",
+        "scale_degree",
+        "fixed_do",
+        "pitch_class"
+      ]
+    },
+    "compoundIntervals": { "type": "boolean" },
+    "score": { "$ref": "./common.schema.json#/$defs/score" },
+    "display": { "type": "object", "additionalProperties": true },
+    "analysis": { "$ref": "./common.schema.json#/$defs/analysis" },
+    "staffDistribution": { "type": "string" },
+    "semibrevesPerLine": { "type": "integer", "minimum": 1 }
+  },
+  "additionalProperties": true
+}

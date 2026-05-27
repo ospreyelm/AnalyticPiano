@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "umto_chorale_analysis_match",
+  "title": "umto_chorale — analysis_match mode",
+  "description": "Label-to-MIDI exercise. Student sees an analysis label (note name, solfège, Roman numeral, etc.) and plays the matching pitch on MIDI in any octave. Graded by ChoraleGrader using pitch-class matching (midi % 12) rather than exact pitch. Structurally identical to playback mode; only the mode field and grader behaviour differ.",
+  "type": "object",
+  "required": ["type", "mode", "isUMTO", "clef", "key", "meter", "analysisType", "grading", "score"],
+  "properties": {
+    "type":    { "const": "umto_chorale" },
+    "mode":    { "const": "analysis_match" },
+    "isUMTO": { "const": true },
+    "exerciseId": { "type": "string", "examples": ["EA80OW"] },
+    "clef": {
+      "type": "string",
+      "enum": ["treble", "bass", "keyboard"]
+    },
+    "key":   { "type": "string" },
+    "meter": { "type": "string" },
+    "analysisType": {
+      "type": "string",
+      "enum": ["note_name", "solfege", "do_based_solfege", "scale_degree", "fixed_do", "pitch_class", "roman_numeral", "figured_bass"],
+      "description": "Determines the label shown as the question prompt. Student hears/sees label, plays pitch."
+    },
+    "complexity_score": { "type": "integer", "minimum": 1, "maximum": 12 },
+    "introText":  { "type": "string", "examples": ["Name the notes: BWV10.7, mm.6-7, Soprano."] },
+    "reviewText": { "type": "string" },
+    "inputMode":  { "type": "string", "enum": ["dropdown","text"], "default": "dropdown" },
+    "semibrevesPerLine": { "type": "integer" },
+    "staffDistribution": { "type": "string" },
+    "allowed_answers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Answer pool — same field used across all three umto_chorale sibling modes."
+    },
+    "grading": {
+      "type": "array",
+      "description": "Same grading slices as the playback sibling. ChoraleGrader uses these but compares (target_midi % 12) instead of exact MIDI.",
+      "items": {
+        "type": "object",
+        "required": ["offset", "target_midi_pitches"],
+        "properties": {
+          "offset":               { "type": "number" },
+          "target_midi_pitches":  { "type": "array", "items": { "type": "integer" } },
+          "rhythmic_flexibility": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "score": {
+      "type": "object",
+      "description": "score.umto.analysis[] provides the label shown to the student. is_target:true marks active prompt slots.",
+      "properties": {
+        "meta":     { "type": "object" },
+        "measures": { "type": "array" },
+        "umto": {
+          "type": "object",
+          "properties": {
+            "metadata": { "type": "object" },
+            "voices":   { "type": "object" },
+            "analysis": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "offset":    { "type": "number" },
+                  "content": {
+                    "type": "object",
+                    "description": "The content field matching analysisType is shown as the question prompt.",
+                    "properties": {
+                      "roman_numeral":    { "type": ["string","null"] },
+                      "figured_bass":     { "type": ["string","null"] },
+                      "scale_degrees":    { "type": ["array","null"] },
+                      "functional_label": { "type": ["string","null"] }
+                    }
+                  },
+                  "is_target":  { "type": "boolean" },
+                  "unit_tags":  { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            },
+            "grading": { "type": "array" }
+          }
+        }
+      }
+    }
+  },
+
+  "x-grading-note": "ChoraleGrader pitch-class matching: accepted = (played_midi % 12) === (target_midi % 12). No octave constraint. Implemented in ANALYSIS_MATCH_MODE.md.",
+
+  "examples": [
+    {
+      "type": "umto_chorale",
+      "mode": "analysis_match",
+      "isUMTO": true,
+      "exerciseId": "EA80OW",
+      "clef": "treble",
+      "key": "iG_",
+      "meter": "4/4",
+      "analysisType": "note_name",
+      "introText": "Name the notes: BWV10.7, measures 6-7, Soprano.",
+      "allowed_answers": ["C", "D", "F", "G"],
+      "grading": [
+        { "offset": 0.0, "target_midi_pitches": [74], "rhythmic_flexibility": false },
+        { "offset": 2.0, "target_midi_pitches": [77], "rhythmic_flexibility": false }
+      ],
+      "score": {
+        "umto": {
+          "analysis": [
+            { "offset": 0.0, "content": { "roman_numeral": "D" }, "is_target": true, "unit_tags": [1] },
+            { "offset": 2.0, "content": { "roman_numeral": "F" }, "is_target": true, "unit_tags": [1] }
+          ]
+        }
+      }
+    }
+  ]
+}

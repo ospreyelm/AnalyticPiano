@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./chorale.schema.json",
+  "title": "Legacy Chorale Exercise",
+  "type": "object",
+  "required": ["type", "score"],
+  "properties": {
+    "type": { "const": "chorale" },
+    "introText": { "type": "string" },
+    "reviewText": { "type": "string" },
+    "mode": { "type": "string" },
+    "targetVoices": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0 }
+          }
+        }
+      ]
+    },
+    "score": { "$ref": "./common.schema.json#/$defs/score" },
+    "display": { "type": "object", "additionalProperties": true },
+    "grading": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": true },
+        { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+      ]
+    },
+    "excerpt": {
+      "type": "object",
+      "properties": {
+        "startMeasure": { "type": "integer", "minimum": 0 },
+        "endMeasure": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "analysis": { "$ref": "./common.schema.json#/$defs/analysis" },
+    "staffDistribution": { "type": "string" },
+    "semibrevesPerLine": { "type": "integer", "minimum": 1 }
+  },
+  "additionalProperties": true
+}

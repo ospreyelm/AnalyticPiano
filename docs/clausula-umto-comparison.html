@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clausula ↔ UMTO Comparison & Extension Plan</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #21263a;
+    --surface3: #272c3f;
+    --border: #2e3347;
+    --text: #e2e8f0;
+    --muted: #8b95b0;
+    --green: #48bb78;
+    --blue: #4a90d9;
+    --amber: #f6ad55;
+    --red: #fc8181;
+    --purple: #b794f4;
+    --cyan: #76e4f7;
+    --pink: #f687b3;
+    --clausula-col: #b794f4;
+    --umto-col: #48bb78;
+    --legacy-col: #f6ad55;
+    --gap-col: #fc8181;
+    --add-col: #76e4f7;
+    --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+  code { font-family: var(--font-mono); font-size: 0.82em; background: rgba(255,255,255,0.07); padding: 0.1em 0.35em; border-radius: 3px; }
+
+  h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, var(--clausula-col), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.4rem; }
+  .subtitle { color: var(--muted); margin-bottom: 2.5rem; }
+
+  h2 { font-size: 1.3rem; font-weight: 600; margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.5rem; color: var(--cyan); }
+
+  /* ── Legend ── */
+  .legend { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Comparison grid ── */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr 1fr 1fr;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    font-size: 0.85rem;
+  }
+  .cg-header {
+    background: var(--surface2);
+    padding: 0.6rem 0.8rem;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .cg-header.clausula { color: var(--clausula-col); }
+  .cg-header.umto     { color: var(--umto-col); }
+  .cg-header.legacy   { color: var(--legacy-col); }
+
+  .cg-row { display: contents; }
+  .cg-cell {
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid rgba(46,51,71,0.6);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .cg-row:last-child .cg-cell { border-bottom: none; }
+  .cg-row:hover .cg-cell { background: rgba(255,255,255,0.02); }
+
+  .cg-label { color: var(--amber); font-family: var(--font-mono); font-size: 0.78rem; }
+
+  .badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 600;
+    padding: 0.1rem 0.45rem; border-radius: 3px; white-space: nowrap;
+  }
+  .badge.yes    { background: rgba(72,187,120,0.18); color: var(--green); }
+  .badge.no     { background: rgba(252,129,129,0.15); color: var(--red); }
+  .badge.empty  { background: rgba(139,149,176,0.15); color: var(--muted); }
+  .badge.part   { background: rgba(246,173,85,0.15); color: var(--amber); }
+  .badge.diff   { background: rgba(183,148,244,0.15); color: var(--purple); }
+
+  /* ── Gap / add table ── */
+  .gap-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-bottom: 2rem; }
+  .gap-table th { text-align: left; padding: 0.5rem 0.75rem; background: var(--surface2); color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .gap-table td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .gap-table tr:last-child td { border-bottom: none; }
+  .gap-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .effort { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 3px; white-space: nowrap; }
+  .effort.low  { background: rgba(72,187,120,0.18); color: var(--green); }
+  .effort.med  { background: rgba(246,173,85,0.18); color: var(--amber); }
+  .effort.high { background: rgba(252,129,129,0.18); color: var(--red); }
+
+  /* ── Code blocks ── */
+  .code-wrap {
+    background: #0a0c14; border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem; overflow-x: auto; margin: 0.75rem 0;
+    font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.65;
+  }
+  .k  { color: #f6ad55; }
+  .s  { color: #68d391; }
+  .n  { color: #76e4f7; }
+  .b  { color: #b794f4; }
+  .c  { color: #4a5568; font-style: italic; }
+  .hl { background: rgba(118,228,247,0.08); display: block; margin: 0 -1rem; padding: 0 1rem; }
+  .add-line { background: rgba(72,187,120,0.10); display: block; margin: 0 -1rem; padding: 0 1rem; border-left: 3px solid var(--green); }
+  .del-line { background: rgba(252,129,129,0.08); display: block; margin: 0 -1rem; padding: 0 1rem; border-left: 3px solid var(--red); color: var(--muted); }
+
+  /* ── Cards ── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; }
+  .card.clausula { border-color: rgba(183,148,244,0.3); }
+  .card.plan { border-color: rgba(118,228,247,0.25); }
+  .card.warn { border-color: rgba(246,173,85,0.3); background: rgba(246,173,85,0.04); }
+
+  .card-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.75rem; }
+
+  /* ── Diff layout ── */
+  .diff-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 860px) { .diff-cols { grid-template-columns: 1fr; } body { padding: 1rem; } .compare-grid { grid-template-columns: 140px 1fr 1fr 1fr; } }
+
+  .col-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+  .col-label.clausula { color: var(--clausula-col); }
+  .col-label.umto     { color: var(--umto-col); }
+
+  /* ── Roadmap steps ── */
+  .steps { counter-reset: step; }
+  .step {
+    display: flex; gap: 1rem; margin-bottom: 1.25rem;
+    padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .step-num {
+    counter-increment: step;
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; background: var(--surface2); color: var(--cyan);
+    border: 1px solid var(--border);
+    margin-top: 2px;
+  }
+  .step-num::after { content: counter(step); }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; margin-bottom: 0.4rem; }
+  .step-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  ul { margin: 0.5rem 0 0.5rem 1.2rem; }
+  li { font-size: 0.88rem; color: var(--text); line-height: 1.7; }
+  p { font-size: 0.9rem; margin: 0.5rem 0; }
+</style>
+</head>
+<body>
+
+<h1>Clausula ↔ UMTO Comparison</h1>
+<p class="subtitle">Gap analysis, legacy schema comparison, and concrete plan for using clausulae as traditional harmonic exercises</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="dot" style="background:var(--clausula-col)"></div> Clausula (current)</div>
+  <div class="legend-item"><div class="dot" style="background:var(--umto-col)"></div> UMTO Bach/Bach-derived (current)</div>
+  <div class="legend-item"><div class="dot" style="background:var(--legacy-col)"></div> Legacy schema (pre-UMTO)</div>
+  <div class="legend-item"><div class="dot" style="background:var(--add-col)"></div> Addition needed</div>
+  <div class="legend-item"><div class="dot" style="background:var(--gap-col)"></div> Gap / blocker</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION 1 — FIELD-BY-FIELD COMPARISON
+     ══════════════════════════════════════════════════════════════ -->
+<h2>1. Field-by-Field Comparison</h2>
+
+<div class="compare-grid">
+  <!-- Headers -->
+  <div class="cg-header">Field / concept</div>
+  <div class="cg-header clausula">Clausula exercise (current)</div>
+  <div class="cg-header umto">UMTO Bach exercise (current)</div>
+  <div class="cg-header legacy">Legacy schema</div>
+
+  <!-- type -->
+  <div class="cg-cell cg-label">type</div>
+  <div class="cg-cell"><code>"umto_chorale"</code><br><span style="color:var(--muted);font-size:0.8rem">same as Bach exercises; clausulae distinguished only by skill tags</span></div>
+  <div class="cg-cell"><code>"umto_chorale"</code></div>
+  <div class="cg-cell"><code>"chorale"</code> / <code>"matching"</code> / <code>"analytical"</code> / <code>"figured_bass"</code> / <code>"identification"</code></div>
+
+  <!-- mode -->
+  <div class="cg-cell cg-label">mode</div>
+  <div class="cg-cell"><code>"playback"</code> only (hardcoded in <code>generate_clausulae_b1.py</code>)</div>
+  <div class="cg-cell"><code>"playback"</code> | <code>"identification"</code> | <code>"analysis_match"</code> | <code>"harmonization"</code></div>
+  <div class="cg-cell">N/A — type encoded mode (e.g. <code>"analytical"</code> = play+analysis overlay)</div>
+
+  <!-- voices / score -->
+  <div class="cg-cell cg-label">voices / score</div>
+  <div class="cg-cell"><span class="badge yes">YES</span> Full SATB <code>VoiceEvent[]</code> per clausula type (S=Discant, A=Alto, T=Tenor, B=Bass). Real MIDI pitches realized from Z₇. 2–4 voices populated.</div>
+  <div class="cg-cell"><span class="badge yes">YES</span> Full SATB from Bach chorale CIR. Same VoiceEvent schema.</div>
+  <div class="cg-cell"><span class="badge diff">DIFF</span> CIR measure/stave/voice structure — no flat voice stream. <code>score.measures[].staves.treble.voices[].items[]</code></div>
+
+  <!-- grading slices -->
+  <div class="cg-cell cg-label">grading[]</div>
+  <div class="cg-cell"><span class="badge yes">YES</span> Populated. 3 slices (ANT/PEN/ULT) for simple; 4–5 for compound. <strong>Full SATB MIDI</strong> at each offset — C major 4-voice: <code>[48,60,64,72]</code> at ULT.</div>
+  <div class="cg-cell"><span class="badge yes">YES</span> Populated. One slice per onset window.</div>
+  <div class="cg-cell"><span class="badge no">NO</span> No grading slices. Legacy types used <code>chord[].visible/hidden</code> arrays or <code>ChoraleGrader</code> reading the score directly.</div>
+
+  <!-- analysis.content.roman_numeral -->
+  <div class="cg-cell cg-label">analysis[].content<br>.roman_numeral</div>
+  <div class="cg-cell"><span class="badge no">NULL</span> Always <code>null</code>. Not computed during generation. <strong>This is the main gap.</strong></div>
+  <div class="cg-cell"><span class="badge yes">YES</span> Populated by music21 roman numeral analysis during <code>import_bach_phrases</code>.</div>
+  <div class="cg-cell"><span class="badge diff">DIFF</span> Legacy <code>analysis.mode.roman_numerals: true</code> toggled overlay rendering; answers stored in <code>chord[].answer</code>.</div>
+
+  <!-- analysis.content.figured_bass -->
+  <div class="cg-cell cg-label">analysis[].content<br>.figured_bass</div>
+  <div class="cg-cell"><span class="badge no">NULL</span> Always <code>null</code>. Not computed during generation.</div>
+  <div class="cg-cell"><span class="badge yes">YES</span> Populated by <code>generate_harmonization</code> from bass pitch + full sonority.</div>
+  <div class="cg-cell"><span class="badge diff">DIFF</span> Legacy <code>type:"figured_bass"</code> stored figures in <code>chord[].visible</code> (bass) + analysis overlay; <code>ExerciseGrader.figuredBassMatch()</code>.</div>
+
+  <!-- analysis.content.functional_label -->
+  <div class="cg-cell cg-label">analysis[].content<br>.functional_label</div>
+  <div class="cg-cell"><span class="badge yes">YES</span> Populated with circled bass scale-degree symbols: ①, ⑤, ① for Do–Sol–Do bass motion. (Currently only in multi-voice exercises with a Bass clausula.)</div>
+  <div class="cg-cell"><span class="badge empty">UNUSED</span> Present in schema, rarely populated.</div>
+  <div class="cg-cell"><span class="badge no">NO</span> No equivalent field.</div>
+
+  <!-- analysis.content.scale_degrees -->
+  <div class="cg-cell cg-label">analysis[].content<br>.scale_degrees</div>
+  <div class="cg-cell"><span class="badge no">NULL</span> Always null.</div>
+  <div class="cg-cell"><span class="badge part">PARTIAL</span> Emitted by <code>generate_clausulae_b1</code> for clausula exercises only (per-voice circled degree rendered in treble staff). Actually written by <code>exercise_sheet.js</code> reading Z₇ from MIDI via scale analysis.</div>
+  <div class="cg-cell"><span class="badge no">NO</span> No equivalent.</div>
+
+  <!-- analysis[].is_target -->
+  <div class="cg-cell cg-label">analysis[].is_target</div>
+  <div class="cg-cell"><span class="badge no">false</span> Always false. No ? slots rendered.</div>
+  <div class="cg-cell"><span class="badge yes">YES</span> true for ? target slots in identification/roman_from_clausulae.</div>
+  <div class="cg-cell"><span class="badge no">NO</span> No equivalent — answers stored per chord item.</div>
+
+  <!-- display object -->
+  <div class="cg-cell cg-label">display{}</div>
+  <div class="cg-cell"><span class="badge yes">YES</span> Clausula-specific: <code>showScaleDegrees:true</code>, <code>voiceColors:{S:"#F9141B", A:"#108040", ...}</code> (Remeš Compendium color scheme), <code>maxMeasures:2</code>.</div>
+  <div class="cg-cell"><span class="badge empty">EMPTY</span> <code>display</code> not normally set on Bach exercises. Frontend defaults apply.</div>
+  <div class="cg-cell"><span class="badge part">PARTIAL</span> Legacy had <code>analysis.mode{roman_numerals:bool, figured_bass:bool, solfege:bool}</code> — a rendering toggle object, not a content object.</div>
+
+  <!-- meter -->
+  <div class="cg-cell cg-label">meter</div>
+  <div class="cg-cell"><code>"2/2"</code> only (alla breve, matches Remeš Compendium)</div>
+  <div class="cg-cell">Variable: <code>"4/4"</code>, <code>"3/4"</code>, <code>"6/8"</code>, etc.</div>
+  <div class="cg-cell">Stored as <code>timeSignature</code> string or in <code>score.meta.time</code>.</div>
+
+  <!-- key -->
+  <div class="cg-cell cg-label">key</div>
+  <div class="cg-cell">Major keys only: C, G, F currently. Minor keys not generated (Z₇ is diatonic-major only). <strong>Minor clausulae would need chromatic ficta extension.</strong></div>
+  <div class="cg-cell">Both major and minor via <code>music21</code> key analysis.</div>
+  <div class="cg-cell">HarmonyLab key id string (e.g. <code>"jC_"</code>, <code>"im_"</code> for C minor).</div>
+
+  <!-- skill tags identifying type -->
+  <div class="cg-cell cg-label">identification<br>in DB</div>
+  <div class="cg-cell">Via <code>skill_tags</code>: <code>branch_b</code> (always), <code>unit:B1</code>…<code>unit:B12</code>, <code>clausula_discant</code> / <code>clausula_tenor</code> / <code>clausula_alto</code> / <code>clausula_bass</code></div>
+  <div class="cg-cell">Via <code>skill_tags</code>: <code>unit:N</code>, <code>Diatonic_Triads</code>, <code>Cadence_Perfect_Authentic</code>, etc.</div>
+  <div class="cg-cell">Via <code>data.type</code> — each exercise type is uniquely identified by the <code>type</code> field value.</div>
+
+  <!-- harmonization support -->
+  <div class="cg-cell cg-label">harmonization<br>mode support</div>
+  <div class="cg-cell"><span class="badge no">NO</span> <code>metadata.mode</code> hardcoded to <code>PLAYBACK</code>. No <code>locked_voices</code> or <code>voice_count_policy</code> set meaningfully. But <strong>all the data is there</strong> — grading slices have SATB MIDI, analysis has bass motion.</div>
+  <div class="cg-cell"><span class="badge yes">YES</span> <code>generate_harmonization</code> command reads source UMTO, sets <code>locked_voices</code>, derives <code>allowedPcs</code> from figured bass, sets <code>voice_count_policy</code>.</div>
+  <div class="cg-cell"><span class="badge no">NO</span> No harmonization mode in legacy.</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION 2 — WHAT'S ACTUALLY MISSING
+     ══════════════════════════════════════════════════════════════ -->
+<h2>2. Gaps: What Clausulae Need to Support Traditional Exercises</h2>
+
+<p style="margin-bottom:1rem;color:var(--muted)">Clausulae already have correct MIDI grading data. The gaps are all in <strong>analysis content</strong> — the semantic labels that drive overlays, ? slots, and harmonization targets.</p>
+
+<table class="gap-table">
+  <thead>
+    <tr>
+      <th>Exercise mode wanted</th>
+      <th>What's missing in clausula exercises</th>
+      <th>Where to add it</th>
+      <th>Effort</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Roman numeral identification</strong><br><small>(? slot, student picks I/V/I)</small></td>
+      <td><code>analysis[].content.roman_numeral</code> is null. No <code>is_target:true</code> slices. The Roman numeral <em>is</em> deterministic from clausula logic: ANT=I, PEN=V (or V7 in dominant clausula), ULT=I for authentic cadence.</td>
+      <td><code>generate_clausulae_b1.py</code> → populate <code>roman_numeral</code> in <code>_build_umto()</code> and set <code>is_target=True</code> on those slices. No schema change — field already exists in <code>AnalysisLayer</code>.</td>
+      <td><span class="effort low">LOW</span></td>
+    </tr>
+    <tr>
+      <td><strong>Figured bass identification</strong><br><small>(? slot, student picks 5/3 / 7 / 6/4)</small></td>
+      <td><code>analysis[].content.figured_bass</code> is null. Figures are computable from the realized MIDI pitches + bass voice (grading slices already have full SATB MIDI).</td>
+      <td>Add a <code>_derive_figured_bass(midi_set, bass_midi, key)</code> helper to the generator that uses the existing figured bass abbreviation logic (already in <code>apps/exercises/harmonization/targets.py</code>). Write result into <code>AnalysisLayer.figured_bass</code> and <code>.raw_figured_bass</code>.</td>
+      <td><span class="effort low">LOW</span></td>
+    </tr>
+    <tr>
+      <td><strong>Harmonization (student plays upper voices)</strong></td>
+      <td><code>metadata.mode</code> hardcoded to PLAYBACK. <code>locked_voices</code> not set to <code>["B"]</code>. <code>voice_count_policy</code> not configured. <code>analysis[].content.figured_bass</code> is null (needed by <code>HarmonizationGrader</code> to derive <code>allowedPcs</code>).</td>
+      <td>Run <code>generate_harmonization --source &lt;clausula_id&gt;</code> — it already works on any UMTO with figured bass populated. Prerequisite: fill figured bass first (row above). Alternatively add a <code>--harmonization</code> flag to the clausula generator to emit the harmonization variant inline.</td>
+      <td><span class="effort med">MED</span> (depends on figured bass fix)</td>
+    </tr>
+    <tr>
+      <td><strong>Analysis match</strong><br><small>(sees note name / solfège label, plays pitch)</small></td>
+      <td>Nothing missing in schema — all data present. The <code>mode</code> field just needs to be set to <code>"analysis_match"</code> and <code>analysisType</code> set (e.g. <code>"note_name"</code>, <code>"scale_degree"</code>). For single-voice clausulae this is <em>identical</em> to existing Unit 1 analysis-match exercises.</td>
+      <td>Generate sibling exercises via a new <code>--mode analysis_match</code> flag, or run existing <code>import_bach_phrases</code>-style pipeline on the clausula UMTO with mode overridden. No schema change needed.</td>
+      <td><span class="effort low">LOW</span></td>
+    </tr>
+    <tr>
+      <td><strong>Playback with Roman numeral overlay</strong><br><small>(student plays, Roman numerals shown above)</small></td>
+      <td><code>analysis[].content.roman_numeral</code> null → no overlay renders. <code>is_target</code> should remain <code>false</code> (passive overlay, not a ? slot).</td>
+      <td>Same fix as Roman numeral identification above — populate <code>roman_numeral</code> in generator. The overlay rendering in <code>exercise_sheet.js</code> checks <code>analysisType</code> on the payload; set it to <code>"roman_numeral"</code> for the playback variant.</td>
+      <td><span class="effort low">LOW</span></td>
+    </tr>
+    <tr>
+      <td><strong>Minor key clausulae</strong></td>
+      <td>Z₇ is diatonic-major. Clausula triples don't encode chromaticism. The leading tone in natural minor ≠ Ti. Musica ficta (raised 6th, raised 7th) would require Z₇ extension or chromatic inflection layer.</td>
+      <td>Separate project. Would need <code>scale.HarmonicMinorScale</code> in <code>realize.py</code> + new clausula definitions for minor-mode formulas. Not required for the existing Branch B curriculum units B1–B12.</td>
+      <td><span class="effort high">HIGH</span></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION 3 — LEGACY SCHEMA: WHAT WE CAN EASILY ADD
+     ══════════════════════════════════════════════════════════════ -->
+<h2>3. Legacy Schema: Useful Fields to Port</h2>
+
+<p style="margin-bottom:1rem;color:var(--muted)">Legacy schemas (pre-UMTO) had these fields that either don't exist in UMTO or aren't populated for clausulae. Most are easy to add:</p>
+
+<table class="gap-table">
+  <thead>
+    <tr>
+      <th>Legacy field</th>
+      <th>Where it lived</th>
+      <th>UMTO equivalent</th>
+      <th>Action for clausulae</th>
+      <th>Effort</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>analysis.mode.roman_numerals</code></td>
+      <td>Render toggle on matching/analytical: <code>{ enabled:true, mode:{ roman_numerals:true } }</code>. Told VexFlow to show RN overlays.</td>
+      <td>UMTO: set <code>analysisType: "roman_numeral"</code> in payload + populate <code>analysis[].content.roman_numeral</code>.</td>
+      <td>Populate <code>roman_numeral</code> in generator; set <code>analysisType</code> in <code>to_frontend_payload()</code>. Frontend reads both.</td>
+      <td><span class="effort low">LOW</span></td>
+    </tr>
+    <tr>
+      <td><code>analysis.mode.figured_bass</code></td>
+      <td>Same toggle system — showed bass figures as overlay on matching/analytical types.</td>
+      <td>UMTO: <code>analysisType: "figured_bass"</code> + <code>analysis[].content.figured_bass</code>.</td>
+      <td>Derive figures from realized MIDI (see gap table). Frontend <code>exercise_definition.js</code> already reads <code>content.figured_bass</code>.</td>
+      <td><span class="effort low">LOW</span></td>
+    </tr>
+    <tr>
+      <td><code>analysis.mode.solfege</code> / <code>do_based_solfege</code></td>
+      <td>Render toggle for solfège label overlays on score.</td>
+      <td>UMTO: <code>analysisType: "solfege"</code>. Clausulae already show circled degree symbols; solfège labels (Do/Ti/Do) are the natural match for B1 exercises.</td>
+      <td>Change <code>analysisType</code> to <code>"solfege"</code> or <code>"scale_degree"</code> for Branch B exercises instead of <code>"clausula"</code> (which is a custom value not handled by standard frontend paths).</td>
+      <td><span class="effort low">LOW</span></td>
+    </tr>
+    <tr>
+      <td><code>highlight.mode</code></td>
+      <td>Legacy: <code>{ enabled:true, mode:{ solfege:true } }</code> — coloured note highlighting by label type.</td>
+      <td>No direct UMTO equivalent. Clausulae use <code>display.voiceColors</code> (by voice slot) which is different (structural coloring, not label coloring).</td>
+      <td>No action needed — <code>display.voiceColors</code> already gives clausulae their Remeš color scheme. Label-based highlight is a separate future feature.</td>
+      <td><span class="effort low">SKIP</span></td>
+    </tr>
+    <tr>
+      <td><code>chord[].answer</code> + <code>chord[].choices[]</code></td>
+      <td>Legacy identification: per-chord answer string and popup choices baked into each chord item.</td>
+      <td>UMTO: <code>analysis[].content.roman_numeral</code> + top-level <code>allowed_answers[]</code>. Per-slot choices built dynamically from <code>allowed_answers</code> pool.</td>
+      <td>Once <code>roman_numeral</code> is populated in <code>AnalysisLayer</code>, the existing frontend <code>buildChoices()</code> path handles choice generation automatically. No extra work needed.</td>
+      <td><span class="effort low">NONE</span></td>
+    </tr>
+    <tr>
+      <td><code>identMode</code></td>
+      <td>Legacy <code>identification</code> / <code>chorale_identification</code>: <code>"practice"</code> | <code>"submit"</code> | <code>"test"</code>.</td>
+      <td>Present in UMTO payload — already passed through to frontend. Field exists, just not set in clausula generator.</td>
+      <td>Add <code>identMode</code> to payload emitted by <code>_build_umto()</code>. One line.</td>
+      <td><span class="effort low">LOW</span></td>
+    </tr>
+    <tr>
+      <td><code>excerpt.startMeasure / endMeasure</code></td>
+      <td>Legacy chorale: told <code>ChoraleGrader</code> which measure range to use.</td>
+      <td>UMTO: not needed — clausulae are self-contained 2-measure exercises. All grading slices are always active.</td>
+      <td>N/A.</td>
+      <td><span class="effort low">SKIP</span></td>
+    </tr>
+    <tr>
+      <td><code>targetVoices</code></td>
+      <td>Legacy chorale: string like <code>"all"</code> or dict mapping staves to voice indices to include in grading.</td>
+      <td>UMTO: <code>metadata.locked_voices</code> (opposite framing — which voices are excluded from student play). Harmonization uses this. Playback uses no filter.</td>
+      <td>Already handled by <code>locked_voices</code>. No port needed.</td>
+      <td><span class="effort low">SKIP</span></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION 4 — SIDE-BY-SIDE ANALYSIS SLICE DIFF
+     ══════════════════════════════════════════════════════════════ -->
+<h2>4. Analysis Slice: Current vs. Target</h2>
+
+<div class="diff-cols">
+  <div>
+    <div class="col-label clausula">Clausula exercise — analysis slice (current)</div>
+    <div class="code-wrap">
+<span class="c">// 4-voice cadence in C, offset 4.0 (ULT — the "I" chord)</span>
+{
+  <span class="k">"offset"</span>: <span class="n">4.0</span>,
+  <span class="k">"content"</span>: {
+    <span class="k">"roman_numeral"</span>:    <span class="b">null</span>,  <span class="c">← gap</span>
+    <span class="k">"raw_roman_numeral"</span>: <span class="b">null</span>,  <span class="c">← gap</span>
+    <span class="k">"local_key"</span>:         <span class="b">null</span>,
+    <span class="k">"figured_bass"</span>:      <span class="b">null</span>,  <span class="c">← gap</span>
+    <span class="k">"raw_figured_bass"</span>:  <span class="b">null</span>,  <span class="c">← gap</span>
+    <span class="k">"functional_label"</span>:  <span class="s">"①"</span>,  <span class="c">← present (circled)</span>
+    <span class="k">"scale_degrees"</span>:     <span class="b">null</span>,
+    <span class="k">"pop_symbol"</span>:        <span class="b">null</span>
+  },
+  <span class="k">"is_target"</span>: <span class="b">false</span>,        <span class="c">← no ? slot</span>
+  <span class="k">"unit_tags"</span>: []           <span class="c">← not linked to any unit</span>
+}
+
+<span class="c">// Grading slice at same offset — DATA IS ALL THERE:</span>
+{
+  <span class="k">"offset"</span>: <span class="n">4.0</span>,
+  <span class="k">"target_midi_pitches"</span>: [<span class="n">48</span>, <span class="n">60</span>, <span class="n">64</span>, <span class="n">72</span>]
+  <span class="c">//  48 = C3 (Bass/Do), 60 = C4 (Tenor),</span>
+  <span class="c">//  64 = E4 (Alto/Mi),  72 = C5 (Discant/Do)</span>
+}
+    </div>
+  </div>
+  <div>
+    <div class="col-label umto">Target state — with harmonic labels added</div>
+    <div class="code-wrap">
+<span class="c">// Same slice, after generator is extended:</span>
+{
+  <span class="k">"offset"</span>: <span class="n">4.0</span>,
+  <span class="k">"content"</span>: {
+<span class="add-line">    <span class="k">"roman_numeral"</span>:    <span class="s">"I"</span>,</span>
+<span class="add-line">    <span class="k">"raw_roman_numeral"</span>: <span class="s">"I"</span>,</span>
+    <span class="k">"local_key"</span>:         <span class="b">null</span>,
+<span class="add-line">    <span class="k">"figured_bass"</span>:      <span class="s">""</span>,    <span class="c">← "" = root position 5/3</span></span>
+<span class="add-line">    <span class="k">"raw_figured_bass"</span>:  <span class="s">"8/5/3"</span>,</span>
+    <span class="k">"functional_label"</span>:  <span class="s">"①"</span>,
+    <span class="k">"scale_degrees"</span>:     <span class="b">null</span>,
+    <span class="k">"pop_symbol"</span>:        <span class="b">null</span>
+  },
+<span class="add-line">  <span class="k">"is_target"</span>: <span class="b">true</span>,          <span class="c">← renders ? slot</span></span>
+<span class="add-line">  <span class="k">"unit_tags"</span>: [<span class="n">9</span>]           <span class="c">← linked to Unit 9</span></span>
+}
+
+<span class="c">// PEN slice (offset 2.0 → "V" chord):</span>
+{
+  <span class="k">"offset"</span>: <span class="n">2.0</span>,
+  <span class="k">"content"</span>: {
+<span class="add-line">    <span class="k">"roman_numeral"</span>:    <span class="s">"V"</span>,</span>
+<span class="add-line">    <span class="k">"figured_bass"</span>:     <span class="s">""</span>,     <span class="c">← root pos (G-B-D)</span></span>
+    <span class="k">"functional_label"</span>: <span class="s">"⑤"</span>
+  },
+<span class="add-line">  <span class="k">"is_target"</span>: <span class="b">true</span></span>
+}
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION 5 — CLAUSULA → HARMONIC FUNCTION MAPPING
+     ══════════════════════════════════════════════════════════════ -->
+<h2>5. Clausula Triple → Harmonic Function Mapping</h2>
+
+<p style="margin-bottom:1rem;color:var(--muted)">These mappings are <strong>deterministic</strong> from clausula type — no music21 needed. Can be hardcoded in the generator.</p>
+
+<div class="diff-cols">
+  <div>
+    <h3>Simple cadence (τ=0 all voices)</h3>
+    <table class="gap-table" style="margin-bottom:0">
+      <thead><tr><th>Offset</th><th>Position</th><th>Bass clausula Z₇</th><th>Roman numeral</th><th>Figured bass</th></tr></thead>
+      <tbody>
+        <tr><td>0.0</td><td>ANT</td><td>Do (0)</td><td><code>I</code></td><td><code>""</code> (5/3)</td></tr>
+        <tr><td>2.0</td><td>PEN</td><td>Sol (4)</td><td><code>V</code></td><td><code>""</code> (5/3)</td></tr>
+        <tr><td>4.0</td><td>ULT</td><td>Do (0)</td><td><code>I</code></td><td><code>""</code> (5/3)</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem">Exact figured bass suffix (root pos vs inversion) must be computed from the full vertical sonority at each offset — the bass pitch alone determines inversion only when all voices are known.</p>
+  </div>
+  <div>
+    <h3>Compound cadence (Discant τ=1)</h3>
+    <table class="gap-table" style="margin-bottom:0">
+      <thead><tr><th>Offset</th><th>Position</th><th>Bass Z₇</th><th>Roman numeral</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>0.0</td><td>ANT (early)</td><td>Do (0)</td><td><code>I</code></td><td>Discant silent (rest)</td></tr>
+        <tr><td>1.0</td><td>ANT (late Discant enters)</td><td>Sol (4) or Do</td><td><code>V</code> or <code>I</code></td><td>Suspension begins — harmony may be ambiguous; needs full MIDI check</td></tr>
+        <tr><td>2.0</td><td>PEN</td><td>Sol (4)</td><td><code>V</code></td><td>Suspension resolves at ULT</td></tr>
+        <tr><td>4.0</td><td>ULT</td><td>Do (0)</td><td><code>I</code></td><td>All voices land</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem">Compound cadences: the suspension dissonance at offset 1.0 (Discant ANT against Bass/Tenor PEN) means that offset should be <code>is_target:false</code> for Roman numeral identification — students aren't expected to label suspension dissonances.</p>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION 6 — CONCRETE IMPLEMENTATION PLAN
+     ══════════════════════════════════════════════════════════════ -->
+<h2>6. Concrete Implementation Plan</h2>
+
+<div class="card warn">
+  <div class="card-title">⚠ Pre-condition</div>
+  <p>The Roman numeral / figured bass content must be added <em>inside <code>generate_clausulae_b1.py</code></em> — not in a separate importer. The generator already owns the Z₇ triple knowledge and the realized MIDI pitches. It is the only place that knows the clausula structure at generation time.</p>
+</div>
+
+<div class="steps">
+
+  <div class="step">
+    <div class="step-num"></div>
+    <div class="step-body">
+      <div class="step-title">Add <code>_roman_numeral_for_clausula(bass_z7, triple, cadence_type)</code> to generator</div>
+      <div class="step-desc">
+        Returns the Roman numeral string for a given clausula position. Simple cadences: ANT=<code>"I"</code>, PEN=<code>"V"</code>, ULT=<code>"I"</code>. Compound: offset 1.0 = <code>None</code> (suspension — skip). No music21 needed — pure lookup table from clausula position + bass Z₇ degree.
+        <div class="code-wrap" style="margin-top:0.6rem">
+<span class="c"># In generate_clausulae_b1.py</span>
+_SIMPLE_RN = {0.0: <span class="s">"I"</span>, 2.0: <span class="s">"V"</span>, 4.0: <span class="s">"I"</span>}
+
+def _roman_for_offset(offset: float, cadence_type: str) -> str | None:
+    if cadence_type == <span class="s">"simple"</span>:
+        return _SIMPLE_RN.get(offset)
+    <span class="c"># compound: suspension at offset 1.0 → skip</span>
+    return {0.0: <span class="s">"I"</span>, 2.0: <span class="s">"V"</span>, 4.0: <span class="s">"I"</span>}.get(offset)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num"></div>
+    <div class="step-body">
+      <div class="step-title">Add <code>_figured_bass_for_sonority(midi_pitches)</code> using existing targets.py logic</div>
+      <div class="step-desc">
+        <code>apps/exercises/harmonization/targets.py</code> already has figured bass abbreviation logic. Import and call it with the MIDI pitches from the grading slice at each offset. Write result to <code>AnalysisLayer.figured_bass</code> and <code>.raw_figured_bass</code>.
+        <div class="code-wrap" style="margin-top:0.6rem">
+<span class="c">from apps.exercises.harmonization.targets import derive_figured_bass</span>
+
+def _figured_bass_for_offset(grading_slices, offset, key):
+    sl = next((s for s in grading_slices if s.offset == offset), None)
+    if not sl or not sl.target_midi_pitches:
+        return None, None
+    bass_midi = min(sl.target_midi_pitches)
+    upper = [m for m in sl.target_midi_pitches if m != bass_midi]
+    fb, raw = derive_figured_bass(bass_midi, upper, key)
+    return fb, raw
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num"></div>
+    <div class="step-body">
+      <div class="step-title">Wire into <code>_build_umto()</code> — populate AnalysisLayer + set is_target</div>
+      <div class="step-desc">
+        Change the <code>analysis=</code> list construction in <code>_build_umto()</code>. Add a <code>harmonic_mode</code> parameter (<code>None</code> for existing behaviour, <code>"roman"</code> / <code>"figured_bass"</code> for new variants). When set, fill <code>roman_numeral</code> / <code>figured_bass</code> and set <code>is_target=True</code> on labellable offsets.
+        <div class="code-wrap" style="margin-top:0.6rem">
+<span class="c"># _build_umto() change:</span>
+analysis=[
+    AnalysisSlice(
+        offset=off,
+        content=AnalysisLayer(
+            functional_label=analysis_labels[i],
+<span class="add-line">            roman_numeral=_roman_for_offset(off, cadence_type) if harmonic_mode else None,</span>
+<span class="add-line">            figured_bass=_figured_bass_for_offset(grading, off, key)[0] if harmonic_mode else None,</span>
+<span class="add-line">            raw_figured_bass=_figured_bass_for_offset(grading, off, key)[1] if harmonic_mode else None,</span>
+        ),
+<span class="add-line">        is_target=(harmonic_mode is not None and _roman_for_offset(off, cadence_type) is not None),</span>
+<span class="add-line">        unit_tags=[9],  <span class="c"># or pass from caller</span></span>
+    )
+    for i, off in enumerate(offsets)
+]
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num"></div>
+    <div class="step-body">
+      <div class="step-title">Add <code>--harmonic-mode</code> flag to management command</div>
+      <div class="step-desc">
+        <code>python manage.py generate_clausulae_b1 --harmonic-mode roman --unit 9 --overwrite</code>
+        <br>generates all clausula exercises with Roman numeral targets. Existing playback-only variants are generated unchanged when flag is omitted (no regression).
+        <div class="code-wrap" style="margin-top:0.6rem">
+parser.add_argument(<span class="s">"--harmonic-mode"</span>,
+    choices=[<span class="s">"roman"</span>, <span class="s">"figured_bass"</span>, <span class="s">"both"</span>],
+    default=None,
+    help=<span class="s">"Add Roman numeral / figured bass analysis targets to generated exercises"</span>)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num"></div>
+    <div class="step-body">
+      <div class="step-title">Run <code>generate_harmonization</code> on the figured-bass-populated clausula exercises</div>
+      <div class="step-desc">
+        Once clausula exercises have <code>figured_bass</code> in their analysis slices, the existing <code>generate_harmonization</code> command works unchanged:
+        <div class="code-wrap" style="margin-top:0.6rem">
+python manage.py generate_harmonization \
+  --source &lt;clausula_exercise_id&gt; \
+  --author admin@example.com \
+  --locked-voices B \
+  --prompt figured_bass \
+  --min-voices 3 --max-voices 4 \
+  --public
+        </div>
+        No changes to <code>generate_harmonization</code> or <code>HarmonizationGrader</code> needed.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num"></div>
+    <div class="step-body">
+      <div class="step-title">Browser-verify each new mode before bulk-generating</div>
+      <div class="step-desc">
+        Per the <code>roman_from_clausulae</code> spec: <em>passing tests is not enough</em>. After steps 1–4, generate one exercise per mode, open in the student app, and confirm: (a) ? slots appear at correct offsets, (b) choices are correct, (c) grading accepts correct answer. Only then bulk-generate the full B1–B12 range.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION 7 — WHAT NEEDS NO CHANGES
+     ══════════════════════════════════════════════════════════════ -->
+<h2>7. What Already Works — No Changes Needed</h2>
+
+<table class="gap-table">
+  <thead><tr><th>Component</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>AnalysisLayer</code> schema in <code>umto.py</code></td>
+      <td><span class="badge yes">READY</span> <code>roman_numeral</code>, <code>figured_bass</code>, <code>raw_figured_bass</code>, <code>scale_degrees</code>, <code>is_target</code> all already present. Zero schema changes needed.</td>
+    </tr>
+    <tr>
+      <td>Frontend identification grader (<code>IdentificationGrader</code>)</td>
+      <td><span class="badge yes">READY</span> Already reads <code>analysis[].content.roman_numeral</code> for answers. Already handles <code>is_target:true</code> slices for ? slots. Clausula exercises will use this path identically to Bach exercises.</td>
+    </tr>
+    <tr>
+      <td><code>HarmonizationGrader</code> + <code>generate_harmonization</code> command</td>
+      <td><span class="badge yes">READY</span> Works on any UMTO with figured bass in analysis slices. Clausula exercises will plug in once figured bass is populated (step 2 above).</td>
+    </tr>
+    <tr>
+      <td><code>display.voiceColors</code> rendering</td>
+      <td><span class="badge yes">READY</span> <code>vexflow_adapter.js</code> already reads <code>display.voiceColors</code> and applies Remeš color scheme. Clausulae already use this.</td>
+    </tr>
+    <tr>
+      <td><code>display.showScaleDegrees</code></td>
+      <td><span class="badge yes">READY</span> <code>exercise_sheet.js:1708</code> already reads this flag and renders circled scale-degree overlays below the bass staff. No changes needed.</td>
+    </tr>
+    <tr>
+      <td>Playlist infrastructure</td>
+      <td><span class="badge yes">READY</span> <code>generate_clausulae_b1</code> already creates playlists per unit. The same playlists will contain the extended exercises once the generator is updated.</td>
+    </tr>
+    <tr>
+      <td><code>allowed_answers</code> pool generation</td>
+      <td><span class="badge yes">READY</span> <code>UMTO.get_allowed_answers(unit)</code> reads from <code>analysis[].content</code> automatically. Once <code>roman_numeral</code> is populated, it will appear in the pool without any extra work.</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+<p style="color:var(--muted);font-size:0.8rem;text-align:center">Generated 2026-05-26 · HarmonyLab-1 · All DB data from local development database</p>
+
+</body>
+</html>

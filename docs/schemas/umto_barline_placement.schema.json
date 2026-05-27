@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "umto_barline_placement",
+  "title": "umto_barline_placement — identification mode",
+  "description": "Unit 2 rhythm/meter exercise. Student sees a sequence of notes without barlines (given a time signature) and clicks between notes to place barlines where measure boundaries fall. Tests understanding of beat grouping and meter. No MIDI input. No score.umto — this type uses a flat note list rather than SATB voices.",
+  "type": "object",
+  "required": ["type", "mode", "isUMTO", "clef", "time_signature", "notes", "correct_barline_positions", "beat_count"],
+  "properties": {
+    "type":    { "const": "umto_barline_placement" },
+    "mode":    { "const": "identification" },
+    "isUMTO": { "const": true },
+    "exerciseId": { "type": "string", "examples": ["EB16ZT"] },
+    "source":     { "type": "string", "examples": ["Unit 2 add barlines manual seed"] },
+    "clef": {
+      "type": "string",
+      "enum": ["treble", "bass"],
+      "description": "Staff clef for rendering. Barline placement exercises typically use treble."
+    },
+    "time_signature": {
+      "type": "string",
+      "description": "Time signature displayed at left of staff. Tells student how to group beats.",
+      "examples": ["3/4", "4/4", "6/8", "2/4"]
+    },
+    "show_time_signature": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to render the time signature as a visual hint. May be false for advanced exercises where identifying meter is part of the task."
+    },
+    "measures": {
+      "type": "integer",
+      "description": "Number of full measures in the exercise (excluding pickup if any).",
+      "minimum": 1,
+      "examples": [2, 4]
+    },
+    "beat_count": {
+      "type": "integer",
+      "description": "Total beats across all measures (= measures × beats_per_measure + pickup_beats).",
+      "minimum": 1,
+      "examples": [6, 8, 12]
+    },
+    "pickup_beats": {
+      "type": "integer",
+      "default": 0,
+      "minimum": 0,
+      "description": "Number of anacrusis beats before the first full measure. 0 = no pickup."
+    },
+    "pitch_mode": {
+      "type": "string",
+      "enum": ["rhythm_only", "pitched"],
+      "default": "rhythm_only",
+      "description": "rhythm_only = noteheads rendered as rhythmic slashes (pitch irrelevant). pitched = full pitched noteheads."
+    },
+    "notes": {
+      "type": "array",
+      "description": "Ordered list of notes/rests in the exercise. Student sees these on the staff without barlines.",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["duration"],
+        "properties": {
+          "pitch": {
+            "type": "string",
+            "description": "Scientific pitch string (e.g. 'B4', 'C5'). Used for rendering when pitch_mode='pitched'. May be arbitrary when pitch_mode='rhythm_only'.",
+            "examples": ["B4", "C5", "A4"]
+          },
+          "duration": {
+            "type": "string",
+            "enum": ["w", "h", "q", "8", "16", "32"],
+            "description": "Note duration type: w=whole, h=half, q=quarter, 8=eighth, 16=sixteenth, 32=thirty-second."
+          },
+          "dots": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3,
+            "default": 0,
+            "description": "Augmentation dots. Each dot adds half the previous duration."
+          }
+        }
+      }
+    },
+    "note_beat_onsets": {
+      "type": "array",
+      "items": { "type": "number" },
+      "description": "Beat position (0-indexed) of each note in notes[]. Parallel array. Used by grader to map note positions to beat grid.",
+      "examples": [[0, 1, 2, 3, 4, 5]]
+    },
+    "beat_positions_ticks": {
+      "type": "array",
+      "items": { "type": "number" },
+      "description": "Tick positions of each beat boundary (including final barline). Length = beat_count + 1.",
+      "examples": [[0, 1, 2, 3, 4, 5, 6]]
+    },
+    "correct_barline_positions": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 },
+      "description": "Zero-indexed note positions after which a barline belongs. E.g. [2] means a barline appears between notes[2] and notes[3]. Student must place barlines exactly at these positions.",
+      "examples": [[2], [3, 6], [2, 5, 8]]
+    },
+    "grading": {
+      "type": "array",
+      "description": "Empty array for barline placement exercises (no MIDI grading).",
+      "maxItems": 0
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Skill tags embedded in data payload (also stored on Exercise.skill_tags).",
+      "examples": [["unit:2", "unit:2_rhythm", "unit:2_meter_simple"]]
+    }
+  },
+
+  "x-grading-note": "BarlineGrader compares student's placed barline positions (set of note indices) against correct_barline_positions. All positions must match exactly for CORRECT. No partial credit.",
+
+  "examples": [
+    {
+      "type": "umto_barline_placement",
+      "mode": "identification",
+      "isUMTO": true,
+      "exerciseId": "EB16ZT",
+      "source": "Unit 2 add barlines manual seed",
+      "clef": "treble",
+      "time_signature": "3/4",
+      "show_time_signature": true,
+      "measures": 2,
+      "beat_count": 6,
+      "pickup_beats": 0,
+      "pitch_mode": "rhythm_only",
+      "notes": [
+        { "pitch": "B4", "duration": "q", "dots": 0 },
+        { "pitch": "B4", "duration": "q", "dots": 0 },
+        { "pitch": "B4", "duration": "q", "dots": 0 },
+        { "pitch": "B4", "duration": "q", "dots": 0 },
+        { "pitch": "B4", "duration": "q", "dots": 0 },
+        { "pitch": "B4", "duration": "q", "dots": 0 }
+      ],
+      "note_beat_onsets": [0, 1, 2, 3, 4, 5],
+      "beat_positions_ticks": [0, 1, 2, 3, 4, 5, 6],
+      "correct_barline_positions": [2],
+      "grading": [],
+      "tags": ["unit:2", "unit:2_rhythm", "unit:2_meter_simple", "unit:2_meter_compound"]
+    }
+  ]
+}

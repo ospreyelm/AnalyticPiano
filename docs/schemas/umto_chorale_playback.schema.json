@@ -1,0 +1,401 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "umto_chorale_playback",
+  "title": "umto_chorale — playback mode",
+  "description": "Score-based MIDI playback exercise. Student sees notation and plays each note/chord in onset-window order. Graded by ChoraleGrader using exact MIDI pitch matching.",
+  "type": "object",
+  "required": ["type", "mode", "isUMTO", "clef", "key", "meter", "grading", "score"],
+  "properties": {
+    "type": {
+      "const": "umto_chorale",
+      "description": "Identifies this as a score-based chorale exercise."
+    },
+    "mode": {
+      "const": "playback",
+      "description": "Activates ChoraleGrader onset-window path. Student plays MIDI to match notation."
+    },
+    "isUMTO": {
+      "const": true
+    },
+    "exerciseId": {
+      "type": "string",
+      "description": "DB-assigned exercise ID. Set to 'TEMP' at build time; backfilled by save_umto_exercise().",
+      "examples": ["EA80OV"]
+    },
+    "clef": {
+      "type": "string",
+      "enum": ["treble", "bass", "keyboard"],
+      "description": "Staff layout. 'keyboard' renders grand staff with S+A on treble, T+B on bass."
+    },
+    "key": {
+      "type": "string",
+      "description": "HarmonyLab key identifier (e.g. 'jC_' = C major, 'iG_' = G major, 'jd_' = D minor).",
+      "examples": ["jC_", "iG_", "jd_"]
+    },
+    "meter": {
+      "type": "string",
+      "description": "Time signature string.",
+      "examples": ["4/4", "3/4", "6/8", "2/2"]
+    },
+    "analysisType": {
+      "type": "string",
+      "enum": ["note_name", "solfege", "do_based_solfege", "scale_degree", "fixed_do", "pitch_class", "roman_numeral", "figured_bass", "roman"],
+      "description": "Label overlay displayed on score (does not affect MIDI grading). Drives allowed_answers list."
+    },
+    "complexity_score": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 12,
+      "description": "Curriculum unit rank (1=Unit 1, 12=Unit 12). Used for adaptive exercise selection."
+    },
+    "introText": {
+      "type": "string",
+      "description": "Instruction shown above the exercise.",
+      "examples": ["Play the notes: BWV10.7, measures 6-7, Soprano voice."]
+    },
+    "reviewText": {
+      "type": "string",
+      "description": "Completion message shown when exercise is finished.",
+      "examples": ["Well done!"]
+    },
+    "inputMode": {
+      "type": "string",
+      "enum": ["dropdown", "text"],
+      "description": "Input widget for identification modes (not used in playback, but present in payload)."
+    },
+    "semibrevesPerLine": {
+      "type": "integer",
+      "description": "Whole-note units per rendered line. Controls score layout width.",
+      "examples": [4]
+    },
+    "staffDistribution": {
+      "type": "string",
+      "description": "Alias for clef used by legacy VexFlow adapter.",
+      "examples": ["treble", "keyboard"]
+    },
+    "allowed_answers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Answer pool for identification popup (present even in playback mode for overlay logic).",
+      "examples": [["C", "D", "F", "G"]]
+    },
+    "grading": {
+      "type": "array",
+      "description": "Ordered list of grading slices. One entry per onset window ChoraleGrader must match.",
+      "items": {
+        "$ref": "#/$defs/GradingSlice"
+      },
+      "minItems": 1
+    },
+    "score": {
+      "$ref": "#/$defs/ScoreWrapper"
+    }
+  },
+  "additionalProperties": true,
+
+  "$defs": {
+    "GradingSlice": {
+      "type": "object",
+      "required": ["offset", "target_midi_pitches"],
+      "properties": {
+        "offset": {
+          "type": "number",
+          "description": "Quarter-lengths from exercise start. Same coordinate system as UMTO voices."
+        },
+        "target_midi_pitches": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 127 },
+          "description": "MIDI pitches student must play at this onset. ChoraleGrader checks exact match."
+        },
+        "rhythmic_flexibility": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, grader ignores note duration timing (not yet fully implemented)."
+        }
+      }
+    },
+
+    "ScoreWrapper": {
+      "type": "object",
+      "description": "Container holding legacy CIR measures (for VexFlow) and the canonical UMTO object.",
+      "properties": {
+        "meta": {
+          "type": "object",
+          "description": "Top-level score metadata echoing key/time/clef.",
+          "properties": {
+            "key": { "type": "string" },
+            "time": { "type": "string" },
+            "clef": { "type": "string" },
+            "staffDistribution": { "type": "string" }
+          }
+        },
+        "measures": {
+          "type": "array",
+          "description": "Legacy CIR measure array consumed by VexFlow adapter. Derived from UMTO voices by _to_legacy_measures().",
+          "items": { "$ref": "#/$defs/CIRMeasure" }
+        },
+        "umto": {
+          "$ref": "#/$defs/UMTOObject"
+        }
+      }
+    },
+
+    "CIRMeasure": {
+      "type": "object",
+      "description": "One measure in Canonical Internal Representation, used by VexFlow renderer.",
+      "properties": {
+        "staves": {
+          "type": "object",
+          "properties": {
+            "treble": { "$ref": "#/$defs/CIRStaff" },
+            "bass":   { "$ref": "#/$defs/CIRStaff" }
+          }
+        }
+      }
+    },
+
+    "CIRStaff": {
+      "type": "object",
+      "properties": {
+        "clef": { "type": "string" },
+        "voices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/CIRItem" }
+              },
+              "direction": { "type": "string", "enum": ["up", "down", "auto"] }
+            }
+          }
+        }
+      }
+    },
+
+    "CIRItem": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["note", "chord", "rest"] },
+        "pitch": {
+          "type": "object",
+          "properties": {
+            "step":   { "type": "string", "enum": ["A","B","C","D","E","F","G"] },
+            "alter":  { "type": "integer", "minimum": -2, "maximum": 2 },
+            "octave": { "type": "integer" }
+          }
+        },
+        "duration": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["w","h","q","8","16","32"] },
+            "dots": { "type": "integer", "minimum": 0, "maximum": 3 }
+          }
+        }
+      }
+    },
+
+    "UMTOObject": {
+      "type": "object",
+      "description": "Canonical UMTO payload (Python class apps.exercises.umto.UMTO).",
+      "required": ["metadata", "voices", "analysis", "grading"],
+      "properties": {
+        "metadata": { "$ref": "#/$defs/UMTOMetadata" },
+        "voices":   { "$ref": "#/$defs/UMTOVoices" },
+        "analysis": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AnalysisSlice" }
+        },
+        "grading": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/GradingSlice" }
+        }
+      }
+    },
+
+    "UMTOMetadata": {
+      "type": "object",
+      "required": ["exercise_id", "source", "key", "meter", "complexity_score", "mode"],
+      "properties": {
+        "exercise_id":       { "type": "string" },
+        "source":            { "type": "string", "description": "Human-readable origin label." },
+        "key":               { "type": "string" },
+        "meter":             { "type": "string" },
+        "clef":              { "type": "string", "enum": ["treble","bass","keyboard"], "default": "treble" },
+        "complexity_score":  { "type": "integer", "minimum": 1, "maximum": 12 },
+        "mode":              { "type": "string", "enum": ["playback","identification","analysis_match","harmonization","symbolic_identification"] },
+        "is_umto":           { "type": "boolean", "const": true },
+        "input_mode":        { "type": "string", "enum": ["dropdown","text"], "default": "dropdown" },
+        "unit":              { "type": ["integer","null"] },
+        "locked_voices":     { "type": "array", "items": { "type": "string", "enum": ["S","A","T","B"] } },
+        "chord_settle_ms":   { "type": "integer", "default": 150 },
+        "release_grace_ms":  { "type": "integer", "default": 120 },
+        "max_voice_displacement": { "type": "integer", "default": 4 },
+        "voice_count_policy": {
+          "type": "object",
+          "properties": {
+            "min":      { "type": "integer", "minimum": 0 },
+            "max":      { "type": ["integer","null"] },
+            "expected": { "type": ["integer","null"] }
+          }
+        },
+        "harmonization_target_policy": {
+          "type": "object",
+          "properties": {
+            "source":                  { "type": "string", "enum": ["figured_bass","roman","analysis_slice"] },
+            "written_spelling_required": { "type": "boolean" },
+            "midi_uses_pitch_class":   { "type": "boolean" }
+          }
+        }
+      }
+    },
+
+    "UMTOVoices": {
+      "type": "object",
+      "description": "SATB voice event streams. Each voice is a list of VoiceEvents in score order.",
+      "properties": {
+        "S": { "type": "array", "items": { "$ref": "#/$defs/VoiceEvent" } },
+        "A": { "type": "array", "items": { "$ref": "#/$defs/VoiceEvent" } },
+        "T": { "type": "array", "items": { "$ref": "#/$defs/VoiceEvent" } },
+        "B": { "type": "array", "items": { "$ref": "#/$defs/VoiceEvent" } }
+      }
+    },
+
+    "VoiceEvent": {
+      "type": "object",
+      "required": ["kind", "duration", "duration_type"],
+      "properties": {
+        "kind":          { "type": "string", "enum": ["note","rest"] },
+        "pitch": {
+          "type": "object",
+          "description": "Present when kind='note'. Null/absent for rests.",
+          "required": ["step","alter","octave","midi"],
+          "properties": {
+            "step":   { "type": "string", "enum": ["A","B","C","D","E","F","G"] },
+            "alter":  { "type": "integer", "minimum": -2, "maximum": 2, "description": "1=sharp, -1=flat, 0=natural" },
+            "octave": { "type": "integer" },
+            "midi":   { "type": "integer", "minimum": 0, "maximum": 127 }
+          }
+        },
+        "duration":       { "type": "number", "description": "Duration in quarter-lengths. 1.0=quarter, 2.0=half, 4.0=whole, 0.5=eighth." },
+        "duration_type":  { "type": "string", "enum": ["w","h","q","8","16","32"] },
+        "dots":           { "type": "integer", "minimum": 0, "maximum": 3, "default": 0 },
+        "is_tied_start":  { "type": "boolean", "default": false },
+        "is_tied_stop":   { "type": "boolean", "default": false },
+        "is_target":      { "type": "boolean", "default": true, "description": "false = context note not graded by ChoraleGrader." }
+      }
+    },
+
+    "AnalysisSlice": {
+      "type": "object",
+      "required": ["offset", "content"],
+      "properties": {
+        "offset": {
+          "type": "number",
+          "description": "Quarter-lengths from exercise start. Must align with a grading slice offset to drive a ? target."
+        },
+        "content": {
+          "type": "object",
+          "description": "Pedagogical label(s) at this musical moment. All fields optional; one or more may be populated.",
+          "properties": {
+            "roman_numeral":     { "type": ["string","null"], "examples": ["I","V7","ii6","IV"] },
+            "raw_roman_numeral": { "type": ["string","null"], "description": "Unfiltered music21 output. Durable record; not shown to student." },
+            "local_key":         { "type": ["string","null"], "description": "Active key at this slice (for tonicizations).", "examples": ["G","d"] },
+            "raw_figured_bass":  { "type": ["string","null"], "description": "Unabbreviated stack e.g. '8/5/3', '7/5/3'." },
+            "figured_bass":      { "type": ["string","null"], "description": "Abbreviated per Kellner convention e.g. '', '7', '4/2'." },
+            "pop_symbol":        { "type": ["string","null"] },
+            "functional_label":  { "type": ["string","null"], "examples": ["Predominant","Dominant"] },
+            "scale_degrees": {
+              "type": ["array","null"],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "midi":  { "type": "integer" },
+                  "label": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "visual": {
+          "type": ["object","null"],
+          "description": "Rendering hints for hand-written style overlays.",
+          "properties": {
+            "x_hint": { "type": ["number","null"] },
+            "y_hint": { "type": ["number","null"] },
+            "anchor": { "type": "string", "enum": ["slice","measure","note"], "default": "slice" },
+            "style":  { "type": "string", "default": "handwritten" }
+          }
+        },
+        "is_target": {
+          "type": "boolean",
+          "default": false,
+          "description": "true = renders a ? button in identification mode. false = passive overlay only."
+        },
+        "unit_tags": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Curriculum units this slice is pedagogically relevant to.",
+          "examples": [[1], [9], [1, 9]]
+        }
+      }
+    }
+  },
+
+  "examples": [
+    {
+      "type": "umto_chorale",
+      "mode": "playback",
+      "isUMTO": true,
+      "exerciseId": "EA80OV",
+      "clef": "treble",
+      "key": "iG_",
+      "meter": "4/4",
+      "analysisType": "note_name",
+      "complexity_score": 1,
+      "introText": "Play the notes: BWV10.7, measures 6-7, Soprano voice.",
+      "reviewText": "Well done!",
+      "inputMode": "dropdown",
+      "semibrevesPerLine": 4,
+      "staffDistribution": "treble",
+      "allowed_answers": ["C", "D", "F", "G"],
+      "grading": [
+        { "offset": 0.0, "target_midi_pitches": [74], "rhythmic_flexibility": false },
+        { "offset": 2.0, "target_midi_pitches": [77], "rhythmic_flexibility": false },
+        { "offset": 4.0, "target_midi_pitches": [72], "rhythmic_flexibility": false }
+      ],
+      "score": {
+        "meta": { "key": "iG_", "time": "4/4", "clef": "treble", "staffDistribution": "treble" },
+        "measures": [],
+        "umto": {
+          "metadata": {
+            "exercise_id": "EA80OV",
+            "source": "BWV10.7, measures 6-7, Soprano voice.",
+            "key": "iG_", "meter": "4/4", "clef": "treble",
+            "mode": "playback", "complexity_score": 1,
+            "is_umto": true, "input_mode": "dropdown",
+            "locked_voices": ["B"],
+            "voice_count_policy": { "min": 3, "max": 4, "expected": null },
+            "chord_settle_ms": 150, "release_grace_ms": 120, "max_voice_displacement": 4
+          },
+          "voices": {
+            "S": [
+              { "kind": "note", "pitch": { "step": "D", "alter": 0, "octave": 5, "midi": 74 }, "duration": 2.0, "duration_type": "h", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true },
+              { "kind": "note", "pitch": { "step": "F", "alter": 0, "octave": 5, "midi": 77 }, "duration": 2.0, "duration_type": "h", "dots": 0, "is_tied_start": false, "is_tied_stop": false, "is_target": true }
+            ],
+            "A": [], "T": [], "B": []
+          },
+          "analysis": [
+            { "offset": 0.0, "content": { "roman_numeral": null, "figured_bass": null }, "is_target": false, "unit_tags": [1] }
+          ],
+          "grading": [
+            { "offset": 0.0, "target_midi_pitches": [74], "rhythmic_flexibility": false },
+            { "offset": 2.0, "target_midi_pitches": [77], "rhythmic_flexibility": false }
+          ]
+        }
+      }
+    }
+  ]
+}

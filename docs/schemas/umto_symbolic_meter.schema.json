@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "umto_symbolic_meter",
+  "title": "umto_symbolic_meter — identification mode",
+  "description": "Unit 2 meter concept questions. Student sees a symbol prompt (a time signature, a grouping label, or a beat-division descriptor) and picks the correct conceptual answer. No notation rendering, no MIDI. Pure symbol → concept mapping. Problems are packed into a single Exercise row as problems[].",
+  "type": "object",
+  "required": ["type", "mode", "isUMTO", "problems"],
+  "properties": {
+    "type":    { "const": "umto_symbolic_meter" },
+    "mode":    { "const": "identification" },
+    "isUMTO": { "const": true },
+    "exerciseId": { "type": "string", "examples": ["EB16IB"] },
+    "clef":  { "type": "string", "examples": ["treble"] },
+    "key":   { "type": "string", "examples": ["C"] },
+    "meter": { "type": "string", "examples": ["4/4"] },
+    "grading": {
+      "type": "array",
+      "description": "Empty — no MIDI grading.",
+      "maxItems": 0
+    },
+    "problems": {
+      "type": "array",
+      "description": "Ordered list of meter-concept questions.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["subtype", "prompt", "answer", "choices"],
+        "properties": {
+          "subtype": {
+            "type": "string",
+            "enum": [
+              "ts_to_grouping",
+              "ts_to_division_type",
+              "grouping_to_ts",
+              "division_to_ts",
+              "ts_to_beat_value"
+            ],
+            "description": "Question direction. Determines what the prompt shows and what kind of answer is expected."
+          },
+          "prompt": {
+            "type": "object",
+            "required": ["kind"],
+            "description": "What is shown to the student.",
+            "oneOf": [
+              {
+                "properties": {
+                  "kind": { "const": "time_signature" },
+                  "text": {
+                    "type": "string",
+                    "description": "Time signature string rendered as a symbol.",
+                    "examples": ["3/4", "6/8", "4/4", "2/2"]
+                  }
+                },
+                "required": ["kind", "text"]
+              },
+              {
+                "properties": {
+                  "kind": { "const": "label" },
+                  "text": {
+                    "type": "string",
+                    "description": "Text label shown to student (e.g. 'simple triple').",
+                    "examples": ["simple triple", "compound duple"]
+                  }
+                },
+                "required": ["kind", "text"]
+              }
+            ]
+          },
+          "answer": {
+            "type": "string",
+            "description": "Correct answer string.",
+            "examples": ["triple", "duple", "compound", "simple", "2/4", "6/8"]
+          },
+          "choices": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 3,
+            "maxItems": 5,
+            "description": "Answer choices shown in popup. Correct answer included.",
+            "examples": [["triple", "duple", "quadruple", "single"]]
+          },
+          "correct_index": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "0-based index of correct answer in choices[]. Redundant with answer but used by some frontend paths."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Explanation shown after student answers. Used in practice/submit modes.",
+            "examples": ["3/4 maps to simple triple.", "6/8 maps to compound duple."]
+          },
+          "source_signature": {
+            "type": "string",
+            "description": "Original time signature string (present when subtype involves a time signature prompt).",
+            "examples": ["3/4", "6/8"]
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Per-problem skill tags.",
+            "examples": [["unit:2", "unit:2_ts_to_grouping"]]
+          }
+        }
+      }
+    }
+  },
+
+  "x-subtype-reference": {
+    "ts_to_grouping":       "Time sig → beat grouping: '3/4' → 'triple'",
+    "ts_to_division_type":  "Time sig → simple/compound: '6/8' → 'compound'",
+    "grouping_to_ts":       "Grouping description → time sig: 'simple duple' → '2/4'",
+    "division_to_ts":       "Division type + grouping → time sig: 'compound triple' → '9/8'",
+    "ts_to_beat_value":     "Time sig → beat note value: '6/8' → 'dotted quarter'"
+  },
+
+  "examples": [
+    {
+      "type": "umto_symbolic_meter",
+      "mode": "identification",
+      "isUMTO": true,
+      "exerciseId": "EB16IB",
+      "clef": "treble",
+      "key": "C",
+      "meter": "4/4",
+      "grading": [],
+      "problems": [
+        {
+          "subtype": "ts_to_grouping",
+          "prompt": { "kind": "time_signature", "text": "3/4" },
+          "answer": "triple",
+          "choices": ["triple", "duple", "quadruple", "single"],
+          "correct_index": 0,
+          "explanation": "3/4 maps to simple triple.",
+          "source_signature": "3/4",
+          "tags": ["unit:2", "unit:2_ts_to_grouping"]
+        },
+        {
+          "subtype": "ts_to_division_type",
+          "prompt": { "kind": "time_signature", "text": "6/8" },
+          "answer": "compound",
+          "choices": ["compound", "simple", "triple", "duple"],
+          "correct_index": 0,
+          "explanation": "6/8 maps to compound duple.",
+          "source_signature": "6/8",
+          "tags": ["unit:2", "unit:2_ts_to_division_type"]
+        }
+      ]
+    }
+  ]
+}
