@@ -204,6 +204,12 @@ define([
     },
 
     _supportsTextInputMode: function (definition) {
+      // Exercises can opt out of text input mode by setting inputModeFixed: "dropdown".
+      // This preserves the visual slot UI (? circles under each beat), which is part
+      // of the pedagogical design for chorale identification exercises.
+      if (definition && definition.exercise && definition.exercise.inputModeFixed === "dropdown") {
+        return false;
+      }
       var analysisType = definition && definition.getAnalysisType
         ? definition.getAnalysisType()
         : "roman";
