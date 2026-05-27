@@ -85,6 +85,22 @@
           ],
           "default": null,
           "title": "Functional Label"
+        },
+        "scale_degrees": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scale Degrees"
         }
       },
       "title": "AnalysisLayer",
