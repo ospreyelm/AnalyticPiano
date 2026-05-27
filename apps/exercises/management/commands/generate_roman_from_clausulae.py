@@ -76,7 +76,7 @@ HL_KEY = {
     "A": "jA_", "Eb": "jEb", "E": "jE_", "Ab": "jAb",
 }
 
-TARGET_KEYS = ["C", "G", "F"]
+TARGET_KEYS = ["C", "F", "G", "D", "Bb"]
 
 # Voice → MIDI octave (matches generate_clausulae_b1)
 _OCTAVE = {"S": 5, "A": 4, "T": 4, "B": 3}
@@ -359,24 +359,62 @@ def _make_exercises(
     style,
 ) -> list[Exercise]:
     """Generate all roman_from_clausulae exercises for a given voice count."""
-    combos = [
-        c for c in enumerate_simple(n_voices=n_voices, require_bass=True)
-        if any(name == "Discant" for name, _, __ in c)
-    ]
+    def _tonal_valid(combo) -> bool:
+        """Filter combos to tonal-music constraints on ANT and ULT sonorities.
+
+        Let ANT = set of scale degrees (Z₇) across all voices at the first position.
+        Let ULT = set of scale degrees (Z₇) across all voices at the last position.
+
+        KEEP iff:
+          (1) 2 ∈ ANT  — first chord must contain the third (Mi)
+          (2) NOT (4 ∈ ULT AND 2 ∉ ULT)  — last chord cannot be bare fifth/octave
+                                             (Sol without Mi is not a complete tonic)
+        Scale degrees: 0=Do, 2=Mi, 4=Sol (Z₇ diatonic integers).
+        """
+        ant = {triple[0] for _, __, triple in combo}
+        ult = {triple[2] for _, __, triple in combo}
+        has_third_at_start  = 2 in ant
+        bad_end             = (4 in ult) and (2 not in ult)
+        return has_third_at_start and not bad_end
+
+    # Deduplicate by slot fingerprint: (slot_id, triple) pairs sorted by slot.
+    # enumerate_simple returns both (Bass, Discant, Tenor) and (Bass, Tenor, Discant)
+    # orderings; _assign_slots maps both to the same B/S/A slots, producing
+    # identical exercises. Keep only the first occurrence of each fingerprint.
+    def _slot_fingerprint(combo) -> frozenset:
+        slots = _assign_slots(combo)
+        return frozenset((vid, triple) for vid, (_, __, triple) in slots.items())
+
+    seen: set = set()
+    combos = []
+    for c in enumerate_simple(n_voices=n_voices, require_bass=True):
+        if not any(name == "Discant" for name, _, __ in c):
+            continue
+        if not _tonal_valid(c):
+            continue
+        fp = _slot_fingerprint(c)
+        if fp in seen:
+            continue
+        seen.add(fp)
+        combos.append(c)
 
     exs: list[Exercise] = []
     voice_str = f"{n_voices}-part"
 
     for key in TARGET_KEYS:
-        for combo in combos:
+        for combo_idx, combo in enumerate(combos, 1):
             slots      = _assign_slots(combo)
             vmap: dict[str, list[VoiceEvent]] = {}
             for vid, (name, var_idx, triple) in slots.items():
                 vmap[vid] = _realize_events(triple, key, vid)
 
             label = _combo_label(slots)
-            # Description doubles as the idempotency key (matched in _save_exercise).
-            desc  = f"{voice_str} authentic cadence in {key} [{label}]"
+            # Human-readable prefix + compact label as idempotency key.
+            # For 3-voice the label fits; for 4-voice use a shorter prefix
+            # to stay within the varchar(60) description field.
+            prefix = f"{voice_str} Authentic Cadence in {key}"
+            candidate = f"{prefix} [{label}]"
+            desc = candidate if len(candidate) <= 60 else f"{prefix} var{combo_idx}"
 
             payload = _build_identification_payload(vmap, key, desc, unit)
 
