@@ -83,6 +83,22 @@ Uncomment the full `.notification` CSS block (lines 585–636). Add `.notificati
 - `initListeners()` call in `onWebMIDIError` remains — keyboard event listeners still attach.
 - No template, CSS, or backend changes.
 
+## Implementation Note: Two Templates
+
+The exercise player has two separate templates:
+
+- `lab/templates/exercise.html` — lab/practice view (instructors, Chrome)
+- `apps/student/templates/student/player.html` — student view (Safari/Firefox users hit this path)
+
+The original spec targeted only the lab template. During implementation it was discovered that
+Safari users reach the student template. Notifications required three additional changes there:
+
+1. `{% include "_notifications.html" %}` added to `player.html` (was absent)
+2. `NotificationsComponent` registered in the student app JS with `defaultHidden: false`
+3. `.notification` CSS rules added inline to `player.html` (student template doesn't load `harmony.css` notification block)
+
+**Future features involving notifications must be applied to both templates.**
+
 ## Out of Scope
 
 - Mouse/click chord entry (would require a new chord assembly UI — significant feature).
