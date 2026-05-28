@@ -180,6 +180,13 @@ define([
       });
       this.updateDevices();
       this.initListeners();
+      if (Array.from(MIDIAccess.inputs.values()).length === 0) {
+        this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
+          type: "warning",
+          title: Config.get("errorText.midiUnavailable.title"),
+          description: Config.get("errorText.midiUnavailable.description"),
+        });
+      }
     },
     /**
      * Called when WebMIDI encounters an error while it is initializing itself.
@@ -187,7 +194,6 @@ define([
      * @return undefined
      */
     onWebMIDIError: function () {
-      console.log("[DEBUG] MidiComponent onWebMIDIError called");
       this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
         type: "warning",
         title: Config.get("errorText.midiUnavailable.title"),
