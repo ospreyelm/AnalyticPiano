@@ -68,7 +68,7 @@ define([
   AppPlayComponent.prototype.getComponentMethods = function () {
     var methods = [
       function () {
-        var c = new NotificationsComponent();
+        var c = new NotificationsComponent({ defaultHidden: false });
         c.init(this);
         c.renderTo("#notifications");
         this.addComponent(c);

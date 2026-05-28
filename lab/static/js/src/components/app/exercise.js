@@ -196,7 +196,7 @@ define([
     var isKeySignatureExercise = definition.type === "umto_key_signature";
     var methods = [
       function () {
-        var c = new NotificationsComponent();
+        var c = new NotificationsComponent({ defaultHidden: false });
         c.init(this);
         c.renderTo("#notifications", "#notificationAlerts");
         this.addComponent(c);
