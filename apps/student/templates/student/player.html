@@ -243,8 +243,98 @@
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
       color: #4a3b30;
       font-size: 0.82rem;
-      line-height: 1.4;
     }
+
+    /* ── Notifications ──────────────────────────────────────── */
+    #notifications {
+      display: block !important;
+      width: 95vw;
+      max-width: 900px;
+      margin: 8px auto;
+      text-align: left;
+    }
+
+    .notifications-wrapper {
+      display: block !important;
+    }
+
+    .notification {
+      position: relative;
+      margin-bottom: 12px;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      box-shadow: 0 4px 20px rgba(38, 27, 17, 0.05);
+      border: 1px solid var(--border);
+      background-color: var(--surface-2);
+      color: var(--text);
+      display: block;
+      transition: all 200ms ease;
+    }
+
+    /* Warning notifications style (MIDI unavailable) */
+    .notification.warning {
+      background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+      border-color: rgba(217, 119, 6, 0.28);
+      color: #78350f;
+    }
+
+    .notification.warning .title {
+      color: #b45309;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .notification.warning .title b {
+      font-weight: 700;
+    }
+
+    /* Clean control buttons */
+    .notification .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(120, 53, 15, 0.18);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.7);
+      color: #78350f;
+      transition: all 150ms ease;
+      user-select: none;
+    }
+
+    .notification .btn:hover {
+      background: #ffffff;
+      border-color: rgba(120, 53, 15, 0.35);
+      box-shadow: 0 2px 4px rgba(120, 53, 15, 0.08);
+    }
+
+    .notification .moredetails, 
+    .notification .delete {
+      float: right;
+      margin-left: 6px;
+    }
+
+    .notification .title {
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1.6;
+    }
+
+    .notification .details {
+      display: block;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(217, 119, 6, 0.2);
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: #92400e;
+    }
+
 
     /* ── Nav toolbar ────────────────────────────────────────── */
     #staff-toolbar {
