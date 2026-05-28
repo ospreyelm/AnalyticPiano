@@ -187,9 +187,9 @@ define([
      */
     onWebMIDIError: function () {
       this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
-        type: "error",
-        title: MIDI_ERROR_TITLE,
-        description: MIDI_ERROR_CONTENT,
+        type: "warning",
+        title: Config.get("errorText.midiUnavailable.title"),
+        description: Config.get("errorText.midiUnavailable.description"),
       });
       this.initListeners();
     },
