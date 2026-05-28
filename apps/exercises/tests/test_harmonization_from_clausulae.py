@@ -131,6 +131,11 @@ def _fake_key_realize(triple, key, octave):
             _FakeNote("D", octave, 12 * (octave + 1) + 2),
             _FakeNote("E", octave, 12 * (octave + 1) + 4),
         ],
+        (2, 1, 0): [
+            _FakeNote("E", octave, 12 * (octave + 1) + 4),
+            _FakeNote("D", octave, 12 * (octave + 1) + 2),
+            _FakeNote("C", octave, 12 * (octave + 1)),
+        ],
         (0, 4, 0): [
             _FakeNote("C", octave, 12 * (octave + 1)),
             _FakeNote("G", octave, 12 * (octave + 1) + 7),
@@ -195,6 +200,52 @@ class GenerateHarmonizationFromClausulaeCommandTests(TestCase):
         assert exercise.data["score"]["umto"]["metadata"]["locked_voices"] == ["B"]
         assert len(exercise.data["harmonizationTargets"]) == 3
 
+        playlist = Playlist.objects.get(
+            name="Unit 9 - Authentic Cadences (Harmonization) 3-voice",
+            authored_by=self.user,
+        )
+        assert ExercisePlaylistOrdered.objects.filter(playlist=playlist).count() == 1
+
+    def test_command_deduplicates_student_equivalent_upper_voice_variants(self):
+        combo_a = (
+            ("Discant", 0, (0, 6, 0)),
+            ("Tenor", 2, (2, 1, 0)),
+            ("Bass", 0, (0, 4, 0)),
+        )
+        combo_b = (
+            ("Discant", 0, (0, 6, 0)),
+            ("Tenor", 3, (2, 1, 2)),
+            ("Bass", 0, (0, 4, 0)),
+        )
+
+        with patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae._CLAUSULAE_AVAILABLE",
+            True,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.enumerate_simple",
+            return_value=[combo_a, combo_b],
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.key_realize",
+            side_effect=_fake_key_realize,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.TARGET_KEYS",
+            ["C"],
+        ):
+            call_command(
+                "generate_harmonization_from_clausulae",
+                author="admin@example.com",
+                unit=9,
+                voices="3",
+                overwrite=True,
+            )
+
+        from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
+
+        exercises = Exercise.objects.filter(
+            authored_by=self.user,
+            skill_tags__contains=["exercise_type:harmonization_from_clausulae"],
+        )
+        assert exercises.count() == 1
         playlist = Playlist.objects.get(
             name="Unit 9 - Authentic Cadences (Harmonization) 3-voice",
             authored_by=self.user,

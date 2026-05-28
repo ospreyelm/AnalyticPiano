@@ -177,6 +177,21 @@ def _slot_fingerprint(combo) -> frozenset:
     return frozenset((vid, triple) for vid, (_, __, triple) in slots.items())
 
 
+def _student_prompt_fingerprint(combo) -> tuple:
+    """Deduplicate variants that look identical to a harmonization student.
+
+    This command locks and displays only the bass voice, and target derivation is
+    figured-bass based. Upper-voice Clausula variants are hidden and do not
+    affect the accepted pitch-class set, so they should not create duplicate
+    student exercises.
+    """
+    slots = _assign_slots(combo)
+    bass = slots.get("B")
+    bass_triple = bass[2] if bass else None
+    figures = tuple((offset, figured, raw) for offset, figured, raw in _CADENCE_FIGURES)
+    return bass_triple, figures
+
+
 def _build_harmonization_payload(
     voice_events_by_id: dict[str, list[VoiceEvent]],
     key: str,
@@ -320,14 +335,14 @@ def _make_exercises(
     options: dict,
     stdout,
 ) -> list[Exercise]:
-    seen: set[frozenset] = set()
+    seen: set[tuple] = set()
     combos = []
     for combo in enumerate_simple(n_voices=n_voices, require_bass=True):
         if not any(name == "Discant" for name, _, __ in combo):
             continue
         if not _tonal_valid(combo):
             continue
-        fp = _slot_fingerprint(combo)
+        fp = _student_prompt_fingerprint(combo)
         if fp in seen:
             continue
         seen.add(fp)
