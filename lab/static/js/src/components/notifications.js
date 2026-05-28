@@ -63,7 +63,7 @@ define([
    * @return undefined
    */
   NotificationsComponent.prototype.onNotification = function (msg) {
-    //console.log("notification event", msg);
+    console.log("[DEBUG] NotificationsComponent onNotification received", msg);
     if (msg.action == "clearall") {
       this.clearAll();
     }
