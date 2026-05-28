@@ -142,6 +142,15 @@ python manage.py generate_roman_from_clausulae \
   --public --overwrite
 ```
 
+**`generate_harmonization_from_clausulae`** — Generate figured-bass harmonization exercises from standard Clausulae cadences. Uses the existing harmonization path: bass is locked, figured-bass analysis slices drive `harmonizationTargets`, and students play the upper voices.
+```
+python manage.py generate_harmonization_from_clausulae \
+  --unit 9 \
+  --author admin@example.com \
+  --voices 3 \
+  --public --overwrite
+```
+
 ---
 
 ### Playlists and curriculum wiring

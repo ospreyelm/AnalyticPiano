@@ -1279,7 +1279,8 @@ define([
             if (select && select.indexOf(vIdx) === -1) return null; // filter out
 
             var satbLabel = staffSatbLabels[vIdx] || null;
-            var hideCurrentVoice = isHarmonization && satbLabel && lockedVoices.indexOf(satbLabel) === -1;
+            var selectedForHarmonization = !!(isHarmonization && select && select.indexOf(vIdx) !== -1);
+            var hideCurrentVoice = isHarmonization && !selectedForHarmonization && satbLabel && lockedVoices.indexOf(satbLabel) === -1;
             var harmonizationOptions = {
               isHarmonization: isHarmonization,
               hideCurrentVoice: hideCurrentVoice,

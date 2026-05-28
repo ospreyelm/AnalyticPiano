@@ -86,15 +86,18 @@ Score-based figured-bass realization exercise. The student sees a bass line with
 - `"figured_bass"` → shows `thoroughbass` overlays (figures below the staff)
 - `"roman"` → shows Roman numeral overlays
 
-**Source:** Derived from any UMTO chorale exercise. Targets are pre-computed by `generate_harmonization` from the source exercise's `analysis` slices (bass + figured bass from each UMTO analysis slice). NCT (non-chord-tone) slices are skipped.
+**Source:** Derived from any UMTO chorale exercise, or generated directly from standard Clausulae cadences. Targets are pre-computed from the exercise's `analysis` slices (bass + figured bass from each UMTO analysis slice). NCT (non-chord-tone) slices are skipped for chorale-derived material.
 
 **Generation:**
 ```
 python manage.py generate_harmonization --source <exercise_id> --author <email> \
   --locked-voices B --prompt figured_bass --min-voices 3 --max-voices 4 --public
+
+python manage.py generate_harmonization_from_clausulae --unit 9 --author <email> \
+  --voices 3 --public --overwrite
 ```
 
-**Key files:** `harmonization_grader_logic.js`, `harmonization_targets_logic.js`, `harmonization_realization_logic.js`, `apps/exercises/harmonization/targets.py`, `apps/exercises/management/commands/generate_harmonization.py`
+**Key files:** `harmonization_grader_logic.js`, `harmonization_targets_logic.js`, `harmonization_realization_logic.js`, `apps/exercises/harmonization/targets.py`, `apps/exercises/management/commands/generate_harmonization.py`, `apps/exercises/management/commands/generate_harmonization_from_clausulae.py`
 
 ---
 

@@ -1819,11 +1819,19 @@ define([
             var lv = definition.exercise && definition.exercise.score && definition.exercise.score.umto
               ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
               : ["B"];
+            function lockedVoiceIndex(staffName, preferredIndex) {
+              var firstMeasure = score && score.measures && score.measures[0];
+              var staff = firstMeasure && firstMeasure.staves && firstMeasure.staves[staffName];
+              var voices = staff && staff.voices ? staff.voices : [];
+              if (voices.length > preferredIndex) return preferredIndex;
+              if (voices.length === 1) return 0;
+              return preferredIndex;
+            }
             var hvTreble = [], hvBass = [];
-            if (lv.indexOf("S") !== -1) hvTreble.push(0);
-            if (lv.indexOf("A") !== -1) hvTreble.push(1);
-            if (lv.indexOf("T") !== -1) hvBass.push(0);
-            if (lv.indexOf("B") !== -1) hvBass.push(1);
+            if (lv.indexOf("S") !== -1) hvTreble.push(lockedVoiceIndex("treble", 0));
+            if (lv.indexOf("A") !== -1) hvTreble.push(lockedVoiceIndex("treble", 1));
+            if (lv.indexOf("T") !== -1) hvBass.push(lockedVoiceIndex("bass", 0));
+            if (lv.indexOf("B") !== -1) hvBass.push(lockedVoiceIndex("bass", 1));
             harmonizationSelectVoices = { treble: hvTreble, bass: hvBass };
           }
 

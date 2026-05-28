@@ -88,6 +88,11 @@ CATALOG = [
             "Generate Branch B Units B1–B2: formal clausulae and simple 2-voice cadences.",
             "python manage.py generate_clausulae_b1 --author admin@example.com --public",
         ),
+        (
+            "generate_harmonization_from_clausulae",
+            "Generate figured-bass harmonization exercises from standard Clausulae cadences.",
+            "python manage.py generate_harmonization_from_clausulae --unit 9 --author admin@example.com --voices 3 --public --overwrite",
+        ),
     ]),
     ("Playlists and curriculum wiring", [
         (

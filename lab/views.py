@@ -330,7 +330,7 @@ def generate_exercise_context(
     analysis_policy = None
     _unit_n_for_policy = unit_n  # may be None if no unit tag found
 
-    if _unit_n_for_policy:
+    if _unit_n_for_policy and exercise_context.get("mode") != "harmonization":
         # Determine family based on mode tag
         _family = "roman"
         _mode_tag = None
