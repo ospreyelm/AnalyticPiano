@@ -10,7 +10,7 @@ define([
   "app/components/music/exercise_sheet",
   "app/components/music/symbolic_question_sheet",
   "app/components/midi",
-  // 'app/components/notifications',
+  "app/components/notifications",
   "app/components/input/shortcuts",
   "app/components/input/note_name",
   "app/components/input/computer_keyboard_ux_logic",
@@ -37,7 +37,7 @@ define([
   ExerciseSheetComponent,
   SymbolicQuestionSheet,
   MidiComponent,
-  // NotificationsComponent,
+  NotificationsComponent,
   KeyboardShortcutsComponent,
   NoteNameInputComponent,
   ComputerKeyboardUxLogic,
@@ -195,12 +195,12 @@ define([
     var isSymbolicMeterExercise = definition.type === "umto_symbolic_meter";
     var isKeySignatureExercise = definition.type === "umto_key_signature";
     var methods = [
-      // function () {
-      //  var c = new NotificationsComponent();
-      //  c.init(this);
-      //  c.renderTo("#notifications", "#notificationAlerts");
-      //  this.addComponent(c);
-      // },
+      function () {
+        var c = new NotificationsComponent();
+        c.init(this);
+        c.renderTo("#notifications", "#notificationAlerts");
+        this.addComponent(c);
+      },
       function () {
         if (isSymbolicMeterExercise || isKeySignatureExercise) {
           return;
