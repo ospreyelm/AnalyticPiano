@@ -7,7 +7,7 @@ define([
   "app/components/music",
   "app/components/music/play_sheet",
   "app/components/midi",
-  // 'app/components/notifications',
+  "app/components/notifications",
   "app/components/input/shortcuts",
   "app/components/input/note_name",
   "app/components/ui/main_menu",
@@ -24,7 +24,7 @@ define([
   MusicComponent,
   PlaySheetComponent,
   MidiComponent,
-  // NotificationsComponent,
+  NotificationsComponent,
   KeyboardShortcutsComponent,
   NoteNameInputComponent,
   MainMenuComponent,
@@ -67,12 +67,12 @@ define([
    */
   AppPlayComponent.prototype.getComponentMethods = function () {
     var methods = [
-      // function () {
-      // 	var c = new NotificationsComponent();
-      // 	c.init(this);
-      // 	c.renderTo("#notifications");
-      // 	this.addComponent(c);
-      // },
+      function () {
+        var c = new NotificationsComponent();
+        c.init(this);
+        c.renderTo("#notifications");
+        this.addComponent(c);
+      },
       function () {
         var c = new PianoComponent({
           toolbarConfig: { metronome: true },
