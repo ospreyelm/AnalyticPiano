@@ -145,6 +145,7 @@ define([
      * @return undefined
      */
     initComponent: function () {
+      console.log("[DEBUG] MidiComponent initComponent called");
       if (!("chords" in this.settings)) {
         throw new Error("missing settings.chords");
       }
@@ -186,6 +187,7 @@ define([
      * @return undefined
      */
     onWebMIDIError: function () {
+      console.log("[DEBUG] MidiComponent onWebMIDIError called");
       this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
         type: "warning",
         title: Config.get("errorText.midiUnavailable.title"),
