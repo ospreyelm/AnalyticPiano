@@ -74,7 +74,8 @@ the structure MIDI input already produces, not a parallel one.
 | Chromatic resolution | Sticky accidental palette (default = diatonic / key-sig) |
 | Commit model | Harmonization v1: chord = accumulate pending notes, then explicit commit. Single-note click entry is deferred until an existing snapshot-compatible target is named |
 | Horizontal targeting (v1) | **Sequential** — clicks build the current target only; columns ahead non-clickable until reached. Random access deferred (see Out of scope) |
-| Chord size limit | **Hard cap at available student slots** = `voiceCountPolicy.max - lockedVoiceCount` (default max 4); click past the cap is a no-op with brief feedback |
+| Chord size limit | **Hard cap at available student slots** = `voiceCountPolicy.max - suppliedVoiceCount` (supplied = locked voices with concrete `.midi`; default max 4); click past the cap is a no-op with brief feedback |
+| Locked voices | **Generic, not bass-special-cased** — merge only `lockedVoices` with concrete `.midi`; future RN harmonization omits `lockedVoices.B` so the student clicks the bass (see §4) |
 | Commit model (chord) | **Snapshot-then-grade**: commit passes `locked target MIDI + clicked MIDI` to the shared harmonization grading helper — does not rely on release-grace + settle timing |
 | Voice assignment | None — grader and overlay are pitch-keyed |
 | Preview | Ghost-note hover preview (approach C) |
@@ -336,13 +337,25 @@ single-note branch is documented below as deferred.
   `exercise_sheet.onMidiNote` currently schedules grading after every `NOTE`
   event, so live NOTE construction would violate explicit commit.
 - Re-click same pitch → remove it from the pending clicked set.
-- **Hard size cap.** Compute `lockedVoiceCount` from the target's
-  `lockedVoices` entries that contribute concrete MIDI/PC requirements, then
-  cap student-clicked notes at `max(0, voiceCountPolicy.max - lockedVoiceCount)`
-  (default policy max 4). A click on a *new* pitch past that cap is a no-op
-  (brief "max N notes" hint); toggling an already-pending pitch off still works.
-  This keeps the complete submitted MIDI set from ever exceeding the grader's
-  `voiceCountPolicy.max`.
+- **Hard size cap.** Compute `suppliedVoiceCount` from the target's
+  `lockedVoices` entries that carry a concrete `.midi` (the given notes the
+  student does not click), then cap student-clicked notes at
+  `max(0, voiceCountPolicy.max - suppliedVoiceCount)` (default policy max 4). A
+  click on a *new* pitch past that cap is a no-op (brief "max N notes" hint);
+  toggling an already-pending pitch off still works. This keeps the complete
+  submitted MIDI set from ever exceeding the grader's `voiceCountPolicy.max`.
+
+- **Treat `lockedVoices` generically — do not special-case bass.** Merge only
+  the voices present in `target.lockedVoices` with a concrete `.midi`; that same
+  set reduces the click cap. The given bass is included in the graded
+  `activeMidi` (so `harmonizationMatch()` sees `lockedVoices.B.pc`) but the
+  student never re-clicks it. This generalizes cleanly to **future Roman-numeral
+  harmonization**: omit `lockedVoices.B`, and the student must click the bass
+  (it counts toward `voiceCountPolicy.max`), with the bass graded through a
+  different target contract (e.g. `requiredBassPc`, `bassChoices`, or
+  "lowest note must be the inversion bass") rather than `lockedVoices.B`. A
+  pc-only locked voice (no `.midi`) is a *constraint* the student satisfies by
+  clicking, so it does not reduce slots and is not merged.
 
 **Commit — snapshot-then-grade (fixes the release-grace/settle race).**
 The existing MIDI path relies on a ~150ms settle timer
