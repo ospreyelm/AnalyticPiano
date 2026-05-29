@@ -156,6 +156,16 @@ define([
       });
     },
 
+    _resolveAny: function (e) {
+      var layout = this._layout();
+      if (!layout) return null;
+      return ClickNoteLogic.resolveClick(this._eventPoint(e), layout, {
+        key: this._key(),
+        palette: this.palette
+        // no activeColumnOnset -> resolves to whatever column the pixel lands in
+      });
+    },
+
     _onCanvasMove: function (e) {
       if (!this.enabled) return;
       var resolved = this._resolve(e);
@@ -178,7 +188,14 @@ define([
     _onCanvasClick: function (e) {
       if (!this.enabled) return;
       var resolved = this._resolve(e);
-      if (!resolved) return;
+      if (!resolved) {
+        // A valid-but-inactive column resolves only when the onset gate is removed.
+        var any = this._resolveAny(e);
+        if (any && any.column && any.column.onset !== this._activeTargetOnset() && this.feedback) {
+          this.feedback.emit("harmonization.click.outside_column", { context: this._feedbackContext() });
+        }
+        return;
+      }
       this._activeColumn = resolved.column;
 
       var existing = -1;
