@@ -1270,6 +1270,22 @@ git commit -m "docs(feedback): register system error ids (phase 4)"
 
 ---
 
+## Future nice-to-haves (not scoped)
+
+Low-priority polish, captured so it isn't lost. None blocks any phase.
+
+- **Dim/disable the Live (MIDI) toggle when WebMIDI is unavailable.** In Safari/Firefox/iOS
+  or with no device, the Live button still shows fully enabled. Not a bug — mode is always
+  overridable by design (spec §"Source mode") and the student can switch — but dimming it
+  (still clickable) would signal that Click is the recommended path. Driven by the existing
+  `EVENTS.BROADCAST.MIDI_INPUTS_CHANGED` / `{inputCount}` signal.
+- **`aria-live` mirror for anchored bubbles** so cat. 2/5 grade messages reach assistive
+  tech (spec open question #3).
+- **First-occurrence-only hint variants** for soft constraints (e.g. show the
+  outside-column text once, silent thereafter) — currently `surface: "none"` logs silently.
+
+---
+
 ## Self-review notes (for the implementer)
 
 - **Verified facts (do not "fix" these):** `ExerciseDefinition.exercise` is a PROPERTY (parsed object), not a method — access `definition.exercise`, never `definition.exercise()`. The exercise id field is `exerciseId` (fall back to `id`/`exercise_id`). The Done button is a local `doneBtn` with class `click-note-done` (no id) — Task 7 stores `this._doneButton`. Outside-column rejection is swallowed inside `pickColumn`/`resolveClick` (returns null) — Task 8 re-resolves without the onset gate to detect it. The cap hint reuses `_capHintEl`, so Task 6 emits at the top of `_showCapHint`, not in the creation branch.
