@@ -171,16 +171,24 @@ define([
      */
     onWebMIDIInit: function (MIDIAccess) {
       this.setMIDIAccess(MIDIAccess);
+      var self = this;
       this.midiDevice.setUpdater(function () {
         var inputs = Array.from(MIDIAccess.inputs.values());
         var outputs = Array.from(MIDIAccess.outputs.values());
         this.clear();
         this.setSources(inputs, outputs);
         this.selectDefaults(inputs);
+        self.broadcast(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, {
+          inputCount: inputs.length,
+        });
       });
       this.updateDevices();
       this.initListeners();
-      if (Array.from(MIDIAccess.inputs.values()).length === 0) {
+      var inputCount = Array.from(MIDIAccess.inputs.values()).length;
+      this.broadcast(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, {
+        inputCount: inputCount,
+      });
+      if (inputCount === 0) {
         this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
           type: "warning",
           title: Config.get("errorText.midiUnavailable.title"),
@@ -199,6 +207,7 @@ define([
         title: Config.get("errorText.midiUnavailable.title"),
         description: Config.get("errorText.midiUnavailable.description"),
       });
+      this.broadcast(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, { inputCount: 0 });
       this.initListeners();
     },
     /**
