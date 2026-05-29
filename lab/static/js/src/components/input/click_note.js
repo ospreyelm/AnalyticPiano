@@ -11,6 +11,7 @@ define([
     this.exerciseContext = this.settings.exerciseContext || null;
     this.keySignature = this.settings.keySignature || null;
     this.midiDevice = this.settings.midiDevice || null;
+    this.feedback = this.settings.feedback || null;
 
     this.enabled = false;
     this.palette = "diatonic";
@@ -209,8 +210,29 @@ define([
       if (this.sheet) this.sheet.render();
     },
 
+    _feedbackContext: function () {
+      var ec = this.exerciseContext;
+      // ExerciseDefinition.exercise is a PROPERTY (parsed object), not a method.
+      if (!ec || !ec.definition || !ec.definition.exercise) return null;
+      var ex = ec.definition.exercise;
+      if (!ex) return null;
+      var tags = ex.skill_tags || [], unit = null;
+      for (var i = 0; i < tags.length; i++) {
+        var m = /^unit:(\d+)$/.exec(tags[i]);
+        if (m) { unit = parseInt(m[1], 10); break; }
+      }
+      return { exerciseId: ex.exerciseId || ex.id || ex.exercise_id || null, unit: unit,
+        complexity: typeof ex.complexity_score === "number" ? ex.complexity_score : null, skillTags: tags };
+    },
+
     _showCapHint: function () {
       if (!this._paletteWrap) return;
+      var capEntry = this.feedback
+        ? this.feedback.emit("harmonization.click.note_cap", { surface: "none", context: this._feedbackContext() })
+        : null;
+      var capTitle = capEntry ? capEntry.title : "Chord is full.";
+      var capBody = capEntry ? capEntry.body : "Remove a note to add another.";
+
       var self = this;
       window.clearTimeout(this._capHintTimer);
       this._paletteWrap.removeClass("click-note-cap-shake");
@@ -220,7 +242,7 @@ define([
       if (!this._capHintEl) {
         this._capHintEl = $(
           '<div class="click-note-cap-hint" role="status" aria-live="polite">' +
-          '<strong>Chord is full.</strong><span>Remove a note to add another.</span>' +
+          '<strong>' + capTitle + '</strong><span>' + capBody + '</span>' +
           '</div>'
         );
         this._paletteWrap.append(this._capHintEl);

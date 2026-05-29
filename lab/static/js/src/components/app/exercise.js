@@ -394,6 +394,7 @@ define([
           exerciseContext: this.models.exerciseContext,
           keySignature: this.models.keySignature,
           midiDevice: this.models.midiDevice,
+          feedback: this.models.feedback,
         });
         c.init(this);
         c.renderTo("#staff-area");
