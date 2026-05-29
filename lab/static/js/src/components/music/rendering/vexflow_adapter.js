@@ -902,7 +902,7 @@ define([
     return voice;
   }
 
-  function buildHarmonizationOverlayVoice(entriesInMeasure, measureTotalTicks, voiceTime, keySigAlters) {
+  function buildHarmonizationOverlayVoice(entriesInMeasure, measureTotalTicks, voiceTime, keySigAlters, colorOverride) {
     if (!entriesInMeasure || !entriesInMeasure.length || !HarmonizationRealizationLogic) return null;
     var sorted = entriesInMeasure.slice().sort(function (a, b) { return a.onset - b.onset; });
     var tickables = [];
@@ -974,7 +974,8 @@ define([
           note.addModifier(new Vex.Flow.Accidental(accType), ki2);
         }
       }
-      if (note.setStyle) note.setStyle({ fillStyle: "#000000", strokeStyle: "#000000" });
+      var overlayColor = colorOverride || "#000000";
+      if (note.setStyle) note.setStyle({ fillStyle: overlayColor, strokeStyle: overlayColor });
       note._isHarmonizationOverlay = true;
       tickables.push(note);
       cursor = entry.onset + headChunk.ticks;
@@ -1087,6 +1088,7 @@ define([
       var isAnalysisMatch = !!(opts && opts.isAnalysisMatch);
       var harmonizationTargets = (opts && opts.harmonizationTargets) || null;
       var harmonizationRealization = (opts && opts.harmonizationRealization) || null;
+      var harmonizationPending = (opts && opts.harmonizationPending) || null;
       // Build offset-keyed lookup so columns match targets by musical position,
       // not by coincidental array index.
       var harmonizationTargetByOffset = null;
@@ -1447,6 +1449,12 @@ define([
       var lastTrebleStave = null;
       var lastBassStave = null;
       var pendingRomanExpRun = null;
+      var staffLayoutColumns = [];
+      var staffLayoutStaves = [];
+      var layoutSystemYTop = Infinity;
+      var layoutSystemYBottom = -Infinity;
+      var layoutSystemXLeft = Infinity;
+      var layoutSystemXRight = -Infinity;
 
       function flushRomanExpRun() {
         if (!pendingRomanExpRun || !pendingRomanExpRun.columns.length) {
@@ -1512,6 +1520,35 @@ define([
         var bassStave = showBass ? makeStave(ctx, currentX, bassY, measureWidth, "bass", isFirstMeasure ? meta : {}, isFirstMeasure) : null;
         var activeStaveForLabel = bassStave || trebleStave;
 
+        if (opts && typeof opts.onStaffLayout === "function") {
+          function recordStave(stave, clef, topStep, topOctave) {
+            if (!stave) return;
+            var topLineY = stave.getYForLine ? stave.getYForLine(0) : stave.getY();
+            var bottomLineY = stave.getYForLine ? stave.getYForLine(4) : stave.getBottomY();
+            var lineSpacing = stave.getYForLine ? (stave.getYForLine(1) - stave.getYForLine(0)) : 10;
+            var sx = stave.getX();
+            var sw = stave.getWidth ? stave.getWidth() : measureWidth;
+            if (!staffLayoutStaves.some(function (s) { return s.clef === clef; })) {
+              staffLayoutStaves.push({
+                clef: clef,
+                topLineY: topLineY,
+                bottomLineY: bottomLineY,
+                lineSpacing: lineSpacing,
+                topLineStep: topStep,
+                topLineOctave: topOctave,
+              });
+            }
+            var top = topLineY - 6 * lineSpacing;
+            var bot = bottomLineY + 6 * lineSpacing;
+            if (top < layoutSystemYTop) layoutSystemYTop = top;
+            if (bot > layoutSystemYBottom) layoutSystemYBottom = bot;
+            if (sx < layoutSystemXLeft) layoutSystemXLeft = sx;
+            if (sx + sw > layoutSystemXRight) layoutSystemXRight = sx + sw;
+          }
+          recordStave(trebleStave, "treble", "F", 5);
+          recordStave(bassStave, "bass", "A", 3);
+        }
+
         // Draw explicit key label beneath the bass clef (e.g., "A minor", "C major")
         function formatKeyForDisplay(k) {
           if (!k || typeof k !== "string" || k.length < 2) return k;
@@ -1571,6 +1608,24 @@ define([
                 absoluteMeasureIndex,
                 "- skipping overlay for this measure"
               );
+            }
+          }
+        }
+
+        if (harmonizationPending && harmonizationPending.length) {
+          var pendingInMeasure = harmonizationPending.filter(function (e) {
+            return e.measureIndex === absoluteMeasureIndex;
+          });
+          if (pendingInMeasure.length) {
+            var pendingOverlay = buildHarmonizationOverlayVoice(
+              pendingInMeasure,
+              measureDurations[measIdx] || fullMeasureTicks,
+              time,
+              keySignatureAlterations,
+              "#5b8def"
+            );
+            if (pendingOverlay) {
+              trebleVoices.push(pendingOverlay);
             }
           }
         }
@@ -1800,6 +1855,16 @@ define([
 
               var activeStaveForAnnotations = bassStave || trebleStave;
               var columnCenterX = getColumnCenterX(col);
+              if (opts && typeof opts.onStaffLayout === "function" && columnCenterX !== null) {
+                staffLayoutColumns.push({
+                  systemIndex: 0,
+                  onset: noteOnset,
+                  measureIndex: noteMeasure,
+                  measureX: (trebleStave || bassStave) ? (trebleStave || bassStave).getX() : null,
+                  measureWidth: measureWidth,
+                  centerX: columnCenterX,
+                });
+              }
               if (opts && typeof opts.onWindowPosition === "function" && typeof matchedIndex === "number" && columnCenterX !== null && activeStaveForAnnotations) {
                 opts.onWindowPosition({
                   windowIndex: absoluteWindowOffset + matchedIndex,
@@ -1930,6 +1995,38 @@ define([
         // Move X position for next measure
         currentX += measureWidth;
         cumulativeMeasureTick += measureDurations[measIdx] || 0;
+      }
+
+      if (opts && typeof opts.onStaffLayout === "function" && staffLayoutStaves.length) {
+        var sysX = layoutSystemXLeft;
+        var sysRight = layoutSystemXRight;
+        staffLayoutStaves.forEach(function (s) {
+          s.x = sysX;
+          s.width = sysRight - sysX;
+        });
+
+        staffLayoutColumns.sort(function (a, b) { return a.centerX - b.centerX; });
+        staffLayoutColumns.forEach(function (c, i) {
+          var prev = staffLayoutColumns[i - 1];
+          var next = staffLayoutColumns[i + 1];
+          var left = prev ? (prev.centerX + c.centerX) / 2 : sysX;
+          var right = next ? (c.centerX + next.centerX) / 2 : sysRight;
+          left = Math.max(left, sysX);
+          right = Math.min(right, sysRight);
+          c.rect = { x: left, width: Math.max(0, right - left) };
+        });
+
+        opts.onStaffLayout({
+          systems: [{
+            systemIndex: 0,
+            yTop: layoutSystemYTop,
+            yBottom: layoutSystemYBottom,
+            xLeft: sysX,
+            xRight: sysRight,
+            staves: staffLayoutStaves,
+          }],
+          columns: staffLayoutColumns,
+        });
       }
 
       flushRomanExpRun();
