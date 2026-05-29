@@ -112,6 +112,7 @@ define([
     this.acceptedHarmonizationSonorities = [];
     this.harmonizationVLScore = null;
     this.harmonizationTier = null;
+    this._harmonizationActiveMidiOverride = null;
 
     _.bindAll(this, ["grade", "triggerTimer", "validateGradingAlignment"]);
 
@@ -195,6 +196,37 @@ define([
         return null;
       }
     },
+    computeHarmonizationGraded: function (activeMidi) {
+      var targets = this.definition.getHarmonizationTargets
+        ? this.definition.getHarmonizationTargets() : [];
+      var ptr = this._harmonizationPointer;
+      if (!activeMidi || !activeMidi.length) {
+        return {
+          result: this.grader.STATE.PARTIAL,
+          score: 1,
+          activeIndex: ptr,
+          problems: [],
+        };
+      }
+      var matchResult = HarmonizationGraderLogic.harmonizationMatch(targets[ptr] || {}, activeMidi);
+      if (matchResult.state === "correct") {
+        this.acceptedHarmonizationSonorities.push({
+          midi: activeMidi.slice(),
+          targetIndex: ptr,
+          ts: Date.now(),
+        });
+        this._harmonizationPointer = ptr + 1;
+      }
+      var allDone = this._harmonizationPointer >= targets.length && targets.length > 0;
+      return {
+        result: allDone ? this.grader.STATE.CORRECT
+          : (matchResult.state === "incorrect" ? this.grader.STATE.INCORRECT : this.grader.STATE.PARTIAL),
+        score: allDone ? 0 : (matchResult.state === "incorrect" ? 2 : 1),
+        activeIndex: this._harmonizationPointer,
+        problems: [matchResult],
+      };
+    },
+
     /**
      * Runs the grading process for the given exercise definition
      * and input chords.
@@ -222,37 +254,14 @@ define([
         this.submitIdentPage({ fromGrade: true });
         return;
       } else if (isHarmonizationExercise) {
-        var tracker = this._harmonizationHeldTracker;
-        var activeMidi = tracker ? tracker.activeMidi(Date.now()) : [];
-        var targets = this.definition.getHarmonizationTargets ? this.definition.getHarmonizationTargets() : [];
-        var ptr = this._harmonizationPointer;
-        // Don't evaluate an empty sonority — it just means all notes were released.
-        // Treat as partial (waiting) rather than incorrect.
-        if (!activeMidi.length) {
-          graded = {
-            result: this.grader.STATE.PARTIAL,
-            score: 1,
-            activeIndex: ptr,
-            problems: [],
-          };
+        var activeMidi;
+        if (this._harmonizationActiveMidiOverride != null) {
+          activeMidi = this._harmonizationActiveMidiOverride;
         } else {
-        var matchResult = HarmonizationGraderLogic.harmonizationMatch(targets[ptr] || {}, activeMidi);
-        if (matchResult.state === "correct") {
-          this.acceptedHarmonizationSonorities.push({
-            midi: activeMidi.slice(),
-            targetIndex: ptr,
-            ts: Date.now(),
-          });
-          this._harmonizationPointer = ptr + 1;
+          var tracker = this._harmonizationHeldTracker;
+          activeMidi = tracker ? tracker.activeMidi(Date.now()) : [];
         }
-        var allDone = this._harmonizationPointer >= targets.length && targets.length > 0;
-        graded = {
-          result: allDone ? this.grader.STATE.CORRECT : (matchResult.state === "incorrect" ? this.grader.STATE.INCORRECT : this.grader.STATE.PARTIAL),
-          score: allDone ? 0 : (matchResult.state === "incorrect" ? 2 : 1),
-          activeIndex: this._harmonizationPointer,
-          problems: [matchResult],
-        };
-        } // end else (activeMidi non-empty)
+        graded = this.computeHarmonizationGraded(activeMidi);
       } else {
         graded = this.grader.grade(this.definition, this.inputChords);
       }
@@ -345,6 +354,14 @@ define([
       }
 
       this.trigger("graded");
+    },
+    gradeHarmonizationMidiSet: function (activeMidi) {
+      this._harmonizationActiveMidiOverride = activeMidi || [];
+      try {
+        this.grade();
+      } finally {
+        this._harmonizationActiveMidiOverride = null;
+      }
     },
     /**
      * Debugging helper to ensure played MIDI notes match the UMTO grading targets.
