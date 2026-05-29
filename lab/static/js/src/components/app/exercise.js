@@ -214,6 +214,7 @@ define([
       exerciseMode === "analysis_match" ||
       exerciseMode === "analysis" ||
       !!(definition.isIdentification && definition.isIdentification());
+    console.log("[SOURCE-TOGGLE-GATE] mode=", exerciseMode, "type=", definition.type, "isIdentification=", (definition.isIdentification && definition.isIdentification()), "isAnalysisExercise=", isAnalysisExercise);
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });
