@@ -94,6 +94,12 @@ define([
       throw new Error("Missing parameter property: .timeSignature");
     }
 
+    this._inputSourceMode = "live";
+    this._staffLayout = null;
+    this._clickNoteComponent = null;
+    this._ghost = null;
+    this._ghostCanvasEl = null;
+
     _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onSubmitIdentification", "onToggleMode", "_onIdentKeyDown"]);
   };
 
@@ -1396,6 +1402,7 @@ define([
       if (this._isIdentificationLikeExercise()) {
         this.renderExerciseText();
       }
+      this.clearGhostNote();
 
       // Playback controls — only for chorale exercise types (idempotent)
       var definition = this.exerciseContext.getDefinition();
@@ -1417,6 +1424,97 @@ define([
       }
 
       return this;
+    },
+
+    _buildHarmonizationPending: function () {
+      var clickComp = this._clickNoteComponent;
+      if (!clickComp || typeof clickComp.getPending !== "function") return null;
+      var pending = clickComp.getPending();
+      if (!pending || !pending.length) return null;
+      var col = clickComp.getActiveColumn ? clickComp.getActiveColumn() : null;
+      pending = pending.slice().sort(function (a, b) { return a.midi - b.midi; });
+      return [{
+        measureIndex: col ? col.measureIndex : 0,
+        onset: col ? col.onset : 0,
+        durationTicks: 1024,
+        midiNotes: pending.map(function (n) { return n.midi; }),
+        spellings: pending.map(function (n) {
+          return { step: n.step, alter: n.alter, octave: n.octave };
+        }),
+      }];
+    },
+
+    setClickNoteComponent: function (comp) {
+      this._clickNoteComponent = comp;
+    },
+
+    getStaffLayout: function () {
+      return this._staffLayout || null;
+    },
+
+    setInputSourceMode: function (mode) {
+      this._inputSourceMode = mode;
+    },
+
+    _ghostCanvas: function () {
+      var base = this.el && this.el[0] ? this.el[0] : null;
+      if (!base) return null;
+      var overlay = this._ghostCanvasEl;
+      if (!overlay) {
+        overlay = document.createElement("canvas");
+        overlay.className = "js-ghost-overlay";
+        overlay.style.position = "absolute";
+        overlay.style.pointerEvents = "none";
+        overlay.style.left = base.offsetLeft + "px";
+        overlay.style.top = base.offsetTop + "px";
+        if (base.parentNode) {
+          var ps = window.getComputedStyle(base.parentNode);
+          if (ps.position === "static") base.parentNode.style.position = "relative";
+          base.parentNode.appendChild(overlay);
+        }
+        this._ghostCanvasEl = overlay;
+      }
+      if (overlay.width !== base.width) overlay.width = base.width;
+      if (overlay.height !== base.height) overlay.height = base.height;
+      overlay.style.width = base.style.width || (base.width + "px");
+      overlay.style.height = base.style.height || (base.height + "px");
+      overlay.style.left = base.offsetLeft + "px";
+      overlay.style.top = base.offsetTop + "px";
+      return overlay;
+    },
+
+    drawGhostNote: function (resolved) {
+      this._ghost = resolved || null;
+      var overlay = this._ghostCanvas();
+      if (!overlay) return;
+      var c2d = overlay.getContext("2d");
+      if (!c2d) return;
+      c2d.clearRect(0, 0, overlay.width, overlay.height);
+      if (this._ghost && this._staffLayout) this._drawGhostGlyph(c2d, this._ghost);
+    },
+
+    clearGhostNote: function () {
+      this._ghost = null;
+      if (!this._ghostCanvasEl) return;
+      var c2d = this._ghostCanvasEl.getContext("2d");
+      if (c2d) c2d.clearRect(0, 0, this._ghostCanvasEl.width, this._ghostCanvasEl.height);
+    },
+
+    _drawGhostGlyph: function (c2d, ghost) {
+      if (!c2d || !this._staffLayout || !ghost || !ghost.column) return;
+      var sys = (this._staffLayout.systems || [])[ghost.column.systemIndex]
+        || (this._staffLayout.systems || [])[0];
+      if (!sys) return;
+      var stave = (sys.staves || []).filter(function (s) { return s.clef === ghost.staveClef; })[0]
+        || sys.staves[0];
+      if (!stave) return;
+      var y = stave.topLineY + ghost.stepsFromTop * (stave.lineSpacing / 2);
+      c2d.save();
+      c2d.fillStyle = "#b0b8c4";
+      c2d.beginPath();
+      c2d.ellipse(ghost.column.centerX, y, 6, 4.5, 0, 0, 2 * Math.PI);
+      c2d.fill();
+      c2d.restore();
     },
     
     _renderDebugOverlay: function () {
@@ -1893,11 +1991,13 @@ define([
             isHarmonization: isHarmonization,
             harmonizationTargets: isHarmonization ? (definition.getHarmonizationTargets ? definition.getHarmonizationTargets() : []) : null,
             harmonizationRealization: isHarmonization ? harmonizationRealizationPayload : null,
+            harmonizationPending: isHarmonization ? self._buildHarmonizationPending() : null,
             lockedVoices: isHarmonization && definition.exercise && definition.exercise.score && definition.exercise.score.umto
               ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
               : null,
             selectVoices: harmonizationSelectVoices,
             analysisType: definition.getAnalysisType ? definition.getAnalysisType() : null,
+            onStaffLayout: function (layout) { self._staffLayout = layout; },
             onWindowPosition: function (slot) {
               if (!slot || typeof slot.windowIndex !== "number") {
                 return;
@@ -2619,7 +2719,9 @@ define([
       }
 
       if (isHarmonization) {
-        console.log("[HARM-DEBUG] onMidiNote harmonization branch. state:", state, "note:", noteNum);
+        if (this._inputSourceMode === "click") {
+          return;
+        }
         var ctx = this.exerciseContext;
         var tracker = ctx._harmonizationHeldTracker;
         if (tracker) {
