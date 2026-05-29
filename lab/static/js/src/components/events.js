@@ -29,6 +29,8 @@ define({
     NEXTEXERCISE: "nextexercise",
     FIRSTEXERCISE: "firstexercise",
     INPUT_MODE: "inputmode",
+    INPUT_SOURCE_MODE: "inputsourcemode",
+    MIDI_INPUTS_CHANGED: "midiinputschanged",
     LABEL_SELECTED: "labelselected",
   },
 });
