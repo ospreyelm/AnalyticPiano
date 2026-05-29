@@ -83,4 +83,22 @@ testGetBassLabelAtOffsetToleratesSmallDrift();
 testGetBassLabelAtOffsetReturnsNullForEmptyLabel();
 testGetBassLabelAtOffsetReturnsNullForNoMatch();
 
+function testNormalizeKeyForVexFlow() {
+  assert.strictEqual(Logic.normalizeKeyForVexFlow("iG_"), "Gm");
+  assert.strictEqual(Logic.normalizeKeyForVexFlow("jG_"), "G");
+  assert.strictEqual(Logic.normalizeKeyForVexFlow("g"), "Gm");
+  assert.strictEqual(Logic.normalizeKeyForVexFlow(""), "C");
+}
+
+function testGetKeySignatureAlterations() {
+  assert.deepStrictEqual(Logic.getKeySignatureAlterations("jC_"), {});
+  assert.deepStrictEqual(Logic.getKeySignatureAlterations("jG_"), { F: 1 });
+  assert.deepStrictEqual(Logic.getKeySignatureAlterations("jF_"), { B: -1 });
+  assert.deepStrictEqual(Logic.getKeySignatureAlterations("jD_"), { F: 1, C: 1 });
+  assert.deepStrictEqual(Logic.getKeySignatureAlterations("iA_"), {});
+}
+
+testNormalizeKeyForVexFlow();
+testGetKeySignatureAlterations();
+
 console.log("vexflow_adapter_logic tests passed");

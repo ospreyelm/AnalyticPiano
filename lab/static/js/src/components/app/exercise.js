@@ -10,9 +10,11 @@ define([
   "app/components/music/exercise_sheet",
   "app/components/music/symbolic_question_sheet",
   "app/components/midi",
-  // 'app/components/notifications',
+  "app/components/notifications",
   "app/components/input/shortcuts",
   "app/components/input/note_name",
+  "app/components/input/click_note",
+  "app/components/input/click_note_logic",
   "app/components/input/computer_keyboard_ux_logic",
   "app/components/ui/main_menu",
   "app/components/ui/music_controls",
@@ -37,9 +39,11 @@ define([
   ExerciseSheetComponent,
   SymbolicQuestionSheet,
   MidiComponent,
-  // NotificationsComponent,
+  NotificationsComponent,
   KeyboardShortcutsComponent,
   NoteNameInputComponent,
+  ClickNoteInputComponent,
+  ClickNoteLogic,
   ComputerKeyboardUxLogic,
   MainMenuComponent,
   MusicControlsComponent,
@@ -195,12 +199,12 @@ define([
     var isSymbolicMeterExercise = definition.type === "umto_symbolic_meter";
     var isKeySignatureExercise = definition.type === "umto_key_signature";
     var methods = [
-      // function () {
-      //  var c = new NotificationsComponent();
-      //  c.init(this);
-      //  c.renderTo("#notifications", "#notificationAlerts");
-      //  this.addComponent(c);
-      // },
+      function () {
+        var c = new NotificationsComponent({ defaultHidden: false });
+        c.init(this);
+        c.renderTo("#notifications", "#notificationAlerts");
+        this.addComponent(c);
+      },
       function () {
         if (isSymbolicMeterExercise || isKeySignatureExercise) {
           return;
@@ -343,13 +347,15 @@ define([
           return;
         }
 
+        var exerciseSheet = new ExerciseSheetComponent({
+          exerciseContext: this.models.exerciseContext,
+          keySignature: this.models.keySignature,
+          midiDevice: this.models.midiDevice,
+        });
+        this.models.exerciseSheet = exerciseSheet;
         var c = new MusicComponent({
           el: $("#staff-area"),
-          sheet: new ExerciseSheetComponent({
-            exerciseContext: this.models.exerciseContext,
-            keySignature: this.models.keySignature,
-            midiDevice: this.models.midiDevice,
-          }),
+          sheet: exerciseSheet,
           analysisSettings: definition.getAnalysisSettings(),
           staffDistribution: definition.getStaffDistribution(),
           highlightSettings: definition.getHighlightSettings(),
@@ -361,6 +367,97 @@ define([
           );
         c.render(exercise_midi_nums); // send midi nums from exercise chords ahead for the purposes of contextual Roman numeral analysis
         this.addComponent(c);
+      },
+      function () {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
+          return;
+        }
+        if (!this.models.exerciseSheet) {
+          return;
+        }
+        var c = new ClickNoteInputComponent({
+          sheet: this.models.exerciseSheet,
+          exerciseContext: this.models.exerciseContext,
+          keySignature: this.models.keySignature,
+          midiDevice: this.models.midiDevice,
+        });
+        c.init(this);
+        c.renderTo("#staff-area");
+        this.addComponent(c);
+      },
+      function () {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
+          return;
+        }
+        if (!this.models.exerciseSheet) {
+          return;
+        }
+        var SOURCE_MODE_KEY = "harmonylab.inputSourceMode";
+        var self = this;
+        var manualChoice = false;
+        var $wrap = $('<div class="input-source-mode-toggle" aria-label="Input source"></div>');
+        var $live = $('<button type="button" class="input-mode-btn" title="Use MIDI or computer keyboard input">MIDI</button>');
+        var $click = $('<button type="button" class="input-mode-btn" title="Click notes onto the staff, then press Done">Click</button>');
+        $wrap.append($live).append($click);
+        var $next = $("#staff-toolbar .js-btn-nextexercise").first();
+        if ($next.length) {
+          $wrap.insertBefore($next);
+        } else {
+          $("#piano").prepend($wrap);
+        }
+
+        function readStoredMode() {
+          try {
+            return window.localStorage.getItem(SOURCE_MODE_KEY);
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function persistMode(mode) {
+          try {
+            window.localStorage.setItem(SOURCE_MODE_KEY, mode);
+          } catch (e) {}
+        }
+
+        function syncButtons(mode) {
+          $live
+            .toggleClass("input-mode-btn-active", mode === "live")
+            .toggleClass("input-mode-btn-inactive", mode !== "live");
+          $click
+            .toggleClass("input-mode-btn-active", mode === "click")
+            .toggleClass("input-mode-btn-inactive", mode !== "click");
+        }
+
+        function applySourceMode(mode) {
+          self.broadcast(EVENTS.BROADCAST.INPUT_SOURCE_MODE, mode);
+          var sheet = self.models && self.models.exerciseSheet;
+          if (sheet && sheet.setInputSourceMode) sheet.setInputSourceMode(mode);
+          syncButtons(mode);
+        }
+
+        self._setInputSourceMode = function (mode) {
+          manualChoice = true;
+          persistMode(mode);
+          applySourceMode(mode);
+        };
+
+        $live.on("click", function (e) {
+          e.preventDefault();
+          self._setInputSourceMode("live");
+        });
+        $click.on("click", function (e) {
+          e.preventDefault();
+          self._setInputSourceMode("click");
+        });
+
+        applySourceMode(ClickNoteLogic.defaultSourceMode(0, readStoredMode()));
+        self.subscribe(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, function (payload) {
+          if (manualChoice || readStoredMode()) return;
+          applySourceMode(
+            ClickNoteLogic.defaultSourceMode((payload && payload.inputCount) || 0, null)
+          );
+        });
       },
     ];
     return methods;

@@ -145,6 +145,7 @@ define([
      * @return undefined
      */
     initComponent: function () {
+      console.log("[DEBUG] MidiComponent initComponent called");
       if (!("chords" in this.settings)) {
         throw new Error("missing settings.chords");
       }
@@ -170,15 +171,30 @@ define([
      */
     onWebMIDIInit: function (MIDIAccess) {
       this.setMIDIAccess(MIDIAccess);
+      var self = this;
       this.midiDevice.setUpdater(function () {
         var inputs = Array.from(MIDIAccess.inputs.values());
         var outputs = Array.from(MIDIAccess.outputs.values());
         this.clear();
         this.setSources(inputs, outputs);
         this.selectDefaults(inputs);
+        self.broadcast(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, {
+          inputCount: inputs.length,
+        });
       });
       this.updateDevices();
       this.initListeners();
+      var inputCount = Array.from(MIDIAccess.inputs.values()).length;
+      this.broadcast(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, {
+        inputCount: inputCount,
+      });
+      if (inputCount === 0) {
+        this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
+          type: "warning",
+          title: Config.get("errorText.midiUnavailable.title"),
+          description: Config.get("errorText.midiUnavailable.description"),
+        });
+      }
     },
     /**
      * Called when WebMIDI encounters an error while it is initializing itself.
@@ -187,10 +203,11 @@ define([
      */
     onWebMIDIError: function () {
       this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
-        type: "error",
-        title: MIDI_ERROR_TITLE,
-        description: MIDI_ERROR_CONTENT,
+        type: "warning",
+        title: Config.get("errorText.midiUnavailable.title"),
+        description: Config.get("errorText.midiUnavailable.description"),
       });
+      this.broadcast(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, { inputCount: 0 });
       this.initListeners();
     },
     /**

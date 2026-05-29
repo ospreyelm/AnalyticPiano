@@ -582,7 +582,7 @@ fieldset.settings-notation {
 
 /*--------------------------------------------------*/
 /* Notifications Styles */
-/*.notificationAlerts {
+.notificationAlerts {
     color: white;
     background-color: black;
     padding: 3px 6px;
@@ -618,6 +618,9 @@ fieldset.settings-notation {
 .notification.info .title {
     color: blue;
 }
+.notification.warning .title {
+    color: #d97706;
+}
 .notification a {
     color: #3366BB;
 }
@@ -633,7 +636,7 @@ fieldset.settings-notation {
 .notification .details {
     display: block;
     margin-top: 0.5rem;
-}*/
+}
 
 /*--------------------------------------------------*/
 /* Instruction Panel Styles */
