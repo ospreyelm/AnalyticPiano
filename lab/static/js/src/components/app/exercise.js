@@ -214,7 +214,19 @@ define([
       exerciseMode === "analysis_match" ||
       exerciseMode === "analysis" ||
       !!(definition.isIdentification && definition.isIdentification());
-    console.log("[SOURCE-TOGGLE-GATE] mode=", exerciseMode, "type=", definition.type, "isIdentification=", (definition.isIdentification && definition.isIdentification()), "isAnalysisExercise=", isAnalysisExercise);
+    var _ex = definition.exercise || {};
+    var _umeta = (_ex.score && _ex.score.umto && _ex.score.umto.metadata) || {};
+    console.log("[SOURCE-TOGGLE-GATE]",
+      "id=", _ex.exerciseId || _ex.id,
+      "type=", definition.type,
+      "mode=", exerciseMode,
+      "analysisType=", (definition.getAnalysisType && definition.getAnalysisType()),
+      "umto.metadata.mode=", _umeta.mode,
+      "umto.metadata.interaction_mode=", _umeta.interaction_mode,
+      "isIdentification=", (definition.isIdentification && definition.isIdentification()),
+      "isChoraleIdentification=", (definition.isChoraleIdentification && definition.isChoraleIdentification()),
+      "isAnalysisExercise=", isAnalysisExercise,
+      "| metadata keys=", Object.keys(_umeta), "| exercise:", _ex);
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });
