@@ -195,11 +195,7 @@ define([
 
       var cap = this._capRemaining();
       if (this._pending.length >= cap) {
-        this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
-          type: "info",
-          title: "Maximum notes",
-          description: "This chord allows up to " + cap + " note(s).",
-        });
+        this._showCapHint();
         return;
       }
 
@@ -211,6 +207,29 @@ define([
       });
       this._audition(resolved.midi);
       if (this.sheet) this.sheet.render();
+    },
+
+    _showCapHint: function () {
+      if (!this._paletteWrap) return;
+      var self = this;
+      window.clearTimeout(this._capHintTimer);
+      this._paletteWrap.removeClass("click-note-cap-shake");
+      // Restart the animation even on repeated clicks.
+      if (this._paletteWrap[0]) void this._paletteWrap[0].offsetWidth;
+      this._paletteWrap.addClass("click-note-cap-shake");
+      if (!this._capHintEl) {
+        this._capHintEl = $(
+          '<div class="click-note-cap-hint" role="status" aria-live="polite">' +
+          '<strong>Chord is full.</strong><span>Remove a note to add another.</span>' +
+          '</div>'
+        );
+        this._paletteWrap.append(this._capHintEl);
+      }
+      this._capHintEl.addClass("is-visible");
+      this._capHintTimer = window.setTimeout(function () {
+        if (self._capHintEl) self._capHintEl.removeClass("is-visible");
+        if (self._paletteWrap) self._paletteWrap.removeClass("click-note-cap-shake");
+      }, 1800);
     },
 
     _audition: function (midi) {

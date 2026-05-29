@@ -921,6 +921,88 @@
       color: var(--text-muted);
     }
 
+    #staff-area .click-note-cap-hint,
+    #piano .click-note-cap-hint {
+      position: absolute;
+      left: 0;
+      top: calc(100% + 7px);
+      z-index: 7;
+      display: flex;
+      min-width: 178px;
+      max-width: 220px;
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 10px;
+      border: 1px solid rgba(42, 126, 148, 0.28);
+      border-radius: 8px;
+      background: rgba(255, 252, 247, 0.98);
+      box-shadow: 0 8px 20px rgba(38, 27, 17, 0.12);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height: 1.2;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-4px);
+      transition: opacity 140ms ease, transform 140ms ease;
+    }
+
+    #staff-area .click-note-cap-hint::before,
+    #piano .click-note-cap-hint::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: -6px;
+      width: 10px;
+      height: 10px;
+      border-left: 1px solid rgba(42, 126, 148, 0.28);
+      border-top: 1px solid rgba(42, 126, 148, 0.28);
+      background: rgba(255, 252, 247, 0.98);
+      transform: rotate(45deg);
+    }
+
+    #staff-area .click-note-cap-hint strong,
+    #piano .click-note-cap-hint strong {
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: var(--teal);
+    }
+
+    #staff-area .click-note-cap-hint span,
+    #piano .click-note-cap-hint span {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    #staff-area .click-note-cap-hint.is-visible,
+    #piano .click-note-cap-hint.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #staff-area .click-note-cap-shake,
+    #piano .click-note-cap-shake {
+      animation: click-note-cap-shake 210ms ease-out;
+    }
+
+    @keyframes click-note-cap-shake {
+      0%, 100% { transform: translateX(0); }
+      30% { transform: translateX(-3px); }
+      60% { transform: translateX(3px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #staff-area .click-note-cap-hint,
+      #piano .click-note-cap-hint {
+        transition: none;
+      }
+
+      #staff-area .click-note-cap-shake,
+      #piano .click-note-cap-shake {
+        animation: none;
+      }
+    }
+
     @media (max-width: 720px) {
       #staff-toolbar .input-source-mode-toggle,
       #piano .input-source-mode-toggle,
