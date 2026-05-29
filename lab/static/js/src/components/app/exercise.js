@@ -420,6 +420,8 @@ define([
         } else {
           $("#piano").prepend($wrap);
         }
+        var $modeMsg = $('<div class="feedback-inline" role="status" aria-live="polite"></div>');
+        $wrap.after($modeMsg);
 
         function readStoredMode() {
           try {
@@ -454,6 +456,12 @@ define([
         self._setInputSourceMode = function (mode) {
           manualChoice = true;
           persistMode(mode);
+          if (self.models.feedback) {
+            self.models.feedback.emit(
+              mode === "click" ? "input.mode.changed_click" : "input.mode.changed_live",
+              { inlineEl: $modeMsg }
+            );
+          }
           applySourceMode(mode);
         };
 
