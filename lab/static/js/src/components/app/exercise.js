@@ -202,6 +202,10 @@ define([
     var disableComputerKeyboardInput = !!definition.disableComputerKeyboardInput;
     var isSymbolicMeterExercise = definition.type === "umto_symbolic_meter";
     var isKeySignatureExercise = definition.type === "umto_key_signature";
+    // Analysis/identification exercises answer via mouse (? slots) or text input,
+    // not MIDI/Click note entry — so the Live/Click source toggle and the
+    // click-on-staff component do not apply.
+    var isAnalysisExercise = !!(definition.isIdentification && definition.isIdentification());
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });
@@ -384,7 +388,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise || isAnalysisExercise) {
           return;
         }
         if (!this.models.exerciseSheet) {
@@ -402,7 +406,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise || isAnalysisExercise) {
           return;
         }
         if (!this.models.exerciseSheet) {
