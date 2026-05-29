@@ -291,7 +291,15 @@ define([
       if (!this.enabled) return;
       var ctx = this.exerciseContext;
       if (!ctx || typeof ctx.gradeHarmonizationMidiSet !== "function") return;
-      if (!this._pending.length) return;
+      if (!this._pending || this._pending.length === 0) {
+        if (this.feedback) {
+          this.feedback.emit("harmonization.click.empty_commit", {
+            controlEl: this._doneButton || ".click-note-done",
+            context: this._feedbackContext()
+          });
+        }
+        return;
+      }
 
       var target = this._activeTarget() || {};
       var lockedMidi = [];
@@ -335,6 +343,7 @@ define([
         palette.append(btn);
       });
       var doneBtn = $('<button type="button" class="input-mode-btn click-note-done" title="Grade the notes you clicked">Done</button>');
+      this._doneButton = doneBtn;
       doneBtn.on("click", function (e) {
         e.preventDefault();
         self._commit();
