@@ -1433,9 +1433,14 @@ define([
       if (!pending || !pending.length) return null;
       var col = clickComp.getActiveColumn ? clickComp.getActiveColumn() : null;
       pending = pending.slice().sort(function (a, b) { return a.midi - b.midi; });
+      var measureIndex = col ? col.measureIndex : 0;
+      var measureTotalTicks = this._measureTotalTicks();
+      var onsetWithinMeasure = col && typeof col.onset === "number"
+        ? col.onset - (measureIndex * measureTotalTicks)
+        : 0;
       return [{
-        measureIndex: col ? col.measureIndex : 0,
-        onset: col ? col.onset : 0,
+        measureIndex: measureIndex,
+        onset: Math.max(0, onsetWithinMeasure),
         // Pending click notes are a placement preview, not rhythmic notation.
         // Always use the same half-note overlay path; whole-note tickables can
         // recenter visually and make the clicked note appear to move/disappear.
@@ -1445,6 +1450,17 @@ define([
           return { step: n.step, alter: n.alter, octave: n.octave };
         }),
       }];
+    },
+
+    _measureTotalTicks: function () {
+      var definition = this.exerciseContext.getDefinition();
+      var score = definition.getScore ? definition.getScore() : null;
+      var meta = (score && score.meta) || {};
+      var tsRaw = meta.time || meta.meter || meta.time_signature || "4/4";
+      var tsParts = String(tsRaw).split("/");
+      var numerator = parseInt(tsParts[0], 10) || 4;
+      var denominator = parseInt(tsParts[1], 10) || 4;
+      return numerator * (4096 / denominator);
     },
 
     setClickNoteComponent: function (comp) {
