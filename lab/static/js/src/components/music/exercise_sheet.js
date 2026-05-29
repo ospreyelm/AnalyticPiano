@@ -1436,59 +1436,15 @@ define([
       return [{
         measureIndex: col ? col.measureIndex : 0,
         onset: col ? col.onset : 0,
-        durationTicks: this._pendingHarmonizationPreviewDurationTicks(col),
+        // Pending click notes are a placement preview, not rhythmic notation.
+        // Always use the same half-note overlay path; whole-note tickables can
+        // recenter visually and make the clicked note appear to move/disappear.
+        durationTicks: 2048,
         midiNotes: pending.map(function (n) { return n.midi; }),
         spellings: pending.map(function (n) {
           return { step: n.step, alter: n.alter, octave: n.octave };
         }),
       }];
-    },
-
-    _pendingHarmonizationPreviewDurationTicks: function (col) {
-      return Math.min(2048, this._activeHarmonizationTargetDurationTicks(col));
-    },
-
-    _measureTotalTicks: function () {
-      var definition = this.exerciseContext.getDefinition();
-      var score = definition.getScore ? definition.getScore() : null;
-      var meta = (score && score.meta) || {};
-      var tsRaw = meta.time || meta.meter || meta.time_signature || "4/4";
-      var tsParts = String(tsRaw).split("/");
-      var numerator = parseInt(tsParts[0], 10) || 4;
-      var denominator = parseInt(tsParts[1], 10) || 4;
-      return numerator * (4096 / denominator);
-    },
-
-    _activeHarmonizationTargetDurationTicks: function (col) {
-      var ctx = this.exerciseContext;
-      var definition = ctx.getDefinition();
-      var targets = definition.getHarmonizationTargets ? definition.getHarmonizationTargets() : [];
-      var ptr = ctx._harmonizationPointer || 0;
-      var target = targets[ptr];
-      var measureTotal = this._measureTotalTicks();
-      if (!target || typeof target.offset !== "number") return 1024;
-
-      var absOnsetTicks = Math.round(target.offset * 1024);
-      var measureIndex = Math.floor(absOnsetTicks / measureTotal);
-      var onsetWithinMeasure = absOnsetTicks - (measureIndex * measureTotal);
-      var nextTargetOnset = null;
-
-      for (var i = 0; i < targets.length; i++) {
-        if (!targets[i] || typeof targets[i].offset !== "number") continue;
-        var nextAbsTicks = Math.round(targets[i].offset * 1024);
-        if (nextAbsTicks <= absOnsetTicks) continue;
-        var nextMeasureIndex = Math.floor(nextAbsTicks / measureTotal);
-        if (nextMeasureIndex !== measureIndex) continue;
-        var nextOnset = nextAbsTicks - (nextMeasureIndex * measureTotal);
-        if (nextTargetOnset === null || nextOnset < nextTargetOnset) {
-          nextTargetOnset = nextOnset;
-        }
-      }
-
-      var fallbackOnset = col && typeof col.onset === "number" ? col.onset : onsetWithinMeasure;
-      return nextTargetOnset !== null
-        ? Math.max(0, nextTargetOnset - fallbackOnset)
-        : Math.max(0, measureTotal - fallbackOnset);
     },
 
     setClickNoteComponent: function (comp) {
