@@ -202,31 +202,26 @@ define([
     var disableComputerKeyboardInput = !!definition.disableComputerKeyboardInput;
     var isSymbolicMeterExercise = definition.type === "umto_symbolic_meter";
     var isKeySignatureExercise = definition.type === "umto_key_signature";
-    // Analysis/identification exercises answer via mouse (? slots) or text input,
-    // not MIDI/Click note entry — so the Live/Click source toggle and the
-    // click-on-staff component do not apply. Gate on interaction MODE (type alone
-    // misses e.g. analysis_match on a harmonization/chorale type), with the
-    // type-based predicate as a fallback.
-    var exerciseMode = definition.getMode ? definition.getMode() : null;
+    // Analysis/identification exercises answer via mouse (? slots / dropdown) or
+    // text input — not MIDI/Click note entry — so the Live/Click source toggle and
+    // the click-on-staff component must not appear. Read the PARSED definition
+    // (this.models.exerciseDefinition); this.getExerciseDefinition() returns a raw
+    // config whose .exercise is empty at this point. Gate on the input mode
+    // ("dropdown"/"text" = slot answers) and the interaction mode.
+    var _def = (this.models && this.models.exerciseDefinition) || definition;
+    var _dex = (_def && _def.exercise) || {};
+    var _dmeta = (_dex.score && _dex.score.umto && _dex.score.umto.metadata) || {};
+    var _dmode = (_def.getMode && _def.getMode()) || _dex.mode || _dmeta.mode || null;
+    var _dinput = _dex.inputMode || _dex.inputModeFixed || _dmeta.input_mode || null;
     var isAnalysisExercise =
-      exerciseMode === "identification" ||
-      exerciseMode === "chorale_identification" ||
-      exerciseMode === "analysis_match" ||
-      exerciseMode === "analysis" ||
-      !!(definition.isIdentification && definition.isIdentification());
-    var _ex = definition.exercise || {};
-    var _umeta = (_ex.score && _ex.score.umto && _ex.score.umto.metadata) || {};
-    console.log("[SOURCE-TOGGLE-GATE]",
-      "id=", _ex.exerciseId || _ex.id,
-      "type=", definition.type,
-      "mode=", exerciseMode,
-      "analysisType=", (definition.getAnalysisType && definition.getAnalysisType()),
-      "umto.metadata.mode=", _umeta.mode,
-      "umto.metadata.interaction_mode=", _umeta.interaction_mode,
-      "isIdentification=", (definition.isIdentification && definition.isIdentification()),
-      "isChoraleIdentification=", (definition.isChoraleIdentification && definition.isChoraleIdentification()),
-      "isAnalysisExercise=", isAnalysisExercise,
-      "| metadata keys=", Object.keys(_umeta), "| exercise:", _ex);
+      _dinput === "dropdown" ||
+      _dinput === "text" ||
+      _dmode === "identification" ||
+      _dmode === "chorale_identification" ||
+      _dmode === "analysis_match" ||
+      _dmode === "analysis" ||
+      !!(_def.isIdentification && _def.isIdentification()) ||
+      !!(_def.isChoraleIdentification && _def.isChoraleIdentification());
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });
