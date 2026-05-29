@@ -126,13 +126,18 @@ commit → merge locked target MIDI + pending click set → grade explicit MIDI 
   each render.
 - Draws the ghost note (top layer, after adapter render, throttled).
 
-### Modified: `exercise.js` **and** `play.js`
-- Both instantiate the keyboard input components (`exercise.js:241`,
-  `play.js:92`). `ClickNoteInputComponent` is wired into **both** entrypoints,
-  gated identically to the keyboard components (skipped for symbolic-meter /
-  key-signature exercises). Not wiring `play.js` would leave click input dead in
-  half the app — both are in scope.
-- Each entrypoint owns the **source-mode** state (`live` ↔ `click`) and
+### Modified: `exercise.js` (only)
+- `ClickNoteInputComponent` is wired into the **exercise** entrypoint only,
+  beside the existing `NoteNameInputComponent` (`exercise.js:241`), gated
+  identically to the keyboard components (skipped for symbolic-meter /
+  key-signature exercises).
+- **`play.js` is out of scope.** It is the free-play sandbox: it builds
+  `PlaySheetComponent` (not `ExerciseSheetComponent`) and has no
+  `exerciseContext`/harmonization targets (`play.js:124-136`). Harmonization
+  exercises always route through `exercise.js`, so a click component in `play.js`
+  would have nothing to grade. Click-as-free-entry in play would be a separate
+  feature with its own design.
+- The exercise entrypoint owns the **source-mode** state (`live` ↔ `click`) and
   passes it to the sheet + input components so each arms/disarms and shows/hides
   its affordances accordingly (see "Source mode").
 - This source-mode state is separate from the existing
@@ -447,13 +452,21 @@ specified.
 
 ## 6. Event wiring & edge cases
 
-**Wiring (`exercise.js` and `play.js`).** Instantiate `ClickNoteInputComponent`
-beside `NoteNameInputComponent` in **both** entrypoints (`exercise.js:241`,
-`play.js:92`), gated identically. Inject the sheet so the component can read
+**Wiring (`exercise.js` only).** Instantiate `ClickNoteInputComponent` beside
+`NoteNameInputComponent` in the exercise entrypoint (`exercise.js:241`), gated
+identically. The `ExerciseSheetComponent` is currently built inline inside the
+`MusicComponent` initializer (`exercise.js:346-356`); hoist it to
+`this.models.exerciseSheet` so the click component receives the **same** sheet
+instance. Because initializers run in array order and the click component reads
+the hoisted sheet, append the click-component initializer (and then the
+source-mode bootstrap) to the **end** of the methods array, after the
+`MusicComponent` initializer. Inject the sheet so the component can read
 `_staffLayout` + pending clicked set and request the ghost draw. Mount the
-palette to `#piano`. The entrypoint owns source-mode state, defaults it from the
-structured MIDI availability signal, and arms/disarms the click component +
-palette/Done UI on toggle (see "Source mode").
+palette to `#piano`. The entrypoint owns source-mode state, applies an initial
+mode synchronously after components exist, then refines it from the structured
+MIDI availability signal, and arms/disarms the click component + palette/Done UI
+on toggle (see "Source mode"). `play.js` is out of scope (see "Modified:
+`exercise.js` (only)" under Architecture, and "Out of scope").
 
 **Events.** Harmonization click/re-click mutates only pending click state; it
 does not broadcast `BROADCAST.NOTE` while building. Chord-mode commit calls the
@@ -501,8 +514,8 @@ that gesture so it does not rely on chord-bank live-note state.
   click-build a chord, hit the cap, commit, verify grade fires on
   `lockedTargetMidi + pendingClickedMidi` and not an empty set; verify ghost
   tracks the cursor; verify columns ahead of the target are inert; verify
-  pending state clears on advance. Test from **both** `exercise.js` and
-  `play.js` entrypoints. Source mode: with no MIDI device, verify the app
+  pending state clears on advance. Test from the `exercise.js` entrypoint
+  (the only wired entrypoint). Source mode: with no MIDI device, verify the app
   defaults to Click and recommends it; with a device, defaults to Live; toggle
   both ways and confirm palette/Done show only in Click, qwerty/notename still
   works as a separate Live-mode keyboard sub-toggle, and a connected device does
@@ -529,3 +542,6 @@ that gesture so it does not rely on chord-bank live-note state.
   identification `?`-slot exercises keep their existing click flow.
 - Free-x composition with no preset onsets.
 - Touch/mobile gestures.
+- **Click input in `play.js` (free-play sandbox).** It uses `PlaySheetComponent`
+  with no `exerciseContext`/grading targets, so there is nothing to commit
+  against. Click-as-free-entry there is a distinct feature needing its own design.

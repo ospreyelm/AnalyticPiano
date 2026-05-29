@@ -655,6 +655,8 @@ The per-column annotation loop (around `vexflow_adapter.js:1820`, `groups.forEac
       var staffLayoutStaves = [];
       var layoutSystemYTop = Infinity;
       var layoutSystemYBottom = -Infinity;
+      var layoutSystemXLeft = Infinity;
+      var layoutSystemXRight = -Infinity;
 ```
 
 Inside `groups.forEach`, right after `var columnCenterX = getColumnCenterX(col);` (line 1858), push a column record (guard against null centerX):
@@ -683,11 +685,14 @@ Inside the measure loop, after both staves are created (after line 1568, `var ba
             var topLineY = stave.getYForLine ? stave.getYForLine(0) : stave.getY();
             var bottomLineY = stave.getYForLine ? stave.getYForLine(4) : stave.getBottomY();
             var lineSpacing = stave.getYForLine ? (stave.getYForLine(1) - stave.getYForLine(0)) : 10;
+            var sx = stave.getX();
+            var sw = stave.getWidth ? stave.getWidth() : measureWidth;
+            // Stave vertical geometry is identical across measures in a single
+            // system, so capture it once per clef. The horizontal extent grows
+            // measure by measure — track it on EVERY call (see x-extent below).
             if (!staffLayoutStaves.some(function (s) { return s.clef === clef; })) {
               staffLayoutStaves.push({
                 clef: clef,
-                x: stave.getX(),
-                width: stave.getWidth ? stave.getWidth() : measureWidth,
                 topLineY: topLineY,
                 bottomLineY: bottomLineY,
                 lineSpacing: lineSpacing,
@@ -699,13 +704,15 @@ Inside the measure loop, after both staves are created (after line 1568, `var ba
             var bot = bottomLineY + 6 * lineSpacing;
             if (top < layoutSystemYTop) layoutSystemYTop = top;
             if (bot > layoutSystemYBottom) layoutSystemYBottom = bot;
+            if (sx < layoutSystemXLeft) layoutSystemXLeft = sx;
+            if (sx + sw > layoutSystemXRight) layoutSystemXRight = sx + sw;
           }
           recordStave(trebleStave, "treble", "F", 5);
           recordStave(bassStave, "bass", "A", 3);
         }
 ```
 
-The `x`/`width` here are per-measure; the system-wide clickable x-range is the union, fixed up in Step 3. (Treble top line = F5, bass top line = A3 — fixed per clef.)
+Per-clef vertical geometry (`topLineY`/`lineSpacing`/top-line pitch) is captured once. The system's clickable x-range (`layoutSystemXLeft`/`Right`) is accumulated across **every** measure so later columns are not clamped to the first measure's width. (Treble top line = F5, bass top line = A3 — fixed per clef.)
 
 - [ ] **Step 3: Compute rects and fire the callback after the render loop**
 
@@ -713,8 +720,10 @@ After the measure loop closes (after `currentX += measureWidth;` at line 1987, o
 
 ```javascript
       if (opts && typeof opts.onStaffLayout === "function" && staffLayoutStaves.length) {
-        var sysX = Math.min.apply(null, staffLayoutStaves.map(function (s) { return s.x; }));
-        var sysRight = Math.max.apply(null, staffLayoutStaves.map(function (s) { return s.x + s.width; }));
+        // System x-range spans every measure, not just the first (accumulated in
+        // recordStave). Stamp it onto each stave so click_note_logic can bound hits.
+        var sysX = layoutSystemXLeft;
+        var sysRight = layoutSystemXRight;
         staffLayoutStaves.forEach(function (s) { s.x = sysX; s.width = sysRight - sysX; });
 
         staffLayoutColumns.sort(function (a, b) { return a.centerX - b.centerX; });
@@ -733,6 +742,8 @@ After the measure loop closes (after `currentX += measureWidth;` at line 1987, o
             systemIndex: 0,
             yTop: layoutSystemYTop,
             yBottom: layoutSystemYBottom,
+            xLeft: sysX,
+            xRight: sysRight,
             staves: staffLayoutStaves,
           }],
           columns: staffLayoutColumns,
@@ -873,41 +884,72 @@ Add to the `exercise_sheet` prototype:
     getStaffLayout: function () { return this._staffLayout || null; },
 ```
 
-- [ ] **Step 3: Ghost-note draw + clear**
+- [ ] **Step 3: Ghost-note draw + clear (dedicated overlay canvas)**
 
-Add ghost methods to the prototype. The ghost is a single faint notehead drawn on top after the adapter render; throttle by only redrawing when the snapped midi/column changes.
+The ghost tracks the cursor, so it must **not** trigger a full VexFlow re-render on every snapped move (the spec calls for a lightweight preview). Draw it on a separate transparent canvas layered over the sheet canvas: drawing and clearing the ghost only touch the overlay, never `render()`. Pending (committed-but-ungraded) noteheads still go through the adapter's overlay voice on `render()` — those change on click, which is infrequent.
+
+Add an overlay accessor that lazily creates/positions a sibling canvas matching the sheet canvas geometry:
 
 ```javascript
-    /** Draw a faint ghost notehead at the snapped column/pitch (top layer). */
+    _ghostCanvas: function () {
+      var base = this.el ? this.el.querySelector("canvas") : null;
+      if (!base) return null;
+      var overlay = this._ghostCanvasEl;
+      if (!overlay) {
+        overlay = document.createElement("canvas");
+        overlay.className = "js-ghost-overlay";
+        overlay.style.position = "absolute";
+        overlay.style.pointerEvents = "none";
+        overlay.style.left = base.offsetLeft + "px";
+        overlay.style.top = base.offsetTop + "px";
+        // Ensure the parent can anchor an absolutely positioned child.
+        if (base.parentNode) {
+          var ps = window.getComputedStyle(base.parentNode);
+          if (ps.position === "static") base.parentNode.style.position = "relative";
+          base.parentNode.appendChild(overlay);
+        }
+        this._ghostCanvasEl = overlay;
+      }
+      // Keep overlay sized/positioned to the (possibly re-rendered) base canvas.
+      if (overlay.width !== base.width) overlay.width = base.width;
+      if (overlay.height !== base.height) overlay.height = base.height;
+      overlay.style.width = base.style.width || (base.width + "px");
+      overlay.style.height = base.style.height || (base.height + "px");
+      overlay.style.left = base.offsetLeft + "px";
+      overlay.style.top = base.offsetTop + "px";
+      return overlay;
+    },
+
+    /** Draw a faint ghost notehead at the snapped column/pitch (overlay only). */
     drawGhostNote: function (resolved) {
       this._ghost = resolved || null;
-      this.render();
+      var overlay = this._ghostCanvas();
+      if (!overlay) return;
+      var c2d = overlay.getContext("2d");
+      if (!c2d) return;
+      c2d.clearRect(0, 0, overlay.width, overlay.height);
+      if (this._ghost && this._staffLayout) this._drawGhostGlyph(c2d, this._ghost);
     },
 
     clearGhostNote: function () {
-      if (!this._ghost) return;
       this._ghost = null;
-      this.render();
+      if (!this._ghostCanvasEl) return;
+      var c2d = this._ghostCanvasEl.getContext("2d");
+      if (c2d) c2d.clearRect(0, 0, this._ghostCanvasEl.width, this._ghostCanvasEl.height);
     },
 ```
 
-Then, at the very end of `render()` (after the adapter draws), draw the ghost on top:
+At the very end of `render()` (after the adapter draws), wipe and re-sync the overlay so a stale ghost from the prior render is removed and the overlay matches the new canvas size:
 
 ```javascript
-      if (this._ghost && this._staffLayout) {
-        this._drawGhostGlyph(this._ghost);
-      }
+      this.clearGhostNote();
 ```
 
-Add the glyph helper (uses the canvas 2D context directly — a lightweight filled ellipse at the column centerX and the pitch y, color `#b0b8c4`):
+Add the glyph helper. It receives the overlay 2D context and draws a lightweight filled ellipse at the column `centerX` and the pitch y, color `#b0b8c4`:
 
 ```javascript
-    _drawGhostGlyph: function (ghost) {
-      if (!this._staffLayout || !ghost || !ghost.column) return;
-      var canvas = this.el ? this.el.querySelector("canvas") : null;
-      if (!canvas) return;
-      var c2d = canvas.getContext("2d");
-      if (!c2d) return;
+    _drawGhostGlyph: function (c2d, ghost) {
+      if (!c2d || !this._staffLayout || !ghost || !ghost.column) return;
       var sys = (this._staffLayout.systems || [])[ghost.column.systemIndex]
         || (this._staffLayout.systems || [])[0];
       if (!sys) return;
@@ -984,13 +1026,37 @@ Change the following `if (Array.from(...).length === 0)` to reuse `inputCount` f
 
 - [ ] **Step 2: Emit on device state change**
 
-The updater closure (`this.midiDevice.setUpdater(function () {...})`, lines 174-180) runs on `onstatechange`. Inside it, after `this.selectDefaults(inputs);`, add:
+The updater closure (`this.midiDevice.setUpdater(function () {...})`, lines 174-180) runs on `onstatechange`. **It is invoked by `MidiDevice.update()` as `this._updater()` — so inside the closure `this` is the `MidiDevice`, not the midi component** (that is why the body calls `this.clear()` / `this.setSources()`, which are `MidiDevice` methods). Calling `this.broadcast(...)` there would throw. Capture the component as `self` before `setUpdater` and broadcast through it.
+
+Change the block at lines 173-180 from:
 
 ```javascript
-        this.broadcast(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, { inputCount: inputs.length });
+      this.setMIDIAccess(MIDIAccess);
+      this.midiDevice.setUpdater(function () {
+        var inputs = Array.from(MIDIAccess.inputs.values());
+        var outputs = Array.from(MIDIAccess.outputs.values());
+        this.clear();
+        this.setSources(inputs, outputs);
+        this.selectDefaults(inputs);
+      });
 ```
 
-(Confirm `this` is bound to the midi component inside the updater; if it is invoked with a different `this`, capture `var self = this;` before `setUpdater` and use `self.broadcast`.)
+to:
+
+```javascript
+      this.setMIDIAccess(MIDIAccess);
+      var self = this;
+      this.midiDevice.setUpdater(function () {
+        var inputs = Array.from(MIDIAccess.inputs.values());
+        var outputs = Array.from(MIDIAccess.outputs.values());
+        this.clear();
+        this.setSources(inputs, outputs);
+        this.selectDefaults(inputs);
+        self.broadcast(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, { inputCount: inputs.length });
+      });
+```
+
+(`this.clear()` etc. still refer to the `MidiDevice`; only the broadcast uses `self`.)
 
 - [ ] **Step 3: Emit on WebMIDI error**
 
@@ -1323,59 +1389,66 @@ git commit -m "feat: add ClickNoteInputComponent for MIDI-free staff click entry
 
 ---
 
-## Task 10: Wire the component + source mode into `exercise.js` and `play.js`
+## Task 10: Wire the component + source mode into `exercise.js`
 
-Instantiate `ClickNoteInputComponent` beside `NoteNameInputComponent` in both entrypoints, gated identically. Each entrypoint owns source-mode state: default from `MIDI_INPUTS_CHANGED`, persist per session in `localStorage`, broadcast `INPUT_SOURCE_MODE`, and inform the sheet.
+Scope: **`exercise.js` only.** `play.js` is the free-play sandbox — it builds `PlaySheetComponent` (not `ExerciseSheetComponent`) and has no `exerciseContext`/harmonization targets (verified: [play.js:124-136](../../../lab/static/js/src/components/app/play.js)). Harmonization exercises always route through `exercise.js`. Wiring a click component into `play.js` would be a no-op with nothing to grade, so it is deliberately excluded.
+
+Two ordering constraints make this non-trivial in `exercise.js`:
+
+1. **The sheet is created inline inside the `MusicComponent` initializer** ([exercise.js:346-356](../../../lab/static/js/src/components/app/exercise.js)) — it is *not* stored on `this.models`. The click component needs the **same** `ExerciseSheetComponent` instance (for layout + ghost), so we hoist it to `this.models.exerciseSheet`.
+2. **Initializers run in array order.** The click component reads `this.models.exerciseSheet`, so it must run **after** the `MusicComponent` initializer (the last element today). The source-mode bootstrap broadcasts `INPUT_SOURCE_MODE`, so it must run **after** the click component subscribes. Therefore: append the click-component initializer, then the bootstrap initializer, to the **end** of the methods array.
 
 **Files:**
 - Modify: `lab/static/js/src/components/app/exercise.js`
-- Modify: `lab/static/js/src/components/app/play.js`
 
-- [ ] **Step 1: Add the AMD dependency in both files**
+- [ ] **Step 1: Add the AMD dependency**
 
-In each entrypoint's `define([...], function(...) {` header, add the module id `"app/components/input/click_note"` and the matching `ClickNoteInputComponent` parameter, beside the existing `NoteNameInputComponent` import.
+In `exercise.js`'s `define([...], function(...) {` header, add the module ids `"app/components/input/click_note"` and `"app/components/input/click_note_logic"` with matching params `ClickNoteInputComponent` and `ClickNoteLogic`, beside the existing `NoteNameInputComponent` import.
 
-- [ ] **Step 2: Add a source-mode bootstrap helper**
+- [ ] **Step 2: Hoist the sheet onto `this.models`**
 
-In each entrypoint, add a small inline source-mode controller (same code in both — they have separate component graphs). Place near where components are created:
+In the `MusicComponent` initializer ([exercise.js:346](../../../lab/static/js/src/components/app/exercise.js)), build the sheet as a local first and store it on `this.models` so the later click initializer can reach the same instance. Replace:
 
 ```javascript
-      var SOURCE_MODE_KEY = "harmonylab.inputSourceMode";
-      var self = this;
-      var _midiInputCount = 0;
-      var _sourceMode = null;
-      function readStoredMode() {
-        try { return window.localStorage.getItem(SOURCE_MODE_KEY); } catch (e) { return null; }
-      }
-      function persistMode(m) {
-        try { window.localStorage.setItem(SOURCE_MODE_KEY, m); } catch (e) {}
-      }
-      function applySourceMode(mode) {
-        _sourceMode = mode;
-        self.broadcast(EVENTS.BROADCAST.INPUT_SOURCE_MODE, mode);
-        var sheet = self.models && self.models.exerciseSheet;
-        if (sheet && sheet.setInputSourceMode) sheet.setInputSourceMode(mode);
-      }
-      this.subscribe(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, function (payload) {
-        _midiInputCount = (payload && payload.inputCount) || 0;
-        if (_sourceMode === null) {
-          applySourceMode(ClickNoteLogic.defaultSourceMode(_midiInputCount, readStoredMode()));
-        }
-        // Mid-session change updates recommendation only; never force-switch.
-      });
+        var c = new MusicComponent({
+          el: $("#staff-area"),
+          sheet: new ExerciseSheetComponent({
+            exerciseContext: this.models.exerciseContext,
+            keySignature: this.models.keySignature,
+            midiDevice: this.models.midiDevice,
+          }),
+          analysisSettings: definition.getAnalysisSettings(),
 ```
 
-> **Implementer note:** match the file's real references for the app instance (`self`), the events module (`EVENTS`), the sheet model accessor (`self.models.exerciseSheet` or equivalent — verify the actual property name in each entrypoint), and `ClickNoteLogic` (add to the `define` header). Wire the Live/Click toggle buttons to call `persistMode(m); applySourceMode(m);` — render them in a small toolbar near `#piano` (mirror `note_name.js`'s toggle markup). On manual toggle, clear pending state (the component already clears on `INPUT_SOURCE_MODE` change via `_onSourceModeChange` → `disable`/`enable`).
+with:
 
-- [ ] **Step 3: Instantiate the component (exercise.js)**
+```javascript
+        var exerciseSheet = new ExerciseSheetComponent({
+          exerciseContext: this.models.exerciseContext,
+          keySignature: this.models.keySignature,
+          midiDevice: this.models.midiDevice,
+        });
+        this.models.exerciseSheet = exerciseSheet;
+        var c = new MusicComponent({
+          el: $("#staff-area"),
+          sheet: exerciseSheet,
+          analysisSettings: definition.getAnalysisSettings(),
+```
 
-In `exercise.js`, add a new component initializer beside the `NoteNameInputComponent` block (after line 247), gated identically:
+(The rest of the `MusicComponent` settings object and the `exercise_midi_nums` block are unchanged.)
+
+- [ ] **Step 3: Append the click-component initializer (after the `MusicComponent` block)**
+
+At the **end** of the `methods` array — after the `MusicComponent` initializer that closes at [exercise.js:364](../../../lab/static/js/src/components/app/exercise.js) and before the closing `];` — add:
 
 ```javascript
       function () {
         if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
           return;
         }
+        if (!this.models.exerciseSheet) {
+          return; // no rendered sheet (e.g. symbolic/keysig path) -> nothing to click
+        }
         var c = new ClickNoteInputComponent({
           sheet: this.models.exerciseSheet,
           exerciseContext: this.models.exerciseContext,
@@ -1387,30 +1460,59 @@ In `exercise.js`, add a new component initializer beside the `NoteNameInputCompo
       },
 ```
 
-- [ ] **Step 4: Instantiate the component (play.js)**
+- [ ] **Step 4: Append the source-mode bootstrap initializer (last)**
 
-In `play.js`, add beside the `NoteNameInputComponent` block (after line 104):
+After the click-component initializer (still the last element before `];`), add the bootstrap. It applies an initial mode **synchronously** (so the already-created click component + sheet receive it regardless of WebMIDI's async timing), then refines the recommendation when `MIDI_INPUTS_CHANGED` arrives — unless the user has manually chosen or a stored preference exists:
 
 ```javascript
       function () {
-        var c = new ClickNoteInputComponent({
-          sheet: this.models.exerciseSheet,
-          exerciseContext: this.models.exerciseContext,
-          keySignature: this.models.keySignature,
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
+          return;
+        }
+        if (!this.models.exerciseSheet) {
+          return;
+        }
+        var SOURCE_MODE_KEY = "harmonylab.inputSourceMode";
+        var self = this;
+        var manualChoice = false;
+        function readStoredMode() {
+          try { return window.localStorage.getItem(SOURCE_MODE_KEY); } catch (e) { return null; }
+        }
+        function persistMode(m) {
+          try { window.localStorage.setItem(SOURCE_MODE_KEY, m); } catch (e) {}
+        }
+        function applySourceMode(mode) {
+          self.broadcast(EVENTS.BROADCAST.INPUT_SOURCE_MODE, mode);
+          var sheet = self.models && self.models.exerciseSheet;
+          if (sheet && sheet.setInputSourceMode) sheet.setInputSourceMode(mode);
+        }
+        // Manual toggle handler for the Live/Click buttons (see implementer note).
+        self._setInputSourceMode = function (mode) {
+          manualChoice = true;
+          persistMode(mode);
+          applySourceMode(mode);
+        };
+        // Apply an initial mode NOW so components that already exist get it.
+        // Unknown device count at this point -> treat as 0 (safe MIDI-free default);
+        // a stored preference, if any, wins via defaultSourceMode.
+        applySourceMode(ClickNoteLogic.defaultSourceMode(0, readStoredMode()));
+        // Later/async availability refines the recommendation only.
+        self.subscribe(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, function (payload) {
+          if (manualChoice || readStoredMode()) return;
+          applySourceMode(
+            ClickNoteLogic.defaultSourceMode((payload && payload.inputCount) || 0, null)
+          );
         });
-        c.init(this);
-        c.renderTo("#piano");
-        this.addComponent(c);
       },
 ```
 
-> **Implementer note:** verify the exact model accessor names (`this.models.exerciseSheet`, `this.models.exerciseContext`, `this.models.keySignature`) in each entrypoint and adjust if the file uses different names. The component degrades gracefully if a model is absent (`_key()` falls back to `"C"`), but the sheet reference is required for layout + ghost.
+> **Implementer note:** verify `this.models.exerciseContext` and `this.models.keySignature` exist (they do — set in the model factory at [exercise.js:150-169](../../../lab/static/js/src/components/app/exercise.js)). Confirm the events module is imported as `EVENTS` in this file's `define` header; if the local name differs, match it. Render the Live/Click toggle buttons in a small toolbar near `#piano` (mirror `note_name.js`'s toggle markup) and wire each button's click to `app._setInputSourceMode("live")` / `("click")`. On mode change the component clears pending state via its `INPUT_SOURCE_MODE` subscription (`_onSourceModeChange` → `disable`/`enable`).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lab/static/js/src/components/app/exercise.js lab/static/js/src/components/app/play.js
-git commit -m "feat: wire click-note component and Live/Click source mode into both entrypoints"
+git add lab/static/js/src/components/app/exercise.js
+git commit -m "feat: wire click-note component and Live/Click source mode into exercise entrypoint"
 ```
 
 ---
@@ -1437,7 +1539,7 @@ Expected: no matches.
 
 - [ ] **Step 3: Browser pass — harmonization, no MIDI device**
 
-Open a harmonization exercise from the **play** view with no MIDI controller connected. Verify:
+Open a harmonization exercise from the **exercise** view (the student exercise route — the only entrypoint wired in Task 10) with no MIDI controller connected. Verify:
 - App defaults to **Click** mode and surfaces the "using click input" recommendation.
 - Accidental palette + **Done** button are visible; qwerty/notename toggle is not the same control.
 - Hovering the staff draws a faint ghost notehead that tracks the cursor and snaps to staff positions; leaving the canvas clears it.
@@ -1449,7 +1551,7 @@ Open a harmonization exercise from the **play** view with no MIDI controller con
 
 - [ ] **Step 4: Browser pass — device present + mode toggle**
 
-With a MIDI controller connected (or simulated): app defaults to **Live**; palette/Done hidden; existing MIDI settle-grade path works unchanged; qwerty/notename keyboard sub-toggle still works in Live mode. Toggle to **Click**: a connected device no longer auto-grades harmonization or adds to the pending set; only click commit grades. Switch modes mid-build: pending chord clears. Repeat the Step 3 build/commit flow from the **exercise** view entrypoint to confirm both wirings.
+With a MIDI controller connected (or simulated): app defaults to **Live**; palette/Done hidden; existing MIDI settle-grade path works unchanged; qwerty/notename keyboard sub-toggle still works in Live mode. Toggle to **Click**: a connected device no longer auto-grades harmonization or adds to the pending set; only click commit grades. Switch modes mid-build: pending chord clears.
 
 - [ ] **Step 5: Browser pass — device change mid-session**
 
