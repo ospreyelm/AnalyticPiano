@@ -1433,16 +1433,19 @@ define([
       if (!pending || !pending.length) return null;
       var col = clickComp.getActiveColumn ? clickComp.getActiveColumn() : null;
       pending = pending.slice().sort(function (a, b) { return a.midi - b.midi; });
-      var durationTicks = this._activeHarmonizationTargetDurationTicks(col);
       return [{
         measureIndex: col ? col.measureIndex : 0,
         onset: col ? col.onset : 0,
-        durationTicks: durationTicks,
+        durationTicks: this._pendingHarmonizationPreviewDurationTicks(col),
         midiNotes: pending.map(function (n) { return n.midi; }),
         spellings: pending.map(function (n) {
           return { step: n.step, alter: n.alter, octave: n.octave };
         }),
       }];
+    },
+
+    _pendingHarmonizationPreviewDurationTicks: function (col) {
+      return Math.min(2048, this._activeHarmonizationTargetDurationTicks(col));
     },
 
     _measureTotalTicks: function () {

@@ -382,7 +382,7 @@ define([
           midiDevice: this.models.midiDevice,
         });
         c.init(this);
-        c.renderTo("#piano");
+        c.renderTo("#staff-area");
         this.addComponent(c);
       },
       function () {
