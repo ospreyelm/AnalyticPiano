@@ -204,8 +204,16 @@ define([
     var isKeySignatureExercise = definition.type === "umto_key_signature";
     // Analysis/identification exercises answer via mouse (? slots) or text input,
     // not MIDI/Click note entry — so the Live/Click source toggle and the
-    // click-on-staff component do not apply.
-    var isAnalysisExercise = !!(definition.isIdentification && definition.isIdentification());
+    // click-on-staff component do not apply. Gate on interaction MODE (type alone
+    // misses e.g. analysis_match on a harmonization/chorale type), with the
+    // type-based predicate as a fallback.
+    var exerciseMode = definition.getMode ? definition.getMode() : null;
+    var isAnalysisExercise =
+      exerciseMode === "identification" ||
+      exerciseMode === "chorale_identification" ||
+      exerciseMode === "analysis_match" ||
+      exerciseMode === "analysis" ||
+      !!(definition.isIdentification && definition.isIdentification());
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });
