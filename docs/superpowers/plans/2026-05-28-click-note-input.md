@@ -892,7 +892,8 @@ Add an overlay accessor that lazily creates/positions a sibling canvas matching 
 
 ```javascript
     _ghostCanvas: function () {
-      var base = this.el ? this.el.querySelector("canvas") : null;
+      // ExerciseSheetComponent.el is a jQuery-wrapped canvas (`$("canvas#staff")`).
+      var base = this.el && this.el[0] ? this.el[0] : null;
       if (!base) return null;
       var overlay = this._ghostCanvasEl;
       if (!overlay) {
@@ -1135,6 +1136,7 @@ define([
     },
 
     // ---- pending-state accessors (read by exercise_sheet) -----------------
+    getPending: function () { return this._pending.slice(); },
     getPendingMidi: function () { return this._pending.map(function (n) { return n.midi; }); },
     getPendingSpellings: function () {
       return this._pending.map(function (n) {
@@ -1187,7 +1189,9 @@ define([
     // ---- geometry helpers -------------------------------------------------
     _canvas: function () {
       if (this.sheet && this.sheet.el) {
-        var c = this.sheet.el.querySelector ? this.sheet.el.querySelector("canvas") : null;
+        // ExerciseSheetComponent.el is a jQuery-wrapped canvas.
+        var c = this.sheet.el[0] || null;
+        if (!c && this.sheet.el.querySelector) c = this.sheet.el.querySelector("canvas");
         if (c) return c;
       }
       return document.querySelector("#staff canvas, canvas#staff, #staff-canvas");
@@ -1460,9 +1464,9 @@ At the **end** of the `methods` array — after the `MusicComponent` initializer
       },
 ```
 
-- [ ] **Step 4: Append the source-mode bootstrap initializer (last)**
+- [ ] **Step 4: Append the source-mode toolbar + bootstrap initializer (last)**
 
-After the click-component initializer (still the last element before `];`), add the bootstrap. It applies an initial mode **synchronously** (so the already-created click component + sheet receive it regardless of WebMIDI's async timing), then refines the recommendation when `MIDI_INPUTS_CHANGED` arrives — unless the user has manually chosen or a stored preference exists:
+After the click-component initializer (still the last element before `];`), add the source-mode toolbar + bootstrap. It renders concrete Live/Click buttons near `#piano`, applies an initial mode **synchronously** (so the already-created click component + sheet receive it regardless of WebMIDI's async timing), then refines the recommendation when `MIDI_INPUTS_CHANGED` arrives — unless the user has manually chosen or a stored preference exists:
 
 ```javascript
       function () {
@@ -1475,23 +1479,44 @@ After the click-component initializer (still the last element before `];`), add 
         var SOURCE_MODE_KEY = "harmonylab.inputSourceMode";
         var self = this;
         var manualChoice = false;
+        var $wrap = $('<div class="input-source-mode-toggle"></div>');
+        var $live = $('<button class="input-mode-btn" title="Use MIDI or computer keyboard input">Live</button>');
+        var $click = $('<button class="input-mode-btn" title="Click notes onto the staff, then press Done">Click</button>');
+        $wrap.append($live).append($click);
+        $("#piano").append($wrap);
         function readStoredMode() {
           try { return window.localStorage.getItem(SOURCE_MODE_KEY); } catch (e) { return null; }
         }
         function persistMode(m) {
           try { window.localStorage.setItem(SOURCE_MODE_KEY, m); } catch (e) {}
         }
+        function syncButtons(mode) {
+          $live
+            .toggleClass("input-mode-btn-active", mode === "live")
+            .toggleClass("input-mode-btn-inactive", mode !== "live");
+          $click
+            .toggleClass("input-mode-btn-active", mode === "click")
+            .toggleClass("input-mode-btn-inactive", mode !== "click");
+        }
         function applySourceMode(mode) {
           self.broadcast(EVENTS.BROADCAST.INPUT_SOURCE_MODE, mode);
           var sheet = self.models && self.models.exerciseSheet;
           if (sheet && sheet.setInputSourceMode) sheet.setInputSourceMode(mode);
+          syncButtons(mode);
         }
-        // Manual toggle handler for the Live/Click buttons (see implementer note).
         self._setInputSourceMode = function (mode) {
           manualChoice = true;
           persistMode(mode);
           applySourceMode(mode);
         };
+        $live.on("click", function (e) {
+          e.preventDefault();
+          self._setInputSourceMode("live");
+        });
+        $click.on("click", function (e) {
+          e.preventDefault();
+          self._setInputSourceMode("click");
+        });
         // Apply an initial mode NOW so components that already exist get it.
         // Unknown device count at this point -> treat as 0 (safe MIDI-free default);
         // a stored preference, if any, wins via defaultSourceMode.
@@ -1506,7 +1531,7 @@ After the click-component initializer (still the last element before `];`), add 
       },
 ```
 
-> **Implementer note:** verify `this.models.exerciseContext` and `this.models.keySignature` exist (they do — set in the model factory at [exercise.js:150-169](../../../lab/static/js/src/components/app/exercise.js)). Confirm the events module is imported as `EVENTS` in this file's `define` header; if the local name differs, match it. Render the Live/Click toggle buttons in a small toolbar near `#piano` (mirror `note_name.js`'s toggle markup) and wire each button's click to `app._setInputSourceMode("live")` / `("click")`. On mode change the component clears pending state via its `INPUT_SOURCE_MODE` subscription (`_onSourceModeChange` → `disable`/`enable`).
+> **Implementer note:** verify `this.models.exerciseContext` and `this.models.keySignature` exist (they do — set in the model factory at [exercise.js:150-169](../../../lab/static/js/src/components/app/exercise.js)). Confirm the events module is imported as `EVENTS` in this file's `define` header; if the local name differs, match it. On mode change the component clears pending state via its `INPUT_SOURCE_MODE` subscription (`_onSourceModeChange` → `disable`/`enable`).
 
 - [ ] **Step 5: Commit**
 
