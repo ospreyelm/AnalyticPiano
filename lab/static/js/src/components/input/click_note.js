@@ -258,17 +258,19 @@ define([
 
     _buildEl: function () {
       var self = this;
-      var wrap = $('<div class="click-note-input" style="display:none;"></div>');
+      var wrap = $('<div class="click-note-input" style="display:none;" aria-label="Click note input tools"></div>');
       var palette = $('<div class="accidental-palette input-mode-toggle"></div>');
       var defs = [
-        ["diatonic", "Key"],
-        ["sharp", "\u266f"],
-        ["flat", "\u266d"],
-        ["natural", "\u266e"],
+        ["diatonic", "Key", "Use the key signature"],
+        ["sharp", "\u266f", "Sharp"],
+        ["flat", "\u266d", "Flat"],
+        ["natural", "\u266e", "Natural"],
       ];
       this._paletteBtns = {};
       defs.forEach(function (d) {
-        var btn = $('<button class="input-mode-btn"></button>').text(d[1]);
+        var btn = $('<button type="button" class="input-mode-btn"></button>')
+          .text(d[1])
+          .attr("title", d[2]);
         btn.on("click", function (e) {
           e.preventDefault();
           self.setPalette(d[0]);
@@ -276,7 +278,7 @@ define([
         self._paletteBtns[d[0]] = btn;
         palette.append(btn);
       });
-      var doneBtn = $('<button class="input-mode-btn click-note-done">Done</button>');
+      var doneBtn = $('<button type="button" class="input-mode-btn click-note-done" title="Grade the notes you clicked">Done</button>');
       doneBtn.on("click", function (e) {
         e.preventDefault();
         self._commit();
@@ -299,7 +301,7 @@ define([
     _syncPalettePanel: function () {
       if (!this._paletteWrap) return;
       if (this.enabled) {
-        this._paletteWrap.show();
+        this._paletteWrap.css("display", "flex");
       } else {
         this._paletteWrap.hide();
       }
@@ -310,7 +312,7 @@ define([
     },
 
     renderTo: function (selector) {
-      $(selector).append(this.el);
+      $(selector).prepend(this.el);
       return this;
     },
 

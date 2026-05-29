@@ -394,11 +394,11 @@ define([
         var SOURCE_MODE_KEY = "harmonylab.inputSourceMode";
         var self = this;
         var manualChoice = false;
-        var $wrap = $('<div class="input-source-mode-toggle"></div>');
-        var $live = $('<button class="input-mode-btn" title="Use MIDI or computer keyboard input">Live</button>');
-        var $click = $('<button class="input-mode-btn" title="Click notes onto the staff, then press Done">Click</button>');
+        var $wrap = $('<div class="input-source-mode-toggle" aria-label="Input source"></div>');
+        var $live = $('<button type="button" class="input-mode-btn" title="Use MIDI or computer keyboard input">Live</button>');
+        var $click = $('<button type="button" class="input-mode-btn" title="Click notes onto the staff, then press Done">Click</button>');
         $wrap.append($live).append($click);
-        $("#piano").append($wrap);
+        $("#piano").prepend($wrap);
 
         function readStoredMode() {
           try {
