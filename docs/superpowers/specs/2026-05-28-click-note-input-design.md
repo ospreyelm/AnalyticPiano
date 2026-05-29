@@ -9,13 +9,15 @@
 Students without a MIDI controller need a way to enter pitches into graded
 exercises. Computer keyboard already works (`KeyboardShortcutsComponent`,
 `NoteNameInputComponent`) by broadcasting `EVENTS.BROADCAST.NOTE` on/off — the
-same channel MIDI uses. The grader (`chorale_grader.js`, `exercise_grader.js`,
-the harmonization grading path in `exercise_context.js`) only consumes those
-events; it does not know the input source.
+same channel MIDI uses. For harmonization, that live-note channel also triggers
+the settle-timer grading path, so click input uses pending UI state while the
+student is building and hands an explicit MIDI set to the same harmonization
+grading logic on commit.
 
-This feature adds **mouse click on an empty staff position** as a third input
-source feeding the same events. A click resolves to a pitch and broadcasts
-`NOTE` — grader untouched.
+This feature adds **mouse click on an empty staff position** as a MIDI-free
+input source. A click resolves to a pitch; in harmonization v1 it updates a
+pending realization, and commit grades the same flat MIDI set shape that MIDI
+input ultimately grades.
 
 ### Scope decision
 
@@ -31,9 +33,11 @@ explicitly out of scope here.
   `Vex.Flow.Renderer.Backends.CANVAS`. Noteheads are pixels, not DOM elements.
   All click handling is pixel hit-testing against exported geometry, never SVG
   element listeners.
-- **Event bus is the only integration seam.** `note_name.js` is the working
-  template: an alternate input component that broadcasts
-  `EVENTS.BROADCAST.NOTE, "on"/"off", midi`. We copy its shape.
+- **Input components integrate at the sheet/context boundary.** `note_name.js`
+  remains the working template for component lifecycle and toolbar mounting. For
+  harmonization, click input intentionally stops short of broadcasting live
+  `NOTE` events during construction because that channel already drives
+  settle-timer grading.
 - **Harmonization grades a pitch-class set, not voice assignment.**
   `harmonization_grader_logic.js#harmonizationMatch(target, activeMidi)` scores
   the flat set of sounding MIDI against `allowedPcs`, `requiredUpperPcs`,
@@ -48,11 +52,14 @@ explicitly out of scope here.
 
 ### Design invariant: input-method-agnostic
 
-Click input MUST be indistinguishable downstream from MIDI/keyboard. It emits
-the same `EVENTS.BROADCAST.NOTE` on/off + `BANK_NOTES`, and at grade time it
-hands the grader the **same data shape** any source produces: a flat set of
-sounding MIDI numbers (chord) or a single MIDI (melodic). No click-specific
-field, flag, or branch reaches a grader. This is load-bearing for the
+Click input MUST be indistinguishable at the grading boundary from
+MIDI/keyboard. At grade time it hands the grader the **same data shape** any
+source produces: a flat set of sounding MIDI numbers (chord) or a single MIDI
+(melodic). For harmonization, click construction is a pending UI state until
+explicit commit; it does **not** broadcast live `NOTE` events while the student
+is still building the chord, because the current harmonization MIDI path grades
+every `NOTE` event after the settle delay. No click-specific field, flag, or
+branch reaches a grader. This is load-bearing for the
 **future post-submission grading layer** the user plans to add: that grader
 will receive committed answers as MIDI sets and must not be able to tell — and
 must not need to know — whether they came from a keyboard, a controller, or a
@@ -65,12 +72,14 @@ the structure MIDI input already produces, not a parallel one.
 |----------|----------|
 | Scope | Empty-staff pitch entry (not displayed-notehead clicks) |
 | Chromatic resolution | Sticky accidental palette (default = diatonic / key-sig) |
-| Commit model | Both, per exercise: chord = accumulate-then-commit; single-voice = one-note-per-column |
+| Commit model | Harmonization v1: chord = accumulate pending notes, then explicit commit. Single-note click entry is deferred until an existing snapshot-compatible target is named |
 | Horizontal targeting (v1) | **Sequential** — clicks build the current target only; columns ahead non-clickable until reached. Random access deferred (see Out of scope) |
-| Chord size limit | **Hard cap at `voiceCountPolicy.max`** (default 4); click past the cap is a no-op with brief feedback |
-| Commit model (chord) | **Snapshot-then-grade**: commit passes the held MIDI set to grading *before* releasing notes — does not rely on release-grace + settle timing |
+| Chord size limit | **Hard cap at available student slots** = `voiceCountPolicy.max - lockedVoiceCount` (default max 4); click past the cap is a no-op with brief feedback |
+| Commit model (chord) | **Snapshot-then-grade**: commit passes `locked target MIDI + clicked MIDI` to the shared harmonization grading helper — does not rely on release-grace + settle timing |
 | Voice assignment | None — grader and overlay are pitch-keyed |
 | Preview | Ghost-note hover preview (approach C) |
+| Input mode | **Explicit Keyboard/MIDI ↔ Click toggle.** Default chosen by MIDI detection (no device → default Click + recommend it; device present → default Keyboard/MIDI). Always overridable; persists per session. Mode gates affordances + which component is armed |
+| Click-mode harmonization grading | **All grading routes through explicit commit.** Click mode suppresses the MIDI live-settle auto-grade for harmonization, so a connected device can't auto-grade behind the student's deliberate build |
 
 ## Architecture
 
@@ -79,16 +88,24 @@ Three new/changed pieces, mirroring `note_name.js`.
 ```
 render() → adapter → onStaffLayout(layout) → exercise_sheet stores _staffLayout
 mouse move → click component reads layout → snap → ghost note drawn
-click → invert pixel→pitch → BROADCAST.NOTE "on" → grader (unchanged)
-commit → snapshot held set → grade (notes still held) → NOTE "off" + BANK_NOTES → advance → re-render
+click → invert pixel→pitch → update pending click set (no live NOTE event in harmonization)
+commit → merge locked target MIDI + pending click set → grade explicit MIDI set → advance → re-render
 ```
 
 ### New: `ClickNoteInputComponent` — `lab/static/js/src/components/input/click_note.js`
 - Renders the accidental palette UI (mounted to `#piano`, like `note_name.js`).
 - Owns click/mousemove/mouseleave handlers on `canvas#staff`.
-- Entry state: active column, sticky accidental, held-note set (chord mode).
-- Broadcasts `EVENTS.BROADCAST.NOTE` on/off and `BANK_NOTES`.
-- `disable()` releases all held notes (copies `note_name.disable()` cleanup).
+- Entry state: active column, sticky accidental, pending clicked-note set
+  (chord mode).
+- For harmonization, click/re-click mutates only the pending set and overlay;
+  commit grades an explicit MIDI snapshot. It does not use live
+  `EVENTS.BROADCAST.NOTE` during chord construction, avoiding the existing
+  settle-timer auto-grade path.
+- For non-harmonization modes that remain in scope, it may use the standard
+  `EVENTS.BROADCAST.NOTE` channel only after the spec names an existing
+  snapshot-compatible grade path.
+- `disable()` clears pending click state and releases any notes if a future mode
+  uses live `NOTE` events.
 
 ### New: `click_note_logic.js` (+ `.test.js`) — `lab/static/js/src/components/input/`
 - Pure pixel→pitch math, no DOM. Follows the repo `*_logic.js` + `.test.js`
@@ -97,14 +114,15 @@ commit → snapshot held set → grade (notes still held) → NOTE "off" + BANK_
 ### Modified: `vexflow_adapter.js`
 - New `opts.onStaffLayout(layout)` callback, fired once per `render()` (same
   pattern as the existing `opts.onWindowPosition` hook).
-- New `opts.harmonizationPending` param — the active column's held-but-
+- New `opts.harmonizationPending` param — the active column's pending-but-
   uncommitted notes, rendered via the existing `buildHarmonizationOverlayVoice`
   in a distinct (pending) style.
 
 ### Modified: `exercise_sheet.js`
 - Stores `this._staffLayout` from `onStaffLayout` (extends the existing
   `_identWindowLayout` precedent).
-- Builds `harmonizationPending` from the click component's held set each render.
+- Builds `harmonizationPending` from the click component's pending clicked set
+  each render.
 - Draws the ghost note (top layer, after adapter render, throttled).
 
 ### Modified: `exercise.js` **and** `play.js`
@@ -113,6 +131,9 @@ commit → snapshot held set → grade (notes still held) → NOTE "off" + BANK_
   gated identically to the keyboard components (skipped for symbolic-meter /
   key-signature exercises). Not wiring `play.js` would leave click input dead in
   half the app — both are in scope.
+- Each entrypoint owns the **input-mode** state (Keyboard/MIDI ↔ Click) and
+  passes it to the sheet + input components so each arms/disarms and shows/hides
+  its affordances accordingly (see "Input mode").
 
 ### New: shared key-signature logic (mandatory extraction)
 - `getKeySignatureAlterations(key)` is currently private in
@@ -122,8 +143,48 @@ commit → snapshot held set → grade (notes still held) → NOTE "off" + BANK_
   adapter import it — do not copy the table. This extraction is required, not
   optional.
 
-**Untouched:** event bus, chord bank, all graders. (No grader contract change —
-v1 is sequential; see §4.)
+**Untouched:** event bus, chord bank, `harmonization_grader_logic.js`.
+`exercise_context.js` gets a small shared harmonization helper so the existing
+MIDI settle path and click commit both evaluate the same explicit MIDI-set
+contract (see §4). The musical grader contract does not change.
+
+## Input mode (Keyboard/MIDI ↔ Click)
+
+Mouse entry is a different interaction model from live play: deliberate
+placement + explicit commit, not real-time performance. An explicit mode keeps
+each model's UI clean and prevents the two harmonization grading contracts
+(live-settle vs commit) from running at once.
+
+**Two modes.** `keyboard` (MIDI + computer keyboard — the existing behavior) and
+`click`. Surfaced as a toolbar toggle near `#piano`.
+
+**Default + recommendation.** `midi.js` already detects zero MIDI inputs
+(`midi.js:183`, which today broadcasts the "no MIDI" guidance). Reuse that
+signal: no device → default to **Click** and surface the existing guidance as a
+"using click input" recommendation; device present → default to **Keyboard/MIDI**.
+The toggle is always manually overridable; selection persists per session
+(client-side, e.g. `localStorage` — no exercise/DB change).
+
+**What the mode gates.**
+- `click` mode arms `ClickNoteInputComponent` and shows the accidental palette,
+  ghost preview, and **Done** commit button. For harmonization it **suppresses
+  the MIDI live-settle auto-grade** so all grading goes through commit (§4) —
+  even if a device is plugged in.
+- `keyboard` mode hides the palette/ghost/Done and restores the existing
+  MIDI/keyboard live-settle path unchanged. `ClickNoteInputComponent` is
+  disarmed (no canvas hit-testing).
+
+**Mid-session device change.** WebMIDI `onstatechange` (plug/unplug) does **not**
+force a mode switch — it only updates the recommendation (e.g. offer "switch to
+click input?" when the last device disappears). Never yank the student out of a
+mode mid-build.
+
+**Mode switch clears in-flight state.** Switching modes clears any pending
+clicked notes and removes the pending overlay (same as disable, §4) so a
+half-built chord never leaks across models.
+
+This mode is a UI/arming + grade-routing layer only. The grading boundary stays
+input-agnostic: whichever path runs hands the grader the same flat MIDI set.
 
 ## 1. Staff layout export (adapter → sheet)
 
@@ -247,21 +308,25 @@ Deferred (YAGNI): double accidentals 𝄪 𝄫.
 
 ## 4. Commit modes (per exercise definition)
 
-Mode chosen from `definition` (`isHarmonization()`, single-voice), the same
-dispatch the graders use.
+Mode chosen from `definition`. Harmonization is the only v1 commit mode; the
+single-note branch is documented below as deferred.
 
 ### Chord mode (harmonization) — accumulate → commit (sequential, v1)
 - The active column is always the **current grading target** (the harmonization
   pointer's onset). Only that column is clickable; later columns are inert until
   the pointer reaches them. No random access in v1.
-- Click empty pitch in active column → `NOTE "on"`; note stays held, added to
-  the current chord, drawn pending.
-- Re-click same pitch → `NOTE "off"`; removed.
-- **Hard size cap.** While held count == `voiceCountPolicy.max` (default 4), a
-  click on a *new* pitch is a no-op (no `NOTE on`, brief "max N notes" hint);
-  toggling an already-held pitch off still works. Keeps the grader from ever
-  seeing `too_many_voices` from click input. (Locked given-bass voices count
-  toward neither the click cap nor the held set — they're score-supplied.)
+- Click empty pitch in active column → add it to the component's pending clicked
+  set and draw it pending. Do **not** broadcast `NOTE "on"` in harmonization:
+  `exercise_sheet.onMidiNote` currently schedules grading after every `NOTE`
+  event, so live NOTE construction would violate explicit commit.
+- Re-click same pitch → remove it from the pending clicked set.
+- **Hard size cap.** Compute `lockedVoiceCount` from the target's
+  `lockedVoices` entries that contribute concrete MIDI/PC requirements, then
+  cap student-clicked notes at `max(0, voiceCountPolicy.max - lockedVoiceCount)`
+  (default policy max 4). A click on a *new* pitch past that cap is a no-op
+  (brief "max N notes" hint); toggling an already-pending pitch off still works.
+  This keeps the complete submitted MIDI set from ever exceeding the grader's
+  `voiceCountPolicy.max`.
 
 **Commit — snapshot-then-grade (fixes the release-grace/settle race).**
 The existing MIDI path relies on a ~150ms settle timer
@@ -271,37 +336,52 @@ The existing MIDI path relies on a ~150ms settle timer
 Click commit avoids the race entirely:
 
 1. Commit gesture = existing bank key (SPACE/ENTER) or a **Done** button.
-2. On commit, the component captures the current held MIDI set as a
-   **snapshot** and drives grading with that snapshot **while the notes are
-   still held** — it does not depend on the tracker's release window. Concretely:
-   feed the snapshot to the same harmonization grade entry point the settle
-   timer uses, synchronously, before any `NOTE "off"`.
-3. *Then* release all held (`NOTE "off"` each) for audio/UI cleanup.
+2. On commit, the component captures the pending clicked MIDI set and asks
+   `exercise_context` to build the complete active MIDI snapshot for the current
+   harmonization target:
+   `activeMidi = lockedTargetMidi + pendingClickedMidi`.
+   This is the same flat active-MIDI set that MIDI input must eventually produce;
+   it includes locked bass/soprano requirements because
+   `harmonizationMatch()` validates `lockedVoices` against `activeMidi`.
+3. `exercise_context` exposes a shared helper, e.g.
+   `_gradeHarmonizationMidiSet(activeMidi, options)`, that contains the current
+   harmonization acceptance logic now embedded in `grade()`:
+   `harmonizationMatch(targets[ptr], activeMidi)`, append accepted sonority,
+   advance `_harmonizationPointer`, update `graded/state`, broadcast
+   `NEXT_CHORD` if needed, and render/update display. The existing MIDI settle
+   timer calls this helper with `tracker.activeMidi(Date.now())`; click commit
+   calls it synchronously with the snapshot.
+4. After grading, clear the pending clicked set. There are no click-generated
+   harmonization `NOTE` events to release in v1; MIDI/keyboard live notes remain
+   handled by their existing paths.
 
-This keeps the grader contract identical (it receives a flat active-MIDI set)
-while removing the timing dependency. No change to
-`harmonization_grader_logic.js`; the only change is that click commit calls the
-grade path with an explicit snapshot rather than waiting on release+settle.
+This keeps the musical grader contract identical (it receives a flat
+active-MIDI set) while removing the timing dependency. No change to
+`harmonization_grader_logic.js`; the change is in `exercise_context.js`, where
+the existing harmonization grade branch is factored into an explicit MIDI-set
+helper shared by MIDI settle and click commit.
 
-### Single-note mode (melodic / one-voice) — one note per column
-Scope for v1: single-voice exercises whose answer is one pitch per onset
-(melodic identification / dictation-style entry). Pitch-name *identification*
-exercises (`isPitchAnalysisType`) keep their existing `?`-slot click flow and
-are **not** in scope here.
+**In `click` mode the MIDI live-settle auto-grade is suppressed** (see "Input
+mode"): the settle timer that calls the helper with
+`tracker.activeMidi(Date.now())` does not fire for harmonization, so a connected
+device never auto-grades behind the student's deliberate build. The same helper
+still runs — only its trigger changes from settle-timer to explicit commit.
 
-- Click pitch in the active column → commit that column's single answer as a
-  **snapshot** (same mechanism as chord mode: hand the single MIDI to the grade
-  path, then emit the `NOTE "on"`/`"off"` pair for audio). This avoids the
-  `chord.js:224` issue where a quick on/off clears the pitch before grading
-  reads it — grading reads the snapshot, not the live chord model.
-- Re-click the active column with a different pitch → replaces that column's
-  answer (snapshot overwrites).
-- Advance is sequential (current target only, like chord mode); submit uses the
-  exercise's normal flow.
+### Single-note mode (deferred until an existing target is named)
+The earlier "one note per column" idea is not v1 until the implementation plan
+names an existing exercise type and grade path that accepts a one-MIDI snapshot
+per onset. Pitch-name *identification* exercises (`isPitchAnalysisType`) keep
+their existing `?`-slot click flow and are **not** in scope here.
 
-### Held-note safety
-On component disable, exercise change, or advance — release all held
-(`NOTE "off"`). Prevents stuck sounding notes.
+Do not implement a quick `NOTE "on"`/`"off"` single-note path as a substitute:
+`chord.js:224` clears the pitch on note-off before normal grading reads the
+chord model. A future single-note click mode must either use an existing
+snapshot-compatible grade path or first define one in a separate spec.
+
+### Pending-state safety
+On component disable, exercise change, or advance — clear pending clicked notes
+and remove the pending overlay. If a future non-harmonization mode uses live
+`NOTE` events, it must also release those notes on disable.
 
 ## 5. Rendering student input
 
@@ -309,12 +389,12 @@ Student notes never touch the score's SATB voices. Two pitch-keyed layers:
 
 ### Pending-realization overlay (accumulated chord)
 - New `opts.harmonizationPending = { measureIndex, onset, midiNotes, spellings }`
-  for the active column's held-but-uncommitted notes.
+  for the active column's pending-but-uncommitted clicked notes.
 - Reuses `buildHarmonizationOverlayVoice` — same chord-stack builder as the
   accepted realization.
 - Styled distinct from committed: accepted = black, pending = blue/gray
   (`#5b8def`), so "building" reads differently from "locked in."
-- `exercise_sheet` builds this from the click component's held set each
+- `exercise_sheet` builds this from the click component's pending clicked set each
   re-render, alongside the existing accepted `harmonizationRealization`.
 
 ### Ghost-note preview (single pitch under cursor)
@@ -329,33 +409,42 @@ Student notes never touch the score's SATB voices. Two pitch-keyed layers:
 the overlay come free — no re-deriving enharmonics.
 
 ### Single-note mode
-Same overlay path, one notehead per column instead of a stack. No SATB
-assignment — click input always produces an overlay of student pitches, never
-mutates the CIR.
+Deferred for v1. A future single-note mode can reuse the overlay approach, but
+only after a concrete exercise type and snapshot-compatible grading path are
+specified.
 
 ## 6. Event wiring & edge cases
 
 **Wiring (`exercise.js` and `play.js`).** Instantiate `ClickNoteInputComponent`
 beside `NoteNameInputComponent` in **both** entrypoints (`exercise.js:241`,
 `play.js:92`), gated identically. Inject the sheet so the component can read
-`_staffLayout` + held set and request the ghost draw. Mount the palette to
-`#piano`.
+`_staffLayout` + pending clicked set and request the ghost draw. Mount the
+palette to `#piano`. The entrypoint owns input-mode state, defaults it from the
+`midi.js` no-input signal, and arms/disarms the click component + palette/Done
+UI on toggle (see "Input mode").
 
-**Events.** Click → `BROADCAST.NOTE "on"` (and `"off"` on re-click/commit).
-Chord-mode commit → snapshot-grade, then release all held + `BANK_NOTES` (§4).
-Identical channel to MIDI/keyboard; `midi.js` and `exercise_sheet.onMidiNote`
-already subscribe.
+**Events.** Harmonization click/re-click mutates only pending click state; it
+does not broadcast `BROADCAST.NOTE` while building. Chord-mode commit calls the
+shared explicit-MIDI-set harmonization helper (§4). `BANK_NOTES` may still be
+used as the UI gesture source, but the click component must intercept/handle
+that gesture so it does not rely on chord-bank live-note state.
 
 **Edge cases.**
 - Out-of-range click (no system/stave / MIDI <21 or >108) → no-op, no ghost.
 - Click outside the active target column (sequential v1) → no-op, no ghost (§2).
-- Click a new pitch when held count == `voiceCountPolicy.max` → no-op + hint (§4).
+- Click a new pitch when pending count has reached available student slots
+  (`voiceCountPolicy.max - lockedVoiceCount`) → no-op + hint (§4).
 - Inter-row gap → nearest system by `py`; inter-stave gap → nearest `topLineY` (§2).
-- Re-render mid-entry (advance) rebuilds `_staffLayout`; held set is component
-  state and survives; pending overlay redrawn from it.
-- Disable / exercise change / advance → release all held.
-- MIDI + click both active → same event bus, coexist; no exclusivity mode.
-- Duplicate pitch already held → re-click toggles off (no double `NOTE on`).
+- Re-render mid-entry rebuilds `_staffLayout`; pending clicked set is component
+  state and survives until commit/advance; pending overlay redraws from it.
+- Disable / exercise change / advance / **mode switch** → clear pending clicked
+  state + remove pending overlay.
+- Mode = `click`: MIDI live-settle auto-grade suppressed for harmonization; all
+  grading via commit. Mode = `keyboard`: existing MIDI/keyboard path unchanged,
+  click disarmed.
+- Device plugged/unplugged mid-session (`onstatechange`) → update the mode
+  recommendation only; never force-switch mid-build.
+- Duplicate pending pitch → re-click toggles off.
 
 ## 7. Testing
 
@@ -367,13 +456,22 @@ already subscribe.
   target column → null (sequential gate).
 - Extraction test: shared `getKeySignatureAlterations` returns identical maps to
   the adapter's prior private version for a few keys (guards the refactor).
-- Snapshot/cap logic (pure, if factored out): chord at `voiceCountPolicy.max`
-  rejects a new pitch but allows toggle-off; commit yields the held MIDI set.
+- Snapshot/cap logic (pure, if factored out): clicked notes at available student
+  slot cap reject a new pitch but allow toggle-off; commit yields
+  `lockedTargetMidi + pendingClickedMidi`.
+- Mode logic (pure, if factored out): default resolves to `click` when input
+  count is 0 and `keyboard` when ≥1; a stored preference overrides the default;
+  switching modes returns "clear pending."
 - Manual browser pass (per CLAUDE.md UI rule): harmonization exercise —
-  click-build a chord, hit the cap, commit, verify grade fires on the snapshot
-  (not an empty set); single-note exercise — click a melody; verify no stuck
-  notes on advance; verify ghost tracks the cursor; verify columns ahead of the
-  target are inert. Test from **both** `exercise.js` and `play.js` entrypoints.
+  click-build a chord, hit the cap, commit, verify grade fires on
+  `lockedTargetMidi + pendingClickedMidi` and not an empty set; verify ghost
+  tracks the cursor; verify columns ahead of the target are inert; verify
+  pending state clears on advance. Test from **both** `exercise.js` and
+  `play.js` entrypoints. Mode: with no MIDI device, verify the app defaults to
+  Click and recommends it; with a device, defaults to Keyboard/MIDI; toggle both
+  ways and confirm palette/Done show only in Click and that a connected device
+  does not auto-grade harmonization while in Click mode; switching modes
+  mid-build clears the pending chord.
 
 ## 8. Documentation impact
 
