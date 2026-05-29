@@ -202,6 +202,26 @@ define([
     var disableComputerKeyboardInput = !!definition.disableComputerKeyboardInput;
     var isSymbolicMeterExercise = definition.type === "umto_symbolic_meter";
     var isKeySignatureExercise = definition.type === "umto_key_signature";
+    // Analysis/identification exercises answer via mouse (? slots / dropdown) or
+    // text input — not MIDI/Click note entry — so the Live/Click source toggle and
+    // the click-on-staff component must not appear. Read the PARSED definition
+    // (this.models.exerciseDefinition); this.getExerciseDefinition() returns a raw
+    // config whose .exercise is empty at this point. Gate on the input mode
+    // ("dropdown"/"text" = slot answers) and the interaction mode.
+    var _def = (this.models && this.models.exerciseDefinition) || definition;
+    var _dex = (_def && _def.exercise) || {};
+    var _dmeta = (_dex.score && _dex.score.umto && _dex.score.umto.metadata) || {};
+    var _dmode = (_def.getMode && _def.getMode()) || _dex.mode || _dmeta.mode || null;
+    var _dinput = _dex.inputMode || _dex.inputModeFixed || _dmeta.input_mode || null;
+    var isAnalysisExercise =
+      _dinput === "dropdown" ||
+      _dinput === "text" ||
+      _dmode === "identification" ||
+      _dmode === "chorale_identification" ||
+      _dmode === "analysis_match" ||
+      _dmode === "analysis" ||
+      !!(_def.isIdentification && _def.isIdentification()) ||
+      !!(_def.isChoraleIdentification && _def.isChoraleIdentification());
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });
@@ -384,7 +404,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise || isAnalysisExercise) {
           return;
         }
         if (!this.models.exerciseSheet) {
@@ -402,7 +422,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise || isAnalysisExercise) {
           return;
         }
         if (!this.models.exerciseSheet) {
