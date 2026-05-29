@@ -11,6 +11,8 @@ define([
   "app/components/music/symbolic_question_sheet",
   "app/components/midi",
   "app/components/notifications",
+  "app/components/feedback_service",
+  "app/config/feedback_catalog",
   "app/components/input/shortcuts",
   "app/components/input/note_name",
   "app/components/input/click_note",
@@ -40,6 +42,8 @@ define([
   SymbolicQuestionSheet,
   MidiComponent,
   NotificationsComponent,
+  FeedbackService,
+  FeedbackCatalog,
   KeyboardShortcutsComponent,
   NoteNameInputComponent,
   ClickNoteInputComponent,
@@ -199,6 +203,16 @@ define([
     var isSymbolicMeterExercise = definition.type === "umto_symbolic_meter";
     var isKeySignatureExercise = definition.type === "umto_key_signature";
     var methods = [
+      function () {
+        var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });
+        c.init(this);
+        this.models.feedback = c;
+        if (this.models.exerciseContext) {
+          this.models.exerciseContext.feedback = c;
+          this.models.exerciseContext._feedbackCatalog = FeedbackCatalog;
+        }
+        this.addComponent(c);
+      },
       function () {
         var c = new NotificationsComponent({ defaultHidden: false });
         c.init(this);
