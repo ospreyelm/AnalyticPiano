@@ -359,7 +359,7 @@ define([
         self._paletteBtns[d[0]] = btn;
         palette.append(btn);
       });
-      var doneBtn = $('<button type="button" class="input-mode-btn click-note-done" title="Grade the notes you clicked">Done</button>');
+      var doneBtn = $('<button type="button" class="input-mode-btn click-note-done" title="Lock in this chord and check it — or press Enter">Lock chord <span class="click-note-done-key">⏎</span></button>');
       this._doneButton = doneBtn;
       doneBtn.on("click", function (e) {
         e.preventDefault();
