@@ -5,8 +5,9 @@ define([
   "app/utils/analyze",
   "app/models/key_signature",
   "app/models/key_context_logic",
+  "app/models/input_method_logic",
   "tonal",
-], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, Tonal) {
+], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, InputMethodLogic, Tonal) {
   var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
@@ -944,6 +945,28 @@ define([
     /**
     isIdentification: function () {
       return this.exercise.type === "identification" || this.exercise.type === "chorale_identification" || this.isSymbolicMeterQuestion();
+    },
+    /**
+     * Canonical answer-input discriminator. Single source of truth for
+     * "how does the student answer this exercise?" — "note_entry" (MIDI/keyboard/
+     * click-on-staff), "dropdown" (? slots), or "text". Gate the Live/Click source
+     * toggle and the click-on-staff component on getInputMethod() === "note_entry".
+     * Do not re-derive from scattered type/mode/analysisType checks.
+     */
+    getInputMethod: function () {
+      var ex = this.exercise || {};
+      var meta = (ex.score && ex.score.umto && ex.score.umto.metadata) || {};
+      return InputMethodLogic.resolveInputMethod({
+        inputModeFixed: ex.inputModeFixed || null,
+        inputMode: ex.inputMode || null,
+        metaInputMode: meta.input_mode || null,
+        mode: this.getMode(),
+        isIdentification: !!(this.isIdentification && this.isIdentification()),
+        isChoraleIdentification: !!(this.isChoraleIdentification && this.isChoraleIdentification()),
+      });
+    },
+    usesNoteEntry: function () {
+      return this.getInputMethod() === "note_entry";
     },
     /**
      * Returns the feedback mode for identification exercises.

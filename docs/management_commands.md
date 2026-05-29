@@ -225,6 +225,14 @@ python manage.py reanalyze_knowledge_graph
 
 ---
 
+## Inspection / debugging
+
+**`dump_exercise`** — Print an exercise's decision fields (type, mode, inputMode, inputModeFixed, analysisType, identMode, allowed_answers) by E-ID, plus the resolved canonical `input_method` (`note_entry` / `dropdown` / `text`). Read the real shape of an exercise instead of guessing field names through the browser. Use the local settings that point at the dev DB.
+```
+python manage.py dump_exercise EB61KJ --settings=harmony.settings.local
+python manage.py dump_exercise EB61KJ --full --settings=harmony.settings.local   # full data JSON
+```
+
 ## Skipped by refresh_all_exercises
 
 The following exercise types are **not** refreshed automatically — re-run their generators if the pipeline changed:
