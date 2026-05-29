@@ -379,6 +379,7 @@ define([
           sheet: this.models.exerciseSheet,
           exerciseContext: this.models.exerciseContext,
           keySignature: this.models.keySignature,
+          midiDevice: this.models.midiDevice,
         });
         c.init(this);
         c.renderTo("#piano");
@@ -395,10 +396,15 @@ define([
         var self = this;
         var manualChoice = false;
         var $wrap = $('<div class="input-source-mode-toggle" aria-label="Input source"></div>');
-        var $live = $('<button type="button" class="input-mode-btn" title="Use MIDI or computer keyboard input">Live</button>');
+        var $live = $('<button type="button" class="input-mode-btn" title="Use MIDI or computer keyboard input">MIDI</button>');
         var $click = $('<button type="button" class="input-mode-btn" title="Click notes onto the staff, then press Done">Click</button>');
         $wrap.append($live).append($click);
-        $("#piano").prepend($wrap);
+        var $next = $("#staff-toolbar .js-btn-nextexercise").first();
+        if ($next.length) {
+          $wrap.insertBefore($next);
+        } else {
+          $("#piano").prepend($wrap);
+        }
 
         function readStoredMode() {
           try {

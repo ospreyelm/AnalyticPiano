@@ -10,6 +10,7 @@ define([
     this.sheet = this.settings.sheet || null;
     this.exerciseContext = this.settings.exerciseContext || null;
     this.keySignature = this.settings.keySignature || null;
+    this.midiDevice = this.settings.midiDevice || null;
 
     this.enabled = false;
     this.palette = "diatonic";
@@ -206,7 +207,19 @@ define([
         alter: resolved.alter,
         octave: resolved.octave,
       });
+      this._audition(resolved.midi);
       if (this.sheet) this.sheet.render();
+    },
+
+    _audition: function (midi) {
+      var device = this.midiDevice;
+      if (!device || typeof device.playNote !== "function") return;
+      device.playNote(midi);
+      if (typeof device.releaseNote === "function") {
+        window.setTimeout(function () {
+          device.releaseNote(midi);
+        }, 450);
+      }
     },
 
     _capRemaining: function () {

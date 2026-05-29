@@ -777,6 +777,7 @@
     }
 
     /* ── Staff click input controls ─────────────────────────── */
+    #staff-toolbar .input-source-mode-toggle,
     #piano .input-source-mode-toggle,
     #piano .click-note-input {
       position: relative;
@@ -797,6 +798,15 @@
       backdrop-filter: blur(2px);
     }
 
+    #staff-toolbar .input-source-mode-toggle {
+      margin: 0 2px 0 4px;
+      padding: 3px;
+      border-color: rgba(42, 126, 148, 0.2);
+      background: rgba(42, 126, 148, 0.08);
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+
     #piano .click-note-input {
       margin-top: -2px;
       margin-bottom: 9px;
@@ -807,6 +817,7 @@
       gap: 4px;
     }
 
+    #staff-toolbar .input-mode-btn,
     #piano .input-mode-btn {
       min-width: 42px;
       min-height: 30px;
@@ -823,21 +834,38 @@
       transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 120ms ease;
     }
 
+    #staff-toolbar .input-mode-btn {
+      min-width: 48px;
+      min-height: 28px;
+      border-color: transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+    }
+
+    #staff-toolbar .input-mode-btn:hover,
     #piano .input-mode-btn:hover {
       border-color: rgba(42, 126, 148, 0.75);
       background: rgba(42, 126, 148, 0.2);
       color: #f8f0e5;
     }
 
+    #staff-toolbar .input-mode-btn:hover {
+      color: var(--teal);
+    }
+
+    #staff-toolbar .input-mode-btn:focus-visible,
     #piano .input-mode-btn:focus-visible {
       outline: 2px solid rgba(42, 126, 148, 0.95);
       outline-offset: 2px;
     }
 
+    #staff-toolbar .input-mode-btn:active,
     #piano .input-mode-btn:active {
       transform: translateY(1px);
     }
 
+    #staff-toolbar .input-mode-btn-active,
     #piano .input-mode-btn-active,
     #piano .click-note-done {
       border-color: rgba(42, 126, 148, 0.95);
@@ -846,16 +874,31 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
     }
 
+    #staff-toolbar .input-mode-btn-active {
+      box-shadow: 0 4px 10px rgba(42, 126, 148, 0.13);
+    }
+
+    #staff-toolbar .input-mode-btn-inactive,
     #piano .input-mode-btn-inactive {
       color: rgba(248, 240, 229, 0.72);
     }
 
+    #staff-toolbar .input-mode-btn-inactive {
+      color: var(--text-muted);
+    }
+
     @media (max-width: 720px) {
+      #staff-toolbar .input-source-mode-toggle,
       #piano .input-source-mode-toggle,
       #piano .click-note-input {
         margin-bottom: 7px;
       }
 
+      #staff-toolbar .input-source-mode-toggle {
+        margin-bottom: 0;
+      }
+
+      #staff-toolbar .input-mode-btn,
       #piano .input-mode-btn {
         min-width: 40px;
         min-height: 32px;
