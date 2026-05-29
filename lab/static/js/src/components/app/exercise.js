@@ -238,6 +238,7 @@ define([
         var c = new MidiComponent({
           chords: this.models.inputChords,
           midiDevice: this.models.midiDevice,
+          feedback: this.models.feedback,
         });
         c.init(this);
         this.addComponent(c);

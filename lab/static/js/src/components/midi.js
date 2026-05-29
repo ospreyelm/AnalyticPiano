@@ -91,6 +91,7 @@ define([
      * @protected
      */
     this.settings = settings || {};
+    this.feedback = this.settings.feedback || null;
     /**
      * The midi channel used to transmit messages.
      * @type {number}
@@ -189,11 +190,7 @@ define([
         inputCount: inputCount,
       });
       if (inputCount === 0) {
-        this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
-          type: "warning",
-          title: Config.get("errorText.midiUnavailable.title"),
-          description: Config.get("errorText.midiUnavailable.description"),
-        });
+        if (this.feedback) { this.feedback.emit("input.device.none", { inlineEl: "#midi-fallback-message" }); }
       }
     },
     /**
@@ -202,11 +199,7 @@ define([
      * @return undefined
      */
     onWebMIDIError: function () {
-      this.broadcast(EVENTS.BROADCAST.NOTIFICATION, {
-        type: "warning",
-        title: Config.get("errorText.midiUnavailable.title"),
-        description: Config.get("errorText.midiUnavailable.description"),
-      });
+      if (this.feedback) { this.feedback.emit("input.device.none", { inlineEl: "#midi-fallback-message" }); }
       this.broadcast(EVENTS.BROADCAST.MIDI_INPUTS_CHANGED, { inputCount: 0 });
       this.initListeners();
     },
