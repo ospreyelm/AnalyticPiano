@@ -81,6 +81,12 @@ var r5 = mod.resolveClick({ px: 100, py: 175 }, LAYOUT, {
 });
 assertEqual("bass top line -> A3 midi 57", r5 && r5.midi, 57);
 
+var r5b = mod.resolveClick({ px: 100, py: 175 }, LAYOUT, {
+  key: "jEb", palette: "diatonic", activeColumnOnset: 0
+});
+assertEqual("Eb major key palette -> A3 becomes Ab3", r5b && r5b.midi, 56);
+assertEqual("Eb major key palette -> A alteration is flat", r5b && r5b.alter, -1);
+
 // Sequential gate: clicking the onset-1024 column when active target is onset 0 -> null.
 var r6 = mod.resolveClick({ px: 240, py: 95 }, LAYOUT, {
   key: "jG_", palette: "diatonic", activeColumnOnset: 0

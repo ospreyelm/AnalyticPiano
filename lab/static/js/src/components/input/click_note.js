@@ -117,11 +117,13 @@ define([
     },
 
     _key: function () {
-      if (this.keySignature && this.keySignature.getKey) return this.keySignature.getKey();
       if (this.exerciseContext && this.exerciseContext.getDefinition) {
         var def = this.exerciseContext.getDefinition();
+        var score = def && def.getScore ? def.getScore() : null;
+        if (score && score.meta && score.meta.key) return score.meta.key;
         if (def && def.getKeyName) return def.getKeyName();
       }
+      if (this.keySignature && this.keySignature.getKey) return this.keySignature.getKey();
       return "C";
     },
 
