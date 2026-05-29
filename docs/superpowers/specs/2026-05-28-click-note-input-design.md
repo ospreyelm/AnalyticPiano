@@ -78,8 +78,8 @@ the structure MIDI input already produces, not a parallel one.
 | Commit model (chord) | **Snapshot-then-grade**: commit passes `locked target MIDI + clicked MIDI` to the shared harmonization grading helper — does not rely on release-grace + settle timing |
 | Voice assignment | None — grader and overlay are pitch-keyed |
 | Preview | Ghost-note hover preview (approach C) |
-| Input mode | **Explicit Keyboard/MIDI ↔ Click toggle.** Default chosen by MIDI detection (no device → default Click + recommend it; device present → default Keyboard/MIDI). Always overridable; persists per session. Mode gates affordances + which component is armed |
-| Click-mode harmonization grading | **All grading routes through explicit commit.** Click mode suppresses the MIDI live-settle auto-grade for harmonization, so a connected device can't auto-grade behind the student's deliberate build |
+| Source mode | **Explicit Live ↔ Click toggle.** Default chosen by MIDI availability (no device → default Click + recommend it; device present → default Live). Always overridable; persists per session. Source mode gates affordances + which component is armed |
+| Click-mode harmonization grading | **All grading routes through explicit commit.** Click mode suppresses live MIDI/computer-keyboard note handling for harmonization, so a connected device can't auto-grade behind the student's deliberate build |
 
 ## Architecture
 
@@ -131,9 +131,12 @@ commit → merge locked target MIDI + pending click set → grade explicit MIDI 
   gated identically to the keyboard components (skipped for symbolic-meter /
   key-signature exercises). Not wiring `play.js` would leave click input dead in
   half the app — both are in scope.
-- Each entrypoint owns the **input-mode** state (Keyboard/MIDI ↔ Click) and
+- Each entrypoint owns the **source-mode** state (`live` ↔ `click`) and
   passes it to the sheet + input components so each arms/disarms and shows/hides
-  its affordances accordingly (see "Input mode").
+  its affordances accordingly (see "Source mode").
+- This source-mode state is separate from the existing
+  `EVENTS.BROADCAST.INPUT_MODE` qwerty/notename computer-keyboard mode. Do not
+  reuse that event/value space for Live/Click.
 
 ### New: shared key-signature logic (mandatory extraction)
 - `getKeySignatureAlterations(key)` is currently private in
@@ -148,36 +151,49 @@ commit → merge locked target MIDI + pending click set → grade explicit MIDI 
 MIDI settle path and click commit both evaluate the same explicit MIDI-set
 contract (see §4). The musical grader contract does not change.
 
-## Input mode (Keyboard/MIDI ↔ Click)
+## Source mode (Live ↔ Click)
 
 Mouse entry is a different interaction model from live play: deliberate
 placement + explicit commit, not real-time performance. An explicit mode keeps
 each model's UI clean and prevents the two harmonization grading contracts
 (live-settle vs commit) from running at once.
 
-**Two modes.** `keyboard` (MIDI + computer keyboard — the existing behavior) and
-`click`. Surfaced as a toolbar toggle near `#piano`.
+**Two source modes.** `live` (MIDI + computer keyboard — the existing
+performance behavior) and `click` (mouse editor + explicit commit). Surface this
+as a toolbar toggle near `#piano`, labeled in the UI as **Live** / **Click**.
+
+**Separate axis from qwerty/notename.** `EVENTS.BROADCAST.INPUT_MODE` already
+controls the computer-keyboard sub-mode with values `"qwerty"` and
+`"notename"` in `note_name.js`. Live/Click is a higher-level source mode and
+must not reuse that event or those values. Add a separate source-mode state or a
+new event such as `EVENTS.BROADCAST.INPUT_SOURCE_MODE` with values `"live"` and
+`"click"`.
 
 **Default + recommendation.** `midi.js` already detects zero MIDI inputs
-(`midi.js:183`, which today broadcasts the "no MIDI" guidance). Reuse that
-signal: no device → default to **Click** and surface the existing guidance as a
-"using click input" recommendation; device present → default to **Keyboard/MIDI**.
-The toggle is always manually overridable; selection persists per session
-(client-side, e.g. `localStorage` — no exercise/DB change).
+(`midi.js:183`, which today broadcasts the "no MIDI" guidance), but that is only
+a notification side effect. Add a small structured availability signal, e.g.
+`EVENTS.BROADCAST.MIDI_INPUTS_CHANGED` with `{ inputCount }`, emitted on initial
+MIDI access, WebMIDI error (`inputCount: 0`), and device state changes. Source
+mode defaults from that signal: no device → default to **Click** and surface the
+existing guidance as a "using click input" recommendation; device present →
+default to **Live**. The toggle is always manually overridable; selection
+persists per session (client-side, e.g. `localStorage` — no exercise/DB change).
 
 **What the mode gates.**
 - `click` mode arms `ClickNoteInputComponent` and shows the accidental palette,
   ghost preview, and **Done** commit button. For harmonization it **suppresses
-  the MIDI live-settle auto-grade** so all grading goes through commit (§4) —
-  even if a device is plugged in.
-- `keyboard` mode hides the palette/ghost/Done and restores the existing
-  MIDI/keyboard live-settle path unchanged. `ClickNoteInputComponent` is
-  disarmed (no canvas hit-testing).
+  live MIDI/computer-keyboard note handling and live-settle auto-grade** so all
+  grading goes through click commit (§4) — even if a device is plugged in.
+  Physical MIDI and computer-keyboard note events are ignored for harmonization
+  in Click mode v1; they do not add to the pending clicked set.
+- `live` mode hides the palette/ghost/Done and restores the existing
+  MIDI/computer-keyboard live-settle path unchanged. `ClickNoteInputComponent`
+  is disarmed (no canvas hit-testing).
 
-**Mid-session device change.** WebMIDI `onstatechange` (plug/unplug) does **not**
-force a mode switch — it only updates the recommendation (e.g. offer "switch to
-click input?" when the last device disappears). Never yank the student out of a
-mode mid-build.
+**Mid-session device change.** WebMIDI `onstatechange` (plug/unplug) emits the
+structured MIDI availability signal but does **not** force a mode switch — it
+only updates the recommendation (e.g. offer "switch to click input?" when the
+last device disappears). Never yank the student out of a mode mid-build.
 
 **Mode switch clears in-flight state.** Switching modes clears any pending
 clicked notes and removes the pending overlay (same as disable, §4) so a
@@ -361,11 +377,14 @@ active-MIDI set) while removing the timing dependency. No change to
 the existing harmonization grade branch is factored into an explicit MIDI-set
 helper shared by MIDI settle and click commit.
 
-**In `click` mode the MIDI live-settle auto-grade is suppressed** (see "Input
-mode"): the settle timer that calls the helper with
+**In `click` source mode the MIDI live-settle auto-grade is suppressed** (see
+"Source mode"): the settle timer that calls the helper with
 `tracker.activeMidi(Date.now())` does not fire for harmonization, so a connected
 device never auto-grades behind the student's deliberate build. The same helper
 still runs — only its trigger changes from settle-timer to explicit commit.
+In Click mode v1, physical MIDI and computer-keyboard note events are ignored
+for harmonization rather than converted into pending clicked notes. Live
+performance input remains available by switching back to Live mode.
 
 ### Single-note mode (deferred until an existing target is named)
 The earlier "one note per column" idea is not v1 until the implementation plan
@@ -419,9 +438,9 @@ specified.
 beside `NoteNameInputComponent` in **both** entrypoints (`exercise.js:241`,
 `play.js:92`), gated identically. Inject the sheet so the component can read
 `_staffLayout` + pending clicked set and request the ghost draw. Mount the
-palette to `#piano`. The entrypoint owns input-mode state, defaults it from the
-`midi.js` no-input signal, and arms/disarms the click component + palette/Done
-UI on toggle (see "Input mode").
+palette to `#piano`. The entrypoint owns source-mode state, defaults it from the
+structured MIDI availability signal, and arms/disarms the click component +
+palette/Done UI on toggle (see "Source mode").
 
 **Events.** Harmonization click/re-click mutates only pending click state; it
 does not broadcast `BROADCAST.NOTE` while building. Chord-mode commit calls the
@@ -439,11 +458,13 @@ that gesture so it does not rely on chord-bank live-note state.
   state and survives until commit/advance; pending overlay redraws from it.
 - Disable / exercise change / advance / **mode switch** → clear pending clicked
   state + remove pending overlay.
-- Mode = `click`: MIDI live-settle auto-grade suppressed for harmonization; all
-  grading via commit. Mode = `keyboard`: existing MIDI/keyboard path unchanged,
-  click disarmed.
-- Device plugged/unplugged mid-session (`onstatechange`) → update the mode
-  recommendation only; never force-switch mid-build.
+- Source mode = `click`: physical MIDI/computer-keyboard note input ignored for
+  harmonization and live-settle auto-grade suppressed; all grading via commit.
+  Source mode = `live`: existing MIDI/computer-keyboard path unchanged, click
+  disarmed.
+- Device plugged/unplugged mid-session (`onstatechange`) → emit structured MIDI
+  availability and update the mode recommendation only; never force-switch
+  mid-build.
 - Duplicate pending pitch → re-click toggles off.
 
 ## 7. Testing
@@ -459,18 +480,20 @@ that gesture so it does not rely on chord-bank live-note state.
 - Snapshot/cap logic (pure, if factored out): clicked notes at available student
   slot cap reject a new pitch but allow toggle-off; commit yields
   `lockedTargetMidi + pendingClickedMidi`.
-- Mode logic (pure, if factored out): default resolves to `click` when input
-  count is 0 and `keyboard` when ≥1; a stored preference overrides the default;
-  switching modes returns "clear pending."
+- Source-mode logic (pure, if factored out): default resolves to `click` when
+  input count is 0 and `live` when ≥1; a stored preference overrides the
+  default; switching modes returns "clear pending." Verify this is independent
+  from the existing qwerty/notename `INPUT_MODE` keyboard sub-mode.
 - Manual browser pass (per CLAUDE.md UI rule): harmonization exercise —
   click-build a chord, hit the cap, commit, verify grade fires on
   `lockedTargetMidi + pendingClickedMidi` and not an empty set; verify ghost
   tracks the cursor; verify columns ahead of the target are inert; verify
   pending state clears on advance. Test from **both** `exercise.js` and
-  `play.js` entrypoints. Mode: with no MIDI device, verify the app defaults to
-  Click and recommends it; with a device, defaults to Keyboard/MIDI; toggle both
-  ways and confirm palette/Done show only in Click and that a connected device
-  does not auto-grade harmonization while in Click mode; switching modes
+  `play.js` entrypoints. Source mode: with no MIDI device, verify the app
+  defaults to Click and recommends it; with a device, defaults to Live; toggle
+  both ways and confirm palette/Done show only in Click, qwerty/notename still
+  works as a separate Live-mode keyboard sub-toggle, and a connected device does
+  not add notes or auto-grade harmonization while in Click mode; switching modes
   mid-build clears the pending chord.
 
 ## 8. Documentation impact
