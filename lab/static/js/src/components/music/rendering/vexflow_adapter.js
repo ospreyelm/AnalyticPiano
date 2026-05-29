@@ -19,10 +19,6 @@ define([
     return map[type] || type;
   }
 
-  // Returns the alteration (in semitones) that the key signature applies to each step (C, D, E, F, G, A, B)
-  // For example, F major (1 flat: Bb) returns { B: -1 }
-  // For example, G major (1 sharp: F#) returns { F: 1 }
-
   function convertRomanSymbols(text) {
     return String(text || "")
       .replace(/bb/g, "𝄫")
@@ -361,58 +357,6 @@ define([
       return null;
     }
     return null;
-  }
-
-  function normalizeKeyForVexFlow(key) {
-    if (!key) return "C";
-    var k = String(key).trim();
-    // Handle HarmonyLab format: iG_ -> Gm, jG_ -> G
-    if (k.startsWith('i') || k.startsWith('j')) {
-      var mode = k.charAt(0);
-      var root = k.substring(1).replace('_', '');
-      return mode === 'i' ? root + 'm' : root;
-    }
-    // Handle lowercase keys (music21 style): g -> Gm, c -> Cm
-    if (k.length > 0 && k[0] === k[0].toLowerCase()) {
-      var root = k[0].toUpperCase() + k.substring(1);
-      return root.endsWith('m') ? root : root + 'm';
-    }
-    return k;
-  }
-
-  function getKeySignatureAlterations(key) {
-    if (!key) return {};
-    
-    var alterations = {};
-    var k = normalizeKeyForVexFlow(key);
-    
-    // Map key to number of sharps (positive) or flats (negative)
-    var map = {
-      'C': 0, 'G': 1, 'D': 2, 'A': 3, 'E': 4, 'B': 5, 'F#': 6, 'C#': 7,
-      'F': -1, 'Bb': -2, 'Eb': -3, 'Ab': -4, 'Db': -5, 'Gb': -6, 'Cb': -7,
-      'Am': 0, 'Em': 1, 'Bm': 2, 'F#m': 3, 'C#m': 4, 'G#m': 5, 'D#m': 6, 'A#m': 7,
-      'Dm': -1, 'Gm': -2, 'Cm': -3, 'Fm': -4, 'Bbm': -5, 'Ebm': -6, 'Abm': -7
-    };
-    
-    var accCount = map[k] || 0;
-    
-    // Order of sharps: F C G D A E B
-    // Order of flats: B E A D G C F
-    if (accCount > 0) {
-      // Sharps
-      var sharpOrder = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
-      for (var i = 0; i < accCount && i < sharpOrder.length; i++) {
-        alterations[sharpOrder[i]] = 1;
-      }
-    } else if (accCount < 0) {
-      // Flats
-      var flatOrder = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
-      for (var i = 0; i < Math.abs(accCount) && i < flatOrder.length; i++) {
-        alterations[flatOrder[i]] = -1;
-      }
-    }
-    
-    return alterations;
   }
 
   function computeFiguredLabel(midi, analyzer, abbreviate) {
@@ -1062,7 +1006,7 @@ define([
   // Add a key signature with a minor->relative-major fallback for older VexFlow builds
   function addKeySignatureSafe(stave, key) {
     if (!key) return;
-    var k = normalizeKeyForVexFlow(key);
+    var k = VexflowAdapterLogic.normalizeKeyForVexFlow(key);
     try {
       stave.addKeySignature(k);
     } catch (e) {
@@ -1164,7 +1108,7 @@ define([
       var figuredYOffset = baseFiguredYOffset - staffYOffset;
       
       // Calculate key signature alterations once for the entire score
-      var keySignatureAlterations = getKeySignatureAlterations(meta.key);
+      var keySignatureAlterations = VexflowAdapterLogic.getKeySignatureAlterations(meta.key);
 
       if (!score.measures || score.measures.length === 0) {
         return;
