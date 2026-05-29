@@ -196,11 +196,37 @@
     };
   }
 
+  function defaultSourceMode(inputCount, storedPref) {
+    if (storedPref === "live" || storedPref === "click") return storedPref;
+    return inputCount > 0 ? "live" : "click";
+  }
+
+  function capRemaining(voiceCountPolicy, lockedVoiceCount) {
+    var max = (voiceCountPolicy && typeof voiceCountPolicy.max === "number")
+      ? voiceCountPolicy.max : 4;
+    return Math.max(0, max - (lockedVoiceCount || 0));
+  }
+
+  function buildCommitSnapshot(lockedMidi, clickedMidi) {
+    var seen = {};
+    var out = [];
+    (lockedMidi || []).concat(clickedMidi || []).forEach(function (m) {
+      if (!seen[m]) {
+        seen[m] = true;
+        out.push(m);
+      }
+    });
+    return out.sort(function (a, b) { return a - b; });
+  }
+
   return {
     pickSystem: pickSystem,
     pickStave: pickStave,
     stepFromTopLine: stepFromTopLine,
     pickColumn: pickColumn,
     resolveClick: resolveClick,
+    defaultSourceMode: defaultSourceMode,
+    capRemaining: capRemaining,
+    buildCommitSnapshot: buildCommitSnapshot,
   };
 });

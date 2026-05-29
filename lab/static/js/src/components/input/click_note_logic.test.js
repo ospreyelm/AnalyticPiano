@@ -93,6 +93,29 @@ var r7 = mod.resolveClick({ px: 100, py: -200 }, LAYOUT, {
 });
 assertEqual("click far outside any system -> null", r7, null);
 
+// --- source mode default ---------------------------------------------------
+assertEqual("no device -> click", mod.defaultSourceMode(0, null), "click");
+assertEqual("device present -> live", mod.defaultSourceMode(2, null), "live");
+assertEqual("stored preference overrides (live) with 0 devices",
+  mod.defaultSourceMode(0, "live"), "live");
+assertEqual("stored preference overrides (click) with devices",
+  mod.defaultSourceMode(3, "click"), "click");
+assertEqual("invalid stored pref ignored -> falls back to count",
+  mod.defaultSourceMode(0, "garbage"), "click");
+
+// --- chord cap -------------------------------------------------------------
+assertEqual("cap = max(0, policyMax - lockedCount): 4 - 1 = 3",
+  mod.capRemaining({ min: 3, max: 4 }, 1), 3);
+assertEqual("cap floors at 0", mod.capRemaining({ min: 3, max: 4 }, 5), 0);
+assertEqual("cap default policy max 4 when policy missing",
+  mod.capRemaining(null, 1), 3);
+
+// --- commit snapshot -------------------------------------------------------
+assertEqual("snapshot merges + dedups + sorts",
+  mod.buildCommitSnapshot([48], [67, 60, 64, 48]), [48, 60, 64, 67]);
+assertEqual("snapshot with no locked notes",
+  mod.buildCommitSnapshot([], [64, 60]), [60, 64]);
+
 if (fail > 0) {
   console.error("\n" + fail + " assertion(s) failed.");
   process.exit(1);
