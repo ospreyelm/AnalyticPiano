@@ -11,6 +11,7 @@ define([
     this.exerciseContext = this.settings.exerciseContext || null;
     this.keySignature = this.settings.keySignature || null;
     this.midiDevice = this.settings.midiDevice || null;
+    this.feedback = this.settings.feedback || null;
 
     this.enabled = false;
     this.palette = "diatonic";
@@ -155,6 +156,16 @@ define([
       });
     },
 
+    _resolveAny: function (e) {
+      var layout = this._layout();
+      if (!layout) return null;
+      return ClickNoteLogic.resolveClick(this._eventPoint(e), layout, {
+        key: this._key(),
+        palette: this.palette
+        // no activeColumnOnset -> resolves to whatever column the pixel lands in
+      });
+    },
+
     _onCanvasMove: function (e) {
       if (!this.enabled) return;
       var resolved = this._resolve(e);
@@ -177,7 +188,14 @@ define([
     _onCanvasClick: function (e) {
       if (!this.enabled) return;
       var resolved = this._resolve(e);
-      if (!resolved) return;
+      if (!resolved) {
+        // A valid-but-inactive column resolves only when the onset gate is removed.
+        var any = this._resolveAny(e);
+        if (any && any.column && any.column.onset !== this._activeTargetOnset() && this.feedback) {
+          this.feedback.emit("harmonization.click.outside_column", { context: this._feedbackContext() });
+        }
+        return;
+      }
       this._activeColumn = resolved.column;
 
       var existing = -1;
@@ -209,8 +227,29 @@ define([
       if (this.sheet) this.sheet.render();
     },
 
+    _feedbackContext: function () {
+      var ec = this.exerciseContext;
+      // ExerciseDefinition.exercise is a PROPERTY (parsed object), not a method.
+      if (!ec || !ec.definition || !ec.definition.exercise) return null;
+      var ex = ec.definition.exercise;
+      if (!ex) return null;
+      var tags = ex.skill_tags || [], unit = null;
+      for (var i = 0; i < tags.length; i++) {
+        var m = /^unit:(\d+)$/.exec(tags[i]);
+        if (m) { unit = parseInt(m[1], 10); break; }
+      }
+      return { exerciseId: ex.exerciseId || ex.id || ex.exercise_id || null, unit: unit,
+        complexity: typeof ex.complexity_score === "number" ? ex.complexity_score : null, skillTags: tags };
+    },
+
     _showCapHint: function () {
       if (!this._paletteWrap) return;
+      var capEntry = this.feedback
+        ? this.feedback.emit("harmonization.click.note_cap", { surface: "none", context: this._feedbackContext() })
+        : null;
+      var capTitle = capEntry ? capEntry.title : "Chord is full.";
+      var capBody = capEntry ? capEntry.body : "Remove a note to add another.";
+
       var self = this;
       window.clearTimeout(this._capHintTimer);
       this._paletteWrap.removeClass("click-note-cap-shake");
@@ -220,7 +259,7 @@ define([
       if (!this._capHintEl) {
         this._capHintEl = $(
           '<div class="click-note-cap-hint" role="status" aria-live="polite">' +
-          '<strong>Chord is full.</strong><span>Remove a note to add another.</span>' +
+          '<strong>' + capTitle + '</strong><span>' + capBody + '</span>' +
           '</div>'
         );
         this._paletteWrap.append(this._capHintEl);
@@ -269,7 +308,15 @@ define([
       if (!this.enabled) return;
       var ctx = this.exerciseContext;
       if (!ctx || typeof ctx.gradeHarmonizationMidiSet !== "function") return;
-      if (!this._pending.length) return;
+      if (!this._pending || this._pending.length === 0) {
+        if (this.feedback) {
+          this.feedback.emit("harmonization.click.empty_commit", {
+            controlEl: this._doneButton || ".click-note-done",
+            context: this._feedbackContext()
+          });
+        }
+        return;
+      }
 
       var target = this._activeTarget() || {};
       var lockedMidi = [];
@@ -312,7 +359,8 @@ define([
         self._paletteBtns[d[0]] = btn;
         palette.append(btn);
       });
-      var doneBtn = $('<button type="button" class="input-mode-btn click-note-done" title="Grade the notes you clicked">Done</button>');
+      var doneBtn = $('<button type="button" class="input-mode-btn click-note-done" title="Lock in this chord and check it — or press Enter">Lock chord <span class="click-note-done-key">⏎</span></button>');
+      this._doneButton = doneBtn;
       doneBtn.on("click", function (e) {
         e.preventDefault();
         self._commit();

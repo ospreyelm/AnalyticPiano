@@ -64,7 +64,13 @@ Spec: [docs/superpowers/specs/2026-04-23-umto-consistency-design.md](docs/superp
 
 Every PR must include documentation updates for the following categories of change:
 
-**New or modified exercise type** — update `docs/exercise_types.md`:
+**New or modified student-facing feedback** — do both:
+1. Add/modify the entry in `lab/static/js/src/config/feedback_catalog.js`
+2. Add/update the row in `docs/feedback_catalog.md`
+Route all student-facing messages through `feedbackService.emit(id, opts)`. Never broadcast
+`EVENTS.BROADCAST.NOTIFICATION` from feature code; never use `window.alert` for students.
+
+**New exercise type** — update `docs/exercise_types.md`:
 - Add/update the type's entry under Play types or Identify types
 - Update the "All exercise types at a glance" summary table at the bottom
 

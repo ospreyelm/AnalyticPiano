@@ -32,5 +32,6 @@ define({
     INPUT_SOURCE_MODE: "inputsourcemode",
     MIDI_INPUTS_CHANGED: "midiinputschanged",
     LABEL_SELECTED: "labelselected",
+    FEEDBACK: "feedback",
   },
 });
