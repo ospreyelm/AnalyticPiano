@@ -12,9 +12,10 @@ Two related extensions to the `roman_from_clausulae` exercise system:
    in Three Voices") instead of synthetic/jargon descriptions.
 2. **Units 10–14** — Extend `generate_roman_from_clausulae` beyond unit 9
    (simple authentic cadences) to cover units 10, 11, 12, 13, 14, with per-unit
-   Roman-numeral answer sets. Units 10–12 and 14 are sourced from the clausulae
-   generation engine; unit 13 (Rule of the Octave) is sourced from transposed
-   compendium ROO `notes` as a sanctioned exception (§0).
+   Roman-numeral answer sets, **all sourced from the clausulae generation
+   engine**. Unit 13 (Rule of the Octave) requires a new engine generator added
+   to `clausulae-project` first (§0) — no compendium score-content sourcing, so
+   the lessons spec stays intact.
 
 This honors the preservation notes in
 [2026-05-26-roman-from-clausulae-lessons.md](2026-05-26-roman-from-clausulae-lessons.md):
@@ -39,36 +40,40 @@ material yet.
 
 | Decision | Choice |
 |---|---|
-| Content source for units 10–12, 14 | **Engine only** — `enumerate_compound_3voice` / `enumerate_compound_4voice` / `enumerate_double_3voice` / `enumerate_double_4voice` (plus `enumerate_simple` for 9). No compendium note-sourcing. |
-| Content source for unit 13 (Rule of Octave) | **Compendium ROO `notes`, transposed** to the target keys (sanctioned lessons-spec exception — see §0). Engine has no ROO generator. |
+| Content source for units 9–12, 14 | **Engine only** — `enumerate_simple` / `enumerate_compound_3voice` / `enumerate_compound_4voice` / `enumerate_double_3voice` / `enumerate_double_4voice`. No compendium note-sourcing. |
+| Content source for unit 13 (Rule of Octave) | **Engine** — new `enumerate_rule_of_octave` (3v/4v) added to `clausulae-project` (§0), chaining already-validated compound triples on the stepwise bass scale. No compendium content; lessons spec unchanged. |
 | Titling | **Curated `(family, n_voices) → page_title` map**, applied to **both** generators (`generate_roman_from_clausulae` and `generate_clausulae_b1`). |
 | RN derivation | **music21 auto-derivation** via a new VoiceEvent→music21 converter, with a verification gate. |
 | Unit assignment | **Generate-and-bin** — analyze derived RNs, assign each exercise to the lowest unit in `{9,10,11,12,13,14}` whose answer set covers them. |
 | Per-unit answer-set source of truth | **Extract shared JSON** read by both JS and Python. |
 
-## §0. Unit 13 — Sanctioned Compendium Exception
+## §0. Unit 13 — Engine ROO Generator (cross-repo prerequisite)
 
-The lessons spec forbids sourcing student score content from the compendium.
-Unit 13 (Rule of the Octave) is a **narrow, explicit exception**, approved by the
-author on 2026-05-30, because:
+Unit 13 (Rule of the Octave) stays **engine-only**, consistent with all other
+units — no compendium score content, so the lessons spec needs no exception.
 
-- The engine has no ROO generator, and ROO is a real curriculum unit.
-- Unlike the rejected MusicXML→reduced-CIR path, `index.json` already holds
-  clean, parsed, validated `notes` (pitch/offset/ql per staff). The 28 ROO
-  entries all carry usable `notes`.
-- ROO progressions are stepwise diatonic scales harmonized by the rule — a
-  well-defined object, not the "musically meaningless" output the spec warned
-  about.
+ROO is already modeled engine-side: `test_rule_of_octave_in_valid_triples`
+(`clausulae-project/tests/test_corpus_validation.py:393`) validates each ROO
+vertical sonority as a member of `_COMPOUND_3V_VALID` / `_COMPOUND_4V_VALID` —
+the same sets `enumerate_compound_3voice` / `enumerate_compound_4voice` produce.
+So ROO = a chain of engine-valid compound triples along the stepwise bass scale
+(degrees 1→8 and back). All 28 compendium ROO entries already pass this check, so
+the construction is validated.
 
-**Mechanism:** read the ROO entries from `index.json`
-(`page_title` contains "Rule of the Octave"), build UMTO voices from their
-`notes`, **transpose** each to the `TARGET_KEYS` (prefer a register that keeps
-the voices around middle C), derive RNs via music21 (§3), and bin to unit 13.
+**Prerequisite (separate, in `clausulae-project`):** add
+`enumerate_rule_of_octave(n_voices=3|4)` to `clausulae/generate.py`. It walks the
+bass scale and, at each degree, selects the validated compound triple whose bass
+matches that degree, yielding the full ROO progression. Ship it with its own
+tests in `clausulae-project` (the 28 compendium ROO entries are the natural
+fixture), then HarmonyLab imports it like the other `enumerate_*` functions.
 
-The lessons spec
-([2026-05-26-roman-from-clausulae-lessons.md](2026-05-26-roman-from-clausulae-lessons.md))
-must be amended to record this exception so future agents don't "fix" it back to
-engine-only.
+**Cross-repo ordering:** the `clausulae-project` generator must land (and be
+`pip install -e`-available) before the HarmonyLab unit-13 path can be
+implemented. The implementation plan tracks this as an explicit upstream
+dependency. Likely dispatched to a `clausulae-project` agent.
+
+The compendium stays purely a **validation fixture** here — never a student
+content source.
 
 ## Components
 
@@ -168,10 +173,10 @@ Refactor `generate_roman_from_clausulae.py`:
   `clausulae/generate.py`. The `*_late_bass` and `enumerate_compound_3voice_double_tau1`
   variants are optional extras; planning decides whether to include them.
   Run across all `TARGET_KEYS`, retaining the existing `_tonal_valid` filter.
-- **ROO pool (unit 13, §0):** ROO `index.json` entries → UMTO voices → transpose
-  to `TARGET_KEYS`.
-- **Per combo/entry + key:** realize/transpose voices → derive RN set via
-  music21 (§3) → build payload.
+- **ROO pool (unit 13, §0):** `enumerate_rule_of_octave` (3v/4v) — the new
+  upstream `clausulae-project` generator — across `TARGET_KEYS`.
+- **Per combo + key:** realize voices → derive RN set via music21 (§3) → build
+  payload. (ROO uses the same realize→analyze path as cadences.)
 - **Binning:** assign the exercise to the **lowest** unit in
   `{9, 10, 11, 12, 13, 14}` whose allowed-answer set ⊇ the exercise's RN set.
   ROO material naturally lands in 13 (its inversions/scalar harmonies need unit
@@ -193,8 +198,8 @@ Refactor `generate_roman_from_clausulae.py`:
 Explicitly **out of scope**:
 
 - Sequences (units 15+; no engine generator).
-- Sourcing score content from the compendium for **non-ROO** units (forbidden by
-  the lessons spec). The compendium is used **only** for unit 13 ROO (§0).
+- Sourcing score content from the compendium for **any** unit (forbidden by the
+  lessons spec). The compendium is used only as a validation fixture.
 - A tag→RN mapping layer over the taxonomy (future cleanup; see §1).
 - Any change to `applySkillFilter` logic (already correct).
 - Any change to the grading engine or UMTO schema.
@@ -206,8 +211,9 @@ Explicitly **out of scope**:
   `applySkillFilter`. Blocker 2 status unchanged.
 - **`docs/management_commands.md`:** update the `generate_roman_from_clausulae`
   entry for the new pools, ROO source, binning, and per-unit playlists.
-- **`2026-05-26-roman-from-clausulae-lessons.md`:** record the §0 ROO compendium
-  exception so future agents don't revert it.
+- **`clausulae-project`:** new `enumerate_rule_of_octave` generator + tests
+  (upstream prerequisite, §0). No lessons-spec exception needed — the spec stays
+  as-is since all units remain engine-sourced.
 
 ### 7. Verification (spec-mandated)
 
@@ -224,16 +230,16 @@ Per the lessons spec, passing tests is **not** sufficient. After generation:
 
 The engine's compound/double cadences may not produce enough harmonic variety to
 populate units 10, 11, and 14 (e.g. everything bins into 9 and 12). Unit 13 is
-safe (sourced directly from ROO entries), but 10/11/14 depend on the engine's
-output landing in those bins. The bin histogram in step 7.1 is the early-warning
-signal. If bins are sparse, the "extend to 10–14" goal partially fails for those
-units and we revisit — most likely re-opening the compendium-exception
-conversation for them too. Surface the histogram **before** committing to bulk
-generation.
+well-defined (ROO RNs land squarely in unit 13's set), but 10/11/14 depend on the
+engine's cadence output landing in those bins. The bin histogram in step 7.1 is
+the early-warning signal. If bins are sparse, the "extend to 10–14" goal
+partially fails for those units and we revisit. Surface the histogram **before**
+committing to bulk generation.
 
-Secondary: ROO transposition must keep voices in a singable/playable register
-(prefer centering around middle C); naive transposition could push voices to
-extreme octaves. The new converter should clamp/choose octaves accordingly.
+Secondary: the cross-repo dependency (§0) is a sequencing risk — the HarmonyLab
+unit-13 path is blocked until `enumerate_rule_of_octave` ships in
+`clausulae-project`. The plan must order it first or fence unit 13 behind a
+feature check so the other units aren't blocked by it.
 
 ## Tests
 
@@ -248,8 +254,10 @@ extreme octaves. The new converter should clamp/choose octaves accordingly.
   analysis, not Clausulae analysis.
 - New VoiceEvent→music21 converter produces correct MIDI/durations (does not
   depend on the broken `_pitch_to_midi`).
-- ROO transposition: each transposed entry keeps voices in the target register
-  (around middle C) and derives a sane RN sequence.
+- `enumerate_rule_of_octave` (upstream, in `clausulae-project`): output chains
+  only `_COMPOUND_*_VALID` triples; the 28 compendium ROO entries are reproduced
+  by it.
+- HarmonyLab ROO exercises bin to unit 13 and derive a sane RN sequence.
 
 These tests gate correctness but **do not** replace the manual browser
 verification in section 7.
