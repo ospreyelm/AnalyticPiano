@@ -11,11 +11,11 @@ Two related extensions to the `roman_from_clausulae` exercise system:
    musical-type page titles from the Galant Compendium (e.g. "Compound Cadences
    in Three Voices") instead of synthetic/jargon descriptions.
 2. **Units 10–14** — Extend `generate_roman_from_clausulae` beyond unit 9
-   (simple authentic cadences) to cover units 10, 11, 12, 13, 14, with per-unit
-   Roman-numeral answer sets, **all sourced from the clausulae generation
-   engine**. Unit 13 (Rule of the Octave) requires a new engine generator added
-   to `clausulae-project` first (§0) — no compendium score-content sourcing, so
-   the lessons spec stays intact.
+   (simple authentic cadences) to cover units **10, 11, 12, 14**, with per-unit
+   Roman-numeral answer sets, all sourced from the clausulae generation engine.
+   **Unit 13 (Rule of the Octave) is deferred to a separate design spike** (§0) —
+   its engine-generation premise is unproven. No compendium score-content
+   sourcing, so the lessons spec stays intact.
 
 This honors the preservation notes in
 [2026-05-26-roman-from-clausulae-lessons.md](2026-05-26-roman-from-clausulae-lessons.md):
@@ -24,7 +24,7 @@ musical type, not measure numbers or Clausulae jargon.
 
 ## Key Finding: Blocker 1 Already Resolved
 
-CLAUDE.md's "HIGH PRIORITY: Multi-Unit Playlist System — Blocker 1" warns that
+CLAUDE.md's and AGENTS.md's "HIGH PRIORITY: Multi-Unit Playlist System — Blocker 1" warn that
 `applySkillFilter`'s generic path is broken and needs a `UNIT_ALLOWED_ANSWERS`
 map. **That map already exists** at
 [exercise_definition.js:15–90](../../../lab/static/js/src/models/exercise_definition.js),
@@ -41,87 +41,75 @@ material yet.
 | Decision | Choice |
 |---|---|
 | Content source for units 9–12, 14 | **Engine only** — `enumerate_simple` / `enumerate_compound_3voice` / `enumerate_compound_4voice` / `enumerate_double_3voice` / `enumerate_double_4voice`. No compendium note-sourcing. |
-| Content source for unit 13 (Rule of Octave) | **Engine** — new `enumerate_rule_of_octave` (3v/4v) added to `clausulae-project` (§0), chaining already-validated compound triples on the stepwise bass scale. No compendium content; lessons spec unchanged. |
+| Unit 13 (Rule of Octave) | **Deferred to a separate design spike** (§0). The engine-ROO premise is unproven (per-degree harmonization is underdetermined); it needs its own rule-table design + validation. Not blocked by, and does not block, this spec. |
 | Titling | **Curated `(family, n_voices) → page_title` map**, applied to **both** generators (`generate_roman_from_clausulae` and `generate_clausulae_b1`). |
 | RN derivation | **music21 auto-derivation** via a new VoiceEvent→music21 converter, with a verification gate. |
-| Unit assignment | **Generate-and-bin** — analyze derived RNs, assign each exercise to the lowest unit in `{9,10,11,12,13,14}` whose answer set covers them. |
-| Per-unit answer-set source of truth | **Extract shared JSON** read by both JS and Python. |
+| Unit assignment | **Generate-and-bin** — analyze derived RNs, assign each exercise to the lowest unit in `{9,10,11,12,14}` whose answer set covers them (14 ⊇ 13, so any RN needing unit-13-only chords lands in 14). |
+| Per-unit answer-set source of truth | **Derive from `music_theory_taxonomy_with_branches.json`** (`analysis.roman.cumulative`); both JS and Python read the generated artifact. |
 
-## §0. Unit 13 — Engine ROO Generator (cross-repo prerequisite)
+## §0. Unit 13 (Rule of the Octave) — Deferred to a Separate Spike
 
-Unit 13 (Rule of the Octave) stays **engine-only**, consistent with all other
-units — no compendium score content, so the lessons spec needs no exception.
+Unit 13 is **out of scope for this spec** and gets its own brainstorm + design
+spec. Reason: the engine-ROO premise does not yet hold up. The existing
+`clausulae-project` tests only prove that ROO triples *extracted from the
+compendium* are members of the compound-valid sets — they do **not** prove the
+engine can *generate* a full Rule-of-the-Octave progression. "Pick the valid
+compound triple whose bass matches each scale degree" is **underdetermined**:
+many valid triples exist per degree, and ROO is a *specific* deterministic
+harmonization, not any valid chain.
 
-ROO is already modeled engine-side: `test_rule_of_octave_in_valid_triples`
-(`clausulae-project/tests/test_corpus_validation.py:393`) validates each ROO
-vertical sonority as a member of `_COMPOUND_3V_VALID` / `_COMPOUND_4V_VALID` —
-the same sets `enumerate_compound_3voice` / `enumerate_compound_4voice` produce.
-So ROO = a chain of engine-valid compound triples along the stepwise bass scale
-(degrees 1→8 and back). All 28 compendium ROO entries already pass this check, so
-the construction is validated.
+What the spike must produce before any unit-13 generation:
 
-**Reuse the validation code — promote it first.** The validated invariants
-already exist but are not importable from a generator:
+- A concrete **ROO degree → harmonization rule table** (ascending and descending;
+  the 1-beat / 2-beat structural variants) — the selection algorithm that pins
+  down one triple per degree. The compendium figured-bass annotations and the
+  structural patterns in `extract_rule_of_octave_voices`
+  (`compendium/validate_examples.py`, the `ex_num`→offset map) are the source
+  material for that table.
+- A decision on whether ROO is engine-generated (new `enumerate_rule_of_octave`)
+  or sourced another way, validated by reproducing the 28 compendium ROO entries.
+- **If** the spike goes engine-route: promote `_COMPOUND_3V_VALID` /
+  `_COMPOUND_4V_VALID` out of `compendium/validate_examples.py` (where they're
+  pure `enumerate_compound_*` output, sys.path-hacked into tests) into the
+  `clausulae` package, so generation and validation share one source.
+  `validate_simple` / `validate_double` already live in
+  `clausulae/constraints.py`.
 
-- `_COMPOUND_3V_VALID` / `_COMPOUND_4V_VALID` are built purely from
-  `enumerate_compound_*` output, but live in `compendium/validate_examples.py`
-  (a script sys.path-hacked into tests), not the `clausulae` package.
-  **Promote them into the package** (e.g. `clausulae/valid_sets.py`) so both
-  generation and validation share one source of truth. They carry zero
-  compendium dependency.
-- `validate_simple` / `validate_double` already live in
-  `clausulae/constraints.py` — the generator calls these as the contrapuntal
-  filter. (Distinct from HarmonyLab's `_tonal_valid`, a tonal-pedagogy sonority
-  filter — keep both; complementary.)
-- `is_rule_of_octave` / `extract_rule_of_octave_voices` are compendium-note
-  *extractors* tied to `ex_num` ranges — **not** reusable for generation. They
-  do encode the ROO structural patterns (ascending/descending, 1-beat/2-beat
-  scale shapes) the generator must reproduce; treat them as the spec for those
-  shapes.
-
-**Prerequisite (separate, in `clausulae-project`):** add
-`enumerate_rule_of_octave(n_voices=3|4)` to `clausulae/generate.py`. It walks the
-bass scale and, at each degree, selects the promoted-valid compound triple whose
-bass matches that degree, yielding the full ROO progression. Ship it with its own
-tests in `clausulae-project`; the generate↔validate loop closes when its output
-**reproduces the 28 compendium ROO entries** under the existing validation. Then
-HarmonyLab imports it like the other `enumerate_*` functions.
-
-**Cross-repo ordering:** the `clausulae-project` generator must land (and be
-`pip install -e`-available) before the HarmonyLab unit-13 path can be
-implemented. The implementation plan tracks this as an explicit upstream
-dependency. Likely dispatched to a `clausulae-project` agent.
-
-The compendium stays purely a **validation fixture** here — never a student
-content source.
+This spec proceeds with units **9, 10, 11, 12, 14** only. The generate-and-bin
+machinery here is unit-13-agnostic: when the spike delivers ROO exercises, they
+slot into the same binning/playlist pipeline without changes.
 
 ## Components
 
-### 1. Shared per-unit answer table
+### 1. Shared per-unit answer table (derived from the taxonomy)
 
-Extract the `UNIT_ALLOWED_ANSWERS` literal (units 9–20) from
-`exercise_definition.js` into a canonical data file consumed by both stacks.
+`music_theory_taxonomy_with_branches.json` already holds the canonical
+per-unit Roman-numeral answer strings at `analysis.roman.cumulative[].value`
+(verified for units 9–14; they match the current JS `UNIT_ALLOWED_ANSWERS`
+literal). The taxonomy is the source of truth per the redundancy roadmap, so we
+**derive** the shared artifact from it rather than freezing the JS literal.
 
-- **Canonical file:** `lab/static/js/src/config/unit_allowed_answers.json`.
-  - If the AMD loader cannot `require` raw JSON, ship a thin generated
-    `unit_allowed_answers.js` AMD module wrapping the same data, or use the
-    `json`/`text` requirejs plugin. **Resolve the exact load mechanism during
-    planning** — do not block the design on it.
-- **JS:** `exercise_definition.js` imports the table instead of inlining it.
-  No behavior change to `applySkillFilter`.
-- **Python:** the generator reads the same file to set `payload.allowed_answers`
-  per unit.
-- **Parity test:** assert the JS-visible table and the Python-loaded table are
-  byte-for-byte equivalent sets per unit, so they can never drift.
+- **Generated artifact:** a build step / management command emits
+  `lab/static/js/src/config/unit_allowed_answers.json` from the taxonomy's
+  `analysis.roman.cumulative` per unit. Generated, not hand-edited; regenerate
+  when the taxonomy changes.
+  - If the AMD loader cannot `require` raw JSON, emit a thin
+    `unit_allowed_answers.js` AMD module instead, or use the `json`/`text`
+    requirejs plugin. **Resolve the exact load mechanism during planning** —
+    do not block the design on it.
+- **JS:** `exercise_definition.js` imports the generated artifact and the inline
+  `UNIT_ALLOWED_ANSWERS` literal is **deleted**. No behavior change to
+  `applySkillFilter`.
+- **Python:** the generator reads the same artifact (or the taxonomy directly)
+  to set `payload.allowed_answers` per unit.
+- **Parity test:** assert the generated artifact equals the taxonomy's
+  `analysis.roman.cumulative` per unit, and that JS and Python see identical
+  sets — so nothing can drift from the taxonomy.
 
-**Why not derive from `music_theory_taxonomy_with_branches.json`?** The
-redundancy roadmap names the taxonomy as the long-term source of truth, but the
-taxonomy stores **pedagogical skill tags** (e.g. `Diatonic_Triads`,
-`Inversions_First`), not the **Roman-numeral answer strings** (`I6`, `ii°7`)
-this table needs. A tag→RN mapping layer does not exist and building one is out
-of scope here. This spec therefore makes the extracted JSON the canonical RN
-table now, and notes taxonomy reconciliation (taxonomy emits the RN table once a
-tag→RN layer exists) as future cleanup aligned with the roadmap.
+Units beyond 14 (15–20) in the current JS literal are carried through unchanged
+by the same derivation (taxonomy permitting); if a unit lacks
+`analysis.roman.cumulative`, the generator falls back to the prior literal value
+for that unit and the plan flags it.
 
 ### 2. Shared clausula → page_title map
 
@@ -193,14 +181,12 @@ Refactor `generate_roman_from_clausulae.py`:
   `clausulae/generate.py`. The `*_late_bass` and `enumerate_compound_3voice_double_tau1`
   variants are optional extras; planning decides whether to include them.
   Run across all `TARGET_KEYS`, retaining the existing `_tonal_valid` filter.
-- **ROO pool (unit 13, §0):** `enumerate_rule_of_octave` (3v/4v) — the new
-  upstream `clausulae-project` generator — across `TARGET_KEYS`.
 - **Per combo + key:** realize voices → derive RN set via music21 (§3) → build
-  payload. (ROO uses the same realize→analyze path as cadences.)
+  payload.
 - **Binning:** assign the exercise to the **lowest** unit in
-  `{9, 10, 11, 12, 13, 14}` whose allowed-answer set ⊇ the exercise's RN set.
-  ROO material naturally lands in 13 (its inversions/scalar harmonies need unit
-  13's set); engine cadences land in 9–12 or 14.
+  `{9, 10, 11, 12, 14}` whose allowed-answer set ⊇ the exercise's RN set. Unit 13
+  is not a candidate here (deferred, §0); since `14 ⊇ 13`, any cadence whose RNs
+  need unit-13-only chords (e.g. `iii`/`III`/`VII`) lands in 14.
   - If **no** unit covers it (an RN beyond unit 14, or music21 noise) →
     **reject the exercise and log it** (verification gate; do not silently emit).
 - **Payload:** `allowed_answers` = the bin unit's set; `skill_tags` include
@@ -230,18 +216,17 @@ Explicitly **out of scope**:
   Blocker 1 **resolved** in both; remove the stale "Fix needed" instructions for
   `applySkillFilter`. Blocker 2 status unchanged.
 - **`docs/management_commands.md`:** update the `generate_roman_from_clausulae`
-  entry for the new pools, ROO source, binning, and per-unit playlists.
-- **`clausulae-project`:** (a) promote `_COMPOUND_*_VALID` from
-  `compendium/validate_examples.py` into the `clausulae` package; (b) new
-  `enumerate_rule_of_octave` generator + tests (upstream prerequisite, §0).
-  No lessons-spec exception needed — all units remain engine-sourced.
+  entry for the new pools, binning, and per-unit playlists.
+- **Unit-13 spike spec:** a follow-up `docs/superpowers/specs/` entry capturing
+  the §0 ROO design questions (rule table, engine-vs-other, validation-code
+  promotion). Created when that spike starts — not part of this spec's work.
 
 ### 7. Verification (spec-mandated)
 
 Per the lessons spec, passing tests is **not** sufficient. After generation:
 
 1. Report the **bin histogram** (count of exercises per unit) before any bulk use.
-2. Browser smoke-test **one exercise per new unit** (10, 11, 12, 13, 14):
+2. Browser smoke-test **one exercise per new unit** (10, 11, 12, 14):
    - Score renders, musically coherent, matches the working clausulae render.
    - One `?` slot per analyzed onset, at the correct offsets.
    - The per-unit answer pool appears in the dropdown.
@@ -250,17 +235,11 @@ Per the lessons spec, passing tests is **not** sufficient. After generation:
 ## Top Risk
 
 The engine's compound/double cadences may not produce enough harmonic variety to
-populate units 10, 11, and 14 (e.g. everything bins into 9 and 12). Unit 13 is
-well-defined (ROO RNs land squarely in unit 13's set), but 10/11/14 depend on the
-engine's cadence output landing in those bins. The bin histogram in step 7.1 is
-the early-warning signal. If bins are sparse, the "extend to 10–14" goal
-partially fails for those units and we revisit. Surface the histogram **before**
-committing to bulk generation.
-
-Secondary: the cross-repo dependency (§0) is a sequencing risk — the HarmonyLab
-unit-13 path is blocked until `enumerate_rule_of_octave` ships in
-`clausulae-project`. The plan must order it first or fence unit 13 behind a
-feature check so the other units aren't blocked by it.
+populate units 10, 11, and 14 (e.g. everything bins into 9 and 12). Those units
+depend entirely on the engine's cadence output landing in those bins. The bin
+histogram in step 7.1 is the early-warning signal. If bins are sparse, the
+"extend to 10–14" goal partially fails for the empty units and we revisit.
+Surface the histogram **before** committing to bulk generation.
 
 ## Tests
 
@@ -268,20 +247,14 @@ feature check so the other units aren't blocked by it.
 - Each exercise's derived RN set ⊆ its assigned unit's allowed-answer set
   (binning correctness).
 - `payload.allowed_answers` equals the assigned unit's set.
-- JS ↔ Python parity for the shared answer table.
+- Answer-table parity: the generated artifact equals the taxonomy's
+  `analysis.roman.cumulative` per unit, and JS and Python see identical sets.
 - Title-map coverage: every emitted `(family, n_voices)` resolves to a page_title.
 - Command idempotency; deterministic playlist ordering.
 - Analysis slices have `is_target: true`; payloads advertise Roman-numeral
   analysis, not Clausulae analysis.
 - New VoiceEvent→music21 converter produces correct MIDI/durations (does not
   depend on the broken `_pitch_to_midi`).
-- Promoted `_COMPOUND_*_VALID` sets are identical whether imported from the
-  package or recomputed from `enumerate_compound_*` (promotion changed location,
-  not content).
-- `enumerate_rule_of_octave` (upstream, in `clausulae-project`): output chains
-  only promoted-valid triples; the 28 compendium ROO entries are reproduced by it
-  under the existing validation.
-- HarmonyLab ROO exercises bin to unit 13 and derive a sane RN sequence.
 
 These tests gate correctness but **do not** replace the manual browser
 verification in section 7.
