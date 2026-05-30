@@ -40,10 +40,10 @@ material yet.
 
 | Decision | Choice |
 |---|---|
-| Content source for units 9–12, 14 | **Engine only** — `enumerate_simple` / `enumerate_compound_3voice` / `enumerate_compound_4voice` / `enumerate_double_3voice` / `enumerate_double_4voice`. No compendium note-sourcing. |
+| Content source for units 9–12, 14 | **Engine only** — this round uses `enumerate_simple` / `enumerate_compound_3voice` / `enumerate_compound_4voice`. No compendium note-sourcing. Double cadences are deferred because their 5-position realization is not yet implemented in HarmonyLab. |
 | Unit 13 (Rule of Octave) | **Deferred to a separate design spike** (§0). The engine-ROO premise is unproven (per-degree harmonization is underdetermined); it needs its own rule-table design + validation. Not blocked by, and does not block, this spec. |
 | Titling | **Curated `(family, n_voices) → page_title` map**, applied to **both** generators (`generate_roman_from_clausulae` and `generate_clausulae_b1`). |
-| RN derivation | **music21 auto-derivation** via a new VoiceEvent→music21 converter, with a verification gate. |
+| RN derivation | **music21 auto-derivation** via a new VoiceEvent→music21 converter, but only at structural harmonic target offsets. Do not turn every chordified suspension/held vertical into a student target. |
 | Unit assignment | **Generate-and-bin** — analyze derived RNs, assign each exercise to the lowest unit in `{9,10,11,12,14}` whose answer set covers them (14 ⊇ 13, so any RN needing unit-13-only chords lands in 14). |
 | Per-unit answer-set source of truth | **Derive from `music_theory_taxonomy_with_branches.json`** (`analysis.roman.cumulative`); both JS and Python read the generated artifact. |
 
@@ -172,20 +172,28 @@ Then:
 
 - Build the `Score` from the realized voices via the new converter.
 - Run roman-numeral analysis (same `music21.roman` approach as
-  `skills_analyzer.py`) to produce an ordered `(offset → roman_numeral)` list.
-- Feed those into `AnalysisSlice`s, all `is_target=True`, so the student sees one
-  `?` slot per analyzed onset.
+  `skills_analyzer.py`) only at the cadence's **structural target offsets**:
+  simple cadences use target offsets `[0.0, 2.0, 4.0]`. Compound cadences also
+  display targets at `[0.0, 2.0, 4.0]` because `2.0` is the dominant onset with
+  a suspension: pedagogically `V(5)4` resolving at `3.0` to `V(5)3`, i.e. a
+  `V4-3` suspension. For student answer/binnning, normalize that target to the
+  underlying Roman answer `V`. Figured-bass/suspension display, if needed, must
+  come from HarmonyLab's existing figured-bass engine (`raw_figured_bass` /
+  `figured_bass` fields), not from Music21 Roman analysis. Do not let music21's
+  literal vertical spelling expose noisy answer-table figures such as `i54`.
+- Feed those structural results into `AnalysisSlice`s, all `is_target=True`, so
+  the student sees one `?` slot per harmonic target, not one slot per transient
+  contrapuntal vertical.
 
 ### 4. Generate-and-bin generator
 
 Refactor `generate_roman_from_clausulae.py`:
 
-- **Engine pools (exact functions, tuple shapes to be confirmed in planning):**
-  `enumerate_simple`, `enumerate_compound_3voice`, `enumerate_compound_4voice`,
-  `enumerate_double_3voice`, `enumerate_double_4voice` — all from
-  `clausulae/generate.py`. The `*_late_bass` and `enumerate_compound_3voice_double_tau1`
-  variants are optional extras; planning decides whether to include them.
-  Run across all `TARGET_KEYS`, retaining the existing `_tonal_valid` filter.
+- **Engine pools:** `enumerate_simple`, `enumerate_compound_3voice`, and
+  `enumerate_compound_4voice` from `clausulae/generate.py`. Run across all
+  `TARGET_KEYS`, retaining the existing tonal-pedagogy sonority filter for both
+  simple and compound material. Double cadences are deferred to a fast-follow
+  because their 5-position quintuple realization is not implemented yet.
 - **Per combo + key:** realize voices → derive RN set via music21 (§3) → build
   payload.
 - **Binning:** assign the exercise to the **lowest** unit in
@@ -201,6 +209,12 @@ Refactor `generate_roman_from_clausulae.py`:
 - **Playlists:** one idempotent playlist per unit that actually received
   exercises (per-unit `Playlist(skill_tags=['unit:N', …])`).
 - **`--unit` flag:** becomes an optional filter (default: emit all bins).
+- **Preview before persistence:** before writing DB rows, support a raw preview
+  mode that prints/exports a few generated examples per populated unit. Each
+  preview must expose the realized notes, target offsets, analysis-source
+  offsets, normalized RN answers, HarmonyLab figured-bass fields (if populated),
+  family/key/voice metadata, and reject reason for uncovered/noisy examples.
+  This is the first verification gate before API/browser wiring.
 - **Idempotency** preserved: re-running with `--overwrite` replaces prior rows /
   playlist orderings for the same descriptions.
 
@@ -231,7 +245,13 @@ Explicitly **out of scope**:
 Per the lessons spec, passing tests is **not** sufficient. After generation:
 
 1. Report the **bin histogram** (count of exercises per unit) before any bulk use.
-2. Browser smoke-test **one exercise per new unit** (10, 11, 12, 14):
+2. Inspect the raw preview table for at least one example per populated unit
+   before saving/bulk use:
+   - realized notes match the intended clausula voices;
+   - compound targets show the `2.0` dominant-suspension target normalized to
+     `V`, while figures come from HarmonyLab figured-bass fields;
+   - rejected examples have clear reasons.
+3. Browser smoke-test **one exercise per new unit** (10, 11, 12, 14):
    - Score renders, musically coherent, matches the working clausulae render.
    - One `?` slot per analyzed onset, at the correct offsets.
    - The per-unit answer pool appears in the dropdown.
@@ -239,11 +259,12 @@ Per the lessons spec, passing tests is **not** sufficient. After generation:
 
 ## Top Risk
 
-The engine's compound/double cadences may not produce enough harmonic variety to
+The engine's simple+compound cadences may not produce enough harmonic variety to
 populate units 10, 11, and 14 (e.g. everything bins into 9 and 12). Those units
-depend entirely on the engine's cadence output landing in those bins. The bin
-histogram in step 7.1 is the early-warning signal. If bins are sparse, the
-"extend to 10–14" goal partially fails for the empty units and we revisit.
+depend entirely on the engine's in-scope cadence output landing in those bins.
+The bin histogram in step 7.1 is the early-warning signal. If bins are sparse,
+the "extend to 10–14" goal partially fails for the empty units and we revisit,
+most likely by implementing double-cadence realization as the next fast-follow.
 Surface the histogram **before** committing to bulk generation.
 
 ## Tests
@@ -260,6 +281,9 @@ Surface the histogram **before** committing to bulk generation.
   analysis, not Clausulae analysis.
 - New VoiceEvent→music21 converter produces correct MIDI/durations (does not
   depend on the broken `_pitch_to_midi`).
+- Compound cadence derivation uses only structural target offsets and rejects
+  tonal-pedagogy-invalid sonorities; suspension/held offsets are not emitted as
+  student RN targets.
 
 These tests gate correctness but **do not** replace the manual browser
 verification in section 7.

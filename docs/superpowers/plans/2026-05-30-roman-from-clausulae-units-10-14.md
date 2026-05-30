@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extend `generate_roman_from_clausulae` from unit-9 simple cadences to units 10/11/12/14 via engine compound/double cadences with music21-derived Roman numerals and automatic unit-binning, title both clausulae generators from the Compendium `page_title` vocabulary, and make the per-unit answer table a taxonomy-derived artifact shared by JS and Python.
+**Goal:** Extend `generate_roman_from_clausulae` from unit-9 simple cadences to units 10/11/12/14 via engine simple+compound cadences with structurally-targeted music21-derived Roman numerals and automatic unit-binning, title both clausulae generators from the Compendium `page_title` vocabulary, and make the per-unit answer table a taxonomy-derived artifact shared by JS and Python.
 
 **Architecture:** A taxonomy-derived `unit_allowed_answers` artifact becomes the single source of truth for per-unit RN answer sets (consumed by both `exercise_definition.js` and the generator). The generator enumerates engine cadences, realizes them through shared realization helpers, derives Roman numerals through a new VoiceEvent→music21 converter, bins each exercise into the lowest covering unit, gives it a page_title-based student title (stored in `metadata.source`) plus a short hashed `description` for idempotency, and writes one idempotent playlist per populated unit. Unit 13 (Rule of the Octave) **and double cadences** are explicitly out of scope (deferred); this round uses **simple + compound** cadence families only.
 
@@ -46,6 +46,10 @@ The worktree's `.python-version` is already `system` (Python 3.13). No DB is req
 - `docs/management_commands.md` — update the generator entry.
 
 **Deferred (out of scope, like unit 13):** double cadences (`enumerate_double_3voice`/`enumerate_double_4voice`) — their realization (5-position quintuples) is unbuilt. Fast-follow if the bin histogram shows units 10/11/14 underpopulated by simple+compound alone.
+
+**Structural targets:** RN derivation is not "every chordified vertical." Compound cadences contain τ=1 preparations/suspensions and held sonorities that music21 can label as non-answer-table figures (for example `i54`). Student targets still appear at the structural harmonic onsets: simple and compound cadences both use target offsets `[0.0, 2.0, 4.0]`. For compound cadences, the `2.0` target is the dominant onset with suspension: `V(5)4` resolving at `3.0` to `V(5)3`, i.e. `V4-3`. The student answer/binning label is the underlying RN `V`. Any figure/suspension display belongs in `raw_figured_bass` / `figured_bass` from HarmonyLab's existing figured-bass engine, not in Music21 RN output.
+
+**Raw preview gate:** before saving DB rows or doing browser/API work, the command must support a preview mode that emits a small table of raw generated examples per populated unit. The table is for human musical review: notes, offsets, RN answer, figure fields, source family/key/voice count, and reject reasons must be visible.
 
 ---
 
@@ -616,6 +620,8 @@ git commit -m "fix: _pitch_to_midi return + add VoiceEvent->music21 converter"
 
 The answer vocabulary uses the degree sign `°` (e.g. `vii°6`, `ii°7`). music21's `RomanNumeral.figure` uses `o` for diminished (e.g. `viio6`) and figured-bass inversion suffixes (`6`, `64`, `65`, ...). Normalize `o → °` and keep the figure suffix; binning later rejects any figure not present in a unit's set.
 
+Important: derive only **structural targets**, not every chordified vertical. Compound cadences include τ=1 preparation/suspension sonorities that are valid counterpoint but can confuse automatic RN analysis. For compound cadences, the student target remains at the dominant onset `2.0` and is conceptually `V4-3`; the answer vocabulary/binning label is normalized to the underlying `V`. Do not store `V4-3` in `raw_roman_numeral`; figures come from HarmonyLab's figured-bass engine and belong in `raw_figured_bass` / `figured_bass` if populated.
+
 - [ ] **Step 1: Write the failing test**
 
 `apps/exercises/tests/test_roman_derivation.py`:
@@ -642,7 +648,11 @@ def _ivi_cadence_c_major():
 
 def test_derive_simple_authentic_cadence():
     from apps.exercises.roman_derivation import derive_cadence
-    verticals = derive_cadence(_ivi_cadence_c_major(), key="C")
+    verticals = derive_cadence(
+        _ivi_cadence_c_major(),
+        key="C",
+        targets=[(0.0, 0.0), (2.0, 2.0), (4.0, 4.0)],
+    )
     assert [v["rn"] for v in verticals] == ["I", "V", "I"]
     # offsets are actual sounding offsets (half/half/whole)
     assert [v["offset"] for v in verticals] == [0.0, 2.0, 4.0]
@@ -656,6 +666,12 @@ def test_normalize_diminished_uses_degree_sign():
     assert normalize_figure("viio6") == "vii°6"
     assert normalize_figure("ii") == "ii"
     assert normalize_figure("V7") == "V7"
+
+
+def test_derive_requires_explicit_targets():
+    from apps.exercises.roman_derivation import derive_cadence
+    with pytest.raises(ValueError):
+        derive_cadence(_ivi_cadence_c_major(), key="C")
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -667,12 +683,18 @@ Expected: FAIL — `ModuleNotFoundError: apps.exercises.roman_derivation`
 
 `apps/exercises/roman_derivation.py`:
 ```python
-"""Derive Roman numerals + grading pitches for a generated cadence via music21.
+"""Derive Roman numerals + grading pitches for generated cadence targets.
 
-Chordify the SATB Score and, at each vertical, run romanNumeralFromChord and
-collect the sounding MIDI pitches. Both the analysis offset and the grading MIDI
-come from the SAME chordified vertical, so they stay aligned for any rhythm
-(simple, compound, held notes, rests) — no position-index assumptions.
+Chordify the SATB Score and, for each requested target, run romanNumeralFromChord
+at the requested analysis-source offset while emitting the AnalysisSlice at the
+target offset. This lets compound cadences place the student target at the
+dominant onset with suspension (2.0) while normalizing the answer from the
+resolved sonority (3.0). The compound penult is pedagogically V(5)4 resolving
+to V(5)3, i.e. V4-3; the RN answer label remains V. Figured-bass display is
+handled separately by HarmonyLab's figured-bass engine, not by Music21 RN.
+
+Do not analyze every chordified vertical: compound cadences contain τ=1
+preparations/suspensions that are valid counterpoint but not RN targets.
 """
 from __future__ import annotations
 
@@ -687,16 +709,33 @@ def normalize_figure(figure: str) -> str:
     return figure.replace("o", "°")
 
 
-def derive_cadence(voices, *, key: str) -> list[dict]:
-    """Return [{"offset": float, "rn": str, "midi": [int, ...]}, ...] per vertical."""
+def _chord_at_offset(chords, target):
+    for chord in chords:
+        start = float(chord.offset)
+        dur = float(chord.quarterLength)
+        if start <= target < start + dur:
+            return chord
+    return None
+
+
+def derive_cadence(voices, *, key: str, targets=None) -> list[dict]:
+    """Return [{"offset": target, "rn": str, "midi": [int, ...]}, ...].
+
+    targets is [(target_offset, analysis_source_offset), ...].
+    """
+    if targets is None:
+        raise ValueError("derive_cadence requires explicit structural targets")
     score = score_from_voices(voices)
     tonal_key = m21key.Key(key)
-    chordified = score.chordify()
+    chords = list(score.chordify().recurse().getElementsByClass("Chord"))
     result: list[dict] = []
-    for chord in chordified.recurse().getElementsByClass("Chord"):
+    for target, source in targets:
+        chord = _chord_at_offset(chords, float(source))
+        if chord is None:
+            raise ValueError(f"No chordified vertical sounding at offset {source}")
         rn = roman.romanNumeralFromChord(chord, tonal_key)
         result.append({
-            "offset": float(chord.offset),
+            "offset": float(target),
             "rn": normalize_figure(rn.figure),
             "midi": sorted(p.midi for p in chord.pitches),
         })
@@ -706,7 +745,7 @@ def derive_cadence(voices, *, key: str) -> list[dict]:
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `DJANGO_SETTINGS_MODULE=harmony.settings.local python3 -m pytest apps/exercises/tests/test_roman_derivation.py -q`
-Expected: PASS (2 passed). If `derive_simple_authentic_cadence` returns something other than `["I","V","I"]` (music21 spelling differences), adjust `normalize_figure` minimally to cover the observed token and re-run — do not broaden beyond what the test requires. If `chord.offset` for the chordified verticals is not the expected sounding offset, inspect `score.chordify().flatten()` offsets and adjust the assertion to the real values before proceeding.
+Expected: PASS (3 passed). If `derive_simple_authentic_cadence` returns something other than `["I","V","I"]` (music21 spelling differences), adjust `normalize_figure` minimally to cover the observed token and re-run — do not broaden beyond what the test requires. If a requested structural offset has no sounding chord, inspect `score.chordify().flatten()` offsets and fix the realization/target-offset mapping before proceeding.
 
 - [ ] **Step 5: Commit**
 
@@ -770,7 +809,7 @@ def bin_unit(rn_set, table: dict, candidate_units) -> int | None:
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `DJANGO_SETTINGS_MODULE=harmony.settings.local python3 -m pytest apps/exercises/tests/test_roman_derivation.py -q`
-Expected: PASS (3 passed)
+Expected: PASS (4 passed)
 
 - [ ] **Step 5: Commit**
 
@@ -787,7 +826,7 @@ git commit -m "feat: lowest-covering-unit binning helper"
 - Modify: `apps/exercises/management/commands/generate_roman_from_clausulae.py`
 - Test: `apps/exercises/tests/test_roman_from_clausulae_units.py`
 
-This task adds the per-exercise payload builder that replaces the hardcoded `_CADENCE_RN` / `_RN_CHOICES_MAJOR` / `_build_identification_payload` path with derived RNs and binning. Keep the existing `_tonal_valid`, `_save_exercise`, and `_build_playlist` helpers (pool wiring + realization come in Task 9).
+This task adds the per-exercise payload builder that replaces the hardcoded `_CADENCE_RN` / `_RN_CHOICES_MAJOR` / `_build_identification_payload` path with structurally-targeted derived RNs and binning. Keep the existing `_save_exercise` and `_build_playlist` helpers (pool wiring, realization, and the shared tonal filter come in Task 9).
 
 - [ ] **Step 1: Write the failing test (pure helpers, no DB, no clausulae lib)**
 
@@ -856,9 +895,25 @@ _CANDIDATE_UNITS = [9, 10, 11, 12, 14]  # unit 13 (ROO) + double cadences deferr
 _UNIT_TABLE = compute_unit_allowed_answers()
 
 
+def structural_targets(family: str) -> list[tuple[float, float]]:
+    """(target_offset, analysis_source_offset) by cadence family."""
+    if family == "compound":
+        # τ=1 voice: rest at 0, ANT at 1, suspension/dominant onset at 2,
+        # resolved PEN at 3, ULT at 4. Emit the ? at 2, but normalize
+        # the dropdown/binning answer to V by deriving from the resolution at 3.
+        # The 4-3 figure comes from the figured-bass engine, not Music21 RN.
+        return [(0.0, 0.0), (2.0, 3.0), (4.0, 4.0)]
+    return [(0.0, 0.0), (2.0, 2.0), (4.0, 4.0)]
+
+
 def build_binned_payload(voices, *, key, family, n_voices, fingerprint, upper_figures=None):
     """Return (payload, unit, derived_rns) or None if no unit covers the RNs."""
-    verticals = derive_cadence(voices, key=key)          # [{offset, rn, midi}, ...]
+    # Structural harmonic targets only. Do not target every chordified vertical:
+    # compound cadences display at the dominant onset with suspension (2.0) but
+    # derive that label from the resolved sonority (3.0).
+    verticals = derive_cadence(
+        voices, key=key, targets=structural_targets(family)
+    )  # [{offset, rn, midi}, ...]
     rn_list = [v["rn"] for v in verticals]
     unit = bin_unit(set(rn_list), _UNIT_TABLE, _CANDIDATE_UNITS)
     if unit is None:
@@ -913,7 +968,9 @@ def build_binned_payload(voices, *, key, family, n_voices, fingerprint, upper_fi
     )
     return payload, unit, rn_list
 ```
-Note: this replaces the old `_build_identification_payload` (delete it and its hardcoded `_CADENCE_RN`/`_RN_CHOICES_MAJOR`). `GradingSlice` is already imported by the command. `Voices` is accepted directly by `UMTO(voices=...)`. The old `_grading_slices` helper is no longer used by this command — grading now comes from `derive_cadence` verticals; remove `_grading_slices` if nothing else references it.
+Note: this replaces the old `_build_identification_payload` (delete it and its hardcoded `_CADENCE_RN`/`_RN_CHOICES_MAJOR`). `GradingSlice` is already imported by the command. `Voices` is accepted directly by `UMTO(voices=...)`. The old `_grading_slices` helper is no longer used by this command — grading now comes from `derive_cadence` structural verticals; remove `_grading_slices` if nothing else references it.
+
+Preview note: keep enough intermediate data available for Task 9's preview table: `family`, `n_voices`, `key`, `fingerprint`, `unit`, derived verticals (`target_offset`, `analysis_source_offset`, `rn`, MIDI/pitch list), figured-bass fields from HarmonyLab's figured-bass engine if populated, and reject reason.
 
 - [ ] **Step 4: Run the test to verify it passes**
 
@@ -951,8 +1008,9 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../clausulae-project")))
 pytest.importorskip("clausulae.generate")
 
-from clausulae.generate import enumerate_simple, enumerate_compound_3voice  # noqa: E402
-from apps.exercises.clausulae_realize import voices_from_combo  # noqa: E402
+from clausulae.generate import enumerate_simple, enumerate_compound_3voice, enumerate_compound_4voice  # noqa: E402
+from apps.exercises.clausulae_realize import voices_from_combo, tonal_valid_combo, upper_figures_at_offset  # noqa: E402
+from apps.exercises.roman_derivation import derive_cadence  # noqa: E402
 from apps.exercises.umto import Voices  # noqa: E402
 
 
@@ -972,6 +1030,39 @@ def test_compound_3voice_combo_has_late_voice_rest():
     voices = voices_from_combo(combo, key="C", family="compound", n_voices=3)
     # τ=1 (Discant=S) starts with a quarter rest
     assert voices.S[0].kind == "rest"
+
+
+def test_compound_targets_skip_suspension_vertical():
+    combo = next((b, e, l, pi) for b, e, l, pi in
+                 enumerate_compound_3voice(require_discant=True, require_bass=True)
+                 if l[0] == "Discant" and tonal_valid_combo((b, e, l)))
+    voices = voices_from_combo(combo, key="C", family="compound", n_voices=3)
+    verticals = derive_cadence(
+        voices,
+        key="C",
+        targets=[(0.0, 0.0), (2.0, 3.0), (4.0, 4.0)],
+    )
+    # The ? appears at the dominant onset (2.0), but the RN was derived from
+    # the resolved sonority at 3.0, so the suspension figure is not exposed.
+    assert [v["offset"] for v in verticals] == [0.0, 2.0, 4.0]
+    assert all(v["rn"] != "i54" for v in verticals)
+
+
+def test_tonal_valid_rejects_bare_opening_compound_sonority():
+    # The first engine-valid compound combo is contrapuntally valid but opens
+    # with bare octaves, which is not a complete tonal RN target.
+    combo = next((b, e, l, pi) for b, e, l, pi in
+                 enumerate_compound_3voice(require_discant=True, require_bass=True)
+                 if l[0] == "Discant")
+    assert tonal_valid_combo(combo[:3]) is False
+
+
+def test_compound_4voice_figures_use_absolute_resolved_penult_offset():
+    combo = next(enumerate_compound_4voice(require_discant=True, require_bass=True))
+    voices = voices_from_combo(combo, key="C", family="compound", n_voices=4)
+    figures = upper_figures_at_offset(voices, offset=3.0)
+    assert figures
+    assert all(1 <= f <= 7 for f in figures)
 
 
 def test_double_family_raises():
@@ -1006,6 +1097,10 @@ if _CLAUSULAE_ROOT not in sys.path:
     sys.path.insert(0, _CLAUSULAE_ROOT)
 
 from clausulae.realize import key_realize  # noqa: E402
+try:
+    from clausulae.constraints import tonal_sonority_ok  # noqa: E402
+except ImportError:  # older editable clausulae-project checkout
+    tonal_sonority_ok = None
 
 from apps.exercises.umto import Pitch, VoiceEvent, Voices  # noqa: E402
 
@@ -1013,6 +1108,7 @@ _OCTAVE = {"S": 5, "A": 4, "T": 4, "B": 3}
 _DUR_SIMPLE = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
 _DUR_COMPOUND_EARLY = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
 _DUR_COMPOUND_LATE = [("h", 2.0), ("q", 1.0), ("w", 4.0)]
+_STEP_INDEX = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
 
 
 def _m21_note_to_pitch(n) -> Pitch:
@@ -1042,6 +1138,51 @@ def compound_events(triple, key: str, vid: str, tau: int) -> list:
 def _voices(vmap: dict) -> Voices:
     return Voices(S=vmap.get("S", []), A=vmap.get("A", []),
                   T=vmap.get("T", []), B=vmap.get("B", []))
+
+
+def tonal_valid_combo(combo) -> bool:
+    """Tonal-pedagogy filter for structural ANT/ULT sonorities.
+
+    Accepts either simple combos or compound combos with the pi list stripped
+    off. Falls back to the documented local rule if the sibling clausulae package
+    does not expose tonal_sonority_ok yet.
+    """
+    triples = [triple for _name, _idx, triple in combo]
+    structural = [(t[0], t[-2] if len(t) > 3 else t[1], t[-1]) for t in triples]
+    if tonal_sonority_ok is not None:
+        return tonal_sonority_ok(structural)
+    ant = {triple[0] for triple in structural}
+    ult = {triple[2] for triple in structural}
+    return (2 in ant) and not (4 in ult and 2 not in ult)
+
+
+def _event_at_offset(events, offset: float):
+    cursor = 0.0
+    for event in events:
+        start = cursor
+        end = cursor + float(event.duration)
+        if start <= offset < end:
+            return event
+        cursor = end
+    return None
+
+
+def _diatonic(pitch) -> int:
+    return pitch.octave * 7 + _STEP_INDEX[pitch.step]
+
+
+def upper_figures_at_offset(voices, *, offset: float) -> set[int]:
+    """Generic intervals of sounding upper voices above bass at an absolute offset."""
+    bass_event = _event_at_offset(voices.B, offset)
+    bass = bass_event.pitch if bass_event and bass_event.pitch else None
+    if bass is None:
+        return set()
+    figs: set[int] = set()
+    for vid in ("S", "A", "T"):
+        event = _event_at_offset(getattr(voices, vid), offset)
+        if event and event.pitch:
+            figs.add((_diatonic(event.pitch) - _diatonic(bass)) % 7 + 1)
+    return figs
 
 
 def voices_from_combo(combo, *, key: str, family: str, n_voices: int) -> Voices:
@@ -1085,7 +1226,7 @@ def voices_from_combo(combo, *, key: str, family: str, n_voices: int) -> Voices:
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `DJANGO_SETTINGS_MODULE=harmony.settings.local python3 -m pytest apps/exercises/tests/test_clausulae_realize.py -q`
-Expected: PASS (3 passed)
+Expected: PASS (6 passed)
 
 - [ ] **Step 5: Confirm enumerator tuple shapes (one-time check before wiring the command)**
 
@@ -1105,8 +1246,8 @@ Confirm the tuple arity/order matches `voices_from_combo` (and b1 lines 565/604)
 - [ ] **Step 6: Wire pools + binning + per-unit playlists into the command**
 
 In `generate_roman_from_clausulae.py`:
-1. Replace the local realization helpers with imports from the shared module:
-   `from apps.exercises.clausulae_realize import voices_from_combo`. Remove the now-duplicate local `_realize_events`/`_OCTAVE`/`_m21_note_to_pitch`/`_DUR_SIMPLE` if present.
+1. Replace the local realization/filter helpers with imports from the shared module:
+   `from apps.exercises.clausulae_realize import voices_from_combo, tonal_valid_combo, upper_figures_at_offset`. Remove the now-duplicate local `_realize_events`/`_OCTAVE`/`_m21_note_to_pitch`/`_DUR_SIMPLE`/`_tonal_valid` if present.
 2. Add the in-scope enumerator imports to the guarded clausulae import block:
    ```python
    from clausulae.generate import (
@@ -1129,35 +1270,18 @@ In `generate_roman_from_clausulae.py`:
            return list(enumerate_compound_4voice(require_discant=True, require_bass=True))
        return []
    ```
-4. Add the compound-4v figure helper (generic interval of upper voices above bass at the penult):
-   ```python
-   _STEP_INDEX = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
-
-   def _diatonic(p):
-       return p.octave * 7 + _STEP_INDEX[p.step]
-
-   def _upper_figures_at(voices, idx):
-       figs = set()
-       bass = voices.B[idx].pitch if idx < len(voices.B) and voices.B[idx].pitch else None
-       if bass is None:
-           return figs
-       for vid in ("S", "A"):
-           seq = getattr(voices, vid)
-           if idx < len(seq) and seq[idx].pitch:
-               figs.add((_diatonic(seq[idx].pitch) - _diatonic(bass)) % 7 + 1)
-       return figs
-   ```
-   For compound-4v, the penult onset index is the second-to-last attack. Compound τ=1 voices begin with a rest, so use the bass (τ=0, no rest) timeline: `penult_idx = len(voices.B) - 2`.
+4. Use `upper_figures_at_offset(voices, offset=3.0)` from the shared module for compound-4v titles. It computes generic intervals from sounding voices at the absolute resolved-penult offset, so τ=1 rests/holds do not shift the figure calculation.
 5. `_make_exercises(family, n_voices, author, options, ...)` returns `dict[int, list[Exercise]]`:
    ```python
    def _make_exercises(family, n_voices, author, options, stdout, style):
        by_unit, rejected = {}, 0
        for key in TARGET_KEYS:
            for combo in _combos_for(family, n_voices):
-               if family == "simple" and not _tonal_valid(combo):
+               tonal_combo = combo[:3] if family == "compound" and n_voices == 3 else combo
+               if not tonal_valid_combo(tonal_combo):
                    continue
                voices = voices_from_combo(combo, key=key, family=family, n_voices=n_voices)
-               upper = (_upper_figures_at(voices, len(voices.B) - 2)
+               upper = (upper_figures_at_offset(voices, offset=3.0)
                         if family == "compound" and n_voices == 4 else None)
                fingerprint = repr(combo)  # hashed into description; just needs to be unique
                built = build_binned_payload(voices, key=key, family=family,
@@ -1183,7 +1307,21 @@ In `generate_roman_from_clausulae.py`:
        return by_unit
    ```
    **Skill tags are static** (namespace + `unit:N` + `family` + `voices`) — no nondeterministic `analyze_chunk_skills` call. (Spec note: harmony-skill tags beyond `unit:N` are dropped here for determinism.)
-6. Rewrite `handle` to iterate the matrix, honor an optional `--unit` filter, build per-unit playlists, and print the histogram:
+6. Add preview support before persistence. New args:
+   - `--preview`: generate candidates and print/export a raw table, but do not save exercises or playlists.
+   - `--preview-limit-per-unit N` default `2`.
+   - `--preview-format md|json` default `md`.
+
+   Preview rows should be row-per-target, grouped by candidate. Required columns/keys:
+   ```text
+   unit | family | voices | key | target_offset | analysis_source_offset | rn_answer |
+   raw_figured_bass | figured_bass | midi | pitches | description | fingerprint | reject_reason
+   ```
+   For compound cadences, the penult row should show `target_offset=2.0`, `analysis_source_offset=3.0`, and `rn_answer=V` (or the normalized underlying RN for the key). Figured-bass columns must come from HarmonyLab's figured-bass engine if populated, not from Music21. Rejected candidates should be included with `reject_reason` instead of silently disappearing.
+
+   Add a pure helper test that builds preview rows from a known simple candidate and asserts the expected keys exist; add a compound preview test that asserts the penult target/source offset split (`2.0`/`3.0`) is visible.
+
+7. Rewrite `handle` to iterate the matrix, honor an optional `--unit` filter, build per-unit playlists, and print the histogram:
    ```python
    by_unit = {}
    for family, n_voices in FAMILY_VOICES:
@@ -1204,12 +1342,22 @@ In `generate_roman_from_clausulae.py`:
    self.stdout.write(self.style.WARNING(
        "\n⚠  Verify ONE exercise per populated unit in the student app before bulk use."))
    ```
+   If `--preview` is set, stop after printing/exporting preview rows and the bin/reject histogram. Do not call `_save_exercise` or `_build_playlist`.
 
 - [ ] **Step 7: Change `--unit` to an optional filter (default None)**
 
 In `add_arguments`, change the `--unit` argument from `default=9` to `default=None` and update its help to "Optional: restrict output to a single bin unit (default: all bins)." Delete the old `--voices` argument if the new family matrix supersedes it (it does — voice counts are driven by `FAMILY_VOICES`).
 
-- [ ] **Step 8: Smoke-run the command**
+- [ ] **Step 8: Preview raw examples before writing DB rows**
+
+Run:
+```bash
+DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py generate_roman_from_clausulae \
+  --author admin@example.com --preview --preview-limit-per-unit 2 --preview-format md
+```
+Expected: a readable table with up to two accepted examples per populated unit plus rejected examples/reasons. Inspect and record at least one row per populated unit before continuing. This is the checkpoint for confirming the generated notes and analysis are musically correct before API/browser wiring.
+
+- [ ] **Step 9: Smoke-run the command**
 
 Run:
 ```bash
@@ -1217,14 +1365,14 @@ DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py generate_roman_f
 ```
 Expected: a bin histogram across units in {9,10,11,12,14} plus a rejected count. **Record the histogram.** If units 10/11/14 are empty, flag it (spec top risk — likely needs double cadences, the deferred follow-up) and report before continuing. Re-run once; row/playlist counts identical (idempotent).
 
-- [ ] **Step 9: Update the legacy test + run the suite**
+- [ ] **Step 10: Update the legacy test + run the suite**
 
 The legacy `apps/exercises/tests/test_roman_from_clausulae.py` asserts the removed `_build_identification_payload` / `_CADENCE_RN` / `_RN_CHOICES_MAJOR`. Rewrite its cases to target `build_binned_payload` (the unit-9 I/V/I case) so coverage is preserved, not deleted.
 
 Run: `DJANGO_SETTINGS_MODULE=harmony.settings.local python3 -m pytest apps/exercises/tests/ -q`
 Expected: PASS (all app tests green).
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add apps/exercises/clausulae_realize.py apps/exercises/management/commands/generate_roman_from_clausulae.py apps/exercises/tests/
@@ -1323,7 +1471,7 @@ generated from `music_theory_taxonomy_with_branches.json` via
 
 - [ ] **Step 2: Update `docs/management_commands.md`**
 
-Update the `generate_roman_from_clausulae` entry: document the family pool (**simple + compound, 3v/4v; double cadences deferred**), music21 RN derivation, generate-and-bin into units {9,10,11,12,14}, page_title student titles (in `metadata.source`) + short hashed `description`, per-unit playlists, and the printed bin histogram. Note unit 13 (ROO) and double cadences as deferred follow-ups. Add a one-line entry for the new `build_unit_allowed_answers` command under the appropriate category, and register it in `apps/exercises/management/commands/list_exercise_generators.py` `CATALOG` if it belongs there (it is a build tool, not an exercise generator — only add if the file documents build commands too; otherwise skip).
+Update the `generate_roman_from_clausulae` entry: document the family pool (**simple + compound, 3v/4v; double cadences deferred**), music21 RN derivation, generate-and-bin into units {9,10,11,12,14}, page_title student titles (in `metadata.source`) + short hashed `description`, `--preview` raw table mode, per-unit playlists, and the printed bin histogram. Note unit 13 (ROO) and double cadences as deferred follow-ups. Add a one-line entry for the new `build_unit_allowed_answers` command under the appropriate category, and register it in `apps/exercises/management/commands/list_exercise_generators.py` `CATALOG` if it belongs there (it is a build tool, not an exercise generator — only add if the file documents build commands too; otherwise skip).
 
 - [ ] **Step 3: Commit**
 
@@ -1336,9 +1484,9 @@ git commit -m "docs: Blocker 1 resolved + document binning generator and build c
 
 ## Self-Review Notes
 
-- **Spec coverage:** §1 answer table → Tasks 1–3; §2 title map → Tasks 4, 10; §3 converter + derivation → Tasks 5, 6; §4 generate-and-bin generator → Tasks 7 (bin), 8 (payload), 9 (pools/playlists/histogram); §6 docs → Task 12; §7 verification → Tasks 9 (histogram) + 11 (browser). Unit 13 (§0) intentionally absent — deferred.
+- **Spec coverage:** §1 answer table → Tasks 1–3; §2 title map → Tasks 4, 10; §3 converter + derivation → Tasks 5, 6; §4 generate-and-bin generator → Tasks 7 (bin), 8 (payload), 9 (pools/playlists/histogram/preview); §6 docs → Task 12; §7 verification → Tasks 9 (raw preview + histogram) + 11 (browser). Unit 13 (§0) intentionally absent — deferred.
 - **Title fields (addresses description length):** student-facing page_title → UMTO `metadata.source` (no limit); `Exercise.description` (`max_length=60`, idempotency key) → short hashed key via `short_description()`. Tested in Task 4.
 - **Deferred this round (like unit 13):** double cadences. Engine has the enumerators but realization (5-position quintuples) is unbuilt; `voices_from_combo` raises for them. Fast-follow if the Task 9 histogram shows units 10/11/14 underpopulated by simple+compound.
 - **DRY:** compound realization is promoted to the shared `clausulae_realize.py` (Task 9) and consumed by both generators (Task 10) — no duplicated/divergent realization.
 - **Out of scope (per spec):** no compendium content sourcing, no `applySkillFilter` logic change, no grading-engine/UMTO-schema change, no clausulae-project changes.
-- **Known adaptation points flagged inline (not placeholders):** enumerator tuple shapes (Task 9 Step 5 prints them, matched against b1's working usage), the `payload["score"]["umto"]` key paths for `analysis`/`metadata.source` (Task 8 Step 1 verifies via `dump_exercise`), `normalize_figure` coverage and chordified offsets (Task 6 Step 4 adjusts to observed music21 output), and `settings.BASE_DIR` (Task 2 Step 3 has a relative-path fallback). Each has a concrete command to resolve it before coding.
+- **Known adaptation points flagged inline (not placeholders):** enumerator tuple shapes (Task 9 Step 5 prints them, matched against b1's working usage), the `payload["score"]["umto"]` key paths for `analysis`/`metadata.source` (Task 8 Step 1 verifies via `dump_exercise`), `normalize_figure` coverage and target/source offsets (Task 6 Step 4 adjusts to observed music21 output), raw preview output (Task 9 Step 8), and `settings.BASE_DIR` (Task 2 Step 3 has a relative-path fallback). Each has a concrete command to resolve it before coding.
