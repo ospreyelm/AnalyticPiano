@@ -30,7 +30,7 @@ map. **That map already exists** at
 [exercise_definition.js:15–90](../../../lab/static/js/src/models/exercise_definition.js),
 filled for units 9–20, with the broken `startsWith` path removed. The frontend
 skill-filtering work is done. This design treats Blocker 1 as resolved and
-removes the stale warning from CLAUDE.md.
+removes the stale warning from both CLAUDE.md and AGENTS.md.
 
 The remaining gap is **generator content**: the generator only produces simple
 authentic cadences (hardcoded `I → V → I`), so units 10–14 have no source
@@ -106,10 +106,15 @@ literal). The taxonomy is the source of truth per the redundancy roadmap, so we
   `analysis.roman.cumulative` per unit, and that JS and Python see identical
   sets — so nothing can drift from the taxonomy.
 
-Units beyond 14 (15–20) in the current JS literal are carried through unchanged
-by the same derivation (taxonomy permitting); if a unit lacks
-`analysis.roman.cumulative`, the generator falls back to the prior literal value
-for that unit and the plan flags it.
+Units beyond 14 (15–20) are carried through by the same derivation where the
+taxonomy provides `analysis.roman.cumulative`. Units that must stay
+**pass-through `null`** (19–20 in the current JS literal) or whose taxonomy entry
+lacks RN data are defined in a **checked-in override file** read by the generator
+(e.g. `unit_allowed_answers.overrides.json`: `{ "19": null, "20": null, … }`).
+The merge order is taxonomy-derived values first, then overrides applied on top —
+so once the JS literal is deleted there is still one explicit, version-controlled
+source for the non-derivable entries. The plan flags any unit that ends up in
+neither source.
 
 ### 2. Shared clausula → page_title map
 
