@@ -60,12 +60,32 @@ So ROO = a chain of engine-valid compound triples along the stepwise bass scale
 (degrees 1→8 and back). All 28 compendium ROO entries already pass this check, so
 the construction is validated.
 
+**Reuse the validation code — promote it first.** The validated invariants
+already exist but are not importable from a generator:
+
+- `_COMPOUND_3V_VALID` / `_COMPOUND_4V_VALID` are built purely from
+  `enumerate_compound_*` output, but live in `compendium/validate_examples.py`
+  (a script sys.path-hacked into tests), not the `clausulae` package.
+  **Promote them into the package** (e.g. `clausulae/valid_sets.py`) so both
+  generation and validation share one source of truth. They carry zero
+  compendium dependency.
+- `validate_simple` / `validate_double` already live in
+  `clausulae/constraints.py` — the generator calls these as the contrapuntal
+  filter. (Distinct from HarmonyLab's `_tonal_valid`, a tonal-pedagogy sonority
+  filter — keep both; complementary.)
+- `is_rule_of_octave` / `extract_rule_of_octave_voices` are compendium-note
+  *extractors* tied to `ex_num` ranges — **not** reusable for generation. They
+  do encode the ROO structural patterns (ascending/descending, 1-beat/2-beat
+  scale shapes) the generator must reproduce; treat them as the spec for those
+  shapes.
+
 **Prerequisite (separate, in `clausulae-project`):** add
 `enumerate_rule_of_octave(n_voices=3|4)` to `clausulae/generate.py`. It walks the
-bass scale and, at each degree, selects the validated compound triple whose bass
-matches that degree, yielding the full ROO progression. Ship it with its own
-tests in `clausulae-project` (the 28 compendium ROO entries are the natural
-fixture), then HarmonyLab imports it like the other `enumerate_*` functions.
+bass scale and, at each degree, selects the promoted-valid compound triple whose
+bass matches that degree, yielding the full ROO progression. Ship it with its own
+tests in `clausulae-project`; the generate↔validate loop closes when its output
+**reproduces the 28 compendium ROO entries** under the existing validation. Then
+HarmonyLab imports it like the other `enumerate_*` functions.
 
 **Cross-repo ordering:** the `clausulae-project` generator must land (and be
 `pip install -e`-available) before the HarmonyLab unit-13 path can be
@@ -211,9 +231,10 @@ Explicitly **out of scope**:
   `applySkillFilter`. Blocker 2 status unchanged.
 - **`docs/management_commands.md`:** update the `generate_roman_from_clausulae`
   entry for the new pools, ROO source, binning, and per-unit playlists.
-- **`clausulae-project`:** new `enumerate_rule_of_octave` generator + tests
-  (upstream prerequisite, §0). No lessons-spec exception needed — the spec stays
-  as-is since all units remain engine-sourced.
+- **`clausulae-project`:** (a) promote `_COMPOUND_*_VALID` from
+  `compendium/validate_examples.py` into the `clausulae` package; (b) new
+  `enumerate_rule_of_octave` generator + tests (upstream prerequisite, §0).
+  No lessons-spec exception needed — all units remain engine-sourced.
 
 ### 7. Verification (spec-mandated)
 
@@ -254,9 +275,12 @@ feature check so the other units aren't blocked by it.
   analysis, not Clausulae analysis.
 - New VoiceEvent→music21 converter produces correct MIDI/durations (does not
   depend on the broken `_pitch_to_midi`).
+- Promoted `_COMPOUND_*_VALID` sets are identical whether imported from the
+  package or recomputed from `enumerate_compound_*` (promotion changed location,
+  not content).
 - `enumerate_rule_of_octave` (upstream, in `clausulae-project`): output chains
-  only `_COMPOUND_*_VALID` triples; the 28 compendium ROO entries are reproduced
-  by it.
+  only promoted-valid triples; the 28 compendium ROO entries are reproduced by it
+  under the existing validation.
 - HarmonyLab ROO exercises bin to unit 13 and derive a sane RN sequence.
 
 These tests gate correctness but **do not** replace the manual browser
