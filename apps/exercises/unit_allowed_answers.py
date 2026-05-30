@@ -26,12 +26,14 @@ def _walk_units(node):
             yield from _walk_units(item)
 
 
-def compute_unit_allowed_answers() -> dict:
-    """Return {unit_int: [rn, ...] | None} merged from taxonomy then overrides."""
-    with open(_TAXONOMY_PATH) as fh:
-        taxonomy = json.load(fh)
+def _build_table(taxonomy: dict, overrides: dict) -> dict[int, list[str] | None]:
+    """Pure helper: build the answer table from a taxonomy dict and overrides dict.
 
-    table: dict = {}
+    Raises ValueError if the same unit ``n`` appears more than once in the
+    taxonomy (which would silently clobber the first entry).
+    Raises KeyError (with unit context) if a cumulative entry lacks 'value'.
+    """
+    table: dict[int, list[str] | None] = {}
     for unit in _walk_units(taxonomy):
         roman = unit["analysis"].get("roman")
         if not isinstance(roman, dict):
@@ -43,11 +45,31 @@ def compute_unit_allowed_answers() -> dict:
             n = int(str(unit["n"]).strip())
         except (TypeError, ValueError):
             continue
-        table[n] = [entry["value"] for entry in cumulative]
 
-    with open(_OVERRIDES_PATH) as fh:
-        overrides = json.load(fh)
+        if n in table:
+            raise ValueError(
+                f"Duplicate unit {n} in taxonomy — answer table would be clobbered"
+            )
+
+        try:
+            table[n] = [entry["value"] for entry in cumulative]
+        except KeyError as exc:
+            raise KeyError(
+                f"Unit {n} cumulative entry missing 'value' key: {exc}"
+            ) from exc
+
     for key, value in overrides.items():
         table[int(key)] = value  # overrides win (including explicit null)
 
     return table
+
+
+def compute_unit_allowed_answers() -> dict[int, list[str] | None]:
+    """Return {unit_int: [rn, ...] | None} merged from taxonomy then overrides."""
+    with open(_TAXONOMY_PATH) as fh:
+        taxonomy = json.load(fh)
+
+    with open(_OVERRIDES_PATH) as fh:
+        overrides = json.load(fh)
+
+    return _build_table(taxonomy, overrides)

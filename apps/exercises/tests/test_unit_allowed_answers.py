@@ -1,4 +1,6 @@
-from apps.exercises.unit_allowed_answers import compute_unit_allowed_answers
+import pytest
+
+from apps.exercises.unit_allowed_answers import _build_table, compute_unit_allowed_answers
 
 
 def test_unit_9_matches_taxonomy_cumulative():
@@ -24,3 +26,49 @@ def test_all_taxonomy_units_present():
     table = compute_unit_allowed_answers()
     for n in (9, 10, 11, 12, 13, 14, 15, 16, 17, 18):
         assert isinstance(table[n], list) and table[n], f"unit {n} missing"
+
+
+# ---------------------------------------------------------------------------
+# Tests for _build_table (pure helper, uses in-memory taxonomy dicts)
+# ---------------------------------------------------------------------------
+
+def _unit_node(n, values):
+    """Build a minimal taxonomy unit node for _build_table tests."""
+    return {
+        "n": n,
+        "analysis": {
+            "roman": {
+                "cumulative": [{"value": v} for v in values]
+            }
+        },
+    }
+
+
+def test_build_table_raises_on_duplicate_unit():
+    """Duplicate unit n in taxonomy must raise ValueError (not silently clobber)."""
+    taxonomy = {
+        "units": [
+            _unit_node(5, ["I", "V"]),
+            _unit_node(5, ["I", "V", "IV"]),  # duplicate n=5
+        ]
+    }
+    with pytest.raises(ValueError, match="Duplicate unit 5"):
+        _build_table(taxonomy, {})
+
+
+def test_build_table_raises_on_missing_value_key():
+    """A cumulative entry without 'value' must raise KeyError mentioning the unit."""
+    taxonomy = {
+        "units": [
+            {
+                "n": 7,
+                "analysis": {
+                    "roman": {
+                        "cumulative": [{"label": "I"}]  # 'value' key absent
+                    }
+                },
+            }
+        ]
+    }
+    with pytest.raises(KeyError, match="Unit 7"):
+        _build_table(taxonomy, {})
