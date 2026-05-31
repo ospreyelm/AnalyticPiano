@@ -30,9 +30,9 @@ COMPENDIUM_TEMPLATES: dict[tuple[str, str], list[tuple[float, str]]] = {
     ("Compound Cadences with 6/4 in Four Voices", "major"): [(0.0, "I"), (1.0, "I6"), (2.0, "Cad64"), (3.0, "V"), (4.0, "I")],
     ("Compound Cadences with 6/4 in Four Voices", "minor"): [(0.0, "i"), (1.0, "i6"), (2.0, "Cad64"), (3.0, "V"), (4.0, "i")],
     ("Evaded Cadences in Three Voices", "major"): [(0.0, "I"), (1.0, "I6"), (2.0, "ii65"), (3.0, "V"), (4.0, "vi")],
-    ("Evaded Cadences in Three Voices", "minor"): [(0.0, "i"), (1.0, "i6"), (2.0, "iiø65"), (3.0, "V"), (4.0, "bVI")],
+    ("Evaded Cadences in Three Voices", "minor"): [(0.0, "V"), (1.0, "i6"), (2.0, "iiø65"), (3.0, "V"), (4.0, "VI")],
     ("Evaded Cadences in Four Voices", "major"): [(0.0, "I"), (1.0, "I6"), (2.0, "ii65"), (3.0, "V"), (4.0, "vi")],
-    ("Evaded Cadences in Four Voices", "minor"): [(0.0, "i"), (1.0, "i6"), (2.0, "iiø65"), (3.0, "V"), (4.0, "bVI")],
+    ("Evaded Cadences in Four Voices", "minor"): [(0.0, "V"), (1.0, "i6"), (2.0, "iiø65"), (3.0, "V"), (4.0, "VI")],
 }
 
 

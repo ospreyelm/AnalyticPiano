@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 # Full Roman-analysis curriculum range; units with ``None`` answer tables are
 # pass-through bins and will be ignored by ``bin_unit`` until they gain pools.
 CANDIDATE_UNITS = list(range(9, 21))
+FAMILY_UNIT_OVERRIDES = {
+    "Evaded Cadences in Three Voices": 17,
+    "Evaded Cadences in Four Voices": 17,
+}
 
 
 def _hl_key(tonic: str, mode: str) -> str:
@@ -106,7 +110,9 @@ def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> d
     # Step 6: bin to lowest covering unit
     rn_set = {rn for _off, rn in template}
     table = compute_unit_allowed_answers()
-    unit = bin_unit(rn_set, table, CANDIDATE_UNITS)
+    unit = FAMILY_UNIT_OVERRIDES.get(example["page_title"])
+    if unit is None:
+        unit = bin_unit(rn_set, table, CANDIDATE_UNITS)
     if unit is None:
         logger.warning(
             "compendium_prep: example %s rn_set %s cannot be binned to any candidate unit",

@@ -10,6 +10,8 @@ def test_lookup_known_types():
         (0.0, "I"), (1.0, "I6"), (2.0, "Cad64"), (3.0, "V"), (4.0, "I")]
     assert template_for("Compound Cadences with 6/4 in Four Voices", "minor") == [
         (0.0, "i"), (1.0, "i6"), (2.0, "Cad64"), (3.0, "V"), (4.0, "i")]
+    assert template_for("Evaded Cadences in Three Voices", "minor") == [
+        (0.0, "V"), (1.0, "i6"), (2.0, "iiø65"), (3.0, "V"), (4.0, "VI")]
 
 
 def test_skipped_types_return_none():

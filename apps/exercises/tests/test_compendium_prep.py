@@ -38,6 +38,13 @@ def test_prep_simple_three_voice_unit_9():
     assert out["umto_kwargs"]["key"] == "jG_"
 
 
+def test_evaded_minor_labels_and_bins_to_unit_17_by_family():
+    out = prepare_compendium_exercise(_ex("m191-192"), "A")
+    assert out["unit"] == 17
+    rns = [a["content"]["roman_numeral"] for a in out["umto_kwargs"]["analysis_overrides"]]
+    assert rns == ["V", "i6", "iiø65", "V", "VI"]
+
+
 def test_unit_14_prep_builds_payload_without_validation_error():
     """Regression: complexity_score must allow unit 14 (was le=12, crashed save)."""
     from apps.exercises.umto_factory import build_umto_payload
