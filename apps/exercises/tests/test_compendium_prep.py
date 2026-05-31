@@ -32,3 +32,22 @@ def test_prep_simple_three_voice_unit_9():
     out = prepare_compendium_exercise(_ex("m025-026"), "G")  # simple 3v major -> G
     assert out["unit"] == 9
     assert out["umto_kwargs"]["key"] == "jG_"
+
+
+def test_unit_14_prep_builds_payload_without_validation_error():
+    """Regression: complexity_score must allow unit 14 (was le=12, crashed save)."""
+    from apps.exercises.umto_factory import build_umto_payload
+    from pydantic import ValidationError
+
+    out = prepare_compendium_exercise(_ex("m111-112"), "C")
+    assert out is not None
+    assert out["unit"] == 14
+
+    # build_umto_payload is keyword-only; umto_kwargs maps directly onto its params.
+    try:
+        payload = build_umto_payload(score_data=out["score_data"], **out["umto_kwargs"])
+    except ValidationError as exc:
+        raise AssertionError(f"Pydantic ValidationError for unit-14 payload: {exc}") from exc
+
+    assert payload is not None
+    assert payload["complexity_score"] == 14

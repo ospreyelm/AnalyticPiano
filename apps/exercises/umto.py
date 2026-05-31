@@ -108,7 +108,7 @@ class Metadata(BaseModel):
     key: str # e.g. "G Major", "c minor"
     meter: str # e.g. "4/4", "3/4"
     clef: str = "treble" # "treble", "bass", "alto", "tenor"
-    complexity_score: int = Field(ge=1, le=12, description="Unit 1-12 ranking system")
+    complexity_score: int = Field(ge=1, le=20, description="Curriculum unit ranking (1-20)")
     mode: InteractionMode = InteractionMode.PLAYBACK
     is_umto: bool = True
     input_mode: Literal["dropdown", "text"] = "dropdown"

@@ -40,12 +40,15 @@ KEYS_BY_MODE: dict[str, list[str]] = {
 def _run_core_loop(options: dict) -> tuple[dict[int, list], int]:
     """Iterate all (example, tonic) pairs and return (by_unit, skipped).
 
-    In preview mode, by_unit values are lists of prep dicts.
-    In real mode, by_unit values are lists of Exercise objects (populated by
-    the caller after this function returns the raw prep dicts — the caller
-    handles DB writes).
+    Returns ``(by_unit, skipped)`` where:
+      - ``by_unit`` maps unit number → list of prep payload dicts (as returned
+        by ``prepare_compendium_exercise``).  Both preview and real paths receive
+        the same raw dicts; DB writes are the caller's (``handle()``) responsibility.
+      - ``skipped`` is the count of (example, tonic) pairs that produced ``None``
+        (untemplated or note-alignment mismatch) plus any pairs filtered by
+        ``--unit``.
 
-    This function is pure-prep; DB writes happen in handle() for real mode.
+    This function is pure-prep; no DB access occurs here.
     """
     examples = load_cadence_examples()
     by_unit: dict[int, list] = {}
@@ -238,14 +241,12 @@ class Command(BaseCommand):
                 # Idempotency check (skip unless --overwrite)
                 if not options["overwrite"]:
                     from apps.exercises.models import Exercise
-                    if Exercise.objects.filter(
+                    ex_existing = Exercise.objects.filter(
                         description=description, authored_by=author
-                    ).exists():
+                    ).first()
+                    if ex_existing is not None:
                         total_skipped_dup += 1
                         # Still collect the existing exercise for playlist ordering.
-                        ex_existing = Exercise.objects.get(
-                            description=description, authored_by=author
-                        )
                         exs.append(ex_existing)
                         continue
 
