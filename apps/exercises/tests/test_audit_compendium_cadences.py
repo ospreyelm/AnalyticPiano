@@ -41,3 +41,40 @@ def test_write_audit_csv_round_trips_rows():
     assert parsed[0].keys() == set(CSV_FIELDS)
     assert parsed[0]["source_id"]
     assert parsed[0]["final_rn"] == parsed[0]["proposed_rn"]
+
+
+def test_audit_rows_include_deterministic_legacy_analysis_fields():
+    rows = build_audit_rows(unit=12, keys=["A"])
+    row = next(
+        row
+        for row in rows
+        if row["source_id"] == "m145-146"
+        and row["target_key"] == "A"
+        and row["offset"] == "1.0"
+    )
+
+    assert row["z7_stack"] == "3 1 3 5"
+    assert row["bass_z7"] == "3"
+    assert row["legacy_chord_code"] == "5/28"
+    assert row["legacy_rn_raw"] == "ii°{z}"
+    assert row["our_rn"] == "ii°6"
+    assert row["final_rn"] == "ii°6"
+    assert row["raw_figured_bass"] == "8/6/3"
+    assert row["figured_bass"] == "6"
+
+
+def test_audit_uses_legacy_analysis_for_major_evaded_opening_dominant():
+    rows = build_audit_rows(unit=17, keys=["C"])
+    row = next(
+        row
+        for row in rows
+        if row["source_id"] == "m187-188"
+        and row["target_key"] == "C"
+        and row["offset"] == "0.0"
+    )
+
+    assert row["legacy_chord_code"] == "7/2z"
+    assert row["legacy_rn_raw"] == "V"
+    assert row["our_rn"] == "V"
+    assert row["music21_rn"] == "V"
+    assert row["final_rn"] == "V"

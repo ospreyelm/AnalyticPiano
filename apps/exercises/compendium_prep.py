@@ -21,6 +21,7 @@ from apps.exercises.compendium_templates import template_for
 from apps.exercises.roman_derivation import bin_unit
 from apps.exercises.unit_allowed_answers import compute_unit_allowed_answers
 from apps.exercises.utils.m21_cir_converter import m21_to_cir
+from apps.exercises.utils.legacy_roman import legacy_roman_from_pitches
 from apps.exercises.umto import InteractionMode
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,38 @@ def _has_chord_at_offset(chords: list, target: float) -> bool:
     return False
 
 
+def _chord_at_offset(chords: list, target: float):
+    for chord in chords:
+        start = float(chord.offset)
+        dur = float(chord.quarterLength)
+        if start <= target < start + dur:
+            return chord
+    return None
+
+
+def _final_roman_label(
+    *,
+    template_rn: str,
+    chord,
+    tonic: str,
+    mode: str,
+    allowed_answers: list[str] | None,
+) -> tuple[str, str]:
+    if chord is None:
+        return template_rn, template_rn
+    legacy = legacy_roman_from_pitches(
+        sorted(chord.pitches, key=lambda p: p.midi),
+        tonic,
+        mode,
+    )
+    if template_rn == "Cad64":
+        return "Cad64", legacy.label or template_rn
+    candidate = legacy.normalized_label or template_rn
+    if allowed_answers is not None and candidate not in allowed_answers:
+        candidate = template_rn
+    return candidate, legacy.label or template_rn
+
+
 def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> dict | None:
     """Build all inputs needed to call save_umto_exercise, without touching the DB.
 
@@ -99,6 +132,7 @@ def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> d
     # Step 3: transpose to target_tonic
     iv = nearest_interval(example["key"], target_tonic)
     tscore = transpose_score(sc, iv)
+    transposed_chords = list(tscore.chordify().flatten().getElementsByClass("Chord"))
 
     # Step 4: build HarmonyLab key string
     hl_key = _hl_key(target_tonic, example["mode"])
@@ -125,23 +159,31 @@ def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> d
     # AnalysisSlice fields: offset, content (AnalysisLayer dict), unit_tags, is_target
     # content fields: roman_numeral, raw_roman_numeral, local_key, raw_figured_bass,
     #                 figured_bass, pop_symbol, functional_label, scale_degrees
-    analysis_overrides = [
-        {
-            "offset": float(off),
-            "content": {
-                "roman_numeral": rn,
-                "raw_roman_numeral": rn,
-                "local_key": None,
-                "raw_figured_bass": None,
-                "figured_bass": None,
-                "pop_symbol": None,
-                "functional_label": None,
-            },
-            "unit_tags": [unit],
-            "is_target": True,
-        }
-        for off, rn in template
-    ]
+    analysis_overrides = []
+    for off, rn in template:
+        final_rn, raw_rn = _final_roman_label(
+            template_rn=rn,
+            chord=_chord_at_offset(transposed_chords, float(off)),
+            tonic=target_tonic,
+            mode=example["mode"],
+            allowed_answers=table.get(unit),
+        )
+        analysis_overrides.append(
+            {
+                "offset": float(off),
+                "content": {
+                    "roman_numeral": final_rn,
+                    "raw_roman_numeral": raw_rn,
+                    "local_key": None,
+                    "raw_figured_bass": None,
+                    "figured_bass": None,
+                    "pop_symbol": None,
+                    "functional_label": None,
+                },
+                "unit_tags": [unit],
+                "is_target": True,
+            }
+        )
 
     # Step 8: title (student-facing source string)
     mode_word = example["mode"]

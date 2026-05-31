@@ -51,7 +51,8 @@ define([], function () {
     "VI",
     "I64",
     "V64",
-    "Cad64"
+    "Cad64",
+    "ii°6"
   ],
   "13": [
     "I",
@@ -73,7 +74,8 @@ define([], function () {
     "iii",
     "III",
     "VII",
-    "Cad64"
+    "Cad64",
+    "ii°6"
   ],
   "14": [
     "I",
@@ -103,6 +105,7 @@ define([], function () {
     "vii°7",
     "viio7",
     "Cad64",
+    "ii°6",
     "ii65",
     "iiø65"
   ],
@@ -134,6 +137,7 @@ define([], function () {
     "vii°7",
     "viio7",
     "Cad64",
+    "ii°6",
     "ii65",
     "iiø65"
   ],
@@ -183,6 +187,7 @@ define([], function () {
     "vii°/IV",
     "vii°7/IV",
     "Cad64",
+    "ii°6",
     "ii65",
     "iiø65"
   ],

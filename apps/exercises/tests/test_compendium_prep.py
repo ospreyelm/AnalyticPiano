@@ -21,6 +21,20 @@ def test_prep_6_5_bins_unit_14_with_template_rns():
     assert out["score_data"]["measures"]  # non-empty CIR
 
 
+def test_prep_uses_normalized_legacy_labels_for_import_answers():
+    out = prepare_compendium_exercise(_ex("m145-146"), "A")
+    assert out is not None
+
+    target = next(
+        target
+        for target in out["umto_kwargs"]["analysis_overrides"]
+        if target["offset"] == 1.0
+    )
+
+    assert target["content"]["roman_numeral"] == "ii°6"
+    assert target["content"]["raw_roman_numeral"] == "ii°{z}"
+
+
 def test_candidate_unit_range_covers_roman_curriculum():
     assert CANDIDATE_UNITS == list(range(9, 21))
 

@@ -103,9 +103,11 @@ def test_additions_propagate_cumulatively():
     # Cad64 (cadential six-four, dominant-function) added at unit 12
     for n in (12, 13, 14, 15, 16, 17, 18):
         assert "Cad64" in table[n], f"Cad64 missing from unit {n}"
+        assert "ii°6" in table[n], f"ii°6 missing from unit {n}"
     # not added below 12
     for n in (9, 10, 11):
         assert "Cad64" not in table[n]
+        assert "ii°6" not in table[n]
     # ii65 / iiø65 added at unit 14 -> present in 14..18, not below
     for n in (14, 15, 16, 17, 18):
         assert "ii65" in table[n] and "iiø65" in table[n]
