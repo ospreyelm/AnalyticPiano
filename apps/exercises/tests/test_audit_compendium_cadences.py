@@ -78,3 +78,21 @@ def test_audit_uses_legacy_analysis_for_major_evaded_opening_dominant():
     assert row["our_rn"] == "V"
     assert row["music21_rn"] == "V"
     assert row["final_rn"] == "V"
+
+
+def test_audit_normalizes_incomplete_root_position_dominant_seventh():
+    rows = build_audit_rows(unit=17, keys=["C"])
+    row = next(
+        row
+        for row in rows
+        if row["source_id"] == "m203-205"
+        and row["target_key"] == "C"
+        and row["offset"] == "0.0"
+    )
+
+    assert row["legacy_chord_code"] == "7/5z"
+    assert row["legacy_rn_raw"] == "V{u3}"
+    assert row["our_rn"] == "V7"
+    assert row["music21_rn"] == "V7"
+    assert row["final_rn"] == "V7"
+    assert row["status"] == "match"

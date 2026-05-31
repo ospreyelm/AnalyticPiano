@@ -41,8 +41,18 @@ def test_legacy_roman_uses_major_table_for_dominant_triad():
     assert result.label == "V"
 
 
+def test_legacy_roman_normalizes_sparse_dominant_dyad_as_v_not_v7():
+    result = legacy_roman_from_pitches(_pitches(["E3", "G#4"]), "A", "minor")
+
+    assert result.chord_code == "7/z"
+    assert result.label == "V{u3}"
+    assert result.normalized_label == "V"
+
+
 def test_normalize_legacy_roman_label_converts_figured_bass_glyph_codes():
     assert normalize_legacy_roman_label("ii°{z}") == "ii°6"
     assert normalize_legacy_roman_label("ii⌀{z5}") == "iiø65"
+    assert normalize_legacy_roman_label("V{u3}", chord_code="7/5z", root="7") == "V7"
+    assert normalize_legacy_roman_label("V{u5}/V", chord_code="2/069", root="2") == "V7/V"
     assert normalize_legacy_roman_label("V{r3}/V") == "V43/V"
     assert normalize_legacy_roman_label("Cad{Cz4}") == "Cad♭64"

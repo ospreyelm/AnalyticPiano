@@ -21,6 +21,7 @@ class LegacyRomanResult:
     chord_code: str
     label: str
     normalized_label: str
+    root: str
 
 
 def _repo_root() -> Path:
@@ -28,7 +29,7 @@ def _repo_root() -> Path:
 
 
 @lru_cache(maxsize=2)
-def _load_table(mode: str) -> dict[str, str]:
+def _load_table(mode: str) -> dict[str, dict[str, str]]:
     table_name = "iChords.js" if mode == "minor" else "jChords.js"
     table_path = (
         _repo_root()
@@ -42,11 +43,19 @@ def _load_table(mode: str) -> dict[str, str]:
     )
     text = table_path.read_text(encoding="utf-8")
     matches = re.finditer(
-        r'"(?P<code>[0-9yz]+/[0-9yz]*)"\s*:\s*\{[^}]*?label:\s*"(?P<label>[^"]+)"',
+        r'"(?P<code>[0-9yz]+/[0-9yz]*)"\s*:\s*\{[^}]*?'
+        r'root:\s*"(?P<root>[^"]+)".*?'
+        r'label:\s*"(?P<label>[^"]+)"',
         text,
         re.DOTALL,
     )
-    return {match.group("code"): match.group("label") for match in matches}
+    return {
+        match.group("code"): {
+            "root": match.group("root"),
+            "label": match.group("label"),
+        }
+        for match in matches
+    }
 
 
 def _tonic_pitch_class(tonic: str) -> int:
@@ -104,7 +113,20 @@ _FIGURED_BASS_GLYPHS = {
 }
 
 
-def normalize_legacy_roman_label(label: str) -> str:
+def _code_contains_chordal_seventh(chord_code: str, root: str) -> bool:
+    if not chord_code or not root or root not in PITCH_CLASSES:
+        return False
+    try:
+        _bass, upper = chord_code.split("/", 1)
+    except ValueError:
+        return False
+    seventh_pc = (PITCH_CLASSES.index(root) + 10) % 12
+    return PITCH_CLASSES[seventh_pc] in upper
+
+
+def normalize_legacy_roman_label(
+    label: str, *, chord_code: str = "", root: str = ""
+) -> str:
     """Convert legacy Sebastian-font brace codes to readable Roman text.
 
     The legacy tables store figures as font glyph mnemonics, e.g. ``ii°{z}``
@@ -115,6 +137,8 @@ def normalize_legacy_roman_label(label: str) -> str:
 
     def replace(match: re.Match) -> str:
         content = match.group(1)
+        if content in {"u3", "u5"}:
+            content = "u" if _code_contains_chordal_seventh(chord_code, root) else ""
         return "".join(
             _FIGURED_BASS_GLYPHS.get(ch, ch) for ch in content if ch != " "
         )
@@ -126,9 +150,14 @@ def legacy_roman_from_pitches(pitches, tonic: str, mode: str) -> LegacyRomanResu
     """Look up a Roman label using HarmonyLab's existing major/minor tables."""
     normalized_mode = "minor" if mode == "minor" else "major"
     chord_code = legacy_chord_code(pitches, tonic)
-    label = _load_table(normalized_mode).get(chord_code, "")
+    entry = _load_table(normalized_mode).get(chord_code, {})
+    label = entry.get("label", "")
+    root = entry.get("root", "")
     return LegacyRomanResult(
         chord_code=chord_code,
         label=label,
-        normalized_label=normalize_legacy_roman_label(label),
+        normalized_label=normalize_legacy_roman_label(
+            label, chord_code=chord_code, root=root
+        ),
+        root=root,
     )
