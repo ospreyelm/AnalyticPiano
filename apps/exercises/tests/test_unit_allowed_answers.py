@@ -100,12 +100,12 @@ def _parse_generated_js():
 
 def test_additions_propagate_cumulatively():
     table = compute_unit_allowed_answers()
-    # i64 added at unit 12 -> present in 12 and all higher list-units
+    # Cad64 (cadential six-four, dominant-function) added at unit 12
     for n in (12, 13, 14, 15, 16, 17, 18):
-        assert "i64" in table[n], f"i64 missing from unit {n}"
+        assert "Cad64" in table[n], f"Cad64 missing from unit {n}"
     # not added below 12
     for n in (9, 10, 11):
-        assert "i64" not in table[n]
+        assert "Cad64" not in table[n]
     # ii65 / iiø65 added at unit 14 -> present in 14..18, not below
     for n in (14, 15, 16, 17, 18):
         assert "ii65" in table[n] and "iiø65" in table[n]
