@@ -50,7 +50,8 @@ define([], function () {
     "vi",
     "VI",
     "I64",
-    "V64"
+    "V64",
+    "i64"
   ],
   "13": [
     "I",
@@ -71,7 +72,8 @@ define([], function () {
     "V64",
     "iii",
     "III",
-    "VII"
+    "VII",
+    "i64"
   ],
   "14": [
     "I",
@@ -99,7 +101,10 @@ define([], function () {
     "vi7",
     "iii7",
     "vii°7",
-    "viio7"
+    "viio7",
+    "i64",
+    "ii65",
+    "iiø65"
   ],
   "15": [
     "I",
@@ -127,7 +132,10 @@ define([], function () {
     "vi7",
     "iii7",
     "vii°7",
-    "viio7"
+    "viio7",
+    "i64",
+    "ii65",
+    "iiø65"
   ],
   "16": [
     "I",
@@ -173,7 +181,10 @@ define([], function () {
     "vii°/vi",
     "vii°7/vi",
     "vii°/IV",
-    "vii°7/IV"
+    "vii°7/IV",
+    "i64",
+    "ii65",
+    "iiø65"
   ],
   "17": [
     "I",
@@ -224,7 +235,10 @@ define([], function () {
     "bVII",
     "bIII",
     "ii°",
-    "ii°6"
+    "ii°6",
+    "i64",
+    "ii65",
+    "iiø65"
   ],
   "18": [
     "I",
@@ -279,7 +293,10 @@ define([], function () {
     "N6",
     "It+6",
     "Ger+6",
-    "Fr+6"
+    "Fr+6",
+    "i64",
+    "ii65",
+    "iiø65"
   ],
   "19": null,
   "20": null

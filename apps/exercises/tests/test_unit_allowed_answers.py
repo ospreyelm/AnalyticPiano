@@ -98,6 +98,29 @@ def _parse_generated_js():
     return json.loads(match.group(1))
 
 
+def test_additions_propagate_cumulatively():
+    table = compute_unit_allowed_answers()
+    # i64 added at unit 12 -> present in 12 and all higher list-units
+    for n in (12, 13, 14, 15, 16, 17, 18):
+        assert "i64" in table[n], f"i64 missing from unit {n}"
+    # not added below 12
+    for n in (9, 10, 11):
+        assert "i64" not in table[n]
+    # ii65 / iiø65 added at unit 14 -> present in 14..18, not below
+    for n in (14, 15, 16, 17, 18):
+        assert "ii65" in table[n] and "iiø65" in table[n]
+    for n in (9, 10, 11, 12, 13):
+        assert "ii65" not in table[n] and "iiø65" not in table[n]
+
+
+def test_additions_do_not_duplicate_or_clobber():
+    table = compute_unit_allowed_answers()
+    # existing taxonomy figures still present, no dupes introduced
+    assert table[14].count("ii65") == 1
+    assert "ii7" in table[14]            # original taxonomy entry intact
+    assert table[9] == ["I", "i", "V", "V7"]  # untouched unit
+
+
 def test_generated_js_matches_loader():
     # Regenerate, then compare to the loader output.
     subprocess.run(
