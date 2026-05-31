@@ -6,12 +6,12 @@ pytest.importorskip("music21")
 
 
 def _ivi_cadence_c_major():
-    """Three onsets in C major: I (C/E/G), V (B/D/G), I (C/E/G) — SAB, half/half/whole."""
+    """Three onsets in C major: I (C/E/G), V (G/D/B), I (C/E/G) — SAB, half/half/whole."""
     def ev(step, octave, midi, ql):
         return VoiceEvent(kind="note", pitch=Pitch(step=step, alter=0, octave=octave, midi=midi),
                           duration=ql, duration_type="h" if ql == 2.0 else "w", dots=0, is_target=True)
     return Voices(
-        S=[ev("G", 4, 67, 2.0), ev("G", 4, 67, 2.0), ev("G", 4, 67, 4.0)],
+        S=[ev("G", 4, 67, 2.0), ev("B", 4, 71, 2.0), ev("G", 4, 67, 4.0)],
         A=[ev("E", 4, 64, 2.0), ev("D", 4, 62, 2.0), ev("E", 4, 64, 4.0)],
         T=[],
         B=[ev("C", 3, 48, 2.0), ev("G", 2, 43, 2.0), ev("C", 3, 48, 4.0)],
@@ -30,7 +30,7 @@ def test_derive_simple_authentic_cadence():
     assert [v["offset"] for v in verticals] == [0.0, 2.0, 4.0]
     # grading MIDI comes from the chordified vertical at each offset, not a position index
     assert verticals[0]["midi"] == [48, 64, 67]   # C3 E4 G4
-    assert verticals[1]["midi"] == [43, 62, 67]   # G2 D4 G4
+    assert verticals[1]["midi"] == [43, 62, 71]   # G2 D4 B4
 
 
 def test_normalize_diminished_uses_degree_sign():
