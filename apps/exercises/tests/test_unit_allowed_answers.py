@@ -72,3 +72,40 @@ def test_build_table_raises_on_missing_value_key():
     }
     with pytest.raises(KeyError, match="Unit 7"):
         _build_table(taxonomy, {})
+
+
+# ---------------------------------------------------------------------------
+# Test: generated JS module matches the loader output
+# ---------------------------------------------------------------------------
+
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+# test file: apps/exercises/tests/test_unit_allowed_answers.py → repo root is parents[3]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_GENERATED_JS = _REPO_ROOT / "lab/static/js/src/config/unit_allowed_answers.js"
+
+
+def _parse_generated_js():
+    """Extract the JSON object literal embedded in the generated AMD module."""
+    text = _GENERATED_JS.read_text()
+    match = re.search(r"return\s+(\{.*\});\s*\}\);\s*$", text, re.DOTALL)
+    assert match, "generated module does not match expected AMD shape"
+    return json.loads(match.group(1))
+
+
+def test_generated_js_matches_loader():
+    # Regenerate, then compare to the loader output.
+    subprocess.run(
+        [sys.executable, "manage.py", "build_unit_allowed_answers"],
+        cwd=_REPO_ROOT,
+        check=True,
+        env={**os.environ, "DJANGO_SETTINGS_MODULE": "harmony.settings.local"},
+    )
+    from apps.exercises.unit_allowed_answers import compute_unit_allowed_answers
+    expected = {str(k): v for k, v in compute_unit_allowed_answers().items()}
+    assert _parse_generated_js() == expected
