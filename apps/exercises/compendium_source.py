@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import Any
 
 from music21 import interval, meter, note, pitch, stream
@@ -31,12 +32,13 @@ from music21.interval import ChromaticInterval
 from apps.exercises.compendium_templates import COMPENDIUM_TEMPLATES
 
 # ---------------------------------------------------------------------------
-# Module constant — override via env COMPENDIUM_INDEX for testing.
+# Module constant — override via env COMPENDIUM_INDEX for local regeneration.
 # ---------------------------------------------------------------------------
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_INDEX_PATH = _REPO_ROOT / "apps" / "exercises" / "data" / "galant_compendium_cadences.json"
 INDEX_PATH: str = os.environ.get(
     "COMPENDIUM_INDEX",
-    "/Users/adorman/Library/CloudStorage/Dropbox/Codebases/"
-    "clausulae-project/compendium/index.json",
+    str(_DEFAULT_INDEX_PATH),
 )
 
 
@@ -46,7 +48,16 @@ INDEX_PATH: str = os.environ.get(
 
 def load_cadence_examples() -> list[dict[str, Any]]:
     """Return example dicts whose (page_title, mode) is in COMPENDIUM_TEMPLATES."""
-    with open(INDEX_PATH, encoding="utf-8") as fh:
+    try:
+        fh = open(INDEX_PATH, encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            f"Compendium cadence index not found at {INDEX_PATH!r}. "
+            "Use the checked-in apps/exercises/data/galant_compendium_cadences.json "
+            "or set COMPENDIUM_INDEX to a local compendium index.json."
+        ) from exc
+
+    with fh:
         all_examples: list[dict] = json.load(fh)
 
     return [

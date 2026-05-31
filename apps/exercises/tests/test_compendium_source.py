@@ -2,7 +2,7 @@ import pytest
 pytest.importorskip("music21")
 from music21 import key, roman
 from apps.exercises.compendium_source import (
-    load_cadence_examples, score_from_example, transpose_score, nearest_interval,
+    INDEX_PATH, load_cadence_examples, score_from_example, transpose_score, nearest_interval,
 )
 
 
@@ -17,6 +17,11 @@ def test_only_templated_pagetypes_loaded():
     assert "Simple Cadences in Two Voices" not in pts   # not templated
     assert "Cudworth Cadence" not in pts
     assert all("notes" in e and e.get("mode") in ("major", "minor") for e in exs)
+
+
+def test_default_index_path_is_repo_local():
+    assert "clausulae-project" not in INDEX_PATH
+    assert INDEX_PATH.endswith("apps/exercises/data/galant_compendium_cadences.json")
 
 
 def test_score_build_and_trim_gives_correct_rns():

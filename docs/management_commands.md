@@ -127,7 +127,7 @@ python manage.py generate_unit5 --type both --author admin@example.com --public
 
 ### Galant Compendium
 
-**`import_compendium_cadences`** — Import Roman-numeral identification exercises from the Galant compendium. Transposes each templated cadence (Simple/Compound/Evaded, major and minor) to multiple keys and groups results into per-unit playlists. Use `--preview` to inspect the exercise count and bin histogram without any DB writes.
+**`import_compendium_cadences`** — Import Roman-numeral identification exercises from the checked-in Galant compendium cadence subset. Transposes each templated cadence (Simple/Compound/Evaded, major and minor) to multiple keys and groups results into per-unit playlists. Use `--preview` to inspect the exercise count and bin histogram without any DB writes. By default it reads `apps/exercises/data/galant_compendium_cadences.json`; set `COMPENDIUM_INDEX=/path/to/index.json` only for local regeneration/debugging.
 ```
 # Dry run — no DB writes
 python manage.py import_compendium_cadences --preview

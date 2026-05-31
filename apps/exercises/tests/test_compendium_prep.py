@@ -1,7 +1,7 @@
 import pytest
 pytest.importorskip("music21")
 from apps.exercises.compendium_source import load_cadence_examples
-from apps.exercises.compendium_prep import prepare_compendium_exercise
+from apps.exercises.compendium_prep import CANDIDATE_UNITS, prepare_compendium_exercise
 
 
 def _ex(eid):
@@ -19,6 +19,10 @@ def test_prep_6_5_bins_unit_14_with_template_rns():
     assert all(a["is_target"] for a in out["umto_kwargs"]["analysis_overrides"])
     assert len(out["description"]) <= 60
     assert out["score_data"]["measures"]  # non-empty CIR
+
+
+def test_candidate_unit_range_covers_roman_curriculum():
+    assert CANDIDATE_UNITS == list(range(9, 21))
 
 
 def test_prep_6_4_bins_unit_12_cad64():

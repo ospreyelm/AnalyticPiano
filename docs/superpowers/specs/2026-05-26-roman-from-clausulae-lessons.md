@@ -220,7 +220,7 @@ music21 is used only to:
 
 ### Source material
 
-The source is the clean parsed `index.json` notes from `clausulae-project/compendium/index.json` (sibling repo), **not** raw MusicXML files. Note durations are trimmed to the next-onset boundary so that inversions render correctly in the student score view. No intermediate derived-corpus JSON files are committed.
+The source is a checked-in curated subset of the clean parsed `index.json` notes at `apps/exercises/data/galant_compendium_cadences.json`, **not** raw MusicXML files. Note durations are trimmed to the next-onset boundary so that inversions render correctly in the student score view. The command can read a local sibling `clausulae-project/compendium/index.json` only when `COMPENDIUM_INDEX` is explicitly set for regeneration/debugging; production and CI use the vendored subset.
 
 ### Relationship to engine-only clausulae path
 
@@ -235,4 +235,3 @@ The prior `generate_roman_from_clausulae` command produces Roman numeral identif
 ### Cadential six-four
 
 Labeled `Cad64`, not `I6/4`. This is intentional and matches the unit answer-set vocabulary and pedagogical convention for the cadential six-four as a pre-dominant/dominant prolongation device rather than a tonic inversion.
-

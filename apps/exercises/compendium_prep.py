@@ -25,8 +25,9 @@ from apps.exercises.umto import InteractionMode
 
 logger = logging.getLogger(__name__)
 
-# Full candidate range so evaded-minor bVI lands in 17, etc.
-CANDIDATE_UNITS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+# Full Roman-analysis curriculum range; units with ``None`` answer tables are
+# pass-through bins and will be ignored by ``bin_unit`` until they gain pools.
+CANDIDATE_UNITS = list(range(9, 21))
 
 
 def _hl_key(tonic: str, mode: str) -> str:

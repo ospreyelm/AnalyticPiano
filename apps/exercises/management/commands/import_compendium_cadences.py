@@ -17,6 +17,7 @@ Options:
     --public      Mark exercises as public (store_true)
     --overwrite   Replace existing exercises with matching descriptions
     --unit N      Only emit exercises that bin to this unit
+    --all-units  Emit all generated unit bins (default)
     --preview     Compute everything, print table + histogram, no DB writes
     --keys K ...  Override target tonics (applied per mode)
 """
@@ -45,8 +46,7 @@ def _run_core_loop(options: dict) -> tuple[dict[int, list], int]:
         by ``prepare_compendium_exercise``).  Both preview and real paths receive
         the same raw dicts; DB writes are the caller's (``handle()``) responsibility.
       - ``skipped`` is the count of (example, tonic) pairs that produced ``None``
-        (untemplated or note-alignment mismatch) plus any pairs filtered by
-        ``--unit``.
+        (untemplated or note-alignment mismatch).
 
     This function is pure-prep; no DB access occurs here.
     """
@@ -189,6 +189,11 @@ class Command(BaseCommand):
             help="Only emit exercises that bin to this unit number.",
         )
         parser.add_argument(
+            "--all-units",
+            action="store_true",
+            help="Emit all generated unit bins. This is the default when --unit is omitted.",
+        )
+        parser.add_argument(
             "--preview",
             action="store_true",
             help="Compute everything and print a table + histogram; no DB writes (author not required).",
@@ -203,6 +208,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         preview = options["preview"]
+        if options.get("unit") is not None and options.get("all_units"):
+            raise CommandError("--unit and --all-units are mutually exclusive.")
 
         if preview:
             # Pure preview: no DB access at all.

@@ -219,9 +219,9 @@ Score-based identification exercise using Bach chorale CIR JSON. Student sees me
 
 ### `roman_from_compendium` (UMTO identification — Galant compendium)
 
-Roman-numeral identification exercises sourced from the Galant compendium cadence pages (sibling `clausulae-project/compendium/index.json`). Each compendium page describes a named cadence type; curated, music-professor-vetted RN templates (`apps/exercises/compendium_templates.py`) supply the answer labels — music21 is **not** used to auto-derive labels (auto-derivation produces suspension/passing-tone noise). Exercises with misaligned or degenerate notes are skipped at import time.
+Roman-numeral identification exercises sourced from a checked-in curated subset of the Galant compendium cadence pages (`apps/exercises/data/galant_compendium_cadences.json`). Each compendium page describes a named cadence type; curated, music-professor-vetted RN templates (`apps/exercises/compendium_templates.py`) supply the answer labels — music21 is **not** used to auto-derive labels (auto-derivation produces suspension/passing-tone noise). Exercises with misaligned or degenerate notes are skipped at import time.
 
-**Source:** `index.json` notes (not raw MusicXML); note durations are trimmed to the next onset for correct inversion rendering. music21 + `m21_to_cir` build the CIR score; `save_umto_exercise` saves the UMTO row.
+**Source:** vendored `index.json`-shape notes (not raw MusicXML); note durations are trimmed to the next onset for correct inversion rendering. music21 + `m21_to_cir` build the CIR score; `save_umto_exercise` saves the UMTO row. `COMPENDIUM_INDEX=/path/to/index.json` can override the checked-in source for local regeneration/debugging.
 
 **Corpus tag:** `corpus:galant_compendium`
 
@@ -243,7 +243,7 @@ python manage.py import_compendium_cadences --unit 9 --author admin@example.com 
 python manage.py import_compendium_cadences --all-units --author admin@example.com --public --overwrite
 ```
 
-**Key files:** `apps/exercises/compendium_templates.py`, `apps/exercises/unit_allowed_answers.py`, `apps/exercises/data/unit_allowed_answers.additions.json`, `apps/exercises/management/commands/import_compendium_cadences.py`
+**Key files:** `apps/exercises/data/galant_compendium_cadences.json`, `apps/exercises/compendium_templates.py`, `apps/exercises/unit_allowed_answers.py`, `apps/exercises/data/unit_allowed_answers.additions.json`, `apps/exercises/management/commands/import_compendium_cadences.py`
 
 **See also:** `docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md` (§ 2026-05-31 Update) for the sanctioned-override note explaining why this path is allowed despite the earlier compendium ban.
 

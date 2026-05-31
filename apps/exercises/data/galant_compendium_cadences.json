@@ -1,0 +1,7010 @@
+[
+  {
+    "id": "m025-026",
+    "ex_num": 13,
+    "page_title": "Simple Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m027-028",
+    "ex_num": 14,
+    "page_title": "Simple Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m029-030",
+    "ex_num": 15,
+    "page_title": "Simple Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m031-032",
+    "ex_num": 16,
+    "page_title": "Simple Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m033-034",
+    "ex_num": 17,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m035-036",
+    "ex_num": 18,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m037-038",
+    "ex_num": 19,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m039-040",
+    "ex_num": 20,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m041-042",
+    "ex_num": 21,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m043-044",
+    "ex_num": 22,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m045-045",
+    "ex_num": 23,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 1,
+    "notes": {
+      "staff5": [],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m046-046",
+    "ex_num": 24,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m047-047",
+    "ex_num": 25,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m048-048",
+    "ex_num": 26,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m049-049",
+    "ex_num": 27,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m050-050",
+    "ex_num": 28,
+    "page_title": "Simple Cadences in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m075-076",
+    "ex_num": 41,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m077-078",
+    "ex_num": 42,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m079-080",
+    "ex_num": 43,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m081-082",
+    "ex_num": 44,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m083-084",
+    "ex_num": 45,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m085-086",
+    "ex_num": 46,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m087-088",
+    "ex_num": 47,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m089-090",
+    "ex_num": 48,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m091-092",
+    "ex_num": 49,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m093-094",
+    "ex_num": 50,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m095-096",
+    "ex_num": 51,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m097-098",
+    "ex_num": 52,
+    "page_title": "Compound Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m099-100",
+    "ex_num": 53,
+    "page_title": "Compound Cadences with 5/4 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m101-102",
+    "ex_num": 54,
+    "page_title": "Compound Cadences with 5/4 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m103-104",
+    "ex_num": 55,
+    "page_title": "Compound Cadences with 5/4 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m105-106",
+    "ex_num": 56,
+    "page_title": "Compound Cadences with 5/4 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m107-108",
+    "ex_num": 57,
+    "page_title": "Compound Cadences with 5/4 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m109-110",
+    "ex_num": 58,
+    "page_title": "Compound Cadences with 5/4 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m111-112",
+    "ex_num": 59,
+    "page_title": "Compound Cadences with 6/5 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m113-114",
+    "ex_num": 60,
+    "page_title": "Compound Cadences with 6/5 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m115-116",
+    "ex_num": 61,
+    "page_title": "Compound Cadences with 6/5 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m117-118",
+    "ex_num": 62,
+    "page_title": "Compound Cadences with 6/5 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B3",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m119-120",
+    "ex_num": 63,
+    "page_title": "Compound Cadences with 6/5 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m121-122",
+    "ex_num": 64,
+    "page_title": "Compound Cadences with 6/5 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m123-124",
+    "ex_num": 65,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "G4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m125-126",
+    "ex_num": 66,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "G4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m127-128",
+    "ex_num": 67,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "G5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m129-130",
+    "ex_num": 68,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m131-132",
+    "ex_num": 69,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m133-134",
+    "ex_num": 70,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "C3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m135-136",
+    "ex_num": 71,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m137-138",
+    "ex_num": 72,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m139-140",
+    "ex_num": 73,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 2.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m141-142",
+    "ex_num": 74,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m143-144",
+    "ex_num": 75,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m145-146",
+    "ex_num": 76,
+    "page_title": "Compound Cadences with 6/4 in Four Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "A2",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m187-188",
+    "ex_num": 97,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m189-190",
+    "ex_num": 98,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m191-192",
+    "ex_num": 99,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "E3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m193-194",
+    "ex_num": 100,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "E3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m195-196",
+    "ex_num": 101,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 4.0,
+          "ql": 0.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m197-198",
+    "ex_num": 102,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 4.0,
+          "ql": 0.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m199-200",
+    "ex_num": 103,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "E3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 4.0,
+          "ql": 0.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m201-202",
+    "ex_num": 104,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "A",
+    "mode": "minor",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "E3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A2",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 4.0,
+          "ql": 0.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m203-205",
+    "ex_num": 105,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "G",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F#5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F5",
+          "offset": 3.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "B4",
+          "offset": 4.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F5",
+          "offset": 4.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 5.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 5.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 6.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 6.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 7.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 8.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 8.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "D3",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 8.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m206-207",
+    "ex_num": 106,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m208-209",
+    "ex_num": 107,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "F4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "F4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "B2",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C3",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m210-211",
+    "ex_num": 108,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "F3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m212-213",
+    "ex_num": 109,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m214-215",
+    "ex_num": 110,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "F5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "F4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "B2",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C3",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B2",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m216-217",
+    "ex_num": 111,
+    "page_title": "Evaded Cadences in Three Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 3,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F5",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "F3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m218-219",
+    "ex_num": 112,
+    "page_title": "Evaded Cadences in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.5,
+          "ql": 0.5
+        },
+        {
+          "pitch": "D4",
+          "offset": 3.5,
+          "ql": 0.5
+        },
+        {
+          "pitch": "E4",
+          "offset": 3.5,
+          "ql": 0.5
+        },
+        {
+          "pitch": "C4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m220-221",
+    "ex_num": 113,
+    "page_title": "Evaded Cadences in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.5,
+          "ql": 0.5
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.5,
+          "ql": 0.5
+        },
+        {
+          "pitch": "E4",
+          "offset": 3.5,
+          "ql": 0.5
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m222-223",
+    "ex_num": 114,
+    "page_title": "Evaded Cadences in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.5,
+          "ql": 0.5
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.5,
+          "ql": 0.5
+        },
+        {
+          "pitch": "G5",
+          "offset": 3.5,
+          "ql": 0.5
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m224-230",
+    "ex_num": 115,
+    "page_title": "Evaded Cadences in Four Voices",
+    "key": "G",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "A4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F#5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "D5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 3.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F#5",
+          "offset": 3.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 4.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F#5",
+          "offset": 4.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 5.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 5.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G4",
+          "offset": 5.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 6.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 6.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "F4",
+          "offset": 6.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "D5",
+          "offset": 7.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F4",
+          "offset": 7.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "G4",
+          "offset": 7.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 8.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E4",
+          "offset": 8.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "G4",
+          "offset": 8.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 9.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 9.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G4",
+          "offset": 9.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 10.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 10.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "D4",
+          "offset": 10.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "B4",
+          "offset": 11.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 11.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E4",
+          "offset": 11.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 12.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C4",
+          "offset": 12.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E4",
+          "offset": 12.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "A4",
+          "offset": 13.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C4",
+          "offset": 13.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 13.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 14.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "B-3",
+          "offset": 14.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "F4",
+          "offset": 14.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "B-3",
+          "offset": 15.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C4",
+          "offset": 15.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "G4",
+          "offset": 15.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "A3",
+          "offset": 16.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C4",
+          "offset": 16.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "G4",
+          "offset": 16.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 17.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 17.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 17.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 18.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "C5",
+          "offset": 18.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 18.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 19.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 19.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 19.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 20.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 20.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 20.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 21.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 21.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 21.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "D4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C#4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D#4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 5.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 6.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B3",
+          "offset": 7.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C4",
+          "offset": 8.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 9.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F#3",
+          "offset": 10.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G#3",
+          "offset": 11.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 12.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 13.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 14.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 15.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 16.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 17.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 18.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 19.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 20.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 21.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 21.0,
+          "ql": 0.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m231-232",
+    "ex_num": 116,
+    "page_title": "Evaded Cadences in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 4.0,
+          "ql": 0.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m233-234",
+    "ex_num": 117,
+    "page_title": "Evaded Cadences in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 4.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 4.0,
+          "ql": 0.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m235-237",
+    "ex_num": 118,
+    "page_title": "Evaded Cadences in Four Voices",
+    "key": "G",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "C5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "F#5",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "G5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F5",
+          "offset": 3.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "B4",
+          "offset": 4.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F5",
+          "offset": 4.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "G4",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 5.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E5",
+          "offset": 5.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 6.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D5",
+          "offset": 6.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 7.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 8.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 8.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 8.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "D3",
+          "offset": 0.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 4.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "C3",
+          "offset": 8.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "m238-240",
+    "ex_num": 119,
+    "page_title": "Evaded Cadences in Four Voices",
+    "key": "C",
+    "mode": "major",
+    "n_voices": 4,
+    "notes": {
+      "staff5": [
+        {
+          "pitch": "B4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D4",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 0.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 1.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "E4",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C5",
+          "offset": 2.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "D4",
+          "offset": 2.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "B4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G4",
+          "offset": 3.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 4.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "C#5",
+          "offset": 4.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E4",
+          "offset": 4.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 5.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "F4",
+          "offset": 5.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "B-4",
+          "offset": 6.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 6.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "E4",
+          "offset": 6.0,
+          "ql": 2.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 7.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "C#5",
+          "offset": 7.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A4",
+          "offset": 8.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "D5",
+          "offset": 8.0,
+          "ql": 4.0
+        },
+        {
+          "pitch": "F4",
+          "offset": 8.0,
+          "ql": 4.0
+        }
+      ],
+      "staff6": [
+        {
+          "pitch": "G3",
+          "offset": 0.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "E3",
+          "offset": 1.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "F3",
+          "offset": 2.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 3.0,
+          "ql": 1.0,
+          "tie": "start"
+        },
+        {
+          "pitch": "G3",
+          "offset": 4.0,
+          "ql": 1.0,
+          "tie": "stop"
+        },
+        {
+          "pitch": "F3",
+          "offset": 5.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "G3",
+          "offset": 6.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "A3",
+          "offset": 7.0,
+          "ql": 1.0
+        },
+        {
+          "pitch": "D3",
+          "offset": 8.0,
+          "ql": 4.0
+        }
+      ]
+    }
+  }
+]
