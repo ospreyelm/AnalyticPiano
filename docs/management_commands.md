@@ -127,6 +127,12 @@ python manage.py generate_unit5 --type both --author admin@example.com --public
 
 ### Galant Compendium
 
+**`audit_compendium_cadences`** — Export a no-DB CSV for reviewing Galant-compendium Roman numeral labels before import. Each row is one target vertical and includes the source id, unit, target key, offset, sounding notes, bass, proposed RN, music21 RN, editable final RN, status, and exception reason.
+```
+python manage.py audit_compendium_cadences --out scratch/compendium_rn_review.csv
+python manage.py audit_compendium_cadences --unit 17 --keys A --out scratch/unit17_a_minor_review.csv
+```
+
 **`import_compendium_cadences`** — Import Roman-numeral identification exercises from the checked-in Galant compendium cadence subset. Transposes each templated cadence (Simple/Compound/Evaded, major and minor) to multiple keys and groups results into per-unit playlists. Use `--preview` to inspect the exercise count and bin histogram without any DB writes. By default it reads `apps/exercises/data/galant_compendium_cadences.json`; set `COMPENDIUM_INDEX=/path/to/index.json` only for local regeneration/debugging.
 ```
 # Dry run — no DB writes
