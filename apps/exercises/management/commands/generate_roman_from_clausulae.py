@@ -49,6 +49,9 @@ from apps.exercises.umto import (
     VoiceEvent,
     Voices,
 )
+from apps.exercises.clausulae_titles import student_title, short_description
+from apps.exercises.roman_derivation import derive_cadence, bin_unit
+from apps.exercises.unit_allowed_answers import compute_unit_allowed_answers
 
 # ── Clausulae library ─────────────────────────────────────────────────────────
 
@@ -207,7 +210,104 @@ def _combo_label(slots: dict[str, tuple]) -> str:
     return " ".join(parts)
 
 
-# ── Payload builder ───────────────────────────────────────────────────────────
+# ── Unit-aware payload builder ────────────────────────────────────────────────
+
+_CANDIDATE_UNITS = [9, 10, 11, 12, 14]  # unit 13 (ROO) + double cadences deferred
+_UNIT_TABLE = compute_unit_allowed_answers()
+
+
+def structural_targets(family: str) -> list[tuple[float, float]]:
+    """Return (target_offset, analysis_source_offset) pairs by cadence family.
+
+    For compound cadences the penult target is placed at 2.0 (dominant-with-
+    suspension onset) but the RN is derived from the resolved sonority at 3.0
+    (the suspension has resolved). Simple and all other families analyze each
+    position directly.
+    """
+    if family == "compound":
+        # τ=1 voice: rest@0, ANT@1, dominant-with-suspension onset@2, resolved
+        # PEN@3, ULT@4. Show ? at 2.0 but derive the answer from offset 3.0.
+        return [(0.0, 0.0), (2.0, 3.0), (4.0, 4.0)]
+    return [(0.0, 0.0), (2.0, 2.0), (4.0, 4.0)]
+
+
+def build_binned_payload(
+    voices: Voices,
+    *,
+    key: str,
+    family: str,
+    n_voices: int,
+    fingerprint: str,
+    upper_figures=None,
+):
+    """Return (payload, unit, derived_rns) or None if no unit covers the RNs.
+
+    voices       – SATB Voices dataclass
+    key          – tonal centre ('C', 'G', etc.)
+    family       – clausula family ('simple', 'compound', 'double')
+    n_voices     – number of active voices (2, 3, or 4)
+    fingerprint  – stable string identifying the voice combination (for hashing)
+    upper_figures – optional set of figured-bass integers (compound 4-voice titles)
+    """
+    targets = structural_targets(family)
+    verticals = derive_cadence(voices, key=key, targets=targets)
+    rn_list = [v["rn"] for v in verticals]
+    unit = bin_unit(set(rn_list), _UNIT_TABLE, _CANDIDATE_UNITS)
+    if unit is None:
+        return None
+
+    analysis = [
+        AnalysisSlice(
+            offset=v["offset"],
+            content=AnalysisLayer(roman_numeral=v["rn"], raw_roman_numeral=v["rn"]),
+            unit_tags=[unit],
+            is_target=True,
+        )
+        for v in verticals
+    ]
+    grading = [
+        GradingSlice(offset=v["offset"], target_midi_pitches=v["midi"])
+        for v in verticals
+    ]
+    vids = {vid for vid in ("S", "A", "T", "B") if getattr(voices, vid)}
+
+    umto = UMTO(
+        metadata=Metadata(
+            exercise_id="TEMP",
+            source=student_title(family, n_voices, key=key, upper_figures=upper_figures),
+            key=HL_KEY.get(key, "jC_"),
+            meter="2/2",
+            clef=_staff_dist(vids),
+            complexity_score=unit,
+            mode=InteractionMode.IDENTIFICATION,
+            input_mode="dropdown",
+            unit=unit,
+        ),
+        voices=voices,
+        analysis=analysis,
+        grading=grading,
+    )
+
+    payload = umto.to_frontend_payload(unit=unit, analysis_type="roman")
+
+    # Override / extend fields that to_frontend_payload sets from metadata defaults.
+    payload["analysisType"] = "roman"
+    payload["identMode"] = "practice"
+    payload["allowed_answers"] = list(_UNIT_TABLE[unit])
+    payload["display"] = {
+        "showNotation": True,
+        "hideKeyLabel": False,
+        "showScaleDegrees": False,
+        "maxMeasures": 2,
+    }
+    payload["inputModeFixed"] = "dropdown"
+    payload["description"] = short_description(
+        family, n_voices, key=key, unit=unit, fingerprint=fingerprint
+    )
+    return payload, unit, rn_list
+
+
+# ── Legacy payload builder (kept for _make_exercises; removed in Task 9) ──────
 
 def _build_identification_payload(
     voice_events_by_id: dict[str, list[VoiceEvent]],
