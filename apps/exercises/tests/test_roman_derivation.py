@@ -44,3 +44,19 @@ def test_derive_requires_explicit_targets():
     from apps.exercises.roman_derivation import derive_cadence
     with pytest.raises(ValueError):
         derive_cadence(_ivi_cadence_c_major(), key="C")
+
+
+def test_bin_unit_lowest_cover():
+    from apps.exercises.roman_derivation import bin_unit
+    table = {
+        9: ["I", "i", "V", "V7"],
+        10: ["I", "i", "V", "V7", "I6", "V6", "vii°6"],
+        12: ["I", "i", "V", "V7", "I6", "V6", "vii°6", "I64", "V64"],
+        14: ["I", "i", "V", "V7", "I6", "V6", "vii°6", "I64", "V64", "ii7"],
+    }
+    candidates = [9, 10, 12, 14]
+    assert bin_unit({"I", "V"}, table, candidates) == 9
+    assert bin_unit({"I", "V6", "I6"}, table, candidates) == 10
+    assert bin_unit({"I", "I64", "V"}, table, candidates) == 12
+    assert bin_unit({"I", "ii7"}, table, candidates) == 14
+    assert bin_unit({"I", "N6"}, table, candidates) is None  # uncovered -> reject

@@ -33,6 +33,22 @@ def _chord_at_offset(chords, target):
     return None
 
 
+def bin_unit(rn_set, table: dict, candidate_units) -> int | None:
+    """Lowest candidate unit whose allowed-answer set covers rn_set, else None.
+
+    Unit 13 is intentionally excluded from candidate_units (deferred); since
+    unit 14 is a superset of 13, RNs needing 13-only chords land in 14.
+    """
+    needed = set(rn_set)
+    for unit in sorted(candidate_units):
+        allowed = table.get(unit)
+        if allowed is None:
+            continue
+        if needed.issubset(set(allowed)):
+            return unit
+    return None
+
+
 def derive_cadence(voices, *, key: str, targets=None) -> list[dict]:
     """Return [{"offset": target, "rn": str, "midi": [int, ...]}, ...].
 
