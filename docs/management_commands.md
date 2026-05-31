@@ -125,6 +125,22 @@ python manage.py generate_unit5 --type both --author admin@example.com --public
 
 ---
 
+### Galant Compendium
+
+**`import_compendium_cadences`** — Import Roman-numeral identification exercises from the Galant compendium. Transposes each templated cadence (Simple/Compound/Evaded, major and minor) to multiple keys and groups results into per-unit playlists. Use `--preview` to inspect the exercise count and bin histogram without any DB writes.
+```
+# Dry run — no DB writes
+python manage.py import_compendium_cadences --preview
+
+# Full import
+python manage.py import_compendium_cadences --author admin@example.com --public --overwrite
+
+# Only units that bin to unit 14
+python manage.py import_compendium_cadences --author admin@example.com --unit 14
+```
+
+---
+
 ### Branch B (Clausulae)
 
 **`generate_clausulae_b1`** — Generate Branch B Units B1–B4 and B11–B12: formal clausulae and cadence exercises (playback mode).

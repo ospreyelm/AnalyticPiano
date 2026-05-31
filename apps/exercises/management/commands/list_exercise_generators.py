@@ -82,6 +82,13 @@ CATALOG = [
             "python manage.py generate_unit5 --type both --author admin@example.com --public",
         ),
     ]),
+    ("Galant Compendium (Roman numerals)", [
+        (
+            "import_compendium_cadences",
+            "Import Roman-numeral identification exercises from the Galant compendium. Transposes templated cadences to multiple keys; groups into per-unit playlists. Use --preview for a dry run (no DB writes).",
+            "python manage.py import_compendium_cadences --author admin@example.com --public --overwrite",
+        ),
+    ]),
     ("Branch B (Clausulae)", [
         (
             "generate_clausulae_b1",
