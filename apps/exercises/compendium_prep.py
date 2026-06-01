@@ -153,6 +153,18 @@ def _source_events_for_staff(
                 previous["tie"] = event.get("tie")
                 continue
         merged.append(event)
+
+    # When the part is fully monophonic (no two notes share an offset), trim each
+    # note's ql to the next onset.  Compendium bass parts often encode a single
+    # sequential line with overlapping source durations; trimming produces the
+    # correct written note values (e.g. quarter-note bass line C-E-G-G).
+    offsets = [e["offset"] for e in merged]
+    if len(offsets) == len(set(offsets)):  # all unique → monophonic
+        for i, event in enumerate(merged[:-1]):
+            next_offset = merged[i + 1]["offset"]
+            if event["offset"] + event["ql"] > next_offset + 0.001:
+                event["ql"] = round(next_offset - event["offset"], 6)
+
     return merged
 
 
@@ -168,6 +180,9 @@ def _assign_part_lanes(events: list[dict[str, Any]]) -> list[list[tuple[float, d
     for event in events:
         offset = round(float(event["offset"]), 6)
         notes_by_offset.setdefault(offset, []).append(event)
+
+    # True when no offset has more than one note — the whole part is monophonic.
+    _is_fully_sequential = all(len(v) == 1 for v in notes_by_offset.values())
 
     lanes: list[list[tuple[float, dict[str, Any]]]] = []
     lane_ends: list[float] = []
@@ -202,6 +217,18 @@ def _assign_part_lanes(events: list[dict[str, Any]]) -> list[list[tuple[float, d
                         key=lambda idx: abs(
                             lanes[idx][-1][1]["pitch"].midi - event["pitch"].midi
                         ) if lanes[idx] else 0,
+                    )
+                elif _is_fully_sequential and lanes:
+                    # Part has no simultaneous notes at any offset: reuse the
+                    # closest lane instead of creating a spurious second voice.
+                    # This handles compendium bass notation where overlapping
+                    # source durations encode a monophonic line.
+                    lane_idx = min(
+                        (idx for idx in range(len(lanes)) if idx not in used_lanes),
+                        key=lambda idx: abs(
+                            lanes[idx][-1][1]["pitch"].midi - event["pitch"].midi
+                        ) if lanes[idx] else 0,
+                        default=len(lanes),
                     )
                 else:
                     lane_idx = len(lanes)
