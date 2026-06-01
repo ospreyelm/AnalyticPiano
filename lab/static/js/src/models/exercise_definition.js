@@ -7,8 +7,9 @@ define([
   "app/models/key_context_logic",
   "app/models/input_method_logic",
   "app/config/unit_allowed_answers",
+  "app/models/exercise_definition_logic",
   "tonal",
-], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, InputMethodLogic, UNIT_ALLOWED_ANSWERS_RAW, Tonal) {
+], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, InputMethodLogic, UNIT_ALLOWED_ANSWERS_RAW, ExerciseDefinitionLogic, Tonal) {
   var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
@@ -460,14 +461,18 @@ define([
     }
 
     function getWindowMeta(sliceOffset, idx) {
-      if (windows && windows[idx]) {
-        var win = windows[idx];
+      var match = ExerciseDefinitionLogic && ExerciseDefinitionLogic.findAnalysisWindowByOffset
+        ? ExerciseDefinitionLogic.findAnalysisWindowByOffset(windows, sliceOffset, idx)
+        : null;
+      if (match && match.window) {
+        var win = match.window;
         var firstEv = win.events && win.events.length ? win.events[0] : null;
         var maxDur = firstEv && typeof firstEv.duration === "number" ? firstEv.duration : 1024;
         _.each(win.events, function(ev) {
           if (typeof ev.duration === "number" && ev.duration > maxDur) maxDur = ev.duration;
         });
         return {
+          windowIndex: match.index,
           measureIndex: firstEv && typeof firstEv.measureIndex === "number" ? firstEv.measureIndex : 0,
           onset: typeof win.onset === "number" ? win.onset : sliceOffset,
           rhythm: ticksToRhythm(maxDur),
@@ -475,6 +480,7 @@ define([
         };
       }
       return {
+        windowIndex: idx,
         measureIndex: 0,
         onset: sliceOffset,
         rhythm: "q",
@@ -558,7 +564,7 @@ define([
       var winMeta = getWindowMeta(slice.offset, idx);
 
       rawProblems.push({
-        windowIndex: idx,
+        windowIndex: winMeta.windowIndex,
         measureIndex: winMeta.measureIndex,
         onset: winMeta.onset,
         answer: normalizeAnalysisLabel(answer),
