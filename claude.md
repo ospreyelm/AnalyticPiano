@@ -92,13 +92,9 @@ These rules apply to all agents working in this repo.
 
 Two blockers prevent replicating the Unit 9 Bach playlist strategy for other units:
 
-### Blocker 1: `applySkillFilter` generic path is broken for most units
+### Blocker 1: RESOLVED (2026-05-31)
 
-**File:** [lab/static/js/src/models/exercise_definition.js:37–67](lab/static/js/src/models/exercise_definition.js#L37-L67)
-
-Unit 9 works because it has a **hardcoded allowlist** (`I`, `i`, `V`, `V7`). All other units fall through to a generic path that strips `unit:N_` from tag names and calls `answer.startsWith(cleanTag)`. This does **not** produce correct Roman numeral filtering — `Dominant_Seventh` does not match `V7`, for example.
-
-**Fix needed:** Replace the generic path with a `UNIT_ALLOWED_ANSWERS` map keyed by unit number. Source of truth is `music_theory_taxonomy_with_branches.json` — each unit's `tags` array maps to allowed answer strings. The map can be derived from that JSON or hardcoded alongside the Unit 9 case.
+`applySkillFilter` uses a `UNIT_ALLOWED_ANSWERS` map (units 9-20) generated from `music_theory_taxonomy_with_branches.json` via `manage.py build_unit_allowed_answers`, consumed by both `exercise_definition.js` and the importers. The broken generic `startsWith` path is gone. Per-unit answer sets include inverted-seventh additions (see apps/exercises/data/unit_allowed_answers.additions.json). Blocker 2 (create_unit_playlist) is unchanged.
 
 ### Blocker 2: No management command to create a unit playlist end-to-end
 

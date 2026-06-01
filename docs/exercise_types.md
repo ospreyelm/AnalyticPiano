@@ -217,6 +217,38 @@ Score-based identification exercise using Bach chorale CIR JSON. Student sees me
 
 ---
 
+### `roman_from_compendium` (UMTO identification — Galant compendium)
+
+Roman-numeral identification exercises sourced from a checked-in curated subset of the Galant compendium cadence pages (`apps/exercises/data/galant_compendium_cadences.json`). Each compendium page describes a named cadence type; curated, music-professor-vetted RN templates (`apps/exercises/compendium_templates.py`) supply the answer labels — music21 is **not** used to auto-derive labels (auto-derivation produces suspension/passing-tone noise). Exercises with misaligned or degenerate notes are skipped at import time.
+
+**Source:** vendored `index.json`-shape notes (not raw MusicXML); note durations are trimmed to the next onset for correct inversion rendering. music21 + `m21_to_cir` build the CIR score; `save_umto_exercise` saves the UMTO row. `COMPENDIUM_INDEX=/path/to/index.json` can override the checked-in source for local regeneration/debugging.
+
+**Corpus tag:** `corpus:galant_compendium`
+
+**Exercise identity tag:** `exercise_type:roman_from_compendium`
+
+**Curriculum coverage:** units 9, 10, 12, 14, 17 (345 exercises across multiple transposition keys).
+
+**Cadential six-four:** labeled `Cad64` (not `I6/4`) to match pedagogical convention and unit answer-set vocabulary.
+
+**Per-unit answer sets:** derived from `music_theory_taxonomy_with_branches.json` via `manage.py build_unit_allowed_answers`, with inverted-seventh additions (`ii65`, `iiø65` → unit 14; `Cad64` → unit 12) from `apps/exercises/data/unit_allowed_answers.additions.json`.
+
+**`analysisType`:** `"roman"` — student clicks a `?` slot and selects from a dropdown.
+
+**Interaction mode:** UMTO `"identification"` — rendered by the same paged identification engine as `chorale_identification`.
+
+**Generation:**
+```bash
+python manage.py import_compendium_cadences --unit 9 --author admin@example.com --public
+python manage.py import_compendium_cadences --all-units --author admin@example.com --public --overwrite
+```
+
+**Key files:** `apps/exercises/data/galant_compendium_cadences.json`, `apps/exercises/compendium_templates.py`, `apps/exercises/unit_allowed_answers.py`, `apps/exercises/data/unit_allowed_answers.additions.json`, `apps/exercises/management/commands/import_compendium_cadences.py`
+
+**See also:** `docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md` (§ 2026-05-31 Update) for the sanctioned-override note explaining why this path is allowed despite the earlier compendium ban.
+
+---
+
 ## Shared infrastructure
 
 ### `IdentificationGrader`
@@ -263,3 +295,4 @@ Currently wired for score-based identification exercises (`chorale_identificatio
 | `identification` | Click | `IdentificationGrader` | On feature branch | Static chords |
 | `chorale_identification` | Click | `IdentificationGrader` | Yes (4/page) | Score-based, analysisType variants |
 | `umto_chorale` (`mode: "identification"`) | Click | `IdentificationGrader` | Yes (4/page) | Modern UMTO form of score-based identification; used by Unit 4 synthetic interval worksheets |
+| `roman_from_compendium` | Click (dropdown) | `IdentificationGrader` | Yes (4/page) | Galant compendium cadences; curated RN templates; units 9/10/12/14/17; `Cad64` label |

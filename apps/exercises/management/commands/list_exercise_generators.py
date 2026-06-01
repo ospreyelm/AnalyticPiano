@@ -82,6 +82,23 @@ CATALOG = [
             "python manage.py generate_unit5 --type both --author admin@example.com --public",
         ),
     ]),
+    ("Galant Compendium (Roman numerals)", [
+        (
+            "audit_compendium_cadences",
+            "Export a no-DB CSV for reviewing Galant-compendium Roman numeral labels before import.",
+            "python manage.py audit_compendium_cadences --out scratch/compendium_rn_review.csv",
+        ),
+        (
+            "verify_compendium_realization",
+            "Verify that the copied Z7 realization layer reproduces the checked-in compendium note JSON exactly.",
+            "python manage.py verify_compendium_realization",
+        ),
+        (
+            "import_compendium_cadences",
+            "Import Roman-numeral identification exercises from the Galant compendium. Transposes templated cadences to multiple keys; groups into per-unit playlists. Use --preview for a dry run (no DB writes).",
+            "python manage.py import_compendium_cadences --author admin@example.com --public --overwrite",
+        ),
+    ]),
     ("Branch B (Clausulae)", [
         (
             "generate_clausulae_b1",

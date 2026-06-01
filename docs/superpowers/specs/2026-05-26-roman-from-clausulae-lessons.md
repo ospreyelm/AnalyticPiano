@@ -198,3 +198,40 @@ For `roman_from_clausulae`, passing tests is not enough. Before considering the 
 
 Only after this smoke test should the generator be expanded to bulk Unit 9-18 material.
 
+---
+
+## 2026-05-31 Update: Compendium-Sourced Roman Identification (sanctioned override)
+
+**Author decision, 2026-05-31.**
+
+### What is overridden
+
+The prohibition in this document — "Do not use the compendium XML-to-derived-CIR path for student-facing exercises" — is **overridden** for the new `import_compendium_cadences` management command.
+
+### Rationale
+
+The original ban was specifically because **auto-derived** RN labels from the compendium (via music21 roman-numeral analysis of the raw XML voices) produced musically meaningless student exercises: suspension tones and passing tones were labelled as chords, producing garbage answers that passed unit tests while failing music inspection.
+
+The new command does **not** auto-derive labels. RN labels come from curated, music-professor-vetted per-page-type templates in `apps/exercises/compendium_templates.py`, keyed by `(page_title, mode)`. Exercises where the note content is misaligned with the template (degenerate voicings, wrong note count, onset mismatches) are skipped entirely, not relabeled.
+
+music21 is used only to:
+1. Build the CIR score from the parsed `index.json` note data (via `m21_to_cir`).
+2. Separately validate — offline, not at runtime — that the curated templates match the real harmonic content. This validation informed which page-types were safe to include and was not used to generate student-facing labels.
+
+### Source material
+
+The source is a checked-in curated subset of the clean parsed `index.json` notes at `apps/exercises/data/galant_compendium_cadences.json`, **not** raw MusicXML files. Note durations are trimmed to the next-onset boundary so that inversions render correctly in the student score view. The command can read a local sibling `clausulae-project/compendium/index.json` only when `COMPENDIUM_INDEX` is explicitly set for regeneration/debugging; production and CI use the vendored subset.
+
+### Relationship to engine-only clausulae path
+
+The prior `generate_roman_from_clausulae` command produces Roman numeral identification exercises by algorithmically generating I-V-I authentic cadences through the Clausulae engine. That path covers **unit 9 only** (authentic cadences). It is superseded for units 10, 12, 14, and 17 by the compendium path, which covers the richer cadence vocabulary those units require (half cadences, deceptive cadences, predominant motion, cadential six-fours, etc.). Both commands may coexist; `generate_roman_from_clausulae` remains valid for unit 9 engine-generated material.
+
+### Tags and exercise identity
+
+- `exercise_type:roman_from_compendium` (distinct from `roman_from_clausulae`)
+- `corpus:galant_compendium`
+- Per-unit tags: `unit:9`, `unit:10`, `unit:12`, `unit:14`, `unit:17`
+
+### Cadential six-four
+
+Labeled `Cad64`, not `I6/4`. This is intentional and matches the unit answer-set vocabulary and pedagogical convention for the cadential six-four as a pre-dominant/dominant prolongation device rather than a tonic inversion.

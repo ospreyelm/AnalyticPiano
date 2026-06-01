@@ -233,8 +233,8 @@
           "type": "string"
         },
         "complexity_score": {
-          "description": "Unit 1-12 ranking system",
-          "maximum": 12,
+          "description": "Curriculum unit ranking (1-20)",
+          "maximum": 20,
           "minimum": 1,
           "title": "Complexity Score",
           "type": "integer"

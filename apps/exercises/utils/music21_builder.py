@@ -161,6 +161,7 @@ def _pitch_to_midi(pitch_data):
 
     semitone = step_semitones.get(step, 0)
     midi = (octave + 1) * 12 + semitone + alter
+    return midi
 
 
 DUR_TO_TYPE = {
