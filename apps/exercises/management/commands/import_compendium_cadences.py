@@ -131,7 +131,7 @@ def _print_preview(stdout, style, by_unit: dict, skipped: int) -> None:
 def _build_playlist(*, author, unit: int, exercises, is_public: bool) -> "Playlist":
     from apps.exercises.models import ExercisePlaylistOrdered, Playlist
 
-    name = f"Unit {unit} — Roman Numerals from the Galant Compendium"
+    name = f"Unit {unit} — Roman Numerals from the Compendium"
     skill_tags = ["exercise_type:roman_from_compendium", f"unit:{unit}"]
 
     playlist, _ = Playlist.objects.get_or_create(
