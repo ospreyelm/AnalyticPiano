@@ -80,19 +80,26 @@ def test_audit_uses_legacy_analysis_for_major_evaded_opening_dominant():
     assert row["final_rn"] == "V"
 
 
-def test_audit_normalizes_incomplete_root_position_dominant_seventh():
+def test_audit_excludes_modulating_evaded_example():
     rows = build_audit_rows(unit=17, keys=["C"])
+
+    assert not any(row["source_id"] == "m203-205" for row in rows)
+
+
+def test_audit_accepts_single_pitch_vertical_template_in_key():
+    rows = build_audit_rows(unit=10, keys=["C"])
     row = next(
         row
         for row in rows
-        if row["source_id"] == "m203-205"
+        if row["source_id"] == "m091-092"
         and row["target_key"] == "C"
         and row["offset"] == "0.0"
     )
 
-    assert row["legacy_chord_code"] == "7/5z"
-    assert row["legacy_rn_raw"] == "V{u3}"
-    assert row["our_rn"] == "V7"
-    assert row["music21_rn"] == "V7"
-    assert row["final_rn"] == "V7"
-    assert row["status"] == "match"
+    assert row["notes"] == "C3"
+    assert row["our_rn"] == ""
+    assert row["proposed_rn"] == "I"
+    assert row["music21_rn"] == "i"
+    assert row["final_rn"] == "I"
+    assert row["status"] == "accepted"
+    assert row["exception_reason"] == "single-pitch vertical uses template label in key"

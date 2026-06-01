@@ -19,6 +19,11 @@ def test_only_templated_pagetypes_loaded():
     assert all("notes" in e and e.get("mode") in ("major", "minor") for e in exs)
 
 
+def test_modulating_evaded_example_is_excluded_from_single_key_cadence_source():
+    exs = load_cadence_examples()
+    assert "m203-205" not in {e["id"] for e in exs}
+
+
 def test_default_index_path_is_repo_local():
     assert "clausulae-project" not in INDEX_PATH
     assert INDEX_PATH.endswith("apps/exercises/data/galant_compendium_cadences.json")

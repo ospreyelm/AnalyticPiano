@@ -167,11 +167,15 @@ def build_audit_rows(*, unit: int | None = None, keys: list[str] | None = None) 
                     )
                     notes = " ".join(_pitch_list(chord))
                     bass = _bass(chord)
-                    status, exception_reason = _classify_status(
-                        mode=example["mode"],
-                        proposed_rn=final_rn,
-                        music21_rn=music21_rn,
-                    )
+                    if len(chord.pitches) == 1 and not our_rn and final_rn == proposed_rn:
+                        status = "accepted"
+                        exception_reason = "single-pitch vertical uses template label in key"
+                    else:
+                        status, exception_reason = _classify_status(
+                            mode=example["mode"],
+                            proposed_rn=final_rn,
+                            music21_rn=music21_rn,
+                        )
                     z7_stack = z7_values
                 rows.append(
                     {

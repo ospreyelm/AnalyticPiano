@@ -41,6 +41,13 @@ INDEX_PATH: str = os.environ.get(
     str(_DEFAULT_INDEX_PATH),
 )
 
+EXCLUDED_EXAMPLE_IDS = {
+    # Modulating/tonicizing cadence: original bass D-G-C in G-major metadata is
+    # properly V/V-V-I in C. Keep it out of the single-key Z7/RN import path
+    # until the local-key/Z6 model exists.
+    "m203-205",
+}
+
 
 # ---------------------------------------------------------------------------
 # Public helpers
@@ -63,6 +70,7 @@ def load_cadence_examples() -> list[dict[str, Any]]:
     return [
         ex for ex in all_examples
         if (ex.get("page_title"), ex.get("mode")) in COMPENDIUM_TEMPLATES
+        and ex.get("id") not in EXCLUDED_EXAMPLE_IDS
     ]
 
 
