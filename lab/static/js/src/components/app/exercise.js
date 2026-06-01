@@ -210,6 +210,12 @@ define([
     // this.getExerciseDefinition() returns a raw config whose .exercise is empty here.
     var _def = (this.models && this.models.exerciseDefinition) || definition;
     var isAnalysisExercise = !!(_def && _def.usesNoteEntry && !_def.usesNoteEntry());
+    // Roman numeral and figured bass identification exercises use only dropdown ? slots —
+    // no keyboard/MIDI note entry. Hide the QWERTY/Note-Name toggle for these.
+    var _analysisType = _def && _def.getAnalysisType ? _def.getAnalysisType() : null;
+    var isKeyboardlessIdentification = isAnalysisExercise && (
+      _analysisType === "roman" || _analysisType === "figured_bass"
+    );
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });
@@ -262,7 +268,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise || isKeyboardlessIdentification) {
           return;
         }
         var c = new NoteNameInputComponent({

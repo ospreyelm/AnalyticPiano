@@ -216,6 +216,14 @@ define([
       if (definition && definition.exercise && definition.exercise.inputModeFixed === "dropdown") {
         return false;
       }
+      // Chorale identification exercises (umto_chorale or chorale_identification) always
+      // use the ? slot UI — text entry is not applicable regardless of analysisType.
+      if (definition && (
+        (typeof definition.isChoraleIdentification === "function" && definition.isChoraleIdentification()) ||
+        (definition.exercise && definition.exercise.type === "umto_chorale")
+      )) {
+        return false;
+      }
       var analysisType = definition && definition.getAnalysisType
         ? definition.getAnalysisType()
         : "roman";
