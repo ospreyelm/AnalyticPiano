@@ -189,6 +189,10 @@ def _to_music21_key(key_name: str):
     text = (key_name or "").strip()
     if not text:
         return m21_key.Key("C")
+    if len(text) >= 2 and text[0] in {"i", "j"}:
+        mode = "minor" if text[0] == "i" else "major"
+        tonic = text[1:].replace("_", "").replace("b", "-")
+        return m21_key.Key(tonic, mode)
     parts = text.split()
     if len(parts) >= 2 and parts[-1].lower() in {"major", "minor"}:
         tonic = " ".join(parts[:-1]).replace("b", "-")

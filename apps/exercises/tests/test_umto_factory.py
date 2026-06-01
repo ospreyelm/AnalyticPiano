@@ -3,7 +3,12 @@ from unittest.mock import MagicMock, patch
 from copy import deepcopy
 from pydantic import ValidationError
 from apps.exercises.umto import InteractionMode
-from apps.exercises.umto_factory import NonUMTOExerciseError, build_umto_payload, save_umto_exercise
+from apps.exercises.umto_factory import (
+    NonUMTOExerciseError,
+    _to_music21_key,
+    build_umto_payload,
+    save_umto_exercise,
+)
 
 SINGLE_VOICE_CIR = {
     "meta": {"key": "C", "time": "4/4"},
@@ -93,6 +98,15 @@ SATB_FINAL_REST_CIR = {
 
 
 class UMTOFactoryTests(TestCase):
+    def test_to_music21_key_accepts_harmonylab_key_strings(self):
+        major = _to_music21_key("jD_")
+        minor = _to_music21_key("iG_")
+
+        self.assertEqual(major.tonic.name, "D")
+        self.assertEqual(major.mode, "major")
+        self.assertEqual(minor.tonic.name, "G")
+        self.assertEqual(minor.mode, "minor")
+
     def test_non_umto_exercise_error_is_value_error_subclass(self):
         self.assertTrue(issubclass(NonUMTOExerciseError, ValueError))
 

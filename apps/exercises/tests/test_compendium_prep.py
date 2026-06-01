@@ -52,6 +52,32 @@ def test_prep_simple_three_voice_unit_9():
     assert out["umto_kwargs"]["key"] == "jG_"
 
 
+def test_compound_three_voice_keeps_simultaneous_upper_notes_in_separate_voices():
+    from apps.exercises.umto_factory import build_umto_payload
+
+    out = prepare_compendium_exercise(_ex("m075-076"), "D")
+    assert out is not None
+
+    score_measures = out["score_data"]["measures"]
+    assert len(score_measures) == 2
+
+    final_treble_voices = score_measures[1]["staves"]["treble"]["voices"]
+    assert len(final_treble_voices) == 2
+    assert [
+        voice["items"][0]["pitch"]["step"]
+        for voice in final_treble_voices
+        if voice["items"] and voice["items"][0]["kind"] == "note"
+    ] == ["D", "F"]
+    assert all(
+        voice["items"] == [voice["items"][0]]
+        and voice["items"][0]["duration"] == {"type": "w", "dots": 0}
+        for voice in final_treble_voices
+    )
+
+    payload = build_umto_payload(score_data=out["score_data"], **out["umto_kwargs"])
+    assert len(payload["score"]["measures"]) == 2
+
+
 def test_evaded_minor_labels_and_bins_to_unit_17_by_family():
     out = prepare_compendium_exercise(_ex("m191-192"), "A")
     assert out["unit"] == 17

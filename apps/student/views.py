@@ -627,6 +627,26 @@ class PlayerView(View):
         exercise_context["disableComputerKeyboardInput"] = _disable_computer_keyboard_input(
             exercise_context, playlist, exercise
         )
+        debug_exercise_db_json = None
+        if settings.DEBUG and request.GET.get("debug_exercise") == "1":
+            debug_exercise_db_json = json.dumps(
+                {
+                    "playlist": {
+                        "id": playlist.id,
+                        "name": playlist.name,
+                        "skill_tags": playlist.skill_tags,
+                    },
+                    "servedExerciseNum": exercise_num,
+                    "exercise": {
+                        "id": exercise.id,
+                        "description": exercise.description,
+                        "skill_tags": exercise.skill_tags,
+                        "complexity": exercise.complexity,
+                        "data": exercise.data,
+                    },
+                    "frontendPayload": exercise_context,
+                }
+            )
 
         if exercise_context.get("type") in {"umto_symbolic_meter", "umto_barline_placement"}:
             context = {
@@ -638,6 +658,7 @@ class PlayerView(View):
                 "is_review_mode": state.mode == "review",
                 "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
                 "exercise_config_json": json.dumps(exercise_context),
+                "debug_exercise_db_json": debug_exercise_db_json,
             }
             return render(request, "qa_player.html", context)
 
@@ -652,6 +673,7 @@ class PlayerView(View):
             "total_exercises": served_count if served_count > 0 else exercise_num,
             "is_review_mode": state.mode == "review",
             "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
+            "debug_exercise_db_json": debug_exercise_db_json,
         }
         rj_context.add_to_view(context)
 

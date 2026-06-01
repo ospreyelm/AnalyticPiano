@@ -24,7 +24,7 @@ from apps.exercises.compendium_source import (
 from apps.exercises.compendium_templates import template_for
 from apps.exercises.roman_derivation import bin_unit
 from apps.exercises.unit_allowed_answers import compute_unit_allowed_answers
-from apps.exercises.utils.m21_cir_converter import m21_to_cir
+from apps.exercises.utils.m21_cir_converter import pitch_to_obj, ql_to_type_dots
 from apps.exercises.utils.legacy_roman import legacy_roman_from_pitches
 from apps.exercises.umto import InteractionMode
 
@@ -103,6 +103,195 @@ def _display_roman_label(label: str) -> str:
     return label
 
 
+def _duration_dict(ql: float) -> dict[str, Any]:
+    dur_type, dots = ql_to_type_dots(ql)
+    return {"type": dur_type, "dots": dots}
+
+
+def _rest_item(ql: float) -> dict[str, Any]:
+    return {"kind": "rest", "duration": _duration_dict(ql)}
+
+
+def _note_item(element, ql: float) -> dict[str, Any]:
+    return {
+        "kind": "note",
+        "pitch": pitch_to_obj(element.pitch),
+        "duration": _duration_dict(ql),
+    }
+
+
+def _mean_midi(part) -> float:
+    pitches = [n.pitch.midi for n in part.flatten().notes if getattr(n, "pitch", None)]
+    return sum(pitches) / len(pitches) if pitches else 0.0
+
+
+def _assign_part_lanes(part) -> list[list[tuple[float, Any]]]:
+    """Split one compendium staff part into monophonic lanes by offset.
+
+    Compendium source staffs may contain simultaneous notes.  The generic
+    music21-to-CIR converter serializes those notes into one legacy voice, which
+    destroys the rhythm.  This lane splitter preserves simultaneity by assigning
+    notes at the same offset to separate voices, highest pitch first.
+    """
+    notes_by_offset: dict[float, list[Any]] = {}
+    for measure in part.getElementsByClass("Measure"):
+        measure_offset = float(measure.offset)
+        for element in measure.flatten().notes:
+            offset = round(measure_offset + float(element.offset), 6)
+            notes_by_offset.setdefault(offset, []).append(element)
+
+    lanes: list[list[tuple[float, Any]]] = []
+    lane_ends: list[float] = []
+    for offset in sorted(notes_by_offset):
+        group = sorted(
+            notes_by_offset[offset],
+            key=lambda element: element.pitch.midi,
+            reverse=True,
+        )
+        for rank, element in enumerate(group):
+            lane_idx = rank
+            if lane_idx >= len(lanes) or offset < lane_ends[lane_idx] - 0.001:
+                lane_idx = next(
+                    (
+                        idx
+                        for idx, end in enumerate(lane_ends)
+                        if offset >= end - 0.001
+                    ),
+                    len(lanes),
+                )
+            while lane_idx >= len(lanes):
+                lanes.append([])
+                lane_ends.append(0.0)
+            lanes[lane_idx].append((offset, element))
+            lane_ends[lane_idx] = max(
+                lane_ends[lane_idx],
+                offset + float(element.quarterLength),
+            )
+    return lanes
+
+
+def _lane_measure_items(
+    lane: list[tuple[float, Any]],
+    *,
+    measure_index: int,
+    measure_ql: float,
+) -> list[dict[str, Any]]:
+    measure_start = measure_index * measure_ql
+    measure_end = measure_start + measure_ql
+    cursor = measure_start
+    items: list[dict[str, Any]] = []
+
+    for offset, element in lane:
+        start = float(offset)
+        end = start + float(element.quarterLength)
+        if end <= measure_start + 0.001 or start >= measure_end - 0.001:
+            continue
+
+        clipped_start = max(start, measure_start)
+        clipped_end = min(end, measure_end)
+        if clipped_start > cursor + 0.001:
+            items.append(_rest_item(round(clipped_start - cursor, 6)))
+        if clipped_end > clipped_start + 0.001:
+            items.append(_note_item(element, round(clipped_end - clipped_start, 6)))
+        cursor = clipped_end
+
+    if cursor < measure_end - 0.001:
+        items.append(_rest_item(round(measure_end - cursor, 6)))
+    return items
+
+
+def _full_rest_voice(measure_ql: float) -> dict[str, Any]:
+    return {"items": [_rest_item(measure_ql)], "direction": "auto"}
+
+
+def _voices_for_staff(
+    lanes: list[list[tuple[float, Any]]],
+    *,
+    staff_name: str,
+    measure_index: int,
+    measure_ql: float,
+) -> list[dict[str, Any]]:
+    voices = [
+        {
+            "items": _lane_measure_items(
+                lane,
+                measure_index=measure_index,
+                measure_ql=measure_ql,
+            ),
+            "direction": "auto",
+        }
+        for lane in lanes[:2]
+    ]
+    if staff_name == "bass" and len(voices) == 1:
+        return [_full_rest_voice(measure_ql), voices[0]]
+    return voices
+
+
+def _compendium_score_to_cir(tscore, *, key_override: str) -> dict[str, Any]:
+    """Build CIR from a transposed compendium score without flattening polyphony."""
+    ts = tscore.recurse().getElementsByClass("TimeSignature").first()
+    time_str = f"{ts.numerator}/{ts.denominator}" if ts else "2/2"
+    num, den = [int(piece) for piece in time_str.split("/")]
+    measure_ql = num * (4.0 / den)
+
+    parts = sorted(list(tscore.parts), key=_mean_midi, reverse=True)
+    upper_part = parts[0] if parts else None
+    lower_part = parts[-1] if len(parts) > 1 else None
+    upper_lanes = _assign_part_lanes(upper_part) if upper_part is not None else []
+    lower_lanes = _assign_part_lanes(lower_part) if lower_part is not None else []
+
+    max_end = 0.0
+    for lane in upper_lanes + lower_lanes:
+        for offset, element in lane:
+            max_end = max(max_end, float(offset) + float(element.quarterLength))
+    measure_count = max(1, int((max_end - 0.001) // measure_ql) + 1)
+
+    measures = []
+    for measure_index in range(measure_count):
+        measures.append(
+            {
+                "number": measure_index + 1,
+                "staves": {
+                    "treble": {
+                        "clef": "treble",
+                        "voices": _voices_for_staff(
+                            upper_lanes,
+                            staff_name="treble",
+                            measure_index=measure_index,
+                            measure_ql=measure_ql,
+                        ),
+                    },
+                    "bass": {
+                        "clef": "bass",
+                        "voices": _voices_for_staff(
+                            lower_lanes,
+                            staff_name="bass",
+                            measure_index=measure_index,
+                            measure_ql=measure_ql,
+                        ),
+                    },
+                },
+            }
+        )
+
+    if key_override.startswith("i"):
+        cir_key = key_override[1:].replace("_", "") + "m"
+    elif key_override.startswith("j"):
+        cir_key = key_override[1:].replace("_", "")
+    else:
+        cir_key = key_override
+
+    return {
+        "meta": {
+            "key": cir_key,
+            "time": time_str,
+            "clef": "keyboard",
+            "staffDistribution": "keyboard",
+        },
+        "measures": measures,
+    }
+
+
 def _final_roman_label(
     *,
     example: dict[str, Any],
@@ -172,8 +361,8 @@ def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> d
     # Step 4: build HarmonyLab key string
     hl_key = _hl_key(target_tonic, example["mode"])
 
-    # Step 5: convert to CIR
-    cir = m21_to_cir(tscore, key_override=hl_key)
+    # Step 5: convert to CIR while preserving compendium staff polyphony.
+    cir = _compendium_score_to_cir(tscore, key_override=hl_key)
     score_data = {"meta": cir["meta"], "measures": cir["measures"]}
 
     # Step 6: bin to lowest covering unit
