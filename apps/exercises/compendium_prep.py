@@ -14,6 +14,7 @@ import re
 from typing import Any
 
 from music21 import key as m21key
+from music21 import pitch as m21pitch
 from music21 import roman
 
 from apps.exercises.compendium_source import (
@@ -112,20 +113,50 @@ def _rest_item(ql: float) -> dict[str, Any]:
     return {"kind": "rest", "duration": _duration_dict(ql)}
 
 
-def _note_item(element, ql: float) -> dict[str, Any]:
+def _pitch_dict_from_pitch(pitch_obj) -> dict[str, Any]:
+    return pitch_to_obj(pitch_obj)
+
+
+def _note_item(event: dict[str, Any], ql: float) -> dict[str, Any]:
     return {
         "kind": "note",
-        "pitch": pitch_to_obj(element.pitch),
+        "pitch": _pitch_dict_from_pitch(event["pitch"]),
         "duration": _duration_dict(ql),
     }
 
 
-def _mean_midi(part) -> float:
-    pitches = [n.pitch.midi for n in part.flatten().notes if getattr(n, "pitch", None)]
-    return sum(pitches) / len(pitches) if pitches else 0.0
+def _source_events_for_staff(
+    notes_list: list[dict[str, Any]],
+    iv,
+) -> list[dict[str, Any]]:
+    events = []
+    for source_note in sorted(notes_list, key=lambda item: (item["offset"], item["pitch"])):
+        pitch_obj = m21pitch.Pitch(source_note["pitch"]).transpose(iv)
+        events.append(
+            {
+                "offset": float(source_note["offset"]),
+                "ql": float(source_note["ql"]),
+                "pitch": pitch_obj,
+                "tie": source_note.get("tie"),
+            }
+        )
+
+    merged: list[dict[str, Any]] = []
+    for event in events:
+        if merged:
+            previous = merged[-1]
+            previous_end = previous["offset"] + previous["ql"]
+            same_pitch = previous["pitch"].nameWithOctave == event["pitch"].nameWithOctave
+            is_tie_continuation = previous.get("tie") in {"start", "continue"} and event.get("tie") in {"stop", "continue"}
+            if same_pitch and abs(previous_end - event["offset"]) < 0.001 and is_tie_continuation:
+                previous["ql"] = round(previous["ql"] + event["ql"], 6)
+                previous["tie"] = event.get("tie")
+                continue
+        merged.append(event)
+    return merged
 
 
-def _assign_part_lanes(part) -> list[list[tuple[float, Any]]]:
+def _assign_part_lanes(events: list[dict[str, Any]]) -> list[list[tuple[float, dict[str, Any]]]]:
     """Split one compendium staff part into monophonic lanes by offset.
 
     Compendium source staffs may contain simultaneous notes.  The generic
@@ -134,44 +165,64 @@ def _assign_part_lanes(part) -> list[list[tuple[float, Any]]]:
     notes at the same offset to separate voices, highest pitch first.
     """
     notes_by_offset: dict[float, list[Any]] = {}
-    for measure in part.getElementsByClass("Measure"):
-        measure_offset = float(measure.offset)
-        for element in measure.flatten().notes:
-            offset = round(measure_offset + float(element.offset), 6)
-            notes_by_offset.setdefault(offset, []).append(element)
+    for event in events:
+        offset = round(float(event["offset"]), 6)
+        notes_by_offset.setdefault(offset, []).append(event)
 
-    lanes: list[list[tuple[float, Any]]] = []
+    lanes: list[list[tuple[float, dict[str, Any]]]] = []
     lane_ends: list[float] = []
     for offset in sorted(notes_by_offset):
         group = sorted(
             notes_by_offset[offset],
-            key=lambda element: element.pitch.midi,
+            key=lambda event: event["pitch"].midi,
             reverse=True,
         )
-        for rank, element in enumerate(group):
-            lane_idx = rank
-            if lane_idx >= len(lanes) or offset < lane_ends[lane_idx] - 0.001:
-                lane_idx = next(
-                    (
-                        idx
-                        for idx, end in enumerate(lane_ends)
-                        if offset >= end - 0.001
-                    ),
-                    len(lanes),
-                )
+        used_lanes = set()
+        for rank, event in enumerate(group):
+            lane_idx = next(
+                (
+                    idx
+                    for idx, lane in enumerate(lanes)
+                    if idx not in used_lanes
+                    and lane
+                    and lane[-1][1]["pitch"].nameWithOctave == event["pitch"].nameWithOctave
+                    and offset >= lane_ends[idx] - 0.001
+                ),
+                None,
+            )
+            if lane_idx is None:
+                free_lanes = [
+                    idx
+                    for idx, end in enumerate(lane_ends)
+                    if idx not in used_lanes and offset >= end - 0.001
+                ]
+                if free_lanes:
+                    lane_idx = min(
+                        free_lanes,
+                        key=lambda idx: abs(
+                            lanes[idx][-1][1]["pitch"].midi - event["pitch"].midi
+                        ) if lanes[idx] else 0,
+                    )
+                else:
+                    lane_idx = len(lanes)
             while lane_idx >= len(lanes):
                 lanes.append([])
                 lane_ends.append(0.0)
-            lanes[lane_idx].append((offset, element))
+            lanes[lane_idx].append((offset, event))
+            used_lanes.add(lane_idx)
             lane_ends[lane_idx] = max(
                 lane_ends[lane_idx],
-                offset + float(element.quarterLength),
+                offset + float(event["ql"]),
             )
-    return lanes
+    return sorted(
+        lanes,
+        key=lambda lane: sum(event["pitch"].midi for _, event in lane) / len(lane),
+        reverse=True,
+    )
 
 
 def _lane_measure_items(
-    lane: list[tuple[float, Any]],
+    lane: list[tuple[float, dict[str, Any]]],
     *,
     measure_index: int,
     measure_ql: float,
@@ -181,9 +232,9 @@ def _lane_measure_items(
     cursor = measure_start
     items: list[dict[str, Any]] = []
 
-    for offset, element in lane:
+    for offset, event in lane:
         start = float(offset)
-        end = start + float(element.quarterLength)
+        end = start + float(event["ql"])
         if end <= measure_start + 0.001 or start >= measure_end - 0.001:
             continue
 
@@ -192,7 +243,7 @@ def _lane_measure_items(
         if clipped_start > cursor + 0.001:
             items.append(_rest_item(round(clipped_start - cursor, 6)))
         if clipped_end > clipped_start + 0.001:
-            items.append(_note_item(element, round(clipped_end - clipped_start, 6)))
+            items.append(_note_item(event, round(clipped_end - clipped_start, 6)))
         cursor = clipped_end
 
     if cursor < measure_end - 0.001:
@@ -205,7 +256,7 @@ def _full_rest_voice(measure_ql: float) -> dict[str, Any]:
 
 
 def _voices_for_staff(
-    lanes: list[list[tuple[float, Any]]],
+    lanes: list[list[tuple[float, dict[str, Any]]]],
     *,
     staff_name: str,
     measure_index: int,
@@ -227,23 +278,33 @@ def _voices_for_staff(
     return voices
 
 
-def _compendium_score_to_cir(tscore, *, key_override: str) -> dict[str, Any]:
+def _compendium_score_to_cir(
+    example: dict[str, Any],
+    *,
+    key_override: str,
+    transpose_interval,
+) -> dict[str, Any]:
     """Build CIR from a transposed compendium score without flattening polyphony."""
-    ts = tscore.recurse().getElementsByClass("TimeSignature").first()
-    time_str = f"{ts.numerator}/{ts.denominator}" if ts else "2/2"
+    time_str = "2/2"
     num, den = [int(piece) for piece in time_str.split("/")]
     measure_ql = num * (4.0 / den)
 
-    parts = sorted(list(tscore.parts), key=_mean_midi, reverse=True)
-    upper_part = parts[0] if parts else None
-    lower_part = parts[-1] if len(parts) > 1 else None
-    upper_lanes = _assign_part_lanes(upper_part) if upper_part is not None else []
-    lower_lanes = _assign_part_lanes(lower_part) if lower_part is not None else []
+    staff_events = [
+        _source_events_for_staff(notes_list, transpose_interval)
+        for _staff_name, notes_list in example["notes"].items()
+    ]
+    staff_events = sorted(
+        staff_events,
+        key=lambda events: sum(event["pitch"].midi for event in events) / len(events) if events else 0.0,
+        reverse=True,
+    )
+    upper_lanes = _assign_part_lanes(staff_events[0]) if staff_events else []
+    lower_lanes = _assign_part_lanes(staff_events[-1]) if len(staff_events) > 1 else []
 
     max_end = 0.0
     for lane in upper_lanes + lower_lanes:
-        for offset, element in lane:
-            max_end = max(max_end, float(offset) + float(element.quarterLength))
+        for offset, event in lane:
+            max_end = max(max_end, float(offset) + float(event["ql"]))
     measure_count = max(1, int((max_end - 0.001) // measure_ql) + 1)
 
     measures = []
@@ -362,7 +423,11 @@ def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> d
     hl_key = _hl_key(target_tonic, example["mode"])
 
     # Step 5: convert to CIR while preserving compendium staff polyphony.
-    cir = _compendium_score_to_cir(tscore, key_override=hl_key)
+    cir = _compendium_score_to_cir(
+        example,
+        key_override=hl_key,
+        transpose_interval=iv,
+    )
     score_data = {"meta": cir["meta"], "measures": cir["measures"]}
 
     # Step 6: bin to lowest covering unit
@@ -447,5 +512,6 @@ def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> d
             "analysis_type": "roman",
             "input_mode": "dropdown",
             "analysis_overrides": analysis_overrides,
+            "preserve_source_durations": True,
         },
     }

@@ -78,6 +78,30 @@ def test_compound_three_voice_keeps_simultaneous_upper_notes_in_separate_voices(
     assert len(payload["score"]["measures"]) == 2
 
 
+def test_compound_three_voice_preserves_source_durations_before_final_measure():
+    from apps.exercises.umto_factory import build_umto_payload
+
+    out = prepare_compendium_exercise(_ex("m075-076"), "D")
+    assert out is not None
+
+    payload = build_umto_payload(score_data=out["score_data"], **out["umto_kwargs"])
+    treble = payload["score"]["measures"][0]["staves"]["treble"]["voices"]
+
+    assert [item["duration"] for item in treble[0]["items"]] == [
+        {"type": "q", "dots": 0},
+        {"type": "h", "dots": 0},
+        {"type": "q", "dots": 0},
+    ]
+    assert [item["kind"] for item in treble[0]["items"]] == ["rest", "note", "note"]
+    assert [item["pitch"]["step"] for item in treble[0]["items"] if item["kind"] == "note"] == ["D", "C"]
+
+    assert [item["duration"] for item in treble[1]["items"]] == [
+        {"type": "h", "dots": 0},
+        {"type": "h", "dots": 0},
+    ]
+    assert [item["pitch"]["step"] for item in treble[1]["items"]] == ["F", "E"]
+
+
 def test_evaded_minor_labels_and_bins_to_unit_17_by_family():
     out = prepare_compendium_exercise(_ex("m191-192"), "A")
     assert out["unit"] == 17
