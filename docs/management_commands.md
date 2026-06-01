@@ -140,15 +140,34 @@ python manage.py verify_compendium_realization --source-id m145-146
 ```
 
 **`import_compendium_cadences`** — Import Roman-numeral identification exercises from the checked-in Galant compendium cadence subset. Transposes each templated cadence (Simple/Compound/Evaded, major and minor) to multiple keys and groups results into per-unit playlists. Use `--preview` to inspect the exercise count and bin histogram without any DB writes. By default it reads `apps/exercises/data/galant_compendium_cadences.json`; set `COMPENDIUM_INDEX=/path/to/index.json` only for local regeneration/debugging.
+
+Recommended workflow:
+1. Run `verify_compendium_realization` after changing the copied Z7 realization layer or source JSON.
+2. Run `audit_compendium_cadences` and review any `status=review` rows before import.
+3. Run `import_compendium_cadences --preview` and confirm the bin histogram.
+4. Run the real import with `--author`, `--public`, and normally `--overwrite`.
+
+Current expected full-import histogram from the checked-in source is:
+- unit 9: 50 exercises
+- unit 10: 90 exercises
+- unit 12: 60 exercises
+- unit 14: 30 exercises
+- unit 17: 110 exercises
+- total: 340 exercises
+
+The real import creates or refreshes one public playlist per populated unit named `Unit N — Roman Numerals from the Galant Compendium`. `--overwrite` is recommended for regeneration because descriptions are the idempotency key (`Cmp m145-146 Am`, etc.); without it, existing exercises are reused and only playlist ordering is refreshed.
 ```
 # Dry run — no DB writes
 python manage.py import_compendium_cadences --preview
 
-# Full import
+# Full import for all currently templated units (9, 10, 12, 14, 17)
 python manage.py import_compendium_cadences --author admin@example.com --public --overwrite
 
 # Only units that bin to unit 14
 python manage.py import_compendium_cadences --author admin@example.com --unit 14
+
+# Optional local debugging only: restrict target transposition keys
+python manage.py import_compendium_cadences --preview --unit 17 --keys C G
 ```
 
 ---

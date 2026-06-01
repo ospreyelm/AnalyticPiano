@@ -103,3 +103,19 @@ def test_audit_accepts_single_pitch_vertical_template_in_key():
     assert row["final_rn"] == "I"
     assert row["status"] == "accepted"
     assert row["exception_reason"] == "single-pitch vertical uses template label in key"
+
+
+def test_audit_uses_confirmed_music21_labels_through_evaded_measure_217():
+    rows = build_audit_rows(unit=17, keys=["C"])
+    row_by_source_offset = {
+        (row["source_id"], row["offset"]): row
+        for row in rows
+        if row["source_id"] in {"m206-207", "m208-209", "m216-217"}
+    }
+
+    assert row_by_source_offset[("m206-207", "3.0")]["final_rn"] == "vii°64"
+    assert row_by_source_offset[("m206-207", "3.0")]["music21_rn"] == "vii°64"
+    assert row_by_source_offset[("m208-209", "0.0")]["final_rn"] == "V65"
+    assert row_by_source_offset[("m208-209", "2.0")]["final_rn"] == "ii42"
+    assert row_by_source_offset[("m216-217", "0.0")]["final_rn"] == "V42"
+    assert row_by_source_offset[("m216-217", "2.0")]["final_rn"] == "ii7"

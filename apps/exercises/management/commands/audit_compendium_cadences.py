@@ -12,6 +12,7 @@ from music21 import roman
 
 from apps.exercises.compendium_inverse import pitch_to_z7
 from apps.exercises.compendium_prep import prepare_compendium_exercise
+from apps.exercises.compendium_prep import _display_roman_label
 from apps.exercises.compendium_source import (
     load_cadence_examples,
     nearest_interval,
@@ -59,7 +60,7 @@ def _chord_at_offset(chords, target: float):
 
 
 def _normalize_figure(figure: str) -> str:
-    return figure.replace("o", "°")
+    return _display_roman_label(figure)
 
 
 def _analysis_offset(page_title: str, proposed_rn: str, offset: float) -> float:

@@ -59,6 +59,26 @@ def test_evaded_minor_labels_and_bins_to_unit_17_by_family():
     assert rns == ["V", "i6", "iiø65", "V", "VI"]
 
 
+def test_evaded_major_through_measure_217_uses_confirmed_music21_labels():
+    out = prepare_compendium_exercise(_ex("m208-209"), "C")
+    assert out["unit"] == 17
+
+    rns = [a["content"]["roman_numeral"] for a in out["umto_kwargs"]["analysis_overrides"]]
+
+    assert rns == ["V65", "I", "ii42", "vii°", "I"]
+
+
+def test_confirmed_vii_diminished_four_displays_as_vii_64():
+    out = prepare_compendium_exercise(_ex("m206-207"), "C")
+    target = next(
+        target
+        for target in out["umto_kwargs"]["analysis_overrides"]
+        if target["offset"] == 3.0
+    )
+
+    assert target["content"]["roman_numeral"] == "vii°64"
+
+
 def test_unit_14_prep_builds_payload_without_validation_error():
     """Regression: complexity_score must allow unit 14 (was le=12, crashed save)."""
     from apps.exercises.umto_factory import build_umto_payload

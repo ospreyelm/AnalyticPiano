@@ -10,7 +10,11 @@ prepare_compendium_exercise(example, target_tonic) -> dict | None
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
+
+from music21 import key as m21key
+from music21 import roman
 
 from apps.exercises.compendium_source import (
     nearest_interval,
@@ -33,6 +37,7 @@ FAMILY_UNIT_OVERRIDES = {
     "Evaded Cadences in Three Voices": 17,
     "Evaded Cadences in Four Voices": 17,
 }
+MUSIC21_CONFIRMED_THROUGH_MEASURE = 217
 
 
 def _hl_key(tonic: str, mode: str) -> str:
@@ -74,8 +79,33 @@ def _chord_at_offset(chords: list, target: float):
     return None
 
 
+def _example_end_measure(example_id: str) -> int | None:
+    match = re.fullmatch(r"m\d+-(\d+)", example_id)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def _use_confirmed_music21_label(example: dict[str, Any]) -> bool:
+    end_measure = _example_end_measure(example["id"])
+    return (
+        example["page_title"] == "Evaded Cadences in Three Voices"
+        and example["mode"] == "major"
+        and end_measure is not None
+        and end_measure <= MUSIC21_CONFIRMED_THROUGH_MEASURE
+    )
+
+
+def _display_roman_label(label: str) -> str:
+    label = label.replace("o", "°")
+    if label == "vii°4":
+        return "vii°64"
+    return label
+
+
 def _final_roman_label(
     *,
+    example: dict[str, Any],
     template_rn: str,
     chord,
     tonic: str,
@@ -84,6 +114,11 @@ def _final_roman_label(
 ) -> tuple[str, str]:
     if chord is None:
         return template_rn, template_rn
+    if _use_confirmed_music21_label(example):
+        music21_label = _display_roman_label(
+            roman.romanNumeralFromChord(chord, m21key.Key(tonic, mode)).figure
+        )
+        return music21_label, template_rn
     legacy = legacy_roman_from_pitches(
         sorted(chord.pitches, key=lambda p: p.midi),
         tonic,
@@ -162,6 +197,7 @@ def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> d
     analysis_overrides = []
     for off, rn in template:
         final_rn, raw_rn = _final_roman_label(
+            example=example,
             template_rn=rn,
             chord=_chord_at_offset(transposed_chords, float(off)),
             tonic=target_tonic,
