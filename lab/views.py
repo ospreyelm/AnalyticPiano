@@ -278,6 +278,7 @@ def generate_exercise_context(
         exercise_is_performed = playlist_performance.exercise_is_performed(exercise.id)
         exercise_error_count = playlist_performance.exercise_error_count(exercise.id)
     
+    used_raw_umto_fallback = False
     if exercise.data.get("type") == "umto_barline_placement":
         exercise_context.update(exercise.data)
     else:
@@ -308,6 +309,7 @@ def generate_exercise_context(
                     "Falling back to raw data. Migrate via apps.exercises.umto_factory.",
                     exercise.id, e,
                 )
+                used_raw_umto_fallback = True
                 exercise_context.update(exercise.data)
         else:
             exercise_context.update(exercise.data)
@@ -404,7 +406,13 @@ def generate_exercise_context(
             for _sl in _slices:
                 _content = _sl.get("content", {})
                 if _family == "roman":
-                    if _target_field in _content:
+                    if (
+                        used_raw_umto_fallback
+                        and exercise_context.get("type") == "umto_chorale"
+                        and _content.get(_target_field) is None
+                    ):
+                        _val = _content.get(_raw_field)
+                    elif _target_field in _content:
                         _val = _content.get(_target_field)
                     else:
                         _val = _content.get(_raw_field)

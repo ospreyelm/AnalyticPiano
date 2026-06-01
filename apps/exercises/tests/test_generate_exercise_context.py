@@ -178,6 +178,25 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
 
     @patch("lab.views.PerformanceData")
     @patch("lab.views.TaxonomyReader")
+    def test_legacy_umto_chorale_raw_fallback_uses_raw_roman_for_targets(self, mock_reader, mock_perf):
+        cumulative = {"I", "V", "V7"}
+        self._make_mocks(cumulative, {"V7"}, mock_reader, mock_perf)
+        data = self._make_exercise_data(["I", "V7"], unit_tags=[10])
+        data["type"] = "umto_chorale"
+        data["isUMTO"] = True
+        for sl in data["score"]["umto"]["analysis"]:
+            sl["content"]["roman_numeral"] = None
+
+        ctx = self._run_context(data, unit_n="10")
+
+        slices = ctx["score"]["umto"]["analysis"]
+        self.assertTrue(slices[0]["is_target"])
+        self.assertEqual(slices[0]["content"]["roman_numeral"], "I")
+        self.assertTrue(slices[1]["is_target"])
+        self.assertEqual(slices[1]["content"]["roman_numeral"], "V7")
+
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
     def test_roman_targeting_moves_suspension_label_to_resolution_for_unit_figures(self, mock_reader, mock_perf):
         def cumulative_for(unit, family):
             if family == "figured_bass":
