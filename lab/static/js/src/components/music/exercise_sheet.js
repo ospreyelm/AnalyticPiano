@@ -21,6 +21,7 @@ define([
   "app/components/music/playback_controls",
   "app/utils/measure_engine",
   "app/models/harmonization_realization_logic",
+  "app/components/music/identification_label_layout_logic",
 ], function (
   $,
   $UI,
@@ -42,7 +43,8 @@ define([
   KeyContext,
   renderPlaybackControls,
   MeasureEngine,
-  HarmonizationRealizationLogic
+  HarmonizationRealizationLogic,
+  IdentificationLabelLayoutLogic
 ) {
   "use strict";
 
@@ -922,11 +924,14 @@ define([
         ctx.font = '16px MainSerifs';
         ctx.fillStyle = '#444444';
         ctx.textAlign = 'center';
-        var keyChangeY = y + 28;
-        if (ctx.canvas && typeof ctx.canvas.height === 'number') {
-          keyChangeY = Math.min(keyChangeY, ctx.canvas.height - 10);
-        }
-        ctx.fillText(text, x, keyChangeY);
+        var pos = IdentificationLabelLayoutLogic.getKeyLabelPosition({
+          slotX: x,
+          slotY: y,
+          textWidth: ctx.measureText(text).width,
+          canvasWidth: ctx.canvas && typeof ctx.canvas.width === 'number' ? ctx.canvas.width : null,
+          canvasHeight: ctx.canvas && typeof ctx.canvas.height === 'number' ? ctx.canvas.height : null,
+        });
+        ctx.fillText(text, pos.x, pos.y);
         ctx.restore();
         ctx.textAlign = 'center';
       }

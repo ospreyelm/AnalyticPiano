@@ -10,7 +10,8 @@ define([
   "app/models/key_context_logic",
   "app/models/harmonization_realization_logic",
   "app/components/music/rendering/vexflow_adapter_logic",
-], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine, KeySignature, KeyContext, HarmonizationRealizationLogic, VexflowAdapterLogic) {
+  "app/components/music/identification_label_layout_logic",
+], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine, KeySignature, KeyContext, HarmonizationRealizationLogic, VexflowAdapterLogic, IdentificationLabelLayoutLogic) {
   "use strict";
 
   function durToVF(d) {
@@ -1593,7 +1594,8 @@ define([
               ? formatKeyForDisplay(opts.keySignature.getKey())
               : formatKeyForDisplay(meta && meta.key)));
 
-        if (isFirstMeasure && displayKey && activeStaveForLabel && !(opts && opts.hideKeyLabel)) {
+        var deferKeyLabelToIdentificationSlot = !!(opts && typeof opts.onWindowPosition === "function");
+        if (isFirstMeasure && displayKey && activeStaveForLabel && !(opts && opts.hideKeyLabel) && !deferKeyLabelToIdentificationSlot) {
           ctx.save();
           ctx.font = "20px MainSerifs";
           ctx.fillStyle = (opts && opts.color) || "#000";
@@ -1842,6 +1844,7 @@ define([
             // Helpers
             // Draw per onset column
             var prevColX = null;
+            var drewDeferredKeyLabel = false;
             groups.forEach(function(col){
               var midiSet = Object.create(null);
               col.notes.forEach(function(t){
@@ -1899,6 +1902,34 @@ define([
                   x: columnCenterX,
                   y: activeStaveForAnnotations.getBottomY() + 18,
                 });
+              }
+
+              if (
+                isFirstMeasure &&
+                displayKey &&
+                activeStaveForAnnotations &&
+                !(opts && opts.hideKeyLabel) &&
+                deferKeyLabelToIdentificationSlot &&
+                !drewDeferredKeyLabel &&
+                groups.length
+              ) {
+                var firstColX = getColumnCenterX(groups[0]);
+                if (firstColX !== null) {
+                  ctx.save();
+                  ctx.font = "20px MainSerifs";
+                  ctx.fillStyle = (opts && opts.color) || "#000";
+                  ctx.textAlign = "center";
+                  var keyPos = IdentificationLabelLayoutLogic.getKeyLabelPosition({
+                    slotX: firstColX,
+                    slotY: activeStaveForAnnotations.getBottomY() - 6,
+                    textWidth: ctx.measureText(displayKey).width,
+                    canvasWidth: ctx.canvas && typeof ctx.canvas.width === "number" ? ctx.canvas.width : null,
+                    canvasHeight: ctx.canvas && typeof ctx.canvas.height === "number" ? ctx.canvas.height : null,
+                  });
+                  ctx.fillText(displayKey, keyPos.x, keyPos.y);
+                  ctx.restore();
+                  drewDeferredKeyLabel = true;
+                }
               }
 
               var colGap = (prevColX !== null && columnCenterX !== null) ? (columnCenterX - prevColX) : null;
