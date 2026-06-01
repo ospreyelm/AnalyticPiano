@@ -66,3 +66,54 @@ class ExerciseAdminGenerateContentTests(TestCase):
             overwrite=True,
             stdout=ANY,
         )
+
+
+class ExerciseAdminOperationsTests(TestCase):
+    def setUp(self):
+        self.admin_user = get_user_model().objects.create_superuser(
+            email="ops@example.com",
+            password="pw",
+        )
+        self.client.force_login(self.admin_user)
+
+    def test_operations_page_lists_generation_commands_with_explanations(self):
+        response = self.client.get(reverse("admin:exercises_exercise_operations"))
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        expected = [
+            "generate_unit4",
+            "generate_unit5",
+            "import_compendium_cadences",
+            "generate_roman_from_clausulae",
+            "generate_harmonization_from_clausulae",
+            "generate_unit2_meter_reference",
+            "rebuild_unit1_playlists",
+        ]
+        for command_name in expected:
+            self.assertIn(f'value="{command_name}"', content)
+
+        self.assertIn("Creates standalone Bach phrase exercises only", content)
+        self.assertIn("Builds or updates the Unit 1 playlists from existing generated Unit 1 exercises", content)
+
+    @patch("apps.exercises.admin_views.call_command")
+    def test_command_stream_generator_forwards_positional_args(self, call_command_mock):
+        from apps.exercises.admin_views import command_stream_generator
+
+        list(
+            command_stream_generator(
+                "duplicate_chorale_as_identification",
+                _args=["EB1234"],
+                author="author@example.com",
+                public=True,
+            )
+        )
+
+        call_command_mock.assert_called_once_with(
+            "duplicate_chorale_as_identification",
+            "EB1234",
+            stdout=ANY,
+            stderr=ANY,
+            author="author@example.com",
+            public=True,
+        )

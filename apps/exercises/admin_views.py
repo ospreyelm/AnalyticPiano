@@ -33,6 +33,7 @@ class StreamingBuffer:
 def command_stream_generator(command_name: str, **kwargs):
     buffer = StreamingBuffer()
     error_container = []
+    positional_args = kwargs.pop("_args", [])
 
     # Yield HTML header and styles first so the browser starts rendering immediately
     yield "<!DOCTYPE html>\n"
@@ -64,7 +65,7 @@ def command_stream_generator(command_name: str, **kwargs):
     # Start the command in a background thread
     def run_command_thread():
         try:
-            call_command(command_name, stdout=buffer, stderr=buffer, **kwargs)
+            call_command(command_name, *positional_args, stdout=buffer, stderr=buffer, **kwargs)
         except Exception as e:
             error_container.append(e)
 
@@ -126,17 +127,28 @@ def operations_view(request):
         if action == 'generate':
             # Collect kwargs
             kwargs = {}
+            int_kwargs = {
+                'unit', 'min_voices', 'max_voices', 'voice_count', 'max_displacement',
+                'min_measures', 'count', 'measures', 'level', 'limit',
+                'max_per_stage', 'intervals_per_exercise', 'max_per_playlist',
+            }
             for key, value in request.POST.items():
                 if key not in ['csrfmiddlewaretoken', 'action', 'command_name'] and value.strip():
                     if key == 'extra_tags':
                         kwargs['extra_tags'] = value.split()
                     elif value == 'on':
                         kwargs[key] = True
+                    elif key in int_kwargs:
+                        kwargs[key] = int(value)
                     else:
                         kwargs[key] = value
 
-            # Add author email to any generator command that creates exercises
-            if 'author' not in kwargs:
+            if command_name == "duplicate_chorale_as_identification" and kwargs.get("exercise_id"):
+                kwargs["_args"] = [kwargs.pop("exercise_id")]
+
+            # Add author email to generator commands that create exercises.
+            no_default_author_commands = {"generate_unit2_meter_reference"}
+            if 'author' not in kwargs and command_name not in no_default_author_commands:
                 kwargs['author'] = request.user.email
 
             # Stream response in real-time

@@ -9,6 +9,8 @@
   .form-row { margin-bottom: 1rem; }
   .form-row label { display: inline-block; width: 150px; font-weight: bold; }
   .form-row input[type="text"], .form-row input[type="number"], .form-row select { width: 300px; padding: 4px; }
+  .command-help { margin: -0.25rem 0 1rem; max-width: 850px; color: #555; line-height: 1.45; }
+  .command-note { margin: -0.5rem 0 1rem 154px; max-width: 620px; color: #666; font-size: 0.92rem; line-height: 1.4; }
   .btn { padding: 6px 12px; background: #417690; color: white; border: none; border-radius: 4px; cursor: pointer; }
   .btn:hover { background: #2c5d77; }
   .btn-secondary { background: #79aec8; }
@@ -37,6 +39,7 @@
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
       <h3>Import Bach Phrases</h3>
+      <p class="command-help">Creates standalone Bach phrase exercises only. Use this when you want raw exercise rows from a Riemenschneider range; add tags such as <code>unit:11 mode:roman</code> manually if the rows should later be found by unit playlist tools.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="import_bach_phrases">
       <div class="form-row">
@@ -68,6 +71,7 @@
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
       <h3>Generate Harmonization</h3>
+      <p class="command-help">Creates a harmonization exercise from an existing UMTO source exercise. The locked voices stay fixed, and the generated target is based on the selected prompt type.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="generate_harmonization">
       <div class="form-row">
@@ -103,6 +107,7 @@
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
       <h3>Generate Unit 1</h3>
+      <p class="command-help">Creates the Unit 1 pitch-identification curriculum and supporting playlists from the Bach corpus. Use this for note names, clefs, and early staff-reading content.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="generate_unit1">
       <button type="submit" class="btn">Run Generator</button>
@@ -110,7 +115,25 @@
 
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
+      <h3>Rebuild Unit 1 Playlists</h3>
+      <p class="command-help">Builds or updates the Unit 1 playlists from existing generated Unit 1 exercises. It does not create new exercise rows.</p>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="rebuild_unit1_playlists">
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label>Max per playlist:</label>
+        <input type="number" name="max_per_playlist" value="36">
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
       <h3>Generate Unit 2 Meter Exercises</h3>
+      <p class="command-help">Creates Unit 2 meter-identification exercises. These ask students to identify meter from notated rhythmic examples.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="generate_unit2_meter_exercises">
       <button type="submit" class="btn">Run Generator</button>
@@ -118,7 +141,18 @@
 
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
+      <h3>Generate Unit 2 Meter Reference</h3>
+      <p class="command-help">Regenerates the Unit 2 meter reference data file used by meter exercises. Use this when the canonical reference examples need to be refreshed.</p>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_unit2_meter_reference">
+      <p class="command-note">This writes <code>apps/exercises/data/unit2_meter_reference.json</code>; it does not create database rows.</p>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
       <h3>Generate Unit 2 Barline Exercises</h3>
+      <p class="command-help">Creates Unit 2 barline-placement exercises. The default form uses the command defaults; use the CLI for custom corpus/manual options.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="generate_unit2_barline_exercises">
       <button type="submit" class="btn">Run Generator</button>
@@ -127,6 +161,7 @@
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
       <h3>Generate Unit 3 Key Sig Exercises</h3>
+      <p class="command-help">Creates Unit 3 key-signature identification exercises for major and minor keys.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="generate_unit3_key_sig_exercises">
       <button type="submit" class="btn">Run Generator</button>
@@ -135,14 +170,88 @@
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
       <h3>Generate Unit 3 Scale Exercises</h3>
+      <p class="command-help">Creates Unit 3 scale-construction exercises. Major scales come from the checked-in MusicXML source; minor scales can be generated by music21.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="generate_unit3_scale_exercises">
+      <div class="form-row">
+        <label>Mode:</label>
+        <select name="mode">
+          <option value="major">Major</option>
+          <option value="minor">Minor</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="public"> Make public</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="overwrite"> Overwrite existing</label>
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Unit 4 Intervals</h3>
+      <p class="command-help">Creates Unit 4 interval-identification worksheet exercises and playlists. Choose generic intervals, specific intervals, or both lanes.</p>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_unit4">
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label>Lane:</label>
+        <select name="lane">
+          <option value="both">Both</option>
+          <option value="generic">Generic</option>
+          <option value="specific">Specific</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="public"> Make public</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="overwrite"> Overwrite existing</label>
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Unit 5 Chord Quality</h3>
+      <p class="command-help">Creates Unit 5 chord-quality identification exercises for triads, seventh chords, or both, including staged playlists.</p>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_unit5">
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label>Type:</label>
+        <select name="type">
+          <option value="both">Both</option>
+          <option value="triads">Triads</option>
+          <option value="sevenths">Seventh chords</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="public"> Make public</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="overwrite"> Overwrite existing</label>
+      </div>
       <button type="submit" class="btn">Run Generator</button>
     </form>
 
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
       <h3>Create Unit Playlist</h3>
+      <p class="command-help">Imports Bach phrase exercises for a curriculum unit, tags them with <code>unit:N</code> and <code>mode:...</code>, then builds or updates an ordered adaptive playlist. This is the usual command for unit-ready Bach content.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="create_unit_playlist">
       <div class="form-row">
@@ -180,14 +289,60 @@
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
       <h3>Create Smart Playlist</h3>
+      <p class="command-help">Creates a dynamic playlist that selects exercises by a single tag. Adaptive mastery is enabled unless you check non-adaptive.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="create_smart_playlist">
+      <div class="form-row">
+        <label>Name:</label>
+        <input type="text" name="name" placeholder="e.g. Unit 9 Roman Review" required>
+      </div>
+      <div class="form-row">
+        <label>Tag:</label>
+        <input type="text" name="tag" placeholder="e.g. unit:9" required>
+      </div>
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="non_adaptive"> Non-adaptive</label>
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Import Compendium Cadences</h3>
+      <p class="command-help">Creates Roman-numeral identification exercises from the Galant compendium, transposes each template to multiple keys, and groups results into per-unit playlists.</p>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="import_compendium_cadences">
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label>Unit:</label>
+        <input type="number" name="unit" placeholder="Optional">
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="all_units"> All units</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="preview"> Preview only</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="public"> Make public</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="overwrite"> Overwrite existing</label>
+      </div>
       <button type="submit" class="btn">Run Generator</button>
     </form>
 
     <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
       {% csrf_token %}
       <h3>Generate Branch B Clausulae (B1 + B2)</h3>
+      <p class="command-help">Creates Branch B formal clausulae and simple two-voice cadence exercises for B1, B2, or both.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="generate_clausulae_b1">
       <div class="form-row">
@@ -211,18 +366,84 @@
       <button type="submit" class="btn">Run Generator</button>
     </form>
 
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Roman From Clausulae</h3>
+      <p class="command-help">Creates standard curriculum Roman-numeral identification exercises from Clausulae material. This uses the corrected Clausulae generation path, not the old compendium-derived corpus path.</p>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_roman_from_clausulae">
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label>Unit:</label>
+        <input type="number" name="unit" value="9">
+      </div>
+      <div class="form-row">
+        <label>Voices:</label>
+        <select name="voices">
+          <option value="all">All</option>
+          <option value="3">3 voices</option>
+          <option value="4">4 voices</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="public"> Make public</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="overwrite"> Overwrite existing</label>
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
+    <form method="post" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+      {% csrf_token %}
+      <h3>Generate Harmonization From Clausulae</h3>
+      <p class="command-help">Creates figured-bass harmonization exercises from standard Clausulae cadences for the selected unit and voice count.</p>
+      <input type="hidden" name="action" value="generate">
+      <input type="hidden" name="command_name" value="generate_harmonization_from_clausulae">
+      <div class="form-row">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label>Unit:</label>
+        <input type="number" name="unit" value="9">
+      </div>
+      <div class="form-row">
+        <label>Voices:</label>
+        <select name="voices">
+          <option value="3">3 voices</option>
+          <option value="4">4 voices</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="public"> Make public</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="overwrite"> Overwrite existing</label>
+      </div>
+      <button type="submit" class="btn">Run Generator</button>
+    </form>
+
     <form method="post">
       {% csrf_token %}
       <h3>Duplicate Chorale as Identification</h3>
+      <p class="command-help">Creates one UMTO identification copy from an existing chorale exercise. The new row keeps the source score and skill tags, but changes the interaction mode to identification.</p>
       <input type="hidden" name="action" value="generate">
       <input type="hidden" name="command_name" value="duplicate_chorale_as_identification">
       <div class="form-row">
         <label>Source Exercise ID:</label>
-        <input type="text" name="source" required>
+        <input type="text" name="exercise_id" required>
       </div>
       <div class="form-row">
-        <label>Voices List:</label>
-        <input type="text" name="voices" placeholder="e.g. S,A,T,B">
+        <label>Author Email:</label>
+        <input type="email" name="author" value="{{ request.user.email }}">
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="public"> Make public</label>
       </div>
       <button type="submit" class="btn">Run Generator</button>
     </form>
