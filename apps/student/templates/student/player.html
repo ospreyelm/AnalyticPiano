@@ -1279,6 +1279,16 @@
 {% endblock %}
 
 {% block js_extra %}
+  {% if debug_exercise_db_json %}
+  <script>
+    window.__HARMONYLAB_DEBUG_EXERCISE_DB__ = {{ debug_exercise_db_json|safe }};
+    console.groupCollapsed("[HarmonyLab debug] Exercise DB row and frontend payload");
+    console.log("DB row", window.__HARMONYLAB_DEBUG_EXERCISE_DB__.exercise);
+    console.log("Playlist", window.__HARMONYLAB_DEBUG_EXERCISE_DB__.playlist);
+    console.log("Frontend payload", window.__HARMONYLAB_DEBUG_EXERCISE_DB__.frontendPayload);
+    console.groupEnd();
+  </script>
+  {% endif %}
   <script>require(['app/main']);</script>
   <script>
     window.PLAYER_DEFINITION_URL = "{% url 'student:player-definition' unit_num=unit_num %}";

@@ -779,9 +779,12 @@ define([
         alto: "c/4",
         tenor: "e/3",
       };
-      // Top voice (S slot) on treble: raise rest above staff to avoid colliding with lower voice
       var restKey = restKeyByClef[clef] || "b/4";
-      if (clef === "treble" && voiceSlot === "S") restKey = "d/5";
+      // Shift rests away from the opposing voice to avoid collisions.
+      if (clef === "treble" && voiceSlot === "S") restKey = "d/5";  // soprano: above staff
+      if (clef === "treble" && voiceSlot === "A") restKey = "g/4";  // alto: below middle line
+      if (clef === "bass"   && voiceSlot === "T") restKey = "f/3";  // tenor: above middle line
+      // B slot uses restKeyByClef default (d/3) which is already low
       var rest = new Vex.Flow.StaveNote({
         clef: clef,
         keys: [restKey],
@@ -1220,9 +1223,26 @@ define([
         // Shared within-measure alteration tracker — reset per measure per staff,
         // shared across all voices so G# in one voice makes G♮ in another show a natural.
         var barAlterations = {};
-        return (staff.voices || [])
+
+        // Detect single-real-voice staff: all items across all voices are rests
+        // except in exactly one voice.  When true, suppress the all-rest voice(s)
+        // and render the remaining voice with natural single-voice stem direction
+        // (down for bass, up for treble) instead of forced two-voice stems.
+        var voices = staff.voices || [];
+        function isAllRests(v) {
+          return v.items.every(function(it) { return it.kind === 'rest'; });
+        }
+        var realVoiceIndices = voices.reduce(function(acc, v, i) {
+          if (!isAllRests(v)) acc.push(i);
+          return acc;
+        }, []);
+        var singleVoiceMode = realVoiceIndices.length === 1;
+
+        return voices
           .map(function (v, vIdx) {
             if (select && select.indexOf(vIdx) === -1) return null; // filter out
+            // In single-voice mode, skip all-rest padding voices entirely.
+            if (singleVoiceMode && isAllRests(v)) return null;
 
             var satbLabel = staffSatbLabels[vIdx] || null;
             var selectedForHarmonization = !!(isHarmonization && select && select.indexOf(vIdx) !== -1);
@@ -1240,16 +1260,22 @@ define([
               localOnset += durationToTicks(it.duration);
               return itemToTickable(clef, it, octaveShift, idState, keySignatureAlterations, onsetToUse, absoluteMeasureIndex, showNotation, isAnalysisMatch, harmonizationOptions, barAlterations);
             }).filter(Boolean);
-            
-            var stemDir = v.direction === "up" ? 1 : v.direction === "down" ? -1 : 1;
-            if (v.direction === "up") tickables.forEach(function (t) { if (t.setStemDirection) t.setStemDirection(1); });
-            if (v.direction === "down") tickables.forEach(function (t) { if (t.setStemDirection) t.setStemDirection(-1); });
+
+            var stemDir;
+            if (singleVoiceMode) {
+              // Let VexFlow auto-stem per note (standard single-voice engraving).
+              stemDir = null;
+            } else {
+              // In two-voice staff, "auto" follows SATB convention: v0 stems up, v1 stems down.
+              stemDir = v.direction === "up" ? 1 : v.direction === "down" ? -1 : (vIdx === 0 ? 1 : -1);
+              tickables.forEach(function (t) { if (t.setStemDirection) t.setStemDirection(stemDir); });
+            }
 
             // Only beam outer voices (S=treble idx0 stems-up, B=bass idx1 stems-down).
             // Inner voices (A=treble idx1, T=bass idx0) beam toward the opposing staff — skip.
-            var isOuterVoice = (stemDir === 1 && vIdx === 0) || (stemDir === -1 && vIdx === 1);
+            var isOuterVoice = singleVoiceMode || (stemDir === 1 && vIdx === 0) || (stemDir === -1 && vIdx === 1);
             var beams = isOuterVoice ? autoBeam(tickables, stemDir) : [];
-            
+
             var voice = buildVoice(time, tickables);
             voice.beams = beams; // Store beams for later drawing
             return voice;

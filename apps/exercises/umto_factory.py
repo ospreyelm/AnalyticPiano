@@ -189,6 +189,10 @@ def _to_music21_key(key_name: str):
     text = (key_name or "").strip()
     if not text:
         return m21_key.Key("C")
+    if len(text) >= 2 and text[0] in {"i", "j"}:
+        mode = "minor" if text[0] == "i" else "major"
+        tonic = text[1:].replace("_", "").replace("b", "-")
+        return m21_key.Key(tonic, mode)
     parts = text.split()
     if len(parts) >= 2 and parts[-1].lower() in {"major", "minor"}:
         tonic = " ".join(parts[:-1]).replace("b", "-")
@@ -213,6 +217,7 @@ def build_umto_payload(
     analysis_overrides: Optional[list] = None,
     analysis_type: Optional[str] = None,
     display: Optional[dict] = None,
+    preserve_source_durations: bool = False,
 ) -> dict:
     """Build a UMTO frontend payload from CIR-shaped score_data.
 
@@ -323,9 +328,12 @@ def build_umto_payload(
                     onsets.add(round(t, 5))
                 t += ev.duration
 
-        # Split held notes at interior onsets so each slot gets the correct notehead
-        voices_dict = _split_voices_at_onsets(voices_dict, onsets)
-        voices_dict = _absorb_trailing_rests_after_final_attack(voices_dict)
+        # Split held notes at interior onsets so each slot gets the correct notehead.
+        # Some curated imported material already carries pedagogically meaningful
+        # durations/ties; for those paths, preserve the source rhythm.
+        if not preserve_source_durations:
+            voices_dict = _split_voices_at_onsets(voices_dict, onsets)
+            voices_dict = _absorb_trailing_rests_after_final_attack(voices_dict)
 
         # Recompute onsets after splitting (new attack points may have been added)
         onsets = set()
