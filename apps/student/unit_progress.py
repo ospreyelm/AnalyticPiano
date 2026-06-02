@@ -33,9 +33,9 @@ from apps.student.unit1_curriculum import get_unit1_lane_groups
 
 @dataclass
 class PlaylistRawData:
-    perf_rows: list = field(default_factory=list)        # PerformanceData, created ASC
-    ident_attempts: list = field(default_factory=list)   # IdentificationAttempt, exercise preloaded, submitted_at ASC
-    served_exercise_ids: list = field(default_factory=list)  # serving order, Unit-4 shuffle applied
+    perf_rows: list[PerformanceData] = field(default_factory=list)        # created ASC
+    ident_attempts: list[IdentificationAttempt] = field(default_factory=list)  # exercise preloaded, submitted_at ASC
+    served_exercise_ids: list[str] = field(default_factory=list)          # serving order, Unit-4 shuffle applied
 
 
 def _get_skill_level(user, skill_tag: str) -> str:
@@ -146,6 +146,10 @@ def _batch_playlist_data(user, playlists) -> dict:
 
     Returns {playlist_pk: PlaylistRawData}. Fires no queries when `playlists`
     is empty.
+
+    Side effect: primes each passed-in playlist's `untransposed_exercises_ids`
+    cache, so later reads of that instance's exercise list/serving order will
+    use the cached value rather than re-querying.
     """
     pks = [pl.pk for pl in playlists]
     if not pks:
@@ -184,7 +188,7 @@ def _batch_playlist_data(user, playlists) -> dict:
     for pl in playlists:
         # Prefill the cached_property so get_ordered_exercise_ids_for_serving()
         # (which applies the Unit-4 shuffle) runs without hitting the DB.
-        pl.__dict__["untransposed_exercises_ids"] = ordered_by_pk[pl.pk]
+        pl.prime_untransposed_exercises_ids(ordered_by_pk[pl.pk])
         served = get_ordered_exercise_ids_for_serving(user, pl)
         raw[pl.pk] = PlaylistRawData(
             perf_rows=perf_by_pk[pl.pk],
