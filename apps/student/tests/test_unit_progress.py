@@ -712,3 +712,27 @@ class MasteryChallengeRedesignTests(TestCase):
         )
 
         self.assertTrue(_check_challenge_mastery(self.student, "treble"))
+
+
+class UnitProgressQueryBudgetTests(TestCase):
+    QUERY_BUDGET = 15  # generous ceiling first; tightened in a later task
+
+    def setUp(self):
+        self.author = _make_author(60001)
+        self.student = _make_student(60002)
+
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
+    @patch(
+        "apps.student.unit_progress.TaxonomyReader.get_skill_label",
+        side_effect=lambda tag: tag.replace("_", " ").title(),
+    )
+    def test_query_count_constant_in_playlist_count(self, *_mocks):
+        _seed_unit_playlists(self.author, self.student, "2", 20, "Note_Names")
+        with self.assertNumQueries(self.QUERY_BUDGET):
+            get_unit_progress_data(self.student, "2")
+
+        # Doubling playlists must NOT increase the count.
+        _seed_unit_playlists(self.author, self.student, "2", 20, "Note_Names")  # 40 total
+        with self.assertNumQueries(self.QUERY_BUDGET):
+            get_unit_progress_data(self.student, "2")
