@@ -70,6 +70,36 @@ def _get_skill_level(user, skill_tag: str) -> str:
     return StudentSkillMastery.LEVEL_NOT_STARTED
 
 
+def _batch_skill_levels(user, display_tags: list[str]) -> dict[str, str]:
+    """Resolve mastery level for each display tag in a single query.
+
+    Mirrors _get_skill_level's TAG_ALIASES expansion and level precedence.
+    """
+    level_order = [
+        StudentSkillMastery.LEVEL_MASTERED,
+        StudentSkillMastery.LEVEL_PROFICIENT,
+        StudentSkillMastery.LEVEL_FAMILIAR,
+        StudentSkillMastery.LEVEL_ATTEMPTED,
+        StudentSkillMastery.LEVEL_NOT_STARTED,
+    ]
+    canonical_by_display = {t: TAG_ALIASES.get(t, [t]) for t in display_tags}
+    all_canonical = {c for tags in canonical_by_display.values() for c in tags}
+    mastery_map = dict(
+        StudentSkillMastery.objects
+        .filter(user=user, skill_tag__in=all_canonical)
+        .values_list("skill_tag", "level")
+    )
+
+    result: dict[str, str] = {}
+    for display_tag, canon in canonical_by_display.items():
+        levels = [mastery_map.get(t, StudentSkillMastery.LEVEL_NOT_STARTED) for t in canon]
+        result[display_tag] = next(
+            (lvl for lvl in level_order if lvl in levels),
+            StudentSkillMastery.LEVEL_NOT_STARTED,
+        )
+    return result
+
+
 def _get_playlists_for_unit(user, unit_tags: list[str], unit_n: str | None = None) -> list[Playlist]:
     """
     Return all Playlist rows tied to a unit by either:
@@ -525,12 +555,14 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
     tier = TaxonomyReader.get_tier_for_unit(unit_n) or {}
     unit_tags: list[str] = unit.get("tags", [])
 
+    skill_levels = _batch_skill_levels(user, unit_tags)
+
     # --- Bar segments (generic path: one per skill tag) ---
     bar_segments = [
         {
             "tag": tag,
             "label": TaxonomyReader.get_skill_label(tag),
-            "level": _get_skill_level(user, tag),
+            "level": skill_levels.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED),
         }
         for tag in unit_tags
     ]
@@ -618,7 +650,7 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
             {
                 "tag": tag,
                 "label": TaxonomyReader.get_skill_label(tag),
-                "level": _get_skill_level(user, tag),
+                "level": skill_levels.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED),
                 "playlists": tag_to_playlists.get(tag, []),
             }
             for tag in unit_tags

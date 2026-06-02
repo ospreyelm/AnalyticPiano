@@ -715,7 +715,7 @@ class MasteryChallengeRedesignTests(TestCase):
 
 
 class UnitProgressQueryBudgetTests(TestCase):
-    QUERY_BUDGET = 15  # generous ceiling first; tightened in a later task
+    QUERY_BUDGET = 5  # steady-state; constant in playlist count after batching skill lookups
 
     def setUp(self):
         self.author = _make_author(60001)
