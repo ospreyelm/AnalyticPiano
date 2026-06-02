@@ -1,4 +1,35 @@
+import os
+import sys
+import threading
+
 from django.apps import AppConfig
+
+
+def _warm_music21():
+    """Import music21 once in the background so the first exercise request
+    doesn't pay its multi-second cold-import cost."""
+    try:
+        import music21  # noqa: F401
+    except Exception:
+        # Warmup is best-effort; never let it break startup.
+        pass
+
+
+def _should_warm() -> bool:
+    """Only warm in a real long-lived server process, not in tests, migrations,
+    or one-shot management commands."""
+    argv = sys.argv
+    if len(argv) > 1:
+        cmd = argv[1]
+        if cmd == "runserver":
+            # Under runserver's autoreloader, ready() fires twice; only warm in
+            # the child process that actually serves requests.
+            return os.environ.get("RUN_MAIN") == "true"
+        # Any other management command (migrate, test, shell, collectstatic, …):
+        # don't warm.
+        return False
+    # No subcommand in argv → WSGI/gunicorn server process: warm.
+    return True
 
 
 def register_psycopg_json_casting(raw_connection):
@@ -38,3 +69,8 @@ class ExercisesConfig(AppConfig):
             register_psycopg_json_casting(connection.connection)
 
         connection_created.connect(disable_psycopg2_json_casting)
+
+        if _should_warm():
+            threading.Thread(
+                target=_warm_music21, name="music21-warmup", daemon=True
+            ).start()
