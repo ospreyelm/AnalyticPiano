@@ -38,42 +38,10 @@ class PlaylistRawData:
     served_exercise_ids: list[str] = field(default_factory=list)          # serving order, Unit-4 shuffle applied
 
 
-def _get_skill_level(user, skill_tag: str) -> str:
-    """
-    Return the best StudentSkillMastery level for a display skill tag.
-
-    Some student-facing Unit 1 tags are aggregate display buckets, such as
-    ``clefs``, which should reflect mastery from underlying canonical tags like
-    ``Read_Treble_Clef`` and ``Read_Bass_Clef``. For non-aliased tags this
-    still behaves like a direct lookup.
-    """
-    canonical_tags = TAG_ALIASES.get(skill_tag, [skill_tag])
-    mastery_rows = StudentSkillMastery.objects.filter(
-        user=user,
-        skill_tag__in=canonical_tags,
-    )
-    mastery_map = {mastery.skill_tag: mastery.level for mastery in mastery_rows}
-    levels = [
-        mastery_map.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED)
-        for tag in canonical_tags
-    ]
-    level_order = [
-        StudentSkillMastery.LEVEL_MASTERED,
-        StudentSkillMastery.LEVEL_PROFICIENT,
-        StudentSkillMastery.LEVEL_FAMILIAR,
-        StudentSkillMastery.LEVEL_ATTEMPTED,
-        StudentSkillMastery.LEVEL_NOT_STARTED,
-    ]
-    for level in level_order:
-        if level in levels:
-            return level
-    return StudentSkillMastery.LEVEL_NOT_STARTED
-
-
 def _batch_skill_levels(user, display_tags: list[str]) -> dict[str, str]:
     """Resolve mastery level for each display tag in a single query.
 
-    Mirrors _get_skill_level's TAG_ALIASES expansion and level precedence.
+    Expands TAG_ALIASES and applies level precedence (best mastery wins).
     """
     level_order = [
         StudentSkillMastery.LEVEL_MASTERED,
@@ -555,20 +523,9 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
     tier = TaxonomyReader.get_tier_for_unit(unit_n) or {}
     unit_tags: list[str] = unit.get("tags", [])
 
-    skill_levels = _batch_skill_levels(user, unit_tags)
-
-    # --- Bar segments (generic path: one per skill tag) ---
-    bar_segments = [
-        {
-            "tag": tag,
-            "label": TaxonomyReader.get_skill_label(tag),
-            "level": skill_levels.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED),
-        }
-        for tag in unit_tags
-    ]
-
     activity_cards: list[dict] = []
     skill_cards: list[dict] = []
+    bar_segments: list[dict] = []
 
     if unit_n == "1":
         bar_segments = []
@@ -616,6 +573,18 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
                 }
             )
     else:
+        skill_levels = _batch_skill_levels(user, unit_tags)
+
+        # --- Bar segments (generic path: one per skill tag) ---
+        bar_segments = [
+            {
+                "tag": tag,
+                "label": TaxonomyReader.get_skill_label(tag),
+                "level": skill_levels.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED),
+            }
+            for tag in unit_tags
+        ]
+
         # --- Group playlists by skill tag ---
         matching_playlists = _dedupe_playlists_by_name(
             _get_playlists_for_unit(user, unit_tags, unit_n=unit_n),
