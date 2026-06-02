@@ -25,76 +25,124 @@ No model/migration/infra changes.
 
 ---
 
-## Task 1: Query-budget regression test (write first, must FAIL)
+## Task 0: Add shared test helpers (`_make_ident`, `_seed_unit_playlists`)
+
+The test file already has module-level helpers: `_make_author(n)`, `_make_student(n)`,
+`_make_exercise(pk, author)` (UMTO-safe — assigns `_id`), `_make_playlist(pk, author, skill_tags, name)`,
+`_make_pd(user, playlist, data)`, and a `TAXONOMY_PATCH` dict patching
+`TaxonomyReader.get_unit` → `STUB_GENERIC_UNIT` (unit `"2"`, tags `["Note_Names","Intervals"]`).
+Tests patch taxonomy with `@patch(...)` decorators or `patch.multiple(**TAXONOMY_PATCH)`.
+
+New tests need an IdentificationAttempt helper and a multi-playlist seeder that
+generates **globally unique pks and names** (so `_dedupe_playlists_by_name` does
+not collapse a second batch).
+
+**Files:**
+- Modify: `apps/student/tests/test_unit_progress.py`
+
+- [ ] **Step 1: Add `_make_ident` and `_seed_unit_playlists` as module-level helpers**
+
+Add after `_make_pd` (line ~99). Note `IdentificationAttempt` must be added to the
+top-of-file model import.
+
+```python
+from apps.exercises.models import (
+    Exercise,
+    ExercisePlaylistOrdered,
+    IdentificationAttempt,   # add this
+    PerformanceData,
+    Playlist,
+    StudentSkillMastery,
+)
+
+
+def _make_ident(user, playlist, exercise, score) -> IdentificationAttempt:
+    return IdentificationAttempt.objects.create(
+        user=user, playlist=playlist, exercise=exercise,
+        is_page_submit=True, score=score,
+    )
+
+
+# Monotonic pk source so every seeded row across batches is unique.
+_PK_SEQ = [100000]
+
+def _next_pk() -> int:
+    _PK_SEQ[0] += 1
+    return _PK_SEQ[0]
+
+
+def _seed_unit_playlists(author, student, unit_n, count, primary_tag):
+    """Create `count` public playlists for the unit, each with one exercise, a
+    PerformanceData row (score 1/1) and a completed IdentificationAttempt.
+
+    Unique pks AND unique names so _dedupe_playlists_by_name keeps them all.
+    Returns the created playlists.
+    """
+    playlists = []
+    for _ in range(count):
+        ex = _make_exercise(_next_pk(), author)
+        pl = _make_playlist(
+            _next_pk(), author,
+            skill_tags=[primary_tag, f"unit:{unit_n}"],
+            name=f"PL-{unit_n}-{_PK_SEQ[0]}",
+        )
+        ExercisePlaylistOrdered.objects.create(playlist=pl, exercise=ex, order=0)
+        _make_pd(student, pl, [{"id": ex.id, "score_numerator": 1, "score_denominator": 1}])
+        _make_ident(student, pl, ex, {"correct": 1, "incorrect": 0, "unanswered": 0})
+        playlists.append(pl)
+    return playlists
+```
+
+- [ ] **Step 2: Commit the helpers**
+
+```bash
+git add apps/student/tests/test_unit_progress.py
+git commit -m "test: add _make_ident + unique-name _seed_unit_playlists helper"
+```
+
+---
+
+## Task 1: Query-budget regression test (write next, must FAIL)
 
 **Files:**
 - Test: `apps/student/tests/test_unit_progress.py`
 
-- [ ] **Step 1: Read the existing test file to match fixtures/imports/style**
+- [ ] **Step 1: Write the failing query-budget test**
 
-Run: `sed -n '1,60p' apps/student/tests/test_unit_progress.py`
-Note the existing helper(s) for creating a user, playlists, exercises, PerformanceData, and how a unit's `unit_tags` are obtained (TaxonomyReader). Reuse them. Pick a real unit number that has taxonomy tags (the spec uses `"9"`).
-
-- [ ] **Step 2: Write the failing query-budget test**
-
-Add to `apps/student/tests/test_unit_progress.py`. Use the file's existing fixture helpers where they exist; the inline helpers below are the fallback shape if none exist.
+Taxonomy is patched (unit `"2"`, primary tag `"Note_Names"`). Author and student
+are distinct users (matches the file's fixture convention).
 
 ```python
 class UnitProgressQueryBudgetTests(TestCase):
-    QUERY_BUDGET = 12  # generous ceiling; real count is ~5 + fixed auth overhead
+    QUERY_BUDGET = 15  # generous ceiling first; tightened in Task 5 to the real count
 
-    def _seed_unit_playlists(self, user, unit_n, count):
-        """Create `count` public playlists tagged for the unit, each with one
-        exercise plus a PerformanceData and an IdentificationAttempt row."""
-        from apps.exercises.models import (
-            Exercise, ExercisePlaylistOrdered, IdentificationAttempt,
-            PerformanceData, Playlist,
-        )
-        from apps.exercises.taxonomy_reader import TaxonomyReader
-        unit_tags = TaxonomyReader.get_unit(unit_n).get("tags", [])
-        primary_tag = unit_tags[0]
-        playlists = []
-        for i in range(count):
-            ex = Exercise(authored_by=user, data={"type": "matching", "chord": []})
-            ex.save(skip_auto_playlist=True)
-            pl = Playlist(
-                authored_by=user, is_public=True,
-                skill_tags=[primary_tag, f"unit:{unit_n}"],
-                name=f"PL {unit_n}-{i}",
-            )
-            pl.save()
-            ExercisePlaylistOrdered.objects.create(playlist=pl, exercise=ex, order=0)
-            PerformanceData.objects.create(
-                user=user, playlist=pl,
-                data=[{"id": ex.id, "score_numerator": 1, "score_denominator": 1}],
-            )
-            IdentificationAttempt.objects.create(
-                user=user, playlist=pl, exercise=ex, is_page_submit=True,
-                score={"correct": 1, "incorrect": 0, "unanswered": 0},
-            )
-            playlists.append(pl)
-        return playlists
+    def setUp(self):
+        self.author = _make_author(60001)
+        self.student = _make_student(60002)
 
-    def test_query_count_constant_in_playlist_count(self):
-        user = self._make_student()  # use existing helper; else create User + student profile
-        self._seed_unit_playlists(user, "9", 20)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
+    @patch(
+        "apps.student.unit_progress.TaxonomyReader.get_skill_label",
+        side_effect=lambda tag: tag.replace("_", " ").title(),
+    )
+    def test_query_count_constant_in_playlist_count(self, *_mocks):
+        _seed_unit_playlists(self.author, self.student, "2", 20, "Note_Names")
         with self.assertNumQueries(self.QUERY_BUDGET):
-            get_unit_progress_data(user, "9")
+            get_unit_progress_data(self.student, "2")
 
         # Doubling playlists must NOT increase the count.
-        self._seed_unit_playlists(user, "9", 20)  # now 40 total
+        _seed_unit_playlists(self.author, self.student, "2", 20, "Note_Names")  # 40 total
         with self.assertNumQueries(self.QUERY_BUDGET):
-            get_unit_progress_data(user, "9")
+            get_unit_progress_data(self.student, "2")
 ```
 
-Adjust `_make_student`, model field names, and `Exercise` construction to match the file's existing fixtures. If the file already has a student/user factory, use it instead of inventing one.
-
-- [ ] **Step 3: Run the test, confirm it FAILS on current code**
+- [ ] **Step 2: Run the test, confirm it FAILS on current code**
 
 Run: `python manage.py test apps.student.tests.test_unit_progress.UnitProgressQueryBudgetTests --settings=harmony.settings.local -v 2`
-Expected: FAIL — actual query count for 40 playlists far exceeds `QUERY_BUDGET` (the second `assertNumQueries` blows the budget because today's code is N+1). This proves the test catches the regression.
+Expected: FAIL — the 40-playlist `assertNumQueries` blows `QUERY_BUDGET` because today's code is N+1. (If the 20-playlist case already exceeds 15, the first assertion fails — also acceptable proof.) This confirms the test catches the regression.
 
-- [ ] **Step 4: Commit the failing test**
+- [ ] **Step 3: Commit the failing test**
 
 ```bash
 git add apps/student/tests/test_unit_progress.py
@@ -212,26 +260,39 @@ git commit -m "feat: add _batch_playlist_data + PlaylistRawData (unused so far)"
 - [ ] **Step 1: Write the parity test**
 
 Confirms the batch fn's `served_exercise_ids` equals the old per-playlist helper
-output for the same (user, playlist), including the Unit-4 shuffle+truncate.
+output for the same (user, playlist), including the Unit-4 shuffle+truncate. This
+test needs no taxonomy patch — `_is_unit4_personalized_playlist` reads only the
+playlist's tags. Build a playlist with tags `["unit:4", "Interval_Specific"]` and
+10 ordered exercises so the shuffle+truncate to `UNIT4_SERVED_EXERCISE_COUNT` (6)
+fires.
 
 ```python
 class BatchPlaylistDataParityTests(TestCase):
+    def setUp(self):
+        self.author = _make_author(61001)
+        self.student = _make_student(61002)
+
     def test_served_ids_match_serving_helper(self):
         from apps.student.player_progression import get_ordered_exercise_ids_for_serving
         from apps.student.unit_progress import _batch_playlist_data
-        user = self._make_student()
-        # A Unit-4 personalized playlist: tag unit:4 + Interval_Specific, >6 exercises.
-        pl = self._make_unit4_playlist(user, num_exercises=10)
-        expected = get_ordered_exercise_ids_for_serving(user, pl)
 
-        # Fresh instance so the cached_property is not already populated.
-        from apps.exercises.models import Playlist
+        pl = _make_playlist(
+            _next_pk(), self.author,
+            skill_tags=["unit:4", "Interval_Specific"], name="U4-parity",
+        )
+        for order in range(10):
+            ex = _make_exercise(_next_pk(), self.author)
+            ExercisePlaylistOrdered.objects.create(playlist=pl, exercise=ex, order=order)
+
+        expected = get_ordered_exercise_ids_for_serving(self.student, pl)
+
+        # Fresh instance so the cached_property is not already populated by the
+        # call above (get_ordered_exercise_ids_for_serving cached it on `pl`).
         pl_fresh = Playlist.objects.get(pk=pl.pk)
-        raw = _batch_playlist_data(user, [pl_fresh])
+        raw = _batch_playlist_data(self.student, [pl_fresh])
         self.assertEqual(raw[pl.pk].served_exercise_ids, expected)
+        self.assertEqual(len(raw[pl.pk].served_exercise_ids), 6)  # truncated
 ```
-
-Implement `_make_unit4_playlist` with tags `["unit:4", "Interval_Specific"]` and 10 ordered exercises so the shuffle+truncate to `UNIT4_SERVED_EXERCISE_COUNT` (6) is exercised. Reuse the seeding helper from Task 1 where possible.
 
 - [ ] **Step 2: Run it, expect PASS**
 
@@ -402,11 +463,14 @@ cannot silently change grading output.
 
 ```python
 class PlaylistStatsIdentityTests(TestCase):
+    def setUp(self):
+        self.author = _make_author(62001)
+        self.student = _make_student(62002)
+
     def test_known_perf_and_ident_yield_expected_stats(self):
         from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
-        user = self._make_student()
-        pl = self._seed_unit_playlists(user, "9", 1)[0]  # 1 ex, 1 perf 1/1, 1 ident correct
-        raw = _batch_playlist_data(user, [pl])
+        pl = _seed_unit_playlists(self.author, self.student, "2", 1, "Note_Names")[0]
+        raw = _batch_playlist_data(self.student, [pl])
         stats = _playlist_stats(pl, raw[pl.pk])
         self.assertEqual(stats["done"], 1)
         self.assertEqual(stats["total"], 1)
@@ -519,18 +583,20 @@ git commit -m "perf: batch skill-level lookups (2M -> 1 query) and tighten budge
 
 ```python
 class PlaylistStatsPurityTests(TestCase):
+    def setUp(self):
+        self.author = _make_author(63001)
+        self.student = _make_student(63002)
+
     def test_playlist_stats_does_no_db_io(self):
         from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
-        from apps.exercises.models import Playlist
-        user = self._make_student()
-        pl = self._seed_unit_playlists(user, "9", 1)[0]
+        pl = _seed_unit_playlists(self.author, self.student, "2", 1, "Note_Names")[0]
         pl = Playlist.objects.get(pk=pl.pk)  # fetched instance, tags loaded
-        raw = _batch_playlist_data(user, [pl])
+        raw = _batch_playlist_data(self.student, [pl])
         with self.assertNumQueries(0):
             _playlist_stats(pl, raw[pl.pk])
 ```
 
-If `_seed_unit_playlists` lives on a different test class, lift it to a shared mixin or module-level helper so all classes can call it. Do that refactor in this step if needed.
+`_seed_unit_playlists` is a module-level helper (Task 0), callable from any test class.
 
 - [ ] **Step 2: Run it, expect PASS**
 
