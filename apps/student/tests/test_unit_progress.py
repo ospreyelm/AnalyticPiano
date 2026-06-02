@@ -736,3 +736,30 @@ class UnitProgressQueryBudgetTests(TestCase):
         _seed_unit_playlists(self.author, self.student, "2", 20, "Note_Names")  # 40 total
         with self.assertNumQueries(self.QUERY_BUDGET):
             get_unit_progress_data(self.student, "2")
+
+
+class BatchPlaylistDataParityTests(TestCase):
+    def setUp(self):
+        self.author = _make_author(61001)
+        self.student = _make_student(61002)
+
+    def test_served_ids_match_serving_helper(self):
+        from apps.student.player_progression import get_ordered_exercise_ids_for_serving
+        from apps.student.unit_progress import _batch_playlist_data
+
+        pl = _make_playlist(
+            _next_pk(), self.author,
+            skill_tags=["unit:4", "Interval_Specific"], name="U4-parity",
+        )
+        for order in range(10):
+            ex = _make_exercise(_next_pk(), self.author)
+            ExercisePlaylistOrdered.objects.create(playlist=pl, exercise=ex, order=order)
+
+        expected = get_ordered_exercise_ids_for_serving(self.student, pl)
+
+        # Fresh instance so the cached_property is not already populated by the
+        # call above (get_ordered_exercise_ids_for_serving cached it on `pl`).
+        pl_fresh = Playlist.objects.get(pk=pl.pk)
+        raw = _batch_playlist_data(self.student, [pl_fresh])
+        self.assertEqual(raw[pl.pk].served_exercise_ids, expected)
+        self.assertEqual(len(raw[pl.pk].served_exercise_ids), 6)  # truncated
