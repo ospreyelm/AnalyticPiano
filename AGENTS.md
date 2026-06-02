@@ -18,6 +18,17 @@ target slices added on top. Do **not** revive the exploratory compendium
 MusicXML-to-derived-CIR corpus path for student-facing exercises; that produced
 musically meaningless student exercises even when tests passed.
 
+## ⚠️ EFFICIENT BACH GENERATION — IMPLEMENT NEXT
+
+Before doing more bulk Bach/Riemenschneider playlist generation or deduplication
+work, implement
+[docs/superpowers/plans/2026-06-02-efficient-bach-generation.md](docs/superpowers/plans/2026-06-02-efficient-bach-generation.md).
+
+The current `create_unit_playlist` workflow repeats expensive music21 analysis
+per unit/mode and can create duplicate chorale exercise rows. The plan defines
+the intended import-once, playlist-many command plus an audit-first deduplication
+path. Do not add more ad hoc batch scripts for this problem.
+
 ## ⚠️ GITHUB PR TARGET — USE AVNER'S REPO, NOT UPSTREAM
 
 When creating pull requests or using `gh pr create`, ALWAYS target:
