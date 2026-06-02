@@ -763,3 +763,17 @@ class BatchPlaylistDataParityTests(TestCase):
         raw = _batch_playlist_data(self.student, [pl_fresh])
         self.assertEqual(raw[pl.pk].served_exercise_ids, expected)
         self.assertEqual(len(raw[pl.pk].served_exercise_ids), 6)  # truncated
+
+
+class PlaylistStatsPurityTests(TestCase):
+    def setUp(self):
+        self.author = _make_author(63001)
+        self.student = _make_student(63002)
+
+    def test_playlist_stats_does_no_db_io(self):
+        from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
+        pl = _seed_unit_playlists(self.author, self.student, "2", 1, "Note_Names")[0]
+        pl = Playlist.objects.get(pk=pl.pk)  # fetched instance, tags loaded
+        raw = _batch_playlist_data(self.student, [pl])
+        with self.assertNumQueries(0):
+            _playlist_stats(pl, raw[pl.pk])
