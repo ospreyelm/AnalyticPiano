@@ -59,15 +59,19 @@ _batch_playlist_data(user, playlists) → {playlist_pk: PlaylistRawData}
 
 _playlist_stats(playlist, raw) → stats dict.  PURE. Zero DB.
   Receives pre-sorted perf rows, ident attempts (exercise preloaded), and
-  ordered untransposed exercise ids for that playlist. Applies the cheap
-  in-memory Unit-4 shuffle (per-user RNG, no query) when applicable.
+  the playlist's SERVED exercise ids (Unit-4 shuffle already applied — see below).
 
 _playlist_stats_by_id(user, playlist_id):
   fetch playlist → _batch_playlist_data(user, [playlist])
                 → _playlist_stats(playlist, raw[playlist.pk])
 
-Total per unit page: 3 progress queries + M skill-level lookups
-(M = unit_tags count, constant per unit). Constant in playlist count.
+_batch_skill_levels(user, unit_tags) → {display_tag: level}
+  ONE query: StudentSkillMastery.filter(user, skill_tag__in=all_canonical_tags).
+  Resolves TAG_ALIASES in Python (same precedence as _get_skill_level), returns a
+  level per display tag. Reused for BOTH bar_segments and skill_cards.
+
+Total per unit page (stats phase): 3 progress queries + 1 skill-levels query.
+Constant in playlist count and in unit_tags count.
 ```
 
 ## Data flow
@@ -79,8 +83,18 @@ Total per unit page: 3 progress queries + M skill-level lookups
 class PlaylistRawData:
     perf_rows: list[PerformanceData]            # ordered by created ASC
     ident_attempts: list[IdentificationAttempt] # exercise preloaded, submitted_at ASC
-    ordered_exercise_ids: list[str]             # untransposed, in `order`
+    served_exercise_ids: list[str]              # serving order, Unit-4 shuffle applied
 ```
+
+**Unit-4 shuffle stays in the batch fn (it needs `user`).** Current serving logic
+seeds a per-user RNG: `f"{user.id}:{playlist.id}:unit4"` (player_progression.py).
+`_batch_playlist_data` fetches the untransposed ordered ids, then for Unit-4
+personalized playlists applies the same shuffle+truncate in-memory (no query) and
+stores the result in `served_exercise_ids`. This keeps `_playlist_stats` pure with
+no `user` argument while preserving Unit-4 `total` and next-index behavior. To
+avoid drift, `_batch_playlist_data` reuses the existing serving helpers
+(`_is_unit4_personalized_playlist`, the RNG seed, `UNIT4_SERVED_EXERCISE_COUNT`)
+rather than re-deriving the shuffle.
 
 ### Batch fn
 
@@ -98,8 +112,8 @@ class PlaylistRawData:
 - `ident_attempts` (was queried 2×) → one `raw.ident_attempts`; `attempt.exercise`
   already loaded (no lazy N+1).
 - `pd_rows.last().created` + `.exists()` → `raw.perf_rows[-1].created if raw.perf_rows else None`.
-- `get_ordered_exercise_ids_for_serving` → `raw.ordered_exercise_ids`, with the
-  Unit-4 shuffle applied in-memory when `_is_unit4_personalized_playlist(playlist)`.
+- `get_ordered_exercise_ids_for_serving` → `raw.served_exercise_ids` (Unit-4
+  shuffle already applied in the batch fn).
 
 ### Behavior preserved
 
@@ -114,8 +128,15 @@ Write the query-budget test first (TDD): it fails on current code, passes after 
 **Test 1 — query budget (regression guard).** Seed a user and 20 playlists in
 one unit (each with exercises + perf + ident rows). `assertNumQueries(budget)`
 around `get_unit_progress_data(user, "9")`. Then seed 40 playlists and assert the
-**same** count. Assert `<= budget` (3 progress + M skill lookups) rather than a
-brittle exact number.
+**same** count. The budget covers the whole function:
+
+- 1 playlist-discovery query (`_get_playlists_for_unit` → `accessible_playlist_queryset`)
+- 3 progress queries (batch fn)
+- 1 skill-levels query (`_batch_skill_levels`)
+
+≈ 5 fixed queries, **constant in both playlist count and unit_tags count**. Assert
+`<= budget` rather than a brittle exact number (auth/session queries may add a
+small fixed overhead depending on test setup).
 
 **Test 2 — behavior identity.** Seed a playlist with known perf + ident data.
 Assert `_playlist_stats` returns the same `done` / `total` / `last_score_pct` /
@@ -132,13 +153,16 @@ so `playlist.tags` does not lazy-load).
 3. Perf + ident both, ident newer → ident score wins.
 4. Unit 1 path — `_playlist_stats_by_id` per lane works via single-item batch.
 5. Empty unit (no matching playlists) → batch with `[]` fires no queries.
-6. Unit-4 shuffle playlist → `total` + next-index reflect shuffled+truncated
-   served ids, matching old `get_ordered_exercise_ids_for_serving`.
+6. Unit-4 shuffle playlist → `served_exercise_ids` (shuffled+truncated in the
+   batch fn) yields `total` + next-index matching old
+   `get_ordered_exercise_ids_for_serving`. Add a direct test asserting batch-fn
+   served ids equal the old helper's output for the same (user, playlist).
 
 ## Files touched
 
 - `apps/student/unit_progress.py` — `_batch_playlist_data`, pure `_playlist_stats`,
-  `_playlist_stats_by_id`.
+  `_playlist_stats_by_id`, `_batch_skill_levels` (replaces per-tag `_get_skill_level`
+  calls in `bar_segments` and `skill_cards`).
 - `apps/student/tests/test_unit_progress.py` — new tests.
 - No model / migration changes. No infra.
 
