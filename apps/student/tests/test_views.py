@@ -1073,6 +1073,31 @@ class StudentHomeQueryBudgetTests(TransactionTestCase):
 
         self.assertEqual(response.status_code, 200)
 
+    def test_batched_home_summary_matches_unit_progress_summary(self):
+        from apps.student.unit_progress import get_unit_progress_data
+        from apps.student.views import _batch_home_unit_summaries, _summarize_unit_progress
+
+        branches, units, by_n, by_tag = self._taxonomy_for_units(1)
+        self._seed_units(1)
+
+        def get_unit(unit_n):
+            return by_n.get(str(unit_n))
+
+        def get_unit_for_tag(tag):
+            return by_tag.get(tag)
+
+        with (
+            patch("apps.student.views.TaxonomyReader.get_unit", side_effect=get_unit),
+            patch("apps.student.views.TaxonomyReader.get_unit_for_tag", side_effect=get_unit_for_tag),
+            patch("apps.student.views.TaxonomyReader.get_tier_for_unit", return_value=branches[0]["tiers"][0]),
+            patch("apps.student.views.TaxonomyReader.get_skill_label", side_effect=lambda tag: tag.replace("_", " ").title()),
+        ):
+            expected = _summarize_unit_progress(get_unit_progress_data(self.student, "2"))
+            summaries = _batch_home_unit_summaries(self.student, units, {"2"})
+
+        self.assertEqual(summaries["2"]["percent"], expected["percent"])
+        self.assertEqual(summaries["2"]["mastered_count"], expected["mastered_count"])
+
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
 class StudentUnitProgressBackLinkTests(TransactionTestCase):
