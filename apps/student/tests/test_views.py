@@ -961,7 +961,7 @@ class StudentHomeUnitDiscoveryTests(TransactionTestCase):
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
 class StudentHomeQueryBudgetTests(TransactionTestCase):
     reset_sequences = True
-    QUERY_BUDGET = 14
+    QUERY_BUDGET = 4
 
     def setUp(self):
         self.client = Client()

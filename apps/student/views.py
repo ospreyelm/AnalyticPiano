@@ -10,7 +10,11 @@ from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from apps.student.unit_progress import get_unit_progress_data, get_next_unit_playlist
+from apps.student.unit_progress import (
+    _batch_skill_levels,
+    get_unit_progress_data,
+    get_next_unit_playlist,
+)
 from apps.student.unit1_curriculum import get_unit1_lane_groups
 from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.student.access import accessible_playlist_queryset, user_can_access_playlist
@@ -131,6 +135,71 @@ def _summarize_unit_progress(data: dict) -> dict:
     }
 
 
+def _empty_unit_progress_summary() -> dict:
+    return {
+        "percent": 0,
+        "mastered_count": 0,
+        "resume_tag": None,
+    }
+
+
+def _taxonomy_units_from_branches(branches: list[dict]) -> list[dict]:
+    units = []
+    for branch in branches:
+        for tier in branch.get("tiers", []):
+            units.extend(tier.get("units", []))
+    return units
+
+
+def _summarize_unit_from_skill_levels(unit: dict, skill_levels: dict[str, str]) -> dict:
+    tags = unit.get("tags", [])
+    mastered_count = sum(
+        1 for tag in tags
+        if skill_levels.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED)
+        == StudentSkillMastery.LEVEL_MASTERED
+    )
+    total = len(tags)
+    return {
+        "percent": int(mastered_count / total * 100) if total else 0,
+        "mastered_count": mastered_count,
+        "resume_tag": None,
+    }
+
+
+def _batch_home_unit_summaries(user, units: list[dict], available_unit_numbers: set[str]) -> dict[str, dict]:
+    """Return home-page progress summaries for all available units.
+
+    Home cards only need the bar-segment summary (percent + mastered_count).
+    For non-Unit-1 units, bar segments map directly to unit skill tags, so one
+    batched mastery lookup is enough. Unit 1 remains lane-based and is handled
+    once as a constant-cost special case.
+    """
+    unit_by_n = {str(unit.get("n")): unit for unit in units}
+    non_unit1_tags = [
+        tag
+        for unit_n, unit in unit_by_n.items()
+        if unit_n in available_unit_numbers and unit_n != "1"
+        for tag in unit.get("tags", [])
+    ]
+    skill_levels = _batch_skill_levels(user, non_unit1_tags)
+
+    summaries: dict[str, dict] = {}
+    for unit_n in available_unit_numbers:
+        unit = unit_by_n.get(str(unit_n))
+        if not unit:
+            continue
+        if str(unit_n) == "1":
+            unit1_data = get_unit_progress_data(user, "1")
+            summaries["1"] = (
+                _summarize_unit_progress(unit1_data)
+                if unit1_data
+                else _empty_unit_progress_summary()
+            )
+            continue
+        summaries[str(unit_n)] = _summarize_unit_from_skill_levels(unit, skill_levels)
+    return summaries
+
+
 def _get_available_unit_numbers(user) -> set[str]:
     available = set()
     playlists = accessible_playlist_queryset(user).order_by("name")
@@ -150,20 +219,32 @@ def _get_available_unit_numbers(user) -> set[str]:
     return available
 
 
-def _build_home_units(user) -> list[dict]:
-    available_unit_numbers = _get_available_unit_numbers(user)
-    units = []
+def _build_home_units(
+    user,
+    available_unit_numbers: set[str] | None = None,
+    progress_by_unit: dict[str, dict] | None = None,
+    units: list[dict] | None = None,
+) -> list[dict]:
+    if available_unit_numbers is None:
+        available_unit_numbers = _get_available_unit_numbers(user)
+    if units is None:
+        units = TaxonomyReader.get_all_units()
+    if progress_by_unit is None:
+        progress_by_unit = _batch_home_unit_summaries(user, units, available_unit_numbers)
 
-    sorted_units = sorted(TaxonomyReader.get_all_units(), key=lambda item: unit_sort_key(str(item["n"])))
+    home_units = []
+
+    sorted_units = sorted(units, key=lambda item: unit_sort_key(str(item["n"])))
     for unit in sorted_units:
         unit_n = str(unit["n"])
         is_available = unit_n in available_unit_numbers
-        progress = _summarize_unit_progress(get_unit_progress_data(user, unit_n)) if is_available else {
-            "percent": 0,
-            "mastered_count": 0,
-        }
+        progress = (
+            progress_by_unit.get(unit_n, _empty_unit_progress_summary())
+            if is_available
+            else _empty_unit_progress_summary()
+        )
 
-        units.append(
+        home_units.append(
             {
                 "num": unit_n,
                 "title": unit.get("title", f"Unit {unit_n}"),
@@ -180,15 +261,28 @@ def _build_home_units(user) -> list[dict]:
             }
         )
 
-    return units
+    return home_units
 
 
-def _build_home_sections(user) -> list[dict]:
+def _build_home_sections(
+    user,
+    available_unit_numbers: set[str] | None = None,
+    progress_by_unit: dict[str, dict] | None = None,
+    branches: list[dict] | None = None,
+) -> list[dict]:
     """Build sections → tiers → units structure from taxonomy, preserving tier metadata.
     Splits standard sequence (core) tiers into individual top-level sections for balanced grid layout.
     """
-    available_unit_numbers = _get_available_unit_numbers(user)
-    branches = TaxonomyReader.get_branches()
+    if branches is None:
+        branches = TaxonomyReader.get_branches()
+    if available_unit_numbers is None:
+        available_unit_numbers = _get_available_unit_numbers(user)
+    if progress_by_unit is None:
+        progress_by_unit = _batch_home_unit_summaries(
+            user,
+            _taxonomy_units_from_branches(branches),
+            available_unit_numbers,
+        )
 
     # Track whether we've found the student's active tier yet (first tier
     # containing an unlocked unit with progress < 100%).
@@ -213,9 +307,9 @@ def _build_home_sections(user) -> list[dict]:
                 unit_n = str(unit["n"])
                 is_available = unit_n in available_unit_numbers
                 progress = (
-                    _summarize_unit_progress(get_unit_progress_data(user, unit_n))
+                    progress_by_unit.get(unit_n, _empty_unit_progress_summary())
                     if is_available
-                    else {"percent": 0, "mastered_count": 0}
+                    else _empty_unit_progress_summary()
                 )
 
                 if is_available and progress["percent"] > 0:
@@ -294,14 +388,27 @@ def _build_home_sections(user) -> list[dict]:
     return sections
 
 
-def _get_resume_target(user) -> tuple[str | None, str | None, dict]:
+def _get_resume_target(
+    user,
+    available: set[str] | None = None,
+    progress_by_unit: dict[str, dict] | None = None,
+    branches: list[dict] | None = None,
+) -> tuple[str | None, str | None, dict]:
     """Find the first incomplete unlocked unit across all branches/tiers.
 
     Returns (resume_url, resume_label, progress_summary).
     Falls back to Unit 1 if nothing else is found.
     """
-    branches = TaxonomyReader.get_branches()
-    available = _get_available_unit_numbers(user)
+    if branches is None:
+        branches = TaxonomyReader.get_branches()
+    if available is None:
+        available = _get_available_unit_numbers(user)
+    if progress_by_unit is None:
+        progress_by_unit = _batch_home_unit_summaries(
+            user,
+            _taxonomy_units_from_branches(branches),
+            available,
+        )
 
     for branch in branches:
         for tier in branch.get("tiers", []):
@@ -313,9 +420,7 @@ def _get_resume_target(user) -> tuple[str | None, str | None, dict]:
                 unit_n = str(unit["n"])
                 if unit_n not in available:
                     continue
-                progress = _summarize_unit_progress(
-                    get_unit_progress_data(user, unit_n)
-                )
+                progress = progress_by_unit.get(unit_n, _empty_unit_progress_summary())
                 if progress["percent"] < 100:
                     # For Unit 1 use the lane-level resume logic
                     if unit_n == "1":
@@ -328,12 +433,46 @@ def _get_resume_target(user) -> tuple[str | None, str | None, dict]:
                     return url, label, progress
 
     # Fallback: Unit 1
-    unit1_data = get_unit_progress_data(user, "1")
-    progress = _summarize_unit_progress(unit1_data) if unit1_data else {
-        "percent": 0, "mastered_count": 0,
-    }
+    progress = progress_by_unit.get("1")
+    if progress is None:
+        unit1_data = get_unit_progress_data(user, "1")
+        progress = (
+            _summarize_unit_progress(unit1_data)
+            if unit1_data
+            else _empty_unit_progress_summary()
+        )
     url = reverse("student:unit-progress", kwargs={"unit_n": "1"})
     return url, "Unit 1 · Pitch & staff notation", progress
+
+
+def _build_home_context(user) -> dict:
+    branches = TaxonomyReader.get_branches()
+    units = _taxonomy_units_from_branches(branches)
+    available = _get_available_unit_numbers(user)
+    progress_by_unit = _batch_home_unit_summaries(user, units, available)
+    resume_url, resume_label, resume_progress = _get_resume_target(
+        user,
+        available=available,
+        progress_by_unit=progress_by_unit,
+        branches=branches,
+    )
+    return {
+        "sections": _build_home_sections(
+            user,
+            available_unit_numbers=available,
+            progress_by_unit=progress_by_unit,
+            branches=branches,
+        ),
+        "units": _build_home_units(
+            user,
+            available_unit_numbers=available,
+            progress_by_unit=progress_by_unit,
+            units=units,
+        ),
+        "resume_url": resume_url,
+        "resume_skill": resume_label,
+        "resume_progress": resume_progress,
+    }
 
 
 class StudentLoginView(View):
@@ -390,14 +529,7 @@ def _require_student(view_func):
 class HomeView(View):
     @_require_student
     def get(self, request):
-        resume_url, resume_label, resume_progress = _get_resume_target(request.user)
-
-        return render(request, "student/home.html", {
-            "sections": _build_home_sections(request.user),
-            "resume_url": resume_url,
-            "resume_skill": resume_label,
-            "resume_progress": resume_progress,
-        })
+        return render(request, "student/home.html", _build_home_context(request.user))
 
 
 class UnitView(View):
