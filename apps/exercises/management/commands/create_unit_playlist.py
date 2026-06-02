@@ -17,6 +17,13 @@ def _mode_to_family(mode: str) -> str:
         return "figured_bass"
     return "roman"
 
+
+def _mode_display_label(mode: str) -> str:
+    if mode == "roman":
+        return "Roman Numeral Analysis"
+    return mode
+
+
 # parents[4] from this file = repo root
 TAXONOMY_PATH = Path(__file__).resolve().parents[4] / "music_theory_taxonomy_with_branches.json"
 
@@ -167,7 +174,7 @@ class Command(BaseCommand):
                                  extra_tags=[unit_tag, mode_tag], public=make_public,
                                  overwrite=options.get("overwrite", False))
 
-        playlist_name = f"Unit {unit_num} — {title} ({mode})"
+        playlist_name = f"Unit {unit_num} — {title} ({_mode_display_label(mode)})"
         if dry_run:
             self.stdout.write(f"[dry-run] Would create playlist: {playlist_name}")
             return

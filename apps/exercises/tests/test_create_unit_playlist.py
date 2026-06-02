@@ -124,7 +124,7 @@ class CreateUnitPlaylistCommandTest(TestCase):
         call_command("create_unit_playlist", unit=11, riemenschneider="21-22",
                      author="teacher@example.com", mode="roman")
         p = Playlist.objects.get(
-            name="Unit 11 — Pre-dominants (roman)",
+            name="Unit 11 — Pre-dominants (Roman Numeral Analysis)",
             authored_by=self.author,
         )
         self.assertFalse(p.is_dynamic)
@@ -146,7 +146,7 @@ class CreateUnitPlaylistCommandTest(TestCase):
                          author="teacher@example.com", mode="roman")
         self.assertEqual(
             Playlist.objects.filter(
-                name="Unit 11 — Pre-dominants (roman)",
+                name="Unit 11 — Pre-dominants (Roman Numeral Analysis)",
                 authored_by=self.author,
             ).count(),
             1,
@@ -165,7 +165,7 @@ class CreateUnitPlaylistCommandTest(TestCase):
         call_command("create_unit_playlist", unit=11, riemenschneider="21",
                      author="teacher@example.com", mode="roman", public=True)
         p = Playlist.objects.get(
-            name="Unit 11 — Pre-dominants (roman)",
+            name="Unit 11 — Pre-dominants (Roman Numeral Analysis)",
             authored_by=self.author,
         )
         self.assertTrue(p.is_public)
