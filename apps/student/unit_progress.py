@@ -198,43 +198,32 @@ def _batch_playlist_data(user, playlists) -> dict:
     return raw
 
 
-def _playlist_stats(user, playlist: Playlist) -> dict:
-    """
-    Compute per-playlist completion stats for a given user.
+def _playlist_stats(playlist: Playlist, raw: "PlaylistRawData") -> dict:
+    """Pure compute of per-playlist completion stats from pre-fetched data.
 
-    Returns:
-        done          - count of unique exercise IDs completed at least once
-        last_score_pct - percentage from the most recent entry that has
-                         score_numerator, or None if no such entry exists
-        url           - URL to resume the playlist at exercise 1
+    No DB access. `raw` is produced by _batch_playlist_data.
     """
-    from apps.exercises.models import IdentificationAttempt
-    
-    # Aggregate all PerformanceData rows for (user, playlist) across all courses
-    pd_rows = PerformanceData.objects.filter(user=user, playlist=playlist)
-    ident_attempts = IdentificationAttempt.objects.filter(user=user, playlist=playlist)
+    perf_rows = raw.perf_rows                # pre-sorted created ASC
+    ident_attempts = raw.ident_attempts      # pre-sorted submitted_at ASC, exercise preloaded
+    served_ids = raw.served_exercise_ids
 
-    # Unique exercise IDs across all rows and all data entries
     completed_ids: set[str] = {
         entry["id"]
-        for pd in pd_rows
+        for pd in perf_rows
         for entry in (pd.data or [])
         if "id" in entry
     }
-    
-    ident_completed_ids = {
+    completed_ids.update(
         attempt.exercise.id
         for attempt in ident_attempts
         if attempt.exercise and is_completed_identification_attempt(attempt)
-    }
-    completed_ids.update(ident_completed_ids)
+    )
     done = len(completed_ids)
 
-    # Last score: most recent data entry with score_numerator present.
     last_score_pct = None
     all_scored_entries = [
         entry
-        for pd in pd_rows.order_by("created")
+        for pd in perf_rows
         for entry in (pd.data or [])
         if "score_numerator" in entry
     ]
@@ -248,13 +237,8 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
         except (KeyError, TypeError, ZeroDivisionError):
             pass
 
-    # Check Identification attempts for scores
+    submitted_ident_attempts = [a for a in ident_attempts if a.is_page_submit]
     ident_scores = []
-    submitted_ident_attempts = [
-        attempt
-        for attempt in ident_attempts.order_by("submitted_at")
-        if attempt.is_page_submit
-    ]
     for attempt in submitted_ident_attempts:
         score_data = attempt.score or {}
         correct = score_data.get("correct", 0)
@@ -263,39 +247,30 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
         tot = correct + incorrect + unanswered
         if tot > 0:
             ident_scores.append(round(correct / tot * 100))
-            
+
     if ident_scores:
-        last_pd_date = pd_rows.order_by("created").last().created if pd_rows.exists() else None
+        last_pd_date = perf_rows[-1].created if perf_rows else None
         last_id_date = submitted_ident_attempts[-1].submitted_at if submitted_ident_attempts else None
-        
         if last_id_date and (not last_pd_date or last_id_date > last_pd_date):
             last_score_pct = ident_scores[-1]
         elif last_score_pct is None:
             last_score_pct = ident_scores[-1]
 
-    # Build playlist URL targeting the student exercise player
-    from apps.exercises.taxonomy_reader import TaxonomyReader
-    unit_num = "1"  # Default fallback
+    unit_num = "1"
     playlist_tags = list(playlist.tags or []) + list(playlist.skill_tags or [])
-
-    # First prefer explicit unit tags (e.g., unit:11), which are common on
-    # generated dynamic playlists.
     for tag in playlist_tags:
         if isinstance(tag, str) and tag.startswith("unit:"):
             unit_num = tag.split(":", 1)[1]
             break
     else:
-        # Fallback to taxonomy lookup for non-unit tags.
         for tag in playlist_tags:
             unit = TaxonomyReader.get_unit_for_tag(tag)
             if unit:
                 unit_num = str(unit.get("n", "1"))
                 break
 
-    # Determine the next uncompleted exercise number
     next_exercise_num = 1
-    ex_ids = get_ordered_exercise_ids_for_serving(user, playlist)
-    for idx, ex_id in enumerate(ex_ids, 1):
+    for idx, ex_id in enumerate(served_ids, 1):
         if ex_id not in completed_ids:
             next_exercise_num = idx
             break
@@ -309,7 +284,7 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
         "id": playlist.id,
         "name": playlist.name,
         "done": done,
-        "total": len(ex_ids),
+        "total": len(served_ids),
         "is_adaptive": bool(playlist.is_adaptive),
         "last_score_pct": last_score_pct,
         "url": url,
@@ -318,7 +293,8 @@ def _playlist_stats(user, playlist: Playlist) -> dict:
 
 def _playlist_stats_by_id(user, playlist_id: str) -> dict:
     playlist = Playlist.objects.get(id=playlist_id)
-    return _playlist_stats(user, playlist)
+    raw = _batch_playlist_data(user, [playlist])
+    return _playlist_stats(playlist, raw[playlist.pk])
 
 
 def _dedupe_playlists_by_name(playlists: list[Playlist], user) -> list[Playlist]:
@@ -614,6 +590,7 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
             user,
         )
         explicit_unit_tag = f"unit:{unit_n}"
+        raw_by_pk = _batch_playlist_data(user, matching_playlists)
 
         # Build a map: skill_tag -> [playlist_stat_dict, ...]
         tag_to_playlists: dict[str, list[dict]] = {tag: [] for tag in unit_tags}
@@ -629,7 +606,7 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
                     primary_tag = unit_tags[0]
             if primary_tag is None:
                 continue
-            stats = _playlist_stats(user, playlist)
+            stats = _playlist_stats(playlist, raw_by_pk[playlist.pk])
             tag_to_playlists[primary_tag].append(stats)
 
         # Sort playlists within each skill card by name for stable ordering
