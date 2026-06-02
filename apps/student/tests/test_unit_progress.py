@@ -16,6 +16,7 @@ from django.test import TestCase
 from apps.exercises.models import (
     Exercise,
     ExercisePlaylistOrdered,
+    IdentificationAttempt,
     PerformanceData,
     Playlist,
     StudentSkillMastery,
@@ -97,6 +98,43 @@ def _make_pd(user: User, playlist: Playlist, data: list) -> PerformanceData:
     pd.data = data
     pd.save()
     return pd
+
+
+def _make_ident(user: User, playlist: Playlist, exercise: Exercise, score: dict) -> IdentificationAttempt:
+    return IdentificationAttempt.objects.create(
+        user=user, playlist=playlist, exercise=exercise,
+        is_page_submit=True, score=score,
+    )
+
+
+# Monotonic pk source so every seeded row across batches is unique.
+_PK_SEQ = [100000]
+
+def _next_pk() -> int:
+    _PK_SEQ[0] += 1
+    return _PK_SEQ[0]
+
+
+def _seed_unit_playlists(author: User, student: User, unit_n: int, count: int, primary_tag: str) -> list:
+    """Create `count` public playlists for the unit, each with one exercise, a
+    PerformanceData row (score 1/1) and a completed IdentificationAttempt.
+
+    Unique pks AND unique names so _dedupe_playlists_by_name keeps them all.
+    Returns the created playlists.
+    """
+    playlists = []
+    for _ in range(count):
+        ex = _make_exercise(_next_pk(), author)
+        pl = _make_playlist(
+            _next_pk(), author,
+            skill_tags=[primary_tag, f"unit:{unit_n}"],
+            name=f"PL-{unit_n}-{_PK_SEQ[0]}",
+        )
+        ExercisePlaylistOrdered.objects.create(playlist=pl, exercise=ex, order=0)
+        _make_pd(student, pl, [{"id": ex.id, "score_numerator": 1, "score_denominator": 1}])
+        _make_ident(student, pl, ex, {"correct": 1, "incorrect": 0, "unanswered": 0})
+        playlists.append(pl)
+    return playlists
 
 
 # ---------------------------------------------------------------------------
