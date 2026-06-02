@@ -649,6 +649,16 @@ class Playlist(ClonableModelMixin, BaseContentModel):
             .values_list("exercise__id", flat=True)
         )
 
+    def prime_untransposed_exercises_ids(self, exercise_ids):
+        """Seed the untransposed_exercises_ids cached_property without a query.
+
+        Callers MUST pass exactly what the property would compute: the list of
+        string exercise ids ordered by ExercisePlaylistOrdered.order. Used by
+        batch-fetch paths (see apps.student.unit_progress._batch_playlist_data)
+        to avoid a per-playlist query.
+        """
+        self.__dict__["untransposed_exercises_ids"] = list(exercise_ids)
+
     @property
     def exercise_list(self):
         if not self.is_transposed():

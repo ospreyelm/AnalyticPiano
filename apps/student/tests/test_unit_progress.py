@@ -16,6 +16,7 @@ from django.test import TestCase
 from apps.exercises.models import (
     Exercise,
     ExercisePlaylistOrdered,
+    IdentificationAttempt,
     PerformanceData,
     Playlist,
     StudentSkillMastery,
@@ -97,6 +98,43 @@ def _make_pd(user: User, playlist: Playlist, data: list) -> PerformanceData:
     pd.data = data
     pd.save()
     return pd
+
+
+def _make_ident(user: User, playlist: Playlist, exercise: Exercise, score: dict) -> IdentificationAttempt:
+    return IdentificationAttempt.objects.create(
+        user=user, playlist=playlist, exercise=exercise,
+        is_page_submit=True, score=score,
+    )
+
+
+# Monotonic pk source so every seeded row across batches is unique.
+_PK_SEQ = [100000]
+
+def _next_pk() -> int:
+    _PK_SEQ[0] += 1
+    return _PK_SEQ[0]
+
+
+def _seed_unit_playlists(author: User, student: User, unit_n: int, count: int, primary_tag: str) -> list:
+    """Create `count` public playlists for the unit, each with one exercise, a
+    PerformanceData row (score 1/1) and a completed IdentificationAttempt.
+
+    Unique pks AND unique names so _dedupe_playlists_by_name keeps them all.
+    Returns the created playlists.
+    """
+    playlists = []
+    for _ in range(count):
+        ex = _make_exercise(_next_pk(), author)
+        pl = _make_playlist(
+            _next_pk(), author,
+            skill_tags=[primary_tag, f"unit:{unit_n}"],
+            name=f"PL-{unit_n}-{_PK_SEQ[0]}",
+        )
+        ExercisePlaylistOrdered.objects.create(playlist=pl, exercise=ex, order=0)
+        _make_pd(student, pl, [{"id": ex.id, "score_numerator": 1, "score_denominator": 1}])
+        _make_ident(student, pl, ex, {"correct": 1, "incorrect": 0, "unanswered": 0})
+        playlists.append(pl)
+    return playlists
 
 
 # ---------------------------------------------------------------------------
@@ -674,3 +712,68 @@ class MasteryChallengeRedesignTests(TestCase):
         )
 
         self.assertTrue(_check_challenge_mastery(self.student, "treble"))
+
+
+class UnitProgressQueryBudgetTests(TestCase):
+    QUERY_BUDGET = 5  # steady-state; constant in playlist count after batching skill lookups
+
+    def setUp(self):
+        self.author = _make_author(60001)
+        self.student = _make_student(60002)
+
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
+    @patch(
+        "apps.student.unit_progress.TaxonomyReader.get_skill_label",
+        side_effect=lambda tag: tag.replace("_", " ").title(),
+    )
+    def test_query_count_constant_in_playlist_count(self, *_mocks):
+        _seed_unit_playlists(self.author, self.student, "2", 20, "Note_Names")
+        with self.assertNumQueries(self.QUERY_BUDGET):
+            get_unit_progress_data(self.student, "2")
+
+        # Doubling playlists must NOT increase the count.
+        _seed_unit_playlists(self.author, self.student, "2", 20, "Note_Names")  # 40 total
+        with self.assertNumQueries(self.QUERY_BUDGET):
+            get_unit_progress_data(self.student, "2")
+
+
+class BatchPlaylistDataParityTests(TestCase):
+    def setUp(self):
+        self.author = _make_author(61001)
+        self.student = _make_student(61002)
+
+    def test_served_ids_match_serving_helper(self):
+        from apps.student.player_progression import get_ordered_exercise_ids_for_serving
+        from apps.student.unit_progress import _batch_playlist_data
+
+        pl = _make_playlist(
+            _next_pk(), self.author,
+            skill_tags=["unit:4", "Interval_Specific"], name="U4-parity",
+        )
+        for order in range(10):
+            ex = _make_exercise(_next_pk(), self.author)
+            ExercisePlaylistOrdered.objects.create(playlist=pl, exercise=ex, order=order)
+
+        expected = get_ordered_exercise_ids_for_serving(self.student, pl)
+
+        # Fresh instance so the cached_property is not already populated by the
+        # call above (get_ordered_exercise_ids_for_serving cached it on `pl`).
+        pl_fresh = Playlist.objects.get(pk=pl.pk)
+        raw = _batch_playlist_data(self.student, [pl_fresh])
+        self.assertEqual(raw[pl.pk].served_exercise_ids, expected)
+        self.assertEqual(len(raw[pl.pk].served_exercise_ids), 6)  # truncated
+
+
+class PlaylistStatsPurityTests(TestCase):
+    def setUp(self):
+        self.author = _make_author(63001)
+        self.student = _make_student(63002)
+
+    def test_playlist_stats_does_no_db_io(self):
+        from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
+        pl = _seed_unit_playlists(self.author, self.student, "2", 1, "Note_Names")[0]
+        pl = Playlist.objects.get(pk=pl.pk)  # fetched instance, tags loaded
+        raw = _batch_playlist_data(self.student, [pl])
+        with self.assertNumQueries(0):
+            _playlist_stats(pl, raw[pl.pk])
