@@ -164,7 +164,10 @@ so `playlist.tags` does not lazy-load).
   `_playlist_stats_by_id`, `_batch_skill_levels` (replaces per-tag `_get_skill_level`
   calls in `bar_segments` and `skill_cards`).
 - `apps/student/tests/test_unit_progress.py` — new tests.
-- No model / migration changes. No infra.
+- `apps/exercises/models.py` — added `Playlist.prime_untransposed_exercises_ids(ids)`
+  helper method (no migration) so the batch fetch can seed the
+  `untransposed_exercises_ids` cached_property without poking `__dict__` from another module.
+- No migration changes. No infra.
 
 ## Out of scope (explicit)
 
