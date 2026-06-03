@@ -1067,18 +1067,10 @@ define([
           }
         }
 
-        console.log("[UMTO-DEBUG] parsed exercise:", {
-            type: exercise.type,
-            mode: exercise.mode,
-            analysisType: exercise.analysisType,
-            analysis: exercise.analysis
-        });
-
         if (exercise.type === "umto_chorale") {
           exercise.harmonizationTargets = definition.harmonizationTargets || [];
           var isIdent = exercise.mode === "identification" || exercise.mode === "chorale_identification";
           var isHarm = exercise.mode === "harmonization";
-          console.log("[UMTO-DEBUG] isIdent:", isIdent, "isHarm:", isHarm, "mode:", exercise.mode);
           if (isHarm) {
             // Harmonization: targets are pre-built by generate_harmonization command.
             exercise.problems = exercise.harmonizationTargets;

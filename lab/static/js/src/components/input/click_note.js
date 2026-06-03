@@ -196,7 +196,12 @@ define([
         }
         return;
       }
+      var prevOnset = this._activeTargetOnset();
       this._activeColumn = resolved.column;
+      // Moving to a new column clears the rejected-state overlay.
+      if (this.exerciseContext && resolved.column && resolved.column.onset !== prevOnset) {
+        this.exerciseContext._harmonizationRejected = null;
+      }
 
       var existing = -1;
       for (var i = 0; i < this._pending.length; i++) {
@@ -326,7 +331,22 @@ define([
       });
 
       var snapshot = ClickNoteLogic.buildCommitSnapshot(lockedMidi, this.getPendingMidi());
+      // Capture spellings + position before clearing, so the rejected-state render can show red notes.
+      var pendingForRejected = this._pending.slice();
+      var columnForRejected = this._activeColumn;
       ctx.gradeHarmonizationMidiSet(snapshot);
+      // If rejected state was set, attach spellings and position from the commit.
+      if (ctx._harmonizationRejected && pendingForRejected.length) {
+        ctx._harmonizationRejected.spellings = pendingForRejected.map(function (n) {
+          return { step: n.step, alter: n.alter || 0, octave: n.octave };
+        });
+        if (columnForRejected) {
+          ctx._harmonizationRejected.measureIndex = columnForRejected.measureIndex || 0;
+          ctx._harmonizationRejected.onset = typeof columnForRejected.onset === "number"
+            ? columnForRejected.onset - ((columnForRejected.measureIndex || 0) * (this.sheet && this.sheet._measureTotalTicks ? this.sheet._measureTotalTicks() : 4096))
+            : 0;
+        }
+      }
       this._pending = [];
       this._activeColumn = null;
       if (this.sheet) this.sheet.render();

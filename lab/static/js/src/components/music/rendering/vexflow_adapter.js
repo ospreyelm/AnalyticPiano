@@ -1093,6 +1093,7 @@ define([
       var harmonizationTargets = (opts && opts.harmonizationTargets) || null;
       var harmonizationRealization = (opts && opts.harmonizationRealization) || null;
       var harmonizationPending = (opts && opts.harmonizationPending) || null;
+      var harmonizationRejected = (opts && opts.harmonizationRejected) || null;
       // Build offset-keyed lookup so columns match targets by musical position,
       // not by coincidental array index.
       var harmonizationTargetByOffset = null;
@@ -1658,12 +1659,29 @@ define([
           }
         }
 
+        if (harmonizationRejected && harmonizationRejected.length) {
+          var rejectedInMeasure = harmonizationRejected.filter(function (e) {
+            return e.measureIndex === absoluteMeasureIndex;
+          });
+          if (rejectedInMeasure.length) {
+            var rejectedOverlay = buildHarmonizationOverlayVoice(
+              rejectedInMeasure,
+              measureDurations[measIdx] || fullMeasureTicks,
+              time,
+              keySignatureAlterations,
+              "#cc2200"
+            );
+            if (rejectedOverlay) {
+              trebleVoices.push(rejectedOverlay);
+            }
+          }
+        }
+
         // Add barlines at the end of each measure
         var isLastMeasureOfPiece = (absoluteMeasureIndex === score.measures.length - 1);
         // Standard intermediate barline is 'single'. Piece end is 'end'.
         var barType = isLastMeasureOfPiece ? 'end' : 'single';
         
-        console.log("[UMTO-DEBUG] rendering measure", absoluteMeasureIndex, "barType:", barType, "isLast:", isLastMeasureOfPiece);
 
         if (trebleStave) {
           trebleStave.setBegBarType(isFirstMeasure ? 'single' : 'none');
