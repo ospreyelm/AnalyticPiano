@@ -3,7 +3,7 @@
 var assert = require("assert");
 var Logic = require("./identification_label_layout_logic");
 
-function testPlacesKeyLabelLeftOfFirstSlot() {
+function testPlacesKeyLabelOnBeatSlot() {
   var position = Logic.getKeyLabelPosition({
     slotX: 448,
     slotY: 740,
@@ -12,8 +12,22 @@ function testPlacesKeyLabelLeftOfFirstSlot() {
     canvasHeight: 820,
   });
 
-  assert.strictEqual(position.x, 342);
-  assert.strictEqual(position.y, 768);
+  assert.strictEqual(position.x, 448);
+  assert.strictEqual(position.y, 774);
+}
+
+function testKeepsInitialKeyLabelLeftOfFirstSlot() {
+  var position = Logic.getKeyLabelPosition({
+    slotX: 448,
+    slotY: 740,
+    textWidth: 72,
+    canvasWidth: 2048,
+    canvasHeight: 820,
+    initial: true,
+  });
+
+  assert.strictEqual(position.x, 222);
+  assert.strictEqual(position.y, 774);
 }
 
 function testClampsKeyLabelInsideCanvas() {
@@ -29,7 +43,8 @@ function testClampsKeyLabelInsideCanvas() {
   assert.strictEqual(position.y, 750);
 }
 
-testPlacesKeyLabelLeftOfFirstSlot();
+testPlacesKeyLabelOnBeatSlot();
+testKeepsInitialKeyLabelLeftOfFirstSlot();
 testClampsKeyLabelInsideCanvas();
 
 console.log("identification_label_layout_logic tests passed");

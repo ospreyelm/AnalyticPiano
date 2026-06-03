@@ -40,6 +40,22 @@ python manage.py generate_harmonization --source EB16DF --author admin@example.c
 python manage.py render_harmonization_review --source EB57LQ
 ```
 
+**`generate_bach_unit_matrix`** — Efficient Bach generation path: imports each Riemenschneider/mode combination once, stamps requested unit tags, and builds each unit playlist from the shared pool.
+```
+python manage.py generate_bach_unit_matrix \
+  --riemenschneider 1-30 \
+  --units 9,10,11,12,14,16,17,18,19,20 \
+  --modes roman,figures,play,play_figures \
+  --author admin@example.com \
+  --public
+```
+
+**`deduplicate_bach_phrases`** — Audit duplicate Bach phrase rows for one author. Dry-run by default; pass `--execute` only after verifying playlist links are safe.
+```
+python manage.py deduplicate_bach_phrases --author admin@example.com
+python manage.py deduplicate_bach_phrases --author admin@example.com --execute
+```
+
 ---
 
 ### Pitch identification (Unit 1)
@@ -179,20 +195,19 @@ python manage.py import_compendium_cadences --preview --unit 17 --keys C G
 python manage.py generate_clausulae_b1 --author admin@example.com --public
 ```
 
-**`generate_roman_from_clausulae`** — Generate `roman_from_clausulae` exercises: Roman numeral identification (I–V–I) over clausula authentic cadences. Student-friendly descriptions, no Branch B tags. Analysis slices have `is_target:true` and `roman_numeral` populated.
+**`generate_roman_from_clausulae`** — Generate `roman_from_clausulae` exercises: Roman numeral identification over standard Clausulae material. Unit 9 emits authentic cadences (`I–V–I`); Unit 10 emits first-inversion cadences (`I6–vii°6–I6`). Student-friendly descriptions, no Branch B tags. Analysis slices have `is_target:true` and `roman_numeral` populated.
 ```
 python manage.py generate_roman_from_clausulae \
+  --unit 10 \
   --author admin@example.com \
-  --voices 3 4 \
-  --cadence simple compound \
-  --unit 9 \
+  --voices 3 \
   --public --overwrite
 ```
 
-**`generate_harmonization_from_clausulae`** — Generate figured-bass harmonization exercises from standard Clausulae cadences. Uses the existing harmonization path: bass is locked, figured-bass analysis slices drive `harmonizationTargets`, and students play the upper voices.
+**`generate_harmonization_from_clausulae`** — Generate figured-bass harmonization exercises from standard Clausulae material. Unit 9 emits authentic cadences (`5/3–5/3–5/3`); Unit 10 emits first-inversion cadences (`6–6–6`). Uses the existing harmonization path: bass is locked, figured-bass analysis slices drive `harmonizationTargets`, and students play the upper voices.
 ```
 python manage.py generate_harmonization_from_clausulae \
-  --unit 9 \
+  --unit 10 \
   --author admin@example.com \
   --voices 3 \
   --public --overwrite

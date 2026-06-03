@@ -148,19 +148,28 @@ python3 manage.py generate_harmonization_from_clausulae --unit 9 --author "$AUTH
 
 ## Bach Unit Playlists
 
-The command mode remains `roman`, but generated playlist names display it as
-`Roman Numeral Analysis`.
-
-Generate Riemenschneider 1-30 for Roman, figured bass, play, and play-with-
-figures modes:
+Generate Riemenschneider 1-30 for Roman, figured bass, play, and play-with-figures modes efficiently across all units using the matrix command:
 
 ```bash
-for unit in 9 10 11 12 14 16 17 18 19 20; do
-  python3 manage.py create_unit_playlist --unit "$unit" --riemenschneider 1-30 --author "$AUTHOR" --mode roman --public --overwrite
-  python3 manage.py create_unit_playlist --unit "$unit" --riemenschneider 1-30 --author "$AUTHOR" --mode figures --public --overwrite
-  python3 manage.py create_unit_playlist --unit "$unit" --riemenschneider 1-30 --author "$AUTHOR" --mode play --public --overwrite
-  python3 manage.py create_unit_playlist --unit "$unit" --riemenschneider 1-30 --author "$AUTHOR" --mode play_figures --public --overwrite
-done
+python3 manage.py generate_bach_unit_matrix \
+  --riemenschneider 1-30 \
+  --units 9,10,11,12,14,16,17,18,19,20 \
+  --modes roman,figures,play,play_figures \
+  --author "$AUTHOR" \
+  --public
+```
+
+To rebuild playlists from existing database rows only (skipping the music21 parse loop and database writes, useful for playlist tuning):
+
+```bash
+python3 manage.py generate_bach_unit_matrix \
+  --riemenschneider 1-30 \
+  --units 9,10,11,12,14,16,17,18,19,20 \
+  --modes roman,figures,play,play_figures \
+  --author "$AUTHOR" \
+  --public \
+  --playlist-only \
+  --skip-refresh
 ```
 
 Note: the figured-bass command mode is `figures`, not `figured_bass`.
@@ -218,3 +227,13 @@ and restart/redeploy the app.
   `&` was treated as a shell operator.
 - Exercises appear but playlists do not yet: some generators create exercise
   rows first and wire playlists near the end.
+
+## GitHub Actions Automation
+
+A workflow at `.github/workflows/generate-neon-content.yml` allows running the Bach unit matrix generation directly from GitHub Actions on a manual dispatch.
+
+For the workflow to function:
+1. Store the direct Neon connection string in GitHub repository secrets as `NEON_DATABASE_URL`.
+2. Navigate to **Actions** -> **Generate Neon Content** -> **Run workflow**.
+3. Provide the parameters (Riemenschneider range, target units, and modes) and click run.
+

@@ -106,6 +106,14 @@ def test_harmonization_payload_keeps_bass_in_locked_voice_slot():
     assert [item["pitch"]["step"] for item in bass_voices[1]["items"]] == ["C", "G"]
 
 
+def test_unit9_target_keys_include_expanded_major_key_set():
+    from apps.exercises.management.commands.generate_harmonization_from_clausulae import (
+        TARGET_KEYS,
+    )
+
+    assert TARGET_KEYS == ["C", "F", "G", "D", "Bb", "Eb", "E", "Ab", "A"]
+
+
 class _FakePitch:
     def __init__(self, step, octave, midi, accidental=None):
         self.step = step
@@ -135,6 +143,11 @@ def _fake_key_realize(triple, key, octave):
             _FakeNote("E", octave, 12 * (octave + 1) + 4),
             _FakeNote("D", octave, 12 * (octave + 1) + 2),
             _FakeNote("C", octave, 12 * (octave + 1)),
+        ],
+        (4, 3, 2): [
+            _FakeNote("G", octave, 12 * (octave + 1) + 7),
+            _FakeNote("F", octave, 12 * (octave + 1) + 5),
+            _FakeNote("E", octave, 12 * (octave + 1) + 4),
         ],
         (0, 4, 0): [
             _FakeNote("C", octave, 12 * (octave + 1)),
@@ -201,7 +214,7 @@ class GenerateHarmonizationFromClausulaeCommandTests(TestCase):
         assert len(exercise.data["harmonizationTargets"]) == 3
 
         playlist = Playlist.objects.get(
-            name="Unit 9 - Authentic Cadences (Harmonization) 3-voice",
+            name="Unit 9 - Authentic Cadences (Harmonization)",
             authored_by=self.user,
         )
         assert ExercisePlaylistOrdered.objects.filter(playlist=playlist).count() == 1
@@ -247,10 +260,142 @@ class GenerateHarmonizationFromClausulaeCommandTests(TestCase):
         )
         assert exercises.count() == 1
         playlist = Playlist.objects.get(
-            name="Unit 9 - Authentic Cadences (Harmonization) 3-voice",
+            name="Unit 9 - Authentic Cadences (Harmonization)",
             authored_by=self.user,
         )
         assert ExercisePlaylistOrdered.objects.filter(playlist=playlist).count() == 1
+
+    def test_command_uses_student_facing_harmonization_names(self):
+        combo = (
+            ("Discant", 0, (0, 6, 0)),
+            ("Tenor", 3, (2, 1, 2)),
+            ("Bass", 0, (0, 4, 0)),
+        )
+
+        with patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae._CLAUSULAE_AVAILABLE",
+            True,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.enumerate_simple",
+            return_value=[combo],
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.key_realize",
+            side_effect=_fake_key_realize,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.TARGET_KEYS",
+            ["C"],
+        ):
+            call_command(
+                "generate_harmonization_from_clausulae",
+                author="admin@example.com",
+                unit=9,
+                voices="3",
+                overwrite=True,
+            )
+
+        from apps.exercises.models import Exercise, Playlist
+
+        playlist = Playlist.objects.get(
+            name="Unit 9 - Authentic Cadences (Harmonization)",
+            authored_by=self.user,
+        )
+        exercise = Exercise.objects.get(
+            authored_by=self.user,
+            skill_tags__contains=["exercise_type:harmonization_from_clausulae"],
+        )
+        assert "3-voice" not in playlist.name
+        assert "3-part" not in exercise.description
+        assert exercise.description == "Harmonization Cadence in C"
+
+    def test_command_renames_existing_legacy_voice_count_playlist(self):
+        from apps.exercises.models import Playlist
+
+        combo = (
+            ("Discant", 0, (0, 6, 0)),
+            ("Tenor", 3, (2, 1, 2)),
+            ("Bass", 0, (0, 4, 0)),
+        )
+        legacy = Playlist.objects.create(
+            name="Unit 9 - Authentic Cadences (Harmonization) 3-voice",
+            authored_by=self.user,
+            is_public=True,
+        )
+
+        with patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae._CLAUSULAE_AVAILABLE",
+            True,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.enumerate_simple",
+            return_value=[combo],
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.key_realize",
+            side_effect=_fake_key_realize,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.TARGET_KEYS",
+            ["C"],
+        ):
+            call_command(
+                "generate_harmonization_from_clausulae",
+                author="admin@example.com",
+                unit=9,
+                voices="3",
+                overwrite=True,
+            )
+
+        legacy.refresh_from_db()
+        assert legacy.name == "Unit 9 - Authentic Cadences (Harmonization)"
+        assert not Playlist.objects.filter(
+            name="Unit 9 - Authentic Cadences (Harmonization) 3-voice",
+            authored_by=self.user,
+        ).exists()
+
+    def test_unit10_command_generates_first_inversion_harmonization_profile(self):
+        with patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae._CLAUSULAE_AVAILABLE",
+            True,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.key_realize",
+            side_effect=_fake_key_realize,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.TARGET_KEYS",
+            ["C"],
+        ):
+            call_command(
+                "generate_harmonization_from_clausulae",
+                author="admin@example.com",
+                unit=10,
+                voices="3",
+                overwrite=True,
+            )
+
+        from apps.exercises.models import Exercise, Playlist
+
+        playlist = Playlist.objects.get(
+            name="Unit 10 - First Inversions (Harmonization)",
+            authored_by=self.user,
+        )
+        exercise = Exercise.objects.get(
+            authored_by=self.user,
+            skill_tags__contains=["exercise_type:harmonization_from_clausulae"],
+        )
+        assert playlist.skill_tags == [
+            "exercise_type:harmonization_from_clausulae",
+            "unit:10",
+            "Inversions_First",
+        ]
+        assert exercise.description == "First-Inversion Cadence in C"
+        assert "Inversions_First" in exercise.skill_tags
+        assert "Cadence_Perfect_Authentic" not in exercise.skill_tags
+
+        analysis = exercise.data["score"]["umto"]["analysis"]
+        assert [s["content"]["figured_bass"] for s in analysis] == ["6", "6", "6"]
+        assert [s["content"]["raw_figured_bass"] for s in analysis] == [
+            "6/3",
+            "6/3",
+            "6/3",
+        ]
+        targets = exercise.data["harmonizationTargets"]
+        assert [t["lockedVoices"]["B"]["midi"] for t in targets] == [52, 50, 52]
 
     def test_student_context_preserves_figured_bass_analysis_type(self):
         from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist

@@ -26,6 +26,16 @@ CATALOG = [
             "Render a visual review page for a harmonization exercise.",
             "python manage.py render_harmonization_review --source EB57LQ",
         ),
+        (
+            "generate_bach_unit_matrix",
+            "Import Bach Riemenschneider phrases once per mode, then project them into per-unit playlists.",
+            "python manage.py generate_bach_unit_matrix --riemenschneider 1-30 --units 9,10,11,12,14,16,17,18,19,20 --modes roman,figures,play,play_figures --author admin@example.com --public",
+        ),
+        (
+            "deduplicate_bach_phrases",
+            "Audit or delete unreferenced duplicate Bach phrase rows after switching to import-once generation.",
+            "python manage.py deduplicate_bach_phrases --author admin@example.com",
+        ),
     ]),
     ("Pitch identification (Unit 1)", [
         (
@@ -106,9 +116,14 @@ CATALOG = [
             "python manage.py generate_clausulae_b1 --author admin@example.com --public",
         ),
         (
+            "generate_roman_from_clausulae",
+            "Generate Roman numeral identification exercises from standard Clausulae cadences.",
+            "python manage.py generate_roman_from_clausulae --unit 10 --author admin@example.com --voices 3 --public --overwrite",
+        ),
+        (
             "generate_harmonization_from_clausulae",
             "Generate figured-bass harmonization exercises from standard Clausulae cadences.",
-            "python manage.py generate_harmonization_from_clausulae --unit 9 --author admin@example.com --voices 3 --public --overwrite",
+            "python manage.py generate_harmonization_from_clausulae --unit 10 --author admin@example.com --voices 3 --public --overwrite",
         ),
     ]),
     ("Playlists and curriculum wiring", [

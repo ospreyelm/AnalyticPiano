@@ -95,6 +95,9 @@ python manage.py generate_harmonization --source <exercise_id> --author <email> 
 
 python manage.py generate_harmonization_from_clausulae --unit 9 --author <email> \
   --voices 3 --public --overwrite
+
+python manage.py generate_harmonization_from_clausulae --unit 10 --author <email> \
+  --voices 3 --public --overwrite
 ```
 
 **Key files:** `harmonization_grader_logic.js`, `harmonization_targets_logic.js`, `harmonization_realization_logic.js`, `apps/exercises/harmonization/targets.py`, `apps/exercises/management/commands/generate_harmonization.py`, `apps/exercises/management/commands/generate_harmonization_from_clausulae.py`

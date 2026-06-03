@@ -24,8 +24,38 @@ _CANONICAL_MAP = {
     "unit:18_neapolitan_sixth":           "Neapolitan_Sixth",
     "unit:18_augmented_sixth":            "Augmented_Sixth",
 }
+def parse_riem_and_measures(description: str) -> tuple[int | None, int | None, int | None]:
+    if not description:
+        return None, None, None
+    m = re.search(r"R(\d+)\s*-\s*Phrase\s*\d+\s*\(mm\.(\d+)-(\d+)\)", description)
+    if m:
+        return int(m.group(1)), int(m.group(2)), int(m.group(3))
+    return None, None, None
 
-def analyze_chunk_skills(chunk, chunk_key):
+
+def check_wir_key_change(description: str) -> bool:
+    riem, start_m, end_m = parse_riem_and_measures(description)
+    if riem is None or start_m is None or end_m is None:
+        return False
+    from apps.exercises.utils import wir_corpus
+    if not wir_corpus.has_chorale(riem):
+        return False
+    chorale = wir_corpus._CHORALES.get(str(riem))
+    if not chorale:
+        return False
+    keys = []
+    for entry in chorale.get("labels", []):
+        m = entry.get("measure")
+        if m is not None and start_m <= m <= end_m:
+            lk = entry.get("local_key")
+            if lk:
+                keys.append(lk)
+    if not keys:
+        return False
+    return len(set(keys)) > 1
+
+
+def analyze_chunk_skills(chunk, chunk_key, description=None):
     """
     Analyzes a music chunk and returns a list of pedagogical tags (unit:X_...)
     and a complexity rating (1-51, based on the curriculum unit).
@@ -39,6 +69,29 @@ def analyze_chunk_skills(chunk, chunk_key):
     skills.add("unit:2_rhythm")
     skills.add("unit:3_key_signature")
     skills.add("unit:4_interval_quality")
+
+    # Quality Exclusions checks
+    has_interior_rests = False
+    for part in chunk.parts:
+        elements = list(part.flatten().notesAndRests)
+        if not elements:
+            continue
+        note_indices = [i for i, el in enumerate(elements) if el.isNote or el.isChord]
+        if not note_indices:
+            continue
+        for i in range(note_indices[0] + 1, note_indices[-1]):
+            if elements[i].isRest:
+                has_interior_rests = True
+                break
+        if has_interior_rests:
+            break
+
+    if not has_interior_rests:
+        skills.add("no_interior_rests")
+
+    if description:
+        if not check_wir_key_change(description):
+            skills.add("no_key_change")
     
     # 1. Chord-by-Chord Analysis
     chordified = chunk.chordify()

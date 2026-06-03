@@ -1,0 +1,67 @@
+name: Generate Neon Content
+
+on:
+  workflow_dispatch:
+    inputs:
+      author:
+        description: "Author email"
+        required: true
+        default: "avnerdorman@gmail.com"
+      riemenschneider:
+        description: "Riemenschneider range"
+        required: true
+        default: "1-30"
+      units:
+        description: "Comma-separated units"
+        required: true
+        default: "9,10,11,12,14,16,17,18,19,20"
+      modes:
+        description: "Comma-separated modes"
+        required: true
+        default: "roman,figures,play,play_figures"
+      playlist_only:
+        description: "Only rebuild playlists from existing rows"
+        type: boolean
+        required: true
+        default: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DJANGO_SETTINGS_MODULE: harmony.settings.common
+      DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+         # Ignore local requirements warnings
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify database
+        run: |
+          python manage.py shell -c "from django.db import connection; c=connection.cursor(); c.execute('select 1'); print(c.fetchone())"
+
+      - name: Migrate
+        run: python manage.py migrate
+
+      - name: Generate Bach unit matrix
+        run: |
+          ARGS=""
+          if [ "${{ inputs.playlist_only }}" = "true" ]; then
+            ARGS="--playlist-only --skip-refresh"
+          fi
+          python manage.py generate_bach_unit_matrix \
+            --riemenschneider "${{ inputs.riemenschneider }}" \
+            --units "${{ inputs.units }}" \
+            --modes "${{ inputs.modes }}" \
+            --author "${{ inputs.author }}" \
+            --public \
+            $ARGS

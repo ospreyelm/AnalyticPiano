@@ -18,9 +18,9 @@
     var textWidth = Math.max(0, typeof opts.textWidth === "number" ? opts.textWidth : 0);
     var canvasWidth = typeof opts.canvasWidth === "number" ? opts.canvasWidth : null;
     var canvasHeight = typeof opts.canvasHeight === "number" ? opts.canvasHeight : null;
-    var gap = Math.max(100, textWidth / 2 + 70);
+    var initial = opts.initial === true;
     var minX = textWidth / 2 + 8;
-    var x = slotX - gap;
+    var x = initial ? slotX - Math.max(220, textWidth / 2 + 190) : slotX;
 
     if (x < minX) x = minX;
     if (canvasWidth !== null) {
@@ -28,7 +28,7 @@
       if (x > maxX) x = maxX;
     }
 
-    var y = slotY + 28;
+    var y = slotY + 34;
     if (canvasHeight !== null) {
       y = Math.min(y, canvasHeight - 10);
     }
