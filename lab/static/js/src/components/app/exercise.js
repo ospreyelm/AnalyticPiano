@@ -166,7 +166,7 @@ define([
     if (models.exerciseContext._isIdentificationExercise && models.exerciseContext._isIdentificationExercise()) {
       if (definition.reviewMode && definition.reviewAnswers) {
         models.exerciseGrader.answers = _.clone(definition.reviewAnswers);
-      } else if (definition.exerciseId) {
+      } else if (definition.exerciseId && !(definition.isChoraleIdentification && definition.isChoraleIdentification())) {
         models.exerciseContext.restoreIdentState(definition.exerciseId);
       }
     }
