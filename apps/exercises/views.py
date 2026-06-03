@@ -296,14 +296,14 @@ def identification_answers_view(request):
         exercise_id = request.GET.get("exercise_id")
         if not exercise_id:
             return JsonResponse({})
-        attempt = (
-            IdentificationAttempt.objects.filter(
-                user=request.user,
-                exercise__id=exercise_id,
-            )
-            .order_by("-submitted_at")
-            .first()
+        qs = IdentificationAttempt.objects.filter(
+            user=request.user,
+            exercise__id=exercise_id,
         )
+        playlist_id = request.GET.get("playlist_id")
+        if playlist_id:
+            qs = qs.filter(playlist__id=playlist_id)
+        attempt = qs.order_by("-submitted_at").first()
         if not attempt:
             return JsonResponse({})
         return JsonResponse({
