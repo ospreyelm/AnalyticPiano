@@ -113,6 +113,7 @@ define([
     this.harmonizationVLScore = null;
     this.harmonizationTier = null;
     this._harmonizationActiveMidiOverride = null;
+    this._harmonizationRejected = null; // { midi, spellings, measureIndex, onset, reasons } — cleared on next column
 
     _.bindAll(this, ["grade", "triggerTimer", "validateGradingAlignment"]);
 
@@ -210,12 +211,28 @@ define([
       }
       var matchResult = HarmonizationGraderLogic.harmonizationMatch(targets[ptr] || {}, activeMidi);
       if (matchResult.state === "correct") {
+        this._harmonizationRejected = null;
         this.acceptedHarmonizationSonorities.push({
           midi: activeMidi.slice(),
           targetIndex: ptr,
           ts: Date.now(),
         });
         this._harmonizationPointer = ptr + 1;
+      } else if (matchResult.state === "incorrect") {
+        var tgt = targets[ptr] || {};
+        var offsetQb = tgt.offset || 0;
+        var beatsPerMeasure = 4; // quarter-beat denominator; most exercises are 4/4
+        var mIdx = Math.floor(offsetQb / beatsPerMeasure);
+        var onsetWithinMeasure = Math.round((offsetQb - mIdx * beatsPerMeasure) * 1024);
+        this._harmonizationRejected = {
+          midi: activeMidi.slice(),
+          spellings: null, // populated by click_note._commit for click path
+          measureIndex: mIdx,
+          onset: onsetWithinMeasure,
+          reasons: matchResult.reasons,
+          target: tgt,
+        };
+        this._emitHarmonizationIncorrectFeedback(matchResult);
       }
       var allDone = this._harmonizationPointer >= targets.length && targets.length > 0;
       return {
@@ -362,6 +379,19 @@ define([
       } finally {
         this._harmonizationActiveMidiOverride = null;
       }
+    },
+    _emitHarmonizationIncorrectFeedback: function (matchResult) {
+      if (!this.feedback) return;
+      var reasons = matchResult.reasons || [];
+      var feedbackId = "harmonization.grade.incorrect";
+      if (reasons.indexOf("wrong_bass") !== -1) {
+        feedbackId = "harmonization.grade.incorrect.wrong_inversion";
+      } else if (reasons.indexOf("illegal_pc") !== -1) {
+        feedbackId = "harmonization.grade.incorrect.wrong_quality";
+      }
+      var canvas = document.querySelector("#staffwrapper canvas, canvas");
+      var anchorRect = canvas ? canvas.getBoundingClientRect() : { top: 200, left: 100, height: 0 };
+      this.feedback.emit(feedbackId, { anchorRect: anchorRect });
     },
     /**
      * Debugging helper to ensure played MIDI notes match the UMTO grading targets.

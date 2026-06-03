@@ -188,7 +188,6 @@ define([
       var definition = this.exerciseContext.getDefinition();
       var isIdent = (definition.isIdentification && definition.isIdentification()) ||
              (definition.isChoraleIdentification && definition.isChoraleIdentification());
-      console.log("[ID] _isIdentificationLikeExercise result:", isIdent, "type:", definition.getType());
       return isIdent;
     },
     _isChoraleIdentificationExercise: function () {
@@ -827,11 +826,9 @@ define([
       var problems = this.exerciseContext.getVisibleProblems
         ? this.exerciseContext.getVisibleProblems()
         : (definition.getProblems ? definition.getProblems() : []);
-      console.log("[ID] _getIdentificationSlots problems count:", problems.length);
       if ((this._isChoraleIdentificationExercise() || definition.getScore()) && !_.isEmpty(this._identWindowLayout)) {
         var layout = this._identWindowLayout || {};
         var layoutByOnset = this._identWindowLayoutByOnset || {};
-        console.log("[ID] UMTO layout keys:", Object.keys(layout));
         return _.map(problems, function (problem, idx) {
           var slot = null;
           if (problem && typeof problem.windowIndex === "number" && layout[problem.windowIndex]) {
@@ -851,10 +848,8 @@ define([
       }
 
       var noteStaves = this.staves.slice(1);
-      console.log("[ID] noteStaves count:", noteStaves.length);
       return _.map(noteStaves, function (treble, idx) {
         var bass = treble.connectedStave;
-        console.log("[ID] Slot", idx, "bass:", !!bass, "bass.staffSegment:", !!(bass && bass.staffSegment));
         if (!bass || !bass.staffSegment) {
           return null;
         }
@@ -1465,6 +1460,21 @@ define([
       }];
     },
 
+    _buildHarmonizationRejected: function () {
+      var ctx = this.exerciseContext;
+      var rejected = ctx && ctx._harmonizationRejected;
+      if (!rejected || !rejected.spellings || !rejected.spellings.length) return null;
+      var midiNotes = rejected.midi || [];
+      if (!midiNotes.length) return null;
+      return [{
+        measureIndex: rejected.measureIndex || 0,
+        onset: Math.max(0, rejected.onset || 0),
+        durationTicks: 2048,
+        midiNotes: midiNotes,
+        spellings: rejected.spellings,
+      }];
+    },
+
     _measureTotalTicks: function () {
       var definition = this.exerciseContext.getDefinition();
       var score = definition.getScore ? definition.getScore() : null;
@@ -1999,7 +2009,6 @@ define([
             );
           }
 
-          console.log("[ID] Calling VexFlowAdapter.render with score:", score, "analyzeConfig:", analyzeConfig);
           VexFlowAdapter.render(score, this.vexRenderer, {
             width: canvas.width,
             height: canvas.height,
@@ -2024,6 +2033,7 @@ define([
             harmonizationTargets: isHarmonization ? (definition.getHarmonizationTargets ? definition.getHarmonizationTargets() : []) : null,
             harmonizationRealization: isHarmonization ? harmonizationRealizationPayload : null,
             harmonizationPending: isHarmonization ? self._buildHarmonizationPending() : null,
+            harmonizationRejected: isHarmonization ? self._buildHarmonizationRejected() : null,
             lockedVoices: isHarmonization && definition.exercise && definition.exercise.score && definition.exercise.score.umto
               ? (definition.exercise.score.umto.metadata.locked_voices || ["B"])
               : null,
@@ -2754,6 +2764,10 @@ define([
         if (this._inputSourceMode === "click") {
           return;
         }
+        // New noteOn clears any red rejected-state overlay from a prior incorrect attempt.
+        if (state === "on" && this.exerciseContext._harmonizationRejected) {
+          this.exerciseContext._harmonizationRejected = null;
+        }
         var ctx = this.exerciseContext;
         var tracker = ctx._harmonizationHeldTracker;
         if (tracker) {
@@ -2871,6 +2885,7 @@ define([
         }
         ctx._harmonizationPointer = 0;
         ctx.acceptedHarmonizationSonorities = [];
+        ctx._harmonizationRejected = null;
         ctx.harmonizationVLScore = null;
         ctx.harmonizationTier = null;
       }
