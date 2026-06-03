@@ -1,5 +1,5 @@
 /* apps/student/static/student/student.css */
-@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Montserrat:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Montserrat:wght@400;600;700&display=swap');
 
 :root {
   --teal: #2a7e94;
@@ -17,7 +17,7 @@
   --warning-pale: #fef3c7;
   --danger: #dc3545;
   --radius: 5px;
-  --font-ui: 'Architects Daughter', cursive;
+  --font-ui: 'Nunito', sans-serif;
   --font-body: 'Montserrat', sans-serif;
 }
 
