@@ -210,7 +210,7 @@ define([
         };
       }
       var matchResult = HarmonizationGraderLogic.harmonizationMatch(targets[ptr] || {}, activeMidi);
-      if (matchResult.state === "correct") {
+      if (matchResult.state === "correct" || matchResult.state === "partial") {
         this._harmonizationRejected = null;
         this.acceptedHarmonizationSonorities.push({
           midi: activeMidi.slice(),
