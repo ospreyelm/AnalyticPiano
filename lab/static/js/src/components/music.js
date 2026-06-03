@@ -347,10 +347,14 @@ define([
           scex.inputChords.staffDistribution = newData.staffDistribution;
 
           // Reset stateful grading modes before creating display and exercise chords
-          if ((scex.definition.isChorale && scex.definition.isChorale()) || 
+          if ((scex.definition.isChorale && scex.definition.isChorale()) ||
               (scex.definition.isChoraleIdentification && scex.definition.isChoraleIdentification())) {
             if (typeof sheetComponent.initChoraleMode === "function") {
               sheetComponent.initChoraleMode();
+            }
+            // Clear prior answers so old labels don't flash on the new exercise.
+            if (scex.grader && typeof scex.grader.reset === "function") {
+              scex.grader.reset();
             }
           }
 
@@ -375,7 +379,9 @@ define([
         }
 
         // Restore identification state for new exercise (from cache or server)
-        if (scex._isIdentificationExercise && scex._isIdentificationExercise()) {
+        // Skip for chorale identification — answer indices are targeting-dependent and unstable.
+        if (scex._isIdentificationExercise && scex._isIdentificationExercise() &&
+            !(scex.definition.isChoraleIdentification && scex.definition.isChoraleIdentification())) {
           var newExerciseId = newData.exerciseId;
           scex.restoreIdentState(newExerciseId);
         }
