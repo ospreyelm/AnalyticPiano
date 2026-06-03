@@ -26,7 +26,8 @@ class SkillsAnalyzerTests(unittest.TestCase):
         skills, complexity = analyze_chunk_skills(chunk, 'C')
         self.assertIn('Diatonic_Triads', skills)
         self.assertIn('Cadence_Perfect_Authentic', skills)
-        self.assertEqual(complexity, 9)
+        # IV introduces unit:11_diatonic_predominant, so complexity leads at 11.
+        self.assertEqual(complexity, 11)
 
     def test_inversions(self):
         # C Major: I6 - V6/4
@@ -44,7 +45,8 @@ class SkillsAnalyzerTests(unittest.TestCase):
         chunk = self.build_chunk([['G4', 'B4', 'D5', 'F5']])
         skills, complexity = analyze_chunk_skills(chunk, 'C')
         self.assertIn('Dominant_Seventh', skills)
-        self.assertEqual(complexity, 9)
+        # containsSeventh() adds unit:14_diatonic_sevenths, so complexity leads at 14.
+        self.assertEqual(complexity, 14)
 
     def test_secondary_dominant(self):
         # C Major: V/V (D major triad) -> V
