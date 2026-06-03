@@ -16,6 +16,7 @@ Per the lessons doc (docs/superpowers/specs/2026-05-26-roman-from-clausulae-less
   "passing tests is not sufficient — the student player must be manually/browser verified."
 """
 import pytest
+from django.test import TestCase
 from apps.exercises.umto import (
     AnalysisLayer,
     AnalysisSlice,
@@ -236,3 +237,155 @@ def test_skill_tags_do_not_contain_branch_b():
     assert not overlap, (
         f"Branch B tags found in roman_from_clausulae skill tags: {overlap}"
     )
+
+
+class _FakePitch:
+    def __init__(self, step, octave, midi, accidental=None):
+        self.step = step
+        self.octave = octave
+        self.midi = midi
+        self.accidental = accidental
+
+
+class _FakeNote:
+    def __init__(self, step, octave, midi, accidental=None):
+        self.pitch = _FakePitch(step, octave, midi, accidental)
+
+
+def _fake_key_realize(triple, key, octave):
+    mapping = {
+        (0, 6, 0): [
+            _FakeNote("C", octave, 12 * (octave + 1)),
+            _FakeNote("B", octave - 1, 12 * octave + 11),
+            _FakeNote("C", octave, 12 * (octave + 1)),
+        ],
+        (2, 1, 2): [
+            _FakeNote("E", octave, 12 * (octave + 1) + 4),
+            _FakeNote("D", octave, 12 * (octave + 1) + 2),
+            _FakeNote("E", octave, 12 * (octave + 1) + 4),
+        ],
+        (4, 3, 2): [
+            _FakeNote("G", octave, 12 * (octave + 1) + 7),
+            _FakeNote("F", octave, 12 * (octave + 1) + 5),
+            _FakeNote("E", octave, 12 * (octave + 1) + 4),
+        ],
+    }
+    return mapping[triple]
+
+
+class GenerateRomanFromClausulaeCommandTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        self.user = get_user_model().objects.create_user(
+            email="admin@example.com",
+            password="pw",
+        )
+
+    def test_unit10_command_generates_first_inversion_roman_profile(self):
+        from django.core.management import call_command
+        from unittest.mock import patch
+
+        with patch(
+            "apps.exercises.management.commands.generate_roman_from_clausulae._CLAUSULAE_AVAILABLE",
+            True,
+        ), patch(
+            "apps.exercises.management.commands.generate_roman_from_clausulae.key_realize",
+            side_effect=_fake_key_realize,
+        ), patch(
+            "apps.exercises.management.commands.generate_roman_from_clausulae.TARGET_KEYS",
+            ["C"],
+        ):
+            call_command(
+                "generate_roman_from_clausulae",
+                author="admin@example.com",
+                unit=10,
+                voices="3",
+                overwrite=True,
+            )
+
+        from apps.exercises.models import Exercise, Playlist
+
+        playlist = Playlist.objects.get(
+            name="Unit 10 — First Inversions (Roman Numerals)",
+            authored_by=self.user,
+        )
+        exercise = Exercise.objects.get(
+            authored_by=self.user,
+            skill_tags__contains=["exercise_type:roman_from_clausulae"],
+        )
+        assert playlist.skill_tags == [
+            "exercise_type:roman_from_clausulae",
+            "unit:10",
+            "Inversions_First",
+        ]
+        assert exercise.description == "First-Inversion Cadence in C"
+        assert "Inversions_First" in exercise.skill_tags
+        assert "Cadence_Perfect_Authentic" not in exercise.skill_tags
+        assert {"I6", "V6", "vii°6"}.issubset(set(exercise.data["allowed_answers"]))
+
+        analysis = exercise.data["score"]["umto"]["analysis"]
+        assert [s["content"]["roman_numeral"] for s in analysis] == [
+            "I6",
+            "vii°6",
+            "I6",
+        ]
+
+    def test_unit10_roman_generation_does_not_overwrite_harmonization_rows(self):
+        from django.core.management import call_command
+        from unittest.mock import patch
+
+        with patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae._CLAUSULAE_AVAILABLE",
+            True,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.key_realize",
+            side_effect=_fake_key_realize,
+        ), patch(
+            "apps.exercises.management.commands.generate_harmonization_from_clausulae.TARGET_KEYS",
+            ["C"],
+        ):
+            call_command(
+                "generate_harmonization_from_clausulae",
+                author="admin@example.com",
+                unit=10,
+                voices="3",
+                overwrite=True,
+            )
+
+        with patch(
+            "apps.exercises.management.commands.generate_roman_from_clausulae._CLAUSULAE_AVAILABLE",
+            True,
+        ), patch(
+            "apps.exercises.management.commands.generate_roman_from_clausulae.key_realize",
+            side_effect=_fake_key_realize,
+        ), patch(
+            "apps.exercises.management.commands.generate_roman_from_clausulae.TARGET_KEYS",
+            ["C"],
+        ):
+            call_command(
+                "generate_roman_from_clausulae",
+                author="admin@example.com",
+                unit=10,
+                voices="3",
+                overwrite=True,
+            )
+
+        from apps.exercises.models import Exercise
+
+        rows = Exercise.objects.filter(
+            description="First-Inversion Cadence in C",
+            authored_by=self.user,
+        ).order_by("id")
+        assert rows.count() == 2
+        assert {
+            row.skill_tags[0]
+            for row in rows
+        } == {
+            "exercise_type:harmonization_from_clausulae",
+            "exercise_type:roman_from_clausulae",
+        }
+        assert {row.data["mode"] for row in rows} == {
+            "harmonization",
+            "identification",
+        }

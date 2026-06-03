@@ -69,7 +69,7 @@
   - `voices:N`
   - `Cadence_Perfect_Authentic`
   - `Diatonic_Triads`
-- [x] Create/update playlist named `Unit N - Authentic Cadences (Harmonization) N-voice`.
+- [x] Create/update student-facing playlist named `Unit N - Authentic Cadences (Harmonization)`; keep voice count only as an internal skill tag.
 - [x] Run the command tests and confirm they pass.
 
 ### Task 3: Docs And Catalog

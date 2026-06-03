@@ -611,7 +611,14 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING(f"  Skipping Phrase {idx+1} (mm. {start_m}-{end_m}): Contains silent/rest-heavy measures (Gap Filter)."))
                     start_m = end_m + 1
                     continue
-                
+
+                description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m}) [{mode}]"
+
+                if _description_exists(description[:60], authored_by=author) and not overwrite:
+                    self.stdout.write(self.style.WARNING(f"  Skipping (exists): {description[:60]}"))
+                    start_m = end_m + 1
+                    continue
+
                 # 3. Detect Key and Mode
                 try:
                     # FORCE GLOBAL KEY FOR ALL PHRASES (per-phrase detection unreliable for short phrases)
@@ -636,7 +643,11 @@ class Command(BaseCommand):
                     harmony_key = "jC_"  # default to C major
 
                 try:
-                    detected_skills, detected_complexity = analyze_chunk_skills(phrase_score, m21_key.tonicPitchNameWithCase)
+                    detected_skills, detected_complexity = analyze_chunk_skills(
+                        phrase_score, 
+                        m21_key.tonicPitchNameWithCase,
+                        description=description[:60]
+                    )
                     detected_complexity = max(1, min(12, detected_complexity))
                     playlist_complexity = max(1, min(10, detected_complexity))
                 except Exception as e:
@@ -663,13 +674,6 @@ class Command(BaseCommand):
                     intro_text = f"Analyze the Roman Numerals for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
                 else:
                     intro_text = f"Play all four voices of this Bach phrase (BWV {bwv_display}, mm. {start_m}-{end_m})."
-
-                description = f"Bach {bwv_display} - Phrase {idx+1} (mm.{start_m}-{end_m}) [{mode}]"
-
-                if _description_exists(description[:60], authored_by=author) and not overwrite:
-                    self.stdout.write(self.style.WARNING(f"  Skipping (exists): {description[:60]}"))
-                    start_m = end_m + 1
-                    continue
 
                 # Extract unit number from extra_tags for analysis tagging
                 unit_nums = []

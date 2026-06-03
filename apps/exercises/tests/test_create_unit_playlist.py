@@ -188,3 +188,88 @@ class CreateUnitPlaylistCommandTest(TestCase):
         with self.assertRaises(CommandError):
             call_command("create_unit_playlist", unit=11, riemenschneider="21",
                          author="nobody@example.com")
+
+    @patch("apps.exercises.management.commands.create_unit_playlist.call_command")
+    def test_roman_playlist_uses_display_label(self, mock_call):
+        call_command(
+            "create_unit_playlist",
+            unit=11,
+            riemenschneider="21",
+            author="teacher@example.com",
+            mode="roman",
+        )
+        self.assertTrue(
+            Playlist.objects.filter(
+                name="Unit 11 — Pre-dominants (Roman Numeral Analysis)",
+                authored_by=self.author,
+            ).exists()
+        )
+
+    def test_select_bach_candidates_excludes_modulation_for_early_units(self):
+        from apps.exercises.management.commands.create_unit_playlist import _select_bach_candidates
+        # Create an exercise with no_key_change and one without (modulation)
+        ex_no_mod = make_umto_exercise(
+            author=self.author,
+            skill_tags=["unit:11", "mode:roman", "no_key_change", "no_interior_rests"],
+            complexity=1,
+            description="Bach R21 - Phrase 1 (mm.1-4) [roman]"
+        )
+        ex_with_mod = make_umto_exercise(
+            author=self.author,
+            skill_tags=["unit:11", "mode:roman", "no_interior_rests"], # missing no_key_change
+            complexity=1,
+            description="Bach R22 - Phrase 1 (mm.1-4) [roman]"
+        )
+
+        # For unit 11 (< 16), ex_with_mod is excluded
+        selected_early = _select_bach_candidates(
+            author=self.author,
+            unit_num=11,
+            mode="roman",
+            riem_range=[21, 22],
+            no_chord_filter=True,
+        )
+        self.assertIn(ex_no_mod, selected_early)
+        self.assertNotIn(ex_with_mod, selected_early)
+
+        # Update unit tag to unit:16 and test for unit 16 (>= 16)
+        ex_with_mod.skill_tags.append("unit:16")
+        ex_with_mod.save()
+        ex_no_mod.skill_tags.append("unit:16")
+        ex_no_mod.save()
+
+        selected_late = _select_bach_candidates(
+            author=self.author,
+            unit_num=16,
+            mode="roman",
+            riem_range=[21, 22],
+            no_chord_filter=True,
+        )
+        self.assertIn(ex_no_mod, selected_late)
+        self.assertIn(ex_with_mod, selected_late)
+
+    def test_select_bach_candidates_excludes_interior_rests(self):
+        from apps.exercises.management.commands.create_unit_playlist import _select_bach_candidates
+        # Create an exercise with no_interior_rests and one with interior rests
+        ex_no_rest = make_umto_exercise(
+            author=self.author,
+            skill_tags=["unit:11", "mode:roman", "no_key_change", "no_interior_rests"],
+            complexity=1,
+            description="Bach R21 - Phrase 1 (mm.1-4) [roman]"
+        )
+        ex_with_rest = make_umto_exercise(
+            author=self.author,
+            skill_tags=["unit:11", "mode:roman", "no_key_change"], # missing no_interior_rests
+            complexity=1,
+            description="Bach R22 - Phrase 1 (mm.1-4) [roman]"
+        )
+
+        selected = _select_bach_candidates(
+            author=self.author,
+            unit_num=11,
+            mode="roman",
+            riem_range=[21, 22],
+            no_chord_filter=True,
+        )
+        self.assertIn(ex_no_rest, selected)
+        self.assertNotIn(ex_with_rest, selected)

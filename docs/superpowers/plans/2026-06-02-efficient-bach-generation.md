@@ -35,15 +35,30 @@
 
 ---
 
-## Task 1: Extract Playlist Projection Helpers
+## Task 1: Add Quality Filtering and Extract Playlist Projection Helpers
 
 **Files:**
+- Modify: `apps/exercises/utils/skills_analyzer.py`
+- Modify: `apps/exercises/management/commands/import_bach_phrases.py`
+- Modify: `apps/exercises/management/commands/backfill_skill_tags.py`
 - Modify: `apps/exercises/management/commands/create_unit_playlist.py`
 - Test: `apps/exercises/tests/test_create_unit_playlist.py`
 
-- [ ] **Step 1: Write failing test for Roman display label**
+- [ ] **Step 1: Write quality check helpers in `skills_analyzer.py`**
 
-Add this test near the existing `CreateUnitPlaylistCommandTest` tests:
+Add `parse_riem_and_measures(description)` and `check_wir_key_change(description)` to parse the Riemenschneider number/measures from the exercise description and lookup local keys in the When in Rome corpus.
+
+Also, add a rest checking loop inside `analyze_chunk_skills(chunk, chunk_key, description=None)` that looks for any `Rest` element in a part's voice timeline that is strictly between its first and last sounding note.
+
+If the phrase is rest-free, append the `"no_interior_rests"` tag. If no key change is detected via When in Rome, append the `"no_key_change"` tag.
+
+- [ ] **Step 2: Pass `description` in callers of `analyze_chunk_skills`**
+
+Modify `import_bach_phrases.py` and `backfill_skill_tags.py` to pass the exercise's `description` to `analyze_chunk_skills(..., description=...)` so key shift checks can run.
+
+- [ ] **Step 3: Write failing test for Roman display label**
+
+Add this test near the existing `CreateUnitPlaylistCommandTest` tests in `apps/exercises/tests/test_create_unit_playlist.py`:
 
 ```python
 @patch("apps.exercises.management.commands.create_unit_playlist.call_command")
@@ -63,7 +78,7 @@ def test_roman_playlist_uses_display_label(self, mock_call):
     )
 ```
 
-- [ ] **Step 2: Run the failing test**
+- [ ] **Step 4: Run the failing test**
 
 Run:
 
@@ -73,7 +88,7 @@ DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py test apps.exerci
 
 Expected before implementation is currently PASS if the local label change already exists; if it passes, keep the test as a regression guard and continue.
 
-- [ ] **Step 3: Add reusable helper for mode display labels if missing**
+- [ ] **Step 5: Add reusable helper for mode display labels if missing**
 
 Ensure `create_unit_playlist.py` contains:
 
@@ -90,9 +105,11 @@ Ensure playlist names use:
 playlist_name = f"Unit {unit_num} — {title} ({_mode_display_label(mode)})"
 ```
 
-- [ ] **Step 4: Extract candidate selection into a helper**
+- [ ] **Step 6: Extract candidate selection and apply quality filtering in helper**
 
-In `create_unit_playlist.py`, add a module-level helper:
+In `create_unit_playlist.py`, add a module-level helper `_select_bach_candidates` that filters by quality tags:
+- Require `"no_interior_rests"` for all exercises in the playlist.
+- Require `"no_key_change"` if `unit_num < 16` (before secondary chord units are introduced).
 
 ```python
 def _select_bach_candidates(*, author, unit_num: int, mode: str, riem_range: list[int], no_chord_filter: bool):
@@ -105,6 +122,13 @@ def _select_bach_candidates(*, author, unit_num: int, mode: str, riem_range: lis
     ).filter(
         skill_tags__contains=[mode_tag],
     )
+
+    # Quality exclusions:
+    # 1. No key changes permitted for units before secondary chords (unit 16)
+    if unit_num < 16:
+        candidates = candidates.filter(skill_tags__contains=["no_key_change"])
+    # 2. Avoid interior rests
+    candidates = candidates.filter(skill_tags__contains=["no_interior_rests"])
 
     family = _mode_to_family(mode)
     require_new_chords = (
@@ -123,7 +147,7 @@ def _select_bach_candidates(*, author, unit_num: int, mode: str, riem_range: lis
     return selected
 ```
 
-- [ ] **Step 5: Use helper in `Command.handle`**
+- [ ] **Step 7: Use helper in `Command.handle`**
 
 Replace the inline candidate loop with:
 
@@ -139,7 +163,7 @@ selected = _select_bach_candidates(
 
 Preserve the existing `ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()` and link creation block.
 
-- [ ] **Step 6: Run focused tests**
+- [ ] **Step 8: Run focused tests**
 
 Run:
 

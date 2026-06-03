@@ -53,7 +53,7 @@ HL_KEY = {
     "A": "jA_", "Eb": "jEb", "E": "jE_", "Ab": "jAb",
 }
 
-TARGET_KEYS = ["C", "F", "G", "D", "Bb"]
+TARGET_KEYS = ["C", "F", "G", "D", "Bb", "Eb", "E", "Ab", "A"]
 
 _OCTAVE = {"S": 5, "A": 4, "T": 4, "B": 3}
 _DUR_SIMPLE = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
@@ -62,25 +62,16 @@ _CADENCE_FIGURES = [
     (2.0, "5/3", "5/3"),
     (4.0, "5/3", "5/3"),
 ]
-_SOLFEGE_LABELS: dict[str, list[str]] = {
-    "Discant": ["Do-Ti-Do"],
-    "Tenor": ["Do-Re-Do", "Do-Re-Mi", "Mi-Re-Do", "Mi-Re-Mi"],
-    "Alto": ["Sol-Sol-Sol", "Sol-Fa-Mi", "Sol-La-Sol"],
-    "Bass": ["Do-Sol-Do"],
+_UNIT10_FIRST_INVERSION_SLOTS = {
+    "S": ("Discant", 0, (0, 6, 0)),
+    "A": ("Alto", 1, (4, 3, 2)),
+    "B": ("Tenor", 3, (2, 1, 2)),
 }
-_SOL_ABBR = {
-    "Do-Ti-Do": "D-Ti-D",
-    "Do-Re-Do": "D-Re-D",
-    "Do-Re-Mi": "D-Re-M",
-    "Mi-Re-Do": "M-Re-D",
-    "Mi-Re-Mi": "M-Re-M",
-    "Sol-Sol-Sol": "S-S-S",
-    "Sol-Fa-Mi": "S-Fa-M",
-    "Sol-La-Sol": "S-La-S",
-    "Do-Sol-Do": "D-Sol-D",
-}
-
-
+_UNIT10_FIGURES = [
+    (0.0, "6", "6/3"),
+    (2.0, "6", "6/3"),
+    (4.0, "6", "6/3"),
+]
 def _staff_dist(vids: set[str]) -> str:
     has_bass = bool(vids & {"T", "B"})
     has_treble = bool(vids & {"S", "A"})
@@ -133,11 +124,6 @@ def _realize_events(triple, key: str, voice_id: str) -> list[VoiceEvent]:
     ]
 
 
-def _solfege_label(clausula_name: str, var_idx: int) -> str:
-    labels = _SOLFEGE_LABELS.get(clausula_name, [])
-    return labels[var_idx] if var_idx < len(labels) else str(var_idx)
-
-
 def _assign_slots(combo: tuple) -> dict[str, tuple]:
     if len(combo) <= 3:
         vid_map = {"Discant": "S", "Tenor": "A", "Alto": "A", "Bass": "B"}
@@ -151,17 +137,6 @@ def _assign_slots(combo: tuple) -> dict[str, tuple]:
             vid = "A"
         result[vid] = (name, idx, triple)
     return result
-
-
-def _combo_label(slots: dict[str, tuple]) -> str:
-    parts = []
-    for vid in ["S", "A", "T", "B"]:
-        if vid not in slots:
-            continue
-        name, var_idx, _ = slots[vid]
-        sol = _solfege_label(name, var_idx)
-        parts.append(f"{name[0]}:{_SOL_ABBR.get(sol, sol)}")
-    return " ".join(parts)
 
 
 def _tonal_valid(combo) -> bool:
@@ -197,10 +172,12 @@ def _build_harmonization_payload(
     key: str,
     description: str,
     unit: int,
+    cadence_figures: list[tuple[float, str, str]] | None = None,
 ) -> dict:
     """Build a UMTO harmonization payload using the existing figured-bass path."""
     vids = set(voice_events_by_id.keys())
-    offsets = [off for off, _, __ in _CADENCE_FIGURES]
+    cadence_figures = cadence_figures or _CADENCE_FIGURES
+    offsets = [off for off, _, __ in cadence_figures]
     hl_key = HL_KEY.get(key, "jC_")
 
     umto = UMTO(
@@ -239,7 +216,7 @@ def _build_harmonization_payload(
                 unit_tags=[unit],
                 is_target=False,
             )
-            for off, figured, raw in _CADENCE_FIGURES
+            for off, figured, raw in cadence_figures
         ],
         grading=_build_grading_slices(voice_events_by_id, offsets),
     )
@@ -269,7 +246,11 @@ def _save_exercise(
     overwrite: bool,
 ) -> Exercise:
     ex = (
-        Exercise.objects.filter(description=description, authored_by=author).first()
+        Exercise.objects.filter(
+            description=description,
+            authored_by=author,
+            skill_tags__contains=[skill_tags[0]],
+        ).first()
         if overwrite else None
     )
     if ex is None:
@@ -328,6 +309,88 @@ def _build_playlist(
     return playlist
 
 
+def _student_facing_playlist_name(unit: int) -> str:
+    if unit == 10:
+        return f"Unit {unit} - First Inversions (Harmonization)"
+    return f"Unit {unit} - Authentic Cadences (Harmonization)"
+
+
+def _legacy_playlist_names(unit: int, voices_arg: str) -> list[str]:
+    suffixes = ["all"] if voices_arg == "all" else [f"{voices_arg}-voice"]
+    return [
+        f"Unit {unit} - Authentic Cadences (Harmonization) {suffix}"
+        for suffix in suffixes
+    ]
+
+
+def _rename_legacy_playlist(
+    *,
+    author,
+    playlist_name: str,
+    legacy_names: list[str],
+) -> None:
+    if Playlist.objects.filter(name=playlist_name, authored_by=author).exists():
+        return
+
+    legacy = (
+        Playlist.objects.filter(name__in=legacy_names, authored_by=author)
+        .order_by("id")
+        .first()
+    )
+    if legacy is None:
+        return
+
+    legacy.name = playlist_name
+    legacy.save(update_fields=["name"])
+
+
+def _fixed_unit_slots(unit: int, n_voices: int) -> list[dict[str, tuple]]:
+    if unit == 10 and n_voices == 3:
+        return [_UNIT10_FIRST_INVERSION_SLOTS]
+    return []
+
+
+def _exercise_description(unit: int, key: str, combo_idx: int, combo_count: int) -> str:
+    if unit == 10:
+        return f"First-Inversion Cadence in {key}"
+
+    prefix = f"Harmonization Cadence in {key}"
+    return prefix if combo_count == 1 else f"{prefix} var{combo_idx}"
+
+
+def _figures_for_unit(unit: int) -> list[tuple[float, str, str]]:
+    return _UNIT10_FIGURES if unit == 10 else _CADENCE_FIGURES
+
+
+def _skill_tags_for_unit(unit: int, n_voices: int) -> list[str]:
+    tags = [
+        "exercise_type:harmonization_from_clausulae",
+        "corpus:standard_exercises_from_clausulae",
+        f"unit:{unit}",
+        "mode:harmonization",
+        f"voices:{n_voices}",
+        "Diatonic_Triads",
+    ]
+    if unit == 10:
+        tags.append("Inversions_First")
+    else:
+        tags.append("Cadence_Perfect_Authentic")
+    return tags
+
+
+def _playlist_skill_tags_for_unit(unit: int) -> list[str]:
+    tags = [
+        "exercise_type:harmonization_from_clausulae",
+        f"unit:{unit}",
+    ]
+    tags.append("Inversions_First" if unit == 10 else "Cadence_Perfect_Authentic")
+    return tags
+
+
+def _heading_label_for_unit(unit: int) -> str:
+    return "first-inversion cadences" if unit == 10 else "authentic cadences"
+
+
 def _make_exercises(
     n_voices: int,
     unit: int,
@@ -335,43 +398,37 @@ def _make_exercises(
     options: dict,
     stdout,
 ) -> list[Exercise]:
-    seen: set[tuple] = set()
-    combos = []
-    for combo in enumerate_simple(n_voices=n_voices, require_bass=True):
-        if not any(name == "Discant" for name, _, __ in combo):
-            continue
-        if not _tonal_valid(combo):
-            continue
-        fp = _student_prompt_fingerprint(combo)
-        if fp in seen:
-            continue
-        seen.add(fp)
-        combos.append(combo)
+    slot_sets = _fixed_unit_slots(unit, n_voices)
+    if not slot_sets:
+        seen: set[tuple] = set()
+        for combo in enumerate_simple(n_voices=n_voices, require_bass=True):
+            if not any(name == "Discant" for name, _, __ in combo):
+                continue
+            if not _tonal_valid(combo):
+                continue
+            fp = _student_prompt_fingerprint(combo)
+            if fp in seen:
+                continue
+            seen.add(fp)
+            slot_sets.append(_assign_slots(combo))
 
     exs: list[Exercise] = []
-    voice_str = f"{n_voices}-part"
     for key in TARGET_KEYS:
-        for combo_idx, combo in enumerate(combos, start=1):
-            slots = _assign_slots(combo)
+        for combo_idx, slots in enumerate(slot_sets, start=1):
             vmap = {
                 vid: _realize_events(triple, key, vid)
                 for vid, (_, __, triple) in slots.items()
             }
-            label = _combo_label(slots)
-            prefix = f"{voice_str} Harmonization Cadence in {key}"
-            candidate = f"{prefix} [{label}]"
-            desc = candidate if len(candidate) <= 60 else f"{prefix} var{combo_idx}"
+            desc = _exercise_description(unit, key, combo_idx, len(slot_sets))
 
-            payload = _build_harmonization_payload(vmap, key, desc, unit)
-            skill_tags = [
-                "exercise_type:harmonization_from_clausulae",
-                "corpus:standard_exercises_from_clausulae",
-                f"unit:{unit}",
-                "mode:harmonization",
-                f"voices:{n_voices}",
-                "Cadence_Perfect_Authentic",
-                "Diatonic_Triads",
-            ]
+            payload = _build_harmonization_payload(
+                vmap,
+                key,
+                desc,
+                unit,
+                cadence_figures=_figures_for_unit(unit),
+            )
+            skill_tags = _skill_tags_for_unit(unit, n_voices)
             exs.append(
                 _save_exercise(
                     author=author,
@@ -418,23 +475,24 @@ class Command(BaseCommand):
         for n_voices in voice_list:
             self.stdout.write(
                 self.style.MIGRATE_HEADING(
-                    f"harmonization_from_clausulae - {n_voices}-voice authentic cadences (Unit {unit})"
+                    f"harmonization_from_clausulae - {n_voices}-voice {_heading_label_for_unit(unit)} (Unit {unit})"
                 )
             )
             all_exercises.extend(
                 _make_exercises(n_voices, unit, author, options, self.stdout)
             )
 
-        playlist_suffix = "all" if voices_arg == "all" else f"{voices_arg}-voice"
+        playlist_name = _student_facing_playlist_name(unit)
+        _rename_legacy_playlist(
+            author=author,
+            playlist_name=playlist_name,
+            legacy_names=_legacy_playlist_names(unit, voices_arg),
+        )
         playlist = _build_playlist(
             author=author,
-            playlist_name=f"Unit {unit} - Authentic Cadences (Harmonization) {playlist_suffix}",
+            playlist_name=playlist_name,
             exercises=all_exercises,
-            skill_tags=[
-                "exercise_type:harmonization_from_clausulae",
-                f"unit:{unit}",
-                "Cadence_Perfect_Authentic",
-            ],
+            skill_tags=_playlist_skill_tags_for_unit(unit),
             is_public=options["public"],
         )
         self.stdout.write(

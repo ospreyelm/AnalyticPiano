@@ -29,6 +29,17 @@ per unit/mode and can create duplicate chorale exercise rows. The plan defines
 the intended import-once, playlist-many command plus an audit-first deduplication
 path. Do not add more ad hoc batch scripts for this problem.
 
+## ⚠️ MUSIC21 KEY NORMALIZATION — READ BEFORE REFRESH/BACKFILL WORK
+
+Before modifying `refresh_all_exercises`, `recompute_chorale_analysis`,
+`backfill_skill_tags`, `backfill_raw_roman_numeral`, or any backend code that
+passes stored Exercise/UMTO/CIR keys into music21, implement
+[docs/superpowers/plans/2026-06-02-music21-key-normalization.md](docs/superpowers/plans/2026-06-02-music21-key-normalization.md).
+
+HarmonyLab stores pseudo-key tokens such as `jC_` and `iA_`; music21 expects
+conventional key names. `Cannot make a step out of 'J'` during broad refreshes
+is a known symptom of this boundary bug.
+
 ## ⚠️ GITHUB PR TARGET — USE AVNER'S REPO, NOT UPSTREAM
 
 When creating pull requests or using `gh pr create`, ALWAYS target:

@@ -409,6 +409,50 @@ def _final_roman_label(
     return candidate, legacy.label or template_rn
 
 
+def _get_active_pitches_at_offset(lanes, target_offset):
+    pitches = []
+    for lane in lanes:
+        for offset, event in lane:
+            start = float(offset)
+            end = start + float(event["ql"])
+            if start - 0.001 <= target_offset < end - 0.001:
+                pitches.append(event["pitch"])
+    return pitches
+
+
+def _tonal_valid_compendium(upper_lanes, lower_lanes, template) -> bool:
+    """Filter compendium exercises to tonal-music constraints on ANT and ULT sonorities.
+
+    Let ANT = the chord at the first template target offset.
+    Let ULT = the chord at the last template target offset.
+
+    KEEP iff:
+      (1) The first chord (ANT) contains its third.
+      (2) The last chord (ULT) does not have a fifth without its third (no bare fifth/octave).
+    """
+    from music21 import chord
+
+    active_lanes = upper_lanes[:2] + lower_lanes[:2]
+
+    # 1. First chord must contain its third
+    first_off = float(template[0][0])
+    first_pitches = _get_active_pitches_at_offset(active_lanes, first_off)
+    if first_pitches:
+        c_first = chord.Chord(first_pitches)
+        if c_first.third is None:
+            return False
+
+    # 2. Last chord cannot be bare fifth/octave
+    last_off = float(template[-1][0])
+    last_pitches = _get_active_pitches_at_offset(active_lanes, last_off)
+    if last_pitches:
+        c_last = chord.Chord(last_pitches)
+        if c_last.fifth is not None and c_last.third is None:
+            return False
+
+    return True
+
+
 def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> dict | None:
     """Build all inputs needed to call save_umto_exercise, without touching the DB.
 
@@ -448,6 +492,27 @@ def prepare_compendium_exercise(example: dict[str, Any], target_tonic: str) -> d
 
     # Step 4: build HarmonyLab key string
     hl_key = _hl_key(target_tonic, example["mode"])
+
+    # Step 4.5: Check tonal validity constraint on the active lanes that are actually kept
+    staff_events = [
+        _source_events_for_staff(notes_list, iv)
+        for _staff_name, notes_list in example["notes"].items()
+    ]
+    staff_events = sorted(
+        staff_events,
+        key=lambda events: sum(event["pitch"].midi for event in events) / len(events) if events else 0.0,
+        reverse=True,
+    )
+    upper_lanes = _assign_part_lanes(staff_events[0]) if staff_events else []
+    lower_lanes = _assign_part_lanes(staff_events[-1]) if len(staff_events) > 1 else []
+
+    if not _tonal_valid_compendium(upper_lanes, lower_lanes, template):
+        logger.warning(
+            "compendium_prep: example %s has tonal sonority violation in key %s — skipping",
+            example["id"],
+            target_tonic,
+        )
+        return None
 
     # Step 5: convert to CIR while preserving compendium staff polyphony.
     cir = _compendium_score_to_cir(

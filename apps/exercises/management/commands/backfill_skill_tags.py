@@ -46,7 +46,8 @@ class Command(BaseCommand):
                     
                     detected_skills, detected_complexity = analyze_chunk_skills(
                         chunk_score, 
-                        ex_key
+                        ex_key,
+                        description=ex.description
                     )
                 except Exception as e:
                     self.stdout.write(self.style.WARNING(f"  Warning: Skipping exercise {ex.id}: {e}"))

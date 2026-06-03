@@ -57,7 +57,7 @@ def _raw_label(slice_dict: dict, family: str = "roman") -> str | None:
             from apps.exercises.utils.figured_bass import abbreviate_figured_bass
             return abbreviate_figured_bass(raw)
         return None
-    return content.get("raw_roman_numeral") or content.get("roman_numeral")
+    return content.get("roman_numeral") or content.get("raw_roman_numeral")
 
 
 def _out_of_scope_ratio(ex, cumulative, family="roman"):
@@ -91,6 +91,41 @@ def _exercise_order_key(ex, unit_num: int, family: str = "roman"):
         ex.complexity,
         Command._extract_riem_phrase(ex.description or ""),
     )
+
+
+def _select_bach_candidates(*, author, unit_num: int, mode: str, riem_range: list[int], no_chord_filter: bool):
+    unit_tag = f"unit:{unit_num}"
+    mode_tag = f"mode:{mode}"
+    riem_set = set(riem_range)
+    candidates = Exercise.objects.filter(
+        authored_by=author,
+        skill_tags__contains=[unit_tag],
+    ).filter(
+        skill_tags__contains=[mode_tag],
+    )
+
+    # Quality exclusions:
+    # 1. No key changes permitted for units before secondary chords (unit 16)
+    if unit_num < 16:
+        candidates = candidates.filter(skill_tags__contains=["no_key_change"])
+    # 2. Avoid interior rests
+    candidates = candidates.filter(skill_tags__contains=["no_interior_rests"])
+
+    family = _mode_to_family(mode)
+    require_new_chords = (
+        not no_chord_filter
+        and mode in ("roman", "figures", "play_figures", "matching")
+    )
+    selected = []
+    for ex in candidates:
+        riem_num, _ = Command._extract_riem_phrase(ex.description or "")
+        if riem_num not in riem_set:
+            continue
+        if require_new_chords and not Command._has_new_chord(ex, unit_num, family):
+            continue
+        selected.append(ex)
+    selected.sort(key=lambda ex: _exercise_order_key(ex, unit_num, family))
+    return selected
 
 
 class Command(BaseCommand):
@@ -201,26 +236,13 @@ class Command(BaseCommand):
         # Build static ordered exercise membership from imported corpus subset.
         # This preserves deterministic sequencing like the original Unit 9 flow.
         if not dry_run:
-            riem_set = set(riem_range)
-            candidates = Exercise.objects.filter(
-                authored_by=author,
-                skill_tags__contains=[unit_tag],
-            ).filter(
-                skill_tags__contains=[mode_tag],
+            selected = _select_bach_candidates(
+                author=author,
+                unit_num=unit_num,
+                mode=mode,
+                riem_range=riem_range,
+                no_chord_filter=options.get("no_chord_filter", False),
             )
-
-            family = _mode_to_family(mode)
-            require_new_chords = not options.get("no_chord_filter", False) and mode in ("roman", "figures", "play_figures", "matching")
-            selected = []
-            for ex in candidates:
-                riem_num, _ = Command._extract_riem_phrase(ex.description or "")
-                if riem_num not in riem_set:
-                    continue
-                if require_new_chords and not Command._has_new_chord(ex, unit_num, family):
-                    self.stdout.write(self.style.WARNING(f"  Skipping {ex.id} (no new-unit chords): {(ex.description or '')[:60]}"))
-                    continue
-                selected.append(ex)
-            selected.sort(key=lambda ex: _exercise_order_key(ex, unit_num, family))
 
             ExercisePlaylistOrdered.objects.filter(playlist=playlist).delete()
             for idx, ex in enumerate(selected, start=1):

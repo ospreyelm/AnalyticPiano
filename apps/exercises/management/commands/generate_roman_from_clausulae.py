@@ -79,7 +79,7 @@ HL_KEY = {
     "A": "jA_", "Eb": "jEb", "E": "jE_", "Ab": "jAb",
 }
 
-TARGET_KEYS = ["C", "F", "G", "D", "Bb"]
+TARGET_KEYS = ["C", "F", "G", "D", "Bb", "Eb", "E", "Ab", "A"]
 
 # Voice → MIDI octave (matches generate_clausulae_b1)
 _OCTAVE = {"S": 5, "A": 4, "T": 4, "B": 3}
@@ -89,10 +89,17 @@ _DUR_SIMPLE = [("h", 2.0), ("h", 2.0), ("w", 4.0)]
 
 # Harmonic rhythm for a simple authentic cadence — I at ANT, V at PEN, I at ULT
 _CADENCE_RN = [(0.0, "I"), (2.0, "V"), (4.0, "I")]
+_UNIT10_FIRST_INVERSION_SLOTS = {
+    "S": ("Discant", 0, (0, 6, 0)),
+    "A": ("Alto", 1, (4, 3, 2)),
+    "B": ("Tenor", 3, (2, 1, 2)),
+}
+_UNIT10_CADENCE_RN = [(0.0, "I6"), (2.0, "vii°6"), (4.0, "I6")]
 
 # Full diatonic triad pool for the identification UI.
 # Expanded beyond {I, V} so students must actually identify each chord.
 _RN_CHOICES_MAJOR = ["I", "ii", "iii", "IV", "V", "vi", "vii°"]
+_RN_CHOICES_UNIT10 = ["I", "i", "V", "V7", "I6", "i6", "V6", "vii°6"]
 
 # Solfège labels per clausula type and variant (matches generate_clausulae_b1)
 _SOLFEGE_LABELS: dict[str, list[str]] = {
@@ -314,6 +321,8 @@ def _build_identification_payload(
     key: str,
     description: str,
     unit: int,
+    cadence_rn: list[tuple[float, str]] | None = None,
+    allowed_answers: list[str] | None = None,
 ) -> dict:
     """
     Build a umto_chorale identification payload with Roman numeral analysis.
@@ -322,7 +331,9 @@ def _build_identification_payload(
     the student sees three ? slots and identifies I, V, I in sequence.
     """
     vids = set(voice_events_by_id.keys())
-    offsets = [off for off, _ in _CADENCE_RN]
+    cadence_rn = cadence_rn or _CADENCE_RN
+    allowed_answers = allowed_answers or _RN_CHOICES_MAJOR
+    offsets = [off for off, _ in cadence_rn]
 
     analysis = [
         AnalysisSlice(
@@ -331,7 +342,7 @@ def _build_identification_payload(
             unit_tags=[unit],
             is_target=True,
         )
-        for off, rn in _CADENCE_RN
+        for off, rn in cadence_rn
     ]
 
     umto = UMTO(
@@ -362,7 +373,7 @@ def _build_identification_payload(
     payload["analysisType"]     = "roman"
     payload["identMode"]        = "practice"
     # Expose the full diatonic pool so the student faces real identification.
-    payload["allowed_answers"]  = _RN_CHOICES_MAJOR
+    payload["allowed_answers"]  = allowed_answers
     # No Branch B display settings: no scale-degree circles, no voice colours.
     payload["display"] = {
         "showNotation":    True,
@@ -389,7 +400,11 @@ def _save_exercise(
     overwrite: bool,
 ) -> Exercise:
     ex = (
-        Exercise.objects.filter(description=description, authored_by=author).first()
+        Exercise.objects.filter(
+            description=description,
+            authored_by=author,
+            skill_tags__contains=[skill_tags[0]],
+        ).first()
         if overwrite else None
     )
     if ex is None:
@@ -448,6 +463,72 @@ def _build_playlist(
     return playlist
 
 
+def _fixed_unit_slots(unit: int, n_voices: int) -> list[dict[str, tuple]]:
+    if unit == 10 and n_voices == 3:
+        return [_UNIT10_FIRST_INVERSION_SLOTS]
+    return []
+
+
+def _cadence_rn_for_unit(unit: int) -> list[tuple[float, str]]:
+    return _UNIT10_CADENCE_RN if unit == 10 else _CADENCE_RN
+
+
+def _allowed_answers_for_unit(unit: int) -> list[str]:
+    return _RN_CHOICES_UNIT10 if unit == 10 else _RN_CHOICES_MAJOR
+
+
+def _exercise_description(
+    unit: int,
+    key: str,
+    n_voices: int,
+    combo_idx: int,
+    label: str,
+) -> str:
+    if unit == 10:
+        return f"First-Inversion Cadence in {key}"
+
+    prefix = f"{n_voices}-part Authentic Cadence in {key}"
+    candidate = f"{prefix} [{label}]"
+    return candidate if len(candidate) <= 60 else f"{prefix} var{combo_idx}"
+
+
+def _skill_tags_for_unit(unit: int, n_voices: int) -> list[str]:
+    tags = [
+        "exercise_type:roman_from_clausulae",
+        "corpus:standard_exercises_from_clausulae",
+        f"unit:{unit}",
+        "mode:roman",
+        f"voices:{n_voices}",
+        "Diatonic_Triads",
+    ]
+    if unit == 10:
+        tags.append("Inversions_First")
+    else:
+        tags.append("Cadence_Perfect_Authentic")
+    return tags
+
+
+def _playlist_name(unit: int, voices_arg: str) -> str:
+    if unit == 10:
+        return f"Unit {unit} — First Inversions (Roman Numerals)"
+
+    suffix = "" if voices_arg == "all" else f" {voices_arg}-voice"
+    return f"Unit {unit} — Authentic Cadences (Roman Numerals){suffix}"
+
+
+def _playlist_skill_tags_for_unit(unit: int) -> list[str]:
+    tags = [
+        "exercise_type:roman_from_clausulae",
+        f"unit:{unit}",
+    ]
+    tags.append("Inversions_First" if unit == 10 else "Cadence_Perfect_Authentic")
+    return tags
+
+
+def _heading_label_for_unit(unit: int) -> str:
+    return "first-inversion cadences" if unit == 10 else "authentic cadences"
+
+
 # ── Per-voice-count generator ─────────────────────────────────────────────────
 
 def _make_exercises(
@@ -485,48 +566,41 @@ def _make_exercises(
         slots = _assign_slots(combo)
         return frozenset((vid, triple) for vid, (_, __, triple) in slots.items())
 
-    seen: set = set()
-    combos = []
-    for c in enumerate_simple(n_voices=n_voices, require_bass=True):
-        if not any(name == "Discant" for name, _, __ in c):
-            continue
-        if not _tonal_valid(c):
-            continue
-        fp = _slot_fingerprint(c)
-        if fp in seen:
-            continue
-        seen.add(fp)
-        combos.append(c)
+    slot_sets = _fixed_unit_slots(unit, n_voices)
+    if not slot_sets:
+        seen: set = set()
+        for c in enumerate_simple(n_voices=n_voices, require_bass=True):
+            if not any(name == "Discant" for name, _, __ in c):
+                continue
+            if not _tonal_valid(c):
+                continue
+            fp = _slot_fingerprint(c)
+            if fp in seen:
+                continue
+            seen.add(fp)
+            slot_sets.append(_assign_slots(c))
 
     exs: list[Exercise] = []
-    voice_str = f"{n_voices}-part"
 
     for key in TARGET_KEYS:
-        for combo_idx, combo in enumerate(combos, 1):
-            slots      = _assign_slots(combo)
+        for combo_idx, slots in enumerate(slot_sets, 1):
             vmap: dict[str, list[VoiceEvent]] = {}
             for vid, (name, var_idx, triple) in slots.items():
                 vmap[vid] = _realize_events(triple, key, vid)
 
             label = _combo_label(slots)
-            # Human-readable prefix + compact label as idempotency key.
-            # For 3-voice the label fits; for 4-voice use a shorter prefix
-            # to stay within the varchar(60) description field.
-            prefix = f"{voice_str} Authentic Cadence in {key}"
-            candidate = f"{prefix} [{label}]"
-            desc = candidate if len(candidate) <= 60 else f"{prefix} var{combo_idx}"
+            desc = _exercise_description(unit, key, n_voices, combo_idx, label)
 
-            payload = _build_identification_payload(vmap, key, desc, unit)
+            payload = _build_identification_payload(
+                vmap,
+                key,
+                desc,
+                unit,
+                cadence_rn=_cadence_rn_for_unit(unit),
+                allowed_answers=_allowed_answers_for_unit(unit),
+            )
 
-            skill_tags = [
-                "exercise_type:roman_from_clausulae",
-                "corpus:standard_exercises_from_clausulae",
-                f"unit:{unit}",
-                "mode:roman",
-                f"voices:{n_voices}",
-                "Cadence_Perfect_Authentic",
-                "Diatonic_Triads",
-            ]
+            skill_tags = _skill_tags_for_unit(unit, n_voices)
 
             ex = _save_exercise(
                 author=author,
@@ -590,7 +664,7 @@ class Command(BaseCommand):
 
         for n_voices in voice_list:
             self.stdout.write(self.style.MIGRATE_HEADING(
-                f"roman_from_clausulae — {n_voices}-voice authentic cadences (Unit {unit})"
+                f"roman_from_clausulae — {n_voices}-voice {_heading_label_for_unit(unit)} (Unit {unit})"
             ))
             exs = _make_exercises(
                 n_voices, unit, author, options, self.stdout, self.style
@@ -600,19 +674,11 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f"  → {len(exs)} exercises generated.")
             )
 
-        # One playlist for the full run (or filtered voice count).
-        playlist_suffix = "" if voices_arg == "all" else f" {voices_arg}-voice"
-        playlist_name   = f"Unit {unit} — Authentic Cadences (Roman Numerals){playlist_suffix}"
-
         playlist = _build_playlist(
             author=author,
-            playlist_name=playlist_name,
+            playlist_name=_playlist_name(unit, voices_arg),
             exercises=all_exercises,
-            skill_tags=[
-                "exercise_type:roman_from_clausulae",
-                f"unit:{unit}",
-                "Cadence_Perfect_Authentic",
-            ],
+            skill_tags=_playlist_skill_tags_for_unit(unit),
             is_public=options["public"],
         )
 

@@ -1925,6 +1925,7 @@ define([
                     textWidth: ctx.measureText(displayKey).width,
                     canvasWidth: ctx.canvas && typeof ctx.canvas.width === "number" ? ctx.canvas.width : null,
                     canvasHeight: ctx.canvas && typeof ctx.canvas.height === "number" ? ctx.canvas.height : null,
+                    initial: true,
                   });
                   ctx.fillText(displayKey, keyPos.x, keyPos.y);
                   ctx.restore();
