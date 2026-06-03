@@ -779,10 +779,13 @@ define([
       // Set a restoring flag so any input that arrives before the response
       // is ignored rather than graded against a blank state.
       this.grader._restoring = true;
+      var restoreData = { exercise_id: exerciseId };
+      var playlistId = this.definition && this.definition.exercise && this.definition.exercise.playlistName;
+      if (playlistId) { restoreData.playlist_id = playlistId; }
       $.ajax({
         type: "GET",
         url: "/ajax/identification-answers/",
-        data: { exercise_id: exerciseId },
+        data: restoreData,
         dataType: "json",
         timeout: 5000,
         success: function (data) {
