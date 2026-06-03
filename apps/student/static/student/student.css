@@ -47,6 +47,7 @@ body {
   font-size: 1.15rem;
   color: var(--teal);
   letter-spacing: 0.01em;
+  text-decoration: none;
 }
 .s-header-user { font-size: 0.8rem; color: var(--text-muted); }
 
@@ -150,7 +151,7 @@ body {
   letter-spacing: 0.08em;
   margin-bottom: 4px;
 }
-.s-resume-title { font-family: var(--font-ui); font-size: 1.05rem; font-weight: 400; }
+.s-resume-title { font-family: var(--font-ui); font-size: 1.4rem; font-weight: 700; }
 .s-resume-progress { background: rgba(255,255,255,0.28); height: 4px; border-radius: 2px; margin-top: 12px; }
 .s-resume-progress-bar { background: white; height: 4px; border-radius: 2px; transition: width 400ms ease-out; }
 .s-resume-meta { font-size: 0.75rem; opacity: 0.8; margin-top: 4px; }
