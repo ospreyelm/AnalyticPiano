@@ -1062,6 +1062,8 @@ define([
         if (!_isIdentMode) {
           if (exercise.analysisType === "note_name") {
             exercise.analysis.mode.note_names = true;
+          } else if (exercise.analysisType === "figured_bass") {
+            exercise.analysis.mode.roman_numerals = false;
           } else {
             exercise.analysis.mode.roman_numerals = true;
           }
@@ -1090,7 +1092,6 @@ define([
             );
           } else {
             var isPlayback = exercise.mode === "playback" || exercise.mode === "analysis_match" || exercise.mode === "play-all-voices";
-            console.log("[UMTO-DEBUG] using fallback problems for non-ident mode. isPlayback:", isPlayback);
             // Playback modes don't need problems structure; they use grading slices instead.
             exercise.problems = isPlayback ? [] : buildUMTOIdentificationProblems(exercise);
           }
