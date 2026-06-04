@@ -356,6 +356,14 @@ define([
             if (scex.grader && typeof scex.grader.reset === "function") {
               scex.grader.reset();
             }
+            // Re-initialize chorale play grader from the new exercise score.
+            // reset() clears the timeline; without re-init the grader has no
+            // windows and ignores all MIDI input on the navigated-to exercise.
+            if (scex.definition.isChorale && scex.definition.isChorale() &&
+                !(scex.definition.isChoraleIdentification && scex.definition.isChoraleIdentification()) &&
+                scex.grader && typeof scex.grader.initFromDefinition === "function") {
+              scex.grader.initFromDefinition(scex.definition);
+            }
           }
 
           if (scex._isHarmonizationExercise && scex._isHarmonizationExercise()) {

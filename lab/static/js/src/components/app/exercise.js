@@ -216,6 +216,9 @@ define([
     var isKeyboardlessIdentification = isAnalysisExercise && (
       _analysisType === "roman" || _analysisType === "figured_bass"
     );
+    // Chorale play exercises are exclusively MIDI — no click-on-staff input.
+    var isChoralePlay = definition.mode === "playback" ||
+      (_def && _def.isChorale && _def.isChorale() && !(_def.isChoraleIdentification && _def.isChoraleIdentification()));
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });
@@ -416,7 +419,7 @@ define([
         this.addComponent(c);
       },
       function () {
-        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise || isAnalysisExercise) {
+        if (disableComputerKeyboardInput || isSymbolicMeterExercise || isKeySignatureExercise || isAnalysisExercise || isChoralePlay) {
           return;
         }
         if (!this.models.exerciseSheet) {
