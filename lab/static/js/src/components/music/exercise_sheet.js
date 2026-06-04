@@ -1825,7 +1825,6 @@ define([
       // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
       // This fixes cases where the database might have a single 'blob' measure.
       if (isChoraleLike && score && score.umto) {
-        console.log("[ID] Forcing UMTO conversion for consistent measure splitting");
         score = this._convertUMTOToProcessedScore(score.umto);
       }
 
@@ -1838,23 +1837,24 @@ define([
         if (!score.metadata.time) score.metadata.time = "4/4";
       }
 
-      console.log("[ID] renderStaves. isChoraleLike:", isChoraleLike, "type:", definition.getType(), "hasMeasures:", hasMeasures);
       
       // Use VexFlow adapter for chorale exercises
       if (isChoraleLike && hasMeasures) {
-        console.log("[ID] Using VexFlowAdapter (Chorale Model) for rendering");
         if (score && score.measures && score.measures.length > 0) {
           var self = this;
           this._identWindowLayout = {};
           this._identWindowLayoutByOnset = {};
           this._updateChoraleViewport(score);
           var canvas = this.el[0];
-          console.log("[ID] Canvas:", canvas, "Width:", canvas.width, "Height:", canvas.height);
           var ctx = this.vexRenderer.getContext();
-          console.log("[ID] Context:", ctx);
-          
           var display = definition.getDisplay() || {};
           var analyzeConfig = _.cloneDeep(this.getAnalyzeConfig() || {});
+          var _analysisType = definition.getAnalysisType ? definition.getAnalysisType() : null;
+          if (_analysisType === "figured_bass") {
+            analyzeConfig.roman_numerals = false;
+            analyzeConfig.mode = analyzeConfig.mode || {};
+            analyzeConfig.mode.roman_numerals = false;
+          }
           var wantsRomans = !!display.showRomans;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
@@ -1930,6 +1930,10 @@ define([
             }
             if (wantsNoteNames) {
               analyzeConfig.mode.note_names = true;
+            }
+            if (!wantsRomans) {
+              analyzeConfig.roman_numerals = false;
+              analyzeConfig.mode.roman_numerals = false;
             }
           }
 

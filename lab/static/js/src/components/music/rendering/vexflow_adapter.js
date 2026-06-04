@@ -360,6 +360,18 @@ define([
     return null;
   }
 
+  function getStoredRomanLabel(analysisSlices, onsetTicks) {
+    if (!analysisSlices || !analysisSlices.length) return null;
+    var ql = onsetTicks / 1024;
+    for (var i = 0; i < analysisSlices.length; i++) {
+      var sl = analysisSlices[i];
+      if (Math.abs(sl.offset - ql) < 0.05 && sl.content && sl.content.roman_numeral) {
+        return sl.content.roman_numeral;
+      }
+    }
+    return null;
+  }
+
   function computeFiguredLabel(midi, analyzer, abbreviate) {
     if (!analyzer || !midi || midi.length < 2) return null;
     try {
@@ -1980,6 +1992,10 @@ define([
                   ctx.restore();
                 }
               } else if (renderRomans && activeStaveForAnnotations) {
+                var storedRoman = getStoredRomanLabel(
+                  score && score.umto && score.umto.analysis,
+                  noteOnset
+                );
                 attachInlineRomanAnnotation(
                   col,
                   midi,
@@ -1987,7 +2003,8 @@ define([
                   inlineAnalyzer,
                   ctx,
                   activeStaveForAnnotations,
-                  { yShift: romanYOffset, colGap: colGap }
+                  { yShift: romanYOffset, colGap: colGap },
+                  storedRoman || undefined
                 );
               } else if (renderFigured && activeStaveForAnnotations) {
                 var figureLabel = computeFiguredLabel(
