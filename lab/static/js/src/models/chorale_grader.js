@@ -46,6 +46,7 @@ define([
       this.mistakeMade = false; // sticky overall flag
       this._lastIncorrect = false; // one-shot flag for grading INCORRECT
       this.finished = false;
+      this._advanceTimer = null; // debounce timer for window advance
 
       // Track per-window details
       this.windowStats = [];      // Array of {status, correct, incorrect, completedAt}
@@ -250,6 +251,35 @@ define([
       }
 
 
+      // If not matched in current window, check if it belongs to the next window.
+      // This handles overlapping chord playing: the student releases the current
+      // chord while pressing the next one, so next-chord notes arrive before the
+      // debounce fires and advances the pointer.
+      // Do NOT add to playedNoteIds here — just suppress the wrong-note penalty.
+      // The note will be matched properly once the pointer advances.
+      if (!matched && this._advanceTimer && this.pointer + 1 < this.windowGroups.length) {
+        var nextIdxs = this.windowGroups[this.pointer + 1];
+        var nextOnset = tl[nextIdxs[0]].onset;
+        var nextHeld = this._getHeldNotesAtOnset(nextOnset, nextIdxs);
+        for (var ni = 0; ni < nextIdxs.length; ni++) {
+          var nev = tl[nextIdxs[ni]];
+          if (this._matchPitch(nev.midi, midi)) {
+            matched = true;
+            console.log("[2. GRADE] ✓ Note " + midi + " belongs to next window — suppressing penalty");
+            break;
+          }
+        }
+        if (!matched) {
+          for (var nh = 0; nh < nextHeld.length; nh++) {
+            if (this._matchPitch(nextHeld[nh].midi, midi)) {
+              matched = true;
+              console.log("[2. GRADE] ✓ Held note " + midi + " belongs to next window — suppressing penalty");
+              break;
+            }
+          }
+        }
+      }
+
       if (!matched) {
         // Wrong note for this window
         this.mistakeMade = true;
@@ -266,12 +296,19 @@ define([
         console.log("[2. GRADE] ✗ Wrong note " + midi + " for current window");
       }
 
-      // Check if current window is now complete and advance
-      var oldPointer = this.pointer;
-      this._advanceIfWindowComplete();
-      if (this.pointer !== oldPointer) {
-        console.log("[3. VISUAL] Advanced window pointer from " + oldPointer + " to " + this.pointer);
-      }
+      // Debounce window advance so simultaneous chord notes don't race.
+      // Without this, note 1 of a chord completes the window and notes 2-4
+      // arrive as wrong notes in the next window.
+      var self = this;
+      if (this._advanceTimer) clearTimeout(this._advanceTimer);
+      this._advanceTimer = setTimeout(function () {
+        self._advanceTimer = null;
+        var oldPointer = self.pointer;
+        self._advanceIfWindowComplete();
+        if (self.pointer !== oldPointer) {
+          console.log("[3. VISUAL] Advanced window pointer from " + oldPointer + " to " + self.pointer);
+        }
+      }, 150);
     },
 
     _matchPitch: function(expectedMidi, playedMidi) {

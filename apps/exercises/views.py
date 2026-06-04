@@ -17,11 +17,13 @@ from apps.student.player_progression import get_served_exercise_id
 User = get_user_model()
 
 
-def _performance_demonstrates_skill(performance_data: dict) -> bool:
+def _performance_demonstrates_skill(performance_data: dict, exercise=None) -> bool:
     numerator = performance_data.get("score_numerator")
     denominator = performance_data.get("score_denominator")
     if denominator not in (None, 0):
-        return numerator == denominator
+        is_chorale_play = exercise and exercise.data.get("type") in ("umto_chorale", "chorale") and exercise.data.get("mode") == "playback"
+        threshold = 0.8 if is_chorale_play else 1.0
+        return (numerator / denominator) >= threshold
     return performance_data.get("error_tally") in (0, -1, "n/a")
 
 
@@ -213,7 +215,7 @@ def _submit_exercise_performance(request):
 
     # Record mastery attempt (skip for figured bass — tags are RN-centric)
     exercise_obj = Exercise.objects.get(id=exercise_id[:6])
-    correct = _performance_demonstrates_skill(performance_data)
+    correct = _performance_demonstrates_skill(performance_data, exercise=exercise_obj)
     mastery_changes = {}
     is_figures_mode = "mode:figures" in (exercise_obj.skill_tags or []) or "mode:figures_unabbreviated" in (exercise_obj.skill_tags or [])
     if exercise_obj.skill_tags and not is_figures_mode:
