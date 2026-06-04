@@ -2014,17 +2014,19 @@ define([
                     analyzeConfig.mode &&
                     analyzeConfig.mode.abbreviate_thoroughbass)
                 );
-                if (figureLabel) {
-                  attachInlineRomanAnnotation(
-                    col,
-                    midi,
-                    analyzeConfig,
-                    inlineAnalyzer,
-                    ctx,
-                    activeStaveForAnnotations,
-                    { yShift: figuredYOffset, lineHeight: 12 },
-                    figureLabel
-                  );
+                if (figureLabel && columnCenterX !== null) {
+                  var figLines = figureLabel.split("\n");
+                  var yBase = activeStaveForAnnotations.getBottomY ? activeStaveForAnnotations.getBottomY() : 0;
+                  var figLineH = 14;
+                  var figStartY = yBase + figuredYOffset;
+                  ctx.save();
+                  ctx.fillStyle = "#000";
+                  ctx.font = "16px MainSerifs";
+                  ctx.textAlign = "center";
+                  figLines.forEach(function (line, idx) {
+                    ctx.fillText(line, columnCenterX, figStartY + idx * figLineH);
+                  });
+                  ctx.restore();
                 }
               } else if (renderRomanExp && activeStaveForAnnotations) {
                 var expLabel = computeRomanExpLabel(midi, inlineAnalyzer);
