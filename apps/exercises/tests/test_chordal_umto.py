@@ -53,3 +53,33 @@ class TestScoreKind(TestCase):
     def test_invalid_kind_rejected(self):
         with self.assertRaises(ValidationError):
             self._meta(score_kind="bogus")
+
+
+from apps.exercises.umto import UMTO
+
+META_VOICES = {"exercise_id": "T", "source": "t", "key": "C", "meter": "4/4",
+               "complexity_score": 1, "score_kind": "voices"}
+META_CHORDAL = {**META_VOICES, "score_kind": "chordal"}
+ONE_CHORD = [{"offset": 0.0, "duration": 1.0, "visible": [60]}]
+
+
+class TestUMTOValidator(TestCase):
+    def test_chordal_requires_chords(self):
+        with self.assertRaises(ValidationError):
+            UMTO.model_validate({"metadata": META_CHORDAL, "chords": []})
+
+    def test_chordal_ok_without_voices(self):
+        obj = UMTO.model_validate({"metadata": META_CHORDAL, "chords": ONE_CHORD})
+        self.assertEqual(obj.metadata.score_kind, "chordal")
+        self.assertEqual(len(obj.chords), 1)
+
+    def test_voices_kind_requires_explicit_voices(self):
+        with self.assertRaises(ValidationError):
+            UMTO.model_validate({"metadata": META_VOICES})
+
+    def test_voices_kind_ok_with_explicit_voices(self):
+        obj = UMTO.model_validate({
+            "metadata": META_VOICES,
+            "voices": {"S": [], "A": [], "T": [], "B": []},
+        })
+        self.assertEqual(obj.metadata.score_kind, "voices")

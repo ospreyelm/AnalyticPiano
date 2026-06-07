@@ -169,9 +169,20 @@ class UMTO(BaseModel):
     )
 
     metadata: Metadata
-    voices: Voices
+    voices: Voices = Field(default_factory=Voices)
+    chords: List[ChordEvent] = Field(default_factory=list)
     analysis: List[AnalysisSlice] = Field(default_factory=list)
     grading: List[GradingSlice] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_score_kind(self):
+        if self.metadata.score_kind == "chordal":
+            if not self.chords:
+                raise ValueError("score_kind 'chordal' requires non-empty chords")
+        else:  # "voices"
+            if "voices" not in self.model_fields_set:
+                raise ValueError("score_kind 'voices' requires an explicit voices field")
+        return self
 
     def get_chord_at_offset(self, offset: float) -> List[Pitch]:
         """
