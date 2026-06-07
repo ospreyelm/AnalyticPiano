@@ -288,7 +288,7 @@ def generate_exercise_context(
             try:
                 from apps.exercises.umto import UMTO
                 umto_obj = UMTO.model_validate(exercise.data)
-                
+
                 # Determine unit focus from playlist tags first; the request-time
                 # targeting layer owns curriculum scoping.
                 unit_focus = None
@@ -300,7 +300,7 @@ def generate_exercise_context(
                             unit_focus = int(tag.split(":")[1])
                         except (ValueError, IndexError):
                             continue
-                
+
                 exercise_context.update(umto_obj.to_frontend_payload(unit=unit_focus))
             except Exception as e:
                 # Fallback to raw data if UMTO validation fails
@@ -310,6 +310,20 @@ def generate_exercise_context(
                     exercise.id, e,
                 )
                 used_raw_umto_fallback = True
+                exercise_context.update(exercise.data)
+        elif exercise.data.get("chord"):
+            # Legacy chord[] row: wrap into chordal UMTO payload at serve time (read-only).
+            # Raw exercise.data is NEVER passed to UMTO.model_validate here.
+            try:
+                from apps.exercises.umto_factory import legacy_chord_row_to_chordal_payload
+                _wrapped = legacy_chord_row_to_chordal_payload(exercise.data)
+                exercise_context.update(_wrapped)
+            except Exception as e:
+                logger.warning(
+                    "[LEGACY EXERCISE] Exercise %s failed legacy chord wrap: %s. "
+                    "Falling back to raw data.",
+                    exercise.id, e,
+                )
                 exercise_context.update(exercise.data)
         else:
             exercise_context.update(exercise.data)

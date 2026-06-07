@@ -1,6 +1,7 @@
 import json
 import os
 import glob
+from dataclasses import dataclass
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 
@@ -14,10 +15,110 @@ except ImportError:
     build_events = None
 
 from apps.exercises.umto import InteractionMode
-from apps.exercises.umto_factory import save_umto_exercise
+from apps.exercises.models import Exercise
+from apps.exercises.umto_factory import build_chordal_umto_payload, save_umto_exercise
+from apps.exercises.utils.umto_import_router import (
+    MusicXMLRouteDecision,
+    build_chordal_analysis_slices,
+    classify_musicxml_score,
+    musicxml_score_to_chord_events,
+)
 from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
 
 User = get_user_model()
+
+
+@dataclass(frozen=True)
+class ImportMusicXMLPayload:
+    decision: MusicXMLRouteDecision
+    score_data: dict | None
+    payload: dict | None
+    meter: str
+
+
+def _score_meter(score) -> str:
+    from music21 import meter
+
+    ts = score.recurse().getElementsByClass(meter.TimeSignature).first()
+    return str(ts.ratioString) if ts else "4/4"
+
+
+def _meter_quarter_length(meter_text: str) -> float:
+    try:
+        numerator, denominator = meter_text.split("/", 1)
+        return int(numerator) * (4.0 / int(denominator))
+    except (AttributeError, ValueError, ZeroDivisionError):
+        return 4.0
+
+
+def _excerpt_chord_events(chords: list[dict], *, meter_text: str,
+                          start_measure: int, end_measure: int | None) -> list[dict]:
+    measure_ql = _meter_quarter_length(meter_text)
+    start_offset = start_measure * measure_ql
+    end_offset = end_measure * measure_ql if end_measure is not None else None
+    excerpt = []
+    for chord_event in chords:
+        offset = float(chord_event.get("offset", 0.0))
+        if offset < start_offset:
+            continue
+        if end_offset is not None and offset >= end_offset:
+            continue
+        copied = dict(chord_event)
+        copied["offset"] = round(offset - start_offset, 6)
+        excerpt.append(copied)
+    return excerpt
+
+
+def _build_import_payload_for_score(
+    score,
+    *,
+    title: str,
+    harmony_key: str,
+    start_measure: int,
+    end_measure: int | None,
+    complexity: int,
+) -> ImportMusicXMLPayload:
+    decision = classify_musicxml_score(score)
+    meter = _score_meter(score)
+
+    if decision.route == "chordal":
+        chords = _excerpt_chord_events(
+            musicxml_score_to_chord_events(score),
+            meter_text=meter,
+            start_measure=start_measure,
+            end_measure=end_measure,
+        )
+        analysis = build_chordal_analysis_slices(chords, harmony_key=harmony_key)
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source=f"Play {title}.",
+            key=harmony_key,
+            meter=meter,
+            clef="keyboard",
+            complexity_score=complexity,
+            mode=InteractionMode.PLAYBACK,
+            chords=chords,
+            analysis=analysis,
+            analysis_review_status="generated" if analysis else "none",
+        )
+        return ImportMusicXMLPayload(
+            decision=decision,
+            score_data=None,
+            payload=payload,
+            meter=meter,
+        )
+
+    cir = m21_to_cir(score, key_override=harmony_key)
+    meta = cir.get('meta', {})
+    measures = cir.get('measures', [])
+    excerpt_measures = measures[start_measure:end_measure] if end_measure else measures[start_measure:]
+    score_data = {"meta": meta, "measures": excerpt_measures}
+    return ImportMusicXMLPayload(
+        decision=decision,
+        score_data=score_data,
+        payload=None,
+        meter=meta.get("time", meter),
+    )
 
 
 class Command(BaseCommand):
@@ -96,18 +197,6 @@ class Command(BaseCommand):
         except Exception:
             harmony_key = "jC_"
 
-        # Convert to CIR
-        cir = m21_to_cir(score, key_override=harmony_key)
-        meta = cir.get('meta', {})
-        measures = cir.get('measures', [])
-
-        if not measures:
-            raise Exception('No measures found')
-
-        # Extract excerpt
-        excerpt_measures = measures[start_measure:end_measure] if end_measure else measures[start_measure:]
-        measure_range = f"mm. {start_measure+1}–{end_measure}" if end_measure else f"complete"
-
         basename = os.path.basename(file_path)
         title = os.path.splitext(basename)[0]
 
@@ -115,12 +204,37 @@ class Command(BaseCommand):
         # We analyze the score to get Unit tags and complexity
         detected_tags, complexity = analyze_chunk_skills(score, harmony_key)
 
-        # Use UMTO factory for persistence
-        score_data = {"meta": meta, "measures": excerpt_measures}
+        import_payload = _build_import_payload_for_score(
+            score,
+            title=title,
+            harmony_key=harmony_key,
+            start_measure=start_measure,
+            end_measure=end_measure,
+            complexity=complexity,
+        )
+
+        if import_payload.decision.route == "chordal":
+            payload = import_payload.payload
+            exercise = Exercise(
+                description=title,
+                data=payload,
+                authored_by=author,
+                skill_tags=list(detected_tags),
+                complexity=complexity,
+                is_public=is_public,
+                time_signature=import_payload.meter,
+            )
+            exercise.save()
+            exercise.data["score"]["umto"]["metadata"]["exercise_id"] = exercise.id
+            exercise.save(update_fields=["data"])
+            return exercise
+
+        if not import_payload.score_data or not import_payload.score_data.get("measures"):
+            raise Exception('No measures found')
         
         exercise = save_umto_exercise(
             description=title,
-            score_data=score_data,
+            score_data=import_payload.score_data,
             author=author,
             skill_tags=list(detected_tags),
             complexity=complexity,
@@ -129,12 +243,11 @@ class Command(BaseCommand):
                 exercise_id="TEMP",
                 source=f"Play {title}.",
                 key=harmony_key,
-                meter=meta.get("time", "4/4"),
-                clef=meta.get("clef", "treble"),
+                meter=import_payload.meter,
+                clef=import_payload.score_data.get("meta", {}).get("clef", "treble"),
                 complexity_score=complexity,
                 mode=InteractionMode.PLAYBACK,
             )
         )
 
         return exercise
-

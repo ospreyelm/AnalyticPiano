@@ -25,6 +25,7 @@ from apps.exercises.umto import (
     GradingSlice,
     AnalysisSlice,
     AnalysisLayer,
+    ChordEvent,
     InteractionMode,
 )
 from apps.exercises.utils.music21_builder import build_score_from_data
@@ -400,6 +401,228 @@ def build_umto_payload(
     payload = umto.to_frontend_payload(unit=unit, analysis_type=analysis_type)
     if display is not None:
         payload["display"] = display
+    return payload
+
+
+def _midi_to_cir_pitch(midi: int) -> dict:
+    """MIDI -> CIR spelled pitch. C-major-ish spelling; sharps for black keys.
+    Octave convention matches the frontend: C4 (MIDI 60) -> octave 4
+    (frontend computes MIDI as (octave+1)*12 + semitone)."""
+    names = [("C", 0), ("C", 1), ("D", 0), ("D", 1), ("E", 0), ("F", 0),
+             ("F", 1), ("G", 0), ("G", 1), ("A", 0), ("A", 1), ("B", 0)]
+    step, alter = names[midi % 12]
+    octave = midi // 12 - 1
+    return {"step": step, "alter": alter, "octave": octave}
+
+
+def _meter_quarter_length(meter: str) -> float:
+    try:
+        num_s, denom_s = meter.split("/", 1)
+        return int(num_s) * (4.0 / int(denom_s))
+    except (ValueError, AttributeError, ZeroDivisionError):
+        return 4.0
+
+
+def _duration_dict(ql: float) -> dict:
+    dur_type, dots = _ql_to_duration_parts(ql)
+    return {"type": dur_type, "dots": dots}
+
+
+# Keyboard staff split: pitches at or above middle C (MIDI 60) render on the
+# treble staff, below on the bass staff. Matches the "keyboard" clef convention.
+_KEYBOARD_SPLIT_MIDI = 60
+
+
+def _chordal_to_measures(chords: list, meter: str) -> list:
+    """Generate minimal CIR measures from chordal chords[] (spike 5a, W1).
+
+    Each chord is split across treble + bass staves by register (keyboard style):
+    pitches >= MIDI 60 go to treble, below to bass. Both staves stay rhythmically
+    aligned — every onset places a chord/note/rest on each staff so durations
+    match. Measures break when accumulated quarter-length reaches the meter's
+    beats-per-measure."""
+    beats = _meter_quarter_length(meter)
+    STAVES = ("treble", "bass")
+
+    def _new_measure():
+        return {"staves": {s: {"voices": [{"items": []}]} for s in STAVES}}
+
+    def _items(staff):
+        return current["staves"][staff]["voices"][0]["items"]
+
+    def _any_items():
+        return any(_items(s) for s in STAVES)
+
+    def _finish_measure():
+        nonlocal current, used
+        if _any_items():
+            measures.append(current)
+        current = _new_measure()
+        used = 0.0
+
+    def _append_rest(ql: float):
+        if ql <= 0:
+            return
+        for staff in STAVES:
+            _items(staff).append({"kind": "rest", "duration": _duration_dict(ql)})
+
+    def _staff_item(midis, duration):
+        pitches = [_midi_to_cir_pitch(m) for m in midis]
+        if len(pitches) > 1:
+            return {"kind": "chord",
+                    "notes": [{"pitch": p} for p in pitches],
+                    "duration": duration}
+        if len(pitches) == 1:
+            return {"kind": "note", "pitch": pitches[0], "duration": duration}
+        return {"kind": "rest", "duration": duration}
+
+    def _append_chord_item(c: dict):
+        visible_midis = list(c.get("visible", []))
+        duration = _duration_dict(float(c["duration"]))
+        treble = [m for m in visible_midis if m >= _KEYBOARD_SPLIT_MIDI]
+        bass = [m for m in visible_midis if m < _KEYBOARD_SPLIT_MIDI]
+        _items("treble").append(_staff_item(treble, duration))
+        _items("bass").append(_staff_item(bass, duration))
+
+    measures = []
+    current = _new_measure()
+    used = 0.0
+    cursor = 0.0
+    for c in sorted(chords, key=lambda item: float(item.get("offset", 0.0))):
+        offset = float(c.get("offset", cursor))
+        if offset < cursor - 1e-6:
+            raise ValueError("Chord offsets must be non-overlapping and monotonic")
+
+        while cursor < offset - 1e-6:
+            gap = min(offset - cursor, beats - used)
+            _append_rest(gap)
+            used += gap
+            cursor += gap
+            if abs(used - beats) < 1e-6 or used > beats:
+                _finish_measure()
+
+        if abs(used - beats) < 1e-6:
+            _finish_measure()
+
+        dur = float(c["duration"])
+        _append_chord_item(c)
+        used += dur
+        cursor = offset + dur
+        if abs(used - beats) < 1e-6 or used > beats:
+            _finish_measure()
+    if _any_items():
+        measures.append(current)
+    return measures
+
+
+def build_chordal_umto_payload(
+    *,
+    exercise_id: str,
+    source: str,
+    key: str,
+    meter: str,
+    clef: str,
+    complexity_score: int,
+    mode: InteractionMode,
+    chords: list,
+    analysis: Optional[list] = None,
+    unit: Optional[int] = None,
+    input_mode: Literal["dropdown", "text"] = "dropdown",
+    analysis_review_status: Literal["none", "generated", "reviewed"] = "none",
+) -> dict:
+    """Build a UMTO frontend payload for a chordal score-kind exercise.
+
+    chords: list of dicts compatible with ChordEvent
+            (offset, duration, visible, hidden?, spelling?).
+    analysis: list of dicts compatible with AnalysisSlice (canonical, top-level).
+    score.measures is generated from chords[] per the spike 5a W1 decision, so
+    the existing ScoreTimeline and VexFlow paths can consume chordal UMTO.
+    """
+    analysis = analysis or []
+    umto = UMTO(
+        metadata=Metadata(
+            exercise_id=exercise_id,
+            source=source,
+            key=key,
+            meter=meter,
+            clef=clef,
+            complexity_score=complexity_score,
+            mode=mode,
+            input_mode=input_mode,
+            unit=unit,
+            score_kind="chordal",
+            analysis_review_status=analysis_review_status,
+        ),
+        chords=[ChordEvent(**c) for c in chords],
+        analysis=[AnalysisSlice(**a) for a in analysis],
+    )
+    umto_json = umto.model_dump(mode="json")
+    UMTO.model_validate(umto_json)  # explicit round-trip validation
+    return {
+        "type": "umto_chorale",
+        "isUMTO": True,
+        "mode": mode.value if hasattr(mode, "value") else mode,
+        "key": key,
+        "meter": meter,
+        "clef": clef,
+        "complexity_score": complexity_score,
+        "score": {
+            "meta": {"key": key, "time": meter, "clef": clef},
+            "measures": _chordal_to_measures(chords, meter),
+            "umto": umto_json,
+        },
+        "analysis": umto_json["analysis"],
+        "grading": [],
+    }
+
+
+def legacy_chord_row_to_chordal_payload(data, *, meter="4/4", clef="keyboard",
+                                        complexity_score=1):
+    """Wrap a legacy data.chord row into a chordal UMTO payload (runtime read only).
+
+    Accepts chords as dicts ({visible,hidden} or {notes}) or bare midi lists.
+    Never writes back to the DB — call this only at serve time.
+    """
+    raw = data.get("chord") or []
+    chords = []
+    analysis = []
+    offset = 0.0
+    for c in raw:
+        if isinstance(c, dict):
+            visible = list(c.get("visible") or c.get("notes") or [])
+            hidden = list(c.get("hidden") or [])
+        else:  # bare list of midi
+            visible, hidden = list(c), []
+        chords.append({"offset": offset, "duration": 1.0,
+                       "visible": visible, "hidden": hidden})
+        if isinstance(c, dict) and c.get("answer"):
+            analysis.append({
+                "offset": offset,
+                "content": {"functional_label": c.get("answer")},
+                "is_target": True,
+            })
+        offset += 1.0
+    legacy_type = data.get("type")
+    is_identification = legacy_type == "identification"
+    payload = build_chordal_umto_payload(
+        exercise_id=str(data.get("id", "LEGACY")),
+        source=data.get("description", "Legacy exercise"),
+        key=data.get("key", "C"), meter=meter, clef=clef,
+        complexity_score=complexity_score,
+        mode=InteractionMode.IDENTIFICATION if is_identification else InteractionMode.PLAYBACK,
+        chords=chords, analysis=analysis,
+    )
+    if is_identification:
+        choices = []
+        for c in raw:
+            if isinstance(c, dict):
+                for choice in c.get("choices") or []:
+                    if choice not in choices:
+                        choices.append(choice)
+        payload["analysisType"] = data.get("analysisType", "chord_quality")
+        payload["inputMode"] = data.get("inputMode", "dropdown")
+        payload["identMode"] = data.get("identMode", "practice")
+        payload["allowed_answers"] = choices
     return payload
 
 

@@ -22,6 +22,7 @@ define([
   "app/utils/measure_engine",
   "app/models/harmonization_realization_logic",
   "app/components/music/identification_label_layout_logic",
+  "app/models/chordal_problems_logic",
 ], function (
   $,
   $UI,
@@ -44,7 +45,8 @@ define([
   renderPlaybackControls,
   MeasureEngine,
   HarmonizationRealizationLogic,
-  IdentificationLabelLayoutLogic
+  IdentificationLabelLayoutLogic,
+  ChordalProblemsLogic
 ) {
   "use strict";
 
@@ -1380,7 +1382,7 @@ define([
       try {
         var score = def.getScore ? def.getScore() : null;
         console.log("[Chorale] score keys:", score ? Object.keys(score) : "null", "has umto:", !!(score && score.umto));
-        if (score && score.umto) {
+        if (score && score.umto && !ChordalProblemsLogic.shouldPreserveChordalMeasures(score)) {
           var converted = this._convertUMTOToProcessedScore(score.umto);
           if (converted) {
             def.exercise.score = converted;
@@ -1824,7 +1826,7 @@ define([
       
       // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
       // This fixes cases where the database might have a single 'blob' measure.
-      if (isChoraleLike && score && score.umto) {
+      if (isChoraleLike && score && score.umto && !ChordalProblemsLogic.shouldPreserveChordalMeasures(score)) {
         score = this._convertUMTOToProcessedScore(score.umto);
       }
 
@@ -2968,16 +2970,109 @@ define([
      * @param {object} umto 
      * @returns {object} Processed score
      */
+    /**
+     * Render-time staff split for chordal UMTO. Chords store flat verticalities;
+     * staff layout is a VIEW option (like the legacy chord-bank path), chosen here
+     * by staffDistribution rather than baked at import. Pitches are routed to
+     * treble/bass per the keyboard split (>= middle C -> treble), then each staff
+     * is split into measures by MeasureEngine. staffDistribution "treble"/"bass"
+     * force a single staff; anything else is grand-staff (both).
+     */
+    _convertChordalUMTOToProcessedScore: function (umto) {
+      var meta = _.cloneDeep(umto.metadata || {});
+      if (meta.meter && !meta.time) meta.time = meta.meter;
+      if (!meta.time) meta.time = "4/4";
+
+      var dist = meta.staffDistribution || "keyboard";
+      var SPLIT = 60; // middle C
+      var midiToPitch = function (m) {
+        var names = [["C",0],["C",1],["D",0],["D",1],["E",0],["F",0],
+                     ["F",1],["G",0],["G",1],["A",0],["A",1],["B",0]];
+        var n = names[((m % 12) + 12) % 12];
+        return { step: n[0], alter: n[1], octave: Math.floor(m / 12) - 1 };
+      };
+      var DUR_TYPE = { 4: "w", 2: "h", 1: "q", 0.5: "8", 0.25: "16", 0.125: "32" };
+      var durType = function (ql) { return DUR_TYPE[ql] || "q"; };
+
+      // Decide which staves are active.
+      var forceTreble = dist === "treble";
+      var forceBass = dist === "bass";
+
+      var trebleItems = [];
+      var bassItems = [];
+      _.each(umto.chords, function (c) {
+        var midis = (c.visible || []).slice();
+        var dur = { type: durType(Number(c.duration)), dots: 0 };
+        var hi, lo;
+        if (forceTreble) { hi = midis; lo = []; }
+        else if (forceBass) { hi = []; lo = midis; }
+        else {
+          var sorted = midis.slice().sort(function (a, b) { return a - b; });
+          hi = sorted.filter(function (m) { return m >= SPLIT; });
+          lo = sorted.filter(function (m) { return m < SPLIT; });
+          // Register split can leave a staff empty (e.g. a chord whose lowest
+          // note is exactly middle C). For a multi-note chord, keep the lowest
+          // note on the bass so the voicing reads as grand-staff rather than
+          // piling every note onto one staff.
+          if (lo.length === 0 && hi.length > 1) {
+            lo = [hi.shift()];
+          } else if (hi.length === 0 && lo.length > 1) {
+            hi = [lo.pop()];
+          }
+        }
+        var mkItem = function (ms) {
+          var pitches = ms.map(midiToPitch);
+          if (pitches.length > 1) {
+            return { kind: "chord", notes: pitches.map(function (p) { return { pitch: p }; }), duration: dur };
+          }
+          if (pitches.length === 1) {
+            return { kind: "note", pitch: pitches[0], duration: dur };
+          }
+          return { kind: "rest", duration: dur };
+        };
+        trebleItems.push(mkItem(hi));
+        bassItems.push(mkItem(lo));
+      });
+
+      var trebleMeasures = MeasureEngine.splitIntoMeasures(trebleItems, meta.time);
+      var bassMeasures = MeasureEngine.splitIntoMeasures(bassItems, meta.time);
+      var numMeasures = Math.max(trebleMeasures.length, bassMeasures.length);
+
+      var measures = [];
+      for (var i = 0; i < numMeasures; i++) {
+        var staves = {};
+        if (!forceBass) {
+          staves.treble = { voices: [{ items: trebleMeasures[i] || [], direction: "auto" }] };
+        }
+        if (!forceTreble) {
+          staves.bass = { voices: [{ items: bassMeasures[i] || [], direction: "auto" }] };
+        }
+        measures.push({ staves: staves });
+      }
+
+      return {
+        meta: { key: meta.key, time: meta.time, clef: meta.clef,
+                staffDistribution: dist },
+        metadata: { time: meta.time, meter: meta.time },
+        measures: measures,
+        umto: umto,
+      };
+    },
+
     _convertUMTOToProcessedScore: function (umto) {
+      if (umto && umto.metadata && umto.metadata.score_kind === "chordal" &&
+          umto.chords && umto.chords.length) {
+        return this._convertChordalUMTOToProcessedScore(umto);
+      }
       if (!umto || !umto.voices) {
         console.error("[ID] UMTO or voices missing", umto);
         return null;
       }
-      
+
       var meta = _.cloneDeep(umto.metadata || {});
       if (meta.meter && !meta.time) meta.time = meta.meter;
       if (!meta.time) meta.time = "4/4";
-      
+
       // Use the MeasureEngine to split each voice into measures
       var voiceKeys = ['S', 'A', 'T', 'B'];
       var splitVoices = {};

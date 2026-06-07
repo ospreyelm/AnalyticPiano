@@ -12,6 +12,16 @@ from django.core.management.base import BaseCommand
 CATALOG = [
     ("Bach chorale phrases (Riemenschneider)", [
         (
+            "import_musicxml",
+            "Import MusicXML through the UMTO representation router: stable multipart scores stay voices-kind; chordal/monophonic sources become chordal UMTO.",
+            "python manage.py import_musicxml path/to/score.musicxml --author admin@example.com --public",
+        ),
+        (
+            "import_legacy_chord_csv",
+            "Import legacy CSV data.chord rows as chordal UMTO exercises. Use --dry-run first.",
+            "python manage.py import_legacy_chord_csv exercises_2026-04-03.csv --author admin@example.com --dry-run --limit 10",
+        ),
+        (
             "import_bach_phrases",
             "Import single, range, or list of Riemenschneider phrases as identification/playback/match/figures/harmonization-source exercises.",
             "python manage.py import_bach_phrases --riemenschneider 1-10 --author admin@example.com --mode roman --extra-tags unit:9",

@@ -58,6 +58,7 @@ from apps.dashboard.views.my_work import my_work_view
 from apps.dashboard.views.api_workbench import (
     api_recent_imports,
     api_multiply_projection,
+    api_chordal_analysis_review,
     workbench_view,
     workbench_upload_view,
 )
@@ -127,6 +128,11 @@ urlpatterns = [
     # Teacher Dashboard Workbench APIs
     path("api/recent-imports/", api_recent_imports, name="api-recent-imports"),
     path("api/multiply-projection/", api_multiply_projection, name="api-multiply-projection"),
+    path(
+        "api/workbench/chordal-analysis/<str:exercise_id>/",
+        api_chordal_analysis_review,
+        name="api-chordal-analysis-review",
+    ),
     path("api/exercises/bulk-delete/", api_bulk_delete_exercises, name="api-bulk-delete-exercises"),
     path("debug/taxonomy/", taxonomy_debug_view, name="taxonomy-debug"),
 ]

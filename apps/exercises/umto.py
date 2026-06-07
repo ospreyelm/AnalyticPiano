@@ -48,6 +48,24 @@ class VoiceEvent(BaseModel):
     is_tied_stop: bool = False
     is_target: bool = True # False if this note is just context/accompaniment
 
+class ChordEvent(BaseModel):
+    offset: float = Field(ge=0.0)          # quarter-lengths from start
+    duration: float = Field(gt=0.0)         # quarter-lengths
+    visible: List[int] = Field(default_factory=list)  # MIDI pitches sounding
+    hidden: List[int] = Field(default_factory=list)   # MIDI pitches not shown
+    spelling: Optional[List[str]] = None    # positional: visible then hidden
+
+    @model_validator(mode="after")
+    def validate_spelling_length(self):
+        if self.spelling is not None:
+            expected = len(self.visible) + len(self.hidden)
+            if len(self.spelling) != expected:
+                raise ValueError(
+                    f"spelling length {len(self.spelling)} must equal "
+                    f"visible+hidden length {expected}"
+                )
+        return self
+
 class Voices(BaseModel):
     S: List[VoiceEvent] = Field(default_factory=list)
     A: List[VoiceEvent] = Field(default_factory=list)
@@ -112,6 +130,8 @@ class Metadata(BaseModel):
     mode: InteractionMode = InteractionMode.PLAYBACK
     is_umto: bool = True
     input_mode: Literal["dropdown", "text"] = "dropdown"
+    score_kind: Literal["voices", "chordal"] = "voices"
+    analysis_review_status: Literal["none", "generated", "reviewed"] = "none"
     unit: Optional[int] = None
     locked_voices: List[VoiceName] = Field(default_factory=lambda: ["B"])
     voice_count_policy: VoiceCountPolicy = Field(default_factory=VoiceCountPolicy)
@@ -150,9 +170,20 @@ class UMTO(BaseModel):
     )
 
     metadata: Metadata
-    voices: Voices
+    voices: Voices = Field(default_factory=Voices)
+    chords: List[ChordEvent] = Field(default_factory=list)
     analysis: List[AnalysisSlice] = Field(default_factory=list)
     grading: List[GradingSlice] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_score_kind(self):
+        if self.metadata.score_kind == "chordal":
+            if not self.chords:
+                raise ValueError("score_kind 'chordal' requires non-empty chords")
+        else:  # "voices"
+            if "voices" not in self.model_fields_set:
+                raise ValueError("score_kind 'voices' requires an explicit voices field")
+        return self
 
     def get_chord_at_offset(self, offset: float) -> List[Pitch]:
         """

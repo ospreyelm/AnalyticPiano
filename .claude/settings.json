@@ -122,7 +122,17 @@
       "Bash(python3 -m pytest apps/exercises/tests/test_key_sig_exercise.py::KeySigExerciseSaveTests -v)",
       "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/.worktrees/unit3-scales-key-signatures add apps/exercises/umto_factory.py apps/exercises/tests/test_key_sig_exercise.py)",
       "Bash(git -C /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/.worktrees/unit3-scales-key-signatures commit -m ' *)",
-      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local DATABASE_URL=postgres://adorman@localhost:5432/analyticpiano python3 -m pytest apps/exercises/tests/test_barline_exercise_builder.py apps/exercises/tests/test_generate_unit2_barline_exercises.py apps/exercises/tests/test_corpus_filter.py -q)"
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local DATABASE_URL=postgres://adorman@localhost:5432/analyticpiano python3 -m pytest apps/exercises/tests/test_barline_exercise_builder.py apps/exercises/tests/test_generate_unit2_barline_exercises.py apps/exercises/tests/test_corpus_filter.py -q)",
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.ci python3 manage.py test apps.dashboard.tests.test_workbench_router_wiring apps.exercises.tests.test_umto_import_router --noinput -v1)",
+      "Bash(sed -n '26,40p' harmony/settings/local.py)",
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py showmigrations exercises)",
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py runserver 8011)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8011/dashboard/workbench/)",
+      "Bash(cp \"/Users/adorman/Library/CloudStorage/Dropbox/Codebases/clausulae-project/compendium/examples/m321-322.xml\" /tmp/m321.xml)",
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py shell -c \"from django.contrib.auth import get_user_model; U=get_user_model\\(\\); print\\([u.email for u in U.objects.filter\\(is_superuser=True\\)[:3]]\\)\")",
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local python3 -c ' *)",
+      "Bash(DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py import_musicxml /tmp/m321.xml --author avnerdorman@gmail.com)",
+      "Bash(awk 'NR>=1370 && NR<=1404' lab/static/js/src/components/music/exercise_sheet.js)"
     ],
     "additionalDirectories": [
       "/Users/adorman"
