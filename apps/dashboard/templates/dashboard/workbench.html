@@ -521,11 +521,22 @@ document.addEventListener("DOMContentLoaded", function() {
         selectionCount.innerText = selectedIds.size;
         if(selectedIds.size > 0) {
             selectionCount.classList.add('active');
-            const hasChordal = Array.from(selectedIds).some(id => {
-                return importMetaById[id] && importMetaById[id].scoreKind === 'chordal';
-            });
+            const selectedItems = Array.from(selectedIds)
+                .map(id => importMetaById[id])
+                .filter(Boolean);
+            const hasChordal = selectedItems.some(item => item.scoreKind === 'chordal');
+            const hasVoices = selectedItems.some(item => item.scoreKind !== 'chordal');
+            const allChordalReviewed = selectedItems
+                .filter(item => item.scoreKind === 'chordal')
+                .every(item => item.analysisReviewStatus === 'reviewed');
             actionBtns.forEach(btn => {
-                btn.disabled = hasChordal ? btn.id !== 'btn-exact' : false;
+                if (!selectedItems.length || (hasChordal && hasVoices)) {
+                    btn.disabled = true;
+                } else if (hasChordal) {
+                    btn.disabled = btn.id !== 'btn-exact' && !allChordalReviewed;
+                } else {
+                    btn.disabled = false;
+                }
             });
         } else {
             selectionCount.classList.remove('active');

@@ -74,6 +74,26 @@ class WorkbenchRouterWiringTests(TestCase):
         )
         chordal.data["score"]["umto"]["metadata"]["exercise_id"] = chordal.id
         chordal.save(update_fields=["data"])
+        reviewed_payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Reviewed chordal",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+            analysis_review_status="reviewed",
+        )
+        reviewed = Exercise.objects.create(
+            description="Reviewed chordal",
+            data=reviewed_payload,
+            authored_by=self.user,
+            skill_tags=["import:musicxml"],
+            complexity=1,
+        )
+        reviewed.data["score"]["umto"]["metadata"]["exercise_id"] = reviewed.id
+        reviewed.save(update_fields=["data"])
 
         response = self.client.get(reverse("dashboard:api-recent-imports"))
 
@@ -84,6 +104,8 @@ class WorkbenchRouterWiringTests(TestCase):
         }
         self.assertEqual(by_description["Multipart upload"]["scoreKind"], "voices")
         self.assertEqual(by_description["Chordal upload"]["scoreKind"], "chordal")
+        self.assertEqual(by_description["Chordal upload"]["analysisReviewStatus"], "none")
+        self.assertEqual(by_description["Reviewed chordal"]["analysisReviewStatus"], "reviewed")
 
     def test_chordal_import_rejects_unreviewed_analysis_projection(self):
         payload = build_chordal_umto_payload(

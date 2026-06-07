@@ -87,6 +87,7 @@ def api_recent_imports(request):
             "description": ex.description,
             "type": data.get("type"),
             "scoreKind": score_kind,
+            "analysisReviewStatus": metadata.get("analysis_review_status", "none"),
             "key": score.get("meta", {}).get("key") or metadata.get("key", "C"),
             "measureRange": metadata.get("source") or data.get("source", {}).get("filename", "Imported MusicXML"),
         })
