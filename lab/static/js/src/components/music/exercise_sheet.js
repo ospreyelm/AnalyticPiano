@@ -3007,8 +3007,18 @@ define([
         if (forceTreble) { hi = midis; lo = []; }
         else if (forceBass) { hi = []; lo = midis; }
         else {
-          hi = midis.filter(function (m) { return m >= SPLIT; });
-          lo = midis.filter(function (m) { return m < SPLIT; });
+          var sorted = midis.slice().sort(function (a, b) { return a - b; });
+          hi = sorted.filter(function (m) { return m >= SPLIT; });
+          lo = sorted.filter(function (m) { return m < SPLIT; });
+          // Register split can leave a staff empty (e.g. a chord whose lowest
+          // note is exactly middle C). For a multi-note chord, keep the lowest
+          // note on the bass so the voicing reads as grand-staff rather than
+          // piling every note onto one staff.
+          if (lo.length === 0 && hi.length > 1) {
+            lo = [hi.shift()];
+          } else if (hi.length === 0 && lo.length > 1) {
+            hi = [lo.pop()];
+          }
         }
         var mkItem = function (ms) {
           var pitches = ms.map(midiToPitch);
