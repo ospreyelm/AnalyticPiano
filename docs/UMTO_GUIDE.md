@@ -124,6 +124,26 @@ numerals, figured bass, and other pedagogical labels. Analysis is correlated to
 chords by matching `offset` values. Chords do **not** carry inline analysis
 labels.
 
+### Chordal analysis review
+
+Chordal imports may include analyzer-generated `analysis[]` slices aligned by
+offset to `chords[]`. `metadata.analysis_review_status` records whether those
+labels are:
+
+- `none` — no analysis is available;
+- `generated` — analyzer output exists but has not been reviewed;
+- `reviewed` — a teacher saved the Workbench analysis review editor.
+
+Workbench analysis projections from chordal imports require `reviewed` status.
+Exact Match playback can be cloned before review because it does not expose
+analysis labels as answer keys.
+
+Generated labels use HarmonyLab analyzer logic first:
+
+- `compute_figured_bass()` for raw and abbreviated figured bass;
+- `legacy_roman_from_pitches()` for Roman labels matching the browser analyzer;
+- music21 Roman analysis only as fallback when HarmonyLab has no table label.
+
 ### Rendering and the playback window
 
 `build_chordal_umto_payload` in `umto_factory.py` calls `_chordal_to_measures`
