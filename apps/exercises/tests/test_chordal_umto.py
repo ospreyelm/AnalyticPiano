@@ -12,9 +12,10 @@ class TestChordEvent(TestCase):
         self.assertIsNone(c.spelling)
 
     def test_input_order_preserved(self):
-        # bass-first ordering must NOT be sorted
-        c = ChordEvent(offset=0.0, duration=1.0, visible=[36, 60, 64])
-        self.assertEqual(c.visible, [36, 60, 64])
+        # descending + shuffled: must NOT be sorted by the model
+        c = ChordEvent(offset=0.0, duration=1.0, visible=[67, 36, 60], hidden=[72, 50])
+        self.assertEqual(c.visible, [67, 36, 60])
+        self.assertEqual(c.hidden, [72, 50])
 
     def test_spelling_length_must_match_visible_plus_hidden(self):
         with self.assertRaises(ValidationError):
