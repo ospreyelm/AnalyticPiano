@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 
 from apps.exercises.models import Exercise
-from apps.exercises.umto import InteractionMode
+from apps.exercises.umto import AnalysisSlice, InteractionMode
 
 @login_required
 def workbench_view(request):
@@ -97,6 +97,90 @@ def _score_kind(exercise):
         .get("metadata", {})
         .get("score_kind", "voices")
     )
+
+
+@login_required
+@csrf_exempt
+def api_chordal_analysis_review(request, exercise_id):
+    try:
+        exercise = Exercise.objects.get(id=exercise_id, authored_by=request.user)
+    except Exercise.DoesNotExist:
+        return JsonResponse({"error": "Exercise not found"}, status=404)
+
+    if _score_kind(exercise) != "chordal":
+        return JsonResponse({
+            "error": "Analysis review is only available for chordal UMTO imports."
+        }, status=400)
+
+    data = _copy.deepcopy(exercise.data or {})
+    umto = data.get("score", {}).get("umto", {})
+    metadata = umto.get("metadata", {})
+    chords = umto.get("chords", [])
+
+    if request.method == "GET":
+        analysis_by_offset = {
+            round(float(item.get("offset", 0.0)), 6): item
+            for item in umto.get("analysis", [])
+        }
+        rows = []
+        for chord in chords:
+            offset = round(float(chord.get("offset", 0.0)), 6)
+            rows.append({
+                "offset": offset,
+                "duration": chord.get("duration"),
+                "visible": chord.get("visible", []),
+                "hidden": chord.get("hidden", []),
+                "spelling": chord.get("spelling", []),
+                "content": (analysis_by_offset.get(offset) or {}).get("content", {}),
+            })
+        return JsonResponse({
+            "exerciseId": exercise.id,
+            "description": exercise.description,
+            "scoreKind": "chordal",
+            "reviewStatus": metadata.get("analysis_review_status", "none"),
+            "rows": rows,
+        })
+
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    try:
+        payload = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    valid_offsets = {
+        round(float(chord.get("offset", 0.0)), 6)
+        for chord in chords
+    }
+    new_analysis = []
+    try:
+        for row in payload.get("rows", []):
+            offset = round(float(row.get("offset", 0.0)), 6)
+            if offset not in valid_offsets:
+                return JsonResponse({
+                    "error": f"Unknown chord offset: {offset}",
+                }, status=400)
+            slice_data = {
+                "offset": offset,
+                "content": row.get("content", {}),
+                "unit_tags": row.get("unit_tags", []),
+                "is_target": True,
+            }
+            new_analysis.append(AnalysisSlice(**slice_data).model_dump(mode="json"))
+    except (TypeError, ValueError) as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+    metadata["analysis_review_status"] = "reviewed"
+    umto["analysis"] = new_analysis
+    data["analysis"] = new_analysis
+    exercise.data = data
+    exercise.save(update_fields=["data"])
+    return JsonResponse({
+        "status": "success",
+        "reviewStatus": "reviewed",
+        "analysis": new_analysis,
+    })
 
 
 def _clone_chordal_exact_match(base_ex, author):

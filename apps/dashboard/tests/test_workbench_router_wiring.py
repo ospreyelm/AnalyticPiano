@@ -141,3 +141,112 @@ class WorkbenchRouterWiringTests(TestCase):
         self.assertEqual(body["status"], "success")
         created = Exercise.objects.get(id=body["created_exercises"][0])
         self.assertEqual(created.data["score"]["umto"]["metadata"]["score_kind"], "chordal")
+
+    def test_chordal_analysis_review_fetch_returns_rows(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Chordal upload",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{
+                "offset": 0.0,
+                "duration": 1.0,
+                "visible": [60, 64, 67],
+                "spelling": ["C4", "E4", "G4"],
+            }],
+            analysis=[{
+                "offset": 0.0,
+                "content": {"roman_numeral": "I", "figured_bass": "5/3"},
+                "is_target": True,
+            }],
+            analysis_review_status="generated",
+        )
+        chordal = Exercise.objects.create(
+            description="Chordal upload",
+            data=payload,
+            authored_by=self.user,
+            complexity=1,
+        )
+
+        response = self.client.get(
+            reverse("dashboard:api-chordal-analysis-review", args=[chordal.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["reviewStatus"], "generated")
+        self.assertEqual(body["rows"][0]["visible"], [60, 64, 67])
+        self.assertEqual(body["rows"][0]["spelling"], ["C4", "E4", "G4"])
+        self.assertEqual(body["rows"][0]["content"]["roman_numeral"], "I")
+
+    def test_chordal_analysis_review_save_persists_reviewed_analysis(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Chordal upload",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+            analysis_review_status="generated",
+        )
+        chordal = Exercise.objects.create(
+            description="Chordal upload",
+            data=payload,
+            authored_by=self.user,
+            complexity=1,
+        )
+
+        response = self.client.post(
+            reverse("dashboard:api-chordal-analysis-review", args=[chordal.id]),
+            data=json.dumps({
+                "rows": [{
+                    "offset": 0.0,
+                    "content": {"roman_numeral": "I6", "figured_bass": "6"},
+                }]
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        chordal.refresh_from_db()
+        umto = chordal.data["score"]["umto"]
+        self.assertEqual(umto["metadata"]["analysis_review_status"], "reviewed")
+        self.assertEqual(umto["analysis"][0]["content"]["roman_numeral"], "I6")
+        self.assertEqual(chordal.data["analysis"], umto["analysis"])
+
+    def test_chordal_analysis_review_save_rejects_unknown_offsets(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Chordal upload",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+        )
+        chordal = Exercise.objects.create(
+            description="Chordal upload",
+            data=payload,
+            authored_by=self.user,
+            complexity=1,
+        )
+
+        response = self.client.post(
+            reverse("dashboard:api-chordal-analysis-review", args=[chordal.id]),
+            data=json.dumps({
+                "rows": [{
+                    "offset": 1.0,
+                    "content": {"roman_numeral": "V"},
+                }]
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("offset", response.json()["error"])
