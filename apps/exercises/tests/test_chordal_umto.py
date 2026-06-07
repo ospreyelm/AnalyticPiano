@@ -97,3 +97,32 @@ class TestSchemaUpToDate(TestCase):
         text = json.dumps(schema)
         self.assertIn("ChordEvent", text)
         self.assertIn("score_kind", text)
+
+
+from apps.exercises.umto_factory import build_chordal_umto_payload
+from apps.exercises.umto import InteractionMode, UMTO
+
+
+class TestChordalFactory(TestCase):
+    def test_payload_stores_chords_under_score_umto(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Rule of the octave, C major, 3 voices",
+            key="C", meter="4/4", clef="keyboard",
+            complexity_score=1, mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+            analysis=[],
+        )
+        umto = payload["score"]["umto"]
+        self.assertEqual(umto["metadata"]["score_kind"], "chordal")
+        self.assertEqual(len(umto["chords"]), 1)
+        self.assertEqual(payload["type"], "umto_chorale")
+        self.assertTrue(payload["isUMTO"])
+
+    def test_payload_validates_against_umto(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP", source="t", key="C", meter="4/4", clef="keyboard",
+            complexity_score=1, mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60]}], analysis=[],
+        )
+        UMTO.model_validate(payload["score"]["umto"])  # must not raise

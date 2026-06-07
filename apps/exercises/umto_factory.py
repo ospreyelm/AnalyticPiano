@@ -25,6 +25,7 @@ from apps.exercises.umto import (
     GradingSlice,
     AnalysisSlice,
     AnalysisLayer,
+    ChordEvent,
     InteractionMode,
 )
 from apps.exercises.utils.music21_builder import build_score_from_data
@@ -401,6 +402,64 @@ def build_umto_payload(
     if display is not None:
         payload["display"] = display
     return payload
+
+
+def build_chordal_umto_payload(
+    *,
+    exercise_id: str,
+    source: str,
+    key: str,
+    meter: str,
+    clef: str,
+    complexity_score: int,
+    mode: InteractionMode,
+    chords: list,
+    analysis: Optional[list] = None,
+    unit: Optional[int] = None,
+    input_mode: Literal["dropdown", "text"] = "dropdown",
+) -> dict:
+    """Build a UMTO frontend payload for a chordal score-kind exercise.
+
+    chords: list of dicts compatible with ChordEvent
+            (offset, duration, visible, hidden?, spelling?).
+    analysis: list of dicts compatible with AnalysisSlice (canonical, top-level).
+    NOTE: score.measures is intentionally NOT generated here — Task 9 adds that
+    (spike 5a decision W1). This task only stores the canonical chordal UMTO object.
+    """
+    analysis = analysis or []
+    umto = UMTO(
+        metadata=Metadata(
+            exercise_id=exercise_id,
+            source=source,
+            key=key,
+            meter=meter,
+            clef=clef,
+            complexity_score=complexity_score,
+            mode=mode,
+            input_mode=input_mode,
+            unit=unit,
+            score_kind="chordal",
+        ),
+        chords=[ChordEvent(**c) for c in chords],
+        analysis=[AnalysisSlice(**a) for a in analysis],
+    )
+    umto_json = umto.model_dump(mode="json")
+    UMTO.model_validate(umto_json)  # explicit round-trip validation
+    return {
+        "type": "umto_chorale",
+        "isUMTO": True,
+        "mode": mode.value if hasattr(mode, "value") else mode,
+        "key": key,
+        "meter": meter,
+        "clef": clef,
+        "complexity_score": complexity_score,
+        "score": {
+            "meta": {"key": key, "time": meter, "clef": clef},
+            "umto": umto_json,
+        },
+        "analysis": umto_json["analysis"],
+        "grading": [],
+    }
 
 
 import os
