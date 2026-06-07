@@ -8,8 +8,9 @@ define([
   "app/models/input_method_logic",
   "app/config/unit_allowed_answers",
   "app/models/exercise_definition_logic",
+  "app/models/chordal_problems_logic",
   "tonal",
-], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, InputMethodLogic, UNIT_ALLOWED_ANSWERS_RAW, ExerciseDefinitionLogic, Tonal) {
+], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, InputMethodLogic, UNIT_ALLOWED_ANSWERS_RAW, ExerciseDefinitionLogic, ChordalProblemsLogic, Tonal) {
   var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
@@ -1070,6 +1071,17 @@ define([
         }
 
         if (exercise.type === "umto_chorale") {
+          // Chordal UMTO: onset verticalities graded as chord-bank problems.
+          // MUST run before the isHarm/isIdent/isPlayback logic, which would
+          // otherwise set problems = [] for playback (spec §5c).
+          if (ChordalProblemsLogic.isChordalUMTO(exercise)) {
+            var _chordalChords = (exercise.score && exercise.score.umto &&
+                                  exercise.score.umto.chords) || [];
+            exercise.problems = ChordalProblemsLogic.chordsToProblems(_chordalChords);
+            exercise.analysis = { enabled: true, mode: {} };
+            exercise.complexity_score = definition.complexity_score || 0;
+            return exercise;
+          }
           exercise.harmonizationTargets = definition.harmonizationTargets || [];
           var isIdent = exercise.mode === "identification" || exercise.mode === "chorale_identification";
           var isHarm = exercise.mode === "harmonization";

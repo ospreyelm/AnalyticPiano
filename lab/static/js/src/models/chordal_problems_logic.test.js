@@ -22,5 +22,10 @@ eq("second merges hidden into notes", problems[1].notes, [50, 62]); // notes sor
 eq("second visible only visible", problems[1].visible, [62]);
 eq("second hidden preserved", problems[1].hidden, [50]);
 
+// isChordalUMTO: detect chordal score-kind from a parsed definition-ish object
+eq("chordal detected", logic.isChordalUMTO({ score: { umto: { metadata: { score_kind: "chordal" } } } }), true);
+eq("voices not chordal", logic.isChordalUMTO({ score: { umto: { metadata: { score_kind: "voices" } } } }), false);
+eq("missing umto not chordal", logic.isChordalUMTO({ score: {} }), false);
+
 console.log(pass + " passed, " + fail + " failed");
 if (fail > 0) process.exit(1);
