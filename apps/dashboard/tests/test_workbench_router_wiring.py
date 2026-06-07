@@ -39,6 +39,14 @@ class WorkbenchRouterWiringTests(TestCase):
         self.assertTrue(temp_path.endswith(".xml"))
         self.assertEqual(call_command.call_args.kwargs["author"], self.user.email)
 
+    def test_workbench_template_includes_chordal_review_editor(self):
+        response = self.client.get(reverse("dashboard:workbench"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "analysisReviewPanel")
+        self.assertContains(response, "openAnalysisReview")
+        self.assertContains(response, "api/workbench/chordal-analysis")
+
     def test_recent_imports_exposes_umto_score_kind(self):
         make_umto_exercise(
             self.user,

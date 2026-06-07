@@ -108,6 +108,21 @@
             </div>
         </div>
     </div>
+
+    <div class="card analysis-review-panel" id="analysisReviewPanel" style="display: none;">
+        <div class="card-header review-panel-header">
+            <h3 id="analysisReviewTitle">Analysis Review</h3>
+            <button class="btn btn-secondary btn-small" onclick="closeAnalysisReview()">Close</button>
+        </div>
+        <div class="card-body review-panel-body">
+            <div id="analysisReviewRows"></div>
+            <div class="review-panel-actions">
+                <button class="btn btn-primary" onclick="saveAnalysisReview()" id="saveAnalysisReviewBtn">
+                    Save Review
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -139,6 +154,7 @@
     .btn-primary:hover { background-color: #2980b9; transform: translateY(-1px); }
     .btn-secondary { background-color: #f8f9fa; color: #333; border: 1px solid #ddd; }
     .btn-secondary:hover { background-color: #e9ecef; }
+    .btn-small { padding: 6px 10px; font-size: 12px; }
 
     .workbench-grid {
         display: grid;
@@ -287,12 +303,45 @@
         cursor: default; /* Items are no longer just big labels */
     }
     .import-item:hover { background-color: #f8f9fa; }
+    .analysis-review-panel { margin-top: 30px; }
+    .review-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .review-panel-body { padding: 20px; }
+    .analysis-review-row {
+        display: grid;
+        grid-template-columns: minmax(120px, 1.2fr) repeat(4, minmax(90px, 1fr));
+        gap: 10px;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #edf2f7;
+    }
+    .analysis-review-chord {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        color: #2d3748;
+    }
+    .analysis-review-row input {
+        min-width: 0;
+        padding: 8px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+    .review-panel-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 18px;
+    }
 </style>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     let selectedIds = new Set();
     let importMetaById = {};
+    let activeReviewExerciseId = null;
     const importsList = document.getElementById('imports-list');
     const selectionCount = document.getElementById('selectionCount');
     const alertBox = document.getElementById('alertBox');
@@ -332,6 +381,10 @@ document.addEventListener("DOMContentLoaded", function() {
             importMetaById[itemId] = item;
             const isChecked = selectedIds.has(itemId) ? 'checked' : '';
             const scoreKind = item.scoreKind || 'voices';
+            const reviewStatus = item.analysisReviewStatus || 'none';
+            const reviewButton = scoreKind === 'chordal'
+                ? `<button class="btn btn-secondary btn-small" onclick="openAnalysisReview('${item.id}')">Review</button>`
+                : '';
             const html = `
                 <div class="import-item">
                     <div class="item-left">
@@ -348,6 +401,8 @@ document.addEventListener("DOMContentLoaded", function() {
                             <option value="practice">Practice</option>
                             <option value="test">Test</option>
                         </select>
+                        ${reviewButton}
+                        ${scoreKind === 'chordal' ? `<span class="badge-pill">${reviewStatus}</span>` : ''}
                         <span class="badge-pill">${scoreKind}</span>
                         <span class="badge-pill">${item.type}</span>
                     </div>
@@ -357,6 +412,86 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         updateStatus();
     }
+
+    function reviewApiUrl(exerciseId) {
+        return `/dashboard/api/workbench/chordal-analysis/${exerciseId}/`;
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    window.openAnalysisReview = function(exerciseId) {
+        activeReviewExerciseId = exerciseId;
+        fetch(reviewApiUrl(exerciseId))
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    showAlert(data.error, 'error');
+                    return;
+                }
+                document.getElementById('analysisReviewPanel').style.display = 'block';
+                document.getElementById('analysisReviewTitle').textContent = `Analysis Review: ${data.description}`;
+                const rows = (data.rows || []).map(row => {
+                    const content = row.content || {};
+                    const chordText = row.spelling && row.spelling.length
+                        ? row.spelling.join(' ')
+                        : (row.visible || []).join(' ');
+                    return `
+                        <div class="analysis-review-row" data-offset="${row.offset}">
+                            <div class="analysis-review-chord">${escapeHtml(chordText)}</div>
+                            <input data-field="roman_numeral" value="${escapeHtml(content.roman_numeral)}" placeholder="Roman">
+                            <input data-field="figured_bass" value="${escapeHtml(content.figured_bass)}" placeholder="Figure">
+                            <input data-field="raw_figured_bass" value="${escapeHtml(content.raw_figured_bass)}" placeholder="Raw figure">
+                            <input data-field="local_key" value="${escapeHtml(content.local_key)}" placeholder="Local key">
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('analysisReviewRows').innerHTML = rows || '<div class="empty-state"><p>No chord analysis rows found.</p></div>';
+            })
+            .catch(() => showAlert('Failed to load analysis review.', 'error'));
+    };
+
+    window.closeAnalysisReview = function() {
+        activeReviewExerciseId = null;
+        document.getElementById('analysisReviewPanel').style.display = 'none';
+    };
+
+    window.saveAnalysisReview = function() {
+        if (!activeReviewExerciseId) return;
+        const rows = Array.from(document.querySelectorAll('.analysis-review-row')).map(row => {
+            const content = {};
+            row.querySelectorAll('input[data-field]').forEach(input => {
+                content[input.dataset.field] = input.value || null;
+            });
+            return { offset: parseFloat(row.dataset.offset), content };
+        });
+
+        fetch(reviewApiUrl(activeReviewExerciseId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ rows })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showAlert('Analysis review saved.', 'success');
+                closeAnalysisReview();
+                fetchImports();
+            } else {
+                showAlert(data.error || 'Failed to save analysis review.', 'error');
+            }
+        })
+        .catch(() => showAlert('Network or server error saving analysis review.', 'error'));
+    };
 
     window.toggleSelection = function(checkbox) {
         if(checkbox.checked) {
