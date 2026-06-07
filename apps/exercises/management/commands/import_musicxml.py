@@ -19,6 +19,7 @@ from apps.exercises.models import Exercise
 from apps.exercises.umto_factory import build_chordal_umto_payload, save_umto_exercise
 from apps.exercises.utils.umto_import_router import (
     MusicXMLRouteDecision,
+    build_chordal_analysis_slices,
     classify_musicxml_score,
     musicxml_score_to_chord_events,
 )
@@ -87,6 +88,7 @@ def _build_import_payload_for_score(
             start_measure=start_measure,
             end_measure=end_measure,
         )
+        analysis = build_chordal_analysis_slices(chords, harmony_key=harmony_key)
         payload = build_chordal_umto_payload(
             exercise_id="TEMP",
             source=f"Play {title}.",
@@ -96,7 +98,8 @@ def _build_import_payload_for_score(
             complexity_score=complexity,
             mode=InteractionMode.PLAYBACK,
             chords=chords,
-            analysis=[],
+            analysis=analysis,
+            analysis_review_status="generated" if analysis else "none",
         )
         return ImportMusicXMLPayload(
             decision=decision,

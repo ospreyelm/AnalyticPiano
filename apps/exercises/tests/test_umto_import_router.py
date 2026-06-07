@@ -234,7 +234,19 @@ class ImportMusicXMLRoutingTests(unittest.TestCase):
         self.assertEqual(result.decision.route, "chordal")
         self.assertIsNone(result.score_data)
         self.assertEqual(result.payload["score"]["umto"]["metadata"]["score_kind"], "chordal")
+        self.assertEqual(
+            result.payload["score"]["umto"]["metadata"]["analysis_review_status"],
+            "generated",
+        )
         self.assertEqual(result.payload["score"]["umto"]["chords"][0]["visible"], [60, 64, 67])
+        self.assertEqual(
+            result.payload["score"]["umto"]["analysis"][0]["content"]["roman_numeral"],
+            "I",
+        )
+        self.assertEqual(
+            result.payload["score"]["umto"]["analysis"][0]["content"]["figured_bass"],
+            "5/3",
+        )
 
     def test_chordal_route_honors_start_and_end_measure(self):
         score = stream.Score()
