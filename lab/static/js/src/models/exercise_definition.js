@@ -1078,8 +1078,70 @@ define([
             var _chordalChords = (exercise.score && exercise.score.umto &&
                                   exercise.score.umto.chords) || [];
             exercise.problems = ChordalProblemsLogic.chordsToProblems(_chordalChords);
-            exercise.analysis = { enabled: true, mode: {} };
+            var chordalIsIdent = exercise.mode === "identification" || exercise.mode === "chorale_identification";
+            if (chordalIsIdent) {
+              var chordalUmto = exercise.score && exercise.score.umto ? exercise.score.umto : {};
+              var chordalTimeline = ScoreTimeline && ScoreTimeline.buildTimeline
+                ? ScoreTimeline.buildTimeline(exercise.score || {})
+                : [];
+              var chordalWindows = buildAnalysisWindows(chordalTimeline);
+              var chordalAnswers = [];
+              var chordalSeen = {};
+              exercise.problems = _.map(_chordalChords, function (chord, idx) {
+                var offset = typeof chord.offset === "number" ? chord.offset : idx;
+                var slice = _.find(chordalUmto.analysis || [], function (s) {
+                  return Math.abs((s.offset || 0) - offset) < 0.001;
+                });
+                var content = (slice && slice.content) || {};
+                var answer = "";
+                if (exercise.analysisType === "figured_bass" && content.figured_bass != null) {
+                  answer = content.figured_bass;
+                } else if (exercise.analysisType === "figured_bass_unabbreviated" && content.raw_figured_bass != null) {
+                  answer = content.raw_figured_bass;
+                } else if (content.roman_numeral) {
+                  answer = stripFiguredBassTokens(content.roman_numeral);
+                } else if (content.pop_symbol) {
+                  answer = content.pop_symbol;
+                } else if (content.figured_bass != null) {
+                  answer = content.figured_bass;
+                } else if (content.functional_label) {
+                  answer = content.functional_label;
+                }
+                answer = normalizeAnalysisLabel(answer);
+                if (answer && !chordalSeen[answer]) {
+                  chordalSeen[answer] = true;
+                  chordalAnswers.push(answer);
+                }
+
+                var match = ExerciseDefinitionLogic && ExerciseDefinitionLogic.findAnalysisWindowByOffset
+                  ? ExerciseDefinitionLogic.findAnalysisWindowByOffset(chordalWindows, offset, idx)
+                  : null;
+                var win = match && match.window ? match.window : null;
+                var firstEv = win && win.events && win.events.length ? win.events[0] : null;
+                var problem = ChordalProblemsLogic.chordsToProblems([chord])[0];
+                problem.windowIndex = match ? match.index : idx;
+                problem.measureIndex = firstEv && typeof firstEv.measureIndex === "number" ? firstEv.measureIndex : 0;
+                problem.onset = win && typeof win.onset === "number" ? win.onset : offset * 1024;
+                problem.answer = answer;
+                problem.choices = [];
+                problem.hidden = !answer || !win;
+                problem.rhythm = chord.duration >= 4 ? "w" : chord.duration >= 2 ? "h" : chord.duration >= 1 ? "q" : chord.duration >= 0.5 ? "8" : "16";
+                return problem;
+              });
+              var explicitChordalAllowed = exercise.allowed_answers || [];
+              exercise.problems = _.map(exercise.problems, function (problem) {
+                if (problem.answer) {
+                  var answerPool = explicitChordalAllowed.length > 0 ? explicitChordalAllowed : chordalAnswers;
+                  problem.choices = _.map(buildChoices(problem.answer, answerPool, exercise.analysisType, false), normalizeAnalysisLabel);
+                }
+                return problem;
+              });
+            }
             exercise.complexity_score = definition.complexity_score || 0;
+            exercise.highlight = _.cloneDeep(HIGHLIGHT_SETTINGS);
+            exercise.playlistTags = definition.playlistTags || [];
+            exercise.playlistSkillTags = definition.playlistSkillTags || [];
+            exercise.skill_tags = definition.skillTags || [];
             return exercise;
           }
           exercise.harmonizationTargets = definition.harmonizationTargets || [];

@@ -22,6 +22,7 @@ define([
   "app/utils/measure_engine",
   "app/models/harmonization_realization_logic",
   "app/components/music/identification_label_layout_logic",
+  "app/models/chordal_problems_logic",
 ], function (
   $,
   $UI,
@@ -44,7 +45,8 @@ define([
   renderPlaybackControls,
   MeasureEngine,
   HarmonizationRealizationLogic,
-  IdentificationLabelLayoutLogic
+  IdentificationLabelLayoutLogic,
+  ChordalProblemsLogic
 ) {
   "use strict";
 
@@ -1380,7 +1382,7 @@ define([
       try {
         var score = def.getScore ? def.getScore() : null;
         console.log("[Chorale] score keys:", score ? Object.keys(score) : "null", "has umto:", !!(score && score.umto));
-        if (score && score.umto) {
+        if (score && score.umto && !ChordalProblemsLogic.shouldPreserveChordalMeasures(score)) {
           var converted = this._convertUMTOToProcessedScore(score.umto);
           if (converted) {
             def.exercise.score = converted;
@@ -1824,7 +1826,7 @@ define([
       
       // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
       // This fixes cases where the database might have a single 'blob' measure.
-      if (isChoraleLike && score && score.umto) {
+      if (isChoraleLike && score && score.umto && !ChordalProblemsLogic.shouldPreserveChordalMeasures(score)) {
         score = this._convertUMTOToProcessedScore(score.umto);
       }
 

@@ -26,6 +26,14 @@ eq("second hidden preserved", problems[1].hidden, [50]);
 eq("chordal detected", logic.isChordalUMTO({ score: { umto: { metadata: { score_kind: "chordal" } } } }), true);
 eq("voices not chordal", logic.isChordalUMTO({ score: { umto: { metadata: { score_kind: "voices" } } } }), false);
 eq("missing umto not chordal", logic.isChordalUMTO({ score: {} }), false);
+eq("preserve backend measures for chordal score", logic.shouldPreserveChordalMeasures({
+  measures: [{ staves: { treble: { voices: [] } } }],
+  umto: { metadata: { score_kind: "chordal" } }
+}), true);
+eq("do not preserve voices umto measures", logic.shouldPreserveChordalMeasures({
+  measures: [{ staves: { treble: { voices: [] } } }],
+  umto: { metadata: { score_kind: "voices" } }
+}), false);
 
 console.log(pass + " passed, " + fail + " failed");
 if (fail > 0) process.exit(1);

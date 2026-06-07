@@ -415,43 +415,86 @@ def _midi_to_cir_pitch(midi: int) -> dict:
     return {"step": step, "alter": alter, "octave": octave}
 
 
+def _meter_quarter_length(meter: str) -> float:
+    try:
+        num_s, denom_s = meter.split("/", 1)
+        return int(num_s) * (4.0 / int(denom_s))
+    except (ValueError, AttributeError, ZeroDivisionError):
+        return 4.0
+
+
+def _duration_dict(ql: float) -> dict:
+    dur_type, dots = _ql_to_duration_parts(ql)
+    return {"type": dur_type, "dots": dots}
+
+
 def _chordal_to_measures(chords: list, meter: str) -> list:
     """Generate minimal CIR measures from chordal chords[] (spike 5a, W1).
     Each chord -> a chord/note item on the treble staff. Measures break when
     accumulated quarter-length reaches the meter's beats-per-measure."""
-    DUR_TYPE = {4.0: "w", 2.0: "h", 1.0: "q", 0.5: "8", 0.25: "16", 0.125: "32"}
-    try:
-        beats = int(meter.split("/")[0]) if "/" in meter else 4
-    except (ValueError, AttributeError):
-        beats = 4
+    beats = _meter_quarter_length(meter)
 
     def _new_measure():
         return {"staves": {"treble": {"voices": [{"items": []}]}}}
 
+    def _items():
+        return current["staves"]["treble"]["voices"][0]["items"]
+
+    def _finish_measure():
+        nonlocal current, used
+        if _items():
+            measures.append(current)
+        current = _new_measure()
+        used = 0.0
+
+    def _append_rest(ql: float):
+        if ql <= 0:
+            return
+        _items().append({"kind": "rest", "duration": _duration_dict(ql)})
+
+    def _append_chord_item(c: dict):
+        visible_midis = list(c.get("visible", []))
+        pitches = [_midi_to_cir_pitch(m) for m in visible_midis]
+        duration = _duration_dict(float(c["duration"]))
+        if len(pitches) > 1:
+            item = {
+                "kind": "chord",
+                "notes": [{"pitch": p} for p in pitches],
+                "duration": duration,
+            }
+        elif len(pitches) == 1:
+            item = {"kind": "note", "pitch": pitches[0], "duration": duration}
+        else:
+            item = {"kind": "rest", "duration": duration}
+        _items().append(item)
+
     measures = []
     current = _new_measure()
     used = 0.0
-    for c in chords:
-        midis = list(c.get("visible", [])) + list(c.get("hidden", []))
-        pitches = [_midi_to_cir_pitch(m) for m in midis]
+    cursor = 0.0
+    for c in sorted(chords, key=lambda item: float(item.get("offset", 0.0))):
+        offset = float(c.get("offset", cursor))
+        if offset < cursor - 1e-6:
+            raise ValueError("Chord offsets must be non-overlapping and monotonic")
+
+        while cursor < offset - 1e-6:
+            gap = min(offset - cursor, beats - used)
+            _append_rest(gap)
+            used += gap
+            cursor += gap
+            if abs(used - beats) < 1e-6 or used > beats:
+                _finish_measure()
+
+        if abs(used - beats) < 1e-6:
+            _finish_measure()
+
         dur = float(c["duration"])
-        dur_type = DUR_TYPE.get(dur, "q")
-        if len(pitches) > 1:
-            item = {"kind": "chord",
-                    "notes": [{"pitch": p} for p in pitches],
-                    "duration": {"type": dur_type, "dots": 0}}
-        elif len(pitches) == 1:
-            item = {"kind": "note", "pitch": pitches[0],
-                    "duration": {"type": dur_type, "dots": 0}}
-        else:
-            item = {"kind": "rest", "duration": {"type": dur_type, "dots": 0}}
-        current["staves"]["treble"]["voices"][0]["items"].append(item)
+        _append_chord_item(c)
         used += dur
-        if used >= beats:
-            measures.append(current)
-            current = _new_measure()
-            used = 0.0
-    if current["staves"]["treble"]["voices"][0]["items"]:
+        cursor = offset + dur
+        if abs(used - beats) < 1e-6 or used > beats:
+            _finish_measure()
+    if _items():
         measures.append(current)
     return measures
 
@@ -475,8 +518,8 @@ def build_chordal_umto_payload(
     chords: list of dicts compatible with ChordEvent
             (offset, duration, visible, hidden?, spelling?).
     analysis: list of dicts compatible with AnalysisSlice (canonical, top-level).
-    NOTE: score.measures is intentionally NOT generated here — Task 9 adds that
-    (spike 5a decision W1). This task only stores the canonical chordal UMTO object.
+    score.measures is generated from chords[] per the spike 5a W1 decision, so
+    the existing ScoreTimeline and VexFlow paths can consume chordal UMTO.
     """
     analysis = analysis or []
     umto = UMTO(
@@ -524,6 +567,7 @@ def legacy_chord_row_to_chordal_payload(data, *, meter="4/4", clef="keyboard",
     """
     raw = data.get("chord") or []
     chords = []
+    analysis = []
     offset = 0.0
     for c in raw:
         if isinstance(c, dict):
@@ -533,14 +577,35 @@ def legacy_chord_row_to_chordal_payload(data, *, meter="4/4", clef="keyboard",
             visible, hidden = list(c), []
         chords.append({"offset": offset, "duration": 1.0,
                        "visible": visible, "hidden": hidden})
+        if isinstance(c, dict) and c.get("answer"):
+            analysis.append({
+                "offset": offset,
+                "content": {"functional_label": c.get("answer")},
+                "is_target": True,
+            })
         offset += 1.0
-    return build_chordal_umto_payload(
+    legacy_type = data.get("type")
+    is_identification = legacy_type == "identification"
+    payload = build_chordal_umto_payload(
         exercise_id=str(data.get("id", "LEGACY")),
         source=data.get("description", "Legacy exercise"),
         key=data.get("key", "C"), meter=meter, clef=clef,
-        complexity_score=complexity_score, mode=InteractionMode.PLAYBACK,
-        chords=chords, analysis=[],
+        complexity_score=complexity_score,
+        mode=InteractionMode.IDENTIFICATION if is_identification else InteractionMode.PLAYBACK,
+        chords=chords, analysis=analysis,
     )
+    if is_identification:
+        choices = []
+        for c in raw:
+            if isinstance(c, dict):
+                for choice in c.get("choices") or []:
+                    if choice not in choices:
+                        choices.append(choice)
+        payload["analysisType"] = data.get("analysisType", "chord_quality")
+        payload["inputMode"] = data.get("inputMode", "dropdown")
+        payload["identMode"] = data.get("identMode", "practice")
+        payload["allowed_answers"] = choices
+    return payload
 
 
 import os

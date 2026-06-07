@@ -159,11 +159,48 @@ class TestChordalMeasures(TestCase):
         self.assertEqual(item["kind"], "note")
         self.assertEqual(item["pitch"]["octave"], 4)   # MIDI 60 -> C4
 
+    def test_hidden_notes_are_not_rendered_into_measures(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP", source="t", key="C", meter="4/4", clef="keyboard",
+            complexity_score=1, mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60], "hidden": [64, 67]}],
+            analysis=[],
+        )
+        item = payload["score"]["measures"][0]["staves"]["treble"]["voices"][0]["items"][0]
+        self.assertEqual(item["kind"], "note")
+        self.assertNotIn("notes", item)
+
     def test_midi_to_pitch_octave_correct(self):
         from apps.exercises.umto_factory import _midi_to_cir_pitch
         self.assertEqual(_midi_to_cir_pitch(60), {"step": "C", "alter": 0, "octave": 4})
         self.assertEqual(_midi_to_cir_pitch(61), {"step": "C", "alter": 1, "octave": 4})
         self.assertEqual(_midi_to_cir_pitch(72), {"step": "C", "alter": 0, "octave": 5})
+
+    def test_offsets_create_rest_gaps_for_window_alignment(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP", source="t", key="C", meter="4/4", clef="keyboard",
+            complexity_score=1, mode=InteractionMode.PLAYBACK,
+            chords=[
+                {"offset": 0.0, "duration": 1.0, "visible": [60]},
+                {"offset": 2.0, "duration": 1.0, "visible": [67]},
+            ],
+            analysis=[],
+        )
+        items = payload["score"]["measures"][0]["staves"]["treble"]["voices"][0]["items"]
+        self.assertEqual([item["kind"] for item in items], ["note", "rest", "note"])
+        self.assertEqual(items[1]["duration"], {"type": "q", "dots": 0})
+
+    def test_compound_meter_uses_quarter_lengths_per_measure(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP", source="t", key="C", meter="6/8", clef="keyboard",
+            complexity_score=1, mode=InteractionMode.PLAYBACK,
+            chords=[
+                {"offset": 0.0, "duration": 1.0, "visible": [60]},
+                {"offset": 3.0, "duration": 1.0, "visible": [67]},
+            ],
+            analysis=[],
+        )
+        self.assertEqual(len(payload["score"]["measures"]), 2)
 
 
 from apps.exercises.umto_factory import legacy_chord_row_to_chordal_payload
@@ -183,6 +220,23 @@ class TestLegacyWrap(TestCase):
         self.assertEqual(umto["metadata"]["score_kind"], "chordal")
         self.assertEqual(len(umto["chords"]), 2)
         self.assertEqual(umto["chords"][0]["visible"], [60, 64, 67])
+
+    def test_legacy_identification_metadata_is_preserved(self):
+        legacy_data = {
+            "type": "identification",
+            "key": "C",
+            "analysisType": "chord_quality",
+            "inputMode": "dropdown",
+            "identMode": "practice",
+            "chord": [
+                {"notes": [60, 64, 67], "answer": "major", "choices": ["major", "minor"]}
+            ],
+        }
+        payload = legacy_chord_row_to_chordal_payload(legacy_data)
+        self.assertEqual(payload["mode"], "identification")
+        self.assertEqual(payload["analysisType"], "chord_quality")
+        self.assertEqual(payload["identMode"], "practice")
+        self.assertEqual(payload["score"]["umto"]["analysis"][0]["content"]["functional_label"], "major")
 
 
 class TestRoundTripEquivalence(TestCase):

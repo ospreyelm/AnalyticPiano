@@ -27,5 +27,15 @@
               def.score.umto.metadata.score_kind === "chordal");
   }
 
-  return { chordsToProblems: chordsToProblems, isChordalUMTO: isChordalUMTO };
+  function shouldPreserveChordalMeasures(score) {
+    return !!(score && score.measures && score.measures.length &&
+              score.umto && score.umto.metadata &&
+              score.umto.metadata.score_kind === "chordal");
+  }
+
+  return {
+    chordsToProblems: chordsToProblems,
+    isChordalUMTO: isChordalUMTO,
+    shouldPreserveChordalMeasures: shouldPreserveChordalMeasures,
+  };
 });
