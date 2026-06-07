@@ -14,6 +14,13 @@ from django.db import transaction
 from apps.exercises.models import Exercise
 from apps.exercises.umto import AnalysisSlice, InteractionMode
 
+CHORDAL_ANALYSIS_TARGETS = {
+    "roman_numeral",
+    "figured_bass",
+    "analysis_match",
+    "identification",
+}
+
 @login_required
 def workbench_view(request):
     """
@@ -183,13 +190,39 @@ def api_chordal_analysis_review(request, exercise_id):
     })
 
 
-def _clone_chordal_exact_match(base_ex, author):
+def _analysis_review_status(exercise):
+    return (
+        (exercise.data or {})
+        .get("score", {})
+        .get("umto", {})
+        .get("metadata", {})
+        .get("analysis_review_status", "none")
+    )
+
+
+def _clone_chordal_projection(base_ex, author, target_type):
     data = _copy.deepcopy(base_ex.data)
     metadata = data["score"]["umto"]["metadata"]
     metadata["exercise_id"] = "TEMP"
-    metadata["mode"] = InteractionMode.PLAYBACK.value
-    data["mode"] = InteractionMode.PLAYBACK.value
-    suffix = " (exact_match)"
+
+    mode = InteractionMode.PLAYBACK
+    if target_type == "analysis_match":
+        mode = InteractionMode.ANALYSIS_MATCH
+    elif target_type != "exact_match":
+        mode = InteractionMode.IDENTIFICATION
+    metadata["mode"] = mode.value
+    data["mode"] = mode.value
+
+    analysis_type_map = {
+        "roman_numeral": "roman",
+        "figured_bass": "figured_bass",
+        "analysis_match": "roman",
+        "identification": "note_name",
+    }
+    if target_type in analysis_type_map:
+        data["analysisType"] = analysis_type_map[target_type]
+
+    suffix = f" ({target_type})"
     description = f"{(base_ex.description or base_ex.id)[:60 - len(suffix)]}{suffix}"
     new_ex = Exercise(
         description=description,
@@ -236,17 +269,31 @@ def api_multiply_projection(request):
             continue
 
     chordal_sources = [ex for ex in source_exercises if _score_kind(ex) == "chordal"]
-    if chordal_sources and target_type != "exact_match":
+    voices_sources = [ex for ex in source_exercises if _score_kind(ex) != "chordal"]
+    if chordal_sources and voices_sources:
         return JsonResponse({
-            "error": "Chordal imports only support Exact Match projection in the Workbench."
+            "error": "Mixed chordal and voices projections must be run separately."
         }, status=400)
+    if chordal_sources and target_type not in CHORDAL_ANALYSIS_TARGETS | {"exact_match"}:
+        return JsonResponse({
+            "error": f"Unsupported chordal projection type: {target_type}"
+        }, status=400)
+    if chordal_sources and target_type in CHORDAL_ANALYSIS_TARGETS:
+        unreviewed = [
+            ex.id for ex in chordal_sources
+            if _analysis_review_status(ex) != "reviewed"
+        ]
+        if unreviewed:
+            return JsonResponse({
+                "error": "Chordal analysis projections require reviewed analysis."
+            }, status=400)
 
     created_ids = []
 
     with transaction.atomic():
         for base_ex in source_exercises:
             if _score_kind(base_ex) == "chordal":
-                new_ex = _clone_chordal_exact_match(base_ex, request.user)
+                new_ex = _clone_chordal_projection(base_ex, request.user, target_type)
                 created_ids.append(new_ex.id)
                 continue
 

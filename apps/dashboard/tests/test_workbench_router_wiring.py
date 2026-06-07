@@ -77,7 +77,7 @@ class WorkbenchRouterWiringTests(TestCase):
         self.assertEqual(by_description["Multipart upload"]["scoreKind"], "voices")
         self.assertEqual(by_description["Chordal upload"]["scoreKind"], "chordal")
 
-    def test_chordal_import_rejects_unsupported_projection_type(self):
+    def test_chordal_import_rejects_unreviewed_analysis_projection(self):
         payload = build_chordal_umto_payload(
             exercise_id="TEMP",
             source="Chordal upload",
@@ -87,6 +87,12 @@ class WorkbenchRouterWiringTests(TestCase):
             complexity_score=1,
             mode=InteractionMode.PLAYBACK,
             chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+            analysis=[{
+                "offset": 0.0,
+                "content": {"roman_numeral": "I", "figured_bass": "5/3"},
+                "is_target": True,
+            }],
+            analysis_review_status="generated",
         )
         chordal = Exercise.objects.create(
             description="Chordal upload",
@@ -106,7 +112,89 @@ class WorkbenchRouterWiringTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Chordal imports only support Exact Match", response.json()["error"])
+        self.assertIn("review", response.json()["error"].lower())
+
+    def test_reviewed_chordal_roman_projection_creates_identification_clone(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Chordal upload",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+            analysis=[{
+                "offset": 0.0,
+                "content": {"roman_numeral": "I", "figured_bass": "5/3"},
+                "is_target": True,
+            }],
+            analysis_review_status="reviewed",
+        )
+        chordal = Exercise.objects.create(
+            description="Chordal upload",
+            data=payload,
+            authored_by=self.user,
+            skill_tags=["import:musicxml"],
+            complexity=1,
+        )
+
+        response = self.client.post(
+            reverse("dashboard:api-multiply-projection"),
+            data=json.dumps({
+                "source_ids": [chordal.id],
+                "target_type": "roman_numeral",
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        created = Exercise.objects.get(id=response.json()["created_exercises"][0])
+        metadata = created.data["score"]["umto"]["metadata"]
+        self.assertEqual(metadata["score_kind"], "chordal")
+        self.assertEqual(metadata["mode"], "identification")
+        self.assertEqual(created.data["analysisType"], "roman")
+        self.assertEqual(
+            created.data["score"]["umto"]["analysis"][0]["content"]["roman_numeral"],
+            "I",
+        )
+
+    def test_mixed_chordal_and_voices_projection_is_rejected(self):
+        voices = make_umto_exercise(
+            self.user,
+            description="Voices",
+            complexity=3,
+            mode=InteractionMode.PLAYBACK,
+        )
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Chordal upload",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+            analysis_review_status="reviewed",
+        )
+        chordal = Exercise.objects.create(
+            description="Chordal upload",
+            data=payload,
+            authored_by=self.user,
+            complexity=1,
+        )
+
+        response = self.client.post(
+            reverse("dashboard:api-multiply-projection"),
+            data=json.dumps({
+                "source_ids": [voices.id, chordal.id],
+                "target_type": "roman_numeral",
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("mixed", response.json()["error"].lower())
 
     def test_chordal_import_allows_exact_match_projection(self):
         payload = build_chordal_umto_payload(
