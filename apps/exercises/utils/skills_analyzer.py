@@ -55,12 +55,29 @@ def check_wir_key_change(description: str) -> bool:
     return len(set(keys)) > 1
 
 
+def _normalize_key_token(chunk_key):
+    """Convert a HarmonyLab pseudo-key token (e.g. 'jC_', 'iA_', 'jBb_') into a
+    music21 key.Key. Plain conventional names ('C', 'a', 'Bb') pass through.
+
+    HarmonyLab stores pseudo-key tokens where a leading 'j' means major and 'i'
+    means minor, trailing '_' is a separator, and 'b' is a flat. music21 cannot
+    parse these directly ("Cannot make a step out of 'J'"), so normalize here at
+    the boundary before constructing the Key.
+    """
+    text = (chunk_key or "jC_").strip()
+    if text and text[0] in {"i", "j"}:
+        tonic = text[1:].replace("_", "").replace("b", "-") or "C"
+        mode = "minor" if text[0] == "i" else "major"
+        return key.Key(tonic, mode)
+    return key.Key(text.replace("b", "-") or "C")
+
+
 def analyze_chunk_skills(chunk, chunk_key, description=None):
     """
     Analyzes a music chunk and returns a list of pedagogical tags (unit:X_...)
     and a complexity rating (1-51, based on the curriculum unit).
     """
-    tonal_key = key.Key(chunk_key)
+    tonal_key = _normalize_key_token(chunk_key)
     skills = set()
     
     # 0. Literacy Check (Tier 1 Units 1-4)
