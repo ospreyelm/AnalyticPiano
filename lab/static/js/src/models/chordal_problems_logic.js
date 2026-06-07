@@ -27,10 +27,14 @@
               def.score.umto.metadata.score_kind === "chordal");
   }
 
+  // Staff layout for chordal UMTO is a render-time VIEW option (like the legacy
+  // chord-bank path): chords[] store flat verticalities and the renderer splits
+  // them across staves per staffDistribution. So we do NOT preserve any stored
+  // (import-time) measures — always re-convert from umto.chords at render so the
+  // current staffDistribution applies. Returns false for chordal to force the
+  // _convertChordalUMTOToProcessedScore path.
   function shouldPreserveChordalMeasures(score) {
-    return !!(score && score.measures && score.measures.length &&
-              score.umto && score.umto.metadata &&
-              score.umto.metadata.score_kind === "chordal");
+    return false;
   }
 
   return {

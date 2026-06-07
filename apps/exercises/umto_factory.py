@@ -428,21 +428,34 @@ def _duration_dict(ql: float) -> dict:
     return {"type": dur_type, "dots": dots}
 
 
+# Keyboard staff split: pitches at or above middle C (MIDI 60) render on the
+# treble staff, below on the bass staff. Matches the "keyboard" clef convention.
+_KEYBOARD_SPLIT_MIDI = 60
+
+
 def _chordal_to_measures(chords: list, meter: str) -> list:
     """Generate minimal CIR measures from chordal chords[] (spike 5a, W1).
-    Each chord -> a chord/note item on the treble staff. Measures break when
-    accumulated quarter-length reaches the meter's beats-per-measure."""
+
+    Each chord is split across treble + bass staves by register (keyboard style):
+    pitches >= MIDI 60 go to treble, below to bass. Both staves stay rhythmically
+    aligned — every onset places a chord/note/rest on each staff so durations
+    match. Measures break when accumulated quarter-length reaches the meter's
+    beats-per-measure."""
     beats = _meter_quarter_length(meter)
+    STAVES = ("treble", "bass")
 
     def _new_measure():
-        return {"staves": {"treble": {"voices": [{"items": []}]}}}
+        return {"staves": {s: {"voices": [{"items": []}]} for s in STAVES}}
 
-    def _items():
-        return current["staves"]["treble"]["voices"][0]["items"]
+    def _items(staff):
+        return current["staves"][staff]["voices"][0]["items"]
+
+    def _any_items():
+        return any(_items(s) for s in STAVES)
 
     def _finish_measure():
         nonlocal current, used
-        if _items():
+        if _any_items():
             measures.append(current)
         current = _new_measure()
         used = 0.0
@@ -450,23 +463,26 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
     def _append_rest(ql: float):
         if ql <= 0:
             return
-        _items().append({"kind": "rest", "duration": _duration_dict(ql)})
+        for staff in STAVES:
+            _items(staff).append({"kind": "rest", "duration": _duration_dict(ql)})
+
+    def _staff_item(midis, duration):
+        pitches = [_midi_to_cir_pitch(m) for m in midis]
+        if len(pitches) > 1:
+            return {"kind": "chord",
+                    "notes": [{"pitch": p} for p in pitches],
+                    "duration": duration}
+        if len(pitches) == 1:
+            return {"kind": "note", "pitch": pitches[0], "duration": duration}
+        return {"kind": "rest", "duration": duration}
 
     def _append_chord_item(c: dict):
         visible_midis = list(c.get("visible", []))
-        pitches = [_midi_to_cir_pitch(m) for m in visible_midis]
         duration = _duration_dict(float(c["duration"]))
-        if len(pitches) > 1:
-            item = {
-                "kind": "chord",
-                "notes": [{"pitch": p} for p in pitches],
-                "duration": duration,
-            }
-        elif len(pitches) == 1:
-            item = {"kind": "note", "pitch": pitches[0], "duration": duration}
-        else:
-            item = {"kind": "rest", "duration": duration}
-        _items().append(item)
+        treble = [m for m in visible_midis if m >= _KEYBOARD_SPLIT_MIDI]
+        bass = [m for m in visible_midis if m < _KEYBOARD_SPLIT_MIDI]
+        _items("treble").append(_staff_item(treble, duration))
+        _items("bass").append(_staff_item(bass, duration))
 
     measures = []
     current = _new_measure()
@@ -494,7 +510,7 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
         cursor = offset + dur
         if abs(used - beats) < 1e-6 or used > beats:
             _finish_measure()
-    if _items():
+    if _any_items():
         measures.append(current)
     return measures
 

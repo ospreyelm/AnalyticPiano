@@ -250,3 +250,34 @@ class TestRoundTripEquivalence(TestCase):
         # gradeable notes = sorted(visible+hidden) — matches the JS chordsToProblems() contract
         notes = sorted(chords[0]["visible"] + chords[0]["hidden"])
         self.assertEqual(notes, [60, 64, 67])
+
+
+class TestChordalKeyboardSplit(TestCase):
+    def test_low_and_high_pitches_split_across_staves(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP", source="t", key="C", meter="4/4", clef="keyboard",
+            complexity_score=1, mode=InteractionMode.PLAYBACK,
+            # E4(64) C5(72) on top, C3(48) in bass — the m321 rule-of-octave shape
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [64, 72, 48]}],
+            analysis=[],
+        )
+        staves = payload["score"]["measures"][0]["staves"]
+        treble = staves["treble"]["voices"][0]["items"][0]
+        bass = staves["bass"]["voices"][0]["items"][0]
+        # treble keeps the two upper pitches as a chord
+        self.assertEqual(treble["kind"], "chord")
+        self.assertEqual(len(treble["notes"]), 2)
+        # bass gets the single low pitch as a note (C3 -> octave 3)
+        self.assertEqual(bass["kind"], "note")
+        self.assertEqual(bass["pitch"]["octave"], 3)
+
+    def test_empty_register_becomes_rest(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP", source="t", key="C", meter="4/4", clef="keyboard",
+            complexity_score=1, mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [72]}],  # treble only
+            analysis=[],
+        )
+        staves = payload["score"]["measures"][0]["staves"]
+        self.assertEqual(staves["treble"]["voices"][0]["items"][0]["kind"], "note")
+        self.assertEqual(staves["bass"]["voices"][0]["items"][0]["kind"], "rest")

@@ -893,7 +893,10 @@ class ExerciseForm(forms.ModelForm):
             grading = {} # UMTO uses a list for grading content; settings are elsewhere or use defaults
         excerpt = data.get("excerpt", {}) or {}
 
-        analysis_mode = (data.get("analysis", {}) or {}).get("mode", {}) or {}
+        analysis_data = data.get("analysis", {}) or {}
+        if not isinstance(analysis_data, dict):
+            analysis_data = {}  # UMTO uses a list for analysis content; mode lives elsewhere
+        analysis_mode = analysis_data.get("mode", {}) or {}
         label_mode = display.get("figureStyle") or "none"
         if label_mode.startswith("figures") and not display.get("showFigures"):
             label_mode = "none"

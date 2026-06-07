@@ -26,10 +26,12 @@ eq("second hidden preserved", problems[1].hidden, [50]);
 eq("chordal detected", logic.isChordalUMTO({ score: { umto: { metadata: { score_kind: "chordal" } } } }), true);
 eq("voices not chordal", logic.isChordalUMTO({ score: { umto: { metadata: { score_kind: "voices" } } } }), false);
 eq("missing umto not chordal", logic.isChordalUMTO({ score: {} }), false);
-eq("preserve backend measures for chordal score", logic.shouldPreserveChordalMeasures({
+// Staff layout is a render-time view option: chordal measures are never
+// preserved — the renderer always re-splits from umto.chords per staffDistribution.
+eq("do not preserve chordal measures (render-time split)", logic.shouldPreserveChordalMeasures({
   measures: [{ staves: { treble: { voices: [] } } }],
   umto: { metadata: { score_kind: "chordal" } }
-}), true);
+}), false);
 eq("do not preserve voices umto measures", logic.shouldPreserveChordalMeasures({
   measures: [{ staves: { treble: { voices: [] } } }],
   umto: { metadata: { score_kind: "voices" } }
