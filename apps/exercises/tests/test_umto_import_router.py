@@ -9,6 +9,7 @@ from apps.exercises.utils.umto_import_router import (
     iter_legacy_chord_csv_rows,
     legacy_csv_row_to_chordal_payload,
     classify_musicxml_score,
+    build_chordal_analysis_slices,
     musicxml_score_to_chord_events,
 )
 from apps.exercises.management.commands.import_musicxml import _build_import_payload_for_score
@@ -142,6 +143,51 @@ class ChordalMusicXMLConversionTests(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["offset"], 0.0)
         self.assertEqual(events[0]["visible"], [72, 48])
+
+
+class ChordalAnalysisGenerationTests(unittest.TestCase):
+    def test_build_chordal_analysis_uses_harmonylab_figured_bass(self):
+        chords = [{
+            "offset": 0.0,
+            "duration": 1.0,
+            "visible": [60, 64, 67],
+            "spelling": ["C4", "E4", "G4"],
+        }]
+
+        analysis = build_chordal_analysis_slices(chords, harmony_key="jC_")
+
+        self.assertEqual(analysis[0]["offset"], 0.0)
+        self.assertEqual(analysis[0]["content"]["raw_figured_bass"], "5/3")
+        self.assertEqual(analysis[0]["content"]["figured_bass"], "5/3")
+
+    def test_build_chordal_analysis_prefers_legacy_roman_table(self):
+        chords = [{
+            "offset": 0.0,
+            "duration": 1.0,
+            "visible": [60, 64, 67],
+            "spelling": ["C4", "E4", "G4"],
+        }]
+
+        analysis = build_chordal_analysis_slices(chords, harmony_key="jC_")
+
+        self.assertEqual(analysis[0]["content"]["roman_numeral"], "I")
+        self.assertEqual(analysis[0]["content"]["local_key"], "jC_")
+
+    def test_build_chordal_analysis_falls_back_to_music21_roman(self):
+        chords = [{
+            "offset": 0.0,
+            "duration": 1.0,
+            "visible": [61, 64, 68],
+            "spelling": ["C#4", "E4", "G#4"],
+        }]
+
+        with patch("apps.exercises.utils.umto_import_router.legacy_roman_from_pitches") as legacy:
+            legacy.return_value.normalized_label = ""
+            legacy.return_value.label = ""
+            analysis = build_chordal_analysis_slices(chords, harmony_key="jC_")
+
+        self.assertTrue(analysis[0]["content"]["roman_numeral"])
+        self.assertEqual(analysis[0]["content"]["local_key"], "jC_")
 
 
 class ImportMusicXMLRoutingTests(unittest.TestCase):

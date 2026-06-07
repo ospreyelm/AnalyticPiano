@@ -8,9 +8,14 @@ from dataclasses import dataclass
 from typing import Iterator, Literal, TextIO
 
 from music21 import chord as m21_chord
+from music21 import key as m21_key
 from music21 import note as m21_note
+from music21 import pitch as m21_pitch
+from music21 import roman as m21_roman
 
 from apps.exercises.umto_factory import legacy_chord_row_to_chordal_payload
+from apps.exercises.utils.figured_bass import compute_figured_bass
+from apps.exercises.utils.legacy_roman import legacy_roman_from_pitches
 
 
 @dataclass(frozen=True)
@@ -96,6 +101,76 @@ def classify_musicxml_score(score) -> MusicXMLRouteDecision:
 
 def _pitch_spelling(pitch) -> str:
     return pitch.nameWithOctave.replace("-", "b")
+
+
+def _harmony_key_to_tonic_mode(harmony_key: str) -> tuple[str, str]:
+    text = (harmony_key or "jC_").strip()
+    if text and text[0] in {"i", "j"}:
+        tonic = text[1:].replace("_", "").replace("b", "-") or "C"
+        mode = "minor" if text[0] == "i" else "major"
+        return tonic, mode
+    return text.replace("b", "-") or "C", "major"
+
+
+def _pitches_for_chord_event(chord_event: dict) -> list:
+    spellings = chord_event.get("spelling") or []
+    if spellings:
+        return [
+            m21_pitch.Pitch(str(name).replace("b", "-"))
+            for name in spellings
+        ]
+    midi_values = (
+        list(chord_event.get("visible") or [])
+        + list(chord_event.get("hidden") or [])
+    )
+    return [m21_pitch.Pitch(midi=int(midi)) for midi in midi_values]
+
+
+def build_chordal_analysis_slices(chords: list[dict], *, harmony_key: str) -> list[dict]:
+    """Build HarmonyLab-first analysis slices for chordal UMTO chord events."""
+    tonic, mode = _harmony_key_to_tonic_mode(harmony_key)
+    tonal_key = m21_key.Key(tonic, mode)
+    legacy_tonic = tonic.replace("-", "b")
+    analysis = []
+
+    for chord_event in chords:
+        pitches = _pitches_for_chord_event(chord_event)
+        if not pitches:
+            continue
+        chord_obj = m21_chord.Chord(pitches)
+        try:
+            raw_fb, figured_bass = compute_figured_bass(chord_obj, tonal_key)
+        except Exception:
+            raw_fb, figured_bass = None, None
+
+        legacy = legacy_roman_from_pitches(
+            sorted(chord_obj.pitches, key=lambda p: p.midi),
+            legacy_tonic,
+            mode,
+        )
+        roman_label = legacy.normalized_label or None
+        raw_roman = legacy.label or legacy.normalized_label or None
+        if not roman_label:
+            try:
+                rn = m21_roman.romanNumeralFromChord(chord_obj, tonal_key)
+                roman_label = rn.figure
+                raw_roman = rn.figure
+            except Exception:
+                pass
+
+        analysis.append({
+            "offset": float(chord_event.get("offset", 0.0)),
+            "content": {
+                "roman_numeral": roman_label,
+                "raw_roman_numeral": raw_roman,
+                "local_key": harmony_key,
+                "raw_figured_bass": raw_fb,
+                "figured_bass": figured_bass,
+            },
+            "unit_tags": [],
+            "is_target": True,
+        })
+    return analysis
 
 
 def musicxml_score_to_chord_events(score) -> list[dict]:
