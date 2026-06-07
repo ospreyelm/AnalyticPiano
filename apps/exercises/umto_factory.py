@@ -404,6 +404,58 @@ def build_umto_payload(
     return payload
 
 
+def _midi_to_cir_pitch(midi: int) -> dict:
+    """MIDI -> CIR spelled pitch. C-major-ish spelling; sharps for black keys.
+    Octave convention matches the frontend: C4 (MIDI 60) -> octave 4
+    (frontend computes MIDI as (octave+1)*12 + semitone)."""
+    names = [("C", 0), ("C", 1), ("D", 0), ("D", 1), ("E", 0), ("F", 0),
+             ("F", 1), ("G", 0), ("G", 1), ("A", 0), ("A", 1), ("B", 0)]
+    step, alter = names[midi % 12]
+    octave = midi // 12 - 1
+    return {"step": step, "alter": alter, "octave": octave}
+
+
+def _chordal_to_measures(chords: list, meter: str) -> list:
+    """Generate minimal CIR measures from chordal chords[] (spike 5a, W1).
+    Each chord -> a chord/note item on the treble staff. Measures break when
+    accumulated quarter-length reaches the meter's beats-per-measure."""
+    DUR_TYPE = {4.0: "w", 2.0: "h", 1.0: "q", 0.5: "8", 0.25: "16", 0.125: "32"}
+    try:
+        beats = int(meter.split("/")[0]) if "/" in meter else 4
+    except (ValueError, AttributeError):
+        beats = 4
+
+    def _new_measure():
+        return {"staves": {"treble": {"voices": [{"items": []}]}}}
+
+    measures = []
+    current = _new_measure()
+    used = 0.0
+    for c in chords:
+        midis = list(c.get("visible", [])) + list(c.get("hidden", []))
+        pitches = [_midi_to_cir_pitch(m) for m in midis]
+        dur = float(c["duration"])
+        dur_type = DUR_TYPE.get(dur, "q")
+        if len(pitches) > 1:
+            item = {"kind": "chord",
+                    "notes": [{"pitch": p} for p in pitches],
+                    "duration": {"type": dur_type, "dots": 0}}
+        elif len(pitches) == 1:
+            item = {"kind": "note", "pitch": pitches[0],
+                    "duration": {"type": dur_type, "dots": 0}}
+        else:
+            item = {"kind": "rest", "duration": {"type": dur_type, "dots": 0}}
+        current["staves"]["treble"]["voices"][0]["items"].append(item)
+        used += dur
+        if used >= beats:
+            measures.append(current)
+            current = _new_measure()
+            used = 0.0
+    if current["staves"]["treble"]["voices"][0]["items"]:
+        measures.append(current)
+    return measures
+
+
 def build_chordal_umto_payload(
     *,
     exercise_id: str,
@@ -455,6 +507,7 @@ def build_chordal_umto_payload(
         "complexity_score": complexity_score,
         "score": {
             "meta": {"key": key, "time": meter, "clef": clef},
+            "measures": _chordal_to_measures(chords, meter),
             "umto": umto_json,
         },
         "analysis": umto_json["analysis"],

@@ -126,3 +126,41 @@ class TestChordalFactory(TestCase):
             chords=[{"offset": 0.0, "duration": 1.0, "visible": [60]}], analysis=[],
         )
         UMTO.model_validate(payload["score"]["umto"])  # must not raise
+
+
+class TestChordalMeasures(TestCase):
+    def test_chords_become_measures_with_chord_items(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP", source="t", key="C", meter="4/4", clef="keyboard",
+            complexity_score=1, mode=InteractionMode.PLAYBACK,
+            chords=[
+                {"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]},
+                {"offset": 1.0, "duration": 1.0, "visible": [62, 65, 69]},
+            ],
+            analysis=[],
+        )
+        measures = payload["score"]["measures"]
+        self.assertTrue(len(measures) >= 1)
+        first_items = measures[0]["staves"]["treble"]["voices"][0]["items"]
+        self.assertEqual(first_items[0]["kind"], "chord")
+        # chord carries a notes[] of {pitch:{step,alter,octave}}
+        self.assertEqual(len(first_items[0]["notes"]), 3)
+        self.assertIn("pitch", first_items[0]["notes"][0])
+        p = first_items[0]["notes"][0]["pitch"]
+        self.assertEqual({"step", "alter", "octave"} <= set(p.keys()), True)
+
+    def test_single_pitch_becomes_note_item(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP", source="t", key="C", meter="4/4", clef="keyboard",
+            complexity_score=1, mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60]}], analysis=[],
+        )
+        item = payload["score"]["measures"][0]["staves"]["treble"]["voices"][0]["items"][0]
+        self.assertEqual(item["kind"], "note")
+        self.assertEqual(item["pitch"]["octave"], 4)   # MIDI 60 -> C4
+
+    def test_midi_to_pitch_octave_correct(self):
+        from apps.exercises.umto_factory import _midi_to_cir_pitch
+        self.assertEqual(_midi_to_cir_pitch(60), {"step": "C", "alter": 0, "octave": 4})
+        self.assertEqual(_midi_to_cir_pitch(61), {"step": "C", "alter": 1, "octave": 4})
+        self.assertEqual(_midi_to_cir_pitch(72), {"step": "C", "alter": 0, "octave": 5})
