@@ -131,6 +131,7 @@ class Metadata(BaseModel):
     is_umto: bool = True
     input_mode: Literal["dropdown", "text"] = "dropdown"
     score_kind: Literal["voices", "chordal"] = "voices"
+    analysis_review_status: Literal["none", "generated", "reviewed"] = "none"
     unit: Optional[int] = None
     locked_voices: List[VoiceName] = Field(default_factory=lambda: ["B"])
     voice_count_policy: VoiceCountPolicy = Field(default_factory=VoiceCountPolicy)

@@ -315,6 +315,16 @@
           "title": "Score Kind",
           "type": "string"
         },
+        "analysis_review_status": {
+          "default": "none",
+          "enum": [
+            "none",
+            "generated",
+            "reviewed"
+          ],
+          "title": "Analysis Review Status",
+          "type": "string"
+        },
         "unit": {
           "anyOf": [
             {

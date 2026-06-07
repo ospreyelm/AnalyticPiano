@@ -512,6 +512,7 @@ def build_chordal_umto_payload(
     analysis: Optional[list] = None,
     unit: Optional[int] = None,
     input_mode: Literal["dropdown", "text"] = "dropdown",
+    analysis_review_status: Literal["none", "generated", "reviewed"] = "none",
 ) -> dict:
     """Build a UMTO frontend payload for a chordal score-kind exercise.
 
@@ -534,6 +535,7 @@ def build_chordal_umto_payload(
             input_mode=input_mode,
             unit=unit,
             score_kind="chordal",
+            analysis_review_status=analysis_review_status,
         ),
         chords=[ChordEvent(**c) for c in chords],
         analysis=[AnalysisSlice(**a) for a in analysis],

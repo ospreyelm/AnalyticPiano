@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import pytest
 from apps.exercises.umto import UMTO, InteractionMode
-from apps.exercises.umto_factory import build_umto_payload
+from apps.exercises.umto_factory import build_chordal_umto_payload, build_umto_payload
 
 UMTO_FIXTURES_DIR = Path("apps/exercises/tests/fixtures/umto")
 CIR_FIXTURES_DIR = Path("apps/exercises/tests/fixtures/cir_inputs")
@@ -159,6 +159,52 @@ class UMTOContractTests(TestCase):
         assert meta.chord_settle_ms == 150
         assert meta.release_grace_ms == 120
         assert meta.max_voice_displacement == 4
+
+    def test_metadata_accepts_analysis_review_status(self):
+        from apps.exercises.umto import Metadata, InteractionMode
+
+        meta = Metadata(
+            exercise_id="TEMP",
+            source="Chordal import",
+            key="jC_",
+            meter="4/4",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            score_kind="chordal",
+            analysis_review_status="generated",
+        )
+
+        assert meta.analysis_review_status == "generated"
+
+    def test_chordal_payload_stores_review_status_and_top_level_analysis(self):
+        analysis = [{
+            "offset": 0.0,
+            "content": {
+                "roman_numeral": "I",
+                "raw_roman_numeral": "I",
+                "local_key": "jC_",
+                "raw_figured_bass": "8/5/3",
+                "figured_bass": "5/3",
+            },
+            "is_target": True,
+        }]
+
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Chordal import",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+            analysis=analysis,
+            analysis_review_status="generated",
+        )
+
+        metadata = payload["score"]["umto"]["metadata"]
+        assert metadata["analysis_review_status"] == "generated"
+        assert payload["analysis"] == payload["score"]["umto"]["analysis"]
 
     def test_metadata_rejects_invalid_locked_voice_ids(self):
         from pydantic import ValidationError
