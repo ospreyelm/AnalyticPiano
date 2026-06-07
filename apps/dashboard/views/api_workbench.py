@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 
 from apps.exercises.models import Exercise
+from apps.exercises.umto import InteractionMode
 
 @login_required
 def workbench_view(request):
@@ -23,7 +24,7 @@ def workbench_view(request):
 @login_required
 def workbench_upload_view(request):
     """
-    Handles file uploads from the UI and natively invokes the mass_import_performance CLI.
+    Handles file uploads from the UI and invokes the MusicXML UMTO router.
     """
     if request.method == 'POST' and request.FILES.get('musicxml_file'):
         uploaded_file = request.FILES['musicxml_file']
@@ -37,7 +38,7 @@ def workbench_upload_view(request):
         try:
             # Route to our CLI command dynamically
             call_command(
-                'mass_import_performance', 
+                'import_musicxml',
                 temp_path, 
                 author=request.user.email
             )
@@ -61,24 +62,64 @@ def api_recent_imports(request):
 
     limit = int(request.GET.get('limit', 50))
     
-    # Filter by user and 'Auto-Import:' prefix which replaces the problematic 
-    # data__source__type='mass_import' exact JSON match lookup that crashes SQLite.
     exercises = Exercise.objects.filter(
         authored_by=request.user,
-        description__startswith="Auto-Import:"
-    ).order_by('-id')[:limit]
+    ).order_by('-_id')[:limit * 3]
     
     results = []
     for ex in exercises:
+        data = ex.data or {}
+        if not data.get("isUMTO"):
+            continue
+        score = data.get("score", {})
+        umto = score.get("umto", {})
+        metadata = umto.get("metadata", {})
+        score_kind = metadata.get("score_kind", "voices")
         results.append({
             "id": ex.id,
             "description": ex.description,
-            "type": ex.data.get("type"),
-            "key": ex.data.get("score", {}).get("meta", {}).get("key", "C"),
-            "measureRange": f"{ex.data.get('source', {}).get('filename', '')} - Chunk {ex.data.get('source', {}).get('chunk', '?')}"
+            "type": data.get("type"),
+            "scoreKind": score_kind,
+            "key": score.get("meta", {}).get("key") or metadata.get("key", "C"),
+            "measureRange": metadata.get("source") or data.get("source", {}).get("filename", "Imported MusicXML"),
         })
+        if len(results) >= limit:
+            break
 
     return JsonResponse({"results": results})
+
+
+def _score_kind(exercise):
+    return (
+        (exercise.data or {})
+        .get("score", {})
+        .get("umto", {})
+        .get("metadata", {})
+        .get("score_kind", "voices")
+    )
+
+
+def _clone_chordal_exact_match(base_ex, author):
+    data = _copy.deepcopy(base_ex.data)
+    metadata = data["score"]["umto"]["metadata"]
+    metadata["exercise_id"] = "TEMP"
+    metadata["mode"] = InteractionMode.PLAYBACK.value
+    data["mode"] = InteractionMode.PLAYBACK.value
+    suffix = " (exact_match)"
+    description = f"{(base_ex.description or base_ex.id)[:60 - len(suffix)]}{suffix}"
+    new_ex = Exercise(
+        description=description,
+        data=data,
+        authored_by=author,
+        skill_tags=base_ex.skill_tags,
+        complexity=base_ex.complexity,
+        is_public=False,
+        time_signature=metadata.get("meter", ""),
+    )
+    new_ex.save()
+    new_ex.data["score"]["umto"]["metadata"]["exercise_id"] = new_ex.id
+    new_ex.save(update_fields=["data"])
+    return new_ex
 
 
 @login_required
@@ -103,17 +144,30 @@ def api_multiply_projection(request):
     if not source_ids or not target_type:
         return JsonResponse({"error": "Missing parameters"}, status=400)
 
+    source_exercises = []
+    for e_id in source_ids:
+        try:
+            source_exercises.append(Exercise.objects.get(id=e_id, authored_by=request.user))
+        except Exercise.DoesNotExist:
+            continue
+
+    chordal_sources = [ex for ex in source_exercises if _score_kind(ex) == "chordal"]
+    if chordal_sources and target_type != "exact_match":
+        return JsonResponse({
+            "error": "Chordal imports only support Exact Match projection in the Workbench."
+        }, status=400)
+
     created_ids = []
 
     with transaction.atomic():
-        for e_id in source_ids:
-            try:
-                base_ex = Exercise.objects.get(id=e_id, authored_by=request.user)
-            except Exercise.DoesNotExist:
+        for base_ex in source_exercises:
+            if _score_kind(base_ex) == "chordal":
+                new_ex = _clone_chordal_exact_match(base_ex, request.user)
+                created_ids.append(new_ex.id)
                 continue
 
             # Determine the identMode for this specific item
-            ident_mode = per_item_modes.get(str(e_id)) or global_ident_mode
+            ident_mode = per_item_modes.get(str(base_ex.id)) or global_ident_mode
             if ident_mode not in ["submit", "practice", "test"]:
                 ident_mode = "submit"
 

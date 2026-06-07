@@ -26,7 +26,7 @@
         <!-- Left Column: Source Items -->
         <div class="card source-card">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h3>Recent Mass Imports</h3>
+                <h3>Recent Imports</h3>
                 <label style="font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                     <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"> Select All
                 </label>
@@ -45,7 +45,7 @@
             </div>
             <div class="card-body">
                 <p class="description-text">
-                    Select raw imported segments from the left, then click below to project them into new playable or analytical exercises in your global library.
+                    Select imported scores from the left, then click below to project them into new playable or analytical exercises in your global library.
                 </p>
 
                 <div class="selection-status">
@@ -292,6 +292,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     let selectedIds = new Set();
+    let importMetaById = {};
     const importsList = document.getElementById('imports-list');
     const selectionCount = document.getElementById('selectionCount');
     const alertBox = document.getElementById('alertBox');
@@ -312,7 +313,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if(data.results && data.results.length > 0) {
                     renderImports(data.results);
                 } else {
-                    importsList.innerHTML = '<div class="empty-state"><p>No recent mass imports found. Once you run the CLI importer, the base exercises will appear here.</p></div>';
+                    importsList.innerHTML = '<div class="empty-state"><p>No recent imports found. Upload MusicXML to add base exercises here.</p></div>';
                 }
             })
             .catch(err => {
@@ -325,9 +326,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function renderImports(items) {
         importsList.innerHTML = '';
-        const globalMode = document.getElementById('global-mode').value;
+        importMetaById = {};
         items.forEach(item => {
-            const isChecked = selectedIds.has(item.id.toString()) ? 'checked' : '';
+            const itemId = item.id.toString();
+            importMetaById[itemId] = item;
+            const isChecked = selectedIds.has(itemId) ? 'checked' : '';
+            const scoreKind = item.scoreKind || 'voices';
             const html = `
                 <div class="import-item">
                     <div class="item-left">
@@ -344,12 +348,14 @@ document.addEventListener("DOMContentLoaded", function() {
                             <option value="practice">Practice</option>
                             <option value="test">Test</option>
                         </select>
+                        <span class="badge-pill">${scoreKind}</span>
                         <span class="badge-pill">${item.type}</span>
                     </div>
                 </div>
             `;
             importsList.insertAdjacentHTML('beforeend', html);
         });
+        updateStatus();
     }
 
     window.toggleSelection = function(checkbox) {
@@ -380,7 +386,12 @@ document.addEventListener("DOMContentLoaded", function() {
         selectionCount.innerText = selectedIds.size;
         if(selectedIds.size > 0) {
             selectionCount.classList.add('active');
-            actionBtns.forEach(btn => btn.disabled = false);
+            const hasChordal = Array.from(selectedIds).some(id => {
+                return importMetaById[id] && importMetaById[id].scoreKind === 'chordal';
+            });
+            actionBtns.forEach(btn => {
+                btn.disabled = hasChordal ? btn.id !== 'btn-exact' : false;
+            });
         } else {
             selectionCount.classList.remove('active');
             actionBtns.forEach(btn => btn.disabled = true);

@@ -18,6 +18,12 @@
 - Create: `apps/exercises/management/commands/import_legacy_chord_csv.py` — dry-run/import command for `exercises_2026-04-03.csv`.
 - Modify: `docs/management_commands.md` — document the new command.
 - Modify: `docs/UMTO_GUIDE.md` — document MusicXML representation routing.
+- Modify: `apps/dashboard/views/api_workbench.py` — route Workbench upload through
+  `import_musicxml`, expose `scoreKind`, and guard chordal projections.
+- Modify: `apps/dashboard/templates/dashboard/workbench.html` — display
+  voices/chordal badges and disable unsupported chordal projection buttons.
+- Create: `apps/dashboard/tests/test_workbench_router_wiring.py` — Workbench
+  upload/API coverage.
 
 ## Task 1: Legacy CSV Parser
 
@@ -309,3 +315,41 @@ git diff --check
 
 Expected: focused tests pass and diff check is clean.
 
+## Task 8: Teacher Workbench Router Wiring
+
+**Files:**
+- Modify: `apps/dashboard/views/api_workbench.py`
+- Modify: `apps/dashboard/templates/dashboard/workbench.html`
+- Test: `apps/dashboard/tests/test_workbench_router_wiring.py`
+
+- [x] **Step 1: Add failing Workbench tests**
+
+Coverage:
+
+- upload POST calls `import_musicxml`;
+- recent imports includes UMTO rows and exposes `scoreKind`;
+- chordal rows reject unsupported projections;
+- chordal rows allow Exact Match cloning.
+
+- [x] **Step 2: Implement backend wiring**
+
+`workbench_upload_view` delegates to `import_musicxml`. `api_recent_imports`
+filters authored UMTO rows in Python and returns `scoreKind`. Projection rejects
+non-Exact-Match chordal requests with HTTP 400 and clones chordal UMTO payloads
+for Exact Match.
+
+- [x] **Step 3: Implement UI wiring**
+
+The Workbench list is labeled "Recent Imports", renders a voices/chordal badge,
+and disables non-Exact-Match actions when the current selection includes a
+chordal import.
+
+- [x] **Step 4: Verify**
+
+Run:
+
+```bash
+DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py test apps.dashboard.tests.test_workbench_router_wiring -v 2 --keepdb
+```
+
+Expected: PASS, with only the existing CKEditor warning.

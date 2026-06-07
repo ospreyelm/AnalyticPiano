@@ -1,0 +1,143 @@
+import json
+from unittest.mock import patch
+
+from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase
+from django.urls import reverse
+
+from apps.exercises.models import Exercise
+from apps.exercises.umto import InteractionMode
+from apps.exercises.umto_factory import build_chordal_umto_payload
+from apps.exercises.tests.umto_test_helpers import make_umto_exercise
+
+
+User = get_user_model()
+
+
+class WorkbenchRouterWiringTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="teacher@example.com", password="pw")
+        self.client.force_login(self.user)
+
+    def test_upload_delegates_to_router_backed_import_musicxml_command(self):
+        uploaded = SimpleUploadedFile(
+            "chords.musicxml",
+            b"<?xml version='1.0'?><score-partwise version='3.1'></score-partwise>",
+            content_type="application/vnd.recordare.musicxml+xml",
+        )
+
+        with patch("apps.dashboard.views.api_workbench.call_command") as call_command:
+            response = self.client.post(
+                reverse("dashboard:workbench-upload"),
+                {"musicxml_file": uploaded},
+            )
+
+        self.assertEqual(response.status_code, 302)
+        command_name, temp_path = call_command.call_args.args[:2]
+        self.assertEqual(command_name, "import_musicxml")
+        self.assertTrue(temp_path.endswith(".xml"))
+        self.assertEqual(call_command.call_args.kwargs["author"], self.user.email)
+
+    def test_recent_imports_exposes_umto_score_kind(self):
+        make_umto_exercise(
+            self.user,
+            description="Multipart upload",
+            complexity=3,
+            skill_tags=["import:musicxml"],
+            mode=InteractionMode.PLAYBACK,
+        )
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Chordal upload",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+        )
+        chordal = Exercise.objects.create(
+            description="Chordal upload",
+            data=payload,
+            authored_by=self.user,
+            skill_tags=["import:musicxml"],
+            complexity=1,
+        )
+        chordal.data["score"]["umto"]["metadata"]["exercise_id"] = chordal.id
+        chordal.save(update_fields=["data"])
+
+        response = self.client.get(reverse("dashboard:api-recent-imports"))
+
+        self.assertEqual(response.status_code, 200)
+        by_description = {
+            item["description"]: item
+            for item in response.json()["results"]
+        }
+        self.assertEqual(by_description["Multipart upload"]["scoreKind"], "voices")
+        self.assertEqual(by_description["Chordal upload"]["scoreKind"], "chordal")
+
+    def test_chordal_import_rejects_unsupported_projection_type(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Chordal upload",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+        )
+        chordal = Exercise.objects.create(
+            description="Chordal upload",
+            data=payload,
+            authored_by=self.user,
+            skill_tags=["import:musicxml"],
+            complexity=1,
+        )
+
+        response = self.client.post(
+            reverse("dashboard:api-multiply-projection"),
+            data=json.dumps({
+                "source_ids": [chordal.id],
+                "target_type": "roman_numeral",
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Chordal imports only support Exact Match", response.json()["error"])
+
+    def test_chordal_import_allows_exact_match_projection(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="Chordal upload",
+            key="jC_",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+        )
+        chordal = Exercise.objects.create(
+            description="Chordal upload",
+            data=payload,
+            authored_by=self.user,
+            skill_tags=["import:musicxml"],
+            complexity=1,
+        )
+
+        response = self.client.post(
+            reverse("dashboard:api-multiply-projection"),
+            data=json.dumps({
+                "source_ids": [chordal.id],
+                "target_type": "exact_match",
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["status"], "success")
+        created = Exercise.objects.get(id=body["created_exercises"][0])
+        self.assertEqual(created.data["score"]["umto"]["metadata"]["score_kind"], "chordal")

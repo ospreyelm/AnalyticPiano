@@ -25,14 +25,27 @@ Add a backend representation router for imported music material:
 - chord-on-staff, homophonic, ragged, or monophonic MusicXML -> chordal UMTO;
 - legacy CSV `data.chord` rows -> chordal UMTO import/validation path.
 
+## Workbench UX Wiring
+
+The Teacher Workbench upload path must call the same MusicXML router as the CLI
+import command. Recent imports should show the UMTO `score_kind` selected by the
+router so teachers can see whether an upload imported as `voices` or `chordal`.
+
+Projection rules:
+
+- voices-kind imports keep the existing projection actions;
+- chordal imports support Exact Match by cloning the chordal UMTO payload as a
+  playback exercise;
+- chordal imports reject Roman numeral, figured bass, analysis-match, and pitch
+  identification projections until those chordal transforms are explicitly built.
+
 ## Non-Goals
 
 - No silent rewrite of existing DB rows.
 - No new frontend exercise type.
 - No native chordal transposition UI beyond preserving source spelling in the
   chordal payload.
-- No Workbench redesign in this slice; Workbench should later call the same
-  backend router.
+- No broad Workbench redesign.
 
 ## Routing Rules
 
@@ -86,4 +99,7 @@ frontend timeline and analysis-window alignment stay on the Spec A W1 path.
    UMTO without writing by default.
 7. `import_musicxml` uses the classifier: voices route keeps the existing
    voices-kind factory path, chordal route uses `build_chordal_umto_payload`.
-
+8. Workbench upload delegates to `import_musicxml`.
+9. Workbench recent imports expose `scoreKind`.
+10. Workbench rejects unsupported projections for chordal imports and allows
+    Exact Match cloning.
