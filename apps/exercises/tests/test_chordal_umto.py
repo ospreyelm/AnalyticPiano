@@ -32,3 +32,24 @@ class TestChordEvent(TestCase):
     def test_nonpositive_duration_rejected(self):
         with self.assertRaises(ValidationError):
             ChordEvent(offset=0.0, duration=0.0, visible=[60])
+
+
+from apps.exercises.umto import Metadata
+
+
+class TestScoreKind(TestCase):
+    def _meta(self, **kw):
+        base = dict(exercise_id="T", source="t", key="C", meter="4/4",
+                    complexity_score=1)
+        base.update(kw)
+        return Metadata(**base)
+
+    def test_default_is_voices(self):
+        self.assertEqual(self._meta().score_kind, "voices")
+
+    def test_chordal_allowed(self):
+        self.assertEqual(self._meta(score_kind="chordal").score_kind, "chordal")
+
+    def test_invalid_kind_rejected(self):
+        with self.assertRaises(ValidationError):
+            self._meta(score_kind="bogus")
