@@ -48,6 +48,24 @@ class VoiceEvent(BaseModel):
     is_tied_stop: bool = False
     is_target: bool = True # False if this note is just context/accompaniment
 
+class ChordEvent(BaseModel):
+    offset: float = Field(ge=0.0)          # quarter-lengths from start
+    duration: float = Field(gt=0.0)         # quarter-lengths
+    visible: List[int] = Field(default_factory=list)  # MIDI pitches sounding
+    hidden: List[int] = Field(default_factory=list)   # MIDI pitches not shown
+    spelling: Optional[List[str]] = None    # positional: visible then hidden
+
+    @model_validator(mode="after")
+    def validate_spelling_length(self):
+        if self.spelling is not None:
+            expected = len(self.visible) + len(self.hidden)
+            if len(self.spelling) != expected:
+                raise ValueError(
+                    f"spelling length {len(self.spelling)} must equal "
+                    f"visible+hidden length {expected}"
+                )
+        return self
+
 class Voices(BaseModel):
     S: List[VoiceEvent] = Field(default_factory=list)
     A: List[VoiceEvent] = Field(default_factory=list)
