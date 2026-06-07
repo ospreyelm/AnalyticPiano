@@ -83,3 +83,16 @@ class TestUMTOValidator(TestCase):
             "voices": {"S": [], "A": [], "T": [], "B": []},
         })
         self.assertEqual(obj.metadata.score_kind, "voices")
+
+
+import json, os
+
+
+class TestSchemaUpToDate(TestCase):
+    def test_schema_contains_chord_and_score_kind(self):
+        path = os.path.join(os.path.dirname(__file__), "..", "umto_schema.json")
+        with open(path) as f:
+            schema = json.load(f)
+        text = json.dumps(schema)
+        self.assertIn("ChordEvent", text)
+        self.assertIn("score_kind", text)

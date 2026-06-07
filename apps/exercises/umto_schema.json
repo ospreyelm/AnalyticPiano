@@ -146,6 +146,55 @@
       "title": "AnalysisSlice",
       "type": "object"
     },
+    "ChordEvent": {
+      "properties": {
+        "offset": {
+          "minimum": 0.0,
+          "title": "Offset",
+          "type": "number"
+        },
+        "duration": {
+          "exclusiveMinimum": 0.0,
+          "title": "Duration",
+          "type": "number"
+        },
+        "visible": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Visible",
+          "type": "array"
+        },
+        "hidden": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Hidden",
+          "type": "array"
+        },
+        "spelling": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spelling"
+        }
+      },
+      "required": [
+        "offset",
+        "duration"
+      ],
+      "title": "ChordEvent",
+      "type": "object"
+    },
     "GradingSlice": {
       "properties": {
         "offset": {
@@ -255,6 +304,15 @@
             "text"
           ],
           "title": "Input Mode",
+          "type": "string"
+        },
+        "score_kind": {
+          "default": "voices",
+          "enum": [
+            "voices",
+            "chordal"
+          ],
+          "title": "Score Kind",
           "type": "string"
         },
         "unit": {
@@ -551,6 +609,13 @@
     "voices": {
       "$ref": "#/$defs/Voices"
     },
+    "chords": {
+      "items": {
+        "$ref": "#/$defs/ChordEvent"
+      },
+      "title": "Chords",
+      "type": "array"
+    },
     "analysis": {
       "items": {
         "$ref": "#/$defs/AnalysisSlice"
@@ -567,8 +632,7 @@
     }
   },
   "required": [
-    "metadata",
-    "voices"
+    "metadata"
   ],
   "title": "Universal Music Theory Object",
   "type": "object"
