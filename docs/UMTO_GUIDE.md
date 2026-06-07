@@ -199,15 +199,33 @@ payload = legacy_chord_row_to_chordal_payload(exercise.data)
 Accepted chord shapes: `{visible, hidden}`, `{notes}` (mapped to `visible`), or a
 bare MIDI list. Each chord is assigned `duration=1.0` quarter-length.
 
+### Import routing
+
+MusicXML import uses `apps.exercises.utils.umto_import_router` to choose the UMTO
+score kind before saving:
+
+- stable 2-, 3-, or 4-part scores with no explicit chord events import as
+  voices-kind UMTO;
+- one-part, monophonic, explicit-chord, ragged, or homophonic sources import as
+  chordal UMTO;
+- chordal conversion groups attacks by absolute quarter-length offset and
+  preserves `spelling[]` alongside MIDI values for future transpose support.
+
+Legacy CSV chord-bank material can be validated/imported explicitly:
+
+```bash
+python manage.py import_legacy_chord_csv exercises_2026-04-03.csv \
+  --author admin@example.com --dry-run --limit 10
+```
+
 ### Known limitations
 
 - **No per-voice voice-leading grading.** Chordal mode has no independent voice
   streams, so voice-leading errors cannot be flagged individually. This is
   acceptable for identification, Roman numeral, figured-bass, and play-the-chord
   exercises.
-- **Transpose not yet implemented for chordal.** The current `transpose.py` only
-  handles legacy `data.chord` arrays. Chordal UMTO transposition is Spec B and
-  has not been built yet.
+- **Native chordal transpose UI is not complete.** Spec B preserves chordal
+  source spelling so a later transpose layer can avoid enharmonic loss.
 
 ## FAQ
 

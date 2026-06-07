@@ -23,6 +23,22 @@ The admin site uses a custom `GenerateContentAdminSite` (see `apps/exercises/adm
 
 ### Bach chorale phrases (Riemenschneider)
 
+**`import_musicxml`** — Import MusicXML through the UMTO representation router. Stable 2-, 3-, or 4-part scores stay voices-kind UMTO; explicit chord, monophonic, or ragged sources become chordal UMTO.
+```
+python manage.py import_musicxml path/to/score.musicxml --author admin@example.com --public
+```
+
+**`import_legacy_chord_csv`** — Import legacy CSV `data.chord` rows as chordal UMTO exercises. Dry-run first; this does not silently rewrite existing rows.
+```
+python manage.py import_legacy_chord_csv exercises_2026-04-03.csv \
+  --author admin@example.com \
+  --dry-run --limit 10
+
+python manage.py import_legacy_chord_csv exercises_2026-04-03.csv \
+  --author admin@example.com \
+  --public
+```
+
 **`import_bach_phrases`** — Import a single Riemenschneider phrase as identification / playback / match / figures / harmonization-source exercises.
 ```
 python manage.py import_bach_phrases --riemenschneider 3 --author admin@example.com \
