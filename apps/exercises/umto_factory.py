@@ -515,6 +515,34 @@ def build_chordal_umto_payload(
     }
 
 
+def legacy_chord_row_to_chordal_payload(data, *, meter="4/4", clef="keyboard",
+                                        complexity_score=1):
+    """Wrap a legacy data.chord row into a chordal UMTO payload (runtime read only).
+
+    Accepts chords as dicts ({visible,hidden} or {notes}) or bare midi lists.
+    Never writes back to the DB — call this only at serve time.
+    """
+    raw = data.get("chord") or []
+    chords = []
+    offset = 0.0
+    for c in raw:
+        if isinstance(c, dict):
+            visible = list(c.get("visible") or c.get("notes") or [])
+            hidden = list(c.get("hidden") or [])
+        else:  # bare list of midi
+            visible, hidden = list(c), []
+        chords.append({"offset": offset, "duration": 1.0,
+                       "visible": visible, "hidden": hidden})
+        offset += 1.0
+    return build_chordal_umto_payload(
+        exercise_id=str(data.get("id", "LEGACY")),
+        source=data.get("description", "Legacy exercise"),
+        key=data.get("key", "C"), meter=meter, clef=clef,
+        complexity_score=complexity_score, mode=InteractionMode.PLAYBACK,
+        chords=chords, analysis=[],
+    )
+
+
 import os
 
 from apps.exercises.models import Exercise

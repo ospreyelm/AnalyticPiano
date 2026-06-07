@@ -164,3 +164,35 @@ class TestChordalMeasures(TestCase):
         self.assertEqual(_midi_to_cir_pitch(60), {"step": "C", "alter": 0, "octave": 4})
         self.assertEqual(_midi_to_cir_pitch(61), {"step": "C", "alter": 1, "octave": 4})
         self.assertEqual(_midi_to_cir_pitch(72), {"step": "C", "alter": 0, "octave": 5})
+
+
+from apps.exercises.umto_factory import legacy_chord_row_to_chordal_payload
+
+
+class TestLegacyWrap(TestCase):
+    def test_legacy_chord_array_wraps_to_chordal(self):
+        legacy_data = {
+            "type": "matching", "key": "C",
+            "chord": [
+                {"visible": [60, 64, 67], "hidden": []},
+                {"visible": [62, 65, 69], "hidden": []},
+            ],
+        }
+        payload = legacy_chord_row_to_chordal_payload(legacy_data)
+        umto = payload["score"]["umto"]
+        self.assertEqual(umto["metadata"]["score_kind"], "chordal")
+        self.assertEqual(len(umto["chords"]), 2)
+        self.assertEqual(umto["chords"][0]["visible"], [60, 64, 67])
+
+
+class TestRoundTripEquivalence(TestCase):
+    def test_wrapped_legacy_matches_legacy_grading_semantics(self):
+        legacy = {"type": "matching", "key": "C",
+                  "chord": [{"visible": [67, 60, 64], "hidden": []}]}
+        payload = legacy_chord_row_to_chordal_payload(legacy)
+        chords = payload["score"]["umto"]["chords"]
+        # visible order preserved from source
+        self.assertEqual(chords[0]["visible"], [67, 60, 64])
+        # gradeable notes = sorted(visible+hidden) — matches the JS chordsToProblems() contract
+        notes = sorted(chords[0]["visible"] + chords[0]["hidden"])
+        self.assertEqual(notes, [60, 64, 67])
