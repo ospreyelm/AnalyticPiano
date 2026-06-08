@@ -940,7 +940,19 @@ class AddExerciseView(View):
         except (NonUMTOExerciseError, ValueError, KeyError):
             return HttpResponse(status=400)
 
-        return JsonResponse(status=201, data={"id": exercise.id})
+        review_status = (
+            (exercise.data or {})
+            .get("score", {})
+            .get("umto", {})
+            .get("metadata", {})
+            .get("analysis_review_status", "none")
+        )
+        review_url = reverse("dashboard:workbench") + "?review=" + str(exercise.id)
+        return JsonResponse(status=201, data={
+            "id": exercise.id,
+            "reviewStatus": review_status,
+            "reviewUrl": review_url,
+        })
 
 
 @login_required()

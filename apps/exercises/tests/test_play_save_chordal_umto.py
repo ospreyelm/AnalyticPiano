@@ -157,6 +157,17 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         chords = ex.data["score"]["umto"]["chords"]
         self.assertEqual(chords[0]["spelling"], ["Bb4", "D5", "F5"])
 
+    def test_save_returns_review_status_and_url(self):
+        self.client.login(email="teacher@example.com", password="pw")
+        payload = {"key": "jC_", "meter": "4/4", "staffDistribution": "keyboard",
+                   "chord": [{"visible": [60, 64, 67], "hidden": [], "rhythmValue": "w"}]}
+        # match the login pattern the other tests use
+        resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
+        self.assertEqual(resp.status_code, 201)
+        body = resp.json()
+        self.assertIn(body["reviewStatus"], ("generated", "none"))
+        self.assertIn("review=" + str(body["id"]), body["reviewUrl"])
+
     def test_malformed_spelling_length_is_dropped(self):
         self.client.login(email="teacher@example.com", password="pw")
         payload = {
