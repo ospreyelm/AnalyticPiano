@@ -400,9 +400,9 @@ def test_factory_emits_pitch_names_for_unit1():
     
     analysis = payload["score"]["umto"]["analysis"]
     assert len(analysis) > 0
-    # Unit 1 identification should have pitch names (e.g. "G") in roman_numeral slot for now
+    # Unit 1 identification should have pitch names (e.g. "G") in raw_roman_numeral slot for now
     # (or wherever the UI expects them)
-    assert analysis[0]["content"]["roman_numeral"] is not None
+    assert analysis[0]["content"]["raw_roman_numeral"] is not None
 
 
 # ---------------------------------------------------------------------------

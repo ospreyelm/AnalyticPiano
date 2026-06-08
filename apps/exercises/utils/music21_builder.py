@@ -132,7 +132,7 @@ def build_score_from_data(exercise_data):
 
     # Add all parts to score
     for part in parts_by_staff.values():
-        score.append(part)
+        score.insert(0.0, part)
 
     return score
 
