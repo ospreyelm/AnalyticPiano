@@ -2991,7 +2991,13 @@ define([
 
       var dist = meta.staffDistribution || "keyboard";
       var spellingTable = null;
-      try { spellingTable = new KeySignature(meta.key).keyToSpelling(meta.key); } catch (e) { spellingTable = null; }
+      if (meta.key) {
+        try {
+          spellingTable = new KeySignature(meta.key).keyToSpelling(meta.key);
+        } catch (e) {
+          console.warn("[exercise_sheet] Bad or missing key in chordal UMTO:", meta.key, "- falling back to default (sharp) spelling");
+        }
+      }
       var midiToPitch = function (m) {
         return ChordalSpelling.keyAwarePitch(m, spellingTable);
       };
