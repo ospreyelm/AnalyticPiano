@@ -559,11 +559,20 @@ define([
           dataType: "json",
           success: function (data) {
             let exerciseID = data.id;
+            let reviewUrl = data.reviewUrl;
+            let needsReview = data.reviewStatus === "generated";
             if (!quiet) {
-              window.alert(
-                `Exercise uploaded! Exercise ID: ${exerciseID}. Taking you to the new exercise now.`
-              );
-              window.open(`/dashboard/exercises/${exerciseID}/`, "_blank");
+              if (needsReview && reviewUrl) {
+                window.alert(
+                  `Exercise saved (ID: ${exerciseID}). Opening analysis review so you can approve or correct it.`
+                );
+                window.open(reviewUrl, "_blank");
+              } else {
+                window.alert(
+                  `Exercise uploaded! Exercise ID: ${exerciseID}. Taking you to the new exercise now.`
+                );
+                window.open(`/dashboard/exercises/${exerciseID}/`, "_blank");
+              }
             } else {
               window.alert(
                 `Exercise uploaded! Exercise ID: ${exerciseID}.`
