@@ -145,9 +145,9 @@ Expected: FAIL — `Cannot find module './chordal_spelling'`.
     var pc = ((midi % 12) + 12) % 12;
     var naturalPc = STEP_PC[step];
     var octave = Math.floor(midi / 12) - 1;
-    // Resolve enharmonic octave wrap (Cb sits above B; B# sits below C).
-    if (naturalPc - pc > 6) octave += 1;
-    else if (pc - naturalPc > 6) octave -= 1;
+    // Resolve enharmonic octave wrap (Cb sounds as B below it; B# sounds as C above it).
+    if (pc - naturalPc > 6) octave += 1;       // e.g. Cb4: step C (pc 0) sounding B3 (pc 11)
+    else if (naturalPc - pc > 6) octave -= 1;  // e.g. B#3: step B (pc 11) sounding C4 (pc 0)
     return { step: step, alter: alter, octave: octave };
   }
 
