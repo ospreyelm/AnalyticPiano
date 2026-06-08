@@ -176,11 +176,23 @@ def api_chordal_analysis_review(request, exercise_id):
                 "is_target": True,
             }
             new_analysis.append(AnalysisSlice(**slice_data).model_dump(mode="json"))
+            spelling = row.get("spelling")
+            if spelling is not None:
+                for chord in chords:
+                    if round(float(chord.get("offset", 0.0)), 6) == offset:
+                        expected = len(chord.get("visible", [])) + len(chord.get("hidden", []))
+                        if len(spelling) != expected:
+                            return JsonResponse(
+                                {"error": f"spelling length {len(spelling)} != {expected} at offset {offset}"},
+                                status=400)
+                        chord["spelling"] = spelling
+                        break
     except (TypeError, ValueError) as exc:
         return JsonResponse({"error": str(exc)}, status=400)
 
     metadata["analysis_review_status"] = "reviewed"
     umto["analysis"] = new_analysis
+    umto["chords"] = chords
     data["analysis"] = new_analysis
     exercise.data = data
     exercise.save(update_fields=["data"])
