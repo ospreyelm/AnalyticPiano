@@ -88,10 +88,20 @@
     return out;
   }
 
+  // Convert a VexFlow-style "name/octave" key (e.g. "bb/4", "c#/5") into a
+  // scientific spelling string ("Bb4", "C#5"). Returns null if unparseable.
+  function vexKeyToSpellingString(keyStr) {
+    var parts = String(keyStr).split("/");
+    if (parts.length !== 2 || !parts[0]) return null;
+    var nm = parts[0];
+    return nm.charAt(0).toUpperCase() + nm.slice(1) + parts[1];
+  }
+
   return {
     spelledPitchFromName: spelledPitchFromName,
     pitchFromSpellingString: pitchFromSpellingString,
     keyAwarePitch: keyAwarePitch,
     resolveChordPitches: resolveChordPitches,
+    vexKeyToSpellingString: vexKeyToSpellingString,
   };
 });

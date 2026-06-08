@@ -45,5 +45,12 @@ eq("hidden notes are resolved",
    S.resolveChordPitches({ visible: [60], hidden: [70] }, ["c","c#","d","eb","e","f","f#","g","g#","a","bb","b"]),
    { 60: { step: "C", alter: 0, octave: 4 }, 70: { step: "B", alter: -1, octave: 4 } });
 
+// vexKeyToSpellingString: "bb/4" -> "Bb4"
+eq("vexKey bb/4 -> Bb4", S.vexKeyToSpellingString("bb/4"), "Bb4");
+eq("vexKey c#/5 -> C#5", S.vexKeyToSpellingString("c#/5"), "C#5");
+eq("vexKey cb/4 -> Cb4", S.vexKeyToSpellingString("cb/4"), "Cb4");
+eq("vexKey e/4 -> E4", S.vexKeyToSpellingString("e/4"), "E4");
+eq("vexKey junk -> null", S.vexKeyToSpellingString("nope"), null);
+
 console.log("\n" + pass + " passed, " + fail + " failed");
 if (fail > 0) process.exit(1);
