@@ -53,6 +53,11 @@
     {% endif %}
     {% if is_chordal %}
         <a href="{% url 'dashboard:workbench' %}?review={{ form.instance.id }}" class="btn dashboard-btn" target="_blank">Review/Edit Analysis</a>
+        {% if analysis_review_status == "generated" %}
+            <span style="display:inline-block;margin-left:8px;padding:4px 10px;border-radius:4px;background:#f0ad4e;color:#fff;font-size:12px;vertical-align:middle;">Needs review</span>
+        {% elif analysis_review_status == "reviewed" %}
+            <span style="display:inline-block;margin-left:8px;padding:4px 10px;border-radius:4px;background:#5cb85c;color:#fff;font-size:12px;vertical-align:middle;">Reviewed</span>
+        {% endif %}
     {% endif %}
     {% with form.instance.get_previous_authored_exercise as previous %}
         {% if not previous == None %}
