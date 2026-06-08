@@ -48,6 +48,9 @@ define([
     if (SHORTS.hasOwnProperty("noteAnchor")) {
       this.noteAnchor = SHORTS.noteAnchor;
     }
+    if (this.settings.hasOwnProperty("noteAnchor")) {
+      this.noteAnchor = this.settings.noteAnchor;
+    }
 
     this.setComponent(
       "input",

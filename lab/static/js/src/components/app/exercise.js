@@ -29,6 +29,8 @@ define([
   "app/models/identification_grader",
   "app/models/exercise_context",
   "app/components/exercise_score_card",
+  "app/models/keyboard_range_logic",
+  "app/config/keyboard_shortcuts",
 ], function (
   module,
   _,
@@ -59,7 +61,9 @@ define([
   ChoraleGrader,
   IdentificationGrader,
   ExerciseContext,
-  ExerciseScoreCard
+  ExerciseScoreCard,
+  KeyboardRangeLogic,
+  KeyboardShortcutsConfig
 ) {
   /**
    * AppExerciseComponent class.
@@ -75,6 +79,33 @@ define([
   };
 
   AppExerciseComponent.prototype = new AppComponent();
+
+  function defaultShortcutAnchor() {
+    return KeyboardShortcutsConfig &&
+      Object.prototype.hasOwnProperty.call(KeyboardShortcutsConfig, "noteAnchor")
+      ? KeyboardShortcutsConfig.noteAnchor
+      : 48;
+  }
+
+  function buildKeyboardRange(exerciseDefinition) {
+    if (!exerciseDefinition || !exerciseDefinition.usesNoteEntry || !exerciseDefinition.usesNoteEntry()) {
+      return null;
+    }
+    var bounds = KeyboardRangeLogic.getShortcutNoteBounds(
+      (KeyboardShortcutsConfig && KeyboardShortcutsConfig.keyMap) || {}
+    );
+    var targetMidis = KeyboardRangeLogic.collectTargetMidis(exerciseDefinition);
+    if (!targetMidis.length || bounds.min == null || bounds.max == null) {
+      return null;
+    }
+    return KeyboardRangeLogic.resolveKeyboardRange({
+      targetMidis: targetMidis,
+      shortcutMin: bounds.min,
+      shortcutMax: bounds.max,
+      baseNoteAnchor: defaultShortcutAnchor(),
+      baseOctaveAdjustment: 0
+    });
+  }
 
   /**
    * Returns the models used by the app.
@@ -175,6 +206,7 @@ define([
       models.exerciseDefinition.getKey(),
       models.exerciseDefinition.getKeySignature()
     );
+    models.keyboardRange = buildKeyboardRange(models.exerciseDefinition);
     return models;
   };
 
@@ -243,6 +275,12 @@ define([
         var c = new PianoComponent({
           toolbarConfig: { metronome: false },
           toolbarEnabled: false,
+          keyboardOctaveAdjustmentDelta: this.models.keyboardRange
+            ? this.models.keyboardRange.octaveShift / 12
+            : 0,
+          qwertyNoteAnchor: this.models.keyboardRange
+            ? this.models.keyboardRange.noteAnchor
+            : defaultShortcutAnchor(),
         });
         c.init(this);
         c.renderTo("#piano");
@@ -266,6 +304,9 @@ define([
         }
         var c = new KeyboardShortcutsComponent({
           keySignature: this.models.keySignature,
+          noteAnchor: this.models.keyboardRange
+            ? this.models.keyboardRange.noteAnchor
+            : defaultShortcutAnchor(),
         });
         c.init(this);
         this.addComponent(c);

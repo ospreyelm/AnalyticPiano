@@ -291,6 +291,24 @@ def _build_playlist(*, author, playlist_name, exercises, skill_tags, is_public):
     return playlist
 
 
+def _interleave_key_blocks(items: list, key_count: int) -> list:
+    """Convert key-major ordering into pattern-major ordering.
+
+    Generators build rows as all patterns in key 1, then all patterns in key 2.
+    For student playlists, cycle keys before moving to the next pattern so early
+    exercises do not all feel like duplicates in C.
+    """
+    if key_count <= 1 or len(items) % key_count != 0:
+        return items
+
+    block_size = len(items) // key_count
+    out = []
+    for pattern_idx in range(block_size):
+        for key_idx in range(key_count):
+            out.append(items[(key_idx * block_size) + pattern_idx])
+    return out
+
+
 # ── Voice assignment helpers ──────────────────────────────────────────────────
 
 def _assign_slots_simple(combo: tuple) -> dict[str, tuple]:
@@ -400,7 +418,8 @@ def _generate_b2(author, options, stdout, style):
             stdout.write(f"  {desc}")
     pl = _build_playlist(
         author=author, playlist_name="B2 — Simple Cadence (2 parts)",
-        exercises=exs, skill_tags=["branch_b", "unit:B2", "cadence_simple_2pt"],
+        exercises=_interleave_key_blocks(exs, len(TARGET_KEYS)),
+        skill_tags=["branch_b", "unit:B2", "cadence_simple_2pt"],
         is_public=options["public"],
     )
     stdout.write(style.SUCCESS(f"B2: {len(exs)} exercises → '{pl.name}'"))

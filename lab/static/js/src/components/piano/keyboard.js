@@ -46,12 +46,16 @@ define([
     defaultKeyWidth: 34,
     numberOfKeys: null,
     octaveAdjustment: null,
+    qwertyNoteAnchor: null,
     initComponent: function () {
       if ("numberOfKeys" in this.settings) {
         this.numberOfKeys = this.settings.numberOfKeys;
       }
       if ("octaveAdjustment" in this.settings) {
         this.octaveAdjustment = this.settings.octaveAdjustment;
+      }
+      if ("qwertyNoteAnchor" in this.settings) {
+        this.qwertyNoteAnchor = this.settings.qwertyNoteAnchor;
       }
 
       this.keyboardGenerator = new KeyboardGenerator(
@@ -287,7 +291,9 @@ define([
 
       var shortcuts = require('app/config/keyboard_shortcuts');
       var keyMap = (shortcuts && shortcuts.keyMap) ? shortcuts.keyMap : {};
-      var NOTE_ANCHOR = (shortcuts && shortcuts.noteAnchor != null) ? shortcuts.noteAnchor : 0;
+      var NOTE_ANCHOR = this.qwertyNoteAnchor != null
+        ? this.qwertyNoteAnchor
+        : (shortcuts && shortcuts.noteAnchor != null) ? shortcuts.noteAnchor : 0;
       var noteToKey = {};
       _.each(keyMap, function (val, key) {
         if (val && val.msg === 'toggleNote') {

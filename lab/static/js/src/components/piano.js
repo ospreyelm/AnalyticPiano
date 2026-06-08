@@ -69,6 +69,18 @@ define([
     if ("keyboardConfig" in this.settings) {
       keyboardConfig = this.settings.keyboardConfig;
     }
+    if (typeof this.settings.keyboardOctaveAdjustmentDelta === "number") {
+      keyboardConfig = _.assign({}, keyboardConfig, {
+        octaveAdjustment:
+          (Number(keyboardConfig.octaveAdjustment) || 0) +
+          this.settings.keyboardOctaveAdjustmentDelta,
+      });
+    }
+    if (this.settings.qwertyNoteAnchor != null) {
+      keyboardConfig = _.assign({}, keyboardConfig, {
+        qwertyNoteAnchor: this.settings.qwertyNoteAnchor,
+      });
+    }
     if ("toolbarEnabled" in this.settings) {
       toolbarEnabled = this.settings.toolbarEnabled ? true : false;
     }
@@ -164,6 +176,7 @@ define([
     var newKeyboardComponent = new KeyboardComponent({
       numberOfKeys: numberOfKeys,
       octaveAdjustment: oldKeyboardComponent.octaveAdjustment,
+      qwertyNoteAnchor: oldKeyboardComponent.qwertyNoteAnchor,
     });
     newKeyboardComponent.init(this);
 
@@ -179,6 +192,7 @@ define([
     var newKeyboardComponent = new KeyboardComponent({
       numberOfKeys: oldKeyboardComponent.numberOfKeys,
       octaveAdjustment: octaveAdjustment,
+      qwertyNoteAnchor: oldKeyboardComponent.qwertyNoteAnchor,
     });
     newKeyboardComponent.init(this);
 
