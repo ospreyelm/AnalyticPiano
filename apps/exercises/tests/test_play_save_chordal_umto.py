@@ -141,3 +141,33 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.client.login(email="teacher@example.com", password="pw")
         response = self.client.post(self.add_url, {"data": "{bad json"})
         self.assertEqual(response.status_code, 400)
+
+    def test_spelling_is_persisted(self):
+        self.client.login(email="teacher@example.com", password="pw")
+        payload = {
+            "key": "jF_", "meter": "4/4", "staffDistribution": "keyboard",
+            "chord": [
+                {"visible": [70, 74, 77], "hidden": [], "rhythmValue": "w",
+                 "spelling": ["Bb4", "D5", "F5"]},
+            ],
+        }
+        resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
+        self.assertEqual(resp.status_code, 201)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        chords = ex.data["score"]["umto"]["chords"]
+        self.assertEqual(chords[0]["spelling"], ["Bb4", "D5", "F5"])
+
+    def test_malformed_spelling_length_is_dropped(self):
+        self.client.login(email="teacher@example.com", password="pw")
+        payload = {
+            "key": "jF_", "meter": "4/4", "staffDistribution": "keyboard",
+            "chord": [
+                {"visible": [70, 74, 77], "hidden": [], "rhythmValue": "w",
+                 "spelling": ["Bb4"]},  # wrong length (1 != 3)
+            ],
+        }
+        resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
+        self.assertEqual(resp.status_code, 201)  # save still succeeds
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        chords = ex.data["score"]["umto"]["chords"]
+        self.assertIsNone(chords[0].get("spelling"))

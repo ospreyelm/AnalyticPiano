@@ -757,12 +757,20 @@ def save_chordal_umto_exercise(
             else:
                 dur = remaining
 
-        normalized_chords.append({
+        spelling = None
+        if isinstance(c, dict) and c.get("spelling"):
+            candidate = list(c.get("spelling"))
+            if len(candidate) == len(visible) + len(hidden):
+                spelling = candidate
+        chord_dict = {
             "offset": off,
             "duration": dur,
             "visible": visible,
             "hidden": hidden,
-        })
+        }
+        if spelling:
+            chord_dict["spelling"] = spelling
+        normalized_chords.append(chord_dict)
         offset = off + dur
 
     analysis_slices = []
