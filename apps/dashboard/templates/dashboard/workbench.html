@@ -620,6 +620,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Initialize list
     fetchImports();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const reviewId = urlParams.get('review');
+    if (reviewId) {
+        openAnalysisReview(reviewId);
+    }
 });
 </script>
 {% endblock content %}

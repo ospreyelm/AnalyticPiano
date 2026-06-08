@@ -144,6 +144,7 @@ def exercise_edit_view(request, exercise_id):
             "dashboard:delete-exercise", kwargs={"exercise_id": exercise_id}
         ),
         "is_chorale": (exercise.data or {}).get("type") == "chorale",
+        "is_chordal": (exercise.data or {}).get("score", {}).get("umto", {}).get("metadata", {}).get("score_kind") == "chordal",
     }
 
     PROTECT_EXERCISE_CONTENT = exercise.has_been_performed

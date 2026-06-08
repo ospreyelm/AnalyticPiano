@@ -51,6 +51,9 @@
             </div>
         </dialog>
     {% endif %}
+    {% if is_chordal %}
+        <a href="{% url 'dashboard:workbench' %}?review={{ form.instance.id }}" class="btn dashboard-btn" target="_blank">Review/Edit Analysis</a>
+    {% endif %}
     {% with form.instance.get_previous_authored_exercise as previous %}
         {% if not previous == None %}
             <button type="submit" class="btn dashboard-btn" name="save-and-edit-previous">← Save, Previous</button>

@@ -752,31 +752,13 @@ def save_chordal_umto_exercise(
 
     analysis_slices = []
     review_status = "none"
-    if _MUSIC21_AVAILABLE:
-        try:
-            score_data = {
-                "measures": _chordal_to_measures(normalized_chords, meter)
-            }
-            m21_score = build_score_from_data({"score": score_data})
-            chordified = m21_score.chordify()
-            k_obj = _to_music21_key(key)
-            onsets = {c["offset"] for c in normalized_chords}
-            for off in sorted(onsets):
-                c = chordified.getElementAtOrBefore(off)
-                if c and hasattr(c, 'pitches'):
-                    rn = roman.romanNumeralFromChord(c, k_obj)
-                    analysis_slices.append({
-                        "offset": off,
-                        "content": {
-                            "roman_numeral": None,
-                            "raw_roman_numeral": rn.figure
-                        },
-                        "unit_tags": []
-                    })
-            if analysis_slices:
-                review_status = "generated"
-        except Exception as e:
-            print(f"Warning: music21 analysis failed: {e}")
+    try:
+        from apps.exercises.utils.umto_import_router import build_chordal_analysis_slices
+        analysis_slices = build_chordal_analysis_slices(normalized_chords, harmony_key=key)
+        if analysis_slices:
+            review_status = "generated"
+    except Exception as e:
+        print(f"Warning: HarmonyLab analysis generation failed: {e}")
 
     try:
         payload = build_chordal_umto_payload(
