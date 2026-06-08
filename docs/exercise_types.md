@@ -141,6 +141,25 @@ python manage.py generate_unit3_scale_exercises --author <email> --mode both --p
 
 ---
 
+### Chordal Play-saved exercises (`score_kind: "chordal"`) — spelling & analysis review
+
+Exercises saved from the Teacher Play view are `umto_chorale` rows with `score_kind: "chordal"` (chords stored as flat verticalities in `umto.chords[]`, split across staves at render time).
+
+**Note spelling.** Chords store MIDI in `visible`/`hidden` plus an optional positional `spelling` array (visible then hidden) in scientific form (`"Bb4"`, `"C#5"`). Rendering resolves each note's spelling in this order:
+1. explicit `chords[i].spelling` (teacher override), else
+2. key-aware default from the exercise key (`KeySignature.keyToSpelling`), else
+3. sharp fallback (only for malformed/missing keys).
+
+The renderer (`vexflow_adapter.itemToTickable`) trusts CIR `pitch.step/alter` and does not snap-spell, so the converter (`exercise_sheet._convertChordalUMTOToProcessedScore` and Python `_chordal_to_measures`) is the single source of spelling. Both share the helpers in `lab/static/js/src/components/music/chordal_spelling.js` (JS) and `apps/exercises/chordal_spelling.py` (Python). On save, `play_sheet.dataForSave` captures the analyzer's contextual spelling into `spelling` so exercises match what the teacher saw.
+
+**Roman-numeral figures** in chordal analysis slices use the braced legacy format (`V{r3}`, `V{z5}`) so figures render stacked and round-trip through `stripFiguredBassTokens` for answers; the brace-stripped form is kept as `raw_roman_numeral`.
+
+**Analysis review / approval (soft gate).** On save the analysis is auto-generated and `analysis_review_status` is set to `"generated"`. The teacher is routed into the workbench review panel (`/dashboard/workbench/?review=<id>`); the edit page shows a "Needs review" / "Reviewed" badge. In the review panel the teacher can override Roman numerals (with a figure-token picker so brace codes aren't needed), edit figured bass / local key, and respell notes per chord; saving sets status to `"reviewed"`. Review API: `api_chordal_analysis_review` (GET/POST). Nothing is blocked on review status (soft gate only).
+
+**Key files:** `chordal_spelling.js`/`chordal_spelling.py`, `exercise_sheet.js`, `umto_factory.py` (`save_chordal_umto_exercise`, `_chordal_to_measures`), `umto_import_router.build_chordal_analysis_slices`, `api_workbench.py`, `dashboard/templates/dashboard/workbench.html`.
+
+---
+
 ## Identify types (student labels notation by clicking)
 
 ### `identification`
