@@ -30,7 +30,9 @@ from apps.exercises.models import (
     Course,
     PerformanceData,
     PlaylistCourseOrdered,
+    NonUMTOExerciseError,
 )
+from apps.exercises.umto_factory import save_chordal_umto_exercise
 from apps.exercises.mastery import get_next_exercise, get_skill_map_elements
 from apps.exercises.utils.transpose import transpose as transpose_exercise
 from apps.exercises.taxonomy_reader import TaxonomyReader
@@ -900,21 +902,43 @@ class AddExerciseView(View):
     http_method_names = ["post"]
 
     def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return HttpResponse(status=400)
+
         data = request.POST.get("data")
-        if data == "null":
-            # TO DO message for user: 'You tried to create an empty exercise. Add some content!'
+        if not data or data == "null":
             return HttpResponse(status=400)
 
-        exercise = Exercise()
-        exercise.data = json.loads(data)
-
-        if request.user.is_authenticated:
-            exercise.authored_by = request.user
-        else:
-            # TO DO message for user: 'You are not logged in. You must be logged in to create exercises.'
+        try:
+            payload = json.loads(data)
+        except (json.JSONDecodeError, TypeError):
             return HttpResponse(status=400)
 
-        exercise.save()
+        if not isinstance(payload, dict):
+            return HttpResponse(status=400)
+
+        chords = payload.get("chord")
+        if not chords or not isinstance(chords, list):
+            return HttpResponse(status=400)
+
+        key = payload.get("key", "C")
+        meter = payload.get("meter", "4/4")
+        clef = payload.get("clef", "keyboard")
+        staff_distribution = payload.get("staffDistribution", "keyboard")
+
+        try:
+            exercise = save_chordal_umto_exercise(
+                description="Play view chordal exercise",
+                author=request.user,
+                chords=chords,
+                key=key,
+                meter=meter,
+                clef=clef,
+                staff_distribution=staff_distribution,
+                is_public=False,
+            )
+        except (NonUMTOExerciseError, ValueError, KeyError):
+            return HttpResponse(status=400)
 
         return JsonResponse(status=201, data={"id": exercise.id})
 
