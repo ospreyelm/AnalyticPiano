@@ -35,5 +35,15 @@ eq("no spelling -> key-aware",
    S.resolveChordPitches({ visible: [70], hidden: [] }, fMajor),
    { 70: { step: "B", alter: -1, octave: 4 } });
 
+// Partial spelling: only some notes overridden; the rest use key-aware default.
+eq("partial spelling falls back to default",
+   S.resolveChordPitches({ visible: [60, 64], hidden: [], spelling: ["C4"] }, null),
+   { 60: { step: "C", alter: 0, octave: 4 }, 64: { step: "E", alter: 0, octave: 4 } });
+
+// Hidden MIDI entries are resolved too (positional order is visible then hidden).
+eq("hidden notes are resolved",
+   S.resolveChordPitches({ visible: [60], hidden: [70] }, ["c","c#","d","eb","e","f","f#","g","g#","a","bb","b"]),
+   { 60: { step: "C", alter: 0, octave: 4 }, 70: { step: "B", alter: -1, octave: 4 } });
+
 console.log("\n" + pass + " passed, " + fail + " failed");
 if (fail > 0) process.exit(1);

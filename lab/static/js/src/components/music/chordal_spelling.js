@@ -14,7 +14,8 @@
 
   // spelledPitchFromName(name, midi) -> { step, alter, octave }
   // Converts a pitch name (e.g. "c#", "eb") and MIDI number to a spelled pitch.
-  // The octave is inferred from the MIDI number, adjusted if wrapping (e.g. Cb->B♭3 wrapped to C4).
+  // The octave is inferred from MIDI, with an enharmonic wrap: e.g. Cb4 is written
+  // C-flat but sounds as B3, so its octave bumps up to 4; B#3 sounds as C4, bumps down.
   function spelledPitchFromName(name, midi) {
     var lower = String(name).trim().toLowerCase();
     var step = lower.charAt(0).toUpperCase();
