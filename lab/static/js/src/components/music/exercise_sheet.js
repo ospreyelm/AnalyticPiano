@@ -3012,13 +3012,14 @@ define([
       var bassItems = [];
       _.each(umto.chords, function (c) {
         var midis = (c.visible || []).slice();
+        var resolved = ChordalSpelling.resolveChordPitches(c, spellingTable);
         var dur = { type: durType(Number(c.duration)), dots: 0 };
         var hi, lo;
         var routed = ChordalUMTOStaffDistribution.routeChordMidis(midis, dist);
         hi = routed.treble;
         lo = routed.bass;
         var mkItem = function (ms) {
-          var pitches = ms.map(midiToPitch);
+          var pitches = ms.map(function (m) { return resolved[m] || midiToPitch(m); });
           if (pitches.length > 1) {
             return { kind: "chord", notes: pitches.map(function (p) { return { pitch: p }; }), duration: dur };
           }
