@@ -13,7 +13,7 @@
             <li><a href="https://webmidi.info" target="_blank">WebMIDI support?</a></li>
         {% endif %}
         <!-- <li id="notificationAlerts" class="notificationAlerts"></li> -->
-        <li><a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:index' %}{% endif %}">New Play View</a></li>
+        <li><a href="{% if home_url %}{{ home_url }}{% else %}{% url 'lab:play' %}{% endif %}">New Play View</a></li>
         {% if user.is_staff %}
             <li><a href={% url 'admin:index'%} target="_blank">ADMIN</a></li>
         {% endif %}

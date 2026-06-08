@@ -31,6 +31,7 @@ app_name = "lab"
 urlpatterns = [
     path("", RedirectView.as_view(url="/play"), name="index"),
     path("play/", PlayView.as_view(), name="index"),
+    path("teacher/play/", PlayView.as_view(), name="play"),
     # User Preferences
     path("ajax/preferences/", preferences_view, name="user-preferences"),
     path("ajax/set-mute/", set_preferred_mute_value, name="user-preferred-mute"),
