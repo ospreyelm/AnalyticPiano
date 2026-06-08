@@ -68,6 +68,7 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.assertEqual(umto_meta["staffDistribution"], "keyboardPlusLHBias")
         self.assertEqual(umto_meta["exercise_id"], ex.id)
         self.assertEqual(data["exerciseId"], ex.id)
+        self.assertEqual(umto_meta["analysis_review_status"], "generated")
 
         # Verify chords
         chords = score["umto"]["chords"]
@@ -78,9 +79,24 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.assertEqual(chords[0]["hidden"], [48])
 
         self.assertEqual(chords[1]["offset"], 1.0)
-        self.assertEqual(chords[1]["duration"], 1.0)
+        self.assertEqual(chords[1]["duration"], 2.0)
         self.assertEqual(chords[1]["visible"], [62, 65, 69])
         self.assertEqual(chords[1]["hidden"], [])
+
+        # Verify analysis slices
+        analysis = score["umto"]["analysis"]
+        self.assertEqual(len(analysis), 2)
+        self.assertEqual(analysis[0]["offset"], 0.0)
+        self.assertEqual(analysis[0]["content"]["roman_numeral"], "IV")
+        self.assertEqual(analysis[0]["content"]["raw_roman_numeral"], "IV")
+        self.assertEqual(analysis[0]["content"]["figured_bass"], "5/3")
+        self.assertEqual(analysis[0]["content"]["raw_figured_bass"], "8/5/3")
+
+        self.assertEqual(analysis[1]["offset"], 1.0)
+        self.assertEqual(analysis[1]["content"]["roman_numeral"], "v")
+        self.assertEqual(analysis[1]["content"]["raw_roman_numeral"], "v")
+        self.assertEqual(analysis[1]["content"]["figured_bass"], "b")
+        self.assertEqual(analysis[1]["content"]["raw_figured_bass"], "5/b3")
 
     def test_null_data_returns_400(self):
         self.client.login(email="teacher@example.com", password="pw")

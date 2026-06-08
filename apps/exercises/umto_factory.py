@@ -714,6 +714,7 @@ def save_chordal_umto_exercise(
     """Normalize and validate incoming chords, build a Chordal UMTO exercise payload,
     validate it, save it, and backfill IDs.
     """
+    beats_per_measure = _meter_quarter_length(meter)
     normalized_chords = []
     offset = 0.0
     for idx, c in enumerate(chords):
@@ -733,6 +734,14 @@ def save_chordal_umto_exercise(
         dur = float(c.get("duration", 1.0))
         off = float(c.get("offset", offset))
 
+        # Adjust final chord's duration to fill the remainder of the final measure
+        if idx == len(chords) - 1:
+            remaining = beats_per_measure - (off % beats_per_measure)
+            if abs(remaining) < 1e-5:
+                dur = beats_per_measure
+            else:
+                dur = remaining
+
         normalized_chords.append({
             "offset": off,
             "duration": dur,
@@ -740,6 +749,16 @@ def save_chordal_umto_exercise(
             "hidden": hidden,
         })
         offset = off + dur
+
+    analysis_slices = []
+    review_status = "none"
+    try:
+        from apps.exercises.utils.umto_import_router import build_chordal_analysis_slices
+        analysis_slices = build_chordal_analysis_slices(normalized_chords, harmony_key=key)
+        if analysis_slices:
+            review_status = "generated"
+    except Exception as e:
+        print(f"Warning: HarmonyLab analysis generation failed: {e}")
 
     try:
         payload = build_chordal_umto_payload(
@@ -751,9 +770,10 @@ def save_chordal_umto_exercise(
             complexity_score=complexity,
             mode=InteractionMode.PLAYBACK,
             chords=normalized_chords,
-            analysis=[],
+            analysis=analysis_slices,
             unit=None,
             input_mode="dropdown",
+            analysis_review_status=review_status,
         )
     except Exception as e:
         raise NonUMTOExerciseError(f"Failed to build chordal UMTO payload: {e}") from e

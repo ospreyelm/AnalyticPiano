@@ -49,7 +49,7 @@ def build_score_from_data(exercise_data):
 
     # Set metadata
     key_sig = meta.get('key', 'C')
-    ts_str = meta.get('time_signature', '4/4')
+    ts_str = meta.get('time_signature') or meta.get('time') or '4/4'
 
     # Get staves from first measure to determine structure
     first_measure = measures[0]
@@ -107,7 +107,10 @@ def build_score_from_data(exercise_data):
                         midi = _pitch_to_midi(pitch_data)
                         el = note.Note(midi=midi, quarterLength=base_ql)
                     elif kind == 'chord':
-                        pitches = item.get('pitches', [])
+                        pitches = item.get('pitches')
+                        if pitches is None:
+                            notes = item.get('notes', [])
+                            pitches = [n.get('pitch') for n in notes if n.get('pitch')]
                         midis = [_pitch_to_midi(p) for p in pitches]
                         el = chord.Chord(midis, quarterLength=base_ql)
                     
@@ -118,7 +121,7 @@ def build_score_from_data(exercise_data):
                         # We need num_beats (default 4.0)
                         num_beats = 4.0
                         try:
-                            ts = meta.get('time_signature', '4/4')
+                            ts = meta.get('time_signature') or meta.get('time') or '4/4'
                             _n, _d = map(int, ts.split('/'))
                             num_beats = _n * (4.0 / _d)  # quarter-lengths per measure
                         except Exception:
