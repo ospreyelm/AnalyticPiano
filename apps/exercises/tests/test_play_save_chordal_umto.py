@@ -68,6 +68,7 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.assertEqual(umto_meta["staffDistribution"], "keyboardPlusLHBias")
         self.assertEqual(umto_meta["exercise_id"], ex.id)
         self.assertEqual(data["exerciseId"], ex.id)
+        self.assertEqual(umto_meta["analysis_review_status"], "generated")
 
         # Verify chords
         chords = score["umto"]["chords"]
@@ -78,9 +79,22 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.assertEqual(chords[0]["hidden"], [48])
 
         self.assertEqual(chords[1]["offset"], 1.0)
-        self.assertEqual(chords[1]["duration"], 1.0)
+        self.assertEqual(chords[1]["duration"], 2.0)
         self.assertEqual(chords[1]["visible"], [62, 65, 69])
         self.assertEqual(chords[1]["hidden"], [])
+
+        # Verify analysis slices
+        analysis = score["umto"]["analysis"]
+        self.assertEqual(len(analysis), 2)
+        self.assertEqual(analysis[0]["offset"], 0.0)
+        # In G major (jG_), chord 0 [48, 60, 64, 67] contains G2, C4, E4, G4.
+        # Wait, the G major triad is G-B-D, but here we have C, E, G, which is a C major triad!
+        # C major triad in G major is a subdominant (IV) chord.
+        self.assertEqual(analysis[0]["content"]["raw_roman_numeral"], "IV")
+        self.assertEqual(analysis[1]["offset"], 1.0)
+        # Chord 1 [62, 65, 69] is D, F, A.
+        # In G major (jG_), D-F-A is a minor v triad.
+        self.assertEqual(analysis[1]["content"]["raw_roman_numeral"], "v")
 
     def test_null_data_returns_400(self):
         self.client.login(email="teacher@example.com", password="pw")
