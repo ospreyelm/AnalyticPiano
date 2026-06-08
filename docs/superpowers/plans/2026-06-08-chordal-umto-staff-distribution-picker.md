@@ -346,7 +346,29 @@ Create `lab/static/js/src/components/music/chordal_umto_staff_distribution.test.
 ```javascript
 "use strict";
 
+var fs = require("fs");
+var path = require("path");
+var vm = require("vm");
+
 var logic = require("./chordal_umto_staff_distribution");
+
+function getVoiceCountFromConfig() {
+  var configPath = path.resolve(__dirname, "../../config/general.js");
+  var code = fs.readFileSync(configPath, "utf8");
+  var voiceCounts = null;
+  var context = {
+    define: function (obj) {
+      voiceCounts = obj.voiceCountForKeyboardStyle;
+    }
+  };
+  vm.runInNewContext(code, context);
+  return voiceCounts;
+}
+
+// Set dynamic voice counts from config to avoid drift
+var configCounts = getVoiceCountFromConfig();
+logic._setKeyboardStyleCounts(configCounts);
+
 var pass = 0;
 var fail = 0;
 
@@ -372,8 +394,20 @@ assertEqual(
 );
 
 assertEqual(
+  "bass alias routes every pitch to bass",
+  logic.routeChordMidis([48, 60, 72], "bass"),
+  { treble: [], bass: [48, 60, 72] }
+);
+
+assertEqual(
   "RH routes every pitch to treble",
   logic.routeChordMidis([48, 60, 72], "RH"),
+  { treble: [48, 60, 72], bass: [] }
+);
+
+assertEqual(
+  "treble alias routes every pitch to treble",
+  logic.routeChordMidis([48, 60, 72], "treble"),
   { treble: [48, 60, 72], bass: [] }
 );
 
@@ -396,15 +430,15 @@ assertEqual(
 );
 
 assertEqual(
-  "keyboardPlusRHBias routes non-keyboard-style chords below G3 to bass",
-  logic.routeChordMidis([52, 55, 59, 62, 65], "keyboardPlusRHBias"),
-  { treble: [55, 59, 62, 65], bass: [52] }
+  "keyboardPlusRHBias routes non-keyboard-style chords below G3 to bass (using length 6 to bypass keyboard-style split)",
+  logic.routeChordMidis([52, 55, 59, 62, 65, 68], "keyboardPlusRHBias"),
+  { treble: [55, 59, 62, 65, 68], bass: [52] }
 );
 
 assertEqual(
-  "keyboardPlusLHBias routes non-keyboard-style chords through F4 to bass",
-  logic.routeChordMidis([52, 55, 59, 62, 65], "keyboardPlusLHBias"),
-  { treble: [], bass: [52, 55, 59, 62, 65] }
+  "keyboardPlusLHBias routes non-keyboard-style chords through F4 to bass (using length 6 to bypass keyboard-style split)",
+  logic.routeChordMidis([52, 55, 59, 62, 65, 68], "keyboardPlusLHBias"),
+  { treble: [68], bass: [52, 55, 59, 62, 65] }
 );
 
 console.log("\n" + pass + " passed, " + fail + " failed");
@@ -428,19 +462,24 @@ Create `lab/static/js/src/components/music/chordal_umto_staff_distribution.js`:
 ```javascript
 (function (root, factory) {
   if (typeof define === "function" && define.amd) {
-    define([], factory);
+    define(["app/config"], factory);
   } else if (typeof module === "object" && module.exports) {
     module.exports = factory();
   } else {
-    root.ChordalUMTOStaffDistribution = factory();
+    root.ChordalUMTOStaffDistribution = factory(root.Config);
   }
-})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+})(typeof globalThis !== "undefined" ? globalThis : this, function (Config) {
   "use strict";
 
   var HIGH_THRESHOLD = 65;
   var MID_THRESHOLD = 60;
   var LOW_THRESHOLD = 55;
-  var KEYBOARD_STYLE_COUNTS = [3, 4];
+  var KEYBOARD_STYLE_COUNTS = [2, 3, 4, 5];
+  if (Config && typeof Config.get === "function") {
+    try {
+      KEYBOARD_STYLE_COUNTS = Config.get("general.voiceCountForKeyboardStyle") || KEYBOARD_STYLE_COUNTS;
+    } catch (e) {}
+  }
   var KEYBOARD_FAMILY = ["keyboard", "keyboardPlusRHBias", "keyboardPlusLHBias"];
 
   function includes(list, value) {
@@ -507,6 +546,12 @@ Create `lab/static/js/src/components/music/chordal_umto_staff_distribution.js`:
 
   return {
     routeChordMidis: routeChordMidis,
+    _getKeyboardStyleCounts: function () {
+      return KEYBOARD_STYLE_COUNTS;
+    },
+    _setKeyboardStyleCounts: function (counts) {
+      KEYBOARD_STYLE_COUNTS = counts;
+    }
   };
 });
 ```

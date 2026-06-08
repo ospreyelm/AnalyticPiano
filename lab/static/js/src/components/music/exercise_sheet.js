@@ -23,6 +23,7 @@ define([
   "app/models/harmonization_realization_logic",
   "app/components/music/identification_label_layout_logic",
   "app/models/chordal_problems_logic",
+  "./chordal_umto_staff_distribution",
 ], function (
   $,
   $UI,
@@ -46,7 +47,8 @@ define([
   MeasureEngine,
   HarmonizationRealizationLogic,
   IdentificationLabelLayoutLogic,
-  ChordalProblemsLogic
+  ChordalProblemsLogic,
+  ChordalUMTOStaffDistribution
 ) {
   "use strict";
 
@@ -2984,7 +2986,6 @@ define([
       if (!meta.time) meta.time = "4/4";
 
       var dist = meta.staffDistribution || "keyboard";
-      var SPLIT = 60; // middle C
       var midiToPitch = function (m) {
         var names = [["C",0],["C",1],["D",0],["D",1],["E",0],["F",0],
                      ["F",1],["G",0],["G",1],["A",0],["A",1],["B",0]];
@@ -2995,8 +2996,8 @@ define([
       var durType = function (ql) { return DUR_TYPE[ql] || "q"; };
 
       // Decide which staves are active.
-      var forceTreble = dist === "treble";
-      var forceBass = dist === "bass";
+      var forceTreble = dist === "RH" || dist === "treble";
+      var forceBass = dist === "LH" || dist === "bass";
 
       var trebleItems = [];
       var bassItems = [];
@@ -3004,22 +3005,9 @@ define([
         var midis = (c.visible || []).slice();
         var dur = { type: durType(Number(c.duration)), dots: 0 };
         var hi, lo;
-        if (forceTreble) { hi = midis; lo = []; }
-        else if (forceBass) { hi = []; lo = midis; }
-        else {
-          var sorted = midis.slice().sort(function (a, b) { return a - b; });
-          hi = sorted.filter(function (m) { return m >= SPLIT; });
-          lo = sorted.filter(function (m) { return m < SPLIT; });
-          // Register split can leave a staff empty (e.g. a chord whose lowest
-          // note is exactly middle C). For a multi-note chord, keep the lowest
-          // note on the bass so the voicing reads as grand-staff rather than
-          // piling every note onto one staff.
-          if (lo.length === 0 && hi.length > 1) {
-            lo = [hi.shift()];
-          } else if (hi.length === 0 && lo.length > 1) {
-            hi = [lo.pop()];
-          }
-        }
+        var routed = ChordalUMTOStaffDistribution.routeChordMidis(midis, dist);
+        hi = routed.treble;
+        lo = routed.bass;
         var mkItem = function (ms) {
           var pitches = ms.map(midiToPitch);
           if (pitches.length > 1) {

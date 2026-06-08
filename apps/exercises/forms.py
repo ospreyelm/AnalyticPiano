@@ -699,6 +699,7 @@ class ExerciseForm(forms.ModelForm):
         self._is_chorale = self._detect_chorale()
         self._is_chorale_identification = self._detect_chorale_identification()
         self._is_identification = self._detect_identification()
+        self._is_chordal_umto = self._detect_chordal_umto()
         self._chorale_voice_choices = []
         self._configure_type_field()
         if self.instance and self.instance.pk:
@@ -746,7 +747,10 @@ class ExerciseForm(forms.ModelForm):
             instance.authored_by = self.context.get("user")
             instance.clean()
             if self._is_chorale:
-                self._store_chorale_settings(instance)
+                if self._is_chordal_umto:
+                    self._store_chordal_umto_settings(instance)
+                else:
+                    self._store_chorale_settings(instance)
             if self._is_identification:
                 self._store_identification_settings(instance)
             if self._detect_interval():
@@ -840,6 +844,10 @@ class ExerciseForm(forms.ModelForm):
             for field in self.CHORALE_ONLY_FIELDS:
                 if field in self.fields:
                     self.fields[field].widget = forms.HiddenInput()
+            return
+
+        if self._is_chordal_umto:
+            self._configure_chordal_umto_fields()
             return
 
         # Hide legacy-only inputs
@@ -977,6 +985,56 @@ class ExerciseForm(forms.ModelForm):
             # already encoded tokens
             tokens = [str(token) for token in mapping]
         return tokens
+
+    def _get_chordal_umto_metadata(self):
+        data = self.instance.data if self.instance and getattr(self.instance, "data", None) else {}
+        score = data.get("score", {}) if isinstance(data, dict) else {}
+        umto = score.get("umto", {}) if isinstance(score, dict) else {}
+        metadata = umto.get("metadata", {}) if isinstance(umto, dict) else {}
+        return metadata if isinstance(metadata, dict) else {}
+
+    def _detect_chordal_umto(self):
+        data = self.instance.data if self.instance and getattr(self.instance, "data", None) else {}
+        if not isinstance(data, dict):
+            return False
+        if data.get("isUMTO") is not True:
+            return False
+        if data.get("type") != self.TYPE_UMTO_CHORALE:
+            return False
+        return self._get_chordal_umto_metadata().get("score_kind") == "chordal"
+
+    def _configure_chordal_umto_fields(self):
+        for field in self.CHORALE_SUPPRESSED_FIELDS:
+            if field in self.fields:
+                self.fields[field].widget = forms.HiddenInput()
+
+        for field in self.CHORALE_ONLY_FIELDS:
+            if field in self.fields and field != "staff_distribution":
+                self.fields[field].widget = forms.HiddenInput()
+
+        metadata = self._get_chordal_umto_metadata()
+        selected = (
+            metadata.get("staffDistribution")
+            or (self.instance.data or {}).get("staffDistribution")
+            or self.DISTRIBUTION_KEYBOARD
+        )
+        if "staff_distribution" in self.fields:
+            field = self.fields["staff_distribution"]
+            field.choices = tuple(
+                choice for choice in self.DISTRIBUTION_CHOICES
+                if choice[0] != self.DISTRIBUTION_CHORALE
+            )
+            field.initial = selected if selected != self.DISTRIBUTION_CHORALE else self.DISTRIBUTION_KEYBOARD
+
+    def _store_chordal_umto_settings(self, instance):
+        data = instance.data
+        score = data.setdefault("score", {})
+        umto = score.setdefault("umto", {})
+        metadata = umto.setdefault("metadata", {})
+        selected = self.cleaned_data.get("staff_distribution") or self.DISTRIBUTION_KEYBOARD
+        metadata["staffDistribution"] = selected
+        data["staffDistribution"] = selected
+        data["type"] = self.cleaned_data.get("type") or data.get("type") or self.TYPE_UMTO_CHORALE
 
     def _store_chorale_settings(self, instance):
         data = instance.data
