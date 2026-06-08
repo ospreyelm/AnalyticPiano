@@ -132,17 +132,17 @@ assertEqual(
   [140, 340]
 );
 
-// barlineXPositions: note-index based, renders at midpoint between notes N and N+1
+// barlineXPositions: note-index based, renders at midpoint between notes N and N+1 plus 4px offset
 assertEqual(
-  "barline x positions use midpoint between note centers",
+  "barline x positions use midpoint between note centers plus 4px offset",
   logic.barlineXPositions([100, 200, 300, 400], [1]),
-  [250]
+  [254]
 );
 
 assertEqual(
   "barline x positions ignore out-of-range indices",
   logic.barlineXPositions([100, 200, 300], [0, 2, 7]),
-  [150]
+  [154]
 );
 
 var browserLikeGlobal = {};
