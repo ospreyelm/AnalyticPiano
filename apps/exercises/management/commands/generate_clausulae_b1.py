@@ -378,7 +378,7 @@ def _generate_b1(author, options, stdout, style):
                 stdout.write(f"  {desc}")
     pl = _build_playlist(
         author=author, playlist_name="B1 — Formal Clausulae",
-        exercises=exs,
+        exercises=_interleave_key_blocks(exs, len(TARGET_KEYS)),
         skill_tags=["branch_b", "unit:B1"],
         is_public=options["public"],
     )
@@ -459,7 +459,8 @@ def _generate_b3(author, options, stdout, style):
             stdout.write(f"  {desc}")
     pl = _build_playlist(
         author=author, playlist_name="B3 — Simple Cadence (3 parts)",
-        exercises=exs, skill_tags=["branch_b", "unit:B3", "cadence_simple_3pt"],
+        exercises=_interleave_key_blocks(exs, len(TARGET_KEYS)),
+        skill_tags=["branch_b", "unit:B3", "cadence_simple_3pt"],
         is_public=options["public"],
     )
     stdout.write(style.SUCCESS(f"B3: {len(exs)} exercises → '{pl.name}'"))
@@ -499,7 +500,8 @@ def _generate_b4(author, options, stdout, style):
             stdout.write(f"  {desc}")
     pl = _build_playlist(
         author=author, playlist_name="B4 — Simple Cadence (4 parts)",
-        exercises=exs, skill_tags=["branch_b", "unit:B4", "cadence_4pt"],
+        exercises=_interleave_key_blocks(exs, len(TARGET_KEYS)),
+        skill_tags=["branch_b", "unit:B4", "cadence_4pt"],
         is_public=options["public"],
     )
     stdout.write(style.SUCCESS(f"B4: {len(exs)} exercises → '{pl.name}'"))
@@ -564,7 +566,8 @@ def _generate_b11(author, options, stdout, style):
             stdout.write(f"  {desc}")
     pl = _build_playlist(
         author=author, playlist_name="B11 — Compound Cadence (2 parts)",
-        exercises=exs, skill_tags=["branch_b", "unit:B11", "cadence_compound_2pt"],
+        exercises=_interleave_key_blocks(exs, len(TARGET_KEYS)),
+        skill_tags=["branch_b", "unit:B11", "cadence_compound_2pt"],
         is_public=options["public"],
     )
     stdout.write(style.SUCCESS(f"B11: {len(exs)} exercises → '{pl.name}'"))
@@ -575,6 +578,8 @@ def _generate_b11(author, options, stdout, style):
 def _generate_b12(author, options, stdout, style):
     stdout.write(style.MIGRATE_HEADING("B12 — Compound Cadence (3–4 voices)"))
     exs = []
+    exs_3v = []
+    exs_4v = []
 
     # 3-voice standard: bass(τ=0) + upper-τ=0 + Discant(τ=1)
     combos_3v = [(b, e, l, pi) for b, e, l, pi in enumerate_compound_3voice(
@@ -616,6 +621,7 @@ def _generate_b12(author, options, stdout, style):
                 complexity=6, is_public=options["public"], overwrite=options["overwrite"],
             )
             exs.append(ex)
+            exs_3v.append(ex)
             stdout.write(f"  {desc}")
 
     # 4-voice compound: bass(τ=0) + 2 upper(τ=0) + Discant(τ=1)
@@ -664,12 +670,17 @@ def _generate_b12(author, options, stdout, style):
                 complexity=7, is_public=options["public"], overwrite=options["overwrite"],
             )
             exs.append(ex)
+            exs_4v.append(ex)
             stdout.write(f"  {desc}")
 
     pl = _build_playlist(
         author=author, playlist_name="B12 — Compound Cadence (3–4 parts)",
-        exercises=exs, skill_tags=["branch_b", "unit:B12", "cadence_compound_3pt",
-                                    "cadence_compound_4pt"],
+        exercises=(
+            _interleave_key_blocks(exs_3v, len(TARGET_KEYS)) +
+            _interleave_key_blocks(exs_4v, len(TARGET_KEYS))
+        ),
+        skill_tags=["branch_b", "unit:B12", "cadence_compound_3pt",
+                    "cadence_compound_4pt"],
         is_public=options["public"],
     )
     stdout.write(style.SUCCESS(f"B12: {len(exs)} exercises → '{pl.name}'"))
