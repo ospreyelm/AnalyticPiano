@@ -24,6 +24,8 @@ define([
   "app/components/music/identification_label_layout_logic",
   "app/models/chordal_problems_logic",
   "./chordal_umto_staff_distribution",
+  "app/models/key_signature",
+  "./chordal_spelling",
 ], function (
   $,
   $UI,
@@ -48,7 +50,9 @@ define([
   HarmonizationRealizationLogic,
   IdentificationLabelLayoutLogic,
   ChordalProblemsLogic,
-  ChordalUMTOStaffDistribution
+  ChordalUMTOStaffDistribution,
+  KeySignature,
+  ChordalSpelling
 ) {
   "use strict";
 
@@ -2986,11 +2990,16 @@ define([
       if (!meta.time) meta.time = "4/4";
 
       var dist = meta.staffDistribution || "keyboard";
+      var spellingTable = null;
+      if (meta.key) {
+        try {
+          spellingTable = new KeySignature(meta.key).keyToSpelling(meta.key);
+        } catch (e) {
+          console.warn("[exercise_sheet] Bad or missing key in chordal UMTO:", meta.key, "- falling back to default (sharp) spelling");
+        }
+      }
       var midiToPitch = function (m) {
-        var names = [["C",0],["C",1],["D",0],["D",1],["E",0],["F",0],
-                     ["F",1],["G",0],["G",1],["A",0],["A",1],["B",0]];
-        var n = names[((m % 12) + 12) % 12];
-        return { step: n[0], alter: n[1], octave: Math.floor(m / 12) - 1 };
+        return ChordalSpelling.keyAwarePitch(m, spellingTable);
       };
       var DUR_TYPE = { 4: "w", 2: "h", 1: "q", 0.5: "8", 0.25: "16", 0.125: "32" };
       var durType = function (ql) { return DUR_TYPE[ql] || "q"; };
@@ -3003,13 +3012,14 @@ define([
       var bassItems = [];
       _.each(umto.chords, function (c) {
         var midis = (c.visible || []).slice();
+        var resolved = ChordalSpelling.resolveChordPitches(c, spellingTable);
         var dur = { type: durType(Number(c.duration)), dots: 0 };
         var hi, lo;
         var routed = ChordalUMTOStaffDistribution.routeChordMidis(midis, dist);
         hi = routed.treble;
         lo = routed.bass;
         var mkItem = function (ms) {
-          var pitches = ms.map(midiToPitch);
+          var pitches = ms.map(function (m) { return resolved[m] || midiToPitch(m); });
           if (pitches.length > 1) {
             return { kind: "chord", notes: pitches.map(function (p) { return { pitch: p }; }), duration: dur };
           }

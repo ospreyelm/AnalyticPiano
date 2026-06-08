@@ -14,6 +14,8 @@ define([
   "app/components/music/score_timeline",
   "app/models/score_player",
   "app/components/music/playback_controls",
+  "app/utils/analyze",
+  "./chordal_spelling",
 ], function (
   $,
   _,
@@ -28,7 +30,9 @@ define([
   VexflowAdapter,
   ScoreTimeline,
   ScorePlayer,
-  renderPlaybackControls
+  renderPlaybackControls,
+  Analyze,
+  ChordalSpelling
 ) {
   "use strict";
 
@@ -677,6 +681,7 @@ define([
       if (objs.length < 2) return null;
 
       let chords = [];
+      var analyzer = new Analyze(this.keySignature);
       let i, len;
       for (i = 1, len = objs.length; i < len; i++) {
         let obj = objs[i];
@@ -693,7 +698,10 @@ define([
         } catch {
           console.log('PlaySheetComponent.dataForSave failed to retrieve unison_idx')
         }
-        chords.unshift({ rhythmValue: "w", visible: visible, hidden: hidden, unison_idx: unison_idx });
+        var spelling = visible.concat(hidden).map(function (m) {
+          return ChordalSpelling.vexKeyToSpellingString(analyzer.getNoteName(m, visible));
+        });
+        chords.unshift({ rhythmValue: "w", visible: visible, hidden: hidden, unison_idx: unison_idx, spelling: spelling });
       }
 
       /* simplify for testing */

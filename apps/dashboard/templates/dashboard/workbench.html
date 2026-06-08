@@ -115,6 +115,16 @@
             <button class="btn btn-secondary btn-small" onclick="closeAnalysisReview()">Close</button>
         </div>
         <div class="card-body review-panel-body">
+            <div id="figurePicker" style="margin-bottom:10px;">
+                <span style="font-size:12px;color:#666;margin-right:6px;">Insert figure into focused Roman field:</span>
+                <button type="button" data-token="{z}">6</button>
+                <button type="button" data-token="{z4}">6/4</button>
+                <button type="button" data-token="{z5}">6/5</button>
+                <button type="button" data-token="{u}">7</button>
+                <button type="button" data-token="{r3}">4/3</button>
+                <button type="button" data-token="{r2}">4/2</button>
+                <button type="button" data-token="{r}">4</button>
+            </div>
             <div id="analysisReviewRows"></div>
             <div class="review-panel-actions">
                 <button class="btn btn-primary" onclick="saveAnalysisReview()" id="saveAnalysisReviewBtn">
@@ -439,16 +449,19 @@ document.addEventListener("DOMContentLoaded", function() {
                 document.getElementById('analysisReviewTitle').textContent = `Analysis Review: ${data.description}`;
                 const rows = (data.rows || []).map(row => {
                     const content = row.content || {};
-                    const chordText = row.spelling && row.spelling.length
-                        ? row.spelling.join(' ')
-                        : (row.visible || []).join(' ');
+                    const visible = row.visible || [];
+                    const hidden = row.hidden || [];
+                    const noteCount = visible.length + hidden.length;
+                    const spellingStr = (row.spelling && row.spelling.length) ? row.spelling.join(' ') : '';
+                    const chordText = spellingStr || visible.join(' ');
                     return `
-                        <div class="analysis-review-row" data-offset="${row.offset}">
+                        <div class="analysis-review-row" data-offset="${row.offset}" data-notecount="${noteCount}">
                             <div class="analysis-review-chord">${escapeHtml(chordText)}</div>
                             <input data-field="roman_numeral" value="${escapeHtml(content.roman_numeral)}" placeholder="Roman">
                             <input data-field="figured_bass" value="${escapeHtml(content.figured_bass)}" placeholder="Figure">
                             <input data-field="raw_figured_bass" value="${escapeHtml(content.raw_figured_bass)}" placeholder="Raw figure">
                             <input data-field="local_key" value="${escapeHtml(content.local_key)}" placeholder="Local key">
+                            <input data-spelling value="${escapeHtml(spellingStr)}" placeholder="Respell e.g. Bb4 D5 F5" title="Space- or comma-separated scientific pitches; leave blank for default spelling">
                         </div>
                     `;
                 }).join('');
@@ -464,12 +477,30 @@ document.addEventListener("DOMContentLoaded", function() {
 
     window.saveAnalysisReview = function() {
         if (!activeReviewExerciseId) return;
-        const rows = Array.from(document.querySelectorAll('.analysis-review-row')).map(row => {
+        const rowEls = Array.from(document.querySelectorAll('.analysis-review-row'));
+        // Client-side length check so the teacher gets a friendly message before POST.
+        for (const rowEl of rowEls) {
+            const spellInput = rowEl.querySelector('input[data-spelling]');
+            if (spellInput && spellInput.value.trim()) {
+                const toks = spellInput.value.trim().split(/[\s,]+/).filter(Boolean);
+                const need = parseInt(rowEl.dataset.notecount, 10) || 0;
+                if (toks.length !== need) {
+                    showAlert(`Respelling needs ${need} pitch name(s) but got ${toks.length} for one chord.`, 'error');
+                    return;
+                }
+            }
+        }
+        const rows = rowEls.map(row => {
             const content = {};
             row.querySelectorAll('input[data-field]').forEach(input => {
                 content[input.dataset.field] = input.value || null;
             });
-            return { offset: parseFloat(row.dataset.offset), content };
+            const out = { offset: parseFloat(row.dataset.offset), content };
+            const spellInput = row.querySelector('input[data-spelling]');
+            if (spellInput && spellInput.value.trim()) {
+                out.spelling = spellInput.value.trim().split(/[\s,]+/).filter(Boolean);
+            }
+            return out;
         });
 
         fetch(reviewApiUrl(activeReviewExerciseId), {
@@ -492,6 +523,40 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .catch(() => showAlert('Network or server error saving analysis review.', 'error'));
     };
+
+    // One-time wiring for the review panel controls (panel markup is always in the DOM).
+    (function initReviewPanelControls() {
+        var rowsEl = document.getElementById('analysisReviewRows');
+        var picker = document.getElementById('figurePicker');
+        if (!rowsEl || !picker) return;
+        var activeRomanInput = null;
+        rowsEl.addEventListener('focusin', function (e) {
+            if (e.target && e.target.matches && e.target.matches('input[data-field="roman_numeral"]')) {
+                activeRomanInput = e.target;
+            }
+        });
+        // Live preview: chord text reflects the respelling as it is typed.
+        rowsEl.addEventListener('input', function (e) {
+            if (e.target && e.target.matches && e.target.matches('input[data-spelling]')) {
+                var rowEl = e.target.closest('.analysis-review-row');
+                var chordEl = rowEl && rowEl.querySelector('.analysis-review-chord');
+                if (chordEl) chordEl.textContent = e.target.value.trim() || '(default)';
+            }
+        });
+        picker.addEventListener('click', function (e) {
+            var btn = e.target.closest('button[data-token]');
+            if (!btn) return;
+            if (!activeRomanInput) { showAlert('Click a Roman field first, then a figure.', 'error'); return; }
+            var token = btn.getAttribute('data-token');
+            var el = activeRomanInput;
+            var start = el.selectionStart != null ? el.selectionStart : el.value.length;
+            var end = el.selectionEnd != null ? el.selectionEnd : el.value.length;
+            el.value = el.value.slice(0, start) + token + el.value.slice(end);
+            var caret = start + token.length;
+            el.focus();
+            try { el.setSelectionRange(caret, caret); } catch (_) {}
+        });
+    })();
 
     window.toggleSelection = function(checkbox) {
         if(checkbox.checked) {

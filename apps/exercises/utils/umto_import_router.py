@@ -148,8 +148,13 @@ def build_chordal_analysis_slices(chords: list[dict], *, harmony_key: str) -> li
             legacy_tonic,
             mode,
         )
-        roman_label = legacy.normalized_label or None
-        raw_roman = legacy.label or legacy.normalized_label or None
+        # Store the braced legacy label (e.g. "V{r3}", "V{z5}") as the canonical
+        # roman_numeral. Both the renderer (drawInlineRoman) and the answer path
+        # (stripFiguredBassTokens) expect this brace-token format to stack figures
+        # correctly. The brace-stripped normalized form (e.g. "V43", "V65") renders
+        # flat and is kept only as raw_roman_numeral for data/audit consumers.
+        roman_label = legacy.label or None
+        raw_roman = legacy.normalized_label or legacy.label or None
         if not roman_label:
             try:
                 rn = m21_roman.romanNumeralFromChord(chord_obj, tonal_key)
