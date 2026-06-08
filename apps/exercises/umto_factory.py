@@ -29,6 +29,7 @@ from apps.exercises.umto import (
     InteractionMode,
 )
 from apps.exercises.utils.music21_builder import build_score_from_data
+from apps.exercises.chordal_spelling import spelling_str_to_cir_pitch
 try:
     from music21 import roman, key as m21_key
     _MUSIC21_AVAILABLE = True
@@ -466,8 +467,21 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
         for staff in STAVES:
             _items(staff).append({"kind": "rest", "duration": _duration_dict(ql)})
 
-    def _staff_item(midis, duration):
-        pitches = [_midi_to_cir_pitch(m) for m in midis]
+    def _chord_spell_map(c):
+        spelling = c.get("spelling") or []
+        if not spelling:
+            return {}
+        all_midis = list(c.get("visible") or []) + list(c.get("hidden") or [])
+        out = {}
+        for midi, s in zip(all_midis, spelling):
+            parsed = spelling_str_to_cir_pitch(s)
+            if parsed:
+                out[midi] = parsed
+        return out
+
+    def _staff_item(midis, duration, spell_map=None):
+        spell_map = spell_map or {}
+        pitches = [spell_map.get(m) or _midi_to_cir_pitch(m) for m in midis]
         if len(pitches) > 1:
             return {"kind": "chord",
                     "notes": [{"pitch": p} for p in pitches],
@@ -479,10 +493,11 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
     def _append_chord_item(c: dict):
         visible_midis = list(c.get("visible", []))
         duration = _duration_dict(float(c["duration"]))
+        spell_map = _chord_spell_map(c)
         treble = [m for m in visible_midis if m >= _KEYBOARD_SPLIT_MIDI]
         bass = [m for m in visible_midis if m < _KEYBOARD_SPLIT_MIDI]
-        _items("treble").append(_staff_item(treble, duration))
-        _items("bass").append(_staff_item(bass, duration))
+        _items("treble").append(_staff_item(treble, duration, spell_map))
+        _items("bass").append(_staff_item(bass, duration, spell_map))
 
     measures = []
     current = _new_measure()
