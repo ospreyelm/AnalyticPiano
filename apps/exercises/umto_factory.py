@@ -695,6 +695,110 @@ def save_umto_exercise(
     return ex
 
 
+def save_chordal_umto_exercise(
+    *,
+    description: str,
+    author,
+    chords: list,
+    key: str,
+    meter: str,
+    clef: str,
+    staff_distribution: str,
+    source: str = "Play view chordal exercise",
+    skill_tags: Optional[list] = None,
+    complexity: int = 1,
+    is_public: bool = False,
+    overwrite: bool = False,
+    auto_playlist: bool = True,
+) -> Exercise:
+    """Normalize and validate incoming chords, build a Chordal UMTO exercise payload,
+    validate it, save it, and backfill IDs.
+    """
+    normalized_chords = []
+    offset = 0.0
+    for idx, c in enumerate(chords):
+        if not isinstance(c, dict):
+            if isinstance(c, (list, tuple, set)):
+                visible = list(c)
+                hidden = []
+            else:
+                raise NonUMTOExerciseError("Each chord must be a dictionary or a sequence of pitches.")
+        else:
+            visible = list(c.get("visible") or c.get("notes") or [])
+            hidden = list(c.get("hidden") or [])
+
+        if not visible and not hidden:
+            raise NonUMTOExerciseError("Chord at index {} contains no pitches.".format(idx))
+
+        dur = float(c.get("duration", 1.0))
+        off = float(c.get("offset", offset))
+
+        normalized_chords.append({
+            "offset": off,
+            "duration": dur,
+            "visible": visible,
+            "hidden": hidden,
+        })
+        offset = off + dur
+
+    try:
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source=source,
+            key=key,
+            meter=meter,
+            clef=clef,
+            complexity_score=complexity,
+            mode=InteractionMode.PLAYBACK,
+            chords=normalized_chords,
+            analysis=[],
+            unit=None,
+            input_mode="dropdown",
+        )
+    except Exception as e:
+        raise NonUMTOExerciseError(f"Failed to build chordal UMTO payload: {e}") from e
+
+    payload["staffDistribution"] = staff_distribution
+    payload["score"]["umto"]["metadata"]["staffDistribution"] = staff_distribution
+
+    try:
+        UMTO.model_validate(payload["score"]["umto"])
+    except Exception as e:
+        raise NonUMTOExerciseError(f"UMTO validation failed: {e}") from e
+
+    ex = None
+    if overwrite:
+        ex = (
+            Exercise.objects.filter(description=description, authored_by=author)
+            .defer("data")
+            .first()
+        )
+
+    tags = list(skill_tags) if skill_tags is not None else ["unit:1"]
+
+    if ex is None:
+        ex = Exercise(
+            description=description,
+            data=payload,
+            authored_by=author,
+            is_public=is_public,
+            skill_tags=tags,
+            complexity=complexity,
+        )
+    else:
+        ex.data = payload
+        ex.skill_tags = tags
+        ex.complexity = complexity
+        ex.is_public = is_public
+
+    ex.save(skip_auto_playlist=not auto_playlist)
+
+    ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
+    ex.data["exerciseId"] = ex.id
+    ex.save()
+    return ex
+
+
 def save_umto_symbolic_exercise(
     *,
     description: str,
