@@ -23,9 +23,10 @@ events rather than S/A/T/B voices.
 
 Add a dashboard-only `staffDistribution` picker for chordal UMTO exercises.
 
-The picker must persist the selected value into chordal UMTO metadata so the existing
-renderer uses it on preview/student playback. It must not change SATB chorale UMTO
-behavior, and it must not introduce new legacy exercise behavior.
+The picker must persist the selected value into chordal UMTO metadata, and the chordal
+UMTO renderer must honor the same staff distribution tokens exposed by the dashboard
+choice set. It must not change SATB chorale UMTO behavior, and it must not introduce new
+legacy exercise behavior.
 
 ## Scope
 
@@ -38,15 +39,17 @@ In scope:
 - Save the selected value to `data.score.umto.metadata.staffDistribution`.
 - Mirror the value to top-level `data.staffDistribution` for existing frontend payload
   compatibility.
+- Update the chordal UMTO render conversion path so persisted dashboard choices have
+  matching preview/student behavior.
 - Keep SATB voices-kind chorale UMTO forced to `"chorale"` with the field hidden.
 - Add focused form tests for chordal UMTO persistence and SATB regression.
+- Add focused renderer/conversion tests for chordal UMTO staff distribution tokens.
 
 Out of scope:
 
 - Play-view session storage behavior.
 - Legacy chord exercise behavior.
 - Broader edit-exercise page refactoring.
-- Renderer changes.
 - New staff distribution option names or labels.
 
 ## Decisions
@@ -78,8 +81,19 @@ existing frontend payload conventions and table/list display code.
 
 Use the current `DISTRIBUTION_CHOICES` values. The implementation should not invent
 new tokens such as `"grand"` unless the renderer and model contract are updated in a
-separate change. The current renderer already consumes existing dashboard values such as
-`"keyboard"`, `"grandStaff"`, `"LH"`, and `"RH"`.
+separate change.
+
+The chordal UMTO converter currently reads `score.umto.metadata.staffDistribution`, but
+it does not yet give every dashboard token distinct behavior. This change must extend
+that converter so the existing dashboard values behave consistently:
+
+- `"keyboard"`, `"keyboardPlusLHBias"`, and `"keyboardPlusRHBias"` use keyboard-style
+  grand-staff splitting, with the documented split bias where applicable.
+- `"grandStaff"` uses grand-staff splitting without collapsing to a single staff.
+- `"LH"` renders all chord tones on the lower staff.
+- `"RH"` renders all chord tones on the upper staff.
+- `"chorale"` remains reserved for SATB voices-kind chorale UMTO and should not be
+  offered as a meaningful chordal layout unless the renderer contract is expanded later.
 
 ## Data Flow
 
@@ -90,8 +104,8 @@ separate change. The current renderer already consumes existing dashboard values
 5. `ExerciseForm.save()` writes the selected value to:
    - `instance.data["score"]["umto"]["metadata"]["staffDistribution"]`
    - `instance.data["staffDistribution"]`
-6. Preview/student render reads the persisted value through the existing frontend
-   rendering path.
+6. Preview/student render reads the persisted value through the chordal UMTO conversion
+   path and applies the selected staff layout.
 
 For SATB chorale UMTO, the existing `_configure_chorale_fields()` /
 `_store_chorale_settings()` behavior continues to hide the field and force
@@ -114,6 +128,13 @@ The chorale configuration flow should branch early:
   settings.
 - other chorale UMTO / legacy chorale: keep existing chorale behavior.
 
+Expected renderer work in `lab/static/js/src/components/music/exercise_sheet.js`:
+
+- Extend `_convertChordalUMTOToProcessedScore()` so the existing dashboard tokens produce
+  the staff layout described above.
+- Keep the stored `meta.staffDistribution` value intact in the processed score metadata.
+- Do not change voices-kind UMTO conversion behavior.
+
 ## Tests
 
 Add focused tests in the dashboard/form test area:
@@ -124,6 +145,9 @@ Add focused tests in the dashboard/form test area:
   mirror.
 - SATB voices-kind chorale UMTO still hides `staff_distribution` and forces
   top-level `staffDistribution` to `"chorale"`.
+- Chordal UMTO conversion routes `"LH"` to bass-only and `"RH"` to treble-only.
+- Chordal UMTO conversion keeps `"grandStaff"` / keyboard-family values on grand-staff
+  rendering.
 
 No legacy-specific test is required because legacy behavior is not part of this change.
 
@@ -134,5 +158,8 @@ No legacy-specific test is required because legacy behavior is not part of this 
 - `ExerciseForm.save()` currently writes top-level `staffDistribution` before
   score-kind-specific handlers run. The chordal handler must run after that generic write
   and overwrite metadata/mirror consistently.
+- The frontend has historical token aliases (`LH`/`RH` versus lower-level
+  `bass`/`treble` handling). The implementation must normalize behavior without
+  changing persisted dashboard tokens.
 - The later edit-page refactor (#4) should preserve this score-kind-specific boundary
   instead of folding chordal UMTO back into the SATB chorale branch.
