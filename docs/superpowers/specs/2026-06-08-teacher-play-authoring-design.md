@@ -62,17 +62,30 @@ auto-derived grid removes the hole problem at the root.
 
 ### Canonical rhythm + barline payload
 
-- **Rhythm:** `ChordEvent.duration` as a **quarter-length float**. The chordal model has
-  no `duration_type`/`dots` (those live on the voices-kind `VoiceEvent`); they are derived
-  at render. `dataForSave()` stops flattening (`rhythmValue: "w"`);
-  `save_chordal_umto_exercise` stops hardcoding `1.0` and **drops the final-chord
-  auto-stretch** (umto_factory.py:752-758) — it distorted the teacher's rhythm and is
-  superseded by the metered Save gate.
-- **Barlines:** **explicit, persisted** as barline positions (quarter-length offsets,
-  snapped to chord onsets) in chordal `Metadata`. This is a real **schema addition** —
-  today the model *derives* measures from meter+durations. Barline offsets must coincide
-  with chord onsets (never interior to a chord), which keeps straddle structurally
-  impossible.
+- **Rhythm:** `ChordEvent.duration` as a **quarter-length float**, drawn from a **closed
+  palette** (no arbitrary floats — they don't always derive cleanly into VexFlow/CIR
+  `duration_type`/`dots`):
+
+  | symbol | `w` | `h.` | `h` | `q.` | `q` | `8.` | `8` | `16` |
+  |--------|-----|------|-----|------|-----|------|-----|------|
+  | qL     | 4   | 3    | 2   | 1.5  | 1   | 0.75 | 0.5 | 0.25 |
+
+  `setChordDuration` accepts only these quarter-lengths; the server rejects off-palette
+  values. `duration_type`/`dots` are derived at render from the palette entry (the chordal
+  model has none; those live on the voices-kind `VoiceEvent`). `dataForSave()` stops
+  flattening (`rhythmValue: "w"`); `save_chordal_umto_exercise` stops hardcoding `1.0` and
+  **drops the final-chord auto-stretch** (umto_factory.py:752-758) — it distorted the
+  teacher's rhythm and is superseded by the metered Save gate. (Tuplets are deferred, so
+  the palette has no triplet values.)
+- **Barlines:** **explicit, persisted** as a new field
+  `metadata.barline_offsets: List[float] = []` on chordal `Metadata` — quarter-length
+  offsets, **sorted, unique**, each coinciding with a chord onset, **excluding `0.0`** (the
+  implicit start barline) **and the stream end** (the implicit final barline). This is a
+  real **schema addition** — today the model *derives* measures from meter+durations.
+  Because every entry sits on a chord onset (never interior to a chord), straddle is
+  structurally impossible. Bars are the segments between consecutive entries of
+  `[0.0] + barline_offsets + [end]`; this list is what the validators and payload tests
+  key off.
 - **Saved render must follow the explicit barlines (contract).** Today
   `build_chordal_umto_payload` generates `score.measures` from chords by meter accumulation
   (umto_factory.py:553) and `_build_score_data` derives measure breaks the same way
@@ -104,8 +117,10 @@ contiguous (`offset[i+1] == offset[i] + duration[i]`), the first chord sits on t
 start barline, and the bar's durations sum to `barLen`. This forbids gaps and overlaps
 alike — a shortened-note gap makes the bar short and **blocks Save** until the teacher
 extends/adds a chord (no auto-rest; explicit rest entry is deferred). In **free** mode a
-gap is harmless (no validation); it renders as empty time / a rest within the single
-measure.
+gap is harmless (no validation) and renders as a **generated display rest** (the existing
+`_append_rest` materializes it). "Explicit rest *entry* is deferred" still holds — these
+display rests are render-only, never authored `kind:"rest"` events. So the one visible
+behavior for a gap is: a rest is shown.
 
 ### Server-side validity (metered mode only)
 
@@ -245,9 +260,13 @@ This dissolves the concept's `T`/`A`/`1–4`/`R` collision worry — none are gl
   (live, in Play), but Save submits the in-Play analysis as the source of truth and must
   not re-run a server generation that overwrites teacher edits. **Save is a blanket
   approval** — it does *not* require every token to be individually accepted; the teacher
-  approves whatever is shown by saving. Completeness = every target slice has an analysis
-  value present (seeded or edited). The generate→`generated` path remains for the non-Play
-  bulk-import flow.
+  approves whatever is shown by saving.
+- **No analysis slot is allowed.** Save does not require an active analysis slot: a Play
+  exercise with both zones empty is a pure `PLAYBACK` exercise with no analysis, saved
+  with `analysis_review_status = "none"`. The `reviewed` stamp and the completeness check
+  apply **only when ≥1 analysis slot is active** — then completeness = every target slice
+  has an analysis value present (seeded or edited). The generate→`generated` path remains
+  for the non-Play bulk-import flow.
 - Save has a **validity precondition** (Decision a, metered mode): in free mode it always
   proceeds; with a meter set it proceeds only when every inter-barline bar sums to
   `barLen`. An invalid metered progression blocks Save with specific feedback rather than
@@ -440,11 +459,17 @@ Defer:
    has 5 beats, expected 4"). No auto-stretch, no auto-rest.
 4a. Setting a meter auto-suggests barlines at cumulative-sum boundaries; the teacher can
     move/add/remove them, and validity re-checks against the edited barlines.
-4b. `setChordDuration` preserves all later chords' offsets (no reflow): shortening leaves
-    a gap, lengthening is capped at the next onset (overlap rejected). UI and agent behave
-    identically. No move/close-gap op in v1.
-4c. A Play Save persists the in-Play analysis as `reviewed` without re-running server
-    generation over teacher edits; it does not require per-token acceptance.
+4b. `setChordDuration` accepts only closed-palette quarter-lengths
+    ({4, 3, 2, 1.5, 1, 0.75, 0.5, 0.25}); off-palette values are rejected server-side. It
+    preserves all later chords' offsets (no reflow): shortening leaves a gap (rendered as a
+    generated display rest), lengthening is capped at the next onset (overlap rejected). UI
+    and agent behave identically. No move/close-gap op in v1.
+4c. `metadata.barline_offsets` is a sorted, unique `List[float]`, each on a chord onset,
+    excluding `0.0` and the stream end; validators and payload tests key off it.
+4d. A Play Save with ≥1 analysis slot persists the in-Play analysis as `reviewed` without
+    re-running server generation over teacher edits, and does not require per-token
+    acceptance. A Play Save with no analysis slot saves a `PLAYBACK` exercise with
+    `analysis_review_status = "none"`.
 5. Each analysis zone holds at most one type; a type only appears in zones its descriptor
    allows; selection persists in `analyzeConfig` as `{ above, below }`.
 6. Authoring keyboard accelerators fire only with a selection; with no selection, all keys
