@@ -11,8 +11,9 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 
-from apps.exercises.models import Exercise
+from apps.exercises.models import Exercise, NonUMTOExerciseError
 from apps.exercises.umto import AnalysisSlice, InteractionMode
+from apps.exercises.umto_factory import validate_chordal_rhythm, _is_palette_duration, _chordal_to_measures
 
 CHORDAL_ANALYSIS_TARGETS = {
     "roman_numeral",
@@ -157,25 +158,43 @@ def api_chordal_analysis_review(request, exercise_id):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    valid_offsets = {
-        round(float(chord.get("offset", 0.0)), 6)
-        for chord in chords
+    valid_offsets = {round(float(c.get("offset", 0.0)), 6) for c in chords}
+
+    # Start from EXISTING analysis so duration/meter/barline-only edits never erase it.
+    analysis_by_offset = {
+        round(float(item.get("offset", 0.0)), 6): item
+        for item in umto.get("analysis", [])
     }
-    new_analysis = []
+
     try:
         for row in payload.get("rows", []):
             offset = round(float(row.get("offset", 0.0)), 6)
             if offset not in valid_offsets:
-                return JsonResponse({
-                    "error": f"Unknown chord offset: {offset}",
-                }, status=400)
-            slice_data = {
-                "offset": offset,
-                "content": row.get("content", {}),
-                "unit_tags": row.get("unit_tags", []),
-                "is_target": True,
-            }
-            new_analysis.append(AnalysisSlice(**slice_data).model_dump(mode="json"))
+                return JsonResponse({"error": f"Unknown chord offset: {offset}"}, status=400)
+
+            # Analysis edit: only when the row carries content.
+            if "content" in row:
+                slice_data = {
+                    "offset": offset,
+                    "content": row.get("content", {}),
+                    "unit_tags": row.get("unit_tags", []),
+                    "is_target": True,
+                }
+                analysis_by_offset[offset] = AnalysisSlice(**slice_data).model_dump(mode="json")
+
+            # Duration edit: palette-checked, applied to the matching chord.
+            if "duration" in row:
+                dur = row["duration"]
+                if not _is_palette_duration(dur):
+                    return JsonResponse(
+                        {"error": f"Duration {dur!r} is not in the authoring palette."},
+                        status=400)
+                for chord in chords:
+                    if round(float(chord.get("offset", 0.0)), 6) == offset:
+                        chord["duration"] = float(dur)
+                        break
+
+            # Spelling edit (existing behavior).
             spelling = row.get("spelling")
             if spelling is not None:
                 for chord in chords:
@@ -190,15 +209,33 @@ def api_chordal_analysis_review(request, exercise_id):
     except (TypeError, ValueError) as exc:
         return JsonResponse({"error": str(exc)}, status=400)
 
-    metadata["analysis_review_status"] = "reviewed"
+    # Meter / barline updates (None meter = free mode); default to current metadata.
+    new_meter = payload.get("meter", metadata.get("meter"))
+    new_barlines = payload.get("barline_offsets", metadata.get("barline_offsets", [])) or []
+
+    # Validate the resulting rhythm (raises -> 400).
+    try:
+        validate_chordal_rhythm(chords, new_meter, new_barlines)
+    except NonUMTOExerciseError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+    new_analysis = [analysis_by_offset[o] for o in sorted(analysis_by_offset)]
+    review_status = "reviewed" if new_analysis else "none"
+
+    # Persist: metadata, chords, analysis, AND rebuilt measures + meta.time.
+    metadata["analysis_review_status"] = review_status
+    metadata["meter"] = new_meter
+    metadata["barline_offsets"] = new_barlines
     umto["analysis"] = new_analysis
     umto["chords"] = chords
     data["analysis"] = new_analysis
+    data.setdefault("score", {}).setdefault("meta", {})["time"] = new_meter
+    data["score"]["measures"] = _chordal_to_measures(chords, new_meter, new_barlines)
     exercise.data = data
     exercise.save(update_fields=["data"])
     return JsonResponse({
         "status": "success",
-        "reviewStatus": "reviewed",
+        "reviewStatus": review_status,
         "analysis": new_analysis,
     })
 
