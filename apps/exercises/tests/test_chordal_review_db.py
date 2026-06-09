@@ -1,7 +1,9 @@
 import json
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from apps.exercises.umto_factory import save_chordal_umto_exercise
+from apps.exercises.umto_factory import save_chordal_umto_exercise, build_chordal_umto_payload
+from apps.exercises.models import Exercise
+from apps.exercises.umto import InteractionMode
 
 User = get_user_model()
 
@@ -74,3 +76,19 @@ class ReviewEndpointRhythmTests(TestCase):
         ex.refresh_from_db()
         assert len(ex.data["score"]["measures"]) == 4
         assert ex.data["score"]["meta"]["time"] == "2/4"
+
+    def test_analysis_only_edit_on_legacy_rhythm_is_allowed(self):
+        # Exercise whose rhythm does NOT tile the bar (legacy: 1 beat in 4/4).
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP", source="legacy", key="C major", meter="4/4",
+            clef="keyboard", complexity_score=1, mode=InteractionMode.PLAYBACK,
+            chords=[{"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67]}],
+            analysis_review_status="generated",
+        )
+        ex = Exercise.objects.create(description="legacy", data=payload,
+                                     authored_by=self.user, complexity=1)
+        # Analysis-only edit (no meter/barline/duration) must succeed despite bad tiling.
+        body = {"rows": [{"offset": 0.0, "content": {"roman_numeral": "I"}}]}
+        resp = self.client.post(self._url(ex), data=json.dumps(body),
+                                content_type="application/json")
+        assert resp.status_code == 200, resp.content

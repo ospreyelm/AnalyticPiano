@@ -213,11 +213,18 @@ def api_chordal_analysis_review(request, exercise_id):
     new_meter = payload.get("meter", metadata.get("meter"))
     new_barlines = payload.get("barline_offsets", metadata.get("barline_offsets", [])) or []
 
-    # Validate the resulting rhythm (raises -> 400).
-    try:
-        validate_chordal_rhythm(chords, new_meter, new_barlines)
-    except NonUMTOExerciseError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)
+    # Validate rhythm ONLY when the payload changes rhythm. Analysis/spelling-only
+    # edits must not be blocked by pre-existing (legacy) rhythm the teacher isn't touching.
+    rhythm_touched = (
+        "meter" in payload
+        or "barline_offsets" in payload
+        or any("duration" in row for row in payload.get("rows", []))
+    )
+    if rhythm_touched:
+        try:
+            validate_chordal_rhythm(chords, new_meter, new_barlines)
+        except NonUMTOExerciseError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
 
     new_analysis = [analysis_by_offset[o] for o in sorted(analysis_by_offset)]
     review_status = "reviewed" if new_analysis else "none"
