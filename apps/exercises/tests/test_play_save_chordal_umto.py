@@ -68,7 +68,9 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.assertEqual(umto_meta["staffDistribution"], "keyboardPlusLHBias")
         self.assertEqual(umto_meta["exercise_id"], ex.id)
         self.assertEqual(data["exerciseId"], ex.id)
-        self.assertEqual(umto_meta["analysis_review_status"], "generated")
+        # When no analysisSlices are supplied the view passes analysis=[] and
+        # the factory stamps "none" (no auto-generation on the Play path).
+        self.assertEqual(umto_meta["analysis_review_status"], "none")
 
         # Verify chords
         chords = score["umto"]["chords"]
@@ -83,20 +85,10 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.assertEqual(chords[1]["visible"], [62, 65, 69])
         self.assertEqual(chords[1]["hidden"], [])
 
-        # Verify analysis slices
+        # Play Authoring Phase B: when no analysisSlices are supplied the view
+        # passes analysis=[] (suppressing auto-generation), so analysis is empty.
         analysis = score["umto"]["analysis"]
-        self.assertEqual(len(analysis), 2)
-        self.assertEqual(analysis[0]["offset"], 0.0)
-        self.assertEqual(analysis[0]["content"]["roman_numeral"], "IV")
-        self.assertEqual(analysis[0]["content"]["raw_roman_numeral"], "IV")
-        self.assertEqual(analysis[0]["content"]["figured_bass"], "5/3")
-        self.assertEqual(analysis[0]["content"]["raw_figured_bass"], "8/5/3")
-
-        self.assertEqual(analysis[1]["offset"], 1.0)
-        self.assertEqual(analysis[1]["content"]["roman_numeral"], "v")
-        self.assertEqual(analysis[1]["content"]["raw_roman_numeral"], "v")
-        self.assertEqual(analysis[1]["content"]["figured_bass"], "b")
-        self.assertEqual(analysis[1]["content"]["raw_figured_bass"], "5/b3")
+        self.assertEqual(len(analysis), 0)
 
     def test_null_data_returns_400(self):
         self.client.login(email="teacher@example.com", password="pw")
@@ -157,16 +149,18 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         chords = ex.data["score"]["umto"]["chords"]
         self.assertEqual(chords[0]["spelling"], ["Bb4", "D5", "F5"])
 
-    def test_save_returns_review_status_and_url(self):
+    def test_save_returns_review_status(self):
+        # reviewUrl was removed in the Play Authoring Phase B contract change.
         self.client.login(email="teacher@example.com", password="pw")
         payload = {"key": "jC_", "meter": "4/4", "staffDistribution": "keyboard",
                    "chord": [{"visible": [60, 64, 67], "hidden": [], "duration": 4.0}]}
-        # match the login pattern the other tests use
         resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
         self.assertEqual(resp.status_code, 201)
         body = resp.json()
-        self.assertIn(body["reviewStatus"], ("generated", "none"))
-        self.assertIn("review=" + str(body["id"]), body["reviewUrl"])
+        self.assertIn("id", body)
+        # No analysisSlices supplied → status is "none" (Play path suppresses auto-generation).
+        self.assertEqual(body["reviewStatus"], "none")
+        self.assertNotIn("reviewUrl", body)
 
     def test_malformed_spelling_length_is_dropped(self):
         self.client.login(email="teacher@example.com", password="pw")

@@ -922,9 +922,11 @@ class AddExerciseView(View):
             return HttpResponse(status=400)
 
         key = payload.get("key", "C")
-        meter = payload.get("meter")  # None = free/open mode (save always allowed; no metric validation)
+        meter = payload.get("meter")  # None = free/open mode (no metric validation)
         clef = payload.get("clef", "keyboard")
         staff_distribution = payload.get("staffDistribution", "keyboard")
+        barline_offsets = payload.get("barline_offsets") or []
+        analysis_slices = payload.get("analysisSlices", [])  # [] => status "none"; non-empty => "reviewed"
 
         try:
             exercise = save_chordal_umto_exercise(
@@ -936,6 +938,8 @@ class AddExerciseView(View):
                 clef=clef,
                 staff_distribution=staff_distribution,
                 is_public=False,
+                barline_offsets=barline_offsets,
+                analysis=analysis_slices,
             )
         except (NonUMTOExerciseError, ValueError, KeyError):
             return HttpResponse(status=400)
@@ -947,11 +951,9 @@ class AddExerciseView(View):
             .get("metadata", {})
             .get("analysis_review_status", "none")
         )
-        review_url = reverse("dashboard:workbench") + "?review=" + str(exercise.id)
         return JsonResponse(status=201, data={
             "id": exercise.id,
             "reviewStatus": review_status,
-            "reviewUrl": review_url,
         })
 
 
