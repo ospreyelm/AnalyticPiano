@@ -159,6 +159,13 @@ define([
         self._playbackWindowIndex = null;
         self._clearPlaybackHighlight();
       });
+
+      // Wire the meter selector in the toolbar to setMeter.
+      // The <select id="play-meter-select"> is rendered in play.html's #staff-toolbar.
+      $("#play-meter-select").on("change", function () {
+        var val = $(this).val();
+        self.setMeter(val || null);
+      });
     },
     /**
      * Initializes the canvas renderer and dom element.
@@ -305,6 +312,7 @@ define([
         }
       } else {
         this.renderStaves();
+        this._drawBarlineTicks();
       }
 
       /* save data for retrieval by MusicControlsComponent.onClickSaveJSON; this may not be the optimal or most professional solution */
@@ -694,6 +702,61 @@ define([
       $("#playback-highlight").hide();
     },
 
+    /**
+     * Draw a thin vertical tick at each barline position on the canvas.
+     * Maps each barline offset → the banked-chord whose onset equals it →
+     * that chord's stave getStartX(), then draws a short vertical line.
+     * Only active in regular stave mode.
+     */
+    _drawBarlineTicks: function () {
+      if (!this._barlineOffsets || !this._barlineOffsets.length) return;
+      if (window.location.search.indexOf("newvf") !== -1) return;
+
+      var staves = this.staves;
+      if (!staves || staves.length < 2) return;
+
+      // Build onset → stave index map:
+      // staves[k] (k>=1) corresponds to banked chord at _items index k (1-based)
+      // bankIndex k has onset = offsetsFromDurations(_bankedDurations())[k-1]
+      var durations = this._bankedDurations();
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
+      // offsets[k-1] is onset for bank index k (1-based); k goes 1..N
+      var onsetToStaveIdx = {};
+      for (var k = 1; k < staves.length; k++) {
+        var onset = offsets[k - 1];
+        if (onset !== undefined) {
+          onsetToStaveIdx[Math.round(onset * 1e6) / 1e6] = k;
+        }
+      }
+
+      // Get the raw 2D context directly from the canvas element (Vex.Flow may
+      // wrap it; accessing the element directly is the most reliable path).
+      var canvas = this.el[0];
+      var raw = canvas ? canvas.getContext("2d") : null;
+      if (!raw) return;
+
+      raw.save();
+      raw.strokeStyle = "rgba(60, 120, 220, 0.85)";
+      raw.lineWidth = 2;
+
+      var canvasHeight = canvas.height || this.getHeight();
+
+      for (var i = 0; i < this._barlineOffsets.length; i++) {
+        var o = Math.round(this._barlineOffsets[i] * 1e6) / 1e6;
+        var si = onsetToStaveIdx[o];
+        if (si === undefined) continue;
+        var stave = staves[si];
+        var x = stave.getStartX ? stave.getStartX() : 0;
+        // Draw a vertical line from canvas top to bottom at this x
+        raw.beginPath();
+        raw.moveTo(x, 0);
+        raw.lineTo(x, canvasHeight);
+        raw.stroke();
+      }
+
+      raw.restore();
+    },
+
     getChordDuration: function (bankIndex) {
       var d = this._chordDurations[bankIndex];
       return typeof d === "number" ? d : 1.0; // default quarter
@@ -706,6 +769,40 @@ define([
 
     setMeter: function (meter) {
       this._meter = meter || null;
+      if (this._meter) this.autoSuggestBarlines(); // seeds barlines; teacher then edits
+      else { this._barlineOffsets = []; this.render(); }
+    },
+
+    placeBarline: function (offset) {
+      var o = Math.round(offset * 1e6) / 1e6;
+      if (this._barlineOffsets.indexOf(o) === -1) {
+        this._barlineOffsets.push(o);
+        this._barlineOffsets.sort(function (a, b) { return a - b; });
+        this.render();
+      }
+    },
+    removeBarline: function (offset) {
+      var o = Math.round(offset * 1e6) / 1e6;
+      this._barlineOffsets = this._barlineOffsets.filter(function (b) { return b !== o; });
+      this.render();
+    },
+    _bankedDurations: function () {
+      var durations = [];
+      for (var i = 1; i < this.chords._items.length; i++) durations.push(this.getChordDuration(i));
+      return durations;
+    },
+    toggleBarlineAtChord: function (bankIndex) {
+      // Barline sits at the onset of the chord at bankIndex (between it and the previous chord).
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(this._bankedDurations());
+      var onset = offsets[bankIndex - 1]; // bankIndex is 1-based for banked chords
+      if (onset === undefined || onset === 0) return; // no barline at stream start
+      if (this._barlineOffsets.indexOf(Math.round(onset * 1e6) / 1e6) === -1) this.placeBarline(onset);
+      else this.removeBarline(onset);
+    },
+    autoSuggestBarlines: function () {
+      var durations = this._bankedDurations();
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
+      this._barlineOffsets = ChordalBarlinesLogic.suggestBarlines(offsets, durations, this._meter);
       this.render();
     },
 
@@ -929,22 +1026,32 @@ define([
 
     /**
      * Attach a click handler on the canvas to hit-test against rendered stave
-     * slots and select the corresponding banked chord.
+     * slots and select the corresponding banked chord, OR toggle a barline when
+     * clicking near a stave boundary (gap).
      *
      * Hit-test strategy (regular stave mode):
      *   - After updateStaves(), this.staves[0] is the display stave,
      *     this.staves[k] (k >= 1) is the treble stave for items[k-1].
      *   - items are chords.items({ limit, reverse:true }), so items[k-1] maps
      *     to this.chords._items[ items.length - k ] (raw bank index).
-     *   - A click at canvas-relative (cx, cy) hits stave k if:
-     *       stave.getStartX() <= cx < stave.getStartX() + stave.getWidth()
-     *       AND cy <= stave.getBottomY()  (any height from top of canvas)
-     *   - Only staves with isBanked=true are selectable (skip the novel/current slot).
+     *
+     * Gap vs chord discrimination:
+     *   - GAP_TOL = 8px. For each banked stave k >= 2, the left edge
+     *     staves[k].getStartX() is a potential gap (boundary between chord k-1
+     *     and chord k). If the click is within GAP_TOL px of that left edge,
+     *     treat it as a gap click and toggle the barline for bank index k.
+     *   - Otherwise, perform the normal chord-body hit-test (chord body = full
+     *     stave column width minus the gap band on the left edge). The chord
+     *     body starts at sx + GAP_TOL and ends at sx + sw.
      *
      * @private
      */
     _initClickHandler: function () {
       var self = this;
+      // Gap tolerance in canvas pixels: clicks within this band on the LEFT
+      // edge of a banked stave (k>=2) are treated as barline-toggle clicks.
+      var GAP_TOL = 8;
+
       this.el.on("click.play-authoring", function (e) {
         // Only active in regular stave mode (not corpus mode)
         if (window.location.search.indexOf("newvf") !== -1) return;
@@ -964,14 +1071,37 @@ define([
         // Build the items list in the same order as updateStaves
         var limit = CHORD_BANK_SIZE;
         var items = self.chords.items({ limit: limit, reverse: true });
+
+        // --- Gap check: staves[k] for k >= 2 have a left-edge gap band ---
+        // stave k corresponds to items[k-1] (0-based) and bank index:
+        //   bankIndex = items.length - 1 - (k-1) = items.length - k
+        // The gap is between chord (bankIndex-1) and chord bankIndex;
+        // toggleBarlineAtChord(bankIndex) places/removes the barline at that onset.
+        for (var gk = 2; gk < staves.length; gk++) {
+          var gStave = staves[gk];
+          var gsx = gStave.getStartX ? gStave.getStartX() : 0;
+          if (cx >= gsx - GAP_TOL && cx < gsx + GAP_TOL) {
+            // Gap click: toggle barline for the right-hand chord at gk
+            var gBankIndex = items.length - gk;
+            if (gBankIndex >= 1) {
+              console.log("[play-authoring] gap click at stave " + gk + " bankIndex=" + gBankIndex);
+              self.toggleBarlineAtChord(gBankIndex);
+            }
+            return; // consumed — do not also select a chord
+          }
+        }
+
+        // --- Chord body hit-test ---
         var hitStaveIdx = -1;
 
         for (var k = 1; k < staves.length; k++) {
           var stave = staves[k];
           var sx = stave.getStartX();
           var sw = stave.getWidth ? stave.getWidth() : stave.width;
-          // Hit region: full stave column width × full canvas height
-          if (cx >= sx && cx < sx + sw) {
+          // For k >= 2, the chord body starts at sx + GAP_TOL (left edge is gap band).
+          // For k == 1 (first banked stave), there is no gap to the left.
+          var bodyLeft = (k >= 2) ? sx + GAP_TOL : sx;
+          if (cx >= bodyLeft && cx < sx + sw) {
             hitStaveIdx = k;
             break;
           }
