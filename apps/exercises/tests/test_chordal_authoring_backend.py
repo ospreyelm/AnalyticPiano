@@ -64,3 +64,84 @@ def test_is_palette_duration_rejects_off_palette():
     # 0.375 (dotted-16) and 0.125 (32nd) render but are NOT in the authoring palette
     for ql in [0.375, 0.125, 1.25, 2.5, 0.0, 3.5]:
         assert _is_palette_duration(ql) is False
+
+
+from apps.exercises.umto_factory import validate_chordal_rhythm
+from apps.exercises.models import NonUMTOExerciseError
+
+
+def _ch(offset, duration, visible=(60,)):
+    return {"offset": offset, "duration": duration, "visible": list(visible)}
+
+
+def test_free_mode_skips_rhythm_validation_but_checks_palette():
+    chords = [_ch(0.0, 1.0), _ch(1.0, 0.75), _ch(1.75, 0.25)]
+    validate_chordal_rhythm(chords, meter=None, barline_offsets=[])  # no raise
+
+
+def test_free_mode_rejects_off_palette_duration():
+    chords = [_ch(0.0, 1.25)]
+    try:
+        validate_chordal_rhythm(chords, meter=None, barline_offsets=[])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError as exc:
+        assert "palette" in str(exc).lower()
+
+
+def test_metered_exact_tiling_passes():
+    chords = [_ch(float(i), 1.0) for i in range(8)]
+    validate_chordal_rhythm(chords, meter="4/4", barline_offsets=[4.0])  # no raise
+
+
+def test_metered_short_bar_blocks():
+    chords = [_ch(0.0, 1.0), _ch(1.0, 1.0), _ch(2.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter="4/4", barline_offsets=[])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError as exc:
+        assert "bar" in str(exc).lower()
+
+
+def test_metered_overfull_bar_blocks():
+    chords = [_ch(0.0, 2.0), _ch(2.0, 2.0), _ch(4.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter="4/4", barline_offsets=[])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError:
+        pass
+
+
+def test_metered_barline_not_on_onset_blocks():
+    chords = [_ch(0.0, 1.0), _ch(1.0, 1.0), _ch(2.0, 1.0), _ch(3.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter="4/4", barline_offsets=[2.5])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError as exc:
+        assert "onset" in str(exc).lower()
+
+
+def test_metered_gap_blocks():
+    chords = [_ch(0.0, 1.0), _ch(2.0, 1.0), _ch(3.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter="4/4", barline_offsets=[])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError:
+        pass
+
+
+def test_free_mode_still_rejects_barline_not_on_onset():
+    chords = [_ch(0.0, 1.0), _ch(1.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter=None, barline_offsets=[0.5])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError as exc:
+        assert "onset" in str(exc).lower()
+
+
+def test_free_mode_still_rejects_overlap():
+    chords = [_ch(0.0, 4.0), _ch(1.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter=None, barline_offsets=[])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError as exc:
+        assert "overlap" in str(exc).lower()

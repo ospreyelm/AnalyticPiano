@@ -86,6 +86,84 @@ def _is_palette_duration(ql: float) -> bool:
         return False
 
 
+def validate_chordal_rhythm(chords, meter, barline_offsets):
+    """Validate chordal rhythm against the ABC-style authoring contract.
+
+    STRUCTURAL rules apply in BOTH modes: every duration is in the palette, chords
+    do not overlap (monotonic), and every barline offset coincides with a chord onset.
+    METERED mode adds exact contiguous tiling: every bar (segments of
+    [0] + sorted(barline_offsets) + [total]) must have its chords contiguous from the
+    bar's start barline and summing to barLen. Raises NonUMTOExerciseError on the first
+    violation.
+    """
+    EPS = 1e-6
+
+    # --- Structural checks (BOTH free and metered) ---
+    for c in chords:
+        if not _is_palette_duration(c.get("duration")):
+            raise NonUMTOExerciseError(
+                f"Duration {c.get('duration')!r} at offset {c.get('offset')} "
+                f"is not in the authoring palette {sorted(CHORDAL_DURATION_PALETTE)}."
+            )
+
+    if not chords:
+        return
+
+    ordered = sorted(chords, key=lambda c: round(float(c["offset"]), 6))
+    onsets = {round(float(c["offset"]), 6) for c in ordered}
+
+    # Non-overlap / monotonic.
+    cursor = None
+    for c in ordered:
+        off = round(float(c["offset"]), 6)
+        if cursor is not None and off < cursor - EPS:
+            raise NonUMTOExerciseError(
+                f"Chord at offset {off} overlaps the previous chord (ends at {cursor})."
+            )
+        cursor = round(off + float(c["duration"]), 6)
+
+    # Every explicit barline must land on a chord onset.
+    for b in barline_offsets:
+        if round(float(b), 6) not in onsets:
+            raise NonUMTOExerciseError(
+                f"Barline at offset {b} does not coincide with a chord onset."
+            )
+
+    if meter is None:
+        return  # free/open mode: structural checks done, no metric tiling
+
+    # --- Metered exact contiguous tiling ---
+    bar_len = _meter_quarter_length(meter)
+    total = round(float(ordered[-1]["offset"]) + float(ordered[-1]["duration"]), 6)
+    bounds = [0.0] + sorted(round(float(b), 6) for b in barline_offsets) + [total]
+
+    for bar_idx in range(len(bounds) - 1):
+        start, end = bounds[bar_idx], bounds[bar_idx + 1]
+        beats = round(end - start, 6)
+        if abs(beats - bar_len) > EPS:
+            raise NonUMTOExerciseError(
+                f"Bar {bar_idx + 1} spans {beats} beats, expected {bar_len}."
+            )
+        bar_chords = [c for c in ordered
+                      if start - EPS <= round(float(c["offset"]), 6) < end - EPS]
+        if not bar_chords:
+            raise NonUMTOExerciseError(f"Bar {bar_idx + 1} is empty.")
+        cursor = start
+        for c in bar_chords:
+            off = round(float(c["offset"]), 6)
+            if abs(off - cursor) > EPS:
+                raise NonUMTOExerciseError(
+                    f"Bar {bar_idx + 1} has a gap/overlap at offset {off} "
+                    f"(expected a chord at {round(cursor, 6)})."
+                )
+            cursor = round(cursor + float(c["duration"]), 6)
+        if abs(cursor - end) > EPS:
+            filled = round(cursor - start, 6)
+            raise NonUMTOExerciseError(
+                f"Bar {bar_idx + 1} has {filled} beats, expected {bar_len}."
+            )
+
+
 def _ql_to_dur_type(ql: float) -> str:
     return _QL_TO_DURATION.get(round(ql, 6), ("q", 0))[0]
 
