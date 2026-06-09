@@ -12,6 +12,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-08-teacher-play-authoring-design.md`
 
+> **Test runner & environment (read first):** This project uses **pytest** (`pytest.ini`), which collects bare `def test_*` functions AND Django `TestCase` classes. Run tests with `python -m pytest <path>` — NOT `python manage.py test` (the Django runner skips bare-function tests and finds 0). Python is pinned to 3.11.9 in this worktree via `pyenv local 3.11.9`. All work happens in the worktree `/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/.claude/worktrees/cool-turing-9de4ba` — every shell command must run from there (the repo root has `master` checked out; committing there is wrong). The per-step `python manage.py test ...` lines below are illustrative — substitute `python -m pytest apps/exercises/tests/<file>.py` (and `apps/dashboard/...` for endpoint tests).
+
 ---
 
 ## File Structure
