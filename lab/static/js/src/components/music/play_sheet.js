@@ -18,6 +18,7 @@ define([
   "./chordal_spelling",
   "./play_save_logic",
   "app/utils/chordal_barlines_logic",
+  "app/config/analysis_slots",
 ], function (
   $,
   _,
@@ -36,7 +37,8 @@ define([
   Analyze,
   ChordalSpelling,
   PlaySaveLogic,
-  ChordalBarlinesLogic
+  ChordalBarlinesLogic,
+  AnalysisSlots
 ) {
   "use strict";
 
@@ -703,8 +705,8 @@ define([
     },
 
     _analyzeSlots: function () {
-      // TEMPORARY stub — replaced in Task 10 (derive {above,below} from analyzeConfig).
-      return { above: null, below: null };
+      var cfg = this.getAnalyzeConfig() || {};
+      return AnalysisSlots.normalizeSlots(cfg);
     },
 
     checkSaveValidity: function () {
