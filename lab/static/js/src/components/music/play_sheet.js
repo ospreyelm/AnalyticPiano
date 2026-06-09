@@ -16,6 +16,8 @@ define([
   "app/components/music/playback_controls",
   "app/utils/analyze",
   "./chordal_spelling",
+  "./play_save_logic",
+  "app/utils/chordal_barlines_logic",
 ], function (
   $,
   _,
@@ -32,7 +34,9 @@ define([
   ScorePlayer,
   renderPlaybackControls,
   Analyze,
-  ChordalSpelling
+  ChordalSpelling,
+  PlaySaveLogic,
+  ChordalBarlinesLogic
 ) {
   "use strict";
 
@@ -697,78 +701,69 @@ define([
       this.render();
     },
 
+    _analyzeSlots: function () {
+      // TEMPORARY stub — replaced in Task 10 (derive {above,below} from analyzeConfig).
+      return { above: null, below: null };
+    },
+
     /* solution for saving data as exercise; called by render() and saved to sessionStorage */
     dataForSave: function () {
       const objs = this.chords._items.map((items) => items._notes);
       if (objs.length < 2) return null;
 
-      let chords = [];
       var analyzer = new Analyze(this.keySignature);
-      let i, len;
-      for (i = 1, len = objs.length; i < len; i++) {
-        let obj = objs[i];
-        let keys = Object.keys(obj);
-        let visible = keys
-          .filter(function (key) {
-            return obj[key];
-          })
-          .map((key) => parseInt(key));
-        let hidden = [];
-        let unison_idx = null;
-        try {
-          unison_idx = this.chords._items[i]._unison_idx;
-        } catch {
-          console.log('PlaySheetComponent.dataForSave failed to retrieve unison_idx')
-        }
-        var spelling = visible.concat(hidden).map(function (m) {
-          return ChordalSpelling.vexKeyToSpellingString(analyzer.getNoteName(m, visible));
-        });
-        chords.unshift({ rhythmValue: "w", visible: visible, hidden: hidden, unison_idx: unison_idx, spelling: spelling });
+      var notes = [];
+      var durations = [];
+      for (var i = 1, len = objs.length; i < len; i++) {
+        var obj = objs[i];
+        var visible = Object.keys(obj)
+          .filter((k) => obj[k])
+          .map((k) => parseInt(k, 10));
+        var hidden = [];
+        var unison_idx = null;
+        try { unison_idx = this.chords._items[i]._unison_idx; } catch (e) {}
+        var spelling = visible.concat(hidden).map((m) =>
+          ChordalSpelling.vexKeyToSpellingString(analyzer.getNoteName(m, visible)));
+        notes.push({ visible: visible, hidden: hidden, spelling: spelling, unison_idx: unison_idx });
+        durations.push(this.getChordDuration(i));
       }
 
-      /* simplify for testing */
-      // chords = chords.map(chord => chord["visible"]);
+      var slots = this._analyzeSlots();
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
 
-      let json_data = {
+      var labels = [];
+      if (slots.below) {
+        for (var j = 0; j < notes.length; j++) {
+          var midis = notes[j].visible;
+          if (slots.below === "thoroughbass") {
+            labels.push(analyzer.full_thoroughbass_figure(midis) || "");
+          } else {
+            var rn = analyzer.to_chord(midis, "roman only");
+            labels.push(rn && rn.numeral ? rn.numeral : "");
+          }
+        }
+      }
+
+      var chordRows = PlaySaveLogic.buildChordRows(notes, durations);
+      var analysisSlices = PlaySaveLogic.buildAnalysisSlices(
+        offsets, slots, labels, this._tokenOverrides);
+
+      var json_data = {
         keySignature: this.keySignature.signatureSpec,
         key: this.keySignature.key,
-        type: "matching" /* provide options */,
-        staffDistribution:
-          this.parentComponent.staffDistributionConfig.staffDistribution,
+        type: "matching",
+        staffDistribution: this.parentComponent.staffDistributionConfig.staffDistribution,
         introText: "",
         reviewText: "",
-        analysis: this.parentComponent.analyzeConfig,
+        analyzeConfig: slots,
         highlight: this.parentComponent.highlightConfig,
-        chord: chords,
+        chord: chordRows,
+        meter: this._meter,
+        barline_offsets: this._barlineOffsets.slice(),
+        analysisSlices: slots.below ? analysisSlices : null,
       };
 
-      /*
-			// These properties should also be included once we start changing these presets per user.
-			json_data["bankAfterMetronomeTick"]
-				= Config.__config.general.bankAfterMetronomeTick;
-			json_data["defaultKeyboardSize"]
-				= Config.__config.general.defaultKeyboardSize;
-			json_data["defaultOctaveAdjustment"]
-				= Config.__config.general.defaultOctaveAdjustment;
-			json_data["defaultRhythmValue"]
-				= Config.__config.general.defaultRhythmValue;
-			json_data["hideNextForAutoAdvance"]
-				= Config.__config.general.hideNextForAutoAdvance;
-			json_data["highlightSettings"]
-				= Config.__config.general.highlightSettings;
-			json_data["keyboardShortcutsEnabled"]
-				= Config.__config.general.keyboardShortcutsEnabled;
-			json_data["noDoubleVision"]
-				= Config.__config.general.noDoubleVision;
-			json_data["voiceCountForChoraleStyle"]
-				= Config.__config.general.voiceCountForChoraleStyle;
-			json_data["voiceCountForKeyboardStyle"]
-				= Config.__config.general.voiceCountForKeyboardStyle;
-			*/
-
-      const save_me = JSON.stringify(json_data, null, 0);
-
-      return save_me;
+      return JSON.stringify(json_data, null, 0);
     },
   });
 
