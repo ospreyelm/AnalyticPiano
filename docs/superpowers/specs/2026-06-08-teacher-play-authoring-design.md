@@ -98,6 +98,44 @@ rest:
 - Result: a teacher shortens a note and the bar simply shows a rest. The blackboard
   stays frictionless; no "you must fill the bar" gate.
 
+### Legacy precedent: trust, not enforcement
+
+The legacy dashboard let an author type a per-chord duration string (`q h q.` …)
+*after* creating the exercise. Its barline logic (`exercise_sheet.js` render loop +
+helpers `getsBarline`, `countElapsedBars`, `getWholeNoteCount`,
+`getWholeNoteRemainder`, `timeSignatureParsed`) was purely additive:
+
+1. Each chord stored a `_rhythmValue`; `getWholeNoteCount` converts it to a whole-note
+   fraction (w=1, h=.5, q=.25, q.=.375).
+2. Those fractions are summed into a running `elapsedWholeNotes`.
+3. `getsBarline(ts, elapsed)` computes `barCount = elapsed × denom / num` and draws a
+   barline at a chord boundary **iff `barCount` is an exact integer** — i.e. only when
+   the cumulative sum lands precisely on a bar multiple. The barline is the boundary
+   between two `Stave` objects, recorded as an index in `this.barlines`.
+
+There was **no splitting, no ties, and no validation.** If a chord's duration overran a
+bar boundary, the note straddled silently and a barline only reappeared wherever a later
+cumulative sum happened to re-align on an integer; bars could hold more or less than a
+full measure. The author was implicitly trusted to type durations that summed to whole
+bars. This is the same cross-barline gap the modern `_to_legacy_measures` still admits
+(`"We don't handle ties/splitting across measures here yet"`).
+
+### Why this design reuses the legacy math but flips the contract
+
+The additive barline core is correct for the bar-aligned case and is **reused as-is** —
+`getsBarline` / `countElapsedBars` / `getWholeNoteCount` / `timeSignatureParsed` are the
+barline source of truth; this spec adds no new measure math. What changes is the
+contract:
+
+- **Legacy:** type anything → straddle silently (trust the author).
+- **This design:** the position-aware picker greys any value that would cross a barline,
+  so the cumulative sum can only land on or before a bar boundary; auto-rest padding
+  fills any gap. `getsBarline` therefore always fires on a clean boundary and no
+  straddling event ever reaches the renderer (enforce the invariant).
+
+The invariant exists precisely because legacy left bar-alignment to author discipline,
+which does not survive contact with a non-expert teacher.
+
 ### Defaults and deferrals
 
 - **Default note value on bank: quarter.** Quarters tile a 4/4 bar in four banks, giving
@@ -291,7 +329,9 @@ Defer:
 - `lab/static/js/src/config/analysis_slots.js` (new) — analysis-slot type descriptors +
   zone rules (single source of truth).
 - `lab/static/js/src/components/music/stave_notater.js`, `exercise_sheet.js` — consume
-  `analysis_slots.js` instead of scattered placement logic.
+  `analysis_slots.js` instead of scattered placement logic. Reuse the existing barline
+  math (`getsBarline`, `countElapsedBars`, `getWholeNoteCount`, `getWholeNoteRemainder`,
+  `timeSignatureParsed`) as the barline source of truth; add no new measure math.
 - `lab/static/js/src/components/ui/music_controls.js` — Save → `reviewed`; delete the
   generated/reviewUrl bounce; route feedback through `feedbackService`.
 - `lab/static/js/src/components/input/shortcuts.js` — selection-scoped accelerators;
