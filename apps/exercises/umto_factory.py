@@ -74,6 +74,17 @@ _QL_TO_DURATION = {
     0.125: ("32", 0),
 }
 
+# Authoring palette: the closed set of note values the teacher may assign in Play.
+# A subset of _QL_TO_DURATION (which also renders 0.375/0.125); tuplets are deferred.
+CHORDAL_DURATION_PALETTE = {4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.25}
+
+
+def _is_palette_duration(ql: float) -> bool:
+    try:
+        return round(float(ql), 6) in CHORDAL_DURATION_PALETTE
+    except (TypeError, ValueError):
+        return False
+
 
 def _ql_to_dur_type(ql: float) -> str:
     return _QL_TO_DURATION.get(round(ql, 6), ("q", 0))[0]

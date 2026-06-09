@@ -46,3 +46,21 @@ def test_voices_kind_still_requires_meter():
 def test_chordal_kind_allows_none_meter():
     md = Metadata(**_base_metadata_kwargs(score_kind="chordal", meter=None))
     assert md.meter is None
+
+
+from apps.exercises.umto_factory import CHORDAL_DURATION_PALETTE, _is_palette_duration
+
+
+def test_palette_contains_the_eight_authoring_values():
+    assert CHORDAL_DURATION_PALETTE == {4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.25}
+
+
+def test_is_palette_duration_accepts_palette_values():
+    for ql in [4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.25]:
+        assert _is_palette_duration(ql) is True
+
+
+def test_is_palette_duration_rejects_off_palette():
+    # 0.375 (dotted-16) and 0.125 (32nd) render but are NOT in the authoring palette
+    for ql in [0.375, 0.125, 1.25, 2.5, 0.0, 3.5]:
+        assert _is_palette_duration(ql) is False
