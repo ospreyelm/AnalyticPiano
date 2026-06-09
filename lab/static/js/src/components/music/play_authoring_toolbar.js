@@ -18,7 +18,8 @@ define(["jquery"], function ($) {
    * PlayAuthoringToolbar
    *
    * A small floating toolbar anchored near a selected banked chord in the
-   * Play view. Provides a duration palette and a respell button.
+   * Play view. Provides a duration palette, a respell button, and an optional
+   * token-correction input for Roman numeral / figured bass overrides.
    *
    * @constructor
    * @param {object} options
@@ -27,10 +28,15 @@ define(["jquery"], function ($) {
    * @param {function} options.onRespell      Called when the Respell button is
    *   clicked.
    * @param {function} options.onClose        Called when the × button is clicked.
+   * @param {function} [options.onSetToken]   Called with (value) when the token
+   *   input is committed (Enter or blur). Only shown when showAt is called with
+   *   a non-null currentToken.
    */
   function PlayAuthoringToolbar(options) {
     this._opts = options || {};
     this._$el = null;
+    this._$tokenRow = null;
+    this._$tokenInput = null;
     this._visible = false;
     this._currentQl = null;
     this._build();
@@ -113,6 +119,43 @@ define(["jquery"], function ($) {
       });
       $el.append($close);
 
+      // Token-correction row (hidden by default; shown when a below-zone label is present)
+      var $tokenRow = $([
+        '<div class="pat-token-row" style="',
+          "display:none;",
+          "margin-top:5px;",
+          "border-top:1px solid #eee;",
+          "padding-top:4px;",
+        '">',
+          '<span style="font-size:11px;color:#666;margin-right:4px;">Label:</span>',
+          '<input class="pat-token-input" type="text" style="',
+            "width:90px;",
+            "font-size:12px;",
+            "padding:2px 4px;",
+            "border:1px solid #bbb;",
+            "border-radius:3px;",
+          '" placeholder="e.g. V7, I6">',
+        "</div>",
+      ].join(""));
+
+      var $tokenInput = $tokenRow.find(".pat-token-input");
+      $tokenInput.on("keydown", function (e) {
+        if (e.which === 13) { // Enter
+          e.preventDefault();
+          if (typeof self._opts.onSetToken === "function") {
+            self._opts.onSetToken($tokenInput.val());
+          }
+        }
+      });
+      $tokenInput.on("blur", function () {
+        if (typeof self._opts.onSetToken === "function") {
+          self._opts.onSetToken($tokenInput.val());
+        }
+      });
+      $el.append($tokenRow);
+      this._$tokenRow = $tokenRow;
+      this._$tokenInput = $tokenInput;
+
       $("body").append($el);
       this._$el = $el;
     },
@@ -138,12 +181,26 @@ define(["jquery"], function ($) {
      *
      * @param {object} rect   Page-coordinate bounding box
      *   { left, top, width, height } (all in px).
-     * @param {number} [currentQl]  Quarter-length of the selected chord, used
+     * @param {number} [currentQl]    Quarter-length of the selected chord, used
      *   to highlight the matching duration button.
+     * @param {string|null} [currentToken]  Current below-zone label for the
+     *   selected chord (e.g. "V7", "I6"). When non-null, reveals the token
+     *   correction input pre-filled with this value. Pass null or omit to hide
+     *   the token row (backward-compatible with Task 12 callers).
      */
-    showAt: function (rect, currentQl) {
+    showAt: function (rect, currentQl, currentToken) {
       var $el = this._$el;
+
+      // Show/hide and prefill token row based on whether a below-zone is active
+      if (currentToken !== null && currentToken !== undefined) {
+        this._$tokenInput.val(currentToken);
+        this._$tokenRow.show();
+      } else {
+        this._$tokenRow.hide();
+      }
+
       // Position toolbar just below the chord slot, centered horizontally
+      // (must happen after show/hide to get correct outerWidth)
       var toolbarWidth = $el.outerWidth(true) || 280;
       var left = rect.left + rect.width / 2 - toolbarWidth / 2;
       var top  = rect.top + rect.height + 6;
