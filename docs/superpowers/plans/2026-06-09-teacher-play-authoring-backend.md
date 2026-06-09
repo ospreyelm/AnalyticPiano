@@ -12,7 +12,12 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-08-teacher-play-authoring-design.md`
 
-> **Test runner & environment (read first):** This project uses **pytest** (`pytest.ini`), which collects bare `def test_*` functions AND Django `TestCase` classes. Run tests with `python -m pytest <path>` — NOT `python manage.py test` (the Django runner skips bare-function tests and finds 0). Python is pinned to 3.11.9 in this worktree via `pyenv local 3.11.9`. All work happens in the worktree `/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/.claude/worktrees/cool-turing-9de4ba` — every shell command must run from there (the repo root has `master` checked out; committing there is wrong). The per-step `python manage.py test ...` lines below are illustrative — substitute `python -m pytest apps/exercises/tests/<file>.py` (and `apps/dashboard/...` for endpoint tests).
+> **Test runner & environment (read first — TWO runners by test type):**
+> - **`pytest-django` is NOT installed**, so plain `pytest` does NOT manage a transactional test DB. Any DB-backed `TestCase` run under bare pytest hits the real local `analyticpiano` postgres and pollutes/fails it. The Django runner cannot configure DATABASES without settings.
+> - **Pure-logic bare-function tests** (no DB — Tasks 1–4): run with `python -m pytest apps/exercises/tests/<file>.py`. The Django runner won't collect bare functions.
+> - **DB-backed `TestCase` tests** (Tasks 5–6, which create rows / hit endpoints): run with `python manage.py test apps.exercises.tests.<module> --settings=harmony.settings.local` (creates + destroys a transactional `test_analyticpiano` DB on local postgres). NEVER run DB-backed tests under bare pytest.
+> - Keep these test types in **separate files** so pytest never executes a DB `TestCase` against the real DB: pure-logic tests in `test_chordal_authoring_backend.py`; DB tests in their own `test_*_db.py` files.
+> - Python is pinned to 3.11.9 in this worktree (`pyenv local 3.11.9`). All work + commits happen in the worktree `/Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/.claude/worktrees/cool-turing-9de4ba` — the repo root has `master` checked out; committing there is wrong.
 
 ---
 
@@ -642,11 +647,11 @@ git commit -m "feat(umto): split chordal score.measures at explicit barlines; me
 
 **Files:**
 - Modify: `apps/exercises/umto_factory.py:713` (`save_chordal_umto_exercise`)
-- Test: `apps/exercises/tests/test_chordal_authoring_backend.py`
+- Test: `apps/exercises/tests/test_chordal_authoring_save_db.py` (NEW — DB-backed `TestCase`, kept separate so bare pytest never runs it against the real DB)
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `apps/exercises/tests/test_chordal_authoring_backend.py`:
+Create `apps/exercises/tests/test_chordal_authoring_save_db.py` with:
 
 ```python
 from django.test import TestCase
