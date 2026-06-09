@@ -1947,6 +1947,21 @@ define([
             }
           }
 
+          // Play Authoring Phase B: if the exercise stored explicit {above, below} slots,
+          // project them onto mode flags so the notater/adapter light up the right zones.
+          // This block only runs when a stored slot directive is present (play-authored
+          // exercises); legacy exercises have no top-level data.analyzeConfig so storedSlots
+          // is null and the block is skipped entirely — no regression risk.
+          var storedSlots = (definition.exercise && definition.exercise.analyzeConfig) || null;
+          if (storedSlots && (storedSlots.above || storedSlots.below)) {
+            analyzeConfig.mode = analyzeConfig.mode || {};
+            analyzeConfig.enabled = true;
+            if (storedSlots.below === "roman_numerals" || storedSlots.below === "roman_numerals_exp") analyzeConfig.mode.roman_numerals = true;
+            if (storedSlots.below === "thoroughbass") analyzeConfig.mode.thoroughbass = true;
+            if (storedSlots.above === "scale_degrees") analyzeConfig.mode.scale_degrees = true;
+            if (storedSlots.above === "note_names") analyzeConfig.mode.note_names = true;
+          }
+
           var startMeasure =
             (this._chorale && typeof this._chorale.startMeasure === "number"
               ? this._chorale.startMeasure
