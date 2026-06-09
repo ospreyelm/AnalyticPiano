@@ -37,7 +37,12 @@
     // grade — per-skill (most specific)
     "harmonization.grade.incorrect.wrong_inversion": { category: "recoverable_mistake", surface: "anchored", title: null, body: "Right chord — but the bass doesn't match the figure's inversion.", detail: null, defaultTimeoutMs: 4500 },
     "harmonization.grade.incorrect.wrong_quality":   { category: "recoverable_mistake", surface: "anchored", title: null, body: "Close — check the chord quality (major, minor, diminished?).", detail: null, defaultTimeoutMs: 4500 },
-    "identification.grade.incorrect.wrong_octave":   { category: "recoverable_mistake", surface: "anchored", title: null, body: "Right letter — wrong octave.", detail: null, defaultTimeoutMs: 4000 }
+    "identification.grade.incorrect.wrong_octave":   { category: "recoverable_mistake", surface: "anchored", title: null, body: "Right letter — wrong octave.", detail: null, defaultTimeoutMs: 4000 },
+
+    // play authoring — save feedback (Phase B)
+    "play.save.success":       { category: "success",        surface: "inline", title: "Saved.",          body: "Your exercise is saved and reviewed.",                                                                 detail: null, defaultTimeoutMs: 2500 },
+    "play.save.invalid_meter": { category: "blocking_error", surface: "inline", title: "Can't save yet.", body: "Bar {bar} has {beats} beats, expected {expected}. Fix a duration or move a barline.",                detail: null, defaultTimeoutMs: null },
+    "play.save.empty":         { category: "blocking_error", surface: "inline", title: "Nothing to save.", body: "Bank at least two chords first.",                                                                    detail: null, defaultTimeoutMs: 2500 }
 
     // system.* errors are appended in Phase 4 (Task 22)
   };
