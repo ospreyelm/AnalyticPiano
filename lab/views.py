@@ -922,7 +922,7 @@ class AddExerciseView(View):
             return HttpResponse(status=400)
 
         key = payload.get("key", "C")
-        meter = payload.get("meter", "4/4")
+        meter = payload.get("meter")  # None = free/open mode (save always allowed; no metric validation)
         clef = payload.get("clef", "keyboard")
         staff_distribution = payload.get("staffDistribution", "keyboard")
 

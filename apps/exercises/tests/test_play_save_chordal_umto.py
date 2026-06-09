@@ -182,3 +182,36 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         ex = Exercise.objects.get(id=resp.json()["id"])
         chords = ex.data["score"]["umto"]["chords"]
         self.assertIsNone(chords[0].get("spelling"))
+
+    def test_missing_meter_key_defaults_to_free_mode(self):
+        """Test that omitting 'meter' key results in free/open mode (meter=None).
+
+        This ensures the play-save endpoint accepts legacy posts that don't include
+        a meter, saving them as free mode without metric validation. The payload has
+        3 quarter-beats which would be invalid under 4/4 metered validation, but is
+        valid in free mode."""
+        self.client.login(email="teacher@example.com", password="pw")
+        payload = {
+            # Note: NO "meter" key at all
+            "key": "jC_",
+            "staffDistribution": "keyboard",
+            "chord": [
+                {"visible": [60], "hidden": [], "duration": 1.0},
+                {"visible": [62], "hidden": [], "duration": 1.0},
+                {"visible": [64], "hidden": [], "duration": 1.0},
+            ],
+        }
+        response = self.client.post(self.add_url, {"data": json.dumps(payload)})
+        self.assertEqual(response.status_code, 201)
+        res_data = response.json()
+        self.assertIn("id", res_data)
+
+        # Retrieve and verify exercise
+        ex = Exercise.objects.get(id=res_data["id"])
+        self.assertEqual(ex.authored_by, self.user)
+        self.assertFalse(ex.is_public)
+
+        # Verify metadata has meter set to None (free/open mode)
+        score = ex.data["score"]
+        umto_meta = score["umto"]["metadata"]
+        self.assertIsNone(umto_meta.get("meter"))
