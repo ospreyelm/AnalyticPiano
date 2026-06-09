@@ -19,6 +19,7 @@ define([
   "./play_save_logic",
   "app/utils/chordal_barlines_logic",
   "app/config/analysis_slots",
+  "./play_authoring_toolbar",
 ], function (
   $,
   _,
@@ -38,7 +39,8 @@ define([
   ChordalSpelling,
   PlaySaveLogic,
   ChordalBarlinesLogic,
-  AnalysisSlots
+  AnalysisSlots,
+  PlayAuthoringToolbar
 ) {
   "use strict";
 
@@ -87,6 +89,7 @@ define([
     this._meter = null;          // null = free/open mode
     this._tokenOverrides = {};   // offset index -> { below: <string> } teacher analysis corrections
     this._selection = null;      // { kind: "chord"|"gap", index } or null
+    this._toolbar = null;        // PlayAuthoringToolbar instance (lazy)
 
     if ("keySignature" in this.settings) {
       this.keySignature = this.settings.keySignature;
@@ -143,6 +146,7 @@ define([
       this.initRenderer();
       this.initStaves();
       this.initListeners();
+      this._initClickHandler();
 
       var self = this;
       this.scorePlayer = new ScorePlayer(this.settings.midiDevice);
@@ -717,6 +721,150 @@ define([
       var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
       var res = ChordalBarlinesLogic.checkRhythm(offsets, durations, this._meter, this._barlineOffsets);
       return res.ok ? { ok: true } : { ok: false, code: "invalid_meter", error: res.error };
+    },
+
+    /**
+     * Lazily construct and return the PlayAuthoringToolbar, wiring callbacks.
+     * @private
+     */
+    _getToolbar: function () {
+      if (!this._toolbar) {
+        var self = this;
+        this._toolbar = new PlayAuthoringToolbar({
+          onSetDuration: function (ql) {
+            if (self._selection) {
+              self.setChordDuration(self._selection.index, ql);
+            }
+          },
+          onRespell: function () {
+            self._respellSelected();
+          },
+          onClose: function () {
+            self._clearSelection();
+          },
+        });
+      }
+      return this._toolbar;
+    },
+
+    /**
+     * Clear the current chord selection and hide the toolbar.
+     */
+    _clearSelection: function () {
+      this._selection = null;
+      if (this._toolbar) {
+        this._toolbar.hide();
+      }
+    },
+
+    /**
+     * Respell the currently selected banked chord's notes enharmonically.
+     *
+     * NOTE: Full enharmonic respell requires deeper integration with the note
+     * factory / chord model (Task 13). This is a stub that logs a TODO.
+     */
+    _respellSelected: function () {
+      // TODO(Task 13): implement single-chord enharmonic flip.
+      // The ChordalSpelling API resolves pitches from MIDI + key context, but
+      // there is no per-chord spelling override in the banked chord flow;
+      // that requires a new _spellingOverrides store analogous to _chordDurations.
+      console.log("[play-authoring] respell TODO — selection:", this._selection);
+    },
+
+    /**
+     * Attach a click handler on the canvas to hit-test against rendered stave
+     * slots and select the corresponding banked chord.
+     *
+     * Hit-test strategy (regular stave mode):
+     *   - After updateStaves(), this.staves[0] is the display stave,
+     *     this.staves[k] (k >= 1) is the treble stave for items[k-1].
+     *   - items are chords.items({ limit, reverse:true }), so items[k-1] maps
+     *     to this.chords._items[ items.length - k ] (raw bank index).
+     *   - A click at canvas-relative (cx, cy) hits stave k if:
+     *       stave.getStartX() <= cx < stave.getStartX() + stave.getWidth()
+     *       AND cy <= stave.getBottomY()  (any height from top of canvas)
+     *   - Only staves with isBanked=true are selectable (skip the novel/current slot).
+     *
+     * @private
+     */
+    _initClickHandler: function () {
+      var self = this;
+      this.el.on("click.play-authoring", function (e) {
+        // Only active in regular stave mode (not corpus mode)
+        if (window.location.search.indexOf("newvf") !== -1) return;
+
+        var canvas = self.el[0];
+        var rect = canvas.getBoundingClientRect();
+        // Canvas-relative click coordinates
+        var cx = e.clientX - rect.left;
+        var cy = e.clientY - rect.top;
+
+        var staves = self.staves;
+        if (!staves || staves.length < 2) {
+          self._clearSelection();
+          return;
+        }
+
+        // Build the items list in the same order as updateStaves
+        var limit = CHORD_BANK_SIZE;
+        var items = self.chords.items({ limit: limit, reverse: true });
+        var hitStaveIdx = -1;
+
+        for (var k = 1; k < staves.length; k++) {
+          var stave = staves[k];
+          var sx = stave.getStartX();
+          var sw = stave.getWidth ? stave.getWidth() : stave.width;
+          // Hit region: full stave column width × full canvas height
+          if (cx >= sx && cx < sx + sw) {
+            hitStaveIdx = k;
+            break;
+          }
+        }
+
+        if (hitStaveIdx < 1) {
+          self._clearSelection();
+          return;
+        }
+
+        // items[hitStaveIdx - 1] is the chord at this stave
+        var itemIdx = hitStaveIdx - 1;
+        if (itemIdx >= items.length) {
+          self._clearSelection();
+          return;
+        }
+
+        // Only allow selection of banked (not current/novel) chords
+        if (!items[itemIdx].isBanked) {
+          self._clearSelection();
+          return;
+        }
+
+        // Compute the _items index: items is the reverse of _items[0..M-1]
+        // items[0] = _items[M-1] (newest banked), items[M-1] = _items[0] (current)
+        // We want _items index = items.length - 1 - itemIdx, but _items[0] = current,
+        // so the banked index = items.length - 1 - itemIdx
+        // Verify: for M items reversed, items[0] = _items[M-1], so _items idx = M-1-itemIdx
+        var bankIndex = items.length - 1 - itemIdx;
+
+        self._selection = { kind: "chord", index: bankIndex };
+
+        // Compute page-coordinate rect for the chord column
+        var hitStave = staves[hitStaveIdx];
+        var sx2 = hitStave.getStartX();
+        var sw2 = hitStave.getWidth ? hitStave.getWidth() : hitStave.width;
+        // Bottom of bass stave: staves[k] is treble, bass is connected but
+        // not separately tracked — use canvas bottom edge as a safe fallback
+        var staveHeight = rect.height;
+        var pageRect = {
+          left:   rect.left + sx2,
+          top:    rect.top,
+          width:  sw2,
+          height: staveHeight,
+        };
+
+        var toolbar = self._getToolbar();
+        toolbar.showAt(pageRect, self.getChordDuration(bankIndex));
+      });
     },
 
     /* solution for saving data as exercise; called by render() and saved to sessionStorage */
