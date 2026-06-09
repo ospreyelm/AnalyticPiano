@@ -864,6 +864,7 @@ def save_chordal_umto_exercise(
     auto_playlist: bool = True,
     barline_offsets: Optional[list] = None,
     analysis: Optional[list] = None,
+    analyze_config: Optional[dict] = None,
 ) -> Exercise:
     """Normalize and validate incoming chords, build a Chordal UMTO exercise payload,
     validate it, save it, and backfill IDs.
@@ -943,6 +944,8 @@ def save_chordal_umto_exercise(
 
     payload["staffDistribution"] = staff_distribution
     payload["score"]["umto"]["metadata"]["staffDistribution"] = staff_distribution
+    if analyze_config is not None:
+        payload["analyzeConfig"] = analyze_config
 
     try:
         UMTO.model_validate(payload["score"]["umto"])

@@ -55,3 +55,19 @@ class AddExerciseViewChordalTests(TestCase):
         }
         resp = self._post(payload)
         self.assertEqual(resp.status_code, 400)
+
+    def test_analyze_config_slots_persist_on_exercise_data(self):
+        from apps.exercises.models import Exercise
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "analyzeConfig": {"above": "note_names", "below": "roman_numerals"},
+            "analysisSlices": [
+                {"offset": 0.0, "content": {"roman_numeral": "I"}, "is_target": True, "unit_tags": []}
+            ],
+        }
+        resp = self._post(payload)
+        self.assertEqual(resp.status_code, 201, resp.content)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        self.assertEqual(ex.data.get("analyzeConfig"), {"above": "note_names", "below": "roman_numerals"})

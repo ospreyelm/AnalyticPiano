@@ -927,6 +927,7 @@ class AddExerciseView(View):
         staff_distribution = payload.get("staffDistribution", "keyboard")
         barline_offsets = payload.get("barline_offsets") or []
         analysis_slices = payload.get("analysisSlices", [])  # [] => status "none"; non-empty => "reviewed"
+        analyze_config = payload.get("analyzeConfig")
 
         try:
             exercise = save_chordal_umto_exercise(
@@ -940,6 +941,7 @@ class AddExerciseView(View):
                 is_public=False,
                 barline_offsets=barline_offsets,
                 analysis=analysis_slices,
+                analyze_config=analyze_config,
             )
         except (NonUMTOExerciseError, ValueError, KeyError):
             return HttpResponse(status=400)
