@@ -62,9 +62,9 @@ note-value palette in the UI but persists the chosen value as a quarter-length o
   `rhythmValue: "w"`.
 - `save_chordal_umto_exercise` accepts per-chord durations and a meter instead of
   hardcoding `1.0`. **Its final-chord auto-stretch (umto_factory.py:752-758, which
-  overwrites the last chord's duration to fill the final measure) must be removed/gated**
-  — it was a flattening-era hack and directly conflicts with per-chord duration control.
-  The teacher's chosen duration stands; any bar remainder is an implicit gap (see below).
+  overwrites the last chord's duration to fill the final measure) must be removed** — it
+  was a flattening-era hack and distorts the teacher's chosen rhythm. The teacher's
+  duration stands; a partial final bar blocks Save instead (see "Bar-completeness").
 - Barlines and multi-measure layout render for free via the existing measure derivation.
 
 ### The hard part is reflow, not rendering
@@ -99,7 +99,11 @@ During initial banking none of this triggers: uniform defaults that divide the b
 chord starts a fresh bar). Straddle risk exists **only** on post-hoc duration edits,
 which constraints 2 and 3 fence off.
 
-### Remainder policy: rests are implicit offset gaps (corrected)
+### Interior remainder: rests are implicit offset gaps (corrected)
+
+This policy covers *interior* gaps only (a shortening edit between two chords). The
+*trailing* case — the progression ending mid-bar — is handled by Bar-completeness below
+(blocked, not padded).
 
 Chordal `offset` is **explicit and independent** of the previous chord's duration (it is
 not a derived cumulative sum). This is what makes "non-reflow local edits" exact:
@@ -123,6 +127,24 @@ Lengthening chord N is capped at the gap before chord N+1; growing past it would
 overlapping/non-monotonic (umto_factory.py:508-509). To grow further the teacher
 deletes/merges the next chord.
 
+### Bar-completeness: Save requires a musically valid exercise
+
+A saved exercise must be musically valid: **every bar sums exactly to `barLen`, and the
+progression ends on a barline.** Concretely, total duration must be an integer multiple
+of `barLen` (and, with the no-straddle invariant, this guarantees every bar is full —
+interior rests count toward filling their bar).
+
+- A **partial final bar blocks Save**, with specific feedback (e.g. "Last bar needs 1
+  more beat"). The teacher resolves it by adding/extending a chord or trimming — not by
+  the system stretching or padding. No auto-stretch, no trailing rest pad.
+- This gate lives at **Save (the creator action), not on the live blackboard.** Live
+  teaching stays zero-friction: the teacher can play any incomplete material; only
+  saving it *as an exercise* requires complete bars. Blocking musical invalidity is a
+  correctness gate, distinct from the metadata-prompt friction we removed.
+- Rationale: the teacher is authoring a student-facing exercise; an exercise that ends
+  mid-bar (or stretches a quarter into a whole to hide the gap) is pedagogically wrong.
+  Better to make the teacher complete it than to guess intent.
+
 ### Server-side enforcement (the picker is UX, not the guarantee)
 
 The greyed-out picker is a client convenience. Because of agent-native parity (Decision
@@ -134,6 +156,8 @@ the UI:
 - **No-overflow check.** `_build_score_data` currently absorbs an overfull measure by
   finishing it when `used > beats` (umto_factory.py:516,526). Replace that silent
   absorption with rejection of durations that overflow the bar from the chord's onset.
+- **Bar-completeness check.** Total duration must be an integer multiple of `barLen`
+  (no partial final bar). Reject otherwise. This is the server side of the Save block.
 - **Monotonic/non-overlap** is already enforced (umto_factory.py:508-509); keep it.
 
 These checks live in a shared validator applied by **both** the create/save path
@@ -256,6 +280,9 @@ This dissolves the concept's `T`/`A`/`1–4`/`R` collision worry — none are gl
 
 - A Play Save sets `umto.metadata.analysis_review_status = "reviewed"` directly. Because
   everything was editable in place, Save *is* the approval.
+- Save has a **validity precondition** (see Bar-completeness): it proceeds only when bars
+  are complete and no event straddles a barline. An invalid progression blocks Save with
+  specific feedback rather than producing a `reviewed` exercise.
 - **Remove the bounce.** Today `music_controls.js` (`onClickSaveJSON`) reads
   `reviewStatus === "generated"` + `reviewUrl` from the add response, fires a
   `window.alert`, and opens the workbench review panel in a new tab. That branch is
@@ -416,10 +443,13 @@ Defer:
 3. The duration picker greys out overflow values **and** the server rejects any
    create/save or review/update write whose chord crosses or overflows a barline; no
    saved event ever straddles a barline regardless of UI or agent origin.
-4. Shortening a chord leaves an offset gap that renders as standard rest(s) within the
-   same bar; later chords' offsets do not move; no pitchless/empty chord events are
-   emitted. The final-chord auto-stretch is gone, so the last chord keeps its chosen
-   duration.
+4. Shortening a chord *between two chords* leaves an offset gap that renders as standard
+   rest(s) within the same bar; later chords' offsets do not move; no pitchless/empty
+   chord events are emitted. The final-chord auto-stretch is gone, so the last chord
+   keeps its chosen duration.
+4a. A progression whose total duration is not an integer multiple of `barLen` (partial
+    final bar) **blocks Save** on both UI and server paths, with specific feedback; it is
+    neither stretched nor trailing-rest-padded. Completing the bar unblocks Save.
 5. Each analysis zone holds at most one type; a type only appears in zones its descriptor
    allows; selection persists in `analyzeConfig` as `{ above, below }`.
 6. Authoring keyboard accelerators fire only with a selection; with no selection, all keys
