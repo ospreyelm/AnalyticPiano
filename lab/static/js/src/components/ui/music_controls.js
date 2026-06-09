@@ -10,6 +10,7 @@ define([
   "app/widgets/analyze",
   "app/widgets/highlight",
   "app/widgets/staff_distribute",
+  "app/components/ui/target_selector",
 ], function (
   $,
   _,
@@ -21,7 +22,8 @@ define([
   KeySignatureWidget,
   AnalyzeWidget,
   HighlightWidget,
-  StaffDistributionWidget
+  StaffDistributionWidget,
+  TargetSelectorComponent
 ) {
   /**
    * Defines whether the shortcuts are enabled by default or not.
@@ -84,6 +86,11 @@ define([
 
     this.addComponent(new ModalComponent());
 
+    this.targetSelector = new TargetSelectorComponent({
+      onChoose: (payload) => this._onTargetChosen(payload),
+    });
+    this.addComponent(this.targetSelector);
+
     this.headerEl = $(settings.headerEl);
     this.containerEl = $(settings.containerEl);
 
@@ -140,6 +147,10 @@ define([
       this.renderOctaveAdjustment();
       this.renderKeyboardShortcuts();
       this.initMidiTab();
+
+      this.subscribe(EVENTS.BROADCAST.PLAY_SAVED, (data) =>
+        this.targetSelector.open(data.exerciseId)
+      );
     },
     /**
      * Initializes the controls layout.
@@ -641,6 +652,22 @@ define([
     onClickFirstExercise: function () {
       this.broadcast(EVENTS.BROADCAST.FIRSTEXERCISE);
       return true;
+    },
+    /**
+     * Receives the seam-contract payload from TargetSelectorComponent.
+     * Logs it as the durable handoff record for Threads 2/3 (assign + curriculum).
+     * v1 wires "library" only.
+     *
+     * @param {object} payload  { exerciseId, targetIntent, sectionId, autoTranspose }
+     * @return undefined
+     */
+    _onTargetChosen: function (payload) {
+      // Seam contract to Threads 2/3 (assign + curriculum). v1 wires "library" only.
+      console.log("[play-target]", JSON.stringify(payload));
+      if (payload.targetIntent === "library") {
+        if (this.feedback) this.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
+        window.open("/dashboard/exercises/" + payload.exerciseId + "/", "_blank");
+      }
     },
   });
 
