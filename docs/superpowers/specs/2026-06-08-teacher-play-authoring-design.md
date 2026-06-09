@@ -69,13 +69,43 @@ auto-derived grid removes the hole problem at the root.
   auto-stretch** (umto_factory.py:752-758) — it distorted the teacher's rhythm and is
   superseded by the metered Save gate.
 - **Barlines:** **explicit, persisted** as barline positions (quarter-length offsets,
-  snapped to chord onsets) in chordal metadata. This is a real **schema addition** — today
-  the model *derives* measures from meter+durations; the ABC model stores the teacher's
-  barlines instead. Barline offsets must coincide with chord onsets (never interior to a
-  chord), which is what keeps straddle structurally impossible.
-- **Free mode needs an optional meter.** `Metadata.meter` is currently a required string;
-  free/open mode requires it to be optional or a sentinel ("none"). Small schema
-  consideration to confirm in planning.
+  snapped to chord onsets) in chordal `Metadata`. This is a real **schema addition** —
+  today the model *derives* measures from meter+durations. Barline offsets must coincide
+  with chord onsets (never interior to a chord), which keeps straddle structurally
+  impossible.
+- **Saved render must follow the explicit barlines (contract).** Today
+  `build_chordal_umto_payload` generates `score.measures` from chords by meter accumulation
+  (umto_factory.py:553) and `_build_score_data` derives measure breaks the same way
+  (umto_factory.py:442+). This must change: **when explicit barline offsets are present,
+  `score.measures` is split at exactly those offsets**, not by meter accumulation —
+  otherwise the student/runtime render won't match what the teacher placed. Meter
+  accumulation is downgraded to the *auto-suggest* helper only.
+- **Free mode: `meter: Optional[str] = None` (decided — not a sentinel).** A `None` meter
+  is the free/open mode; sentinel `"none"` is rejected (invites string-compare bugs).
+  `Metadata.meter` becomes optional; `_meter_quarter_length` and the measure builders must
+  accept `None`. **Free-mode layout:** `score.measures` is still split at explicit
+  barlines (the same contract above); with zero barlines the whole stream is a single
+  measure with no internal barlines and no time-signature glyph. No rhythmic validation
+  runs when `meter is None`.
+
+### Duration-edit contract (no reflow)
+
+`ChordEvent.offset` is absolute. `setChordDuration(offset, quarterLength)` **preserves all
+later chords' offsets** — it never reflows the tail. Consequences:
+
+- **Shortening** leaves a gap (empty time) before the next chord.
+- **Lengthening** is capped at the next chord's onset; exceeding it is an overlap,
+  rejected by the existing monotonic/non-overlap check (umto_factory.py:508-509).
+- There is **no `setChordOffset`/move/close-gap op in v1.** To restructure, delete and
+  re-add chords. (A move op is deferred.)
+
+In **metered** mode, validity is *exact contiguous tiling*: within each bar the chords are
+contiguous (`offset[i+1] == offset[i] + duration[i]`), the first chord sits on the bar's
+start barline, and the bar's durations sum to `barLen`. This forbids gaps and overlaps
+alike — a shortened-note gap makes the bar short and **blocks Save** until the teacher
+extends/adds a chord (no auto-rest; explicit rest entry is deferred). In **free** mode a
+gap is harmless (no validation); it renders as empty time / a rest within the single
+measure.
 
 ### Server-side validity (metered mode only)
 
@@ -85,9 +115,10 @@ just in the UI. One shared validator runs on the create/save path
 workbench chordal-analysis endpoint):
 
 - **Free mode (no meter):** no rhythmic validation; any chord stream saves.
-- **Metered mode:** reject unless every inter-barline bar sums to exactly `barLen`, and
-  every barline offset coincides with a chord onset. This replaces `_build_score_data`'s
-  silent absorption of overfull measures (umto_factory.py:516,526).
+- **Metered mode:** reject unless every bar is an *exact contiguous tiling* (chords
+  contiguous, first chord on the start barline, durations sum to `barLen`) and every
+  barline offset coincides with a chord onset. This replaces `_build_score_data`'s silent
+  absorption of overfull measures (umto_factory.py:516,526).
 - **Monotonic/non-overlap** stays enforced (umto_factory.py:508-509).
 
 UI and agent paths obey the same rule because both pass through this validator.
@@ -207,6 +238,16 @@ This dissolves the concept's `T`/`A`/`1–4`/`R` collision worry — none are gl
 
 - A Play Save sets `umto.metadata.analysis_review_status = "reviewed"` directly. Because
   everything was editable in place, Save *is* the approval.
+- **Generation vs. reviewed (contract).** The factory currently auto-generates analysis
+  and stamps `generated` when slices exist (umto_factory.py:776-782). The Play path
+  **bypasses that stamping**: it persists the analysis the teacher saw and (optionally)
+  edited in place, and marks it `reviewed`. Generation may still seed initial labels
+  (live, in Play), but Save submits the in-Play analysis as the source of truth and must
+  not re-run a server generation that overwrites teacher edits. **Save is a blanket
+  approval** — it does *not* require every token to be individually accepted; the teacher
+  approves whatever is shown by saving. Completeness = every target slice has an analysis
+  value present (seeded or edited). The generate→`generated` path remains for the non-Play
+  bulk-import flow.
 - Save has a **validity precondition** (Decision a, metered mode): in free mode it always
   proceeds; with a meter set it proceeds only when every inter-barline bar sums to
   `barLen`. An invalid metered progression blocks Save with specific feedback rather than
@@ -368,10 +409,13 @@ Defer:
   suspend note-entry when a text input is focused.
 - `lab/static/js/src/components/music/chordal_spelling.js` — respell on canvas; per-key
   recompute for auto-transpose (deferred impl).
-- `apps/exercises/umto_factory.py` (`save_chordal_umto_exercise`, `_build_score_data`) —
-  accept per-chord durations + explicit barlines + optional meter; **remove the
-  final-chord auto-stretch**; replace overfull-measure absorption with the shared
-  metered-validity check.
+- `apps/exercises/umto_factory.py` (`save_chordal_umto_exercise`,
+  `build_chordal_umto_payload`, `_build_score_data`, `_meter_quarter_length`) — accept
+  per-chord durations + explicit barlines + `meter=None`; **split `score.measures` at
+  explicit barline offsets** (meter accumulation becomes the auto-suggest helper only);
+  **remove the final-chord auto-stretch**; replace overfull-measure absorption with the
+  shared metered-validity check; accept teacher-reviewed analysis and stamp `reviewed`
+  without re-generating over edits (the generate→`generated` path stays for bulk import).
 - `apps/dashboard/views/api_workbench.py` — extend the review payload schema with meter /
   duration / barline / analysis-slot fields for agent parity.
 - Reuse the workbench respell editor + figure-token picker JS from `workbench.html`
@@ -383,17 +427,24 @@ Defer:
 
 1. Banking N chords and Save produces a chordal UMTO row whose `analysis_review_status` is
    `reviewed` with no review-panel redirect and no `window.alert`.
-2. `dataForSave` round-trips each chord's chosen note value as `ChordEvent.duration`
-   (quarter-lengths) plus explicit barline offsets; the saved UMTO renders barlines where
-   the teacher placed them. (`duration_type`/`dots` are derived at render.)
-3. Free mode (no meter) saves any chord stream with no rhythmic validation. Barlines snap
-   to chord onsets; no barline can fall interior to a chord, so no event straddles one.
-4. In metered mode, Save (UI and server) is allowed only when every inter-barline bar
-   sums to exactly `barLen`; an over/under bar **blocks Save** with specific feedback
-   ("Bar 3 has 5 beats, expected 4"). No auto-stretch, no auto-rest — the final-chord
-   auto-stretch is gone and the teacher's durations stand.
+2. `dataForSave` round-trips each chord's `ChordEvent.duration` (quarter-lengths) plus
+   explicit barline offsets; saved `score.measures` is split at exactly those barline
+   offsets (not by meter accumulation), so the runtime render matches what the teacher
+   placed. (`duration_type`/`dots` are derived at render.)
+3. Free mode is `meter: None` (no sentinel): saves any chord stream with no rhythmic
+   validation; `score.measures` is one measure when no barlines are placed; no
+   time-signature glyph. Barlines snap to chord onsets; none can fall interior to a chord.
+4. In metered mode, Save (UI and server) is allowed only when every bar is an exact
+   contiguous tiling (chords contiguous, first on the start barline, durations sum to
+   `barLen`); a gap/overlap/over/under bar **blocks Save** with specific feedback ("Bar 3
+   has 5 beats, expected 4"). No auto-stretch, no auto-rest.
 4a. Setting a meter auto-suggests barlines at cumulative-sum boundaries; the teacher can
     move/add/remove them, and validity re-checks against the edited barlines.
+4b. `setChordDuration` preserves all later chords' offsets (no reflow): shortening leaves
+    a gap, lengthening is capped at the next onset (overlap rejected). UI and agent behave
+    identically. No move/close-gap op in v1.
+4c. A Play Save persists the in-Play analysis as `reviewed` without re-running server
+    generation over teacher edits; it does not require per-token acceptance.
 5. Each analysis zone holds at most one type; a type only appears in zones its descriptor
    allows; selection persists in `analyzeConfig` as `{ above, below }`.
 6. Authoring keyboard accelerators fire only with a selection; with no selection, all keys
