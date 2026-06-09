@@ -72,6 +72,17 @@ def test_metadata_round_trips_barline_offsets():
     dumped = md.model_dump(mode="json")
     again = Metadata(**dumped)
     assert again.barline_offsets == [4.0, 8.0]
+
+
+def test_voices_kind_still_requires_meter():
+    import pytest
+    with pytest.raises(Exception):
+        Metadata(**_base_metadata_kwargs(score_kind="voices", meter=None))
+
+
+def test_chordal_kind_allows_none_meter():
+    md = Metadata(**_base_metadata_kwargs(score_kind="chordal", meter=None))
+    assert md.meter is None
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -89,6 +100,18 @@ In `apps/exercises/umto.py`, change the `meter` line and add `barline_offsets` d
 ```
 
 (`Optional`, `List`, and `Field` are already imported in this module.)
+
+Then add a model validator to the `Metadata` class so `meter` stays required for
+voices-kind scores (only chordal free mode may omit it). Add at the end of the class body
+(`model_validator` is already imported — it's used by other models in this file):
+
+```python
+    @model_validator(mode="after")
+    def _meter_required_for_voices(self):
+        if self.score_kind == "voices" and not self.meter:
+            raise ValueError("meter is required for voices-kind scores")
+        return self
+```
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -248,6 +271,26 @@ def test_metered_gap_blocks():
         assert False, "expected NonUMTOExerciseError"
     except NonUMTOExerciseError:
         pass
+
+
+def test_free_mode_still_rejects_barline_not_on_onset():
+    # structural rule applies even with no meter
+    chords = [_ch(0.0, 1.0), _ch(1.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter=None, barline_offsets=[0.5])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError as exc:
+        assert "onset" in str(exc).lower()
+
+
+def test_free_mode_still_rejects_overlap():
+    # chord at 0.0 lasts a whole (4.0) but next starts at 1.0 -> overlap
+    chords = [_ch(0.0, 4.0), _ch(1.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter=None, barline_offsets=[])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError as exc:
+        assert "overlap" in str(exc).lower()
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -263,15 +306,16 @@ In `apps/exercises/umto_factory.py`, add after `_is_palette_duration`:
 def validate_chordal_rhythm(chords, meter, barline_offsets):
     """Validate chordal rhythm against the ABC-style authoring contract.
 
-    Free mode (meter is None): only the duration palette is enforced.
-    Metered mode: every bar (segments of [0] + sorted(barline_offsets) + [total])
-    must be an EXACT CONTIGUOUS TILING — chords contiguous, first chord on the bar's
-    start barline, durations summing to barLen — and every barline offset must
-    coincide with a chord onset. Raises NonUMTOExerciseError on the first violation.
+    STRUCTURAL rules apply in BOTH modes: every duration is in the palette, chords
+    do not overlap (monotonic), and every barline offset coincides with a chord onset.
+    METERED mode adds exact contiguous tiling: every bar (segments of
+    [0] + sorted(barline_offsets) + [total]) must have its chords contiguous from the
+    bar's start barline and summing to barLen. Raises NonUMTOExerciseError on the first
+    violation.
     """
     EPS = 1e-6
 
-    # Palette applies in both modes.
+    # --- Structural checks (BOTH free and metered) ---
     for c in chords:
         if not _is_palette_duration(c.get("duration")):
             raise NonUMTOExerciseError(
@@ -279,15 +323,21 @@ def validate_chordal_rhythm(chords, meter, barline_offsets):
                 f"is not in the authoring palette {sorted(CHORDAL_DURATION_PALETTE)}."
             )
 
-    if meter is None:
-        return  # free/open mode: no metric validation
-
     if not chords:
         return
 
-    bar_len = _meter_quarter_length(meter)
     ordered = sorted(chords, key=lambda c: round(float(c["offset"]), 6))
     onsets = {round(float(c["offset"]), 6) for c in ordered}
+
+    # Non-overlap / monotonic.
+    cursor = None
+    for c in ordered:
+        off = round(float(c["offset"]), 6)
+        if cursor is not None and off < cursor - EPS:
+            raise NonUMTOExerciseError(
+                f"Chord at offset {off} overlaps the previous chord (ends at {cursor})."
+            )
+        cursor = round(off + float(c["duration"]), 6)
 
     # Every explicit barline must land on a chord onset.
     for b in barline_offsets:
@@ -296,18 +346,23 @@ def validate_chordal_rhythm(chords, meter, barline_offsets):
                 f"Barline at offset {b} does not coincide with a chord onset."
             )
 
+    if meter is None:
+        return  # free/open mode: structural checks done, no metric tiling
+
+    # --- Metered exact contiguous tiling ---
+    bar_len = _meter_quarter_length(meter)
     total = round(float(ordered[-1]["offset"]) + float(ordered[-1]["duration"]), 6)
     bounds = [0.0] + sorted(round(float(b), 6) for b in barline_offsets) + [total]
 
     for bar_idx in range(len(bounds) - 1):
         start, end = bounds[bar_idx], bounds[bar_idx + 1]
-        bar_chords = [c for c in ordered
-                      if start - EPS <= round(float(c["offset"]), 6) < end - EPS]
         beats = round(end - start, 6)
         if abs(beats - bar_len) > EPS:
             raise NonUMTOExerciseError(
                 f"Bar {bar_idx + 1} spans {beats} beats, expected {bar_len}."
             )
+        bar_chords = [c for c in ordered
+                      if start - EPS <= round(float(c["offset"]), 6) < end - EPS]
         if not bar_chords:
             raise NonUMTOExerciseError(f"Bar {bar_idx + 1} is empty.")
         cursor = start
@@ -503,9 +558,42 @@ Replace with:
 
 (When `meter` is None and there are no barlines, `beats == 0.0` disables meter-accumulation finishes, yielding a single measure.)
 
+Finally, make gap rests render faithfully. A free-mode gap can be any multiple of 0.25
+(differences of palette durations), which is not always a single renderable value, so
+decompose it into palette-sized rests. Find the existing `_append_rest` helper:
+
+```python
+    def _append_rest(ql: float):
+        if ql <= 0:
+            return
+        for staff in STAVES:
+            _items(staff).append({"kind": "rest", "duration": _duration_dict(ql)})
+```
+
+Replace it with a greedy palette decomposition (largest first):
+
+```python
+    _REST_PALETTE_DESC = (4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.25)
+
+    def _append_rest(ql: float):
+        remaining = round(float(ql), 6)
+        if remaining <= 1e-6:
+            return
+        pieces = []
+        while remaining > 1e-6:
+            piece = next((p for p in _REST_PALETTE_DESC if p <= remaining + 1e-6), 0.25)
+            pieces.append(piece)
+            remaining = round(remaining - piece, 6)
+        for staff in STAVES:
+            for piece in pieces:
+                _items(staff).append({"kind": "rest", "duration": _duration_dict(piece)})
+```
+
 - [ ] **Step 4: Thread `barline_offsets` through `build_chordal_umto_payload`**
 
-In `apps/exercises/umto_factory.py`, add a parameter to `build_chordal_umto_payload` (signature starts ~line 533). Add after `meter: str,`:
+`build_chordal_umto_payload` is **keyword-only** (`def build_chordal_umto_payload(*, ...)`),
+so default/non-default ordering is unconstrained — but add the new param at the **end** of
+the parameter list (after `analysis_review_status:`) for clarity:
 
 ```python
     barline_offsets: Optional[list] = None,
@@ -639,7 +727,7 @@ Expected: FAIL — `save_chordal_umto_exercise()` got an unexpected keyword argu
 
 - [ ] **Step 3: Update the signature and body**
 
-In `apps/exercises/umto_factory.py`, change the `save_chordal_umto_exercise` signature (line 713). Change `meter: str` to `meter: Optional[str] = None` and add three params:
+In `apps/exercises/umto_factory.py`, change the `save_chordal_umto_exercise` signature (line 713). This function is **keyword-only** (`def save_chordal_umto_exercise(*, ...)`), so retyping `meter` to a default value before the required `clef`/`staff_distribution` is **legal Python** (keyword-only args have no "non-default after default" rule). Change `meter: str` to `meter: Optional[str] = None` and add `barline_offsets` and `analysis` at the **end** of the list:
 
 ```python
 def save_chordal_umto_exercise(
@@ -798,6 +886,47 @@ class ReviewEndpointRhythmTests(TestCase):
         resp = self.client.post(self._url(), data=json.dumps(body),
                                 content_type="application/json")
         assert resp.status_code == 400
+
+    def _with_analysis(self):
+        chords = [{"offset": float(i), "duration": 1.0, "visible": [60]} for i in range(8)]
+        analysis = [{"offset": 0.0, "content": {"roman_numeral": "I"},
+                     "unit_tags": [], "is_target": True}]
+        return save_chordal_umto_exercise(
+            description="t", author=self.user, chords=chords,
+            key="C major", meter="4/4", clef="keyboard",
+            staff_distribution="keyboard", barline_offsets=[4.0], analysis=analysis)
+
+    def test_meter_only_update_preserves_analysis(self):
+        ex = self._with_analysis()
+        url = f"/dashboard/api/workbench/chordal-analysis/{ex.id}/"
+        body = {"meter": "2/4", "barline_offsets": [2.0, 4.0, 6.0], "rows": []}
+        resp = self.client.post(url, data=json.dumps(body), content_type="application/json")
+        assert resp.status_code == 200, resp.content
+        ex.refresh_from_db()
+        analysis = ex.data["score"]["umto"]["analysis"]
+        assert any(a["content"].get("roman_numeral") == "I" for a in analysis)
+
+    def test_duration_only_update_preserves_analysis(self):
+        ex = self._with_analysis()
+        url = f"/dashboard/api/workbench/chordal-analysis/{ex.id}/"
+        # No content on the row -> a duration-only edit must not erase analysis
+        body = {"rows": [{"offset": 0.0, "duration": 1.0}]}
+        resp = self.client.post(url, data=json.dumps(body), content_type="application/json")
+        assert resp.status_code == 200, resp.content
+        ex.refresh_from_db()
+        analysis = ex.data["score"]["umto"]["analysis"]
+        assert any(a["content"].get("roman_numeral") == "I" for a in analysis)
+
+    def test_post_rebuilds_score_measures(self):
+        ex = self._with_analysis()
+        url = f"/dashboard/api/workbench/chordal-analysis/{ex.id}/"
+        # Re-bar 8 quarters as four 2/4 bars -> 4 measures
+        body = {"meter": "2/4", "barline_offsets": [2.0, 4.0, 6.0], "rows": []}
+        resp = self.client.post(url, data=json.dumps(body), content_type="application/json")
+        assert resp.status_code == 200, resp.content
+        ex.refresh_from_db()
+        assert len(ex.data["score"]["measures"]) == 4
+        assert ex.data["score"]["meta"]["time"] == "2/4"
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -805,53 +934,109 @@ class ReviewEndpointRhythmTests(TestCase):
 Run: `python manage.py test apps.exercises.tests.test_chordal_authoring_backend.ReviewEndpointRhythmTests -v 2`
 Expected: FAIL — endpoint ignores `meter`/`barline_offsets`/`duration` and returns 200 / does not persist them.
 
-- [ ] **Step 3: Extend the POST handler**
+- [ ] **Step 3: Rewrite the POST branch**
 
-In `apps/dashboard/views/api_workbench.py`, import the validator near the top (with the other `apps.exercises` imports):
-
-```python
-from apps.exercises.umto_factory import validate_chordal_rhythm, _is_palette_duration
-```
-
-In `api_chordal_analysis_review`, inside the POST branch, **after** `payload = json.loads(...)` and **before** the `metadata[...] = "reviewed"` write, apply duration/meter/barline updates and validate. Insert this block right after the `new_analysis` row loop completes (just before `metadata["analysis_review_status"] = "reviewed"`):
+In `apps/dashboard/views/api_workbench.py`, add imports near the top (with the other `apps.exercises` imports):
 
 ```python
-    # Apply per-row duration edits (chords is the live list mutated below).
-    for row in payload.get("rows", []):
-        if "duration" not in row:
-            continue
-        dur = row["duration"]
-        if not _is_palette_duration(dur):
-            return JsonResponse(
-                {"error": f"Duration {dur!r} is not in the authoring palette."},
-                status=400)
-        roff = round(float(row.get("offset", 0.0)), 6)
-        for chord in chords:
-            if round(float(chord.get("offset", 0.0)), 6) == roff:
-                chord["duration"] = float(dur)
-                break
-
-    # Apply meter / barline updates (None meter = free mode).
-    new_meter = payload.get("meter", metadata.get("meter"))
-    new_barlines = payload.get("barline_offsets", metadata.get("barline_offsets", []))
-
-    # Validate the resulting rhythm (raises -> 400).
-    try:
-        validate_chordal_rhythm(chords, new_meter, new_barlines or [])
-    except NonUMTOExerciseError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)
-
-    metadata["meter"] = new_meter
-    metadata["barline_offsets"] = new_barlines or []
-```
-
-Add the import for the error type if not already present (top of file, with the exercises imports):
-
-```python
+from apps.exercises.umto_factory import validate_chordal_rhythm, _is_palette_duration, _chordal_to_measures
 from apps.exercises.models import NonUMTOExerciseError
 ```
 
-Note: the existing handler already mutates `chords` and writes `umto["chords"] = chords` and `exercise.save(...)` after this block, so the duration/meter/barline mutations persist with the existing save. Confirm `metadata` is the same dict object that gets written back (it is — `metadata = umto.setdefault("metadata", {})` style reference earlier in the function).
+Replace the **entire POST branch** of `api_chordal_analysis_review` (everything from `if request.method != "POST":` through the final `return JsonResponse({...})`) with the version below. Key changes vs. the old code: analysis is **upserted onto existing slices** (so duration/meter/barline-only edits never erase it), per-row `duration` is palette-checked and applied, `meter`/`barline_offsets` are accepted, the result is validated, and `score.measures` + `meta.time` are **rebuilt**:
+
+```python
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    try:
+        payload = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    valid_offsets = {round(float(c.get("offset", 0.0)), 6) for c in chords}
+
+    # Start from EXISTING analysis so duration/meter/barline-only edits never erase it.
+    analysis_by_offset = {
+        round(float(item.get("offset", 0.0)), 6): item
+        for item in umto.get("analysis", [])
+    }
+
+    try:
+        for row in payload.get("rows", []):
+            offset = round(float(row.get("offset", 0.0)), 6)
+            if offset not in valid_offsets:
+                return JsonResponse({"error": f"Unknown chord offset: {offset}"}, status=400)
+
+            # Analysis edit: only when the row carries content.
+            if "content" in row:
+                slice_data = {
+                    "offset": offset,
+                    "content": row.get("content", {}),
+                    "unit_tags": row.get("unit_tags", []),
+                    "is_target": True,
+                }
+                analysis_by_offset[offset] = AnalysisSlice(**slice_data).model_dump(mode="json")
+
+            # Duration edit: palette-checked, applied to the matching chord.
+            if "duration" in row:
+                dur = row["duration"]
+                if not _is_palette_duration(dur):
+                    return JsonResponse(
+                        {"error": f"Duration {dur!r} is not in the authoring palette."},
+                        status=400)
+                for chord in chords:
+                    if round(float(chord.get("offset", 0.0)), 6) == offset:
+                        chord["duration"] = float(dur)
+                        break
+
+            # Spelling edit (existing behavior).
+            spelling = row.get("spelling")
+            if spelling is not None:
+                for chord in chords:
+                    if round(float(chord.get("offset", 0.0)), 6) == offset:
+                        expected = len(chord.get("visible", [])) + len(chord.get("hidden", []))
+                        if len(spelling) != expected:
+                            return JsonResponse(
+                                {"error": f"spelling length {len(spelling)} != {expected} at offset {offset}"},
+                                status=400)
+                        chord["spelling"] = spelling
+                        break
+    except (TypeError, ValueError) as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+    # Meter / barline updates (None meter = free mode); default to current metadata.
+    new_meter = payload.get("meter", metadata.get("meter"))
+    new_barlines = payload.get("barline_offsets", metadata.get("barline_offsets", [])) or []
+
+    # Validate the resulting rhythm (raises -> 400).
+    try:
+        validate_chordal_rhythm(chords, new_meter, new_barlines)
+    except NonUMTOExerciseError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+    new_analysis = [analysis_by_offset[o] for o in sorted(analysis_by_offset)]
+    review_status = "reviewed" if new_analysis else "none"
+
+    # Persist: metadata, chords, analysis, AND rebuilt measures + meta.time.
+    metadata["analysis_review_status"] = review_status
+    metadata["meter"] = new_meter
+    metadata["barline_offsets"] = new_barlines
+    umto["analysis"] = new_analysis
+    umto["chords"] = chords
+    data["analysis"] = new_analysis
+    data.setdefault("score", {}).setdefault("meta", {})["time"] = new_meter
+    data["score"]["measures"] = _chordal_to_measures(chords, new_meter, new_barlines)
+    exercise.data = data
+    exercise.save(update_fields=["data"])
+    return JsonResponse({
+        "status": "success",
+        "reviewStatus": review_status,
+        "analysis": new_analysis,
+    })
+```
+
+`metadata`, `umto`, `chords`, and `data` are the live deepcopy references bound at the top of the function (`data = _copy.deepcopy(...)`, `umto = data.get("score", {}).get("umto", {})`, etc.), so these mutations persist via the final `exercise.data = data`.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -898,9 +1083,14 @@ git commit -m "test: align existing chordal tests with ABC authoring contract"
 - `meter: Optional = None` free mode (spec Decision a, Codex item 2) → Tasks 1, 4, 5.
 - No-reflow duration semantics are a UI contract; the backend enforces only palette + tiling (gaps rejected in metered mode) → Tasks 3, 5. The `setChordDuration` offset-preservation is a **Plan 2 (UI)** concern; backend rejects the resulting invalid tiling.
 - Metered exact-tiling validity + free-mode pass (spec Decision a) → Task 3.
+- Structural rules (palette, non-overlap, barline-on-onset) apply in BOTH modes; only metric tiling is metered-only (Codex r3 item 2) → Task 3.
 - Remove final-chord auto-stretch (spec, Codex r1 item 2) → Task 5.
 - Shared validator on save + endpoint (spec, Codex r1 item 3 / r2) → Tasks 3, 5, 6.
 - Save = reviewed without regeneration; no-slot → none (spec Decision d, Codex r2 item 4) → Task 5.
 - Endpoint duration/meter/barline ops + rejection tests (spec AC10) → Task 6. (Analysis-slot persistence deferred to Plan 2.)
+- Endpoint rebuilds `score.measures` + `meta.time` so render matches edited UMTO (Codex r3 item 3) → Task 6.
+- Endpoint upserts analysis so meter/barline/duration-only edits preserve it (Codex r3 item 4) → Task 6.
+- Free-mode gaps decompose into palette rests so they render faithfully (Codex r3 item 5) → Task 4.
+- `meter` stays required for voices-kind via model validator (Codex r3 item 6) → Task 1.
 
 **Deferred to Plan 2 (in-Play UI):** the click-first authoring surface, selection-scoped shortcuts, analysis-slot UI + `analyzeConfig {above, below}` persistence, barline auto-suggest UX, `dataForSave` changes, `music_controls` Save→reviewed wiring + `feedbackService`, ABC-style render path in `exercise_sheet.js`, post-save target selector, MusicXML-onto-canvas.
