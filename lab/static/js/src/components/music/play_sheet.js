@@ -85,9 +85,10 @@ define([
 
     // Authoring state (Play teacher authoring). Default note value = quarter (1.0).
     this._chordDurations = {};   // bankIndex -> quarter-length (palette)
+    this._spellingOverrides = {}; // arrayIndex (0-based over banked chords) -> [spelling strings]
     this._barlineOffsets = [];   // quarter-length offsets, sorted/unique, on chord onsets
     this._meter = null;          // null = free/open mode
-    this._tokenOverrides = {};   // offset index -> { below: <string> } teacher analysis corrections
+    this._tokenOverrides = {};   // arrayIndex (0-based over banked chords) -> { below: <string> } teacher analysis corrections
     this._selection = null;      // { kind: "chord"|"gap", index } or null
     this._toolbar = null;        // PlayAuthoringToolbar instance (lazy)
 
@@ -742,9 +743,53 @@ define([
           onClose: function () {
             self._clearSelection();
           },
+          onSetToken: function (value) {
+            if (self._selection) {
+              self.setToken(self._selection.index, "below", value);
+            }
+          },
         });
       }
       return this._toolbar;
+    },
+
+    /**
+     * Compute the current below-zone label for the given banked chord
+     * (for pre-filling the token correction input in the toolbar).
+     * Returns the override value if set, otherwise the computed label, or
+     * null if no below-zone is active.
+     *
+     * @param {number} bankIndex  _items index (1-based) of the banked chord.
+     * @return {string|null}
+     */
+    _getCurrentTokenLabel: function (bankIndex) {
+      var slots = this._analyzeSlots();
+      if (!slots || !slots.below) return null;
+      var arrayIndex = bankIndex - 1; // 0-based
+      // Return stored override if present
+      if (this._tokenOverrides[arrayIndex] &&
+          typeof this._tokenOverrides[arrayIndex].below !== "undefined") {
+        return this._tokenOverrides[arrayIndex].below;
+      }
+      // Otherwise compute the default label
+      var chord = this.chords._items[bankIndex];
+      if (!chord) return null;
+      var obj = chord._notes;
+      var visible = Object.keys(obj)
+        .filter(function (k) { return obj[k]; })
+        .map(function (k) { return parseInt(k, 10); });
+      if (!visible.length) return null;
+      try {
+        var analyzer = new Analyze(this.keySignature);
+        if (slots.below === "thoroughbass") {
+          return analyzer.full_thoroughbass_figure(visible) || "";
+        } else {
+          var rn = analyzer.to_chord(visible, "roman only");
+          return (rn && rn.numeral) ? rn.numeral : "";
+        }
+      } catch (e) {
+        return null;
+      }
     },
 
     /**
@@ -758,17 +803,128 @@ define([
     },
 
     /**
-     * Respell the currently selected banked chord's notes enharmonically.
+     * Flip the enharmonic spelling of the currently selected banked chord and
+     * store it in _spellingOverrides so dataForSave picks it up.
      *
-     * NOTE: Full enharmonic respell requires deeper integration with the note
-     * factory / chord model (Task 13). This is a stub that logs a TODO.
+     * Algorithm: for each note in the chord, read the current spelling string
+     * (from _spellingOverrides if already overridden, else the key-aware
+     * default from ChordalSpelling/Analyze). Then apply a minimal enharmonic
+     * flip: sharp -> flat, flat -> sharp, natural -> no change. Specifically:
+     *   - alter > 0 (sharps): raise the letter step by one, apply flats
+     *     (e.g. C# -> Db, F# -> Gb, D# -> Eb)
+     *   - alter < 0 (flats): lower the letter step by one, apply sharps
+     *     (e.g. Db -> C#, Bb -> A#, Eb -> D#)
+     *   - alter == 0 (natural): leave unchanged
+     *
+     * The result is stored at arrayIndex = bankIndex - 1 (0-based), which
+     * matches the loop variable in dataForSave (i starts at 1, arrayIndex = i-1).
      */
     _respellSelected: function () {
-      // TODO(Task 13): implement single-chord enharmonic flip.
-      // The ChordalSpelling API resolves pitches from MIDI + key context, but
-      // there is no per-chord spelling override in the banked chord flow;
-      // that requires a new _spellingOverrides store analogous to _chordDurations.
-      console.log("[play-authoring] respell TODO — selection:", this._selection);
+      if (!this._selection || this._selection.kind !== "chord") return;
+      var bankIndex = this._selection.index;
+      var arrayIndex = bankIndex - 1; // 0-based, matches dataForSave notes[] index
+
+      // Get visible MIDI notes for this chord (mirror of dataForSave's "visible" derivation)
+      var chord = this.chords._items[bankIndex];
+      if (!chord) return;
+      var obj = chord._notes;
+      var visible = Object.keys(obj)
+        .filter(function (k) { return obj[k]; })
+        .map(function (k) { return parseInt(k, 10); });
+      var hidden = [];
+      try { hidden = chord._hidden_notes ? chord._hidden_notes.slice() : []; } catch (e) {}
+      var allMidis = visible.concat(hidden);
+      if (allMidis.length === 0) return;
+
+      // Determine the current spelling strings (override already stored, or recompute)
+      var currentSpellings;
+      if (this._spellingOverrides[arrayIndex] &&
+          this._spellingOverrides[arrayIndex].length === allMidis.length) {
+        currentSpellings = this._spellingOverrides[arrayIndex].slice();
+      } else {
+        // Recompute key-aware defaults (same logic as dataForSave)
+        var analyzer = new Analyze(this.keySignature);
+        currentSpellings = allMidis.map(function (m) {
+          return ChordalSpelling.vexKeyToSpellingString(analyzer.getNoteName(m, visible));
+        });
+      }
+
+      // Letter steps in order (for enharmonic flip)
+      var STEPS = ["C", "D", "E", "F", "G", "A", "B"];
+
+      // Flip each spelling string
+      var flipped = currentSpellings.map(function (str, idx) {
+        var midi = allMidis[idx];
+        var parsed = ChordalSpelling.pitchFromSpellingString(str);
+        if (!parsed) return str; // can't parse, leave unchanged
+
+        var alter = parsed.alter;
+        if (alter === 0) return str; // natural — no enharmonic equivalent at same MIDI pitch
+
+        // Compute new step and alter
+        var stepIdx = STEPS.indexOf(parsed.step.toUpperCase());
+        if (stepIdx === -1) return str;
+        var newStep, newAlter;
+        if (alter > 0) {
+          // Sharp(s) -> raise letter by one step, apply flats
+          newStep = STEPS[(stepIdx + 1) % 7];
+          newAlter = -(alter); // e.g. C# (alter=1) -> Db (alter=-1)
+        } else {
+          // Flat(s) -> lower letter by one step, apply sharps
+          newStep = STEPS[(stepIdx + 6) % 7]; // -1 mod 7
+          newAlter = -(alter); // e.g. Db (alter=-1) -> C# (alter=1)
+        }
+
+        // Recompute octave from MIDI for the new spelling
+        var pc = ((midi % 12) + 12) % 12;
+        var STEP_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+        var naturalPc = STEP_PC[newStep];
+        var octave = Math.floor(midi / 12) - 1;
+        if (pc - naturalPc > 6) octave += 1;
+        else if (naturalPc - pc > 6) octave -= 1;
+
+        // Build accidental suffix string
+        var acc = "";
+        var i;
+        if (newAlter > 0) {
+          for (i = 0; i < newAlter; i++) acc += "#";
+        } else if (newAlter < 0) {
+          for (i = 0; i < -newAlter; i++) acc += "b";
+        }
+
+        return newStep + acc + octave;
+      });
+
+      // Only store if lengths match (guard against backend spelling-length rejection)
+      if (flipped.length !== allMidis.length) return;
+      this._spellingOverrides[arrayIndex] = flipped;
+      console.log("[play-authoring] respell bankIndex=" + bankIndex +
+        " arrayIndex=" + arrayIndex + " ->", flipped);
+      this.render();
+    },
+
+    /**
+     * Store a teacher-override for the below-zone token (Roman numeral /
+     * figured bass label) for the given bankIndex.
+     *
+     * Keying: arrayIndex = bankIndex - 1 (0-based over banked chords).
+     * This matches dataForSave's loop (i starts at 1; notes[i-1] = chord at
+     * bankIndex i) and buildAnalysisSlices's iteration over offsets[i] which
+     * also uses 0-based indexing over banked chords.
+     *
+     * @param {number} bankIndex  _items index of the selected banked chord (1-based).
+     * @param {string} zone       Which zone to override — "below" is the only
+     *   supported zone currently (Roman numeral or figured bass depending on
+     *   analyzeConfig.slots.below).
+     * @param {string} value      The override label (plain text, e.g. "V7", "I6").
+     */
+    setToken: function (bankIndex, zone, value) {
+      var arrayIndex = bankIndex - 1; // 0-based over banked chords (matches dataForSave)
+      this._tokenOverrides[arrayIndex] = this._tokenOverrides[arrayIndex] || {};
+      this._tokenOverrides[arrayIndex][zone] = value;
+      console.log("[play-authoring] setToken bankIndex=" + bankIndex +
+        " arrayIndex=" + arrayIndex + " zone=" + zone + " value=" + value);
+      this.render();
     },
 
     /**
@@ -863,7 +1019,8 @@ define([
         };
 
         var toolbar = self._getToolbar();
-        toolbar.showAt(pageRect, self.getChordDuration(bankIndex));
+        var currentToken = self._getCurrentTokenLabel(bankIndex);
+        toolbar.showAt(pageRect, self.getChordDuration(bankIndex), currentToken);
       });
     },
 
@@ -883,8 +1040,14 @@ define([
         var hidden = [];
         var unison_idx = null;
         try { unison_idx = this.chords._items[i]._unison_idx; } catch (e) {}
-        var spelling = visible.concat(hidden).map((m) =>
+        var allMidisForSpell = visible.concat(hidden);
+        var spelling = allMidisForSpell.map((m) =>
           ChordalSpelling.vexKeyToSpellingString(analyzer.getNoteName(m, visible)));
+        var arrayIndex = i - 1; // 0-based over banked chords (matches _spellingOverrides / _tokenOverrides keys)
+        if (this._spellingOverrides[arrayIndex] &&
+            this._spellingOverrides[arrayIndex].length === allMidisForSpell.length) {
+          spelling = this._spellingOverrides[arrayIndex];
+        }
         notes.push({ visible: visible, hidden: hidden, spelling: spelling, unison_idx: unison_idx });
         durations.push(this.getChordDuration(i));
       }
