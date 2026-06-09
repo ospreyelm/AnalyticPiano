@@ -74,6 +74,104 @@ _QL_TO_DURATION = {
     0.125: ("32", 0),
 }
 
+# Authoring palette: the closed set of note values the teacher may assign in Play.
+# A subset of _QL_TO_DURATION (which also renders 0.375/0.125); tuplets are deferred.
+CHORDAL_DURATION_PALETTE = {4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.25}
+
+
+def _is_palette_duration(ql: float) -> bool:
+    try:
+        return round(float(ql), 6) in CHORDAL_DURATION_PALETTE
+    except (TypeError, ValueError):
+        return False
+
+
+def validate_chordal_rhythm(chords, meter, barline_offsets):
+    """Validate chordal rhythm against the ABC-style authoring contract.
+
+    STRUCTURAL rules apply in BOTH modes: every duration is in the palette, chords
+    do not overlap (monotonic), and every barline offset coincides with a chord onset.
+    METERED mode adds exact contiguous tiling: every bar (segments of
+    [0] + sorted(barline_offsets) + [total]) must have its chords contiguous from the
+    bar's start barline and summing to barLen. Raises NonUMTOExerciseError on the first
+    violation.
+    """
+    EPS = 1e-6
+
+    # --- Structural checks (BOTH free and metered) ---
+    for c in chords:
+        if not _is_palette_duration(c.get("duration")):
+            raise NonUMTOExerciseError(
+                f"Duration {c.get('duration')!r} at offset {c.get('offset')} "
+                f"is not in the authoring palette {sorted(CHORDAL_DURATION_PALETTE)}."
+            )
+
+    if not chords:
+        return
+
+    ordered = sorted(chords, key=lambda c: round(float(c["offset"]), 6))
+    onsets = {round(float(c["offset"]), 6) for c in ordered}
+
+    # Non-overlap / monotonic.
+    cursor = None
+    for c in ordered:
+        off = round(float(c["offset"]), 6)
+        if cursor is not None and off < cursor - EPS:
+            raise NonUMTOExerciseError(
+                f"Chord at offset {off} overlaps the previous chord (ends at {cursor})."
+            )
+        cursor = round(off + float(c["duration"]), 6)
+
+    # Barlines: must be unique, strictly between 0 and the stream end, and on a chord onset.
+    total = round(float(ordered[-1]["offset"]) + float(ordered[-1]["duration"]), 6)
+    seen_barlines = set()
+    for b in barline_offsets:
+        rb = round(float(b), 6)
+        if rb <= 0.0 or rb >= total:
+            raise NonUMTOExerciseError(
+                f"Barline at offset {b} must be > 0 and < the stream end ({total})."
+            )
+        if rb in seen_barlines:
+            raise NonUMTOExerciseError(f"Duplicate barline at offset {b}.")
+        seen_barlines.add(rb)
+        if rb not in onsets:
+            raise NonUMTOExerciseError(
+                f"Barline at offset {b} does not coincide with a chord onset."
+            )
+
+    if meter is None:
+        return  # free/open mode: structural checks done, no metric tiling
+
+    # --- Metered exact contiguous tiling ---
+    bar_len = _meter_quarter_length(meter)
+    bounds = [0.0] + sorted(round(float(b), 6) for b in barline_offsets) + [total]
+
+    for bar_idx in range(len(bounds) - 1):
+        start, end = bounds[bar_idx], bounds[bar_idx + 1]
+        beats = round(end - start, 6)
+        if abs(beats - bar_len) > EPS:
+            raise NonUMTOExerciseError(
+                f"Bar {bar_idx + 1} spans {beats} beats, expected {bar_len}."
+            )
+        bar_chords = [c for c in ordered
+                      if start - EPS <= round(float(c["offset"]), 6) < end - EPS]
+        if not bar_chords:
+            raise NonUMTOExerciseError(f"Bar {bar_idx + 1} is empty.")
+        cursor = start
+        for c in bar_chords:
+            off = round(float(c["offset"]), 6)
+            if abs(off - cursor) > EPS:
+                raise NonUMTOExerciseError(
+                    f"Bar {bar_idx + 1} has a gap/overlap at offset {off} "
+                    f"(expected a chord at {round(cursor, 6)})."
+                )
+            cursor = round(cursor + float(c["duration"]), 6)
+        if abs(cursor - end) > EPS:
+            filled = round(cursor - start, 6)
+            raise NonUMTOExerciseError(
+                f"Bar {bar_idx + 1} has {filled} beats, expected {bar_len}."
+            )
+
 
 def _ql_to_dur_type(ql: float) -> str:
     return _QL_TO_DURATION.get(round(ql, 6), ("q", 0))[0]
@@ -434,7 +532,7 @@ def _duration_dict(ql: float) -> dict:
 _KEYBOARD_SPLIT_MIDI = 60
 
 
-def _chordal_to_measures(chords: list, meter: str) -> list:
+def _chordal_to_measures(chords: list, meter, barline_offsets=None) -> list:
     """Generate minimal CIR measures from chordal chords[] (spike 5a, W1).
 
     Each chord is split across treble + bass staves by register (keyboard style):
@@ -442,7 +540,7 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
     aligned — every onset places a chord/note/rest on each staff so durations
     match. Measures break when accumulated quarter-length reaches the meter's
     beats-per-measure."""
-    beats = _meter_quarter_length(meter)
+    beats = _meter_quarter_length(meter) if meter else 0.0
     STAVES = ("treble", "bass")
 
     def _new_measure():
@@ -461,11 +559,20 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
         current = _new_measure()
         used = 0.0
 
+    _REST_PALETTE_DESC = (4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.25)
+
     def _append_rest(ql: float):
-        if ql <= 0:
+        remaining = round(float(ql), 6)
+        if remaining <= 1e-6:
             return
+        pieces = []
+        while remaining > 1e-6:
+            piece = next((p for p in _REST_PALETTE_DESC if p <= remaining + 1e-6), min(0.25, remaining))
+            pieces.append(piece)
+            remaining = round(remaining - piece, 6)
         for staff in STAVES:
-            _items(staff).append({"kind": "rest", "duration": _duration_dict(ql)})
+            for piece in pieces:
+                _items(staff).append({"kind": "rest", "duration": _duration_dict(piece)})
 
     def _chord_spell_map(c):
         spelling = c.get("spelling") or []
@@ -503,28 +610,56 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
     current = _new_measure()
     used = 0.0
     cursor = 0.0
+
+    if barline_offsets:
+        split_points = sorted(round(float(b), 6) for b in barline_offsets)
+    else:
+        split_points = []
+    next_split = 0
+
     for c in sorted(chords, key=lambda item: float(item.get("offset", 0.0))):
         offset = float(c.get("offset", cursor))
         if offset < cursor - 1e-6:
             raise ValueError("Chord offsets must be non-overlapping and monotonic")
 
         while cursor < offset - 1e-6:
-            gap = min(offset - cursor, beats - used)
+            limit = offset
+            if split_points and next_split < len(split_points):
+                limit = min(limit, split_points[next_split])
+            if not split_points and beats:
+                limit = min(limit, cursor + (beats - used))
+            gap = limit - cursor
+            if gap <= 1e-6:
+                gap = offset - cursor
             _append_rest(gap)
             used += gap
-            cursor += gap
-            if abs(used - beats) < 1e-6 or used > beats:
+            cursor = round(cursor + gap, 6)
+            if split_points:
+                if next_split < len(split_points) and abs(cursor - split_points[next_split]) < 1e-6:
+                    _finish_measure()
+                    next_split += 1
+            elif beats and (abs(used - beats) < 1e-6 or used > beats):
                 _finish_measure()
 
-        if abs(used - beats) < 1e-6:
+        if split_points and next_split < len(split_points) \
+                and abs(cursor - split_points[next_split]) < 1e-6:
+            _finish_measure()
+            next_split += 1
+        elif not split_points and beats and abs(used - beats) < 1e-6:
             _finish_measure()
 
         dur = float(c["duration"])
         _append_chord_item(c)
         used += dur
-        cursor = offset + dur
-        if abs(used - beats) < 1e-6 or used > beats:
+        cursor = round(offset + dur, 6)
+
+        if split_points:
+            if next_split < len(split_points) and abs(cursor - split_points[next_split]) < 1e-6:
+                _finish_measure()
+                next_split += 1
+        elif beats and (abs(used - beats) < 1e-6 or used > beats):
             _finish_measure()
+
     if _any_items():
         measures.append(current)
     return measures
@@ -544,6 +679,7 @@ def build_chordal_umto_payload(
     unit: Optional[int] = None,
     input_mode: Literal["dropdown", "text"] = "dropdown",
     analysis_review_status: Literal["none", "generated", "reviewed"] = "none",
+    barline_offsets: Optional[list] = None,
 ) -> dict:
     """Build a UMTO frontend payload for a chordal score-kind exercise.
 
@@ -567,6 +703,7 @@ def build_chordal_umto_payload(
             unit=unit,
             score_kind="chordal",
             analysis_review_status=analysis_review_status,
+            barline_offsets=barline_offsets or [],
         ),
         chords=[ChordEvent(**c) for c in chords],
         analysis=[AnalysisSlice(**a) for a in analysis],
@@ -583,7 +720,7 @@ def build_chordal_umto_payload(
         "complexity_score": complexity_score,
         "score": {
             "meta": {"key": key, "time": meter, "clef": clef},
-            "measures": _chordal_to_measures(chords, meter),
+            "measures": _chordal_to_measures(chords, meter, barline_offsets or []),
             "umto": umto_json,
         },
         "analysis": umto_json["analysis"],
@@ -716,7 +853,7 @@ def save_chordal_umto_exercise(
     author,
     chords: list,
     key: str,
-    meter: str,
+    meter: Optional[str] = None,
     clef: str,
     staff_distribution: str,
     source: str = "Play view chordal exercise",
@@ -725,11 +862,13 @@ def save_chordal_umto_exercise(
     is_public: bool = False,
     overwrite: bool = False,
     auto_playlist: bool = True,
+    barline_offsets: Optional[list] = None,
+    analysis: Optional[list] = None,
 ) -> Exercise:
     """Normalize and validate incoming chords, build a Chordal UMTO exercise payload,
     validate it, save it, and backfill IDs.
     """
-    beats_per_measure = _meter_quarter_length(meter)
+    beats_per_measure = _meter_quarter_length(meter) if meter else 0.0
     normalized_chords = []
     offset = 0.0
     for idx, c in enumerate(chords):
@@ -749,14 +888,6 @@ def save_chordal_umto_exercise(
         dur = float(c.get("duration", 1.0))
         off = float(c.get("offset", offset))
 
-        # Adjust final chord's duration to fill the remainder of the final measure
-        if idx == len(chords) - 1:
-            remaining = beats_per_measure - (off % beats_per_measure)
-            if abs(remaining) < 1e-5:
-                dur = beats_per_measure
-            else:
-                dur = remaining
-
         spelling = None
         if isinstance(c, dict) and c.get("spelling"):
             candidate = list(c.get("spelling"))
@@ -773,15 +904,23 @@ def save_chordal_umto_exercise(
         normalized_chords.append(chord_dict)
         offset = off + dur
 
-    analysis_slices = []
-    review_status = "none"
-    try:
-        from apps.exercises.utils.umto_import_router import build_chordal_analysis_slices
-        analysis_slices = build_chordal_analysis_slices(normalized_chords, harmony_key=key)
-        if analysis_slices:
-            review_status = "generated"
-    except Exception as e:
-        print(f"Warning: HarmonyLab analysis generation failed: {e}")
+    validate_chordal_rhythm(normalized_chords, meter, barline_offsets or [])
+
+    if analysis is not None:
+        # Teacher-reviewed (Play) path: use supplied analysis verbatim.
+        analysis_slices = analysis
+        review_status = "reviewed" if analysis else "none"
+    else:
+        # Non-Play path (bulk import): auto-generate and mark generated.
+        analysis_slices = []
+        review_status = "none"
+        try:
+            from apps.exercises.utils.umto_import_router import build_chordal_analysis_slices
+            analysis_slices = build_chordal_analysis_slices(normalized_chords, harmony_key=key)
+            if analysis_slices:
+                review_status = "generated"
+        except Exception as e:
+            print(f"Warning: HarmonyLab analysis generation failed: {e}")
 
     try:
         payload = build_chordal_umto_payload(
@@ -797,6 +936,7 @@ def save_chordal_umto_exercise(
             unit=None,
             input_mode="dropdown",
             analysis_review_status=review_status,
+            barline_offsets=barline_offsets or [],
         )
     except Exception as e:
         raise NonUMTOExerciseError(f"Failed to build chordal UMTO payload: {e}") from e

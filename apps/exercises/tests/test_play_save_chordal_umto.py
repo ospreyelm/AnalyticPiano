@@ -34,8 +34,8 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.client.login(email="teacher@example.com", password="pw")
         payload = {
             "chord": [
-                {"visible": [60, 64, 67], "hidden": [48], "rhythmValue": "w"},
-                {"visible": [62, 65, 69], "hidden": [], "rhythmValue": "w"},
+                {"visible": [60, 64, 67], "hidden": [48], "duration": 1.0},
+                {"visible": [62, 65, 69], "hidden": [], "duration": 2.0},
             ],
             "key": "jG_",
             "meter": "3/4",
@@ -147,7 +147,7 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         payload = {
             "key": "jF_", "meter": "4/4", "staffDistribution": "keyboard",
             "chord": [
-                {"visible": [70, 74, 77], "hidden": [], "rhythmValue": "w",
+                {"visible": [70, 74, 77], "hidden": [], "duration": 4.0,
                  "spelling": ["Bb4", "D5", "F5"]},
             ],
         }
@@ -160,7 +160,7 @@ class PlayViewSaveChordalUMTOTests(TestCase):
     def test_save_returns_review_status_and_url(self):
         self.client.login(email="teacher@example.com", password="pw")
         payload = {"key": "jC_", "meter": "4/4", "staffDistribution": "keyboard",
-                   "chord": [{"visible": [60, 64, 67], "hidden": [], "rhythmValue": "w"}]}
+                   "chord": [{"visible": [60, 64, 67], "hidden": [], "duration": 4.0}]}
         # match the login pattern the other tests use
         resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
         self.assertEqual(resp.status_code, 201)
@@ -173,7 +173,7 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         payload = {
             "key": "jF_", "meter": "4/4", "staffDistribution": "keyboard",
             "chord": [
-                {"visible": [70, 74, 77], "hidden": [], "rhythmValue": "w",
+                {"visible": [70, 74, 77], "hidden": [], "duration": 4.0,
                  "spelling": ["Bb4"]},  # wrong length (1 != 3)
             ],
         }
@@ -182,3 +182,36 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         ex = Exercise.objects.get(id=resp.json()["id"])
         chords = ex.data["score"]["umto"]["chords"]
         self.assertIsNone(chords[0].get("spelling"))
+
+    def test_missing_meter_key_defaults_to_free_mode(self):
+        """Test that omitting 'meter' key results in free/open mode (meter=None).
+
+        This ensures the play-save endpoint accepts legacy posts that don't include
+        a meter, saving them as free mode without metric validation. The payload has
+        3 quarter-beats which would be invalid under 4/4 metered validation, but is
+        valid in free mode."""
+        self.client.login(email="teacher@example.com", password="pw")
+        payload = {
+            # Note: NO "meter" key at all
+            "key": "jC_",
+            "staffDistribution": "keyboard",
+            "chord": [
+                {"visible": [60], "hidden": [], "duration": 1.0},
+                {"visible": [62], "hidden": [], "duration": 1.0},
+                {"visible": [64], "hidden": [], "duration": 1.0},
+            ],
+        }
+        response = self.client.post(self.add_url, {"data": json.dumps(payload)})
+        self.assertEqual(response.status_code, 201)
+        res_data = response.json()
+        self.assertIn("id", res_data)
+
+        # Retrieve and verify exercise
+        ex = Exercise.objects.get(id=res_data["id"])
+        self.assertEqual(ex.authored_by, self.user)
+        self.assertFalse(ex.is_public)
+
+        # Verify metadata has meter set to None (free/open mode)
+        score = ex.data["score"]
+        umto_meta = score["umto"]["metadata"]
+        self.assertIsNone(umto_meta.get("meter"))
