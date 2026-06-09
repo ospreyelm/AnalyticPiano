@@ -12,6 +12,7 @@ define([
   "app/components/input/note_name",
   "app/components/ui/main_menu",
   "app/components/ui/music_controls",
+  "app/components/feedback_service",
   "app/models/chord_bank",
   "app/models/key_signature",
   "app/models/midi_device",
@@ -29,6 +30,7 @@ define([
   NoteNameInputComponent,
   MainMenuComponent,
   MusicControlsComponent,
+  FeedbackService,
   ChordBank,
   KeySignature,
   MidiDevice
@@ -112,11 +114,16 @@ define([
         this.addComponent(c);
       },
       function () {
+        var feedback = new FeedbackService({ exerciseContext: null });
+        feedback.init(this);
+        this.addComponent(feedback);
+
         var c = new MusicControlsComponent({
           headerEl: "#header",
           containerEl: "#mainmenu",
           keySignature: this.models.keySignature,
           midiDevice: this.models.midiDevice,
+          feedback: feedback,
         });
         c.init(this);
         this.addComponent(c);

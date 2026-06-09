@@ -74,6 +74,7 @@ define([
     }
     this.keySignature = settings.keySignature;
     this.midiDevice = settings.midiDevice;
+    this.feedback = settings.feedback || null;
 
     if (settings.exerciseContext) {
       this.exerciseContext = settings.exerciseContext;
@@ -557,30 +558,24 @@ define([
           url: window.location.origin + "/exercises/add/",
           data: { data: json_data },
           dataType: "json",
-          success: function (data) {
-            let exerciseID = data.id;
-            let reviewUrl = data.reviewUrl;
-            let needsReview = data.reviewStatus === "generated";
-            if (!quiet) {
-              if (needsReview && reviewUrl) {
-                window.alert(
-                  `Exercise saved (ID: ${exerciseID}). Opening analysis review so you can approve or correct it.`
-                );
-                window.open(reviewUrl, "_blank");
-              } else {
-                window.alert(
-                  `Exercise uploaded! Exercise ID: ${exerciseID}. Taking you to the new exercise now.`
-                );
-                window.open(`/dashboard/exercises/${exerciseID}/`, "_blank");
-              }
-            } else {
-              window.alert(
-                `Exercise uploaded! Exercise ID: ${exerciseID}.`
-              );
+          success: (data) => {
+            const exerciseID = data.id;
+            if (this.feedback) {
+              this.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
             }
+            this.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
+              exerciseId: exerciseID,
+              reviewStatus: data.reviewStatus,
+            });
           },
-          error: function (error) {
-            console.log(error);
+          error: (xhr) => {
+            console.log(xhr);
+            if (this.feedback) {
+              this.feedback.emit("play.save.invalid_meter", {
+                inlineEl: "#save-feedback",
+                params: { bar: "?", beats: "?", expected: "?" },
+              });
+            }
           },
         });
       } else {
