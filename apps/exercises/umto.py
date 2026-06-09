@@ -124,7 +124,8 @@ class Metadata(BaseModel):
     exercise_id: str
     source: str # e.g. "Bach Chorale BWV 269", "Sonata K.331"
     key: str # e.g. "G Major", "c minor"
-    meter: str # e.g. "4/4", "3/4"
+    meter: Optional[str] = None # e.g. "4/4", "3/4"; None = free/open (no time signature)
+    barline_offsets: List[float] = Field(default_factory=list)  # explicit chordal barlines (quarter-lengths, on chord onsets, excludes 0.0 and stream end)
     clef: str = "treble" # "treble", "bass", "alto", "tenor"
     complexity_score: int = Field(ge=1, le=20, description="Curriculum unit ranking (1-20)")
     mode: InteractionMode = InteractionMode.PLAYBACK
@@ -141,6 +142,12 @@ class Metadata(BaseModel):
     chord_settle_ms: int = 150
     release_grace_ms: int = 120
     max_voice_displacement: int = 4
+
+    @model_validator(mode="after")
+    def _meter_required_for_voices(self):
+        if self.score_kind == "voices" and not self.meter:
+            raise ValueError("meter is required for voices-kind scores")
+        return self
 
 class UMTO(BaseModel):
     """
