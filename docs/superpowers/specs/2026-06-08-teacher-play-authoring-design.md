@@ -43,13 +43,28 @@ Play does wrong is `dataForSave()` discarding rhythm (`rhythmValue: "w"`), after
 So the v1 question is narrow: make the authoring slot model duration-aware and let the
 teacher set note values, while keeping the blackboard frictionless.
 
+### Canonical rhythm payload (corrected)
+
+The chordal model `ChordEvent` carries only `offset`, `duration` (quarter-lengths),
+`visible`, `hidden`, `spelling` — **not** `duration_type`/`dots` (those live on the
+voices-kind `VoiceEvent`). So the canonical chordal rhythm payload is **`duration` as a
+quarter-length float**; `duration_type`/`dots` are *derived at render* by the
+chordal→measures conversion, never stored on the chord. The slot model exposes a
+note-value palette in the UI but persists the chosen value as a quarter-length on
+`ChordEvent.duration`. No schema change to `ChordEvent` is required.
+
 ### What ships
 
-- Each banked chord is a slot carrying `duration` / `duration_type` / `dots`. The score
-  carries `meter` (default `4/4`, set once at the top of the canvas).
-- `dataForSave()` stops flattening: it serializes each chord's chosen duration.
+- Each banked chord persists its chosen note value as `ChordEvent.duration`
+  (quarter-lengths). The score carries `meter` (default `4/4`, set once at the top of the
+  canvas).
+- `dataForSave()` stops flattening: it serializes each chord's chosen duration instead of
+  `rhythmValue: "w"`.
 - `save_chordal_umto_exercise` accepts per-chord durations and a meter instead of
-  hardcoding `1.0`.
+  hardcoding `1.0`. **Its final-chord auto-stretch (umto_factory.py:752-758, which
+  overwrites the last chord's duration to fill the final measure) must be removed/gated**
+  — it was a flattening-era hack and directly conflicts with per-chord duration control.
+  The teacher's chosen duration stands; any bar remainder is an implicit gap (see below).
 - Barlines and multi-measure layout render for free via the existing measure derivation.
 
 ### The hard part is reflow, not rendering
@@ -84,19 +99,47 @@ During initial banking none of this triggers: uniform defaults that divide the b
 chord starts a fresh bar). Straddle risk exists **only** on post-hoc duration edits,
 which constraints 2 and 3 fence off.
 
-### Remainder policy: auto-pad with a rest
+### Remainder policy: rests are implicit offset gaps (corrected)
 
-When a shortening edit leaves unfilled time in a bar, the freed span auto-fills with a
-rest:
+Chordal `offset` is **explicit and independent** of the previous chord's duration (it is
+not a derived cumulative sum). This is what makes "non-reflow local edits" exact:
+changing chord N's `duration` changes no chord's `offset`. A shortening edit leaves
+`offset[N+1] > offset[N] + duration[N]` — a gap — and the existing chordal→measures
+derivation already fills offset gaps with rests (`_build_score_data` `_append_rest`,
+umto_factory.py:511-515). So:
 
-- The model already supports `kind: "rest"`; `_to_legacy_measures` already renders rest
-  items. No new rendering engine.
-- Onsets stay stable (non-reflow), so no downstream straddle.
-- The freed span is always within a single bar (guaranteed by the invariant), so it is
-  decomposed greedily into standard rest values (e.g. 3 free beats in 4/4 → dotted-half
-  rest; otherwise a short greedy sequence of standard rests).
-- Result: a teacher shortens a note and the bar simply shows a rest. The blackboard
-  stays frictionless; no "you must fill the bar" gate.
+- **Rests are implicit gaps between chord offsets**, not stored `kind: "rest"` chord
+  events (the chordal schema has no rest event; `_append_rest` synthesizes them during
+  render). Do **not** emit empty/pitchless chords — `save_chordal_umto_exercise` rejects
+  them (umto_factory.py:746).
+- Onsets stay stable (offsets are explicit), so no downstream straddle.
+- The gap is always within a single bar (guaranteed by the invariant), so the derivation
+  renders it as one or a short greedy sequence of standard rests.
+- Result: a teacher shortens a note and the bar simply shows a rest, with no schema
+  change and no "you must fill the bar" gate. The blackboard stays frictionless.
+
+Lengthening chord N is capped at the gap before chord N+1; growing past it would make
+`offset[N+1] < offset[N]+duration[N]`, which the derivation already rejects as
+overlapping/non-monotonic (umto_factory.py:508-509). To grow further the teacher
+deletes/merges the next chord.
+
+### Server-side enforcement (the picker is UX, not the guarantee)
+
+The greyed-out picker is a client convenience. Because of agent-native parity (Decision
+e), the invariant must be enforced **on the server**, on every write path, not only in
+the UI:
+
+- **No-straddle check.** For each chord, `floor(offset / barLen)` must equal
+  `floor((offset + duration - ε) / barLen)`. Reject any chord that crosses a barline.
+- **No-overflow check.** `_build_score_data` currently absorbs an overfull measure by
+  finishing it when `used > beats` (umto_factory.py:516,526). Replace that silent
+  absorption with rejection of durations that overflow the bar from the chord's onset.
+- **Monotonic/non-overlap** is already enforced (umto_factory.py:508-509); keep it.
+
+These checks live in a shared validator applied by **both** the create/save path
+(`save_chordal_umto_exercise` / `/exercises/add/`) and the review/update path (the
+workbench chordal-analysis endpoint). UI and agent paths obey the same invariant because
+they pass through the same server validation.
 
 ### Legacy precedent: trust, not enforcement
 
@@ -251,6 +294,14 @@ The operation set — not the widget set — is the contract. Duration, meter, a
 slot operations are added to the review payload schema so an agent has full parity with
 the new authoring controls.
 
+**Endpoint gap (must close before parity is real).** The current workbench
+chordal-analysis POST handler (`api_workbench.py`) updates only analysis `content` and
+spelling — it cannot set `duration`, `meter`, or analysis-slot zones. The implementation
+plan must include a schema-extension step for this endpoint covering the new ops, plus
+tests for: invalid offset (no matching chord), invalid duration value (outside palette),
+and barline overflow / straddle rejection. The same shared validator from "Server-side
+enforcement" backs these tests.
+
 ---
 
 ## Zero-friction blackboard: quiet until invoked
@@ -300,16 +351,24 @@ the canvas. (Full import-onto-canvas wiring may phase after the core authoring l
 
 ## v1 cut (sequencing)
 
-Ship:
+The core loop ships first; import and the post-save seam phase behind it (no hard product
+reason to ship them together — splitting reduces v1 risk).
+
+**Phase A — core authoring/review/duration loop:**
 
 1. Re-home review/override/respell into Play with **live notation preview** (free — Play
    already has the VexFlow renderer). Save → `reviewed`.
 2. On-canvas click targets: respell, Roman-numeral correction (with figure picker),
    analysis-zone selection (the slot model), per-chord duration with the constraint model.
-3. Duration-aware `dataForSave` / `save_chordal_umto_exercise`; meter; barlines; auto-rest
-   padding.
-4. MusicXML import onto the same canvas.
-5. Post-save target-selector stub (library default) + auto-transpose toggle (contract
+3. Duration-aware `dataForSave` / `save_chordal_umto_exercise` (remove final-chord
+   auto-stretch); meter; barlines; rests-as-implicit-gaps.
+4. Shared server-side invariant validator on create/save **and** review/update paths;
+   review-endpoint schema extension for duration/meter/analysis-slot ops + tests.
+
+**Phase B — seam + import (after Phase A lands):**
+
+5. MusicXML import onto the same canvas.
+6. Post-save target-selector stub (library default) + auto-transpose toggle (contract
    only).
 
 Defer:
@@ -351,12 +410,16 @@ Defer:
 
 1. Banking N chords and Save produces a chordal UMTO row whose `analysis_review_status` is
    `reviewed` with no review-panel redirect and no `window.alert`.
-2. `dataForSave` round-trips each chord's chosen `duration_type`/`dots` and the score
-   `meter`; the saved UMTO renders correct barlines.
-3. The duration picker greys out any value that would overflow the current bar; no saved
-   event ever crosses a barline.
-4. Shortening a chord auto-pads the freed span with standard rest(s) within the same bar;
-   later chords' onsets do not move.
+2. `dataForSave` round-trips each chord's chosen note value as `ChordEvent.duration`
+   (quarter-lengths) plus the score `meter`; the saved UMTO renders correct barlines.
+   (`duration_type`/`dots` are derived at render, not stored on the chord.)
+3. The duration picker greys out overflow values **and** the server rejects any
+   create/save or review/update write whose chord crosses or overflows a barline; no
+   saved event ever straddles a barline regardless of UI or agent origin.
+4. Shortening a chord leaves an offset gap that renders as standard rest(s) within the
+   same bar; later chords' offsets do not move; no pitchless/empty chord events are
+   emitted. The final-chord auto-stretch is gone, so the last chord keeps its chosen
+   duration.
 5. Each analysis zone holds at most one type; a type only appears in zones its descriptor
    allows; selection persists in `analyzeConfig` as `{ above, below }`.
 6. Authoring keyboard accelerators fire only with a selection; with no selection, all keys
@@ -366,7 +429,10 @@ Defer:
 8. The live blackboard with no interaction shows no authoring chrome and behaves as today.
 9. Save surfaces the post-save target selector; choosing `library` files the reviewed
    exercise; the seam contract `{ exerciseId, targetIntent, sectionId?, autoTranspose }`
-   is emitted.
+   is emitted. (Phase B.)
+10. The review/update endpoint accepts duration, meter, and analysis-slot ops; it rejects
+    invalid offsets (no matching chord), out-of-palette durations, and barline
+    overflow/straddle, with tests covering each rejection.
 
 ## Non-goals
 
