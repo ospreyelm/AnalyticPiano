@@ -34,8 +34,8 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.client.login(email="teacher@example.com", password="pw")
         payload = {
             "chord": [
-                {"visible": [60, 64, 67], "hidden": [48], "rhythmValue": "w"},
-                {"visible": [62, 65, 69], "hidden": [], "rhythmValue": "w"},
+                {"visible": [60, 64, 67], "hidden": [48], "duration": 1.0},
+                {"visible": [62, 65, 69], "hidden": [], "duration": 2.0},
             ],
             "key": "jG_",
             "meter": "3/4",
@@ -147,7 +147,7 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         payload = {
             "key": "jF_", "meter": "4/4", "staffDistribution": "keyboard",
             "chord": [
-                {"visible": [70, 74, 77], "hidden": [], "rhythmValue": "w",
+                {"visible": [70, 74, 77], "hidden": [], "duration": 4.0,
                  "spelling": ["Bb4", "D5", "F5"]},
             ],
         }
@@ -160,7 +160,7 @@ class PlayViewSaveChordalUMTOTests(TestCase):
     def test_save_returns_review_status_and_url(self):
         self.client.login(email="teacher@example.com", password="pw")
         payload = {"key": "jC_", "meter": "4/4", "staffDistribution": "keyboard",
-                   "chord": [{"visible": [60, 64, 67], "hidden": [], "rhythmValue": "w"}]}
+                   "chord": [{"visible": [60, 64, 67], "hidden": [], "duration": 4.0}]}
         # match the login pattern the other tests use
         resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
         self.assertEqual(resp.status_code, 201)
@@ -173,7 +173,7 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         payload = {
             "key": "jF_", "meter": "4/4", "staffDistribution": "keyboard",
             "chord": [
-                {"visible": [70, 74, 77], "hidden": [], "rhythmValue": "w",
+                {"visible": [70, 74, 77], "hidden": [], "duration": 4.0,
                  "spelling": ["Bb4"]},  # wrong length (1 != 3)
             ],
         }

@@ -844,7 +844,7 @@ def save_chordal_umto_exercise(
     author,
     chords: list,
     key: str,
-    meter: str,
+    meter: Optional[str] = None,
     clef: str,
     staff_distribution: str,
     source: str = "Play view chordal exercise",
@@ -853,11 +853,13 @@ def save_chordal_umto_exercise(
     is_public: bool = False,
     overwrite: bool = False,
     auto_playlist: bool = True,
+    barline_offsets: Optional[list] = None,
+    analysis: Optional[list] = None,
 ) -> Exercise:
     """Normalize and validate incoming chords, build a Chordal UMTO exercise payload,
     validate it, save it, and backfill IDs.
     """
-    beats_per_measure = _meter_quarter_length(meter)
+    beats_per_measure = _meter_quarter_length(meter) if meter else 0.0
     normalized_chords = []
     offset = 0.0
     for idx, c in enumerate(chords):
@@ -877,14 +879,6 @@ def save_chordal_umto_exercise(
         dur = float(c.get("duration", 1.0))
         off = float(c.get("offset", offset))
 
-        # Adjust final chord's duration to fill the remainder of the final measure
-        if idx == len(chords) - 1:
-            remaining = beats_per_measure - (off % beats_per_measure)
-            if abs(remaining) < 1e-5:
-                dur = beats_per_measure
-            else:
-                dur = remaining
-
         spelling = None
         if isinstance(c, dict) and c.get("spelling"):
             candidate = list(c.get("spelling"))
@@ -901,15 +895,23 @@ def save_chordal_umto_exercise(
         normalized_chords.append(chord_dict)
         offset = off + dur
 
-    analysis_slices = []
-    review_status = "none"
-    try:
-        from apps.exercises.utils.umto_import_router import build_chordal_analysis_slices
-        analysis_slices = build_chordal_analysis_slices(normalized_chords, harmony_key=key)
-        if analysis_slices:
-            review_status = "generated"
-    except Exception as e:
-        print(f"Warning: HarmonyLab analysis generation failed: {e}")
+    validate_chordal_rhythm(normalized_chords, meter, barline_offsets or [])
+
+    if analysis is not None:
+        # Teacher-reviewed (Play) path: use supplied analysis verbatim.
+        analysis_slices = analysis
+        review_status = "reviewed" if analysis else "none"
+    else:
+        # Non-Play path (bulk import): auto-generate and mark generated.
+        analysis_slices = []
+        review_status = "none"
+        try:
+            from apps.exercises.utils.umto_import_router import build_chordal_analysis_slices
+            analysis_slices = build_chordal_analysis_slices(normalized_chords, harmony_key=key)
+            if analysis_slices:
+                review_status = "generated"
+        except Exception as e:
+            print(f"Warning: HarmonyLab analysis generation failed: {e}")
 
     try:
         payload = build_chordal_umto_payload(
@@ -925,6 +927,7 @@ def save_chordal_umto_exercise(
             unit=None,
             input_mode="dropdown",
             analysis_review_status=review_status,
+            barline_offsets=barline_offsets or [],
         )
     except Exception as e:
         raise NonUMTOExerciseError(f"Failed to build chordal UMTO payload: {e}") from e
