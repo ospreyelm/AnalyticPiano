@@ -4,7 +4,8 @@ define([
   "app/components/events",
   "app/components/component",
   "./keyboard",
-], function (_, Config, EVENTS, Component, KeyboardInputComponent) {
+  "app/components/input/note_entry_gate_logic",
+], function (_, Config, EVENTS, Component, KeyboardInputComponent, NoteEntryGate) {
   /**
    * Defines the keyboard shortcuts.
    * @type {object}
@@ -179,11 +180,22 @@ define([
     },
     /**
      * Checks if shortcuts are enabled.
+     * Returns false when a text input, textarea, or contenteditable element is
+     * focused so that typing in authoring fields does not trigger note entry.
      *
      * @return {boolean} True if enabled, false otherwise.
      */
     isEnabled: function () {
-      return this.enabled ? true : false;
+      if (!this.enabled) return false;
+      if (typeof document !== "undefined" && document.activeElement) {
+        var el = document.activeElement;
+        if (NoteEntryGate.shouldSuspendNoteEntry(
+              el.tagName, el.getAttribute && el.getAttribute("type"),
+              el.isContentEditable)) {
+          return false;
+        }
+      }
+      return true;
     },
     /**
      * Checks if the key is up/down.

@@ -98,7 +98,7 @@ define([
       throw new Error("missing settings.keySignature");
     }
 
-    _.bindAll(this, ["render", "onChordsUpdate"]);
+    _.bindAll(this, ["render", "onChordsUpdate", "_onAuthoringKeydown"]);
   };
 
   PlaySheetComponent.prototype = new Component();
@@ -148,6 +148,7 @@ define([
       this.initStaves();
       this.initListeners();
       this._initClickHandler();
+      document.addEventListener("keydown", this._onAuthoringKeydown);
 
       var self = this;
       this.scorePlayer = new ScorePlayer(this.settings.midiDevice);
@@ -1218,6 +1219,39 @@ define([
       };
 
       return JSON.stringify(json_data, null, 0);
+    },
+
+    /**
+     * Keyboard accelerators scoped to the current chord selection.
+     * This handler is a NO-OP when _selection is null, so note entry is
+     * completely unaffected with no selection active.
+     *
+     * Duration mapping (pragmatic choice matching toolbar palette):
+     *   1 = quarter  (1.0 quarter-lengths)
+     *   2 = half     (2.0 quarter-lengths)
+     *   3 = dotted half (3.0 quarter-lengths)
+     *   4 = whole    (4.0 quarter-lengths)
+     *   r/R = respell selected chord enharmonically
+     *   Escape = deselect
+     *
+     * No global authoring keys are registered here — these accelerators
+     * only fire when a chord is selected (selection-scoped).
+     */
+    _onAuthoringKeydown: function (e) {
+      if (!this._selection) return; // selection-scoped only; note entry unaffected
+      // Don't act if a text field is focused (let typing happen).
+      var ae = document.activeElement;
+      if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)) return;
+      var idx = this._selection.index;
+      switch (e.key) {
+        case "1": this.setChordDuration(idx, 1.0); e.preventDefault(); break;   // quarter
+        case "2": this.setChordDuration(idx, 2.0); e.preventDefault(); break;   // half
+        case "3": this.setChordDuration(idx, 3.0); e.preventDefault(); break;   // dotted half
+        case "4": this.setChordDuration(idx, 4.0); e.preventDefault(); break;   // whole
+        case "r": case "R": this._respellSelected(); e.preventDefault(); break;
+        case "Escape": this._clearSelection(); e.preventDefault(); break;
+        default: break;
+      }
     },
   });
 
