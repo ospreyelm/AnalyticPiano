@@ -302,6 +302,7 @@ define([
 
       /* save data for retrieval by MusicControlsComponent.onClickSaveJSON; this may not be the optimal or most professional solution */
       sessionStorage.setItem("current_state", this.dataForSave());
+      sessionStorage.setItem("current_state_validity", JSON.stringify(this.checkSaveValidity()));
 
       return this;
     },
@@ -704,6 +705,16 @@ define([
     _analyzeSlots: function () {
       // TEMPORARY stub — replaced in Task 10 (derive {above,below} from analyzeConfig).
       return { above: null, below: null };
+    },
+
+    checkSaveValidity: function () {
+      const objs = this.chords._items.map((items) => items._notes);
+      if (objs.length < 2) return { ok: false, code: "empty" };
+      var durations = [];
+      for (var i = 1; i < objs.length; i++) durations.push(this.getChordDuration(i));
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
+      var res = ChordalBarlinesLogic.checkRhythm(offsets, durations, this._meter, this._barlineOffsets);
+      return res.ok ? { ok: true } : { ok: false, code: "invalid_meter", error: res.error };
     },
 
     /* solution for saving data as exercise; called by render() and saved to sessionStorage */

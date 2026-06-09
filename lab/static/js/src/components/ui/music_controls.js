@@ -553,6 +553,21 @@ define([
       json_data = JSON.stringify(json_data, null, 0);
 
       if (destination === "upload") {
+        var validity = JSON.parse(sessionStorage.getItem("current_state_validity") || "null");
+        if (validity && !validity.ok) {
+          if (this.feedback) {
+            if (validity.code === "empty") {
+              this.feedback.emit("play.save.empty", { inlineEl: "#save-feedback" });
+            } else {
+              var m = /Bar (\d+) (?:has|spans) (\S+) beats, expected ([^.]+)/.exec(validity.error || "");
+              this.feedback.emit("play.save.invalid_meter", {
+                inlineEl: "#save-feedback",
+                params: m ? { bar: m[1], beats: m[2], expected: m[3] } : { bar: "?", beats: "?", expected: "?" },
+              });
+            }
+          }
+          return false;
+        }
         $.ajax({
           type: "POST",
           url: window.location.origin + "/exercises/add/",
