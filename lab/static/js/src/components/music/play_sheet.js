@@ -75,6 +75,13 @@ define([
       throw new Error("missing settings.chords");
     }
 
+    // Authoring state (Play teacher authoring). Default note value = quarter (1.0).
+    this._chordDurations = {};   // bankIndex -> quarter-length (palette)
+    this._barlineOffsets = [];   // quarter-length offsets, sorted/unique, on chord onsets
+    this._meter = null;          // null = free/open mode
+    this._tokenOverrides = {};   // offset index -> { below: <string> } teacher analysis corrections
+    this._selection = null;      // { kind: "chord"|"gap", index } or null
+
     if ("keySignature" in this.settings) {
       this.keySignature = this.settings.keySignature;
     } else {
@@ -673,6 +680,21 @@ define([
 
     _clearPlaybackHighlight: function () {
       $("#playback-highlight").hide();
+    },
+
+    getChordDuration: function (bankIndex) {
+      var d = this._chordDurations[bankIndex];
+      return typeof d === "number" ? d : 1.0; // default quarter
+    },
+
+    setChordDuration: function (bankIndex, quarterLength) {
+      this._chordDurations[bankIndex] = quarterLength;
+      this.render();
+    },
+
+    setMeter: function (meter) {
+      this._meter = meter || null;
+      this.render();
     },
 
     /* solution for saving data as exercise; called by render() and saved to sessionStorage */
