@@ -122,9 +122,19 @@ def validate_chordal_rhythm(chords, meter, barline_offsets):
             )
         cursor = round(off + float(c["duration"]), 6)
 
-    # Every explicit barline must land on a chord onset.
+    # Barlines: must be unique, strictly between 0 and the stream end, and on a chord onset.
+    total = round(float(ordered[-1]["offset"]) + float(ordered[-1]["duration"]), 6)
+    seen_barlines = set()
     for b in barline_offsets:
-        if round(float(b), 6) not in onsets:
+        rb = round(float(b), 6)
+        if rb <= 0.0 or rb >= total:
+            raise NonUMTOExerciseError(
+                f"Barline at offset {b} must be > 0 and < the stream end ({total})."
+            )
+        if rb in seen_barlines:
+            raise NonUMTOExerciseError(f"Duplicate barline at offset {b}.")
+        seen_barlines.add(rb)
+        if rb not in onsets:
             raise NonUMTOExerciseError(
                 f"Barline at offset {b} does not coincide with a chord onset."
             )
@@ -134,7 +144,6 @@ def validate_chordal_rhythm(chords, meter, barline_offsets):
 
     # --- Metered exact contiguous tiling ---
     bar_len = _meter_quarter_length(meter)
-    total = round(float(ordered[-1]["offset"]) + float(ordered[-1]["duration"]), 6)
     bounds = [0.0] + sorted(round(float(b), 6) for b in barline_offsets) + [total]
 
     for bar_idx in range(len(bounds) - 1):
@@ -558,7 +567,7 @@ def _chordal_to_measures(chords: list, meter, barline_offsets=None) -> list:
             return
         pieces = []
         while remaining > 1e-6:
-            piece = next((p for p in _REST_PALETTE_DESC if p <= remaining + 1e-6), 0.25)
+            piece = next((p for p in _REST_PALETTE_DESC if p <= remaining + 1e-6), min(0.25, remaining))
             pieces.append(piece)
             remaining = round(remaining - piece, 6)
         for staff in STAVES:

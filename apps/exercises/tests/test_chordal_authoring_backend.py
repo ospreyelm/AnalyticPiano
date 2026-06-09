@@ -163,3 +163,30 @@ def test_free_mode_single_measure_when_no_barlines():
     measures = _chordal_to_measures(chords, meter=None, barline_offsets=[])
     assert len(measures) == 1
     assert len(measures[0]["staves"]["treble"]["voices"][0]["items"]) == 3
+
+
+def test_barline_at_zero_rejected_free_mode():
+    chords = [_ch(0.0, 1.0), _ch(1.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter=None, barline_offsets=[0.0])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError:
+        pass
+
+
+def test_barline_at_stream_end_rejected():
+    chords = [_ch(0.0, 1.0), _ch(1.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter=None, barline_offsets=[2.0])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError:
+        pass
+
+
+def test_duplicate_barline_rejected():
+    chords = [_ch(0.0, 1.0), _ch(1.0, 1.0), _ch(2.0, 1.0), _ch(3.0, 1.0)]
+    try:
+        validate_chordal_rhythm(chords, meter=None, barline_offsets=[1.0, 1.0])
+        assert False, "expected NonUMTOExerciseError"
+    except NonUMTOExerciseError:
+        pass
