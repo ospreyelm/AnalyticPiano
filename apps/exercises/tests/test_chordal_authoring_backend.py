@@ -145,3 +145,21 @@ def test_free_mode_still_rejects_overlap():
         assert False, "expected NonUMTOExerciseError"
     except NonUMTOExerciseError as exc:
         assert "overlap" in str(exc).lower()
+
+
+from apps.exercises.umto_factory import _chordal_to_measures
+
+
+def test_measures_split_at_explicit_barlines():
+    chords = [_ch(float(i), 1.0) for i in range(6)]
+    measures = _chordal_to_measures(chords, meter="2/4", barline_offsets=[2.0, 4.0])
+    assert len(measures) == 3
+    for m in measures:
+        assert len(m["staves"]["treble"]["voices"][0]["items"]) == 2
+
+
+def test_free_mode_single_measure_when_no_barlines():
+    chords = [_ch(0.0, 1.0), _ch(1.0, 0.5), _ch(1.5, 0.5)]
+    measures = _chordal_to_measures(chords, meter=None, barline_offsets=[])
+    assert len(measures) == 1
+    assert len(measures[0]["staves"]["treble"]["voices"][0]["items"]) == 3

@@ -523,7 +523,7 @@ def _duration_dict(ql: float) -> dict:
 _KEYBOARD_SPLIT_MIDI = 60
 
 
-def _chordal_to_measures(chords: list, meter: str) -> list:
+def _chordal_to_measures(chords: list, meter, barline_offsets=None) -> list:
     """Generate minimal CIR measures from chordal chords[] (spike 5a, W1).
 
     Each chord is split across treble + bass staves by register (keyboard style):
@@ -531,7 +531,7 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
     aligned — every onset places a chord/note/rest on each staff so durations
     match. Measures break when accumulated quarter-length reaches the meter's
     beats-per-measure."""
-    beats = _meter_quarter_length(meter)
+    beats = _meter_quarter_length(meter) if meter else 0.0
     STAVES = ("treble", "bass")
 
     def _new_measure():
@@ -550,11 +550,20 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
         current = _new_measure()
         used = 0.0
 
+    _REST_PALETTE_DESC = (4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.25)
+
     def _append_rest(ql: float):
-        if ql <= 0:
+        remaining = round(float(ql), 6)
+        if remaining <= 1e-6:
             return
+        pieces = []
+        while remaining > 1e-6:
+            piece = next((p for p in _REST_PALETTE_DESC if p <= remaining + 1e-6), 0.25)
+            pieces.append(piece)
+            remaining = round(remaining - piece, 6)
         for staff in STAVES:
-            _items(staff).append({"kind": "rest", "duration": _duration_dict(ql)})
+            for piece in pieces:
+                _items(staff).append({"kind": "rest", "duration": _duration_dict(piece)})
 
     def _chord_spell_map(c):
         spelling = c.get("spelling") or []
@@ -592,28 +601,56 @@ def _chordal_to_measures(chords: list, meter: str) -> list:
     current = _new_measure()
     used = 0.0
     cursor = 0.0
+
+    if barline_offsets:
+        split_points = sorted(round(float(b), 6) for b in barline_offsets)
+    else:
+        split_points = []
+    next_split = 0
+
     for c in sorted(chords, key=lambda item: float(item.get("offset", 0.0))):
         offset = float(c.get("offset", cursor))
         if offset < cursor - 1e-6:
             raise ValueError("Chord offsets must be non-overlapping and monotonic")
 
         while cursor < offset - 1e-6:
-            gap = min(offset - cursor, beats - used)
+            limit = offset
+            if split_points and next_split < len(split_points):
+                limit = min(limit, split_points[next_split])
+            if not split_points and beats:
+                limit = min(limit, cursor + (beats - used))
+            gap = limit - cursor
+            if gap <= 1e-6:
+                gap = offset - cursor
             _append_rest(gap)
             used += gap
-            cursor += gap
-            if abs(used - beats) < 1e-6 or used > beats:
+            cursor = round(cursor + gap, 6)
+            if split_points:
+                if next_split < len(split_points) and abs(cursor - split_points[next_split]) < 1e-6:
+                    _finish_measure()
+                    next_split += 1
+            elif beats and (abs(used - beats) < 1e-6 or used > beats):
                 _finish_measure()
 
-        if abs(used - beats) < 1e-6:
+        if split_points and next_split < len(split_points) \
+                and abs(cursor - split_points[next_split]) < 1e-6:
+            _finish_measure()
+            next_split += 1
+        elif not split_points and beats and abs(used - beats) < 1e-6:
             _finish_measure()
 
         dur = float(c["duration"])
         _append_chord_item(c)
         used += dur
-        cursor = offset + dur
-        if abs(used - beats) < 1e-6 or used > beats:
+        cursor = round(offset + dur, 6)
+
+        if split_points:
+            if next_split < len(split_points) and abs(cursor - split_points[next_split]) < 1e-6:
+                _finish_measure()
+                next_split += 1
+        elif beats and (abs(used - beats) < 1e-6 or used > beats):
             _finish_measure()
+
     if _any_items():
         measures.append(current)
     return measures
@@ -633,6 +670,7 @@ def build_chordal_umto_payload(
     unit: Optional[int] = None,
     input_mode: Literal["dropdown", "text"] = "dropdown",
     analysis_review_status: Literal["none", "generated", "reviewed"] = "none",
+    barline_offsets: Optional[list] = None,
 ) -> dict:
     """Build a UMTO frontend payload for a chordal score-kind exercise.
 
@@ -656,6 +694,7 @@ def build_chordal_umto_payload(
             unit=unit,
             score_kind="chordal",
             analysis_review_status=analysis_review_status,
+            barline_offsets=barline_offsets or [],
         ),
         chords=[ChordEvent(**c) for c in chords],
         analysis=[AnalysisSlice(**a) for a in analysis],
@@ -672,7 +711,7 @@ def build_chordal_umto_payload(
         "complexity_score": complexity_score,
         "score": {
             "meta": {"key": key, "time": meter, "clef": clef},
-            "measures": _chordal_to_measures(chords, meter),
+            "measures": _chordal_to_measures(chords, meter, barline_offsets or []),
             "umto": umto_json,
         },
         "analysis": umto_json["analysis"],
