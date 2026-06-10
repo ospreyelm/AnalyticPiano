@@ -1246,6 +1246,20 @@ define([
       var slots = this._analyzeSlots();
       var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
 
+      // Persist the teacher's analysis DISPLAY choices so the saved exercise renders
+      // what they saw (not just the below-zone reviewed slices). exercise_sheet reads
+      // these display.show* flags via definition.getDisplay().
+      var liveCfg = this.getAnalyzeConfig() || {};
+      var liveMode = liveCfg.mode || {};
+      var display = {
+        showRomans: !!liveMode.roman_numerals,
+        showFigures: !!liveMode.thoroughbass,
+        showChordLabels: !!liveMode.chord_labels,
+        showScaleDegrees: !!liveMode.scale_degrees,
+        showNoteNames: !!liveMode.note_names,
+      };
+      if (liveMode.abbreviate_thoroughbass) display.figureStyle = "figures_abbrev";
+
       var labels = [];
       if (slots.below) {
         for (var j = 0; j < notes.length; j++) {
@@ -1271,6 +1285,7 @@ define([
         introText: "",
         reviewText: "",
         analyzeConfig: slots,
+        display: display,
         highlight: this.parentComponent.highlightConfig,
         chord: chordRows,
         meter: this._meter,

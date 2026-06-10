@@ -71,3 +71,27 @@ class AddExerciseViewChordalTests(TestCase):
         self.assertEqual(resp.status_code, 201, resp.content)
         ex = Exercise.objects.get(id=resp.json()["id"])
         self.assertEqual(ex.data.get("analyzeConfig"), {"above": "note_names", "below": "roman_numerals"})
+
+
+class AddExerciseViewDisplayFlagsTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        U = get_user_model()
+        self.user = U.objects.create_user(email="disp@example.com", password="x")
+        self.client.force_login(self.user)
+
+    def test_display_flags_persist_on_exercise_data(self):
+        from apps.exercises.models import Exercise
+        payload = {
+            "chord": [{"offset": float(i), "duration": 1.0, "visible": [60, 64, 67], "hidden": []} for i in range(2)],
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "display": {"showRomans": True, "showFigures": False, "showChordLabels": True,
+                        "showScaleDegrees": False, "showNoteNames": False},
+        }
+        resp = self.client.post("/exercises/add/", data={"data": json.dumps(payload)})
+        self.assertEqual(resp.status_code, 201, resp.content)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        self.assertEqual(ex.data.get("display", {}).get("showRomans"), True)
+        self.assertEqual(ex.data.get("display", {}).get("showChordLabels"), True)
+        self.assertEqual(ex.data.get("display", {}).get("showFigures"), False)
