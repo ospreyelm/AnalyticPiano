@@ -107,10 +107,12 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
         return;
       }
       var current = this.current();
-      if (
-        (request_origin === "by_metronome" || this._items.length == 1) && // the first user's bank is _items[1]
-        current.getNoteNumbers().length == 0
-      ) {
+      // Never bank an empty chord. Pressing Enter/Space (or a metronome tick) with
+      // no sounding notes used to create a stray empty slot whenever chords already
+      // existed — the old guard only blocked empties for the metronome or the very
+      // first bank. An empty bank is never wanted (explicit rests are out of scope),
+      // so block it for every origin.
+      if (current.getNoteNumbers().length == 0) {
         return;
       }
 
