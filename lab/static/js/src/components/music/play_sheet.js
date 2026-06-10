@@ -807,13 +807,13 @@ define([
     setChordDuration: function (chord, quarterLength) {
       if (!chord) return;
       this._chordDurations[chord._cid] = quarterLength;
-      this.render();
+      this.onChordsUpdate(); // rebuild staves (render() alone repaints stale staves)
     },
 
     setMeter: function (meter) {
       this._meter = meter || null;
       if (this._meter) this.autoSuggestBarlines(); // seeds barlines; teacher then edits
-      else { this._barlineOffsets = []; this.render(); }
+      else { this._barlineOffsets = []; this.onChordsUpdate(); }
     },
 
     placeBarline: function (offset) {
@@ -821,13 +821,13 @@ define([
       if (this._barlineOffsets.indexOf(o) === -1) {
         this._barlineOffsets.push(o);
         this._barlineOffsets.sort(function (a, b) { return a - b; });
-        this.render();
+        this.onChordsUpdate();
       }
     },
     removeBarline: function (offset) {
       var o = Math.round(offset * 1e6) / 1e6;
       this._barlineOffsets = this._barlineOffsets.filter(function (b) { return b !== o; });
-      this.render();
+      this.onChordsUpdate();
     },
     _bankedDurations: function () {
       var self = this;
@@ -849,7 +849,7 @@ define([
       var durations = this._bankedDurations();
       var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
       this._barlineOffsets = ChordalBarlinesLogic.suggestBarlines(offsets, durations, this._meter);
-      this.render();
+      this.onChordsUpdate();
     },
 
     _analyzeSlots: function () {
@@ -1032,7 +1032,7 @@ define([
       // Only store if lengths match (guard against backend spelling-length rejection)
       if (flipped.length !== allMidis.length) return;
       this._spellingOverrides[chord._cid] = flipped;
-      this.render();
+      this.onChordsUpdate();
     },
 
     /**
@@ -1050,7 +1050,7 @@ define([
       if (!chord) return;
       this._tokenOverrides[chord._cid] = this._tokenOverrides[chord._cid] || {};
       this._tokenOverrides[chord._cid][zone] = value;
-      this.render();
+      this.onChordsUpdate();
     },
 
     /**
