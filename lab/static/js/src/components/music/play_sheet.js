@@ -84,12 +84,14 @@ define([
     }
 
     // Authoring state (Play teacher authoring). Default note value = quarter (1.0).
-    this._chordDurations = {};   // bankIndex -> quarter-length (palette)
-    this._spellingOverrides = {}; // arrayIndex (0-based over banked chords) -> [spelling strings]
+    // All authoring overrides are keyed by the chord's STABLE id (chord._cid),
+    // never by a positional index — the bank unshifts new chords so indices shift.
+    this._chordDurations = {};   // chord._cid -> quarter-length (palette)
+    this._spellingOverrides = {}; // chord._cid -> [spelling strings]
     this._barlineOffsets = [];   // quarter-length offsets, sorted/unique, on chord onsets
     this._meter = null;          // null = free/open mode
-    this._tokenOverrides = {};   // arrayIndex (0-based over banked chords) -> { below: <string> } teacher analysis corrections
-    this._selection = null;      // { kind: "chord"|"gap", index } or null
+    this._tokenOverrides = {};   // chord._cid -> { below: <string> } teacher analysis corrections
+    this._selection = null;      // { kind: "chord", chord: <Chord> } or null
     this._toolbar = null;        // PlayAuthoringToolbar instance (lazy)
 
     if ("keySignature" in this.settings) {
@@ -443,14 +445,12 @@ define([
         treble_alterationHistory[i] = treble_activeAlterations;
         bass_alterationHistory[i] = bass_activeAlterations;
 
-        // Live per-chord duration (play-authoring). The reversed display list maps to
-        // the natural this.chords._items index via (items.length - 1 - i), which is the
-        // same bankIndex dataForSave/getChordDuration use. Only banked chords carry an
-        // authored duration; the live/working chord keeps the default note value.
+        // Live per-chord duration (play-authoring). Look up by the chord's stable id
+        // (positional indices shift on bank). Only banked chords carry an authored
+        // duration; the live/working chord keeps the default note value.
         let noteDuration = null;
         if (isBanked) {
-          let bankIndex = items.length - 1 - i;
-          let ql = this.getChordDuration(bankIndex);
+          let ql = this.getChordDuration(chord);
           let dp = ChordalBarlinesLogic.qlToVexDuration(ql);
           noteDuration = { duration: dp.duration, dots: dp.dots, quarterLength: ql };
         }
@@ -536,7 +536,9 @@ define([
 
       if (typeof this.keySignature.signatureSpec === "string") {
         const staffSig = this.keySignature.signatureSpec;
-        stave.setFirstBarWidth(staffSig, 4);
+        // Reserve extra first-bar width for the time-signature glyph when a meter
+        // is set, otherwise the glyph is clipped/overlapped and never shows.
+        stave.setFirstBarWidth(staffSig, 4, !!this._meter);
       }
       stave.updatePosition();
 
@@ -744,12 +746,12 @@ define([
       var staves = this.staves;
       if (!staves || staves.length < 2) return;
 
-      // Build onset → stave index map:
-      // staves[k] (k>=1) corresponds to banked chord at _items index k (1-based)
-      // bankIndex k has onset = offsetsFromDurations(_bankedDurations())[k-1]
+      // Build onset → stave index map. Display is chronological (oldest left):
+      // staves[k] (k>=1) is the k-th banked chord in chronological order, whose
+      // onset is offsetsFromDurations(_bankedDurations())[k-1]. Both the offsets
+      // and the staves are chronological, so they line up.
       var durations = this._bankedDurations();
       var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
-      // offsets[k-1] is onset for bank index k (1-based); k goes 1..N
       var onsetToStaveIdx = {};
       for (var k = 1; k < staves.length; k++) {
         var onset = offsets[k - 1];
@@ -786,13 +788,25 @@ define([
       raw.restore();
     },
 
-    getChordDuration: function (bankIndex) {
-      var d = this._chordDurations[bankIndex];
+    /**
+     * Banked chords in CHRONOLOGICAL order (oldest first). The bank stores
+     * _items[0] = live chord and _items[1..N] = banked NEWEST-first (unshift),
+     * so drop the live chord and reverse. This order matches the on-screen
+     * display (staves left→right) and the saved-exercise chord order.
+     */
+    _bankedChrono: function () {
+      return this.chords._items.slice(1).reverse();
+    },
+
+    // Duration keyed by the chord's STABLE id (positional indices shift on bank).
+    getChordDuration: function (chord) {
+      var d = chord ? this._chordDurations[chord._cid] : undefined;
       return typeof d === "number" ? d : 1.0; // default quarter
     },
 
-    setChordDuration: function (bankIndex, quarterLength) {
-      this._chordDurations[bankIndex] = quarterLength;
+    setChordDuration: function (chord, quarterLength) {
+      if (!chord) return;
+      this._chordDurations[chord._cid] = quarterLength;
       this.render();
     },
 
@@ -816,15 +830,18 @@ define([
       this.render();
     },
     _bankedDurations: function () {
-      var durations = [];
-      for (var i = 1; i < this.chords._items.length; i++) durations.push(this.getChordDuration(i));
-      return durations;
+      var self = this;
+      return this._bankedChrono().map(function (c) { return self.getChordDuration(c); });
     },
-    toggleBarlineAtChord: function (bankIndex) {
-      // Barline sits at the onset of the chord at bankIndex (between it and the previous chord).
+    toggleBarlineAtChord: function (chord) {
+      // A barline sits at the onset of `chord` (between it and the previous chord).
+      if (!chord) return;
+      var chrono = this._bankedChrono();
+      var idx = chrono.indexOf(chord);
+      if (idx <= 0) return; // index 0 is the stream start — no barline there
       var offsets = ChordalBarlinesLogic.offsetsFromDurations(this._bankedDurations());
-      var onset = offsets[bankIndex - 1]; // bankIndex is 1-based for banked chords
-      if (onset === undefined || onset === 0) return; // no barline at stream start
+      var onset = offsets[idx];
+      if (onset === undefined || onset === 0) return;
       if (this._barlineOffsets.indexOf(Math.round(onset * 1e6) / 1e6) === -1) this.placeBarline(onset);
       else this.removeBarline(onset);
     },
@@ -841,10 +858,8 @@ define([
     },
 
     checkSaveValidity: function () {
-      const objs = this.chords._items.map((items) => items._notes);
-      if (objs.length < 2) return { ok: false, code: "empty" };
-      var durations = [];
-      for (var i = 1; i < objs.length; i++) durations.push(this.getChordDuration(i));
+      if (this.chords._items.length < 2) return { ok: false, code: "empty" };
+      var durations = this._bankedDurations();
       var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
       var res = ChordalBarlinesLogic.checkRhythm(offsets, durations, this._meter, this._barlineOffsets);
       return res.ok ? { ok: true } : { ok: false, code: "invalid_meter", error: res.error };
@@ -860,7 +875,7 @@ define([
         this._toolbar = new PlayAuthoringToolbar({
           onSetDuration: function (ql) {
             if (self._selection) {
-              self.setChordDuration(self._selection.index, ql);
+              self.setChordDuration(self._selection.chord, ql);
             }
           },
           onRespell: function () {
@@ -871,7 +886,7 @@ define([
           },
           onSetToken: function (value) {
             if (self._selection) {
-              self.setToken(self._selection.index, "below", value);
+              self.setToken(self._selection.chord, "below", value);
             }
           },
         });
@@ -885,21 +900,18 @@ define([
      * Returns the override value if set, otherwise the computed label, or
      * null if no below-zone is active.
      *
-     * @param {number} bankIndex  _items index (1-based) of the banked chord.
+     * @param {Chord} chord  the banked chord object.
      * @return {string|null}
      */
-    _getCurrentTokenLabel: function (bankIndex) {
+    _getCurrentTokenLabel: function (chord) {
       var slots = this._analyzeSlots();
       if (!slots || !slots.below) return null;
-      var arrayIndex = bankIndex - 1; // 0-based
-      // Return stored override if present
-      if (this._tokenOverrides[arrayIndex] &&
-          typeof this._tokenOverrides[arrayIndex].below !== "undefined") {
-        return this._tokenOverrides[arrayIndex].below;
-      }
-      // Otherwise compute the default label
-      var chord = this.chords._items[bankIndex];
       if (!chord) return null;
+      // Return stored override if present (keyed by stable chord id)
+      if (this._tokenOverrides[chord._cid] &&
+          typeof this._tokenOverrides[chord._cid].below !== "undefined") {
+        return this._tokenOverrides[chord._cid].below;
+      }
       var obj = chord._notes;
       var visible = Object.keys(obj)
         .filter(function (k) { return obj[k]; })
@@ -942,16 +954,12 @@ define([
      *     (e.g. Db -> C#, Bb -> A#, Eb -> D#)
      *   - alter == 0 (natural): leave unchanged
      *
-     * The result is stored at arrayIndex = bankIndex - 1 (0-based), which
-     * matches the loop variable in dataForSave (i starts at 1, arrayIndex = i-1).
+     * The result is stored keyed by the chord's stable id (this._spellingOverrides),
+     * which dataForSave reads back per chord (positional indices shift on bank).
      */
     _respellSelected: function () {
       if (!this._selection || this._selection.kind !== "chord") return;
-      var bankIndex = this._selection.index;
-      var arrayIndex = bankIndex - 1; // 0-based, matches dataForSave notes[] index
-
-      // Get visible MIDI notes for this chord (mirror of dataForSave's "visible" derivation)
-      var chord = this.chords._items[bankIndex];
+      var chord = this._selection.chord;
       if (!chord) return;
       var obj = chord._notes;
       var visible = Object.keys(obj)
@@ -964,9 +972,9 @@ define([
 
       // Determine the current spelling strings (override already stored, or recompute)
       var currentSpellings;
-      if (this._spellingOverrides[arrayIndex] &&
-          this._spellingOverrides[arrayIndex].length === allMidis.length) {
-        currentSpellings = this._spellingOverrides[arrayIndex].slice();
+      if (this._spellingOverrides[chord._cid] &&
+          this._spellingOverrides[chord._cid].length === allMidis.length) {
+        currentSpellings = this._spellingOverrides[chord._cid].slice();
       } else {
         // Recompute key-aware defaults (same logic as dataForSave)
         var analyzer = new Analyze(this.keySignature);
@@ -1023,33 +1031,25 @@ define([
 
       // Only store if lengths match (guard against backend spelling-length rejection)
       if (flipped.length !== allMidis.length) return;
-      this._spellingOverrides[arrayIndex] = flipped;
-      console.log("[play-authoring] respell bankIndex=" + bankIndex +
-        " arrayIndex=" + arrayIndex + " ->", flipped);
+      this._spellingOverrides[chord._cid] = flipped;
       this.render();
     },
 
     /**
      * Store a teacher-override for the below-zone token (Roman numeral /
-     * figured bass label) for the given bankIndex.
+     * figured bass label) for the given chord, keyed by its stable id.
+     * dataForSave maps these back onto the chronological banked-chord order.
      *
-     * Keying: arrayIndex = bankIndex - 1 (0-based over banked chords).
-     * This matches dataForSave's loop (i starts at 1; notes[i-1] = chord at
-     * bankIndex i) and buildAnalysisSlices's iteration over offsets[i] which
-     * also uses 0-based indexing over banked chords.
-     *
-     * @param {number} bankIndex  _items index of the selected banked chord (1-based).
-     * @param {string} zone       Which zone to override — "below" is the only
+     * @param {Chord} chord  the selected banked chord object.
+     * @param {string} zone  Which zone to override — "below" is the only
      *   supported zone currently (Roman numeral or figured bass depending on
      *   analyzeConfig.slots.below).
-     * @param {string} value      The override label (plain text, e.g. "V7", "I6").
+     * @param {string} value  The override label (plain text, e.g. "V7", "I6").
      */
-    setToken: function (bankIndex, zone, value) {
-      var arrayIndex = bankIndex - 1; // 0-based over banked chords (matches dataForSave)
-      this._tokenOverrides[arrayIndex] = this._tokenOverrides[arrayIndex] || {};
-      this._tokenOverrides[arrayIndex][zone] = value;
-      console.log("[play-authoring] setToken bankIndex=" + bankIndex +
-        " arrayIndex=" + arrayIndex + " zone=" + zone + " value=" + value);
+    setToken: function (chord, zone, value) {
+      if (!chord) return;
+      this._tokenOverrides[chord._cid] = this._tokenOverrides[chord._cid] || {};
+      this._tokenOverrides[chord._cid][zone] = value;
       this.render();
     },
 
@@ -1102,19 +1102,16 @@ define([
         var items = self.chords.items({ limit: limit, reverse: true });
 
         // --- Gap check: staves[k] for k >= 2 have a left-edge gap band ---
-        // stave k corresponds to items[k-1] (0-based) and bank index:
-        //   bankIndex = items.length - 1 - (k-1) = items.length - k
-        // The gap is between chord (bankIndex-1) and chord bankIndex;
-        // toggleBarlineAtChord(bankIndex) places/removes the barline at that onset.
+        // Display is chronological (oldest left): stave gk == items[gk-1].chord.
+        // The gap on stave gk's left edge sits at that chord's onset; toggling
+        // there places/removes a barline before the chord.
         for (var gk = 2; gk < staves.length; gk++) {
           var gStave = staves[gk];
           var gsx = gStave.getStartX ? gStave.getStartX() : 0;
           if (cx >= gsx - GAP_TOL && cx < gsx + GAP_TOL) {
-            // Gap click: toggle barline for the right-hand chord at gk
-            var gBankIndex = items.length - gk;
-            if (gBankIndex >= 1) {
-              console.log("[play-authoring] gap click at stave " + gk + " bankIndex=" + gBankIndex);
-              self.toggleBarlineAtChord(gBankIndex);
+            var gItem = items[gk - 1];
+            if (gItem && gItem.isBanked) {
+              self.toggleBarlineAtChord(gItem.chord);
             }
             return; // consumed — do not also select a chord
           }
@@ -1154,14 +1151,9 @@ define([
           return;
         }
 
-        // Compute the _items index: items is the reverse of _items[0..M-1]
-        // items[0] = _items[M-1] (newest banked), items[M-1] = _items[0] (current)
-        // We want _items index = items.length - 1 - itemIdx, but _items[0] = current,
-        // so the banked index = items.length - 1 - itemIdx
-        // Verify: for M items reversed, items[0] = _items[M-1], so _items idx = M-1-itemIdx
-        var bankIndex = items.length - 1 - itemIdx;
-
-        self._selection = { kind: "chord", index: bankIndex };
+        // Select the chord OBJECT (stable across banking, unlike a positional index).
+        var selectedChord = items[itemIdx].chord;
+        self._selection = { kind: "chord", chord: selectedChord };
 
         // Compute page-coordinate rect for the chord column
         var hitStave = staves[hitStaveIdx];
@@ -1178,8 +1170,8 @@ define([
         };
 
         var toolbar = self._getToolbar();
-        var currentToken = self._getCurrentTokenLabel(bankIndex);
-        toolbar.showAt(pageRect, self.getChordDuration(bankIndex), currentToken);
+        var currentToken = self._getCurrentTokenLabel(selectedChord);
+        toolbar.showAt(pageRect, self.getChordDuration(selectedChord), currentToken);
       });
     },
 
@@ -1191,24 +1183,32 @@ define([
       var analyzer = new Analyze(this.keySignature);
       var notes = [];
       var durations = [];
-      for (var i = 1, len = objs.length; i < len; i++) {
-        var obj = objs[i];
+      // Iterate banked chords CHRONOLOGICALLY (oldest first) so the saved chord
+      // order matches what the teacher sees; key all overrides by the chord's
+      // stable id (positional indices shift on bank).
+      var chrono = this._bankedChrono();
+      var tokenOverridesArr = {}; // 0-based chronological index -> { below: str }
+      for (var i = 0; i < chrono.length; i++) {
+        var chordObj = chrono[i];
+        var obj = chordObj._notes;
         var visible = Object.keys(obj)
           .filter((k) => obj[k])
           .map((k) => parseInt(k, 10));
         var hidden = [];
         var unison_idx = null;
-        try { unison_idx = this.chords._items[i]._unison_idx; } catch (e) {}
+        try { unison_idx = chordObj._unison_idx; } catch (e) {}
         var allMidisForSpell = visible.concat(hidden);
         var spelling = allMidisForSpell.map((m) =>
           ChordalSpelling.vexKeyToSpellingString(analyzer.getNoteName(m, visible)));
-        var arrayIndex = i - 1; // 0-based over banked chords (matches _spellingOverrides / _tokenOverrides keys)
-        if (this._spellingOverrides[arrayIndex] &&
-            this._spellingOverrides[arrayIndex].length === allMidisForSpell.length) {
-          spelling = this._spellingOverrides[arrayIndex];
+        if (this._spellingOverrides[chordObj._cid] &&
+            this._spellingOverrides[chordObj._cid].length === allMidisForSpell.length) {
+          spelling = this._spellingOverrides[chordObj._cid];
         }
         notes.push({ visible: visible, hidden: hidden, spelling: spelling, unison_idx: unison_idx });
-        durations.push(this.getChordDuration(i));
+        durations.push(this.getChordDuration(chordObj));
+        if (this._tokenOverrides[chordObj._cid]) {
+          tokenOverridesArr[i] = this._tokenOverrides[chordObj._cid];
+        }
       }
 
       var slots = this._analyzeSlots();
@@ -1229,7 +1229,7 @@ define([
 
       var chordRows = PlaySaveLogic.buildChordRows(notes, durations);
       var analysisSlices = PlaySaveLogic.buildAnalysisSlices(
-        offsets, slots, labels, this._tokenOverrides);
+        offsets, slots, labels, tokenOverridesArr);
 
       var json_data = {
         keySignature: this.keySignature.signatureSpec,
@@ -1270,12 +1270,12 @@ define([
       // Don't act if a text field is focused (let typing happen).
       var ae = document.activeElement;
       if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)) return;
-      var idx = this._selection.index;
+      var chord = this._selection.chord;
       switch (e.key) {
-        case "1": this.setChordDuration(idx, 1.0); e.preventDefault(); break;   // quarter
-        case "2": this.setChordDuration(idx, 2.0); e.preventDefault(); break;   // half
-        case "3": this.setChordDuration(idx, 3.0); e.preventDefault(); break;   // dotted half
-        case "4": this.setChordDuration(idx, 4.0); e.preventDefault(); break;   // whole
+        case "1": this.setChordDuration(chord, 1.0); e.preventDefault(); break;   // quarter
+        case "2": this.setChordDuration(chord, 2.0); e.preventDefault(); break;   // half
+        case "3": this.setChordDuration(chord, 3.0); e.preventDefault(); break;   // dotted half
+        case "4": this.setChordDuration(chord, 4.0); e.preventDefault(); break;   // whole
         case "r": case "R": this._respellSelected(); e.preventDefault(); break;
         case "Escape": this._clearSelection(); e.preventDefault(); break;
         default: break;
