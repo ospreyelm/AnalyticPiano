@@ -169,6 +169,16 @@ define([
         var val = $(this).val();
         self.setMeter(val || null);
       });
+
+      // Wire the analysis-zone selectors (Above / Below) to setAnalysisSlot, and
+      // initialize them from the current analyzeConfig so they reflect the live state.
+      var slots = this._analyzeSlots();
+      $("#play-analysis-above").val(slots.above || "").on("change", function () {
+        self.setAnalysisSlot("above", $(this).val() || null);
+      });
+      $("#play-analysis-below").val(slots.below || "").on("change", function () {
+        self.setAnalysisSlot("below", $(this).val() || null);
+      });
     },
     /**
      * Initializes the canvas renderer and dom element.
@@ -855,6 +865,28 @@ define([
     _analyzeSlots: function () {
       var cfg = this.getAnalyzeConfig() || {};
       return AnalysisSlots.normalizeSlots(cfg);
+    },
+
+    // Mode flags the Play stave-notater actually renders, per zone. Only these are
+    // offered in the toolbar so what the teacher picks is what shows (WYSIWYG).
+    _zoneModes: function (zone) {
+      return zone === "above" ? ["note_names"] : ["roman_numerals", "thoroughbass"];
+    },
+
+    /**
+     * Set the active analysis type for a zone (above|below). Writes the shared
+     * analyzeConfig.mode flags (mutually exclusive within the zone), toggles
+     * `enabled`, and rebuilds. typeId === null clears the zone. This is the data
+     * op behind the toolbar selectors; an agent can drive it the same way.
+     */
+    setAnalysisSlot: function (zone, typeId) {
+      var cfg = this.getAnalyzeConfig();
+      if (!cfg) return;
+      cfg.mode = cfg.mode || {};
+      this._zoneModes(zone).forEach(function (m) { cfg.mode[m] = false; });
+      if (typeId) cfg.mode[typeId] = true;
+      cfg.enabled = !!(cfg.mode.roman_numerals || cfg.mode.thoroughbass || cfg.mode.note_names);
+      this.onChordsUpdate();
     },
 
     checkSaveValidity: function () {
