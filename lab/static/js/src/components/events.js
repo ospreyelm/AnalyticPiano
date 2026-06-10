@@ -33,5 +33,6 @@ define({
     MIDI_INPUTS_CHANGED: "midiinputschanged",
     LABEL_SELECTED: "labelselected",
     FEEDBACK: "feedback",
+    PLAY_SAVED: "play:saved",
   },
 });

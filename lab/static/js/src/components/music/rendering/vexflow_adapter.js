@@ -1442,9 +1442,12 @@ define([
         var ratio = Math.max(0, Math.min(1, dur / fullMeasureTicks));
         if (dur >= fullMeasureTicks * 0.95) {
           weights.push(1);
-        } else if (wi === 0) {
-          // Pickup: we've already reserved a base width (overhead + min notes width). Avoid double-allocation.
-          // Give it zero proportional share so it doesn't steal space from full bars.
+        } else if (wi === 0 && numMeasures > 1) {
+          // Pickup BEFORE full bars: we've already reserved a base width (overhead +
+          // min notes width). Give it zero proportional share so it doesn't steal
+          // space from the full bars that follow. Only applies when other measures
+          // exist — a standalone short/free-mode measure is not a pickup-to-nothing
+          // and must stretch to fill the width (see the weight-1 fallthrough below).
           weights.push(0);
         } else {
           // Other partials (rare): tie to duration with a floor
@@ -1472,8 +1475,11 @@ define([
       for (var mw = 0; mw < numMeasures; mw++) {
         var extra = unitWidth * weights[mw];
         var widthCandidate = baseWidths[mw] + extra;
-        // Enforce a minimum notes-area width for any partial measure to avoid crumpling
-        if (measureDurations[mw] < fullMeasureTicks * 0.95) {
+        // Enforce a minimum notes-area width for a partial measure to avoid crumpling
+        // ONLY when other (full) measures share the row. A standalone partial/free-mode
+        // measure keeps its distributed width so it stretches to fill, instead of being
+        // clamped to ~min and leaving the staff tiny.
+        if (numMeasures > 1 && measureDurations[mw] < fullMeasureTicks * 0.95) {
           var minFromNotes = 0;
           var notesMin = (mw === 0 ? pickupNotesMinWidth : measureNotesMinWidth(mw));
           if (notesMin > 0) minFromNotes = notesMin / 0.8; // convert to whole-measure width

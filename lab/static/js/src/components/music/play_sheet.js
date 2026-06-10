@@ -16,6 +16,10 @@ define([
   "app/components/music/playback_controls",
   "app/utils/analyze",
   "./chordal_spelling",
+  "./play_save_logic",
+  "app/utils/chordal_barlines_logic",
+  "app/config/analysis_slots",
+  "./play_authoring_toolbar",
 ], function (
   $,
   _,
@@ -32,7 +36,11 @@ define([
   ScorePlayer,
   renderPlaybackControls,
   Analyze,
-  ChordalSpelling
+  ChordalSpelling,
+  PlaySaveLogic,
+  ChordalBarlinesLogic,
+  AnalysisSlots,
+  PlayAuthoringToolbar
 ) {
   "use strict";
 
@@ -75,13 +83,24 @@ define([
       throw new Error("missing settings.chords");
     }
 
+    // Authoring state (Play teacher authoring). Default note value = quarter (1.0).
+    // All authoring overrides are keyed by the chord's STABLE id (chord._cid),
+    // never by a positional index — the bank unshifts new chords so indices shift.
+    this._chordDurations = {};   // chord._cid -> quarter-length (palette)
+    this._spellingOverrides = {}; // chord._cid -> [spelling strings]
+    this._barlineOffsets = [];   // quarter-length offsets, sorted/unique, on chord onsets
+    this._meter = null;          // null = free/open mode
+    this._tokenOverrides = {};   // chord._cid -> { below: <string> } teacher analysis corrections
+    this._selection = null;      // { kind: "chord", chord: <Chord> } or null
+    this._toolbar = null;        // PlayAuthoringToolbar instance (lazy)
+
     if ("keySignature" in this.settings) {
       this.keySignature = this.settings.keySignature;
     } else {
       throw new Error("missing settings.keySignature");
     }
 
-    _.bindAll(this, ["render", "onChordsUpdate"]);
+    _.bindAll(this, ["render", "onChordsUpdate", "_onAuthoringKeydown"]);
   };
 
   PlaySheetComponent.prototype = new Component();
@@ -130,6 +149,8 @@ define([
       this.initRenderer();
       this.initStaves();
       this.initListeners();
+      this._initClickHandler();
+      document.addEventListener("keydown", this._onAuthoringKeydown);
 
       var self = this;
       this.scorePlayer = new ScorePlayer(this.settings.midiDevice);
@@ -140,6 +161,13 @@ define([
       this.scorePlayer.bind("stopped", function () {
         self._playbackWindowIndex = null;
         self._clearPlaybackHighlight();
+      });
+
+      // Wire the meter selector in the toolbar to setMeter.
+      // The <select id="play-meter-select"> is rendered in play.html's #staff-toolbar.
+      $("#play-meter-select").on("change", function () {
+        var val = $(this).val();
+        self.setMeter(val || null);
       });
     },
     /**
@@ -287,10 +315,12 @@ define([
         }
       } else {
         this.renderStaves();
+        this._drawBarlineTicks();
       }
 
       /* save data for retrieval by MusicControlsComponent.onClickSaveJSON; this may not be the optimal or most professional solution */
       sessionStorage.setItem("current_state", this.dataForSave());
+      sessionStorage.setItem("current_state_validity", JSON.stringify(this.checkSaveValidity()));
 
       return this;
     },
@@ -415,13 +445,24 @@ define([
         treble_alterationHistory[i] = treble_activeAlterations;
         bass_alterationHistory[i] = bass_activeAlterations;
 
+        // Live per-chord duration (play-authoring). Look up by the chord's stable id
+        // (positional indices shift on bank). Only banked chords carry an authored
+        // duration; the live/working chord keeps the default note value.
+        let noteDuration = null;
+        if (isBanked) {
+          let ql = this.getChordDuration(chord);
+          let dp = ChordalBarlinesLogic.qlToVexDuration(ql);
+          noteDuration = { duration: dp.duration, dots: dp.dots, quarterLength: ql };
+        }
+
         treble = this.createNoteStave(
           "treble",
           _.clone(position),
           chord,
           isBanked,
           isNovel,
-          treble_activeAlterations
+          treble_activeAlterations,
+          noteDuration
         );
         bass = this.createNoteStave(
           "bass",
@@ -429,7 +470,8 @@ define([
           chord,
           isBanked,
           isNovel,
-          bass_activeAlterations
+          bass_activeAlterations,
+          noteDuration
         );
         position.index += 1;
         treble.connect(bass);
@@ -486,9 +528,17 @@ define([
       stave.setNotater(stave_notater);
       stave.setMaxWidth(this.getWidth());
 
+      // Live time-signature glyph (play-authoring): when a meter is set the display
+      // stave (the first bar) draws it; in free mode (_meter null) no glyph appears.
+      if (this._meter) {
+        stave.setTimeSignature(this._meter);
+      }
+
       if (typeof this.keySignature.signatureSpec === "string") {
         const staffSig = this.keySignature.signatureSpec;
-        stave.setFirstBarWidth(staffSig, 4);
+        // Reserve extra first-bar width for the time-signature glyph when a meter
+        // is set, otherwise the glyph is clipped/overlapped and never shows.
+        stave.setFirstBarWidth(staffSig, 4, !!this._meter);
       }
       stave.updatePosition();
 
@@ -508,9 +558,17 @@ define([
       chord,
       isBanked,
       isNovel,
-      activeAlterations
+      activeAlterations,
+      noteDuration
     ) {
       var stave = new Stave(clef, position);
+      if (noteDuration) {
+        stave.setNoteDuration(
+          noteDuration.duration,
+          noteDuration.dots,
+          noteDuration.quarterLength
+        );
+      }
 
       stave.setRenderer(this.vexRenderer);
       stave.setKeySignature(this.keySignature);
@@ -675,78 +733,568 @@ define([
       $("#playback-highlight").hide();
     },
 
+    /**
+     * Draw a thin vertical tick at each barline position on the canvas.
+     * Maps each barline offset → the banked-chord whose onset equals it →
+     * that chord's stave getStartX(), then draws a short vertical line.
+     * Only active in regular stave mode.
+     */
+    _drawBarlineTicks: function () {
+      if (!this._barlineOffsets || !this._barlineOffsets.length) return;
+      if (window.location.search.indexOf("newvf") !== -1) return;
+
+      var staves = this.staves;
+      if (!staves || staves.length < 2) return;
+
+      // Build onset → stave index map. Display is chronological (oldest left):
+      // staves[k] (k>=1) is the k-th banked chord in chronological order, whose
+      // onset is offsetsFromDurations(_bankedDurations())[k-1]. Both the offsets
+      // and the staves are chronological, so they line up.
+      var durations = this._bankedDurations();
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
+      var onsetToStaveIdx = {};
+      for (var k = 1; k < staves.length; k++) {
+        var onset = offsets[k - 1];
+        if (onset !== undefined) {
+          onsetToStaveIdx[Math.round(onset * 1e6) / 1e6] = k;
+        }
+      }
+
+      // Get the raw 2D context directly from the canvas element (Vex.Flow may
+      // wrap it; accessing the element directly is the most reliable path).
+      var canvas = this.el[0];
+      var raw = canvas ? canvas.getContext("2d") : null;
+      if (!raw) return;
+
+      raw.save();
+      raw.strokeStyle = "rgba(60, 120, 220, 0.85)";
+      raw.lineWidth = 2;
+
+      var canvasHeight = canvas.height || this.getHeight();
+
+      for (var i = 0; i < this._barlineOffsets.length; i++) {
+        var o = Math.round(this._barlineOffsets[i] * 1e6) / 1e6;
+        var si = onsetToStaveIdx[o];
+        if (si === undefined) continue;
+        var stave = staves[si];
+        var x = stave.getStartX ? stave.getStartX() : 0;
+        // Draw a vertical line from canvas top to bottom at this x
+        raw.beginPath();
+        raw.moveTo(x, 0);
+        raw.lineTo(x, canvasHeight);
+        raw.stroke();
+      }
+
+      raw.restore();
+    },
+
+    /**
+     * Banked chords in CHRONOLOGICAL order (oldest first). The bank stores
+     * _items[0] = live chord and _items[1..N] = banked NEWEST-first (unshift),
+     * so drop the live chord and reverse. This order matches the on-screen
+     * display (staves left→right) and the saved-exercise chord order.
+     */
+    _bankedChrono: function () {
+      return this.chords._items.slice(1).reverse();
+    },
+
+    // Duration keyed by the chord's STABLE id (positional indices shift on bank).
+    getChordDuration: function (chord) {
+      var d = chord ? this._chordDurations[chord._cid] : undefined;
+      return typeof d === "number" ? d : 1.0; // default quarter
+    },
+
+    setChordDuration: function (chord, quarterLength) {
+      if (!chord) return;
+      this._chordDurations[chord._cid] = quarterLength;
+      this.onChordsUpdate(); // rebuild staves (render() alone repaints stale staves)
+    },
+
+    setMeter: function (meter) {
+      this._meter = meter || null;
+      if (this._meter) this.autoSuggestBarlines(); // seeds barlines; teacher then edits
+      else { this._barlineOffsets = []; this.onChordsUpdate(); }
+    },
+
+    placeBarline: function (offset) {
+      var o = Math.round(offset * 1e6) / 1e6;
+      if (this._barlineOffsets.indexOf(o) === -1) {
+        this._barlineOffsets.push(o);
+        this._barlineOffsets.sort(function (a, b) { return a - b; });
+        this.onChordsUpdate();
+      }
+    },
+    removeBarline: function (offset) {
+      var o = Math.round(offset * 1e6) / 1e6;
+      this._barlineOffsets = this._barlineOffsets.filter(function (b) { return b !== o; });
+      this.onChordsUpdate();
+    },
+    _bankedDurations: function () {
+      var self = this;
+      return this._bankedChrono().map(function (c) { return self.getChordDuration(c); });
+    },
+    toggleBarlineAtChord: function (chord) {
+      // A barline sits at the onset of `chord` (between it and the previous chord).
+      if (!chord) return;
+      var chrono = this._bankedChrono();
+      var idx = chrono.indexOf(chord);
+      if (idx <= 0) return; // index 0 is the stream start — no barline there
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(this._bankedDurations());
+      var onset = offsets[idx];
+      if (onset === undefined || onset === 0) return;
+      if (this._barlineOffsets.indexOf(Math.round(onset * 1e6) / 1e6) === -1) this.placeBarline(onset);
+      else this.removeBarline(onset);
+    },
+    autoSuggestBarlines: function () {
+      var durations = this._bankedDurations();
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
+      this._barlineOffsets = ChordalBarlinesLogic.suggestBarlines(offsets, durations, this._meter);
+      this.onChordsUpdate();
+    },
+
+    _analyzeSlots: function () {
+      var cfg = this.getAnalyzeConfig() || {};
+      return AnalysisSlots.normalizeSlots(cfg);
+    },
+
+    checkSaveValidity: function () {
+      if (this.chords._items.length < 2) return { ok: false, code: "empty" };
+      var durations = this._bankedDurations();
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
+      var res = ChordalBarlinesLogic.checkRhythm(offsets, durations, this._meter, this._barlineOffsets);
+      return res.ok ? { ok: true } : { ok: false, code: "invalid_meter", error: res.error };
+    },
+
+    /**
+     * Lazily construct and return the PlayAuthoringToolbar, wiring callbacks.
+     * @private
+     */
+    _getToolbar: function () {
+      if (!this._toolbar) {
+        var self = this;
+        this._toolbar = new PlayAuthoringToolbar({
+          onSetDuration: function (ql) {
+            if (self._selection) {
+              self.setChordDuration(self._selection.chord, ql);
+            }
+          },
+          onRespell: function () {
+            self._respellSelected();
+          },
+          onClose: function () {
+            self._clearSelection();
+          },
+          onSetToken: function (value) {
+            if (self._selection) {
+              self.setToken(self._selection.chord, "below", value);
+            }
+          },
+        });
+      }
+      return this._toolbar;
+    },
+
+    /**
+     * Compute the current below-zone label for the given banked chord
+     * (for pre-filling the token correction input in the toolbar).
+     * Returns the override value if set, otherwise the computed label, or
+     * null if no below-zone is active.
+     *
+     * @param {Chord} chord  the banked chord object.
+     * @return {string|null}
+     */
+    _getCurrentTokenLabel: function (chord) {
+      var slots = this._analyzeSlots();
+      if (!slots || !slots.below) return null;
+      if (!chord) return null;
+      // Return stored override if present (keyed by stable chord id)
+      if (this._tokenOverrides[chord._cid] &&
+          typeof this._tokenOverrides[chord._cid].below !== "undefined") {
+        return this._tokenOverrides[chord._cid].below;
+      }
+      var obj = chord._notes;
+      var visible = Object.keys(obj)
+        .filter(function (k) { return obj[k]; })
+        .map(function (k) { return parseInt(k, 10); });
+      if (!visible.length) return null;
+      try {
+        var analyzer = new Analyze(this.keySignature);
+        if (slots.below === "thoroughbass") {
+          return analyzer.full_thoroughbass_figure(visible) || "";
+        } else {
+          var rn = analyzer.to_chord(visible, "roman only");
+          return (rn && rn.numeral) ? rn.numeral : "";
+        }
+      } catch (e) {
+        return null;
+      }
+    },
+
+    /**
+     * Clear the current chord selection and hide the toolbar.
+     */
+    _clearSelection: function () {
+      this._selection = null;
+      if (this._toolbar) {
+        this._toolbar.hide();
+      }
+    },
+
+    /**
+     * Flip the enharmonic spelling of the currently selected banked chord and
+     * store it in _spellingOverrides so dataForSave picks it up.
+     *
+     * Algorithm: for each note in the chord, read the current spelling string
+     * (from _spellingOverrides if already overridden, else the key-aware
+     * default from ChordalSpelling/Analyze). Then apply a minimal enharmonic
+     * flip: sharp -> flat, flat -> sharp, natural -> no change. Specifically:
+     *   - alter > 0 (sharps): raise the letter step by one, apply flats
+     *     (e.g. C# -> Db, F# -> Gb, D# -> Eb)
+     *   - alter < 0 (flats): lower the letter step by one, apply sharps
+     *     (e.g. Db -> C#, Bb -> A#, Eb -> D#)
+     *   - alter == 0 (natural): leave unchanged
+     *
+     * The result is stored keyed by the chord's stable id (this._spellingOverrides),
+     * which dataForSave reads back per chord (positional indices shift on bank).
+     */
+    _respellSelected: function () {
+      if (!this._selection || this._selection.kind !== "chord") return;
+      var chord = this._selection.chord;
+      if (!chord) return;
+      var obj = chord._notes;
+      var visible = Object.keys(obj)
+        .filter(function (k) { return obj[k]; })
+        .map(function (k) { return parseInt(k, 10); });
+      var hidden = [];
+      try { hidden = chord._hidden_notes ? chord._hidden_notes.slice() : []; } catch (e) {}
+      var allMidis = visible.concat(hidden);
+      if (allMidis.length === 0) return;
+
+      // Determine the current spelling strings (override already stored, or recompute)
+      var currentSpellings;
+      if (this._spellingOverrides[chord._cid] &&
+          this._spellingOverrides[chord._cid].length === allMidis.length) {
+        currentSpellings = this._spellingOverrides[chord._cid].slice();
+      } else {
+        // Recompute key-aware defaults (same logic as dataForSave)
+        var analyzer = new Analyze(this.keySignature);
+        currentSpellings = allMidis.map(function (m) {
+          return ChordalSpelling.vexKeyToSpellingString(analyzer.getNoteName(m, visible));
+        });
+      }
+
+      // Letter steps in order (for enharmonic flip)
+      var STEPS = ["C", "D", "E", "F", "G", "A", "B"];
+
+      // Flip each spelling string
+      var flipped = currentSpellings.map(function (str, idx) {
+        var midi = allMidis[idx];
+        var parsed = ChordalSpelling.pitchFromSpellingString(str);
+        if (!parsed) return str; // can't parse, leave unchanged
+
+        var alter = parsed.alter;
+        if (alter === 0) return str; // natural — no enharmonic equivalent at same MIDI pitch
+
+        // Compute new step and alter
+        var stepIdx = STEPS.indexOf(parsed.step.toUpperCase());
+        if (stepIdx === -1) return str;
+        var newStep, newAlter;
+        if (alter > 0) {
+          // Sharp(s) -> raise letter by one step, apply flats
+          newStep = STEPS[(stepIdx + 1) % 7];
+          newAlter = -(alter); // e.g. C# (alter=1) -> Db (alter=-1)
+        } else {
+          // Flat(s) -> lower letter by one step, apply sharps
+          newStep = STEPS[(stepIdx + 6) % 7]; // -1 mod 7
+          newAlter = -(alter); // e.g. Db (alter=-1) -> C# (alter=1)
+        }
+
+        // Recompute octave from MIDI for the new spelling
+        var pc = ((midi % 12) + 12) % 12;
+        var STEP_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+        var naturalPc = STEP_PC[newStep];
+        var octave = Math.floor(midi / 12) - 1;
+        if (pc - naturalPc > 6) octave += 1;
+        else if (naturalPc - pc > 6) octave -= 1;
+
+        // Build accidental suffix string
+        var acc = "";
+        var i;
+        if (newAlter > 0) {
+          for (i = 0; i < newAlter; i++) acc += "#";
+        } else if (newAlter < 0) {
+          for (i = 0; i < -newAlter; i++) acc += "b";
+        }
+
+        return newStep + acc + octave;
+      });
+
+      // Only store if lengths match (guard against backend spelling-length rejection)
+      if (flipped.length !== allMidis.length) return;
+      this._spellingOverrides[chord._cid] = flipped;
+      this.onChordsUpdate();
+    },
+
+    /**
+     * Store a teacher-override for the below-zone token (Roman numeral /
+     * figured bass label) for the given chord, keyed by its stable id.
+     * dataForSave maps these back onto the chronological banked-chord order.
+     *
+     * @param {Chord} chord  the selected banked chord object.
+     * @param {string} zone  Which zone to override — "below" is the only
+     *   supported zone currently (Roman numeral or figured bass depending on
+     *   analyzeConfig.slots.below).
+     * @param {string} value  The override label (plain text, e.g. "V7", "I6").
+     */
+    setToken: function (chord, zone, value) {
+      if (!chord) return;
+      this._tokenOverrides[chord._cid] = this._tokenOverrides[chord._cid] || {};
+      this._tokenOverrides[chord._cid][zone] = value;
+      this.onChordsUpdate();
+    },
+
+    /**
+     * Attach a click handler on the canvas to hit-test against rendered stave
+     * slots and select the corresponding banked chord, OR toggle a barline when
+     * clicking near a stave boundary (gap).
+     *
+     * Hit-test strategy (regular stave mode):
+     *   - After updateStaves(), this.staves[0] is the display stave,
+     *     this.staves[k] (k >= 1) is the treble stave for items[k-1].
+     *   - items are chords.items({ limit, reverse:true }), so items[k-1] maps
+     *     to this.chords._items[ items.length - k ] (raw bank index).
+     *
+     * Gap vs chord discrimination:
+     *   - GAP_TOL = 8px. For each banked stave k >= 2, the left edge
+     *     staves[k].getStartX() is a potential gap (boundary between chord k-1
+     *     and chord k). If the click is within GAP_TOL px of that left edge,
+     *     treat it as a gap click and toggle the barline for bank index k.
+     *   - Otherwise, perform the normal chord-body hit-test (chord body = full
+     *     stave column width minus the gap band on the left edge). The chord
+     *     body starts at sx + GAP_TOL and ends at sx + sw.
+     *
+     * @private
+     */
+    _initClickHandler: function () {
+      var self = this;
+      // Gap tolerance in canvas pixels: clicks within this band on the LEFT
+      // edge of a banked stave (k>=2) are treated as barline-toggle clicks.
+      var GAP_TOL = 8;
+
+      this.el.on("click.play-authoring", function (e) {
+        // Only active in regular stave mode (not corpus mode)
+        if (window.location.search.indexOf("newvf") !== -1) return;
+
+        var canvas = self.el[0];
+        var rect = canvas.getBoundingClientRect();
+        // Canvas-relative click coordinates
+        var cx = e.clientX - rect.left;
+        var cy = e.clientY - rect.top;
+
+        var staves = self.staves;
+        if (!staves || staves.length < 2) {
+          self._clearSelection();
+          return;
+        }
+
+        // Build the items list in the same order as updateStaves
+        var limit = CHORD_BANK_SIZE;
+        var items = self.chords.items({ limit: limit, reverse: true });
+
+        // --- Gap check: staves[k] for k >= 2 have a left-edge gap band ---
+        // Display is chronological (oldest left): stave gk == items[gk-1].chord.
+        // The gap on stave gk's left edge sits at that chord's onset; toggling
+        // there places/removes a barline before the chord.
+        for (var gk = 2; gk < staves.length; gk++) {
+          var gStave = staves[gk];
+          var gsx = gStave.getStartX ? gStave.getStartX() : 0;
+          if (cx >= gsx - GAP_TOL && cx < gsx + GAP_TOL) {
+            var gItem = items[gk - 1];
+            if (gItem && gItem.isBanked) {
+              self.toggleBarlineAtChord(gItem.chord);
+            }
+            return; // consumed — do not also select a chord
+          }
+        }
+
+        // --- Chord body hit-test ---
+        var hitStaveIdx = -1;
+
+        for (var k = 1; k < staves.length; k++) {
+          var stave = staves[k];
+          var sx = stave.getStartX();
+          var sw = stave.getWidth ? stave.getWidth() : stave.width;
+          // For k >= 2, the chord body starts at sx + GAP_TOL (left edge is gap band).
+          // For k == 1 (first banked stave), there is no gap to the left.
+          var bodyLeft = (k >= 2) ? sx + GAP_TOL : sx;
+          if (cx >= bodyLeft && cx < sx + sw) {
+            hitStaveIdx = k;
+            break;
+          }
+        }
+
+        if (hitStaveIdx < 1) {
+          self._clearSelection();
+          return;
+        }
+
+        // items[hitStaveIdx - 1] is the chord at this stave
+        var itemIdx = hitStaveIdx - 1;
+        if (itemIdx >= items.length) {
+          self._clearSelection();
+          return;
+        }
+
+        // Only allow selection of banked (not current/novel) chords
+        if (!items[itemIdx].isBanked) {
+          self._clearSelection();
+          return;
+        }
+
+        // Select the chord OBJECT (stable across banking, unlike a positional index).
+        var selectedChord = items[itemIdx].chord;
+        self._selection = { kind: "chord", chord: selectedChord };
+
+        // Compute page-coordinate rect for the chord column
+        var hitStave = staves[hitStaveIdx];
+        var sx2 = hitStave.getStartX();
+        var sw2 = hitStave.getWidth ? hitStave.getWidth() : hitStave.width;
+        // Bottom of bass stave: staves[k] is treble, bass is connected but
+        // not separately tracked — use canvas bottom edge as a safe fallback
+        var staveHeight = rect.height;
+        var pageRect = {
+          left:   rect.left + sx2,
+          top:    rect.top,
+          width:  sw2,
+          height: staveHeight,
+        };
+
+        var toolbar = self._getToolbar();
+        var currentToken = self._getCurrentTokenLabel(selectedChord);
+        toolbar.showAt(pageRect, self.getChordDuration(selectedChord), currentToken);
+      });
+    },
+
     /* solution for saving data as exercise; called by render() and saved to sessionStorage */
     dataForSave: function () {
       const objs = this.chords._items.map((items) => items._notes);
       if (objs.length < 2) return null;
 
-      let chords = [];
       var analyzer = new Analyze(this.keySignature);
-      let i, len;
-      for (i = 1, len = objs.length; i < len; i++) {
-        let obj = objs[i];
-        let keys = Object.keys(obj);
-        let visible = keys
-          .filter(function (key) {
-            return obj[key];
-          })
-          .map((key) => parseInt(key));
-        let hidden = [];
-        let unison_idx = null;
-        try {
-          unison_idx = this.chords._items[i]._unison_idx;
-        } catch {
-          console.log('PlaySheetComponent.dataForSave failed to retrieve unison_idx')
+      var notes = [];
+      var durations = [];
+      // Iterate banked chords CHRONOLOGICALLY (oldest first) so the saved chord
+      // order matches what the teacher sees; key all overrides by the chord's
+      // stable id (positional indices shift on bank).
+      var chrono = this._bankedChrono();
+      var tokenOverridesArr = {}; // 0-based chronological index -> { below: str }
+      for (var i = 0; i < chrono.length; i++) {
+        var chordObj = chrono[i];
+        var obj = chordObj._notes;
+        var visible = Object.keys(obj)
+          .filter((k) => obj[k])
+          .map((k) => parseInt(k, 10));
+        var hidden = [];
+        var unison_idx = null;
+        try { unison_idx = chordObj._unison_idx; } catch (e) {}
+        var allMidisForSpell = visible.concat(hidden);
+        var spelling = allMidisForSpell.map((m) =>
+          ChordalSpelling.vexKeyToSpellingString(analyzer.getNoteName(m, visible)));
+        if (this._spellingOverrides[chordObj._cid] &&
+            this._spellingOverrides[chordObj._cid].length === allMidisForSpell.length) {
+          spelling = this._spellingOverrides[chordObj._cid];
         }
-        var spelling = visible.concat(hidden).map(function (m) {
-          return ChordalSpelling.vexKeyToSpellingString(analyzer.getNoteName(m, visible));
-        });
-        chords.unshift({ rhythmValue: "w", visible: visible, hidden: hidden, unison_idx: unison_idx, spelling: spelling });
+        notes.push({ visible: visible, hidden: hidden, spelling: spelling, unison_idx: unison_idx });
+        durations.push(this.getChordDuration(chordObj));
+        if (this._tokenOverrides[chordObj._cid]) {
+          tokenOverridesArr[i] = this._tokenOverrides[chordObj._cid];
+        }
       }
 
-      /* simplify for testing */
-      // chords = chords.map(chord => chord["visible"]);
+      var slots = this._analyzeSlots();
+      var offsets = ChordalBarlinesLogic.offsetsFromDurations(durations);
 
-      let json_data = {
+      // Persist the teacher's analysis DISPLAY choices so the saved exercise renders
+      // what they saw (not just the below-zone reviewed slices). exercise_sheet reads
+      // these display.show* flags via definition.getDisplay().
+      var liveCfg = this.getAnalyzeConfig() || {};
+      var liveMode = liveCfg.mode || {};
+      var display = {
+        showRomans: !!liveMode.roman_numerals,
+        showFigures: !!liveMode.thoroughbass,
+        showChordLabels: !!liveMode.chord_labels,
+        showScaleDegrees: !!liveMode.scale_degrees,
+        showNoteNames: !!liveMode.note_names,
+      };
+      if (liveMode.abbreviate_thoroughbass) display.figureStyle = "figures_abbrev";
+
+      var labels = [];
+      if (slots.below) {
+        for (var j = 0; j < notes.length; j++) {
+          var midis = notes[j].visible;
+          if (slots.below === "thoroughbass") {
+            labels.push(analyzer.full_thoroughbass_figure(midis) || "");
+          } else {
+            var rn = analyzer.to_chord(midis, "roman only");
+            labels.push(rn && rn.numeral ? rn.numeral : "");
+          }
+        }
+      }
+
+      var chordRows = PlaySaveLogic.buildChordRows(notes, durations);
+      var analysisSlices = PlaySaveLogic.buildAnalysisSlices(
+        offsets, slots, labels, tokenOverridesArr);
+
+      var json_data = {
         keySignature: this.keySignature.signatureSpec,
         key: this.keySignature.key,
-        type: "matching" /* provide options */,
-        staffDistribution:
-          this.parentComponent.staffDistributionConfig.staffDistribution,
+        type: "matching",
+        staffDistribution: this.parentComponent.staffDistributionConfig.staffDistribution,
         introText: "",
         reviewText: "",
-        analysis: this.parentComponent.analyzeConfig,
+        analyzeConfig: slots,
+        display: display,
         highlight: this.parentComponent.highlightConfig,
-        chord: chords,
+        chord: chordRows,
+        meter: this._meter,
+        barline_offsets: this._barlineOffsets.slice(),
+        analysisSlices: slots.below ? analysisSlices : null,
       };
 
-      /*
-			// These properties should also be included once we start changing these presets per user.
-			json_data["bankAfterMetronomeTick"]
-				= Config.__config.general.bankAfterMetronomeTick;
-			json_data["defaultKeyboardSize"]
-				= Config.__config.general.defaultKeyboardSize;
-			json_data["defaultOctaveAdjustment"]
-				= Config.__config.general.defaultOctaveAdjustment;
-			json_data["defaultRhythmValue"]
-				= Config.__config.general.defaultRhythmValue;
-			json_data["hideNextForAutoAdvance"]
-				= Config.__config.general.hideNextForAutoAdvance;
-			json_data["highlightSettings"]
-				= Config.__config.general.highlightSettings;
-			json_data["keyboardShortcutsEnabled"]
-				= Config.__config.general.keyboardShortcutsEnabled;
-			json_data["noDoubleVision"]
-				= Config.__config.general.noDoubleVision;
-			json_data["voiceCountForChoraleStyle"]
-				= Config.__config.general.voiceCountForChoraleStyle;
-			json_data["voiceCountForKeyboardStyle"]
-				= Config.__config.general.voiceCountForKeyboardStyle;
-			*/
+      return JSON.stringify(json_data, null, 0);
+    },
 
-      const save_me = JSON.stringify(json_data, null, 0);
-
-      return save_me;
+    /**
+     * Keyboard accelerators scoped to the current chord selection.
+     * This handler is a NO-OP when _selection is null, so note entry is
+     * completely unaffected with no selection active.
+     *
+     * Duration mapping (pragmatic choice matching toolbar palette):
+     *   1 = quarter  (1.0 quarter-lengths)
+     *   2 = half     (2.0 quarter-lengths)
+     *   3 = dotted half (3.0 quarter-lengths)
+     *   4 = whole    (4.0 quarter-lengths)
+     *   r/R = respell selected chord enharmonically
+     *   Escape = deselect
+     *
+     * No global authoring keys are registered here — these accelerators
+     * only fire when a chord is selected (selection-scoped).
+     */
+    _onAuthoringKeydown: function (e) {
+      if (!this._selection) return; // selection-scoped only; note entry unaffected
+      // Don't act if a text field is focused (let typing happen).
+      var ae = document.activeElement;
+      if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)) return;
+      var chord = this._selection.chord;
+      switch (e.key) {
+        case "1": this.setChordDuration(chord, 1.0); e.preventDefault(); break;   // quarter
+        case "2": this.setChordDuration(chord, 2.0); e.preventDefault(); break;   // half
+        case "3": this.setChordDuration(chord, 3.0); e.preventDefault(); break;   // dotted half
+        case "4": this.setChordDuration(chord, 4.0); e.preventDefault(); break;   // whole
+        case "r": case "R": this._respellSelected(); e.preventDefault(); break;
+        case "Escape": this._clearSelection(); e.preventDefault(); break;
+        default: break;
+      }
     },
   });
 

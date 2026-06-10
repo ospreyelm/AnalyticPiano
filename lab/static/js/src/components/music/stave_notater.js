@@ -7,6 +7,7 @@ define([
   "app/util",
   "app/utils/analyze",
   "app/utils/fontparser",
+  "app/config/analysis_slots",
 ], function (
   _,
   Vex,
@@ -14,7 +15,8 @@ define([
   Config /* only for declaring MASK_TREBLE */,
   util,
   Analyze,
-  FontParser
+  FontParser,
+  AnalysisSlots
 ) {
   "use strict";
 
@@ -200,6 +202,11 @@ define([
         },
         this
       );
+
+      // Derive slot representation for above/below zone awareness.
+      // Compute-only: this.slots is available for future use; the draw
+      // dispatch continues to use the existing mode.* guards unchanged.
+      this.slots = AnalysisSlots.normalizeSlots(this.analyzeConfig || {});
 
       // optional
       if (this.config.hasOwnProperty("chord")) {

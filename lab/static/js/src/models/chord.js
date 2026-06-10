@@ -35,6 +35,13 @@ define([
       STAFF_DISTRIBUTION = sessionStorage.getItem("staffDistribution");
     }
 
+    // Stable per-instance id. The chord bank inserts banked chords at the FRONT
+    // of _items (unshift), so positional indices shift on every bank. Authoring
+    // overrides (duration/spelling/analysis) must be keyed by this stable id,
+    // never by a positional index. copy() does not touch it, so each banked
+    // chord object keeps its own id for its lifetime.
+    this._cid = ++Chord._cidSeq;
+
     this.settings = settings || {};
 
     if (
@@ -48,6 +55,9 @@ define([
 
     this.init();
   };
+
+  // Monotonic source for stable chord ids (see this._cid in the constructor).
+  Chord._cidSeq = 0;
 
   _.extend(Chord.prototype, {
     /**

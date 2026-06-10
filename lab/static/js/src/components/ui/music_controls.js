@@ -10,6 +10,7 @@ define([
   "app/widgets/analyze",
   "app/widgets/highlight",
   "app/widgets/staff_distribute",
+  "app/components/ui/target_selector",
 ], function (
   $,
   _,
@@ -21,7 +22,8 @@ define([
   KeySignatureWidget,
   AnalyzeWidget,
   HighlightWidget,
-  StaffDistributionWidget
+  StaffDistributionWidget,
+  TargetSelectorComponent
 ) {
   /**
    * Defines whether the shortcuts are enabled by default or not.
@@ -74,6 +76,7 @@ define([
     }
     this.keySignature = settings.keySignature;
     this.midiDevice = settings.midiDevice;
+    this.feedback = settings.feedback || null;
 
     if (settings.exerciseContext) {
       this.exerciseContext = settings.exerciseContext;
@@ -82,6 +85,11 @@ define([
     }
 
     this.addComponent(new ModalComponent());
+
+    this.targetSelector = new TargetSelectorComponent({
+      onChoose: (payload) => this._onTargetChosen(payload),
+    });
+    this.addComponent(this.targetSelector);
 
     this.headerEl = $(settings.headerEl);
     this.containerEl = $(settings.containerEl);
@@ -139,6 +147,10 @@ define([
       this.renderOctaveAdjustment();
       this.renderKeyboardShortcuts();
       this.initMidiTab();
+
+      this.subscribe(EVENTS.BROADCAST.PLAY_SAVED, (data) =>
+        this.targetSelector.open(data.exerciseId)
+      );
     },
     /**
      * Initializes the controls layout.
@@ -552,35 +564,44 @@ define([
       json_data = JSON.stringify(json_data, null, 0);
 
       if (destination === "upload") {
+        var validity = JSON.parse(sessionStorage.getItem("current_state_validity") || "null");
+        if (validity && !validity.ok) {
+          if (this.feedback) {
+            if (validity.code === "empty") {
+              this.feedback.emit("play.save.empty", { inlineEl: "#save-feedback" });
+            } else {
+              var m = /Bar (\d+) (?:has|spans) (\S+) beats, expected ([^.]+)/.exec(validity.error || "");
+              this.feedback.emit("play.save.invalid_meter", {
+                inlineEl: "#save-feedback",
+                params: m ? { bar: m[1], beats: m[2], expected: m[3] } : { bar: "?", beats: "?", expected: "?" },
+              });
+            }
+          }
+          return false;
+        }
         $.ajax({
           type: "POST",
           url: window.location.origin + "/exercises/add/",
           data: { data: json_data },
           dataType: "json",
-          success: function (data) {
-            let exerciseID = data.id;
-            let reviewUrl = data.reviewUrl;
-            let needsReview = data.reviewStatus === "generated";
-            if (!quiet) {
-              if (needsReview && reviewUrl) {
-                window.alert(
-                  `Exercise saved (ID: ${exerciseID}). Opening analysis review so you can approve or correct it.`
-                );
-                window.open(reviewUrl, "_blank");
-              } else {
-                window.alert(
-                  `Exercise uploaded! Exercise ID: ${exerciseID}. Taking you to the new exercise now.`
-                );
-                window.open(`/dashboard/exercises/${exerciseID}/`, "_blank");
-              }
-            } else {
-              window.alert(
-                `Exercise uploaded! Exercise ID: ${exerciseID}.`
-              );
+          success: (data) => {
+            const exerciseID = data.id;
+            if (this.feedback) {
+              this.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
             }
+            this.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
+              exerciseId: exerciseID,
+              reviewStatus: data.reviewStatus,
+            });
           },
-          error: function (error) {
-            console.log(error);
+          error: (xhr) => {
+            console.log(xhr);
+            if (this.feedback) {
+              this.feedback.emit("play.save.invalid_meter", {
+                inlineEl: "#save-feedback",
+                params: { bar: "?", beats: "?", expected: "?" },
+              });
+            }
           },
         });
       } else {
@@ -631,6 +652,22 @@ define([
     onClickFirstExercise: function () {
       this.broadcast(EVENTS.BROADCAST.FIRSTEXERCISE);
       return true;
+    },
+    /**
+     * Receives the seam-contract payload from TargetSelectorComponent.
+     * Logs it as the durable handoff record for Threads 2/3 (assign + curriculum).
+     * v1 wires "library" only.
+     *
+     * @param {object} payload  { exerciseId, targetIntent, sectionId, autoTranspose }
+     * @return undefined
+     */
+    _onTargetChosen: function (payload) {
+      // Seam contract to Threads 2/3 (assign + curriculum). v1 wires "library" only.
+      console.log("[play-target]", JSON.stringify(payload));
+      if (payload.targetIntent === "library") {
+        if (this.feedback) this.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
+        window.open("/dashboard/exercises/" + payload.exerciseId + "/", "_blank");
+      }
     },
   });
 

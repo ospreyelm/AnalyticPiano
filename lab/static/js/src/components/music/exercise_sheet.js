@@ -26,6 +26,7 @@ define([
   "./chordal_umto_staff_distribution",
   "app/models/key_signature",
   "./chordal_spelling",
+  "app/utils/chordal_barlines_logic",
 ], function (
   $,
   $UI,
@@ -52,7 +53,8 @@ define([
   ChordalProblemsLogic,
   ChordalUMTOStaffDistribution,
   KeySignature,
-  ChordalSpelling
+  ChordalSpelling,
+  ChordalBarlinesLogic
 ) {
   "use strict";
 
@@ -1945,6 +1947,21 @@ define([
             }
           }
 
+          // Play Authoring Phase B: if the exercise stored explicit {above, below} slots,
+          // project them onto mode flags so the notater/adapter light up the right zones.
+          // This block only runs when a stored slot directive is present (play-authored
+          // exercises); legacy exercises have no top-level data.analyzeConfig so storedSlots
+          // is null and the block is skipped entirely — no regression risk.
+          var storedSlots = (definition.exercise && definition.exercise.analyzeConfig) || null;
+          if (storedSlots && (storedSlots.above || storedSlots.below)) {
+            analyzeConfig.mode = analyzeConfig.mode || {};
+            analyzeConfig.enabled = true;
+            if (storedSlots.below === "roman_numerals" || storedSlots.below === "roman_numerals_exp") analyzeConfig.mode.roman_numerals = true;
+            if (storedSlots.below === "thoroughbass") analyzeConfig.mode.thoroughbass = true;
+            if (storedSlots.above === "scale_degrees") analyzeConfig.mode.scale_degrees = true;
+            if (storedSlots.above === "note_names") analyzeConfig.mode.note_names = true;
+          }
+
           var startMeasure =
             (this._chorale && typeof this._chorale.startMeasure === "number"
               ? this._chorale.startMeasure
@@ -2987,7 +3004,8 @@ define([
     _convertChordalUMTOToProcessedScore: function (umto) {
       var meta = _.cloneDeep(umto.metadata || {});
       if (meta.meter && !meta.time) meta.time = meta.meter;
-      if (!meta.time) meta.time = "4/4";
+      // meta.time may be null/undefined => free/open mode (no time signature glyph).
+      var hasMeter = !!meta.time;
 
       var dist = meta.staffDistribution || "keyboard";
       var spellingTable = null;
@@ -3001,8 +3019,12 @@ define([
       var midiToPitch = function (m) {
         return ChordalSpelling.keyAwarePitch(m, spellingTable);
       };
-      var DUR_TYPE = { 4: "w", 2: "h", 1: "q", 0.5: "8", 0.25: "16", 0.125: "32" };
-      var durType = function (ql) { return DUR_TYPE[ql] || "q"; };
+      var DUR_PARTS = {
+        4: { type: "w", dots: 0 }, 3: { type: "h", dots: 1 }, 2: { type: "h", dots: 0 },
+        1.5: { type: "q", dots: 1 }, 1: { type: "q", dots: 0 }, 0.75: { type: "8", dots: 1 },
+        0.5: { type: "8", dots: 0 }, 0.25: { type: "16", dots: 0 }, 0.125: { type: "32", dots: 0 }
+      };
+      var durParts = function (ql) { return DUR_PARTS[Number(ql)] || { type: "q", dots: 0 }; };
 
       // Decide which staves are active.
       var forceTreble = dist === "RH" || dist === "treble";
@@ -3013,7 +3035,8 @@ define([
       _.each(umto.chords, function (c) {
         var midis = (c.visible || []).slice();
         var resolved = ChordalSpelling.resolveChordPitches(c, spellingTable);
-        var dur = { type: durType(Number(c.duration)), dots: 0 };
+        var dp = durParts(Number(c.duration));
+        var dur = { type: dp.type, dots: dp.dots };
         var hi, lo;
         var routed = ChordalUMTOStaffDistribution.routeChordMidis(midis, dist);
         hi = routed.treble;
@@ -3032,8 +3055,24 @@ define([
         bassItems.push(mkItem(lo));
       });
 
-      var trebleMeasures = MeasureEngine.splitIntoMeasures(trebleItems, meta.time);
-      var bassMeasures = MeasureEngine.splitIntoMeasures(bassItems, meta.time);
+      var barlineOffsets = (umto.metadata && umto.metadata.barline_offsets) || [];
+      var chordOffsets = (umto.chords || []).map(function (c) { return Number(c.offset); });
+      var trebleMeasures, bassMeasures;
+      if (barlineOffsets.length || !hasMeter) {
+        // Explicit barlines (or free mode): split by item counts at chord onsets.
+        var counts = ChordalBarlinesLogic.measureItemCounts(chordOffsets, barlineOffsets);
+        var sliceByCounts = function (items) {
+          var out = []; var idx = 0;
+          for (var k = 0; k < counts.length; k++) { out.push(items.slice(idx, idx + counts[k])); idx += counts[k]; }
+          if (!out.length) out.push(items.slice());
+          return out;
+        };
+        trebleMeasures = sliceByCounts(trebleItems);
+        bassMeasures = sliceByCounts(bassItems);
+      } else {
+        trebleMeasures = MeasureEngine.splitIntoMeasures(trebleItems, meta.time);
+        bassMeasures = MeasureEngine.splitIntoMeasures(bassItems, meta.time);
+      }
       var numMeasures = Math.max(trebleMeasures.length, bassMeasures.length);
 
       var measures = [];
@@ -3049,9 +3088,9 @@ define([
       }
 
       return {
-        meta: { key: meta.key, time: meta.time, clef: meta.clef,
-                staffDistribution: dist },
-        metadata: { time: meta.time, meter: meta.time },
+        meta: { key: meta.key, time: hasMeter ? meta.time : null, clef: meta.clef,
+                staffDistribution: dist, noTimeSignature: !hasMeter },
+        metadata: { time: hasMeter ? meta.time : null, meter: hasMeter ? meta.time : null },
         measures: measures,
         umto: umto,
       };

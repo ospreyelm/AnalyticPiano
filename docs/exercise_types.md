@@ -154,9 +154,17 @@ The renderer (`vexflow_adapter.itemToTickable`) trusts CIR `pitch.step/alter` an
 
 **Roman-numeral figures** in chordal analysis slices use the braced legacy format (`V{r3}`, `V{z5}`) so figures render stacked and round-trip through `stripFiguredBassTokens` for answers; the brace-stripped form is kept as `raw_roman_numeral`.
 
-**Analysis review / approval (soft gate).** On save the analysis is auto-generated and `analysis_review_status` is set to `"generated"`. The teacher is routed into the workbench review panel (`/dashboard/workbench/?review=<id>`); the edit page shows a "Needs review" / "Reviewed" badge. In the review panel the teacher can override Roman numerals (with a figure-token picker so brace codes aren't needed), edit figured bass / local key, and respell notes per chord; saving sets status to `"reviewed"`. Review API: `api_chordal_analysis_review` (GET/POST). Nothing is blocked on review status (soft gate only).
+**Click-first authoring (Teacher Play Authoring, Phase B).** Authoring happens in place on the Play canvas — "if you see it, you can click it to change it." Clicking a banked chord opens a micro-toolbar (`play_authoring_toolbar.js`): a closed **duration palette** (quarter-lengths `{4, 3, 2, 1.5, 1, 0.75, 0.5, 0.25}`, default quarter), **Respell**, and below-zone **token correction** (Roman numeral / figured bass). Clicking the gap between two chords places/removes a **barline** at that chord's onset. Selection-scoped keyboard accelerators (`1`–`4` set duration, `R` respell, `Esc` deselect) fire only while a chord is selected; note-entry is suspended whenever a text field is focused, so neither collides with the QWERTY note-entry overlay.
 
-**Key files:** `chordal_spelling.js`/`chordal_spelling.py`, `exercise_sheet.js`, `umto_factory.py` (`save_chordal_umto_exercise`, `_chordal_to_measures`), `umto_import_router.build_chordal_analysis_slices`, `api_workbench.py`, `dashboard/templates/dashboard/workbench.html`.
+**Rhythm & meter (ABC-style).** `ChordEvent.duration` is a per-chord quarter-length from the closed palette; `metadata.barline_offsets` is the explicit sorted/unique list of teacher-placed barlines (on chord onsets, excluding `0.0` and the stream end). The **meter is the mode switch**:
+- **Free / open mode** (`meter: null`, default) — any rhythm saves; the saved score is one running measure with no time-signature glyph; no metric validation.
+- **Metered mode** (a time signature is set) — barlines auto-suggest at meter boundaries (teacher then edits), and Save is **gated**: every bar must be an exact contiguous tiling summing to the meter, else Save is blocked with specific feedback ("Bar 3 has 5 beats, expected 4"). The same validator runs client-side (`chordal_barlines_logic.checkRhythm`) and server-side (`umto_factory.validate_chordal_rhythm`). The saved render splits `score.measures` at exactly the placed barlines.
+
+**Analysis slots.** Two zones (above / below the staff), at most one analysis type each, persisted as `analyzeConfig: {above, below}` on the exercise data (`analysis_slots.js` owns the type→zone rules). Below-zone harmonic labels (Roman numerals / figured bass) are serialized as reviewed analysis slices; above-zone pitch labels (note names / scale degrees) are key-relative and recomputed at render.
+
+**Save = approval (no soft-gate bounce).** A Play Save persists the in-place analysis directly and stamps `analysis_review_status = "reviewed"` (or `"none"` when no analysis slot is active — a pure `PLAYBACK` exercise). There is **no** redirect to the workbench and **no** `window.alert`; feedback routes through `feedbackService`. After save, a post-save **target selector** emits the seam contract `{ exerciseId, targetIntent: "library" | "assign", sectionId?, autoTranspose }` (v1 wires `library`; `assign`/curriculum are Threads 2/3). The legacy `generated → workbench review` path (`api_chordal_analysis_review`) survives only for bulk MusicXML imports that never pass through Play, and an agent retains full parity via the review API payload.
+
+**Key files:** `play_sheet.js` (`dataForSave`, authoring state), `play_save_logic.js`, `chordal_barlines_logic.js`, `analysis_slots.js`, `play_authoring_toolbar.js`, `target_selector.js`, `music_controls.js` (Save→reviewed), `shortcuts.js` + `note_entry_gate_logic.js`, `chordal_spelling.js`/`chordal_spelling.py`, `exercise_sheet.js`, `umto_factory.py` (`save_chordal_umto_exercise`, `validate_chordal_rhythm`, `_chordal_to_measures`), `lab/views.py` (`AddExerciseView`), `api_workbench.py`.
 
 ---
 
@@ -314,6 +322,7 @@ Currently wired for score-based identification exercises (`chorale_identificatio
 | `harmonization` | MIDI | `HarmonizationGrader` | No | Slice-by-slice FB realization, locked voices |
 | `chorale` | MIDI | `ChoraleGrader` | No | Score-based, onset windows |
 | `umto_chorale` (playback) | MIDI | `ChoraleGrader` | No | UMTO scale exercises; hand_mode selector planned |
+| `umto_chorale` (chordal, Play-authored) | MIDI | `ChoraleGrader` | No | Click-first Play authoring; per-chord palette durations + explicit barlines; free (`meter:null`) or metered (validated); Save = `reviewed` |
 | `identification` | Click | `IdentificationGrader` | On feature branch | Static chords |
 | `chorale_identification` | Click | `IdentificationGrader` | Yes (4/page) | Score-based, analysisType variants |
 | `umto_chorale` (`mode: "identification"`) | Click | `IdentificationGrader` | Yes (4/page) | Modern UMTO form of score-based identification; used by Unit 4 synthetic interval worksheets |

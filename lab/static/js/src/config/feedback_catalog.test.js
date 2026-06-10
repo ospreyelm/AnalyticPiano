@@ -34,5 +34,16 @@ assertEqual("ev category", ev.category, "recoverable_mistake");
 assertEqual("ev unit", ev.unit, 9);
 assertEqual("ev ts", ev.ts, 123);
 
+// play.save.* entries (Task 2 — Play authoring feedback catalog)
+var ps = mod.render("play.save.success", null);
+assertEqual("play.save.success truthy", !!ps, true);
+
+var pim = mod.render("play.save.invalid_meter", { bar: 3, beats: 5, expected: 4 });
+assertEqual("play.save.invalid_meter truthy", !!pim, true);
+assertEqual("play.save.invalid_meter interpolates bar", pim && pim.body.indexOf("3") !== -1, true);
+
+var pe = mod.render("play.save.empty", null);
+assertEqual("play.save.empty truthy", !!pe, true);
+
 if (fail > 0) { console.error("\n" + fail + " test(s) failed"); process.exit(1); }
 console.log("\nAll tests passed");
