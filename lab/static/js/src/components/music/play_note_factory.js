@@ -78,8 +78,8 @@ define([
      * @public
      * @return {array}
      */
-    createStaveNotes: function (duration = undefined) {
-      return this.staveNoteFactory.createStaveNotes(duration);
+    createStaveNotes: function (duration = undefined, dots = undefined) {
+      return this.staveNoteFactory.createStaveNotes(duration, dots);
     },
     /**
      * Returns true if there are any stave notes to create, false otherwise.

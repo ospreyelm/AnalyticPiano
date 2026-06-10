@@ -50,5 +50,25 @@ assertEqual("validity barline off-onset not ok",
 assertEqual("validity overlap not ok (free)",
   mod.checkRhythm([0,1], [4,1], null, []).ok, false);
 
+// QL TO VEX DURATION
+assertEqual("qlToVexDuration: 4 -> w/0",
+  mod.qlToVexDuration(4), { duration: "w", dots: 0 });
+assertEqual("qlToVexDuration: 3 -> h/1 (dotted half)",
+  mod.qlToVexDuration(3), { duration: "h", dots: 1 });
+assertEqual("qlToVexDuration: 2 -> h/0",
+  mod.qlToVexDuration(2), { duration: "h", dots: 0 });
+assertEqual("qlToVexDuration: 1.5 -> q/1 (dotted quarter)",
+  mod.qlToVexDuration(1.5), { duration: "q", dots: 1 });
+assertEqual("qlToVexDuration: 1 -> q/0",
+  mod.qlToVexDuration(1), { duration: "q", dots: 0 });
+assertEqual("qlToVexDuration: 0.75 -> 8/1 (dotted eighth)",
+  mod.qlToVexDuration(0.75), { duration: "8", dots: 1 });
+assertEqual("qlToVexDuration: 0.5 -> 8/0",
+  mod.qlToVexDuration(0.5), { duration: "8", dots: 0 });
+assertEqual("qlToVexDuration: 0.25 -> 16/0",
+  mod.qlToVexDuration(0.25), { duration: "16", dots: 0 });
+assertEqual("qlToVexDuration: 0.99 (unknown) -> q/0 fallback",
+  mod.qlToVexDuration(0.99), { duration: "q", dots: 0 });
+
 if (fail > 0) { console.error("\n" + fail + " failed."); process.exit(1); }
 else { console.log("\nAll chordal_barlines_logic assertions passed (" + pass + ")."); }

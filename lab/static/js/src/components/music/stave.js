@@ -94,6 +94,12 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      * @type {boolean}
      */
     this._isNovel = true;
+    /**
+     * Optional note-duration override set by play_sheet for authoring.
+     * null = use default (whole note); otherwise {vfDuration, dots, quarterLength}.
+     * @type {object|null}
+     */
+    this._overrideNoteDuration = null;
 
     var getUrlVars = function () {
       var vars = {};
@@ -388,63 +394,79 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
       /**
        * Meter defined here on basis of rhythm value.
        * Follows exercise definition.
+       * If an explicit note-duration override has been set (play-authoring),
+       * use its quarter-length for the Voice time object and pass the VexFlow
+       * duration string to createStaveNotes so the notehead renders correctly.
        */
-      var rhythm_value = this.noteFactory.getRhythmValue();
-      if (rhythm_value == null) {
-        rhythm_value = DEFAULT_RHYTHM_VALUE;
-      }
-      if (rhythm_value === "w") {
+      var overrideDuration = null;
+      var overrideDots = 0;
+      if (this._overrideNoteDuration) {
+        var ov = this._overrideNoteDuration;
         time = {
-          num_beats: 4,
+          num_beats: ov.quarterLength,
           beat_value: 4,
           resolution: Vex.Flow.RESOLUTION,
         };
-      } else if (rhythm_value === "W") {
-        time = {
-          num_beats: 6,
-          beat_value: 4,
-          resolution: Vex.Flow.RESOLUTION,
-        };
-      } else if (rhythm_value === "H") {
-        time = {
-          num_beats: 3,
-          beat_value: 4,
-          resolution: Vex.Flow.RESOLUTION,
-        };
-      } else if (rhythm_value === "h") {
-        time = {
-          num_beats: 2,
-          beat_value: 4,
-          resolution: Vex.Flow.RESOLUTION,
-        };
-      } else if (rhythm_value === "Q") {
-        time = {
-          num_beats: 1.5,
-          beat_value: 4,
-          resolution: Vex.Flow.RESOLUTION,
-        };
-      } else if (rhythm_value === "q") {
-        time = {
-          num_beats: 1,
-          beat_value: 4,
-          resolution: Vex.Flow.RESOLUTION,
-        };
-      } else if (rhythm_value === "8") {
-        time = {
-          num_beats: 0.5,
-          beat_value: 4,
-          resolution: Vex.Flow.RESOLUTION,
-        };
+        overrideDuration = ov.vfDuration;
+        overrideDots = ov.dots;
       } else {
-        // should be redundant
-        time = {
-          num_beats: 4,
-          beat_value: 4,
-          resolution: Vex.Flow.RESOLUTION,
-        };
+        var rhythm_value = this.noteFactory.getRhythmValue();
+        if (rhythm_value == null) {
+          rhythm_value = "w";
+        }
+        if (rhythm_value === "w") {
+          time = {
+            num_beats: 4,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
+        } else if (rhythm_value === "W") {
+          time = {
+            num_beats: 6,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
+        } else if (rhythm_value === "H") {
+          time = {
+            num_beats: 3,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
+        } else if (rhythm_value === "h") {
+          time = {
+            num_beats: 2,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
+        } else if (rhythm_value === "Q") {
+          time = {
+            num_beats: 1.5,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
+        } else if (rhythm_value === "q") {
+          time = {
+            num_beats: 1,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
+        } else if (rhythm_value === "8") {
+          time = {
+            num_beats: 0.5,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
+        } else {
+          // should be redundant
+          time = {
+            num_beats: 4,
+            beat_value: 4,
+            resolution: Vex.Flow.RESOLUTION,
+          };
+        }
       }
 
-      const create = this.createStaveNotes();
+      const create = this.createStaveNotes(overrideDuration, overrideDots);
 
       if (create.length == 2) { // chorale format
         var low_voice, high_voice;
@@ -722,9 +744,9 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      *
      * @return {array}
      */
-    createStaveNotes: function (duration = undefined) {
+    createStaveNotes: function (duration = undefined, dots = undefined) {
       if (this.noteFactory) {
-        return this.noteFactory.createStaveNotes(duration);
+        return this.noteFactory.createStaveNotes(duration, dots);
       }
       return [];
     },
@@ -958,6 +980,18 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
      */
     isNovel: function () {
       return this._isNovel;
+    },
+    /**
+     * Sets an explicit note-duration override for this stave (play-authoring).
+     * When set, createStaveVoice uses this duration instead of the default whole note.
+     *
+     * @param {string} vfDuration  VexFlow type string ("w","h","q","8","16").
+     * @param {number} dots        Dot count (0 or 1).
+     * @param {number} quarterLength  Quarter-length (palette value, e.g. 1, 0.5).
+     * @return undefined
+     */
+    setNoteDuration: function (vfDuration, dots, quarterLength) {
+      this._overrideNoteDuration = { vfDuration: vfDuration, dots: dots, quarterLength: quarterLength };
     },
     /**
      * Handles a "notated" event.

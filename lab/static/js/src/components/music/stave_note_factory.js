@@ -85,14 +85,18 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
      * @public
      * @return {array}
      */
-    createStaveNotes: function (duration = undefined) {
+    createStaveNotes: function (duration = undefined, dots = undefined) {
       // console.log(duration, 'passed to createStaveNotes');
       let vexflow_duration = duration
         ? duration
         : this.getRhythmValue().toLowerCase();
       const rv = this.getRhythmValue();
+      // When an explicit dot count is provided (play-authoring duration override),
+      // honor it; otherwise derive dots from the rhythm value (uppercase = dotted).
       let vexflow_dots =
-        rv.toUpperCase() == rv && /^[a-zA-Z]$/.test(rv) ? 1 : 0;
+        dots != null
+          ? dots
+          : (rv.toUpperCase() == rv && /^[a-zA-Z]$/.test(rv) ? 1 : 0);
       let vexflow_keys = this.getNoteKeys();
       let full_context = this.chord.settings.full_context || false;
 

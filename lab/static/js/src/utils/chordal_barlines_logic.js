@@ -149,6 +149,34 @@
     return { ok: true };
   }
 
+  // Map from palette quarter-length to VexFlow {duration, dots}.
+  // duration is the VexFlow type string ("w","h","q","8","16").
+  // dots is the dot count (0 or 1).
+  var QL_TO_VEX = {
+    4:    { duration: "w",  dots: 0 },
+    3:    { duration: "h",  dots: 1 },
+    2:    { duration: "h",  dots: 0 },
+    1.5:  { duration: "q",  dots: 1 },
+    1:    { duration: "q",  dots: 0 },
+    0.75: { duration: "8",  dots: 1 },
+    0.5:  { duration: "8",  dots: 0 },
+    0.25: { duration: "16", dots: 0 },
+  };
+
+  /**
+   * Convert a palette quarter-length to a VexFlow duration descriptor.
+   *
+   * @param {number} ql  Quarter-length (one of the eight palette values).
+   * @return {{ duration: string, dots: number }}
+   *   duration: VexFlow type string ("w","h","q","8","16").
+   *   dots: dot count (0 or 1).
+   *   Falls back to {duration:"q",dots:0} for unrecognised values.
+   */
+  function qlToVexDuration(ql) {
+    var entry = QL_TO_VEX[r6(Number(ql))];
+    return entry ? { duration: entry.duration, dots: entry.dots } : { duration: "q", dots: 0 };
+  }
+
   return {
     PALETTE: PALETTE,
     isPaletteDuration: isPaletteDuration,
@@ -157,5 +185,6 @@
     suggestBarlines: suggestBarlines,
     measureItemCounts: measureItemCounts,
     checkRhythm: checkRhythm,
+    qlToVexDuration: qlToVexDuration,
   };
 });

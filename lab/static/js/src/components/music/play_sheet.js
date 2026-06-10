@@ -443,13 +443,26 @@ define([
         treble_alterationHistory[i] = treble_activeAlterations;
         bass_alterationHistory[i] = bass_activeAlterations;
 
+        // Live per-chord duration (play-authoring). The reversed display list maps to
+        // the natural this.chords._items index via (items.length - 1 - i), which is the
+        // same bankIndex dataForSave/getChordDuration use. Only banked chords carry an
+        // authored duration; the live/working chord keeps the default note value.
+        let noteDuration = null;
+        if (isBanked) {
+          let bankIndex = items.length - 1 - i;
+          let ql = this.getChordDuration(bankIndex);
+          let dp = ChordalBarlinesLogic.qlToVexDuration(ql);
+          noteDuration = { duration: dp.duration, dots: dp.dots, quarterLength: ql };
+        }
+
         treble = this.createNoteStave(
           "treble",
           _.clone(position),
           chord,
           isBanked,
           isNovel,
-          treble_activeAlterations
+          treble_activeAlterations,
+          noteDuration
         );
         bass = this.createNoteStave(
           "bass",
@@ -457,7 +470,8 @@ define([
           chord,
           isBanked,
           isNovel,
-          bass_activeAlterations
+          bass_activeAlterations,
+          noteDuration
         );
         position.index += 1;
         treble.connect(bass);
@@ -514,6 +528,12 @@ define([
       stave.setNotater(stave_notater);
       stave.setMaxWidth(this.getWidth());
 
+      // Live time-signature glyph (play-authoring): when a meter is set the display
+      // stave (the first bar) draws it; in free mode (_meter null) no glyph appears.
+      if (this._meter) {
+        stave.setTimeSignature(this._meter);
+      }
+
       if (typeof this.keySignature.signatureSpec === "string") {
         const staffSig = this.keySignature.signatureSpec;
         stave.setFirstBarWidth(staffSig, 4);
@@ -536,9 +556,17 @@ define([
       chord,
       isBanked,
       isNovel,
-      activeAlterations
+      activeAlterations,
+      noteDuration
     ) {
       var stave = new Stave(clef, position);
+      if (noteDuration) {
+        stave.setNoteDuration(
+          noteDuration.duration,
+          noteDuration.dots,
+          noteDuration.quarterLength
+        );
+      }
 
       stave.setRenderer(this.vexRenderer);
       stave.setKeySignature(this.keySignature);
