@@ -195,6 +195,13 @@ CATALOG = [
             "python manage.py reanalyze_knowledge_graph",
         ),
     ]),
+    ("Factory library / infrastructure", [
+        (
+            "ensure_factory_account",
+            "Idempotently create the factory system account (settings.FACTORY_USER_EMAIL) that owns official curated content.",
+            "python manage.py ensure_factory_account",
+        ),
+    ]),
 ]
 
 

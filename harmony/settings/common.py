@@ -372,6 +372,8 @@ ENVIRONMENT_LOCAL = "local"
 ENVIRONMENT_DEV = "dev"
 ENVIRONMENT_PROD = "prod"
 
+FACTORY_USER_EMAIL = "factory@monteverdi.app"
+
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 
 CACHES = {

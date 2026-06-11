@@ -74,16 +74,24 @@ class Command(BaseCommand):
         updated = 0
         unchanged = 0
         skipped = 0
+        failure_counts = {
+            "no_source_score": 0,
+            "no_measures": 0,
+            "invalid_key": 0,
+            "music21_error": 0,
+        }
 
         for ex in qs.iterator():
             riem_num = self._extract_riem(ex)
             if riem_num is None:
                 skipped += 1
+                failure_counts["no_source_score"] += 1
                 continue
 
             measure_range = self._extract_measure_range(ex.description or "")
             if measure_range is None:
                 skipped += 1
+                failure_counts["no_measures"] += 1
                 self.stdout.write(self.style.WARNING(
                     f"  skip {ex.id}: cannot parse measure range from description "
                     f"{ex.description!r}"
@@ -110,6 +118,10 @@ class Command(BaseCommand):
                 )
             except Exception as e:
                 skipped += 1
+                if "Cannot make a step out of 'J'" in str(e):
+                    failure_counts["invalid_key"] += 1
+                else:
+                    failure_counts["music21_error"] += 1
                 self.stdout.write(self.style.ERROR(
                     f"  skip {ex.id}: music21 fetch failed ({riem_num}, "
                     f"mm.{start_m}-{end_m}): {e}"
@@ -129,12 +141,20 @@ class Command(BaseCommand):
                 )
             except CommandError as e:
                 skipped += 1
+                if "Cannot make a step out of 'J'" in str(e):
+                    failure_counts["invalid_key"] += 1
+                else:
+                    failure_counts["music21_error"] += 1
                 self.stdout.write(self.style.ERROR(
                     f"  skip {ex.id}: build_roman_analysis_overrides failed: {e}"
                 ))
                 continue
             except Exception as e:
                 skipped += 1
+                if "Cannot make a step out of 'J'" in str(e):
+                    failure_counts["invalid_key"] += 1
+                else:
+                    failure_counts["music21_error"] += 1
                 self.stdout.write(self.style.ERROR(
                     f"  skip {ex.id}: unexpected error: {e}"
                 ))
@@ -144,6 +164,7 @@ class Command(BaseCommand):
             umto = (data.get("score") or {}).get("umto")
             if not umto:
                 skipped += 1
+                failure_counts["no_source_score"] += 1
                 continue
 
             old_overrides = umto.get("analysis") or []
@@ -171,6 +192,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"\nDone. updated={updated} unchanged={unchanged} skipped={skipped}"
         ))
+        self.stdout.write(f"Failure categories: {failure_counts}")
 
     @staticmethod
     def _extract_riem(ex: Exercise) -> int | None:

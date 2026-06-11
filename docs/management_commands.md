@@ -256,6 +256,8 @@ These update existing exercise rows in-place. They do **not** create new rows. S
 
 > **When to use:** After fixing a bug in the analysis pipeline (e.g. figured bass derivation, key detection), run `refresh_all_exercises` to propagate the fix to all affected rows without re-importing from source files.
 
+> **Key normalization:** Stored HarmonyLab key tokens (`jC_`, `iA_`, …) are normalized via `apps.exercises.utils.key_normalization.harmony_key_to_music21()` before music21 analysis; `Cannot make a step out of 'J'` should be treated as a regression. Broad refresh/backfill commands print a `Failure categories: {...}` summary at the end.
+
 **`refresh_all_exercises`** — Dispatcher: runs `recompute_chorale_analysis` then `recompute_harmonization_targets --resync-from-source` in sequence. The safest way to refresh everything after a pipeline change.
 ```
 python manage.py refresh_all_exercises
@@ -299,6 +301,16 @@ python manage.py backfill_raw_roman_numeral
 **`reanalyze_knowledge_graph`** — Recompute knowledge-graph edges from current exercise tags.
 ```
 python manage.py reanalyze_knowledge_graph
+```
+
+---
+
+## Factory library / infrastructure
+
+**`ensure_factory_account`** — Idempotently create the factory system account (`settings.FACTORY_USER_EMAIL`, default `factory@monteverdi.app`) that owns official curated content. Teacher role, unusable password. Safe to re-run; run before any factory-library seeding.
+```
+python manage.py ensure_factory_account
+python manage.py ensure_factory_account --email other@example.com
 ```
 
 ---
