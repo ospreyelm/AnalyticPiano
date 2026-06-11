@@ -50,3 +50,17 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: harmony.settings.ci
         run: pytest
+
+      # pytest.ini testpaths only cover apps/exercises + scripts; the Django
+      # runner covers the remaining apps with a proper isolated test DB.
+      - name: Run Django-runner tests (student, teacher, dashboard, lab, accounts)
+        env:
+          DJANGO_SETTINGS_MODULE: harmony.settings.ci
+        run: python manage.py test --noinput apps.student apps.teacher apps.dashboard apps.accounts lab
+
+      - name: Factory library dry-check
+        env:
+          DJANGO_SETTINGS_MODULE: harmony.settings.ci
+        run: |
+          python manage.py generate_factory_library --dry-run
+          python manage.py generate_factory_library --report
