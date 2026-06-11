@@ -1,0 +1,231 @@
+{# apps/teacher/templates/teacher/course_wizard.html #}
+{% extends "teacher/base.html" %}
+{% load static %}
+
+{% block title %}New Course — Monteverdi{% endblock %}
+
+{% block head_extra %}
+  <script>
+    /* Embed server data before the external script loads */
+    window.__WIZARD_DATA__ = {
+      unitsJson: {{ units_json }},
+      factoryAvailable: {{ factory_available|yesno:"true,false" }}
+    };
+  </script>
+{% endblock %}
+
+{% block content %}
+<h1 class="t-page-title">Create a Course</h1>
+<p class="t-page-sub">Unit-first course creation — pick units, dates, and Monteverdi builds the schedule.</p>
+
+{% csrf_token %}
+
+<!-- ── Stepper ─────────────────────────────────────────────── -->
+<nav class="t-stepper" aria-label="Wizard steps" id="stepper">
+  <div class="t-step is-active" data-step="1" id="step-indicator-1">
+    <span class="t-step-num" aria-hidden="true">1</span>
+    <span class="t-step-label">Basics</span>
+  </div>
+  <div class="t-step" data-step="2" id="step-indicator-2">
+    <span class="t-step-num" aria-hidden="true">2</span>
+    <span class="t-step-label">Units</span>
+  </div>
+  <div class="t-step" data-step="3" id="step-indicator-3">
+    <span class="t-step-num" aria-hidden="true">3</span>
+    <span class="t-step-label">Schedule</span>
+  </div>
+  <div class="t-step" data-step="4" id="step-indicator-4">
+    <span class="t-step-num" aria-hidden="true">4</span>
+    <span class="t-step-label">Review</span>
+  </div>
+</nav>
+
+<!-- ── Error banner (shared, repositioned per step) ────────── -->
+<div class="t-error-banner" id="error-banner" role="alert" aria-live="polite"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STEP 1 — Basics
+════════════════════════════════════════════════════════════ -->
+<section class="t-step-panel is-active" id="panel-1" aria-labelledby="step-1-title">
+  <div class="t-card">
+    <h2 class="t-card-title" id="step-1-title">Course details</h2>
+
+    <div class="t-form-row">
+      <label class="t-label" for="field-title">Course title</label>
+      <input
+        class="t-input"
+        type="text"
+        id="field-title"
+        name="title"
+        maxlength="64"
+        placeholder="e.g. Music Theory — Fall 2026"
+        autocomplete="off"
+        aria-describedby="err-title"
+      >
+      <span class="t-field-error" id="err-title">Please enter a course title.</span>
+    </div>
+
+    <div class="t-form-row-2">
+      <div>
+        <label class="t-label" for="field-start">Semester start</label>
+        <input
+          class="t-input"
+          type="date"
+          id="field-start"
+          name="start"
+          aria-describedby="err-start"
+        >
+        <span class="t-field-error" id="err-start">Please choose a start date.</span>
+      </div>
+      <div>
+        <label class="t-label" for="field-end">Semester end</label>
+        <input
+          class="t-input"
+          type="date"
+          id="field-end"
+          name="end"
+          aria-describedby="err-end"
+        >
+        <span class="t-field-error" id="err-end">Please choose an end date after the start.</span>
+      </div>
+    </div>
+
+    <div class="t-form-row">
+      <div class="t-check-row">
+        <input type="checkbox" id="field-create-group" name="createGroup">
+        <label for="field-create-group">Create a student group for this course</label>
+      </div>
+      <div id="group-name-area" style="display:none; margin-top: 6px;">
+        <label class="t-label" for="field-group-name">Group name</label>
+        <input
+          class="t-input"
+          type="text"
+          id="field-group-name"
+          name="groupName"
+          maxlength="120"
+          placeholder="e.g. Fall 2026 — Section A"
+          aria-describedby="err-group-name"
+        >
+        <span class="t-field-error" id="err-group-name">Please enter a group name.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="t-wizard-nav">
+    <span></span>
+    <div class="t-wizard-nav-right">
+      <button class="t-btn t-btn-primary" id="btn-1-next" type="button">
+        Next: Pick Units
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STEP 2 — Unit picker
+════════════════════════════════════════════════════════════ -->
+<section class="t-step-panel" id="panel-2" aria-labelledby="step-2-title">
+  <div class="t-card">
+    <h2 class="t-card-title" id="step-2-title">Select units</h2>
+    <p style="font-size:0.875rem; color:var(--text-muted); margin:0 0 16px; font-family:var(--font-body);">
+      Units without official content are shown but cannot be selected. Check all playlists you want to include — all are selected by default.
+    </p>
+
+    {% if not factory_available %}
+    <div class="t-error-banner is-visible" role="status">
+      Factory playlists are not available in this environment. You can still select units, but no playlists will be pre-attached.
+    </div>
+    {% endif %}
+
+    <!-- Branch groups rendered by JS into #unit-picker-root -->
+    <div id="unit-picker-root"></div>
+  </div>
+
+  <div class="t-wizard-nav">
+    <button class="t-btn t-btn-ghost" id="btn-2-back" type="button">Back</button>
+    <div class="t-wizard-nav-right">
+      <span id="unit-selection-hint" style="font-size:0.8rem; color:var(--text-muted); font-family:var(--font-body);">Select at least one unit to continue.</span>
+      <button class="t-btn t-btn-primary" id="btn-2-next" type="button" disabled>
+        Next: Schedule
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STEP 3 — Schedule
+════════════════════════════════════════════════════════════ -->
+<section class="t-step-panel" id="panel-3" aria-labelledby="step-3-title">
+  <div class="t-card">
+    <h2 class="t-card-title" id="step-3-title">Schedule</h2>
+    <p style="font-size:0.875rem; color:var(--text-muted); margin:0 0 16px; font-family:var(--font-body);">
+      Publish and due dates are pre-filled by dividing the semester into equal windows. Edit any cell to override.
+    </p>
+
+    <div style="overflow-x:auto;">
+      <table class="t-schedule-table" id="schedule-table" aria-label="Unit schedule">
+        <thead>
+          <tr>
+            <th scope="col">Unit</th>
+            <th scope="col">Publish date</th>
+            <th scope="col">Due date</th>
+          </tr>
+        </thead>
+        <tbody id="schedule-tbody">
+          <!-- populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="t-wizard-nav">
+    <button class="t-btn t-btn-ghost" id="btn-3-back" type="button">Back</button>
+    <div class="t-wizard-nav-right">
+      <button class="t-btn t-btn-primary" id="btn-3-next" type="button">
+        Next: Review
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STEP 4 — Review & create
+════════════════════════════════════════════════════════════ -->
+<section class="t-step-panel" id="panel-4" aria-labelledby="step-4-title">
+  <div class="t-card">
+    <h2 class="t-card-title" id="step-4-title">Review &amp; create</h2>
+
+    <!-- Course basics summary -->
+    <div class="t-review-section">
+      <h3 class="t-review-section-title">Course</h3>
+      <div id="review-basics">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- Units summary -->
+    <div class="t-review-section">
+      <h3 class="t-review-section-title">Units &amp; schedule</h3>
+      <ul class="t-review-units-list" id="review-units" aria-label="Selected units summary">
+        <!-- populated by JS -->
+      </ul>
+    </div>
+  </div>
+
+  <!-- Inline error shown after a 400 response -->
+  <div class="t-error-banner" id="create-error" role="alert" aria-live="polite"></div>
+
+  <div class="t-wizard-nav">
+    <button class="t-btn t-btn-ghost" id="btn-4-back" type="button">Back</button>
+    <div class="t-wizard-nav-right">
+      <button class="t-btn t-btn-primary" id="btn-create" type="button">
+        Create course
+      </button>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block body_extra %}
+<script src="{% static 'teacher/course_wizard.js' %}"></script>
+{% endblock %}

@@ -132,6 +132,7 @@ INSTALLED_APPS = (
     "apps.exercises",
     "apps.dashboard",
     "apps.student",
+    "apps.teacher",
 
     "lab",
     # Third parties

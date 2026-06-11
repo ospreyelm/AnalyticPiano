@@ -1,0 +1,573 @@
+/* apps/teacher/static/teacher/teacher.css
+   Teacher UI — .t-* components built on token vars from tokens.css.
+   Do NOT import student.css. */
+
+/* ── Layout ─────────────────────────────────────────────────────────── */
+
+.t-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 52px;
+  background: var(--teal);
+  color: #fff;
+}
+
+.t-header-brand {
+  font-family: var(--font-ui);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.t-header-brand:hover { color: var(--teal-pale); }
+
+.t-header-user-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.t-header-user {
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.t-header-signout {
+  font-size: 0.78rem;
+  color: #ffd;
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 150ms ease;
+}
+.t-header-signout:hover { opacity: 1; }
+
+.t-main {
+  padding: 32px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ── Typography helpers ──────────────────────────────────────────────── */
+
+.t-page-title {
+  font-family: var(--font-ui);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.t-page-sub {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0 0 28px;
+}
+
+.t-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+/* ── Form inputs ─────────────────────────────────────────────────────── */
+
+.t-input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  width: 100%;
+  background: var(--surface-2);
+  color: var(--text);
+  transition: border-color 150ms ease;
+  box-sizing: border-box;
+}
+.t-input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(42,126,148,0.15);
+}
+.t-input:disabled {
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.t-input-error {
+  border-color: var(--danger) !important;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+
+.t-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 22px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 150ms ease, opacity 150ms ease;
+  text-decoration: none;
+}
+.t-btn:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+.t-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.t-btn-primary {
+  background: var(--teal);
+  color: #fff;
+}
+.t-btn-primary:hover:not(:disabled) { background: var(--teal-dark); }
+
+.t-btn-secondary {
+  background: var(--surface-2);
+  color: var(--teal);
+  border: 1px solid var(--teal-mid);
+}
+.t-btn-secondary:hover:not(:disabled) { background: var(--teal-pale); border-color: var(--teal); }
+
+.t-btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.t-btn-ghost:hover:not(:disabled) { background: var(--surface); color: var(--text); }
+
+/* ── Stepper ─────────────────────────────────────────────────────────── */
+
+.t-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 32px;
+  user-select: none;
+}
+
+.t-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+}
+
+.t-step + .t-step::before {
+  content: '';
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  position: absolute;
+  left: -50%;
+  top: 16px;
+  z-index: 0;
+  transition: background 200ms ease;
+}
+
+.t-step.is-done + .t-step::before,
+.t-step.is-active + .t-step::before {
+  background: var(--teal);
+}
+
+.t-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  border: 2px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+
+.t-step-label {
+  font-size: 0.75rem;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: color 200ms ease;
+}
+
+.t-step.is-active .t-step-num {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+}
+.t-step.is-active .t-step-label { color: var(--teal); }
+
+.t-step.is-done .t-step-num {
+  background: var(--teal-pale);
+  border-color: var(--teal);
+  color: var(--teal);
+}
+.t-step.is-done .t-step-label { color: var(--teal); }
+
+/* ── Wizard card ─────────────────────────────────────────────────────── */
+
+.t-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px 28px 24px;
+  margin-bottom: 20px;
+}
+
+.t-card-title {
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 18px;
+}
+
+/* ── Form row / grid ─────────────────────────────────────────────────── */
+
+.t-form-row {
+  margin-bottom: 16px;
+}
+
+.t-form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 540px) {
+  .t-form-row-2 { grid-template-columns: 1fr; }
+}
+
+/* ── Checkbox helpers ────────────────────────────────────────────────── */
+
+.t-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.t-check-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--teal);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.t-check-row label {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* ── Unit picker ─────────────────────────────────────────────────────── */
+
+.t-branch {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.t-branch-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+  transition: background 150ms ease;
+}
+.t-branch-header:hover { background: var(--teal-pale); }
+.t-branch-header:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: -2px;
+}
+
+.t-branch-chevron {
+  margin-left: auto;
+  transition: transform 200ms ease;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.t-branch.is-open .t-branch-chevron { transform: rotate(180deg); }
+
+.t-branch-body {
+  display: none;
+  padding: 8px 14px 12px;
+  border-top: 1px solid var(--border);
+}
+.t-branch.is-open .t-branch-body { display: block; }
+
+.t-unit-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.t-unit-card:last-child { border-bottom: none; }
+
+.t-unit-card input[type="checkbox"] {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--teal);
+  flex-shrink: 0;
+}
+.t-unit-card input[type="checkbox"]:disabled { opacity: 0.4; }
+
+.t-unit-card-body { flex: 1; }
+
+.t-unit-title {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.t-unit-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  margin-left: 6px;
+  background: var(--teal-pale);
+  color: var(--teal);
+  vertical-align: middle;
+}
+.t-unit-badge.is-zero {
+  background: var(--surface);
+  color: var(--text-muted);
+}
+.t-unit-badge.is-warn {
+  background: var(--warning-pale);
+  color: var(--warning);
+}
+
+.t-unit-no-content {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* playlist sub-list inside unit card */
+.t-playlist-list {
+  margin: 8px 0 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.t-playlist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  color: var(--text);
+}
+
+.t-playlist-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--teal);
+}
+
+.t-playlist-mode-badge {
+  font-size: 0.7rem;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--teal-pale);
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+/* ── Schedule table ──────────────────────────────────────────────────── */
+
+.t-schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-family: var(--font-body);
+}
+
+.t-schedule-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--border);
+}
+
+.t-schedule-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.t-schedule-table tr:last-child td { border-bottom: none; }
+
+.t-schedule-table .t-input {
+  padding: 5px 8px;
+  font-size: 0.82rem;
+  width: auto;
+  min-width: 130px;
+}
+
+/* ── Review summary ──────────────────────────────────────────────────── */
+
+.t-review-section {
+  margin-bottom: 18px;
+}
+
+.t-review-section-title {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 6px;
+}
+
+.t-review-field {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 4px 12px;
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+  font-family: var(--font-body);
+}
+
+.t-review-key {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.t-review-val { color: var(--text); }
+
+.t-review-units-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.t-review-unit-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 120px 120px;
+  gap: 6px 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  align-items: start;
+}
+.t-review-unit-row:last-child { border-bottom: none; }
+
+.t-review-unit-name { font-weight: 600; color: var(--text); }
+.t-review-unit-playlists { color: var(--text-muted); font-size: 0.78rem; }
+.t-review-unit-date { color: var(--text); }
+
+/* ── Error / notice banners ──────────────────────────────────────────── */
+
+.t-error-banner {
+  background: #fdf0f0;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  font-family: var(--font-body);
+  color: var(--danger);
+  margin-bottom: 16px;
+  display: none;
+}
+.t-error-banner.is-visible { display: block; }
+
+.t-field-error {
+  font-size: 0.78rem;
+  color: var(--danger);
+  margin-top: 3px;
+  display: none;
+}
+.t-field-error.is-visible { display: block; }
+
+/* ── Wizard footer nav ───────────────────────────────────────────────── */
+
+.t-wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.t-wizard-nav-right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ── Step panels ─────────────────────────────────────────────────────── */
+
+.t-step-panel { display: none; }
+.t-step-panel.is-active { display: block; }
+
+/* ── Spinner ─────────────────────────────────────────────────────────── */
+
+.t-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: t-spin 0.6s linear infinite;
+  display: inline-block;
+}
+@keyframes t-spin { to { transform: rotate(360deg); } }

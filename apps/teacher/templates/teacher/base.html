@@ -1,0 +1,28 @@
+{# apps/teacher/templates/teacher/base.html #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Monteverdi — Teacher{% endblock %}</title>
+  {% load static %}
+  <link href="{% static 'student/tokens.css' %}" rel="stylesheet">
+  <link href="{% static 'teacher/teacher.css' %}" rel="stylesheet">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="t-header">
+    <a class="t-header-brand" href="/">Monteverdi</a>
+    {% if request.user.is_authenticated %}
+      <div class="t-header-user-area">
+        <span class="t-header-user">{{ request.user.first_name|default:request.user.email }}</span>
+        <a class="t-header-signout" href="/accounts/logout/">Sign out</a>
+      </div>
+    {% endif %}
+  </header>
+  <main class="t-main">
+    {% block content %}{% endblock %}
+  </main>
+  {% block body_extra %}{% endblock %}
+</body>
+</html>

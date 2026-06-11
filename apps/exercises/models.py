@@ -1013,6 +1013,19 @@ class Course(ClonableModelMixin, BaseContentModel):
         help_text="Students must reach this level to 'complete' a skill in this course.",
     )
 
+    start_date = models.DateField(
+        "Semester Start Date",
+        blank=True,
+        null=True,
+        help_text="Optional semester start date for the course creation wizard.",
+    )
+    end_date = models.DateField(
+        "Semester End Date",
+        blank=True,
+        null=True,
+        help_text="Optional semester end date for the course creation wizard.",
+    )
+
     created = models.DateTimeField("Created", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 

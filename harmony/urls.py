@@ -20,6 +20,7 @@ urlpatterns = [
     path("accounts/", include("apps.accounts.urls"), name="accounts"),
     path("dashboard/", include("apps.dashboard.urls")),
     path("s/", include("apps.student.urls")),
+    path("teacher/", include("apps.teacher.urls")),
     path("", include(lab.urls)),
 
     path("library/", library_view, name="library"),
