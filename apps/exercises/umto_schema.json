@@ -273,8 +273,23 @@
           "type": "string"
         },
         "meter": {
-          "title": "Meter",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Meter"
+        },
+        "barline_offsets": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Barline Offsets",
+          "type": "array"
         },
         "clef": {
           "default": "treble",
@@ -376,7 +391,6 @@
         "exercise_id",
         "source",
         "key",
-        "meter",
         "complexity_score"
       ],
       "title": "Metadata",

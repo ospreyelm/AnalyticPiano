@@ -29,6 +29,7 @@ class DuplicateChoraleAsIdentificationTests(TestCase):
         self.assertEqual(clone.data["mode"], "identification")
         self.assertTrue(clone.data["isUMTO"])
         self.assertEqual(clone.authored_by_id, author.id)
-        # Verify the score was preserved (via umto synthesis)
+        # Verify the score was preserved (via umto synthesis).
+        # make_umto_exercise's DEFAULT_CIR has a single soprano C4 (MIDI 60).
         self.assertIn("umto", clone.data["score"])
-        self.assertEqual(clone.data["score"]["umto"]["voices"]["S"][0]["pitch"]["midi"], 67)
+        self.assertEqual(clone.data["score"]["umto"]["voices"]["S"][0]["pitch"]["midi"], 60)

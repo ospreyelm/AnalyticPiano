@@ -305,14 +305,16 @@ class GenerateUnit1Tests(TestCase):
         treble_identify = Playlist.objects.get(name="Unit 1 - Note Names (Treble)")
         treble_play = Playlist.objects.get(name="Unit 1 - Note Names (Treble Play)")
 
-        identify_types = set(
-            treble_identify.exerciseplaylistordered_set.select_related("exercise")
-            .values_list("exercise__data__mode", flat=True)
-        )
-        play_types = set(
-            treble_play.exerciseplaylistordered_set.select_related("exercise")
-            .values_list("exercise__data__mode", flat=True)
-        )
+        # Read data.mode in Python: values_list on a JSON key transform returns
+        # raw JSON bytes on this driver instead of decoded strings.
+        identify_types = {
+            epo.exercise.data.get("mode")
+            for epo in treble_identify.exerciseplaylistordered_set.select_related("exercise")
+        }
+        play_types = {
+            epo.exercise.data.get("mode")
+            for epo in treble_play.exerciseplaylistordered_set.select_related("exercise")
+        }
 
         self.assertNotIn("playback", identify_types)
         self.assertEqual(play_types, {"playback"})

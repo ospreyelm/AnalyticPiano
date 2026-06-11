@@ -74,5 +74,7 @@ class ImportChoralePitchIdentificationTests(TestCase):
         )
 
         ex = Exercise.objects.latest("created")
-        self.assertEqual(ex.data["type"], "chorale_identification")
+        # All new rows are UMTO; legacy chorale_identification is frozen.
+        self.assertEqual(ex.data["type"], "umto_chorale")
+        self.assertEqual(ex.data["mode"], "identification")
         self.assertEqual(ex.data["analysisType"], "note_name")

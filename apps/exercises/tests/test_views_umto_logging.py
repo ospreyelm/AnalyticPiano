@@ -17,6 +17,7 @@ class ViewUMTOLoggingTests(TestCase):
         try:
             User = get_user_model()
             author = User.objects.create(email="w@w.com")
+            self.client.force_login(author)
             
             # Create a row that claims to be UMTO but has empty/invalid data
             ex = Exercise.objects.create(
@@ -25,7 +26,7 @@ class ViewUMTOLoggingTests(TestCase):
                 authored_by=author,
             )
             
-            url = reverse("exercise_view", kwargs={"exercise_id": ex.id})
+            url = reverse("lab:exercise-view", kwargs={"exercise_id": ex.id})
             
             with self.assertLogs('lab.views', level='WARNING') as cm:
                 self.client.get(url)

@@ -100,4 +100,5 @@ class SkillsAnalyzerTests(unittest.TestCase):
         chunk = self.build_chunk([['G4', 'B4', 'D5'], ['C4', 'E4', 'G4']])
         skills, complexity = analyze_chunk_skills(chunk, 'c')
         self.assertIn('Picardy_Third', skills)
-        self.assertEqual(complexity, 6)
+        # Picardy maps to unit:17 (modal mixture), which leads the complexity.
+        self.assertEqual(complexity, 17)
