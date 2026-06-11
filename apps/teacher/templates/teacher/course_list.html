@@ -1,0 +1,43 @@
+{# apps/teacher/templates/teacher/course_list.html #}
+{% extends "teacher/base.html" %}
+{% load static %}
+
+{% block title %}My Courses — Monteverdi{% endblock %}
+
+{% block content %}
+<div class="t-list-header">
+  <div>
+    <h1 class="t-page-title">My Courses</h1>
+    <p class="t-page-sub">Your courses and their unit schedules.</p>
+  </div>
+  <a class="t-btn t-btn-primary" href="/teacher/courses/new/">+ New course</a>
+</div>
+
+{% if courses %}
+  <div class="t-course-grid">
+    {% for course in courses %}
+    <a class="t-course-card" href="/teacher/courses/{{ course.id }}/">
+      <div class="t-course-card-title">{{ course.title }}</div>
+      <div class="t-course-card-meta">
+        {% if course.start_date and course.end_date %}
+          <span>{{ course.start_date }} – {{ course.end_date }}</span>
+        {% elif course.start_date %}
+          <span>From {{ course.start_date }}</span>
+        {% else %}
+          <span class="t-muted">No dates set</span>
+        {% endif %}
+      </div>
+      <div class="t-course-card-stats">
+        <span class="t-stat-badge">{{ course.unit_count }} unit{{ course.unit_count|pluralize }}</span>
+        <span class="t-stat-badge">{{ course.student_count }} student{{ course.student_count|pluralize }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="t-empty-state">
+    <p>You haven't created any courses yet.</p>
+    <a class="t-btn t-btn-primary" href="/teacher/courses/new/">Create your first course</a>
+  </div>
+{% endif %}
+{% endblock %}

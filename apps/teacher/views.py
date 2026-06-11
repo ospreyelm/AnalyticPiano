@@ -211,3 +211,323 @@ def create_course_view(request):
                 order += 1
 
     return JsonResponse({"courseId": course.id}, status=201)
+
+
+# ---------------------------------------------------------------------------
+# Course management views (Task 1)
+# ---------------------------------------------------------------------------
+
+@teacher_required
+def course_list_view(request):
+    """GET /teacher/courses/ — list teacher's courses."""
+    from django.db.models import Count
+
+    courses_qs = Course.objects.filter(authored_by=request.user).prefetch_related(
+        "visible_to__members",
+        "playlists",
+    ).order_by("-created")
+
+    courses = []
+    for course in courses_qs:
+        unit_count = PlaylistCourseOrdered.objects.filter(course=course).count()
+        student_ids = set()
+        for group in course.visible_to.all():
+            for member in group.members.all():
+                student_ids.add(member.pk)
+        courses.append({
+            "id": course.id,
+            "title": course.title,
+            "start_date": course.start_date,
+            "end_date": course.end_date,
+            "unit_count": unit_count,
+            "student_count": len(student_ids),
+        })
+
+    return render(request, "teacher/course_list.html", {"courses": courses})
+
+
+@teacher_required
+def course_detail_view(request, course_id):
+    """GET /teacher/courses/<course_id>/ — course detail."""
+    from django.shortcuts import get_object_or_404
+    from django.db.models import Q
+
+    course = get_object_or_404(Course, id=course_id, authored_by=request.user)
+
+    # Build PCO rows JSON
+    pco_qs = (
+        PlaylistCourseOrdered.objects.filter(course=course)
+        .select_related("playlist")
+        .order_by("order")
+    )
+    tz = timezone.get_current_timezone()
+    pco_rows = []
+    for pco in pco_qs:
+        publish_iso = None
+        due_iso = None
+        if pco.publish_date:
+            publish_iso = pco.publish_date.astimezone(tz).date().isoformat()
+        if pco.due_date:
+            due_iso = pco.due_date.astimezone(tz).date().isoformat()
+        pco_rows.append({
+            "pcoId": pco.pk,
+            "playlistId": pco.playlist.id,
+            "playlistName": pco.playlist.name,
+            "mode": _mode_from_tags(pco.playlist.skill_tags or [], pco.playlist.name),
+            "publish": publish_iso,
+            "due": due_iso,
+            "order": pco.order,
+        })
+
+    # Build groups data
+    groups = []
+    for group in course.visible_to.select_related().prefetch_related("members").all():
+        members = [
+            {"name": m.get_full_name(), "email": m.email}
+            for m in group.members.all()
+        ]
+        groups.append({
+            "name": group.name,
+            "join_code": group.join_code,
+            "member_count": len(members),
+            "members": members,
+        })
+
+    # Build addable playlists
+    factory_user = _get_factory_user()
+    playlist_filter = Q(authored_by=request.user) | Q(is_public=True)
+    if factory_user is not None:
+        playlist_filter = playlist_filter | Q(authored_by=factory_user)
+    addable_qs = (
+        Playlist.objects.filter(playlist_filter)
+        .order_by("name")[:500]
+    )
+    addable_playlists = []
+    for pl in addable_qs:
+        if pl.authored_by_id == request.user.pk:
+            source = "mine"
+        elif factory_user and pl.authored_by_id == factory_user.pk:
+            source = "official"
+        else:
+            source = "official" if pl.is_public else "mine"
+        addable_playlists.append({"id": pl.id, "name": pl.name, "source": source})
+
+    # Dashboard deep-link URLs
+    from django.urls import reverse
+    dashboard_edit_url = reverse("dashboard:edit-course", args=[course.id])
+    dashboard_activity_url = reverse("dashboard:course-activity", args=[course.id])
+
+    return render(
+        request,
+        "teacher/course_detail.html",
+        {
+            "course": course,
+            "pco_rows_json": json.dumps(pco_rows),
+            "groups": groups,
+            "activity_json": json.dumps(course.performance_dict),
+            "addable_playlists_json": json.dumps(addable_playlists),
+            "dashboard_edit_url": dashboard_edit_url,
+            "dashboard_activity_url": dashboard_activity_url,
+        },
+    )
+
+
+@teacher_required
+@require_http_methods(["POST"])
+def update_pco_view(request, course_id):
+    """POST /teacher/courses/<course_id>/update-pco/ — update/remove PCO rows."""
+    from django.shortcuts import get_object_or_404
+
+    course = get_object_or_404(Course, id=course_id, authored_by=request.user)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    changes = body.get("changes", [])
+    removals = body.get("removals", [])
+
+    # Validate all pcoIds belong to this course
+    all_pco_ids = [c["pcoId"] for c in changes if "pcoId" in c] + list(removals)
+    if all_pco_ids:
+        course_pco_ids = set(
+            PlaylistCourseOrdered.objects.filter(course=course)
+            .values_list("pk", flat=True)
+        )
+        for pid in all_pco_ids:
+            if pid not in course_pco_ids:
+                return JsonResponse(
+                    {"error": f"PCO {pid} does not belong to this course."}, status=400
+                )
+
+    tz = timezone.get_current_timezone()
+
+    with transaction.atomic():
+        # Apply changes
+        for change in changes:
+            pco_id = change.get("pcoId")
+            if pco_id is None:
+                continue
+            try:
+                pco = PlaylistCourseOrdered.objects.get(pk=pco_id, course=course)
+            except PlaylistCourseOrdered.DoesNotExist:
+                return JsonResponse({"error": f"PCO {pco_id} not found."}, status=400)
+
+            if "publish" in change:
+                if change["publish"] is None:
+                    pco.publish_date = None
+                else:
+                    try:
+                        d = _parse_date(change["publish"])
+                    except ValueError as exc:
+                        return JsonResponse({"error": str(exc)}, status=400)
+                    pco.publish_date = timezone.make_aware(
+                        datetime.combine(d, time(0, 0, 0)), tz
+                    )
+
+            if "due" in change:
+                if change["due"] is None:
+                    pco.due_date = None
+                else:
+                    try:
+                        d = _parse_date(change["due"])
+                    except ValueError as exc:
+                        return JsonResponse({"error": str(exc)}, status=400)
+                    pco.due_date = timezone.make_aware(
+                        datetime.combine(d, time(23, 59, 0)), tz
+                    )
+
+            if "order" in change and change["order"] is not None:
+                pco.order = change["order"]
+
+            pco.save()
+
+        # Apply removals
+        for pco_id in removals:
+            PlaylistCourseOrdered.objects.filter(pk=pco_id, course=course).delete()
+
+    return JsonResponse({"ok": True})
+
+
+@teacher_required
+@require_http_methods(["POST"])
+def respread_view(request, course_id):
+    """POST /teacher/courses/<course_id>/respread/ — re-spread publish/due dates."""
+    from django.shortcuts import get_object_or_404
+    from apps.teacher.scheduling import spread_schedule
+    import datetime as dt
+
+    course = get_object_or_404(Course, id=course_id, authored_by=request.user)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    from_order = body.get("fromOrder", 1)
+    publish_all_at_start = bool(body.get("publishAllAtStart", False))
+
+    if not course.end_date:
+        return JsonResponse({"error": "Course has no end_date."}, status=400)
+
+    rows = list(
+        PlaylistCourseOrdered.objects.filter(course=course, order__gte=from_order)
+        .order_by("order")
+    )
+
+    if not rows:
+        return JsonResponse({"error": "No PCO rows at or after fromOrder."}, status=400)
+
+    today = dt.date.today()
+    window_start = max(today, course.start_date) if course.start_date else today
+    window_end = course.end_date
+
+    if window_start >= window_end:
+        return JsonResponse({"error": "window start >= end_date."}, status=400)
+
+    windows = spread_schedule(
+        window_start,
+        window_end,
+        n_units=len(rows),
+        publish_all_at_start=publish_all_at_start,
+    )
+
+    tz = timezone.get_current_timezone()
+    with transaction.atomic():
+        for pco, win in zip(rows, windows):
+            pco.publish_date = timezone.make_aware(
+                datetime.combine(win.publish_date, time(0, 0, 0)), tz
+            )
+            pco.due_date = timezone.make_aware(
+                datetime.combine(win.due_date, time(23, 59, 0)), tz
+            )
+            pco.save(update_fields=["publish_date", "due_date"])
+
+    return JsonResponse({"ok": True})
+
+
+@teacher_required
+@require_http_methods(["POST"])
+def add_playlist_view(request, course_id):
+    """POST /teacher/courses/<course_id>/add-playlist/ — append a playlist to course."""
+    from django.shortcuts import get_object_or_404
+    from django.db.models import Max
+
+    course = get_object_or_404(Course, id=course_id, authored_by=request.user)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    playlist_id = body.get("playlistId")
+    if not playlist_id:
+        return JsonResponse({"error": "playlistId is required."}, status=400)
+
+    try:
+        playlist = Playlist.objects.get(id=playlist_id)
+    except Playlist.DoesNotExist:
+        return JsonResponse({"error": f"Playlist {playlist_id!r} does not exist."}, status=400)
+
+    factory_user = _get_factory_user()
+    is_allowed = (
+        playlist.authored_by_id == request.user.pk
+        or playlist.is_public
+        or (factory_user is not None and playlist.authored_by_id == factory_user.pk)
+    )
+    if not is_allowed:
+        return JsonResponse({"error": "You do not have access to this playlist."}, status=400)
+
+    publish_date = None
+    due_date = None
+    tz = timezone.get_current_timezone()
+
+    if body.get("publish"):
+        try:
+            d = _parse_date(body["publish"])
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        publish_date = timezone.make_aware(datetime.combine(d, time(0, 0, 0)), tz)
+
+    if body.get("due"):
+        try:
+            d = _parse_date(body["due"])
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        due_date = timezone.make_aware(datetime.combine(d, time(23, 59, 0)), tz)
+
+    max_order = PlaylistCourseOrdered.objects.filter(course=course).aggregate(
+        max_order=Max("order")
+    )["max_order"] or 0
+    next_order = max_order + 1
+
+    pco = PlaylistCourseOrdered.objects.create(
+        course=course,
+        playlist=playlist,
+        order=next_order,
+        publish_date=publish_date,
+        due_date=due_date,
+    )
+
+    return JsonResponse({"ok": True, "pcoId": pco.pk, "order": pco.order}, status=201)

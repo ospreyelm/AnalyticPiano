@@ -571,3 +571,377 @@
   display: inline-block;
 }
 @keyframes t-spin { to { transform: rotate(360deg); } }
+
+/* Course management ─────────────────────────────────────────────────── */
+
+/* List page header row (title + "New course" button) */
+.t-list-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+/* Course card grid on list page */
+.t-course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.t-course-card {
+  display: block;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 22px 18px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.t-course-card:hover {
+  border-color: var(--teal);
+  box-shadow: 0 2px 8px rgba(42,126,148,0.10);
+}
+
+.t-course-card-title {
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.t-course-card-meta {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.t-course-card-stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.t-stat-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* Empty state */
+.t-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Detail page two-column layout */
+.t-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 800px) {
+  .t-detail-layout { grid-template-columns: 1fr; }
+}
+
+.t-detail-main { min-width: 0; }
+.t-detail-side  { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+
+/* Action bar above timeline */
+.t-timeline-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.t-respread-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Timeline table */
+.t-timeline-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-family: var(--font-body);
+}
+
+.t-timeline-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--border);
+  background: var(--surface);
+}
+
+.t-timeline-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.t-timeline-row:last-child td { border-bottom: none; }
+
+.t-timeline-row.is-dragging {
+  opacity: 0.4;
+}
+
+.t-timeline-row.is-drag-over td {
+  background: var(--teal-pale);
+}
+
+/* Column widths */
+.t-col-drag   { width: 28px; padding-right: 4px; }
+.t-col-name   { min-width: 120px; }
+.t-col-mode   { width: 80px; white-space: nowrap; }
+.t-col-date   { width: 140px; }
+.t-col-remove { width: 36px; text-align: center; }
+
+/* Drag handle */
+.t-drag-handle {
+  cursor: grab;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  user-select: none;
+  display: inline-block;
+  padding: 2px 4px;
+}
+.t-drag-handle:active { cursor: grabbing; }
+
+/* Mode badge */
+.t-mode-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  background: var(--teal-pale);
+  color: var(--teal);
+}
+.t-mode-badge.t-mode-play,
+.t-mode-badge.t-mode-play_figures {
+  background: #edf2ff;
+  color: #3b5bdb;
+}
+.t-mode-badge.t-mode-figures {
+  background: #fff0f6;
+  color: #c2255c;
+}
+.t-mode-badge.t-mode-identify {
+  background: #fff9db;
+  color: #e67700;
+}
+
+/* Small date input inside timeline */
+.t-input-sm {
+  padding: 4px 7px;
+  font-size: 0.82rem;
+  width: auto;
+  min-width: 124px;
+}
+
+/* Remove icon button */
+.t-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  font-size: 0.85rem;
+  transition: background 150ms ease, color 150ms ease;
+}
+.t-btn-remove {
+  color: var(--text-muted);
+}
+.t-btn-remove:hover {
+  background: #fdf0f0;
+  color: var(--danger);
+}
+
+/* Small ghost button variant */
+.t-btn-sm {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+}
+
+/* Timeline empty state */
+.t-timeline-empty {
+  padding: 24px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Add playlist panel */
+.t-add-playlist-panel { margin-top: 16px; }
+
+.t-form-row-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (max-width: 600px) {
+  .t-form-row-3 { grid-template-columns: 1fr; }
+}
+
+/* Roster panel */
+.t-roster-group {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.t-roster-group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.t-roster-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.t-roster-group-name {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.t-roster-join-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.t-roster-join-code {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.t-roster-join-code code {
+  font-family: var(--font-mono, monospace);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.t-roster-member-list {
+  margin: 0;
+  padding: 0 0 0 12px;
+  list-style: none;
+}
+
+.t-roster-member {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text);
+  padding: 2px 0;
+}
+
+.t-muted {
+  color: var(--text-muted);
+  font-size: 0.78em;
+}
+
+/* Link style for inline anchors */
+.t-link {
+  color: var(--teal);
+  text-decoration: none;
+  font-size: inherit;
+}
+.t-link:hover { text-decoration: underline; }
+
+/* Activity table */
+.t-activity-table {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  min-width: 100%;
+}
+
+.t-activity-table th,
+.t-activity-table td {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.t-activity-table th {
+  background: var(--surface);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+}
+
+.t-activity-playlist-header {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.t-activity-student {
+  font-weight: 600;
+  color: var(--text);
+  min-width: 120px;
+}
+
+.t-activity-cell {
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Dark spinner variant (for use on non-primary buttons) */
+.t-spinner-dark {
+  border-color: rgba(0,0,0,0.15);
+  border-top-color: var(--text);
+}
