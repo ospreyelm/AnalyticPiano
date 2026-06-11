@@ -37,6 +37,54 @@ def normalize_key(k):
     return prefix + note + suffix
 
 
+def compute_midi_vector(sig_orig, sig_target, midi_notes=None):
+    """Compute the signed MIDI transposition interval from sig_orig to sig_target.
+
+    Picks the direction that results in the smallest interval (<=6 semitones),
+    matching the 'shortest-interval' rule used in transpose().  The midi_notes
+    argument is accepted for API symmetry (future: could enable the
+    keyboard-range octave-fitting heuristic inside transpose()) but is not
+    used in the current implementation.
+
+    Returns (midi_vector: int, key_target: None).
+    key_target is always None — call compute_key_target() separately to
+    resolve the target HarmonyLab key token.  Returns (0, None) when
+    sig_target is not in all_sigs.
+    """
+    if sig_target not in all_sigs:
+        return (0, None)
+
+    pc_ref_orig = sig_to_pc[sig_orig]
+    pc_ref_target = sig_to_pc[sig_target]
+    pc_vector = (12 + pc_ref_target - pc_ref_orig) % 12
+
+    # Shortest-interval rule: prefer going down for intervals >= 6 semitones.
+    # Tritone (exactly 6) prefers down — identical to transpose().
+    if pc_vector >= 6:
+        midi_vector = pc_vector - 12
+    else:
+        midi_vector = pc_vector
+
+    return (midi_vector, None)
+
+
+def compute_key_target(key_orig, sig_orig, sig_target):
+    """Return the HarmonyLab key token after transposing from sig_orig to sig_target.
+
+    key_orig must already be in HarmonyLab format (e.g. 'jC_').  Returns None
+    when the computation is out of range.
+    """
+    if sig_target not in all_sigs:
+        return None
+    if key_orig == "h":
+        return key_orig
+    try:
+        fifth_chain_move = all_sigs.index(sig_target) - all_sigs.index(sig_orig)
+        return all_keys[all_keys.index(key_orig) + 2 * fifth_chain_move]
+    except (ValueError, IndexError):
+        return None
+
+
 def transpose(exercise, staff_sig_request):
     exercise = deepcopy(exercise)
     sig_orig = exercise.data.get("keySignature")

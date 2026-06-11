@@ -66,7 +66,11 @@ Surface backend 400 reasons via `feedbackService` (new catalog entries:
 
 ## Tasks
 
-- [ ] Task 1: backend contract + authoring-meta endpoint + CSRF (Codex, TDD;
+- [x] Task 1: backend contract + authoring-meta endpoint + CSRF (Codex, TDD;
       new tests in `lab/tests/test_add_exercise_view_metadata_db.py`)
-- [ ] Task 2: save dialog frontend (Sonnet) + feedback catalog entries
-- [ ] Task 3: orchestrator review, full suite, E2E smoke via dev server
+- [x] Task 2: save dialog frontend (Sonnet) + feedback catalog entries
+- [x] Task 3: orchestrator review + full suite (20/20 lab AddExercise tests
+      green; 12 full-suite failures verified pre-existing on master e2bb6573).
+      Live-browser smoke deferred: the dev server at :8000 serves the main
+      checkout, not this worktree — smoke after merge or by running runserver
+      from the worktree.

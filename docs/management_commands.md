@@ -313,6 +313,27 @@ python manage.py ensure_factory_account
 python manage.py ensure_factory_account --email other@example.com
 ```
 
+**`generate_factory_library`** — Run the declarative factory manifest (`apps/exercises/factory_manifest.py`): shared commands once (Bach matrix, compendium), then per-unit generators, all authored by the factory account. Curated (hand-authored) manifest entries are never regenerated — only their playlists are verified. `--report` and `--verify` are read-only; `--dry-run` prints planned invocations.
+```
+python manage.py generate_factory_library --dry-run
+python manage.py generate_factory_library --units 1,2,9-20 --skip-refresh
+python manage.py generate_factory_library --report
+python manage.py generate_factory_library --verify
+```
+
+**`export_factory_curated`** / **`import_factory_curated`** — Backup + prod-sync path for hand-authored factory content (click-first editor, `import_musicxml`), which is NOT regenerable from code. Export writes per-unit JSON under `data/factory_curated/` (commit it); import upserts by preserved exercise id (`--update` required to write; never deletes). Exercise ids survive later re-saves (model guard in `Exercise.save()`).
+```
+python manage.py export_factory_curated
+python manage.py import_factory_curated            # dry-run
+python manage.py import_factory_curated --update
+```
+
+**`generate_transpositions`** — Batch-create transposed copies of a UMTO chordal exercise. Needed because runtime playlist transposition (`transpose_requests`) only handles legacy `data["chord"]` rows, not UMTO chordal. Shifts MIDI via the shared circle-of-fifths/keyboard-range helpers in `utils/transpose.py`; analysis slices are key-relative and copied verbatim; copies are tagged `transposed_from:<id>`. Idempotent; `--overwrite` updates existing copies.
+```
+python manage.py generate_transpositions --exercise EA0001 --keys C,G,Bb,F#m
+python manage.py generate_transpositions --exercise EA0001 --keys C,G --playlist 'Cadences (all keys)'
+```
+
 ---
 
 ## Inspection / debugging

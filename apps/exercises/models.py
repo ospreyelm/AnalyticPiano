@@ -277,7 +277,11 @@ class Exercise(ClonableModelMixin, BaseContentModel):
             return
 
         # self.validate_unique()
-        self.set_id(initial="E")
+        if not self.id:
+            # Derivation from _id is deterministic, so recomputing is a no-op for
+            # normal rows — but rows imported with a preserved cross-environment id
+            # (import_factory_curated) must keep it across subsequent saves.
+            self.set_id(initial="E")
         self.sort_data()
         self.set_rhythm_values()
 
