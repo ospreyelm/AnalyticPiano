@@ -36,6 +36,67 @@
 	</div>
     {% include "_footer.html" %}
 </div>
+
+<!-- Save Exercise Dialog (hidden by default) -->
+<div id="play-save-dialog-overlay" class="play-save-overlay" style="display:none;" aria-modal="true" role="dialog" aria-labelledby="play-save-dialog-title">
+  <div class="play-save-dialog">
+    <h2 id="play-save-dialog-title" class="play-save-dialog-title">Save Exercise</h2>
+
+    <div class="play-save-field">
+      <label for="play-save-description">Description <span class="play-save-required">*</span></label>
+      <input type="text" id="play-save-description" name="description" maxlength="60" value="Play view chordal exercise" class="play-save-input" />
+    </div>
+
+    <div class="play-save-field">
+      <label for="play-save-unit">Unit</label>
+      <select id="play-save-unit" name="unit" class="play-save-select">
+        <option value="">— no unit —</option>
+        <!-- populated by JS -->
+      </select>
+    </div>
+
+    <div class="play-save-field">
+      <label for="play-save-tags">Additional tags <span class="play-save-hint">(comma-separated, optional)</span></label>
+      <input type="text" id="play-save-tags" name="tags" placeholder="e.g. Cadence_Half, Secondary_Dominant" class="play-save-input" />
+    </div>
+
+    <div class="play-save-field">
+      <label for="play-save-playlist">Playlist</label>
+      <select id="play-save-playlist" name="playlist" class="play-save-select">
+        <option value="">— none —</option>
+        <!-- populated by JS -->
+        <option value="__new__">New playlist…</option>
+      </select>
+    </div>
+
+    <div id="play-save-new-playlist-row" class="play-save-field" style="display:none;">
+      <label for="play-save-new-playlist-name">New playlist name</label>
+      <input type="text" id="play-save-new-playlist-name" name="playlist_name" maxlength="100" class="play-save-input" />
+    </div>
+
+    <div class="play-save-field play-save-field-check">
+      <label>
+        <input type="checkbox" id="play-save-public" name="is_public" />
+        Make public
+      </label>
+    </div>
+
+    <div id="play-save-official-row" class="play-save-field play-save-field-check" style="display:none;">
+      <label>
+        <input type="checkbox" id="play-save-official" name="save_as_official" />
+        Save as official (factory library)
+      </label>
+    </div>
+
+    <div id="play-save-dialog-feedback" class="feedback-inline play-save-dialog-feedback" aria-live="polite"></div>
+
+    <div class="play-save-actions">
+      <button type="button" id="play-save-submit" class="play-save-btn play-save-btn-primary">Save</button>
+      <button type="button" id="play-save-cancel" class="play-save-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div style="font-family: 'Sebastian'">&nbsp;<!-- make sure font is loaded  --></div>
 <div style="font-family: 'MainSerifs'">&nbsp;<!-- make sure font is loaded  --></div>
 <div style="font-family: 'JazzSerifs'">&nbsp;<!-- make sure font is loaded  --></div>

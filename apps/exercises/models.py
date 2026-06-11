@@ -277,7 +277,11 @@ class Exercise(ClonableModelMixin, BaseContentModel):
             return
 
         # self.validate_unique()
-        self.set_id(initial="E")
+        if not self.id:
+            # Derivation from _id is deterministic, so recomputing is a no-op for
+            # normal rows — but rows imported with a preserved cross-environment id
+            # (import_factory_curated) must keep it across subsequent saves.
+            self.set_id(initial="E")
         self.sort_data()
         self.set_rhythm_values()
 
@@ -1007,6 +1011,19 @@ class Course(ClonableModelMixin, BaseContentModel):
         choices=StudentSkillMastery.LEVEL_CHOICES,
         default=StudentSkillMastery.LEVEL_MASTERED,
         help_text="Students must reach this level to 'complete' a skill in this course.",
+    )
+
+    start_date = models.DateField(
+        "Semester Start Date",
+        blank=True,
+        null=True,
+        help_text="Optional semester start date for the course creation wizard.",
+    )
+    end_date = models.DateField(
+        "Semester End Date",
+        blank=True,
+        null=True,
+        help_text="Optional semester end date for the course creation wizard.",
     )
 
     created = models.DateTimeField("Created", auto_now_add=True)

@@ -48,6 +48,10 @@ graph LR
 ---
 
 ### B. Key Normalization (Tonic / Mode String Mapping)
+
+> [!NOTE]
+> **Backend boundary rule (2026-06):** Backend music21 boundaries must call `apps.exercises.utils.key_normalization.harmony_key_to_music21()` before constructing `music21.key.Key` from stored Exercise/UMTO/CIR key strings. HarmonyLab storage remains `j...` / `i...`; music21 receives conventional key names only. See `docs/superpowers/plans/2026-06-02-key-normalization-audit-notes.md` for the caller audit.
+
 Converting user-entered key strings or raw CIR keys (like `Bb`, `F#m`, `C`) into HarmonyLab's internal format (where minor keys are prefixed with `i`, major with `j`, and naturals are suffixed with an underscore e.g., `jBb`, `iF#`, `jC_`) is duplicated across:
 
 * **Python Implementation**: [transpose.py:L28-38](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/utils/transpose.py#L28-38) (`normalize_key(k)`)

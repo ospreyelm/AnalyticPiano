@@ -13,6 +13,7 @@ import unittest
 # Allow running from repo root
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
+from django.test import SimpleTestCase
 from apps.exercises.generation import music21_builder as mb
 from apps.exercises.utils.music21_builder import score_to_cir
 from music21 import pitch, stream, note, meter, key
@@ -37,6 +38,50 @@ def midi_set(chord_dict):
 def note_names_with_octave_from_chord(chord_dict):
     all_midi = chord_dict["visible"] + chord_dict["hidden"]
     return [pitch.Pitch(midi=m).nameWithOctave for m in all_midi]
+
+
+def _minimal_score_data(key_value):
+    return {
+        "score": {
+            "meta": {"key": key_value, "time_signature": "4/4"},
+            "measures": [
+                {
+                    "number": 1,
+                    "staves": {
+                        "treble": {
+                            "voices": [
+                                {
+                                    "items": [
+                                        {
+                                            "kind": "note",
+                                            "pitch": {"step": "C", "alter": 0, "octave": 4},
+                                            "duration": {"type": "q", "dots": 0},
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                }
+            ],
+        }
+    }
+
+
+class Music21BuilderKeyTest(SimpleTestCase):
+    def test_build_score_accepts_harmonylab_major_key(self):
+        from apps.exercises.utils.music21_builder import build_score_from_data
+
+        score = build_score_from_data(_minimal_score_data("jC_"))
+
+        self.assertEqual(len(score.parts), 1)
+
+    def test_build_score_accepts_harmonylab_minor_key(self):
+        from apps.exercises.utils.music21_builder import build_score_from_data
+
+        score = build_score_from_data(_minimal_score_data("iA_"))
+
+        self.assertEqual(len(score.parts), 1)
 
 
 # ---------------------------------------------------------------------------

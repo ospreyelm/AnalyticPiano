@@ -32,6 +32,12 @@ class Command(BaseCommand):
         
         processed_count = 0
         error_count = 0
+        failure_counts = {
+            "no_source_score": 0,
+            "no_measures": 0,
+            "invalid_key": 0,
+            "music21_error": 0,
+        }
         
         for page_num in paginator.page_range:
             self.stdout.write(f"Processing page {page_num} of {paginator.num_pages}...")
@@ -50,6 +56,15 @@ class Command(BaseCommand):
                         description=ex.description
                     )
                 except Exception as e:
+                    error_text = str(e)
+                    if "Cannot make a step out of 'J'" in error_text:
+                        failure_counts["invalid_key"] += 1
+                    elif "No measures found" in error_text:
+                        failure_counts["no_measures"] += 1
+                    elif not (ex.data or {}).get("score"):
+                        failure_counts["no_source_score"] += 1
+                    else:
+                        failure_counts["music21_error"] += 1
                     self.stdout.write(self.style.WARNING(f"  Warning: Skipping exercise {ex.id}: {e}"))
                     error_count += 1
                     continue
@@ -60,3 +75,4 @@ class Command(BaseCommand):
                 processed_count += 1
                 
         self.stdout.write(self.style.SUCCESS(f'Backfill complete. Processed: {processed_count}. Errors: {error_count}.'))
+        self.stdout.write(f"Failure categories: {failure_counts}")

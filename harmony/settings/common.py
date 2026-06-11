@@ -132,6 +132,7 @@ INSTALLED_APPS = (
     "apps.exercises",
     "apps.dashboard",
     "apps.student",
+    "apps.teacher",
 
     "lab",
     # Third parties
@@ -371,6 +372,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 ENVIRONMENT_LOCAL = "local"
 ENVIRONMENT_DEV = "dev"
 ENVIRONMENT_PROD = "prod"
+
+FACTORY_USER_EMAIL = "factory@monteverdi.app"
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 

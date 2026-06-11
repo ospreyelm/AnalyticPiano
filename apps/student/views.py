@@ -200,6 +200,87 @@ def _batch_home_unit_summaries(user, units: list[dict], available_unit_numbers: 
     return summaries
 
 
+def _get_course_unit_dates(user) -> dict[str, dict]:
+    """Map unit number → schedule info from the user's enrolled courses.
+
+    Enrollment = membership in a Group that a Course is visible_to. Courses do
+    not gate unit availability (factory playlists stay public); they only add
+    publish/due dates for sequencing and grading.
+
+    Returns {unit_n: {"due": datetime|None, "publish": datetime|None,
+                      "published": bool, "course_title": str}} keeping the
+    earliest due date when several playlists/courses tag the same unit.
+    """
+    from django.utils.timezone import now as tz_now
+
+    rows = (
+        PlaylistCourseOrdered.objects.filter(course__visible_to__members=user)
+        .select_related("course", "playlist")
+    )
+    out: dict[str, dict] = {}
+    current = tz_now()
+    for pco in rows:
+        tags = list(pco.playlist.skill_tags or []) + list(pco.playlist.tags or [])
+        unit_numbers = {
+            tag.split(":", 1)[1]
+            for tag in tags
+            if isinstance(tag, str) and tag.startswith("unit:")
+        }
+        for unit_n in unit_numbers:
+            existing = out.get(unit_n)
+            if existing is not None and existing["due"] is not None and (
+                pco.due_date is None or pco.due_date >= existing["due"]
+            ):
+                continue
+            out[unit_n] = {
+                "due": pco.due_date,
+                "publish": pco.publish_date,
+                "published": pco.publish_date is None or pco.publish_date <= current,
+                "course_title": pco.course.title,
+            }
+    return out
+
+
+def _unit_date_labels(info: dict | None) -> dict:
+    """Template-ready chip labels for one unit's course schedule info."""
+    if not info:
+        return {"due_label": None, "opens_label": None, "overdue": False}
+    from django.utils.timezone import localtime
+    from django.utils.timezone import now as tz_now
+
+    if not info["published"] and info["publish"] is not None:
+        return {
+            "due_label": None,
+            "opens_label": localtime(info["publish"]).strftime("Opens %a %b %-d"),
+            "overdue": False,
+        }
+    if info["due"] is not None:
+        return {
+            "due_label": localtime(info["due"]).strftime("Due %a %b %-d"),
+            "opens_label": None,
+            "overdue": info["due"] < tz_now(),
+        }
+    return {"due_label": None, "opens_label": None, "overdue": False}
+
+
+def resolve_course_for_playlist(user, playlist):
+    """Pick the Course a performance should attribute to for this playlist.
+
+    Prefer a course the user is enrolled in (group membership) over the bare
+    first PlaylistCourseOrdered row — a playlist may sit in several courses.
+    """
+    base = (
+        PlaylistCourseOrdered.objects.filter(playlist=playlist)
+        .select_related("course")
+        .order_by("order", "_id")
+    )
+    enrolled = base.filter(course__visible_to__members=user).first()
+    if enrolled is not None:
+        return enrolled.course
+    fallback = base.first()
+    return fallback.course if fallback else None
+
+
 def _get_available_unit_numbers(user) -> set[str]:
     available = set()
     playlists = accessible_playlist_queryset(user).order_by("name")
@@ -224,6 +305,7 @@ def _build_home_units(
     available_unit_numbers: set[str] | None = None,
     progress_by_unit: dict[str, dict] | None = None,
     units: list[dict] | None = None,
+    course_dates: dict[str, dict] | None = None,
 ) -> list[dict]:
     if available_unit_numbers is None:
         available_unit_numbers = _get_available_unit_numbers(user)
@@ -231,6 +313,8 @@ def _build_home_units(
         units = TaxonomyReader.get_all_units()
     if progress_by_unit is None:
         progress_by_unit = _batch_home_unit_summaries(user, units, available_unit_numbers)
+    if course_dates is None:
+        course_dates = _get_course_unit_dates(user)
 
     home_units = []
 
@@ -258,6 +342,7 @@ def _build_home_units(
                     if is_available
                     else None
                 ),
+                **_unit_date_labels(course_dates.get(unit_n)),
             }
         )
 
@@ -269,6 +354,7 @@ def _build_home_sections(
     available_unit_numbers: set[str] | None = None,
     progress_by_unit: dict[str, dict] | None = None,
     branches: list[dict] | None = None,
+    course_dates: dict[str, dict] | None = None,
 ) -> list[dict]:
     """Build sections → tiers → units structure from taxonomy, preserving tier metadata.
     Splits standard sequence (core) tiers into individual top-level sections for balanced grid layout.
@@ -283,6 +369,8 @@ def _build_home_sections(
             _taxonomy_units_from_branches(branches),
             available_unit_numbers,
         )
+    if course_dates is None:
+        course_dates = _get_course_unit_dates(user)
 
     # Track whether we've found the student's active tier yet (first tier
     # containing an unlocked unit with progress < 100%).
@@ -330,6 +418,7 @@ def _build_home_sections(
                         if is_available
                         else None
                     ),
+                    **_unit_date_labels(course_dates.get(unit_n)),
                 })
 
             # A tier is "active" if it's the first one we encounter that has an
@@ -450,6 +539,7 @@ def _build_home_context(user) -> dict:
     units = _taxonomy_units_from_branches(branches)
     available = _get_available_unit_numbers(user)
     progress_by_unit = _batch_home_unit_summaries(user, units, available)
+    course_dates = _get_course_unit_dates(user)
     resume_url, resume_label, resume_progress = _get_resume_target(
         user,
         available=available,
@@ -462,12 +552,14 @@ def _build_home_context(user) -> dict:
             available_unit_numbers=available,
             progress_by_unit=progress_by_unit,
             branches=branches,
+            course_dates=course_dates,
         ),
         "units": _build_home_units(
             user,
             available_unit_numbers=available,
             progress_by_unit=progress_by_unit,
             units=units,
+            course_dates=course_dates,
         ),
         "resume_url": resume_url,
         "resume_skill": resume_label,
@@ -530,6 +622,42 @@ class HomeView(View):
     @_require_student
     def get(self, request):
         return render(request, "student/home.html", _build_home_context(request.user))
+
+
+class JoinCourseView(View):
+    """Student-styled enrollment: enter (or deep-link) a group join code."""
+
+    @_require_student
+    def get(self, request):
+        prefill = request.GET.get("code", "").strip().upper()
+        return render(request, "student/join.html", {"join_code": prefill, "error": None})
+
+    @_require_student
+    def post(self, request):
+        from apps.accounts.models import Group
+
+        code = request.POST.get("join_code", "").strip().upper()
+        if not code:
+            return render(
+                request, "student/join.html",
+                {"join_code": "", "error": "Please enter a join code."},
+            )
+        group = Group.objects.filter(join_code=code).first()
+        if group is None:
+            return render(
+                request, "student/join.html",
+                {"join_code": code,
+                 "error": f'No class found with code "{code}". Check the code and try again.'},
+            )
+        if request.user == group.manager:
+            return render(
+                request, "student/join.html",
+                {"join_code": code,
+                 "error": "You are the teacher of this class — you cannot join it as a student."},
+            )
+        if not group.members.filter(pk=request.user.pk).exists():
+            group.members.add(request.user)
+        return redirect(reverse("student:home"))
 
 
 class UnitView(View):
@@ -622,13 +750,7 @@ class PlayerView(View):
         if exercise_num < 1:
             raise Http404("Invalid exercise number.")
 
-        playlist_course = (
-            PlaylistCourseOrdered.objects.filter(playlist=playlist)
-            .select_related("course")
-            .order_by("order", "_id")
-            .first()
-        )
-        course = playlist_course.course if playlist_course else None
+        course = resolve_course_for_playlist(request.user, playlist)
 
         is_dynamic_or_adaptive = bool(playlist.is_dynamic or playlist.is_adaptive)
         served_ids = get_ordered_exercise_ids_for_serving(request.user, playlist)
@@ -834,13 +956,7 @@ class PlayerDefinitionView(View):
         if exercise_num < 1:
             raise Http404("Invalid exercise number.")
 
-        playlist_course = (
-            PlaylistCourseOrdered.objects.filter(playlist=playlist)
-            .select_related("course")
-            .order_by("order", "_id")
-            .first()
-        )
-        course = playlist_course.course if playlist_course else None
+        course = resolve_course_for_playlist(request.user, playlist)
 
         served_count = len(get_ordered_exercise_ids_for_serving(request.user, playlist))
         if exercise_num > served_count:

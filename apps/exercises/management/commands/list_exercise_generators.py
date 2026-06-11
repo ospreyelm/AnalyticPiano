@@ -195,6 +195,33 @@ CATALOG = [
             "python manage.py reanalyze_knowledge_graph",
         ),
     ]),
+    ("Factory library / infrastructure", [
+        (
+            "ensure_factory_account",
+            "Idempotently create the factory system account (settings.FACTORY_USER_EMAIL) that owns official curated content.",
+            "python manage.py ensure_factory_account",
+        ),
+        (
+            "generate_factory_library",
+            "Run the full factory-manifest seed (generators + curated playlists) under the factory account. --report/--verify are read-only.",
+            "python manage.py generate_factory_library --units 1,2,9-20 --dry-run",
+        ),
+        (
+            "export_factory_curated",
+            "Dump hand-authored factory exercises + playlist memberships to data/factory_curated/ JSON (git-committed backup + prod sync).",
+            "python manage.py export_factory_curated",
+        ),
+        (
+            "import_factory_curated",
+            "Upsert curated factory exercises/playlists from data/factory_curated/ (dry-run without --update; never deletes).",
+            "python manage.py import_factory_curated --update",
+        ),
+        (
+            "generate_transpositions",
+            "Batch-create transposed copies of a UMTO chordal exercise (runtime playlist transposition does not apply to UMTO chordal rows).",
+            "python manage.py generate_transpositions --exercise EA0001 --keys C,G,Bb,F#m --playlist 'My set (all keys)'",
+        ),
+    ]),
 ]
 
 

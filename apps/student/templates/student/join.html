@@ -1,0 +1,26 @@
+{% extends "student/base.html" %}
+{% block title %}Join a class — Monteverdi{% endblock %}
+{% block content %}
+<div style="max-width: 420px; margin: 48px auto;">
+  <h1 class="s-section-label">Join a class</h1>
+  <p style="color: var(--text-muted); font-size: 0.9rem;">
+    Enter the join code your teacher gave you. You'll see your class's
+    schedule and due dates on your home page.
+  </p>
+  {% if error %}
+    <div style="background: #fdecea; border: 1px solid var(--danger); color: var(--danger);
+                border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px; font-size: 0.9rem;">
+      {{ error }}
+    </div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <label class="s-label" for="join-code">Join code</label>
+    <input class="s-input" id="join-code" name="join_code" value="{{ join_code }}"
+           autocomplete="off" autocapitalize="characters" spellcheck="false"
+           style="margin: 6px 0 14px; text-transform: uppercase; letter-spacing: 0.12em;">
+    <button class="s-btn-primary" type="submit">Join class</button>
+    <a class="s-btn-secondary" href="{% url 'student:home' %}" style="margin-left: 10px;">Cancel</a>
+  </form>
+</div>
+{% endblock %}

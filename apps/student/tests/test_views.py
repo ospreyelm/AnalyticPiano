@@ -961,7 +961,9 @@ class StudentHomeUnitDiscoveryTests(TransactionTestCase):
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
 class StudentHomeQueryBudgetTests(TransactionTestCase):
     reset_sequences = True
-    QUERY_BUDGET = 4
+    # session + user + accessible playlists + batched mastery + course-unit
+    # dates (one constant PCO join for enrolled-course due chips)
+    QUERY_BUDGET = 5
 
     def setUp(self):
         self.client = Client()

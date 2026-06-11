@@ -1,0 +1,144 @@
+{# apps/teacher/templates/teacher/course_detail.html #}
+{% extends "teacher/base.html" %}
+{% load static %}
+
+{% block title %}{{ course.title }} — Monteverdi{% endblock %}
+
+{% block head_extra %}
+  <script>
+    window.__COURSE_DATA__ = {
+      courseId: {{ course.id }},
+      pcoRows: {{ pco_rows_json }},
+      groups: {{ groups|safe }},
+      activity: {{ activity_json }},
+      addablePlaylists: {{ addable_playlists_json }},
+      dashboardEditUrl: {{ dashboard_edit_url|safe }},
+      dashboardActivityUrl: {{ dashboard_activity_url|safe }},
+    };
+  </script>
+{% endblock %}
+
+{% block content %}
+<div class="t-list-header">
+  <div>
+    <h1 class="t-page-title">{{ course.title }}</h1>
+    <p class="t-page-sub">
+      {% if course.start_date and course.end_date %}
+        {{ course.start_date }} – {{ course.end_date }}
+      {% elif course.start_date %}
+        From {{ course.start_date }}
+      {% else %}
+        No date range set
+      {% endif %}
+      &nbsp;·&nbsp;
+      <a class="t-link" href="{{ dashboard_edit_url }}">Edit in dashboard</a>
+      &nbsp;·&nbsp;
+      <a class="t-link" href="{{ dashboard_activity_url }}">Activity report</a>
+    </p>
+  </div>
+  <a class="t-btn t-btn-ghost" href="/teacher/courses/">← All courses</a>
+</div>
+
+{% csrf_token %}
+
+<!-- ── Two-column layout ───────────────────────────────────────────── -->
+<div class="t-detail-layout">
+
+  <!-- ── LEFT: Timeline + Add playlist ──────────────────────────────── -->
+  <div class="t-detail-main">
+
+    <!-- Action bar -->
+    <div class="t-timeline-actions" id="timeline-actions">
+      <button class="t-btn t-btn-primary" id="btn-save-changes" type="button" disabled>
+        Save changes
+      </button>
+      <div class="t-respread-form" id="respread-form">
+        <label class="t-label" for="respread-from-order" style="display:inline;margin-bottom:0;">Re-spread from order</label>
+        <input class="t-input t-input-sm" type="number" id="respread-from-order" min="1" value="1" style="width:64px;">
+        <label class="t-check-row" style="display:inline-flex;margin:0;">
+          <input type="checkbox" id="respread-publish-all">
+          <span style="font-size:0.85rem;font-family:var(--font-body);">Publish all at start</span>
+        </label>
+        <button class="t-btn t-btn-secondary" id="btn-respread" type="button">Re-spread remaining</button>
+      </div>
+    </div>
+
+    <!-- Error banner for timeline section -->
+    <div class="t-error-banner" id="timeline-error" role="alert" aria-live="polite"></div>
+
+    <!-- Timeline table -->
+    <div class="t-card" style="padding:0;overflow:hidden;">
+      <table class="t-timeline-table" id="timeline-table" aria-label="Course unit timeline">
+        <thead>
+          <tr>
+            <th scope="col" class="t-col-drag" aria-label="Drag to reorder"></th>
+            <th scope="col" class="t-col-name">Playlist</th>
+            <th scope="col" class="t-col-mode">Mode</th>
+            <th scope="col" class="t-col-date">Publish</th>
+            <th scope="col" class="t-col-date">Due</th>
+            <th scope="col" class="t-col-remove" aria-label="Remove"></th>
+          </tr>
+        </thead>
+        <tbody id="timeline-tbody">
+          <!-- populated by course_detail.js -->
+        </tbody>
+      </table>
+      <div id="timeline-empty" class="t-timeline-empty" style="display:none;">
+        No playlists in this course yet. Add one below.
+      </div>
+    </div>
+
+    <!-- Add playlist panel -->
+    <div class="t-card t-add-playlist-panel" id="add-playlist-panel">
+      <h2 class="t-card-title">Add playlist</h2>
+      <div class="t-form-row-3">
+        <div>
+          <label class="t-label" for="add-playlist-select">Playlist</label>
+          <select class="t-input" id="add-playlist-select">
+            <option value="">— choose —</option>
+          </select>
+        </div>
+        <div>
+          <label class="t-label" for="add-playlist-publish">Publish date</label>
+          <input class="t-input" type="date" id="add-playlist-publish">
+        </div>
+        <div>
+          <label class="t-label" for="add-playlist-due">Due date</label>
+          <input class="t-input" type="date" id="add-playlist-due">
+        </div>
+      </div>
+      <div class="t-error-banner" id="add-playlist-error" role="alert" aria-live="polite"></div>
+      <div style="margin-top:12px;">
+        <button class="t-btn t-btn-primary" id="btn-add-playlist" type="button">Add to course</button>
+      </div>
+    </div>
+
+  </div><!-- /.t-detail-main -->
+
+  <!-- ── RIGHT: Roster + Activity ───────────────────────────────────── -->
+  <div class="t-detail-side">
+
+    <!-- Roster panel -->
+    <div class="t-card" id="roster-panel">
+      <h2 class="t-card-title">Roster</h2>
+      <div id="roster-content">
+        <!-- populated by course_detail.js -->
+      </div>
+    </div>
+
+    <!-- Activity panel -->
+    <div class="t-card" id="activity-panel">
+      <h2 class="t-card-title">Activity</h2>
+      <div id="activity-content" style="overflow-x:auto;">
+        <!-- populated by course_detail.js -->
+      </div>
+    </div>
+
+  </div><!-- /.t-detail-side -->
+
+</div><!-- /.t-detail-layout -->
+{% endblock %}
+
+{% block body_extra %}
+<script src="{% static 'teacher/course_detail.js' %}"></script>
+{% endblock %}

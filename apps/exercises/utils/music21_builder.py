@@ -11,6 +11,8 @@ try:
 except ImportError:
     _MUSIC21_AVAILABLE = False
 
+from apps.exercises.utils.key_normalization import harmony_key_to_music21
+
 
 def _serialize_key_name(k_obj):
     tonic = k_obj.tonic.name.replace("-", "b")
@@ -48,7 +50,9 @@ def build_score_from_data(exercise_data):
     score = stream.Score()
 
     # Set metadata
-    key_sig = meta.get('key', 'C')
+    # Normalize now so future music21 key insertion cannot receive HarmonyLab's
+    # `j...` / `i...` pseudo-key tokens.
+    key_sig = harmony_key_to_music21(meta.get('key', 'C'))
     ts_str = meta.get('time_signature') or meta.get('time') or '4/4'
 
     # Get staves from first measure to determine structure

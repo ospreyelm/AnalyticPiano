@@ -14,6 +14,7 @@ from apps.exercises.views import (
 
 from .views import (
     AddExerciseView,
+    AuthoringMetaView,
     PlayView,
     PlaylistView,
     ExerciseView,
@@ -48,6 +49,11 @@ urlpatterns = [
         name="exercise-performance-history",
     ),
     path("exercises/add/", AddExerciseView.as_view(), name="add-exercise"),
+    path(
+        "exercises/authoring-meta/",
+        AuthoringMetaView.as_view(),
+        name="authoring-meta",
+    ),
     # Performance
     path(
         "ajax/exercise-performance/",

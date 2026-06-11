@@ -1,25 +1,6 @@
 /* apps/student/static/student/student.css */
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Montserrat:wght@400;600;700&display=swap');
-
-:root {
-  --teal: #2a7e94;
-  --teal-dark: #1f6070;
-  --teal-pale: #e8f4f7;
-  --teal-mid: #aacbd4;
-  --surface: #f7f8f8;
-  --surface-2: #ffffff;
-  --border: #dde3e6;
-  --text: #1a2224;
-  --text-muted: #6c7c80;
-  --success: #198754;
-  --success-pale: #e8f5ee;
-  --warning: #b45309;
-  --warning-pale: #fef3c7;
-  --danger: #dc3545;
-  --radius: 5px;
-  --font-ui: 'Nunito', sans-serif;
-  --font-body: 'Montserrat', sans-serif;
-}
+@import url('tokens.css');
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -65,19 +46,8 @@ body {
 
 /* ── Form ────────────────────────────────────────────────── */
 .s-form { display: flex; flex-direction: column; gap: 8px; }
-.s-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.s-input {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-size: 0.95rem;
-  font-family: var(--font-body);
-  width: 100%;
-  background: var(--surface-2);
-  color: var(--text);
-  transition: border-color 150ms ease;
-}
-.s-input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(42,126,148,0.15); }
+
+
 .s-form-error {
   background: #fde8e8;
   border: 1px solid #f5c6c6;
@@ -88,35 +58,9 @@ body {
 }
 
 /* ── Buttons ─────────────────────────────────────────────── */
-.s-btn-primary {
-  background: var(--teal);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  padding: 8px 20px;
-  font-size: 0.9rem;
-  font-family: var(--font-ui);
-  cursor: pointer;
-  margin-top: 8px;
-  transition: background 150ms ease;
-}
-.s-btn-primary:hover { background: var(--teal-dark); }
 
-.s-btn-secondary {
-  background: var(--surface-2);
-  color: var(--teal);
-  border: 1px solid var(--teal-mid);
-  border-radius: 16px;
-  padding: 6px 16px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-family: var(--font-body);
-  cursor: pointer;
-  text-decoration: none;
-  transition: all 150ms ease;
-  display: inline-block;
-}
-.s-btn-secondary:hover { background: var(--teal-pale); border-color: var(--teal); }
+
+
 
 /* ── Back link ───────────────────────────────────────────── */
 .s-back {
