@@ -18,7 +18,7 @@ from apps.dashboard.forms import DashboardExerciseForm
 from apps.dashboard.tables import ExercisesListTable
 from apps.exercises.umto import InteractionMode
 from apps.exercises.umto_factory import save_umto_exercise
-from apps.exercises.pitch_voice_utils import strip_to_voice
+from apps.exercises.pitch_voice_utils import strip_to_voice, VOICE_MAP
 from apps.exercises.models import Exercise
 
 import re
@@ -240,7 +240,12 @@ def exercise_edit_view(request, exercise_id):
                         for voice in voices:
                             stripped_score = strip_to_voice(source_score, voice)
                             intro = source_data.get("introText") or f"Name each note in the {voice} voice."
-                            
+                            # The stripped score carries its single voice at index 0
+                            # of its staff, so anchor UMTO to that staff's primary
+                            # voice (S for treble, T for bass).
+                            staff_name, _voice_idx = VOICE_MAP[voice]
+                            primary_voice = "soprano" if staff_name == "treble" else "tenor"
+
                             new_exercise = save_umto_exercise(
                                 description=f"{exercise.description or exercise.id} ({voice} id)",
                                 score_data=stripped_score,
@@ -253,14 +258,16 @@ def exercise_edit_view(request, exercise_id):
                                     source=intro,
                                     key=source_data.get("key") or source_score.get("meta", {}).get("key", "C"),
                                     meter=source_score.get("meta", {}).get("time", "4/4"),
-                                    clef=source_score.get("meta", {}).get("clef", "treble"),
+                                    clef=staff_name,
                                     complexity_score=exercise.complexity,
                                     mode=InteractionMode.IDENTIFICATION,
-                                    target_voice=voice,
-                                    analysisType=analysis_type,
+                                    target_voice=primary_voice,
+                                    analysis_type=analysis_type,
                                     input_mode=input_mode,
                                 )
                             )
+                            new_exercise.data["identMode"] = ident_mode
+                            new_exercise.save()
                 except ValueError as exc:
                     messages.error(request, str(exc))
                     return redirect("dashboard:edit-exercise", exercise.id)
