@@ -331,6 +331,28 @@
       grid-column: 1 / -1;
     }
   }
+  /* Course schedule chips (enrolled students only) */
+  .s-due-chip {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    background: var(--teal-pale);
+    color: var(--teal-dark);
+    vertical-align: 1px;
+    white-space: nowrap;
+  }
+  .s-due-chip.overdue {
+    background: #fdecea;
+    color: var(--danger);
+  }
+  .s-due-chip.opens {
+    background: var(--warning-pale);
+    color: var(--warning);
+  }
 </style>
 
 <!-- Course catalog — all branches equal -->
@@ -375,7 +397,7 @@
                   {% else %}
                     <a class="s-unit-card active" href="{{ unit.url }}">
                       <div class="s-unit-card-row">
-                        <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
+                        <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}{% if unit.due_label %} <span class="s-due-chip{% if unit.overdue %} overdue{% endif %}">{{ unit.due_label }}</span>{% elif unit.opens_label %} <span class="s-due-chip opens">{{ unit.opens_label }}</span>{% endif %}</span>
                         <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
                       </div>
                       {% if unit.percent > 0 %}
@@ -423,7 +445,7 @@
                     {% else %}
                       <a class="s-unit-card active" href="{{ unit.url }}">
                         <div class="s-unit-card-row">
-                          <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}</span>
+                          <span class="s-unit-title">Unit {{ unit.num }} · {{ unit.title }}{% if unit.due_label %} <span class="s-due-chip{% if unit.overdue %} overdue{% endif %}">{{ unit.due_label }}</span>{% elif unit.opens_label %} <span class="s-due-chip opens">{{ unit.opens_label }}</span>{% endif %}</span>
                           <span class="s-unit-pct">{% if unit.percent == 0 %}Start here →{% else %}{{ unit.percent }}%{% endif %}</span>
                         </div>
                         {% if unit.percent > 0 %}
