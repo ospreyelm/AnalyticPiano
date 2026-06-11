@@ -42,7 +42,10 @@
     // play authoring — save feedback (Phase B)
     "play.save.success":       { category: "success",        surface: "inline", title: "Saved.",          body: "Your exercise is saved and reviewed.",                                                                 detail: null, defaultTimeoutMs: 2500 },
     "play.save.invalid_meter": { category: "blocking_error", surface: "inline", title: "Can't save yet.", body: "Bar {bar} has {beats} beats, expected {expected}. Fix a duration or move a barline.",                detail: null, defaultTimeoutMs: null },
-    "play.save.empty":         { category: "blocking_error", surface: "inline", title: "Nothing to save.", body: "Bank at least two chords first.",                                                                    detail: null, defaultTimeoutMs: 2500 }
+    "play.save.empty":              { category: "blocking_error", surface: "inline", title: "Nothing to save.",     body: "Bank at least two chords first.",                                                                    detail: null, defaultTimeoutMs: 2500 },
+    "play.save.invalid_tags":       { category: "blocking_error", surface: "inline", title: "Invalid tags.",         body: "One or more tags are not recognised. Use letters, digits, and : _ # / - only (max 40 chars each).", detail: null, defaultTimeoutMs: null },
+    "play.save.playlist_locked":    { category: "blocking_error", surface: "inline", title: "Playlist is locked.",   body: "That playlist is locked and can't accept new exercises. Choose a different playlist.",              detail: null, defaultTimeoutMs: null },
+    "play.save.forbidden_official": { category: "blocking_error", surface: "inline", title: "Not allowed.",          body: "Only superusers can save exercises to the official factory library.",                              detail: null, defaultTimeoutMs: null }
 
     // system.* errors are appended in Phase 4 (Task 22)
   };

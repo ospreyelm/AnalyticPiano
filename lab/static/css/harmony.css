@@ -1377,3 +1377,23 @@ ul.pagination li {
 .feedback-inline.is-visible { opacity: 1; }
 .feedback-inline strong { color: #1f2937; }
 .click-note-done-key { display: inline-block; margin-left: 4px; padding: 0 5px; border: 1px solid currentColor; border-radius: 3px; font-size: 0.85em; line-height: 1.3; opacity: .75; }
+
+/* Play save dialog */
+.play-save-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.45); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+.play-save-dialog { background: #fff; border-radius: 6px; padding: 24px 28px; width: 400px; max-width: 95vw; box-shadow: 0 4px 24px rgba(0,0,0,.2); }
+.play-save-dialog-title { margin: 0 0 18px; font-size: 18px; font-weight: 600; }
+.play-save-field { margin-bottom: 14px; }
+.play-save-field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.play-save-field-check label { display: inline; font-weight: normal; }
+.play-save-field-check input[type="checkbox"] { margin-right: 6px; }
+.play-save-input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #bbb; border-radius: 4px; font-size: 13px; }
+.play-save-select { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #bbb; border-radius: 4px; font-size: 13px; }
+.play-save-required { color: #c00; }
+.play-save-hint { font-weight: normal; color: #777; font-size: 12px; }
+.play-save-dialog-feedback { margin-bottom: 12px; font-size: 13px; min-height: 16px; }
+.play-save-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+.play-save-btn { padding: 7px 18px; border-radius: 4px; border: 1px solid #bbb; background: #f5f5f5; font-size: 13px; cursor: pointer; }
+.play-save-btn:hover { background: #e8e8e8; }
+.play-save-btn-primary { background: #2563eb; color: #fff; border-color: #1d4ed8; }
+.play-save-btn-primary:hover { background: #1d4ed8; }
+.play-save-btn-primary:disabled { background: #93c5fd; border-color: #93c5fd; cursor: default; }

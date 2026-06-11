@@ -579,31 +579,7 @@ define([
           }
           return false;
         }
-        $.ajax({
-          type: "POST",
-          url: window.location.origin + "/exercises/add/",
-          data: { data: json_data },
-          dataType: "json",
-          success: (data) => {
-            const exerciseID = data.id;
-            if (this.feedback) {
-              this.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
-            }
-            this.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
-              exerciseId: exerciseID,
-              reviewStatus: data.reviewStatus,
-            });
-          },
-          error: (xhr) => {
-            console.log(xhr);
-            if (this.feedback) {
-              this.feedback.emit("play.save.invalid_meter", {
-                inlineEl: "#save-feedback",
-                params: { bar: "?", beats: "?", expected: "?" },
-              });
-            }
-          },
-        });
+        this._openSaveDialog(json_data);
       } else {
         console.log("Download", json_data);
         var file_name = "exercise_download";
@@ -668,6 +644,231 @@ define([
         if (this.feedback) this.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
         window.open("/dashboard/exercises/" + payload.exerciseId + "/", "_blank");
       }
+    },
+
+    /**
+     * Reads the csrftoken cookie value (set by ensure_csrf_cookie on PlayView).
+     *
+     * @return {string}
+     */
+    _getCsrfToken: function () {
+      var value = "; " + document.cookie;
+      var parts = value.split("; csrftoken=");
+      if (parts.length === 2) {
+        return parts.pop().split(";").shift();
+      }
+      return "";
+    },
+
+    /**
+     * Opens the save-exercise dialog, fetches authoring-meta to populate it,
+     * and wires up submit/cancel.
+     *
+     * @param {string} json_data  Serialised JSON payload (already stringified)
+     * @return undefined
+     */
+    _openSaveDialog: function (json_data) {
+      var that = this;
+      var overlayEl = $("#play-save-dialog-overlay");
+      var feedbackEl = $("#play-save-dialog-feedback");
+
+      // Reset dialog state
+      $("#play-save-description").val("Play view chordal exercise");
+      $("#play-save-unit").html('<option value="">— no unit —</option>');
+      $("#play-save-tags").val("");
+      $("#play-save-playlist").html('<option value="">— none —</option><option value="__new__">New playlist…</option>');
+      $("#play-save-new-playlist-row").hide();
+      $("#play-save-new-playlist-name").val("");
+      $("#play-save-public").prop("checked", false);
+      $("#play-save-official").prop("checked", false);
+      $("#play-save-official-row").hide();
+      feedbackEl.text("").removeClass("is-visible");
+
+      overlayEl.show();
+
+      // Fetch authoring-meta to populate unit/playlist dropdowns
+      $.ajax({
+        type: "GET",
+        url: window.location.origin + "/exercises/authoring-meta/",
+        dataType: "json",
+        success: function (meta) {
+          // Populate units
+          var unitSelect = $("#play-save-unit");
+          $.each(meta.units || [], function (i, u) {
+            unitSelect.append(
+              $("<option>").val(u.n).text("Unit " + u.n + (u.title ? " — " + u.title : ""))
+            );
+          });
+
+          // Populate playlists (locked ones disabled)
+          var playlistSelect = $("#play-save-playlist");
+          // Remove the __new__ option temporarily, re-append at end
+          playlistSelect.html('<option value="">— none —</option>');
+          $.each(meta.playlists || [], function (i, pl) {
+            var optEl = $("<option>").val(pl.id).text(pl.name + (pl.locked ? " (locked)" : ""));
+            if (pl.locked) {
+              optEl.prop("disabled", true);
+            }
+            playlistSelect.append(optEl);
+          });
+          playlistSelect.append($("<option>").val("__new__").text("New playlist…"));
+
+          // Show official checkbox only for superusers
+          if (meta.isSuperuser) {
+            $("#play-save-official-row").show();
+          }
+        },
+        error: function () {
+          // Non-fatal: dialog still usable without dropdowns populated
+          console.warn("[play-save] Could not fetch authoring-meta");
+        },
+      });
+
+      // Wire playlist select: show/hide new-name input
+      $("#play-save-playlist").off("change.playsave").on("change.playsave", function () {
+        if ($(this).val() === "__new__") {
+          $("#play-save-new-playlist-row").show();
+        } else {
+          $("#play-save-new-playlist-row").hide();
+        }
+      });
+
+      // Wire cancel button
+      $("#play-save-cancel").off("click.playsave").on("click.playsave", function () {
+        overlayEl.hide();
+      });
+
+      // Close on overlay background click
+      overlayEl.off("click.playsave").on("click.playsave", function (e) {
+        if ($(e.target).is(overlayEl)) {
+          overlayEl.hide();
+        }
+      });
+
+      // Wire submit button
+      $("#play-save-submit").off("click.playsave").on("click.playsave", function () {
+        that._submitSaveDialog(json_data, overlayEl, feedbackEl);
+      });
+    },
+
+    /**
+     * Collects dialog field values, extends the json_data payload, and POSTs
+     * to /exercises/add/.
+     *
+     * @param {string}  json_data   Already-stringified score JSON
+     * @param {jQuery}  overlayEl
+     * @param {jQuery}  feedbackEl
+     * @return undefined
+     */
+    _submitSaveDialog: function (json_data, overlayEl, feedbackEl) {
+      var that = this;
+
+      var description = $.trim($("#play-save-description").val());
+      if (!description) {
+        feedbackEl.text("Description is required.").addClass("is-visible");
+        return;
+      }
+
+      // Build skill tags array: optional unit: prefix + free tags
+      var skillTags = [];
+      var unitVal = $("#play-save-unit").val();
+      if (unitVal) {
+        skillTags.push("unit:" + unitVal);
+      }
+      var freeTags = $("#play-save-tags").val();
+      if (freeTags) {
+        var parsed = freeTags.split(",");
+        for (var i = 0; i < parsed.length; i++) {
+          var tag = $.trim(parsed[i]);
+          if (tag) {
+            skillTags.push(tag);
+          }
+        }
+      }
+
+      var isPublic = $("#play-save-public").is(":checked");
+      var saveAsOfficial = $("#play-save-official").is(":checked");
+
+      var playlistSelectVal = $("#play-save-playlist").val();
+      var playlistId = null;
+      var playlistName = null;
+      if (playlistSelectVal === "__new__") {
+        playlistName = $.trim($("#play-save-new-playlist-name").val()) || null;
+      } else if (playlistSelectVal) {
+        playlistId = playlistSelectVal;
+      }
+
+      // Parse existing json_data, extend with new fields, re-serialise
+      var payload;
+      try {
+        payload = JSON.parse(json_data);
+      } catch (e) {
+        console.error("[play-save] Failed to parse json_data", e);
+        return;
+      }
+      payload.description = description;
+      payload.skillTags = skillTags;
+      payload.isPublic = isPublic;
+      payload.saveAsOfficial = saveAsOfficial;
+      if (playlistId !== null) {
+        payload.playlistId = playlistId;
+      }
+      if (playlistName !== null) {
+        payload.playlistName = playlistName;
+      }
+
+      var extendedData = JSON.stringify(payload, null, 0);
+
+      $("#play-save-submit").prop("disabled", true);
+      feedbackEl.text("").removeClass("is-visible");
+
+      $.ajax({
+        type: "POST",
+        url: window.location.origin + "/exercises/add/",
+        data: { data: extendedData },
+        dataType: "json",
+        headers: { "X-CSRFToken": that._getCsrfToken() },
+        success: function (data) {
+          overlayEl.hide();
+          if (that.feedback) {
+            that.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
+          }
+          that.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
+            exerciseId: data.id,
+            reviewStatus: data.reviewStatus,
+            playlistId: data.playlistId || null,
+            playlistName: data.playlistName || null,
+          });
+        },
+        error: function (xhr) {
+          $("#play-save-submit").prop("disabled", false);
+          var errMsg = null;
+          try {
+            errMsg = JSON.parse(xhr.responseText).error || null;
+          } catch (e) { /* ignore */ }
+
+          var feedbackId = "play.save.invalid_meter";
+          if (errMsg) {
+            var lower = errMsg.toLowerCase();
+            if (lower.indexOf("tag") !== -1) {
+              feedbackId = "play.save.invalid_tags";
+            } else if (lower.indexOf("locked") !== -1 || lower.indexOf("playlist") !== -1) {
+              feedbackId = "play.save.playlist_locked";
+            } else if (lower.indexOf("official") !== -1 || lower.indexOf("superuser") !== -1 || xhr.status === 403) {
+              feedbackId = "play.save.forbidden_official";
+            }
+          } else if (xhr.status === 403) {
+            feedbackId = "play.save.forbidden_official";
+          }
+
+          if (that.feedback) {
+            that.feedback.emit(feedbackId, {
+              inlineEl: "#play-save-dialog-feedback",
+              params: { bar: "?", beats: "?", expected: "?" },
+            });
+          }
+        },
+      });
     },
   });
 

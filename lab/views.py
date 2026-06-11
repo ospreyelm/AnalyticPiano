@@ -2,15 +2,15 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db import models
-from django.db.models import When, Case, Q
+from django.db import models, transaction
+from django.db.models import Max, When, Case, Q
 from django.urls import reverse
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.http import urlencode
 from django.views.generic import View, TemplateView, RedirectView
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 
 import logging
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ from apps.exercises.models import (
     Playlist,
     Course,
     PerformanceData,
+    ExercisePlaylistOrdered,
     PlaylistCourseOrdered,
     NonUMTOExerciseError,
 )
@@ -41,6 +42,7 @@ from apps.exercises.taxonomy_reader import TaxonomyReader
 import json
 import copy
 import os
+import re
 
 # from django.core.mail import send_mail
 
@@ -106,6 +108,10 @@ class RequirejsView(View):
 class PlayView(RequirejsTemplateView):
     template_name = "play.html"
     requirejs_app = "app/components/app/play"
+
+    @method_decorator(ensure_csrf_cookie)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     # def get_context_data(self, course_id=None, **kwargs):
     #     context = super(PlayView, self).get_context_data(**kwargs)
@@ -897,9 +903,107 @@ class ChoraleAnalysisDebugView(RequirejsTemplateView):
     requirejs_app = "app/components/app/debug_analysis"
 
 
-@method_decorator(csrf_exempt, name="dispatch")
 class AddExerciseView(View):
     http_method_names = ["post"]
+    _TAG_RE = re.compile(r"^[A-Za-z0-9:_#/-]{1,40}$")
+
+    def _json_error(self, message, status=400):
+        return JsonResponse({"error": message}, status=status)
+
+    def _bool_field(self, payload, field_name, default=False):
+        value = payload.get(field_name, default)
+        if not isinstance(value, bool):
+            raise ValueError(f"{field_name} must be a boolean.")
+        return value
+
+    def _description(self, payload):
+        description = payload.get("description", "Play view chordal exercise")
+        if not isinstance(description, str) or len(description) > 60:
+            raise ValueError("description must be a string of 60 characters or fewer.")
+        return description
+
+    def _skill_tags(self, payload):
+        tags = payload.get("skillTags", [])
+        if not isinstance(tags, list) or len(tags) > 20:
+            raise ValueError("skillTags must be a list of at most 20 strings.")
+
+        cleaned = []
+        for tag in tags:
+            if not isinstance(tag, str) or not self._TAG_RE.match(tag):
+                raise ValueError("skillTags contains an invalid tag.")
+            if tag.startswith("unit:"):
+                unit_n = tag.split(":", 1)[1]
+                if TaxonomyReader.get_unit(unit_n) is None:
+                    raise ValueError(f"unit tag {tag} does not reference a known unit.")
+            cleaned.append(tag)
+        return cleaned
+
+    def _playlist_fields(self, payload):
+        playlist_id = payload.get("playlistId")
+        playlist_name = payload.get("playlistName")
+
+        if isinstance(playlist_id, str):
+            playlist_id = playlist_id.strip() or None
+        elif playlist_id is not None:
+            playlist_id = str(playlist_id)
+
+        if isinstance(playlist_name, str):
+            playlist_name = playlist_name.strip() or None
+        elif playlist_name is not None:
+            raise ValueError("playlistName must be a string.")
+
+        if playlist_id and playlist_name:
+            raise ValueError("playlistId and playlistName are mutually exclusive.")
+        if playlist_name and len(playlist_name) > 64:
+            raise ValueError("playlistName must be 64 characters or fewer.")
+        return playlist_id, playlist_name
+
+    def _factory_user(self):
+        return User.objects.filter(email=settings.FACTORY_USER_EMAIL).first()
+
+    def _resolve_author(self, request, save_as_official):
+        if not save_as_official:
+            return request.user
+        if not request.user.is_superuser:
+            return None
+        return self._factory_user()
+
+    def _append_to_playlist(self, *, exercise, author, playlist_id=None, playlist_name=None, is_public=False):
+        if not playlist_id and not playlist_name:
+            return None
+
+        if playlist_id:
+            playlist = Playlist.objects.filter(id=playlist_id).first()
+            if playlist is None:
+                raise ValueError("playlistId does not reference an existing playlist.")
+            if playlist.authored_by_id != author.id:
+                raise ValueError("playlist must be authored by the save author.")
+            if playlist.has_been_performed:
+                raise ValueError("playlist is locked because it has been performed.")
+        else:
+            playlist, created = Playlist.objects.get_or_create(
+                name=playlist_name,
+                authored_by=author,
+                defaults={"is_public": is_public},
+            )
+            if created and is_public and not playlist.is_public:
+                playlist.is_public = True
+                playlist.save()
+            if playlist.has_been_performed:
+                raise ValueError("playlist is locked because it has been performed.")
+
+        next_order = (
+            ExercisePlaylistOrdered.objects.filter(playlist=playlist)
+            .aggregate(max_order=Max("order"))
+            .get("max_order")
+            or 0
+        ) + 1
+        ExercisePlaylistOrdered.objects.create(
+            playlist=playlist,
+            exercise=exercise,
+            order=next_order,
+        )
+        return playlist
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -931,22 +1035,48 @@ class AddExerciseView(View):
         display = payload.get("display")  # teacher's analysis display flags (showRomans, ...)
 
         try:
-            exercise = save_chordal_umto_exercise(
-                description="Play view chordal exercise",
-                author=request.user,
-                chords=chords,
-                key=key,
-                meter=meter,
-                clef=clef,
-                staff_distribution=staff_distribution,
-                is_public=False,
-                barline_offsets=barline_offsets,
-                analysis=analysis_slices,
-                analyze_config=analyze_config,
-                display=display,
-            )
-        except (NonUMTOExerciseError, ValueError, KeyError):
-            return HttpResponse(status=400)
+            description = self._description(payload)
+            skill_tags = self._skill_tags(payload)
+            is_public = self._bool_field(payload, "isPublic", False)
+            save_as_official = self._bool_field(payload, "saveAsOfficial", False)
+            playlist_id, playlist_name = self._playlist_fields(payload)
+
+            author = self._resolve_author(request, save_as_official)
+            if save_as_official and author is None:
+                if request.user.is_superuser:
+                    return self._json_error(
+                        f"Factory user {settings.FACTORY_USER_EMAIL} does not exist.",
+                        status=400,
+                    )
+                return self._json_error("Only superusers can save official exercises.", status=403)
+
+            effective_is_public = True if save_as_official else is_public
+            with transaction.atomic():
+                exercise = save_chordal_umto_exercise(
+                    description=description,
+                    author=author,
+                    chords=chords,
+                    key=key,
+                    meter=meter,
+                    clef=clef,
+                    staff_distribution=staff_distribution,
+                    skill_tags=skill_tags,
+                    is_public=effective_is_public,
+                    auto_playlist=not (playlist_id or playlist_name),
+                    barline_offsets=barline_offsets,
+                    analysis=analysis_slices,
+                    analyze_config=analyze_config,
+                    display=display,
+                )
+                playlist = self._append_to_playlist(
+                    exercise=exercise,
+                    author=author,
+                    playlist_id=playlist_id,
+                    playlist_name=playlist_name,
+                    is_public=effective_is_public,
+                )
+        except (NonUMTOExerciseError, ValueError, KeyError) as exc:
+            return self._json_error(str(exc) or "Invalid exercise payload.", status=400)
 
         review_status = (
             (exercise.data or {})
@@ -955,10 +1085,47 @@ class AddExerciseView(View):
             .get("metadata", {})
             .get("analysis_review_status", "none")
         )
-        return JsonResponse(status=201, data={
+        response_data = {
             "id": exercise.id,
             "reviewStatus": review_status,
-        })
+        }
+        if playlist is not None:
+            response_data.update({"playlistId": playlist.id, "playlistName": playlist.name})
+        return JsonResponse(status=201, data=response_data)
+
+
+class AuthoringMetaView(View):
+    http_method_names = ["get"]
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        units = []
+        for unit in TaxonomyReader.get_all_units():
+            unit_n = unit.get("n")
+            try:
+                unit_n = int(unit_n)
+            except (TypeError, ValueError):
+                pass
+            units.append({"n": unit_n, "title": unit.get("title", "")})
+
+        playlist_filter = Q(authored_by=request.user)
+        if request.user.is_superuser:
+            factory_user = User.objects.filter(email=settings.FACTORY_USER_EMAIL).first()
+            if factory_user is not None:
+                playlist_filter |= Q(authored_by=factory_user)
+
+        playlists = [
+            {"id": playlist.id, "name": playlist.name, "locked": bool(playlist.has_been_performed)}
+            for playlist in Playlist.objects.filter(playlist_filter).order_by("name", "id")
+        ]
+
+        return JsonResponse(
+            {
+                "units": units,
+                "playlists": playlists,
+                "isSuperuser": bool(request.user.is_superuser),
+            }
+        )
 
 
 @login_required()

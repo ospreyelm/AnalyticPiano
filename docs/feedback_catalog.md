@@ -47,5 +47,8 @@ Feedback id convention: `<domain>.<context>.<event>`. IDs are STABLE (analytics 
 | play.save.success | success | inline | "Saved. Your exercise is saved and reviewed." | 2500ms | play workbench save handler |
 | play.save.invalid_meter | blocking_error | inline | "Can't save yet. Bar {bar} has {beats} beats, expected {expected}. Fix a duration or move a barline." | sticky | play workbench save handler |
 | play.save.empty | blocking_error | inline | "Nothing to save. Bank at least two chords first." | 2500ms | play workbench save handler |
+| play.save.invalid_tags | blocking_error | inline | "Invalid tags. One or more tags are not recognised. Use letters, digits, and : _ # / - only (max 40 chars each)." | sticky | play workbench save dialog |
+| play.save.playlist_locked | blocking_error | inline | "Playlist is locked. That playlist is locked and can't accept new exercises. Choose a different playlist." | sticky | play workbench save dialog |
+| play.save.forbidden_official | blocking_error | inline | "Not allowed. Only superusers can save exercises to the official factory library." | sticky | play workbench save dialog |
 
 (Phase 4 adds the system.* rows.)
