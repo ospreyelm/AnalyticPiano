@@ -89,6 +89,12 @@ class Command(BaseCommand):
             first = selected_measures[0].get('staves', {})
             return sum(len(stave.get('voices', [])) for stave in first.values())
 
+        if mode == 'identify' and analysis_type in PITCH_ANALYSIS_TYPES and not voice_name:
+            raise CommandError(
+                f'Pitch identification (--analysis={analysis_type}) requires --voice '
+                'to isolate a single voice.'
+            )
+
         if analysis_type in ('interval_generic', 'interval_specific'):
             voice_count = count_voices(excerpt_measures)
             if voice_count != 2:
@@ -121,6 +127,17 @@ class Command(BaseCommand):
             'meta': meta,
             'measures': excerpt_measures,
         }
+
+        # Pitch identification isolates a single voice: strip the score down to
+        # that voice and anchor UMTO to the staff's primary voice (S/T at index 0).
+        target_voice_for_umto = voice_name
+        if mode == 'identify' and analysis_type in PITCH_ANALYSIS_TYPES:
+            from apps.exercises.pitch_voice_utils import strip_to_voice, VOICE_MAP
+            score_for_umto = strip_to_voice(score_for_umto, voice_name)
+            staff_name, _voice_idx = VOICE_MAP[voice_name]
+            meta = dict(meta)
+            meta['clef'] = staff_name
+            target_voice_for_umto = 'soprano' if staff_name == 'treble' else 'tenor'
 
         # Detect skill tags via music21 analysis
         from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
@@ -160,7 +177,8 @@ class Command(BaseCommand):
                 clef=primary_clef,
                 complexity_score=detected_complexity,
                 mode=umto_mode,
-                target_voice=voice_name,
+                target_voice=target_voice_for_umto,
+                analysis_type=analysis_type if mode == 'identify' else None,
             )
         )
 

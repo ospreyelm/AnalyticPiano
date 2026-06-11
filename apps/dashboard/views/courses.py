@@ -5,6 +5,7 @@ import re
 import math
 
 from django.db.models import Q
+from django.db.models.fields.json import KeyTextTransform
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -28,6 +29,7 @@ from apps.dashboard.tables import (
 )
 from apps.exercises.models import (
     Course,
+    Exercise,
     IdentificationAttempt,
     PerformanceData,
     Playlist,
@@ -38,8 +40,15 @@ from apps.accounts.models import Group, User
 
 
 def course_has_identification_exercises(course):
-    return course.exercise_set.filter(
-        data__type="chorale_identification"
+    # The data column is json (not jsonb), so key-equality lookups fail with
+    # "operator does not exist: json = jsonb"; compare as text via ->> instead.
+    return Exercise.objects.filter(
+        exerciseplaylistordered__playlist__courses=course
+    ).annotate(
+        data_type=KeyTextTransform("type", "data"),
+        data_mode=KeyTextTransform("mode", "data"),
+    ).filter(
+        Q(data_type="chorale_identification") | Q(data_mode="identification")
     ).exists()
 
 

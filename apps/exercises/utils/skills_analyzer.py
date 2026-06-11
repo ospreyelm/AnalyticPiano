@@ -23,6 +23,7 @@ _CANONICAL_MAP = {
     "unit:16_secondary_leading_tone":     "Secondary_Leading_Tone",
     "unit:18_neapolitan_sixth":           "Neapolitan_Sixth",
     "unit:18_augmented_sixth":            "Augmented_Sixth",
+    "unit:17_picardy_third":              "Picardy_Third",
 }
 def parse_riem_and_measures(description: str) -> tuple[int | None, int | None, int | None]:
     if not description:
@@ -150,7 +151,16 @@ def analyze_chunk_skills(chunk, chunk_key, description=None):
             
         # Chromaticism (Tier 2/3)
         if not is_diatonic:
-            if rn.isDominantSeventh() or (rn.isMajorTriad() and deg not in [1, 4, 5]):
+            # Neapolitan Sixth first: a bII major triad must not be
+            # mis-tagged as a secondary dominant below.
+            is_n6 = False
+            if hasattr(rn, 'isNeapolitan') and rn.isNeapolitan(): is_n6 = True
+            elif rn.isMajorTriad() and deg == 2 and rn.frontAlterationAccidental and rn.frontAlterationAccidental.name == 'flat':
+                is_n6 = True
+            if is_n6:
+                skills.add("unit:18_neapolitan_sixth")
+
+            if not is_n6 and (rn.isDominantSeventh() or (rn.isMajorTriad() and deg not in [1, 4, 5])):
                 skills.add("unit:16_secondary_dominant")
             if rn.isDiminishedSeventh():
                 skills.add("unit:16_diminished_seventh")
@@ -158,17 +168,9 @@ def analyze_chunk_skills(chunk, chunk_key, description=None):
             elif rn.isHalfDiminishedSeventh():
                 skills.add("unit:16_half_diminished_seventh")
                 skills.add("unit:16_secondary_leading_tone")
-            
+
             if rn.isAugmentedSixth():
                 skills.add("unit:18_augmented_sixth")
-                
-            # Neapolitan Sixth fallback
-            is_n6 = False
-            if hasattr(rn, 'isNeapolitan') and rn.isNeapolitan(): is_n6 = True
-            elif rn.isMajorTriad() and deg == 2 and rn.frontAlterationAccidental and rn.frontAlterationAccidental.name == 'flat':
-                is_n6 = True
-            if is_n6:
-                skills.add("unit:18_neapolitan_sixth")
 
     # 2. Functional Exclusivity (Unit 9 vs Unit 11)
     # Unit 9: Tonic and Dominant exclusively
@@ -207,6 +209,11 @@ def analyze_chunk_skills(chunk, chunk_key, description=None):
         
         if u_deg == 5 and ult.isMajorTriad():
             skills.add("unit:7_cadence_half")
+
+        # Picardy Third: minor-key phrase ending on a major tonic triad
+        if tonal_key.mode == 'minor' and u_deg == 1 and ult.isMajorTriad():
+            skills.add("unit:17_picardy_third")
+            skills.add("unit:17_Picardy_Third")
 
     # 5. Determine Complexity (The lead unit number)
     unit_nums = []

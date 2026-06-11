@@ -40,7 +40,7 @@ class TaxonomyDebugViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "dashboard/taxonomy_debug.html")
         self.assertContains(response, "Curriculum Taxonomy")
-        self.assertContains(response, "Core Sequence")
+        self.assertContains(response, "Standard Sequence")
         self.assertContains(response, "Branch A")
         self.assertContains(response, "Unit 9")
         self.assertContains(response, "Tonic &amp; dominant")

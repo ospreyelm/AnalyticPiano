@@ -8,22 +8,44 @@ from apps.exercises.models import Exercise
 from apps.exercises.tests.umto_test_helpers import make_umto_exercise
 
 
+TWO_VOICE_CIR = {
+    "meta": {"key": "C", "time": "4/4"},
+    "measures": [{
+        "staves": {"treble": {"voices": [
+            {"items": [
+                {"kind": "note", "pitch": {"step": "C", "alter": 0, "octave": 5}, "duration": {"type": "q", "dots": 0}},
+            ]},
+            {"items": [
+                {"kind": "note", "pitch": {"step": "A", "alter": 0, "octave": 4}, "duration": {"type": "q", "dots": 0}},
+            ]},
+        ]}}
+    }]
+}
+
+
 class DashboardPitchDuplicationTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(email="teacher@example.com", password="pw")
         self.client.force_login(self.user)
+        # Keyboard clef + no target voice so the source keeps soprano AND alto
+        # as separate treble voices (needed for per-voice duplication).
         self.source = make_umto_exercise(
             author=self.user,
             description="Source chorale",
             complexity=1,
-            unit=1
+            unit=1,
+            score_data=TWO_VOICE_CIR,
+            clef="keyboard",
+            target_voice=None,
         )
 
+    def _base_post_data(self):
         return {
             "description": self.source.description,
             "is_public": "on",
             "data": json.dumps(self.source.data),
             "type": "umto_chorale",
+            "complexity": "1",
             "staff_distribution": "chorale",
             "identMode": "practice",
             "analysisType": "note_name",
