@@ -486,9 +486,10 @@ def add_group_view(request, course_id):
     if len(name) > 100:
         return JsonResponse({"error": "name must be at most 100 characters."}, status=400)
 
-    group = Group(name=name, manager=request.user)
-    group.save()
-    course.visible_to.add(group)
+    with transaction.atomic():
+        group = Group(name=name, manager=request.user)
+        group.save()
+        course.visible_to.add(group)
 
     # Return groups in the same shape as groups_json context variable
     groups = []
