@@ -1,5 +1,63 @@
 # HarmonyLab Chorale Exercise System - Implementation Guide
 
+## 🚨 CURRENT PRODUCT PRIORITIES — READ FIRST
+
+The project priority order has changed. When choosing what to build next,
+planning work, or deciding between competing cleanup tasks, use this order:
+
+1. **Make the `/teacher/play/` generation pipeline efficient and maximally useful.**
+   - Prioritize the teacher-facing authoring/generation workflow at
+     `https://monteverdimusic.com/teacher/play/`.
+   - The goal is a fast, practical pipeline for creating useful exercises,
+     playlists, official content, and variants without manual CLI steps.
+
+2. **Add MusicXML import to `/teacher/play/`.**
+   - Teachers/admins should be able to import MusicXML directly from the new
+     teacher authoring surface.
+   - Imported content must follow the UMTO path and be usable for official
+     factory content when saved by a superuser.
+
+3. **Create new alternatives to the legacy Dashboard.**
+   - Work started in the teacher app must stay in the teacher app.
+   - Do not send normal teacher workflows back to `/dashboard/...` unless the
+     link is explicitly an advanced/admin-only escape hatch.
+   - Build new teacher-app pages for editing, organizing, reviewing, and
+     managing courses/playlists/exercises.
+
+4. **Make the student experience complete.**
+   - Students who join a course should see a clear course-focused experience,
+     not just the full curriculum.
+   - Course assignments, due/open states, next work, progress, and activity
+     should be obvious and navigable.
+
+5. **Fix grading of MIDI play exercises.**
+   - Current MIDI play grading penalizes too harshly.
+   - HarmonyLab is a theory learning app, not a performance evaluation app.
+   - Prefer forgiving, pedagogically useful grading: tolerate timing,
+     re-attacks, harmless extra input, and correction behavior where musically
+     appropriate.
+
+6. **Create a single modern visual/CSS identity.**
+   - Build a unified CSS/design system that is modern, beautiful, and coherent.
+   - It should feel distinct from Artusi and not look like an Artusi clone.
+   - Use this identity consistently across teacher and student surfaces.
+
+7. **Move `/teacher/play/` onto the new CSS and layouts.**
+   - The authoring/generation surface should visually belong to the new
+     Monteverdi teacher experience.
+   - Prioritize layout, usability, and consistency with the emerging teacher
+     app design.
+
+These priorities supersede older "implement next" notes when there is a
+conflict in what to work on first. Older technical-debt warnings still matter,
+but they should be handled in service of the priority list above.
+
+High-priority launch follow-up list:
+[docs/teacher_experience_launch_followups.md](docs/teacher_experience_launch_followups.md)
+
+Meta-plan for addressing these priorities:
+[docs/superpowers/plans/2026-06-12-teacher-experience-meta-plan.md](docs/superpowers/plans/2026-06-12-teacher-experience-meta-plan.md)
+
 > [!IMPORTANT]
 > **HIGH PRIORITY TECHNICAL DEBT & REDUNDANCY WARNING**
 > A comprehensive analysis of cross-language algorithmic duplication (Python vs. JavaScript figured bass abbreviation stack rules, key normalization routines, pitch-spelling-to-MIDI conversions, and rhythmic duration coordinates) and parallel view routing structure technical debt has been compiled and committed to [docs/redundancy_analysis_report.md](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/docs/redundancy_analysis_report.md). 
