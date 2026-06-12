@@ -26,6 +26,7 @@
       playlistId:   r.playlistId,
       playlistName: r.playlistName,
       mode:         r.mode,
+      skillTags:    r.skillTags || [],
       publish:      r.publish || '',
       due:          r.due     || '',
       order:        r.order,
@@ -96,6 +97,34 @@
     return MAP[mode] || (mode || '—');
   }
 
+  /* ── Unit helpers ───────────────────────────────────────────────────── */
+
+  /** Extract unit number N from a skill_tags array (first "unit:N" tag). Returns null if none. */
+  function unitFromTags(skillTags) {
+    for (var i = 0; i < skillTags.length; i++) {
+      var m = /^unit:(\d+)$/.exec(skillTags[i]);
+      if (m) return m[1];
+    }
+    return null;
+  }
+
+  /** Absolute URL for the student unit play page for unit N. */
+  function studentUnitUrl(unitN) {
+    return window.location.origin + '/s/units/' + unitN + '/play/';
+  }
+
+  function copyToClipboard(text, btn) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        var orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = orig; }, 1800);
+      }).catch(function () { fallbackCopy(text, btn); });
+    } else {
+      fallbackCopy(text, btn);
+    }
+  }
+
   /* ── Save-button state ──────────────────────────────────────────────── */
 
   function refreshSaveBtn() {
@@ -143,7 +172,42 @@
       // ── Name ──
       var tdName = document.createElement('td');
       tdName.className = 't-col-name';
-      tdName.textContent = row.playlistName;
+      var nameSpan = document.createElement('span');
+      nameSpan.textContent = row.playlistName;
+      tdName.appendChild(nameSpan);
+
+      var unitN = unitFromTags(row.skillTags);
+      if (unitN !== null) {
+        var studentUrl = studentUnitUrl(unitN);
+        var linkWrap = document.createElement('span');
+        linkWrap.style.cssText = 'display:inline-flex;gap:0.25rem;margin-left:0.5rem;vertical-align:middle;';
+
+        var viewLink = document.createElement('a');
+        viewLink.href = studentUrl;
+        viewLink.target = '_blank';
+        viewLink.rel = 'noopener noreferrer';
+        viewLink.className = 't-btn t-btn-ghost t-btn-sm';
+        viewLink.textContent = 'Student view ↗';
+        linkWrap.appendChild(viewLink);
+
+        var copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 't-btn t-btn-ghost t-btn-sm';
+        copyBtn.textContent = 'Copy link';
+        copyBtn.addEventListener('click', (function (url) {
+          return function () { copyToClipboard(url, copyBtn); };
+        }(studentUrl)));
+        linkWrap.appendChild(copyBtn);
+
+        tdName.appendChild(linkWrap);
+      } else {
+        var noLinkSpan = document.createElement('span');
+        noLinkSpan.className = 't-muted';
+        noLinkSpan.style.cssText = 'margin-left:0.5rem;font-size:0.8125rem;';
+        noLinkSpan.textContent = 'No direct link';
+        tdName.appendChild(noLinkSpan);
+      }
+
       tr.appendChild(tdName);
 
       // ── Mode badge ──
@@ -500,16 +564,6 @@
       });
     });
 
-    // Delegated listener for add-group form buttons (survives re-renders)
-    container.addEventListener('click', function (e) {
-      if (e.target.id === 'btn-add-group-submit') {
-        onAddGroup();
-      } else if (e.target.id === 'btn-add-group-cancel') {
-        document.getElementById('add-group-form').style.display = 'none';
-        var addGroupBtn = document.getElementById('btn-show-add-group');
-        if (addGroupBtn) addGroupBtn.style.display = '';
-      }
-    });
   }
 
   function onAddGroup() {
@@ -705,6 +759,20 @@
     // Panels
     renderRoster();
     renderActivity();
+
+    // Delegated listener for add-group form buttons (wired once, survives re-renders)
+    var rosterContainer = document.getElementById('roster-content');
+    if (rosterContainer) {
+      rosterContainer.addEventListener('click', function (e) {
+        if (e.target.id === 'btn-add-group-submit') {
+          onAddGroup();
+        } else if (e.target.id === 'btn-add-group-cancel') {
+          document.getElementById('add-group-form').style.display = 'none';
+          var addGroupBtn = document.getElementById('btn-show-add-group');
+          if (addGroupBtn) addGroupBtn.style.display = '';
+        }
+      });
+    }
 
     // Show add-group form when button clicked
     var showAddGroupBtn = document.getElementById('btn-show-add-group');

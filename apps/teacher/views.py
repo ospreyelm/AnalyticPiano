@@ -18,7 +18,7 @@ from apps.teacher.decorators import teacher_required
 def _serialize_course_groups(course):
     """Return a list of group dicts for the given course's visible_to groups."""
     result = []
-    for group in course.visible_to.select_related().prefetch_related("members").all():
+    for group in course.visible_to.prefetch_related("members").all():
         members = [
             {"name": m.get_full_name(), "email": m.email}
             for m in group.members.all()
@@ -291,6 +291,7 @@ def course_detail_view(request, course_id):
             "playlistId": pco.playlist.id,
             "playlistName": pco.playlist.name,
             "mode": _mode_from_tags(pco.playlist.skill_tags or [], pco.playlist.name),
+            "skillTags": pco.playlist.skill_tags or [],
             "publish": publish_iso,
             "due": due_iso,
             "order": pco.order,

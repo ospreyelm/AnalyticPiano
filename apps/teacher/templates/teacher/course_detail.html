@@ -30,8 +30,6 @@
       {% else %}
         No date range set
       {% endif %}
-      &nbsp;·&nbsp;
-      <a class="t-link" href="{{ dashboard_activity_url }}">Activity report</a>
     </p>
   </div>
   <a class="t-btn t-btn-ghost" href="/teacher/courses/">← All courses</a>
@@ -138,6 +136,10 @@
   </div><!-- /.t-detail-side -->
 
 </div><!-- /.t-detail-layout -->
+<details class="t-legacy-section">
+  <summary>Advanced / Admin</summary>
+  <p><a class="t-link" href="{{ dashboard_activity_url }}">Advanced activity report (legacy)</a></p>
+</details>
 {% endblock %}
 
 {% block body_extra %}
