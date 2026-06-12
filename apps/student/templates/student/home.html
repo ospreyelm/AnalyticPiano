@@ -6,7 +6,7 @@
 {% if joined_course %}
 <div class="s-join-banner" id="join-banner">
   You've joined <strong>{{ joined_course }}</strong>.
-  <button onclick="document.getElementById('join-banner').remove()" aria-label="Dismiss">×</button>
+  <button onclick="this.closest('.s-join-banner').remove()" aria-label="Dismiss">×</button>
 </div>
 {% endif %}
 
