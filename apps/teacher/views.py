@@ -469,6 +469,46 @@ def respread_view(request, course_id):
 
 @teacher_required
 @require_http_methods(["POST"])
+def add_group_view(request, course_id):
+    """POST /teacher/courses/<course_id>/groups/ — create a new group and link to course."""
+    from django.shortcuts import get_object_or_404
+
+    course = get_object_or_404(Course, id=course_id, authored_by=request.user)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    name = (body.get("name") or "").strip()
+    if not name:
+        return JsonResponse({"error": "name is required."}, status=400)
+    if len(name) > 100:
+        return JsonResponse({"error": "name must be at most 100 characters."}, status=400)
+
+    group = Group(name=name, manager=request.user)
+    group.save()
+    course.visible_to.add(group)
+
+    # Return groups in the same shape as groups_json context variable
+    groups = []
+    for g in course.visible_to.prefetch_related("members").all():
+        members = [
+            {"name": m.get_full_name(), "email": m.email}
+            for m in g.members.all()
+        ]
+        groups.append({
+            "name": g.name,
+            "join_code": g.join_code,
+            "member_count": len(members),
+            "members": members,
+        })
+
+    return JsonResponse({"groups": groups})
+
+
+@teacher_required
+@require_http_methods(["POST"])
 def add_playlist_view(request, course_id):
     """POST /teacher/courses/<course_id>/add-playlist/ — append a playlist to course."""
     from django.shortcuts import get_object_or_404

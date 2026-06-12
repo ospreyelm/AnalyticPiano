@@ -9,6 +9,7 @@ from apps.teacher.views import (
     update_pco_view,
     respread_view,
     add_playlist_view,
+    add_group_view,
 )
 
 app_name = "teacher"
@@ -21,4 +22,5 @@ urlpatterns = [
     path("courses/<str:course_id>/update-pco/", update_pco_view, name="course-update-pco"),
     path("courses/<str:course_id>/respread/", respread_view, name="course-respread"),
     path("courses/<str:course_id>/add-playlist/", add_playlist_view, name="course-add-playlist"),
+    path("courses/<str:course_id>/groups/", add_group_view, name="course-add-group"),
 ]
