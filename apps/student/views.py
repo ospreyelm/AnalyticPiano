@@ -1,5 +1,6 @@
 import json
 import uuid
+from collections import defaultdict
 from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
@@ -20,6 +21,7 @@ from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.student.access import accessible_playlist_queryset, user_can_access_playlist
 from apps.accounts.forms import CustomAuthenticationForm, RegistrationForm
 from apps.exercises.models import (
+    Course,
     Exercise,
     IdentificationAttempt,
     PerformanceData,
@@ -534,32 +536,44 @@ def _get_resume_target(
     return url, "Unit 1 · Pitch & staff notation", progress
 
 
-def _build_course_panels(
-    user,
-    available_unit_numbers: set[str],
-    progress_by_unit: dict[str, dict],
-    course_dates: dict[str, dict],
-) -> list[dict]:
-    """Return one dict per enrolled course for the student home page."""
-    from apps.exercises.models import Course
-    from django.utils.timezone import now as tz_now
+def _get_enrolled_courses_with_pcos(user) -> tuple[list, dict]:
+    """Return (courses_list, pcos_by_course_id) using a single PCO query.
 
-    from collections import defaultdict
-
-    courses = Course.objects.filter(visible_to__members=user).distinct().order_by("title")
-
-    units = TaxonomyReader.get_all_units()
-    unit_meta_by_n = {str(u["n"]): u for u in units}
-
-    all_pcos = (
+    courses_list — distinct Course objects the user is enrolled in, ordered by title.
+    pcos_by_course_id — defaultdict(list) mapping course.id → list of PCO objects.
+    """
+    all_pcos = list(
         PlaylistCourseOrdered.objects
         .filter(course__visible_to__members=user)
         .select_related("course", "playlist")
         .distinct()
     )
-    pcos_by_course = defaultdict(list)
+    pcos_by_course_id: dict = defaultdict(list)
+    courses_map: dict = {}
     for pco in all_pcos:
-        pcos_by_course[pco.course_id].append(pco)
+        pcos_by_course_id[pco.course_id].append(pco)
+        if pco.course_id not in courses_map:
+            courses_map[pco.course_id] = pco.course
+
+    courses_list = sorted(courses_map.values(), key=lambda c: c.title)
+    return courses_list, pcos_by_course_id
+
+
+def _build_course_panels(
+    user,
+    available_unit_numbers: set[str],
+    progress_by_unit: dict[str, dict],
+    course_dates: dict[str, dict],
+    courses_and_pcos: tuple | None = None,
+) -> list[dict]:
+    """Return one dict per enrolled course for the student home page."""
+    if courses_and_pcos is not None:
+        courses, pcos_by_course = courses_and_pcos
+    else:
+        courses, pcos_by_course = _get_enrolled_courses_with_pcos(user)
+
+    units = TaxonomyReader.get_all_units()
+    unit_meta_by_n = {str(u["n"]): u for u in units}
 
     panels = []
     for course in courses:
@@ -624,7 +638,11 @@ def _build_home_context(user) -> dict:
     available = _get_available_unit_numbers(user)
     progress_by_unit = _batch_home_unit_summaries(user, units, available)
     course_dates = _get_course_unit_dates(user)
-    course_panels = _build_course_panels(user, available, progress_by_unit, course_dates)
+    courses_and_pcos = _get_enrolled_courses_with_pcos(user)
+    course_panels = _build_course_panels(
+        user, available, progress_by_unit, course_dates,
+        courses_and_pcos=courses_and_pcos,
+    )
     resume_url, resume_label, resume_progress = _get_resume_target(
         user,
         available=available,
