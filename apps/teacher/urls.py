@@ -10,6 +10,7 @@ from apps.teacher.views import (
     respread_view,
     add_playlist_view,
     add_group_view,
+    suggest_units_view,
 )
 
 app_name = "teacher"
@@ -23,4 +24,5 @@ urlpatterns = [
     path("courses/<str:course_id>/respread/", respread_view, name="course-respread"),
     path("courses/<str:course_id>/add-playlist/", add_playlist_view, name="course-add-playlist"),
     path("courses/<str:course_id>/groups/", add_group_view, name="course-add-group"),
+    path("play/api/suggest-units/", suggest_units_view, name="suggest-units"),
 ]

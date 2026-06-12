@@ -1,5 +1,6 @@
 """Views for the teacher course creation wizard."""
 import json
+import logging
 from datetime import datetime, time
 
 from django.conf import settings
@@ -13,6 +14,8 @@ from apps.accounts.models import Group
 from apps.exercises.models import Course, Playlist, PlaylistCourseOrdered
 from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.teacher.decorators import teacher_required
+
+logger = logging.getLogger(__name__)
 
 
 def _serialize_course_groups(course):
@@ -558,3 +561,117 @@ def add_playlist_view(request, course_id):
     )
 
     return JsonResponse({"ok": True, "pcoId": pco.pk, "order": pco.order}, status=201)
+
+
+# ---------------------------------------------------------------------------
+# Unit suggestion API (Task 2.5+2.6)
+# ---------------------------------------------------------------------------
+
+@teacher_required
+@require_http_methods(["POST"])
+def suggest_units_view(request):
+    """
+    POST /teacher/play/api/suggest-units/
+
+    Accepts a CIR score or an existing exercise ID, detects skill tags,
+    and returns ranked unit suggestions for the teacher.
+
+    Request body (JSON):
+      { "exercise_id": "EA0001" }
+      OR
+      { "cir_score": { ...CIR dict... }, "key": "jC_" }
+
+    Response:
+      { "skill_tags": [...], "suggested_units": [9, 11] }
+
+    Returns 200 OK with empty lists on any analysis failure (graceful degradation).
+    Requires staff or superuser. Returns 403 if non-staff.
+    """
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"error": "Permission denied."}, status=403)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse(
+            {"skill_tags": [], "suggested_units": []},
+            status=200
+        )
+
+    detected_tags = []
+    music21_score = None
+
+    # Try to load from exercise_id first
+    exercise_id = body.get("exercise_id")
+    if exercise_id:
+        try:
+            from apps.exercises.models import Exercise
+            exercise = Exercise.objects.get(id=exercise_id)
+
+            # If exercise already has skill_tags, use them directly
+            if exercise.skill_tags:
+                detected_tags = exercise.skill_tags
+            else:
+                # Try to rebuild from the exercise data
+                from apps.exercises.utils.music21_builder import build_score_from_data
+
+                try:
+                    music21_score = build_score_from_data(exercise.data)
+                    chunk_key = exercise.data.get("meta", {}).get("key", "jC_")
+                except Exception:
+                    # If we can't build the score, gracefully return empty
+                    pass
+
+        except Exception:
+            # Exercise not found or other error — gracefully continue
+            pass
+
+    # Otherwise, try to build from cir_score + key
+    if not detected_tags and not music21_score:
+        cir_score = body.get("cir_score")
+        if cir_score and isinstance(cir_score, dict):
+            try:
+                from apps.exercises.utils.music21_builder import build_score_from_data
+
+                # Wrap the cir_score in the expected data structure
+                wrapped_data = {"score": cir_score}
+                music21_score = build_score_from_data(wrapped_data)
+                chunk_key = body.get("key", "jC_")
+            except Exception:
+                # Score building failed — gracefully return empty
+                pass
+
+    # If we have a music21 score, analyze it for skills
+    if music21_score and not detected_tags:
+        try:
+            from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
+
+            chunk_key = body.get("key", "jC_")
+            skills_list, complexity = analyze_chunk_skills(
+                music21_score,
+                chunk_key,
+                description=None
+            )
+            detected_tags = skills_list
+        except Exception:
+            # Skill analysis failed — gracefully return empty
+            pass
+
+    # Suggest units from detected tags
+    suggested_units = []
+    if detected_tags:
+        try:
+            from apps.exercises.services.unit_suggester import suggest_units_from_tags
+
+            suggested_units = suggest_units_from_tags(detected_tags, top_n=5)
+        except Exception:
+            # Unit suggestion failed — return empty list
+            pass
+
+    return JsonResponse(
+        {
+            "skill_tags": detected_tags,
+            "suggested_units": suggested_units,
+        },
+        status=200
+    )
