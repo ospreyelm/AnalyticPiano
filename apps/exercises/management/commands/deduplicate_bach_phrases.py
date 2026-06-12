@@ -23,35 +23,40 @@ class Command(BaseCommand):
         rows = Exercise.objects.filter(
             authored_by=author,
             description__startswith="Bach R",
-        ).order_by("description", "-created", "_id")
+        ).order_by("description", "created", "_id")
 
         groups = defaultdict(list)
         for ex in rows:
             groups[ex.description].append(ex)
 
         duplicate_groups = {desc: xs for desc, xs in groups.items() if len(xs) > 1}
-        delete_ids = []
+        all_dup_ids = [ex.pk for xs in duplicate_groups.values() for ex in xs]
+        # Only protect exercises referenced by real (non-auto) playlists.
+        # Auto-playlists are per-exercise scratch pads — safe to lose.
         protected_ids = set(
             ExercisePlaylistOrdered.objects.filter(
-                exercise_id__in=[ex.pk for xs in duplicate_groups.values() for ex in xs]
-            ).exclude(
-                playlist__is_auto=True
+                exercise_id__in=all_dup_ids,
+                playlist__is_auto=False,
             ).values_list("exercise_id", flat=True)
         )
 
+        delete_pks = []
         for desc, xs in duplicate_groups.items():
-            keep = xs[0]
             for ex in xs[1:]:
                 if ex.pk in protected_ids:
-                    self.stdout.write(self.style.WARNING(f"protected referenced duplicate {ex.id}: {desc}"))
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"protected (playlist-referenced) duplicate {ex.id}: {desc}"
+                        )
+                    )
                     continue
-                delete_ids.append(ex.pk)
+                delete_pks.append(ex.pk)
 
         self.stdout.write(f"Duplicate descriptions: {len(duplicate_groups)}")
-        self.stdout.write(f"Unreferenced duplicates to delete: {len(delete_ids)}")
+        self.stdout.write(f"Unreferenced duplicates to delete: {len(delete_pks)}")
 
-        if options["execute"] and delete_ids:
-            deleted, _ = Exercise.objects.filter(pk__in=delete_ids).delete()
+        if options["execute"] and delete_pks:
+            deleted, _ = Exercise.objects.filter(pk__in=delete_pks).delete()
             self.stdout.write(self.style.SUCCESS(f"Deleted {deleted} rows."))
         elif not options["execute"]:
             self.stdout.write("Dry run only. Pass --execute to delete unreferenced duplicates.")
