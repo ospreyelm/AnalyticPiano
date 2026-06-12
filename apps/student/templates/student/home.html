@@ -3,11 +3,43 @@
 {% block title %}Monteverdi{% endblock %}
 {% block content %}
 
-{% if request.GET.joined %}
+{% if joined_course %}
 <div class="s-join-banner" id="join-banner">
-  You've joined <strong>{{ request.GET.joined }}</strong>.
+  You've joined <strong>{{ joined_course }}</strong>.
   <button onclick="document.getElementById('join-banner').remove()" aria-label="Dismiss">×</button>
 </div>
+{% endif %}
+
+{% if course_panels %}
+<section class="s-course-panels">
+  {% for panel in course_panels %}
+  <div class="s-course-panel">
+    <div class="s-course-panel-header">
+      <h2 class="s-course-panel-title">{{ panel.title }}</h2>
+      {% if panel.progress_pct > 0 %}
+      <span class="s-course-panel-progress">{{ panel.progress_pct }}% complete</span>
+      {% endif %}
+    </div>
+    {% if panel.next_unit %}
+    <a class="s-course-next" href="{{ panel.next_unit.url }}">
+      <span class="s-course-next-label">Next up</span>
+      <span class="s-course-next-title">Unit {{ panel.next_unit.n }} · {{ panel.next_unit.title }}</span>
+      {% if panel.next_unit.due_label %}<span class="s-due-chip{% if panel.next_unit.overdue %} overdue{% endif %}">{{ panel.next_unit.due_label }}</span>{% endif %}
+    </a>
+    {% endif %}
+    {% if panel.open_units|length > 1 %}
+    <details class="s-course-units">
+      <summary>All open units ({{ panel.open_units|length }})</summary>
+      <ul>
+        {% for u in panel.open_units %}
+        <li><a href="{{ u.url }}">Unit {{ u.n }} · {{ u.title }}{% if u.due_label %} <span class="s-due-chip{% if u.overdue %} overdue{% endif %}">{{ u.due_label }}</span>{% endif %}</a> <span class="s-unit-pct">{{ u.progress_pct }}%</span></li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
 {% endif %}
 
 {% if resume_url %}
@@ -22,6 +54,115 @@
 {% endif %}
 
 <style>
+  /* ── Course panels ───────────────────────────────────────── */
+  .s-course-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .s-course-panel {
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--teal);
+    border-radius: 12px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+  .s-course-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 8px;
+    gap: 12px;
+  }
+  .s-course-panel-title {
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+  }
+  .s-course-panel-progress {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .s-course-next {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: color-mix(in srgb, var(--teal) 8%, var(--surface-2));
+    border-top: 1px solid color-mix(in srgb, var(--teal) 20%, transparent);
+    text-decoration: none;
+    transition: background 150ms ease;
+  }
+  .s-course-next:hover {
+    background: color-mix(in srgb, var(--teal) 15%, var(--surface-2));
+  }
+  .s-course-next-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--teal);
+    white-space: nowrap;
+  }
+  .s-course-next-title {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .s-due-chip {
+    font-size: 0.72rem;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--teal) 15%, transparent);
+    color: var(--teal);
+    white-space: nowrap;
+  }
+  .s-due-chip.overdue {
+    background: color-mix(in srgb, #dc2626 12%, transparent);
+    color: #dc2626;
+  }
+  .s-course-units {
+    border-top: 1px solid var(--border);
+    padding: 8px 16px 12px;
+    font-size: 0.85rem;
+  }
+  .s-course-units summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 0;
+    user-select: none;
+  }
+  .s-course-units ul {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .s-course-units li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .s-course-units a {
+    color: var(--text);
+    text-decoration: none;
+    flex: 1;
+  }
+  .s-course-units a:hover { text-decoration: underline; }
+  .s-unit-pct {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
   /* ── Join success banner ─────────────────────────────────── */
   .s-join-banner {
     display: flex;
