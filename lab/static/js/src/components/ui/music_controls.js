@@ -93,6 +93,16 @@ define([
 
     this.headerEl = $(settings.headerEl);
     this.containerEl = $(settings.containerEl);
+    this._authoringMetaLoaded = false;
+    this._isSuperuser = false;
+    this._suggestedUnits = {};
+    this._pendingSaveJsonData = null;
+    this._currentUnitSuggestionKey = null;
+    this._completedUnitSuggestionKeys = {};
+    this._unitSuggestionInFlightByKey = {};
+    this._unitSuggestionCallbacksByKey = {};
+    this._autoSelectedSuggestedUnits = {};
+    this._applyingSuggestedUnits = false;
 
     // _.bindAll(this, []);
   };
@@ -147,9 +157,10 @@ define([
       this.renderOctaveAdjustment();
       this.renderKeyboardShortcuts();
       this.initMidiTab();
+      this.initSavePanel();
 
       this.subscribe(EVENTS.BROADCAST.PLAY_SAVED, (data) =>
-        this.targetSelector.open(data.exerciseId)
+        this.targetSelector.open(data)
       );
     },
     /**
@@ -428,6 +439,359 @@ define([
       newTab.document.write("<img src='" + dataURL + "' alt='from canvas'/>");
       return true;
     },
+
+    initSavePanel: function () {
+      var that = this;
+      var panelEl = $("#play-save-panel");
+      if (!panelEl.length) {
+        return;
+      }
+
+      this._loadAuthoringMeta();
+
+      $("#play-save-description, #play-save-tags, #play-save-mode, " +
+        "#play-save-create-transpositions, #play-save-key-set, #play-save-public, " +
+        "#play-save-official, #play-save-new-playlist-name")
+        .off(".playsave")
+        .on("input.playsave change.playsave", function () {
+          that._validateSavePanel(false);
+        });
+
+      $("#play-save-unit").off("change.playsave").on("change.playsave", function () {
+        if (!that._applyingSuggestedUnits) {
+          that._autoSelectedSuggestedUnits = {};
+        }
+        that._validateSavePanel(false);
+      });
+
+      $("#play-save-playlist").off("change.playsave").on("change.playsave", function () {
+        if ($(this).val() === "__new__") {
+          $("#play-save-new-playlist-row").show();
+        } else {
+          $("#play-save-new-playlist-row").hide();
+        }
+        that._validateSavePanel(false);
+      });
+
+      $("#play-save-key-set-preset").off("change.playsave").on("change.playsave", function () {
+        that._applyKeySetPreset($(this).val());
+        that._validateSavePanel(false);
+      });
+
+      $("#play-save-submit").off("click.playsave").on("click.playsave", function () {
+        var jsonData = that._pendingSaveJsonData || that._getCurrentSaveJsonData();
+        if (!jsonData) {
+          that._setSavePanelFeedback("No score is ready to save.");
+          return;
+        }
+        var requestKey = that._suggestionRequestKey(jsonData);
+        $("#play-save-submit").prop("disabled", true);
+        that._ensureUnitSuggestionsForScore(jsonData, function () {
+          var currentJsonData = that._pendingSaveJsonData || that._getCurrentSaveJsonData();
+          if (that._suggestionRequestKey(currentJsonData) !== requestKey) {
+            that._validateSavePanel(false);
+            return;
+          }
+          that._submitSaveDialog(jsonData, null, $("#play-save-dialog-feedback"));
+        });
+      });
+
+      this._applyKeySetPreset($("#play-save-key-set-preset").val() || "common");
+      this._validateSavePanel(false);
+    },
+
+    _loadAuthoringMeta: function () {
+      var that = this;
+      var unitSelect = $("#play-save-unit");
+      var playlistSelect = $("#play-save-playlist");
+
+      if (!unitSelect.length || this._authoringMetaLoaded) {
+        return;
+      }
+
+      $.ajax({
+        type: "GET",
+        url: window.location.origin + "/exercises/authoring-meta/",
+        dataType: "json",
+        success: function (meta) {
+          that._authoringMetaLoaded = true;
+          that._isSuperuser = !!meta.isSuperuser;
+
+          unitSelect.empty();
+          $.each(meta.units || [], function (i, u) {
+            var label = "Unit " + u.n + (u.title ? " - " + u.title : "");
+            unitSelect.append(
+              $("<option>").val(String(u.n)).text(label).attr("data-base-label", label)
+            );
+          });
+
+          playlistSelect.html('<option value="">None</option>');
+          $.each(meta.playlists || [], function (i, pl) {
+            var optEl = $("<option>").val(pl.id).text(pl.name + (pl.locked ? " (locked)" : ""));
+            if (pl.locked) {
+              optEl.prop("disabled", true);
+            }
+            playlistSelect.append(optEl);
+          });
+          playlistSelect.append($("<option>").val("__new__").text("New playlist..."));
+
+          if (that._isSuperuser) {
+            $("#play-save-official-row").show();
+          } else {
+            $("#play-save-official").prop("checked", false);
+            $("#play-save-official-row").hide();
+          }
+
+          that._applySuggestedUnits();
+          that._validateSavePanel(false);
+        },
+        error: function () {
+          that._setSavePanelFeedback("Could not load units and playlists.");
+          console.warn("[play-save] Could not fetch authoring-meta");
+        },
+      });
+    },
+
+    _getCurrentSaveJsonData: function () {
+      var currentState = sessionStorage.getItem("current_state");
+      if (!currentState) {
+        return null;
+      }
+      try {
+        return JSON.stringify(JSON.parse(currentState), null, 0);
+      } catch (e) {
+        console.warn("[play-save] Failed to parse current_state", e);
+        return null;
+      }
+    },
+
+    _prepareSavePanel: function (json_data, focusPanel) {
+      this._pendingSaveJsonData = json_data;
+      this._loadAuthoringMeta();
+      if (this._currentUnitSuggestionKey !== this._suggestionRequestKey(json_data)) {
+        this._clearAutoSuggestedUnits();
+      }
+      this._ensureUnitSuggestionsForScore(json_data);
+      this._validateSavePanel(false);
+
+      if (focusPanel && $("#play-save-panel").length) {
+        $("html, body").animate({ scrollTop: $("#play-save-panel").offset().top - 16 }, 180);
+        $("#play-save-description").trigger("focus");
+      }
+    },
+
+    _suggestionRequestKey: function (json_data) {
+      return json_data || "";
+    },
+
+    _clearAutoSuggestedUnits: function () {
+      var unitSelect = $("#play-save-unit");
+      var autoSelected = this._autoSelectedSuggestedUnits || {};
+      this._suggestedUnits = {};
+      this._autoSelectedSuggestedUnits = {};
+      if (!unitSelect.length) {
+        return;
+      }
+      unitSelect.find("option").each(function () {
+        var option = $(this);
+        var value = String(option.val());
+        var baseLabel = option.attr("data-base-label") || option.text().replace(/ \(suggested\)$/, "");
+        option.attr("data-base-label", baseLabel);
+        option.text(baseLabel);
+        if (autoSelected[value]) {
+          option.prop("selected", false);
+        }
+      });
+    },
+
+    _ensureUnitSuggestionsForScore: function (json_data, callback) {
+      var key = this._suggestionRequestKey(json_data);
+      if (this._completedUnitSuggestionKeys[key]) {
+        if (callback) callback();
+        return;
+      }
+
+      if (callback) {
+        if (!this._unitSuggestionCallbacksByKey[key]) {
+          this._unitSuggestionCallbacksByKey[key] = [];
+        }
+        this._unitSuggestionCallbacksByKey[key].push(callback);
+      }
+
+      if (this._unitSuggestionInFlightByKey[key]) {
+        return;
+      }
+
+      this._currentUnitSuggestionKey = key;
+      this._unitSuggestionInFlightByKey[key] = true;
+      this._setSaveSuggestionStatus("Checking suggested units...");
+      this._suggestUnitsForCurrentScore(json_data, key, () => {
+        var callbacks = this._unitSuggestionCallbacksByKey[key] || [];
+        delete this._unitSuggestionCallbacksByKey[key];
+        delete this._unitSuggestionInFlightByKey[key];
+        this._completedUnitSuggestionKeys[key] = true;
+        $.each(callbacks, function (i, cb) {
+          cb();
+        });
+      });
+    },
+
+    _suggestUnitsForCurrentScore: function (json_data, requestKey, done) {
+      var that = this;
+      var payload;
+      var finish = done || function () {};
+      try {
+        payload = JSON.parse(json_data);
+      } catch (e) {
+        if (requestKey === this._currentUnitSuggestionKey) {
+          this._setSaveSuggestionStatus("");
+        }
+        finish();
+        return;
+      }
+
+      var cirScore = payload.score || payload.cir_score || payload;
+      var key = payload.key || (payload.meta && payload.meta.key) || "jC_";
+
+      $.ajax({
+        type: "POST",
+        url: window.location.origin + "/teacher/play/api/suggest-units/",
+        data: JSON.stringify({ cir_score: cirScore, key: key }),
+        contentType: "application/json",
+        dataType: "json",
+        headers: { "X-CSRFToken": that._getCsrfToken() },
+        success: function (data) {
+          var suggested = data && data.suggested_units ? data.suggested_units : [];
+          if (requestKey === that._currentUnitSuggestionKey) {
+            that._suggestedUnits = {};
+            $.each(suggested, function (i, unitNum) {
+              that._suggestedUnits[String(unitNum)] = true;
+            });
+            that._applySuggestedUnits();
+            that._setSaveSuggestionStatus(suggested.length ? "Suggested units selected." : "");
+            that._validateSavePanel(false);
+          }
+          finish();
+        },
+        error: function () {
+          if (requestKey === that._currentUnitSuggestionKey) {
+            that._clearAutoSuggestedUnits();
+            that._setSaveSuggestionStatus("");
+            that._validateSavePanel(false);
+          }
+          console.warn("[play-save] Could not fetch unit suggestions");
+          finish();
+        },
+      });
+    },
+
+    _applySuggestedUnits: function () {
+      var unitSelect = $("#play-save-unit");
+      if (!unitSelect.length) {
+        return;
+      }
+
+      var current = unitSelect.val() || [];
+      var currentSelected = {};
+      var selected = {};
+      var manualSelected = {};
+      var newAutoSelected = {};
+      $.each(current, function (i, value) {
+        currentSelected[String(value)] = true;
+      });
+
+      $.each(currentSelected, (value) => {
+        if (!this._autoSelectedSuggestedUnits[value]) {
+          manualSelected[value] = true;
+          selected[value] = true;
+        }
+      });
+
+      $.each(this._suggestedUnits || {}, function (value) {
+        selected[String(value)] = true;
+        if (!manualSelected[String(value)]) {
+          newAutoSelected[String(value)] = true;
+        }
+      });
+
+      this._autoSelectedSuggestedUnits = newAutoSelected;
+      unitSelect.data("suggested-map", this._suggestedUnits || {});
+      this._applyingSuggestedUnits = true;
+      unitSelect.find("option").each(function () {
+        var option = $(this);
+        var value = String(option.val());
+        var baseLabel = option.attr("data-base-label") || option.text().replace(/ \(suggested\)$/, "");
+        option.attr("data-base-label", baseLabel);
+        option.text(baseLabel + ((unitSelect.data("suggested-map") || {})[value] ? " (suggested)" : ""));
+        option.prop("selected", !!selected[value]);
+      });
+      this._applyingSuggestedUnits = false;
+    },
+
+    _applyKeySetPreset: function (preset) {
+      var presets = {
+        common: "C, G, D, F, Bb, Eb",
+        sharp: "C, G, D, A, E, B",
+        flat: "C, F, Bb, Eb, Ab, Db",
+        all: "C, G, D, A, E, B, F#, Db, Ab, Eb, Bb, F",
+      };
+      if (preset && preset !== "custom" && presets[preset]) {
+        $("#play-save-key-set").val(presets[preset]);
+      }
+    },
+
+    _getSelectedUnits: function () {
+      var value = $("#play-save-unit").val() || [];
+      if (!$.isArray(value)) {
+        value = value ? [value] : [];
+      }
+      return value;
+    },
+
+    _getSelectedKeySet: function () {
+      var raw = $("#play-save-key-set").val() || "";
+      var keys = [];
+      var seen = {};
+      $.each(raw.split(/[,\s]+/), function (i, value) {
+        var key = $.trim(value);
+        if (key && !seen[key]) {
+          keys.push(key);
+          seen[key] = true;
+        }
+      });
+      return keys;
+    },
+
+    _setSavePanelFeedback: function (message) {
+      var feedbackEl = $("#play-save-dialog-feedback");
+      feedbackEl.text(message || "");
+      feedbackEl.toggleClass("is-visible", !!message);
+    },
+
+    _setSaveSuggestionStatus: function (message) {
+      $("#play-save-suggestion-status").text(message || "");
+    },
+
+    _validateSavePanel: function (showMessage) {
+      var description = $.trim($("#play-save-description").val() || "");
+      var units = this._getSelectedUnits();
+      var createTranspositions = $("#play-save-create-transpositions").is(":checked");
+      var keySet = this._getSelectedKeySet();
+      var message = "";
+
+      if (!description) {
+        message = "Description is required.";
+      } else if (units.length === 0) {
+        message = "Select at least one unit tag.";
+      } else if (createTranspositions && keySet.length === 0) {
+        message = "Choose at least one key for transpositions.";
+      }
+
+      $("#play-save-submit").prop("disabled", !!message);
+      this._setSavePanelFeedback(message);
+      return !message;
+    },
+
     /**
      * Handler to upload or download JSON data for the current notation.
      *
@@ -579,7 +943,7 @@ define([
           }
           return false;
         }
-        this._openSaveDialog(json_data);
+        this._prepareSavePanel(json_data, true);
       } else {
         console.log("Download", json_data);
         var file_name = "exercise_download";
@@ -684,97 +1048,6 @@ define([
     },
 
     /**
-     * Opens the save-exercise dialog, fetches authoring-meta to populate it,
-     * and wires up submit/cancel.
-     *
-     * @param {string} json_data  Serialised JSON payload (already stringified)
-     * @return undefined
-     */
-    _openSaveDialog: function (json_data) {
-      var that = this;
-      var overlayEl = $("#play-save-dialog-overlay");
-      var feedbackEl = $("#play-save-dialog-feedback");
-
-      // Reset dialog state
-      $("#play-save-description").val("Play view chordal exercise");
-      $("#play-save-unit").html('<option value="">— no unit —</option>');
-      $("#play-save-tags").val("");
-      $("#play-save-playlist").html('<option value="">— none —</option><option value="__new__">New playlist…</option>');
-      $("#play-save-new-playlist-row").hide();
-      $("#play-save-new-playlist-name").val("");
-      $("#play-save-public").prop("checked", false);
-      $("#play-save-official").prop("checked", false);
-      $("#play-save-official-row").hide();
-      feedbackEl.text("").removeClass("is-visible");
-
-      overlayEl.show();
-
-      // Fetch authoring-meta to populate unit/playlist dropdowns
-      $.ajax({
-        type: "GET",
-        url: window.location.origin + "/exercises/authoring-meta/",
-        dataType: "json",
-        success: function (meta) {
-          // Populate units
-          var unitSelect = $("#play-save-unit");
-          $.each(meta.units || [], function (i, u) {
-            unitSelect.append(
-              $("<option>").val(u.n).text("Unit " + u.n + (u.title ? " — " + u.title : ""))
-            );
-          });
-
-          // Populate playlists (locked ones disabled)
-          var playlistSelect = $("#play-save-playlist");
-          // Remove the __new__ option temporarily, re-append at end
-          playlistSelect.html('<option value="">— none —</option>');
-          $.each(meta.playlists || [], function (i, pl) {
-            var optEl = $("<option>").val(pl.id).text(pl.name + (pl.locked ? " (locked)" : ""));
-            if (pl.locked) {
-              optEl.prop("disabled", true);
-            }
-            playlistSelect.append(optEl);
-          });
-          playlistSelect.append($("<option>").val("__new__").text("New playlist…"));
-
-          // Show official checkbox only for superusers
-          if (meta.isSuperuser) {
-            $("#play-save-official-row").show();
-          }
-        },
-        error: function () {
-          // Non-fatal: dialog still usable without dropdowns populated
-          console.warn("[play-save] Could not fetch authoring-meta");
-        },
-      });
-
-      // Wire playlist select: show/hide new-name input
-      $("#play-save-playlist").off("change.playsave").on("change.playsave", function () {
-        if ($(this).val() === "__new__") {
-          $("#play-save-new-playlist-row").show();
-        } else {
-          $("#play-save-new-playlist-row").hide();
-        }
-      });
-
-      // Wire cancel button
-      $("#play-save-cancel").off("click.playsave").on("click.playsave", function () {
-        overlayEl.hide();
-      });
-
-      // Close on overlay background click
-      overlayEl.off("click.playsave").on("click.playsave", function (e) {
-        if ($(e.target).is(overlayEl)) {
-          overlayEl.hide();
-        }
-      });
-
-      // Wire submit button
-      $("#play-save-submit").off("click.playsave").on("click.playsave", function () {
-        that._submitSaveDialog(json_data, overlayEl, feedbackEl);
-      });
-    },
-
-    /**
      * Collects dialog field values, extends the json_data payload, and POSTs
      * to /exercises/add/.
      *
@@ -786,6 +1059,10 @@ define([
     _submitSaveDialog: function (json_data, overlayEl, feedbackEl) {
       var that = this;
 
+      if (!this._validateSavePanel(true)) {
+        return;
+      }
+
       var description = $.trim($("#play-save-description").val());
       if (!description) {
         feedbackEl.text("Description is required.").addClass("is-visible");
@@ -794,10 +1071,10 @@ define([
 
       // Build skill tags array: optional unit: prefix + free tags
       var skillTags = [];
-      var unitVal = $("#play-save-unit").val();
-      if (unitVal) {
+      var unitVals = this._getSelectedUnits();
+      $.each(unitVals, function (i, unitVal) {
         skillTags.push("unit:" + unitVal);
-      }
+      });
       var freeTags = $("#play-save-tags").val();
       if (freeTags) {
         var parsed = freeTags.split(",");
@@ -810,7 +1087,10 @@ define([
       }
 
       var isPublic = $("#play-save-public").is(":checked");
-      var saveAsOfficial = $("#play-save-official").is(":checked");
+      var saveAsOfficial = this._isSuperuser && $("#play-save-official-row").is(":visible") && $("#play-save-official").is(":checked");
+      var createTranspositions = $("#play-save-create-transpositions").is(":checked");
+      var keySet = this._getSelectedKeySet();
+      var selectedMode = $("#play-save-mode").val() || "play";
 
       var playlistSelectVal = $("#play-save-playlist").val();
       var playlistId = null;
@@ -833,6 +1113,7 @@ define([
       payload.skillTags = skillTags;
       payload.isPublic = isPublic;
       payload.saveAsOfficial = saveAsOfficial;
+      payload.mode = selectedMode;
       if (playlistId !== null) {
         payload.playlistId = playlistId;
       }
@@ -852,15 +1133,21 @@ define([
         dataType: "json",
         headers: { "X-CSRFToken": that._getCsrfToken() },
         success: function (data) {
-          overlayEl.hide();
+          if (overlayEl && overlayEl.hide) {
+            overlayEl.hide();
+          }
           if (that.feedback) {
             that.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
           }
+          that._pendingSaveJsonData = null;
           that.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
             exerciseId: data.id,
             reviewStatus: data.reviewStatus,
             playlistId: data.playlistId || null,
             playlistName: data.playlistName || null,
+            create_transpositions: createTranspositions,
+            key_set: keySet,
+            is_official: saveAsOfficial,
           });
         },
         error: function (xhr) {
@@ -889,6 +1176,8 @@ define([
               inlineEl: "#play-save-dialog-feedback",
               params: { bar: "?", beats: "?", expected: "?" },
             });
+          } else {
+            that._setSavePanelFeedback(errMsg || "Could not save exercise.");
           }
         },
       });
