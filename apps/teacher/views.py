@@ -301,10 +301,7 @@ def course_detail_view(request, course_id):
     groups = _serialize_course_groups(course)
 
     # Build addable playlists
-    factory_user = _get_factory_user()
-    playlist_filter = Q(authored_by=request.user) | Q(is_public=True)
-    if factory_user is not None:
-        playlist_filter = playlist_filter | Q(authored_by=factory_user)
+    playlist_filter = Q(authored_by=request.user) | Q(is_public=True) | Q(is_official=True)
     addable_qs = (
         Playlist.objects.filter(playlist_filter)
         .order_by("name")[:500]
@@ -313,10 +310,8 @@ def course_detail_view(request, course_id):
     for pl in addable_qs:
         if pl.authored_by_id == request.user.pk:
             source = "mine"
-        elif factory_user and pl.authored_by_id == factory_user.pk:
-            source = "official"
         else:
-            source = "official" if pl.is_public else "mine"
+            source = "official" if pl.is_official else "mine"
         addable_playlists.append({"id": pl.id, "name": pl.name, "source": source})
 
     # Dashboard deep-link URLs

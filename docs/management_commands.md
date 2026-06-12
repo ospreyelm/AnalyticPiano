@@ -313,7 +313,7 @@ python manage.py ensure_factory_account
 python manage.py ensure_factory_account --email other@example.com
 ```
 
-**`generate_factory_library`** — Run the declarative factory manifest (`apps/exercises/factory_manifest.py`): shared commands once (Bach matrix, compendium), then per-unit generators, all authored by the factory account. Curated (hand-authored) manifest entries are never regenerated — only their playlists are verified. `--report` and `--verify` are read-only; `--dry-run` prints planned invocations.
+**`generate_factory_library`** — Run the declarative factory manifest (`apps/exercises/factory_manifest.py`): shared commands once (Bach matrix, compendium), then per-unit generators, all authored by the factory account. Curated (hand-authored) manifest entries are never regenerated — only their playlists are verified. `--report` and `--verify` are read-only; `--dry-run` prints planned invocations. The `--report` flag filters playlists by `is_official=True` (not by factory account ownership), so it no longer requires the factory user account to exist.
 ```
 python manage.py generate_factory_library --dry-run
 python manage.py generate_factory_library --units 1,2,9-20 --skip-refresh

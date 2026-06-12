@@ -139,6 +139,7 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         default=False,
         help_text="Check to share your exercise with other users of this site: allow them to include the exercise in their playlists and see your email address.",
     )
+    is_official = models.BooleanField(default=False, db_index=True)
 
     locked = models.BooleanField("Locked", default=False)
 
@@ -590,6 +591,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         default=False,
         help_text="Sharing your playlist will allow other users to include it in their courses. Doing so will reveal your email address to all users of the site.",
     )
+    is_official = models.BooleanField(default=False, db_index=True)
     is_adaptive = models.BooleanField(
         "Adaptive Mode",
         default=False,
