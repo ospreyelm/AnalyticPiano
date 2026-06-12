@@ -108,11 +108,102 @@
 
 			<div class="play-save-actions">
 				<button type="button" id="play-save-submit" class="play-save-btn play-save-btn-primary" disabled>Save</button>
+				<button type="button" id="play-batch-generate-btn" class="play-save-btn play-save-btn-secondary">Generate batch</button>
 			</div>
 		</aside>
 		<div id="piano"></div>
 	</div>
     {% include "_footer.html" %}
+</div>
+
+<!-- Batch generation wizard modal -->
+<div id="batch-wizard-overlay" class="batch-wizard-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="batch-wizard-title">
+	<div class="batch-wizard-dialog">
+		<!-- Step 1: Form -->
+		<div id="batch-wizard-form">
+			<div class="batch-wizard-header">
+				<h2 id="batch-wizard-title" class="batch-wizard-title">Generate batch</h2>
+				<button type="button" class="batch-wizard-close" aria-label="Close">&times;</button>
+			</div>
+			<div class="batch-wizard-body">
+				<div class="batch-wizard-field">
+					<label for="batch-source-ref">Riemenschneider range</label>
+					<input type="text" id="batch-source-ref" class="batch-wizard-input" placeholder="e.g. 1-30" />
+					<div class="batch-wizard-hint">Enter a range like 1-30 or a single number like 5.</div>
+				</div>
+				<div class="batch-wizard-field">
+					<label for="batch-unit">Unit</label>
+					<select id="batch-unit" class="batch-wizard-select">
+						<option value="">Select unit…</option>
+					</select>
+				</div>
+				<div class="batch-wizard-field">
+					<label>Exercise types</label>
+					<div class="batch-wizard-checkboxes">
+						<label class="batch-wizard-checkbox"><input type="checkbox" id="batch-type-play" value="play" checked /> Play</label>
+						<label class="batch-wizard-checkbox"><input type="checkbox" id="batch-type-identify" value="identify" /> Identify</label>
+						<label class="batch-wizard-checkbox"><input type="checkbox" id="batch-type-roman" value="roman" /> Roman numerals</label>
+						<label class="batch-wizard-checkbox"><input type="checkbox" id="batch-type-figures" value="figures" /> Figured bass</label>
+					</div>
+				</div>
+				<div class="batch-wizard-field">
+					<label for="batch-key-preset">Key set</label>
+					<select id="batch-key-preset" class="batch-wizard-select">
+						<option value="common">Common keys (C G D F Bb Eb)</option>
+						<option value="sharp">Sharp keys (C G D A E B)</option>
+						<option value="flat">Flat keys (C F Bb Eb Ab Db)</option>
+						<option value="all">All 12 keys</option>
+						<option value="custom">Custom…</option>
+					</select>
+					<input type="text" id="batch-key-set" class="batch-wizard-input" value="C, G, D, F, Bb, Eb" aria-label="Keys for batch generation" />
+				</div>
+				<div class="batch-wizard-field">
+					<label for="batch-playlist">Target playlist</label>
+					<select id="batch-playlist" class="batch-wizard-select">
+						<option value="">None</option>
+						<option value="__new__">New playlist…</option>
+					</select>
+				</div>
+				<div id="batch-new-playlist-row" class="batch-wizard-field" style="display:none;">
+					<label for="batch-new-playlist-name">New playlist name</label>
+					<input type="text" id="batch-new-playlist-name" class="batch-wizard-input" maxlength="100" />
+				</div>
+				<div id="batch-official-row" class="batch-wizard-field" style="display:none;">
+					<label class="batch-wizard-checkbox"><input type="checkbox" id="batch-is-official" /> Save as official content</label>
+				</div>
+				<div id="batch-dry-run-estimate" class="batch-wizard-estimate" style="display:none;">
+					<strong>Estimate:</strong> <span id="batch-estimate-text">—</span>
+				</div>
+			</div>
+			<div class="batch-wizard-footer">
+				<div id="batch-wizard-feedback" class="batch-wizard-feedback" aria-live="polite"></div>
+				<div class="batch-wizard-actions">
+					<button type="button" id="batch-cancel-btn" class="play-save-btn">Cancel</button>
+					<button type="button" id="batch-execute-btn" class="play-save-btn play-save-btn-primary" disabled>Generate</button>
+				</div>
+			</div>
+		</div>
+		<!-- Step 2: Results -->
+		<div id="batch-wizard-results" style="display:none;">
+			<div class="batch-wizard-header">
+				<h2 class="batch-wizard-title">Generated exercises</h2>
+				<button type="button" class="batch-wizard-close" aria-label="Close">&times;</button>
+			</div>
+			<div class="batch-wizard-body">
+				<div id="batch-results-summary" class="batch-results-summary"></div>
+				<div id="batch-results-actions" class="batch-results-bulk-actions">
+					<button type="button" id="batch-reject-all-btn" class="play-save-btn play-save-btn-danger">Delete all</button>
+					<button type="button" id="batch-regen-btn" class="play-save-btn" style="display:none;">Regenerate selected</button>
+				</div>
+				<div id="batch-results-list" class="batch-results-list"></div>
+			</div>
+			<div class="batch-wizard-footer">
+				<div class="batch-wizard-actions">
+					<button type="button" id="batch-results-done-btn" class="play-save-btn play-save-btn-primary">Done</button>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 
 <div style="font-family: 'Sebastian'">&nbsp;<!-- make sure font is loaded  --></div>

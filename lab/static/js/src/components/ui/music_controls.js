@@ -158,6 +158,7 @@ define([
       this.renderKeyboardShortcuts();
       this.initMidiTab();
       this.initSavePanel();
+      this.initBatchWizard();
 
       this.subscribe(EVENTS.BROADCAST.PLAY_SAVED, (data) =>
         this.targetSelector.open(data)
@@ -1182,6 +1183,351 @@ define([
         },
       });
     },
+    /* ------------------------------------------------------------------
+     * Batch generation wizard (sub-plans 3.2–4.3)
+     * ------------------------------------------------------------------ */
+
+    initBatchWizard: function () {
+      var that = this;
+      var overlay = $("#batch-wizard-overlay");
+      if (!overlay.length) { return; }
+
+      // Populate unit select from already-loaded authoring meta
+      var populateUnits = function () {
+        var batchUnitSel = $("#batch-unit");
+        var saveUnitSel = $("#play-save-unit");
+        if (batchUnitSel.children("option").length > 1) { return; }
+        saveUnitSel.children("option").each(function () {
+          if ($(this).val()) {
+            batchUnitSel.append($(this).clone().prop("selected", false));
+          }
+        });
+      };
+
+      // Populate playlist select from save panel
+      var populatePlaylists = function () {
+        var batchPl = $("#batch-playlist");
+        var savePl = $("#play-save-playlist");
+        // Clear all except None / New playlist
+        batchPl.children("option").not("[value=''][value='__new__']").remove();
+        savePl.children("option").each(function () {
+          var v = $(this).val();
+          if (v && v !== "__new__") {
+            batchPl.append($(this).clone().prop("selected", false));
+          }
+        });
+      };
+
+      // Wire open button
+      $("#play-batch-generate-btn").off("click.batch").on("click.batch", function () {
+        if (that._authoringMetaLoaded) {
+          populateUnits();
+          populatePlaylists();
+        } else {
+          // Wait for meta then reopen
+          var waitInterval = setInterval(function () {
+            if (that._authoringMetaLoaded) {
+              clearInterval(waitInterval);
+              populateUnits();
+              populatePlaylists();
+            }
+          }, 200);
+        }
+        var isSuperuser = $("#play-save-official-row").is(":visible");
+        $("#batch-official-row").toggle(isSuperuser);
+        that._openBatchWizard();
+      });
+
+      // Wire close buttons
+      overlay.off("click.batch").on("click.batch", ".batch-wizard-close, #batch-cancel-btn", function () {
+        that._closeBatchWizard();
+      });
+      // Click outside dialog closes
+      overlay.on("click.batchoverlay", function (e) {
+        if ($(e.target).is(overlay)) { that._closeBatchWizard(); }
+      });
+
+      // Playlist toggle
+      overlay.on("change.batch", "#batch-playlist", function () {
+        $("#batch-new-playlist-row").toggle($(this).val() === "__new__");
+        that._validateBatchForm();
+      });
+
+      // Key preset change
+      overlay.on("change.batch", "#batch-key-preset", function () {
+        that._applyBatchKeyPreset($(this).val());
+        that._validateBatchForm();
+      });
+
+      // Debounced estimate on form change
+      var estimateTimer = null;
+      overlay.on("input.batch change.batch",
+        "#batch-source-ref, #batch-unit, #batch-type-play, #batch-type-identify, " +
+        "#batch-type-roman, #batch-type-figures, #batch-key-set, #batch-key-preset",
+        function () {
+          that._validateBatchForm();
+          clearTimeout(estimateTimer);
+          estimateTimer = setTimeout(function () { that._fetchBatchEstimate(); }, 500);
+        }
+      );
+
+      // Execute
+      overlay.on("click.batch", "#batch-execute-btn", function () {
+        that._executeBatch();
+      });
+
+      // Reject all
+      overlay.on("click.batch", "#batch-reject-all-btn", function () {
+        that._rejectAllBatchResults();
+      });
+
+      // Done
+      overlay.on("click.batch", "#batch-results-done-btn", function () {
+        that._closeBatchWizard();
+      });
+
+      // Per-row delete
+      overlay.on("click.batch", ".batch-result-del", function () {
+        var row = $(this).closest(".batch-result-row");
+        var exerciseId = row.data("exercise-id");
+        that._deleteBatchExercise(exerciseId, row);
+      });
+
+      // Regenerate selected
+      overlay.on("click.batch", "#batch-regen-btn", function () {
+        var selected = $(".batch-result-row input[type=checkbox]:checked")
+          .map(function () { return $(this).closest(".batch-result-row").data("exercise-id"); })
+          .get();
+        if (!selected.length) { return; }
+        that._executeBatch(true, selected);
+      });
+
+      this._applyBatchKeyPreset("common");
+      this._validateBatchForm();
+    },
+
+    _openBatchWizard: function () {
+      $("#batch-wizard-overlay").show();
+      $("#batch-wizard-form").show();
+      $("#batch-wizard-results").hide();
+      $("#batch-wizard-feedback").text("");
+      $("#batch-dry-run-estimate").hide();
+      $("body").css("overflow", "hidden");
+    },
+
+    _closeBatchWizard: function () {
+      $("#batch-wizard-overlay").hide();
+      $("body").css("overflow", "");
+      this._batchGeneratedIds = [];
+    },
+
+    _applyBatchKeyPreset: function (preset) {
+      var presets = {
+        common: "C, G, D, F, Bb, Eb",
+        sharp:  "C, G, D, A, E, B",
+        flat:   "C, F, Bb, Eb, Ab, Db",
+        all:    "C, G, D, A, E, B, F#, F, Bb, Eb, Ab, Db",
+      };
+      if (preset !== "custom" && presets[preset]) {
+        $("#batch-key-set").val(presets[preset]);
+      }
+    },
+
+    _getBatchFormData: function () {
+      var sourceRef = $.trim($("#batch-source-ref").val());
+      var unit = $("#batch-unit").val();
+      var keySetRaw = $.trim($("#batch-key-set").val());
+      var keySet = keySetRaw ? keySetRaw.split(",").map(function (s) { return $.trim(s); }).filter(Boolean) : [];
+      var exerciseTypes = [];
+      if ($("#batch-type-play").is(":checked")) { exerciseTypes.push("play"); }
+      if ($("#batch-type-identify").is(":checked")) { exerciseTypes.push("identify"); }
+      if ($("#batch-type-roman").is(":checked")) { exerciseTypes.push("roman"); }
+      if ($("#batch-type-figures").is(":checked")) { exerciseTypes.push("figures"); }
+      var playlistVal = $("#batch-playlist").val();
+      var playlistTarget = (playlistVal && playlistVal !== "__new__") ? parseInt(playlistVal, 10) : null;
+      var newPlaylistName = $.trim($("#batch-new-playlist-name").val());
+      var isOfficial = $("#batch-is-official").is(":checked");
+      return { sourceRef: sourceRef, unit: unit, keySet: keySet, exerciseTypes: exerciseTypes,
+               playlistTarget: playlistTarget, newPlaylistName: newPlaylistName, isOfficial: isOfficial };
+    },
+
+    _validateBatchRangeStr: function (str) {
+      if (!str) { return false; }
+      // Accept "N" or "N-M"
+      return /^\d+(-\d+)?$/.test(str.replace(/\s/g, ""));
+    },
+
+    _validateBatchForm: function () {
+      var d = this._getBatchFormData();
+      var ok = this._validateBatchRangeStr(d.sourceRef) &&
+               d.unit &&
+               d.exerciseTypes.length > 0 &&
+               d.keySet.length > 0;
+      if (d.isOfficial && !$("#play-save-official-row").is(":visible")) { ok = false; }
+      $("#batch-execute-btn").prop("disabled", !ok);
+      return ok;
+    },
+
+    _fetchBatchEstimate: function () {
+      if (!this._validateBatchForm()) { return; }
+      var d = this._getBatchFormData();
+      var payload = {
+        source: "bach_riemenschneider",
+        source_ref: d.sourceRef,
+        unit: parseInt(d.unit, 10),
+        skill_tags: [],
+        exercise_types: d.exerciseTypes,
+        key_set: d.keySet,
+        playlist_target: d.playlistTarget,
+        is_official: d.isOfficial,
+        author_email: "",
+        dry_run: true,
+      };
+      var csrfToken = $("[name=csrfmiddlewaretoken]").val() ||
+        document.cookie.replace(/(?:(?:^|.*;\s*)csrftoken\s*=\s*([^;]*).*$)|^.*$/, "$1");
+      $.ajax({
+        url: "/teacher/play/api/generate-manifest/dry-run/",
+        method: "POST",
+        contentType: "application/json",
+        headers: { "X-CSRFToken": csrfToken },
+        data: JSON.stringify(payload),
+        success: function (data) {
+          var est = data.estimated_exercises || 0;
+          var typeCount = (data.exercise_types || []).length;
+          var keyCount = data.key_count || 0;
+          $("#batch-estimate-text").text(
+            est + " exercises (" + typeCount + " type" + (typeCount !== 1 ? "s" : "") +
+            " × " + keyCount + " key" + (keyCount !== 1 ? "s" : "") + ")"
+          );
+          $("#batch-dry-run-estimate").show();
+        },
+        error: function () {
+          $("#batch-dry-run-estimate").hide();
+        },
+      });
+    },
+
+    _executeBatch: function (overwrite, exerciseIds) {
+      var d = this._getBatchFormData();
+      if (!this._validateBatchForm()) { return; }
+      var csrfToken = $("[name=csrfmiddlewaretoken]").val() ||
+        document.cookie.replace(/(?:(?:^|.*;\s*)csrftoken\s*=\s*([^;]*).*$)|^.*$/, "$1");
+      var payload = {
+        source: "bach_riemenschneider",
+        source_ref: d.sourceRef,
+        unit: parseInt(d.unit, 10),
+        skill_tags: [],
+        exercise_types: d.exerciseTypes,
+        key_set: d.keySet,
+        playlist_target: d.playlistTarget,
+        new_playlist_name: d.newPlaylistName || null,
+        is_official: d.isOfficial,
+        author_email: "",
+        dry_run: false,
+      };
+      if (overwrite) { payload.overwrite = true; }
+      if (exerciseIds && exerciseIds.length) { payload.overwrite_ids = exerciseIds; }
+
+      $("#batch-execute-btn").prop("disabled", true).text("Generating…");
+      $("#batch-wizard-feedback").text("");
+      var that = this;
+
+      $.ajax({
+        url: "/teacher/play/api/generate-manifest/execute/",
+        method: "POST",
+        contentType: "application/json",
+        headers: { "X-CSRFToken": csrfToken },
+        data: JSON.stringify(payload),
+        success: function (data) {
+          $("#batch-execute-btn").prop("disabled", false).text("Generate");
+          that._batchGeneratedIds = (data.exercise_ids || []).concat(that._batchGeneratedIds || []);
+          that._renderBatchResults(data);
+        },
+        error: function (xhr) {
+          $("#batch-execute-btn").prop("disabled", false).text("Generate");
+          var msg = "Generation failed.";
+          try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) { /* ignore */ }
+          $("#batch-wizard-feedback").text(msg);
+        },
+      });
+    },
+
+    _renderBatchResults: function (data) {
+      var exercises = data.exercises || [];
+      var total = exercises.length;
+      var byType = {};
+      exercises.forEach(function (ex) {
+        byType[ex.exercise_type] = (byType[ex.exercise_type] || 0) + 1;
+      });
+      var typeSummary = Object.keys(byType).map(function (t) {
+        return byType[t] + " " + t;
+      }).join(", ");
+
+      var summaryHtml = "<strong>" + total + " exercise" + (total !== 1 ? "s" : "") +
+        " created</strong>" + (typeSummary ? " (" + typeSummary + ")" : "");
+      $("#batch-results-summary").html(summaryHtml);
+
+      var listHtml = "";
+      exercises.forEach(function (ex) {
+        var previewUrl = "/s/exercises/" + encodeURIComponent(ex.id) + "/";
+        listHtml += '<div class="batch-result-row" data-exercise-id="' + ex.id + '">' +
+          '<input type="checkbox" class="batch-result-select" />' +
+          '<span class="batch-result-type">' + (ex.exercise_type || "") + "</span>" +
+          '<span class="batch-result-key">' + (ex.key || "") + "</span>" +
+          '<a href="' + previewUrl + '" target="_blank">' +
+            (ex.description || ("Exercise " + ex.id)) + "</a>" +
+          '<button type="button" class="batch-result-del" title="Delete">&times;</button>' +
+          "</div>";
+      });
+      $("#batch-results-list").html(listHtml);
+      $("#batch-regen-btn").show();
+
+      $("#batch-wizard-form").hide();
+      $("#batch-wizard-results").show();
+    },
+
+    _rejectAllBatchResults: function () {
+      var ids = this._batchGeneratedIds || [];
+      if (!ids.length) { this._closeBatchWizard(); return; }
+      var csrfToken = $("[name=csrfmiddlewaretoken]").val() ||
+        document.cookie.replace(/(?:(?:^|.*;\s*)csrftoken\s*=\s*([^;]*).*$)|^.*$/, "$1");
+      var that = this;
+      $.ajax({
+        url: "/dashboard/api/exercises/bulk-delete/",
+        method: "POST",
+        contentType: "application/json",
+        headers: { "X-CSRFToken": csrfToken },
+        data: JSON.stringify({ ids: ids }),
+        complete: function () {
+          that._batchGeneratedIds = [];
+          $(".batch-result-row").addClass("deleted");
+          setTimeout(function () { that._closeBatchWizard(); }, 600);
+        },
+      });
+    },
+
+    _deleteBatchExercise: function (exerciseId, rowEl) {
+      var csrfToken = $("[name=csrfmiddlewaretoken]").val() ||
+        document.cookie.replace(/(?:(?:^|.*;\s*)csrftoken\s*=\s*([^;]*).*$)|^.*$/, "$1");
+      var that = this;
+      $.ajax({
+        url: "/dashboard/api/exercises/bulk-delete/",
+        method: "POST",
+        contentType: "application/json",
+        headers: { "X-CSRFToken": csrfToken },
+        data: JSON.stringify({ ids: [exerciseId] }),
+        success: function () {
+          rowEl.addClass("deleted");
+          that._batchGeneratedIds = (that._batchGeneratedIds || []).filter(function (id) {
+            return id !== exerciseId;
+          });
+        },
+        error: function () {
+          rowEl.find(".batch-result-del").prop("disabled", false);
+        },
+      });
+    },
+
   });
 
   return MusicControlsComponent;
