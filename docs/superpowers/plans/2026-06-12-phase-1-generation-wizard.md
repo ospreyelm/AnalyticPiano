@@ -141,20 +141,20 @@ All endpoints require `staff` or `superuser`. `is_official=True` requires `super
 **Prerequisite:** Phase 0.5 (`is_official` field) must be merged first.  
 **Executor:** Tier 2
 
-- [ ] **1.1** Extract `generate_transpositions` core into
+- [x] **1.1** Extract `generate_transpositions` core into
   `apps/exercises/services/transposition_service.py::generate_transposed_copies`.
   Management command becomes a thin wrapper. *(Tier 2)*
 
-- [ ] **1.2** Fix the mangled checkbox label in
+- [x] **1.2** Fix the mangled checkbox label in
   `lab/static/js/src/components/ui/target_selector.js`:
   change display string from `"Auto-ne for varied keys"` → `"Create transpositions"`;
   fix payload key from `n` → `create_transpositions`. *(Tier 1)*
 
-- [ ] **1.3** Replace the no-op `console.log` in
+- [x] **1.3** Replace the no-op `console.log` in
   `lab/static/js/src/components/ui/music_controls.js::_onTargetChosen` with
   a real `POST` to `/teacher/play/api/save-with-transpositions/`. *(Tier 2)*
 
-- [ ] **1.4** Implement `POST /teacher/play/api/save-with-transpositions/`
+- [x] **1.4** Implement `POST /teacher/play/api/save-with-transpositions/`
   in `lab/views.py` (or a new `apps/teacher/views.py`):
   - Validate `create_transpositions`, `key_set`, `playlist_id`, `is_official`.
   - Call `generate_transposed_copies` for each key in `key_set`.
@@ -165,7 +165,7 @@ All endpoints require `staff` or `superuser`. `is_official=True` requires `super
   confirm correct UMTO rows appear in the target playlist; confirm superuser can
   save as official; confirm non-superuser cannot. *(Tier 2)*
 
-- [ ] **1.6** Unit tests for `generate_transposed_copies`:
+- [x] **1.6** Unit tests for `generate_transposed_copies`:
   correct key count, UMTO shape, playlist membership, `is_official` flag. *(Tier 1)*
 
 ---
@@ -174,13 +174,13 @@ All endpoints require `staff` or `superuser`. `is_official=True` requires `super
 
 **Executor:** Tier 2
 
-- [ ] **2.1** Create `apps/exercises/services/generation_manifest.py` with the
+- [x] **2.1** Create `apps/exercises/services/generation_manifest.py` with the
   `GenerationManifest` dataclass described above. *(Tier 2)*
 
-- [ ] **2.2** Implement `manifest.dry_run_summary()` — estimate exercise count
+- [x] **2.2** Implement `manifest.dry_run_summary()` — estimate exercise count
   by type × key_set without DB writes. *(Tier 2)*
 
-- [ ] **2.3** Implement `manifest.execute()`:
+- [x] **2.3** Implement `manifest.execute()`:
   - `source == "bach_riemenschneider"` → calls `generate_bach_unit_matrix`
     (which is the prerequisite plan's command) for each exercise type in
     `exercise_types`.
@@ -189,12 +189,12 @@ All endpoints require `staff` or `superuser`. `is_official=True` requires `super
   - Sets `is_official` on all produced rows when `manifest.is_official` and
     author is superuser. *(Tier 2)*
 
-- [ ] **2.4** Implement
+- [x] **2.4** Implement
   `POST /teacher/play/api/generate-manifest/dry-run/` and
   `POST /teacher/play/api/generate-manifest/execute/`
   in `apps/teacher/views.py` (create file if absent). *(Tier 2)*
 
-- [ ] **2.5** Implement
+- [x] **2.5** Implement
   `POST /teacher/play/api/suggest-units/` in `apps/teacher/views.py`:
   - Accept a CIR score (or an existing `exercise_id`) in the request body.
   - Run `analyze_chunk_skills` (from `skills_analyzer.py`) on the score to get
@@ -207,10 +207,10 @@ All endpoints require `staff` or `superuser`. `is_official=True` requires `super
   - Caller (wizard UI) pre-checks the top suggestions; teacher confirms or
     edits before save. *(Tier 2)*
 
-- [ ] **2.6** Unit tests for `suggest-units`: known skill-tag set → expected
+- [x] **2.6** Unit tests for `suggest-units`: known skill-tag set → expected
   unit ranking; empty score → empty suggestions (no crash). *(Tier 1)*
 
-- [ ] **2.7** Unit tests for manifest dry run and execute paths. *(Tier 1)*
+- [x] **2.7** Unit tests for manifest dry run and execute paths. *(Tier 1)*
 
 ---
 
@@ -225,13 +225,13 @@ All endpoints require `staff` or `superuser`. `is_official=True` requires `super
   Unit field is a required multi-select (not optional). Follows existing
   teacher-app UI conventions (D5 — no design gate). *(Tier 2)*
 
-- [ ] **3.1a** When a score is loaded or a played-in exercise is ready to save,
+- [x] **3.1a** When a score is loaded or a played-in exercise is ready to save,
   call `POST /teacher/play/api/suggest-units/` automatically. Pre-check
   suggested units in the unit multi-select with a subtle "(suggested)" label.
   Teacher can accept, add, or remove units before saving. Unit field must have
   at least one value to enable the save button. *(Tier 2)*
 
-- [ ] **3.2** Add a **"Generate batch" button** to `/teacher/play/` launching a
+- [x] **3.2** Add a **"Generate batch" button** to `/teacher/play/` launching a
   modal wizard with:
   - Source: Bach Riemenschneider range (text input with validation)
   - Unit: number input
@@ -243,11 +243,11 @@ All endpoints require `staff` or `superuser`. `is_official=True` requires `super
   - Target playlist: select existing or create new
   - Dry-run estimate shown before submit *(Tier 2)*
 
-- [ ] **3.3** Wire "Generate batch" submit to
+- [x] **3.3** Wire "Generate batch" submit to
   `POST /teacher/play/api/generate-manifest/dry-run/` on change,
   then `POST /teacher/play/api/generate-manifest/execute/` on confirm. *(Tier 2)*
 
-- [ ] **3.4** Show inline validation: non-superuser cannot set "Save as official";
+- [x] **3.4** Show inline validation: non-superuser cannot set "Save as official";
   empty key set blocked; Riemenschneider range validated client-side. *(Tier 1)*
 
 ---
@@ -256,15 +256,15 @@ All endpoints require `staff` or `superuser`. `is_official=True` requires `super
 
 **Executor:** Tier 2
 
-- [ ] **4.1** After execute returns, render a **results panel** in `/teacher/play/`
+- [x] **4.1** After execute returns, render a **results panel** in `/teacher/play/`
   showing: exercise count by type, count by key, list of created exercise
   descriptions with preview links (opens in `/teacher/play/?exercise=<id>`). *(Tier 2)*
 
-- [ ] **4.2** Add bulk-action controls: "Accept all", "Reject all" (delete),
+- [x] **4.2** Add bulk-action controls: "Accept all", "Reject all" (delete),
   per-row retag (unit/mode), per-row delete. Bulk actions call existing
   exercise CRUD endpoints. *(Tier 2)*
 
-- [ ] **4.3** "Regenerate selected" calls the manifest execute endpoint again
+- [x] **4.3** "Regenerate selected" calls the manifest execute endpoint again
   with `overwrite=True` for the selected subset. *(Tier 2)*
 
 ---

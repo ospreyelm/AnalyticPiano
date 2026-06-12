@@ -840,10 +840,20 @@ def generation_manifest_execute_view(request):
         # Build response
         if isinstance(created, list):
             exercise_ids = [ex.id for ex in created]
+            exercises_detail = []
+            for ex in created:
+                umto = ex.data.get("umto", {}) if isinstance(ex.data, dict) else {}
+                exercises_detail.append({
+                    "id": ex.id,
+                    "description": ex.description,
+                    "exercise_type": umto.get("mode", ""),
+                    "key": umto.get("key", ""),
+                })
             return JsonResponse(
                 {
                     "created_count": len(exercise_ids),
                     "exercise_ids": exercise_ids,
+                    "exercises": exercises_detail,
                 },
                 status=200
             )
@@ -853,6 +863,7 @@ def generation_manifest_execute_view(request):
                 {
                     "created_count": 0,
                     "exercise_ids": [],
+                    "exercises": [],
                 },
                 status=200
             )
