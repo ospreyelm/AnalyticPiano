@@ -30,8 +30,6 @@
       {% else %}
         No date range set
       {% endif %}
-      &nbsp;·&nbsp;
-      <a class="t-link" href="{{ dashboard_activity_url }}">Activity report</a>
     </p>
   </div>
   <a class="t-btn t-btn-ghost" href="/teacher/courses/">← All courses</a>
@@ -118,7 +116,10 @@
 
     <!-- Roster panel -->
     <div class="t-card" id="roster-panel">
-      <h2 class="t-card-title">Roster</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+        <h2 class="t-card-title" style="margin-bottom:0;">Roster</h2>
+        <button id="btn-show-add-group" class="t-btn t-btn-primary t-btn-sm" type="button">+ Add group</button>
+      </div>
       <div id="roster-content">
         <!-- populated by course_detail.js -->
       </div>
@@ -135,6 +136,10 @@
   </div><!-- /.t-detail-side -->
 
 </div><!-- /.t-detail-layout -->
+<details class="t-legacy-section">
+  <summary>Advanced / Admin</summary>
+  <p><a class="t-link" href="{{ dashboard_activity_url }}">Advanced activity report (legacy)</a></p>
+</details>
 {% endblock %}
 
 {% block body_extra %}
