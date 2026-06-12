@@ -4,11 +4,12 @@ import logging
 from datetime import datetime, time
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.accounts.models import Group
 from apps.exercises.models import Course, Playlist, PlaylistCourseOrdered
@@ -675,3 +676,191 @@ def suggest_units_view(request):
         },
         status=200
     )
+
+
+@require_POST
+@login_required
+def generation_manifest_dry_run_view(request):
+    """POST /teacher/play/api/generate-manifest/dry-run/
+
+    Accepts a JSON body matching GenerationManifest fields and returns a
+    dry-run estimate of exercises that would be created.
+
+    Request body (JSON):
+      {
+        "source": "bach_riemenschneider" | "played_in",
+        "source_ref": "1-30" | "exercise_id",
+        "unit": 9,
+        "skill_tags": [],
+        "exercise_types": ["play", "roman"],
+        "key_set": ["C", "G"],
+        "playlist_target": null,
+        "is_official": false,
+        "author_email": "teacher@example.com"
+      }
+
+    Response:
+      {
+        "source": "bach_riemenschneider",
+        "source_ref": "1-30",
+        "unit": 9,
+        "exercise_types": ["play", "roman"],
+        "key_count": 2,
+        "estimated_exercises": 4,
+        "is_official": false,
+        "playlist_target": null
+      }
+
+    Requires staff or superuser. Returns 403 if non-staff.
+    is_official=True requires superuser. Returns 403 if non-superuser tries.
+    """
+    from django.contrib.auth import get_user_model
+
+    from apps.exercises.services.generation_manifest import GenerationManifest
+
+    User = get_user_model()
+
+    # Auth check: require staff or superuser
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"error": "Permission denied."}, status=403)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse(
+            {"error": "Invalid JSON body."}, status=400
+        )
+
+    # Check if is_official=True but user is not superuser
+    is_official = body.get("is_official", False)
+    if is_official and not request.user.is_superuser:
+        return JsonResponse(
+            {"error": "Only superusers can create official exercises."},
+            status=403
+        )
+
+    try:
+        manifest = GenerationManifest(
+            source=body.get("source", ""),
+            source_ref=body.get("source_ref", ""),
+            unit=body.get("unit", 0),
+            skill_tags=body.get("skill_tags", []),
+            exercise_types=body.get("exercise_types", []),
+            key_set=body.get("key_set", []),
+            playlist_target=body.get("playlist_target"),
+            is_official=is_official,
+            author_email=body.get("author_email", ""),
+            dry_run=True,
+        )
+        summary = manifest.dry_run_summary()
+        return JsonResponse(summary, status=200)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception as e:
+        logger.error(f"Dry-run error: {e}")
+        return JsonResponse(
+            {"error": "Internal server error during dry-run."},
+            status=500
+        )
+
+
+@require_POST
+@login_required
+def generation_manifest_execute_view(request):
+    """POST /teacher/play/api/generate-manifest/execute/
+
+    Accepts a JSON body matching GenerationManifest fields and executes the
+    generation pipeline. Returns created exercise IDs or management command output.
+
+    Request body (JSON):
+      {
+        "source": "bach_riemenschneider" | "played_in",
+        "source_ref": "1-30" | "exercise_id",
+        "unit": 9,
+        "skill_tags": [],
+        "exercise_types": ["play", "roman"],
+        "key_set": ["C", "G"],
+        "playlist_target": null,
+        "is_official": false,
+        "author_email": "teacher@example.com"
+      }
+
+    Response:
+      {
+        "created_count": 4,
+        "exercise_ids": ["EA0001", "EA0002", "EA0003", "EA0004"]
+      }
+
+    For bach_riemenschneider source: created_count and exercise_ids may be empty
+    (management commands don't easily return Exercise objects).
+
+    Requires staff or superuser. Returns 403 if non-staff.
+    is_official=True requires superuser. Returns 403 if non-superuser tries.
+    """
+    from django.contrib.auth import get_user_model
+
+    from apps.exercises.services.generation_manifest import GenerationManifest
+
+    User = get_user_model()
+
+    # Auth check: require staff or superuser
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"error": "Permission denied."}, status=403)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse(
+            {"error": "Invalid JSON body."}, status=400
+        )
+
+    # Check if is_official=True but user is not superuser
+    is_official = body.get("is_official", False)
+    if is_official and not request.user.is_superuser:
+        return JsonResponse(
+            {"error": "Only superusers can create official exercises."},
+            status=403
+        )
+
+    try:
+        manifest = GenerationManifest(
+            source=body.get("source", ""),
+            source_ref=body.get("source_ref", ""),
+            unit=body.get("unit", 0),
+            skill_tags=body.get("skill_tags", []),
+            exercise_types=body.get("exercise_types", []),
+            key_set=body.get("key_set", []),
+            playlist_target=body.get("playlist_target"),
+            is_official=is_official,
+            author_email=body.get("author_email", ""),
+            dry_run=False,
+        )
+        created = manifest.execute()
+
+        # Build response
+        if isinstance(created, list):
+            exercise_ids = [ex.id for ex in created]
+            return JsonResponse(
+                {
+                    "created_count": len(exercise_ids),
+                    "exercise_ids": exercise_ids,
+                },
+                status=200
+            )
+        else:
+            # Bach generation returns empty list (or summary dict in dry-run)
+            return JsonResponse(
+                {
+                    "created_count": 0,
+                    "exercise_ids": [],
+                },
+                status=200
+            )
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception as e:
+        logger.error(f"Execution error: {e}")
+        return JsonResponse(
+            {"error": "Internal server error during execution."},
+            status=500
+        )
