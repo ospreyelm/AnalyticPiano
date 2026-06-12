@@ -749,7 +749,7 @@ def generation_manifest_dry_run_view(request):
             key_set=body.get("key_set", []),
             playlist_target=body.get("playlist_target"),
             is_official=is_official,
-            author_email=body.get("author_email", ""),
+            author_email=body.get("author_email", "") or request.user.email,
             dry_run=True,
         )
         summary = manifest.dry_run_summary()
@@ -832,7 +832,7 @@ def generation_manifest_execute_view(request):
             key_set=body.get("key_set", []),
             playlist_target=body.get("playlist_target"),
             is_official=is_official,
-            author_email=body.get("author_email", ""),
+            author_email=body.get("author_email", "") or request.user.email,
             dry_run=False,
         )
         created = manifest.execute()
