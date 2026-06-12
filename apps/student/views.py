@@ -544,21 +544,27 @@ def _build_course_panels(
     from apps.exercises.models import Course
     from django.utils.timezone import now as tz_now
 
+    from collections import defaultdict
+
     courses = Course.objects.filter(visible_to__members=user).distinct().order_by("title")
-    if not courses.exists():
-        return []
 
     units = TaxonomyReader.get_all_units()
     unit_meta_by_n = {str(u["n"]): u for u in units}
 
-    current = tz_now()
+    all_pcos = (
+        PlaylistCourseOrdered.objects
+        .filter(course__visible_to__members=user)
+        .select_related("course", "playlist")
+        .distinct()
+    )
+    pcos_by_course = defaultdict(list)
+    for pco in all_pcos:
+        pcos_by_course[pco.course_id].append(pco)
+
     panels = []
     for course in courses:
         # Gather unit numbers from playlists in this course
-        pco_rows = (
-            PlaylistCourseOrdered.objects.filter(course=course)
-            .select_related("playlist")
-        )
+        pco_rows = pcos_by_course[course.id]
         course_unit_numbers = set()
         for pco in pco_rows:
             tags = list(pco.playlist.skill_tags or []) + list(pco.playlist.tags or [])
@@ -566,9 +572,11 @@ def _build_course_panels(
                 if isinstance(tag, str) and tag.startswith("unit:"):
                     course_unit_numbers.add(tag.split(":", 1)[1])
 
-        # Build open units (published + not 100% complete)
+        # Build open units (published + not 100% complete + accessible to student)
         open_units = []
         for unit_n in sorted(course_unit_numbers, key=unit_sort_key):
+            if unit_n not in available_unit_numbers:
+                continue
             info = course_dates.get(unit_n)
             if info is None:
                 # Not in course_dates means no schedule; treat as open
