@@ -634,12 +634,35 @@ define([
      * Logs it as the durable handoff record for Threads 2/3 (assign + curriculum).
      * v1 wires "library" only.
      *
-     * @param {object} payload  { exerciseId, targetIntent, sectionId, autoTranspose }
+     * @param {object} payload  { exerciseId, targetIntent, sectionId, create_transpositions, key_set }
      * @return undefined
      */
     _onTargetChosen: function (payload) {
-      // Seam contract to Threads 2/3 (assign + curriculum). v1 wires "library" only.
-      console.log("[play-target]", JSON.stringify(payload));
+      var that = this;
+
+      if (payload.create_transpositions && payload.key_set && payload.key_set.length > 0) {
+        var body = JSON.stringify({
+          exerciseId: payload.exerciseId,
+          key_set: payload.key_set,
+          playlistId: payload.playlistId || null,
+          is_official: payload.is_official || false,
+        });
+        fetch(window.location.origin + "/teacher/play/api/save-with-transpositions/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": that._getCsrfToken(),
+          },
+          body: body,
+        }).then(function (res) {
+          if (!res.ok) {
+            console.warn("[play-target] save-with-transpositions failed", res.status);
+          }
+        }).catch(function (err) {
+          console.warn("[play-target] save-with-transpositions error", err);
+        });
+      }
+
       if (payload.targetIntent === "library") {
         if (this.feedback) this.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
         window.open("/dashboard/exercises/" + payload.exerciseId + "/", "_blank");

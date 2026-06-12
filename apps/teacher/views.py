@@ -1,18 +1,22 @@
 """Views for the teacher course creation wizard."""
 import json
+import logging
 from datetime import datetime, time
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.accounts.models import Group
 from apps.exercises.models import Course, Playlist, PlaylistCourseOrdered
 from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.teacher.decorators import teacher_required
+
+logger = logging.getLogger(__name__)
 
 
 def _serialize_course_groups(course):
@@ -558,3 +562,374 @@ def add_playlist_view(request, course_id):
     )
 
     return JsonResponse({"ok": True, "pcoId": pco.pk, "order": pco.order}, status=201)
+
+
+# ---------------------------------------------------------------------------
+# Unit suggestion API (Task 2.5+2.6)
+# ---------------------------------------------------------------------------
+
+@teacher_required
+@require_http_methods(["POST"])
+def suggest_units_view(request):
+    """
+    POST /teacher/play/api/suggest-units/
+
+    Accepts a CIR score or an existing exercise ID, detects skill tags,
+    and returns ranked unit suggestions for the teacher.
+
+    Request body (JSON):
+      { "exercise_id": "EA0001" }
+      OR
+      { "cir_score": { ...CIR dict... }, "key": "jC_" }
+
+    Response:
+      { "skill_tags": [...], "suggested_units": [9, 11] }
+
+    Returns 200 OK with empty lists on any analysis failure (graceful degradation).
+    Requires staff or superuser. Returns 403 if non-staff.
+    """
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"error": "Permission denied."}, status=403)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse(
+            {"skill_tags": [], "suggested_units": []},
+            status=200
+        )
+
+    detected_tags = []
+    music21_score = None
+
+    # Try to load from exercise_id first
+    exercise_id = body.get("exercise_id")
+    if exercise_id:
+        try:
+            from apps.exercises.models import Exercise
+            exercise = Exercise.objects.get(id=exercise_id)
+
+            # If exercise already has skill_tags, use them directly
+            if exercise.skill_tags:
+                detected_tags = exercise.skill_tags
+            else:
+                # Try to rebuild from the exercise data
+                from apps.exercises.utils.music21_builder import build_score_from_data
+
+                try:
+                    music21_score = build_score_from_data(exercise.data)
+                    chunk_key = exercise.data.get("meta", {}).get("key", "jC_")
+                except Exception:
+                    # If we can't build the score, gracefully return empty
+                    pass
+
+        except Exception:
+            # Exercise not found or other error — gracefully continue
+            pass
+
+    # Otherwise, try to build from cir_score + key
+    if not detected_tags and not music21_score:
+        cir_score = body.get("cir_score")
+        if cir_score and isinstance(cir_score, dict):
+            try:
+                from apps.exercises.utils.music21_builder import build_score_from_data
+
+                # Wrap the cir_score in the expected data structure
+                wrapped_data = {"score": cir_score}
+                music21_score = build_score_from_data(wrapped_data)
+                chunk_key = body.get("key", "jC_")
+            except Exception:
+                # Score building failed — gracefully return empty
+                pass
+
+    # If we have a music21 score, analyze it for skills
+    if music21_score and not detected_tags:
+        try:
+            from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
+
+            chunk_key = body.get("key", "jC_")
+            skills_list, complexity = analyze_chunk_skills(
+                music21_score,
+                chunk_key,
+                description=None
+            )
+            detected_tags = skills_list
+        except Exception:
+            # Skill analysis failed — gracefully return empty
+            pass
+
+    # Suggest units from detected tags
+    suggested_units = []
+    if detected_tags:
+        try:
+            from apps.exercises.services.unit_suggester import suggest_units_from_tags
+
+            suggested_units = suggest_units_from_tags(detected_tags, top_n=5)
+        except Exception:
+            # Unit suggestion failed — return empty list
+            pass
+
+    return JsonResponse(
+        {
+            "skill_tags": detected_tags,
+            "suggested_units": suggested_units,
+        },
+        status=200
+    )
+
+
+@require_POST
+@login_required
+def generation_manifest_dry_run_view(request):
+    """POST /teacher/play/api/generate-manifest/dry-run/
+
+    Accepts a JSON body matching GenerationManifest fields and returns a
+    dry-run estimate of exercises that would be created.
+
+    Request body (JSON):
+      {
+        "source": "bach_riemenschneider" | "played_in",
+        "source_ref": "1-30" | "exercise_id",
+        "unit": 9,
+        "skill_tags": [],
+        "exercise_types": ["play", "roman"],
+        "key_set": ["C", "G"],
+        "playlist_target": null,
+        "is_official": false,
+        "author_email": "teacher@example.com"
+      }
+
+    Response:
+      {
+        "source": "bach_riemenschneider",
+        "source_ref": "1-30",
+        "unit": 9,
+        "exercise_types": ["play", "roman"],
+        "key_count": 2,
+        "estimated_exercises": 4,
+        "is_official": false,
+        "playlist_target": null
+      }
+
+    Requires staff or superuser. Returns 403 if non-staff.
+    is_official=True requires superuser. Returns 403 if non-superuser tries.
+    """
+    from django.contrib.auth import get_user_model
+
+    from apps.exercises.services.generation_manifest import GenerationManifest
+
+    User = get_user_model()
+
+    # Auth check: require staff or superuser
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"error": "Permission denied."}, status=403)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse(
+            {"error": "Invalid JSON body."}, status=400
+        )
+
+    # Check if is_official=True but user is not superuser
+    is_official = body.get("is_official", False)
+    if is_official and not request.user.is_superuser:
+        return JsonResponse(
+            {"error": "Only superusers can create official exercises."},
+            status=403
+        )
+
+    try:
+        manifest = GenerationManifest(
+            source=body.get("source", ""),
+            source_ref=body.get("source_ref", ""),
+            unit=body.get("unit", 0),
+            skill_tags=body.get("skill_tags", []),
+            exercise_types=body.get("exercise_types", []),
+            key_set=body.get("key_set", []),
+            playlist_target=body.get("playlist_target"),
+            is_official=is_official,
+            author_email=body.get("author_email", ""),
+            dry_run=True,
+        )
+        summary = manifest.dry_run_summary()
+        return JsonResponse(summary, status=200)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception as e:
+        logger.error(f"Dry-run error: {e}")
+        return JsonResponse(
+            {"error": "Internal server error during dry-run."},
+            status=500
+        )
+
+
+@require_POST
+@login_required
+def generation_manifest_execute_view(request):
+    """POST /teacher/play/api/generate-manifest/execute/
+
+    Accepts a JSON body matching GenerationManifest fields and executes the
+    generation pipeline. Returns created exercise IDs or management command output.
+
+    Request body (JSON):
+      {
+        "source": "bach_riemenschneider" | "played_in",
+        "source_ref": "1-30" | "exercise_id",
+        "unit": 9,
+        "skill_tags": [],
+        "exercise_types": ["play", "roman"],
+        "key_set": ["C", "G"],
+        "playlist_target": null,
+        "is_official": false,
+        "author_email": "teacher@example.com"
+      }
+
+    Response:
+      {
+        "created_count": 4,
+        "exercise_ids": ["EA0001", "EA0002", "EA0003", "EA0004"]
+      }
+
+    For bach_riemenschneider source: created_count and exercise_ids may be empty
+    (management commands don't easily return Exercise objects).
+
+    Requires staff or superuser. Returns 403 if non-staff.
+    is_official=True requires superuser. Returns 403 if non-superuser tries.
+    """
+    from django.contrib.auth import get_user_model
+
+    from apps.exercises.services.generation_manifest import GenerationManifest
+
+    User = get_user_model()
+
+    # Auth check: require staff or superuser
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"error": "Permission denied."}, status=403)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse(
+            {"error": "Invalid JSON body."}, status=400
+        )
+
+    # Check if is_official=True but user is not superuser
+    is_official = body.get("is_official", False)
+    if is_official and not request.user.is_superuser:
+        return JsonResponse(
+            {"error": "Only superusers can create official exercises."},
+            status=403
+        )
+
+    try:
+        manifest = GenerationManifest(
+            source=body.get("source", ""),
+            source_ref=body.get("source_ref", ""),
+            unit=body.get("unit", 0),
+            skill_tags=body.get("skill_tags", []),
+            exercise_types=body.get("exercise_types", []),
+            key_set=body.get("key_set", []),
+            playlist_target=body.get("playlist_target"),
+            is_official=is_official,
+            author_email=body.get("author_email", ""),
+            dry_run=False,
+        )
+        created = manifest.execute()
+
+        # Build response
+        if isinstance(created, list):
+            exercise_ids = [ex.id for ex in created]
+            return JsonResponse(
+                {
+                    "created_count": len(exercise_ids),
+                    "exercise_ids": exercise_ids,
+                },
+                status=200
+            )
+        else:
+            # Bach generation returns empty list (or summary dict in dry-run)
+            return JsonResponse(
+                {
+                    "created_count": 0,
+                    "exercise_ids": [],
+                },
+                status=200
+            )
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception as e:
+        logger.error(f"Execution error: {e}")
+        return JsonResponse(
+            {"error": "Internal server error during execution."},
+            status=500
+        )
+
+
+@require_POST
+@login_required
+def save_with_transpositions_view(request):
+    """POST /teacher/play/api/save-with-transpositions/
+
+    Called after an exercise is saved, when the teacher checks "Create transpositions"
+    in the TargetSelector. Generates transposed UMTO copies into the target playlist.
+
+    Body (JSON):
+      {
+        "exerciseId": "EA0001",
+        "key_set": ["G", "Bb", "F"],      // required, non-empty
+        "playlistId": "P-001",             // optional
+        "is_official": false               // optional, requires superuser
+      }
+
+    Response:
+      { "created": ["EA0002", "EA0003", ...] }
+    """
+    if not request.user.is_staff and not request.user.is_superuser:
+        return JsonResponse({"error": "Staff access required."}, status=403)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    exercise_id = body.get("exerciseId")
+    key_set = body.get("key_set", [])
+    playlist_id = body.get("playlistId")
+    is_official = body.get("is_official", False)
+
+    if not exercise_id:
+        return JsonResponse({"error": "exerciseId is required."}, status=400)
+    if not key_set or not isinstance(key_set, list):
+        return JsonResponse({"error": "key_set must be a non-empty list of key strings."}, status=400)
+    if is_official and not request.user.is_superuser:
+        return JsonResponse({"error": "Only superusers can create official exercises."}, status=403)
+
+    from apps.exercises.models import Exercise
+    from apps.exercises.services.transposition_service import generate_transposed_copies
+
+    try:
+        source = Exercise.objects.get(id=exercise_id)
+    except Exercise.DoesNotExist:
+        return JsonResponse({"error": f"Exercise {exercise_id!r} not found."}, status=400)
+
+    playlist = None
+    if playlist_id:
+        try:
+            playlist = Playlist.objects.get(id=playlist_id)
+        except Playlist.DoesNotExist:
+            return JsonResponse({"error": f"Playlist {playlist_id!r} not found."}, status=400)
+
+    try:
+        created = generate_transposed_copies(
+            source_exercise=source,
+            key_set=key_set,
+            playlist=playlist,
+            author=request.user,
+            is_official=is_official,
+            overwrite=False,
+        )
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+    return JsonResponse({"created": [ex.id for ex in created]})

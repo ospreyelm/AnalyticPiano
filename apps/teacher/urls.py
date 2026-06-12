@@ -10,6 +10,10 @@ from apps.teacher.views import (
     respread_view,
     add_playlist_view,
     add_group_view,
+    suggest_units_view,
+    generation_manifest_dry_run_view,
+    generation_manifest_execute_view,
+    save_with_transpositions_view,
 )
 
 app_name = "teacher"
@@ -23,4 +27,8 @@ urlpatterns = [
     path("courses/<str:course_id>/respread/", respread_view, name="course-respread"),
     path("courses/<str:course_id>/add-playlist/", add_playlist_view, name="course-add-playlist"),
     path("courses/<str:course_id>/groups/", add_group_view, name="course-add-group"),
+    path("play/api/suggest-units/", suggest_units_view, name="suggest-units"),
+    path("play/api/generate-manifest/dry-run/", generation_manifest_dry_run_view, name="generate-manifest-dry-run"),
+    path("play/api/generate-manifest/execute/", generation_manifest_execute_view, name="generate-manifest-execute"),
+    path("play/api/save-with-transpositions/", save_with_transpositions_view, name="save-with-transpositions"),
 ]
