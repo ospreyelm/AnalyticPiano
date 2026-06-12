@@ -200,12 +200,6 @@
         linkWrap.appendChild(copyBtn);
 
         tdName.appendChild(linkWrap);
-      } else {
-        var noLinkSpan = document.createElement('span');
-        noLinkSpan.className = 't-muted';
-        noLinkSpan.style.cssText = 'margin-left:0.5rem;font-size:0.8125rem;';
-        noLinkSpan.textContent = 'No direct link';
-        tdName.appendChild(noLinkSpan);
       }
 
       tr.appendChild(tdName);

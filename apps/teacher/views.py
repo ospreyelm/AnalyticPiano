@@ -497,7 +497,7 @@ def add_group_view(request, course_id):
         course.visible_to.add(group)
 
     # Return groups in the same shape as groups_json context variable
-    return JsonResponse({"groups": _serialize_course_groups(course)})
+    return JsonResponse({"groups": _serialize_course_groups(course)}, status=201)
 
 
 @teacher_required
