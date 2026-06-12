@@ -5,6 +5,7 @@ Run with:
 """
 import json
 
+from django.conf import settings
 from django.test import TestCase, Client
 from django.urls import reverse, resolve
 from django.utils import timezone
@@ -112,6 +113,30 @@ class TeacherRequiredTests(TestCase):
         resp = self.client.get(self.wizard_url)
         self.assertNotEqual(resp.status_code, 302)
         self.assertNotEqual(resp.status_code, 403)
+
+
+class CourseWizardRenderTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.teacher = _make_teacher()
+        self.factory = _make_teacher(email=settings.FACTORY_USER_EMAIL)
+        self.client.force_login(self.teacher)
+
+    def test_units_json_is_embedded_as_valid_javascript(self):
+        _make_playlist(
+            self.factory,
+            name="Unit 9 — Tonic & Dominant",
+            skill_tags=["unit:9", "mode:roman"],
+        )
+
+        resp = self.client.get(reverse("teacher:course-wizard"))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+
+        self.assertIn("window.__WIZARD_DATA__", html)
+        self.assertIn('unitsJson: [{"branch"', html)
+        self.assertNotIn("unitsJson: [{&quot;", html)
 
 
 # ---------------------------------------------------------------------------

@@ -8,7 +8,7 @@
   <script>
     /* Embed server data before the external script loads */
     window.__WIZARD_DATA__ = {
-      unitsJson: {{ units_json }},
+      unitsJson: {{ units_json|safe }},
       factoryAvailable: {{ factory_available|yesno:"true,false" }}
     };
   </script>
