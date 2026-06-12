@@ -89,9 +89,9 @@ Ask these once, at the owning phase's kickoff, and record the answer here.
 |---|----------|--------------|
 | Q1 | Should non-superuser teachers be able to submit content for official review, or only save personal content? | Phase 3 (curation workbench) |
 | Q2 | What is the minimum useful MusicXML import scope for v1: chorales, keyboard reductions, single-line melodies, or arbitrary scores? | Phase 2 (MusicXML import) |
-| Q3 | Which transposition sets are pedagogically appropriate by unit (all keys, selected keys, pedagogical key set)? | Phase 1 (generation wizard) |
+| Q3 | Which transposition sets are pedagogically appropriate by unit (all keys, selected keys, pedagogical key set)? **Answer (2026-06-12): Configurable per generation run. Wizard exposes a key-set picker; no hardcoded default set. Teacher chooses all 12, a curated subset, or a custom list at run time.** | Phase 1 (generation wizard) |
 | Q4 | What does "forgiving MIDI grading" mean for each play exercise type (timing, extra notes, re-attacks, octave equivalence, correction behavior)? | Phase 4 (grading reform) |
 | Q5 | What visual qualities make Monteverdi distinct from Artusi (colors, typography, density, icons)? Academic, studio/tool-like, modern SaaS, or conservatory feel? | Phase 5 (CSS identity) |
 | Q6 | Which legacy dashboard functions are genuinely still needed by normal teachers (vs. advanced/admin escape hatches)? | Phase 3 (curation workbench) |
-| Q7 | Which generation variants should be produced together by default from one source? | Phase 1 (generation wizard) |
+| Q7 | Which generation variants should be produced together by default from one source? **Answer (2026-06-12): Configurable via wizard checkboxes; default selection is play only. Teacher opts into identify, roman, figures individually.** | Phase 1 (generation wizard) |
 | Q8 | Should assigned course work hide non-course playlists or merely prioritize them? | Phase 0 (student home) |

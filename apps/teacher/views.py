@@ -864,3 +864,72 @@ def generation_manifest_execute_view(request):
             {"error": "Internal server error during execution."},
             status=500
         )
+
+
+@require_POST
+@login_required
+def save_with_transpositions_view(request):
+    """POST /teacher/play/api/save-with-transpositions/
+
+    Called after an exercise is saved, when the teacher checks "Create transpositions"
+    in the TargetSelector. Generates transposed UMTO copies into the target playlist.
+
+    Body (JSON):
+      {
+        "exerciseId": "EA0001",
+        "key_set": ["G", "Bb", "F"],      // required, non-empty
+        "playlistId": "P-001",             // optional
+        "is_official": false               // optional, requires superuser
+      }
+
+    Response:
+      { "created": ["EA0002", "EA0003", ...] }
+    """
+    if not request.user.is_staff and not request.user.is_superuser:
+        return JsonResponse({"error": "Staff access required."}, status=403)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    exercise_id = body.get("exerciseId")
+    key_set = body.get("key_set", [])
+    playlist_id = body.get("playlistId")
+    is_official = body.get("is_official", False)
+
+    if not exercise_id:
+        return JsonResponse({"error": "exerciseId is required."}, status=400)
+    if not key_set or not isinstance(key_set, list):
+        return JsonResponse({"error": "key_set must be a non-empty list of key strings."}, status=400)
+    if is_official and not request.user.is_superuser:
+        return JsonResponse({"error": "Only superusers can create official exercises."}, status=403)
+
+    from apps.exercises.models import Exercise
+    from apps.exercises.services.transposition_service import generate_transposed_copies
+
+    try:
+        source = Exercise.objects.get(id=exercise_id)
+    except Exercise.DoesNotExist:
+        return JsonResponse({"error": f"Exercise {exercise_id!r} not found."}, status=400)
+
+    playlist = None
+    if playlist_id:
+        try:
+            playlist = Playlist.objects.get(id=playlist_id)
+        except Playlist.DoesNotExist:
+            return JsonResponse({"error": f"Playlist {playlist_id!r} not found."}, status=400)
+
+    try:
+        created = generate_transposed_copies(
+            source_exercise=source,
+            key_set=key_set,
+            playlist=playlist,
+            author=request.user,
+            is_official=is_official,
+            overwrite=False,
+        )
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+    return JsonResponse({"created": [ex.id for ex in created]})

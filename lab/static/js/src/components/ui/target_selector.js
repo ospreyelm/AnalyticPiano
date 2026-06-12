@@ -7,7 +7,7 @@ define(["jquery", "app/components/component"], function ($, Component) {
    * disabled (coming soon). Auto-transpose defaults to off.
    *
    * Emits the Threads 2/3 seam contract via the onChoose callback:
-   *   { exerciseId, targetIntent, sectionId, autoTranspose }
+   *   { exerciseId, targetIntent, sectionId, create_transpositions }
    *
    * @param {object} settings
    * @param {function} settings.onChoose  Called with the seam-contract payload.
@@ -51,7 +51,7 @@ define(["jquery", "app/components/component"], function ($, Component) {
         '<div style="margin-bottom:20px;">' +
         '<label style="cursor:pointer;">' +
         '<input type="checkbox" id="target-auto-transpose" style="margin-right:6px;" />' +
-        "Auto-transpose for varied keys" +
+        "Create transpositions" +
         "</label>" +
         "</div>" +
         '<button id="target-selector-file-btn" ' +
@@ -86,14 +86,15 @@ define(["jquery", "app/components/component"], function ($, Component) {
     var targetIntent = this._el
       .find("input[name='target-intent']:checked")
       .val() || "library";
-    var autoTranspose = this._el
+    var create_transpositions = this._el
       .find("#target-auto-transpose")[0].checked;
 
     var payload = {
       exerciseId: this._exerciseId,
       targetIntent: targetIntent,
       sectionId: null,
-      autoTranspose: autoTranspose,
+      create_transpositions: create_transpositions,
+      key_set: this._keySet || [],
     };
 
     this._onChoose(payload);

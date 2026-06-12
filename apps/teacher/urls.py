@@ -13,6 +13,7 @@ from apps.teacher.views import (
     suggest_units_view,
     generation_manifest_dry_run_view,
     generation_manifest_execute_view,
+    save_with_transpositions_view,
 )
 
 app_name = "teacher"
@@ -29,4 +30,5 @@ urlpatterns = [
     path("play/api/suggest-units/", suggest_units_view, name="suggest-units"),
     path("play/api/generate-manifest/dry-run/", generation_manifest_dry_run_view, name="generate-manifest-dry-run"),
     path("play/api/generate-manifest/execute/", generation_manifest_execute_view, name="generate-manifest-execute"),
+    path("play/api/save-with-transpositions/", save_with_transpositions_view, name="save-with-transpositions"),
 ]
