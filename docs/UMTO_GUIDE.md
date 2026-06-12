@@ -29,6 +29,15 @@ ex = save_umto_exercise(
 )
 ```
 
+## Exercise model fields (top-level kwargs to `save_umto_exercise`)
+
+| Field | Type | Default | Meaning |
+|---|---|---|---|
+| `description` | CharField | — | Human-readable title shown in admin and playlists |
+| `skill_tags` | ArrayField | `[]` | List of skill/unit tag strings used for filtering |
+| `complexity` | IntegerField | `0` | Rough difficulty score (higher = harder) |
+| `is_official` | BooleanField | `False` | True if this exercise is part of the official Monteverdi curriculum |
+
 ## The three InteractionMode values
 
 - `PLAYBACK` — student sees notation, plays each note on MIDI keyboard. Grading

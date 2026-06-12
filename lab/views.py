@@ -1068,6 +1068,9 @@ class AddExerciseView(View):
                     analyze_config=analyze_config,
                     display=display,
                 )
+                if save_as_official:
+                    exercise.is_official = True
+                    exercise.save(update_fields=["is_official"])
                 playlist = self._append_to_playlist(
                     exercise=exercise,
                     author=author,

@@ -380,6 +380,87 @@ class ReportTest(TestCase):
         called_names = [c.args[0] for c in mock_call.call_args_list if c.args]
         self.assertNotIn("ensure_factory_account", called_names)
 
+    @patch(_SHARED_PATH, FAKE_SHARED_COMMANDS)
+    @patch(_MANIFEST_PATH, FAKE_MANIFEST)
+    def test_report_counts_official_playlists_only(self):
+        """--report must include official playlists and exclude non-official ones."""
+        # Create an official playlist with an exercise for unit 1
+        official_exercise = make_umto_exercise(
+            self.factory_user,
+            description="official unit 1 exercise",
+            unit=1,
+            skill_tags=["unit:1"],
+        )
+        official_playlist = Playlist.objects.create(
+            name="Unit 1 — Official",
+            authored_by=self.factory_user,
+            skill_tags=["unit:1"],
+            is_official=True,
+        )
+        ExercisePlaylistOrdered.objects.create(
+            playlist=official_playlist, exercise=official_exercise, order=1
+        )
+
+        # Create a non-official playlist with the same tag — should NOT appear in report coverage
+        other_user = User.objects.create_user(
+            email="teacher@example.com", password="x"
+        )
+        unofficial_exercise = make_umto_exercise(
+            other_user,
+            description="unofficial unit 1 exercise",
+            unit=1,
+            skill_tags=["unit:1"],
+        )
+        unofficial_playlist = Playlist.objects.create(
+            name="Unit 1 — Mine",
+            authored_by=other_user,
+            skill_tags=["unit:1"],
+            is_official=False,
+        )
+        ExercisePlaylistOrdered.objects.create(
+            playlist=unofficial_playlist, exercise=unofficial_exercise, order=1
+        )
+
+        # Report should show unit 1 as covered (official playlist exists)
+        out = _call_gfl(
+            report=True,
+            units="1",
+            author="factory@monteverdi.app",
+        )
+        # Official playlist means no "NO COVERAGE" flag for unit 1
+        self.assertNotIn("NO COVERAGE", out)
+
+    @patch(_SHARED_PATH, FAKE_SHARED_COMMANDS)
+    @patch(_MANIFEST_PATH, FAKE_MANIFEST)
+    def test_report_shows_no_coverage_when_only_unofficial_playlist(self):
+        """--report flags unit as uncovered when only non-official playlists exist."""
+        other_user = User.objects.create_user(
+            email="teacher2@example.com", password="x"
+        )
+        unofficial_exercise = make_umto_exercise(
+            other_user,
+            description="unofficial unit 1 exercise",
+            unit=1,
+            skill_tags=["unit:1"],
+        )
+        unofficial_playlist = Playlist.objects.create(
+            name="Unit 1 — Mine",
+            authored_by=other_user,
+            skill_tags=["unit:1"],
+            is_official=False,
+        )
+        ExercisePlaylistOrdered.objects.create(
+            playlist=unofficial_playlist, exercise=unofficial_exercise, order=1
+        )
+
+        out = _call_gfl(
+            report=True,
+            units="1",
+            author="factory@monteverdi.app",
+        )
+        # Non-official playlist should not count; unit 1 should show as uncovered
+        self.assertIn("NO COVERAGE", out)
+
 
 # ---------------------------------------------------------------------------
 # Normal run: ensure_factory_account called first

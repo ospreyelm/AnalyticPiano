@@ -294,22 +294,14 @@ class Command(BaseCommand):
             playlist_count = 0
             exercise_count = 0
 
-            if author_email:
-                from django.contrib.auth import get_user_model
-
-                User = get_user_model()
-                try:
-                    factory_user = User.objects.get(email=author_email)
-                    tag = f"unit:{unit_label}"
-                    playlists = Playlist.objects.filter(
-                        authored_by=factory_user,
-                        skill_tags__contains=[tag],
-                    )
-                    playlist_count = playlists.count()
-                    for pl in playlists:
-                        exercise_count += pl.exercises.count()
-                except User.DoesNotExist:
-                    pass
+            tag = f"unit:{unit_label}"
+            playlists = Playlist.objects.filter(
+                is_official=True,
+                skill_tags__contains=[tag],
+            )
+            playlist_count = playlists.count()
+            for pl in playlists:
+                exercise_count += pl.exercises.count()
 
             flag = "" if playlist_count > 0 else " *** NO COVERAGE ***"
             self.stdout.write(
