@@ -7,19 +7,18 @@ DEFAULT_UNITS = "9,10,11,12,14,16,17,18,19,20"
 DEFAULT_MODES = "roman,figures,play,play_figures"
 
 
-def _parse_csv_ints(value: str) -> list[int]:
+def _parse_csv_ints(value):
     out = []
     for part in str(value).split(","):
         part = part.strip()
-        if not part:
-            continue
-        out.append(int(part))
+        if part:
+            out.append(int(part))
     if not out:
         raise CommandError("At least one unit is required.")
     return out
 
 
-def _parse_csv_strings(value: str) -> list[str]:
+def _parse_csv_strings(value):
     out = []
     for part in str(value).split(","):
         part = part.strip()
@@ -49,6 +48,7 @@ class Command(BaseCommand):
         units = _parse_csv_ints(options["units"])
         modes = _parse_csv_strings(options["modes"])
         author_email = options["author"]
+
         User = get_user_model()
         try:
             User.objects.get(email=author_email)
@@ -61,7 +61,7 @@ class Command(BaseCommand):
 
         if not options["playlist_only"]:
             for mode in modes:
-                tags = [f"unit:{unit}" for unit in units] + [f"mode:{mode}"]
+                extra_tags = [f"unit:{u}" for u in units] + [f"mode:{mode}"]
                 self.stdout.write(self.style.MIGRATE_HEADING(f"[import] mode={mode}"))
                 call_command(
                     "import_bach_phrases",
@@ -69,7 +69,7 @@ class Command(BaseCommand):
                     author=author_email,
                     mode=mode,
                     min_measures=options["min_measures"],
-                    extra_tags=tags,
+                    extra_tags=extra_tags,
                     public=options["public"],
                     overwrite=options["overwrite"],
                 )
@@ -93,6 +93,5 @@ class Command(BaseCommand):
             call_command("refresh_all_exercises")
             call_command("backfill_skill_tags", all=True)
             call_command("backfill_raw_roman_numeral")
-            call_command("reanalyze_knowledge_graph")
 
         self.stdout.write(self.style.SUCCESS("generate_bach_unit_matrix complete."))

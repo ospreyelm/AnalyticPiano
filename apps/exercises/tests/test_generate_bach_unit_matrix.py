@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 
 
@@ -57,7 +58,7 @@ class GenerateBachUnitMatrixCommandTest(TestCase):
         self.assertEqual(len(playlist_calls), 2)
 
     def test_rejects_unknown_author(self):
-        with self.assertRaisesMessage(Exception, "No user with email"):
+        with self.assertRaises(CommandError) as ctx:
             call_command(
                 "generate_bach_unit_matrix",
                 units="9",
@@ -66,3 +67,4 @@ class GenerateBachUnitMatrixCommandTest(TestCase):
                 author="missing@example.com",
                 skip_refresh=True,
             )
+        self.assertIn("No user with email", str(ctx.exception))

@@ -14,16 +14,24 @@ class DeduplicateBachPhrasesCommandTest(TestCase):
         self.author = User.objects.create_user(email="teacher@example.com", password="pw")
 
     def test_dry_run_does_not_delete_duplicates(self):
-        make_umto_exercise(author=self.author, skill_tags=["unit:9", "mode:roman"], complexity=1, description="Bach R1 - Phrase 1 (mm.1-4) [roman]")
-        make_umto_exercise(author=self.author, skill_tags=["unit:10", "mode:roman"], complexity=1, description="Bach R1 - Phrase 1 (mm.1-4) [roman]")
+        make_umto_exercise(self.author, skill_tags=["unit:9", "mode:roman"], description="Bach R1 - Phrase 1 (mm.1-4) [roman]")
+        make_umto_exercise(self.author, skill_tags=["unit:10", "mode:roman"], description="Bach R1 - Phrase 1 (mm.1-4) [roman]")
 
         call_command("deduplicate_bach_phrases", author="teacher@example.com")
 
-        self.assertEqual(Exercise.objects.filter(description="Bach R1 - Phrase 1 (mm.1-4) [roman]").count(), 2)
+        self.assertEqual(
+            Exercise.objects.filter(description="Bach R1 - Phrase 1 (mm.1-4) [roman]").count(), 2
+        )
 
     def test_execute_deletes_unreferenced_duplicate(self):
-        keep = make_umto_exercise(author=self.author, skill_tags=["unit:9", "unit:10", "mode:roman"], complexity=1, description="Bach R1 - Phrase 1 (mm.1-4) [roman]")
-        remove = make_umto_exercise(author=self.author, skill_tags=["unit:10", "mode:roman"], complexity=1, description="Bach R1 - Phrase 1 (mm.1-4) [roman]")
+        keep = make_umto_exercise(
+            self.author, skill_tags=["unit:9", "unit:10", "mode:roman"],
+            description="Bach R1 - Phrase 1 (mm.1-4) [roman]"
+        )
+        remove = make_umto_exercise(
+            self.author, skill_tags=["unit:10", "mode:roman"],
+            description="Bach R1 - Phrase 1 (mm.1-4) [roman]"
+        )
 
         call_command("deduplicate_bach_phrases", author="teacher@example.com", execute=True)
 
@@ -31,8 +39,14 @@ class DeduplicateBachPhrasesCommandTest(TestCase):
         self.assertFalse(Exercise.objects.filter(pk=remove.pk).exists())
 
     def test_execute_preserves_referenced_duplicate(self):
-        make_umto_exercise(author=self.author, skill_tags=["unit:9", "unit:10", "mode:roman"], complexity=1, description="Bach R1 - Phrase 1 (mm.1-4) [roman]")
-        referenced = make_umto_exercise(author=self.author, skill_tags=["unit:10", "mode:roman"], complexity=1, description="Bach R1 - Phrase 1 (mm.1-4) [roman]")
+        make_umto_exercise(
+            self.author, skill_tags=["unit:9", "unit:10", "mode:roman"],
+            description="Bach R1 - Phrase 1 (mm.1-4) [roman]"
+        )
+        referenced = make_umto_exercise(
+            self.author, skill_tags=["unit:10", "mode:roman"],
+            description="Bach R1 - Phrase 1 (mm.1-4) [roman]"
+        )
         playlist = Playlist.objects.create(name="Unit 10 Test", authored_by=self.author, skill_tags=["unit:10"])
         ExercisePlaylistOrdered.objects.create(playlist=playlist, exercise=referenced, order=1)
 
