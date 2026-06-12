@@ -94,4 +94,4 @@ Ask these once, at the owning phase's kickoff, and record the answer here.
 | Q5 | What visual qualities make Monteverdi distinct from Artusi (colors, typography, density, icons)? Academic, studio/tool-like, modern SaaS, or conservatory feel? | Phase 5 (CSS identity) |
 | Q6 | Which legacy dashboard functions are genuinely still needed by normal teachers (vs. advanced/admin escape hatches)? | Phase 3 (curation workbench) |
 | Q7 | Which generation variants should be produced together by default from one source? **Answer (2026-06-12): Configurable via wizard checkboxes; default selection is play only. Teacher opts into identify, roman, figures individually.** | Phase 1 (generation wizard) |
-| Q8 | Should assigned course work hide non-course playlists or merely prioritize them? | Phase 0 (student home) |
+| Q8 | ~~Should assigned course work hide non-course playlists or merely prioritize them?~~ **Decided: prioritize** — course content surfaces first; full curriculum remains below. | Phase 0 (student home) |
