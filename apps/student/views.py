@@ -1,4 +1,5 @@
 import json
+import urllib.parse
 import uuid
 from pathlib import Path
 from django.conf import settings
@@ -657,7 +658,7 @@ class JoinCourseView(View):
             )
         if not group.members.filter(pk=request.user.pk).exists():
             group.members.add(request.user)
-        return redirect(reverse("student:home"))
+        return redirect(reverse("student:home") + "?joined=" + urllib.parse.quote(group.name))
 
 
 class UnitView(View):

@@ -3,6 +3,13 @@
 {% block title %}Monteverdi{% endblock %}
 {% block content %}
 
+{% if request.GET.joined %}
+<div class="s-join-banner" id="join-banner">
+  You've joined <strong>{{ request.GET.joined }}</strong>.
+  <button onclick="document.getElementById('join-banner').remove()" aria-label="Dismiss">×</button>
+</div>
+{% endif %}
+
 {% if resume_url %}
   <a class="s-resume-card" href="{{ resume_url }}">
     <div class="s-resume-label">Pick up where you left off</div>
@@ -15,6 +22,32 @@
 {% endif %}
 
 <style>
+  /* ── Join success banner ─────────────────────────────────── */
+  .s-join-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    background: color-mix(in srgb, var(--teal, #1a8a9a) 12%, var(--surface-2, #f0f4f5));
+    border: 1px solid color-mix(in srgb, var(--teal, #1a8a9a) 30%, transparent);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    color: var(--text-1, #1a1a1a);
+  }
+  .s-join-banner button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--text-2, #555);
+    padding: 0 0.25rem;
+    flex-shrink: 0;
+  }
+  .s-join-banner button:hover { color: var(--text-1, #1a1a1a); }
+
   /* ── Resume card linear gradient & shadow ────────────────── */
   .s-resume-card {
     background: linear-gradient(135deg, var(--teal) 0%, #1f6070 100%) !important;
