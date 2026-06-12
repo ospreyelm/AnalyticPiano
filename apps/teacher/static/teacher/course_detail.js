@@ -500,14 +500,15 @@
       });
     });
 
-    // Wire up add-group form buttons
-    var submitBtn = document.getElementById('btn-add-group-submit');
-    var cancelBtn = document.getElementById('btn-add-group-cancel');
-    if (submitBtn) submitBtn.addEventListener('click', onAddGroup);
-    if (cancelBtn) cancelBtn.addEventListener('click', function () {
-      document.getElementById('add-group-form').style.display = 'none';
-      var addGroupBtn = document.getElementById('btn-show-add-group');
-      if (addGroupBtn) addGroupBtn.style.display = '';
+    // Delegated listener for add-group form buttons (survives re-renders)
+    container.addEventListener('click', function (e) {
+      if (e.target.id === 'btn-add-group-submit') {
+        onAddGroup();
+      } else if (e.target.id === 'btn-add-group-cancel') {
+        document.getElementById('add-group-form').style.display = 'none';
+        var addGroupBtn = document.getElementById('btn-show-add-group');
+        if (addGroupBtn) addGroupBtn.style.display = '';
+      }
     });
   }
 

@@ -5,7 +5,7 @@ from datetime import datetime, time
 from django.conf import settings
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
@@ -13,6 +13,23 @@ from apps.accounts.models import Group
 from apps.exercises.models import Course, Playlist, PlaylistCourseOrdered
 from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.teacher.decorators import teacher_required
+
+
+def _serialize_course_groups(course):
+    """Return a list of group dicts for the given course's visible_to groups."""
+    result = []
+    for group in course.visible_to.select_related().prefetch_related("members").all():
+        members = [
+            {"name": m.get_full_name(), "email": m.email}
+            for m in group.members.all()
+        ]
+        result.append({
+            "name": group.name,
+            "join_code": group.join_code,
+            "member_count": len(members),
+            "members": members,
+        })
+    return result
 
 
 def _get_factory_user():
@@ -280,18 +297,7 @@ def course_detail_view(request, course_id):
         })
 
     # Build groups data
-    groups = []
-    for group in course.visible_to.select_related().prefetch_related("members").all():
-        members = [
-            {"name": m.get_full_name(), "email": m.email}
-            for m in group.members.all()
-        ]
-        groups.append({
-            "name": group.name,
-            "join_code": group.join_code,
-            "member_count": len(members),
-            "members": members,
-        })
+    groups = _serialize_course_groups(course)
 
     # Build addable playlists
     factory_user = _get_factory_user()
@@ -471,8 +477,6 @@ def respread_view(request, course_id):
 @require_http_methods(["POST"])
 def add_group_view(request, course_id):
     """POST /teacher/courses/<course_id>/groups/ — create a new group and link to course."""
-    from django.shortcuts import get_object_or_404
-
     course = get_object_or_404(Course, id=course_id, authored_by=request.user)
 
     try:
@@ -492,27 +496,13 @@ def add_group_view(request, course_id):
         course.visible_to.add(group)
 
     # Return groups in the same shape as groups_json context variable
-    groups = []
-    for g in course.visible_to.prefetch_related("members").all():
-        members = [
-            {"name": m.get_full_name(), "email": m.email}
-            for m in g.members.all()
-        ]
-        groups.append({
-            "name": g.name,
-            "join_code": g.join_code,
-            "member_count": len(members),
-            "members": members,
-        })
-
-    return JsonResponse({"groups": groups})
+    return JsonResponse({"groups": _serialize_course_groups(course)})
 
 
 @teacher_required
 @require_http_methods(["POST"])
 def add_playlist_view(request, course_id):
     """POST /teacher/courses/<course_id>/add-playlist/ — append a playlist to course."""
-    from django.shortcuts import get_object_or_404
     from django.db.models import Max
 
     course = get_object_or_404(Course, id=course_id, authored_by=request.user)
