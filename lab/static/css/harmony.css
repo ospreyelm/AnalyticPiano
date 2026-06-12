@@ -1397,3 +1397,113 @@ ul.pagination li {
 .play-save-btn-primary { background: #2563eb; color: #fff; border-color: #1d4ed8; }
 .play-save-btn-primary:hover { background: #1d4ed8; }
 .play-save-btn-primary:disabled { background: #93c5fd; border-color: #93c5fd; cursor: default; }
+
+.harmony-ui {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: 0.75rem;
+  align-items: start;
+  width: 95vw;
+  max-width: 112rem;
+  margin: 0 auto;
+}
+.harmony-ui #staff-area,
+.harmony-ui #piano {
+  min-width: 0;
+}
+.harmony-ui #staff {
+  width: 100%;
+  max-width: none;
+}
+.play-save-panel {
+  box-sizing: border-box;
+  width: 100%;
+  color: #1f2933;
+  background: #f7f0df;
+  border: 1px solid #d9c9a9;
+  border-radius: 6px;
+  padding: 0.85rem;
+  text-align: left;
+  box-shadow: 0 1px 4px rgba(45, 39, 29, 0.12);
+}
+.play-save-panel-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.play-save-panel .play-save-dialog-title {
+  font-size: 1rem;
+  line-height: 1.2;
+  margin: 0;
+}
+.play-save-panel-status {
+  min-height: 1rem;
+  color: #6b5b37;
+  font-size: 0.82rem;
+  text-align: right;
+}
+.play-save-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.65rem;
+}
+.play-save-panel .play-save-field {
+  margin-bottom: 0;
+}
+.play-save-panel .play-save-field label {
+  color: #3b3323;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.play-save-panel .play-save-input,
+.play-save-panel .play-save-select {
+  background: #fffdf8;
+  border-color: #c8b894;
+  border-radius: 4px;
+  color: #1f2933;
+}
+.play-save-panel select[multiple] {
+  min-height: 7.25rem;
+}
+.play-save-key-input {
+  margin-top: 0.35rem;
+}
+.play-save-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.35rem;
+  padding-top: 0.1rem;
+}
+.play-save-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+.play-save-checkbox input {
+  flex: 0 0 auto;
+}
+.play-save-panel .play-save-dialog-feedback {
+  min-height: 1rem;
+  margin: 0.65rem 0 0;
+  color: #7c2d12;
+}
+.play-save-panel .play-save-actions {
+  justify-content: flex-start;
+  margin-top: 0.65rem;
+}
+.play-save-panel .play-save-btn {
+  min-height: 2.1rem;
+  padding: 0.45rem 1rem;
+}
+@media (max-width: 980px) {
+  .harmony-ui {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .play-save-panel {
+    order: 2;
+  }
+}
