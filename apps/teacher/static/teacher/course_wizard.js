@@ -621,7 +621,7 @@
       .then(function (result) {
         if (result.status === 201) {
           var courseId = result.data.courseId;
-          window.location.href = '/dashboard/courses/' + courseId + '/';
+          window.location.href = '/teacher/courses/' + courseId + '/';
         } else {
           var msg = (result.data && result.data.error) ?
             result.data.error :

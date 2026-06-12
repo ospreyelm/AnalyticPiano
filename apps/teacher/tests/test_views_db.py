@@ -4,6 +4,7 @@ Run with:
     DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py test --noinput apps.teacher.tests.test_views_db -v 1
 """
 import json
+from pathlib import Path
 
 from django.conf import settings
 from django.test import TestCase, Client
@@ -137,6 +138,17 @@ class CourseWizardRenderTests(TestCase):
         self.assertIn("window.__WIZARD_DATA__", html)
         self.assertIn('unitsJson: [{"branch"', html)
         self.assertNotIn("unitsJson: [{&quot;", html)
+
+    def test_create_success_redirects_to_teacher_course_detail(self):
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "static"
+            / "teacher"
+            / "course_wizard.js"
+        ).read_text()
+
+        self.assertIn("'/teacher/courses/' + courseId + '/'", script)
+        self.assertNotIn("'/dashboard/courses/' + courseId + '/'", script)
 
 
 # ---------------------------------------------------------------------------

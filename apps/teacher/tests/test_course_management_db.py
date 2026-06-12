@@ -252,7 +252,7 @@ class CourseDetailContextTests(TestCase):
         group.members.add(student)
         self.course.visible_to.add(group)
         resp = self.client.get(self.url)
-        groups = resp.context["groups"]
+        groups = json.loads(resp.context["groups_json"])
         self.assertEqual(len(groups), 1)
         self.assertEqual(groups[0]["name"], "Section A")
         self.assertEqual(groups[0]["member_count"], 1)
@@ -291,6 +291,17 @@ class CourseDetailContextTests(TestCase):
         self.assertIn("dashboard_activity_url", resp.context)
         self.assertIn(self.course.id, resp.context["dashboard_edit_url"])
         self.assertIn(self.course.id, resp.context["dashboard_activity_url"])
+
+    def test_course_data_is_embedded_as_valid_javascript(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn(f'courseId: "{self.course.id}"', html)
+        self.assertIn("pcoRows: [{", html)
+        self.assertIn("groups: [", html)
+        self.assertIn('dashboardActivityUrl: "', html)
+        self.assertNotIn("pcoRows: [{&quot;", html)
+        self.assertNotIn("Edit in dashboard", html)
 
     def test_other_teachers_course_404(self):
         other_course = _make_course(self.teacher2, title="Other Course")

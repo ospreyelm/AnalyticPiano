@@ -323,7 +323,7 @@ def course_detail_view(request, course_id):
         {
             "course": course,
             "pco_rows_json": json.dumps(pco_rows),
-            "groups": groups,
+            "groups_json": json.dumps(groups),
             "activity_json": json.dumps(course.performance_dict),
             "addable_playlists_json": json.dumps(addable_playlists),
             "dashboard_edit_url": dashboard_edit_url,

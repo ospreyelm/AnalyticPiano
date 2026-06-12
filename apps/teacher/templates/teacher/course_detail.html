@@ -7,13 +7,13 @@
 {% block head_extra %}
   <script>
     window.__COURSE_DATA__ = {
-      courseId: {{ course.id }},
-      pcoRows: {{ pco_rows_json }},
-      groups: {{ groups|safe }},
-      activity: {{ activity_json }},
-      addablePlaylists: {{ addable_playlists_json }},
-      dashboardEditUrl: {{ dashboard_edit_url|safe }},
-      dashboardActivityUrl: {{ dashboard_activity_url|safe }},
+      courseId: "{{ course.id|escapejs }}",
+      pcoRows: {{ pco_rows_json|safe }},
+      groups: {{ groups_json|safe }},
+      activity: {{ activity_json|safe }},
+      addablePlaylists: {{ addable_playlists_json|safe }},
+      dashboardEditUrl: "{{ dashboard_edit_url|escapejs }}",
+      dashboardActivityUrl: "{{ dashboard_activity_url|escapejs }}",
     };
   </script>
 {% endblock %}
@@ -30,8 +30,6 @@
       {% else %}
         No date range set
       {% endif %}
-      &nbsp;·&nbsp;
-      <a class="t-link" href="{{ dashboard_edit_url }}">Edit in dashboard</a>
       &nbsp;·&nbsp;
       <a class="t-link" href="{{ dashboard_activity_url }}">Activity report</a>
     </p>
