@@ -54,14 +54,24 @@
 				</div>
 
 				<div class="play-save-field">
-					<label for="play-save-mode">Mode</label>
-					<select id="play-save-mode" name="mode" class="play-save-select">
-						<option value="play">Play</option>
-						<option value="roman">Roman numerals</option>
-						<option value="figures">Figured bass</option>
-						<option value="identify">Identify</option>
-						<option value="harmonization">Harmonization</option>
-					</select>
+					<label>Interaction Modes <span class="play-save-required">*</span></label>
+					<div class="play-save-checkboxes-group" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+						<label class="play-save-checkbox">
+							<input type="checkbox" name="modes" value="play" checked /> Play
+						</label>
+						<label class="play-save-checkbox" id="play-save-mode-roman-lbl">
+							<input type="checkbox" name="modes" value="roman" /> Roman numerals
+						</label>
+						<label class="play-save-checkbox" id="play-save-mode-figures-lbl">
+							<input type="checkbox" name="modes" value="figures" /> Figured bass
+						</label>
+						<label class="play-save-checkbox" id="play-save-mode-identify-lbl">
+							<input type="checkbox" name="modes" value="identify" /> Identify
+						</label>
+						<label class="play-save-checkbox" id="play-save-mode-harmonization-lbl">
+							<input type="checkbox" name="modes" value="harmonization" /> Harmonization
+						</label>
+					</div>
 				</div>
 
 				<div class="play-save-field">

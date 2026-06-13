@@ -1044,11 +1044,11 @@ class AddExerciseView(View):
         analysis_slices = payload.get("analysisSlices", [])  # [] => status "none"; non-empty => "reviewed"
         analyze_config = payload.get("analyzeConfig")
         display = payload.get("display")  # teacher's analysis display flags (showRomans, ...)
+        selected_modes = payload.get("modes") or [payload.get("mode", "play")]
         _mode_map = {
             "identify": InteractionMode.IDENTIFICATION,
             "harmonization": InteractionMode.HARMONIZATION,
         }
-        interaction_mode = _mode_map.get(payload.get("mode", ""), InteractionMode.PLAYBACK)
 
         try:
             description = self._description(payload)
@@ -1068,47 +1068,71 @@ class AddExerciseView(View):
                 return self._json_error("Only superusers can save official exercises.", status=403)
 
             effective_is_public = True if save_as_official else is_public
+            created_exercises = []
+            playlist = None
+
             with transaction.atomic():
-                exercise = save_chordal_umto_exercise(
-                    description=description,
-                    author=author,
-                    chords=chords,
-                    key=key,
-                    meter=meter,
-                    clef=clef,
-                    staff_distribution=staff_distribution,
-                    skill_tags=skill_tags,
-                    is_public=effective_is_public,
-                    auto_playlist=False,
-                    barline_offsets=barline_offsets,
-                    analysis=analysis_slices,
-                    analyze_config=analyze_config,
-                    display=display,
-                    mode=interaction_mode,
-                )
-                if save_as_official:
-                    exercise.is_official = True
-                    exercise.save(update_fields=["is_official"])
-                playlist = self._append_to_playlist(
-                    exercise=exercise,
-                    author=author,
-                    playlist_id=playlist_id,
-                    playlist_name=playlist_name,
-                    is_public=effective_is_public,
-                    is_adaptive=is_adaptive,
-                )
+                import copy
+                for mode in selected_modes:
+                    mode_display = copy.deepcopy(display or {})
+                    for flag in ["showRomans", "showFigures", "showChordLabels", "showScaleDegrees", "showNoteNames"]:
+                        if flag not in mode_display:
+                            mode_display[flag] = False
+
+                    if mode == "roman":
+                        mode_display["showRomans"] = True
+                        mode_display["showFigures"] = False
+                    elif mode == "figures":
+                        mode_display["showFigures"] = True
+                        mode_display["showRomans"] = False
+                    elif mode in ("identify", "harmonization"):
+                        mode_display["showRomans"] = False
+                        mode_display["showFigures"] = False
+
+                    exercise = save_chordal_umto_exercise(
+                        description=description,
+                        author=author,
+                        chords=chords,
+                        key=key,
+                        meter=meter,
+                        clef=clef,
+                        staff_distribution=staff_distribution,
+                        skill_tags=skill_tags,
+                        is_public=effective_is_public,
+                        auto_playlist=False,
+                        barline_offsets=barline_offsets,
+                        analysis=analysis_slices,
+                        analyze_config=analyze_config,
+                        display=mode_display,
+                        mode=_mode_map.get(mode, InteractionMode.PLAYBACK),
+                    )
+                    if save_as_official:
+                        exercise.is_official = True
+                        exercise.save(update_fields=["is_official"])
+                    created_exercises.append(exercise)
+
+                    playlist = self._append_to_playlist(
+                        exercise=exercise,
+                        author=author,
+                        playlist_id=playlist_id,
+                        playlist_name=playlist_name,
+                        is_public=effective_is_public,
+                        is_adaptive=is_adaptive,
+                    )
         except (NonUMTOExerciseError, ValueError, KeyError) as exc:
             return self._json_error(str(exc) or "Invalid exercise payload.", status=400)
 
+        first_ex = created_exercises[0]
         review_status = (
-            (exercise.data or {})
+            (first_ex.data or {})
             .get("score", {})
             .get("umto", {})
             .get("metadata", {})
             .get("analysis_review_status", "none")
         )
         response_data = {
-            "id": exercise.id,
+            "id": first_ex.id,
+            "ids": [ex.id for ex in created_exercises],
             "reviewStatus": review_status,
         }
         if playlist is not None:

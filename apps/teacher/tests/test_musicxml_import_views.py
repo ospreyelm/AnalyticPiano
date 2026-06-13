@@ -330,3 +330,43 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertIn("Transposition base", descriptions)
         self.assertIn("Transposition base (G)", descriptions)
         self.assertIn("Transposition base (Am)", descriptions)
+
+    def test_save_chordal_exercise_multiple_modes(self):
+        """Saving with multiple checked modes creates an Exercise for each selected mode."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
+
+        playlist = Playlist.objects.create(
+            name="Multi-Mode Playlist",
+            authored_by=self.staff_teacher,
+            is_public=True,
+        )
+
+        response = self.client.post(
+            reverse("teacher:import-musicxml-save"),
+            {
+                "musicxml_file": uploaded,
+                "description": "Multi-mode test",
+                "unit": "11",
+                "modes": ["play", "roman"],
+                "playlist_id": playlist.id,
+                "harmony_key": "jC_",
+                "complexity": 2,
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(len(data["ids"]), 2)
+
+        # Confirm both exercises were saved and mapped to playlist
+        mappings = ExercisePlaylistOrdered.objects.filter(playlist=playlist).order_by("order")
+        self.assertEqual(mappings.count(), 2)
+
+        ex1 = mappings[0].exercise
+        ex2 = mappings[1].exercise
+
+        self.assertEqual(ex1.description, "Multi-mode test")
+        self.assertEqual(ex1.data["mode"], "play")
+        self.assertEqual(ex2.description, "Multi-mode test")
+        self.assertEqual(ex2.data["mode"], "roman")

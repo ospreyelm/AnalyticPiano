@@ -228,8 +228,6 @@ define([
         
         if (corpusFile) {
           console.log('Loading corpus file:', corpusFile);
-          // Change "DISPLAY OPTIONS" to "CHORALE STYLE" for corpus mode
-          $('.js-btn-menu').text('CHORALE STYLE');
           
           // Cache payload to avoid re-fetching on every UI change
           var renderWithState = function(payload){

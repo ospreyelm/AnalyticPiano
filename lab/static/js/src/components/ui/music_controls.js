@@ -465,13 +465,17 @@ define([
 
       this._loadAuthoringMeta();
 
-      $("#play-save-description, #play-save-tags, #play-save-mode, " +
+      $("#play-save-description, #play-save-tags, " +
         "#play-save-create-transpositions, #play-save-key-set, #play-save-public, " +
         "#play-save-official, #play-save-new-playlist-name")
         .off(".playsave")
         .on("input.playsave change.playsave", function () {
           that._validateSavePanel(false);
         });
+
+      $(document).off(".playsavemodes").on("change.playsavemodes", "input[name='modes']", function () {
+        that._validateSavePanel(false);
+      });
 
       $("#play-save-unit").off("change.playsave").on("change.playsave", function () {
         if (!that._applyingSuggestedUnits) {
@@ -805,6 +809,10 @@ define([
       var units = this._getSelectedUnits();
       var createTranspositions = $("#play-save-create-transpositions").is(":checked");
       var keySet = this._getSelectedKeySet();
+      var selectedModes = [];
+      $('input[name="modes"]:checked').each(function () {
+        selectedModes.push($(this).val());
+      });
       var message = "";
 
       var playlistSelectVal = $("#play-save-playlist").val();
@@ -814,8 +822,8 @@ define([
         message = "Description is required.";
       } else if (units.length === 0) {
         message = "Select at least one unit tag.";
-      } else if (playlistSelectVal === "__new__" && !newPlaylistName) {
-        message = "Enter a name for the new playlist.";
+      } else if (selectedModes.length === 0) {
+        message = "Select at least one interaction mode.";
       } else if (createTranspositions && keySet.length === 0) {
         message = "Choose at least one key for transpositions.";
       }
@@ -1038,25 +1046,28 @@ define([
       var that = this;
 
       if (payload.create_transpositions && payload.key_set && payload.key_set.length > 0) {
-        var body = JSON.stringify({
-          exerciseId: payload.exerciseId,
-          key_set: payload.key_set,
-          playlistId: payload.playlistId || null,
-          is_official: payload.is_official || false,
-        });
-        fetch(window.location.origin + "/teacher/play/api/save-with-transpositions/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": that._getCsrfToken(),
-          },
-          body: body,
-        }).then(function (res) {
-          if (!res.ok) {
-            console.warn("[play-target] save-with-transpositions failed", res.status);
-          }
-        }).catch(function (err) {
-          console.warn("[play-target] save-with-transpositions error", err);
+        var exerciseIds = payload.exerciseIds || [payload.exerciseId];
+        $.each(exerciseIds, function (idx, exId) {
+          var body = JSON.stringify({
+            exerciseId: exId,
+            key_set: payload.key_set,
+            playlistId: payload.playlistId || null,
+            is_official: payload.is_official || false,
+          });
+          fetch(window.location.origin + "/teacher/play/api/save-with-transpositions/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": that._getCsrfToken(),
+            },
+            body: body,
+          }).then(function (res) {
+            if (!res.ok) {
+              console.warn("[play-target] save-with-transpositions failed for " + exId, res.status);
+            }
+          }).catch(function (err) {
+            console.warn("[play-target] save-with-transpositions error for " + exId, err);
+          });
         });
       }
 
@@ -1128,7 +1139,14 @@ define([
       var saveAsOfficial = this._isSuperuser && $("#play-save-official-row").is(":visible") && $("#play-save-official").is(":checked");
       var createTranspositions = $("#play-save-create-transpositions").is(":checked");
       var keySet = this._getSelectedKeySet();
-      var selectedMode = $("#play-save-mode").val() || "play";
+      
+      var selectedModes = [];
+      $('input[name="modes"]:checked').each(function () {
+        selectedModes.push($(this).val());
+      });
+      if (selectedModes.length === 0) {
+        selectedModes = ["play"];
+      }
 
       var playlistSelectVal = $("#play-save-playlist").val();
       var playlistId = null;
@@ -1153,7 +1171,8 @@ define([
       payload.skillTags = skillTags;
       payload.isPublic = isPublic;
       payload.saveAsOfficial = saveAsOfficial;
-      payload.mode = selectedMode;
+      payload.modes = selectedModes;
+      payload.mode = selectedModes[0]; // backward-compat fallback
       if (playlistId !== null) {
         payload.playlistId = playlistId;
       }
@@ -1195,6 +1214,7 @@ define([
           that._pendingSaveJsonData = null;
           that.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
             exerciseId: data.id,
+            exerciseIds: data.ids || [data.id],
             reviewStatus: data.reviewStatus,
             playlistId: data.playlistId || null,
             playlistName: data.playlistName || null,
@@ -1630,16 +1650,21 @@ define([
             
             // Set mode restrictions
             if (data.route === "chordal") {
-              $("#play-save-mode option[value='roman']").prop("disabled", false).show();
-              $("#play-save-mode option[value='figures']").prop("disabled", false).show();
-              $("#play-save-mode option[value='harmonization']").prop("disabled", false).show();
+              $("#play-save-mode-roman-lbl input").prop("disabled", false);
+              $("#play-save-mode-roman-lbl").show();
+              $("#play-save-mode-figures-lbl input").prop("disabled", false);
+              $("#play-save-mode-figures-lbl").show();
+              $("#play-save-mode-harmonization-lbl input").prop("disabled", false);
+              $("#play-save-mode-harmonization-lbl").show();
             } else {
-              $("#play-save-mode option[value='roman']").prop("disabled", true).hide();
-              $("#play-save-mode option[value='figures']").prop("disabled", true).hide();
-              $("#play-save-mode option[value='harmonization']").prop("disabled", true).hide();
-              var curVal = $("#play-save-mode").val();
-              if (curVal === "roman" || curVal === "figures" || curVal === "harmonization") {
-                $("#play-save-mode").val("play");
+              $("#play-save-mode-roman-lbl input").prop("disabled", true).prop("checked", false);
+              $("#play-save-mode-roman-lbl").hide();
+              $("#play-save-mode-figures-lbl input").prop("disabled", true).prop("checked", false);
+              $("#play-save-mode-figures-lbl").hide();
+              $("#play-save-mode-harmonization-lbl input").prop("disabled", true).prop("checked", false);
+              $("#play-save-mode-harmonization-lbl").hide();
+              if (!$("input[name='modes']:checked").length) {
+                $("input[name='modes'][value='play']").prop("checked", true);
               }
             }
 
@@ -1648,8 +1673,90 @@ define([
             
             // Load onto sheet
             var sheet = that._getSheetComponent();
-            if (sheet) {
-              sheet.setCorpusPayload(data.payload);
+            if (sheet && data.payload && data.payload.score) {
+              sheet.clearCorpusPayload();
+              sheet._chordDurations = {};
+              sheet._spellingOverrides = {};
+              sheet._barlineOffsets = [];
+              sheet._tokenOverrides = {};
+              sheet._clearSelection();
+
+              require(["app/models/chord", "app/components/music/score_timeline"], function (Chord, ScoreTimeline) {
+                var timeline = ScoreTimeline.buildTimeline(data.payload.score);
+                timeline.sort(function (a, b) { return a.onset - b.onset; });
+
+                var chords = [];
+                var onsets = [];
+                var onsetMap = {};
+
+                timeline.forEach(function (ev) {
+                  if (ev.midi === undefined) return;
+                  var onset = ev.onset;
+                  if (!(onset in onsetMap)) {
+                    onsetMap[onset] = { visible: [], duration: ev.duration };
+                    onsets.push(onset);
+                  }
+                  if (onsetMap[onset].visible.indexOf(ev.midi) === -1) {
+                    onsetMap[onset].visible.push(ev.midi);
+                  }
+                  if (ev.duration > onsetMap[onset].duration) {
+                    onsetMap[onset].duration = ev.duration;
+                  }
+                });
+
+                onsets.sort(function (a, b) { return a - b; });
+
+                for (var i = 0; i < onsets.length; i++) {
+                  var onset = onsets[i];
+                  var durationTicks = onsetMap[onset].duration;
+                  if (i < onsets.length - 1) {
+                    durationTicks = onsets[i + 1] - onset;
+                  }
+                  var durationQuarters = durationTicks / 1024.0;
+                  chords.push({
+                    visible: onsetMap[onset].visible,
+                    duration: durationQuarters
+                  });
+                }
+
+                var chordBank = sheet.chords;
+                var oldCurrent = chordBank.current();
+                if (oldCurrent) {
+                  chordBank._removeListeners(oldCurrent);
+                }
+
+                var newChords = [];
+                var liveChord = chordBank.makeChord();
+                newChords.push(liveChord);
+
+                for (var cIdx = chords.length - 1; cIdx >= 0; cIdx--) {
+                  var cData = chords[cIdx];
+                  var chord = chordBank.makeChord();
+                  chord.noteOn(cData.visible);
+                  newChords.push(chord);
+                  sheet._chordDurations[chord._cid] = cData.duration;
+                }
+
+                chordBank._items = newChords;
+                chordBank._addListeners(liveChord);
+
+                // Sync meter dropdown
+                var meterVal = (data.payload && data.payload.score && data.payload.score.umto && data.payload.score.umto.metadata && data.payload.score.umto.metadata.meter) || data.payload.meter || "";
+                sheet._meter = meterVal || null;
+                $("#play-meter-select").val(meterVal);
+
+                // Sync barlines
+                var barlineOffsets = (data.payload && data.payload.score && data.payload.score.umto && data.payload.score.umto.metadata && data.payload.score.umto.metadata.barline_offsets) || [];
+                if (barlineOffsets && barlineOffsets.length > 0) {
+                  sheet._barlineOffsets = barlineOffsets.map(function (o) { return Math.round(o * 1e6) / 1e6; });
+                } else if (sheet._meter) {
+                  sheet.autoSuggestBarlines();
+                }
+
+                chordBank.trigger("clear");
+                chordBank.trigger("change");
+              });
+            } else if (sheet) {
               sheet.render();
             }
             
@@ -1685,7 +1792,14 @@ define([
       var saveAsOfficial = this._isSuperuser && $("#play-save-official-row").is(":visible") && $("#play-save-official").is(":checked");
       var createTranspositions = $("#play-save-create-transpositions").is(":checked");
       var keySet = this._getSelectedKeySet();
-      var selectedMode = $("#play-save-mode").val() || "play";
+      
+      var selectedModes = [];
+      $('input[name="modes"]:checked').each(function () {
+        selectedModes.push($(this).val());
+      });
+      if (selectedModes.length === 0) {
+        selectedModes = ["play"];
+      }
 
       var playlistSelectVal = $("#play-save-playlist").val();
       var playlistId = null;
@@ -1713,7 +1827,10 @@ define([
       fd.append("end", $("#musicxml-end-measure").val() || "");
       fd.append("harmony_key", this.keySignature.getKey() || "jC_");
       fd.append("complexity", $("#musicxml-complexity").val() || 1);
-      fd.append("mode", selectedMode);
+      
+      $.each(selectedModes, function (i, m) {
+        fd.append("modes", m);
+      });
 
       if (playlistId !== null) {
         fd.append("playlist_id", playlistId);
@@ -1753,6 +1870,7 @@ define([
 
           that.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
             exerciseId: data.id,
+            exerciseIds: data.ids || [data.id],
             reviewStatus: data.reviewStatus,
             playlistId: data.playlistId || null,
             playlistName: data.playlistName || null,
