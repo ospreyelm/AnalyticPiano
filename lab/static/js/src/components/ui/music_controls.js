@@ -780,10 +780,15 @@ define([
       var keySet = this._getSelectedKeySet();
       var message = "";
 
+      var playlistSelectVal = $("#play-save-playlist").val();
+      var newPlaylistName = $.trim($("#play-save-new-playlist-name").val() || "");
+
       if (!description) {
         message = "Description is required.";
       } else if (units.length === 0) {
         message = "Select at least one unit tag.";
+      } else if (playlistSelectVal === "__new__" && !newPlaylistName) {
+        message = "Enter a name for the new playlist.";
       } else if (createTranspositions && keySet.length === 0) {
         message = "Choose at least one key for transpositions.";
       }
@@ -1137,6 +1142,18 @@ define([
         dataType: "json",
         headers: { "X-CSRFToken": that._getCsrfToken() },
         success: function (data) {
+          $("#play-save-submit").prop("disabled", false);
+          if (data.playlistId && data.playlistName) {
+            var playlistSelect = $("#play-save-playlist");
+            var existingOpt = playlistSelect.find("option[value='" + data.playlistId + "']");
+            if (!existingOpt.length) {
+              var newOpt = $("<option>").val(data.playlistId).text(data.playlistName);
+              playlistSelect.find("option[value='__new__']").before(newOpt);
+            }
+            playlistSelect.val(String(data.playlistId));
+            $("#play-save-new-playlist-row").hide();
+            $("#play-save-new-playlist-name").val("");
+          }
           if (overlayEl && overlayEl.hide) {
             overlayEl.hide();
           }
