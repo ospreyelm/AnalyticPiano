@@ -209,3 +209,24 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         score = ex.data["score"]
         umto_meta = score["umto"]["metadata"]
         self.assertIsNone(umto_meta.get("meter"))
+
+    def test_save_with_adaptive_playlist_creates_adaptive_playlist(self):
+        self.client.login(email="teacher@example.com", password="pw")
+        payload = {
+            "key": "jC_",
+            "staffDistribution": "keyboard",
+            "chord": [
+                {"visible": [60], "hidden": [], "duration": 1.0},
+            ],
+            "playlistName": "Test Adaptive Playlist",
+            "isAdaptive": True,
+        }
+        response = self.client.post(self.add_url, {"data": json.dumps(payload)})
+        self.assertEqual(response.status_code, 201)
+
+        # Verify playlist is created and is_adaptive=True
+        from apps.exercises.models import Playlist
+        pl = Playlist.objects.get(name="Test Adaptive Playlist")
+        self.assertTrue(pl.is_adaptive)
+        self.assertEqual(pl.authored_by, self.user)
+

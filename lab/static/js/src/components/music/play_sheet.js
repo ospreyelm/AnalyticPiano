@@ -207,15 +207,14 @@ define([
     render: function () {
       this.clear();
 
-      // Feature flag: render a sample polyphonic measure using the new adapter when '?newvf' is present
-      // Using simple string indexOf to avoid CSP issues with URLSearchParams
-      var useNewAdapter = window.location.search.indexOf("newvf") !== -1;
+      // Feature flag: render a sample polyphonic measure using the new adapter when '?newvf' is present or an imported score is loaded
+      var useNewAdapter = window.location.search.indexOf("newvf") !== -1 || !!this._corpusPayload;
 
       if (useNewAdapter) {
         var width = this.getWidth();
         var height = this.getHeight();
         var params = this._getAllQueryParams ? this._getAllQueryParams() : {};
-        var corpusFile = params.loadCorpus || this._getQueryParam('loadCorpus');
+        var corpusFile = params.loadCorpus || this._getQueryParam('loadCorpus') || (this._corpusPayload ? "imported.xml" : null);
         var self = this;
         
         if (corpusFile) {
@@ -1293,8 +1292,16 @@ define([
         case "4": this.setChordDuration(chord, 4.0); e.preventDefault(); break;   // whole
         case "r": case "R": this._respellSelected(); e.preventDefault(); break;
         case "Escape": this._clearSelection(); e.preventDefault(); break;
-        default: break;
+        case "default": break;
       }
+    },
+    setCorpusPayload: function (payload) {
+      this._corpusPayload = payload;
+      this._corpusFile = "imported.xml";
+    },
+    clearCorpusPayload: function () {
+      this._corpusPayload = null;
+      this._corpusFile = null;
     },
   });
 
