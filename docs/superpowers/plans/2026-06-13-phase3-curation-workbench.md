@@ -144,7 +144,6 @@ Admin-only escape hatch links (shown only to superusers):
 | Roman numeral | `roman` | `content.roman_numeral` ✓ | Teacher / music21 |
 | Figured bass | `figured_bass` | `content.figured_bass` ✓ | music21 |
 | Figured bass (unabbreviated) | `figured_bass_unabbreviated` | `content.raw_figured_bass` ✓ | music21 |
-| Chord label | `chord_labels` | `content.chord_label` (new, analytics) | Live MIDI via `analyze.to_chord()` |
 | Scale degree | `scale_degree` | — | Live MIDI |
 | Note name | `note_name` | — | Live MIDI |
 | Solfège | `solfege` | — | Live MIDI |
@@ -160,9 +159,16 @@ Admin-only escape hatch links (shown only to superusers):
 | Interval (specific) | `interval_specific` | `content.interval_specific` (new, analytics) | Live MIDI via Tonal.js |
 
 "Stored in AnalysisLayer" = persisted for analytics. The identification grader
-reads these stored values only for `roman`, `figured_bass`, and
+reads stored values only for `roman`, `figured_bass`, and
 `figured_bass_unabbreviated`; all other types recompute from MIDI at runtime.
 New stored fields are for metadata enrichment and future search, not grading.
+
+**`chord_labels` deferred:** `computeWindowLabel()` in `exercise_definition.js`
+has no branch for `analysisType === "chord_labels"` — it falls through to
+`analyzer.to_chord(midiStack, "roman only")` which is not the correct path.
+`chord_labels` is omitted from the editor dropdown in this phase. A follow-up
+task must add the correct `chord_labels` branch to `computeWindowLabel` before
+exposing it as an identification type.
 
 The selected `analysisType` is stored as a top-level key in the Exercise payload
 (see AnalysisLayer expansion below). Changing it and saving rewrites only that
@@ -215,7 +221,6 @@ the frontend to read these fields instead of recomputing, if needed.
 
 **New optional fields on `AnalysisLayer`** (`apps/exercises/umto.py`):
 ```python
-chord_label: Optional[str] = None         # e.g. "CM7", "dm", "G7" — from analyze.to_chord()
 set_class_prime: Optional[str] = None     # e.g. "(0,1,4)"
 set_class_forte: Optional[str] = None     # e.g. "3-11B"
 set_class_normal: Optional[str] = None    # e.g. "[0,3,7]"
@@ -224,6 +229,8 @@ spacing: Optional[str] = None             # output of analyze.to_spacing()
 interval_specific: Optional[str] = None   # specific interval name
 interval_generic: Optional[str] = None    # generic interval size
 ```
+
+(`chord_label` deferred — no functional `chord_labels` path in `computeWindowLabel` yet.)
 
 **JS compute path** (`play_sheet.js` + `play_save_logic.js`):
 `buildAnalysisSlices(offsets, slots, labels, overrides)` currently has no access
@@ -310,10 +317,10 @@ Same flow applies to individual exercises submitted from the exercise editor.
   `/approve/`, `/reject/` endpoints. Superuser check on approve/reject.
   [Tier 2]
 - [ ] Add same submit/approve/reject endpoints for exercises. [Tier 2]
-- [ ] Expand `AnalysisLayer` in `apps/exercises/umto.py` with 8 new optional
-  fields (chord_label, set_class_prime/forte/normal/set, spacing,
-  interval_specific, interval_generic). Run `python manage.py make_umto_schema`
-  to regenerate schema. [Tier 2]
+- [ ] Expand `AnalysisLayer` in `apps/exercises/umto.py` with 7 new optional
+  fields (set_class_prime/forte/normal/set, spacing, interval_specific,
+  interval_generic). Run `python manage.py make_umto_schema` to regenerate
+  schema. [Tier 2]
 - [ ] Fix `analysisType` serving boundary in `lab/views.py`: at the line
   `exercise_context["analysisType"] = _family` (~line 505), first check
   `exercise.data.get("analysisType")` and prefer that value. The
@@ -329,8 +336,8 @@ Same flow applies to individual exercises submitted from the exercise editor.
   the available `Analyze` instance and the chord MIDI arrays already in scope
   (the same arrays used to drive the ANALYZE panel). Build a
   `deterministicFieldsArr` indexed by chord position containing
-  `{ chord_label, set_class_set, set_class_normal, set_class_prime,
-  set_class_forte, spacing, interval_specific, interval_generic }` using
+  `{ set_class_set, set_class_normal, set_class_prime, set_class_forte,
+  spacing, interval_specific, interval_generic }` using
   existing `analyze.js` exports. [Tier 2]
 - [ ] Update `buildAnalysisSlices(offsets, slots, labels, overrides)` in
   `lab/static/js/src/components/music/play_save_logic.js` to accept a 5th
@@ -410,8 +417,9 @@ Same flow applies to individual exercises submitted from the exercise editor.
   new `CourseSettingsView`. Remove `dashboardEditUrl` escape hatch. [Tier 2]
 - [ ] Activity tab: add to `course_detail.html`; playlist selector dropdown;
   per-student table (progress %, avg score, last active, attempts). Query:
-  `PerformanceData` filtered by course + playlist (see `Course.aggregate_performance`
-  at `apps/exercises/models.py:1239`). [Tier 2]
+  `PerformanceData.objects.filter(Q(course=self) | Q(course=None, playlist__in=...))`,
+  same pattern as `Course.refresh_performance_dict()` (`apps/exercises/models.py:1237`)
+  and `Course.add_performance_to_dict()` (`apps/exercises/models.py:1168`). [Tier 2]
 - [ ] Remove `dashboardActivityUrl` escape hatch (replace with new Activity
   tab; keep "Full report (legacy)" link for power users). [Tier 1]
 
