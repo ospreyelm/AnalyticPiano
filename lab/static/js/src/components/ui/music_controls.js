@@ -136,6 +136,15 @@ define([
         e.preventDefault();
         this.onClickPristine();
       });
+      $(".js-btn-import-musicxml").on("click", (e) => {
+        e.preventDefault();
+        $("#musicxml-upload-input").click();
+      });
+      $("#musicxml-upload-input").on("change", (e) => {
+        var file = e.target.files[0];
+        if (!file) return;
+        this._importMusicXMLPreview(file);
+      });
       $(".js-btn-nextexercise").on("click", (e) => {
         e.preventDefault();
         this.onClickNextExercise();
@@ -163,6 +172,12 @@ define([
       this.subscribe(EVENTS.BROADCAST.PLAY_SAVED, (data) =>
         this.targetSelector.open(data)
       );
+      this.subscribe(EVENTS.BROADCAST.PRISTINE, () => {
+        this._activeMusicXMLFile = null;
+        this._pendingSaveJsonData = null;
+        $("#play-save-musicxml-options").hide();
+        $("#musicxml-upload-input").val("");
+      });
     },
     /**
      * Initializes the controls layout.
@@ -496,6 +511,18 @@ define([
           that._submitSaveDialog(jsonData, null, $("#play-save-dialog-feedback"));
         });
       });
+
+      var musicxmlTimer = null;
+      $("#musicxml-start-measure, #musicxml-end-measure, #musicxml-complexity")
+        .off(".musicxml")
+        .on("change.musicxml input.musicxml", function () {
+          if (that._activeMusicXMLFile) {
+            clearTimeout(musicxmlTimer);
+            musicxmlTimer = setTimeout(function () {
+              that._importMusicXMLPreview(that._activeMusicXMLFile);
+            }, 400);
+          }
+        });
 
       this._applyKeySetPreset($("#play-save-key-set-preset").val() || "common");
       this._validateSavePanel(false);
@@ -1075,6 +1102,11 @@ define([
         return;
       }
 
+      if (this._activeMusicXMLFile) {
+        this._submitMusicXMLSaveDialog(feedbackEl);
+        return;
+      }
+
       // Build skill tags array: optional unit: prefix + free tags
       var skillTags = [];
       var unitVals = this._getSelectedUnits();
@@ -1545,6 +1577,216 @@ define([
         error: function () {
           rowEl.find(".batch-result-del").prop("disabled", false);
         },
+      });
+    },
+
+    _getSheetComponent: function () {
+      if (!this.parentComponent) return null;
+      var musicComponent = _.find(this.parentComponent.components, function (comp) {
+        return comp && typeof comp.hasComponent === "function" && comp.hasComponent("sheet");
+      });
+      return musicComponent ? musicComponent.getComponent("sheet") : null;
+    },
+
+    _importMusicXMLPreview: function (file) {
+      var that = this;
+      var fd = new FormData();
+      fd.append("musicxml_file", file);
+      fd.append("start", $("#musicxml-start-measure").val() || 0);
+      fd.append("end", $("#musicxml-end-measure").val() || "");
+      fd.append("complexity", $("#musicxml-complexity").val() || "");
+      fd.append("harmony_key", this.keySignature.getKey() || "");
+
+      this._setSavePanelFeedback("Importing MusicXML...");
+
+      $.ajax({
+        url: "/teacher/play/api/import-musicxml/preview/",
+        type: "POST",
+        data: fd,
+        processData: false,
+        contentType: false,
+        headers: { "X-CSRFToken": that._getCsrfToken() },
+        success: function (data) {
+          that._setSavePanelFeedback("");
+          if (data.success) {
+            that._activeMusicXMLFile = file;
+            that._pendingSaveJsonData = JSON.stringify(data.payload);
+            
+            // Set form values
+            $("#play-save-description").val(data.title || file.name.split('.')[0]);
+            $("#musicxml-complexity").val(data.complexity || 1);
+            
+            // Sync key signature model
+            if (data.key) {
+              that.keySignature.changeKey(data.key, true);
+            }
+            
+            // Suggested units
+            that._suggestedUnits = {};
+            $.each(data.suggested_units || [], function (i, unitNum) {
+              that._suggestedUnits[String(unitNum)] = true;
+            });
+            that._applySuggestedUnits();
+            
+            // Set mode restrictions
+            if (data.route === "chordal") {
+              $("#play-save-mode option[value='roman']").prop("disabled", false).show();
+              $("#play-save-mode option[value='figures']").prop("disabled", false).show();
+            } else {
+              $("#play-save-mode option[value='roman']").prop("disabled", true).hide();
+              $("#play-save-mode option[value='figures']").prop("disabled", true).hide();
+              var curVal = $("#play-save-mode").val();
+              if (curVal === "roman" || curVal === "figures") {
+                $("#play-save-mode").val("play");
+              }
+            }
+
+            // Show options
+            $("#play-save-musicxml-options").show();
+            
+            // Load onto sheet
+            var sheet = that._getSheetComponent();
+            if (sheet) {
+              sheet.setCorpusPayload(data.payload);
+              sheet.render();
+            }
+            
+            // Open/focus save panel
+            if ($("#play-save-panel").length) {
+              $("html, body").animate({ scrollTop: $("#play-save-panel").offset().top - 16 }, 180);
+              $("#play-save-description").trigger("focus");
+            }
+            that._validateSavePanel(false);
+          } else {
+            that._setSavePanelFeedback(data.error || "Failed to preview MusicXML.");
+          }
+        },
+        error: function (xhr) {
+          var msg = "Failed to preview MusicXML.";
+          try {
+            msg = JSON.parse(xhr.responseText).error || msg;
+          } catch (e) {}
+          that._setSavePanelFeedback(msg);
+        }
+      });
+    },
+
+    _submitMusicXMLSaveDialog: function (feedbackEl) {
+      var that = this;
+      $("#play-save-submit").prop("disabled", true);
+      feedbackEl.text("").removeClass("is-visible");
+
+      var description = $.trim($("#play-save-description").val());
+      var unitVals = this._getSelectedUnits();
+      var freeTags = $("#play-save-tags").val();
+      var isPublic = $("#play-save-public").is(":checked");
+      var saveAsOfficial = this._isSuperuser && $("#play-save-official-row").is(":visible") && $("#play-save-official").is(":checked");
+      var createTranspositions = $("#play-save-create-transpositions").is(":checked");
+      var keySet = this._getSelectedKeySet();
+      var selectedMode = $("#play-save-mode").val() || "play";
+
+      var playlistSelectVal = $("#play-save-playlist").val();
+      var playlistId = null;
+      var playlistName = null;
+      var isAdaptive = false;
+      if (playlistSelectVal === "__new__") {
+        playlistName = $.trim($("#play-save-new-playlist-name").val()) || null;
+        isAdaptive = $("#play-save-adaptive").is(":checked");
+      } else if (playlistSelectVal) {
+        playlistId = playlistSelectVal;
+      }
+
+      var fd = new FormData();
+      fd.append("musicxml_file", this._activeMusicXMLFile);
+      fd.append("description", description);
+      
+      $.each(unitVals, function (i, u) {
+        fd.append("unit", u);
+      });
+
+      fd.append("tags", freeTags);
+      fd.append("is_public", isPublic);
+      fd.append("save_as_official", saveAsOfficial);
+      fd.append("start", $("#musicxml-start-measure").val() || 0);
+      fd.append("end", $("#musicxml-end-measure").val() || "");
+      fd.append("harmony_key", this.keySignature.getKey() || "jC_");
+      fd.append("complexity", $("#musicxml-complexity").val() || 1);
+      fd.append("mode", selectedMode);
+
+      if (playlistId !== null) {
+        fd.append("playlist_id", playlistId);
+      }
+      if (playlistName !== null) {
+        fd.append("playlist_name", playlistName);
+        fd.append("is_adaptive", isAdaptive);
+      }
+
+      fd.append("create_transpositions", createTranspositions);
+      fd.append("key_set", $("#play-save-key-set").val() || "");
+
+      $.ajax({
+        url: "/teacher/play/api/import-musicxml/save/",
+        type: "POST",
+        data: fd,
+        processData: false,
+        contentType: false,
+        headers: { "X-CSRFToken": that._getCsrfToken() },
+        success: function (data) {
+          if (that.feedback) {
+            that.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
+          }
+          
+          // Clear active file and payload
+          that._activeMusicXMLFile = null;
+          that._pendingSaveJsonData = null;
+          $("#play-save-musicxml-options").hide();
+          $("#musicxml-upload-input").val("");
+          
+          // Reset sheet to normal blackboard state (clears corpus rendering)
+          var sheet = that._getSheetComponent();
+          if (sheet) {
+            sheet.clearCorpusPayload();
+            sheet.render();
+          }
+
+          that.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
+            exerciseId: data.id,
+            reviewStatus: data.reviewStatus,
+            playlistId: data.playlistId || null,
+            playlistName: data.playlistName || null,
+            create_transpositions: createTranspositions,
+            key_set: keySet,
+            is_official: saveAsOfficial,
+          });
+        },
+        error: function (xhr) {
+          $("#play-save-submit").prop("disabled", false);
+          var errMsg = null;
+          try {
+            errMsg = JSON.parse(xhr.responseText).error || null;
+          } catch (e) {}
+          
+          var feedbackId = "play.save.invalid_meter";
+          if (errMsg) {
+            var lower = errMsg.toLowerCase();
+            if (lower.indexOf("tag") !== -1) {
+              feedbackId = "play.save.invalid_tags";
+            } else if (lower.indexOf("locked") !== -1 || lower.indexOf("playlist") !== -1) {
+              feedbackId = "play.save.playlist_locked";
+            } else if (lower.indexOf("official") !== -1 || lower.indexOf("superuser") !== -1 || xhr.status === 403) {
+              feedbackId = "play.save.forbidden_official";
+            }
+          }
+          
+          if (that.feedback) {
+            that.feedback.emit(feedbackId, {
+              inlineEl: "#play-save-dialog-feedback",
+              params: { bar: "?", beats: "?", expected: "?" }
+            });
+          } else {
+            that._setSavePanelFeedback(errMsg || "Could not save exercise.");
+          }
+        }
       });
     },
 

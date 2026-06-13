@@ -871,6 +871,22 @@ ul.menu-group-list li {
   background-repeat: no-repeat;
   background-size: 25px 25px;
 }
+.musicxml-icon {
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%234A3E3D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="9" cy="14" r="2"></circle><path d="M11 12v2"></path></svg>');
+  background-repeat: no-repeat;
+  background-size: 23px 23px;
+  background-position: center;
+  height: 25px;
+  width: 25px;
+  margin: 4px 0 0 8px;
+  float: right;
+}
+.musicxml-icon:hover {
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23a04000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="9" cy="14" r="2"></circle><path d="M11 12v2"></path></svg>');
+  background-repeat: no-repeat;
+  background-size: 23px 23px;
+  background-position: center;
+}
 .save-icon {
   background: url(../img/icon-save.png); /* Wikimedia commons */
   background-repeat: no-repeat;
