@@ -205,6 +205,15 @@ define([
      * @return this
      */
     render: function () {
+      var width = this.getWidth();
+      var height = this.getHeight();
+      if (this.vexRenderer && typeof this.vexRenderer.resize === "function") {
+        this.vexRenderer.resize(width, height);
+      } else {
+        this.el[0].width = width;
+        this.el[0].height = height;
+      }
+
       this.clear();
 
       // Feature flag: render a sample polyphonic measure using the new adapter when '?newvf' is present or an imported score is loaded
