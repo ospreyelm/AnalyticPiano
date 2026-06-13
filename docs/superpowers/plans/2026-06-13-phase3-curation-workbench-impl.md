@@ -1,4 +1,12 @@
-# Phase 3: Curation Workbench — Implementation Plan
+# Phase 3: Curation Workbench — Implementation Plan (SUPERSEDED)
+
+> **⚠️ SUPERSEDED** — This monolithic plan was split into 6 focused plans after a Codex review identified blocking issues. Use the split plans instead:
+> - [3A: Analysis Metadata Foundation](2026-06-13-phase3a-analysis-metadata-foundation.md)
+> - [3B: Official Review Workflow](2026-06-13-phase3b-official-review-workflow.md)
+> - [3C: Library Hub + Browse](2026-06-13-phase3c-library-hub-browse.md)
+> - [3D: Playlist + Exercise Editors](2026-06-13-phase3d-playlist-exercise-editors.md)
+> - [3E: Course Detail Replacement](2026-06-13-phase3e-course-detail-replacement.md)
+> - [3F: VexFlow Thumbnails](2026-06-13-phase3f-vexflow-thumbnails.md)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
