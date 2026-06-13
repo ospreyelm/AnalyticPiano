@@ -15,6 +15,10 @@ from apps.teacher.views import (
     generation_manifest_execute_view,
     save_with_transpositions_view,
 )
+from apps.teacher.views_musicxml import (
+    import_musicxml_preview_view,
+    import_musicxml_save_view,
+)
 
 app_name = "teacher"
 
@@ -31,4 +35,6 @@ urlpatterns = [
     path("play/api/generate-manifest/dry-run/", generation_manifest_dry_run_view, name="generate-manifest-dry-run"),
     path("play/api/generate-manifest/execute/", generation_manifest_execute_view, name="generate-manifest-execute"),
     path("play/api/save-with-transpositions/", save_with_transpositions_view, name="save-with-transpositions"),
+    path("play/api/import-musicxml/preview/", import_musicxml_preview_view, name="import-musicxml-preview"),
+    path("play/api/import-musicxml/save/", import_musicxml_save_view, name="import-musicxml-save"),
 ]

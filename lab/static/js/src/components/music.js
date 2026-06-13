@@ -182,6 +182,14 @@ define([
       if (!sheetComponent.hasOwnProperty("exerciseContext")) {
         /* play view */
         sheetComponent.chords.clear();
+        if (typeof sheetComponent.clearCorpusPayload === "function") {
+          sheetComponent.clearCorpusPayload();
+        }
+        $("#play-save-musicxml-options").hide();
+        var fileInput = $("#musicxml-upload-input");
+        if (fileInput.length) {
+          fileInput.val("");
+        }
       } else {
         /* exercise view */
         let scex = sheetComponent.exerciseContext;

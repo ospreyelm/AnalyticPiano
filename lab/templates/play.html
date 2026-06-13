@@ -18,6 +18,8 @@
 				<div id="save-feedback" class="feedback-inline" aria-live="polite"></div>
 				<!-- <a class="download-icon js-btn-download-json" alt="Download JSON"> </a> -->
 				<a class="refresh-icon js-btn-pristine" title="Reload sheet music" alt="Reload sheet music"> </a>
+				<a class="musicxml-icon js-btn-import-musicxml" title="Import MusicXML" alt="Import MusicXML" href="#"> </a>
+				<input type="file" id="musicxml-upload-input" accept=".xml,.musicxml,.mxl" style="display:none;" />
 				<label for="play-meter-select" style="font-size:12px;margin-left:10px;vertical-align:middle;">Meter:</label>
 				<select id="play-meter-select" title="Set meter (auto-suggests barlines)" style="font-size:12px;padding:2px 4px;vertical-align:middle;border:1px solid #bbb;border-radius:3px;">
 					<option value="">Free</option>
@@ -99,6 +101,24 @@
 						<input type="checkbox" id="play-save-adaptive" name="is_adaptive" />
 						Adaptive <span class="play-save-hint">(serve exercises by skill, not order)</span>
 					</label>
+				</div>
+
+				<div id="play-save-musicxml-options" class="play-save-field play-save-field-wide" style="display:none; border-top: 1px solid #d9c9a9; padding-top: 10px; margin-top: 5px;">
+					<h3 style="font-size: 13px; margin: 0 0 8px 0; color: #2d251d; font-weight: 700;">MusicXML Import Options</h3>
+					<div style="display: flex; gap: 10px;">
+						<div style="flex: 1;">
+							<label for="musicxml-start-measure" style="font-size: 11px; margin-bottom: 2px;">Start Measure</label>
+							<input type="number" id="musicxml-start-measure" name="musicxml_start" class="play-save-input" value="0" min="0" style="padding: 4px 6px;" />
+						</div>
+						<div style="flex: 1;">
+							<label for="musicxml-end-measure" style="font-size: 11px; margin-bottom: 2px;">End Measure</label>
+							<input type="number" id="musicxml-end-measure" name="musicxml_end" class="play-save-input" placeholder="All" min="1" style="padding: 4px 6px;" />
+						</div>
+						<div style="flex: 1;">
+							<label for="musicxml-complexity" style="font-size: 11px; margin-bottom: 2px;">Complexity</label>
+							<input type="number" id="musicxml-complexity" name="musicxml_complexity" class="play-save-input" value="1" min="1" max="100" style="padding: 4px 6px;" />
+						</div>
+					</div>
 				</div>
 
 				<div class="play-save-field">
