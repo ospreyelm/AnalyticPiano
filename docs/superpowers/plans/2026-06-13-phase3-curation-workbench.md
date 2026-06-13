@@ -51,8 +51,8 @@ new URLs — tab state via query param or anchor).
                                         superuser only — 403 for others)
 
 GET /teacher/library/exercises/<id>/preview/
-    Returns { cir: <score_data> } for first two measures; used by the VexFlow
-    thumbnail in the playlist editor and library exercise list.
+    Returns { "score_data": <cir_dict> } for the exercise. Frontend restricts
+    rendering to first two measures. Used by VexFlow thumbnails.
 
 /teacher/courses/<id>/              Existing page; add Settings + Activity tabs
                                         rendered inline via ?tab=settings|activity
@@ -137,23 +137,32 @@ Admin-only escape hatch links (shown only to superusers):
 - "Edit raw JSON (admin)" → legacy `/dashboard/exercises/<id>/edit/`
 - "Analysis workbench (admin)" → legacy chordal analysis view
 
-**Analysis type dropdown options:**
-- Roman numeral (`roman`)
-- Figured bass (`thoroughbass`)
-- Figured bass (unabbreviated) (`figured_bass_unabbreviated`)
-- Chord quality (`chord_quality`)
-- Scale degrees (`scale_degrees`)
-- Note name (`note_name`)
-- Solfège (`solfege`)
-- Do-based solfège (`do_based_solfege`)
-- Fixed do (`fixed_do`)
-- Pitch class (`pitch_class`)
-- Set class — prime form (`set_class_prime`)
-- Set class — Forte label (`set_class_forte`)
-- Set class — normal order (`set_class_normal`)
-- Set class — set notation (`set_class_set`)
-- Spacing (`spacing`)
-- Intervals (`intervals`)
+**Analysis type dropdown options** (canonical `analysisType` token → stored/computed path):
+
+| Label | Token | Stored in AnalysisLayer? | Computed from |
+|---|---|---|---|
+| Roman numeral | `roman` | `content.roman_numeral` ✓ | Teacher / music21 |
+| Figured bass | `figured_bass` | `content.figured_bass` ✓ | music21 |
+| Figured bass (unabbreviated) | `figured_bass_unabbreviated` | `content.raw_figured_bass` ✓ | music21 |
+| Chord label | `chord_labels` | `content.chord_label` (new, analytics) | Live MIDI via `analyze.to_chord()` |
+| Scale degree | `scale_degree` | — | Live MIDI |
+| Note name | `note_name` | — | Live MIDI |
+| Solfège | `solfege` | — | Live MIDI |
+| Do-based solfège | `do_based_solfege` | — | Live MIDI |
+| Fixed do | `fixed_do` | — | Live MIDI |
+| Pitch class | `pitch_class` | — | Live MIDI |
+| Set class — prime form | `set_class_prime` | `content.set_class_prime` (new, analytics) | Live MIDI / Python |
+| Set class — Forte label | `set_class_forte` | `content.set_class_forte` (new, analytics) | Live MIDI / Python |
+| Set class — normal order | `set_class_normal` | `content.set_class_normal` (new, analytics) | Live MIDI / Python |
+| Set class — set notation | `set_class_set` | `content.set_class_set` (new, analytics) | Live MIDI / Python |
+| Spacing | `spacing` | `content.spacing` (new, analytics) | Live MIDI |
+| Interval (generic) | `interval_generic` | `content.interval_generic` (new, analytics) | Live MIDI via Tonal.js |
+| Interval (specific) | `interval_specific` | `content.interval_specific` (new, analytics) | Live MIDI via Tonal.js |
+
+"Stored in AnalysisLayer" = persisted for analytics. The identification grader
+reads these stored values only for `roman`, `figured_bass`, and
+`figured_bass_unabbreviated`; all other types recompute from MIDI at runtime.
+New stored fields are for metadata enrichment and future search, not grading.
 
 The selected `analysisType` is stored as a top-level key in the Exercise payload
 (see AnalysisLayer expansion below). Changing it and saving rewrites only that
@@ -187,54 +196,64 @@ Replaces the `dashboardActivityUrl` escape hatch in `course_detail.html`.
 
 ### AnalysisLayer Expansion
 
-**Context:** `UMTO.analysis` is a `List[AnalysisLayer]`, one slice per chord.
-Currently stores roman_numeral, figured_bass, local_key, etc. All deterministic
-analysis values (set class, chord quality, spacing, intervals) were previously
-only available in the ANALYZE panel overlay at runtime — they were never saved.
+**Data shape (corrected):** `UMTO.analysis` is `List[AnalysisSlice]` where each
+`AnalysisSlice.content: AnalysisLayer`. The slice also carries `offset`,
+`visual`, `unit_tags`, and `is_target`.
 
-**Decision:** Expand `AnalysisLayer` to include all deterministic analysis
-values. Compute and store them at save time in `buildAnalysisSlices` using
-existing `analyze.js` functions. Roman numeral is the only non-deterministic
-field requiring teacher judgment/editing; all others are computed from MIDI
-notes. `analysisType` becomes a view selector over the stored data, not the
-only thing computed.
+**How the frontend currently reads stored content** (`exercise_definition.js`):
+- `analysisType === "figured_bass_unabbreviated"` → reads `slice.content.raw_figured_bass`
+- `analysisType === "figured_bass"` → reads `slice.content.figured_bass`
+- Anything else → falls through to `computeWindowLabel(midiStack, analysisType, ...)`,
+  which computes the answer live from MIDI using `analyze.js` functions.
+
+This means: `roman_numeral`, `figured_bass`, `raw_figured_bass` are read from
+stored content; all other analysis types are computed live. The new fields
+below are **not read by the identification grader in this phase** — they are
+stored for analytics, metadata enrichment, and future search/filtering. A
+deferred follow-up task ("stored-analysis identification mode") would wire
+the frontend to read these fields instead of recomputing, if needed.
 
 **New optional fields on `AnalysisLayer`** (`apps/exercises/umto.py`):
 ```python
-chord_quality: Optional[str] = None       # e.g. "Mm7", "dim", "aug"
+chord_label: Optional[str] = None         # e.g. "CM7", "dm", "G7" — from analyze.to_chord()
 set_class_prime: Optional[str] = None     # e.g. "(0,1,4)"
 set_class_forte: Optional[str] = None     # e.g. "3-11B"
 set_class_normal: Optional[str] = None    # e.g. "[0,3,7]"
 set_class_set: Optional[str] = None       # e.g. "{C,E,G}"
-spacing: Optional[str] = None             # output of to_spacing()
-intervals: Optional[List[int]] = None     # semitone intervals between voices
+spacing: Optional[str] = None             # output of analyze.to_spacing()
+interval_specific: Optional[str] = None   # specific interval name
+interval_generic: Optional[str] = None    # generic interval size
 ```
 
-**`buildAnalysisSlices` update** (`play_save_logic.js`): for each chord/onset,
-call the existing `analyze.js` functions and add results to the slice:
-```javascript
-// analyze.js already exports these:
-to_set_class_set(notes)   → set_class_set
-to_set_class_normal(notes) → set_class_normal
-to_set_class_prime(notes)  → set_class_prime
-to_set_class_forte(notes)  → set_class_forte
-to_spacing(notes)          → spacing
-// chord_quality and intervals: use existing analyze.js functions or compute inline
-```
+**JS compute path** (`play_sheet.js` + `play_save_logic.js`):
+`buildAnalysisSlices(offsets, slots, labels, overrides)` currently has no access
+to MIDI stacks. Fix: in `play_sheet.js`, before calling `buildAnalysisSlices`,
+compute deterministic fields for each chord onset using the available `Analyze`
+instance and the chord MIDI arrays already in scope. Pass a new
+`deterministicFieldsArr` argument (array indexed by chord position). Update
+`buildAnalysisSlices` signature to accept and merge this array into each output
+slice's `content`.
 
-**`analysisType` storage:** stored as `payload["analysisType"]` on the Exercise
-(top-level key in the UMTO wrapper dict, not inside Metadata). On save from
-exercise editor, the server rewrites only this key. `to_frontend_payload()` in
-`umto.py` reads it from `payload.get("analysisType")` before falling back to
-the complexity-score heuristic. This is backward-compatible — exercises without
-the key continue to work.
+**Python compute path** (`apps/exercises/utils/umto_import_router.py`):
+`build_chordal_analysis_slices()` generates slices for non-Play paths (bulk
+import, MusicXML, management commands). Expand this function to compute and
+populate the same new fields using music21 (for chord label) and pure-Python
+pitch math (for set class, spacing, intervals). This keeps Play-saved and
+Python-generated exercises consistent.
+
+**`analysisType` storage:** stored as `exercise.data["analysisType"]` (top-level
+key in the UMTO wrapper dict, not inside `UMTO.metadata`). `to_frontend_payload()`
+has no access to the outer wrapper dict — the fix lives at the serving boundary
+in `lab/views.py`. Where `exercise_context["analysisType"] = _family` is set
+(line ~505), first check `exercise.data.get("analysisType")` and prefer it.
+This is backward-compatible — exercises without the key keep the heuristic.
 
 ---
 
 ### VexFlow Score Thumbnails
 
 The preview endpoint `GET /teacher/library/exercises/<id>/preview/` returns
-the raw `score_data` (CIR dict) from the UMTO exercise. The frontend renders it
+`{ "score_data": <cir_dict> }` from the UMTO exercise. The frontend renders it
 using the existing VexFlow adapter, restricted to the first 2 measures. Lazy-
 loaded in the playlist editor and library list: thumbnail images are requested
 only when the row scrolls into view (Intersection Observer). Render target: a
@@ -291,25 +310,42 @@ Same flow applies to individual exercises submitted from the exercise editor.
   `/approve/`, `/reject/` endpoints. Superuser check on approve/reject.
   [Tier 2]
 - [ ] Add same submit/approve/reject endpoints for exercises. [Tier 2]
-- [ ] Expand `AnalysisLayer` in `apps/exercises/umto.py` with 7 new optional
-  fields (chord_quality, set_class_prime/forte/normal/set, spacing, intervals).
-  Run `python manage.py make_umto_schema` to regenerate schema. [Tier 2]
-- [ ] Update `to_frontend_payload()` in `umto.py` to read `analysisType` from
-  `payload.get("analysisType")` before complexity-score heuristic. [Tier 2]
+- [ ] Expand `AnalysisLayer` in `apps/exercises/umto.py` with 8 new optional
+  fields (chord_label, set_class_prime/forte/normal/set, spacing,
+  interval_specific, interval_generic). Run `python manage.py make_umto_schema`
+  to regenerate schema. [Tier 2]
+- [ ] Fix `analysisType` serving boundary in `lab/views.py`: at the line
+  `exercise_context["analysisType"] = _family` (~line 505), first check
+  `exercise.data.get("analysisType")` and prefer that value. The
+  `to_frontend_payload()` method cannot access the outer wrapper dict; the fix
+  belongs at the view layer. [Tier 2]
 
 ---
 
 ### 2. `buildAnalysisSlices` expansion
 
-- [ ] In `play_save_logic.js`, update `buildAnalysisSlices` to call existing
-  `analyze.js` functions for each chord and include all deterministic fields in
-  every AnalysisLayer slice: `set_class_set`, `set_class_normal`,
-  `set_class_prime`, `set_class_forte`, `spacing`. Add `chord_quality` and
-  `intervals` using available analyze.js functions. [Tier 2]
+- [ ] In `lab/static/js/src/components/music/play_sheet.js`, before calling
+  `buildAnalysisSlices`, compute deterministic fields for each chord onset using
+  the available `Analyze` instance and the chord MIDI arrays already in scope
+  (the same arrays used to drive the ANALYZE panel). Build a
+  `deterministicFieldsArr` indexed by chord position containing
+  `{ chord_label, set_class_set, set_class_normal, set_class_prime,
+  set_class_forte, spacing, interval_specific, interval_generic }` using
+  existing `analyze.js` exports. [Tier 2]
+- [ ] Update `buildAnalysisSlices(offsets, slots, labels, overrides)` in
+  `lab/static/js/src/components/music/play_save_logic.js` to accept a 5th
+  argument `deterministicFieldsArr` and merge those fields into each output
+  slice's `content`. Update the single call site in `play_sheet.js`. [Tier 2]
+- [ ] Expand `build_chordal_analysis_slices()` in
+  `apps/exercises/utils/umto_import_router.py` to compute and populate the same
+  8 new AnalysisLayer fields using music21 (for chord_label) and pure-Python
+  pitch math (for set class, spacing, intervals). This ensures Python-generated
+  exercises (bulk import, MusicXML, management commands) have the same stored
+  fields as Play-saved exercises. [Tier 2]
 - [ ] Verify the expanded slices pass through `lab/views.py` AddExercise →
-  `save_chordal_umto_exercise` without rejection. [Tier 2]
-- [ ] Add `analysisType` to the save payload in `play_sheet.js` (reads from
-  current teacher session's selected analysis type). [Tier 2]
+  `save_chordal_umto_exercise` without Pydantic rejection. [Tier 2]
+- [ ] Add `analysisType` to the save payload in `play_sheet.js` (reads from the
+  currently selected analysis type in the teacher's session UI). [Tier 2]
 
 ---
 
@@ -374,7 +410,8 @@ Same flow applies to individual exercises submitted from the exercise editor.
   new `CourseSettingsView`. Remove `dashboardEditUrl` escape hatch. [Tier 2]
 - [ ] Activity tab: add to `course_detail.html`; playlist selector dropdown;
   per-student table (progress %, avg score, last active, attempts). Query:
-  `ExerciseRecord` objects filtered by course + playlist. [Tier 2]
+  `PerformanceData` filtered by course + playlist (see `Course.aggregate_performance`
+  at `apps/exercises/models.py:1239`). [Tier 2]
 - [ ] Remove `dashboardActivityUrl` escape hatch (replace with new Activity
   tab; keep "Full report (legacy)" link for power users). [Tier 1]
 
@@ -407,7 +444,10 @@ tabs, AnalysisLayer expansion, VexFlow thumbnails, official review flow.
 
 **Out of scope (deferred):** export/import of playlists, bulk exercise
 operations, exercise connections/links between exercises, exercise duplication
-from this editor (use existing play/ save flow), CSS identity overhaul (Phase 5).
+from this editor (use existing play/ save flow), CSS identity overhaul (Phase 5),
+"stored-analysis identification mode" (wiring `exercise_definition.js` to read
+new AnalysisLayer fields instead of live-computing for chord_labels/set_class/
+spacing/intervals identification exercises).
 
 **Escape hatches retained (legacy, not replaced):** raw JSON editor, chordal
 analysis workbench. These remain at `/dashboard/...` and are linked from the
