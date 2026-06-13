@@ -1096,8 +1096,10 @@ define([
       var playlistSelectVal = $("#play-save-playlist").val();
       var playlistId = null;
       var playlistName = null;
+      var isAdaptive = false;
       if (playlistSelectVal === "__new__") {
         playlistName = $.trim($("#play-save-new-playlist-name").val()) || null;
+        isAdaptive = $("#play-save-adaptive").is(":checked");
       } else if (playlistSelectVal) {
         playlistId = playlistSelectVal;
       }
@@ -1120,6 +1122,7 @@ define([
       }
       if (playlistName !== null) {
         payload.playlistName = playlistName;
+        payload.isAdaptive = isAdaptive;
       }
 
       var extendedData = JSON.stringify(payload, null, 0);

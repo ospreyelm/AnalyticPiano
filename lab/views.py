@@ -968,7 +968,7 @@ class AddExerciseView(View):
             return None
         return self._factory_user()
 
-    def _append_to_playlist(self, *, exercise, author, playlist_id=None, playlist_name=None, is_public=False):
+    def _append_to_playlist(self, *, exercise, author, playlist_id=None, playlist_name=None, is_public=False, is_adaptive=False):
         if not playlist_id and not playlist_name:
             return None
 
@@ -984,11 +984,12 @@ class AddExerciseView(View):
             playlist, created = Playlist.objects.get_or_create(
                 name=playlist_name,
                 authored_by=author,
-                defaults={"is_public": is_public},
+                defaults={"is_public": is_public, "is_adaptive": is_adaptive},
             )
-            if created and is_public and not playlist.is_public:
-                playlist.is_public = True
-                playlist.save()
+            if created:
+                if is_public and not playlist.is_public:
+                    playlist.is_public = True
+                    playlist.save()
             if playlist.has_been_performed:
                 raise ValueError("playlist is locked because it has been performed.")
 
@@ -1039,6 +1040,7 @@ class AddExerciseView(View):
             skill_tags = self._skill_tags(payload)
             is_public = self._bool_field(payload, "isPublic", False)
             save_as_official = self._bool_field(payload, "saveAsOfficial", False)
+            is_adaptive = self._bool_field(payload, "isAdaptive", False)
             playlist_id, playlist_name = self._playlist_fields(payload)
 
             author = self._resolve_author(request, save_as_official)
@@ -1062,7 +1064,7 @@ class AddExerciseView(View):
                     staff_distribution=staff_distribution,
                     skill_tags=skill_tags,
                     is_public=effective_is_public,
-                    auto_playlist=not (playlist_id or playlist_name),
+                    auto_playlist=False,
                     barline_offsets=barline_offsets,
                     analysis=analysis_slices,
                     analyze_config=analyze_config,
@@ -1077,6 +1079,7 @@ class AddExerciseView(View):
                     playlist_id=playlist_id,
                     playlist_name=playlist_name,
                     is_public=effective_is_public,
+                    is_adaptive=is_adaptive,
                 )
         except (NonUMTOExerciseError, ValueError, KeyError) as exc:
             return self._json_error(str(exc) or "Invalid exercise payload.", status=400)
