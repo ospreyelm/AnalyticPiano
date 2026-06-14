@@ -33,6 +33,7 @@ from apps.exercises.models import (
     PlaylistCourseOrdered,
     NonUMTOExerciseError,
 )
+from apps.exercises.umto import InteractionMode
 from apps.exercises.umto_factory import save_chordal_umto_exercise
 from apps.exercises.mastery import get_next_exercise, get_skill_map_elements
 from apps.exercises.utils.transpose import transpose as transpose_exercise
@@ -1043,6 +1044,11 @@ class AddExerciseView(View):
         analysis_slices = payload.get("analysisSlices", [])  # [] => status "none"; non-empty => "reviewed"
         analyze_config = payload.get("analyzeConfig")
         display = payload.get("display")  # teacher's analysis display flags (showRomans, ...)
+        _mode_map = {
+            "identify": InteractionMode.IDENTIFICATION,
+            "harmonization": InteractionMode.HARMONIZATION,
+        }
+        interaction_mode = _mode_map.get(payload.get("mode", ""), InteractionMode.PLAYBACK)
 
         try:
             description = self._description(payload)
@@ -1078,6 +1084,7 @@ class AddExerciseView(View):
                     analysis=analysis_slices,
                     analyze_config=analyze_config,
                     display=display,
+                    mode=interaction_mode,
                 )
                 if save_as_official:
                     exercise.is_official = True

@@ -866,6 +866,7 @@ def save_chordal_umto_exercise(
     analysis: Optional[list] = None,
     analyze_config: Optional[dict] = None,
     display: Optional[dict] = None,
+    mode: "InteractionMode" = None,
 ) -> Exercise:
     """Normalize and validate incoming chords, build a Chordal UMTO exercise payload,
     validate it, save it, and backfill IDs.
@@ -932,7 +933,7 @@ def save_chordal_umto_exercise(
             meter=meter,
             clef=clef,
             complexity_score=complexity,
-            mode=InteractionMode.PLAYBACK,
+            mode=mode if mode is not None else InteractionMode.PLAYBACK,
             chords=normalized_chords,
             analysis=analysis_slices,
             unit=None,
