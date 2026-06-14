@@ -1,0 +1,204 @@
+{% extends "student/base.html" %}
+{% block title %}{{ course.title }} — Monteverdi{% endblock %}
+{% block content %}
+
+<header class="s-cd-header">
+  <a class="s-cd-back" href="{% url 'student:home' %}">← Home</a>
+  <div class="s-cd-title-row">
+    <h1 class="s-cd-title">{{ course.title }}</h1>
+    <span class="s-cd-teacher">{{ teacher_name }}</span>
+  </div>
+  {% if overall_pct > 0 %}
+  <div class="s-cd-overall">
+    <div class="s-progress-bar-track">
+      <div class="s-progress-bar-fill" style="width: {{ overall_pct }}%"></div>
+    </div>
+    <span class="s-cd-overall-label">{{ overall_pct }}% overall</span>
+  </div>
+  {% endif %}
+</header>
+
+{% if open_assignments %}
+<section class="s-cd-section">
+  <div class="s-cd-section-label s-cd-label-open">● Open now</div>
+  {% for row in open_assignments %}
+  <div class="s-cd-row{% if row.overdue %} s-cd-row-overdue{% endif %}">
+    <div class="s-cd-row-main">
+      <span class="s-cd-row-name">{{ row.name }}</span>
+      <div class="s-cd-row-chips">
+        {% if row.overdue %}
+          <span class="s-due-chip overdue">{{ row.due_label }}</span>
+        {% elif row.due_label %}
+          <span class="s-due-chip">{{ row.due_label }}</span>
+        {% endif %}
+        <span class="s-cd-pct">{{ row.progress_pct }}%</span>
+      </div>
+    </div>
+    {% if row.progress_pct > 0 %}
+    <div class="s-progress-bar-track s-cd-bar">
+      <div class="s-progress-bar-fill" style="width: {{ row.progress_pct }}%"></div>
+    </div>
+    {% endif %}
+    {% if row.play_url %}
+    <a class="s-cd-cta" href="{{ row.play_url }}">
+      {% if row.progress_pct == 0 %}Start →{% else %}Continue →{% endif %}
+    </a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if upcoming_assignments %}
+<section class="s-cd-section">
+  <div class="s-cd-section-label s-cd-label-upcoming">○ Upcoming</div>
+  {% for row in upcoming_assignments %}
+  <div class="s-cd-row s-cd-row-upcoming">
+    <div class="s-cd-row-main">
+      <span class="s-cd-row-name">{{ row.name }}</span>
+      {% if row.opens_label %}
+        <span class="s-due-chip opens">{{ row.opens_label }}</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if completed_assignments %}
+<section class="s-cd-section">
+  <div class="s-cd-section-label s-cd-label-done">✓ Completed</div>
+  {% for row in completed_assignments %}
+  <div class="s-cd-row s-cd-row-done">
+    <div class="s-cd-row-main">
+      <span class="s-cd-row-name">{{ row.name }}</span>
+      <span class="s-cd-pct s-cd-done-pct">100%</span>
+    </div>
+    {% if row.play_url %}
+    <a class="s-cd-cta s-cd-review" href="{{ row.play_url }}">Review →</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if not open_assignments and not upcoming_assignments and not completed_assignments %}
+<p class="s-cd-empty">No assignments yet. Check back soon.</p>
+{% endif %}
+
+<style>
+  .s-cd-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .s-cd-back {
+    display: inline-block;
+    font-size: 0.82rem;
+    color: var(--teal);
+    text-decoration: none;
+    margin-bottom: 10px;
+  }
+  .s-cd-back:hover { text-decoration: underline; }
+  .s-cd-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .s-cd-title {
+    font-family: var(--font-ui);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+  }
+  .s-cd-teacher {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .s-cd-overall {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .s-cd-overall .s-progress-bar-track { flex: 1; }
+  .s-cd-overall-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .s-cd-section {
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface-2);
+  }
+  .s-cd-section-label {
+    padding: 8px 14px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  .s-cd-label-open { color: var(--teal); background: color-mix(in srgb, var(--teal) 6%, var(--surface-2)); }
+  .s-cd-label-upcoming { color: var(--text-muted); background: var(--surface); }
+  .s-cd-label-done { color: #10b981; background: color-mix(in srgb, #10b981 6%, var(--surface-2)); }
+
+  .s-cd-row {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .s-cd-row:last-child { border-bottom: none; }
+  .s-cd-row-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .s-cd-row-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+  }
+  .s-cd-row-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .s-cd-pct {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--teal);
+  }
+  .s-cd-done-pct { color: #10b981; }
+  .s-cd-bar { margin-top: 6px; }
+  .s-cd-cta {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--teal);
+    text-decoration: none;
+  }
+  .s-cd-cta:hover { text-decoration: underline; }
+  .s-cd-review { color: #10b981; }
+  .s-cd-row-upcoming { opacity: 0.6; }
+  .s-cd-row-done { opacity: 0.75; }
+  .s-cd-row-overdue .s-cd-row-name { color: var(--text); }
+  .s-cd-empty {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 32px 0;
+  }
+</style>
+
+{% endblock %}

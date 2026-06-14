@@ -13,31 +13,23 @@
 {% if course_panels %}
 <section class="s-course-panels">
   {% for panel in course_panels %}
-  <div class="s-course-panel">
+  <a class="s-course-panel" href="{% url 'student:course-detail' pk=panel.course_pk %}">
     <div class="s-course-panel-header">
       <h2 class="s-course-panel-title">{{ panel.title }}</h2>
       {% if panel.progress_pct > 0 %}
       <span class="s-course-panel-progress">{{ panel.progress_pct }}% complete</span>
       {% endif %}
     </div>
-    {% if panel.next_unit %}
-    <a class="s-course-next" href="{{ panel.next_unit.url }}">
-      <span class="s-course-next-label">Next up</span>
-      <span class="s-course-next-title">Unit {{ panel.next_unit.n }} · {{ panel.next_unit.title }}</span>
-      {% if panel.next_unit.due_label %}<span class="s-due-chip{% if panel.next_unit.overdue %} overdue{% endif %}">{{ panel.next_unit.due_label }}</span>{% endif %}
-    </a>
-    {% endif %}
-    {% if panel.open_units|length > 1 %}
-    <details class="s-course-units">
-      <summary>All open units ({{ panel.open_units|length }})</summary>
-      <ul>
-        {% for u in panel.open_units %}
-        <li><a href="{{ u.url }}">Unit {{ u.n }} · {{ u.title }}{% if u.due_label %} <span class="s-due-chip{% if u.overdue %} overdue{% endif %}">{{ u.due_label }}</span>{% endif %}</a> <span class="s-unit-pct">{{ u.progress_pct }}%</span></li>
-        {% endfor %}
-      </ul>
-    </details>
-    {% endif %}
-  </div>
+    <div class="s-course-panel-footer">
+      {% if panel.open_count %}
+      <span class="s-course-panel-badge">{{ panel.open_count }} open{% if panel.due_count %} · {{ panel.due_count }} due{% endif %}</span>
+      {% endif %}
+      {% if panel.overdue_count %}
+      <span class="s-due-chip overdue">{{ panel.overdue_count }} overdue</span>
+      {% endif %}
+      <span class="s-course-panel-cta">View course →</span>
+    </div>
+  </a>
   {% endfor %}
 </section>
 {% endif %}
@@ -161,6 +153,35 @@
     font-size: 0.78rem;
     color: var(--text-muted);
     white-space: nowrap;
+  }
+
+  /* ── Course panel as nav card ────────────────────────────────── */
+  .s-course-panel {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 200ms ease, transform 150ms ease;
+  }
+  .s-course-panel:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.10);
+    transform: translateY(-2px);
+  }
+  .s-course-panel-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px 12px;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+  .s-course-panel-badge {
+    color: var(--text-muted);
+  }
+  .s-course-panel-cta {
+    margin-left: auto;
+    color: var(--teal);
+    font-weight: 600;
+    font-size: 0.82rem;
   }
 
   /* ── Join success banner ─────────────────────────────────── */
@@ -530,7 +551,22 @@
 </style>
 
 <!-- Course catalog — all branches equal -->
+{% if course_panels %}
+<style>
+  .s-curriculum-collapse { margin-top: 8px; }
+  .s-curriculum-collapse > summary {
+    cursor: pointer; font-size: 0.85rem; color: var(--text-muted);
+    padding: 8px 4px; user-select: none; list-style: none;
+  }
+  .s-curriculum-collapse > summary::before { content: "▶ "; font-size: 0.65rem; }
+  .s-curriculum-collapse[open] > summary::before { content: "▼ "; }
+</style>
+<details class="s-curriculum-collapse">
+  <summary>Browse all units</summary>
+  <div class="s-catalog">
+{% else %}
 <div class="s-catalog">
+{% endif %}
   {% for section in sections %}
     <div class="s-branch-card s-branch-{{ section.id }}" data-branch>
       <button class="s-branch-header" data-branch-toggle>
@@ -639,6 +675,7 @@
     </div>
   {% endfor %}
 </div>
+{% if course_panels %}</details>{% endif %}
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {

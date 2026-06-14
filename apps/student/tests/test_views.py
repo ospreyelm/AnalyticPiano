@@ -962,8 +962,8 @@ class StudentHomeUnitDiscoveryTests(TransactionTestCase):
 class StudentHomeQueryBudgetTests(TransactionTestCase):
     reset_sequences = True
     # session + user + accessible playlists + batched mastery + course-unit
-    # dates (one constant PCO join for enrolled-course due chips)
-    QUERY_BUDGET = 5
+    # dates + enrolled-courses PCO join (two constant PCO queries)
+    QUERY_BUDGET = 6
 
     def setUp(self):
         self.client = Client()
