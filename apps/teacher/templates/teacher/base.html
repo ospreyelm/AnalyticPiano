@@ -14,6 +14,14 @@
   <header class="t-header">
     <a class="t-header-brand" href="/">Monteverdi</a>
     {% if request.user.is_authenticated %}
+      <nav class="t-header-nav" aria-label="Teacher navigation">
+        <a class="t-nav-link {% if 'course' in request.resolver_match.url_name %}t-nav-link--active{% endif %}"
+           href="{% url 'teacher:course-list' %}">Courses</a>
+        <a class="t-nav-link {% if 'library' in request.resolver_match.url_name %}t-nav-link--active{% endif %}"
+           href="{% url 'teacher:library-hub' %}">Library</a>
+        <a class="t-nav-link {% if 'play' in request.resolver_match.url_name %}t-nav-link--active{% endif %}"
+           href="/teacher/play/">Play</a>
+      </nav>
       <div class="t-header-user-area">
         <span class="t-header-user">{{ request.user.first_name|default:request.user.email }}</span>
         <a class="t-header-signout" href="/accounts/logout/">Sign out</a>

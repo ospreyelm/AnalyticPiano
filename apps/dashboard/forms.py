@@ -140,7 +140,7 @@ class DashboardExerciseForm(ExerciseForm):
 
     class Meta:
         model = Exercise
-        exclude = ["authored_by", "locked"]
+        exclude = ["authored_by", "locked", "official_review_status"]
         widgets = {
             "data": PrettyJSONWidget(attrs={"initial": "parsed"}),
             "id": forms.TextInput(attrs={"readonly": "readonly"}),
@@ -396,7 +396,7 @@ class DashboardPlaylistForm(PlaylistForm):
     )
 
     class Meta(PlaylistForm.Meta):
-        exclude = ["authored_by"]
+        exclude = ["authored_by", "official_review_status"]
         widgets = {
             "id": forms.TextInput(attrs={"readonly": "readonly"}),
             "is_auto": forms.CheckboxInput(attrs={"disabled": "disabled"}),

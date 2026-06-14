@@ -49,6 +49,15 @@ import re
 User = get_user_model()
 
 
+def _resolve_analysis_type(exercise_data, heuristic):
+    """Prefer stored chordal UMTO analysisType over the complexity heuristic."""
+    if isinstance(exercise_data, dict) and exercise_data.get("isUMTO") is True:
+        stored = exercise_data.get("analysisType")
+        if stored:
+            return stored
+    return heuristic
+
+
 class RequirejsContext(object):
     def __init__(self, config, debug=True):
         self._debug = debug
@@ -502,7 +511,7 @@ def generate_exercise_context(
                             _cur["is_target"] = False
             
             # Inject analysisType into the top-level payload for the frontend
-            exercise_context["analysisType"] = _family
+            exercise_context["analysisType"] = _resolve_analysis_type(exercise.data, _family)
 
     exercise_context.update(
         {

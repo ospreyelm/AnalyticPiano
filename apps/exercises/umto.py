@@ -81,6 +81,14 @@ class AnalysisLayer(BaseModel):
     pop_symbol: Optional[str] = None
     functional_label: Optional[str] = None # e.g. "Predominant", "Dominant"
     scale_degrees: Optional[List[Dict[str, Any]]] = None  # [{"midi": 71, "label": "3"}, ...]
+    # Analytics fields are stored at save time; identification graders still live-compute them.
+    set_class_prime: Optional[str] = None
+    set_class_forte: Optional[str] = None
+    set_class_normal: Optional[str] = None
+    set_class_set: Optional[str] = None
+    spacing: Optional[str] = None
+    interval_specific: Optional[str] = None
+    interval_generic: Optional[str] = None
 
 class VisualMetadata(BaseModel):
     """

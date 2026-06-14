@@ -190,6 +190,11 @@ CATALOG = [
             "python manage.py backfill_raw_roman_numeral",
         ),
         (
+            "backfill_analysis_layer",
+            "Backfill set_class/interval analytics into existing UMTO chordal analysis slices.",
+            "python manage.py backfill_analysis_layer --dry-run",
+        ),
+        (
             "reanalyze_knowledge_graph",
             "Recompute knowledge-graph edges from current exercise tags.",
             "python manage.py reanalyze_knowledge_graph",

@@ -20,7 +20,10 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.exercises.models import Exercise, Playlist
-from apps.exercises.services.transposition_service import generate_transposed_copies
+from apps.exercises.services.transposition_service import (
+    _sig_for_clean_key,
+    generate_transposed_copies,
+)
 
 User = get_user_model()
 
@@ -97,6 +100,10 @@ class Command(BaseCommand):
         raw_keys = [k.strip() for k in options["keys"].split(",") if k.strip()]
         if not raw_keys:
             raise CommandError("--keys must be a non-empty comma-separated list.")
+        skipped_keys = [
+            clean_key for clean_key in raw_keys
+            if _sig_for_clean_key(clean_key) is None
+        ]
 
         # ---- get or create playlist if requested ----
         playlist = None
@@ -127,6 +134,8 @@ class Command(BaseCommand):
         # ---- print result summary ----
         self.stdout.write("")
         self.stdout.write(f"Source: {source.id} — {source.description}")
+        for clean_key in skipped_keys:
+            self.stdout.write(f"  SKIP {clean_key} — unknown key")
         self.stdout.write(f"Created/updated: {len(created)} exercise(s)")
         for ex in created:
             self.stdout.write(f"  {ex.id} — {ex.description}")

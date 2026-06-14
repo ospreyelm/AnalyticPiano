@@ -1250,12 +1250,36 @@ define([
       }
 
       var chordRows = PlaySaveLogic.buildChordRows(notes, durations);
+      var deterministicFieldsArr = (notes || []).map(function(chord) {
+        var midis = (chord && chord.visible) ? chord.visible : [];
+        var out = {};
+        try { out.set_class_set = analyzer.to_set_class_set(midis) || null; } catch (e) { out.set_class_set = null; }
+        try { out.set_class_normal = analyzer.to_set_class_normal(midis) || null; } catch (e) { out.set_class_normal = null; }
+        try { out.set_class_prime = analyzer.to_set_class_prime(midis) || null; } catch (e) { out.set_class_prime = null; }
+        try { out.set_class_forte = analyzer.to_set_class_forte(midis) || null; } catch (e) { out.set_class_forte = null; }
+        try { out.spacing = analyzer.to_spacing(midis) || null; } catch (e) { out.spacing = null; }
+        if (midis.length === 2) {
+          try {
+            var ivl = analyzer.to_interval(midis);
+            out.interval_specific = (ivl && ivl.name) || null;
+            out.interval_generic = (ivl && String(ivl.size)) || null;
+          } catch (e) {
+            out.interval_specific = null;
+            out.interval_generic = null;
+          }
+        } else {
+          out.interval_specific = null;
+          out.interval_generic = null;
+        }
+        return out;
+      });
       var analysisSlices = PlaySaveLogic.buildAnalysisSlices(
-        offsets, slots, labels, tokenOverridesArr);
+        offsets, slots, labels, tokenOverridesArr, deterministicFieldsArr);
 
       var json_data = {
         keySignature: this.keySignature.signatureSpec,
         key: this.keySignature.key,
+        analysisType: slots.below === "thoroughbass" ? "figured_bass" : "roman",
         type: "matching",
         staffDistribution: this.parentComponent.staffDistributionConfig.staffDistribution,
         introText: "",

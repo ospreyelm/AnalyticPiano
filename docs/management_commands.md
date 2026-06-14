@@ -298,6 +298,12 @@ python manage.py backfill_skill_tags --all
 python manage.py backfill_raw_roman_numeral
 ```
 
+**`backfill_analysis_layer`** — Populate `set_class_*`, `spacing`, and `interval_*` analytics on existing UMTO chordal analysis slices. Use `--all` to overwrite existing values and `--dry-run` to preview counts.
+```
+python manage.py backfill_analysis_layer --dry-run
+python manage.py backfill_analysis_layer --all
+```
+
 **`reanalyze_knowledge_graph`** — Recompute knowledge-graph edges from current exercise tags.
 ```
 python manage.py reanalyze_knowledge_graph

@@ -764,7 +764,7 @@ class ExerciseForm(forms.ModelForm):
 
     class Meta:
         model = Exercise
-        fields = "__all__"
+        exclude = ["official_review_status"]
         widgets = {
             "data": PrettyJSONWidget(attrs={"initial": "parsed"}),
         }
@@ -1279,7 +1279,7 @@ class PlaylistForm(forms.ModelForm):
 
     class Meta:
         model = Playlist
-        exclude = []
+        exclude = ["official_review_status"]
         widgets = {
             "id": forms.TextInput(attrs={"readonly": "readonly"}),
             "is_auto": forms.CheckboxInput(attrs={"readonly": "readonly"}),

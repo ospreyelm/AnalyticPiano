@@ -153,6 +153,26 @@ Generated labels use HarmonyLab analyzer logic first:
 - `legacy_roman_from_pitches()` for Roman labels matching the browser analyzer;
 - music21 Roman analysis only as fallback when HarmonyLab has no table label.
 
+### Analytics fields
+
+`AnalysisLayer` also stores optional analytics computed at save/import time.
+Identification grading still computes live from the rendered pitch stack; these
+fields preserve authored/imported values for browse, review, and metadata
+workflows.
+
+| Field | Example | Source |
+|---|---|---|
+| `set_class_prime` | `"(0,3,7)"` | music21 `chord.primeFormString` or JS `analyzer.to_set_class_prime` |
+| `set_class_forte` | `"3-11B"` | music21 `chord.forteClassTnI` or JS `analyzer.to_set_class_forte` |
+| `set_class_normal` | `"[0,3,7]"` | music21 `chord.normalOrder` or JS `analyzer.to_set_class_normal` |
+| `set_class_set` | `"{C,E,G}"` | pitch names or JS `analyzer.to_set_class_set` |
+| `spacing` | `"+"` or `"°"` | JS `analyzer.to_spacing`; Python imports store `null` |
+| `interval_specific` | `"P5"` | 2-note sets only |
+| `interval_generic` | `"5"` | 2-note sets only |
+
+Run `python manage.py backfill_analysis_layer --dry-run` to preview analytics
+population for existing chordal UMTO rows.
+
 ### Rendering and the playback window
 
 `build_chordal_umto_payload` in `umto_factory.py` calls `_chordal_to_measures`

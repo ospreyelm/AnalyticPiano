@@ -51,6 +51,31 @@
   margin: 0 auto;
 }
 
+/* ── Header navigation ───────────────────────────────────────────────── */
+
+.t-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 24px;
+  margin-right: auto;
+}
+
+.t-nav-link {
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.78);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.t-nav-link:hover,
+.t-nav-link--active {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
 /* ── Typography helpers ──────────────────────────────────────────────── */
 
 .t-page-title {
@@ -655,16 +680,16 @@
 /* Detail page two-column layout */
 .t-detail-layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 260px 1fr;
   gap: 20px;
   align-items: start;
 }
-@media (max-width: 800px) {
+@media (max-width: 700px) {
   .t-detail-layout { grid-template-columns: 1fr; }
 }
 
 .t-detail-main { min-width: 0; }
-.t-detail-side  { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.t-detail-side  { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 
 /* Action bar above timeline */
 .t-timeline-actions {
@@ -944,4 +969,176 @@
 .t-spinner-dark {
   border-color: rgba(0,0,0,0.15);
   border-top-color: var(--text);
+}
+
+/* ── Library hub ─────────────────────────────────────────────────────── */
+
+.t-library-shell {
+  width: min(1120px, calc(100vw - 48px));
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.t-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 18px;
+}
+
+.t-tab {
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 9px 18px;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.t-tab:hover,
+.t-tab--active {
+  color: var(--teal);
+  border-bottom-color: var(--teal);
+}
+
+.t-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 7px;
+  margin-left: 5px;
+}
+
+.t-badge--warn {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.t-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.t-input-sm {
+  width: auto;
+  min-width: 120px;
+  padding: 6px 10px;
+  font-size: 0.84rem;
+}
+
+.t-btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.t-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+
+.t-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+}
+
+.t-table th {
+  padding: 8px 12px;
+  text-align: left;
+  background: var(--surface);
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.t-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.t-table tr:last-child td { border-bottom: none; }
+.t-table tr:hover td { background: #f0f6f8; }
+
+.t-empty-inline {
+  color: var(--text-muted);
+  padding: 8px 0;
+}
+
+.t-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.t-section-title {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 22px 0 10px;
+}
+
+.t-submission-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.t-submission-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.t-btn-success { background: #198754; color: #fff; }
+.t-btn-danger { background: #dc3545; color: #fff; }
+
+@media (max-width: 720px) {
+  .t-header {
+    flex-wrap: wrap;
+    height: auto;
+    gap: 8px;
+    padding: 10px 16px;
+  }
+  .t-header-nav {
+    order: 3;
+    width: 100%;
+    margin: 0;
+  }
+  .t-library-shell {
+    width: 100%;
+    margin-left: 0;
+    transform: none;
+  }
+  .t-filter-bar,
+  .t-submission-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }

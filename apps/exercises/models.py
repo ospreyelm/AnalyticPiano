@@ -140,6 +140,22 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         help_text="Check to share your exercise with other users of this site: allow them to include the exercise in their playlists and see your email address.",
     )
     is_official = models.BooleanField(default=False, db_index=True)
+    REVIEW_NONE = "none"
+    REVIEW_PENDING = "pending"
+    REVIEW_APPROVED = "approved"
+    REVIEW_REJECTED = "rejected"
+    REVIEW_STATUS_CHOICES = [
+        (REVIEW_NONE, "none"),
+        (REVIEW_PENDING, "pending"),
+        (REVIEW_APPROVED, "approved"),
+        (REVIEW_REJECTED, "rejected"),
+    ]
+    official_review_status = models.CharField(
+        max_length=16,
+        choices=REVIEW_STATUS_CHOICES,
+        default=REVIEW_NONE,
+        db_index=True,
+    )
 
     locked = models.BooleanField("Locked", default=False)
 
@@ -592,6 +608,12 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         help_text="Sharing your playlist will allow other users to include it in their courses. Doing so will reveal your email address to all users of the site.",
     )
     is_official = models.BooleanField(default=False, db_index=True)
+    official_review_status = models.CharField(
+        max_length=16,
+        choices=Exercise.REVIEW_STATUS_CHOICES,
+        default=Exercise.REVIEW_NONE,
+        db_index=True,
+    )
     is_adaptive = models.BooleanField(
         "Adaptive Mode",
         default=False,

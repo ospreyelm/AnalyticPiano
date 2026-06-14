@@ -1,0 +1,129 @@
+{% extends "teacher/base.html" %}
+
+{% block title %}Library - Monteverdi{% endblock %}
+
+{% block content %}
+<div class="t-library-shell">
+  <div class="t-list-header">
+    <div>
+      <h1 class="t-page-title">Library</h1>
+      <p class="t-page-sub">Browse teacher-ready playlists and exercises.</p>
+    </div>
+  </div>
+
+  <div class="t-tabs" role="tablist">
+    <a class="t-tab {% if tab == 'playlists' %}t-tab--active{% endif %}" href="?tab=playlists">Playlists</a>
+    <a class="t-tab {% if tab == 'exercises' %}t-tab--active{% endif %}" href="?tab=exercises">Exercises</a>
+    {% if request.user.is_superuser %}
+      <a class="t-tab {% if tab == 'official' %}t-tab--active{% endif %}" href="?tab=official">
+        Official
+        {% if pending_count %}<span class="t-badge t-badge--warn">{{ pending_count }}</span>{% endif %}
+      </a>
+    {% endif %}
+  </div>
+
+  {% if tab != 'official' %}
+    <form class="t-filter-bar" method="get">
+      <input type="hidden" name="tab" value="{{ tab }}">
+      <input class="t-input t-input-sm" type="text" name="unit" value="{{ unit_filter }}" placeholder="Unit">
+      <select class="t-input t-input-sm" name="official">
+        <option value="">All</option>
+        <option value="official" {% if official_filter == 'official' %}selected{% endif %}>Official only</option>
+        <option value="personal" {% if official_filter == 'personal' %}selected{% endif %}>Mine only</option>
+      </select>
+      <button class="t-btn t-btn-ghost t-btn-sm" type="submit">Filter</button>
+    </form>
+  {% endif %}
+
+  {% if tab == 'playlists' %}
+    <div class="t-table-wrap">
+      <table class="t-table">
+        <thead>
+          <tr><th>Name</th><th>Tags</th><th>Exercises</th><th>Official</th><th>Updated</th></tr>
+        </thead>
+        <tbody>
+          {% for playlist in playlists %}
+            <tr>
+              <td><a class="t-link" href="{% url 'lab:playlist-view' playlist.id %}">{{ playlist.name }}</a></td>
+              <td class="t-mono">{{ playlist.skill_tags|join:", " }}</td>
+              <td>{{ playlist.exercise_count }}</td>
+              <td>{% if playlist.is_official %}Yes{% endif %}</td>
+              <td>{{ playlist.updated|date:"Y-m-d" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5"><div class="t-empty-inline">No playlists found.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {% if tab == 'exercises' %}
+    <div class="t-table-wrap">
+      <table class="t-table">
+        <thead>
+          <tr><th>Description</th><th>Tags</th><th>Complexity</th><th>Official</th><th>Preview</th><th>Updated</th></tr>
+        </thead>
+        <tbody>
+          {% for exercise in exercises %}
+            <tr>
+              <td><a class="t-link" href="{% url 'lab:exercise-view' exercise.id %}">{{ exercise.description|default:"(no description)" }}</a></td>
+              <td class="t-mono">{{ exercise.skill_tags|join:", " }}</td>
+              <td>{{ exercise.complexity }}</td>
+              <td>{% if exercise.is_official %}Yes{% endif %}</td>
+              <td><a class="t-link" href="{% url 'teacher:exercise-preview' exercise.id %}">JSON</a></td>
+              <td>{{ exercise.updated|date:"Y-m-d" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6"><div class="t-empty-inline">No exercises found.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {% if tab == 'official' %}
+    <h2 class="t-section-title">Pending Playlists</h2>
+    {% for playlist in pending_playlists %}
+      <div class="t-submission-card">
+        <div>
+          <strong>{{ playlist.name }}</strong>
+          <span class="t-mono">{{ playlist.id }}</span><br>
+          <span class="t-muted">Playlist - {{ playlist.authored_by.email }} - {{ playlist.updated|date:"Y-m-d" }}</span>
+        </div>
+        <div class="t-submission-actions">
+          <form method="post" action="{% url 'teacher:playlist-approve' playlist.id %}">
+            {% csrf_token %}<button class="t-btn t-btn-sm t-btn-success" type="submit">Approve</button>
+          </form>
+          <form method="post" action="{% url 'teacher:playlist-reject' playlist.id %}">
+            {% csrf_token %}<button class="t-btn t-btn-sm t-btn-danger" type="submit">Reject</button>
+          </form>
+        </div>
+      </div>
+    {% empty %}
+      <p class="t-muted">No pending playlist submissions.</p>
+    {% endfor %}
+
+    <h2 class="t-section-title">Pending Exercises</h2>
+    {% for exercise in pending_exercises %}
+      <div class="t-submission-card">
+        <div>
+          <strong>{{ exercise.description|default:"(no description)" }}</strong>
+          <span class="t-mono">{{ exercise.id }}</span><br>
+          <span class="t-muted">Exercise - {{ exercise.authored_by.email }} - {{ exercise.updated|date:"Y-m-d" }}</span>
+        </div>
+        <div class="t-submission-actions">
+          <form method="post" action="{% url 'teacher:exercise-approve' exercise.id %}">
+            {% csrf_token %}<button class="t-btn t-btn-sm t-btn-success" type="submit">Approve</button>
+          </form>
+          <form method="post" action="{% url 'teacher:exercise-reject' exercise.id %}">
+            {% csrf_token %}<button class="t-btn t-btn-sm t-btn-danger" type="submit">Reject</button>
+          </form>
+        </div>
+      </div>
+    {% empty %}
+      <p class="t-muted">No pending exercise submissions.</p>
+    {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

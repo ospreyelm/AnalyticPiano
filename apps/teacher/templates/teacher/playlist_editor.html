@@ -1,0 +1,186 @@
+{# apps/teacher/templates/teacher/playlist_editor.html #}
+{% extends "teacher/base.html" %}
+
+{% block title %}{{ playlist.name }} — Library — Monteverdi{% endblock %}
+
+{% block head_extra %}
+<script>
+window.__PL__ = {
+  id:               "{{ playlist.id|escapejs }}",
+  exercises:        {{ exercises_json|safe }},
+  canEdit:          {{ can_edit|yesno:"true,false" }},
+  reviewStatus:     "{{ review_status|escapejs }}",
+  csrfToken:        "{{ csrf_token }}",
+  saveUrl:          "{% url 'teacher:playlist-save' playlist.id %}",
+  reorderUrl:       "{% url 'teacher:playlist-reorder' playlist.id %}",
+  addExUrl:         "{% url 'teacher:playlist-add-exercise' playlist.id %}",
+  searchUrl:        "{% url 'teacher:exercises-search' %}",
+  submitReviewUrl:  "{% url 'teacher:playlist-submit-review' playlist.id %}",
+};
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="t-list-header">
+  <div>
+    <a class="t-link t-muted" href="{% url 'teacher:library-hub' %}?tab=playlists">← Library</a>
+    <h1 class="t-page-title" style="margin-top:4px;">{{ playlist.name }}</h1>
+  </div>
+</div>
+
+<div class="t-detail-layout">
+  <!-- Metadata sidebar -->
+  <div class="t-detail-side">
+    <div class="t-card">
+      <div class="t-card-title">Playlist metadata</div>
+
+      <label class="t-label">Name</label>
+      <input class="t-input" id="pl-name" type="text"
+             value="{{ playlist.name|escapejs }}" maxlength="64"
+             {% if not can_edit %}disabled{% endif %}>
+
+      <label class="t-label" style="margin-top:10px;">Tags (comma-separated)</label>
+      <input class="t-input" id="pl-tags" type="text"
+             value="{{ playlist.skill_tags|join:', ' }}"
+             {% if not can_edit %}disabled{% endif %}>
+
+      <label class="t-label" style="margin-top:10px;">Visibility</label>
+      <select class="t-input" id="pl-visibility" {% if not can_edit %}disabled{% endif %}>
+        <option value="public"  {% if playlist.is_public  %}selected{% endif %}>Public</option>
+        <option value="private" {% if not playlist.is_public %}selected{% endif %}>Private</option>
+      </select>
+
+      <div style="margin-top:8px;">
+        <span class="t-label" style="display:inline;">Review status:</span>
+        <span class="t-mono">{% if playlist.is_official %}official{% else %}{{ playlist.official_review_status }}{% endif %}</span>
+      </div>
+
+      {% if can_edit %}
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="t-btn t-btn-primary" id="btn-pl-save">Save</button>
+        {% if not playlist.is_official and playlist.official_review_status != 'pending' %}
+        <button class="t-btn t-btn-ghost" id="btn-submit-review"
+                {% if not playlist.is_public %}disabled title="Make public first"{% endif %}>
+          Submit for review
+        </button>
+        {% elif playlist.official_review_status == 'pending' %}
+        <span class="t-muted">Submitted — awaiting review</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Exercise list -->
+  <div class="t-detail-main">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h2 class="t-section-title" style="margin:0;">Exercises</h2>
+      {% if can_edit %}
+      <button class="t-btn t-btn-ghost t-btn-sm" id="btn-add-exercise">+ Add exercise</button>
+      {% endif %}
+    </div>
+    <div id="exercise-list"></div>
+  </div>
+</div>
+
+<!-- Add exercise modal -->
+<div id="add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:8px;padding:24px;width:90%;max-width:520px;">
+    <h3 style="margin-bottom:12px;font-family:var(--font-ui);">Add exercise</h3>
+    <input class="t-input" id="modal-q" type="text" placeholder="Search description…">
+    <input class="t-input" id="modal-unit" type="text" placeholder="Unit (optional)" style="margin-top:8px;">
+    <button class="t-btn t-btn-ghost t-btn-sm" id="btn-modal-search" style="margin-top:8px;">Search</button>
+    <div id="modal-results" style="margin-top:12px;max-height:220px;overflow-y:auto;"></div>
+    <button class="t-btn t-btn-ghost" id="btn-modal-close" style="margin-top:12px;">Close</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_extra %}
+<script>
+(function() {
+  var PL = window.__PL__;
+
+  function renderList(exercises) {
+    var el = document.getElementById("exercise-list");
+    if (!exercises.length) {
+      el.innerHTML = '<p class="t-muted">No exercises in this playlist.</p>';
+      return;
+    }
+    el.innerHTML = '<table class="t-table"><thead><tr><th>#</th><th>Description</th><th>ID</th>' +
+      (PL.canEdit ? '<th></th>' : '') + '</tr></thead><tbody>' +
+      exercises.map(function(ex, i) {
+        return '<tr><td>' + (i+1) + '</td>' +
+          '<td>' + (ex.description || "(no description)") + '</td>' +
+          '<td class="t-mono">' + ex.id + '</td>' +
+          (PL.canEdit ? '<td><button class="t-btn t-btn-sm t-btn-ghost" onclick="removeEx(' + ex.epo_id + ')">Remove</button></td>' : '') +
+          '</tr>';
+      }).join('') + '</tbody></table>';
+  }
+  renderList(PL.exercises);
+
+  function post(url, body) {
+    return fetch(url, {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-CSRFToken": PL.csrfToken},
+      body: JSON.stringify(body),
+    }).then(function(r) { return r.json(); });
+  }
+
+  // Save metadata
+  document.getElementById("btn-pl-save") && document.getElementById("btn-pl-save").addEventListener("click", function() {
+    var tags = document.getElementById("pl-tags").value.split(",").map(function(t){ return t.trim(); }).filter(Boolean);
+    post(PL.saveUrl, {
+      name: document.getElementById("pl-name").value,
+      skill_tags: tags,
+      is_public: document.getElementById("pl-visibility").value === "public",
+    }).then(function(j) { if (j.ok) location.reload(); else alert(j.error); });
+  });
+
+  // Submit for review
+  document.getElementById("btn-submit-review") && document.getElementById("btn-submit-review").addEventListener("click", function() {
+    if (!confirm("Submit for official review?")) return;
+    post(PL.submitReviewUrl, {}).then(function(j) {
+      if (j.ok) location.reload(); else alert(j.error);
+    });
+  });
+
+  // Modal
+  var modal = document.getElementById("add-modal");
+  document.getElementById("btn-add-exercise") && document.getElementById("btn-add-exercise").addEventListener("click", function() {
+    modal.style.display = "flex";
+  });
+  document.getElementById("btn-modal-close").addEventListener("click", function() {
+    modal.style.display = "none";
+  });
+  document.getElementById("btn-modal-search").addEventListener("click", function() {
+    var url = PL.searchUrl + "?q=" + encodeURIComponent(document.getElementById("modal-q").value) +
+              "&unit=" + encodeURIComponent(document.getElementById("modal-unit").value);
+    fetch(url).then(function(r){ return r.json(); }).then(function(j) {
+      var el = document.getElementById("modal-results");
+      if (!j.results.length) { el.innerHTML = '<p class="t-muted">No results.</p>'; return; }
+      el.innerHTML = j.results.map(function(ex) {
+        return '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
+          '<span>' + (ex.description || "(no desc)") + ' <span class="t-mono">' + ex.id + '</span></span>' +
+          '<button class="t-btn t-btn-sm t-btn-primary" onclick="addEx(\'' + ex.id + '\')">Add</button>' +
+        '</div>';
+      }).join('');
+    });
+  });
+
+  window.addEx = function(exId) {
+    post(PL.addExUrl, {exerciseId: exId}).then(function(j) {
+      if (j.ok) location.reload(); else alert(j.error);
+    });
+  };
+
+  window.removeEx = function(epoId) {
+    if (!confirm("Remove from playlist?")) return;
+    fetch("/teacher/library/playlists/" + PL.id + "/remove-exercise/" + epoId + "/",
+      {method:"POST", headers:{"X-CSRFToken": PL.csrfToken}})
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if (j.ok) location.reload(); });
+  };
+})();
+</script>
+{% endblock %}
