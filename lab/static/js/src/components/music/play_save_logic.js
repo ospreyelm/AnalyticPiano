@@ -29,7 +29,7 @@
     });
   }
 
-  function buildAnalysisSlices(offsets, slots, labels, overrides) {
+  function buildAnalysisSlices(offsets, slots, labels, overrides, deterministicFieldsArr) {
     if (!slots || !slots.below) return [];
     var key = BELOW_CONTENT_KEY[slots.below];
     if (!key) return [];
@@ -39,6 +39,14 @@
         ? overrides[i].below : null;
       var value = ov !== null ? ov : (labels[i] != null ? labels[i] : "");
       var content = {}; content[key] = value;
+      if (deterministicFieldsArr && deterministicFieldsArr[i]) {
+        var extra = deterministicFieldsArr[i];
+        for (var field in extra) {
+          if (Object.prototype.hasOwnProperty.call(extra, field)) {
+            content[field] = extra[field];
+          }
+        }
+      }
       out.push({ offset: offsets[i], content: content, is_target: true, unit_tags: [] });
     }
     return out;

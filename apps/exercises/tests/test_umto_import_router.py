@@ -301,3 +301,39 @@ class ImportLegacyChordCSVCommandTests(unittest.TestCase):
                 )
 
         self.assertIn("Parsed 1 legacy chord rows", command.stdout.getvalue())
+
+
+class ChordalAnalysisAnalyticsTests(unittest.TestCase):
+    CHORDS = [
+        {"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67], "hidden": []},
+        {"offset": 1.0, "duration": 1.0, "visible": [62, 65, 69], "hidden": []},
+    ]
+
+    def test_set_class_fields_present(self):
+        slices = build_chordal_analysis_slices(self.CHORDS, harmony_key="C")
+        content = slices[0]["content"]
+
+        self.assertIsNotNone(content["set_class_prime"])
+        self.assertIn("set_class_forte", content)
+        self.assertIn("set_class_normal", content)
+        self.assertIn("set_class_set", content)
+
+    def test_spacing_field_present_for_python_backfill(self):
+        slices = build_chordal_analysis_slices(self.CHORDS, harmony_key="C")
+
+        self.assertIn("spacing", slices[0]["content"])
+        self.assertIsNone(slices[0]["content"]["spacing"])
+
+    def test_interval_fields_null_for_triad(self):
+        slices = build_chordal_analysis_slices(self.CHORDS, harmony_key="C")
+
+        self.assertIsNone(slices[0]["content"]["interval_specific"])
+        self.assertIsNone(slices[0]["content"]["interval_generic"])
+
+    def test_interval_fields_populated_for_dyad(self):
+        dyad_chords = [{"offset": 0.0, "duration": 1.0, "visible": [60, 67], "hidden": []}]
+        slices = build_chordal_analysis_slices(dyad_chords, harmony_key="C")
+        content = slices[0]["content"]
+
+        self.assertIsNotNone(content["interval_specific"])
+        self.assertIsNotNone(content["interval_generic"])

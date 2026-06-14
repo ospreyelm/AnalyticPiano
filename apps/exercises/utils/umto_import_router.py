@@ -9,6 +9,7 @@ from typing import Iterator, Literal, TextIO
 
 from music21 import chord as m21_chord
 from music21 import key as m21_key
+from music21 import interval as m21_interval
 from music21 import note as m21_note
 from music21 import pitch as m21_pitch
 from music21 import roman as m21_roman
@@ -163,6 +164,24 @@ def build_chordal_analysis_slices(chords: list[dict], *, harmony_key: str) -> li
             except Exception:
                 pass
 
+        sc_prime = sc_forte = sc_normal = sc_set = None
+        try:
+            sc_prime = chord_obj.primeFormString
+            sc_forte = chord_obj.forteClassTnI
+            sc_normal = str(list(chord_obj.normalOrder))
+            sc_set = "{" + ",".join(p.name for p in chord_obj.pitches) + "}"
+        except Exception:
+            pass
+
+        interval_specific = interval_generic = None
+        if len(pitches) == 2:
+            try:
+                interval_obj = m21_interval.Interval(chord_obj.pitches[0], chord_obj.pitches[1])
+                interval_specific = interval_obj.directedName
+                interval_generic = str(abs(interval_obj.generic.directed))
+            except Exception:
+                pass
+
         analysis.append({
             "offset": float(chord_event.get("offset", 0.0)),
             "content": {
@@ -171,6 +190,13 @@ def build_chordal_analysis_slices(chords: list[dict], *, harmony_key: str) -> li
                 "local_key": harmony_key,
                 "raw_figured_bass": raw_fb,
                 "figured_bass": figured_bass,
+                "set_class_prime": sc_prime,
+                "set_class_forte": sc_forte,
+                "set_class_normal": sc_normal,
+                "set_class_set": sc_set,
+                "spacing": None,
+                "interval_specific": interval_specific,
+                "interval_generic": interval_generic,
             },
             "unit_tags": [],
             "is_target": True,

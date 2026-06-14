@@ -86,6 +86,11 @@ Score-based figured-bass realization exercise. The student sees a bass line with
 - `"figured_bass"` → shows `thoroughbass` overlays (figures below the staff)
 - `"roman"` → shows Roman numeral overlays
 
+**`analysisType` storage:** saved UMTO chordal exercises store the selected type
+at `exercise.data["analysisType"]`. `lab.views._resolve_analysis_type()` reads
+that persisted value first and falls back to the legacy complexity heuristic only
+for older rows without the key.
+
 **Source:** Derived from any UMTO chorale exercise, or generated directly from standard Clausulae cadences. Targets are pre-computed from the exercise's `analysis` slices (bass + figured bass from each UMTO analysis slice). NCT (non-chord-tone) slices are skipped for chorale-derived material.
 
 **Generation:**
