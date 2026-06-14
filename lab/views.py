@@ -978,7 +978,7 @@ class AddExerciseView(View):
             return None
         return self._factory_user()
 
-    def _append_to_playlist(self, *, exercise, author, playlist_id=None, playlist_name=None, is_public=False, is_adaptive=False):
+    def _append_to_playlist(self, *, exercise, author, playlist_id=None, playlist_name=None, is_public=False, is_adaptive=False, is_official=False):
         if not playlist_id and not playlist_name:
             return None
 
@@ -986,9 +986,9 @@ class AddExerciseView(View):
             playlist = Playlist.objects.filter(id=playlist_id).first()
             if playlist is None:
                 raise ValueError("playlistId does not reference an existing playlist.")
-            if playlist.authored_by_id != author.id:
+            if not is_official and playlist.authored_by_id != author.id:
                 raise ValueError("playlist must be authored by the save author.")
-            if playlist.has_been_performed:
+            if not is_official and playlist.has_been_performed:
                 raise ValueError("playlist is locked because it has been performed.")
         else:
             playlist, created = Playlist.objects.get_or_create(
@@ -1118,6 +1118,7 @@ class AddExerciseView(View):
                         playlist_name=playlist_name,
                         is_public=effective_is_public,
                         is_adaptive=is_adaptive,
+                        is_official=save_as_official,
                     )
         except (NonUMTOExerciseError, ValueError, KeyError) as exc:
             return self._json_error(str(exc) or "Invalid exercise payload.", status=400)
