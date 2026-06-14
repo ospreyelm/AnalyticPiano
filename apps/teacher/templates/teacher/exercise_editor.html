@@ -13,6 +13,7 @@ window.__EX__ = {
   submitReviewUrl: "{% url 'teacher:exercise-submit-review' exercise.id %}",
 };
 </script>
+<script src="https://unpkg.com/vexflow@4/build/cjs/vexflow.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -28,6 +29,14 @@ window.__EX__ = {
 <div class="t-detail-layout">
   <!-- Sidebar: in-playlists + admin link -->
   <div class="t-detail-side">
+    <div class="t-card" id="preview-card">
+      <div class="t-card-title">Score preview</div>
+      <div id="preview-container" style="width:100%;min-height:100px;overflow:hidden;">
+        <p class="t-muted" id="preview-msg" style="font-size:0.78rem;">Loading preview…</p>
+        <canvas id="preview-canvas" style="display:none;max-width:100%;border-radius:4px;border:1px solid var(--border);"></canvas>
+      </div>
+    </div>
+
     <div class="t-card">
       <div class="t-card-title">In playlists</div>
       {% for pl in in_playlists %}
@@ -145,6 +154,122 @@ window.__EX__ = {
       if (j.ok) location.reload(); else alert(j.error);
     });
   });
+})();
+</script>
+
+<script>
+(function() {
+  var previewUrl = "{% url 'teacher:exercise-preview' exercise.id %}";
+  var canvas     = document.getElementById("preview-canvas");
+  var msg        = document.getElementById("preview-msg");
+
+  function showError(text) {
+    msg.textContent = text || "Preview unavailable.";
+    msg.style.display = "";
+    canvas.style.display = "none";
+  }
+
+  function extractMeasures(scoreData, maxMeasures) {
+    // Returns flat array of note dicts: {pitch: str, duration: str, dots: int}[][]
+    // One inner array per measure, representing treble voice 0 items.
+    if (!scoreData || !scoreData.measures) return null;
+    var measures = scoreData.measures.slice(0, maxMeasures);
+    return measures.map(function(m) {
+      try {
+        return m.staves.treble.voices[0].items || [];
+      } catch(e) {
+        return [];
+      }
+    });
+  }
+
+  var DUR_MAP = { "w": "w", "h": "h", "q": "q", "8": "8", "16": "16", "32": "32" };
+
+  function pitchToVex(step, alter, octave) {
+    // Convert CIR pitch to VexFlow key string, e.g. "C#/4"
+    var acc = alter === 1 ? "#" : alter === -1 ? "b" : "";
+    return step + acc + "/" + octave;
+  }
+
+  function renderThumbnail(scoreData) {
+    var measureItems = extractMeasures(scoreData, 2);
+    if (!measureItems || !measureItems.length) {
+      showError("No treble staff found.");
+      return;
+    }
+
+    var VF = window.Vex && window.Vex.Flow;
+    if (!VF) { showError("VexFlow unavailable."); return; }
+
+    var W = 300, H = 120;
+    canvas.width  = W;
+    canvas.height = H;
+    canvas.style.display = "block";
+    msg.style.display = "none";
+
+    var renderer = new VF.Renderer(canvas, VF.Renderer.Backends.CANVAS);
+    renderer.resize(W, H);
+    var ctx = renderer.getContext();
+    ctx.clearRect(0, 0, W, H);
+
+    var staveWidth = Math.floor((W - 20) / measureItems.length);
+    var staves = [];
+    var noteGroups = [];
+
+    measureItems.forEach(function(items, idx) {
+      var x = 10 + idx * staveWidth;
+      var stave = new VF.Stave(x, 10, staveWidth - 4);
+      if (idx === 0) stave.addClef("treble");
+      stave.setContext(ctx).draw();
+      staves.push(stave);
+
+      var notes = [];
+      (items || []).forEach(function(item) {
+        try {
+          var dur = DUR_MAP[item.duration && item.duration.type] || "q";
+          if (item.kind === "rest") {
+            notes.push(new VF.StaveNote({keys: ["b/4"], duration: dur + "r"}));
+            return;
+          }
+          var keys;
+          if (item.kind === "chord" && item.pitches) {
+            keys = item.pitches.map(function(p) {
+              return pitchToVex(p.step, p.alter || 0, p.octave);
+            });
+          } else if (item.pitch) {
+            keys = [pitchToVex(item.pitch.step, item.pitch.alter || 0, item.pitch.octave)];
+          } else {
+            return;
+          }
+          var n = new VF.StaveNote({keys: keys, duration: dur});
+          if (item.duration && item.duration.dots) {
+            for (var d = 0; d < item.duration.dots; d++) VF.Dot.buildAndAttach([n]);
+          }
+          notes.push(n);
+        } catch(e) { /* skip malformed note */ }
+      });
+
+      if (!notes.length) return;
+      noteGroups.push({stave: stave, notes: notes});
+    });
+
+    noteGroups.forEach(function(g) {
+      try {
+        var voice = new VF.Voice({num_beats: g.notes.length, beat_value: 4}).setStrict(false);
+        voice.addTickables(g.notes);
+        new VF.Formatter().joinVoices([voice]).format([voice], g.stave.getWidth() - 24);
+        voice.draw(ctx, g.stave);
+      } catch(e) { /* skip measure on error */ }
+    });
+  }
+
+  fetch(previewUrl)
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(j) {
+      if (!j.score_data) { showError("No score data."); return; }
+      renderThumbnail(j.score_data);
+    })
+    .catch(function() { showError("Preview unavailable."); });
 })();
 </script>
 {% endblock %}
