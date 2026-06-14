@@ -201,7 +201,7 @@ window.__EX__ = {
     var VF = window.Vex && window.Vex.Flow;
     if (!VF) { showError("VexFlow unavailable."); return; }
 
-    var W = 300, H = 120;
+    var W = 300, H = 160;
     canvas.width  = W;
     canvas.height = H;
     canvas.style.display = "block";
@@ -218,7 +218,7 @@ window.__EX__ = {
 
     measureItems.forEach(function(items, idx) {
       var x = 10 + idx * staveWidth;
-      var stave = new VF.Stave(x, 10, staveWidth - 4);
+      var stave = new VF.Stave(x, 30, staveWidth - 4);
       if (idx === 0) stave.addClef("treble");
       stave.setContext(ctx).draw();
       staves.push(stave);
