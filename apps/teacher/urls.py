@@ -19,6 +19,14 @@ from apps.teacher.views_musicxml import (
     import_musicxml_preview_view,
     import_musicxml_save_view,
 )
+from apps.teacher.views_library import (
+    exercise_approve_view,
+    exercise_reject_view,
+    exercise_submit_review_view,
+    playlist_approve_view,
+    playlist_reject_view,
+    playlist_submit_review_view,
+)
 
 app_name = "teacher"
 
@@ -37,4 +45,10 @@ urlpatterns = [
     path("play/api/save-with-transpositions/", save_with_transpositions_view, name="save-with-transpositions"),
     path("play/api/import-musicxml/preview/", import_musicxml_preview_view, name="import-musicxml-preview"),
     path("play/api/import-musicxml/save/", import_musicxml_save_view, name="import-musicxml-save"),
+    path("library/playlists/<str:playlist_id>/submit-review/", playlist_submit_review_view, name="playlist-submit-review"),
+    path("library/playlists/<str:playlist_id>/approve/", playlist_approve_view, name="playlist-approve"),
+    path("library/playlists/<str:playlist_id>/reject/", playlist_reject_view, name="playlist-reject"),
+    path("library/exercises/<str:exercise_id>/submit-review/", exercise_submit_review_view, name="exercise-submit-review"),
+    path("library/exercises/<str:exercise_id>/approve/", exercise_approve_view, name="exercise-approve"),
+    path("library/exercises/<str:exercise_id>/reject/", exercise_reject_view, name="exercise-reject"),
 ]
