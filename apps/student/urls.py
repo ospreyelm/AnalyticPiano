@@ -9,6 +9,7 @@ urlpatterns = [
     path("signup/", views.StudentSignupView.as_view(), name="signup"),
     path("", views.HomeView.as_view(), name="home"),
     path("join/", views.JoinCourseView.as_view(), name="join"),
+    path("courses/<int:pk>/", views.CourseDetailView.as_view(), name="course-detail"),
     path("units/<str:unit_n>/", views.UnitProgressView.as_view(), name="unit-progress"),
     path("units/<str:unit_num>/", views.UnitView.as_view(), name="unit"),
     path("units/<str:unit_num>/play/", views.PlayerView.as_view(), name="player"),

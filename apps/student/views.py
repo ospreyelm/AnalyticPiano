@@ -540,7 +540,7 @@ def _get_enrolled_courses_with_pcos(user) -> tuple[list, dict]:
     """Return (courses_list, pcos_by_course_id) using a single PCO query.
 
     courses_list — distinct Course objects the user is enrolled in, ordered by title.
-    pcos_by_course_id — defaultdict(list) mapping course.id → list of PCO objects.
+    pcos_by_course_id — defaultdict(list) mapping course.pk → list of PCO objects.
     """
     all_pcos = list(
         PlaylistCourseOrdered.objects
@@ -551,9 +551,9 @@ def _get_enrolled_courses_with_pcos(user) -> tuple[list, dict]:
     pcos_by_course_id: dict = defaultdict(list)
     courses_map: dict = {}
     for pco in all_pcos:
-        pcos_by_course_id[pco.course_id].append(pco)
-        if pco.course_id not in courses_map:
-            courses_map[pco.course_id] = pco.course
+        pcos_by_course_id[pco.course.pk].append(pco)
+        if pco.course.pk not in courses_map:
+            courses_map[pco.course.pk] = pco.course
 
     courses_list = sorted(courses_map.values(), key=lambda c: c.title)
     return courses_list, pcos_by_course_id
@@ -561,72 +561,60 @@ def _get_enrolled_courses_with_pcos(user) -> tuple[list, dict]:
 
 def _build_course_panels(
     user,
-    available_unit_numbers: set[str],
-    progress_by_unit: dict[str, dict],
-    course_dates: dict[str, dict],
-    courses_and_pcos: tuple | None = None,
+    courses_and_pcos=None,
 ) -> list[dict]:
     """Return one dict per enrolled course for the student home page."""
+    from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
+    from django.utils.timezone import now as tz_now
+
     if courses_and_pcos is not None:
         courses, pcos_by_course = courses_and_pcos
     else:
         courses, pcos_by_course = _get_enrolled_courses_with_pcos(user)
 
-    units = TaxonomyReader.get_all_units()
-    unit_meta_by_n = {str(u["n"]): u for u in units}
+    all_playlists = [
+        pco.playlist
+        for pco_rows in pcos_by_course.values()
+        for pco in pco_rows
+    ]
+    raw_by_pk = _batch_playlist_data(user, all_playlists) if all_playlists else {}
+    current = tz_now()
 
     panels = []
     for course in courses:
-        # Gather unit numbers from playlists in this course
-        pco_rows = pcos_by_course[course.id]
-        course_unit_numbers = set()
+        pco_rows = pcos_by_course[course.pk]
+
+        pct_sum = 0
+        open_count = 0
+        due_count = 0
+        overdue_count = 0
         for pco in pco_rows:
-            tags = list(pco.playlist.skill_tags or []) + list(pco.playlist.tags or [])
-            for tag in tags:
-                if isinstance(tag, str) and tag.startswith("unit:"):
-                    course_unit_numbers.add(tag.split(":", 1)[1])
+            pl = pco.playlist
+            stats = (
+                _playlist_stats(pl, raw_by_pk[pl.pk])
+                if pl.pk in raw_by_pk
+                else {"done": 0, "total": 0}
+            )
+            pco_pct = min(100, stats["done"] * 100 // stats["total"]) if stats["total"] else 0
+            pct_sum += pco_pct
 
-        # Build open units (published + not 100% complete + accessible to student)
-        open_units = []
-        for unit_n in sorted(course_unit_numbers, key=unit_sort_key):
-            if unit_n not in available_unit_numbers:
-                continue
-            info = course_dates.get(unit_n)
-            if info is None:
-                # Not in course_dates means no schedule; treat as open
-                published = True
-            else:
-                published = info.get("published", True)
-            if not published:
-                continue
+            is_upcoming = pco.publish_date is not None and pco.publish_date > current
+            is_complete = pco_pct >= 100
+            if not is_upcoming and not is_complete:
+                open_count += 1
+                if pco.due_date is not None:
+                    due_count += 1
+                    if pco.due_date < current:
+                        overdue_count += 1
 
-            progress = progress_by_unit.get(unit_n, _empty_unit_progress_summary())
-            if progress["percent"] >= 100:
-                continue
-
-            date_labels = _unit_date_labels(info)
-            unit_meta = unit_meta_by_n.get(unit_n, {})
-            open_units.append({
-                "n": unit_n,
-                "title": unit_meta.get("title", f"Unit {unit_n}"),
-                "url": f"/s/units/{unit_n}/play/",
-                "due_label": date_labels.get("due_label") or "",
-                "overdue": date_labels.get("overdue", False),
-                "progress_pct": progress["percent"],
-            })
-
-        # Compute overall course progress across all course units
-        total_pct = 0
-        count = len(course_unit_numbers)
-        for unit_n in course_unit_numbers:
-            total_pct += progress_by_unit.get(unit_n, _empty_unit_progress_summary())["percent"]
-        avg_pct = int(total_pct / count) if count else 0
-
+        avg_pct = int(pct_sum / len(pco_rows)) if pco_rows else 0
         panels.append({
             "title": course.title,
-            "open_units": open_units,
-            "next_unit": open_units[0] if open_units else None,
             "progress_pct": avg_pct,
+            "course_pk": course.pk,
+            "open_count": open_count,
+            "due_count": due_count,
+            "overdue_count": overdue_count,
         })
 
     return panels
@@ -640,7 +628,7 @@ def _build_home_context(user) -> dict:
     course_dates = _get_course_unit_dates(user)
     courses_and_pcos = _get_enrolled_courses_with_pcos(user)
     course_panels = _build_course_panels(
-        user, available, progress_by_unit, course_dates,
+        user,
         courses_and_pcos=courses_and_pcos,
     )
     resume_url, resume_label, resume_progress = _get_resume_target(
@@ -720,6 +708,116 @@ def _require_student(view_func):
             return HttpResponseRedirect("/dashboard/")
         return view_func(self, request, *args, **kwargs)
     return wrapper
+
+
+class CourseDetailView(View):
+    @_require_student
+    def get(self, request, pk):
+        from apps.exercises.models import Course, PlaylistCourseOrdered
+        from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
+        from django.utils.timezone import now as tz_now
+
+        course = Course.objects.filter(
+            pk=pk, visible_to__members=request.user
+        ).select_related("authored_by").distinct().first()
+        if course is None:
+            from django.http import Http404
+            raise Http404("Course not found or not enrolled.")
+
+        author = course.authored_by
+        teacher_name = author.get_full_name() or author.email
+
+        pcos = list(
+            PlaylistCourseOrdered.objects
+            .filter(course=course)
+            .select_related("playlist")
+            .order_by("order", "pk")
+        )
+        playlists = [pco.playlist for pco in pcos]
+        raw_by_pk = _batch_playlist_data(request.user, playlists) if playlists else {}
+
+        current = tz_now()
+        open_assignments = []
+        upcoming_assignments = []
+        completed_assignments = []
+
+        for pco in pcos:
+            pl = pco.playlist
+            stats = _playlist_stats(pl, raw_by_pk[pl.pk]) if pl.pk in raw_by_pk else {"done": 0, "total": 0, "url": None}
+            progress_pct = min(100, stats["done"] * 100 // stats["total"]) if stats["total"] else 0
+
+            if pco.publish_date is not None and pco.publish_date > current:
+                status = "upcoming"
+            elif progress_pct >= 100:
+                status = "completed"
+            else:
+                status = "open"
+
+            overdue = (
+                status == "open"
+                and pco.due_date is not None
+                and pco.due_date < current
+            )
+
+            due_label = None
+            opens_label = None
+            if status == "upcoming" and pco.publish_date:
+                from django.utils.timezone import localtime
+                opens_label = localtime(pco.publish_date).strftime("Opens %a %b %-d")
+            elif pco.due_date is not None:
+                from django.utils.timezone import localtime
+                due_label = localtime(pco.due_date).strftime("Due %a %b %-d")
+
+            unit_tags = [
+                t for t in list(pl.skill_tags or []) + list(pl.tags or [])
+                if isinstance(t, str) and t.startswith("unit:")
+            ]
+            unit_n = unit_tags[0].split(":", 1)[1] if unit_tags else None
+
+            if status == "upcoming":
+                play_url = None
+            elif status == "completed":
+                from django.urls import reverse as _reverse
+                play_url = (
+                    _reverse("student:player", kwargs={"unit_num": unit_n})
+                    + f"?playlist={pl.id}&exercise_num=1"
+                ) if unit_n else None
+            else:  # open
+                play_url = stats.get("url")
+
+            row = {
+                "playlist_id": pl.id,
+                "name": pl.name,
+                "order": pco.order,
+                "status": status,
+                "overdue": overdue,
+                "progress_pct": progress_pct,
+                "due_label": due_label,
+                "opens_label": opens_label,
+                "play_url": play_url,
+            }
+
+            if status == "open":
+                open_assignments.append(row)
+            elif status == "upcoming":
+                upcoming_assignments.append(row)
+            else:
+                completed_assignments.append(row)
+
+        all_pcts = [
+            r["progress_pct"]
+            for r in open_assignments + upcoming_assignments + completed_assignments
+        ]
+        overall_pct = int(sum(all_pcts) / len(all_pcts)) if all_pcts else 0
+
+        return render(request, "student/course_detail.html", {
+            "course": course,
+            "teacher_name": teacher_name,
+            "overall_pct": overall_pct,
+            "open_assignments": open_assignments,
+            "upcoming_assignments": upcoming_assignments,
+            "completed_assignments": completed_assignments,
+        })
 
 
 class HomeView(View):
