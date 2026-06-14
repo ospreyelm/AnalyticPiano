@@ -713,15 +713,13 @@ def _require_student(view_func):
 class CourseDetailView(View):
     @_require_student
     def get(self, request, pk):
-        from apps.exercises.models import Course, PlaylistCourseOrdered
         from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
-        from django.utils.timezone import now as tz_now
+        from django.utils.timezone import now as tz_now, localtime
 
         course = Course.objects.filter(
             pk=pk, visible_to__members=request.user
         ).select_related("authored_by").distinct().first()
         if course is None:
-            from django.http import Http404
             raise Http404("Course not found or not enrolled.")
 
         author = course.authored_by
@@ -763,10 +761,8 @@ class CourseDetailView(View):
             due_label = None
             opens_label = None
             if status == "upcoming" and pco.publish_date:
-                from django.utils.timezone import localtime
                 opens_label = localtime(pco.publish_date).strftime("Opens %a %b %-d")
             elif pco.due_date is not None:
-                from django.utils.timezone import localtime
                 due_label = localtime(pco.due_date).strftime("Due %a %b %-d")
 
             unit_tags = [
@@ -778,9 +774,8 @@ class CourseDetailView(View):
             if status == "upcoming":
                 play_url = None
             elif status == "completed":
-                from django.urls import reverse as _reverse
                 play_url = (
-                    _reverse("student:player", kwargs={"unit_num": unit_n})
+                    reverse("student:player", kwargs={"unit_num": unit_n})
                     + f"?playlist={pl.id}&exercise_num=1"
                 ) if unit_n else None
             else:  # open
