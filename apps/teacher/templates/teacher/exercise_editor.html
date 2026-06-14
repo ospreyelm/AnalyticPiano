@@ -199,10 +199,12 @@ window.__EX__ = {
     var VF = window.Vex && window.Vex.Flow;
     if (!VF) { showError("VexFlow unavailable."); return; }
 
-    var W = 300, H = 220;
-    canvas.width  = W;
-    canvas.height = H;
+    // Render at 1.5× internal resolution then CSS-shrink to 300×240 display.
+    // VexFlow needs wide staves to size noteheads correctly; browser scaling handles the rest.
+    var W = 460, H = 370;
     canvas.style.display = "block";
+    canvas.style.width   = "300px";
+    canvas.style.height  = "240px";
     msg.style.display = "none";
 
     var renderer = new VF.Renderer(canvas, VF.Renderer.Backends.CANVAS);
@@ -210,8 +212,8 @@ window.__EX__ = {
     var ctx = renderer.getContext();
     ctx.clearRect(0, 0, W, H);
 
-    var staveWidth = Math.floor((W - 20) / measureItems.length);
-    var TREBLE_Y = 10, BASS_Y = 110;
+    var staveWidth = Math.floor((W - 30) / measureItems.length);
+    var TREBLE_Y = 20, BASS_Y = 195;
     var noteGroups = [];
 
     function buildNotes(items, clef) {
