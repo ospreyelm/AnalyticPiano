@@ -318,24 +318,63 @@ def course_detail_view(request, course_id):
             source = "official" if pl.is_official else "mine"
         addable_playlists.append({"id": pl.id, "name": pl.name, "source": source})
 
-    # Dashboard deep-link URLs
-    from django.urls import reverse
-    dashboard_edit_url = reverse("dashboard:edit-course", args=[course.id])
-    dashboard_activity_url = reverse("dashboard:course-activity", args=[course.id])
+    tab = request.GET.get("tab", "timeline")
 
     return render(
         request,
         "teacher/course_detail.html",
         {
             "course": course,
+            "pco_rows": pco_rows,
             "pco_rows_json": json.dumps(pco_rows),
             "groups_json": json.dumps(groups),
             "activity_json": json.dumps(course.performance_dict),
             "addable_playlists_json": json.dumps(addable_playlists),
-            "dashboard_edit_url": dashboard_edit_url,
-            "dashboard_activity_url": dashboard_activity_url,
+            "tab": tab,
         },
     )
+
+
+@teacher_required
+@require_POST
+def course_settings_view(request, course_id):
+    """POST /teacher/courses/<course_id>/update-settings/ — update course settings."""
+    from datetime import date as _date
+
+    course = get_object_or_404(Course, id=course_id, authored_by=request.user)
+
+    try:
+        body = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if "title" in body:
+        course.title = str(body["title"])[:200]
+
+    def _parse_date(val):
+        """Parse ISO date string or None; sentinel 'SKIP' means key not in body."""
+        if val == "SKIP":
+            return "SKIP"
+        if val is None:
+            return None
+        try:
+            return _date.fromisoformat(str(val))
+        except ValueError:
+            return "INVALID"
+
+    new_start = _parse_date(body.get("start_date", "SKIP"))
+    new_end = _parse_date(body.get("end_date", "SKIP"))
+    if new_start == "INVALID" or new_end == "INVALID":
+        return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+    if new_start != "SKIP":
+        course.start_date = new_start
+    if new_end != "SKIP":
+        course.end_date = new_end
+    if course.start_date and course.end_date and course.start_date >= course.end_date:
+        return JsonResponse({"error": "start_date must be before end_date."}, status=400)
+
+    course.save()
+    return JsonResponse({"ok": True})
 
 
 @teacher_required

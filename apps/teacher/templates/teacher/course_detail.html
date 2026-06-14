@@ -12,8 +12,8 @@
       groups: {{ groups_json|safe }},
       activity: {{ activity_json|safe }},
       addablePlaylists: {{ addable_playlists_json|safe }},
-      dashboardEditUrl: "{{ dashboard_edit_url|escapejs }}",
-      dashboardActivityUrl: "{{ dashboard_activity_url|escapejs }}",
+      csrfToken: "{{ csrf_token }}",
+      settingsSaveUrl: "{% url 'teacher:course-update-settings' course.id %}",
     };
   </script>
 {% endblock %}
@@ -37,7 +37,19 @@
 
 {% csrf_token %}
 
+<div class="t-tabs" style="margin-bottom:18px;">
+  <a class="t-tab {% if tab == 'timeline' %}t-tab--active{% endif %}"
+     href="?tab=timeline">Timeline</a>
+  <a class="t-tab {% if tab == 'roster' %}t-tab--active{% endif %}"
+     href="?tab=roster">Roster</a>
+  <a class="t-tab {% if tab == 'settings' %}t-tab--active{% endif %}"
+     href="?tab=settings">Settings</a>
+  <a class="t-tab {% if tab == 'activity' %}t-tab--active{% endif %}"
+     href="?tab=activity">Activity</a>
+</div>
+
 <!-- ── Two-column layout ───────────────────────────────────────────── -->
+{% if tab == 'timeline' or tab == 'roster' %}
 <div class="t-detail-layout">
 
   <!-- ── LEFT: Timeline + Add playlist ──────────────────────────────── -->
@@ -136,10 +148,99 @@
   </div><!-- /.t-detail-side -->
 
 </div><!-- /.t-detail-layout -->
-<details class="t-legacy-section">
-  <summary>Advanced / Admin</summary>
-  <p><a class="t-link" href="{{ dashboard_activity_url }}">Advanced activity report (legacy)</a></p>
-</details>
+{% endif %}
+
+{% if tab == 'settings' %}
+<div style="max-width:480px;">
+  <div class="t-card">
+    <div class="t-card-title">Course settings</div>
+
+    <label class="t-label">Title</label>
+    <input class="t-input" id="settings-title" type="text"
+           value="{{ course.title|escapejs }}" maxlength="200">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+      <div>
+        <label class="t-label">Start date</label>
+        <input class="t-input" id="settings-start" type="date"
+               value="{% if course.start_date %}{{ course.start_date|date:'Y-m-d' }}{% endif %}">
+      </div>
+      <div>
+        <label class="t-label">End date</label>
+        <input class="t-input" id="settings-end" type="date"
+               value="{% if course.end_date %}{{ course.end_date|date:'Y-m-d' }}{% endif %}">
+      </div>
+    </div>
+
+    <div style="margin-top:14px;">
+      <button class="t-btn t-btn-primary" id="btn-settings-save">Save</button>
+    </div>
+    <p id="settings-msg" class="t-muted" style="margin-top:8px;display:none;"></p>
+  </div>
+</div>
+<script>
+document.getElementById("btn-settings-save").addEventListener("click", function() {
+  var data = window.__COURSE_DATA__;
+  var msg = document.getElementById("settings-msg");
+  fetch(data.settingsSaveUrl, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": data.csrfToken},
+    body: JSON.stringify({
+      title:      document.getElementById("settings-title").value,
+      start_date: document.getElementById("settings-start").value || null,
+      end_date:   document.getElementById("settings-end").value || null,
+    }),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(j) {
+    msg.style.display = "";
+    msg.textContent = j.ok ? "Saved." : (j.error || "Error.");
+  });
+});
+</script>
+{% endif %}
+
+{% if tab == 'activity' %}
+<div>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+    <label class="t-label" style="margin:0;white-space:nowrap;">Filter by playlist:</label>
+    <select class="t-input" id="activity-pl-filter" style="max-width:300px;">
+      <option value="">All</option>
+      {% for row in pco_rows %}
+      <option value="{{ row.playlistId }}">{{ row.playlistName }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div id="activity-table-container"></div>
+  <p class="t-muted" style="margin-top:8px;">
+    Data from <code>course.performance_dict</code> — reflects all recorded activity.
+  </p>
+</div>
+<script>
+(function() {
+  var activity = window.__COURSE_DATA__.activity || {};
+  var container = document.getElementById("activity-table-container");
+  var entries = Object.entries(activity);
+  if (!entries.length) {
+    container.innerHTML = '<p class="t-muted">No activity recorded yet.</p>';
+    return;
+  }
+  var rows = entries.map(function(kv) {
+    var key = kv[0], val = kv[1];
+    return '<tr>' +
+      '<td>' + key + '</td>' +
+      '<td>' + (val.pass_mark != null ? val.pass_mark : "—") + '</td>' +
+      '<td>' + (val.attempts  != null ? val.attempts  : "—") + '</td>' +
+      '<td>' + (val.time_spent_minutes != null ? val.time_spent_minutes + " min" : "—") + '</td>' +
+    '</tr>';
+  }).join('');
+  container.innerHTML =
+    '<table class="t-table"><thead><tr>' +
+    '<th>Student / exercise</th><th>Status</th><th>Attempts</th><th>Time</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+})();
+</script>
+{% endif %}
 {% endblock %}
 
 {% block body_extra %}

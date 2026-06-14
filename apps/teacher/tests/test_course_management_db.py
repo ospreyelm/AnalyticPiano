@@ -285,12 +285,18 @@ class CourseDetailContextTests(TestCase):
         mine = next(p for p in addable if p["id"] == self.pl1.id)
         self.assertEqual(mine["source"], "mine")
 
-    def test_dashboard_urls_in_context(self):
+    def test_tab_in_context_defaults_to_timeline(self):
         resp = self.client.get(self.url)
-        self.assertIn("dashboard_edit_url", resp.context)
-        self.assertIn("dashboard_activity_url", resp.context)
-        self.assertIn(self.course.id, resp.context["dashboard_edit_url"])
-        self.assertIn(self.course.id, resp.context["dashboard_activity_url"])
+        self.assertEqual(resp.context["tab"], "timeline")
+
+    def test_tab_parameter_respected(self):
+        resp = self.client.get(self.url + "?tab=settings")
+        self.assertEqual(resp.context["tab"], "settings")
+
+    def test_no_dashboard_urls_in_context(self):
+        resp = self.client.get(self.url)
+        self.assertNotIn("dashboard_edit_url", resp.context)
+        self.assertNotIn("dashboard_activity_url", resp.context)
 
     def test_course_data_is_embedded_as_valid_javascript(self):
         resp = self.client.get(self.url)
@@ -299,9 +305,9 @@ class CourseDetailContextTests(TestCase):
         self.assertIn(f'courseId: "{self.course.id}"', html)
         self.assertIn("pcoRows: [{", html)
         self.assertIn("groups: [", html)
-        self.assertIn('dashboardActivityUrl: "', html)
+        self.assertIn('settingsSaveUrl: "', html)
         self.assertNotIn("pcoRows: [{&quot;", html)
-        self.assertNotIn("Edit in dashboard", html)
+        self.assertNotIn("dashboardActivityUrl", html)
 
     def test_other_teachers_course_404(self):
         other_course = _make_course(self.teacher2, title="Other Course")
