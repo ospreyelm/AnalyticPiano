@@ -725,7 +725,8 @@ class CourseDetailView(View):
             raise Http404("Course not found or not enrolled.")
 
         author = course.authored_by
-        teacher_name = author.get_full_name() or author.email
+        full_name = author.get_full_name()
+        teacher_name = author.email if full_name == "[anonymous]" else full_name
 
         pcos = list(
             PlaylistCourseOrdered.objects
