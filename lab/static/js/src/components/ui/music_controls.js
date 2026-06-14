@@ -1062,7 +1062,7 @@ define([
 
       if (payload.targetIntent === "library") {
         if (this.feedback) this.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
-        window.open("/dashboard/exercises/" + payload.exerciseId + "/", "_blank");
+        window.open("/teacher/library/exercises/" + payload.exerciseId + "/", "_blank");
       }
     },
 
@@ -1632,11 +1632,13 @@ define([
             if (data.route === "chordal") {
               $("#play-save-mode option[value='roman']").prop("disabled", false).show();
               $("#play-save-mode option[value='figures']").prop("disabled", false).show();
+              $("#play-save-mode option[value='harmonization']").prop("disabled", false).show();
             } else {
               $("#play-save-mode option[value='roman']").prop("disabled", true).hide();
               $("#play-save-mode option[value='figures']").prop("disabled", true).hide();
+              $("#play-save-mode option[value='harmonization']").prop("disabled", true).hide();
               var curVal = $("#play-save-mode").val();
-              if (curVal === "roman" || curVal === "figures") {
+              if (curVal === "roman" || curVal === "figures" || curVal === "harmonization") {
                 $("#play-save-mode").val("play");
               }
             }
