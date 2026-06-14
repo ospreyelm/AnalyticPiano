@@ -170,16 +170,14 @@ window.__EX__ = {
   }
 
   function extractMeasures(scoreData, maxMeasures) {
-    // Returns flat array of note dicts: {pitch: str, duration: str, dots: int}[][]
-    // One inner array per measure, representing treble voice 0 items.
+    // Returns [{treble: items[], bass: items[]}] per measure.
     if (!scoreData || !scoreData.measures) return null;
     var measures = scoreData.measures.slice(0, maxMeasures);
     return measures.map(function(m) {
-      try {
-        return m.staves.treble.voices[0].items || [];
-      } catch(e) {
-        return [];
-      }
+      var treble = [], bass = [];
+      try { treble = m.staves.treble.voices[0].items || []; } catch(e) {}
+      try { bass   = m.staves.bass.voices[0].items   || []; } catch(e) {}
+      return {treble: treble, bass: bass};
     });
   }
 
@@ -194,14 +192,14 @@ window.__EX__ = {
   function renderThumbnail(scoreData) {
     var measureItems = extractMeasures(scoreData, 2);
     if (!measureItems || !measureItems.length) {
-      showError("No treble staff found.");
+      showError("No score data.");
       return;
     }
 
     var VF = window.Vex && window.Vex.Flow;
     if (!VF) { showError("VexFlow unavailable."); return; }
 
-    var W = 300, H = 120;
+    var W = 300, H = 220;
     canvas.width  = W;
     canvas.height = H;
     canvas.style.display = "block";
@@ -213,22 +211,16 @@ window.__EX__ = {
     ctx.clearRect(0, 0, W, H);
 
     var staveWidth = Math.floor((W - 20) / measureItems.length);
-    var staves = [];
+    var TREBLE_Y = 10, BASS_Y = 110;
     var noteGroups = [];
 
-    measureItems.forEach(function(items, idx) {
-      var x = 10 + idx * staveWidth;
-      var stave = new VF.Stave(x, 10, staveWidth - 4);
-      if (idx === 0) stave.addClef("treble");
-      stave.setContext(ctx).draw();
-      staves.push(stave);
-
+    function buildNotes(items, clef) {
       var notes = [];
       (items || []).forEach(function(item) {
         try {
           var dur = DUR_MAP[item.duration && item.duration.type] || "q";
           if (item.kind === "rest") {
-            notes.push(new VF.StaveNote({keys: ["b/4"], duration: dur + "r"}));
+            notes.push(new VF.StaveNote({clef: clef, keys: [clef === "bass" ? "d/3" : "b/4"], duration: dur + "r"}));
             return;
           }
           var keys;
@@ -241,16 +233,30 @@ window.__EX__ = {
           } else {
             return;
           }
-          var n = new VF.StaveNote({keys: keys, duration: dur});
+          var n = new VF.StaveNote({clef: clef, keys: keys, duration: dur});
           if (item.duration && item.duration.dots) {
             for (var d = 0; d < item.duration.dots; d++) VF.Dot.buildAndAttach([n]);
           }
           notes.push(n);
         } catch(e) { /* skip malformed note */ }
       });
+      return notes;
+    }
 
-      if (!notes.length) return;
-      noteGroups.push({stave: stave, notes: notes});
+    measureItems.forEach(function(m, idx) {
+      var x = 10 + idx * staveWidth;
+      var sw = staveWidth - 4;
+
+      var trebleStave = new VF.Stave(x, TREBLE_Y, sw);
+      var bassStave   = new VF.Stave(x, BASS_Y,   sw);
+      if (idx === 0) { trebleStave.addClef("treble"); bassStave.addClef("bass"); }
+      trebleStave.setContext(ctx).draw();
+      bassStave.setContext(ctx).draw();
+
+      var tNotes = buildNotes(m.treble, "treble");
+      var bNotes = buildNotes(m.bass,   "bass");
+      if (tNotes.length) noteGroups.push({stave: trebleStave, notes: tNotes});
+      if (bNotes.length) noteGroups.push({stave: bassStave,   notes: bNotes});
     });
 
     noteGroups.forEach(function(g) {
