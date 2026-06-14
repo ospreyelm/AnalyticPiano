@@ -119,6 +119,44 @@ Append to the test file:
         self.client.force_login(loner)
         response = self.client.get(reverse("student:home"))
         self.assertNotContains(response, "s-curriculum-collapse")
+
+    def test_home_panel_progress_is_pco_row_averaged(self):
+        """Two PCOs in same unit: one 100%, one 0% → panel shows 50%, not 100/0."""
+        from apps.exercises.models import ExercisePlaylistOrdered, PerformanceData
+        from apps.exercises.tests.umto_test_helpers import make_umto_exercise
+
+        pl_done = Playlist(
+            name="Unit 9 — Done", authored_by=self.teacher,
+            is_public=True, skill_tags=["unit:9"],
+        )
+        pl_done.save()
+        ex = make_umto_exercise(author=self.teacher, unit=9)
+        ExercisePlaylistOrdered.objects.create(playlist=pl_done, exercise=ex, order=1)
+        PerformanceData.objects.create(
+            user=self.student,
+            playlist=pl_done,
+            data=[{"id": ex.id, "score_numerator": 1, "score_denominator": 1}],
+        )
+        PlaylistCourseOrdered.objects.create(
+            course=self.course, playlist=pl_done, order=1,
+        )
+
+        # Second playlist for same unit:9, no progress
+        pl_empty = Playlist(
+            name="Unit 9 — Identification", authored_by=self.teacher,
+            is_public=True, skill_tags=["unit:9"],
+        )
+        pl_empty.save()
+        PlaylistCourseOrdered.objects.create(
+            course=self.course, playlist=pl_empty, order=2,
+        )
+
+        response = self.client.get(reverse("student:home"))
+        self.assertEqual(response.status_code, 200)
+        panels = response.context["course_panels"]
+        self.assertEqual(len(panels), 1)
+        # 100% + 0% averaged across 2 PCO rows = 50%, not 100 (unit-level) or 0
+        self.assertEqual(panels[0]["progress_pct"], 50)
 ```
 
 - [ ] **Step 1.3: Run tests — expect FAIL (URL not defined yet)**
@@ -169,9 +207,10 @@ urlpatterns = [
 ]
 ```
 
-- [ ] **Step 2.2: Add stub `CourseDetailView` at end of `apps/student/views.py`**
+- [ ] **Step 2.2: Add `CourseDetailView` to `apps/student/views.py` — before `HomeView`**
 
-Append before the last line of the file (after `JoinCourseView`):
+`urls.py` imports `views.CourseDetailView` at module load time, so the class must be defined
+before Django resolves it. Place it before `HomeView` (around line 725). Do not append to end of file.
 
 ```python
 class CourseDetailView(View):
@@ -233,6 +272,29 @@ class CourseDetailView(View):
                 from django.utils.timezone import localtime
                 due_label = localtime(pco.due_date).strftime("Due %a %b %-d")
 
+            # Build play_url explicitly per status.
+            # For open: use stats["url"] (has correct next incomplete exercise_num).
+            # For completed: explicitly use exercise_num=1 (start review from beginning).
+            #   Do NOT rely on _playlist_stats returning exercise_num=1 for done playlists —
+            #   that's an implicit side-effect, not a contract.
+            # For upcoming: None (no CTA).
+            unit_tags = [
+                t for t in list(pl.skill_tags or []) + list(pl.tags or [])
+                if isinstance(t, str) and t.startswith("unit:")
+            ]
+            unit_n = unit_tags[0].split(":", 1)[1] if unit_tags else None
+
+            if status == "upcoming":
+                play_url = None
+            elif status == "completed":
+                from django.urls import reverse as _reverse
+                play_url = (
+                    _reverse("student:player", kwargs={"unit_num": unit_n})
+                    + f"?playlist={pl.id}&exercise_num=1"
+                ) if unit_n else None
+            else:  # open
+                play_url = stats.get("url")
+
             row = {
                 "playlist_id": pl.id,
                 "name": pl.name,
@@ -242,7 +304,7 @@ class CourseDetailView(View):
                 "progress_pct": progress_pct,
                 "due_label": due_label,
                 "opens_label": opens_label,
-                "play_url": stats["url"] if status != "upcoming" else None,
+                "play_url": play_url,
             }
 
             if status == "open":
@@ -417,91 +479,57 @@ In `home.html`, inside the existing `<style>` block (around line 56), append aft
   }
 ```
 
-- [ ] **Step 3.4: Update `_build_course_panels` to compute counts + PCO-row-based `avg_pct`**
+- [ ] **Step 3.4: Replace `_build_course_panels` — PCO-row-based progress, no open_units**
 
-The spec requires `progress_pct` averaged across PCO rows (not distinct unit numbers). We also
-need `open_count`, `due_count`, `overdue_count`. Both changes happen in `_build_course_panels`.
+The spec removed `open_units`/`next_unit` from home panels. Drop all unit-level logic.
+The simplified function only needs `user` and `courses_and_pcos`.
 
-First, add an import near the top of the function (or at top of views.py import block):
-
-```python
-from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
-```
-
-Then restructure `_build_course_panels` to batch playlist progress. The key change: before the
-`for course in courses:` loop, collect all playlists and call `_batch_playlist_data` once:
+Replace the entire `_build_course_panels` function (signature + body):
 
 ```python
 def _build_course_panels(
     user,
-    available_unit_numbers: set[str],
-    progress_by_unit: dict[str, dict],
-    course_dates: dict[str, dict],
     courses_and_pcos: tuple | None = None,
 ) -> list[dict]:
-    """Return one dict per enrolled course for the student home page."""
+    """Return one nav-card dict per enrolled course for the student home page.
+
+    Progress and counts are PCO-assignment-level (not unit-level) so that
+    multiple playlists for the same unit each contribute independently.
+    """
     from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
+    from django.utils.timezone import now as tz_now
 
     if courses_and_pcos is not None:
         courses, pcos_by_course = courses_and_pcos
     else:
         courses, pcos_by_course = _get_enrolled_courses_with_pcos(user)
 
-    units = TaxonomyReader.get_all_units()
-    unit_meta_by_n = {str(u["n"]): u for u in units}
-
     # Batch playlist progress across all enrolled courses (3 queries total).
+    # _get_enrolled_courses_with_pcos keys pcos_by_course by pco.course_id,
+    # which equals course.pk (the integer auto-PK). Use course.pk for all lookups.
     all_playlists = [
         pco.playlist
         for pco_rows in pcos_by_course.values()
         for pco in pco_rows
     ]
     raw_by_pk = _batch_playlist_data(user, all_playlists) if all_playlists else {}
-
-    from django.utils.timezone import now as tz_now
     current = tz_now()
 
     panels = []
     for course in courses:
-        pco_rows = pcos_by_course[course.id]
-        course_unit_numbers = set()
-        for pco in pco_rows:
-            tags = list(pco.playlist.skill_tags or []) + list(pco.playlist.tags or [])
-            for tag in tags:
-                if isinstance(tag, str) and tag.startswith("unit:"):
-                    course_unit_numbers.add(tag.split(":", 1)[1])
+        pco_rows = pcos_by_course[course.pk]   # key by pk, not the nullable id CharField
 
-        # Build open units (for unit availability check — kept for next_unit compat)
-        open_units = []
-        for unit_n in sorted(course_unit_numbers, key=unit_sort_key):
-            if unit_n not in available_unit_numbers:
-                continue
-            info = course_dates.get(unit_n)
-            published = info.get("published", True) if info else True
-            if not published:
-                continue
-            progress = progress_by_unit.get(unit_n, _empty_unit_progress_summary())
-            if progress["percent"] >= 100:
-                continue
-            date_labels = _unit_date_labels(info)
-            unit_meta = unit_meta_by_n.get(unit_n, {})
-            open_units.append({
-                "n": unit_n,
-                "title": unit_meta.get("title", f"Unit {unit_n}"),
-                "url": f"/s/units/{unit_n}/play/",
-                "due_label": date_labels.get("due_label") or "",
-                "overdue": date_labels.get("overdue", False),
-                "progress_pct": progress["percent"],
-            })
-
-        # PCO-row-level progress and counts.
         pct_sum = 0
         open_count = 0
         due_count = 0
         overdue_count = 0
         for pco in pco_rows:
             pl = pco.playlist
-            stats = _playlist_stats(pl, raw_by_pk[pl.pk]) if pl.pk in raw_by_pk else {"done": 0, "total": 0}
+            stats = (
+                _playlist_stats(pl, raw_by_pk[pl.pk])
+                if pl.pk in raw_by_pk
+                else {"done": 0, "total": 0}
+            )
             pco_pct = min(100, stats["done"] * 100 // stats["total"]) if stats["total"] else 0
             pct_sum += pco_pct
 
@@ -515,11 +543,8 @@ def _build_course_panels(
                         overdue_count += 1
 
         avg_pct = int(pct_sum / len(pco_rows)) if pco_rows else 0
-
         panels.append({
             "title": course.title,
-            "open_units": open_units,
-            "next_unit": open_units[0] if open_units else None,
             "progress_pct": avg_pct,
             "course_pk": course.pk,
             "open_count": open_count,
@@ -530,7 +555,28 @@ def _build_course_panels(
     return panels
 ```
 
-This replaces the entire `_build_course_panels` function body. The function signature is unchanged.
+Also update the `_build_home_context` call site (around line 642) — remove the now-unused
+positional args since the signature changed:
+
+```python
+    course_panels = _build_course_panels(
+        user,
+        courses_and_pcos=courses_and_pcos,
+    )
+```
+
+And update `_get_enrolled_courses_with_pcos` to key by `pco.course.pk` instead of `pco.course_id`
+to make the contract explicit (both are the integer PK, but `pco.course.pk` is unambiguous):
+
+```python
+    for pco in all_pcos:
+        pcos_by_course_id[pco.course.pk].append(pco)
+        if pco.course.pk not in courses_map:
+            courses_map[pco.course.pk] = pco.course
+```
+
+> **Note:** `pco.course.pk` requires `course` to be select_related, which it already is
+> (`select_related("course", "playlist")` in the existing query).
 
 - [ ] **Step 3.5: Run home panel tests**
 
@@ -665,7 +711,7 @@ class CourseDetailViewTests(TransactionTestCase):
         pl.save()
         from apps.exercises.tests.umto_test_helpers import make_umto_exercise
         ex = make_umto_exercise(author=self.teacher, unit=9)
-        epo = ExercisePlaylistOrdered.objects.create(playlist=pl, exercise=ex, order=1)
+        ExercisePlaylistOrdered.objects.create(playlist=pl, exercise=ex, order=1)
 
         PlaylistCourseOrdered.objects.create(
             course=self.course, playlist=pl, order=1,
@@ -743,13 +789,17 @@ class CourseDetailViewTests(TransactionTestCase):
         self.assertTrue(row["opens_label"].startswith("Opens "))
 ```
 
-- [ ] **Step 4.2: Run new tests — expect FAIL on content assertions**
+- [ ] **Step 4.2: Run new tests — most should PASS already**
 
 ```bash
 DJANGO_SETTINGS_MODULE=harmony.settings.local python3 manage.py test --noinput apps.student.tests.test_course_detail.CourseDetailViewTests -v 1 2>&1 | tail -30
 ```
 
-Expected: most context-assertion tests fail because the template stub doesn't pass context checks correctly, but the view itself should return 200 for enrolled and 404 for unenrolled.
+Expected: nearly all tests pass. `CourseDetailView` is fully implemented in Task 2 — the stub
+template doesn't affect context assertions (`response.context[...]`). Only
+`test_teacher_name_fallback_to_email` may fail if the stub template doesn't render the teacher
+email; it passes after Task 5 adds the full template. If other tests fail, debug before
+continuing.
 
 ---
 
