@@ -199,22 +199,25 @@ window.__EX__ = {
     var VF = window.Vex && window.Vex.Flow;
     if (!VF) { showError("VexFlow unavailable."); return; }
 
-    // Render at 1.5× internal resolution then CSS-shrink to 300×240 display.
-    // VexFlow needs wide staves to size noteheads correctly; browser scaling handles the rest.
-    var W = 460, H = 370;
-    canvas.style.display = "block";
-    canvas.style.width   = "300px";
-    canvas.style.height  = "240px";
-    msg.style.display = "none";
+    // Render at crisp backing store resolution then size canvas display container.
+    var W = 380, H = 200;
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
 
     var renderer = new VF.Renderer(canvas, VF.Renderer.Backends.CANVAS);
-    renderer.resize(W, H);
+    renderer.resize(W * dpr, H * dpr);
     var ctx = renderer.getContext();
+    ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
 
+    canvas.style.display = "block";
+    canvas.style.width   = "300px";
+    canvas.style.height  = "158px";
+    msg.style.display = "none";
+
     var staveWidth = Math.floor((W - 30) / measureItems.length);
-    var TREBLE_Y = 20, BASS_Y = 195;
-    var noteGroups = [];
+    var TREBLE_Y = 15, BASS_Y = 115;
 
     function buildNotes(items, clef) {
       var notes = [];
@@ -255,19 +258,48 @@ window.__EX__ = {
       trebleStave.setContext(ctx).draw();
       bassStave.setContext(ctx).draw();
 
+      // Draw grand staff connections
+      if (idx === 0) {
+        new VF.StaveConnector(trebleStave, bassStave).setType('brace').setContext(ctx).draw();
+        new VF.StaveConnector(trebleStave, bassStave).setType('singleLeft').setContext(ctx).draw();
+      }
+      if (idx === measureItems.length - 1) {
+        new VF.StaveConnector(trebleStave, bassStave).setType('singleRight').setContext(ctx).draw();
+      }
+
       var tNotes = buildNotes(m.treble, "treble");
       var bNotes = buildNotes(m.bass,   "bass");
-      if (tNotes.length) noteGroups.push({stave: trebleStave, notes: tNotes});
-      if (bNotes.length) noteGroups.push({stave: bassStave,   notes: bNotes});
-    });
 
-    noteGroups.forEach(function(g) {
-      try {
-        var voice = new VF.Voice({num_beats: g.notes.length, beat_value: 4}).setStrict(false);
-        voice.addTickables(g.notes);
-        new VF.Formatter().joinVoices([voice]).format([voice], g.stave.getWidth() - 24);
-        voice.draw(ctx, g.stave);
-      } catch(e) { /* skip measure on error */ }
+      var voices = [];
+      var tVoice = null, bVoice = null;
+
+      if (tNotes.length) {
+        tVoice = new VF.Voice({num_beats: tNotes.length, beat_value: 4}).setStrict(false);
+        tVoice.addTickables(tNotes);
+        voices.push(tVoice);
+      }
+      if (bNotes.length) {
+        bVoice = new VF.Voice({num_beats: bNotes.length, beat_value: 4}).setStrict(false);
+        bVoice.addTickables(bNotes);
+        voices.push(bVoice);
+      }
+
+      if (voices.length) {
+        var formatter = new VF.Formatter();
+        if (tVoice) formatter.joinVoices([tVoice]);
+        if (bVoice) formatter.joinVoices([bVoice]);
+
+        var leftPadTreble = trebleStave.getNoteStartX() - trebleStave.getX();
+        var leftPadBass = bassStave.getNoteStartX() - bassStave.getX();
+        var leftPad = Math.max(leftPadTreble, leftPadBass);
+        var rightPad = 12;
+        var notesWidth = Math.max(0, sw - leftPad - rightPad);
+
+        formatter.format(voices, notesWidth);
+
+        if (tVoice) tVoice.draw(ctx, trebleStave);
+        if (bVoice) bVoice.draw(ctx, bassStave);
+      }
     });
   }
 
