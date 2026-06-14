@@ -72,6 +72,26 @@ class AddExerciseViewChordalTests(TestCase):
         ex = Exercise.objects.get(id=resp.json()["id"])
         self.assertEqual(ex.data.get("analyzeConfig"), {"above": "note_names", "below": "roman_numerals"})
 
+    def test_save_multiple_modes(self):
+        from apps.exercises.models import Exercise
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "modes": ["play", "roman", "figures"],
+        }
+        resp = self._post(payload)
+        self.assertEqual(resp.status_code, 201, resp.content)
+        body = resp.json()
+        self.assertIn("ids", body)
+        self.assertEqual(len(body["ids"]), 3)
+
+        exercises = Exercise.objects.filter(id__in=body["ids"]).order_by("id")
+        self.assertEqual(exercises.count(), 3)
+        self.assertEqual(exercises[0].data["mode"], "play")
+        self.assertEqual(exercises[1].data["mode"], "roman")
+        self.assertEqual(exercises[2].data["mode"], "figures")
+
 
 class AddExerciseViewDisplayFlagsTests(TestCase):
     def setUp(self):

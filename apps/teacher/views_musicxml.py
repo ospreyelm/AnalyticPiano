@@ -229,7 +229,7 @@ def import_musicxml_save_view(request):
     except (TypeError, ValueError):
         complexity = 1
 
-    selected_mode = request.POST.get("mode", "play")
+    selected_modes = request.POST.getlist("modes") or [request.POST.get("mode", "play")]
     playlist_id = request.POST.get("playlist_id")
     playlist_name = request.POST.get("playlist_name")
     is_adaptive = request.POST.get("is_adaptive") in ("true", "on", True)
@@ -265,114 +265,125 @@ def import_musicxml_save_view(request):
         from apps.exercises.models import ExercisePlaylistOrdered
         from django.db.models import Max
 
+        created_exercises = []
+        playlist = None
+
         with transaction.atomic():
-            if decision.route == "chordal":
-                payload = import_payload.payload
-                display = {
-                    "showRomans": selected_mode == "roman",
-                    "showFigures": selected_mode == "figures",
-                    "showChordLabels": False,
-                    "showScaleDegrees": False,
-                    "showNoteNames": False,
-                }
-                payload["display"] = display
-                payload["mode"] = selected_mode
-                if "umto" in payload.get("score", {}):
-                    payload["score"]["umto"]["metadata"]["mode"] = selected_mode
+            for mode in selected_modes:
+                if decision.route == "chordal":
+                    import copy
+                    payload = copy.deepcopy(import_payload.payload)
+                    display = {
+                        "showRomans": mode == "roman",
+                        "showFigures": mode == "figures",
+                        "showChordLabels": False,
+                        "showScaleDegrees": False,
+                        "showNoteNames": False,
+                    }
+                    payload["display"] = display
+                    payload["mode"] = mode
+                    if "umto" in payload.get("score", {}):
+                        payload["score"]["umto"]["metadata"]["mode"] = mode
 
-                exercise = Exercise(
-                    description=description,
-                    data=payload,
-                    authored_by=author,
-                    skill_tags=skill_tags,
-                    complexity=complexity,
-                    is_public=effective_is_public,
-                    time_signature=import_payload.meter,
-                )
-                if save_as_official:
-                    exercise.is_official = True
-                exercise.save()
-                exercise.data["score"]["umto"]["metadata"]["exercise_id"] = exercise.id
-                exercise.data["exerciseId"] = exercise.id
-                exercise.save(update_fields=["data"])
-            else:
-                umto_mode = InteractionMode.IDENTIFICATION if selected_mode == "identify" else InteractionMode.PLAYBACK
-                umto_kwargs = dict(
-                    exercise_id="TEMP",
-                    source=f"Play {description}.",
-                    key=harmony_key,
-                    meter=import_payload.meter,
-                    clef=import_payload.score_data.get("meta", {}).get("clef", "treble"),
-                    complexity_score=complexity,
-                    mode=umto_mode,
-                )
-                exercise = save_umto_exercise(
-                    description=description,
-                    score_data=import_payload.score_data,
-                    author=author,
-                    skill_tags=skill_tags,
-                    complexity=complexity,
-                    is_public=effective_is_public,
-                    umto_kwargs=umto_kwargs,
-                    auto_playlist=False,
-                )
-                if save_as_official:
-                    exercise.is_official = True
-                    exercise.save(update_fields=["is_official"])
-
-            # Target playlist mapping
-            playlist = None
-            if playlist_id or playlist_name:
-                if playlist_id:
-                    playlist = Playlist.objects.filter(id=playlist_id).first()
-                    if not playlist:
-                        raise ValueError("Playlist not found.")
-                    if playlist.authored_by_id != author.id:
-                        raise ValueError("Playlist must be authored by the save author.")
-                else:
-                    playlist, pl_created = Playlist.objects.get_or_create(
-                        name=playlist_name,
+                    exercise = Exercise(
+                        description=description,
+                        data=payload,
                         authored_by=author,
-                        defaults={"is_public": effective_is_public, "is_adaptive": is_adaptive},
+                        skill_tags=skill_tags,
+                        complexity=complexity,
+                        is_public=effective_is_public,
+                        time_signature=import_payload.meter,
+                    )
+                    if save_as_official:
+                        exercise.is_official = True
+                    exercise.save()
+                    exercise.data["score"]["umto"]["metadata"]["exercise_id"] = exercise.id
+                    exercise.data["exerciseId"] = exercise.id
+                    exercise.save(update_fields=["data"])
+                else:
+                    umto_mode = InteractionMode.IDENTIFICATION if mode == "identify" else InteractionMode.PLAYBACK
+                    umto_kwargs = dict(
+                        exercise_id="TEMP",
+                        source=f"Play {description}.",
+                        key=harmony_key,
+                        meter=import_payload.meter,
+                        clef=import_payload.score_data.get("meta", {}).get("clef", "treble"),
+                        complexity_score=complexity,
+                        mode=umto_mode,
+                        analysis_type="figured_bass" if mode == "figures" else "roman",
+                    )
+                    import copy
+                    score_data_copy = copy.deepcopy(import_payload.score_data)
+                    exercise = save_umto_exercise(
+                        description=description,
+                        score_data=score_data_copy,
+                        author=author,
+                        skill_tags=skill_tags,
+                        complexity=complexity,
+                        is_public=effective_is_public,
+                        umto_kwargs=umto_kwargs,
+                        auto_playlist=False,
+                    )
+                    if save_as_official:
+                        exercise.is_official = True
+                        exercise.save(update_fields=["is_official"])
+
+                created_exercises.append(exercise)
+
+                # Target playlist mapping
+                if playlist_id or playlist_name:
+                    if playlist_id:
+                        playlist = Playlist.objects.filter(id=playlist_id).first()
+                        if not playlist:
+                            raise ValueError("Playlist not found.")
+                        if playlist.authored_by_id != author.id:
+                            raise ValueError("Playlist must be authored by the save author.")
+                    else:
+                        playlist, pl_created = Playlist.objects.get_or_create(
+                            name=playlist_name,
+                            authored_by=author,
+                            defaults={"is_public": effective_is_public, "is_adaptive": is_adaptive},
+                        )
+
+                    next_order = (
+                        ExercisePlaylistOrdered.objects.filter(playlist=playlist)
+                        .aggregate(max_order=Max("order"))
+                        .get("max_order")
+                        or 0
+                    ) + 1
+                    ExercisePlaylistOrdered.objects.create(
+                        playlist=playlist,
+                        exercise=exercise,
+                        order=next_order,
                     )
 
-                next_order = (
-                    ExercisePlaylistOrdered.objects.filter(playlist=playlist)
-                    .aggregate(max_order=Max("order"))
-                    .get("max_order")
-                    or 0
-                ) + 1
-                ExercisePlaylistOrdered.objects.create(
-                    playlist=playlist,
-                    exercise=exercise,
-                    order=next_order,
-                )
+                # Create transpositions if requested
+                create_transpositions = request.POST.get("create_transpositions") in ("true", "on", True)
+                key_set_str = request.POST.get("key_set") or ""
+                key_set = [k.strip() for k in key_set_str.split(",") if k.strip()]
 
-            # Create transpositions if requested
-            create_transpositions = request.POST.get("create_transpositions") in ("true", "on", True)
-            key_set_str = request.POST.get("key_set") or ""
-            key_set = [k.strip() for k in key_set_str.split(",") if k.strip()]
-
-            if create_transpositions and key_set:
-                from apps.exercises.services.transposition_service import generate_transposed_copies
-                generate_transposed_copies(
-                    source_exercise=exercise,
-                    key_set=key_set,
-                    playlist=playlist,
-                    author=author,
-                    is_official=save_as_official,
-                    overwrite=False,
-                )
+                if create_transpositions and key_set:
+                    from apps.exercises.services.transposition_service import generate_transposed_copies
+                    generate_transposed_copies(
+                        source_exercise=exercise,
+                        key_set=key_set,
+                        playlist=playlist,
+                        author=author,
+                        is_official=save_as_official,
+                        overwrite=False,
+                    )
 
         try:
             os.unlink(tmp_path)
         except Exception:
             pass
 
+        first_ex = created_exercises[0]
         response_data = {
             "success": True,
-            "id": exercise.id,
-            "reviewStatus": exercise.data.get("score", {}).get("umto", {}).get("metadata", {}).get("analysis_review_status", "none"),
+            "id": first_ex.id,
+            "ids": [ex.id for ex in created_exercises],
+            "reviewStatus": first_ex.data.get("score", {}).get("umto", {}).get("metadata", {}).get("analysis_review_status", "none"),
         }
         if playlist:
             response_data.update({"playlistId": playlist.id, "playlistName": playlist.name})
