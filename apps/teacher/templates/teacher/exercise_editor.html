@@ -232,9 +232,9 @@ window.__EX__ = {
             return;
           }
           var keys;
-          if (item.kind === "chord" && item.pitches) {
-            keys = item.pitches.map(function(p) {
-              return pitchToVex(p.step, p.alter || 0, p.octave);
+          if (item.kind === "chord" && item.notes) {
+            keys = item.notes.map(function(p) {
+              return pitchToVex(p.pitch.step, p.pitch.alter || 0, p.pitch.octave);
             });
           } else if (item.pitch) {
             keys = [pitchToVex(item.pitch.step, item.pitch.alter || 0, item.pitch.octave)];
