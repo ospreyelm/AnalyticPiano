@@ -1,5 +1,7 @@
 """Teacher library review workflow views."""
 
+import json
+
 from django.conf import settings
 from django.db.models import Count, Q
 from django.http import Http404
@@ -8,8 +10,28 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import ROLE_TEACHER, User
-from apps.exercises.models import Exercise, Playlist
+from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
 from apps.teacher.decorators import teacher_required
+
+
+ANALYSIS_TYPE_CHOICES = [
+    ("roman", "Roman numeral"),
+    ("figured_bass", "Figured bass"),
+    ("figured_bass_unabbreviated", "Figured bass (unabbreviated)"),
+    ("scale_degree", "Scale degree"),
+    ("note_name", "Note name"),
+    ("solfege", "Solfege"),
+    ("do_based_solfege", "Do-based solfege"),
+    ("fixed_do", "Fixed do"),
+    ("pitch_class", "Pitch class"),
+    ("set_class_prime", "Set class - prime form"),
+    ("set_class_forte", "Set class - Forte label"),
+    ("set_class_normal", "Set class - normal order"),
+    ("set_class_set", "Set class - set notation"),
+    ("spacing", "Spacing"),
+    ("interval_generic", "Interval (generic)"),
+    ("interval_specific", "Interval (specific)"),
+]
 
 
 def _factory_user():
@@ -225,3 +247,190 @@ def exercises_search_view(request):
         for exercise in queryset[:50]
     ]
     return JsonResponse({"results": results})
+
+
+@teacher_required
+def playlist_detail_view(request, playlist_id):
+    playlist = get_object_or_404(
+        Playlist,
+        Q(id=playlist_id)
+        & (Q(authored_by=request.user) | Q(is_public=True) | Q(is_official=True)),
+    )
+    ordered_exercises = (
+        ExercisePlaylistOrdered.objects.filter(playlist=playlist)
+        .select_related("exercise")
+        .order_by("order", "pk")
+    )
+    exercises_data = [
+        {
+            "id": ordered.exercise.id,
+            "description": ordered.exercise.description or "",
+            "complexity": ordered.exercise.complexity,
+            "skill_tags": ordered.exercise.skill_tags or [],
+            "is_official": ordered.exercise.is_official,
+            "epo_id": ordered.pk,
+            "order": ordered.order,
+        }
+        for ordered in ordered_exercises
+    ]
+
+    return render(
+        request,
+        "teacher/playlist_editor.html",
+        {
+            "playlist": playlist,
+            "ordered_exercises": ordered_exercises,
+            "exercises_json": json.dumps(exercises_data),
+            "can_edit": playlist.authored_by_id == request.user.pk
+            or request.user.is_superuser,
+            "review_status": playlist.official_review_status,
+        },
+    )
+
+
+@teacher_required
+@require_POST
+def playlist_save_view(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
+    try:
+        body = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if "name" in body:
+        playlist.name = str(body["name"])[:64]
+    if "skill_tags" in body and isinstance(body["skill_tags"], list):
+        playlist.skill_tags = [str(tag)[:64] for tag in body["skill_tags"]]
+    if "is_public" in body:
+        playlist.is_public = bool(body["is_public"])
+    playlist.save()
+    return _ok()
+
+
+@teacher_required
+@require_POST
+def playlist_reorder_view(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
+    try:
+        body = json.loads(request.body or "{}")
+        order = body["order"]
+    except (json.JSONDecodeError, KeyError):
+        return JsonResponse({"error": "order list required"}, status=400)
+    if not isinstance(order, list):
+        return JsonResponse({"error": "order list required"}, status=400)
+
+    for index, ordered_pk in enumerate(order):
+        ExercisePlaylistOrdered.objects.filter(
+            pk=ordered_pk,
+            playlist=playlist,
+        ).update(order=index)
+    return _ok()
+
+
+@teacher_required
+@require_POST
+def playlist_add_exercise_view(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
+    try:
+        body = json.loads(request.body or "{}")
+        exercise_id = body["exerciseId"]
+    except (json.JSONDecodeError, KeyError):
+        return JsonResponse({"error": "exerciseId required"}, status=400)
+
+    exercise = get_object_or_404(
+        Exercise,
+        Q(id=exercise_id)
+        & (Q(authored_by=request.user) | Q(is_public=True) | Q(is_official=True)),
+    )
+    next_order = ExercisePlaylistOrdered.objects.filter(playlist=playlist).count()
+    ordered = ExercisePlaylistOrdered.objects.create(
+        playlist=playlist,
+        exercise=exercise,
+        order=next_order,
+    )
+    return _ok(epoId=ordered.pk)
+
+
+@teacher_required
+@require_POST
+def playlist_remove_exercise_view(request, playlist_id, ordered_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
+    ordered = get_object_or_404(
+        ExercisePlaylistOrdered,
+        pk=ordered_id,
+        playlist=playlist,
+    )
+    ordered.delete()
+    return _ok()
+
+
+@teacher_required
+def exercise_detail_view(request, exercise_id):
+    exercise = get_object_or_404(
+        Exercise,
+        Q(id=exercise_id)
+        & (Q(authored_by=request.user) | Q(is_public=True) | Q(is_official=True)),
+    )
+    can_edit = exercise.authored_by_id == request.user.pk or request.user.is_superuser
+    analysis_type = "roman"
+    umto_meta = {}
+    if isinstance(exercise.data, dict):
+        analysis_type = exercise.data.get("analysisType", "roman")
+        score = exercise.data.get("score", {})
+        umto_block = score.get("umto", {}) if isinstance(score, dict) else {}
+        meta = umto_block.get("metadata", {}) if isinstance(umto_block, dict) else {}
+        umto_meta = {
+            "key": meta.get("key", ""),
+            "meter": meta.get("meter", ""),
+            "mode": meta.get("mode", ""),
+            "score_kind": meta.get("score_kind", ""),
+            "analysis_review_status": meta.get("analysis_review_status", "none"),
+            "complexity_score": meta.get("complexity_score", 1),
+        }
+
+    in_playlists = list(
+        Playlist.objects.filter(exercises=exercise)
+        .values("id", "name", "is_official")[:20]
+    )
+    return render(
+        request,
+        "teacher/exercise_editor.html",
+        {
+            "exercise": exercise,
+            "umto_meta": umto_meta,
+            "in_playlists": in_playlists,
+            "can_edit": can_edit,
+            "analysis_type": analysis_type,
+            "analysis_type_choices": ANALYSIS_TYPE_CHOICES,
+            "review_status": exercise.official_review_status,
+        },
+    )
+
+
+@teacher_required
+@require_POST
+def exercise_save_view(request, exercise_id):
+    exercise = get_object_or_404(Exercise, id=exercise_id, authored_by=request.user)
+    try:
+        body = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if "description" in body:
+        exercise.description = str(body["description"])[:60]
+    if "skill_tags" in body and isinstance(body["skill_tags"], list):
+        exercise.skill_tags = [str(tag)[:64] for tag in body["skill_tags"]]
+    if "complexity" in body:
+        try:
+            exercise.complexity = max(1, min(20, int(body["complexity"])))
+        except (TypeError, ValueError):
+            pass
+    if "is_public" in body:
+        exercise.is_public = bool(body["is_public"])
+    if "analysisType" in body and isinstance(exercise.data, dict):
+        exercise.data = {
+            **exercise.data,
+            "analysisType": str(body["analysisType"]),
+        }
+    exercise.save()
+    return _ok()
