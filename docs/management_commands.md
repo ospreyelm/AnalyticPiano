@@ -78,6 +78,12 @@ python manage.py prune_non_satb_bach_phrases --author admin@example.com --list
 python manage.py prune_non_satb_bach_phrases --author admin@example.com --execute
 ```
 
+**`repair_bach_slice_barlines`** — Audit or repair Bach phrase rows whose stored rendered `score.measures` were rebarred after UMTO flattening. This catches pickup and truncated-bar slices by comparing stored measure durations to a fresh Music21 Riemenschneider slice. Dry-run by default; pass `--execute` to update only `Exercise.data["score"]["measures"]` and `score.umto.metadata.barline_offsets`, preserving exercise IDs, tags, public flags, and playlist links.
+```
+python manage.py repair_bach_slice_barlines --author admin@example.com --list
+python manage.py repair_bach_slice_barlines --author admin@example.com --riemenschneider 204 --execute
+```
+
 ---
 
 ### Pitch identification (Unit 1)
