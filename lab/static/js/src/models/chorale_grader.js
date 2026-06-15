@@ -47,6 +47,7 @@ define([
       this._lastIncorrect = false; // one-shot flag for grading INCORRECT
       this.finished = false;
       this._advanceTimer = null; // debounce timer for window advance
+      this._scoreLogged = false; // guard: only log completion summary once
 
       // Track per-window details
       this.windowStats = [];      // Array of {status, correct, incorrect, completedAt}
@@ -280,6 +281,18 @@ define([
         }
       }
 
+      // Re-attack check: note already matched in current window — harmless.
+      // Covers players who re-press a key mid-chord before releasing.
+      if (!matched) {
+        for (var ra = 0; ra < idxs.length; ra++) {
+          if (this._matchPitch(tl[idxs[ra]].midi, midi) && this.playedNoteIds.has(tl[idxs[ra]].id)) {
+            matched = true;
+            console.log("[2. GRADE] ✓ Re-attack of already-played note " + midi + " in window " + this.pointer + " — harmless");
+            break;
+          }
+        }
+      }
+
       if (!matched) {
         // Wrong note for this window
         this.mistakeMade = true;
@@ -500,7 +513,9 @@ define([
         graded.score = 0;
         graded.activeIndex = this.windowGroups.length; // past-the-end
 
-        // Completion diagnostic summary
+        // Completion diagnostic summary (once per exercise)
+        if (this._scoreLogged) return graded;
+        this._scoreLogged = true;
         var tl = this.timeline;
         var correctCount = 0;
         var failedWindows = [];
