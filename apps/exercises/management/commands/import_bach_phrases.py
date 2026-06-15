@@ -13,6 +13,15 @@ from apps.exercises.utils.m21_cir_converter import m21_to_cir
 from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
 
 
+NON_SATB_RIEMENSCHNEIDER_NUMBERS = {
+    11, 43, 46, 51, 116, 150, 270, 298, 313, 323,
+    327, 329, 330, 331, 344, 347, 348, 353, 362, 368,
+}
+
+
+def _is_four_part_score(score) -> bool:
+    return len(list(score.parts)) == 4
+
 
 
 def _description_exists(description: str, authored_by=None) -> bool:
@@ -484,6 +493,19 @@ class Command(BaseCommand):
 
             if not score:
                 raise CommandError("Could not load score")
+
+            if current_riem_num is not None and not _is_four_part_score(score):
+                part_names = [
+                    str(p.partName or p.partAbbreviation or p.id or "")
+                    for p in score.parts
+                ]
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Skipping {bwv_display}: expected 4 SATB parts, "
+                        f"found {len(part_names)} ({', '.join(part_names)})."
+                    )
+                )
+                continue
 
             # 2. Cadence Detection (Harmonic + Rhythmic Heuristic)
             self.stdout.write("Analyzing harmonic arrivals and rhythmic cadences...")

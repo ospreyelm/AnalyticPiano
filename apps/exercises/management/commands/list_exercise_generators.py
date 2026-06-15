@@ -46,6 +46,11 @@ CATALOG = [
             "Audit or delete unreferenced duplicate Bach phrase rows after switching to import-once generation.",
             "python manage.py deduplicate_bach_phrases --author admin@example.com",
         ),
+        (
+            "prune_non_satb_bach_phrases",
+            "Dry-run or delete Bach phrase rows imported from non-four-part Riemenschneider sources.",
+            "python manage.py prune_non_satb_bach_phrases --author admin@example.com --list",
+        ),
     ]),
     ("Pitch identification (Unit 1)", [
         (
