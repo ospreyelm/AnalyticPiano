@@ -100,12 +100,18 @@ class CourseDetailView(View):
 ```
 
 **Enrollment check:** query
-`PlaylistCourseOrdered.objects.filter(course__pk=pk, course__visible_to__members=request.user)`.
-If this returns no rows, return 404.
+`Course.objects.filter(pk=pk, visible_to__members=request.user).select_related("authored_by").distinct()`.
+Return 404 if no course found (student not enrolled). An enrolled student in a course with no
+assignments renders the page with empty assignment sections — never a 404.
 
-**PCO rows:** same queryset, `.select_related("course", "playlist").order_by("order", "pk")`.
+**PCO rows:** separate query:
+`PlaylistCourseOrdered.objects.filter(course=course).select_related("playlist").order_by("order", "pk")`.
 
-**Playlist progress:** new helper `_batch_playlist_summaries(user, playlists)` — see below.
+**Playlist progress:** call `_batch_playlist_data(user, playlists)` + `_playlist_stats(playlist, raw[playlist.pk])`
+from `apps/student/unit_progress.py` (3-query batch, handles Unit-4 served-order semantics, primes
+`untransposed_exercises_ids` cache). Extract `done / total` for each playlist's percent.
+`_playlist_stats` also returns a pre-built `url` (with correct `next_exercise_num`) — use it
+directly as `play_url`.
 Do **not** use `_get_course_unit_dates()` here; use each PCO's own `publish_date` / `due_date`.
 
 **Status per PCO:**
@@ -127,11 +133,10 @@ Overdue flag: `status == "open"` AND `due_date is not None` AND `due_date < now`
     "order": pco.order,
     "status": "open" | "upcoming" | "completed",
     "overdue": bool,
-    "progress_pct": int,           # from _batch_playlist_summaries
+    "progress_pct": int,           # min(100, done*100//total) from _playlist_stats; 0 if total==0
     "due_label": str | None,       # e.g. "Due Mon Jun 16" or None
     "opens_label": str | None,     # e.g. "Opens Fri Jun 19" or None
-    "play_url": str | None,        # None if upcoming; see CTA section
-    "unit_n": str | None,          # first unit:N tag, for play URL construction
+    "play_url": str | None,        # url from _playlist_stats; None if upcoming
 }
 ```
 
@@ -157,41 +162,41 @@ teacher_name = author.get_full_name() or author.email
 
 ### CTA links (play URL)
 
-For `open` assignments, the "Continue →" / "Start →" link is:
-
-```
-/s/units/<unit_n>/play/?playlist=<playlist.id>&exercise_num=1
-```
-
-`PlayerView` calls `resolve_requested_step` which handles resumption — passing `exercise_num=1`
-is correct; it redirects the student to their actual next exercise.
+`play_url` comes directly from `_playlist_stats(playlist, raw[playlist.pk])["url"]`.
+That function already resolves `next_exercise_num` (first incomplete exercise in served order) and
+builds the correct `/s/units/<unit_n>/play/?playlist=<id>&exercise_num=<n>` URL, including
+Unit-4 shuffle semantics.
 
 Label: "Start →" if `progress_pct == 0`, else "Continue →".
 
-`upcoming` assignments show no CTA. `completed` assignments show "Review →" (same URL).
-
-If a playlist has no `unit:N` tag, `play_url` is None and no CTA is rendered.
+`upcoming` assignments: `play_url = None`, no CTA rendered.  
+`completed` assignments: show "Review →" using the same `play_url`.
 
 ---
 
-## `_batch_playlist_summaries` Helper
+## Playlist Progress — No New Helper
 
-New private function in `apps/student/views.py`:
+No new `_batch_playlist_summaries` function. Use the existing infrastructure from
+`apps/student/unit_progress.py`:
 
 ```python
-def _batch_playlist_summaries(user, playlists: list) -> dict:
-    """Return {playlist.id: percent_complete} for a list of playlists.
+from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
 
-    Uses two batched queries (PerformanceData + IdentificationAttempt).
-    """
+raw_by_pk = _batch_playlist_data(user, playlists)   # 3 queries total
+for pco in pcos:
+    pl = pco.playlist
+    stats = _playlist_stats(pl, raw_by_pk[pl.pk])
+    progress_pct = min(100, stats["done"] * 100 // stats["total"]) if stats["total"] else 0
+    play_url = stats["url"]   # already built with correct next_exercise_num
 ```
 
-Two batch queries keyed by `playlist_id__in=[...]`. Mirrors the per-playlist logic in
-`_user_completed_exercise_ids` but batched. Returns `{playlist_id: int}` (0–100).
+`_batch_playlist_data` fires exactly 3 queries regardless of playlist count:
+`PerformanceData`, `IdentificationAttempt`, `ExercisePlaylistOrdered`. It also primes
+`untransposed_exercises_ids` cache and applies Unit-4 serving-order semantics via
+`get_ordered_exercise_ids_for_serving`.
 
-Completion count: union of exercise IDs from PerformanceData entries + completed
-IdentificationAttempts. Denominator: `len(playlist.untransposed_exercises_ids or [])`.
-Result is `min(100, int(done / total * 100))` or 0 if total is 0.
+Update the test `test_batch_playlist_summaries` → `test_playlist_progress_via_unit_progress`
+to reflect this (no new public function to test; test `CourseDetailView` context values instead).
 
 ---
 
@@ -252,7 +257,7 @@ File: `apps/student/tests/test_course_detail.py`
 
 | File | Change |
 |---|---|
-| `apps/student/views.py` | Add `_batch_playlist_summaries`; extend `_build_course_panels`; add `CourseDetailView` |
+| `apps/student/views.py` | Extend `_build_course_panels`; add `CourseDetailView` (uses `unit_progress._batch_playlist_data`) |
 | `apps/student/urls.py` | Add `courses/<int:pk>/` route |
 | `apps/student/templates/student/home.html` | Course panels → nav cards; curriculum in `<details>` |
 | `apps/student/templates/student/course_detail.html` | New template |
