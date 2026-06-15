@@ -176,6 +176,7 @@ class Command(BaseCommand):
             authored_by=author,
             description__startswith="Bach R",
         ).order_by("description", "id")
+        candidates = list(queryset)
 
         checked = 0
         skipped = 0
@@ -183,7 +184,7 @@ class Command(BaseCommand):
         mismatches = []
         score_cache = {}
 
-        for exercise in queryset.iterator():
+        for exercise in candidates:
             parsed = _parse_bach_phrase(exercise.description)
             if parsed is None:
                 skipped += 1

@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.db.models.query import QuerySet
 from django.test import TestCase
 
 from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
@@ -133,3 +134,28 @@ class RepairBachSliceBarlinesTest(TestCase):
             [1.0, 5.0],
         )
         self.assertTrue(ExercisePlaylistOrdered.objects.filter(exercise=bad).exists())
+
+    def test_materializes_candidate_rows_before_music21_conversion(self):
+        user = _create_admin_user("barline-materialize@example.test")
+        _make_exercise(
+            user,
+            "Bach R204 - Phrase 1 (mm.0-2) [play]",
+            BAD_REBARRED_MEASURES,
+        )
+
+        out = StringIO()
+        with patch.object(
+            QuerySet,
+            "iterator",
+            side_effect=AssertionError("repair command must not hold an open DB cursor"),
+        ), patch(
+            "apps.exercises.management.commands.repair_bach_slice_barlines._expected_measures_for_slice",
+            return_value=EXPECTED_PICKUP_MEASURES,
+        ):
+            call_command(
+                "repair_bach_slice_barlines",
+                author=user.email,
+                stdout=out,
+            )
+
+        self.assertIn("Checked exercises: 1", out.getvalue())
