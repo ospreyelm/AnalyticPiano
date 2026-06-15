@@ -499,6 +499,35 @@ define([
         graded.result = CORRECT;
         graded.score = 0;
         graded.activeIndex = this.windowGroups.length; // past-the-end
+
+        // Completion diagnostic summary
+        var tl = this.timeline;
+        var correctCount = 0;
+        var failedWindows = [];
+        for (var w = 0; w < this.windowStats.length; w++) {
+          var s = this.windowStats[w];
+          if (s.status === 'complete' && s.incorrect.length === 0) {
+            correctCount++;
+          } else if (s.incorrect.length > 0) {
+            var expectedMidis = this.windowGroups[w].map(function(idx) { return tl[idx].midi; });
+            failedWindows.push({
+              window: w,
+              incorrect: s.incorrect,
+              expected: expectedMidis,
+              isReattack: s.incorrect.every(function(m) { return expectedMidis.indexOf(m) !== -1; }),
+            });
+          }
+        }
+        var total = this.windowGroups.length;
+        console.log('[SCORE] Completed: ' + correctCount + '/' + total + ' windows correct (' + Math.round(correctCount / total * 100) + '%)');
+        if (failedWindows.length === 0) {
+          console.log('[SCORE] No incorrect windows — perfect score');
+        } else {
+          failedWindows.forEach(function(fw) {
+            var tag = fw.isReattack ? 'RE-ATTACK' : 'WRONG NOTE';
+            console.log('[SCORE] Window ' + fw.window + ' FAILED [' + tag + '] — incorrect: [' + fw.incorrect.join(',') + '] | expected: [' + fw.expected.join(',') + ']');
+          });
+        }
       }
 
       return graded;
