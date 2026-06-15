@@ -17,13 +17,19 @@ from apps.student.player_progression import get_served_exercise_id
 User = get_user_model()
 
 
-def _performance_demonstrates_skill(performance_data: dict, exercise=None) -> bool:
+def _performance_demonstrates_skill(performance_data: dict, exercise=None, attempt_count: int = 1) -> bool:
     numerator = performance_data.get("score_numerator")
     denominator = performance_data.get("score_denominator")
     if denominator not in (None, 0):
         is_chorale_play = exercise and exercise.data.get("type") in ("umto_chorale", "chorale") and exercise.data.get("mode") == "playback"
-        threshold = 0.8 if is_chorale_play else 1.0
-        return (numerator / denominator) >= threshold
+        if is_chorale_play:
+            # Progressive threshold: repeated attempts get a lower bar so weak
+            # pianists can still earn skill credit through persistence.
+            if attempt_count >= 5:
+                return True  # finished the exercise = pass
+            threshold = 0.6 if attempt_count >= 3 else 0.8
+            return (numerator / denominator) >= threshold
+        return (numerator / denominator) >= 1.0
     return performance_data.get("error_tally") in (0, -1, "n/a")
 
 
@@ -215,7 +221,16 @@ def _submit_exercise_performance(request):
 
     # Record mastery attempt (skip for figured bass — tags are RN-centric)
     exercise_obj = Exercise.objects.get(id=exercise_id[:6])
-    correct = _performance_demonstrates_skill(performance_data, exercise=exercise_obj)
+    # Count all submissions for this exercise in this playlist (including current).
+    # PerformanceData.submit() already ran above, so count >= 1.
+    exercise_prefix = exercise_id[:6]
+    attempt_count = sum(
+        1
+        for pd in PerformanceData.objects.filter(user_id=user_id, playlist=playlist_obj)
+        for entry in (pd.data or [])
+        if entry.get("id", "")[:6] == exercise_prefix
+    )
+    correct = _performance_demonstrates_skill(performance_data, exercise=exercise_obj, attempt_count=attempt_count)
     mastery_changes = {}
     is_figures_mode = "mode:figures" in (exercise_obj.skill_tags or []) or "mode:figures_unabbreviated" in (exercise_obj.skill_tags or [])
     if exercise_obj.skill_tags and not is_figures_mode:

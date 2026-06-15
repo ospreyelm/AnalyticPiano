@@ -1,4 +1,5 @@
 import json
+from unittest.mock import MagicMock
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
@@ -13,9 +14,76 @@ from apps.exercises.models import (
 )
 from apps.exercises.tests.umto_test_helpers import make_umto_exercise
 from apps.exercises.umto import InteractionMode
+from apps.exercises.views import _performance_demonstrates_skill
 
 
 User = get_user_model()
+
+
+def _chorale_exercise(mode="playback"):
+    ex = MagicMock()
+    ex.data = {"type": "umto_chorale", "mode": mode}
+    return ex
+
+
+class PerformanceDemonstratesSkillTests(TestCase):
+    def _pd(self, numerator, denominator):
+        return {"score_numerator": numerator, "score_denominator": denominator}
+
+    def test_chorale_attempt1_passes_at_80pct(self):
+        self.assertTrue(_performance_demonstrates_skill(
+            self._pd(8, 10), exercise=_chorale_exercise(), attempt_count=1
+        ))
+
+    def test_chorale_attempt1_fails_below_80pct(self):
+        self.assertFalse(_performance_demonstrates_skill(
+            self._pd(7, 10), exercise=_chorale_exercise(), attempt_count=1
+        ))
+
+    def test_chorale_attempt2_still_uses_80pct(self):
+        self.assertFalse(_performance_demonstrates_skill(
+            self._pd(7, 10), exercise=_chorale_exercise(), attempt_count=2
+        ))
+
+    def test_chorale_attempt3_passes_at_60pct(self):
+        self.assertTrue(_performance_demonstrates_skill(
+            self._pd(6, 10), exercise=_chorale_exercise(), attempt_count=3
+        ))
+
+    def test_chorale_attempt3_fails_below_60pct(self):
+        self.assertFalse(_performance_demonstrates_skill(
+            self._pd(5, 10), exercise=_chorale_exercise(), attempt_count=3
+        ))
+
+    def test_chorale_attempt4_uses_60pct(self):
+        self.assertTrue(_performance_demonstrates_skill(
+            self._pd(6, 10), exercise=_chorale_exercise(), attempt_count=4
+        ))
+
+    def test_chorale_attempt5_passes_with_zero_score(self):
+        self.assertTrue(_performance_demonstrates_skill(
+            self._pd(0, 10), exercise=_chorale_exercise(), attempt_count=5
+        ))
+
+    def test_chorale_attempt10_passes_with_zero_score(self):
+        self.assertTrue(_performance_demonstrates_skill(
+            self._pd(0, 20), exercise=_chorale_exercise(), attempt_count=10
+        ))
+
+    def test_non_chorale_still_requires_100pct(self):
+        ex = MagicMock()
+        ex.data = {"type": "umto_chorale", "mode": "identification"}
+        self.assertFalse(_performance_demonstrates_skill(
+            self._pd(9, 10), exercise=ex, attempt_count=5
+        ))
+        self.assertTrue(_performance_demonstrates_skill(
+            self._pd(10, 10), exercise=ex, attempt_count=5
+        ))
+
+    def test_default_attempt_count_is_1(self):
+        self.assertFalse(_performance_demonstrates_skill(
+            self._pd(7, 10), exercise=_chorale_exercise()
+        ))
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
