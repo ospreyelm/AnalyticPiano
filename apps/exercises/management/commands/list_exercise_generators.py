@@ -51,6 +51,11 @@ CATALOG = [
             "Dry-run or delete Bach phrase rows imported from non-four-part Riemenschneider sources.",
             "python manage.py prune_non_satb_bach_phrases --author admin@example.com --list",
         ),
+        (
+            "repair_bach_slice_barlines",
+            "Dry-run or repair Bach phrase rows whose stored rendered measures drifted from source slice barlines.",
+            "python manage.py repair_bach_slice_barlines --author admin@example.com --list",
+        ),
     ]),
     ("Pitch identification (Unit 1)", [
         (
