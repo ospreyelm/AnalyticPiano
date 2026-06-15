@@ -72,6 +72,12 @@ python manage.py deduplicate_bach_phrases --author admin@example.com
 python manage.py deduplicate_bach_phrases --author admin@example.com --execute
 ```
 
+**`prune_non_satb_bach_phrases`** — Audit or delete Bach phrase rows imported from known non-four-part Riemenschneider sources. This removes bad rows such as R150-derived phrases without rerunning the full Bach unit matrix. Dry-run by default; pass `--execute` only after reviewing the affected exercise/link counts.
+```
+python manage.py prune_non_satb_bach_phrases --author admin@example.com --list
+python manage.py prune_non_satb_bach_phrases --author admin@example.com --execute
+```
+
 ---
 
 ### Pitch identification (Unit 1)

@@ -162,6 +162,22 @@ def _first_wir_exercise(tag: str):
 
 
 class WiRImportIntegrationTests(TestCase):
+    def test_import_skips_non_satb_riemenschneider_scores(self):
+        admin_user = _create_admin_user("wir-non-satb@example.test")
+        call_command(
+            "import_bach_phrases",
+            riemenschneider=150,
+            author=admin_user.email,
+            mode="play",
+            extra_tags=["unit:wir_non_satb"],
+        )
+        self.assertFalse(
+            Exercise.objects.filter(
+                authored_by=admin_user,
+                description__startswith="Bach R150",
+            ).exists()
+        )
+
     def test_wir_roman_first_slice_r1(self):
         admin_user = _create_admin_user("wir-r1@example.test")
         call_command(
