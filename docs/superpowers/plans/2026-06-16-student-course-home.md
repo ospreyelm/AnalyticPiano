@@ -92,12 +92,15 @@ All three are popped by `HomeView.get()` in one pass.
 - [ ] **[Tier 2]** `JoinCourseView.post()` — after `group.members.add(request.user)`:
   - Query `PlaylistCourseOrdered.objects.filter(course__visible_to=group)` ordered
     by `due_date ASC NULLS LAST, order ASC`
-  - Pick first PCO where `publish_date` is null or in the past
-  - Compute URL via `_playlist_stats_by_id(request.user, pco.playlist.id)["url"]`
-    (accepts one playlist; acceptable since this is a single post-action, not a
-    bulk home render)
-  - If found: store `next_assignment_url` and `next_assignment_name` in session
-  - If not found or no published PCO: skip (banner shows only group name)
+  - Iterate published PCOs (publish_date null or past); for each:
+    1. Check the playlist has an explicit `unit:N` tag in
+       `skill_tags + tags`; skip if none (avoids the unit-1 fallback in
+       `_playlist_stats` producing a URL for a non-unit playlist)
+    2. Call `stats = _playlist_stats_by_id(request.user, pco.playlist.id)`
+    3. Skip if `stats["done"] >= stats["total"]` (completed assignment)
+    4. On first match: store `stats["url"]` as `next_assignment_url` and
+       `pco.playlist.name` as `next_assignment_name` in session; break
+  - If no match found: skip (banner shows only group name)
 
 - [ ] **[Tier 2]** `HomeView.get()` — pop `next_assignment_url` and
   `next_assignment_name` alongside existing `joined_course` pop; add both to context
@@ -120,8 +123,12 @@ All three are popped by `HomeView.get()` in one pass.
   - `_build_course_panels` returns `next_url=None` when all PCOs are upcoming
   - `_build_course_panels` sorts by due date (null last) over order
   - `JoinCourseView.post()` stores `next_assignment_url` in session when a
-    published open PCO exists
+    published open (incomplete) PCO with a `unit:N` tag exists
   - `JoinCourseView.post()` omits `next_assignment_url` when no published PCO
+  - `JoinCourseView.post()` omits `next_assignment_url` when PCO is published but
+    already 100% complete (skips it, picks next; or none if all complete)
+  - `JoinCourseView.post()` omits `next_assignment_url` when no `unit:N` tag on
+    the playlist (does not fall back to unit 1)
   - `HomeView.get()` pops all three session keys; context contains expected values
   - Partially completed playlist: `next_url` points to first incomplete exercise
     (not exercise 1)
