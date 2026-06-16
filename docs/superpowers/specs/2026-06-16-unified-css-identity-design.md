@@ -88,8 +88,8 @@ migrated to vars as a follow-up cleanup pass, not part of this spec.
 
 **New file:** `apps/student/static/student/player-canvas.css`
 
-**Source:** The inline `<style>` block in `apps/student/templates/student/player.html`
-(currently ~800 lines). Move the entire block verbatim into the new file.
+**Source:** The inline `<style>` block in `apps/student/templates/student/player.html`.
+Move the entire block verbatim into the new file.
 
 **Scope of extraction** (representative, not exhaustive):
 
@@ -118,38 +118,166 @@ migrated to vars as a follow-up cleanup pass, not part of this spec.
 
 ## Phase 3 — Migrate `/teacher/play/`
 
-### Template
+### 3a. Patch `teacher/base.html` — add JS blocks
+
+`teacher/base.html` currently has no RequireJS setup. `play.html` depends on
+`require(['app/main'])` which only works when `require.js` is loaded and configured
+(currently provided by `__base.html`'s `{% block js_require %}`).
+
+**Fix:** Add two new template blocks to `teacher/base.html` inside `<body>`, just
+before `{% block body_extra %}`:
+
+```html
+{% block js_require %}{% endblock %}
+{% block js_extra %}{% endblock %}
+```
+
+This lets pages that extend `teacher/base.html` inject JS boot sequences. The
+blocks are empty by default so existing teacher pages (`course_wizard.html`,
+`library_hub.html`, etc.) are unaffected.
+
+### 3b. Patch `teacher/base.html` — add Google Fonts
+
+`teacher/base.html` loads `tokens.css` (which defines `--font-ui: 'Nunito'` and
+`--font-body: 'Montserrat'`) but never loads the actual font files. `student.css`
+loads them via `@import url(...)`, but teacher pages don't load `student.css`.
+Result: teacher surfaces fall back to system fonts.
+
+**Fix:** Add a Google Fonts `<link>` to `teacher/base.html`'s `<head>`:
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+```
+
+Place it before the `tokens.css` and `teacher.css` links. No change to
+`student.css` (it keeps its own `@import` for student-only pages).
+
+### 3c. Migrate `play.html`
 
 **File:** `lab/templates/play.html`
 
-| Before | After |
-|---|---|
-| `{% extends "__base.html" %}` | `{% extends "teacher/base.html" %}` |
-| Imports `harmony.css` (via `__base.html`) | Imports `tokens.css` + `teacher.css` (via teacher base) |
-| No teacher header/nav | Teacher header/nav included automatically |
+**Template extension:**
 
-**`{% block head_extra %}`** adds:
-1. `player-canvas.css` — warm parchment canvas + dark piano
-2. Notation font `<style>` block for `Sebastian`, `MainSerifs`, `JazzSerifs`
-   (previously pulled in via `harmony.css`; now declared explicitly since
-   `harmony.css` is no longer loaded)
+```
+{% extends "teacher/base.html" %}   {# was: __base.html #}
+```
 
-### Canvas area
+**`{% block js_require %}`** — copy the RequireJS boot from `__base.html` verbatim:
 
-`#staff-area`, `#piano`, `.harmony-ui`, `#staffwrapper` — **HTML unchanged**.
-`player-canvas.css` styles them identically to the student player. No JS changes.
+```html
+{% block js_require %}
+{% load static %}
+<script src="{% static 'js/lib/require.js' %}"></script>
+<script>requirejs.config({ enforceDefine: true, waitSeconds: 0 });</script>
+{% autoescape off %}
+<script>requirejs.config({{ requirejs.config_json }});</script>
+<script>window.appStaticUrl = '{% static '' %}';</script>
+{% if requirejs.debug %}<script>requirejs.config({'urlArgs': 't='+(new Date().getTime())});</script>{% endif %}
+{% endautoescape %}
+{% endblock %}
+```
 
-The play-view toolbar (`#staff-toolbar`) keeps its existing icons and controls;
-`player-canvas.css` provides the `.s-toolbar-btn` amber pill styling.
+`PlayView` already extends `RequirejsTemplateView`, so `requirejs.config_json` is
+available in context. No view change needed.
 
-### Save panel (`#play-save-panel`)
+**`{% block js_extra %}`** retains the existing `require(['app/main'])` call:
+
+```html
+{% block js_extra %}
+<script>require(['app/main']);</script>
+{% endblock %}
+```
+
+**`{% block head_extra %}`** adds three things:
+
+1. `player-canvas.css` — warm parchment canvas + dark piano aesthetic:
+   ```html
+   <link href="{% static 'student/player-canvas.css' %}" rel="stylesheet">
+   ```
+
+2. Notation font `@font-face` declarations for `Sebastian`, `MainSerifs`,
+   `JazzSerifs` — previously loaded via `harmony.css`, now declared explicitly
+   since `harmony.css` is no longer loaded:
+   ```html
+   <style>
+   @font-face { font-family: "Sebastian"; src: url("{% static 'fonts/Sebastian-FigBass-Modified.woff' %}") format("woff"); }
+   @font-face { font-family: "MainSerifs"; src: url("{% static 'fonts/Alegreya-Regular-Modified.woff' %}") format("woff"); }
+   @font-face { font-family: "JazzSerifs"; src: url("{% static 'fonts/Alegreya-Regular-Modified-v2.woff' %}") format("woff"); }
+   </style>
+   ```
+
+3. Play-specific layout CSS — overrides `.harmony-ui` for the two-column
+   authoring layout (canvas left, save panel right). This is play-only and does
+   not belong in `player-canvas.css` which must stay compatible with the
+   single-column student player:
+   ```html
+   <style>
+   /* Play view: canvas + save panel side-by-side */
+   .harmony-ui {
+     display: flex;
+     flex-direction: row;
+     gap: 0;
+     align-items: stretch;
+     padding: 0;
+     border-radius: 12px;
+     overflow: hidden;
+   }
+   #staff-area {
+     flex: 1;
+     min-width: 0;
+     padding: 12px 12px 0;
+   }
+   #piano {
+     margin: 6px 12px 12px;
+   }
+   #play-save-panel {
+     width: 280px;
+     flex-shrink: 0;
+     background: #fff;
+     border-left: 1px solid var(--border);
+     overflow-y: auto;
+     padding: 20px;
+   }
+   </style>
+   ```
+
+### 3d. Restyle play toolbar
+
+The current `#staff-toolbar` in `play.html` uses icon-button classes from
+`harmony.css` (`icon-btn`, `save-icon`, `refresh-icon`, `musicxml-icon`). Removing
+`harmony.css` leaves these unstyled.
+
+**Fix:** Replace the icon-button markup with `.t-btn t-btn-ghost` equivalents.
+JS hooks target these buttons by class selectors (`js-btn-upload-json`,
+`js-btn-pristine`, `js-btn-import-musicxml`) which are preserved on the new markup;
+only the visual classes change.
+
+```html
+<!-- Before (harmony.css icon buttons) -->
+<a class="save-icon js-btn-upload-json" title="Create exercise" ...> </a>
+<a class="refresh-icon js-btn-pristine" title="Reload sheet music" ...> </a>
+<a class="musicxml-icon js-btn-import-musicxml" ...> </a>
+
+<!-- After (.t-btn equivalents, JS selectors preserved) -->
+<button class="t-btn t-btn-ghost t-btn-sm js-btn-upload-json" title="Create exercise">Save</button>
+<button class="t-btn t-btn-ghost t-btn-sm js-btn-pristine" title="Reload">↺ Reload</button>
+<button class="t-btn t-btn-ghost t-btn-sm js-btn-import-musicxml" title="Import MusicXML">Import MusicXML</button>
+```
+
+The camera/screenshot icon-btn is already hidden by `player.html`'s
+`.icon-btn-camera { display: none !important }` rule, which carries over in
+`player-canvas.css`. It can be removed from the HTML entirely.
+
+The meter `<select>` and its label remain unchanged.
+
+### 3e. Restyle save panel (`#play-save-panel`)
 
 Restyled with `.t-*` classes. The element IDs and `name` attributes that JS
 targets are preserved exactly — only visual classes change.
 
 | Element | Before (ad-hoc) | After (`.t-*`) |
 |---|---|---|
-| Panel container | `play-save-panel` custom CSS | white sidebar, `border-left: 1px solid var(--border)` |
+| Panel container | `play-save-panel` custom CSS | Layout from 3c `<style>` block above |
 | Section heading | `.play-save-dialog-title` | `class="t-card-title"` |
 | Field wrapper | `.play-save-field` | `class="t-form-row"` |
 | Labels | `<label>` unstyled | `class="t-label"` |
@@ -159,27 +287,10 @@ targets are preserved exactly — only visual classes change.
 | Save button | `.play-save-btn-primary` | `class="t-btn t-btn-primary"` |
 | Feedback div | `.feedback-inline` | unchanged (JS depends on it) |
 
-**Panel width:** fixed `280px` right sidebar, flex row with canvas. Same layout
-footprint as today.
-
-### `harmony.css` removal
-
-`harmony.css` is no longer loaded in `play.html`. Its remaining useful rules
-(notation font declarations, body reset) are replaced by:
-- Font declarations moved to an explicit `<style>` block in `{% block head_extra %}`
-- Body/reset covered by `tokens.css` + browser defaults
-
-No other pages are affected; `harmony.css` continues to load via `__base.html`
-for the student exercise player until a future cleanup pass.
-
 ### Teacher nav active state
 
 "Play" nav link already receives `t-nav-link--active` via the existing conditional
-in `teacher/base.html`:
-```html
-{% if 'play' in request.resolver_match.url_name %}t-nav-link--active{% endif %}
-```
-No change needed.
+in `teacher/base.html`. No change needed.
 
 ---
 
@@ -188,29 +299,36 @@ No change needed.
 | File | Change |
 |---|---|
 | `apps/student/static/student/tokens.css` | Add 7 new tokens |
-| `apps/student/static/student/player-canvas.css` | **New file** — extracted from player.html |
+| `apps/teacher/templates/teacher/base.html` | Add Google Fonts `<link>`; add `{% block js_require %}` and `{% block js_extra %}` |
+| `apps/student/static/student/player-canvas.css` | **New file** — extracted from player.html inline `<style>` |
 | `apps/student/templates/student/player.html` | Remove inline `<style>`, add `<link>` to player-canvas.css |
-| `lab/templates/play.html` | Extend teacher/base.html; import player-canvas.css; restyle save panel |
+| `lab/templates/play.html` | Extend teacher/base.html; add RequireJS boot in js_require block; import player-canvas.css + fonts + play layout CSS; restyle toolbar + save panel |
 
-No backend changes. No JS changes. No model changes.
+No backend changes. No model changes. No changes to JS files.
 
 ---
 
 ## Testing
 
-**Phase 1 (tokens):** Visual smoke-test teacher app (course list, library, wizard).
-Verify no regression. No automated tests needed — purely additive CSS.
+**Phase 1 (tokens):** Smoke-test teacher app (course list, library, wizard). No
+visual regression expected — new tokens are additive.
 
-**Phase 2 (extraction):** Load student player page; confirm visual is pixel-identical
-to before. Test play exercise, identification exercise, QWERTY mode, settings drawer.
+**Phase 2 (extraction):** Load student player page. Confirm visual is identical to
+before. Test play exercise, identification exercise, QWERTY mode, settings drawer,
+click-note mode.
 
 **Phase 3 (play.html):** Load `/teacher/play/`. Verify:
 - Teacher header/nav visible; "Play" link active
+- Nunito/Montserrat fonts render correctly (not falling back to system fonts)
+- RequireJS boots: music canvas loads, staff renders, piano keyboard works
 - Canvas renders with warm parchment + dark piano (identical to student player)
-- Save panel fields, checkboxes, selects all function
-- Save button posts correctly (JS targets preserved by id/name)
+- Notation fonts (`Sebastian`, `MainSerifs`, `JazzSerifs`) load — verify by
+  checking staff renders figured bass / Roman numeral annotations correctly
+- Toolbar buttons (`Save`, `↺ Reload`, `Import MusicXML`) render and respond
+- Save panel fields, checkboxes, selects, meter select all function
+- Save button posts correctly (JS targets by id/name preserved)
 - Superuser sees "Save as official" row
-- MusicXML import panel appears on import
+- MusicXML import panel appears after file selection
 
 ---
 
@@ -218,6 +336,5 @@ to before. Test play exercise, identification exercise, QWERTY mode, settings dr
 
 - Migrating `harmony.css` out of `__base.html` globally
 - Reskinning the student player top bar (`.s-player-header`) to teal
-- Adding new save-panel features (transpositions wiring is Phase 1 of the
-  generation wizard, a separate plan)
+- Adding new save-panel features (transpositions wiring is the generation wizard plan)
 - Dark mode
