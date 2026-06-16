@@ -150,3 +150,80 @@ class NextUpPanelTests(TransactionTestCase):
         panels = self._panels()
         self.assertIsNotNone(panels[0]["next_url"])
         self.assertIn("exercise_num=2", panels[0]["next_url"])
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class JoinNextAssignmentTests(TransactionTestCase):
+    """JoinCourseView.post stores next_assignment_url in session."""
+    reset_sequences = True
+
+    def setUp(self):
+        self.client = Client()
+        self.teacher = User.objects.create_user(
+            id=41001, email="jteach@test.com", password="pw", is_staff=False
+        )
+        self.student = User.objects.create_user(
+            id=41002, email="jstu@test.com", password="pw", is_staff=False
+        )
+        self.group = Group.objects.create(
+            name="Theory Fall", manager=self.teacher, join_code="FALL26"
+        )
+        self.course = Course(title="Music Theory I", authored_by=self.teacher, open=False)
+        self.course.save()
+        self.course.visible_to.add(self.group)
+        self.client.force_login(self.student)
+
+    def _join(self):
+        return self.client.post(
+            reverse("student:join"),
+            {"join_code": "FALL26"},
+            follow=False,
+        )
+
+    def test_session_stores_next_url_when_open_pco_exists(self):
+        """Session gets next_assignment_url after joining with a published open PCO."""
+        pl = _make_playlist(self.teacher, "Unit 9 — Play", 9)
+        _add_exercise(pl, self.teacher, 9)
+        PlaylistCourseOrdered.objects.create(
+            course=self.course, playlist=pl, order=1,
+        )
+        response = self._join()
+        self.assertEqual(response.status_code, 302)
+        session = self.client.session
+        self.assertIn("next_assignment_url", session)
+        self.assertIn("next_assignment_name", session)
+        self.assertEqual(session["next_assignment_name"], "Unit 9 — Play")
+
+    def test_session_omits_next_url_when_no_pco(self):
+        """No PCOs → session has no next_assignment_url."""
+        response = self._join()
+        self.assertEqual(response.status_code, 302)
+        session = self.client.session
+        self.assertNotIn("next_assignment_url", session)
+
+    def test_session_omits_next_url_when_all_complete(self):
+        """All published PCOs at 100% → session has no next_assignment_url."""
+        pl = _make_playlist(self.teacher, "Unit 9 — Play", 9)
+        ex = _add_exercise(pl, self.teacher, 9)
+        _complete_exercise(self.student, pl, ex)
+        PlaylistCourseOrdered.objects.create(
+            course=self.course, playlist=pl, order=1,
+        )
+        response = self._join()
+        session = self.client.session
+        self.assertNotIn("next_assignment_url", session)
+
+    def test_session_omits_next_url_when_no_unit_tag(self):
+        """Playlist without unit:N tag → session has no next_assignment_url."""
+        pl = Playlist(
+            name="Untagged playlist", authored_by=self.teacher,
+            is_public=True, skill_tags=[],
+        )
+        pl.save()
+        _add_exercise(pl, self.teacher, 9)
+        PlaylistCourseOrdered.objects.create(
+            course=self.course, playlist=pl, order=1,
+        )
+        response = self._join()
+        session = self.client.session
+        self.assertNotIn("next_assignment_url", session)

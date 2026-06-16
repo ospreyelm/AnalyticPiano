@@ -892,6 +892,32 @@ class JoinCourseView(View):
         if not group.members.filter(pk=request.user.pk).exists():
             group.members.add(request.user)
         request.session['joined_course'] = group.name
+
+        # Find first open published assignment for the "start here" link.
+        from django.db.models import F as _F
+        from django.utils.timezone import now as _tz_now
+        from apps.student.unit_progress import _playlist_stats_by_id
+        _now = _tz_now()
+        _candidate_pcos = (
+            PlaylistCourseOrdered.objects
+            .filter(course__visible_to=group)
+            .select_related("playlist")
+            .order_by(_F("due_date").asc(nulls_last=True), "order")
+        )
+        for _pco in _candidate_pcos:
+            if _pco.publish_date is not None and _pco.publish_date > _now:
+                continue
+            _pl = _pco.playlist
+            _pl_tags = list(_pl.skill_tags or []) + list(_pl.tags or [])
+            if not any(isinstance(t, str) and t.startswith("unit:") for t in _pl_tags):
+                continue
+            _stats = _playlist_stats_by_id(request.user, _pl.id)
+            if _stats["total"] == 0 or _stats["done"] >= _stats["total"]:
+                continue
+            request.session["next_assignment_url"] = _stats["url"]
+            request.session["next_assignment_name"] = _pl.name or ""
+            break
+
         return redirect(reverse("student:home"))
 
 
