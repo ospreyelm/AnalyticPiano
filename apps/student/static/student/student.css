@@ -201,3 +201,29 @@ body {
 @media (max-width: 600px) {
   .s-main { padding: 16px 12px; }
 }
+
+/* ── Course panel next-up row and link overrides ── */
+
+/* Panel is now a <div> — suppress link hover lift from inline styles. */
+.s-course-panel {
+  cursor: default;
+}
+.s-course-panel:hover {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* "View course →" footer link. */
+.s-course-panel-cta {
+  text-decoration: none;
+}
+.s-course-panel-cta:hover {
+  text-decoration: underline;
+}
+
+/* Arrow inside the next-up row. */
+.s-course-next-arrow {
+  color: var(--teal);
+  font-weight: 600;
+  flex-shrink: 0;
+}

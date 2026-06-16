@@ -13,13 +13,23 @@
 {% if course_panels %}
 <section class="s-course-panels">
   {% for panel in course_panels %}
-  <a class="s-course-panel" href="{% url 'student:course-detail' pk=panel.course_pk %}">
+  <div class="s-course-panel">
     <div class="s-course-panel-header">
       <h2 class="s-course-panel-title">{{ panel.title }}</h2>
       {% if panel.progress_pct > 0 %}
       <span class="s-course-panel-progress">{{ panel.progress_pct }}% complete</span>
       {% endif %}
     </div>
+    {% if panel.next_url %}
+    <a class="s-course-next" href="{{ panel.next_url }}">
+      <span class="s-course-next-label">Next up</span>
+      <span class="s-course-next-title">{{ panel.next_name }}</span>
+      {% if panel.next_due_label %}
+      <span class="s-due-chip">{{ panel.next_due_label }}</span>
+      {% endif %}
+      <span class="s-course-next-arrow">→</span>
+    </a>
+    {% endif %}
     <div class="s-course-panel-footer">
       {% if panel.open_count %}
       <span class="s-course-panel-badge">{{ panel.open_count }} open{% if panel.due_count %} · {{ panel.due_count }} due{% endif %}</span>
@@ -27,9 +37,9 @@
       {% if panel.overdue_count %}
       <span class="s-due-chip overdue">{{ panel.overdue_count }} overdue</span>
       {% endif %}
-      <span class="s-course-panel-cta">View course →</span>
+      <a class="s-course-panel-cta" href="{% url 'student:course-detail' pk=panel.course_pk %}">View course →</a>
     </div>
-  </a>
+  </div>
   {% endfor %}
 </section>
 {% endif %}
