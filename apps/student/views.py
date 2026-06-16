@@ -1,3 +1,4 @@
+import datetime
 import json
 import uuid
 from collections import defaultdict
@@ -564,8 +565,11 @@ def _build_course_panels(
     courses_and_pcos=None,
 ) -> list[dict]:
     """Return one dict per enrolled course for the student home page."""
+
     from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
     from django.utils.timezone import now as tz_now
+
+    _FAR_FUTURE = datetime.datetime(2999, 12, 31, tzinfo=datetime.timezone.utc)
 
     if courses_and_pcos is not None:
         courses, pcos_by_course = courses_and_pcos
@@ -588,12 +592,14 @@ def _build_course_panels(
         open_count = 0
         due_count = 0
         overdue_count = 0
+        next_candidates = []  # (pco, stats) for published, incomplete PCOs
+
         for pco in pco_rows:
             pl = pco.playlist
             stats = (
                 _playlist_stats(pl, raw_by_pk[pl.pk])
                 if pl.pk in raw_by_pk
-                else {"done": 0, "total": 0}
+                else {"done": 0, "total": 0, "url": None}
             )
             pco_pct = min(100, stats["done"] * 100 // stats["total"]) if stats["total"] else 0
             pct_sum += pco_pct
@@ -602,10 +608,35 @@ def _build_course_panels(
             is_complete = pco_pct >= 100
             if not is_upcoming and not is_complete:
                 open_count += 1
+                if stats.get("total", 0) > 0:
+                    next_candidates.append((pco, stats))
                 if pco.due_date is not None:
                     due_count += 1
                     if pco.due_date < current:
                         overdue_count += 1
+
+        # Pick "next up": earliest due date (nulls last), then playlist order.
+        next_candidates.sort(
+            key=lambda t: (
+                t[0].due_date is None,
+                t[0].due_date if t[0].due_date is not None else _FAR_FUTURE,
+                t[0].order,
+            )
+        )
+
+        next_url = None
+        next_name = None
+        next_due_label = None
+        if next_candidates:
+            winner_pco, winner_stats = next_candidates[0]
+            next_url = winner_stats["url"]  # always non-None when total > 0 (guarded above)
+            next_name = winner_pco.playlist.name
+            date_labels = _unit_date_labels({
+                "due": winner_pco.due_date,
+                "publish": None,
+                "published": True,
+            })
+            next_due_label = date_labels["due_label"]
 
         avg_pct = int(pct_sum / len(pco_rows)) if pco_rows else 0
         panels.append({
@@ -615,6 +646,9 @@ def _build_course_panels(
             "open_count": open_count,
             "due_count": due_count,
             "overdue_count": overdue_count,
+            "next_url": next_url,
+            "next_name": next_name,
+            "next_due_label": next_due_label,
         })
 
     return panels
@@ -821,6 +855,8 @@ class HomeView(View):
     def get(self, request):
         context = _build_home_context(request.user)
         context['joined_course'] = request.session.pop('joined_course', None)
+        context['next_assignment_url'] = request.session.pop('next_assignment_url', None)
+        context['next_assignment_name'] = request.session.pop('next_assignment_name', None)
         return render(request, "student/home.html", context)
 
 
@@ -858,6 +894,32 @@ class JoinCourseView(View):
         if not group.members.filter(pk=request.user.pk).exists():
             group.members.add(request.user)
         request.session['joined_course'] = group.name
+
+        # Find first open published assignment for the "start here" link.
+        from django.db.models import F as _F
+        from django.utils.timezone import now as _tz_now
+        from apps.student.unit_progress import _playlist_stats_by_id
+        _now = _tz_now()
+        _candidate_pcos = (
+            PlaylistCourseOrdered.objects
+            .filter(course__visible_to=group)
+            .select_related("playlist")
+            .order_by(_F("due_date").asc(nulls_last=True), "order")
+        )
+        for _pco in _candidate_pcos:
+            if _pco.publish_date is not None and _pco.publish_date > _now:
+                continue
+            _pl = _pco.playlist
+            _pl_tags = list(_pl.skill_tags or []) + list(_pl.tags or [])
+            if not any(isinstance(t, str) and t.startswith("unit:") for t in _pl_tags):
+                continue
+            _stats = _playlist_stats_by_id(request.user, _pl.id)
+            if _stats["total"] == 0 or _stats["done"] >= _stats["total"]:
+                continue
+            request.session["next_assignment_url"] = _stats["url"]
+            request.session["next_assignment_name"] = _pl.name or ""
+            break
+
         return redirect(reverse("student:home"))
 
 
