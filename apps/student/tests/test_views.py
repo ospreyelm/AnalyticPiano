@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import Client, TransactionTestCase, override_settings
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 import json
 import random
@@ -1238,3 +1238,22 @@ class ChallengeGenerationConstraintTests(TransactionTestCase):
             name__startswith=f"_challenge_{self.student.id}_treble",
         )
         self.assertEqual(created.count(), 2)
+
+
+class DesignTokensTests(TestCase):
+    def test_tokens_css_defines_required_custom_properties(self):
+        tokens_path = (
+            Path(__file__).resolve().parents[1] / "static" / "student" / "tokens.css"
+        )
+        content = tokens_path.read_text()
+        for prop in (
+            "--teal-header:",
+            "--font-mono:",
+            "--text-xs:",
+            "--text-sm:",
+            "--text-base:",
+            "--text-lg:",
+            "--text-xl:",
+            "--surface: #f4f6f7;",
+        ):
+            self.assertIn(prop, content, f"tokens.css missing {prop}")
