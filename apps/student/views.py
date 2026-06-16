@@ -1,3 +1,4 @@
+import datetime
 import json
 import uuid
 from collections import defaultdict
@@ -564,11 +565,11 @@ def _build_course_panels(
     courses_and_pcos=None,
 ) -> list[dict]:
     """Return one dict per enrolled course for the student home page."""
-    import datetime as _dt
+
     from apps.student.unit_progress import _batch_playlist_data, _playlist_stats
     from django.utils.timezone import now as tz_now
 
-    _FAR_FUTURE = _dt.datetime(2999, 12, 31, tzinfo=_dt.timezone.utc)
+    _FAR_FUTURE = datetime.datetime(2999, 12, 31, tzinfo=datetime.timezone.utc)
 
     if courses_and_pcos is not None:
         courses, pcos_by_course = courses_and_pcos
@@ -628,7 +629,7 @@ def _build_course_panels(
         next_due_label = None
         if next_candidates:
             winner_pco, winner_stats = next_candidates[0]
-            next_url = winner_stats.get("url")
+            next_url = winner_stats["url"]  # always non-None when total > 0 (guarded above)
             next_name = winner_pco.playlist.name
             date_labels = _unit_date_labels({
                 "due": winner_pco.due_date,
