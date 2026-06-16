@@ -227,3 +227,65 @@ class JoinNextAssignmentTests(TransactionTestCase):
         response = self._join()
         session = self.client.session
         self.assertNotIn("next_assignment_url", session)
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class HomeViewSessionPopTests(TransactionTestCase):
+    """HomeView.get pops next_assignment session keys into context."""
+    reset_sequences = True
+
+    def setUp(self):
+        self.client = Client()
+        self.teacher = User.objects.create_user(
+            id=42001, email="hteach@test.com", password="pw", is_staff=False
+        )
+        self.student = User.objects.create_user(
+            id=42002, email="hstu@test.com", password="pw", is_staff=False
+        )
+        self.group = Group.objects.create(name="Theory Spring", manager=self.teacher)
+        self.group.members.add(self.student)
+        self.course = Course(title="Music Theory I", authored_by=self.teacher, open=False)
+        self.course.save()
+        self.course.visible_to.add(self.group)
+        self.client.force_login(self.student)
+
+    def test_session_keys_consumed_after_home_view(self):
+        """Session keys are popped (consumed) after GET /student/."""
+        session = self.client.session
+        session["joined_course"] = "Test Group"
+        session["next_assignment_url"] = "/s/play/1/1/"
+        session["next_assignment_name"] = "Unit 1 Roman Numerals"
+        session.save()
+
+        response = self.client.get(reverse("student:home"))
+        self.assertEqual(response.status_code, 200)
+
+        # Keys should be removed from session after GET
+        updated_session = self.client.session
+        self.assertNotIn("joined_course", updated_session)
+        self.assertNotIn("next_assignment_url", updated_session)
+        self.assertNotIn("next_assignment_name", updated_session)
+
+    def test_context_has_all_three_values_from_session(self):
+        """Context has joined_course, next_assignment_url, and next_assignment_name."""
+        session = self.client.session
+        session["joined_course"] = "Test Group"
+        session["next_assignment_url"] = "/s/play/1/1/"
+        session["next_assignment_name"] = "Unit 1 Roman Numerals"
+        session.save()
+
+        response = self.client.get(reverse("student:home"))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.context["joined_course"], "Test Group")
+        self.assertEqual(response.context["next_assignment_url"], "/s/play/1/1/")
+        self.assertEqual(response.context["next_assignment_name"], "Unit 1 Roman Numerals")
+
+    def test_context_defaults_to_none_when_keys_absent(self):
+        """When session keys absent, context values default to None (not KeyError)."""
+        response = self.client.get(reverse("student:home"))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertIsNone(response.context["joined_course"])
+        self.assertIsNone(response.context["next_assignment_url"])
+        self.assertIsNone(response.context["next_assignment_name"])

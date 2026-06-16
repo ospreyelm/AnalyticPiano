@@ -855,6 +855,8 @@ class HomeView(View):
     def get(self, request):
         context = _build_home_context(request.user)
         context['joined_course'] = request.session.pop('joined_course', None)
+        context['next_assignment_url'] = request.session.pop('next_assignment_url', None)
+        context['next_assignment_name'] = request.session.pop('next_assignment_name', None)
         return render(request, "student/home.html", context)
 
 
