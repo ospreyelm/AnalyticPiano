@@ -38,6 +38,7 @@ Meta-plan for addressing these follow-ups:
      and attach transposed variants to the correct official playlist.
 
 4. **Add a course-focused student home section.**
+   - > **Resolved 2026-06-16** — course panels show "Next up →" row (nearest due date); curriculum collapsible below. See plan 2026-06-16-student-course-home.md.
    - Current behavior: joined students still see the full curriculum first.
    - Desired behavior: show "My courses" or "Assigned by your teacher" above
      the curriculum, with course title, current/next due work, and direct links
@@ -190,6 +191,7 @@ Meta-plan for addressing these follow-ups:
      assigned exercises.
 
 3. **Student join success should be explicit.**
+   - > **Resolved 2026-06-16** — banner now shows "Start: <playlist name> →" link to first open assignment.
    - After joining, show "You joined <course/group>" and a direct link to first
      assigned work.
    - Avoid dropping students onto the generic curriculum with no confirmation.
