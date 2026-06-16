@@ -5,7 +5,7 @@
 
 {% if joined_course %}
 <div class="s-join-banner" id="join-banner">
-  You've joined <strong>{{ joined_course }}</strong>.
+  <span>You've joined <strong>{{ joined_course }}</strong>.{% if next_assignment_url %}<a class="s-join-banner-link" href="{{ next_assignment_url }}">Start: {{ next_assignment_name }} →</a>{% endif %}</span>
   <button onclick="this.closest('.s-join-banner').remove()" aria-label="Dismiss">×</button>
 </div>
 {% endif %}

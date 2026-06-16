@@ -227,3 +227,15 @@ body {
   font-weight: 600;
   flex-shrink: 0;
 }
+
+/* Join success banner — "Start: <name> →" link. */
+.s-join-banner-link {
+  color: var(--teal);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+.s-join-banner-link:hover {
+  text-decoration: underline;
+}
