@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Monteverdi — Teacher{% endblock %}</title>
   {% load static %}
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="{% static 'student/tokens.css' %}" rel="stylesheet">
   <link href="{% static 'teacher/teacher.css' %}" rel="stylesheet">
   {% block head_extra %}{% endblock %}
@@ -32,5 +33,7 @@
     {% block content %}{% endblock %}
   </main>
   {% block body_extra %}{% endblock %}
+  {% block js_require %}{% endblock %}
+  {% block js_extra %}{% endblock %}
 </body>
 </html>
