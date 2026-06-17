@@ -60,15 +60,13 @@
 	<div class="harmony-ui">
 		<div id="staff-area" class="content-area">
 			<div id="staff-toolbar">
-				<a class="icon-btn icon-btn-right icon-btn-camera js-btn-screenshot" href="#" target="_blank" title="Screenshot &ndash; works in some browsers" alt="Screenshot"> </a>
-				<a class="save-icon js-btn-upload-json" title="Create exercise" alt="Upload JSON"> </a>
+				<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-upload-json" title="Create exercise">Save</button>
 				<div id="save-feedback" class="feedback-inline" aria-live="polite"></div>
-				<!-- <a class="download-icon js-btn-download-json" alt="Download JSON"> </a> -->
-				<a class="refresh-icon js-btn-pristine" title="Reload sheet music" alt="Reload sheet music"> </a>
-				<a class="musicxml-icon js-btn-import-musicxml" title="Import MusicXML" alt="Import MusicXML" href="#"> </a>
+				<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-pristine" title="Reload sheet music">&#8635; Reload</button>
+				<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-import-musicxml" title="Import MusicXML">Import MusicXML</button>
 				<input type="file" id="musicxml-upload-input" accept=".xml,.musicxml,.mxl" style="display:none;" />
-				<label for="play-meter-select" style="font-size:12px;margin-left:10px;vertical-align:middle;">Meter:</label>
-				<select id="play-meter-select" title="Set meter (auto-suggests barlines)" style="font-size:12px;padding:2px 4px;vertical-align:middle;border:1px solid #bbb;border-radius:3px;">
+				<label for="play-meter-select" class="t-label" style="display:inline-block;margin-left:10px;vertical-align:middle;">Meter:</label>
+				<select id="play-meter-select" class="t-input" title="Set meter (auto-suggests barlines)" style="display:inline-block;width:auto;font-size:0.8rem;padding:4px 8px;vertical-align:middle;">
 					<option value="">Free</option>
 					<option value="2/4">2/4</option>
 					<option value="3/4">3/4</option>
@@ -83,47 +81,47 @@
 		</div>
 		<aside id="play-save-panel" class="play-save-panel" aria-labelledby="play-save-panel-title">
 			<div class="play-save-panel-header">
-				<h2 id="play-save-panel-title" class="play-save-dialog-title">Save exercise</h2>
+				<h2 id="play-save-panel-title" class="play-save-dialog-title t-card-title">Save exercise</h2>
 				<div id="play-save-suggestion-status" class="play-save-panel-status" aria-live="polite"></div>
 			</div>
 
 			<div class="play-save-grid">
-				<div class="play-save-field play-save-field-wide">
-					<label for="play-save-description">Description <span class="play-save-required">*</span></label>
-					<input type="text" id="play-save-description" name="description" maxlength="60" value="Play view chordal exercise" class="play-save-input" />
+				<div class="play-save-field play-save-field-wide t-form-row">
+					<label for="play-save-description" class="t-label">Description <span class="play-save-required">*</span></label>
+					<input type="text" id="play-save-description" name="description" maxlength="60" value="Play view chordal exercise" class="play-save-input t-input" />
 				</div>
 
-				<div class="play-save-field">
-					<label for="play-save-unit">Unit tags <span class="play-save-required">*</span></label>
-					<select id="play-save-unit" name="unit" class="play-save-select" multiple size="5">
+				<div class="play-save-field t-form-row">
+					<label for="play-save-unit" class="t-label">Unit tags <span class="play-save-required">*</span></label>
+					<select id="play-save-unit" name="unit" class="play-save-select t-input" multiple size="5">
 						<!-- populated by JS -->
 					</select>
 				</div>
 
-				<div class="play-save-field">
-					<label>Interaction Modes <span class="play-save-required">*</span></label>
+				<div class="play-save-field t-form-row">
+					<label class="t-label">Interaction Modes <span class="play-save-required">*</span></label>
 					<div class="play-save-checkboxes-group" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
-						<label class="play-save-checkbox">
+						<label class="play-save-checkbox t-check-row">
 							<input type="checkbox" name="modes" value="play" checked /> Play
 						</label>
-						<label class="play-save-checkbox" id="play-save-mode-roman-lbl">
+						<label class="play-save-checkbox t-check-row" id="play-save-mode-roman-lbl">
 							<input type="checkbox" name="modes" value="roman" /> Roman numerals
 						</label>
-						<label class="play-save-checkbox" id="play-save-mode-figures-lbl">
+						<label class="play-save-checkbox t-check-row" id="play-save-mode-figures-lbl">
 							<input type="checkbox" name="modes" value="figures" /> Figured bass
 						</label>
-						<label class="play-save-checkbox" id="play-save-mode-identify-lbl">
+						<label class="play-save-checkbox t-check-row" id="play-save-mode-identify-lbl">
 							<input type="checkbox" name="modes" value="identify" /> Identify
 						</label>
-						<label class="play-save-checkbox" id="play-save-mode-harmonization-lbl">
+						<label class="play-save-checkbox t-check-row" id="play-save-mode-harmonization-lbl">
 							<input type="checkbox" name="modes" value="harmonization" /> Harmonization
 						</label>
 					</div>
 				</div>
 
-				<div class="play-save-field">
-					<label for="play-save-tags">Additional tags <span class="play-save-hint">(optional)</span></label>
-					<input type="text" id="play-save-tags" name="tags" placeholder="e.g. Cadence_Half" class="play-save-input" list="play-save-tags-list" autocomplete="off" />
+				<div class="play-save-field t-form-row">
+					<label for="play-save-tags" class="t-label">Additional tags <span class="play-save-hint">(optional)</span></label>
+					<input type="text" id="play-save-tags" name="tags" placeholder="e.g. Cadence_Half" class="play-save-input t-input" list="play-save-tags-list" autocomplete="off" />
 					<datalist id="play-save-tags-list">
 						<option value="Diatonic_Triads">
 						<option value="Dominant_Seventh">
@@ -144,63 +142,63 @@
 					</datalist>
 				</div>
 
-				<div class="play-save-field">
-					<label for="play-save-playlist">Target playlist</label>
-					<select id="play-save-playlist" name="playlist" class="play-save-select">
+				<div class="play-save-field t-form-row">
+					<label for="play-save-playlist" class="t-label">Target playlist</label>
+					<select id="play-save-playlist" name="playlist" class="play-save-select t-input">
 						<option value="">None</option>
 						<option value="__new__">New playlist...</option>
 					</select>
 				</div>
 
-				<div id="play-save-new-playlist-row" class="play-save-field" style="display:none;">
-					<label for="play-save-new-playlist-name">New playlist name</label>
-					<input type="text" id="play-save-new-playlist-name" name="playlist_name" maxlength="100" class="play-save-input" />
-					<label class="play-save-checkbox" style="margin-top:4px;">
+				<div id="play-save-new-playlist-row" class="play-save-field t-form-row" style="display:none;">
+					<label for="play-save-new-playlist-name" class="t-label">New playlist name</label>
+					<input type="text" id="play-save-new-playlist-name" name="playlist_name" maxlength="100" class="play-save-input t-input" />
+					<label class="play-save-checkbox t-check-row" style="margin-top:4px;">
 						<input type="checkbox" id="play-save-adaptive" name="is_adaptive" />
 						Adaptive <span class="play-save-hint">(serve exercises by skill, not order)</span>
 					</label>
 				</div>
 
-				<div id="play-save-musicxml-options" class="play-save-field play-save-field-wide" style="display:none; border-top: 1px solid #d9c9a9; padding-top: 10px; margin-top: 5px;">
+				<div id="play-save-musicxml-options" class="play-save-field play-save-field-wide t-form-row" style="display:none; border-top: 1px solid #d9c9a9; padding-top: 10px; margin-top: 5px;">
 					<h3 style="font-size: 13px; margin: 0 0 8px 0; color: #2d251d; font-weight: 700;">MusicXML Import Options</h3>
 					<div style="display: flex; gap: 10px;">
 						<div style="flex: 1;">
-							<label for="musicxml-start-measure" style="font-size: 11px; margin-bottom: 2px;">Start Measure</label>
-							<input type="number" id="musicxml-start-measure" name="musicxml_start" class="play-save-input" value="0" min="0" style="padding: 4px 6px;" />
+							<label for="musicxml-start-measure" class="t-label" style="font-size: 11px; margin-bottom: 2px;">Start Measure</label>
+							<input type="number" id="musicxml-start-measure" name="musicxml_start" class="play-save-input t-input" value="0" min="0" style="padding: 4px 6px;" />
 						</div>
 						<div style="flex: 1;">
-							<label for="musicxml-end-measure" style="font-size: 11px; margin-bottom: 2px;">End Measure</label>
-							<input type="number" id="musicxml-end-measure" name="musicxml_end" class="play-save-input" placeholder="All" min="1" style="padding: 4px 6px;" />
+							<label for="musicxml-end-measure" class="t-label" style="font-size: 11px; margin-bottom: 2px;">End Measure</label>
+							<input type="number" id="musicxml-end-measure" name="musicxml_end" class="play-save-input t-input" placeholder="All" min="1" style="padding: 4px 6px;" />
 						</div>
 						<div style="flex: 1;">
-							<label for="musicxml-complexity" style="font-size: 11px; margin-bottom: 2px;">Complexity</label>
-							<input type="number" id="musicxml-complexity" name="musicxml_complexity" class="play-save-input" value="1" min="1" max="100" style="padding: 4px 6px;" />
+							<label for="musicxml-complexity" class="t-label" style="font-size: 11px; margin-bottom: 2px;">Complexity</label>
+							<input type="number" id="musicxml-complexity" name="musicxml_complexity" class="play-save-input t-input" value="1" min="1" max="100" style="padding: 4px 6px;" />
 						</div>
 					</div>
 				</div>
 
-				<div class="play-save-field">
-					<label for="play-save-key-set-preset">Key set</label>
-					<select id="play-save-key-set-preset" class="play-save-select">
+				<div class="play-save-field t-form-row">
+					<label for="play-save-key-set-preset" class="t-label">Key set</label>
+					<select id="play-save-key-set-preset" class="play-save-select t-input">
 						<option value="common">Common keys</option>
 						<option value="sharp">Sharp keys</option>
 						<option value="flat">Flat keys</option>
 						<option value="all">All 12</option>
 						<option value="custom">Custom</option>
 					</select>
-					<input type="text" id="play-save-key-set" class="play-save-input play-save-key-input" value="C, G, D, F, Bb, Eb" aria-label="Keys for transpositions" />
+					<input type="text" id="play-save-key-set" class="play-save-input play-save-key-input t-input" value="C, G, D, F, Bb, Eb" aria-label="Keys for transpositions" />
 				</div>
 
 				<div class="play-save-options">
-					<label class="play-save-checkbox">
+					<label class="play-save-checkbox t-check-row">
 						<input type="checkbox" id="play-save-create-transpositions" name="create_transpositions" />
 						Create transpositions
 					</label>
-					<label class="play-save-checkbox">
+					<label class="play-save-checkbox t-check-row">
 						<input type="checkbox" id="play-save-public" name="is_public" />
 						Make public
 					</label>
-					<label id="play-save-official-row" class="play-save-checkbox" style="display:none;">
+					<label id="play-save-official-row" class="play-save-checkbox t-check-row" style="display:none;">
 						<input type="checkbox" id="play-save-official" name="save_as_official" />
 						Save as official
 					</label>
@@ -210,7 +208,7 @@
 			<div id="play-save-dialog-feedback" class="feedback-inline play-save-dialog-feedback is-visible" aria-live="polite"></div>
 
 			<div class="play-save-actions">
-				<button type="button" id="play-save-submit" class="play-save-btn play-save-btn-primary" disabled>Save</button>
+				<button type="button" id="play-save-submit" class="play-save-btn play-save-btn-primary t-btn t-btn-primary" disabled>Save</button>
 			</div>
 		</aside>
 		<div id="piano"></div>

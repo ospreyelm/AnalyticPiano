@@ -35,3 +35,21 @@ class PlayViewTeacherChromeTests(TestCase):
     def test_play_view_loads_notation_fonts(self):
         resp = self.client.get(reverse("lab:play"))
         self.assertContains(resp, "Sebastian-FigBass-Modified.woff")
+
+    def test_play_view_toolbar_uses_t_btn_classes(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertContains(resp, 't-btn t-btn-ghost t-btn-sm js-btn-upload-json')
+        self.assertContains(resp, 'js-btn-pristine')
+        self.assertContains(resp, 'js-btn-import-musicxml')
+
+    def test_play_view_save_panel_uses_t_classes(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertContains(resp, 't-card-title')
+        self.assertContains(resp, 't-btn t-btn-primary')
+
+    def test_play_view_save_panel_preserves_js_hooks(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertContains(resp, 'id="play-save-description"')
+        self.assertContains(resp, 'id="play-save-submit"')
+        self.assertContains(resp, 'id="play-save-create-transpositions"')
+        self.assertContains(resp, 'name="modes"')
