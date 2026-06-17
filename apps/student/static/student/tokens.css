@@ -3,7 +3,7 @@
   --teal-dark: #1f6070;
   --teal-pale: #e8f4f7;
   --teal-mid: #aacbd4;
-  --surface: #f7f8f8;
+  --surface: #f4f6f7;
   --surface-2: #ffffff;
   --border: #dde3e6;
   --text: #1a2224;
@@ -16,6 +16,13 @@
   --radius: 5px;
   --font-ui: 'Nunito', sans-serif;
   --font-body: 'Montserrat', sans-serif;
+  --teal-header: #1e5c6e;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --text-xs: 0.72rem;
+  --text-sm: 0.82rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.05rem;
+  --text-xl: 1.5rem;
 }
 
 .s-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }

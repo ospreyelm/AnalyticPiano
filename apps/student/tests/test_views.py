@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import Client, TransactionTestCase, override_settings
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 import json
 import random
@@ -1238,3 +1238,43 @@ class ChallengeGenerationConstraintTests(TransactionTestCase):
             name__startswith=f"_challenge_{self.student.id}_treble",
         )
         self.assertEqual(created.count(), 2)
+
+
+class DesignTokensTests(TestCase):
+    def test_tokens_css_defines_required_custom_properties(self):
+        tokens_path = (
+            Path(__file__).resolve().parents[1] / "static" / "student" / "tokens.css"
+        )
+        content = tokens_path.read_text()
+        for prop in (
+            "--teal-header:",
+            "--font-mono:",
+            "--text-xs:",
+            "--text-sm:",
+            "--text-base:",
+            "--text-lg:",
+            "--text-xl:",
+            "--surface: #f4f6f7;",
+        ):
+            self.assertIn(prop, content, f"tokens.css missing {prop}")
+
+
+class PlayerCanvasCssExtractionTests(TestCase):
+    def test_player_canvas_css_file_exists_and_has_content(self):
+        css_path = (
+            Path(__file__).resolve().parents[1]
+            / "static" / "student" / "player-canvas.css"
+        )
+        self.assertTrue(css_path.exists(), "player-canvas.css was not created")
+        content = css_path.read_text()
+        for selector in ("#piano", ".harmony-ui", "#staffwrapper", ".s-toolbar-btn"):
+            self.assertIn(selector, content, f"player-canvas.css missing {selector}")
+
+    def test_player_template_links_player_canvas_css_and_has_no_inline_style(self):
+        template_path = (
+            Path(__file__).resolve().parents[1]
+            / "templates" / "student" / "player.html"
+        )
+        content = template_path.read_text()
+        self.assertIn("student/player-canvas.css", content)
+        self.assertNotIn("<style>", content)

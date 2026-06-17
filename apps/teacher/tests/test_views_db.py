@@ -151,6 +151,16 @@ class CourseWizardRenderTests(TestCase):
         self.assertNotIn("'/dashboard/courses/' + courseId + '/'", script)
 
 
+class TeacherBaseTemplateTests(TestCase):
+    def test_course_list_response_includes_google_fonts_link(self):
+        teacher = _make_teacher()
+        client = Client()
+        client.force_login(teacher)
+        resp = client.get(reverse("teacher:course-list"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "fonts.googleapis.com/css2?family=Nunito")
+
+
 # ---------------------------------------------------------------------------
 # create_course happy path
 # ---------------------------------------------------------------------------
