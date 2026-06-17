@@ -92,6 +92,19 @@
   overflow-y: hidden;
 }
 
+#staff {
+  width: 100%;
+  max-width: none;
+  min-width: 52rem;
+  height: 390px;
+  position: static;
+  z-index: 1;
+  margin: 0 auto;
+  border: 0;
+  padding: 0;
+  display: block;
+}
+
 #user-interaction-solicitation {
   position: absolute;
   left: 50%;
@@ -196,6 +209,230 @@
   color: rgba(255, 248, 238, 0.96);
 }
 
+.keyboard-input-mode .input-mode-toggle,
+.keyboard-input-mode .qwerty-help-panel,
+.keyboard-input-mode .notename-panel {
+  display: none !important;
+}
+
+#staff-toolbar .input-source-mode-toggle,
+#piano .input-source-mode-toggle,
+#piano .click-note-input,
+#staff-area .click-note-input {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  width: max-content;
+  max-width: calc(100% - 18px);
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 0 auto 8px;
+  padding: 4px;
+  box-sizing: border-box;
+  border: 1px solid rgba(237, 226, 209, 0.18);
+  border-radius: 999px;
+  background: rgba(248, 240, 229, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(2px);
+}
+
+#staff-area .click-note-input {
+  position: absolute;
+  left: 22px;
+  top: 54px;
+  margin: 0;
+  border-color: rgba(42, 126, 148, 0.24);
+  background: rgba(248, 240, 229, 0.94);
+  box-shadow: 0 6px 16px rgba(38, 27, 17, 0.08);
+  backdrop-filter: none;
+}
+
+#staff-toolbar .input-source-mode-toggle {
+  margin: 0 2px 0 4px;
+  padding: 3px;
+  border-color: rgba(42, 126, 148, 0.2);
+  background: rgba(42, 126, 148, 0.08);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+#piano .click-note-input {
+  margin-top: -2px;
+  margin-bottom: 9px;
+}
+
+#staff-area .accidental-palette,
+#piano .accidental-palette {
+  display: flex;
+  gap: 4px;
+}
+
+#staff-toolbar .input-mode-btn,
+#piano .input-mode-btn,
+#staff-area .input-mode-btn {
+  min-width: 42px;
+  min-height: 30px;
+  padding: 4px 11px;
+  border: 1px solid rgba(237, 226, 209, 0.22);
+  border-radius: 999px;
+  background: rgba(21, 16, 13, 0.42);
+  color: rgba(248, 240, 229, 0.86);
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+#staff-area .input-mode-btn {
+  border-color: rgba(42, 126, 148, 0.18);
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text);
+}
+
+#staff-toolbar .input-mode-btn {
+  min-width: 48px;
+  min-height: 28px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+#staff-toolbar .input-mode-btn:hover,
+#piano .input-mode-btn:hover,
+#staff-area .input-mode-btn:hover {
+  border-color: rgba(42, 126, 148, 0.75);
+  background: rgba(42, 126, 148, 0.2);
+  color: #f8f0e5;
+}
+
+#staff-area .input-mode-btn:hover,
+#staff-toolbar .input-mode-btn:hover {
+  color: var(--teal);
+}
+
+#staff-toolbar .input-mode-btn:focus-visible,
+#piano .input-mode-btn:focus-visible,
+#staff-area .input-mode-btn:focus-visible {
+  outline: 2px solid rgba(42, 126, 148, 0.95);
+  outline-offset: 2px;
+}
+
+#staff-toolbar .input-mode-btn:active,
+#piano .input-mode-btn:active,
+#staff-area .input-mode-btn:active {
+  transform: translateY(1px);
+}
+
+#staff-toolbar .input-mode-btn-active,
+#piano .input-mode-btn-active,
+#piano .click-note-done,
+#staff-area .input-mode-btn-active,
+#staff-area .click-note-done {
+  border-color: rgba(42, 126, 148, 0.95);
+  background: #2a7e94;
+  color: #f8f0e5;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+#staff-area .input-mode-btn-inactive,
+#staff-toolbar .input-mode-btn-inactive {
+  color: var(--text-muted);
+}
+
+#staff-toolbar .input-mode-btn-active {
+  box-shadow: 0 4px 10px rgba(42, 126, 148, 0.13);
+}
+
+#piano .input-mode-btn-inactive {
+  color: rgba(248, 240, 229, 0.72);
+}
+
+#staff-area .click-note-cap-hint,
+#piano .click-note-cap-hint {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 7px);
+  z-index: 7;
+  display: flex;
+  min-width: 178px;
+  max-width: 220px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid rgba(42, 126, 148, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 252, 247, 0.98);
+  box-shadow: 0 8px 20px rgba(38, 27, 17, 0.12);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+#staff-area .click-note-cap-hint::before,
+#piano .click-note-cap-hint::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: -6px;
+  width: 10px;
+  height: 10px;
+  border-left: 1px solid rgba(42, 126, 148, 0.28);
+  border-top: 1px solid rgba(42, 126, 148, 0.28);
+  background: rgba(255, 252, 247, 0.98);
+  transform: rotate(45deg);
+}
+
+#staff-area .click-note-cap-hint strong,
+#piano .click-note-cap-hint strong {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--teal);
+}
+
+#staff-area .click-note-cap-hint span,
+#piano .click-note-cap-hint span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+#staff-area .click-note-cap-hint.is-visible,
+#piano .click-note-cap-hint.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#staff-area .click-note-cap-shake,
+#piano .click-note-cap-shake {
+  animation: click-note-cap-shake 210ms ease-out;
+}
+
+@keyframes click-note-cap-shake {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #staff-area .click-note-cap-hint,
+  #piano .click-note-cap-hint {
+    transition: none;
+  }
+
+  #staff-area .click-note-cap-shake,
+  #piano .click-note-cap-shake {
+    animation: none;
+  }
+}
+
 .feedback-bubble {
   position: absolute;
   z-index: 1000;
@@ -241,4 +478,31 @@
 
 .feedback-inline strong {
   color: #1f2937;
+}
+
+@media (max-width: 720px) {
+  #staff-toolbar .input-source-mode-toggle,
+  #piano .input-source-mode-toggle,
+  #piano .click-note-input,
+  #staff-area .click-note-input {
+    margin-bottom: 7px;
+  }
+
+  #staff-area .click-note-input {
+    left: 18px;
+    top: 52px;
+    margin-bottom: 0;
+  }
+
+  #staff-toolbar .input-source-mode-toggle {
+    margin-bottom: 0;
+  }
+
+  #staff-toolbar .input-mode-btn,
+  #piano .input-mode-btn,
+  #staff-area .input-mode-btn {
+    min-width: 40px;
+    min-height: 32px;
+    padding: 5px 10px;
+  }
 }

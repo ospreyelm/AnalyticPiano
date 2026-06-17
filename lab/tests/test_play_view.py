@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.staticfiles import finders
 from django.test import TestCase
 from django.urls import reverse
 
@@ -84,3 +85,16 @@ class PlayViewTeacherChromeTests(TestCase):
         self.assertContains(resp, 'id="play-save-submit"')
         self.assertContains(resp, 'id="play-save-create-transpositions"')
         self.assertContains(resp, 'name="modes"')
+
+    def test_exercise_canvas_css_preserves_staff_and_keyboard_layout_rules(self):
+        css_path = finders.find("student/exercise-canvas.css")
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding="utf-8") as css_file:
+            css = css_file.read()
+
+        self.assertIn("#staff {", css)
+        self.assertIn("min-width: 52rem", css)
+        self.assertIn("height: 390px", css)
+        self.assertIn(".keyboard-input-mode .input-mode-toggle", css)
+        self.assertIn("#piano .click-note-input", css)
+        self.assertIn("#staff-toolbar .input-source-mode-toggle", css)
