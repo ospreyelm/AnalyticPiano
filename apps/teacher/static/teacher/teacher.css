@@ -51,6 +51,15 @@
   margin: 0 auto;
 }
 
+.t-main--workspace {
+  max-width: none;
+  padding: 0;
+}
+
+.u-hidden {
+  display: none !important;
+}
+
 /* ── Header navigation ───────────────────────────────────────────────── */
 
 .t-header-nav {

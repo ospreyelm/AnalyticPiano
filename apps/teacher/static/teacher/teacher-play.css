@@ -1,0 +1,224 @@
+/* Teacher Play workspace.
+   Route-specific layer for /teacher/play/. Keep selectors scoped to
+   .t-play-workspace except where legacy AMD components require fixed IDs. */
+
+.t-play-workspace {
+  min-height: calc(100vh - 52px);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.t-play-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.t-play-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.t-play-inline-label {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 0 4px;
+  white-space: nowrap;
+}
+
+.t-play-meter-select {
+  width: auto;
+  min-width: 92px;
+  padding: 5px 9px;
+  font-size: var(--text-sm);
+}
+
+.t-play-audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.t-play-control-btn {
+  min-height: 32px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.t-play-hidden-mounts {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.t-play-stage {
+  width: calc(100% - 24px);
+  max-width: none;
+  margin: 10px auto 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-areas:
+    "staff save"
+    "piano save";
+  gap: 12px;
+  align-items: stretch;
+  padding: 14px 12px 16px;
+  box-sizing: border-box;
+  border: 1px solid rgba(125, 101, 74, 0.14);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fbf7ef 0%, #f1e8db 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 18px 40px rgba(38, 27, 17, 0.08);
+}
+
+.t-play-stage #staff-area {
+  grid-area: staff;
+  min-width: 0;
+  padding: 0;
+}
+
+.t-play-stage #piano {
+  grid-area: piano;
+  min-width: 0;
+}
+
+.t-play-save-panel {
+  grid-area: save;
+  min-width: 0;
+  max-height: calc(100vh - 118px);
+  overflow-y: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(38, 27, 17, 0.08);
+}
+
+.t-play-save-panel .play-save-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.t-play-save-panel .play-save-field {
+  margin-bottom: 0;
+}
+
+.t-play-save-panel .play-save-options {
+  display: grid;
+  gap: 8px;
+}
+
+.t-play-checkboxes-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.t-play-checkbox-offset {
+  margin-top: 4px;
+}
+
+.t-play-save-panel .play-save-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 14px;
+}
+
+.t-play-musicxml-options {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 5px;
+}
+
+.t-play-musicxml-title {
+  font-size: var(--text-sm);
+  margin: 0 0 8px;
+  color: var(--text);
+  font-weight: 700;
+  font-family: var(--font-ui);
+}
+
+.t-play-musicxml-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.t-play-compact-label {
+  font-size: var(--text-xs);
+  margin-bottom: 2px;
+}
+
+.t-play-compact-input {
+  padding: 5px 7px;
+}
+
+.t-play-font-preload {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.t-play-font-sebastian {
+  font-family: "Sebastian";
+}
+
+.t-play-font-main-serifs {
+  font-family: "MainSerifs";
+}
+
+.t-play-font-jazz-serifs {
+  font-family: "JazzSerifs";
+}
+
+@media (max-width: 1020px) {
+  .t-play-stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "staff"
+      "piano"
+      "save";
+  }
+
+  .t-play-save-panel {
+    max-height: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .t-play-topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .t-play-toolbar,
+  .t-play-audio-controls {
+    width: 100%;
+  }
+
+  .t-play-control-btn,
+  .t-play-toolbar .t-btn,
+  .t-play-meter-select {
+    min-height: 44px;
+  }
+
+  .t-play-musicxml-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,244 @@
+/* Shared exercise canvas layer.
+   Used by /teacher/play/ first. Student migration comes later. */
+
+#container {
+  opacity: 1 !important;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+}
+
+#notifications {
+  display: block;
+  width: 95vw;
+  max-width: 900px;
+  margin: 8px auto;
+  text-align: left;
+}
+
+.notifications-wrapper {
+  display: block;
+}
+
+.notification {
+  position: relative;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  box-shadow: 0 4px 20px rgba(38, 27, 17, 0.05);
+  border: 1px solid var(--border);
+  background-color: var(--surface-2);
+  color: var(--text);
+  display: block;
+  transition: all 200ms ease;
+}
+
+.notification.warning {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: rgba(217, 119, 6, 0.28);
+  color: #78350f;
+}
+
+.notification.warning .title {
+  color: #b45309;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.notification .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(120, 53, 15, 0.18);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.7);
+  color: #78350f;
+  transition: all 150ms ease;
+  user-select: none;
+}
+
+#staff-area {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  box-sizing: border-box;
+  position: relative;
+}
+
+#staff-toolbar {
+  margin: 8px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+#staffwrapper {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  height: 400px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+#user-interaction-solicitation {
+  position: absolute;
+  left: 50%;
+  top: 58px;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: min(960px, calc(100% - 48px));
+  max-width: calc(100% - 48px);
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(44, 38, 34, 0.13);
+  font-family: var(--font-ui);
+  font-size: clamp(2.5rem, 5.8vw, 6.5rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+  text-align: center;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+#piano {
+  width: 100%;
+  max-width: none;
+  margin: 6px auto 0;
+  padding: 10px 8px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  position: relative;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #241c17 0%, #15100d 100%);
+  border: 1px solid rgba(0, 0, 0, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -16px 24px rgba(255, 255, 255, 0.03),
+    0 18px 34px rgba(0, 0, 0, 0.22);
+}
+
+#piano::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(158, 46, 46, 0.2), rgba(187, 57, 57, 0.95), rgba(158, 46, 46, 0.2));
+}
+
+.keyboard-wrapper {
+  margin: 0 auto !important;
+}
+
+.keyboard-input-mode {
+  max-width: 100%;
+}
+
+.keyboard-area {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.keyboard .qwerty-labels {
+  z-index: 4;
+}
+
+.keyboard .qwerty-key-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 3px;
+  border-radius: 7px;
+  border: 1px solid rgba(115, 91, 64, 0.38);
+  background: linear-gradient(180deg, rgba(251, 246, 238, 0.98) 0%, rgba(232, 220, 202, 0.98) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 1px 2px rgba(36, 26, 18, 0.14);
+  color: #2e2217;
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.keyboard .qwerty-key-badge.black {
+  padding: 0 2px;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: linear-gradient(180deg, rgba(71, 64, 59, 0.96) 0%, rgba(26, 22, 20, 0.96) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 4px rgba(0, 0, 0, 0.28);
+  color: rgba(255, 248, 238, 0.96);
+}
+
+.feedback-bubble {
+  position: absolute;
+  z-index: 1000;
+  max-width: 280px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #2b2f36;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+  pointer-events: none;
+}
+
+.feedback-bubble--mistake {
+  background: #8a3324;
+}
+
+.feedback-bubble--success {
+  background: #2f6b3a;
+}
+
+.feedback-control-flash {
+  animation: feedback-shake .4s ease;
+}
+
+@keyframes feedback-shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.feedback-inline {
+  font-size: 13px;
+  color: #444;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.feedback-inline.is-visible {
+  opacity: 1;
+}
+
+.feedback-inline strong {
+  color: #1f2937;
+}

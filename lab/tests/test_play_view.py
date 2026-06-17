@@ -19,9 +19,11 @@ class PlayViewTeacherChromeTests(TestCase):
         self.assertContains(resp, 't-header')
         self.assertContains(resp, 'Monteverdi')
 
-    def test_play_view_loads_player_canvas_css(self):
+    def test_play_view_loads_scoped_teacher_and_canvas_css(self):
         resp = self.client.get(reverse("lab:play"))
-        self.assertContains(resp, "student/player-canvas.css")
+        self.assertContains(resp, "student/exercise-canvas.css")
+        self.assertContains(resp, "teacher/teacher-play.css")
+        self.assertNotContains(resp, "student/player-canvas.css")
 
     def test_play_view_boots_requirejs(self):
         resp = self.client.get(reverse("lab:play"))
@@ -36,11 +38,40 @@ class PlayViewTeacherChromeTests(TestCase):
         resp = self.client.get(reverse("lab:play"))
         self.assertContains(resp, "Sebastian-FigBass-Modified.woff")
 
-    def test_play_view_toolbar_uses_t_btn_classes(self):
+    def test_play_view_uses_workspace_main_class(self):
         resp = self.client.get(reverse("lab:play"))
-        self.assertContains(resp, 't-btn t-btn-ghost t-btn-sm js-btn-upload-json')
+        self.assertContains(resp, 'class="t-main t-main--workspace"')
+        self.assertContains(resp, 'class="t-play-workspace js-fade-in fade"')
+
+    def test_play_view_does_not_render_legacy_lab_header_menu(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertNotContains(resp, "Dashboard")
+        self.assertNotContains(resp, "New Play View")
+        self.assertNotContains(resp, "DISPLAY OPTIONS")
+        self.assertNotContains(resp, "_header_music.html")
+
+    def test_play_view_preserves_required_legacy_mount_points(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertContains(resp, 'id="mainmenu"')
+        self.assertContains(resp, 'class="js-keysignature-widget"')
+        self.assertContains(resp, 'class="js-notation-opts-widget"')
+        self.assertContains(resp, 'class="js-keyboardsize settings-inline"')
+        self.assertContains(resp, 'class="js-octaveadjustment settings-inline"')
+        self.assertContains(resp, 'class="js-keyboardshortcuts settings-inline"')
+
+    def test_play_view_toolbar_preserves_js_hooks(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertContains(resp, 'js-btn-upload-json')
         self.assertContains(resp, 'js-btn-pristine')
         self.assertContains(resp, 'js-btn-import-musicxml')
+        self.assertContains(resp, 'id="musicxml-upload-input"')
+        self.assertContains(resp, 'id="play-meter-select"')
+
+    def test_play_view_audio_controls_preserve_js_hooks(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertContains(resp, 'id="mute-toggle"')
+        self.assertContains(resp, 'id="volume"')
+        self.assertContains(resp, 'id="midi-switch"')
 
     def test_play_view_save_panel_uses_t_classes(self):
         resp = self.client.get(reverse("lab:play"))
