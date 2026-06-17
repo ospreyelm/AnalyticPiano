@@ -1,39 +1,15 @@
 {% extends "teacher/base.html" %}
 {% load static %}
 
+{% block main_class %}t-main--workspace{% endblock %}
+
 {% block head_extra %}
-<link href="{% static 'student/player-canvas.css' %}" rel="stylesheet">
+<link href="{% static 'student/exercise-canvas.css' %}" rel="stylesheet">
+<link href="{% static 'teacher/teacher-play.css' %}" rel="stylesheet">
 <style>
 @font-face { font-family: "Sebastian"; src: url("{% static 'fonts/Sebastian-FigBass-Modified.woff' %}") format("woff"); }
 @font-face { font-family: "MainSerifs"; src: url("{% static 'fonts/Alegreya-Regular-Modified.woff' %}") format("woff"); }
 @font-face { font-family: "JazzSerifs"; src: url("{% static 'fonts/Alegreya-Regular-Modified-v2.woff' %}") format("woff"); }
-
-/* Play view: canvas + save panel side-by-side */
-.harmony-ui {
-  display: flex;
-  flex-direction: row;
-  gap: 0;
-  align-items: stretch;
-  padding: 0;
-  border-radius: 12px;
-  overflow: hidden;
-}
-#staff-area {
-  flex: 1;
-  min-width: 0;
-  padding: 12px 12px 0;
-}
-#piano {
-  margin: 6px 12px 12px;
-}
-#play-save-panel {
-  width: 280px;
-  flex-shrink: 0;
-  background: #fff;
-  border-left: 1px solid var(--border);
-  overflow-y: auto;
-  padding: 20px;
-}
 </style>
 {% endblock %}
 
@@ -52,34 +28,48 @@
 {% endblock %}
 
 {% block content %}
-<div id="container" class="js-fade-in fade" style="opacity: 0;">
-	{% include "_header_music.html" %}
-	{% include "_menu_music.html" %}
-	{% include "_menu_piano.html" %}
+<div id="container" class="t-play-workspace js-fade-in fade" style="opacity: 0;">
+	<section class="t-play-topbar" aria-label="Authoring controls">
+		<div class="t-play-toolbar">
+			<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-upload-json" title="Create exercise">Save</button>
+			<div id="save-feedback" class="feedback-inline" aria-live="polite"></div>
+			<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-pristine" title="Reload sheet music">&#8635; Reload</button>
+			<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-import-musicxml" title="Import MusicXML">Import MusicXML</button>
+			<input type="file" id="musicxml-upload-input" accept=".xml,.musicxml,.mxl" class="u-hidden" />
+			<label for="play-meter-select" class="t-label t-play-inline-label">Meter</label>
+			<select id="play-meter-select" class="t-input t-play-meter-select" title="Set meter (auto-suggests barlines)">
+				<option value="">Free</option>
+				<option value="2/4">2/4</option>
+				<option value="3/4">3/4</option>
+				<option value="4/4">4/4</option>
+				<option value="6/8">6/8</option>
+			</select>
+		</div>
+		<div class="t-play-audio-controls" aria-label="Audio and MIDI controls">
+			<button id="mute-toggle" type="button" class="t-btn t-btn-ghost t-btn-sm t-play-control-btn" title="Toggle mute">Mute</button>
+			<button id="volume" type="button" class="t-btn t-btn-ghost t-btn-sm t-play-control-btn" title="Adjust volume">mf</button>
+			<button id="midi-switch" type="button" class="t-btn t-btn-ghost t-btn-sm t-play-control-btn" title="Turn MIDI input on or off">MIDI</button>
+		</div>
+	</section>
+	<div id="legacy-play-mounts" class="t-play-hidden-mounts" aria-hidden="true">
+		<div id="mainmenu">
+			<div class="js-keysignature-widget"></div>
+			<div class="js-notation-opts-widget"></div>
+			<div class="js-keyboardsize settings-inline"></div>
+			<div class="js-octaveadjustment settings-inline"></div>
+			<div class="js-keyboardshortcuts settings-inline"></div>
+		</div>
+	</div>
 	{% include "_notifications.html" %}
-	<div class="harmony-ui">
-		<div id="staff-area" class="content-area">
-			<div id="staff-toolbar">
-				<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-upload-json" title="Create exercise">Save</button>
-				<div id="save-feedback" class="feedback-inline" aria-live="polite"></div>
-				<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-pristine" title="Reload sheet music">&#8635; Reload</button>
-				<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-import-musicxml" title="Import MusicXML">Import MusicXML</button>
-				<input type="file" id="musicxml-upload-input" accept=".xml,.musicxml,.mxl" style="display:none;" />
-				<label for="play-meter-select" class="t-label" style="display:inline-block;margin-left:10px;vertical-align:middle;">Meter:</label>
-				<select id="play-meter-select" class="t-input" title="Set meter (auto-suggests barlines)" style="display:inline-block;width:auto;font-size:0.8rem;padding:4px 8px;vertical-align:middle;">
-					<option value="">Free</option>
-					<option value="2/4">2/4</option>
-					<option value="3/4">3/4</option>
-					<option value="4/4">4/4</option>
-					<option value="6/8">6/8</option>
-				</select>
-			</div>
+	<div class="harmony-ui t-play-stage">
+		<div id="staff-area" class="content-area t-play-staff-area">
+			<div id="staff-toolbar" class="t-play-staff-toolbar"></div>
 			<div id="staffwrapper">
 				<div id="user-interaction-solicitation">CLICK TO START AUDIO</div>
 				<canvas id="staff"></canvas>
 			</div>
 		</div>
-		<aside id="play-save-panel" class="play-save-panel" aria-labelledby="play-save-panel-title">
+		<aside id="play-save-panel" class="play-save-panel t-play-save-panel" aria-labelledby="play-save-panel-title">
 			<div class="play-save-panel-header">
 				<h2 id="play-save-panel-title" class="play-save-dialog-title t-card-title">Save exercise</h2>
 				<div id="play-save-suggestion-status" class="play-save-panel-status" aria-live="polite"></div>
@@ -100,7 +90,7 @@
 
 				<div class="play-save-field t-form-row">
 					<label class="t-label">Interaction Modes <span class="play-save-required">*</span></label>
-					<div class="play-save-checkboxes-group" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+					<div class="play-save-checkboxes-group t-play-checkboxes-group">
 						<label class="play-save-checkbox t-check-row">
 							<input type="checkbox" name="modes" value="play" checked /> Play
 						</label>
@@ -153,26 +143,26 @@
 				<div id="play-save-new-playlist-row" class="play-save-field t-form-row" style="display:none;">
 					<label for="play-save-new-playlist-name" class="t-label">New playlist name</label>
 					<input type="text" id="play-save-new-playlist-name" name="playlist_name" maxlength="100" class="play-save-input t-input" />
-					<label class="play-save-checkbox t-check-row" style="margin-top:4px;">
+					<label class="play-save-checkbox t-check-row t-play-checkbox-offset">
 						<input type="checkbox" id="play-save-adaptive" name="is_adaptive" />
 						Adaptive <span class="play-save-hint">(serve exercises by skill, not order)</span>
 					</label>
 				</div>
 
-				<div id="play-save-musicxml-options" class="play-save-field play-save-field-wide t-form-row" style="display:none; border-top: 1px solid #d9c9a9; padding-top: 10px; margin-top: 5px;">
-					<h3 style="font-size: 13px; margin: 0 0 8px 0; color: #2d251d; font-weight: 700;">MusicXML Import Options</h3>
-					<div style="display: flex; gap: 10px;">
-						<div style="flex: 1;">
-							<label for="musicxml-start-measure" class="t-label" style="font-size: 11px; margin-bottom: 2px;">Start Measure</label>
-							<input type="number" id="musicxml-start-measure" name="musicxml_start" class="play-save-input t-input" value="0" min="0" style="padding: 4px 6px;" />
+				<div id="play-save-musicxml-options" class="play-save-field play-save-field-wide t-form-row t-play-musicxml-options" style="display:none;">
+					<h3 class="t-play-musicxml-title">MusicXML Import Options</h3>
+					<div class="t-play-musicxml-grid">
+						<div>
+							<label for="musicxml-start-measure" class="t-label t-play-compact-label">Start Measure</label>
+							<input type="number" id="musicxml-start-measure" name="musicxml_start" class="play-save-input t-input t-play-compact-input" value="0" min="0" />
 						</div>
-						<div style="flex: 1;">
-							<label for="musicxml-end-measure" class="t-label" style="font-size: 11px; margin-bottom: 2px;">End Measure</label>
-							<input type="number" id="musicxml-end-measure" name="musicxml_end" class="play-save-input t-input" placeholder="All" min="1" style="padding: 4px 6px;" />
+						<div>
+							<label for="musicxml-end-measure" class="t-label t-play-compact-label">End Measure</label>
+							<input type="number" id="musicxml-end-measure" name="musicxml_end" class="play-save-input t-input t-play-compact-input" placeholder="All" min="1" />
 						</div>
-						<div style="flex: 1;">
-							<label for="musicxml-complexity" class="t-label" style="font-size: 11px; margin-bottom: 2px;">Complexity</label>
-							<input type="number" id="musicxml-complexity" name="musicxml_complexity" class="play-save-input t-input" value="1" min="1" max="100" style="padding: 4px 6px;" />
+						<div>
+							<label for="musicxml-complexity" class="t-label t-play-compact-label">Complexity</label>
+							<input type="number" id="musicxml-complexity" name="musicxml_complexity" class="play-save-input t-input t-play-compact-input" value="1" min="1" max="100" />
 						</div>
 					</div>
 				</div>
@@ -216,7 +206,7 @@
     {% include "_footer.html" %}
 </div>
 
-<div style="font-family: 'Sebastian'">&nbsp;<!-- make sure font is loaded  --></div>
-<div style="font-family: 'MainSerifs'">&nbsp;<!-- make sure font is loaded  --></div>
-<div style="font-family: 'JazzSerifs'">&nbsp;<!-- make sure font is loaded  --></div>
+<div class="t-play-font-preload t-play-font-sebastian">&nbsp;<!-- make sure font is loaded  --></div>
+<div class="t-play-font-preload t-play-font-main-serifs">&nbsp;<!-- make sure font is loaded  --></div>
+<div class="t-play-font-preload t-play-font-jazz-serifs">&nbsp;<!-- make sure font is loaded  --></div>
 {% endblock %}

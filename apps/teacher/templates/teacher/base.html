@@ -29,7 +29,7 @@
       </div>
     {% endif %}
   </header>
-  <main class="t-main">
+  <main class="t-main {% block main_class %}{% endblock %}">
     {% block content %}{% endblock %}
   </main>
   {% block body_extra %}{% endblock %}
