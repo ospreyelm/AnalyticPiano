@@ -6,6 +6,7 @@ import random
 from pathlib import Path
 from unittest.mock import patch
 
+from apps.accounts.models import ROLE_STUDENT, ROLE_TEACHER
 from apps.exercises.models import (
     Course,
     Exercise,
@@ -47,12 +48,38 @@ class StudentBasicViewTests(TransactionTestCase):
         response = self.client.get(reverse("student:login"))
         self.assertEqual(response.status_code, 200)
 
+    def test_authenticated_teacher_login_get_redirects_to_teacher_courses(self):
+        self.instructor.role = ROLE_TEACHER
+        self.instructor.save(update_fields=["role"])
+        self.client.force_login(self.instructor)
+
+        response = self.client.get(reverse("student:login"))
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
+
     def test_login_page_uses_monteverdi_branding(self):
         response = self.client.get(reverse("student:login"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Monteverdi")
         self.assertNotContains(response, "HarmonyLab")
+
+    def test_student_base_header_uses_post_logout_form(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("student:home"))
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertRegex(
+            content,
+            rf'<form[^>]*method="post"[^>]*action="{reverse("student:logout")}"',
+        )
+        self.assertIn("csrfmiddlewaretoken", content)
+        self.assertNotIn(f'href="{reverse("student:logout")}"', content)
 
     def test_login_post_valid_redirects_to_home(self):
         response = self.client.post(
@@ -62,6 +89,55 @@ class StudentBasicViewTests(TransactionTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], reverse("student:home"))
 
+    def test_login_post_restores_safe_guarded_student_destination(self):
+        guarded_path = reverse(
+            "student:unit-progress",
+            kwargs={"unit_n": "1"},
+        )
+        guarded_response = self.client.get(guarded_path)
+        login_url = guarded_response["Location"]
+
+        login_response = self.client.get(login_url)
+        self.assertEqual(login_response.status_code, 200)
+
+        response = self.client.post(
+            login_url,
+            {"email": "sarah@test.com", "password": "testpass123"},
+        )
+
+        self.assertRedirects(
+            response,
+            guarded_path,
+            fetch_redirect_response=False,
+        )
+
+    def test_login_post_rejects_external_next_and_redirects_to_student_home(self):
+        response = self.client.post(
+            f"{reverse('student:login')}?next=https://example.com/steal",
+            {"email": "sarah@test.com", "password": "testpass123"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("student:home"),
+            fetch_redirect_response=False,
+        )
+
+    def test_teacher_login_post_redirects_to_teacher_courses(self):
+        self.instructor.role = ROLE_TEACHER
+        self.instructor.save(update_fields=["role"])
+
+        response = self.client.post(
+            f"{reverse('student:login')}?next={reverse('student:home')}",
+            {"email": "prof@test.com", "password": "testpass123"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
+
     def test_login_post_invalid_rerenders_form(self):
         response = self.client.post(
             reverse("student:login"),
@@ -70,16 +146,58 @@ class StudentBasicViewTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"form", response.content.lower())
 
+    def test_student_logout_get_returns_405(self):
+        self.client.force_login(self.student)
+
+        response = self.client.get(reverse("student:logout"))
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_student_logout_post_redirects_to_student_login(self):
+        self.client.force_login(self.student)
+
+        response = self.client.post(reverse("student:logout"))
+
+        self.assertRedirects(
+            response,
+            reverse("student:login"),
+            fetch_redirect_response=False,
+        )
+        self.assertNotIn("_auth_user_id", self.client.session)
+
     def test_home_redirects_unauthenticated_to_student_login(self):
         response = self.client.get(reverse("student:home"))
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/s/login/", response["Location"])
+        self.assertRedirects(
+            response,
+            f"{reverse('student:login')}?next={reverse('student:home')}",
+            fetch_redirect_response=False,
+        )
 
-    def test_home_redirects_instructor_to_dashboard(self):
+    def test_home_redirects_teacher_to_teacher_courses(self):
+        self.instructor.role = ROLE_TEACHER
+        self.instructor.save(update_fields=["role"])
         self.client.force_login(self.instructor)
+
         response = self.client.get(reverse("student:home"))
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/dashboard/", response["Location"])
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
+
+    def test_staff_student_is_not_treated_as_teacher(self):
+        staff_student = User.objects.create_user(
+            email="staff-student@example.com",
+            password="testpass123",
+            role=ROLE_STUDENT,
+            is_staff=True,
+        )
+        self.client.force_login(staff_student)
+
+        response = self.client.get(reverse("student:home"))
+
+        self.assertEqual(response.status_code, 200)
 
     def test_home_returns_200_for_student(self):
         self.client.force_login(self.student)
@@ -178,6 +296,101 @@ class StudentBasicViewTests(TransactionTestCase):
             reverse("student:player", kwargs={"unit_num": 1}) + f"?playlist={playlist.id}"
         )
         self.assertEqual(response.status_code, 200)
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class StudentRoleBoundaryTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            email="role-boundary-teacher@test.com",
+            password="testpass123",
+            role=ROLE_TEACHER,
+        )
+        self.client.force_login(self.teacher)
+
+    def test_anonymous_challenge_redirects_to_student_login_with_next(self):
+        self.client.logout()
+        path = reverse(
+            "student:unit1-challenge",
+            kwargs={"group_key": "treble"},
+        )
+
+        response = self.client.get(path)
+
+        self.assertRedirects(
+            response,
+            f"{reverse('student:login')}?next={path}",
+            fetch_redirect_response=False,
+        )
+
+    def test_anonymous_unit_progress_redirects_to_student_login_with_next(self):
+        self.client.logout()
+        path = reverse("student:unit-progress", kwargs={"unit_n": "1"})
+
+        response = self.client.get(path)
+
+        self.assertRedirects(
+            response,
+            f"{reverse('student:login')}?next={path}",
+            fetch_redirect_response=False,
+        )
+
+    def test_teacher_challenge_redirects_before_creating_playlist(self):
+        lane_keys = [
+            "identify_treble",
+            "play_from_name_treble",
+            "play_the_notes_treble",
+        ]
+        exercises = [
+            make_umto_exercise(
+                self.teacher,
+                description=f"Challenge source {index}",
+            )
+            for index in range(6)
+        ]
+        source_exercises = {
+            lane_key: exercises[index * 2 : index * 2 + 2]
+            for index, lane_key in enumerate(lane_keys)
+        }
+        progress = {
+            "bar_segments": [
+                {"tag": lane_key, "level": "proficient"}
+                for lane_key in lane_keys
+            ]
+        }
+        playlist_count = Playlist.objects.count()
+
+        with (
+            patch(
+                "apps.student.unit_progress.get_unit_progress_data",
+                return_value=progress,
+            ),
+            patch(
+                "apps.student.unit1_curriculum.get_unit1_challenge_source_exercises",
+                return_value=source_exercises,
+            ),
+        ):
+            response = self.client.get(
+                reverse("student:unit1-challenge", kwargs={"group_key": "treble"})
+            )
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(Playlist.objects.count(), playlist_count)
+
+    def test_teacher_unit_progress_redirects_to_teacher_courses(self):
+        response = self.client.get(
+            reverse("student:unit-progress", kwargs={"unit_n": "1"})
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])

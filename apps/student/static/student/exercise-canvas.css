@@ -163,6 +163,8 @@
 
 .keyboard-wrapper {
   margin: 0 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .keyboard-input-mode {
@@ -171,7 +173,7 @@
 
 .keyboard-area {
   display: flex;
-  justify-content: center;
+  justify-content: safe center;
   align-items: flex-start;
 }
 
@@ -184,9 +186,11 @@
 }
 
 .keyboard .qwerty-key-badge {
+  position: absolute;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   box-sizing: border-box;
   padding: 0 3px;
   border-radius: 7px;

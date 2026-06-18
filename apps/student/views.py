@@ -2,16 +2,20 @@ import datetime
 import json
 import uuid
 from collections import defaultdict
+from functools import wraps
 from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+from apps.accounts.models import ROLE_TEACHER
+from apps.accounts.navigation import home_url_for_user
 from apps.student.unit_progress import (
     _batch_skill_levels,
     get_unit_progress_data,
@@ -696,7 +700,7 @@ def _build_home_context(user) -> dict:
 class StudentLoginView(View):
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect(reverse("student:home"))
+            return redirect(home_url_for_user(request.user))
         form = CustomAuthenticationForm()
         return render(request, "student/login.html", {"form": form})
 
@@ -708,11 +712,22 @@ class StudentLoginView(View):
             user = authenticate(username=email, password=password)
             if user is not None:
                 django_login(request, user)
-                return redirect(reverse("student:home"))
+                if user.is_superuser or user.role == ROLE_TEACHER:
+                    return redirect(home_url_for_user(user))
+                next_url = request.GET.get("next")
+                if next_url and url_has_allowed_host_and_scheme(
+                    next_url,
+                    allowed_hosts={request.get_host()},
+                    require_https=request.is_secure(),
+                ):
+                    return redirect(next_url)
+                return redirect(home_url_for_user(user))
         return render(request, "student/login.html", {"form": form})
 
 class StudentLogoutView(View):
-    def get(self, request):
+    http_method_names = ["post"]
+
+    def post(self, request):
         django_logout(request)
         return redirect(reverse("student:login"))
 
@@ -734,14 +749,26 @@ class StudentSignupView(View):
 
 
 def _require_student(view_func):
-    """Decorator: redirect unauthenticated → login, instructor → dashboard."""
+    """Decorator: redirect unauthenticated users to login and teachers home."""
+    @wraps(view_func)
     def wrapper(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect(f"{reverse('student:login')}?next={request.path}")
-        if request.user.is_staff:
-            return HttpResponseRedirect("/dashboard/")
+        if request.user.is_superuser or request.user.role == ROLE_TEACHER:
+            return redirect(home_url_for_user(request.user))
         return view_func(self, request, *args, **kwargs)
     return wrapper
+
+
+class StudentRoleRequiredMixin(LoginRequiredMixin):
+    login_url = reverse_lazy("student:login")
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and (
+            request.user.is_superuser or request.user.role == ROLE_TEACHER
+        ):
+            return redirect(home_url_for_user(request.user))
+        return super().dispatch(request, *args, **kwargs)
 
 
 class CourseDetailView(View):
@@ -1269,7 +1296,7 @@ class PlayerDefinitionView(View):
         return JsonResponse(exercise_context)
 
 
-class ChallengeView(LoginRequiredMixin, View):
+class ChallengeView(StudentRoleRequiredMixin, View):
     def get(self, request, group_key):
         from apps.student.unit1_curriculum import get_unit1_challenge_source_exercises, CHALLENGE_GROUPS
         from apps.student.unit_progress import get_unit_progress_data
@@ -1328,7 +1355,7 @@ class ChallengeView(LoginRequiredMixin, View):
         return redirect(player_url)
 
 
-class UnitProgressView(LoginRequiredMixin, View):
+class UnitProgressView(StudentRoleRequiredMixin, View):
     def get(self, request, unit_n):
         data = get_unit_progress_data(request.user, unit_n)
         if data is None:

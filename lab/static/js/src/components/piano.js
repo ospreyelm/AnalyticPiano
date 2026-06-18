@@ -211,11 +211,7 @@ define([
    * @return undefined
    */
   PianoComponent.prototype.updateWidth = function () {
-    var keyboardComponent = this.getComponent("keyboard");
-    var offset = keyboardComponent.keyboardEl.position();
-    var total_margin = 2 * offset.left;
-
-    this.el.width(keyboardComponent.layout.width + total_margin);
+    // No-op: Let CSS flexbox/margins handle responsive centering and width.
   };
 
   return PianoComponent;

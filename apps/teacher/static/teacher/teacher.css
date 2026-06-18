@@ -37,11 +37,17 @@
 }
 
 .t-header-signout {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
   font-size: 0.78rem;
   color: #ffd;
   text-decoration: none;
   opacity: 0.85;
   transition: opacity 150ms ease;
+  cursor: pointer;
 }
 .t-header-signout:hover { opacity: 1; }
 

@@ -68,7 +68,7 @@
   max-width: none;
   margin: 10px auto 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
   grid-template-areas:
     "staff save"
     "piano save";

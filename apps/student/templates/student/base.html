@@ -12,10 +12,11 @@
   <header class="s-header">
     <a class="s-header-brand" href="{% url 'student:home' %}">Monteverdi</a>
     {% if request.user.is_authenticated %}
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <form class="s-header-auth" method="post" action="{% url 'student:logout' %}">
+        {% csrf_token %}
         <span class="s-header-user">{{ request.user.first_name|default:request.user.email }}</span>
-        <a href="{% url 'student:logout' %}" style="font-size: 0.8rem; color: #e74c3c; text-decoration: none;">Sign out</a>
-      </div>
+        <button class="s-header-signout" type="submit">Sign out</button>
+      </form>
     {% endif %}
   </header>
   <main class="s-main">

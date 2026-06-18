@@ -31,6 +31,23 @@ body {
   text-decoration: none;
 }
 .s-header-user { font-size: 0.8rem; color: var(--text-muted); }
+.s-header-auth {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.s-header-signout {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  color: #e74c3c;
+  text-decoration: none;
+  cursor: pointer;
+}
+.s-header-signout:hover { text-decoration: underline; }
 
 /* ── Main ────────────────────────────────────────────────── */
 .s-main { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }

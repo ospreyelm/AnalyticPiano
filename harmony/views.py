@@ -1,4 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+
+from apps.accounts.navigation import home_url_for_user
+
+
+def home_redirect(request):
+    return redirect(home_url_for_user(request.user))
 
 
 def error_404(request, exception):
@@ -14,4 +20,3 @@ def error_404(request, exception):
         pass
 
     return render(request, "404.html", data, status=404)
-
