@@ -175,6 +175,10 @@
   align-items: flex-start;
 }
 
+.keyboard {
+  position: relative;
+}
+
 .keyboard .qwerty-labels {
   z-index: 4;
 }
