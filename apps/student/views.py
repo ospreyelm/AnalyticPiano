@@ -6,12 +6,14 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+from apps.accounts.models import ROLE_TEACHER
+from apps.accounts.navigation import home_url_for_user
 from apps.student.unit_progress import (
     _batch_skill_levels,
     get_unit_progress_data,
@@ -696,7 +698,7 @@ def _build_home_context(user) -> dict:
 class StudentLoginView(View):
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect(reverse("student:home"))
+            return redirect(home_url_for_user(request.user))
         form = CustomAuthenticationForm()
         return render(request, "student/login.html", {"form": form})
 
@@ -734,12 +736,12 @@ class StudentSignupView(View):
 
 
 def _require_student(view_func):
-    """Decorator: redirect unauthenticated → login, instructor → dashboard."""
+    """Decorator: redirect unauthenticated users to login and teachers home."""
     def wrapper(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect(f"{reverse('student:login')}?next={request.path}")
-        if request.user.is_staff:
-            return HttpResponseRedirect("/dashboard/")
+        if request.user.is_superuser or request.user.role == ROLE_TEACHER:
+            return redirect(home_url_for_user(request.user))
         return view_func(self, request, *args, **kwargs)
     return wrapper
 

@@ -16,7 +16,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from .forms import CustomAuthenticationForm, RegistrationForm
-from .models import ROLE_TEACHER, get_preferences_default
+from .models import get_preferences_default
+from .navigation import home_url_for_user
 
 User = get_user_model()
 
@@ -53,9 +54,7 @@ def login(request):
             password = form.cleaned_data.get("password")
             user = authenticate(username=email, password=password)
             django_login(request, user)
-            if user.is_superuser or user.role == ROLE_TEACHER:
-                return redirect(reverse("teacher:course-list"))
-            return redirect(reverse("dashboard:my-work"))
+            return redirect(home_url_for_user(user))
         else:
             return render(request, "accounts/login.html", {"form": form})
     else:

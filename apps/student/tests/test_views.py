@@ -6,6 +6,7 @@ import random
 from pathlib import Path
 from unittest.mock import patch
 
+from apps.accounts.models import ROLE_STUDENT, ROLE_TEACHER
 from apps.exercises.models import (
     Course,
     Exercise,
@@ -47,6 +48,19 @@ class StudentBasicViewTests(TransactionTestCase):
         response = self.client.get(reverse("student:login"))
         self.assertEqual(response.status_code, 200)
 
+    def test_authenticated_teacher_login_get_redirects_to_teacher_courses(self):
+        self.instructor.role = ROLE_TEACHER
+        self.instructor.save(update_fields=["role"])
+        self.client.force_login(self.instructor)
+
+        response = self.client.get(reverse("student:login"))
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
+
     def test_login_page_uses_monteverdi_branding(self):
         response = self.client.get(reverse("student:login"))
 
@@ -72,14 +86,37 @@ class StudentBasicViewTests(TransactionTestCase):
 
     def test_home_redirects_unauthenticated_to_student_login(self):
         response = self.client.get(reverse("student:home"))
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/s/login/", response["Location"])
+        self.assertRedirects(
+            response,
+            f"{reverse('student:login')}?next={reverse('student:home')}",
+            fetch_redirect_response=False,
+        )
 
-    def test_home_redirects_instructor_to_dashboard(self):
+    def test_home_redirects_teacher_to_teacher_courses(self):
+        self.instructor.role = ROLE_TEACHER
+        self.instructor.save(update_fields=["role"])
         self.client.force_login(self.instructor)
+
         response = self.client.get(reverse("student:home"))
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/dashboard/", response["Location"])
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
+
+    def test_staff_student_is_not_treated_as_teacher(self):
+        staff_student = User.objects.create_user(
+            email="staff-student@example.com",
+            password="testpass123",
+            role=ROLE_STUDENT,
+            is_staff=True,
+        )
+        self.client.force_login(staff_student)
+
+        response = self.client.get(reverse("student:home"))
+
+        self.assertEqual(response.status_code, 200)
 
     def test_home_returns_200_for_student(self):
         self.client.force_login(self.student)

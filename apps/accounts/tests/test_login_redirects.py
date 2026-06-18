@@ -43,7 +43,7 @@ class LoginRedirectTests(TestCase):
             fetch_redirect_response=False,
         )
 
-    def test_student_role_keeps_existing_my_work_redirect(self):
+    def test_student_role_redirects_to_student_home(self):
         student = get_user_model().objects.create_user(
             email="student@example.com",
             password=self.password,
@@ -54,6 +54,6 @@ class LoginRedirectTests(TestCase):
 
         self.assertRedirects(
             response,
-            reverse("dashboard:my-work"),
+            reverse("student:home"),
             fetch_redirect_response=False,
         )
