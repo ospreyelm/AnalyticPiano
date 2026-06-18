@@ -160,6 +160,24 @@ class TeacherBaseTemplateTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "fonts.googleapis.com/css2?family=Nunito")
 
+    def test_teacher_base_header_uses_course_list_brand_link_and_post_logout_form(self):
+        teacher = _make_teacher()
+        client = Client()
+        client.force_login(teacher)
+        resp = client.get(reverse("teacher:course-list"))
+        content = resp.content.decode()
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp,
+            f'href="{reverse("teacher:course-list")}"',
+        )
+        self.assertRegex(
+            content,
+            rf'<form[^>]*method="post"[^>]*action="{reverse("custom-logout")}"',
+        )
+        self.assertIn("csrfmiddlewaretoken", content)
+        self.assertNotIn('href="/accounts/logout/"', content)
+
 
 # ---------------------------------------------------------------------------
 # create_course happy path

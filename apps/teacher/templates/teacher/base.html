@@ -13,7 +13,7 @@
 </head>
 <body>
   <header class="t-header">
-    <a class="t-header-brand" href="/">Monteverdi</a>
+    <a class="t-header-brand" href="{% url 'teacher:course-list' %}">Monteverdi</a>
     {% if request.user.is_authenticated %}
       <nav class="t-header-nav" aria-label="Teacher navigation">
         <a class="t-nav-link {% if 'course' in request.resolver_match.url_name %}t-nav-link--active{% endif %}"
@@ -23,10 +23,11 @@
         <a class="t-nav-link {% if 'play' in request.resolver_match.url_name %}t-nav-link--active{% endif %}"
            href="/teacher/play/">Play</a>
       </nav>
-      <div class="t-header-user-area">
+      <form class="t-header-user-area" method="post" action="{% url 'custom-logout' %}">
+        {% csrf_token %}
         <span class="t-header-user">{{ request.user.first_name|default:request.user.email }}</span>
-        <a class="t-header-signout" href="/accounts/logout/">Sign out</a>
-      </div>
+        <button class="t-header-signout" type="submit">Sign out</button>
+      </form>
     {% endif %}
   </header>
   <main class="t-main {% block main_class %}{% endblock %}">

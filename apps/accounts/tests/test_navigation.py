@@ -118,3 +118,28 @@ class HomeDestinationTests(TestCase):
             reverse("student:home"),
             fetch_redirect_response=False,
         )
+
+
+class LogoutNavigationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="logout-nav@example.com",
+            password="pass",
+            role=ROLE_STUDENT,
+        )
+        self.client.force_login(self.user)
+
+    def test_custom_logout_get_returns_405(self):
+        response = self.client.get(reverse("custom-logout"))
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_custom_logout_post_redirects_to_student_login(self):
+        response = self.client.post(reverse("custom-logout"))
+
+        self.assertRedirects(
+            response,
+            reverse("student:login"),
+            fetch_redirect_response=False,
+        )
+        self.assertNotIn("_auth_user_id", self.client.session)

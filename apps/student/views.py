@@ -725,7 +725,9 @@ class StudentLoginView(View):
         return render(request, "student/login.html", {"form": form})
 
 class StudentLogoutView(View):
-    def get(self, request):
+    http_method_names = ["post"]
+
+    def post(self, request):
         django_logout(request)
         return redirect(reverse("student:login"))
 

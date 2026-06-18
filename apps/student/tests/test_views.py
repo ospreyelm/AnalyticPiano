@@ -68,6 +68,19 @@ class StudentBasicViewTests(TransactionTestCase):
         self.assertContains(response, "Monteverdi")
         self.assertNotContains(response, "HarmonyLab")
 
+    def test_student_base_header_uses_post_logout_form(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("student:home"))
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertRegex(
+            content,
+            rf'<form[^>]*method="post"[^>]*action="{reverse("student:logout")}"',
+        )
+        self.assertIn("csrfmiddlewaretoken", content)
+        self.assertNotIn(f'href="{reverse("student:logout")}"', content)
+
     def test_login_post_valid_redirects_to_home(self):
         response = self.client.post(
             reverse("student:login"),
@@ -132,6 +145,25 @@ class StudentBasicViewTests(TransactionTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"form", response.content.lower())
+
+    def test_student_logout_get_returns_405(self):
+        self.client.force_login(self.student)
+
+        response = self.client.get(reverse("student:logout"))
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_student_logout_post_redirects_to_student_login(self):
+        self.client.force_login(self.student)
+
+        response = self.client.post(reverse("student:logout"))
+
+        self.assertRedirects(
+            response,
+            reverse("student:login"),
+            fetch_redirect_response=False,
+        )
+        self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_home_redirects_unauthenticated_to_student_login(self):
         response = self.client.get(reverse("student:home"))

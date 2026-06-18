@@ -23,7 +23,7 @@ User = get_user_model()
 
 
 class LogoutView(DjangoLogoutView):
-    next_page = reverse_lazy("lab:index")
+    next_page = reverse_lazy("student:login")
 
 
 class PasswordResetView(DjangoPasswordResetView):
