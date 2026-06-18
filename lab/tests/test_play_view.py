@@ -95,6 +95,8 @@ class PlayViewTeacherChromeTests(TestCase):
         self.assertIn("#staff {", css)
         self.assertIn("min-width: 52rem", css)
         self.assertIn("height: 390px", css)
+        self.assertIn(".keyboard {", css)
+        self.assertIn("position: relative", css)
         self.assertIn(".keyboard-input-mode .input-mode-toggle", css)
         self.assertIn("#piano .click-note-input", css)
         self.assertIn("#staff-toolbar .input-source-mode-toggle", css)
