@@ -242,6 +242,33 @@ class StudentRoleBoundaryTests(TestCase):
         )
         self.client.force_login(self.teacher)
 
+    def test_anonymous_challenge_redirects_to_student_login_with_next(self):
+        self.client.logout()
+        path = reverse(
+            "student:unit1-challenge",
+            kwargs={"group_key": "treble"},
+        )
+
+        response = self.client.get(path)
+
+        self.assertRedirects(
+            response,
+            f"{reverse('student:login')}?next={path}",
+            fetch_redirect_response=False,
+        )
+
+    def test_anonymous_unit_progress_redirects_to_student_login_with_next(self):
+        self.client.logout()
+        path = reverse("student:unit-progress", kwargs={"unit_n": "1"})
+
+        response = self.client.get(path)
+
+        self.assertRedirects(
+            response,
+            f"{reverse('student:login')}?next={path}",
+            fetch_redirect_response=False,
+        )
+
     def test_teacher_challenge_redirects_before_creating_playlist(self):
         lane_keys = [
             "identify_treble",

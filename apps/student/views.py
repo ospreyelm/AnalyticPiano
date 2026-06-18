@@ -749,6 +749,8 @@ def _require_student(view_func):
 
 
 class StudentRoleRequiredMixin(LoginRequiredMixin):
+    login_url = reverse_lazy("student:login")
+
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and (
             request.user.is_superuser or request.user.role == ROLE_TEACHER
