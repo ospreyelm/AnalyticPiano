@@ -194,4 +194,3 @@ verify:
 3. Teacher sign out succeeds and lands on `/s/login/`.
 4. Student login and `/` land on `/s/`.
 5. QWERTY labels align with white and black keys in `/teacher/play/`.
-

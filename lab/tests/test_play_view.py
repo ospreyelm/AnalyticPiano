@@ -107,4 +107,3 @@ class PlayViewTeacherChromeTests(TestCase):
 
         self.assertIn("#piano .click-note-input", css)
         self.assertIn("#staff-toolbar .input-source-mode-toggle", css)
-
