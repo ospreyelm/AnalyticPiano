@@ -7,13 +7,14 @@ admin.autodiscover()
 import lab.urls
 from apps.exercises.views_tools import content_generation_view
 from apps.dashboard.views.library import library_view, clone_course_view
+from harmony.views import home_redirect
 
 admin.site.site_header = "Admin"
 admin.site.site_title = "Admin"
 admin.site.index_title = "Admin"
 
 urlpatterns = [
-    path("", RedirectView.as_view(url="/s/"), name="root-redirect"),
+    path("", home_redirect, name="root-redirect"),
     path("play/", RedirectView.as_view(url="/s/"), name="play-redirect"),
     path("tools/content-generation/", content_generation_view, name="content-generation"),
 
