@@ -76,12 +76,46 @@ class StudentBasicViewTests(TransactionTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], reverse("student:home"))
 
+    def test_login_post_restores_safe_guarded_student_destination(self):
+        guarded_path = reverse(
+            "student:unit-progress",
+            kwargs={"unit_n": "1"},
+        )
+        guarded_response = self.client.get(guarded_path)
+        login_url = guarded_response["Location"]
+
+        login_response = self.client.get(login_url)
+        self.assertEqual(login_response.status_code, 200)
+
+        response = self.client.post(
+            login_url,
+            {"email": "sarah@test.com", "password": "testpass123"},
+        )
+
+        self.assertRedirects(
+            response,
+            guarded_path,
+            fetch_redirect_response=False,
+        )
+
+    def test_login_post_rejects_external_next_and_redirects_to_student_home(self):
+        response = self.client.post(
+            f"{reverse('student:login')}?next=https://example.com/steal",
+            {"email": "sarah@test.com", "password": "testpass123"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("student:home"),
+            fetch_redirect_response=False,
+        )
+
     def test_teacher_login_post_redirects_to_teacher_courses(self):
         self.instructor.role = ROLE_TEACHER
         self.instructor.save(update_fields=["role"])
 
         response = self.client.post(
-            reverse("student:login"),
+            f"{reverse('student:login')}?next={reverse('student:home')}",
             {"email": "prof@test.com", "password": "testpass123"},
         )
 

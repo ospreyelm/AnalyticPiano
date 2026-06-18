@@ -10,6 +10,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -711,6 +712,15 @@ class StudentLoginView(View):
             user = authenticate(username=email, password=password)
             if user is not None:
                 django_login(request, user)
+                if user.is_superuser or user.role == ROLE_TEACHER:
+                    return redirect(home_url_for_user(user))
+                next_url = request.GET.get("next")
+                if next_url and url_has_allowed_host_and_scheme(
+                    next_url,
+                    allowed_hosts={request.get_host()},
+                    require_https=request.is_secure(),
+                ):
+                    return redirect(next_url)
                 return redirect(home_url_for_user(user))
         return render(request, "student/login.html", {"form": form})
 
