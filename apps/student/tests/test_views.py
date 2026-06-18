@@ -76,6 +76,21 @@ class StudentBasicViewTests(TransactionTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], reverse("student:home"))
 
+    def test_teacher_login_post_redirects_to_teacher_courses(self):
+        self.instructor.role = ROLE_TEACHER
+        self.instructor.save(update_fields=["role"])
+
+        response = self.client.post(
+            reverse("student:login"),
+            {"email": "prof@test.com", "password": "testpass123"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
+
     def test_login_post_invalid_rerenders_form(self):
         response = self.client.post(
             reverse("student:login"),
@@ -215,6 +230,74 @@ class StudentBasicViewTests(TransactionTestCase):
             reverse("student:player", kwargs={"unit_num": 1}) + f"?playlist={playlist.id}"
         )
         self.assertEqual(response.status_code, 200)
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class StudentRoleBoundaryTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            email="role-boundary-teacher@test.com",
+            password="testpass123",
+            role=ROLE_TEACHER,
+        )
+        self.client.force_login(self.teacher)
+
+    def test_teacher_challenge_redirects_before_creating_playlist(self):
+        lane_keys = [
+            "identify_treble",
+            "play_from_name_treble",
+            "play_the_notes_treble",
+        ]
+        exercises = [
+            make_umto_exercise(
+                self.teacher,
+                description=f"Challenge source {index}",
+            )
+            for index in range(6)
+        ]
+        source_exercises = {
+            lane_key: exercises[index * 2 : index * 2 + 2]
+            for index, lane_key in enumerate(lane_keys)
+        }
+        progress = {
+            "bar_segments": [
+                {"tag": lane_key, "level": "proficient"}
+                for lane_key in lane_keys
+            ]
+        }
+        playlist_count = Playlist.objects.count()
+
+        with (
+            patch(
+                "apps.student.unit_progress.get_unit_progress_data",
+                return_value=progress,
+            ),
+            patch(
+                "apps.student.unit1_curriculum.get_unit1_challenge_source_exercises",
+                return_value=source_exercises,
+            ),
+        ):
+            response = self.client.get(
+                reverse("student:unit1-challenge", kwargs={"group_key": "treble"})
+            )
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(Playlist.objects.count(), playlist_count)
+
+    def test_teacher_unit_progress_redirects_to_teacher_courses(self):
+        response = self.client.get(
+            reverse("student:unit-progress", kwargs={"unit_n": "1"})
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("teacher:course-list"),
+            fetch_redirect_response=False,
+        )
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
