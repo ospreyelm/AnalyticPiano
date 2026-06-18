@@ -141,14 +141,29 @@ define([
       layoutConfig.keyWidth = this.defaultKeyWidth;
       layoutConfig.height = this.defaultHeight;
       layoutConfig.width = this.defaultKeyWidth * keywiseWidth;
-      layoutConfig.leftPadding = nudge_right;
-      if (window.innerWidth < layoutConfig.width * 1.1) {
+      layoutConfig.leftPadding = (nudge_right / 2 + nudge_left) / 2;
+      var availableWidth = window.innerWidth;
+      // Account for the authoring/save sidebar on larger screens in the /teacher/play/ workspace
+      if (window.innerWidth > 1020 && (document.querySelector(".t-play-stage") || document.querySelector(".t-play-workspace") || document.querySelector("#play-save-panel"))) {
+        availableWidth -= 340;
+      }
+
+      if (availableWidth < layoutConfig.width * 1.1) {
         // layoutConfig.leftPadding = 0;
-        layoutConfig.width = window.innerWidth * 0.9;
-        layoutConfig.keyWidth = layoutConfig.width / keywiseWidth;
+        var targetWidth = availableWidth * 0.9;
+        var computedKeyWidth = targetWidth / keywiseWidth;
+        var minKeyWidth = 30;
+        if (computedKeyWidth < minKeyWidth) {
+          layoutConfig.keyWidth = minKeyWidth;
+          layoutConfig.width = minKeyWidth * keywiseWidth;
+        } else {
+          layoutConfig.keyWidth = computedKeyWidth;
+          layoutConfig.width = targetWidth;
+        }
         layoutConfig.height =
           (this.defaultHeight * layoutConfig.keyWidth) / this.defaultKeyWidth;
       }
+
 
       // layoutConfig.height = (window.screen.height <= 768 ? this.defaultSmallHeight: this.defaultHeight);
 
@@ -204,7 +219,7 @@ define([
     makeKeyComponents: function (leftPadding = 0) {
       var that = this;
       var keys = [];
-      var whiteIndex = Number((leftPadding / 2).toFixed(1));
+      var whiteIndex = Number(leftPadding.toFixed(1));
 
       _.each(this.keyboardGenerator.keySpecs, function (keySpec, index) {
         var keyComponent = KeyComponent.create({
