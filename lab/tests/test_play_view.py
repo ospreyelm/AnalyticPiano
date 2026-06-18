@@ -97,6 +97,14 @@ class PlayViewTeacherChromeTests(TestCase):
         self.assertIn("height: 390px", css)
         self.assertIn(".keyboard {", css)
         self.assertIn("position: relative", css)
+        badge_rule_start = css.find(".keyboard .qwerty-key-badge {")
+        self.assertNotEqual(badge_rule_start, -1)
+        badge_rule_end = css.find("}", badge_rule_start)
+        self.assertNotEqual(badge_rule_end, -1)
+        badge_rule = css[badge_rule_start:badge_rule_end]
+        self.assertIn("position: absolute", badge_rule)
         self.assertIn(".keyboard-input-mode .input-mode-toggle", css)
+
         self.assertIn("#piano .click-note-input", css)
         self.assertIn("#staff-toolbar .input-source-mode-toggle", css)
+
