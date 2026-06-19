@@ -9,6 +9,7 @@ from apps.exercises.umto_factory import (
     build_umto_payload,
     save_umto_exercise,
 )
+from apps.exercises.umto_factory import build_chordal_umto_payload
 
 SINGLE_VOICE_CIR = {
     "meta": {"key": "C", "time": "4/4"},
@@ -398,3 +399,38 @@ class UMTOFactoryTests(TestCase):
                 unit=1,
                 input_mode="free_text",
             )
+
+
+class ChordalAnalysisTypeTests(TestCase):
+    def _chords(self):
+        return [
+            {"offset": float(i), "duration": 1.0, "visible": [60, 64, 67], "hidden": []}
+            for i in range(4)
+        ]
+
+    def test_build_chordal_umto_payload_defaults_analysis_type_to_roman(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="test",
+            key="C",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.IDENTIFICATION,
+            chords=self._chords(),
+        )
+        self.assertEqual(payload["analysisType"], "roman")
+
+    def test_build_chordal_umto_payload_sets_explicit_analysis_type(self):
+        payload = build_chordal_umto_payload(
+            exercise_id="TEMP",
+            source="test",
+            key="C",
+            meter="4/4",
+            clef="keyboard",
+            complexity_score=1,
+            mode=InteractionMode.IDENTIFICATION,
+            chords=self._chords(),
+            analysis_type="figured_bass",
+        )
+        self.assertEqual(payload["analysisType"], "figured_bass")
