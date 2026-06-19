@@ -13,7 +13,6 @@ from music21 import stream, note, chord, meter
 
 from apps.accounts.models import ROLE_TEACHER
 from apps.exercises.models import Exercise, Playlist, ExercisePlaylistOrdered
-from apps.exercises.umto import InteractionMode
 
 User = get_user_model()
 
@@ -89,11 +88,27 @@ class MusicXMLImportViewsTest(TestCase):
         self.chordal_xml_bytes = make_test_musicxml_bytes([["C4", "E4", "G4", "C5"]])
         self.voices_xml_bytes = make_test_musicxml_bytes([["C5"], ["G4"], ["E4"], ["C3"]])
 
+    def _make_uploaded(self, data=None):
+        return SimpleUploadedFile("test.xml", data or self.chordal_xml_bytes, content_type="text/xml")
+
+    def _post_save(self, extra=None, xml_data=None):
+        """POST to the save endpoint with canonical-save defaults."""
+        payload = {
+            "musicxml_file": self._make_uploaded(xml_data),
+            "description": "Imported cadence",
+            "unit": "11",
+            "mode": "roman",
+            "harmony_key": "jC_",
+        }
+        if extra:
+            payload.update(extra)
+        return self.client.post(reverse("teacher:import-musicxml-save"), payload)
+
+    # ── Auth/permission ────────────────────────────────────────────────────────
+
     def test_unauthenticated_requests_redirect(self):
         """Unauthenticated requests to preview and save should redirect to login."""
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
-
-        # Preview redirect
+        uploaded = self._make_uploaded()
         response = self.client.post(
             reverse("teacher:import-musicxml-preview"),
             {"musicxml_file": uploaded}
@@ -101,7 +116,7 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login/", response.url)
 
-        # Save redirect
+        uploaded = self._make_uploaded()
         response = self.client.post(
             reverse("teacher:import-musicxml-save"),
             {"musicxml_file": uploaded, "description": "Test"}
@@ -112,26 +127,27 @@ class MusicXMLImportViewsTest(TestCase):
     def test_non_staff_teacher_forbidden(self):
         """Teachers without staff status should receive a 403 Forbidden."""
         self.client.login(email="regular_teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
 
-        # Preview Forbidden
+        uploaded = self._make_uploaded()
         response = self.client.post(
             reverse("teacher:import-musicxml-preview"),
             {"musicxml_file": uploaded}
         )
         self.assertEqual(response.status_code, 403)
 
-        # Save Forbidden
+        uploaded = self._make_uploaded()
         response = self.client.post(
             reverse("teacher:import-musicxml-save"),
             {"musicxml_file": uploaded, "description": "Test"}
         )
         self.assertEqual(response.status_code, 403)
 
+    # ── Preview ────────────────────────────────────────────────────────────────
+
     def test_preview_monophonic_chordal_route(self):
         """1-part score should parse, auto-detect C major, and route to chordal."""
         self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
+        uploaded = self._make_uploaded()
 
         response = self.client.post(
             reverse("teacher:import-musicxml-preview"),
@@ -150,7 +166,7 @@ class MusicXMLImportViewsTest(TestCase):
     def test_preview_multipart_voices_route(self):
         """4-part score should parse, detect key, and route to voices."""
         self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.voices_xml_bytes, content_type="text/xml")
+        uploaded = self._make_uploaded(self.voices_xml_bytes)
 
         response = self.client.post(
             reverse("teacher:import-musicxml-preview"),
@@ -165,311 +181,195 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertIn("payload", data)
         self.assertEqual(data["payload"]["isUMTO"], True)
 
-    def test_save_chordal_exercise_success(self):
-        """Saving a chordal score creates the Exercise, tags, and links to target playlist."""
+    # ── Canonical-save contract ────────────────────────────────────────────────
+
+    def test_save_automatically_creates_canonical_playlist(self):
+        """Saving without a playlist target creates the canonical playlist."""
         self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
+        response = self._post_save({"description": "Imported cadence"})
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
+        self.assertTrue(data["success"])
+        playlist = Playlist.objects.get(id=data["playlistId"])
+        self.assertEqual(playlist.name, "Unit 11 — Exercises (Roman)")
+        self.assertEqual(playlist.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
+        self.assertEqual(playlist.canonical_unit, 11)
+        self.assertEqual(playlist.canonical_mode, "roman")
 
-        # Create playlist
-        playlist = Playlist.objects.create(
-            name="My Playlist",
-            authored_by=self.staff_teacher,
-            is_public=True,
+    def test_repeated_musicxml_saves_reuse_destination(self):
+        """Saving twice with the same unit+mode reuses the canonical playlist."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        first = self._post_save({"description": "First import"})
+        second = self._post_save({"description": "Second import"})
+        self.assertEqual(first.status_code, 201, first.content)
+        self.assertEqual(second.status_code, 201, second.content)
+        self.assertEqual(first.json()["playlistId"], second.json()["playlistId"])
+
+    def test_musicxml_and_composed_save_share_destination_identity(self):
+        """MusicXML save and composed (AddExerciseView) save land in the same canonical playlist."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+
+        # Composed save via AddExerciseView
+        import json as _json
+        composed_payload = {
+            "chord": [
+                {"offset": float(i), "duration": 1.0, "visible": [60, 64, 67], "hidden": []}
+                for i in range(4)
+            ],
+            "skillTags": ["unit:11"],
+            "mode": "roman",
+        }
+        composed_resp = self.client.post(
+            "/exercises/add/",
+            data={"data": _json.dumps(composed_payload)},
         )
+        self.assertEqual(composed_resp.status_code, 201, composed_resp.content)
 
+        # MusicXML save
+        imported_resp = self._post_save({"description": "Imported"})
+        self.assertEqual(imported_resp.status_code, 201, imported_resp.content)
+
+        self.assertEqual(composed_resp.json()["playlistId"], imported_resp.json()["playlistId"])
+
+    def test_musicxml_rejects_multiple_modes(self):
+        """Sending multiple modes must return 400 with 'exactly one' message."""
+        self.client.login(email="teacher@example.com", password="testpass123")
         response = self.client.post(
             reverse("teacher:import-musicxml-save"),
             {
-                "musicxml_file": uploaded,
-                "description": "My Chordal Import",
+                "musicxml_file": self._make_uploaded(),
+                "description": "Multi-mode attempt",
                 "unit": "11",
-                "tags": "Cadence_Half, custom_tag",
-                "mode": "roman",
-                "playlist_id": playlist.id,
+                "modes": ["play", "roman"],
                 "harmony_key": "jC_",
-                "complexity": 2,
-            }
+            },
         )
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertIn("exactly one", response.json()["error"].lower())
+
+    def test_musicxml_rejects_playlist_id_override(self):
+        """Sending playlist_id must return 400 with 'automatic' message."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        playlist = Playlist.objects.create(name="Existing", authored_by=self.staff_teacher)
+        response = self._post_save({"playlist_id": playlist.id})
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertIn("automatic", response.json()["error"].lower())
+
+    def test_save_voices_exercise_canonical(self):
+        """Saving a multipart score creates a voices UMTO exercise in the canonical playlist."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        response = self._post_save(
+            {"description": "My Voices Import", "mode": "play", "complexity": 5},
+            xml_data=self.voices_xml_bytes,
+        )
+        self.assertEqual(response.status_code, 201, response.content)
         data = response.json()
         self.assertTrue(data["success"])
+        exercise = Exercise.objects.get(id=data["id"])
+        self.assertEqual(exercise.description, "My Voices Import")
+        self.assertEqual(exercise.complexity, 5)
+        self.assertIn("unit:11", exercise.skill_tags)
+        self.assertEqual(exercise.data["score"]["umto"]["metadata"]["score_kind"], "voices")
+        playlist = Playlist.objects.get(id=data["playlistId"])
+        self.assertEqual(playlist.name, "Unit 11 — Exercises (Play)")
 
-        # Check database
+    def test_save_chordal_exercise_with_tags_and_key(self):
+        """Saving a chordal score persists extra skill_tags, key, complexity, and display mode."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        response = self._post_save({
+            "description": "My Chordal Import",
+            "tags": "Cadence_Half, custom_tag",
+            "mode": "roman",
+            "complexity": 2,
+        })
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
         exercise = Exercise.objects.get(id=data["id"])
         self.assertEqual(exercise.description, "My Chordal Import")
         self.assertEqual(exercise.complexity, 2)
         self.assertIn("unit:11", exercise.skill_tags)
         self.assertIn("Cadence_Half", exercise.skill_tags)
         self.assertIn("custom_tag", exercise.skill_tags)
-
-        # Confirm score kind is chordal and display mode set
         self.assertEqual(exercise.data["score"]["umto"]["metadata"]["score_kind"], "chordal")
         self.assertEqual(exercise.data["score"]["umto"]["metadata"]["mode"], "roman")
         self.assertEqual(exercise.data["display"]["showRomans"], True)
 
-        # Confirm playlist mapping
-        mapping = ExercisePlaylistOrdered.objects.get(playlist=playlist, exercise=exercise)
-        self.assertEqual(mapping.order, 1)
-
-    def test_save_voices_exercise_success(self):
-        """Saving a multipart score creates a voices UMTO exercise."""
-        self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.voices_xml_bytes, content_type="text/xml")
-
-        response = self.client.post(
-            reverse("teacher:import-musicxml-save"),
-            {
-                "musicxml_file": uploaded,
-                "description": "My Voices Import",
-                "unit": "9, 10",
-                "mode": "play",
-                "harmony_key": "jC_",
-                "complexity": 5,
-            }
-        )
-        self.assertEqual(response.status_code, 201)
-        data = response.json()
-        self.assertTrue(data["success"])
-
-        # Check database
-        exercise = Exercise.objects.get(id=data["id"])
-        self.assertEqual(exercise.description, "My Voices Import")
-        self.assertEqual(exercise.complexity, 5)
-        self.assertIn("unit:9", exercise.skill_tags)
-        self.assertIn("unit:10", exercise.skill_tags)
-        self.assertEqual(exercise.data["score"]["umto"]["metadata"]["score_kind"], "voices")
-        self.assertEqual(exercise.data["score"]["umto"]["metadata"]["mode"], "playback")
-
-    def test_save_new_playlist_creation_and_adaptive(self):
-        """Saving to a new playlist should create the playlist and respect adaptive flag."""
-        self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
-
-        response = self.client.post(
-            reverse("teacher:import-musicxml-save"),
-            {
-                "musicxml_file": uploaded,
-                "description": "Adaptive test",
-                "playlist_name": "New Adaptive Playlist",
-                "is_adaptive": "true",
-                "harmony_key": "jC_",
-            }
-        )
-        self.assertEqual(response.status_code, 201)
-        data = response.json()
-
-        playlist = Playlist.objects.get(id=data["playlistId"])
-        self.assertEqual(playlist.name, "New Adaptive Playlist Exercise (Play)")
-        self.assertTrue(playlist.is_adaptive)
-        self.assertEqual(playlist.authored_by, self.staff_teacher)
-
-    def test_save_new_playlist_gets_unit_prefix(self):
-        """A new playlist name should be prefixed with the selected unit and suffixed
-        with its mode, matching existing naming convention (e.g.
-        "Unit 20 — Modulation II (play)", "Exercise" marking manually-authored
-        content as distinct from Bach-corpus-derived playlists)."""
-        self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
-
-        response = self.client.post(
-            reverse("teacher:import-musicxml-save"),
-            {
-                "musicxml_file": uploaded,
-                "description": "Unit prefix test",
-                "playlist_name": "Rule of the Octave",
-                "unit": "13",
-            }
-        )
-        self.assertEqual(response.status_code, 201, response.content)
-        playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "Unit 13 — Rule of the Octave Exercise (Play)")
-
-    def test_save_existing_playlist_mode_mismatch_is_rejected(self):
-        """Adding a roman exercise to an existing play-only playlist must be blocked,
-        derived from the playlist's own "(Mode)" name suffix."""
-        self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
-        playlist = Playlist.objects.create(
-            name="Unit 13 — Rule of the Octave Exercise (Play)",
-            authored_by=self.staff_teacher,
-        )
-
-        response = self.client.post(
-            reverse("teacher:import-musicxml-save"),
-            {
-                "musicxml_file": uploaded,
-                "description": "Mismatch test",
-                "playlist_id": playlist.id,
-                "modes": ["roman"],
-            }
-        )
-        self.assertEqual(response.status_code, 400, response.content)
-        self.assertEqual(ExercisePlaylistOrdered.objects.filter(playlist=playlist).count(), 0)
-
-    def test_save_official_sets_playlist_official_and_skill_tags(self):
-        """Saving as official into a new playlist must propagate is_official/skill_tags
-        onto the playlist itself, not just the exercise."""
-        self.client.login(email="super@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
-
-        response = self.client.post(
-            reverse("teacher:import-musicxml-save"),
-            {
-                "musicxml_file": uploaded,
-                "description": "Official playlist propagation",
-                "playlist_name": "Official New Playlist",
-                "save_as_official": "true",
-                "unit": "13",
-            }
-        )
-        self.assertEqual(response.status_code, 201, response.content)
-        data = response.json()
-
-        playlist = Playlist.objects.get(id=data["playlistId"])
-        self.assertTrue(playlist.is_official)
-        self.assertEqual(playlist.skill_tags, ["unit:13"])
-
-    def test_save_multi_mode_new_playlist_splits_per_mode(self):
-        """Multiple selected modes into a new playlist name must create one playlist
-        per mode, matching the existing single-mode-per-playlist convention."""
-        self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
-
-        response = self.client.post(
-            reverse("teacher:import-musicxml-save"),
-            {
-                "musicxml_file": uploaded,
-                "description": "Multi mode split",
-                "playlist_name": "Multi Mode Drafts",
-                "modes": ["play", "roman"],
-            }
-        )
-        self.assertEqual(response.status_code, 201, response.content)
-        data = response.json()
-        self.assertEqual(len(data["ids"]), 2)
-        self.assertIn("playlists", data)
-        self.assertEqual(len(data["playlists"]), 2)
-
-        play_playlist = Playlist.objects.get(name="Multi Mode Drafts Exercise (Play)")
-        roman_playlist = Playlist.objects.get(name="Multi Mode Drafts Exercise (Roman)")
-        self.assertNotEqual(play_playlist.id, roman_playlist.id)
-
-        play_exercise = Exercise.objects.get(id=data["ids"][0])
-        roman_exercise = Exercise.objects.get(id=data["ids"][1])
-        self.assertTrue(
-            ExercisePlaylistOrdered.objects.filter(playlist=play_playlist, exercise=play_exercise).exists()
-        )
-        self.assertTrue(
-            ExercisePlaylistOrdered.objects.filter(playlist=roman_playlist, exercise=roman_exercise).exists()
-        )
-        self.assertFalse(
-            ExercisePlaylistOrdered.objects.filter(playlist=play_playlist, exercise=roman_exercise).exists()
-        )
+    # ── Official saves ─────────────────────────────────────────────────────────
 
     def test_save_official_requires_superuser(self):
         """Only superusers can save official exercises, authored by the factory user."""
-        uploaded1 = SimpleUploadedFile("test1.xml", self.chordal_xml_bytes, content_type="text/xml")
-        uploaded2 = SimpleUploadedFile("test2.xml", self.chordal_xml_bytes, content_type="text/xml")
- 
         # Staff user gets 403
         self.client.login(email="teacher@example.com", password="testpass123")
-        response = self.client.post(
-            reverse("teacher:import-musicxml-save"),
-            {
-                "musicxml_file": uploaded1,
-                "description": "Official attempt",
-                "save_as_official": "true",
-            }
-        )
+        response = self._post_save({"save_as_official": "true"})
         self.assertEqual(response.status_code, 403)
- 
+
         # Superuser succeeds
         self.client.login(email="super@example.com", password="testpass123")
-        response = self.client.post(
-            reverse("teacher:import-musicxml-save"),
-            {
-                "musicxml_file": uploaded2,
-                "description": "Official success",
-                "save_as_official": "true",
-            }
-        )
-        self.assertEqual(response.status_code, 201)
+        response = self._post_save({"save_as_official": "true", "is_public": "true"})
+        self.assertEqual(response.status_code, 201, response.content)
         data = response.json()
-
         exercise = Exercise.objects.get(id=data["id"])
         self.assertTrue(exercise.is_official)
         self.assertEqual(exercise.authored_by, self.factory_user)
 
-    def test_save_with_transpositions(self):
-        """Saving with create_transpositions=true should create transpositions in the playlist."""
+    def test_save_official_sets_playlist_official(self):
+        """Official save propagates is_official onto the canonical playlist."""
+        self.client.login(email="super@example.com", password="testpass123")
+        response = self._post_save({
+            "save_as_official": "true",
+            "is_public": "true",
+            "unit": "13",
+        })
+        self.assertEqual(response.status_code, 201, response.content)
+        playlist = Playlist.objects.get(id=response.json()["playlistId"])
+        self.assertTrue(playlist.is_official)
+        self.assertEqual(playlist.skill_tags, ["unit:13"])
+
+    def test_save_official_private_respects_editable_public_checkbox(self):
+        """Official save with is_public=false must not force exercise or playlist public."""
+        self.client.login(email="super@example.com", password="testpass123")
+        response = self._post_save({"save_as_official": "true", "is_public": "false"})
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
+        exercise = Exercise.objects.get(id=data["id"])
+        playlist = Playlist.objects.get(id=data["playlistId"])
+        self.assertFalse(exercise.is_public)
+        self.assertFalse(playlist.is_public)
+
+    def test_multiple_modes_rejects_with_400(self):
+        """Canonical API requires exactly one mode; multi-mode is not supported."""
         self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
-
-        playlist = Playlist.objects.create(
-            name="Transposition Playlist",
-            authored_by=self.staff_teacher,
-        )
-
         response = self.client.post(
             reverse("teacher:import-musicxml-save"),
             {
-                "musicxml_file": uploaded,
-                "description": "Transposition base",
-                "playlist_id": playlist.id,
+                "musicxml_file": self._make_uploaded(),
+                "description": "Multi mode",
+                "unit": "11",
+                "modes": ["play", "roman"],
                 "harmony_key": "jC_",
-                "create_transpositions": "true",
-                "key_set": "G, Am",
-            }
+            },
         )
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("exactly one", response.json()["error"].lower())
+
+    # ── Transpositions ─────────────────────────────────────────────────────────
+
+    def test_save_with_transpositions(self):
+        """Saving with create_transpositions=true creates transposed copies in the canonical playlist."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        response = self._post_save({
+            "description": "Transposition base",
+            "create_transpositions": "true",
+            "key_set": "G, Am",
+        })
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
+        playlist = Playlist.objects.get(id=data["playlistId"])
 
         # Base plus 2 transposed exercises = 3 exercises total in playlist
         mappings = ExercisePlaylistOrdered.objects.filter(playlist=playlist)
         self.assertEqual(mappings.count(), 3)
-
-        # Check description and keys
-        exercises = [m.exercise for m in mappings]
-        descriptions = [ex.description for ex in exercises]
+        descriptions = [m.exercise.description for m in mappings]
         self.assertIn("Transposition base", descriptions)
         self.assertIn("Transposition base (G)", descriptions)
         self.assertIn("Transposition base (Am)", descriptions)
-
-    def test_save_chordal_exercise_multiple_modes(self):
-        """Saving with multiple checked modes creates an Exercise for each selected mode."""
-        self.client.login(email="teacher@example.com", password="testpass123")
-        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
-
-        playlist = Playlist.objects.create(
-            name="Multi-Mode Playlist",
-            authored_by=self.staff_teacher,
-            is_public=True,
-        )
-
-        response = self.client.post(
-            reverse("teacher:import-musicxml-save"),
-            {
-                "musicxml_file": uploaded,
-                "description": "Multi-mode test",
-                "unit": "11",
-                "modes": ["play", "roman"],
-                "playlist_id": playlist.id,
-                "harmony_key": "jC_",
-                "complexity": 2,
-            }
-        )
-        self.assertEqual(response.status_code, 201)
-        data = response.json()
-        self.assertTrue(data["success"])
-        self.assertEqual(len(data["ids"]), 2)
-
-        # Confirm both exercises were saved and mapped to playlist
-        mappings = ExercisePlaylistOrdered.objects.filter(playlist=playlist).order_by("order")
-        self.assertEqual(mappings.count(), 2)
-
-        ex1 = mappings[0].exercise
-        ex2 = mappings[1].exercise
-
-        self.assertEqual(ex1.description, "Multi-mode test")
-        self.assertEqual(ex1.data["mode"], "play")
-        self.assertEqual(ex2.description, "Multi-mode test")
-        self.assertEqual(ex2.data["mode"], "roman")
