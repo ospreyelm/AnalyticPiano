@@ -83,7 +83,7 @@
 
 				<div class="play-save-field t-form-row">
 					<label for="play-save-unit" class="t-label">Unit tags <span class="play-save-required">*</span></label>
-					<select id="play-save-unit" name="unit" class="play-save-select t-input" multiple size="5">
+					<select id="play-save-unit" name="unit" class="play-save-select t-input" multiple size="4">
 						<!-- populated by JS -->
 					</select>
 				</div>
@@ -140,7 +140,7 @@
 					</select>
 				</div>
 
-				<div id="play-save-new-playlist-row" class="play-save-field t-form-row" style="display:none;">
+				<div id="play-save-new-playlist-row" class="play-save-field play-save-field-wide t-form-row" style="display:none;">
 					<label for="play-save-new-playlist-name" class="t-label">New playlist name</label>
 					<input type="text" id="play-save-new-playlist-name" name="playlist_name" maxlength="100" class="play-save-input t-input" />
 					<label class="play-save-checkbox t-check-row t-play-checkbox-offset">
@@ -167,32 +167,37 @@
 					</div>
 				</div>
 
-				<div class="play-save-field t-form-row">
-					<label for="play-save-key-set-preset" class="t-label">Key set</label>
-					<select id="play-save-key-set-preset" class="play-save-select t-input">
-						<option value="common">Common keys</option>
-						<option value="sharp">Sharp keys</option>
-						<option value="flat">Flat keys</option>
-						<option value="all">All 12</option>
-						<option value="custom">Custom</option>
-					</select>
-					<input type="text" id="play-save-key-set" class="play-save-input play-save-key-input t-input" value="C, G, D, F, Bb, Eb" aria-label="Keys for transpositions" />
-				</div>
+				<details class="play-save-advanced play-save-field-wide">
+					<summary>Advanced options</summary>
+					<div class="play-save-advanced-body">
+						<div class="play-save-field t-form-row">
+							<label for="play-save-key-set-preset" class="t-label">Key set</label>
+							<select id="play-save-key-set-preset" class="play-save-select t-input">
+								<option value="common">Common keys</option>
+								<option value="sharp">Sharp keys</option>
+								<option value="flat">Flat keys</option>
+								<option value="all">All 12</option>
+								<option value="custom">Custom</option>
+							</select>
+							<input type="text" id="play-save-key-set" class="play-save-input play-save-key-input t-input" value="C, G, D, F, Bb, Eb" aria-label="Keys for transpositions" />
+						</div>
 
-				<div class="play-save-options">
-					<label class="play-save-checkbox t-check-row">
-						<input type="checkbox" id="play-save-create-transpositions" name="create_transpositions" />
-						Create transpositions
-					</label>
-					<label class="play-save-checkbox t-check-row">
-						<input type="checkbox" id="play-save-public" name="is_public" />
-						Make public
-					</label>
-					<label id="play-save-official-row" class="play-save-checkbox t-check-row" style="display:none;">
-						<input type="checkbox" id="play-save-official" name="save_as_official" />
-						Save as official
-					</label>
-				</div>
+						<div class="play-save-options">
+							<label class="play-save-checkbox t-check-row">
+								<input type="checkbox" id="play-save-create-transpositions" name="create_transpositions" />
+								Create transpositions
+							</label>
+							<label class="play-save-checkbox t-check-row">
+								<input type="checkbox" id="play-save-public" name="is_public" />
+								Make public
+							</label>
+							<label id="play-save-official-row" class="play-save-checkbox t-check-row" style="display:none;">
+								<input type="checkbox" id="play-save-official" name="save_as_official" />
+								Save as official
+							</label>
+						</div>
+					</div>
+				</details>
 			</div>
 
 			<div id="play-save-dialog-feedback" class="feedback-inline play-save-dialog-feedback is-visible" aria-live="polite"></div>

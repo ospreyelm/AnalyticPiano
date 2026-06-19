@@ -155,6 +155,22 @@ class AddExerciseViewMetadataTests(TestCase):
         self.assertEqual(playlist.authored_by, self.factory_user)
         self.assertTrue(playlist.is_public)
 
+    def test_save_as_official_new_playlist_sets_official_and_skill_tags(self):
+        self.client.force_login(self.superuser)
+
+        response = self._post({
+            "chord": self._chords(),
+            "saveAsOfficial": True,
+            "playlistName": "Factory Unit 13",
+            "skillTags": ["unit:13", "Note_Names"],
+        })
+
+        self.assertEqual(response.status_code, 201, response.content)
+        body = response.json()
+        playlist = Playlist.objects.get(id=body["playlistId"])
+        self.assertTrue(playlist.is_official)
+        self.assertEqual(playlist.skill_tags, ["unit:13", "Note_Names"])
+
     def test_save_as_official_non_superuser_returns_403(self):
         response = self._post({"chord": self._chords(), "saveAsOfficial": True})
 

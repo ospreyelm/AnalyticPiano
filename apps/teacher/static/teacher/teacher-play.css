@@ -82,6 +82,12 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 18px 40px rgba(38, 27, 17, 0.08);
 }
 
+@media (min-width: 1280px) {
+  .t-play-stage {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  }
+}
+
 .t-play-stage #staff-area {
   grid-area: staff;
   min-width: 0;
@@ -101,14 +107,18 @@
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 18px;
+  padding: 14px;
   box-shadow: 0 8px 24px rgba(38, 27, 17, 0.08);
 }
 
 .t-play-save-panel .play-save-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.t-play-save-panel .play-save-field-wide {
+  grid-column: 1 / -1;
 }
 
 .t-play-save-panel .play-save-field {
@@ -122,8 +132,9 @@
 
 .t-play-checkboxes-group {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   margin-top: 4px;
 }
 
@@ -131,10 +142,50 @@
   margin-top: 4px;
 }
 
+.play-save-advanced {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.play-save-advanced > summary {
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text);
+  list-style: none;
+}
+
+.play-save-advanced > summary::-webkit-details-marker {
+  display: none;
+}
+
+.play-save-advanced > summary::before {
+  content: "\25B8";
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform 0.15s ease;
+}
+
+.play-save-advanced[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.play-save-advanced-body {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+
 .t-play-save-panel .play-save-actions {
   display: flex;
   justify-content: flex-start;
   margin-top: 14px;
+  position: sticky;
+  bottom: 0;
+  background: var(--surface-2);
+  padding: 8px 0 4px;
 }
 
 .t-play-musicxml-options {
@@ -198,6 +249,14 @@
 
   .t-play-save-panel {
     max-height: none;
+  }
+
+  .t-play-save-panel .play-save-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .t-play-save-panel .play-save-actions {
+    position: static;
   }
 }
 
