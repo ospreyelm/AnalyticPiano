@@ -1047,11 +1047,12 @@ define([
 
       if (payload.create_transpositions && payload.key_set && payload.key_set.length > 0) {
         var exerciseIds = payload.exerciseIds || [payload.exerciseId];
+        var playlistsByExerciseId = payload.playlistsByExerciseId || {};
         $.each(exerciseIds, function (idx, exId) {
           var body = JSON.stringify({
             exerciseId: exId,
             key_set: payload.key_set,
-            playlistId: payload.playlistId || null,
+            playlistId: playlistsByExerciseId[exId] || payload.playlistId || null,
             is_official: payload.is_official || false,
           });
           fetch(window.location.origin + "/teacher/play/api/save-with-transpositions/", {
@@ -1194,13 +1195,22 @@ define([
         headers: { "X-CSRFToken": that._getCsrfToken() },
         success: function (data) {
           $("#play-save-submit").prop("disabled", false);
-          if (data.playlistId && data.playlistName) {
+          // Multi-mode saves into a new playlist name create one playlist per mode
+          // (matches existing single-mode-per-playlist content convention) — data.playlists
+          // lists all of them; data.playlistId/playlistName remain the first as a fallback
+          // for single-mode saves and existing-playlist-id saves (still just one playlist).
+          var allPlaylists = data.playlists || (data.playlistId
+            ? [{ id: data.playlistId, name: data.playlistName }]
+            : []);
+          if (allPlaylists.length) {
             var playlistSelect = $("#play-save-playlist");
-            var existingOpt = playlistSelect.find("option[value='" + data.playlistId + "']");
-            if (!existingOpt.length) {
-              var newOpt = $("<option>").val(data.playlistId).text(data.playlistName);
-              playlistSelect.find("option[value='__new__']").before(newOpt);
-            }
+            $.each(allPlaylists, function (i, pl) {
+              var existingOpt = playlistSelect.find("option[value='" + pl.id + "']");
+              if (!existingOpt.length) {
+                var newOpt = $("<option>").val(pl.id).text(pl.name);
+                playlistSelect.find("option[value='__new__']").before(newOpt);
+              }
+            });
             playlistSelect.val(String(data.playlistId));
             $("#play-save-new-playlist-row").hide();
             $("#play-save-new-playlist-name").val("");
@@ -1212,12 +1222,23 @@ define([
             that.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
           }
           that._pendingSaveJsonData = null;
+          // Map each saved exercise to its own playlist (one per mode when multi-mode
+          // split a new playlist name into several) so transpositions land in the right
+          // playlist instead of always following the first/primary one.
+          var exerciseIds = data.ids || [data.id];
+          var playlistsByExerciseId = {};
+          if (data.playlists && data.playlists.length === exerciseIds.length) {
+            $.each(exerciseIds, function (i, exId) {
+              playlistsByExerciseId[exId] = data.playlists[i].id;
+            });
+          }
           that.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
             exerciseId: data.id,
-            exerciseIds: data.ids || [data.id],
+            exerciseIds: exerciseIds,
             reviewStatus: data.reviewStatus,
             playlistId: data.playlistId || null,
             playlistName: data.playlistName || null,
+            playlistsByExerciseId: playlistsByExerciseId,
             create_transpositions: createTranspositions,
             key_set: keySet,
             is_official: saveAsOfficial,

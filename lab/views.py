@@ -1075,6 +1075,13 @@ class AddExerciseView(View):
             effective_is_public = True if save_as_official else is_public
             created_exercises = []
             playlist = None
+            # Each mode produces a structurally different exercise (play/roman/figures/
+            # identify/harmonization); existing content always keeps one mode per playlist
+            # (e.g. "Unit 20 — Modulation II (play)" vs "... (figures)" as separate rows).
+            # When the teacher names a new playlist and selects multiple modes, split into
+            # one playlist per mode rather than mixing modes into a single playlist.
+            multi_mode = len(selected_modes) > 1
+            playlists_by_id = {}
 
             with transaction.atomic():
                 import copy
@@ -1116,16 +1123,23 @@ class AddExerciseView(View):
                         exercise.save(update_fields=["is_official"])
                     created_exercises.append(exercise)
 
+                    mode_playlist_name = (
+                        f"{playlist_name} ({mode})"
+                        if multi_mode and playlist_name
+                        else playlist_name
+                    )
                     playlist = self._append_to_playlist(
                         exercise=exercise,
                         author=author,
                         playlist_id=playlist_id,
-                        playlist_name=playlist_name,
+                        playlist_name=mode_playlist_name,
                         is_public=effective_is_public,
                         is_adaptive=is_adaptive,
                         is_official=save_as_official,
                         skill_tags=skill_tags,
                     )
+                    if playlist is not None:
+                        playlists_by_id[playlist.id] = (mode, playlist)
         except (NonUMTOExerciseError, ValueError, KeyError) as exc:
             return self._json_error(str(exc) or "Invalid exercise payload.", status=400)
 
@@ -1142,8 +1156,13 @@ class AddExerciseView(View):
             "ids": [ex.id for ex in created_exercises],
             "reviewStatus": review_status,
         }
-        if playlist is not None:
-            response_data.update({"playlistId": playlist.id, "playlistName": playlist.name})
+        if playlists_by_id:
+            response_data["playlists"] = [
+                {"id": pl.id, "name": pl.name, "mode": mode}
+                for mode, pl in playlists_by_id.values()
+            ]
+            primary_mode, primary_playlist = next(iter(playlists_by_id.values()))
+            response_data.update({"playlistId": primary_playlist.id, "playlistName": primary_playlist.name})
         return JsonResponse(status=201, data=response_data)
 
 

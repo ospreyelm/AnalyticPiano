@@ -263,6 +263,66 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertTrue(playlist.is_adaptive)
         self.assertEqual(playlist.authored_by, self.staff_teacher)
 
+    def test_save_official_sets_playlist_official_and_skill_tags(self):
+        """Saving as official into a new playlist must propagate is_official/skill_tags
+        onto the playlist itself, not just the exercise."""
+        self.client.login(email="super@example.com", password="testpass123")
+        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
+
+        response = self.client.post(
+            reverse("teacher:import-musicxml-save"),
+            {
+                "musicxml_file": uploaded,
+                "description": "Official playlist propagation",
+                "playlist_name": "Official New Playlist",
+                "save_as_official": "true",
+                "unit": "13",
+            }
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
+
+        playlist = Playlist.objects.get(id=data["playlistId"])
+        self.assertTrue(playlist.is_official)
+        self.assertEqual(playlist.skill_tags, ["unit:13"])
+
+    def test_save_multi_mode_new_playlist_splits_per_mode(self):
+        """Multiple selected modes into a new playlist name must create one playlist
+        per mode, matching the existing single-mode-per-playlist convention."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
+
+        response = self.client.post(
+            reverse("teacher:import-musicxml-save"),
+            {
+                "musicxml_file": uploaded,
+                "description": "Multi mode split",
+                "playlist_name": "Multi Mode Drafts",
+                "modes": ["play", "roman"],
+            }
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
+        self.assertEqual(len(data["ids"]), 2)
+        self.assertIn("playlists", data)
+        self.assertEqual(len(data["playlists"]), 2)
+
+        play_playlist = Playlist.objects.get(name="Multi Mode Drafts (play)")
+        roman_playlist = Playlist.objects.get(name="Multi Mode Drafts (roman)")
+        self.assertNotEqual(play_playlist.id, roman_playlist.id)
+
+        play_exercise = Exercise.objects.get(id=data["ids"][0])
+        roman_exercise = Exercise.objects.get(id=data["ids"][1])
+        self.assertTrue(
+            ExercisePlaylistOrdered.objects.filter(playlist=play_playlist, exercise=play_exercise).exists()
+        )
+        self.assertTrue(
+            ExercisePlaylistOrdered.objects.filter(playlist=roman_playlist, exercise=roman_exercise).exists()
+        )
+        self.assertFalse(
+            ExercisePlaylistOrdered.objects.filter(playlist=play_playlist, exercise=roman_exercise).exists()
+        )
+
     def test_save_official_requires_superuser(self):
         """Only superusers can save official exercises, authored by the factory user."""
         uploaded1 = SimpleUploadedFile("test1.xml", self.chordal_xml_bytes, content_type="text/xml")
