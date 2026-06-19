@@ -469,4 +469,5 @@ class CreateCoursePermissionTests(TestCase):
         student = _make_student()
         self.client.force_login(student)
         resp = _post_create(self.client, self._payload())
-        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(resp.json()["redirectUrl"], reverse("student:home"))

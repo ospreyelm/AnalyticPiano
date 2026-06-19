@@ -36,5 +36,24 @@
   {% block body_extra %}{% endblock %}
   {% block js_require %}{% endblock %}
   {% block js_extra %}{% endblock %}
+  <script>
+    (function() {
+      var checkJQuery = setInterval(function() {
+        if (window.jQuery) {
+          clearInterval(checkJQuery);
+          window.jQuery(document).ajaxError(function (event, xhr, settings, thrownError) {
+            if (xhr.status === 403) {
+              try {
+                var data = JSON.parse(xhr.responseText);
+                if (data && data.redirectUrl) {
+                  window.location.href = data.redirectUrl;
+                }
+              } catch (e) {}
+            }
+          });
+        }
+      }, 100);
+    })();
+  </script>
 </body>
 </html>

@@ -96,3 +96,33 @@ class AddExerciseViewChordalTests(TestCase):
         resp = self._post(payload)
         self.assertEqual(resp.status_code, 400)
         self.assertIn("exactly one", resp.json()["error"].lower())
+
+    def test_saves_with_transpositions_generated(self):
+        from apps.exercises.models import Exercise, Playlist
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "play",
+            "createTranspositions": True,
+            "keySet": ["G", "F"],
+        }
+        resp = self._post(payload)
+        self.assertEqual(resp.status_code, 201, resp.content)
+        
+        # Verify source exercise exists
+        source_id = resp.json()["id"]
+        source_ex = Exercise.objects.get(id=source_id)
+        
+        # Verify transposed exercises were created
+        transposed_g = Exercise.objects.get(description=f"{source_ex.description} (G)")
+        transposed_f = Exercise.objects.get(description=f"{source_ex.description} (F)")
+        
+        # Verify they are linked to the canonical playlist
+        playlist = Playlist.objects.filter(skill_tags__contains=["unit:1"]).first()
+        self.assertIsNotNone(playlist)
+        playlist_exercises = [entry.exercise for entry in playlist.exerciseplaylistordered_set.all()]
+        self.assertIn(source_ex, playlist_exercises)
+        self.assertIn(transposed_g, playlist_exercises)
+        self.assertIn(transposed_f, playlist_exercises)

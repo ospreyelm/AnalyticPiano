@@ -1011,7 +1011,8 @@ class AddExerciseView(View):
                 "Do not send playlistId or playlistName."
             )
 
-        key = payload.get("key", "C")
+        from apps.exercises.utils.transpose import normalize_key
+        key = normalize_key(payload.get("key", "C"))
         meter = payload.get("meter")  # None = free/open mode (no metric validation)
         clef = payload.get("clef", "keyboard")
         staff_distribution = payload.get("staffDistribution", "keyboard")
@@ -1027,6 +1028,12 @@ class AddExerciseView(View):
             unit = self._single_unit(skill_tags)
             is_public = self._bool_field(payload, "isPublic", False)
             save_as_official = self._bool_field(payload, "saveAsOfficial", False)
+            create_transpositions = self._bool_field(payload, "createTranspositions", False)
+            key_set_raw = payload.get("keySet") or []
+            if isinstance(key_set_raw, str):
+                key_set = [k.strip() for k in key_set_raw.split(",") if k.strip()]
+            else:
+                key_set = [str(k).strip() for k in key_set_raw if str(k).strip()]
 
             author = self._resolve_author(request, save_as_official)
             if save_as_official and author is None:
@@ -1092,6 +1099,17 @@ class AddExerciseView(View):
                     is_official=save_as_official,
                 )
                 append_exercise_to_canonical_playlist(playlist, exercise)
+
+                if create_transpositions and key_set:
+                    from apps.exercises.services.transposition_service import generate_transposed_copies
+                    generate_transposed_copies(
+                        source_exercise=exercise,
+                        key_set=key_set,
+                        playlist=playlist,
+                        author=author,
+                        is_official=save_as_official,
+                        overwrite=False,
+                    )
 
         except (NonUMTOExerciseError, ValueError, KeyError) as exc:
             return self._json_error(str(exc) or "Invalid exercise payload.", status=400)

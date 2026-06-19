@@ -8,7 +8,7 @@ User = get_user_model()
 
 class PlayViewTeacherChromeTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email="play@example.com", password="x")
+        self.user = User.objects.create_user(email="play@example.com", password="x", role="teacher")
         self.client.force_login(self.user)
 
     def test_play_view_returns_200(self):
