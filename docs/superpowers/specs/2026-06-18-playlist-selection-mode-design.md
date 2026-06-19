@@ -1,5 +1,14 @@
 # Playlist selection_mode + target_length + orphan-exercise fix
 
+> [!NOTE]
+> **Superseded in part on 2026-06-19.** Do not implement the
+> `selection_mode`, `target_length`, or adaptive-serving design from this
+> document as the long-term assignment architecture. Those portions are
+> replaced by
+> [2026-06-19-individualized-assignment-recipes-design.md](2026-06-19-individualized-assignment-recipes-design.md),
+> which uses bounded assignment sections and immutable student slots. The
+> orphan-exercise findings remain valid independent work.
+
 *Revised twice after Codex review — see "Revision history" at the end for what
 changed and why each round. target_length kept exposing more pre-existing
 adaptive-serving bugs as the audit got more thorough: slot-1 navigation pinning,
