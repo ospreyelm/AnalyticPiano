@@ -3,29 +3,37 @@
 This is the authoritative repository-wide instruction file. Tool-specific
 instruction files must point here rather than duplicate project policy.
 
-## Current product priority
+## Current product direction
 
-The previous seven-item teacher-experience priority list is complete. The
-current priority is **Assignment Slot Foundation (Phase 1)**:
+The previous seven-item teacher-experience priority list is complete.
+
+The proposed Assignment Slot Foundation and individualized assignment-recipe
+architecture are **under consideration, not authorized for implementation**.
+They represent a substantial refactor, and the product owner wants additional
+time to evaluate the direction before committing to it.
+
+Do not write an implementation plan, add models, change routing or submission
+identity, migrate playlists, or begin any assignment-architecture phase unless
+the product owner explicitly reprioritizes and approves that implementation in
+a later request.
+
+The narrow Phase 1 design is retained for evaluation:
 
 [docs/superpowers/specs/2026-06-19-assignment-slot-foundation-phase1-design.md](docs/superpowers/specs/2026-06-19-assignment-slot-foundation-phase1-design.md)
 
-Phase 1 introduces `StudentAssignment`, `AssignmentSection`, and
-`StudentAssignmentSlot`; persists just-in-time exercise identity; moves modern
-player and submission endpoints to slot IDs; and redirects legacy student
-delivery routes. It does not include quotas, taxonomy reconstruction, or the
-recipe editor.
-
-The broader assignment-recipe architecture is roadmap context only:
+The broader assignment-recipe document is architectural exploration and roadmap
+context only:
 
 [docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md](docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md)
 
-Do not continue automatically into roadmap phases after Phase 1. The
-`selection_mode` and `target_length` portions of
+Neither document is a current implementation directive. The `selection_mode`
+and `target_length` portions of
 [docs/superpowers/specs/2026-06-18-playlist-selection-mode-design.md](docs/superpowers/specs/2026-06-18-playlist-selection-mode-design.md)
 are superseded. Its orphan-exercise findings remain separate valid work.
 
-This priority supersedes older “implement next” notes when they conflict.
+Until a new priority is explicitly approved, work only on tasks directly
+requested by the product owner. Do not infer that the next roadmap phase should
+begin automatically.
 
 ## Non-negotiable architecture rules
 
