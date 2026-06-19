@@ -1140,6 +1140,8 @@ define([
       payload.mode = canonicalFields.mode;
       payload.isPublic = canonicalFields.isPublic;
       payload.saveAsOfficial = canonicalFields.saveAsOfficial;
+      payload.createTranspositions = createTranspositions;
+      payload.keySet = keySet;
 
       var extendedData = JSON.stringify(payload, null, 0);
 

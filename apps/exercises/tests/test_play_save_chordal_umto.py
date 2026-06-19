@@ -41,6 +41,8 @@ class PlayViewSaveChordalUMTOTests(TestCase):
             "meter": "3/4",
             "clef": "keyboard",
             "staffDistribution": "keyboardPlusLHBias",
+            "skillTags": ["unit:1"],
+            "mode": "play",
         }
         response = self.client.post(self.add_url, {"data": json.dumps(payload)})
         self.assertEqual(response.status_code, 201)
@@ -142,6 +144,8 @@ class PlayViewSaveChordalUMTOTests(TestCase):
                 {"visible": [70, 74, 77], "hidden": [], "duration": 4.0,
                  "spelling": ["Bb4", "D5", "F5"]},
             ],
+            "skillTags": ["unit:1"],
+            "mode": "play",
         }
         resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
         self.assertEqual(resp.status_code, 201)
@@ -153,7 +157,8 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         # reviewUrl was removed in the Play Authoring Phase B contract change.
         self.client.login(email="teacher@example.com", password="pw")
         payload = {"key": "jC_", "meter": "4/4", "staffDistribution": "keyboard",
-                   "chord": [{"visible": [60, 64, 67], "hidden": [], "duration": 4.0}]}
+                   "chord": [{"visible": [60, 64, 67], "hidden": [], "duration": 4.0}],
+                   "skillTags": ["unit:1"], "mode": "play"}
         resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
         self.assertEqual(resp.status_code, 201)
         body = resp.json()
@@ -170,6 +175,8 @@ class PlayViewSaveChordalUMTOTests(TestCase):
                 {"visible": [70, 74, 77], "hidden": [], "duration": 4.0,
                  "spelling": ["Bb4"]},  # wrong length (1 != 3)
             ],
+            "skillTags": ["unit:1"],
+            "mode": "play",
         }
         resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
         self.assertEqual(resp.status_code, 201)  # save still succeeds
@@ -194,6 +201,8 @@ class PlayViewSaveChordalUMTOTests(TestCase):
                 {"visible": [62], "hidden": [], "duration": 1.0},
                 {"visible": [64], "hidden": [], "duration": 1.0},
             ],
+            "skillTags": ["unit:1"],
+            "mode": "play",
         }
         response = self.client.post(self.add_url, {"data": json.dumps(payload)})
         self.assertEqual(response.status_code, 201)
@@ -210,7 +219,7 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         umto_meta = score["umto"]["metadata"]
         self.assertIsNone(umto_meta.get("meter"))
 
-    def test_save_with_adaptive_playlist_creates_adaptive_playlist(self):
+    def test_save_with_playlist_name_or_id_is_rejected(self):
         self.client.login(email="teacher@example.com", password="pw")
         payload = {
             "key": "jC_",
@@ -220,13 +229,10 @@ class PlayViewSaveChordalUMTOTests(TestCase):
             ],
             "playlistName": "Test Adaptive Playlist",
             "isAdaptive": True,
+            "skillTags": ["unit:1"],
+            "mode": "play",
         }
         response = self.client.post(self.add_url, {"data": json.dumps(payload)})
-        self.assertEqual(response.status_code, 201)
-
-        # Verify playlist is created and is_adaptive=True
-        from apps.exercises.models import Playlist
-        pl = Playlist.objects.get(name="Test Adaptive Playlist")
-        self.assertTrue(pl.is_adaptive)
-        self.assertEqual(pl.authored_by, self.user)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Playlist destination is automatic", response.json()["error"])
 
