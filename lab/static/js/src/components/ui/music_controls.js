@@ -1615,16 +1615,17 @@ define([
 
             // Set mode restrictions
             var selectMode = $("#play-save-mode");
+            var chordalOnlyModes = ["roman", "figures", "figures_unabbreviated", "matching", "harmonization"];
             if (data.route === "chordal") {
-              selectMode.find("option[value='roman']").prop("disabled", false).show();
-              selectMode.find("option[value='figures']").prop("disabled", false).show();
-              selectMode.find("option[value='harmonization']").prop("disabled", false).show();
+              $.each(chordalOnlyModes, function (i, val) {
+                selectMode.find("option[value='" + val + "']").prop("disabled", false).show();
+              });
             } else {
-              selectMode.find("option[value='roman']").prop("disabled", true).hide();
-              selectMode.find("option[value='figures']").prop("disabled", true).hide();
-              selectMode.find("option[value='harmonization']").prop("disabled", true).hide();
+              $.each(chordalOnlyModes, function (i, val) {
+                selectMode.find("option[value='" + val + "']").prop("disabled", true).hide();
+              });
               var currentVal = selectMode.val();
-              if (currentVal === "roman" || currentVal === "figures" || currentVal === "harmonization") {
+              if (chordalOnlyModes.indexOf(currentVal) !== -1) {
                 selectMode.val("play");
               }
             }
