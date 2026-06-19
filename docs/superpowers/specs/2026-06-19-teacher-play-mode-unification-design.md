@@ -26,11 +26,13 @@ Three concrete bugs follow from this mismatch:
    static labels instead of the hidden `?`-slot quiz the matrix generator's
    `"roman"` mode produces. Verified directly against production data
    (exercise `EB91IC`, playlist `Unit 13 — Exercises (Roman)`).
-2. **Batch wizard's `"identify"` checkbox is dead on arrival.** It POSTs
-   `exercise_types: ["identify"]` through to
+2. **Batch wizard is unreachable dead code.** Its `"identify"` checkbox
+   would POST `exercise_types: ["identify"]` through to
    `generate_bach_unit_matrix --modes identify` → `import_bach_phrases --mode
-   identify`, whose `argparse` `choices` doesn't include `"identify"` —
-   the command errors.
+   identify`, whose `argparse` `choices` doesn't include `"identify"` — but
+   this never happens in practice, because the batch wizard's HTML
+   (`#batch-wizard-overlay`, `#batch-type-*`) doesn't exist in any template.
+   Out of scope here — see "Scope correction" below.
 3. **`analysisType` was never wired for chordal (manual editor) exercises.**
    [`build_chordal_umto_payload`](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/apps/exercises/umto_factory.py)
    never sets a top-level `analysisType` key, unlike the phrase-based factory
@@ -40,21 +42,31 @@ Three concrete bugs follow from this mismatch:
    bug 1, picking `"figures"` in the manual editor would still quiz Roman
    numerals, not figured bass.
 
+## Scope correction: the batch wizard has no UI
+
+File-mapping during planning found that `#batch-wizard-overlay` and the
+`#batch-type-*` checkboxes referenced in `music_controls.js` don't exist in
+any template. `initBatchWizard()` itself guards on this:
+`if (!overlay.length) { return; }` ([music_controls.js:1229](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/lab/static/js/src/components/ui/music_controls.js)).
+A code comment marks it `"sub-plans 3.2–4.3"` — a planned-but-never-shipped
+feature. The batch wizard is currently unreachable by any teacher; its
+`"identify"` checkbox bug is dead code, not a live one. **This plan covers
+the manual editor only.** Building the batch wizard's missing HTML is a
+separate, larger project, out of scope here.
+
 ## Goal
 
-One shared, correct mode vocabulary, used by both pickers, with no duplicate
-mapping logic:
+One correct mode vocabulary for the manual editor, with no duplicate mapping
+logic against the matrix generator:
 
 - **Manual editor**: `play, play_figures, roman, figures,
   figures_unabbreviated, matching, harmonization` (7 modes).
-- **Batch wizard**: same minus `harmonization` (6 modes) — the matrix
-  generator has no code path to produce harmonization exercises from Bach
-  phrases, and building that is out of scope here.
-- `"identify"` is removed from both pickers. Its job — a hidden-answer quiz —
-  is now done correctly by `roman` / `figures` / `figures_unabbreviated`.
+- `"identify"` is removed. Its job — a hidden-answer quiz — is now done
+  correctly by `roman` / `figures` / `figures_unabbreviated`.
 
 ## Non-goals
 
+- No batch wizard UI work (see scope correction above).
 - No batch-generation support for harmonization exercises from Bach phrases.
 - No retroactive fix for exercises already saved with the old broken
   `"roman"` semantics (static, always-visible labels) — this only changes
@@ -144,24 +156,21 @@ its own `--mode` `argparse` `choices` list still excludes `"harmonization"`.
 
 ### Frontend changes
 
-- **Manual editor** (`selectMode` in the play-save dialog,
-  `music_controls.js` / `play.html`): replace the current 5 `<option>`s with
-  7, matching the new `SUPPORTED_TEACHER_PLAY_MODES`. Remove the show/hide
-  toggle logic currently keyed off `"identify"` (lines ~1619-1627 in
-  `music_controls.js`).
-- **Batch wizard** (`#batch-type-*` checkboxes): replace the 4 checkboxes
-  (`play`, `identify`, `roman`, `figures`) with 6 (`play`, `play_figures`,
-  `roman`, `figures`, `figures_unabbreviated`, `matching`). Update
-  `_getBatchFormData()` to collect the new set; no `harmonization` checkbox.
+- **Manual editor** (`#play-save-mode` `<select>` in
+  `lab/templates/play.html:93-100`): replace the current 5 `<option>`s with
+  7, matching the new `SUPPORTED_TEACHER_PLAY_MODES`. There is no
+  `"identify"`-specific toggle logic to remove — that mode was simply a
+  static `<option>` with no JS behavior tied to it. Separately,
+  `music_controls.js:1616-1630` already disables/hides `roman`/`figures`/
+  `harmonization` options when a MusicXML import isn't routed as
+  `"chordal"`; extend that same list to also cover `figures_unabbreviated`,
+  `matching`, and `play_figures`, since they need the same chordal-specific
+  analysis support.
 
 ### Validation / safety net
 
-`SUPPORTED_TEACHER_PLAY_MODES` (manual editor, 7 modes) is enforced by
-`AddExerciseView._single_mode`. The batch wizard's checkbox markup is the
-only gate keeping `harmonization` out of the Bach pipeline — there's no
-separate backend assertion, since `generate_bach_unit_matrix`'s own
-`import_bach_phrases --mode` `argparse choices` already rejects anything
-outside its 6-mode list as a hard backstop.
+`SUPPORTED_TEACHER_PLAY_MODES` (7 modes) is enforced by
+`AddExerciseView._single_mode`.
 
 ## Testing
 
