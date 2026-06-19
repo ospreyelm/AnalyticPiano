@@ -1,62 +1,39 @@
 # HarmonyLab Chorale Exercise System - Implementation Guide
 
-## 🚨 CURRENT PRODUCT PRIORITIES — READ FIRST
+## 🚨 CURRENT PRODUCT PRIORITY — READ FIRST
 
-The project priority order has changed. When choosing what to build next,
-planning work, or deciding between competing cleanup tasks, use this order:
+The prior 7-item teacher-experience priority list (efficient `/teacher/play/`
+generation, MusicXML import, dashboard alternatives, student experience, MIDI
+grading, unified CSS identity, `/teacher/play/` on new CSS) is **complete**.
+That list no longer governs what to build next.
 
-1. **Make the `/teacher/play/` generation pipeline efficient and maximally useful.**
-   - Prioritize the teacher-facing authoring/generation workflow at
-     `https://monteverdimusic.com/teacher/play/`.
-   - The goal is a fast, practical pipeline for creating useful exercises,
-     playlists, official content, and variants without manual CLI steps.
+The current priority is implementing **Individualized Assignment Recipes and
+Immutable Student Slots**:
+[docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md](docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md).
 
-2. **Add MusicXML import to `/teacher/play/`.**
-   - Teachers/admins should be able to import MusicXML directly from the new
-     teacher authoring surface.
-   - Imported content must follow the UMTO path and be usable for official
-     factory content when saved by a superuser.
+That design replaces `Playlist`'s overloaded role (ordered list + adaptive pool
++ implicit completion definition, among others) with a first-class
+**Assignment** model: teacher-authored sections with coverage quotas,
+just-in-time per-student exercise selection, and immutable served-exercise
+slots. It supersedes the bounded-adaptive portion of
+[docs/superpowers/specs/2026-06-18-playlist-selection-mode-design.md](docs/superpowers/specs/2026-06-18-playlist-selection-mode-design.md)
+(that doc's orphan-exercise fix remains valid, separate work).
 
-3. **Create new alternatives to the legacy Dashboard.**
-   - Work started in the teacher app must stay in the teacher app.
-   - Do not send normal teacher workflows back to `/dashboard/...` unless the
-     link is explicitly an advanced/admin-only escape hatch.
-   - Build new teacher-app pages for editing, organizing, reviewing, and
-     managing courses/playlists/exercises.
-
-4. **Make the student experience complete.**
-   - Students who join a course should see a clear course-focused experience,
-     not just the full curriculum.
-   - Course assignments, due/open states, next work, progress, and activity
-     should be obvious and navigable.
-
-5. **Fix grading of MIDI play exercises.**
-   - Current MIDI play grading penalizes too harshly.
-   - HarmonyLab is a theory learning app, not a performance evaluation app.
-   - Prefer forgiving, pedagogically useful grading: tolerate timing,
-     re-attacks, harmless extra input, and correction behavior where musically
-     appropriate.
-
-6. **Create a single modern visual/CSS identity.**
-   - Build a unified CSS/design system that is modern, beautiful, and coherent.
-   - It should feel distinct from Artusi and not look like an Artusi clone.
-   - Use this identity consistently across teacher and student surfaces.
-
-7. **Move `/teacher/play/` onto the new CSS and layouts.**
-   - The authoring/generation surface should visually belong to the new
-     Monteverdi teacher experience.
-   - Prioritize layout, usability, and consistency with the emerging teacher
-     app design.
+**Start with Phase 1 only** (Slot foundation under existing playlists — new
+`StudentAssignment`/`AssignmentSection`/`StudentAssignmentSlot` models,
+just-in-time selection with persisted identity, modern player and submission
+endpoints on slot IDs, legacy student routes redirected). Phase 1 alone fixes
+the confirmed adaptive-serving bugs (slot-1 navigation pinning, course-blind
+`PerformanceData` lookups, submission failures on unlinked pool exercises,
+direct-URL cap bypass) without requiring the recipe editor, quota-feasibility
+solver, or taxonomy-metadata buildout that later phases need. Treat Phases 2-6
+(recipe editor, missing-content generation, product rename, exercise
+sets/drills, legacy retirement) as a separate, explicitly-reprioritized
+initiative once Phase 1 ships — don't auto-continue into them.
 
 These priorities supersede older "implement next" notes when there is a
 conflict in what to work on first. Older technical-debt warnings still matter,
-but they should be handled in service of the priority list above.
-
-High-priority launch follow-up list:
-[docs/teacher_experience_launch_followups.md](docs/teacher_experience_launch_followups.md)
-
-Meta-plan for addressing these priorities:
-[docs/superpowers/plans/2026-06-12-teacher-experience-meta-plan.md](docs/superpowers/plans/2026-06-12-teacher-experience-meta-plan.md)
+but they should be handled in service of the priority above.
 
 > [!IMPORTANT]
 > **HIGH PRIORITY TECHNICAL DEBT & REDUNDANCY WARNING**
