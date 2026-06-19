@@ -539,6 +539,11 @@ def remove_exercise_from_playlists(sender, instance, *args, **kwargs):
 
 class Playlist(ClonableModelMixin, BaseContentModel):
     id = models.CharField("P-ID", unique=True, max_length=16, null=True)
+    FAMILY_TEACHER_PLAY = "teacher_play"
+    PLAYLIST_FAMILY_CHOICES = (
+        ("", "Unclassified"),
+        (FAMILY_TEACHER_PLAY, "Teacher Play authored exercises"),
+    )
     is_auto = models.BooleanField(
         "Auto-generated",
         default=False,
@@ -554,6 +559,24 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         related_name="playlists",
         on_delete=models.PROTECT,
         verbose_name="Author of Playlist",
+    )
+    playlist_family = models.CharField(
+        max_length=24,
+        choices=PLAYLIST_FAMILY_CHOICES,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+    canonical_unit = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    canonical_mode = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        db_index=True,
     )
 
     created = models.DateTimeField("Created", auto_now_add=True)
@@ -668,6 +691,25 @@ class Playlist(ClonableModelMixin, BaseContentModel):
     class Meta:
         verbose_name = "Playlist"
         verbose_name_plural = "Playlists"
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    ~Q(playlist_family="teacher_play")
+                    | (Q(canonical_unit__isnull=False) & ~Q(canonical_mode=""))
+                ),
+                name="teacher_play_requires_unit_and_mode",
+            ),
+            models.UniqueConstraint(
+                fields=[
+                    "authored_by",
+                    "playlist_family",
+                    "canonical_unit",
+                    "canonical_mode",
+                ],
+                condition=Q(playlist_family="teacher_play"),
+                name="uniq_teacher_play_author_unit_mode",
+            )
+        ]
 
     @cached_property
     def untransposed_exercises_ids(self):
