@@ -238,6 +238,9 @@ def import_musicxml_save_view(request):
         playlist_id = playlist_id.strip() or None
     if playlist_name:
         playlist_name = playlist_name.strip() or None
+        if playlist_name:
+            from apps.exercises.utils.playlist_naming import apply_unit_prefix
+            playlist_name = apply_unit_prefix(playlist_name, skill_tags)
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xml") as tmp:
         for chunk in musicxml_file.chunks():
@@ -267,6 +270,10 @@ def import_musicxml_save_view(request):
 
         created_exercises = []
         playlist = None
+        # Same convention as lab.views.AddExerciseView.post: one playlist per mode,
+        # matching existing content (e.g. "Unit 20 — Modulation II (play)" vs "(figures)").
+        multi_mode = len(selected_modes) > 1
+        playlists_by_id = {}
 
         with transaction.atomic():
             for mode in selected_modes:
@@ -331,7 +338,12 @@ def import_musicxml_save_view(request):
                 created_exercises.append(exercise)
 
                 # Target playlist mapping
-                if playlist_id or playlist_name:
+                mode_playlist_name = (
+                    f"{playlist_name} ({mode})"
+                    if multi_mode and playlist_name
+                    else playlist_name
+                )
+                if playlist_id or mode_playlist_name:
                     if playlist_id:
                         playlist = Playlist.objects.filter(id=playlist_id).first()
                         if not playlist:
@@ -340,9 +352,14 @@ def import_musicxml_save_view(request):
                             raise ValueError("Playlist must be authored by the save author.")
                     else:
                         playlist, pl_created = Playlist.objects.get_or_create(
-                            name=playlist_name,
+                            name=mode_playlist_name,
                             authored_by=author,
-                            defaults={"is_public": effective_is_public, "is_adaptive": is_adaptive},
+                            defaults={
+                                "is_public": effective_is_public,
+                                "is_adaptive": is_adaptive,
+                                "is_official": save_as_official,
+                                "skill_tags": list(skill_tags or []),
+                            },
                         )
 
                     next_order = (
@@ -356,6 +373,7 @@ def import_musicxml_save_view(request):
                         exercise=exercise,
                         order=next_order,
                     )
+                    playlists_by_id[playlist.id] = (mode, playlist)
 
                 # Create transpositions if requested
                 create_transpositions = request.POST.get("create_transpositions") in ("true", "on", True)
@@ -385,8 +403,13 @@ def import_musicxml_save_view(request):
             "ids": [ex.id for ex in created_exercises],
             "reviewStatus": first_ex.data.get("score", {}).get("umto", {}).get("metadata", {}).get("analysis_review_status", "none"),
         }
-        if playlist:
-            response_data.update({"playlistId": playlist.id, "playlistName": playlist.name})
+        if playlists_by_id:
+            response_data["playlists"] = [
+                {"id": pl.id, "name": pl.name, "mode": mode}
+                for mode, pl in playlists_by_id.values()
+            ]
+            primary_mode, primary_playlist = next(iter(playlists_by_id.values()))
+            response_data.update({"playlistId": primary_playlist.id, "playlistName": primary_playlist.name})
         return JsonResponse(response_data, status=201)
 
     except Exception as e:
