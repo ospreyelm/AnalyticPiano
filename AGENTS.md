@@ -1,125 +1,145 @@
-# HarmonyLab Chorale Exercise System - Implementation Guide
+# HarmonyLab Repository Instructions
 
-## 🚨 CURRENT PRODUCT PRIORITIES — READ FIRST
+This is the authoritative repository-wide instruction file. Tool-specific
+instruction files must point here rather than duplicate project policy.
 
-The project priority order has changed. When choosing what to build next,
-planning work, or deciding between competing cleanup tasks, use this order:
+## Current product direction
 
-1. **Make the `/teacher/play/` generation pipeline efficient and maximally useful.**
-   - Prioritize the teacher-facing authoring/generation workflow at
-     `https://monteverdimusic.com/teacher/play/`.
-   - The goal is a fast, practical pipeline for creating useful exercises,
-     playlists, official content, and variants without manual CLI steps.
+The previous seven-item teacher-experience priority list is complete.
 
-2. **Add MusicXML import to `/teacher/play/`.**
-   - Teachers/admins should be able to import MusicXML directly from the new
-     teacher authoring surface.
-   - Imported content must follow the UMTO path and be usable for official
-     factory content when saved by a superuser.
+The proposed Assignment Slot Foundation and individualized assignment-recipe
+architecture are **under consideration, not authorized for implementation**.
+They represent a substantial refactor, and the product owner wants additional
+time to evaluate the direction before committing to it.
 
-3. **Create new alternatives to the legacy Dashboard.**
-   - Work started in the teacher app must stay in the teacher app.
-   - Do not send normal teacher workflows back to `/dashboard/...` unless the
-     link is explicitly an advanced/admin-only escape hatch.
-   - Build new teacher-app pages for editing, organizing, reviewing, and
-     managing courses/playlists/exercises.
+Do not write an implementation plan, add models, change routing or submission
+identity, migrate playlists, or begin any assignment-architecture phase unless
+the product owner explicitly reprioritizes and approves that implementation in
+a later request.
 
-4. **Make the student experience complete.**
-   - Students who join a course should see a clear course-focused experience,
-     not just the full curriculum.
-   - Course assignments, due/open states, next work, progress, and activity
-     should be obvious and navigable.
+The narrow Phase 1 design is retained for evaluation:
 
-5. **Fix grading of MIDI play exercises.**
-   - Current MIDI play grading penalizes too harshly.
-   - HarmonyLab is a theory learning app, not a performance evaluation app.
-   - Prefer forgiving, pedagogically useful grading: tolerate timing,
-     re-attacks, harmless extra input, and correction behavior where musically
-     appropriate.
+[docs/superpowers/specs/2026-06-19-assignment-slot-foundation-phase1-design.md](docs/superpowers/specs/2026-06-19-assignment-slot-foundation-phase1-design.md)
 
-6. **Create a single modern visual/CSS identity.**
-   - Build a unified CSS/design system that is modern, beautiful, and coherent.
-   - It should feel distinct from Artusi and not look like an Artusi clone.
-   - Use this identity consistently across teacher and student surfaces.
+The broader assignment-recipe document is architectural exploration and roadmap
+context only:
 
-7. **Move `/teacher/play/` onto the new CSS and layouts.**
-   - The authoring/generation surface should visually belong to the new
-     Monteverdi teacher experience.
-   - Prioritize layout, usability, and consistency with the emerging teacher
-     app design.
+[docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md](docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md)
 
-These priorities supersede older "implement next" notes when there is a
-conflict in what to work on first. Older technical-debt warnings still matter,
-but they should be handled in service of the priority list above.
+Neither document is a current implementation directive. The `selection_mode`
+and `target_length` portions of
+[docs/superpowers/specs/2026-06-18-playlist-selection-mode-design.md](docs/superpowers/specs/2026-06-18-playlist-selection-mode-design.md)
+are superseded. Its orphan-exercise findings remain separate valid work.
 
-High-priority launch follow-up list:
-[docs/teacher_experience_launch_followups.md](docs/teacher_experience_launch_followups.md)
+Until a new priority is explicitly approved, work only on tasks directly
+requested by the product owner. Do not infer that the next roadmap phase should
+begin automatically.
 
-Meta-plan for addressing these priorities:
-[docs/superpowers/plans/2026-06-12-teacher-experience-meta-plan.md](docs/superpowers/plans/2026-06-12-teacher-experience-meta-plan.md)
+## Non-negotiable architecture rules
 
-> [!IMPORTANT]
-> **HIGH PRIORITY TECHNICAL DEBT & REDUNDANCY WARNING**
-> A comprehensive analysis of cross-language algorithmic duplication (Python vs. JavaScript figured bass abbreviation stack rules, key normalization routines, pitch-spelling-to-MIDI conversions, and rhythmic duration coordinates) and parallel view routing structure technical debt has been compiled and committed to [docs/redundancy_analysis_report.md](file:///Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/docs/redundancy_analysis_report.md). 
-> 
-> All agents working on features, controllers, or refactoring in this repository MUST review the findings and phased cleanup roadmap in the redundancy report before modifying code.
+- New Exercise rows must use UMTO. Legacy `chorale`,
+  `chorale_identification`, and raw-CIR shapes are frozen.
+- Create exercises through `save_umto_exercise` or another sanctioned UMTO
+  factory. Never set `HARMONYLAB_ALLOW_LEGACY_EXERCISE=1` in production, CI,
+  tests, or ordinary feature work.
+- Work started in `/teacher/...` stays in the teacher app. Do not route normal
+  teacher workflows through `/dashboard/...`.
+- Student exercise delivery must converge on the modern student player.
+- Do not add new business logic to `lab/views.py`; extract or use focused,
+  app-neutral services.
+- The taxonomy is the source of truth for curriculum and assignable musical
+  concepts. Do not create parallel Python and JavaScript allowlists.
+- Backend music21 boundaries must normalize stored HarmonyLab keys through
+  `apps.exercises.utils.key_normalization.harmony_key_to_music21()`.
+- Before modifying features, controllers, shared algorithms, or routing, read
+  [docs/redundancy_analysis_report.md](docs/redundancy_analysis_report.md).
 
-## ⚠️ ROMAN NUMERALS FROM CLAUSULAE — READ BEFORE IMPLEMENTING
+UMTO references:
 
-Before implementing, regenerating, or modifying Roman numeral exercises sourced from
-Clausulae material, read
-[docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md](docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md).
+- [docs/UMTO_GUIDE.md](docs/UMTO_GUIDE.md)
+- [apps/exercises/umto_schema.json](apps/exercises/umto_schema.json)
+- [docs/superpowers/specs/2026-04-23-umto-consistency-design.md](docs/superpowers/specs/2026-04-23-umto-consistency-design.md)
 
-The corrected direction is a distinct `roman_from_clausulae` exercise type generated
-through the same working Clausulae generation/rendering path, with Roman numeral
-target slices added on top. Do **not** revive the exploratory compendium
-MusicXML-to-derived-CIR corpus path for student-facing exercises; that produced
-musically meaningless student exercises even when tests passed.
+## Replacement and retirement policy
 
-## ⚠️ EFFICIENT BACH GENERATION — IMPLEMENT NEXT
+Follow [docs/architecture/engineering-principles.md](docs/architecture/engineering-principles.md)
+for architectural changes. In summary:
 
-Before doing more bulk Bach/Riemenschneider playlist generation or deduplication
-work, implement
-[docs/superpowers/plans/2026-06-02-efficient-bach-generation.md](docs/superpowers/plans/2026-06-02-efficient-bach-generation.md).
+- Identify which existing paths a new authoritative implementation replaces.
+- Include redirects, migration, and deletion conditions in the design and plan.
+- Compatibility code must state its removal condition and must not become a
+  second permanent source of truth.
+- Prefer one shared service over parallel logic in views, commands, and
+  frontend entry points.
+- Do not add substantial responsibility to existing oversized modules; extract
+  a focused module or service while touching them.
+- A new model must replace or narrow an existing model responsibility.
+- Feature completion includes retirement work when safe, not only addition.
 
-The current `create_unit_playlist` workflow repeats expensive music21 analysis
-per unit/mode and can create duplicate chorale exercise rows. The plan defines
-the intended import-once, playlist-many command plus an audit-first deduplication
-path. Do not add more ad hoc batch scripts for this problem.
+## Read-before-modifying guide
 
-## ⚠️ MUSIC21 KEY NORMALIZATION — READ BEFORE REFRESH/BACKFILL WORK
+| Area | Required reading |
+|---|---|
+| Assignment delivery, adaptive selection, submissions | [Phase 1 slot design](docs/superpowers/specs/2026-06-19-assignment-slot-foundation-phase1-design.md) |
+| Later assignment recipes, quotas, taxonomy metadata | [Assignment architecture roadmap](docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md) |
+| Cross-language algorithms or legacy/modern routes | [Redundancy analysis](docs/redundancy_analysis_report.md) |
+| Roman exercises from Clausulae | [Roman-from-Clausulae lesson spec](docs/superpowers/specs/2026-05-26-roman-from-clausulae-lessons.md) |
+| Bach/Riemenschneider bulk generation or deduplication | [Efficient Bach generation plan](docs/superpowers/plans/2026-06-02-efficient-bach-generation.md) |
+| Refresh/backfill code that passes keys to music21 | [Music21 key normalization plan](docs/superpowers/plans/2026-06-02-music21-key-normalization.md) |
+| Chorale grading, timeline, or rendering | [Chorale system guide](docs/architecture/chorale-system.md) |
+| Deployment | Deployment section below |
 
-Before modifying `refresh_all_exercises`, `recompute_chorale_analysis`,
-`backfill_skill_tags`, `backfill_raw_roman_numeral`, or any backend code that
-passes stored Exercise/UMTO/CIR keys into music21, implement
-[docs/superpowers/plans/2026-06-02-music21-key-normalization.md](docs/superpowers/plans/2026-06-02-music21-key-normalization.md).
+## Documentation requirements
 
-HarmonyLab stores pseudo-key tokens such as `jC_` and `iA_`; music21 expects
-conventional key names. `Cannot make a step out of 'J'` during broad refreshes
-is a known symptom of this boundary bug.
+Every pull request must update documentation for these changes:
 
-## ⚠️ GITHUB PR TARGET — USE AVNER'S REPO, NOT UPSTREAM
+### Student-facing feedback
 
-When creating pull requests or using `gh pr create`, ALWAYS target:
+1. Add or modify the entry in
+   `lab/static/js/src/config/feedback_catalog.js`.
+2. Update [docs/feedback_catalog.md](docs/feedback_catalog.md).
+3. Route student messages through `feedbackService.emit(id, opts)`.
+
+Do not broadcast `EVENTS.BROADCAST.NOTIFICATION` from feature code and do not
+use `window.alert` for student feedback.
+
+### New or modified exercise type
+
+Update [docs/exercise_types.md](docs/exercise_types.md), including the summary
+table.
+
+### New management command
+
+1. Update [docs/management_commands.md](docs/management_commands.md).
+2. Register the command in
+   `apps/exercises/management/commands/list_exercise_generators.py`.
+
+### Significant feature
+
+For work spanning more than one file or session, create a checked-task plan
+before implementation:
+
+`docs/superpowers/plans/YYYY-MM-DD-feature-name.md`
+
+Create a design spec when architecture or data-shape decisions are involved:
+
+`docs/superpowers/specs/YYYY-MM-DD-feature-name-design.md`
+
+## Pull request target
+
+Pull requests must target `avnerdorman/HarmonyLab`, base `master`, unless the
+user explicitly requests otherwise:
 
 ```bash
---repo avnerdorman/HarmonyLab
+gh pr create --repo avnerdorman/HarmonyLab --base master
 ```
 
-Do NOT let GitHub CLI infer the repository from `upstream`. This checkout may also have
-`upstream` configured as `ospreyelm/AnalyticPiano`, but PRs for this project must be
-created against `avnerdorman/HarmonyLab` with base `master` unless the user explicitly
-requests a different target.
+Do not let GitHub CLI infer the target from the `upstream` remote, which may
+point to `ospreyelm/AnalyticPiano`.
 
+## Deployment safety
 
-## ⚠️ DEPLOYMENT — READ BEFORE RUNNING `fly deploy`
-
-**NEVER run `fly deploy` from the main repo root.**
-
-`.worktrees/` (400MB+) sits inside the repo root. Without `.dockerignore` covering it,
-Docker sends the entire thing as build context.
-
-### Correct deploy procedure
+Never run `fly deploy` from the main repository root. Deploy from:
 
 ```bash
 cd /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/.worktrees/master-run
@@ -127,715 +147,28 @@ git pull
 fly deploy
 ```
 
-Deploy from the `master-run` worktree — `.worktrees/` is excluded from its Docker context.
+This prevents nested worktrees from entering the Docker build context.
 
-### Why not the main repo root
-
-- `.worktrees/` contains 5 worktrees (~400MB)
-- `.dockerignore` at root excludes it, but deploying from inside `master-run` is safer
-- Build context from `master-run` is ~30MB
-
-### DB restore (if needed)
+For a database restore:
 
 ```bash
-# Tunnel to Fly Postgres (use 5433 to avoid local postgres conflict)
 fly proxy 5433:5432 -a monteverdi-db
 
-# In another terminal — restore from local dump
 pg_restore -h localhost -p 5433 -U postgres -d postgres --clean --if-exists \
   /Users/adorman/Library/CloudStorage/Dropbox/Codebases/HarmonyLab-1/local_db.dump
-# Password: (check fly secrets or 1Password)
-# Ignore "role adorman does not exist" warnings — harmless
 ```
 
----
-
-## UMTO is the Canonical Exercise Representation
-
-**All new Exercise rows MUST be UMTO.** Legacy `chorale`, `chorale_identification`,
-and raw-CIR Exercise shapes are FROZEN — do not extend, do not emit from new code.
-
-### Creating an Exercise (only sanctioned path)
-
-```python
-from apps.exercises.umto_factory import save_umto_exercise
-from apps.exercises.umto import InteractionMode
-
-ex = save_umto_exercise(
-    description="BWV1.6 mm.1-2 — Soprano (identification) Stage 1",
-    score_data=cir_score_dict,
-    author=user,
-    skill_tags=["unit:1", "Note_Names", "Read_Treble_Clef"],
-    complexity=11,
-    umto_kwargs=dict(
-        exercise_id="TEMP",
-        source="BWV1.6 measures 1-2, Soprano voice.",
-        key="G", meter="4/4", clef="treble",
-        complexity_score=1,
-        mode=InteractionMode.IDENTIFICATION,
-        target_voice="soprano",
-        unit=1,
-    ),
-)
-```
-
-Direct `Exercise(data={...}).save()` on new rows is blocked by `Exercise.clean()`
-and `Exercise.save()`. Bypass env `HARMONYLAB_ALLOW_LEGACY_EXERCISE=1` exists for
-one-shot migration scripts only — never set in CI, tests, or production.
-
-Schema: [apps/exercises/umto_schema.json](apps/exercises/umto_schema.json)
-(auto-regenerated by `python manage.py make_umto_schema`).
-
-Guide: [docs/UMTO_GUIDE.md](docs/UMTO_GUIDE.md)
-Spec: [docs/superpowers/specs/2026-04-23-umto-consistency-design.md](docs/superpowers/specs/2026-04-23-umto-consistency-design.md)
-
----
-
-## Documentation Requirements
-
-Every PR must include documentation updates for the following categories of change:
-
-**New or modified exercise type** — update `docs/exercise_types.md`:
-- Add/update the type's entry under Play types or Identify types
-- Update the "All exercise types at a glance" summary table at the bottom
-
-**New management command** — do both:
-1. Add an entry to `docs/management_commands.md` under the appropriate category
-2. Register the command in `apps/exercises/management/commands/list_exercise_generators.py` (add a tuple to `CATALOG`)
-
-**Significant new feature** (spanning more than one file or more than one session) — create a superpowers plan *before* implementing:
-- Plan: `docs/superpowers/plans/YYYY-MM-DD-feature-name.md`
-- Design spec (if architecture decisions are involved): `docs/superpowers/specs/YYYY-MM-DD-feature-name-design.md`
-- Plans use `- [ ]` checkbox tasks; specs capture the why and data shapes
-- If a feature was implemented without a plan, create the plan retrospectively and mark completed tasks `- [x]`
-
-These rules apply to all agents working in this repo.
-
----
-
-## ⚠️ HIGH PRIORITY: Multi-Unit Playlist System (Not Yet Built)
-
-Two blockers prevent replicating the Unit 9 Bach playlist strategy for other units:
-
-### Blocker 1: RESOLVED (2026-05-31)
-
-`applySkillFilter` uses a `UNIT_ALLOWED_ANSWERS` map (units 9-20) generated from `music_theory_taxonomy_with_branches.json` via `manage.py build_unit_allowed_answers`, consumed by both `exercise_definition.js` and the importers. The broken generic `startsWith` path is gone. Per-unit answer sets include inverted-seventh additions (see apps/exercises/data/unit_allowed_answers.additions.json). Blocker 2 (create_unit_playlist) is unchanged.
-
-### Blocker 2: No management command to create a unit playlist end-to-end
-
-`scratch/batch_import_unit9.py` is a one-off script. Each new unit requires copy-paste + hand-edit.
-
-**Fix needed:** A `create_unit_playlist` management command:
-```bash
-python manage.py create_unit_playlist \
-  --unit 11 \
-  --riemenschneider 21-30 \
-  --author admin@example.com \
-  --mode roman
-```
-This should: look up unit tags from `music_theory_taxonomy_with_branches.json`, run `import_bach_phrases` for the R-range, create a `Playlist(skill_tags=['unit:N'])`, link exercises, and be idempotent.
-
-### Fix Blocker 1 first — it gates whether filtering works at all.
-
----
-
-## Overview
-
-The Chorale exercise type is a specialized grading system for teaching Bach chorales using MIDI input. Unlike traditional chord-based exercises, chorales use an **onset-based window system** that requires students to play notes in order as they appear in the score.
-
-## Summary of Improvements
-
-### Core Fixes (Commits 1ba3d59, 96e52c7, 0cdff11, 5fcb4d2)
-
-**Three critical bugs were fixed in chorale_grader.js:**
-
-#### 1. Held Notes Algorithm Bug
-**Problem:** Voice tracking only marked voices as "seen" when notes were held.
-**Fix:** Mark voices as seen after checking (line 202).
-**Impact:** Bass notes correctly detected as held.
-
-#### 2. Passing Tones in Separate Windows
-**Problem:** Inner voice notes at non-beat-aligned onsets created orphaned windows.
-**Fix:** Merge onset groups within 1024 ticks into single windows (lines 62-88).
-**Impact:** All notes can be played together.
-
-#### 3. Enhanced Diagnostics
-Added detailed console logging for debugging (lines 89-110).
-
-### New Features (Commit d52a75e)
-
-#### Feature 1: Enhanced Instructional Text ✅
-**File:** `apps/exercises/management/commands/import_chorale.py` (lines 89-90)
-
-Students now see clear, actionable instructions:
-- "Play all four voices of BWV1.6, measures 1–4"
-- "Use the keyboard or MIDI controller to play each note as it appears"
-- "Notes turn black when played correctly"
-
-Plus specific completion feedback mentioning the chorale and measure range.
-
-**Benefit:** Better onboarding and clearer pedagogical guidance.
-
-#### Feature 3: Detailed Grading Feedback ✅
-**File:** `lab/static/js/src/models/chorale_grader.js` (75 new lines)
-
-The grader now tracks per-window statistics:
-- Window status (`not_started`, `complete`)
-- Correct notes played in each window
-- Incorrect notes attempted in each window
-- Completion timestamp
-
-Returns detailed `problems` array with per-window data:
-```javascript
-problems: [
-  {
-    windowIndex: 0,
-    status: "complete",
-    score: 0,  // 0=no errors, 1=incomplete, 2=has errors
-    count: { correct: [60, 52, 43, 33], incorrect: [] },
-    note: { 60: "correct", 52: "correct", ... },
-    notes: [60, 52, 43, 33]
-  },
-  // ... one object per window
-]
-```
-
-**Benefit:** Enables analytics, error tracking, and future visual feedback.
-
-### Pitch Identification Exercise Type ✅
-
-**Spec:** [docs/superpowers/specs/2026-04-14-pitch-identification-design.md](docs/superpowers/specs/2026-04-14-pitch-identification-design.md)
-
-Six pitch-oriented `analysisType` values (`note_name`, `solfege`, `do_based_solfege`, `scale_degree`, `fixed_do`, `pitch_class`) extend `chorale_identification` for pitch identification exercises. The student sees a single-voice score and names each note by clicking a `?` slot and choosing from a popup of 5 options.
-
-**Files changed:**
-- `apps/exercises/pitch_voice_utils.py` — new shared `strip_to_voice()` + `validate_pitch_voice()` helpers
-- `apps/exercises/management/commands/import_chorale.py` — 6 new `--analysis` choices + `--voice` arg
-- `apps/dashboard/views/exercises.py` — `duplicate-as-pitch-identification` POST action
-- `apps/dashboard/templates/dashboard/edit-exercise.html` — "Duplicate as Pitch Identification" button + modal
-- `lab/static/js/src/models/exercise_definition.js` — `isPitchAnalysisType()`, label/choice logic
-- `lab/static/js/src/components/music/exercise_sheet.js` — `_identPageSize` synced to rendered column count (bug fix: was hardcoded to 4, causing only 4 `?` slots per screen regardless of note count)
-
-**Dashboard flow:** Open a chorale exercise → click "Duplicate as Pitch Identification" → select voices, analysis type, and identification mode → one new `chorale_identification` exercise is created per selected voice.
-
-**CLI flow:** `python manage.py import_chorale bwv1.6.json --mode identify --analysis note_name --voice soprano --start 0 --end 4`
-
-### Knowledge Graph Tagging System ✅
-
-**Spec:** [docs/superpowers/specs/knowledge-graph-tagging-design.md](docs/superpowers/specs/knowledge-graph-tagging-design.md)
-
-Automated harmonic analysis via `music21` detects 16 pedagogical skills during import. Enables adaptive exercise selection based on student proficiency.
-
-**16 Skill Tags:**
-Diatonic_Triads, Inversions_First, Inversions_Second, Dominant_Seventh, Cadence_Half, Cadence_Perfect_Authentic, Cadence_Deceptive, Cadence_Plagal, Secondary_Dominant, Secondary_Leading_Tone, Diminished_Seventh, Half_Diminished_Seventh, Neapolitan_Sixth, Augmented_Sixth, Picardy_Third, Modulation_Diatonic_Pivot
-
-**Implementation (Commit 97e71557):**
-- **Exercise model** — `skill_tags` ArrayField + `complexity` integer with GIN/B-tree indexes
-- **[skills_analyzer.py](apps/exercises/utils/skills_analyzer.py)** — Detect harmony skills via roman numeral analysis (107 lines)
-- **[music21_builder.py](apps/exercises/utils/music21_builder.py)** — Convert exercise JSON to music21 Score for analysis
-- **[mass_import_performance.py](apps/exercises/management/commands/mass_import_performance.py)** — Inject skill detection at import time
-- **[backfill_skill_tags.py](apps/exercises/management/commands/backfill_skill_tags.py)** — Backfill existing exercises (supports `--all` flag for overwrite)
-- **[test_skills_analyzer.py](apps/exercises/tests/test_skills_analyzer.py)** — 11 unit tests covering all skill detectors
-
-**Usage:**
-```bash
-# Backfill existing exercises (default: only empty tags)
-python manage.py backfill_skill_tags
-
-# Overwrite all exercise tags (rebuild from scratch)
-python manage.py backfill_skill_tags --all
-
-# Query exercises by skill
-Exercise.objects.filter(skill_tags__contains=['Secondary_Dominant'])
-Exercise.objects.filter(skill_tags__contains=['Cadence_Perfect_Authentic'], complexity__lte=3)
-```
-
-**Backfill Results:** 42/45 exercises tagged successfully. 3 legacy data errors (no-measures, bad pitch) expected.
-
-**Future:** Adaptive engine uses tagged exercises + transposition layer to serve diverse key practice without DB duplication.
-
-## Architecture
-
-### Key Files
-
-- **[chorale_grader.js](lab/static/js/src/models/chorale_grader.js)** - Main grading engine (342 lines)
-- **[score_timeline.js](lab/static/js/src/components/music/score_timeline.js)** - Timeline construction from CIR data (126 lines)
-- **[exercise_sheet.js](lab/static/js/src/components/music/exercise_sheet.js)** - UI initialization for chorales
-- **[exercise_context.js](lab/static/js/src/models/exercise_context.js)** - Integration with broader exercise system
-- **[exercise_definition.js](lab/static/js/src/models/exercise_definition.js)** - Exercise type definition
-- **[vexflow_adapter.js](lab/static/js/src/components/music/vexflow_adapter.js)** - Rendering with analysis overlays
-- **[import_chorale.py](apps/exercises/management/commands/import_chorale.py)** - Django management command for importing chorales
-- **[pitch_voice_utils.py](apps/exercises/pitch_voice_utils.py)** - Shared voice stripping and validation for pitch identification
-- **[skills_analyzer.py](apps/exercises/utils/skills_analyzer.py)** - Harmonic skill detection via music21 roman numeral analysis
-- **[music21_builder.py](apps/exercises/utils/music21_builder.py)** - Convert exercise JSON to music21 Score
-- **[backfill_skill_tags.py](apps/exercises/management/commands/backfill_skill_tags.py)** - Backfill skill tags on existing exercises
-- **[chorale_exercises_plan.md](docs/chorale_exercises_plan.md)** - Curriculum and design specification
-
-### Data Flow
-
-```
-CIR JSON Score (Bach chorales in canonical internal representation)
-    ↓
-ScoreTimeline.buildTimeline() → Flat timeline of note events
-    ↓
-ChoraleGrader.initFromDefinition() → Groups timeline by onset
-    ↓
-MIDI input (noteOn/noteOff events)
-    ↓
-ChoraleGrader.grade() → CORRECT/PARTIAL/INCORRECT
-    ↓
-ExerciseContext → Update UI, advance exercise
-```
-
-## How the Chorale Grader Works
-
-### 1. Initialization Phase
-
-When an exercise starts:
-
-```javascript
-grader.initFromDefinition(definition)
-```
-
-This does:
-1. Extracts the CIR score from definition
-2. Calls `ScoreTimeline.buildTimeline(score)` to create a flat timeline
-3. Groups events by **onset** (timing) using `groupByOnset()`
-4. Sets `pointer = 0` (current window index)
-5. Initializes `playedNoteIds` Set (tracks which notes have been played)
-
-**Timeline event structure:**
-```javascript
-{
-  id: 0,              // unique identifier for rendering correlation
-  onset: 1024,        // cumulative ticks from start
-  duration: 2048,     // ticks for this note
-  midi: 60,           // MIDI pitch (C4)
-  staff: "treble",    // which staff
-  voiceIndex: 0,      // which voice on that staff
-  measureIndex: 0,    // which measure
-  itemIndex: 2,       // position in voice's items array
-  headIndex: 0        // which note in a chord
-}
-```
-
-**Window groups example:**
-- Window 0 (onset=0): MIDI notes [60, 52, 43, 33] (SATB chord)
-- Window 1 (onset=1024): MIDI notes [57, 52, 43, 33]
-- Window 2 (onset=2048): MIDI notes [60, 50, 45, 33]
-- etc.
-
-### 2. Play Phase - noteOn Events
-
-When student plays MIDI note at pitch P:
-
-```javascript
-grader.noteOn(midi)
-```
-
-Process:
-1. Add MIDI to `heldMidi` set (notes currently being held)
-2. Get current window (pointer) expected notes
-3. Calculate **held notes** - notes from previous onsets still sounding (important for tied notes and overlaps)
-4. Try to match played note against:
-   - Current window's new attacks
-   - Held notes from previous windows
-5. If match found: add event ID to `playedNoteIds`
-6. If no match: set `mistakeMade = true` and `_lastIncorrect = true`
-7. Check if window is complete and auto-advance if needed
-
-### 3. Held Notes Algorithm
-
-This is critical for correctness with tied notes and overlaps:
-
-```javascript
-_getHeldNotesAtOnset(onset)
-```
-
-For each voice/staff combo:
-1. Walk timeline backwards from the target onset
-2. Find the most recent event **before** the onset
-3. Check if that note is still sounding: `ev.onset + ev.duration > onset`
-4. Collect all held notes
-
-**Why this matters:**
-- In Bach chorales, inner voices often have tied notes
-- Bass might hold a note under two treble notes
-- Student must only play the NEW notes, not re-trigger held ones
-
-### 4. Grading Phase
-
-Called after each MIDI event or completion:
-
-```javascript
-grader.grade(definition, inputChords)
-```
-
-Returns:
-```javascript
-{
-  result: "correct|partial|incorrect",
-  score: 0|1|2,           // 0=correct, 1=partial, 2=incorrect
-  problems: [             // Detailed per-window feedback
-    {
-      windowIndex: 0,
-      status: "complete",
-      score: 0,
-      count: { correct: [...], incorrect: [...] },
-      note: { 60: "correct", 61: "incorrect", ... },
-      notes: [60, 52, 43, 33]
-    },
-    // ... one per window
-  ],
-  activeIndex: windowIndex
-}
-```
-
-**Grading logic:**
-- If `_lastIncorrect` was set (wrong note just played): return **INCORRECT** (score=2)
-- If `finished` is true (all windows complete): return **CORRECT** (score=0)
-- Otherwise: return **PARTIAL** (score=1)
-
-**Problems array (NEW):**
-- Built from `windowStats` tracking per-window data
-- Enables analytics of which windows/notes students struggle with
-- Foundation for future visual feedback (red coloring for incorrect notes)
-
-Note: `_lastIncorrect` is a **one-shot flag** consumed after grading to allow partial correction.
-
-### 5. Window Advancement
-
-Called automatically in `noteOn` or explicitly:
-
-```javascript
-_advanceIfWindowComplete()
-```
-
-Loop until window complete:
-1. Check if all required notes played
-   - All new attacks in current window
-   - All held notes still sounding
-2. If yes: increment `pointer`
-3. If `pointer >= windowGroups.length`: set `finished = true`
-
-**Important:** No auto-satisfaction of repeated chords - player must explicitly play each note.
-
----
-
-## Common Issues and Troubleshooting
-
-### Issue 1: Notes Not Registering
-
-**Symptom:** Playing correct notes but they don't turn black (not recognized as played)
-
-**Root causes:**
-
-1. **MIDI number mismatch**
-   - Check console log: `[1. PLAY] NOTE ON: X`
-   - Verify against window log: `Current window onset=..., new attacks: [60, 52, 43, 33]`
-   - **Fix:** Ensure keyboard/MIDI controller octave matches expected range
-
-2. **Timeline building error**
-   - Check console: `[INIT] Built timeline with N events...`
-   - Verify measure counts match score
-   - **Fix:** Check CIR JSON score structure - ensure valid measures/staves/voices
-
-3. **Event ID mismatch** (rendering doesn't match grader)
-   - IDs should correlate between grader and renderer
-   - Check in [score_timeline.js:114-120](lab/static/js/src/components/music/score_timeline.js#L114-L120)
-   - **Fix:** Don't sort timeline after building - insertion order must match renderer
-
-### Issue 2: Window Not Advancing
-
-**Symptom:** Played all notes in window but stuck on same window
-
-**Root cause:** Held notes not being recognized
-
-**Debug steps:**
-1. Check console logs in `_advanceIfWindowComplete`
-2. Look for: `Window check: played X/Y notes (Z new + W held)`
-3. If W=0 but should be > 0: held notes algorithm failed
-
-**Common causes:**
-- Voice structure incorrect in CIR JSON
-- Staff/voiceIndex tracking broken
-- Note duration calculation wrong
-
-**Fix:**
-- Verify CIR score structure
-- Check `durToTicks()` calculation in [score_timeline.js:6-12](lab/static/js/src/components/music/score_timeline.js#L6-L12)
-- Trace backwards in timeline for held notes
-
-### Issue 3: False Negatives (Wrong Note Detection)
-
-**Symptom:** Playing correct note but marked INCORRECT
-
-**Causes:**
-
-1. **Off-by-one in MIDI calculation**
-   - Check [score_timeline.js:28-33](lab/static/js/src/components/music/score_timeline.js#L28-L33)
-   - MIDI formula: `(octave + 1) * 12 + semitone`
-   - C4 should be 60
-
-2. **Octave wrapping**
-   - High treble notes might wrap to wrong octave
-   - **Check:** Log expected vs actual: `[2. GRADE] Matched note X in current window`
-
-3. **Chord ordering**
-   - If playing chord notes in different order than rendered
-   - Grader matches by MIDI pitch, not order, so should work
-   - **Check:** Look for duplicate MIDI notes in window
-
-### Issue 4: Instant Pass (Too Easy Grading)
-
-**Symptom:** Exercise completes immediately without playing
-
-**Cause:** Empty timeline or window groups
-
-**Check:**
-- Console: `[INIT] Built timeline with 0 events...` → No notes generated
-- Reasons:
-  - CIR score structure malformed
-  - `startMeasure` >= `endMeasure` in options
-  - All voices filtered out
-
-**Fix:**
-- Verify CIR JSON score format
-- Check exercise definition measure range
-- Check `selectVoices` option in timeline builder
-
-### Issue 5: Wrong Window Content
-
-**Symptom:** Expected notes don't match actual score
-
-**Check:**
-1. Console log first windows: `First 5 windows: ...`
-2. Manually verify against rendered score
-3. Check measure-by-measure event counts
-
-**Common causes:**
-- CIR JSON corrupted or truncated
-- Incorrect measure range in import
-- Voice selection filtering wrong notes
-
----
-
-## Debug Logging
-
-The chorale grader has comprehensive console logging with prefixes:
-
-```javascript
-[INIT]        // Initialization and timeline building
-[1. PLAY]     // MIDI input events (noteOn/noteOff)
-[2. GRADE]    // Grading logic and window checks
-[3. VISUAL]   // UI state changes
-```
-
-**Enable debugging:**
-1. Open DevTools (F12)
-2. Go to Console tab
-3. Start/play exercise
-4. Filter by `[INIT]` or `[2. GRADE]` etc.
-
-**Key log lines to watch:**
-```
-[INIT] Built timeline with X events across Y onset windows
-[INIT] First 5 windows: Window 0 (onset=0): 60, 52, 43, 33
-[1. PLAY] NOTE ON: 60
-[2. GRADE] Current window onset=0, new attacks: [60, 52, 43, 33], held notes: [], all expected: [60, 52, 43, 33]
-[2. GRADE] ✓ Matched note 60 in current window (id=0)
-[2. GRADE] Window check: played 1/4 notes (4 new + 0 held), complete=false
-[2. GRADE] Window complete! Advancing from 0 to 1
-[2. GRADE] Exercise complete!
-```
-
----
-
-## Testing Scenarios
-
-### Test 1: Simple Chorale (4 measures)
-
-```bash
-python manage.py import_chorale data/corpus/bach/bwv1.6.json \
-  --author=admin@example.com \
-  --start=0 --end=4 --public
-```
-
-Expected behavior:
-- 4 windows (one per beat/chord change)
-- Clear timeline in console
-- Notes advance automatically
-
-### Test 2: Single Voice Play
-
-For "play-soprano" mode:
-- Exercise should only expect treble staff notes
-- Bass voice held notes should NOT block advancement
-- Check `selectVoices` filtering in timeline builder
-
-### Test 3: With Held Notes
-
-Look for measure 2+ with tied notes:
-- Console should show: `held notes: [57]` etc.
-- Window completion should include held notes in count
-
----
-
-## Key Design Decisions
-
-### Why Onset-Based Windows?
-
-Instead of note-by-note:
-- Groups simultaneous notes together
-- Matches real musical performance (chords played together)
-- Simplifies tie/overlap handling
-
-### Why One-Shot `_lastIncorrect`?
-
-Instead of persistent error state:
-- Allows partial correction mid-phrase
-- Prevents one mistake from failing entire exercise
-- Only reports the most recent error
-
-### Why No Auto-Satisfaction?
-
-Instead of auto-completing repeated notes:
-- Ensures deliberate practice
-- Prevents "ghost playing" after completion
-- Matches pedagogical intent
-
----
-
-## Integration Points
-
-### ExerciseContext ([exercise_context.js](lab/static/js/src/models/exercise_context.js))
-
-Special handling for chorales:
-```javascript
-if (definition.isChorale()) {
-  // Doesn't use chord bank advancement
-  // Special completion check: flawless = CORRECT
-}
-```
-
-### ExerciseSheet ([exercise_sheet.js](lab/static/js/src/components/music/exercise_sheet.js))
-
-Initialization:
-```javascript
-if (definition.isChorale()) {
-  grader.initFromDefinition(definition);
-}
-```
-
-### VexFlow Adapter ([vexflow_adapter.js](lab/static/js/src/components/music/vexflow_adapter.js))
-
-Rendering:
-- Displays Roman numerals and figured bass
-- Colors notes based on `playedNoteIds` Set
-- Gray = unplayed, Black = correct, Red = incorrect
-
----
-
-## Data Structure: CIR Score
-
-Bach chorales are stored as "Canonical Internal Representation" JSON:
-
-```json
-{
-  "meta": {
-    "key": "G major",
-    "time_signature": "4/4"
-  },
-  "measures": [
-    {
-      "staves": {
-        "treble": {
-          "voices": [
-            {
-              "items": [
-                {
-                  "kind": "note" | "chord" | "rest",
-                  "pitch": { "step": "C", "alter": 0, "octave": 4 },
-                  "duration": { "type": "q", "dots": 0 }
-                }
-              ]
-            }
-          ]
-        },
-        "bass": { "voices": [...] }
-      }
-    }
-  ]
-}
-```
-
-### Duration Types
-
-- `w` = whole (4096 ticks)
-- `h` = half (2048)
-- `q` = quarter (1024)
-- `8` = eighth (512)
-- `16` = sixteenth (256)
-- `32` = thirty-second (128)
-
-Dots multiply: `base + base/2 + base/4 + ...`
-
----
-
-## Recent Changes (Last 7 Commits)
-
-1. **1bcd281** - Add comprehensive roadmap for future chorale improvements
-2. **d52a75e** - Add instructional text and detailed grading feedback to chorales
-3. **ff58760** - Enable performance data saving for chorale exercises
-4. **cd72f3a** - Update AGENTS.md with final resolution summary
-5. **5fcb4d2** - Merge nearby onsets into single windows during initialization
-6. **ab9d54c** - Allow matching passing tones in nearby windows
-7. **96e52c7** - Replace beat filter with window merging for inner voice notes
-
----
-
-## Future Enhancements
-
-Five additional features are documented in [docs/chorale_future_improvements.md](docs/chorale_future_improvements.md) with detailed implementation plans:
-
-### Phase 1 (High Priority)
-- **Feature 2:** Visual feedback for incorrect notes (red coloring in VexFlow)
-- **Feature 4:** Mode variations (play-outer, play-soprano, play-inner, play-bass-figures)
-
-### Phase 2 (Medium Priority)
-- **Feature 5:** Grading configuration functionality (octaveFlexible, releaseTolerancePct)
-- **Feature 6:** Mode-specific visual enhancements
-
-### Phase 3 (Lower Priority)
-- **Feature 7:** Hint system for stuck students
-- **Feature 8:** Performance metrics dashboard
-
-Each feature includes:
-- Detailed objective and current state
-- Step-by-step implementation guide with code examples
-- Testing strategy
-- Technical debt notes
-
-See [chorale_future_improvements.md](docs/chorale_future_improvements.md) for the complete roadmap.
-
----
-
-## Next Steps for Troubleshooting
-
-1. **Reproduce issue** with specific chorale and measure range
-2. **Capture console logs** - screenshot or copy-paste full debug output
-3. **Verify CIR JSON** structure using `validate_cir_structure()` helper (if exists)
-4. **Check timeline** - does `buildTimeline()` produce expected events?
-5. **Trace MIDI events** - do noteOn/noteOff arrive correctly?
-6. **Verify rendering** - do event IDs match between grader and renderer?
-
----
-
-## Resources
-
-- Bach Chorale Data: `data/corpus/bach/` (JSON files like `bwv1.6.json`)
-- Django Model: `apps/exercises/models.py` (Exercise model with JSON data field)
-- Planning Doc: [docs/chorale_exercises_plan.md](docs/chorale_exercises_plan.md)
-- Future Improvements: [docs/chorale_future_improvements.md](docs/chorale_future_improvements.md) (roadmap with 5 pending features)
-- Unit 9 Import Strategy: [docs/unit_9_bach_import_strategy.md](docs/unit_9_bach_import_strategy.md) (Curriculum-driven frontend filtering)
-- Import Script: [apps/exercises/management/commands/import_chorale.py](apps/exercises/management/commands/import_chorale.py)
+Use port `5433` to avoid a local PostgreSQL conflict. Ignore harmless
+`role adorman does not exist` warnings.
+
+## Repository hygiene
+
+- Preserve unrelated user changes in dirty worktrees.
+- Use isolated worktrees for feature work.
+- Do not add new one-off batch scripts when an approved service or management
+  command plan exists.
+- Keep generated profiles, dumps, console logs, and local audit output out of
+  tracked source.
+- Archive or mark superseded plans; do not leave competing active directions.
+- Current policy belongs here. Historical implementation detail belongs in
+  `docs/`, not in always-loaded agent instructions.
