@@ -1609,25 +1609,21 @@ define([
               that._suggestedUnits[String(unitNum)] = true;
             });
             that._applySuggestedUnits();
-            that._renderPlaylistOptions();
+            that._renderCanonicalDestination();
 
             // Set mode restrictions
+            var selectMode = $("#play-save-mode");
             if (data.route === "chordal") {
-              $("#play-save-mode-roman-lbl input").prop("disabled", false);
-              $("#play-save-mode-roman-lbl").show();
-              $("#play-save-mode-figures-lbl input").prop("disabled", false);
-              $("#play-save-mode-figures-lbl").show();
-              $("#play-save-mode-harmonization-lbl input").prop("disabled", false);
-              $("#play-save-mode-harmonization-lbl").show();
+              selectMode.find("option[value='roman']").prop("disabled", false).show();
+              selectMode.find("option[value='figures']").prop("disabled", false).show();
+              selectMode.find("option[value='harmonization']").prop("disabled", false).show();
             } else {
-              $("#play-save-mode-roman-lbl input").prop("disabled", true).prop("checked", false);
-              $("#play-save-mode-roman-lbl").hide();
-              $("#play-save-mode-figures-lbl input").prop("disabled", true).prop("checked", false);
-              $("#play-save-mode-figures-lbl").hide();
-              $("#play-save-mode-harmonization-lbl input").prop("disabled", true).prop("checked", false);
-              $("#play-save-mode-harmonization-lbl").hide();
-              if (!$("input[name='modes']:checked").length) {
-                $("input[name='modes'][value='play']").prop("checked", true);
+              selectMode.find("option[value='roman']").prop("disabled", true).hide();
+              selectMode.find("option[value='figures']").prop("disabled", true).hide();
+              selectMode.find("option[value='harmonization']").prop("disabled", true).hide();
+              var currentVal = selectMode.val();
+              if (currentVal === "roman" || currentVal === "figures" || currentVal === "harmonization") {
+                selectMode.val("play");
               }
             }
 
