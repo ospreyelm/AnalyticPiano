@@ -978,7 +978,7 @@ class AddExerciseView(View):
             return None
         return self._factory_user()
 
-    def _append_to_playlist(self, *, exercise, author, playlist_id=None, playlist_name=None, is_public=False, is_adaptive=False, is_official=False, skill_tags=None):
+    def _append_to_playlist(self, *, exercise, author, playlist_id=None, playlist_name=None, is_public=False, is_adaptive=False, is_official=False, skill_tags=None, mode=None):
         if not playlist_id and not playlist_name:
             return None
 
@@ -990,6 +990,14 @@ class AddExerciseView(View):
                 raise ValueError("playlist must be authored by the save author.")
             if not is_official and playlist.has_been_performed:
                 raise ValueError("playlist is locked because it has been performed.")
+            if mode:
+                from apps.exercises.utils.playlist_naming import extract_playlist_mode
+                existing_mode = extract_playlist_mode(playlist.name)
+                if existing_mode and existing_mode != mode:
+                    raise ValueError(
+                        f"Playlist '{playlist.name}' only accepts {existing_mode} exercises; "
+                        f"cannot add a {mode} exercise to it."
+                    )
         else:
             playlist, created = Playlist.objects.get_or_create(
                 name=playlist_name,
@@ -1062,9 +1070,6 @@ class AddExerciseView(View):
             save_as_official = self._bool_field(payload, "saveAsOfficial", False)
             is_adaptive = self._bool_field(payload, "isAdaptive", False)
             playlist_id, playlist_name = self._playlist_fields(payload)
-            if playlist_name:
-                from apps.exercises.utils.playlist_naming import apply_unit_prefix
-                playlist_name = apply_unit_prefix(playlist_name, skill_tags)
 
             author = self._resolve_author(request, save_as_official)
             if save_as_official and author is None:
@@ -1081,9 +1086,10 @@ class AddExerciseView(View):
             # Each mode produces a structurally different exercise (play/roman/figures/
             # identify/harmonization); existing content always keeps one mode per playlist
             # (e.g. "Unit 20 — Modulation II (play)" vs "... (figures)" as separate rows).
-            # When the teacher names a new playlist and selects multiple modes, split into
-            # one playlist per mode rather than mixing modes into a single playlist.
-            multi_mode = len(selected_modes) > 1
+            # A new playlist name always gets a mode-specific name built by
+            # build_new_playlist_name (so multiple selected modes split into separate
+            # playlists, and even a single-mode save's playlist name encodes its mode).
+            from apps.exercises.utils.playlist_naming import build_new_playlist_name
             playlists_by_id = {}
 
             with transaction.atomic():
@@ -1127,9 +1133,8 @@ class AddExerciseView(View):
                     created_exercises.append(exercise)
 
                     mode_playlist_name = (
-                        f"{playlist_name} ({mode})"
-                        if multi_mode and playlist_name
-                        else playlist_name
+                        build_new_playlist_name(playlist_name, skill_tags, mode)
+                        if playlist_name else None
                     )
                     playlist = self._append_to_playlist(
                         exercise=exercise,
@@ -1140,6 +1145,7 @@ class AddExerciseView(View):
                         is_adaptive=is_adaptive,
                         is_official=save_as_official,
                         skill_tags=skill_tags,
+                        mode=mode,
                     )
                     if playlist is not None:
                         playlists_by_id[playlist.id] = (mode, playlist)

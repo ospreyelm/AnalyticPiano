@@ -238,9 +238,6 @@ def import_musicxml_save_view(request):
         playlist_id = playlist_id.strip() or None
     if playlist_name:
         playlist_name = playlist_name.strip() or None
-        if playlist_name:
-            from apps.exercises.utils.playlist_naming import apply_unit_prefix
-            playlist_name = apply_unit_prefix(playlist_name, skill_tags)
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xml") as tmp:
         for chunk in musicxml_file.chunks():
@@ -270,9 +267,10 @@ def import_musicxml_save_view(request):
 
         created_exercises = []
         playlist = None
-        # Same convention as lab.views.AddExerciseView.post: one playlist per mode,
-        # matching existing content (e.g. "Unit 20 — Modulation II (play)" vs "(figures)").
-        multi_mode = len(selected_modes) > 1
+        # Same convention as lab.views.AddExerciseView.post: a new playlist name
+        # always gets a mode-specific name (build_new_playlist_name), so multiple
+        # selected modes split into separate playlists.
+        from apps.exercises.utils.playlist_naming import build_new_playlist_name, extract_playlist_mode
         playlists_by_id = {}
 
         with transaction.atomic():
@@ -339,9 +337,8 @@ def import_musicxml_save_view(request):
 
                 # Target playlist mapping
                 mode_playlist_name = (
-                    f"{playlist_name} ({mode})"
-                    if multi_mode and playlist_name
-                    else playlist_name
+                    build_new_playlist_name(playlist_name, skill_tags, mode)
+                    if playlist_name else None
                 )
                 if playlist_id or mode_playlist_name:
                     if playlist_id:
@@ -350,6 +347,12 @@ def import_musicxml_save_view(request):
                             raise ValueError("Playlist not found.")
                         if playlist.authored_by_id != author.id:
                             raise ValueError("Playlist must be authored by the save author.")
+                        existing_mode = extract_playlist_mode(playlist.name)
+                        if existing_mode and existing_mode != mode:
+                            raise ValueError(
+                                f"Playlist '{playlist.name}' only accepts {existing_mode} exercises; "
+                                f"cannot add a {mode} exercise to it."
+                            )
                     else:
                         playlist, pl_created = Playlist.objects.get_or_create(
                             name=mode_playlist_name,

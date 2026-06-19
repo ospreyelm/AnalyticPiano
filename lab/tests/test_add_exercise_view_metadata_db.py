@@ -84,8 +84,8 @@ class AddExerciseViewMetadataTests(TestCase):
         playlist = Playlist.objects.get(id=body["playlistId"])
         exercise = Exercise.objects.get(id=body["id"])
         link = ExercisePlaylistOrdered.objects.get(playlist=playlist, exercise=exercise)
-        self.assertEqual(body["playlistName"], "Unit 1 Drafts")
-        self.assertEqual(playlist.name, "Unit 1 Drafts")
+        self.assertEqual(body["playlistName"], "Unit 1 Drafts Exercise (Play)")
+        self.assertEqual(playlist.name, "Unit 1 Drafts Exercise (Play)")
         self.assertEqual(playlist.authored_by, self.user)
         self.assertEqual(link.order, 1)
 
@@ -98,7 +98,7 @@ class AddExerciseViewMetadataTests(TestCase):
 
         self.assertEqual(response.status_code, 201, response.content)
         playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "Unit 13 — Rule of the Octave")
+        self.assertEqual(playlist.name, "Unit 13 — Rule of the Octave Exercise (Play)")
 
     def test_playlist_name_multi_unit_prefix(self):
         response = self._post({
@@ -109,7 +109,7 @@ class AddExerciseViewMetadataTests(TestCase):
 
         self.assertEqual(response.status_code, 201, response.content)
         playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "Units 9, 13 — Shared drill")
+        self.assertEqual(playlist.name, "Units 9, 13 — Shared drill Exercise (Play)")
 
     def test_playlist_name_not_double_prefixed_when_already_starts_with_unit(self):
         response = self._post({
@@ -120,7 +120,7 @@ class AddExerciseViewMetadataTests(TestCase):
 
         self.assertEqual(response.status_code, 201, response.content)
         playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "Unit 13 - Rule of the Octave")
+        self.assertEqual(playlist.name, "Unit 13 - Rule of the Octave Exercise (Play)")
 
     def test_playlist_name_no_unit_prefix_when_no_unit_tag(self):
         response = self._post({
@@ -131,7 +131,7 @@ class AddExerciseViewMetadataTests(TestCase):
 
         self.assertEqual(response.status_code, 201, response.content)
         playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "No unit here")
+        self.assertEqual(playlist.name, "No unit here Exercise (Play)")
 
     def test_multi_mode_new_playlist_splits_into_one_playlist_per_mode(self):
         response = self._post({
@@ -146,8 +146,8 @@ class AddExerciseViewMetadataTests(TestCase):
         self.assertIn("playlists", body)
         self.assertEqual(len(body["playlists"]), 2)
 
-        play_playlist = Playlist.objects.get(name="Unit 13 Drafts (play)")
-        roman_playlist = Playlist.objects.get(name="Unit 13 Drafts (roman)")
+        play_playlist = Playlist.objects.get(name="Unit 13 Drafts Exercise (Play)")
+        roman_playlist = Playlist.objects.get(name="Unit 13 Drafts Exercise (Roman)")
         self.assertNotEqual(play_playlist.id, roman_playlist.id)
 
         play_exercise = Exercise.objects.get(id=body["ids"][0])
@@ -162,7 +162,7 @@ class AddExerciseViewMetadataTests(TestCase):
             ExercisePlaylistOrdered.objects.filter(playlist=play_playlist, exercise=roman_exercise).exists()
         )
 
-    def test_single_mode_new_playlist_uses_plain_name(self):
+    def test_single_mode_new_playlist_still_gets_mode_suffix(self):
         response = self._post({
             "chord": self._chords(),
             "modes": ["play"],
@@ -170,11 +170,11 @@ class AddExerciseViewMetadataTests(TestCase):
         })
 
         self.assertEqual(response.status_code, 201, response.content)
-        playlist = Playlist.objects.get(name="Unit 13 Drafts Solo")
-        self.assertEqual(response.json()["playlistName"], "Unit 13 Drafts Solo")
-        self.assertEqual(playlist.name, "Unit 13 Drafts Solo")
+        playlist = Playlist.objects.get(name="Unit 13 Drafts Solo Exercise (Play)")
+        self.assertEqual(response.json()["playlistName"], "Unit 13 Drafts Solo Exercise (Play)")
+        self.assertEqual(playlist.name, "Unit 13 Drafts Solo Exercise (Play)")
 
-    def test_multi_mode_existing_playlist_id_shares_one_playlist(self):
+    def test_multi_mode_existing_unrestricted_playlist_id_shares_one_playlist(self):
         playlist = Playlist.objects.create(name="Shared Existing", authored_by=self.user)
 
         response = self._post({
@@ -186,6 +186,39 @@ class AddExerciseViewMetadataTests(TestCase):
         self.assertEqual(response.status_code, 201, response.content)
         self.assertEqual(
             ExercisePlaylistOrdered.objects.filter(playlist=playlist).count(), 2
+        )
+
+    def test_existing_playlist_mode_mismatch_is_rejected(self):
+        playlist = Playlist.objects.create(
+            name="Unit 13 — Rule of the Octave Exercise (Play)", authored_by=self.user
+        )
+
+        response = self._post({
+            "chord": self._chords(),
+            "modes": ["roman"],
+            "playlistId": playlist.id,
+        })
+
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertIn("playlist", response.json()["error"].lower())
+        self.assertEqual(
+            ExercisePlaylistOrdered.objects.filter(playlist=playlist).count(), 0
+        )
+
+    def test_existing_playlist_matching_mode_succeeds(self):
+        playlist = Playlist.objects.create(
+            name="Unit 13 — Rule of the Octave Exercise (Play)", authored_by=self.user
+        )
+
+        response = self._post({
+            "chord": self._chords(),
+            "modes": ["play"],
+            "playlistId": playlist.id,
+        })
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(
+            ExercisePlaylistOrdered.objects.filter(playlist=playlist).count(), 1
         )
 
     def test_playlist_id_appends_at_next_order(self):

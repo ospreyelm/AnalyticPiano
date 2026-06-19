@@ -259,13 +259,15 @@ class MusicXMLImportViewsTest(TestCase):
         data = response.json()
 
         playlist = Playlist.objects.get(id=data["playlistId"])
-        self.assertEqual(playlist.name, "New Adaptive Playlist")
+        self.assertEqual(playlist.name, "New Adaptive Playlist Exercise (Play)")
         self.assertTrue(playlist.is_adaptive)
         self.assertEqual(playlist.authored_by, self.staff_teacher)
 
     def test_save_new_playlist_gets_unit_prefix(self):
-        """A new playlist name should be prefixed with the selected unit, matching
-        existing naming convention (e.g. "Unit 20 — Modulation II (play)")."""
+        """A new playlist name should be prefixed with the selected unit and suffixed
+        with its mode, matching existing naming convention (e.g.
+        "Unit 20 — Modulation II (play)", "Exercise" marking manually-authored
+        content as distinct from Bach-corpus-derived playlists)."""
         self.client.login(email="teacher@example.com", password="testpass123")
         uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
 
@@ -280,7 +282,29 @@ class MusicXMLImportViewsTest(TestCase):
         )
         self.assertEqual(response.status_code, 201, response.content)
         playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "Unit 13 — Rule of the Octave")
+        self.assertEqual(playlist.name, "Unit 13 — Rule of the Octave Exercise (Play)")
+
+    def test_save_existing_playlist_mode_mismatch_is_rejected(self):
+        """Adding a roman exercise to an existing play-only playlist must be blocked,
+        derived from the playlist's own "(Mode)" name suffix."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
+        playlist = Playlist.objects.create(
+            name="Unit 13 — Rule of the Octave Exercise (Play)",
+            authored_by=self.staff_teacher,
+        )
+
+        response = self.client.post(
+            reverse("teacher:import-musicxml-save"),
+            {
+                "musicxml_file": uploaded,
+                "description": "Mismatch test",
+                "playlist_id": playlist.id,
+                "modes": ["roman"],
+            }
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual(ExercisePlaylistOrdered.objects.filter(playlist=playlist).count(), 0)
 
     def test_save_official_sets_playlist_official_and_skill_tags(self):
         """Saving as official into a new playlist must propagate is_official/skill_tags
@@ -326,8 +350,8 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertIn("playlists", data)
         self.assertEqual(len(data["playlists"]), 2)
 
-        play_playlist = Playlist.objects.get(name="Multi Mode Drafts (play)")
-        roman_playlist = Playlist.objects.get(name="Multi Mode Drafts (roman)")
+        play_playlist = Playlist.objects.get(name="Multi Mode Drafts Exercise (Play)")
+        roman_playlist = Playlist.objects.get(name="Multi Mode Drafts Exercise (Roman)")
         self.assertNotEqual(play_playlist.id, roman_playlist.id)
 
         play_exercise = Exercise.objects.get(id=data["ids"][0])
