@@ -573,7 +573,7 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         db_index=True,
     )
     canonical_mode = models.CharField(
-        max_length=20,
+        max_length=32,
         blank=True,
         default="",
         db_index=True,
