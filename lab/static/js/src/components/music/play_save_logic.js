@@ -54,9 +54,11 @@
 
   var MODE_LABELS = {
     play: "Play",
+    play_figures: "Play + figures",
     roman: "Roman",
     figures: "Figures",
-    identify: "Identify",
+    figures_unabbreviated: "Figures (unabbreviated)",
+    matching: "Matching",
     harmonization: "Harmonization"
   };
 
