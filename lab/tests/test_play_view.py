@@ -84,7 +84,30 @@ class PlayViewTeacherChromeTests(TestCase):
         self.assertContains(resp, 'id="play-save-description"')
         self.assertContains(resp, 'id="play-save-submit"')
         self.assertContains(resp, 'id="play-save-create-transpositions"')
-        self.assertContains(resp, 'name="modes"')
+        # Modes are now a single <select>, not checkboxes
+        self.assertNotContains(resp, 'name="modes"')
+
+    def test_save_panel_has_single_unit_and_mode_controls(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertContains(resp, 'id="play-save-unit"')
+        self.assertContains(resp, 'id="play-save-mode"')
+        self.assertNotContains(resp, 'name="modes"')
+
+    def test_save_panel_has_read_only_destination(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertContains(resp, 'id="play-save-destination"')
+        self.assertContains(resp, 'Will save to')
+
+    def test_save_panel_has_no_playlist_management_controls(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertNotContains(resp, 'id="play-save-playlist"')
+        self.assertNotContains(resp, 'id="play-save-new-playlist-name"')
+        self.assertNotContains(resp, 'id="play-save-adaptive"')
+
+    def test_public_and_official_controls_exist(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertContains(resp, 'id="play-save-public"')
+        self.assertContains(resp, 'id="play-save-official"')
 
     def test_exercise_canvas_css_preserves_staff_and_keyboard_layout_rules(self):
         css_path = finders.find("student/exercise-canvas.css")
