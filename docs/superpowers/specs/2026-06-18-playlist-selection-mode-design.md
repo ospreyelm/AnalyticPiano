@@ -1,10 +1,14 @@
 # Playlist selection_mode + target_length + orphan-exercise fix
 
-*Revised after Codex review — see "Revision history" at the end for what changed
-and why. The scope grew significantly: target_length exposed pre-existing
-adaptive-serving bugs (slot-1 navigation pinning, three call sites with zero
-adaptive awareness, one of which can 400 on score submission) that have to be
-fixed for target_length to work correctly, not just bolted around.*
+*Revised twice after Codex review — see "Revision history" at the end for what
+changed and why each round. target_length kept exposing more pre-existing
+adaptive-serving bugs as the audit got more thorough: slot-1 navigation pinning,
+six call sites with zero adaptive awareness (one can 400 on score submission,
+two had no pre-resolution guard at all so direct URLs could bypass the cap
+entirely), and a course-blind PerformanceData lookup that can crash with
+MultipleObjectsReturned. All confirmed by reading the running code, not taken on
+faith — including pushing back on one claim (`ExerciseView`) that didn't hold
+up under verification.*
 
 ## Problem
 
@@ -195,10 +199,41 @@ code changes:
      assignment in test setup at lines 74-75, 276-277, 347-348 (not a
      constructor kwarg; missed entirely by the first audit pass). Update to set
      `pl.selection_mode = Playlist.SELECTION_STATIC_ORDERED`.
+   - `apps/exercises/tests/test_adaptive_serving.py` — constructor kwargs at
+     lines 53 (`Playlist(...)` + `.save()`) and 192
+     (`Playlist.objects.create(...)`), both `is_adaptive=True`. Missed by the
+     first audit pass because it was excluded from the original grep (which
+     skipped files matching `test`). Update both to
+     `selection_mode=Playlist.SELECTION_ADAPTIVE_POOL`.
+   - `scratch/batch_import_unit9.py:47-48` and
+     `scratch/batch_harmonization_qa.py:136-137` — both `is_dynamic=False,
+     is_adaptive=False` constructor/`get_or_create` kwargs. Explicit decision:
+     **migrate both**, not declare unsupported. `batch_harmonization_qa.py` is
+     a documented, intentionally re-runnable pipeline (per project memory:
+     "re-runnable pipeline: import roman sources → derive harmonization →
+     bundle in playlist"), not throwaway scratch code despite its directory.
+     `batch_import_unit9.py` is described in `CLAUDE.md` as a superseded
+     one-off, but the fix is two lines either way — leaving it broken to crash
+     on next use costs more than fixing it now.
 
-   25 kwarg/assignment blocks across 15 files total (`generate_unit2_barline_exercises.py`
+   29 kwarg/assignment blocks across 18 files total (`generate_unit2_barline_exercises.py`
    alone has 3 `get_or_create`+`if not created:` pairs = 6 blocks;
-   `test_generate_exercise_context.py` has 3 separate assignment pairs).
+   `test_generate_exercise_context.py` and `test_adaptive_serving.py` each
+   have multiple separate assignment/kwarg pairs).
+
+   **Read-only — verified safe, no code change, but must still pass after the
+   write-site conversion above** (these assert `playlist.is_adaptive`/
+   `is_dynamic` via plain attribute reads on objects created by code this spec
+   *does* change, so they're the closest thing to existing regression coverage
+   for several write sites): `apps/exercises/tests/test_create_unit_playlist.py:130-131`,
+   `apps/exercises/tests/test_play_save_chordal_umto.py:230`,
+   `apps/teacher/tests/test_musicxml_import_views.py:263` (line 254's
+   `"is_adaptive": "true"` is an HTTP POST field name, a separate wire-contract
+   concern from the Python model field — not renamed by this spec),
+   `apps/exercises/tests/test_generate_unit2_barline_exercises.py:200` (line
+   204's `is_adaptive_entry` is an unrelated field on `ExercisePlaylistOrdered`,
+   not `Playlist.is_adaptive` — verified as a false-positive grep match, not a
+   write site).
 
 Serving code (`mastery.py:350`, `apps/student/views.py:1045`) is left reading the
 new properties as-is — no logic changes there, only the attribute's backing
@@ -346,16 +381,72 @@ thing that makes "served exercise N" a coherent, stable concept at all — witho
 it, "stop after target_length exercises" is capping a sequence that isn't
 reliably sequential to begin with.
 
-**5b. Make three blind call sites adaptive-aware**, mirroring the pattern
+**5b. Fix `get_next_exercise`'s navigation pinning — it's broken for the exact
+mode this spec cares most about, and has a separate crash risk.** Verified two
+distinct bugs in the pinning check (`apps/exercises/mastery.py:284-296`), on top
+of the slot-threading bug in 5a:
+
+1. **Pinning validity requires `ExercisePlaylistOrdered` linkage**
+   (`ExercisePlaylistOrdered.objects.filter(playlist=playlist,
+   exercise=pinned_ex).exists()`), but `adaptive_pool_scoped` mode deliberately
+   selects from the *global* Exercise pool via `skill_tags__overlap`
+   (`mastery.py:354`), not from manually-linked rows. A pinned exercise from a
+   scoped pool will almost always fail this check, fall through to "fresh
+   selection" every time, and re-roll the RNG — meaning the one mode this spec
+   is actually meant to make useful (`adaptive_pool_scoped`, the "Smart
+   Assignment" case) has its pinning silently disabled today. Fix: the validity
+   check becomes selection-mode-aware — for `adaptive_pool_scoped`, validate
+   against the same pool criteria used for selection (skill_tags overlap +
+   complexity range) instead of literal `ExercisePlaylistOrdered` membership;
+   for `adaptive_pool` (unscoped), any existing `Exercise` row is valid, matching
+   today's de facto behavior for that mode.
+2. **The `PerformanceData` lookup ignores `course` entirely**
+   (`PerformanceData.objects.get(user=user_obj, playlist=playlist)`), despite
+   `PerformanceData.Meta.unique_together = (("user", "playlist", "course"))`
+   (`apps/exercises/models.py:1363`). A student who's accessed the same playlist
+   through two different courses (or once via a course and once with no course)
+   can have multiple `PerformanceData` rows for one `(user, playlist)` pair —
+   this `.get()` would raise `MultipleObjectsReturned`, a crash, not just wrong
+   data. Fix: thread `course` through `get_next_exercise`'s call chain and filter
+   the lookup by it (`PerformanceData.objects.filter(user=user_obj,
+   playlist=playlist, course=course).first()`, switching from `.get()` to
+   `.filter().first()` defensively).
+
+**5c. Keep server-side resolution as the source of truth; don't switch to
+trusting a client-sent exercise ID.** `lab/views.py:204`'s existing comment is
+explicit and deliberate: *"the accuracy of this database write depends on the
+playlist not having changed since the call of compileExerciseReport"* — i.e. the
+codebase already chose server-side re-derivation over client-supplied identity,
+almost certainly to prevent a student's client from claiming credit for an
+exercise it wasn't actually served (an anti-cheat boundary, not an oversight).
+Switching to "client sends the ID, server validates it" would be a larger,
+separate architecture change to that boundary, and isn't necessary to fix the
+two confirmed bugs above — 5a (slot threading) and 5b (pinning correctness) make
+server-side re-derivation reliable without needing to trust the client. Once
+both are fixed, re-running the selector at submission time reproduces the
+GET-rendered exercise via the same deterministic seed for the first visit to a
+slot, and via the (now-fixed) pinning check for any repeat visit — which is the
+existing design's own mechanism for exactly this stability problem, just
+currently broken. Noted as a considered alternative, not adopted, to keep this
+change scoped to fixing confirmed bugs rather than redesigning an
+intentional security boundary.
+
+**5d. Make three blind call sites adaptive-aware**, mirroring the pattern
 `PlayerView` (`apps/student/views.py:1019`) already uses correctly today
 (`if playlist.is_dynamic or playlist.is_adaptive: <adaptive path> else: <static
 path>`):
 
 - `PlayerDefinitionView.get` (`apps/student/views.py:1227`) — currently calls
   `get_ordered_exercise_ids_for_serving`/`get_served_exercise_id`
-  unconditionally. `course = resolve_course_for_playlist(request.user,
-  playlist)` is already computed at line 1249 — reuse it. Add the same
-  conditional `PlayerView` already has.
+  unconditionally, **with no pre-resolution guard for adaptive playlists at
+  all** (its `exercise_num > served_count` check at line 1252 only meaningfully
+  bounds static playlists — `served_count` for adaptive is the same
+  linked-row-count landmine from Problem #4). `course =
+  resolve_course_for_playlist(request.user, playlist)` is already computed at
+  line 1249 — reuse it. Add the same conditional `PlayerView` already has,
+  *and* an explicit pre-resolution cap check (see 5f) — this view would
+  otherwise happily resolve and serve exercise 999 of a 5-exercise-capped
+  playlist if requested by direct URL.
 - `_submit_exercise_performance` (`apps/exercises/views.py:186`) — currently
   calls `get_served_exercise_id` unconditionally at line 207. `data_course_id`
   is already available from the POST payload; resolve a `Course` object from it
@@ -378,7 +469,14 @@ path>`):
   the static path. Safe to use directly for `PerformanceData`/mastery scoring at
   the two new call sites — no special-casing needed.
 
-**5c. Add `Playlist` model helpers for adaptive-only "effective length":**
+**Checked and excluded:** `lab/views.py:ExerciseView` (line 760) does **not**
+need adaptive-cap handling — verified it takes a bare `exercise_id` with no
+`playlist`/`exercise_num` concept at all, and calls
+`generate_exercise_context(None, exercise, request.user)` with `playlist=None`,
+which routes to an entirely separate "browse my own exercises by id" code path,
+unrelated to playlist serving or capping.
+
+**5e. Add `Playlist` model helpers for adaptive-only "effective length":**
 
 ```python
 def effective_length(self):
@@ -400,16 +498,43 @@ Unit-4-personalized-shuffle special case (see Non-goals) — static playlists ke
 using `served_count`/`playlist.exercise_count`/`playlist.next_num()` exactly as
 today.
 
-**5d. Apply the cap consistently, using the 5c helpers, everywhere an adaptive
-"is there a next exercise" / "what's the total" question is answered:**
+**5f. Apply the cap consistently, using the 5e helpers, everywhere an adaptive
+"is there a next exercise" / "what's the total" question is answered or a
+navigable link is generated.** This list grew twice during review — found by
+tracing every reader of `served_count`/`exercise_count`/"total" tied to a
+playlist, not just the navigation call sites named in the first pass:
 
 - `apps/student/views.py:1049` — add `or (is_dynamic_or_adaptive and
   playlist.effective_length() and exercise_num > playlist.effective_length())`
   to the existing redirect guard.
+- `apps/student/views.py:1088` and `:1275` — both assign
+  `exercise_context["totalExercises"] = served_count`, where `served_count` is
+  the linked-row count (meaningless for adaptive, per Problem #4). For adaptive
+  playlists, use `playlist.effective_length()` instead (may be `None` for
+  unbounded — frontend should treat `None` as "no total to show," not `0`).
 - `apps/student/views.py:1131` — adaptive branch's `next_num = resolved_num + 1`
   becomes `playlist.effective_next_num(resolved_num)`.
+- `apps/student/views.py:1227` (`PlayerDefinitionView`, new in 5d) — needs both
+  a pre-resolution guard (`if playlist.effective_length() and exercise_num >
+  playlist.effective_length(): <redirect/404>`, checked *before* calling
+  `get_adaptive_exercise_for_view`, not just an adjusted `next_num` afterward —
+  otherwise a direct URL past the cap still resolves and serves an exercise)
+  and the same `effective_*` helpers for its redirect/total logic.
 - `lab/views.py:198` (`generate_exercise_context`'s adaptive branch) — same
-  `effective_next_num` substitution.
+  `effective_next_num` substitution for `next_num`.
+- `lab/views.py:257` (`exercise_list` "dots" navigation, used by the legacy
+  `PlaylistView` template) — currently builds
+  `range(max(1, exercise_num - 2), exercise_num + 3)` unconditionally, always
+  showing 2 slots past the current one regardless of any cap. Clip the upper
+  bound to `min(exercise_num + 3, playlist.effective_length() + 1)` when
+  `effective_length()` is set, so the dots list never renders a clickable link
+  past `target_length`.
+- `lab/views.py:552` (`PlaylistView.get`) — like `PlayerDefinitionView`, has
+  **no** pre-resolution guard for adaptive mode before calling
+  `get_adaptive_exercise_for_view` (line 588). Add the same explicit
+  `effective_length()` check before resolution, not just relying on
+  `generate_exercise_context`'s `next_num` adjustment downstream — a direct URL
+  to this legacy route past the cap would otherwise still serve an exercise.
 - `apps/exercises/views.py:70,99` (`_build_completion_response`) — currently has
   **no** adaptive branch at all (Problem #4). Add one: when
   `playlist.selection_mode != static_ordered`, compute `next_num` via
@@ -418,8 +543,19 @@ today.
   or null out `total_exercises` for unbounded adaptive playlists rather than
   reporting a misleading static count). Static playlists keep using
   `playlist.next_num()`/`playlist.exercise_count` exactly as today.
-- `PlayerDefinitionView` (new adaptive branch from 5b) — same `effective_*`
-  helpers for its redirect/total logic.
+- `apps/student/unit_progress.py:285-286` (`_playlist_stats`) — `"total":
+  len(served_ids)` and `"is_adaptive": bool(playlist.is_adaptive)` feed
+  `apps/student/templates/student/unit_progress.html:87-114`, which currently
+  forces the progress bar to a hardcoded `0%`/no-fraction display whenever
+  `is_adaptive` is true (a deliberate workaround for adaptive having no real
+  total today). Once `target_length` exists, this is stale: when
+  `playlist.effective_length()` is set, `_playlist_stats` should report it as
+  `"total"` (a real, finite number) so the progress bar shows an actual
+  `done/total` fraction instead of the indeterminate display; the template's
+  `is_adaptive` branch becomes `is_adaptive and total is None` (or an
+  equivalent explicit "unbounded" flag) so capped adaptive playlists render
+  like static ones, and only genuinely unbounded ones keep the indeterminate
+  bar.
 
 ## UI changes
 
@@ -443,25 +579,39 @@ No other `/teacher/play/` UI changes.
   correct values for all 3 `selection_mode` values.
 - `target_length` validation: assert `target_length=0` is rejected
   (`MinValueValidator(1)`), `target_length=None` is accepted.
-- Run the full management-command test suite, plus a smoke-run of any of the 15
+- Run the full management-command test suite, plus a smoke-run of any of the 18
   files in Section 1's write-site list that lack dedicated tests, after
   converting their kwargs/assignments to `selection_mode=` — catches any missed
-  call site via `AttributeError`/`TypeError` at minimum.
+  call site via `AttributeError`/`TypeError` at minimum. Explicitly confirm the
+  4 read-only tests named in Section 1 still pass unmodified
+  (`test_create_unit_playlist.py`, `test_play_save_chordal_umto.py`,
+  `test_musicxml_import_views.py`, `test_generate_unit2_barline_exercises.py`).
 - Slot-stability regression test (covers 5a): for an adaptive playlist, request
   the same `exercise_num` twice for the same user and assert the same exercise
   is returned both times (navigation pinning working); request two different
   `exercise_num` values and assert they can differ (not all collapsing to slot
   1's selection).
-- Adaptive submission test (covers 5b): for an adaptive/dynamic playlist with
+- Pinning correctness test (covers 5b): for an `adaptive_pool_scoped` playlist,
+  request the same `exercise_num` twice and assert the same exercise is
+  returned both times (pinning surviving the "not linked via
+  ExercisePlaylistOrdered" case); create two `PerformanceData` rows for the
+  same `(user, playlist)` under two different courses and assert
+  `get_next_exercise` doesn't raise `MultipleObjectsReturned`.
+- Adaptive submission test (covers 5d): for an adaptive/dynamic playlist with
   fewer `ExercisePlaylistOrdered`-linked rows than a configured `target_length`,
   submit a score for an exercise_num beyond the linked-row count and assert it
   succeeds (no `400 "Invalid exercise number"`) — this is the regression test
   for the landmine found in Problem #4.
-- `target_length` capping end-to-end (covers 5c/5d): `target_length=None` behaves
-  identically to today across all four call sites in 5d; `target_length=5` stops
-  `next_num`/`effective_next_num` at 5 and redirects/responds accordingly past
-  it, regardless of mastery state, in `PlayerView`, `PlayerDefinitionView`, and
-  `_build_completion_response`.
+- `target_length` capping end-to-end (covers 5e/5f): `target_length=None`
+  behaves identically to today across every call site in 5f;
+  `target_length=5` stops `next_num`/`effective_next_num` at 5 and
+  redirects/responds/omits-dots-links accordingly past it, regardless of
+  mastery state, in `PlayerView`, `PlayerDefinitionView`, legacy `PlaylistView`
+  (including the pre-resolution guard — a direct URL to exercise_num=999 on a
+  5-capped playlist must 404/redirect, not serve an exercise), the "dots"
+  navigation list, `_build_completion_response`, and the unit-progress summary
+  (`_playlist_stats`/`unit_progress.html` showing a real fraction instead of
+  the indeterminate bar once capped).
 - Orphan-exercise fix: extend `lab/tests/test_add_exercise_view_metadata_db.py`
   with a test posting no `playlistId`/`playlistName` and asserting the exercise
   lands in an auto-created "My Drafts" playlist instead of no playlist at all.
@@ -495,3 +645,45 @@ file / PR discussion for the verification trail), not taken on faith. Section 5
 (Adaptive serving/submission correctness) is new in this revision — the original
 draft incorrectly claimed `get_next_exercise` "has no concept of exercise_num or
 position."
+
+**Second revision**, after a follow-up Codex review of the first revision caught
+three more things, all verified before this revision:
+
+1. Section 5a's slot-threading fix alone didn't make adaptive slots stable —
+   `get_next_exercise`'s pinning check also requires `ExercisePlaylistOrdered`
+   linkage (which `adaptive_pool_scoped` deliberately doesn't use, since it
+   pulls from the global pool) and ignores `course` despite
+   `PerformanceData`'s `(user, playlist, course)` uniqueness constraint (a
+   `MultipleObjectsReturned` crash risk, not just a correctness gap, confirmed
+   by reading the model's `Meta.unique_together`). Added 5b (pinning fix) and
+   5c (an explicit decision to keep server-side resolution rather than adopt
+   Codex's alternative suggestion of trusting a client-sent exercise id — the
+   existing code has a deliberate anti-cheat comment explaining why it
+   re-derives server-side; fixing pinning correctness achieves the same
+   stability goal without touching that boundary).
+2. The cap was enforceable as a navigation-link hider but not as a real
+   server-side block: tracing every reader of `served_count`/`exercise_count`/
+   "total" tied to a playlist (not just the call sites Codex named) surfaced
+   three more gaps — `apps/student/views.py:1088`/`:1275` (`totalExercises`
+   using the wrong count), `lab/views.py:257` (the "dots" navigation list
+   exposing clickable links past the cap), `lab/views.py:552`
+   (`PlaylistView`, a second legacy route with no pre-resolution guard, same
+   bug as `PlayerDefinitionView`), and `apps/student/unit_progress.py:285-286`
+   plus its template (`unit_progress.html`) forcing a hardcoded 0%/indeterminate
+   progress bar for all adaptive playlists regardless of whether a real total
+   now exists. All folded into 5f. One claim didn't hold up under
+   verification and was pushed back on: `ExerciseView` (`lab/views.py:760`)
+   has no `playlist`/`exercise_num` concept at all and isn't part of this
+   serving path — confirmed by reading it, not assumed.
+3. The write-site audit was still incomplete a second time — a broad,
+   unscoped repo-wide grep (this time not excluding anything by filename
+   pattern) found `apps/exercises/tests/test_adaptive_serving.py` (2 more
+   constructor-kwarg sites) and two scratch scripts
+   (`batch_import_unit9.py`, `batch_harmonization_qa.py`). Explicit decision
+   made to migrate both scratch scripts rather than declare them unsupported
+   — one is a documented, intentionally re-runnable pipeline per project
+   memory, and the fix is two lines regardless. Four more files were found to
+   reference `is_adaptive`/`is_dynamic` but verified as read-only (safe under
+   the new properties, no code change needed) and added to the testing plan
+   by name instead, since they're the closest existing regression coverage
+   for several write sites this spec touches.
