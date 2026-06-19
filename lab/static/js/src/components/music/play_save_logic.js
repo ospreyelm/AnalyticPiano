@@ -52,5 +52,32 @@
     return out;
   }
 
-  return { buildChordRows: buildChordRows, buildAnalysisSlices: buildAnalysisSlices };
+  var MODE_LABELS = {
+    play: "Play",
+    roman: "Roman",
+    figures: "Figures",
+    identify: "Identify",
+    harmonization: "Harmonization"
+  };
+
+  function canonicalDestinationLabel(unit, mode) {
+    if (!unit || !MODE_LABELS[mode]) return "";
+    return "Unit " + unit + " — Exercises (" + MODE_LABELS[mode] + ")";
+  }
+
+  function buildCanonicalSaveFields(options) {
+    return {
+      skillTags: ["unit:" + options.unit],
+      mode: options.mode,
+      isPublic: !!options.isPublic,
+      saveAsOfficial: !!options.saveAsOfficial
+    };
+  }
+
+  return {
+    buildChordRows: buildChordRows,
+    buildAnalysisSlices: buildAnalysisSlices,
+    canonicalDestinationLabel: canonicalDestinationLabel,
+    buildCanonicalSaveFields: buildCanonicalSaveFields
+  };
 });

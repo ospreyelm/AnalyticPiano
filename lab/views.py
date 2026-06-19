@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import models, transaction
-from django.db.models import Max, When, Case, Q
+from django.db.models import When, Case, Q
 from django.urls import reverse
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -29,7 +29,6 @@ from apps.exercises.models import (
     Playlist,
     Course,
     PerformanceData,
-    ExercisePlaylistOrdered,
     PlaylistCourseOrdered,
     NonUMTOExerciseError,
 )
@@ -938,6 +937,7 @@ class AddExerciseView(View):
             raise ValueError("skillTags must be a list of at most 20 strings.")
 
         cleaned = []
+        unit_tag_count = 0
         for tag in tags:
             if not isinstance(tag, str) or not self._TAG_RE.match(tag):
                 raise ValueError("skillTags contains an invalid tag.")
@@ -945,28 +945,34 @@ class AddExerciseView(View):
                 unit_n = tag.split(":", 1)[1]
                 if TaxonomyReader.get_unit(unit_n) is None:
                     raise ValueError(f"unit tag {tag} does not reference a known unit.")
+                unit_tag_count += 1
             cleaned.append(tag)
+        if unit_tag_count != 1:
+            raise ValueError("Exactly one unit tag is required.")
         return cleaned
 
-    def _playlist_fields(self, payload):
-        playlist_id = payload.get("playlistId")
-        playlist_name = payload.get("playlistName")
+    def _single_mode(self, payload):
+        """Extract and validate exactly one interaction mode."""
+        from apps.exercises.utils.playlist_naming import SUPPORTED_TEACHER_PLAY_MODES
+        modes = payload.get("modes")
+        if modes is not None:
+            if not isinstance(modes, list) or len(modes) != 1:
+                raise ValueError(
+                    "Exactly one mode is required. Send 'mode' (string) not 'modes' (list)."
+                )
+            mode = modes[0]
+        else:
+            mode = payload.get("mode", "play")
+        if mode not in SUPPORTED_TEACHER_PLAY_MODES:
+            raise ValueError(f"Unsupported interaction mode: {mode}")
+        return mode
 
-        if isinstance(playlist_id, str):
-            playlist_id = playlist_id.strip() or None
-        elif playlist_id is not None:
-            playlist_id = str(playlist_id)
-
-        if isinstance(playlist_name, str):
-            playlist_name = playlist_name.strip() or None
-        elif playlist_name is not None:
-            raise ValueError("playlistName must be a string.")
-
-        if playlist_id and playlist_name:
-            raise ValueError("playlistId and playlistName are mutually exclusive.")
-        if playlist_name and len(playlist_name) > 64:
-            raise ValueError("playlistName must be 64 characters or fewer.")
-        return playlist_id, playlist_name
+    def _single_unit(self, skill_tags):
+        """Return the integer unit number from the validated skill_tags list."""
+        for tag in skill_tags:
+            if tag.startswith("unit:"):
+                return int(tag.split(":", 1)[1])
+        raise ValueError("Exactly one unit tag is required.")
 
     def _factory_user(self):
         return User.objects.filter(email=settings.FACTORY_USER_EMAIL).first()
@@ -977,49 +983,6 @@ class AddExerciseView(View):
         if not request.user.is_superuser:
             return None
         return self._factory_user()
-
-    def _append_to_playlist(self, *, exercise, author, playlist_id=None, playlist_name=None, is_public=False, is_adaptive=False, is_official=False, skill_tags=None):
-        if not playlist_id and not playlist_name:
-            return None
-
-        if playlist_id:
-            playlist = Playlist.objects.filter(id=playlist_id).first()
-            if playlist is None:
-                raise ValueError("playlistId does not reference an existing playlist.")
-            if not is_official and playlist.authored_by_id != author.id:
-                raise ValueError("playlist must be authored by the save author.")
-            if not is_official and playlist.has_been_performed:
-                raise ValueError("playlist is locked because it has been performed.")
-        else:
-            playlist, created = Playlist.objects.get_or_create(
-                name=playlist_name,
-                authored_by=author,
-                defaults={
-                    "is_public": is_public,
-                    "is_adaptive": is_adaptive,
-                    "is_official": is_official,
-                    "skill_tags": list(skill_tags or []),
-                },
-            )
-            if created:
-                if is_public and not playlist.is_public:
-                    playlist.is_public = True
-                    playlist.save()
-            if playlist.has_been_performed:
-                raise ValueError("playlist is locked because it has been performed.")
-
-        next_order = (
-            ExercisePlaylistOrdered.objects.filter(playlist=playlist)
-            .aggregate(max_order=Max("order"))
-            .get("max_order")
-            or 0
-        ) + 1
-        ExercisePlaylistOrdered.objects.create(
-            playlist=playlist,
-            exercise=exercise,
-            order=next_order,
-        )
-        return playlist
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -1041,6 +1004,13 @@ class AddExerciseView(View):
         if not chords or not isinstance(chords, list):
             return HttpResponse(status=400)
 
+        # Reject explicit playlist destination — routing is automatic.
+        if payload.get("playlistId") or payload.get("playlistName"):
+            return self._json_error(
+                "Playlist destination is automatic for teacher-play saves. "
+                "Do not send playlistId or playlistName."
+            )
+
         key = payload.get("key", "C")
         meter = payload.get("meter")  # None = free/open mode (no metric validation)
         clef = payload.get("clef", "keyboard")
@@ -1049,22 +1019,14 @@ class AddExerciseView(View):
         analysis_slices = payload.get("analysisSlices", [])  # [] => status "none"; non-empty => "reviewed"
         analyze_config = payload.get("analyzeConfig")
         display = payload.get("display")  # teacher's analysis display flags (showRomans, ...)
-        selected_modes = payload.get("modes") or [payload.get("mode", "play")]
-        _mode_map = {
-            "identify": InteractionMode.IDENTIFICATION,
-            "harmonization": InteractionMode.HARMONIZATION,
-        }
 
         try:
             description = self._description(payload)
             skill_tags = self._skill_tags(payload)
+            mode = self._single_mode(payload)
+            unit = self._single_unit(skill_tags)
             is_public = self._bool_field(payload, "isPublic", False)
             save_as_official = self._bool_field(payload, "saveAsOfficial", False)
-            is_adaptive = self._bool_field(payload, "isAdaptive", False)
-            playlist_id, playlist_name = self._playlist_fields(payload)
-            if playlist_name:
-                from apps.exercises.utils.playlist_naming import apply_unit_prefix
-                playlist_name = apply_unit_prefix(playlist_name, skill_tags)
 
             author = self._resolve_author(request, save_as_official)
             if save_as_official and author is None:
@@ -1075,97 +1037,80 @@ class AddExerciseView(View):
                     )
                 return self._json_error("Only superusers can save official exercises.", status=403)
 
-            effective_is_public = True if save_as_official else is_public
-            created_exercises = []
-            playlist = None
-            # Each mode produces a structurally different exercise (play/roman/figures/
-            # identify/harmonization); existing content always keeps one mode per playlist
-            # (e.g. "Unit 20 — Modulation II (play)" vs "... (figures)" as separate rows).
-            # When the teacher names a new playlist and selects multiple modes, split into
-            # one playlist per mode rather than mixing modes into a single playlist.
-            multi_mode = len(selected_modes) > 1
-            playlists_by_id = {}
+            _mode_map = {
+                "identify": InteractionMode.IDENTIFICATION,
+                "harmonization": InteractionMode.HARMONIZATION,
+            }
+
+            import copy
+            mode_display = copy.deepcopy(display or {})
+            for flag in ["showRomans", "showFigures", "showChordLabels", "showScaleDegrees", "showNoteNames"]:
+                if flag not in mode_display:
+                    mode_display[flag] = False
+            if mode == "roman":
+                mode_display["showRomans"] = True
+                mode_display["showFigures"] = False
+            elif mode == "figures":
+                mode_display["showFigures"] = True
+                mode_display["showRomans"] = False
+            elif mode in ("identify", "harmonization"):
+                mode_display["showRomans"] = False
+                mode_display["showFigures"] = False
+
+            from apps.exercises.services.canonical_playlist import (
+                append_exercise_to_canonical_playlist,
+                resolve_canonical_playlist,
+            )
 
             with transaction.atomic():
-                import copy
-                for mode in selected_modes:
-                    mode_display = copy.deepcopy(display or {})
-                    for flag in ["showRomans", "showFigures", "showChordLabels", "showScaleDegrees", "showNoteNames"]:
-                        if flag not in mode_display:
-                            mode_display[flag] = False
+                exercise = save_chordal_umto_exercise(
+                    description=description,
+                    author=author,
+                    chords=chords,
+                    key=key,
+                    meter=meter,
+                    clef=clef,
+                    staff_distribution=staff_distribution,
+                    skill_tags=skill_tags,
+                    is_public=is_public,
+                    auto_playlist=False,
+                    barline_offsets=barline_offsets,
+                    analysis=analysis_slices,
+                    analyze_config=analyze_config,
+                    display=mode_display,
+                    mode=_mode_map.get(mode, InteractionMode.PLAYBACK),
+                )
+                if save_as_official:
+                    exercise.is_official = True
+                    exercise.save(update_fields=["is_official"])
 
-                    if mode == "roman":
-                        mode_display["showRomans"] = True
-                        mode_display["showFigures"] = False
-                    elif mode == "figures":
-                        mode_display["showFigures"] = True
-                        mode_display["showRomans"] = False
-                    elif mode in ("identify", "harmonization"):
-                        mode_display["showRomans"] = False
-                        mode_display["showFigures"] = False
+                playlist = resolve_canonical_playlist(
+                    author=author,
+                    unit=unit,
+                    mode=mode,
+                    is_public=is_public,
+                    is_official=save_as_official,
+                )
+                append_exercise_to_canonical_playlist(playlist, exercise)
 
-                    exercise = save_chordal_umto_exercise(
-                        description=description,
-                        author=author,
-                        chords=chords,
-                        key=key,
-                        meter=meter,
-                        clef=clef,
-                        staff_distribution=staff_distribution,
-                        skill_tags=skill_tags,
-                        is_public=effective_is_public,
-                        auto_playlist=False,
-                        barline_offsets=barline_offsets,
-                        analysis=analysis_slices,
-                        analyze_config=analyze_config,
-                        display=mode_display,
-                        mode=_mode_map.get(mode, InteractionMode.PLAYBACK),
-                    )
-                    if save_as_official:
-                        exercise.is_official = True
-                        exercise.save(update_fields=["is_official"])
-                    created_exercises.append(exercise)
-
-                    mode_playlist_name = (
-                        f"{playlist_name} ({mode})"
-                        if multi_mode and playlist_name
-                        else playlist_name
-                    )
-                    playlist = self._append_to_playlist(
-                        exercise=exercise,
-                        author=author,
-                        playlist_id=playlist_id,
-                        playlist_name=mode_playlist_name,
-                        is_public=effective_is_public,
-                        is_adaptive=is_adaptive,
-                        is_official=save_as_official,
-                        skill_tags=skill_tags,
-                    )
-                    if playlist is not None:
-                        playlists_by_id[playlist.id] = (mode, playlist)
         except (NonUMTOExerciseError, ValueError, KeyError) as exc:
             return self._json_error(str(exc) or "Invalid exercise payload.", status=400)
 
-        first_ex = created_exercises[0]
         review_status = (
-            (first_ex.data or {})
+            (exercise.data or {})
             .get("score", {})
             .get("umto", {})
             .get("metadata", {})
             .get("analysis_review_status", "none")
         )
         response_data = {
-            "id": first_ex.id,
-            "ids": [ex.id for ex in created_exercises],
+            "id": exercise.id,
+            "ids": [exercise.id],
             "reviewStatus": review_status,
+            "playlistId": playlist.id,
+            "playlistName": playlist.name,
+            "playlists": [{"id": playlist.id, "name": playlist.name, "mode": mode}],
         }
-        if playlists_by_id:
-            response_data["playlists"] = [
-                {"id": pl.id, "name": pl.name, "mode": mode}
-                for mode, pl in playlists_by_id.values()
-            ]
-            primary_mode, primary_playlist = next(iter(playlists_by_id.values()))
-            response_data.update({"playlistId": primary_playlist.id, "playlistName": primary_playlist.name})
         return JsonResponse(status=201, data=response_data)
 
 

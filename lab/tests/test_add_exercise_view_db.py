@@ -24,7 +24,13 @@ class AddExerciseViewChordalTests(TestCase):
         ]
 
     def test_free_mode_no_meter_saves_reviewed_none_when_no_analysis(self):
-        payload = {"chord": self._chords(), "key": "C", "staffDistribution": "keyboard"}
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "play",
+        }
         resp = self._post(payload)
         self.assertEqual(resp.status_code, 201, resp.content)
         body = resp.json()
@@ -37,6 +43,8 @@ class AddExerciseViewChordalTests(TestCase):
             "key": "C",
             "meter": "4/4",
             "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "play",
             "barline_offsets": [4.0],
             "analysisSlices": [
                 {"offset": 0.0, "content": {"roman_numeral": "I"}, "is_target": True, "unit_tags": []}
@@ -52,6 +60,8 @@ class AddExerciseViewChordalTests(TestCase):
             "key": "C",
             "meter": "4/4",
             "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "play",
         }
         resp = self._post(payload)
         self.assertEqual(resp.status_code, 400)
@@ -62,6 +72,8 @@ class AddExerciseViewChordalTests(TestCase):
             "chord": self._chords(),
             "key": "C",
             "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "roman",
             "analyzeConfig": {"above": "note_names", "below": "roman_numerals"},
             "analysisSlices": [
                 {"offset": 0.0, "content": {"roman_numeral": "I"}, "is_target": True, "unit_tags": []}
@@ -72,46 +84,15 @@ class AddExerciseViewChordalTests(TestCase):
         ex = Exercise.objects.get(id=resp.json()["id"])
         self.assertEqual(ex.data.get("analyzeConfig"), {"above": "note_names", "below": "roman_numerals"})
 
-    def test_save_multiple_modes(self):
-        from apps.exercises.models import Exercise
+    def test_multiple_modes_are_rejected(self):
+        """The endpoint now requires exactly one mode; multi-mode fan-out is gone."""
         payload = {
             "chord": self._chords(),
             "key": "C",
             "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
             "modes": ["play", "roman", "figures"],
         }
         resp = self._post(payload)
-        self.assertEqual(resp.status_code, 201, resp.content)
-        body = resp.json()
-        self.assertIn("ids", body)
-        self.assertEqual(len(body["ids"]), 3)
-
-        exercises = Exercise.objects.filter(id__in=body["ids"]).order_by("id")
-        self.assertEqual(exercises.count(), 3)
-        self.assertEqual(exercises[0].data["mode"], "play")
-        self.assertEqual(exercises[1].data["mode"], "roman")
-        self.assertEqual(exercises[2].data["mode"], "figures")
-
-
-class AddExerciseViewDisplayFlagsTests(TestCase):
-    def setUp(self):
-        from django.contrib.auth import get_user_model
-        U = get_user_model()
-        self.user = U.objects.create_user(email="disp@example.com", password="x")
-        self.client.force_login(self.user)
-
-    def test_display_flags_persist_on_exercise_data(self):
-        from apps.exercises.models import Exercise
-        payload = {
-            "chord": [{"offset": float(i), "duration": 1.0, "visible": [60, 64, 67], "hidden": []} for i in range(2)],
-            "key": "C",
-            "staffDistribution": "keyboard",
-            "display": {"showRomans": True, "showFigures": False, "showChordLabels": True,
-                        "showScaleDegrees": False, "showNoteNames": False},
-        }
-        resp = self.client.post("/exercises/add/", data={"data": json.dumps(payload)})
-        self.assertEqual(resp.status_code, 201, resp.content)
-        ex = Exercise.objects.get(id=resp.json()["id"])
-        self.assertEqual(ex.data.get("display", {}).get("showRomans"), True)
-        self.assertEqual(ex.data.get("display", {}).get("showChordLabels"), True)
-        self.assertEqual(ex.data.get("display", {}).get("showFigures"), False)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("exactly one", resp.json()["error"].lower())

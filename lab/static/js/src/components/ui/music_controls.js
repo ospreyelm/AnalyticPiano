@@ -11,6 +11,7 @@ define([
   "app/widgets/highlight",
   "app/widgets/staff_distribute",
   "app/components/ui/target_selector",
+  "app/components/music/play_save_logic",
 ], function (
   $,
   _,
@@ -23,7 +24,8 @@ define([
   AnalyzeWidget,
   HighlightWidget,
   StaffDistributionWidget,
-  TargetSelectorComponent
+  TargetSelectorComponent,
+  PlaySaveLogic
 ) {
   /**
    * Defines whether the shortcuts are enabled by default or not.
@@ -467,32 +469,21 @@ define([
 
       $("#play-save-description, #play-save-tags, " +
         "#play-save-create-transpositions, #play-save-key-set, #play-save-public, " +
-        "#play-save-official, #play-save-new-playlist-name")
+        "#play-save-official")
         .off(".playsave")
         .on("input.playsave change.playsave", function () {
           that._validateSavePanel(false);
         });
 
-      $(document).off(".playsavemodes").on("change.playsavemodes", "input[name='modes']", function () {
-        that._validateSavePanel(false);
-      });
-
-      $("#play-save-unit").off("change.playsave").on("change.playsave", function () {
-        if (!that._applyingSuggestedUnits) {
-          that._autoSelectedSuggestedUnits = {};
-        }
-        that._renderPlaylistOptions();
-        that._validateSavePanel(false);
-      });
-
-      $("#play-save-playlist").off("change.playsave").on("change.playsave", function () {
-        if ($(this).val() === "__new__") {
-          $("#play-save-new-playlist-row").show();
-        } else {
-          $("#play-save-new-playlist-row").hide();
-        }
-        that._validateSavePanel(false);
-      });
+      $("#play-save-unit, #play-save-mode")
+        .off("change.playsave")
+        .on("change.playsave input.playsave", function () {
+          if (this.id === "play-save-unit" && !that._applyingSuggestedUnits) {
+            that._autoSelectedSuggestedUnits = {};
+          }
+          that._renderCanonicalDestination();
+          that._validateSavePanel(false);
+        });
 
       $("#play-save-key-set-preset").off("change.playsave").on("change.playsave", function () {
         that._applyKeySetPreset($(this).val());
@@ -536,7 +527,6 @@ define([
     _loadAuthoringMeta: function () {
       var that = this;
       var unitSelect = $("#play-save-unit");
-      var playlistSelect = $("#play-save-playlist");
 
       if (!unitSelect.length || this._authoringMetaLoaded) {
         return;
@@ -551,6 +541,7 @@ define([
           that._isSuperuser = !!meta.isSuperuser;
 
           unitSelect.empty();
+          unitSelect.append($("<option>").val("").text("— Select unit —"));
           $.each(meta.units || [], function (i, u) {
             var label = "Unit " + u.n + (u.title ? " - " + u.title : "");
             unitSelect.append(
@@ -558,9 +549,8 @@ define([
             );
           });
 
-          that._allPlaylists = meta.playlists || [];
-
           if (that._isSuperuser) {
+            $("#play-save-public, #play-save-official").prop("checked", true);
             $("#play-save-official-row").show();
           } else {
             $("#play-save-official").prop("checked", false);
@@ -568,7 +558,7 @@ define([
           }
 
           that._applySuggestedUnits();
-          that._renderPlaylistOptions();
+          that._renderCanonicalDestination();
           that._validateSavePanel(false);
         },
         error: function () {
@@ -578,53 +568,14 @@ define([
       });
     },
 
-    /**
-     * Rebuilds the Target Playlist dropdown from this._allPlaylists, filtered to
-     * playlists tagged with a currently-selected unit (or all playlists, if no
-     * unit is selected yet) — keeps the dropdown from offering playlists that
-     * contradict the unit structure. No "None" option: every save must target a
-     * playlist (existing or new).
-     *
-     * @return undefined
-     */
-    _renderPlaylistOptions: function () {
-      var playlistSelect = $("#play-save-playlist");
-      var selectedUnits = this._getSelectedUnits();
-      var unitTags = {};
-      $.each(selectedUnits, function (i, u) {
-        unitTags["unit:" + u] = true;
-      });
-      var hasUnitFilter = selectedUnits.length > 0;
-
-      var previousVal = playlistSelect.val();
-      playlistSelect.empty();
-      $.each(this._allPlaylists || [], function (i, pl) {
-        if (hasUnitFilter) {
-          var tags = pl.skillTags || [];
-          var matches = false;
-          for (var t = 0; t < tags.length; t++) {
-            if (unitTags[tags[t]]) {
-              matches = true;
-              break;
-            }
-          }
-          if (!matches) {
-            return;
-          }
-        }
-        var optEl = $("<option>").val(pl.id).text(pl.name + (pl.locked ? " (locked)" : ""));
-        if (pl.locked) {
-          optEl.prop("disabled", true);
-        }
-        playlistSelect.append(optEl);
-      });
-      playlistSelect.append($("<option>").val("__new__").text("New playlist..."));
-
-      if (previousVal && playlistSelect.find("option[value='" + previousVal + "']").length) {
-        playlistSelect.val(previousVal);
-      } else {
-        playlistSelect.val("__new__");
-      }
+    _renderCanonicalDestination: function () {
+      var label = PlaySaveLogic.canonicalDestinationLabel(
+        $("#play-save-unit").val(),
+        $("#play-save-mode").val()
+      );
+      $("#play-save-destination").text(
+        label ? "Will save to: " + label : "Select a unit and interaction mode."
+      );
     },
 
     _getCurrentSaveJsonData: function () {
@@ -743,7 +694,7 @@ define([
               that._suggestedUnits[String(unitNum)] = true;
             });
             that._applySuggestedUnits();
-            that._renderPlaylistOptions();
+            that._renderCanonicalDestination();
             that._setSaveSuggestionStatus(suggested.length ? "Suggested units selected." : "");
             that._validateSavePanel(false);
           }
@@ -767,30 +718,20 @@ define([
         return;
       }
 
-      var current = unitSelect.val() || [];
-      var currentSelected = {};
-      var selected = {};
-      var manualSelected = {};
-      var newAutoSelected = {};
-      $.each(current, function (i, value) {
-        currentSelected[String(value)] = true;
-      });
-
-      $.each(currentSelected, (value) => {
-        if (!this._autoSelectedSuggestedUnits[value]) {
-          manualSelected[value] = true;
-          selected[value] = true;
-        }
-      });
-
+      // Single-select: at most one unit is ever the actual selection. A manually
+      // chosen unit always wins; otherwise fall back to the first suggested unit.
+      var currentVal = String(unitSelect.val() || "");
+      var wasManual = currentVal && !this._autoSelectedSuggestedUnits[currentVal];
+      var suggestedValues = [];
       $.each(this._suggestedUnits || {}, function (value) {
-        selected[String(value)] = true;
-        if (!manualSelected[String(value)]) {
-          newAutoSelected[String(value)] = true;
-        }
+        suggestedValues.push(String(value));
       });
 
-      this._autoSelectedSuggestedUnits = newAutoSelected;
+      var chosenValue = wasManual ? currentVal : (suggestedValues[0] || currentVal);
+      this._autoSelectedSuggestedUnits = (!wasManual && chosenValue && suggestedValues.indexOf(chosenValue) !== -1)
+        ? { [chosenValue]: true }
+        : {};
+
       unitSelect.data("suggested-map", this._suggestedUnits || {});
       this._applyingSuggestedUnits = true;
       unitSelect.find("option").each(function () {
@@ -799,7 +740,7 @@ define([
         var baseLabel = option.attr("data-base-label") || option.text().replace(/ \(suggested\)$/, "");
         option.attr("data-base-label", baseLabel);
         option.text(baseLabel + ((unitSelect.data("suggested-map") || {})[value] ? " (suggested)" : ""));
-        option.prop("selected", !!selected[value]);
+        option.prop("selected", value === chosenValue && value !== "");
       });
       this._applyingSuggestedUnits = false;
     },
@@ -851,23 +792,17 @@ define([
     _validateSavePanel: function (showMessage) {
       var description = $.trim($("#play-save-description").val() || "");
       var units = this._getSelectedUnits();
+      var mode = $("#play-save-mode").val() || "";
       var createTranspositions = $("#play-save-create-transpositions").is(":checked");
       var keySet = this._getSelectedKeySet();
-      var selectedModes = [];
-      $('input[name="modes"]:checked').each(function () {
-        selectedModes.push($(this).val());
-      });
       var message = "";
-
-      var playlistSelectVal = $("#play-save-playlist").val();
-      var newPlaylistName = $.trim($("#play-save-new-playlist-name").val() || "");
 
       if (!description) {
         message = "Description is required.";
-      } else if (units.length === 0) {
-        message = "Select at least one unit tag.";
-      } else if (selectedModes.length === 0) {
-        message = "Select at least one interaction mode.";
+      } else if (units.length !== 1) {
+        message = "Select exactly one unit.";
+      } else if (!mode) {
+        message = "Select exactly one interaction mode.";
       } else if (createTranspositions && keySet.length === 0) {
         message = "Choose at least one key for transpositions.";
       }
@@ -1163,13 +1098,24 @@ define([
         return;
       }
 
-      // Build skill tags array: optional unit: prefix + free tags
-      var skillTags = [];
-      var unitVals = this._getSelectedUnits();
-      $.each(unitVals, function (i, unitVal) {
-        skillTags.push("unit:" + unitVal);
-      });
+      var unit = this._getSelectedUnits()[0];
+      var mode = $("#play-save-mode").val();
       var freeTags = $("#play-save-tags").val();
+      var isPublic = $("#play-save-public").is(":checked");
+      var saveAsOfficial = this._isSuperuser && $("#play-save-official").is(":checked");
+      var createTranspositions = $("#play-save-create-transpositions").is(":checked");
+      var keySet = this._getSelectedKeySet();
+
+      // Build canonical fields using play_save_logic
+      var canonicalFields = PlaySaveLogic.buildCanonicalSaveFields({
+        unit: unit,
+        mode: mode,
+        isPublic: isPublic,
+        saveAsOfficial: saveAsOfficial
+      });
+
+      // Assemble final skillTags with free tags appended
+      var skillTags = canonicalFields.skillTags.slice();
       if (freeTags) {
         var parsed = freeTags.split(",");
         for (var i = 0; i < parsed.length; i++) {
@@ -1180,30 +1126,6 @@ define([
         }
       }
 
-      var isPublic = $("#play-save-public").is(":checked");
-      var saveAsOfficial = this._isSuperuser && $("#play-save-official").is(":checked");
-      var createTranspositions = $("#play-save-create-transpositions").is(":checked");
-      var keySet = this._getSelectedKeySet();
-      
-      var selectedModes = [];
-      $('input[name="modes"]:checked').each(function () {
-        selectedModes.push($(this).val());
-      });
-      if (selectedModes.length === 0) {
-        selectedModes = ["play"];
-      }
-
-      var playlistSelectVal = $("#play-save-playlist").val();
-      var playlistId = null;
-      var playlistName = null;
-      var isAdaptive = false;
-      if (playlistSelectVal === "__new__") {
-        playlistName = $.trim($("#play-save-new-playlist-name").val()) || null;
-        isAdaptive = $("#play-save-adaptive").is(":checked");
-      } else if (playlistSelectVal) {
-        playlistId = playlistSelectVal;
-      }
-
       // Parse existing json_data, extend with new fields, re-serialise
       var payload;
       try {
@@ -1212,19 +1134,12 @@ define([
         console.error("[play-save] Failed to parse json_data", e);
         return;
       }
+
       payload.description = description;
       payload.skillTags = skillTags;
-      payload.isPublic = isPublic;
-      payload.saveAsOfficial = saveAsOfficial;
-      payload.modes = selectedModes;
-      payload.mode = selectedModes[0]; // backward-compat fallback
-      if (playlistId !== null) {
-        payload.playlistId = playlistId;
-      }
-      if (playlistName !== null) {
-        payload.playlistName = playlistName;
-        payload.isAdaptive = isAdaptive;
-      }
+      payload.mode = canonicalFields.mode;
+      payload.isPublic = canonicalFields.isPublic;
+      payload.saveAsOfficial = canonicalFields.saveAsOfficial;
 
       var extendedData = JSON.stringify(payload, null, 0);
 
@@ -1239,36 +1154,17 @@ define([
         headers: { "X-CSRFToken": that._getCsrfToken() },
         success: function (data) {
           $("#play-save-submit").prop("disabled", false);
-          // Multi-mode saves into a new playlist name create one playlist per mode
-          // (matches existing single-mode-per-playlist content convention) — data.playlists
-          // lists all of them; data.playlistId/playlistName remain the first as a fallback
-          // for single-mode saves and existing-playlist-id saves (still just one playlist).
-          var allPlaylists = data.playlists || (data.playlistId
-            ? [{ id: data.playlistId, name: data.playlistName }]
-            : []);
-          if (allPlaylists.length) {
-            var playlistSelect = $("#play-save-playlist");
-            $.each(allPlaylists, function (i, pl) {
-              var existingOpt = playlistSelect.find("option[value='" + pl.id + "']");
-              if (!existingOpt.length) {
-                var newOpt = $("<option>").val(pl.id).text(pl.name);
-                playlistSelect.find("option[value='__new__']").before(newOpt);
-              }
-            });
-            playlistSelect.val(String(data.playlistId));
-            $("#play-save-new-playlist-row").hide();
-            $("#play-save-new-playlist-name").val("");
-          }
           if (overlayEl && overlayEl.hide) {
             overlayEl.hide();
           }
           if (that.feedback) {
             that.feedback.emit("play.save.success", { inlineEl: "#save-feedback" });
           }
+
+          // On success, retain unit/mode, clear only description/file-specific transient state
+          $("#play-save-description").val("");
           that._pendingSaveJsonData = null;
-          // Map each saved exercise to its own playlist (one per mode when multi-mode
-          // split a new playlist name into several) so transpositions land in the right
-          // playlist instead of always following the first/primary one.
+
           var exerciseIds = data.ids || [data.id];
           var playlistsByExerciseId = {};
           if (data.playlists && data.playlists.length === exerciseIds.length) {
@@ -1276,6 +1172,7 @@ define([
               playlistsByExerciseId[exId] = data.playlists[i].id;
             });
           }
+
           that.broadcast(EVENTS.BROADCAST.PLAY_SAVED, {
             exerciseId: data.id,
             exerciseIds: exerciseIds,
@@ -1852,60 +1749,33 @@ define([
       feedbackEl.text("").removeClass("is-visible");
 
       var description = $.trim($("#play-save-description").val());
-      var unitVals = this._getSelectedUnits();
+      var unit = this._getSelectedUnits()[0];
+      var mode = $("#play-save-mode").val();
       var freeTags = $("#play-save-tags").val();
       var isPublic = $("#play-save-public").is(":checked");
       var saveAsOfficial = this._isSuperuser && $("#play-save-official").is(":checked");
       var createTranspositions = $("#play-save-create-transpositions").is(":checked");
       var keySet = this._getSelectedKeySet();
-      
-      var selectedModes = [];
-      $('input[name="modes"]:checked').each(function () {
-        selectedModes.push($(this).val());
-      });
-      if (selectedModes.length === 0) {
-        selectedModes = ["play"];
-      }
 
-      var playlistSelectVal = $("#play-save-playlist").val();
-      var playlistId = null;
-      var playlistName = null;
-      var isAdaptive = false;
-      if (playlistSelectVal === "__new__") {
-        playlistName = $.trim($("#play-save-new-playlist-name").val()) || null;
-        isAdaptive = $("#play-save-adaptive").is(":checked");
-      } else if (playlistSelectVal) {
-        playlistId = playlistSelectVal;
-      }
+      var canonicalFields = PlaySaveLogic.buildCanonicalSaveFields({
+        unit: unit,
+        mode: mode,
+        isPublic: isPublic,
+        saveAsOfficial: saveAsOfficial
+      });
 
       var fd = new FormData();
       fd.append("musicxml_file", this._activeMusicXMLFile);
       fd.append("description", description);
-      
-      $.each(unitVals, function (i, u) {
-        fd.append("unit", u);
-      });
-
+      fd.append("unit", canonicalFields.skillTags[0].replace("unit:", ""));
       fd.append("tags", freeTags);
-      fd.append("is_public", isPublic);
-      fd.append("save_as_official", saveAsOfficial);
+      fd.append("is_public", canonicalFields.isPublic);
+      fd.append("save_as_official", canonicalFields.saveAsOfficial);
       fd.append("start", $("#musicxml-start-measure").val() || 0);
       fd.append("end", $("#musicxml-end-measure").val() || "");
       fd.append("harmony_key", this.keySignature.getKey() || "jC_");
       fd.append("complexity", $("#musicxml-complexity").val() || 1);
-      
-      $.each(selectedModes, function (i, m) {
-        fd.append("modes", m);
-      });
-
-      if (playlistId !== null) {
-        fd.append("playlist_id", playlistId);
-      }
-      if (playlistName !== null) {
-        fd.append("playlist_name", playlistName);
-        fd.append("is_adaptive", isAdaptive);
-      }
-
+      fd.append("mode", canonicalFields.mode);
       fd.append("create_transpositions", createTranspositions);
       fd.append("key_set", $("#play-save-key-set").val() || "");
 
@@ -1926,6 +1796,7 @@ define([
           that._pendingSaveJsonData = null;
           $("#play-save-musicxml-options").hide();
           $("#musicxml-upload-input").val("");
+          $("#play-save-description").val("");
           
           // Reset sheet to normal blackboard state (clears corpus rendering)
           var sheet = that._getSheetComponent();

@@ -37,5 +37,39 @@ var ov = mod.buildAnalysisSlices([0, 1], { above: null, below: "roman_numerals" 
   ["I", "V"], { 1: { below: "V7" } });
 assertEqual("override applied", ov[1].content, { roman_numeral: "V7" });
 
+// canonicalDestinationLabel: human-readable name for the auto-routed playlist.
+assertEqual(
+  "canonical destination label",
+  mod.canonicalDestinationLabel("11", "roman"),
+  "Unit 11 — Exercises (Roman)"
+);
+assertEqual(
+  "missing unit has no destination",
+  mod.canonicalDestinationLabel("", "roman"),
+  ""
+);
+assertEqual(
+  "missing mode has no destination",
+  mod.canonicalDestinationLabel("11", ""),
+  ""
+);
+
+// buildCanonicalSaveFields: assemble the JSON payload for AddExerciseView.
+assertEqual(
+  "single save payload",
+  mod.buildCanonicalSaveFields({
+    unit: "11",
+    mode: "roman",
+    isPublic: true,
+    saveAsOfficial: true
+  }),
+  {
+    skillTags: ["unit:11"],
+    mode: "roman",
+    isPublic: true,
+    saveAsOfficial: true
+  }
+);
+
 if (fail > 0) { console.error("\n" + fail + " failed."); process.exit(1); }
 else { console.log("\nAll play_save_logic assertions passed (" + pass + ")."); }
