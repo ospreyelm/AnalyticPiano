@@ -18,15 +18,15 @@ This directory contains comprehensive documentation for the HarmonyLab system, i
 - **Covers:** Exercise/Playlist/Course data model, how exercises are served, exercise types, key encoding, staff distribution, curriculum generation workflow, grading systems, non-obvious patterns
 - **Audience:** Agents and developers making changes to the app
 
-### **[claude.md](../claude.md)** - Main Implementation Guide
-- **Status:** ENHANCED ✓ Core issues fixed + features 1 & 3 implemented
-- **Focus:** Chorale exercise system architecture and troubleshooting
-- **Latest Updates:**
-  - Three critical bugs fixed (held notes, passing tones, diagnostics)
-  - Feature 1: Enhanced instructional text for chorales
-  - Feature 3: Detailed grading feedback with per-window statistics
-  - Future roadmap with 5 planned features (Phases 1-3)
-- **Audience:** Developers maintaining the chorale grader system
+### **[architecture/chorale-system.md](architecture/chorale-system.md)** - Chorale System Guide
+- **Focus:** Canonical representation, principal code, grading invariants,
+  debugging, and required generation references
+- **Audience:** Developers maintaining chorale grading, timeline, or rendering
+
+### **[architecture/engineering-principles.md](architecture/engineering-principles.md)** - Engineering Principles
+- **Focus:** Authoritative paths, replacement budgets, model responsibility,
+  compatibility retirement, and service boundaries
+- **Audience:** Developers and reviewers making architectural changes
 
 ---
 
@@ -116,33 +116,11 @@ This directory contains comprehensive documentation for the HarmonyLab system, i
 
 ---
 
-## Implementation Priorities Summary
+## Current implementation priority
 
-### Chorale System (Music Education Focus)
-
-**Completed:**
-- ✅ Fix held notes algorithm
-- ✅ Fix passing tones in separate windows
-- ✅ Enhanced instructional text (Feature 1)
-- ✅ Detailed grading feedback (Feature 3)
-
-**Next (High Priority):**
-1. Visual feedback for incorrect notes (Feature 2) - 4-6 hrs
-2. Mode variations: play-outer, play-soprano, play-inner (Feature 4) - 6-8 hrs
-
-### LMS Student Experience (Platform Focus)
-
-**Quick Wins (1-2 days):**
-1. Dashboard "Due Soon" widget - 4 hrs
-2. Email reminders - 6 hrs
-3. Error detail display - 3 hrs
-4. Progress bars - 2 hrs
-
-**Medium Effort (3-4 days):**
-5. Course grade summary - 2 hrs
-6. Attempt history - 4 hrs
-7. Per-exercise feedback - 3 hrs
-8. Mobile fixes - 4 hrs
+Current priorities are maintained only in the repository root
+[AGENTS.md](../AGENTS.md). Do not infer priority from historical roadmaps or
+completed feature summaries in individual documents.
 
 ---
 
@@ -151,7 +129,9 @@ This directory contains comprehensive documentation for the HarmonyLab system, i
 ```
 docs/
 ├── README.md                              (this file)
-├── claude.md                              (main implementation guide)
+├── architecture/
+│   ├── engineering-principles.md          (replacement and retirement policy)
+│   └── chorale-system.md                  (chorale maintenance guide)
 ├── chorale_analysis.md                    (harmonic analysis pipeline — computed on the fly)
 ├── chorale_future_improvements.md         (chorale feature roadmap)
 ├── WHEN_IN_ROME_IMPORT.md                 (WiR-backed Bach import reference)
@@ -165,7 +145,7 @@ docs/
 ## Quick Links by Role
 
 ### For Developers Working on Chorales
-1. Read [claude.md](../claude.md) - Architecture and grading system
+1. Read [architecture/chorale-system.md](architecture/chorale-system.md)
 2. Check [chorale_analysis.md](chorale_analysis.md) - How harmonic analysis is computed
 3. Check [chorale_future_improvements.md](chorale_future_improvements.md) - Planned features with implementation steps
 4. See `docs/chorale_exercises_plan.md` - Curriculum specification
@@ -176,10 +156,11 @@ docs/
 3. Check "Code Locations" section for development estimates
 
 ### For New Developers
-1. Start with [claude.md](../claude.md) - Overview and architecture
-2. Read the "How the Chorale Grader Works" section
-3. Check "Common Issues and Troubleshooting" for typical problems
-4. Review debug logging section for console-based investigation
+1. Start with [AGENTS.md](../AGENTS.md) for current policy and priority
+2. Read [architecture.md](architecture.md) for the application model
+3. Read [architecture/engineering-principles.md](architecture/engineering-principles.md)
+   before architectural changes
+4. Use the read-before-modifying table in `AGENTS.md` for feature-specific docs
 
 ---
 
@@ -210,32 +191,17 @@ docs/
 ### Reading Order
 
 **For Understanding the Current System:**
-1. [claude.md](../claude.md) - Sections 1-4: Overview, fixes, architecture
-2. [lms_student_ux_assessment.md](lms_student_ux_assessment.md) - Sections 1-6: Current state
+1. [architecture.md](architecture.md) - Application architecture
+2. [architecture/chorale-system.md](architecture/chorale-system.md) - Chorale system
+3. [lms_student_ux_assessment.md](lms_student_ux_assessment.md) - Student experience assessment
 
 **For Planning Future Work:**
 1. [chorale_future_improvements.md](chorale_future_improvements.md) - Phase 1-3 roadmap
 2. [lms_student_ux_assessment.md](lms_student_ux_assessment.md) - Sections 9-11: Implementation priorities
 
 **For Specific Issues:**
-- Chorale grading problems: [claude.md](../claude.md) - "Common Issues and Troubleshooting"
+- Chorale grading problems: [architecture/chorale-system.md](architecture/chorale-system.md)
 - Student experience problems: [lms_student_ux_assessment.md](lms_student_ux_assessment.md) - Sections 1-8
-
----
-
-## Key Metrics
-
-### Chorale System
-- **Lines of Code:** ~450 (chorale_grader.js)
-- **Features Implemented:** 3 (fixes + Features 1, 3)
-- **Features Planned:** 5 (Features 2, 4-8)
-- **Estimated Dev Time:** ~90 hours for all features
-
-### LMS System
-- **Current Grade:** C+ (Functional but incomplete)
-- **Feature Parity:** ~40% vs. Canvas/Blackboard
-- **Estimated Improvement Time:** 50 hours (Phase 1-3)
-- **Top Priority:** Deadline notifications & grade visibility
 
 ---
 
@@ -243,19 +209,18 @@ docs/
 
 When updating these documents:
 
-1. Keep [claude.md](../claude.md) synchronized with actual code
-2. Update "Recent Changes" section when committing new features
-3. Add code locations for new features
-4. Use consistent formatting (## sections, code blocks, tables)
-5. Include effort estimates for features
-6. Link to related documentation
+1. Keep current repository policy in [AGENTS.md](../AGENTS.md).
+2. Put durable architecture guidance in `docs/architecture/`.
+3. Mark superseded specifications and plans clearly.
+4. Add code locations and verification guidance for new features.
+5. Link related documentation instead of duplicating it.
 
 ---
 
 ## Questions?
 
-- **Chorale system questions:** See [claude.md](../claude.md) debugging section
+- **Chorale system questions:** See [architecture/chorale-system.md](architecture/chorale-system.md)
 - **Student UX questions:** See [lms_student_ux_assessment.md](lms_student_ux_assessment.md) relevant section
 - **Feature planning:** See corresponding roadmap document
 
-Last updated: 2026-04-21
+Last updated: 2026-06-19
