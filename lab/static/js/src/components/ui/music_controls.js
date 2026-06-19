@@ -1136,7 +1136,7 @@ define([
       }
 
       var isPublic = $("#play-save-public").is(":checked");
-      var saveAsOfficial = this._isSuperuser && $("#play-save-official-row").is(":visible") && $("#play-save-official").is(":checked");
+      var saveAsOfficial = this._isSuperuser && $("#play-save-official").is(":checked");
       var createTranspositions = $("#play-save-create-transpositions").is(":checked");
       var keySet = this._getSelectedKeySet();
       
@@ -1305,7 +1305,7 @@ define([
             }
           }, 200);
         }
-        var isSuperuser = $("#play-save-official-row").is(":visible");
+        var isSuperuser = that._isSuperuser;
         $("#batch-official-row").toggle(isSuperuser);
         that._openBatchWizard();
       });
@@ -1435,7 +1435,7 @@ define([
                d.unit &&
                d.exerciseTypes.length > 0 &&
                d.keySet.length > 0;
-      if (d.isOfficial && !$("#play-save-official-row").is(":visible")) { ok = false; }
+      if (d.isOfficial && !this._isSuperuser) { ok = false; }
       $("#batch-execute-btn").prop("disabled", !ok);
       return ok;
     },
@@ -1789,7 +1789,7 @@ define([
       var unitVals = this._getSelectedUnits();
       var freeTags = $("#play-save-tags").val();
       var isPublic = $("#play-save-public").is(":checked");
-      var saveAsOfficial = this._isSuperuser && $("#play-save-official-row").is(":visible") && $("#play-save-official").is(":checked");
+      var saveAsOfficial = this._isSuperuser && $("#play-save-official").is(":checked");
       var createTranspositions = $("#play-save-create-transpositions").is(":checked");
       var keySet = this._getSelectedKeySet();
       
