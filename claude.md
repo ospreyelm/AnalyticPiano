@@ -7,29 +7,27 @@ generation, MusicXML import, dashboard alternatives, student experience, MIDI
 grading, unified CSS identity, `/teacher/play/` on new CSS) is **complete**.
 That list no longer governs what to build next.
 
-The current priority is implementing **Individualized Assignment Recipes and
-Immutable Student Slots**:
-[docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md](docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md).
+The current priority is implementing **Assignment Slot Foundation (Phase 1)**:
+[docs/superpowers/specs/2026-06-19-assignment-slot-foundation-phase1-design.md](docs/superpowers/specs/2026-06-19-assignment-slot-foundation-phase1-design.md).
+This is implementation-ready on its own — new `StudentAssignment`/
+`AssignmentSection`/`StudentAssignmentSlot` models, just-in-time selection with
+persisted identity, modern player and submission endpoints on slot IDs, legacy
+student routes redirected. No quotas, no taxonomy rebuild, no recipe editor.
+It fixes the confirmed adaptive-serving bugs (slot-1 navigation pinning,
+course-blind `PerformanceData` lookups, submission failures on unlinked pool
+exercises, direct-URL cap bypass) and lets a teacher bound an existing
+unbounded adaptive playlist by setting one explicit quantity — no count is
+ever inferred.
 
-That design replaces `Playlist`'s overloaded role (ordered list + adaptive pool
-+ implicit completion definition, among others) with a first-class
-**Assignment** model: teacher-authored sections with coverage quotas,
-just-in-time per-student exercise selection, and immutable served-exercise
-slots. It supersedes the bounded-adaptive portion of
+The broader architecture this fits into — full recipe editor, coverage quotas,
+taxonomy-element metadata, missing-content generation, eventual product
+rename — is roadmap context only, not current scope:
+[docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md](docs/superpowers/specs/2026-06-19-individualized-assignment-recipes-design.md).
+Treat it as a separate, explicitly-reprioritized initiative once Phase 1
+ships — don't auto-continue into it. Both documents supersede the
+bounded-adaptive portion of
 [docs/superpowers/specs/2026-06-18-playlist-selection-mode-design.md](docs/superpowers/specs/2026-06-18-playlist-selection-mode-design.md)
 (that doc's orphan-exercise fix remains valid, separate work).
-
-**Start with Phase 1 only** (Slot foundation under existing playlists — new
-`StudentAssignment`/`AssignmentSection`/`StudentAssignmentSlot` models,
-just-in-time selection with persisted identity, modern player and submission
-endpoints on slot IDs, legacy student routes redirected). Phase 1 alone fixes
-the confirmed adaptive-serving bugs (slot-1 navigation pinning, course-blind
-`PerformanceData` lookups, submission failures on unlinked pool exercises,
-direct-URL cap bypass) without requiring the recipe editor, quota-feasibility
-solver, or taxonomy-metadata buildout that later phases need. Treat Phases 2-6
-(recipe editor, missing-content generation, product rename, exercise
-sets/drills, legacy retirement) as a separate, explicitly-reprioritized
-initiative once Phase 1 ships — don't auto-continue into them.
 
 These priorities supersede older "implement next" notes when there is a
 conflict in what to work on first. Older technical-debt warnings still matter,

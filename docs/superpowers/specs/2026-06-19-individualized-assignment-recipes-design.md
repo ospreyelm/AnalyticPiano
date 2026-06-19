@@ -1,4 +1,20 @@
-# Individualized Assignment Recipes and Immutable Student Slots
+# Assignment Architecture Roadmap (Phases 2-6)
+
+> [!NOTE]
+> **This is the long-term roadmap, not an implementation-ready spec.** Phase 1
+> (slot foundation — `StudentAssignment`, immutable slots, modern-player
+> routing, slot-based submission, no quotas, no taxonomy rebuild) is split out
+> into
+> [2026-06-19-assignment-slot-foundation-phase1-design.md](2026-06-19-assignment-slot-foundation-phase1-design.md),
+> which is the actual next implementation target. This document covers
+> Phases 2-6 (recipe editor, quota feasibility, taxonomy enrichment, missing-
+> content generation, product rename, legacy retirement) as roadmap context —
+> none of it blocks or is required by Phase 1.
+>
+> Split after a second review round (Codex) confirmed the original combined
+> document mixed an implementation-ready Phase 1 with several genuinely large,
+> separately-prioritized sub-projects (a quota-feasibility solver, a taxonomy
+> metadata rebuild) that don't need to gate Phase 1's adaptive-bug fixes.
 
 ## Status and relationship to prior work
 
@@ -239,6 +255,7 @@ Constraints:
 - every quota key must also appear in `eligible_elements`;
 - every quota value is an integer `>= 1`;
 - each quota value must be `<= quantity`;
+- `len(coverage_quotas) <= 8` (fixed solver boundary — see Quota allocation);
 - `min_complexity <= max_complexity` when both are set;
 - only taxonomy elements applicable to the selected exercise types may be used;
 - published sections are edited by creating a new recipe revision, not mutating
@@ -355,6 +372,16 @@ position. A blocked position is not represented by a partially populated slot;
 a slot exists only after a concrete exercise has been selected.
 
 ## Taxonomy contract
+
+> [!IMPORTANT]
+> **This is foundational Phase 2 work, not an implicit dependency someone
+> discovers mid-implementation.** Today's taxonomy
+> (`music_theory_taxonomy_with_branches.json`) is a flat `unit:N`/skill-tag
+> structure with none of the metadata below — no `assignable_element` flag, no
+> `concept_family`, no `exercise_types` applicability, no alias list. Building
+> this metadata layer is its own scoped sub-project and must be planned and
+> staffed as Phase 2 work before any recipe-editor UI is built on top of it,
+> not assumed to already exist or to be a quick addition alongside the editor.
 
 `eligible_elements` and `coverage_quotas` use canonical taxonomy identifiers.
 The taxonomy is the shared vocabulary for:
@@ -558,14 +585,24 @@ For each candidate:
 4. discard the candidate if not; and
 5. rank the remaining feasible candidates.
 
-The feasibility solver may initially use a bounded backtracking or
-integer-programming-style search because section quantities are expected to be
-small. It must be deterministic and shared by publication validation and
-runtime selection to prevent disagreement between the two.
+**Solver boundary, fixed now rather than left to implementation discretion:**
+the recipe editor caps each section to a small number of distinct quota
+elements (a fixed UI limit — single digits, e.g. 8). Within that bound, the
+algorithm is deterministic dynamic programming over the remaining-quota
+vector: state = (positions remaining, per-element remaining-quota counts,
+each clipped to the section's `quantity`), transition = applying one
+candidate's credited-element set. With a small, bounded element count and
+quota values capped at `quantity`, the state space is bounded and the DP is
+tractable by construction — this is the algorithm, not a placeholder pending
+benchmarking. It must be deterministic and shared verbatim by publication
+validation and runtime selection, so the two can never disagree about
+feasibility.
 
-The implementation plan must benchmark realistic candidate-pool sizes before
-choosing the exact algorithm. It may precompute element bitmasks and cap the
-runtime candidate subset after preserving all quota-relevant candidates.
+Benchmarking against realistic candidate-pool sizes (number of exercises per
+type/complexity/key combination) chooses *optimizations* within this
+algorithm — precomputed element bitmasks, candidate-subset pruning that
+provably preserves all quota-relevant candidates, memoization strategy — not
+the fundamental approach or the correctness contract above.
 
 ## Just-in-time individualized selection
 
@@ -771,25 +808,31 @@ membership = existing ExercisePlaylistOrdered order
 No immediate data copy is required. A later migration can materialize explicit
 sections when a teacher edits or converts the assignment.
 
-### Existing bounded adaptive playlists
+### Existing adaptive playlists — corrected policy
 
-If an adaptive playlist already has an intended finite count, migrate it to one
-individualized section:
+**Verified: no current adaptive playlist has any notion of an "intended
+count."** That field doesn't exist yet (it was the still-unshipped
+`target_length` from the superseded `selection_mode` spec) — every
+`is_adaptive=True` playlist today is, in fact, genuinely unbounded (confirmed:
+0 of 58 locally have any bound). The original draft of this migration step
+described inferring "intended count" from data that doesn't exist, which isn't
+actionable.
 
-```text
-quantity = intended count
-exercise_types = inferred or explicitly reviewed
-eligible_elements = current skill tags after taxonomy cleanup
-coverage_quotas = {}
-```
+**Corrected default: every existing adaptive playlist migrates to
+Drill/Practice, not Assignment, with no exceptions inferred from data.** Until
+the drill model exists, keep them on the legacy compatibility path, labeled as
+open-ended practice.
 
-Empty quotas preserve current personalized targeting without promising a
-specific distribution.
+Converting a specific playlist into a bounded individualized Assignment
+section is a **deliberate, teacher-supplied action**, never automatic or
+inferred: the teacher opens the (now-Drill) playlist, explicitly sets a
+`quantity`, reviews/confirms `exercise_types`, and the recipe authoring flow
+takes it from there like any newly-created section. No script or migration
+guesses a count on the teacher's behalf.
 
-### Existing endless adaptive playlists
-
-Migrate to Drill/Practice, not Assignment. Until the drill model exists, keep
-them on the legacy compatibility path and label them as open-ended practice.
+Fixed (non-adaptive) playlists are the only category that auto-migrates, per
+the section above — their "quantity" is unambiguous (current served exercise
+count), nothing is being guessed.
 
 ### Existing progress
 
@@ -808,17 +851,10 @@ Migration rules:
 
 ### Phase 1: Slot foundation under existing playlists
 
-- Add `StudentAssignment`, `AssignmentSection`, and `StudentAssignmentSlot`.
-- Materialize one compatibility section for each existing playlist when it is
-  first served or edited; no bulk migration is required.
-- Fixed slots resolve from ordered membership.
-- Adaptive slots use just-in-time selection and persist identity.
-- Update modern player and submission endpoints to use slot IDs.
-- Redirect legacy student delivery routes to the modern player.
-- Keep teacher playlist CRUD and course scheduling intact.
-
-This phase resolves the current adaptive identity and submission bugs without
-requiring the full recipe editor.
+Fully specified separately, implementation-ready:
+[2026-06-19-assignment-slot-foundation-phase1-design.md](2026-06-19-assignment-slot-foundation-phase1-design.md).
+No quotas, no taxonomy rebuild — resolves the current adaptive identity and
+submission bugs on its own, without requiring anything else in this roadmap.
 
 ### Phase 2: Assignment sections and recipes
 
