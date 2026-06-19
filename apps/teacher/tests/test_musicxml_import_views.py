@@ -263,6 +263,25 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertTrue(playlist.is_adaptive)
         self.assertEqual(playlist.authored_by, self.staff_teacher)
 
+    def test_save_new_playlist_gets_unit_prefix(self):
+        """A new playlist name should be prefixed with the selected unit, matching
+        existing naming convention (e.g. "Unit 20 — Modulation II (play)")."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        uploaded = SimpleUploadedFile("test.xml", self.chordal_xml_bytes, content_type="text/xml")
+
+        response = self.client.post(
+            reverse("teacher:import-musicxml-save"),
+            {
+                "musicxml_file": uploaded,
+                "description": "Unit prefix test",
+                "playlist_name": "Rule of the Octave",
+                "unit": "13",
+            }
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        playlist = Playlist.objects.get(id=response.json()["playlistId"])
+        self.assertEqual(playlist.name, "Unit 13 — Rule of the Octave")
+
     def test_save_official_sets_playlist_official_and_skill_tags(self):
         """Saving as official into a new playlist must propagate is_official/skill_tags
         onto the playlist itself, not just the exercise."""

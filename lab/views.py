@@ -1062,6 +1062,9 @@ class AddExerciseView(View):
             save_as_official = self._bool_field(payload, "saveAsOfficial", False)
             is_adaptive = self._bool_field(payload, "isAdaptive", False)
             playlist_id, playlist_name = self._playlist_fields(payload)
+            if playlist_name:
+                from apps.exercises.utils.playlist_naming import apply_unit_prefix
+                playlist_name = apply_unit_prefix(playlist_name, skill_tags)
 
             author = self._resolve_author(request, save_as_official)
             if save_as_official and author is None:
@@ -1187,7 +1190,12 @@ class AuthoringMetaView(View):
                 playlist_filter |= Q(authored_by=factory_user)
 
         playlists = [
-            {"id": playlist.id, "name": playlist.name, "locked": bool(playlist.has_been_performed)}
+            {
+                "id": playlist.id,
+                "name": playlist.name,
+                "locked": bool(playlist.has_been_performed),
+                "skillTags": playlist.skill_tags or [],
+            }
             for playlist in Playlist.objects.filter(playlist_filter).order_by("name", "id")
         ]
 

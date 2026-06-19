@@ -238,6 +238,9 @@ def import_musicxml_save_view(request):
         playlist_id = playlist_id.strip() or None
     if playlist_name:
         playlist_name = playlist_name.strip() or None
+        if playlist_name:
+            from apps.exercises.utils.playlist_naming import apply_unit_prefix
+            playlist_name = apply_unit_prefix(playlist_name, skill_tags)
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xml") as tmp:
         for chunk in musicxml_file.chunks():

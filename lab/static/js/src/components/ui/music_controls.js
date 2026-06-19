@@ -481,6 +481,7 @@ define([
         if (!that._applyingSuggestedUnits) {
           that._autoSelectedSuggestedUnits = {};
         }
+        that._renderPlaylistOptions();
         that._validateSavePanel(false);
       });
 
@@ -557,15 +558,7 @@ define([
             );
           });
 
-          playlistSelect.html('<option value="">None</option>');
-          $.each(meta.playlists || [], function (i, pl) {
-            var optEl = $("<option>").val(pl.id).text(pl.name + (pl.locked ? " (locked)" : ""));
-            if (pl.locked) {
-              optEl.prop("disabled", true);
-            }
-            playlistSelect.append(optEl);
-          });
-          playlistSelect.append($("<option>").val("__new__").text("New playlist..."));
+          that._allPlaylists = meta.playlists || [];
 
           if (that._isSuperuser) {
             $("#play-save-official-row").show();
@@ -575,6 +568,7 @@ define([
           }
 
           that._applySuggestedUnits();
+          that._renderPlaylistOptions();
           that._validateSavePanel(false);
         },
         error: function () {
@@ -582,6 +576,55 @@ define([
           console.warn("[play-save] Could not fetch authoring-meta");
         },
       });
+    },
+
+    /**
+     * Rebuilds the Target Playlist dropdown from this._allPlaylists, filtered to
+     * playlists tagged with a currently-selected unit (or all playlists, if no
+     * unit is selected yet) — keeps the dropdown from offering playlists that
+     * contradict the unit structure. No "None" option: every save must target a
+     * playlist (existing or new).
+     *
+     * @return undefined
+     */
+    _renderPlaylistOptions: function () {
+      var playlistSelect = $("#play-save-playlist");
+      var selectedUnits = this._getSelectedUnits();
+      var unitTags = {};
+      $.each(selectedUnits, function (i, u) {
+        unitTags["unit:" + u] = true;
+      });
+      var hasUnitFilter = selectedUnits.length > 0;
+
+      var previousVal = playlistSelect.val();
+      playlistSelect.empty();
+      $.each(this._allPlaylists || [], function (i, pl) {
+        if (hasUnitFilter) {
+          var tags = pl.skillTags || [];
+          var matches = false;
+          for (var t = 0; t < tags.length; t++) {
+            if (unitTags[tags[t]]) {
+              matches = true;
+              break;
+            }
+          }
+          if (!matches) {
+            return;
+          }
+        }
+        var optEl = $("<option>").val(pl.id).text(pl.name + (pl.locked ? " (locked)" : ""));
+        if (pl.locked) {
+          optEl.prop("disabled", true);
+        }
+        playlistSelect.append(optEl);
+      });
+      playlistSelect.append($("<option>").val("__new__").text("New playlist..."));
+
+      if (previousVal && playlistSelect.find("option[value='" + previousVal + "']").length) {
+        playlistSelect.val(previousVal);
+      } else {
+        playlistSelect.val("__new__");
+      }
     },
 
     _getCurrentSaveJsonData: function () {
@@ -700,6 +743,7 @@ define([
               that._suggestedUnits[String(unitNum)] = true;
             });
             that._applySuggestedUnits();
+            that._renderPlaylistOptions();
             that._setSaveSuggestionStatus(suggested.length ? "Suggested units selected." : "");
             that._validateSavePanel(false);
           }
@@ -1668,7 +1712,8 @@ define([
               that._suggestedUnits[String(unitNum)] = true;
             });
             that._applySuggestedUnits();
-            
+            that._renderPlaylistOptions();
+
             // Set mode restrictions
             if (data.route === "chordal") {
               $("#play-save-mode-roman-lbl input").prop("disabled", false);

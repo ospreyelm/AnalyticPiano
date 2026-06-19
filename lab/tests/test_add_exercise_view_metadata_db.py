@@ -89,6 +89,50 @@ class AddExerciseViewMetadataTests(TestCase):
         self.assertEqual(playlist.authored_by, self.user)
         self.assertEqual(link.order, 1)
 
+    def test_playlist_name_gets_unit_prefix_when_unit_tag_selected(self):
+        response = self._post({
+            "chord": self._chords(),
+            "skillTags": ["unit:13"],
+            "playlistName": "Rule of the Octave",
+        })
+
+        self.assertEqual(response.status_code, 201, response.content)
+        playlist = Playlist.objects.get(id=response.json()["playlistId"])
+        self.assertEqual(playlist.name, "Unit 13 — Rule of the Octave")
+
+    def test_playlist_name_multi_unit_prefix(self):
+        response = self._post({
+            "chord": self._chords(),
+            "skillTags": ["unit:9", "unit:13"],
+            "playlistName": "Shared drill",
+        })
+
+        self.assertEqual(response.status_code, 201, response.content)
+        playlist = Playlist.objects.get(id=response.json()["playlistId"])
+        self.assertEqual(playlist.name, "Units 9, 13 — Shared drill")
+
+    def test_playlist_name_not_double_prefixed_when_already_starts_with_unit(self):
+        response = self._post({
+            "chord": self._chords(),
+            "skillTags": ["unit:13"],
+            "playlistName": "Unit 13 - Rule of the Octave",
+        })
+
+        self.assertEqual(response.status_code, 201, response.content)
+        playlist = Playlist.objects.get(id=response.json()["playlistId"])
+        self.assertEqual(playlist.name, "Unit 13 - Rule of the Octave")
+
+    def test_playlist_name_no_unit_prefix_when_no_unit_tag(self):
+        response = self._post({
+            "chord": self._chords(),
+            "skillTags": ["Note_Names"],
+            "playlistName": "No unit here",
+        })
+
+        self.assertEqual(response.status_code, 201, response.content)
+        playlist = Playlist.objects.get(id=response.json()["playlistId"])
+        self.assertEqual(playlist.name, "No unit here")
+
     def test_multi_mode_new_playlist_splits_into_one_playlist_per_mode(self):
         response = self._post({
             "chord": self._chords(),
@@ -245,7 +289,7 @@ class AddExerciseViewMetadataTests(TestCase):
         self.assertTrue(any(unit["n"] == 1 and unit["title"] for unit in body["units"]))
         self.assertEqual(
             body["playlists"],
-            [{"id": user_playlist.id, "name": "My Drafts", "locked": True}],
+            [{"id": user_playlist.id, "name": "My Drafts", "locked": True, "skillTags": []}],
         )
 
         self.client.force_login(self.superuser)
