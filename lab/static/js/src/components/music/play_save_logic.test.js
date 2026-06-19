@@ -44,6 +44,21 @@ assertEqual(
   "Unit 11 — Exercises (Roman)"
 );
 assertEqual(
+  "play plus figures destination label",
+  mod.canonicalDestinationLabel("11", "play_figures"),
+  "Unit 11 — Exercises (Play + figures)"
+);
+assertEqual(
+  "unabbreviated figures destination label",
+  mod.canonicalDestinationLabel("11", "figures_unabbreviated"),
+  "Unit 11 — Exercises (Figures (unabbreviated))"
+);
+assertEqual(
+  "matching destination label",
+  mod.canonicalDestinationLabel("11", "matching"),
+  "Unit 11 — Exercises (Matching)"
+);
+assertEqual(
   "missing unit has no destination",
   mod.canonicalDestinationLabel("", "roman"),
   ""
