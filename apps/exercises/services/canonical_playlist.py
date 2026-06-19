@@ -17,7 +17,7 @@ def resolve_canonical_playlist(
     is_official: bool,
 ) -> Playlist:
     unit = int(unit)
-    canonical_mode_label(mode)
+    canonical_mode_label(mode)  # validates mode; raises ValueError for unsupported values
     name = build_canonical_playlist_name(unit, mode)
     unit_tag = f"unit:{unit}"
     identity = {

@@ -25,289 +25,190 @@ class AddExerciseViewMetadataTests(TestCase):
         ]
 
     def _post(self, payload):
+        # Canonical-save defaults: one unit, one mode, no playlist fields.
+        payload.setdefault("skillTags", ["unit:11"])
+        payload.setdefault("mode", "roman")
+        payload.pop("playlistId", None)
+        payload.pop("playlistName", None)
+        payload.pop("modes", None)
         return self.client.post("/exercises/add/", data={"data": json.dumps(payload)})
+
+    # ── Canonical-save contract ────────────────────────────────────────────────
+
+    def test_save_creates_canonical_playlist_without_playlist_payload(self):
+        response = self._post({"chord": self._chords(), "description": "First"})
+        self.assertEqual(response.status_code, 201, response.content)
+        body = response.json()
+        self.assertIn("playlistId", body)
+        playlist = Playlist.objects.get(id=body["playlistId"])
+        self.assertEqual(playlist.name, "Unit 11 — Exercises (Roman)")
+        self.assertEqual(playlist.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
+        self.assertEqual(playlist.canonical_unit, 11)
+        self.assertEqual(playlist.canonical_mode, "roman")
+
+    def test_different_descriptions_reuse_one_playlist(self):
+        first = self._post({"chord": self._chords(), "description": "First"})
+        second = self._post({"chord": self._chords(), "description": "Second"})
+        self.assertEqual(first.status_code, 201, first.content)
+        self.assertEqual(second.status_code, 201, second.content)
+        self.assertEqual(first.json()["playlistId"], second.json()["playlistId"])
+        self.assertEqual(
+            Playlist.objects.filter(
+                authored_by=self.user,
+                playlist_family=Playlist.FAMILY_TEACHER_PLAY,
+                canonical_unit=11,
+                canonical_mode="roman",
+            ).count(),
+            1,
+        )
+
+    def test_different_modes_use_different_playlists(self):
+        roman = self._post({"chord": self._chords(), "mode": "roman"})
+        play = self._post({"chord": self._chords(), "mode": "play"})
+        self.assertEqual(roman.status_code, 201, roman.content)
+        self.assertEqual(play.status_code, 201, play.content)
+        self.assertNotEqual(roman.json()["playlistId"], play.json()["playlistId"])
+
+    def test_multiple_modes_are_rejected(self):
+        payload = {"chord": self._chords()}
+        payload.pop("modes", None)
+        payload["modes"] = ["play", "roman"]
+        # Override _post defaults by posting directly so modes isn't popped.
+        payload.setdefault("skillTags", ["unit:11"])
+        response = self.client.post("/exercises/add/", data={"data": json.dumps(payload)})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("exactly one", response.json()["error"].lower())
+
+    def test_playlist_override_fields_are_rejected(self):
+        payload = {
+            "chord": self._chords(),
+            "skillTags": ["unit:11"],
+            "mode": "roman",
+            "playlistId": "PA0001",
+        }
+        response = self.client.post("/exercises/add/", data={"data": json.dumps(payload)})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("automatic", response.json()["error"].lower())
+
+    # ── Core field validation ──────────────────────────────────────────────────
 
     def test_default_behavior_unchanged(self):
         response = self._post({"chord": self._chords(), "key": "C", "staffDistribution": "keyboard"})
-
         self.assertEqual(response.status_code, 201, response.content)
         exercise = Exercise.objects.get(id=response.json()["id"])
         self.assertEqual(exercise.description, "Play view chordal exercise")
         self.assertEqual(exercise.authored_by, self.user)
         self.assertFalse(exercise.is_public)
-        self.assertEqual(exercise.skill_tags, [])
+        self.assertEqual(exercise.skill_tags, ["unit:11"])
 
     def test_description_persisted(self):
         response = self._post({
             "chord": self._chords(),
-            "description": "Unit 1 tonic triads",
+            "description": "Unit 11 tonic triads",
         })
-
         self.assertEqual(response.status_code, 201, response.content)
         exercise = Exercise.objects.get(id=response.json()["id"])
-        self.assertEqual(exercise.description, "Unit 1 tonic triads")
+        self.assertEqual(exercise.description, "Unit 11 tonic triads")
 
     def test_valid_skill_tags_persist(self):
         response = self._post({
             "chord": self._chords(),
             "skillTags": ["unit:1", "Note_Names", "cadence/authentic#1"],
         })
-
         self.assertEqual(response.status_code, 201, response.content)
         exercise = Exercise.objects.get(id=response.json()["id"])
         self.assertEqual(exercise.skill_tags, ["unit:1", "Note_Names", "cadence/authentic#1"])
 
     def test_invalid_skill_tag_format_returns_400(self):
         response = self._post({"chord": self._chords(), "skillTags": ["bad tag"]})
-
         self.assertEqual(response.status_code, 400)
         self.assertIn("error", response.json())
 
     def test_unknown_unit_tag_returns_400(self):
         response = self._post({"chord": self._chords(), "skillTags": ["unit:99999"]})
-
         self.assertEqual(response.status_code, 400)
         self.assertIn("unit", response.json()["error"])
 
     def test_is_public_persisted(self):
         response = self._post({"chord": self._chords(), "isPublic": True})
-
         self.assertEqual(response.status_code, 201, response.content)
         exercise = Exercise.objects.get(id=response.json()["id"])
         self.assertTrue(exercise.is_public)
 
-    def test_playlist_name_creates_playlist_and_appends_at_order_one(self):
-        response = self._post({"chord": self._chords(), "playlistName": "Unit 1 Drafts"})
-
-        self.assertEqual(response.status_code, 201, response.content)
-        body = response.json()
-        playlist = Playlist.objects.get(id=body["playlistId"])
-        exercise = Exercise.objects.get(id=body["id"])
-        link = ExercisePlaylistOrdered.objects.get(playlist=playlist, exercise=exercise)
-        self.assertEqual(body["playlistName"], "Unit 1 Drafts Exercise (Play)")
-        self.assertEqual(playlist.name, "Unit 1 Drafts Exercise (Play)")
-        self.assertEqual(playlist.authored_by, self.user)
-        self.assertEqual(link.order, 1)
-
-    def test_playlist_name_gets_unit_prefix_when_unit_tag_selected(self):
-        response = self._post({
-            "chord": self._chords(),
-            "skillTags": ["unit:13"],
-            "playlistName": "Rule of the Octave",
-        })
-
-        self.assertEqual(response.status_code, 201, response.content)
-        playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "Unit 13 — Rule of the Octave Exercise (Play)")
-
-    def test_playlist_name_multi_unit_prefix(self):
-        response = self._post({
+    def test_multiple_unit_tags_returns_400(self):
+        payload = {
             "chord": self._chords(),
             "skillTags": ["unit:9", "unit:13"],
-            "playlistName": "Shared drill",
-        })
+            "mode": "roman",
+        }
+        response = self.client.post("/exercises/add/", data={"data": json.dumps(payload)})
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertIn("unit", response.json()["error"].lower())
 
-        self.assertEqual(response.status_code, 201, response.content)
-        playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "Units 9, 13 — Shared drill Exercise (Play)")
-
-    def test_playlist_name_not_double_prefixed_when_already_starts_with_unit(self):
-        response = self._post({
-            "chord": self._chords(),
-            "skillTags": ["unit:13"],
-            "playlistName": "Unit 13 - Rule of the Octave",
-        })
-
-        self.assertEqual(response.status_code, 201, response.content)
-        playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "Unit 13 - Rule of the Octave Exercise (Play)")
-
-    def test_playlist_name_no_unit_prefix_when_no_unit_tag(self):
-        response = self._post({
+    def test_no_unit_tag_returns_400(self):
+        payload = {
             "chord": self._chords(),
             "skillTags": ["Note_Names"],
-            "playlistName": "No unit here",
-        })
-
-        self.assertEqual(response.status_code, 201, response.content)
-        playlist = Playlist.objects.get(id=response.json()["playlistId"])
-        self.assertEqual(playlist.name, "No unit here Exercise (Play)")
-
-    def test_multi_mode_new_playlist_splits_into_one_playlist_per_mode(self):
-        response = self._post({
-            "chord": self._chords(),
-            "modes": ["play", "roman"],
-            "playlistName": "Unit 13 Drafts",
-        })
-
-        self.assertEqual(response.status_code, 201, response.content)
-        body = response.json()
-        self.assertEqual(len(body["ids"]), 2)
-        self.assertIn("playlists", body)
-        self.assertEqual(len(body["playlists"]), 2)
-
-        play_playlist = Playlist.objects.get(name="Unit 13 Drafts Exercise (Play)")
-        roman_playlist = Playlist.objects.get(name="Unit 13 Drafts Exercise (Roman)")
-        self.assertNotEqual(play_playlist.id, roman_playlist.id)
-
-        play_exercise = Exercise.objects.get(id=body["ids"][0])
-        roman_exercise = Exercise.objects.get(id=body["ids"][1])
-        self.assertTrue(
-            ExercisePlaylistOrdered.objects.filter(playlist=play_playlist, exercise=play_exercise).exists()
-        )
-        self.assertTrue(
-            ExercisePlaylistOrdered.objects.filter(playlist=roman_playlist, exercise=roman_exercise).exists()
-        )
-        self.assertFalse(
-            ExercisePlaylistOrdered.objects.filter(playlist=play_playlist, exercise=roman_exercise).exists()
-        )
-
-    def test_single_mode_new_playlist_still_gets_mode_suffix(self):
-        response = self._post({
-            "chord": self._chords(),
-            "modes": ["play"],
-            "playlistName": "Unit 13 Drafts Solo",
-        })
-
-        self.assertEqual(response.status_code, 201, response.content)
-        playlist = Playlist.objects.get(name="Unit 13 Drafts Solo Exercise (Play)")
-        self.assertEqual(response.json()["playlistName"], "Unit 13 Drafts Solo Exercise (Play)")
-        self.assertEqual(playlist.name, "Unit 13 Drafts Solo Exercise (Play)")
-
-    def test_multi_mode_existing_unrestricted_playlist_id_shares_one_playlist(self):
-        playlist = Playlist.objects.create(name="Shared Existing", authored_by=self.user)
-
-        response = self._post({
-            "chord": self._chords(),
-            "modes": ["play", "roman"],
-            "playlistId": playlist.id,
-        })
-
-        self.assertEqual(response.status_code, 201, response.content)
-        self.assertEqual(
-            ExercisePlaylistOrdered.objects.filter(playlist=playlist).count(), 2
-        )
-
-    def test_existing_playlist_mode_mismatch_is_rejected(self):
-        playlist = Playlist.objects.create(
-            name="Unit 13 — Rule of the Octave Exercise (Play)", authored_by=self.user
-        )
-
-        response = self._post({
-            "chord": self._chords(),
-            "modes": ["roman"],
-            "playlistId": playlist.id,
-        })
-
+            "mode": "roman",
+        }
+        response = self.client.post("/exercises/add/", data={"data": json.dumps(payload)})
         self.assertEqual(response.status_code, 400, response.content)
-        self.assertIn("playlist", response.json()["error"].lower())
-        self.assertEqual(
-            ExercisePlaylistOrdered.objects.filter(playlist=playlist).count(), 0
-        )
+        self.assertIn("unit", response.json()["error"].lower())
 
-    def test_existing_playlist_matching_mode_succeeds(self):
-        playlist = Playlist.objects.create(
-            name="Unit 13 — Rule of the Octave Exercise (Play)", authored_by=self.user
-        )
+    # ── Official / superuser saves ─────────────────────────────────────────────
 
-        response = self._post({
-            "chord": self._chords(),
-            "modes": ["play"],
-            "playlistId": playlist.id,
-        })
-
-        self.assertEqual(response.status_code, 201, response.content)
-        self.assertEqual(
-            ExercisePlaylistOrdered.objects.filter(playlist=playlist).count(), 1
-        )
-
-    def test_playlist_id_appends_at_next_order(self):
-        playlist = Playlist.objects.create(name="Existing Drafts", authored_by=self.user)
-        existing = self._post({"chord": self._chords()}).json()["id"]
-        ExercisePlaylistOrdered.objects.create(
-            playlist=playlist,
-            exercise=Exercise.objects.get(id=existing),
-            order=3,
-        )
-
-        response = self._post({"chord": self._chords(), "playlistId": playlist.id})
-
-        self.assertEqual(response.status_code, 201, response.content)
-        body = response.json()
-        self.assertEqual(body["playlistId"], playlist.id)
-        self.assertEqual(body["playlistName"], "Existing Drafts")
-        link = ExercisePlaylistOrdered.objects.get(playlist=playlist, exercise__id=body["id"])
-        self.assertEqual(link.order, 4)
-
-    def test_wrong_owner_playlist_id_returns_400(self):
-        playlist = Playlist.objects.create(name="Someone Else", authored_by=self.other_user)
-
-        response = self._post({"chord": self._chords(), "playlistId": playlist.id})
-
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("playlist", response.json()["error"])
-
-    def test_locked_playlist_id_returns_400(self):
-        playlist = Playlist.objects.create(name="Performed", authored_by=self.user)
-        PerformanceData.objects.create(user=self.other_user, playlist=playlist, data=[])
-
-        response = self._post({"chord": self._chords(), "playlistId": playlist.id})
-
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("locked", response.json()["error"])
-
-    def test_playlist_id_and_name_returns_400(self):
-        playlist = Playlist.objects.create(name="Existing Drafts", authored_by=self.user)
-
-        response = self._post({
-            "chord": self._chords(),
-            "playlistId": playlist.id,
-            "playlistName": "New Drafts",
-        })
-
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("playlistId", response.json()["error"])
-
-    def test_save_as_official_superuser_uses_factory_author_and_forces_public(self):
+    def test_save_as_official_superuser_uses_factory_author(self):
         self.client.force_login(self.superuser)
-
         response = self._post({
             "chord": self._chords(),
-            "isPublic": False,
+            "isPublic": True,
             "saveAsOfficial": True,
-            "playlistName": "Factory Unit 1",
         })
-
         self.assertEqual(response.status_code, 201, response.content)
         body = response.json()
         exercise = Exercise.objects.get(id=body["id"])
         playlist = Playlist.objects.get(id=body["playlistId"])
         self.assertEqual(exercise.authored_by, self.factory_user)
-        self.assertTrue(exercise.is_public)
         self.assertEqual(playlist.authored_by, self.factory_user)
+        self.assertTrue(exercise.is_public)
         self.assertTrue(playlist.is_public)
 
-    def test_save_as_official_new_playlist_sets_official_and_skill_tags(self):
+    def test_save_as_official_private_respects_editable_public_checkbox(self):
+        """Official save with isPublic=False must not force exercise or playlist public."""
         self.client.force_login(self.superuser)
+        response = self._post({
+            "chord": self._chords(),
+            "isPublic": False,
+            "saveAsOfficial": True,
+        })
+        self.assertEqual(response.status_code, 201, response.content)
+        body = response.json()
+        exercise = Exercise.objects.get(id=body["id"])
+        playlist = Playlist.objects.get(id=body["playlistId"])
+        self.assertEqual(exercise.authored_by, self.factory_user)
+        self.assertFalse(exercise.is_public)
+        self.assertFalse(playlist.is_public)
 
+    def test_save_as_official_sets_official_flag(self):
+        self.client.force_login(self.superuser)
         response = self._post({
             "chord": self._chords(),
             "saveAsOfficial": True,
-            "playlistName": "Factory Unit 13",
+            "isPublic": True,
             "skillTags": ["unit:13", "Note_Names"],
         })
-
         self.assertEqual(response.status_code, 201, response.content)
         body = response.json()
         playlist = Playlist.objects.get(id=body["playlistId"])
         self.assertTrue(playlist.is_official)
-        self.assertEqual(playlist.skill_tags, ["unit:13", "Note_Names"])
+        self.assertEqual(playlist.skill_tags, ["unit:13"])
 
     def test_save_as_official_non_superuser_returns_403(self):
         response = self._post({"chord": self._chords(), "saveAsOfficial": True})
-
         self.assertEqual(response.status_code, 403)
         self.assertIn("error", response.json())
+
+    # ── Authoring meta ─────────────────────────────────────────────────────────
 
     def test_authoring_meta_returns_units_playlists_and_superuser_flag(self):
         user_playlist = Playlist.objects.create(name="My Drafts", authored_by=self.user)
@@ -335,7 +236,5 @@ class AddExerciseViewMetadataTests(TestCase):
 
     def test_authoring_meta_anonymous_requires_login(self):
         self.client.logout()
-
         response = self.client.get("/exercises/authoring-meta/")
-
         self.assertIn(response.status_code, (302, 403))
