@@ -1044,25 +1044,20 @@ class AddExerciseView(View):
                     )
                 return self._json_error("Only superusers can save official exercises.", status=403)
 
-            _mode_map = {
-                "identify": InteractionMode.IDENTIFICATION,
-                "harmonization": InteractionMode.HARMONIZATION,
-            }
+            from apps.exercises.utils.teacher_play_modes import resolve_mode
+            resolved = resolve_mode(mode)
+            interaction_mode = resolved["interaction_mode"]
+            analysis_type = resolved["analysis_type"]
 
             import copy
             mode_display = copy.deepcopy(display or {})
             for flag in ["showRomans", "showFigures", "showChordLabels", "showScaleDegrees", "showNoteNames"]:
                 if flag not in mode_display:
                     mode_display[flag] = False
-            if mode == "roman":
-                mode_display["showRomans"] = True
-                mode_display["showFigures"] = False
-            elif mode == "figures":
-                mode_display["showFigures"] = True
-                mode_display["showRomans"] = False
-            elif mode in ("identify", "harmonization"):
-                mode_display["showRomans"] = False
-                mode_display["showFigures"] = False
+            if resolved["display"]:
+                for flag, value in resolved["display"].items():
+                    if flag not in (display or {}):
+                        mode_display[flag] = value
 
             from apps.exercises.services.canonical_playlist import (
                 append_exercise_to_canonical_playlist,
@@ -1085,7 +1080,8 @@ class AddExerciseView(View):
                     analysis=analysis_slices,
                     analyze_config=analyze_config,
                     display=mode_display,
-                    mode=_mode_map.get(mode, InteractionMode.PLAYBACK),
+                    mode=interaction_mode,
+                    analysis_type=analysis_type,
                 )
                 if save_as_official:
                     exercise.is_official = True

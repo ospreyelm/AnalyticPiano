@@ -126,3 +126,91 @@ class AddExerciseViewChordalTests(TestCase):
         self.assertIn(source_ex, playlist_exercises)
         self.assertIn(transposed_g, playlist_exercises)
         self.assertIn(transposed_f, playlist_exercises)
+
+    def test_roman_mode_produces_identification_with_roman_analysis_type(self):
+        from apps.exercises.models import Exercise
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "roman",
+        }
+        resp = self._post(payload)
+        self.assertEqual(resp.status_code, 201, resp.content)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        self.assertEqual(ex.data["mode"], "identification")
+        self.assertEqual(ex.data["analysisType"], "roman")
+        self.assertNotEqual(ex.data.get("display", {}).get("showRomans"), True)
+
+    def test_figures_mode_produces_identification_with_figured_bass_analysis_type(self):
+        from apps.exercises.models import Exercise
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "figures",
+        }
+        resp = self._post(payload)
+        self.assertEqual(resp.status_code, 201, resp.content)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        self.assertEqual(ex.data["mode"], "identification")
+        self.assertEqual(ex.data["analysisType"], "figured_bass")
+
+    def test_figures_unabbreviated_mode_produces_unabbreviated_analysis_type(self):
+        from apps.exercises.models import Exercise
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "figures_unabbreviated",
+        }
+        resp = self._post(payload)
+        self.assertEqual(resp.status_code, 201, resp.content)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        self.assertEqual(ex.data["mode"], "identification")
+        self.assertEqual(ex.data["analysisType"], "figured_bass_unabbreviated")
+
+    def test_matching_mode_produces_analysis_match(self):
+        from apps.exercises.models import Exercise
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "matching",
+        }
+        resp = self._post(payload)
+        self.assertEqual(resp.status_code, 201, resp.content)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        self.assertEqual(ex.data["mode"], "analysis_match")
+
+    def test_play_figures_mode_produces_playback_with_figures_display_overlay(self):
+        from apps.exercises.models import Exercise
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "play_figures",
+        }
+        resp = self._post(payload)
+        self.assertEqual(resp.status_code, 201, resp.content)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        self.assertEqual(ex.data["mode"], "playback")
+        self.assertEqual(ex.data["analysisType"], "figured_bass")
+        self.assertEqual(ex.data["display"]["showFigures"], True)
+
+    def test_identify_mode_is_no_longer_supported(self):
+        payload = {
+            "chord": self._chords(),
+            "key": "C",
+            "staffDistribution": "keyboard",
+            "skillTags": ["unit:1"],
+            "mode": "identify",
+        }
+        resp = self._post(payload)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("unsupported", resp.json()["error"].lower())

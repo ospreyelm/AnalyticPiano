@@ -679,16 +679,14 @@ class Command(BaseCommand):
                 # Convert to CIR JSON
                 cir_data = m21_to_cir(phrase_score, key_override=harmony_key)
                 
-                # 4. Map to UMTO Interaction Mode
-                # `roman` and `figures` are label-entry exercises (show prompts/slots),
-                # while `matching` is the inverse mode (label shown, play the pitch).
-                if mode in ('play', 'play_figures'):
-                    umto_mode = InteractionMode.PLAYBACK
-                elif mode == 'matching':
-                    umto_mode = InteractionMode.ANALYSIS_MATCH
-                else:
-                    umto_mode = InteractionMode.IDENTIFICATION
-                
+                # 4. Map to UMTO Interaction Mode / analysis_type / display via
+                # the shared resolver (also used by the manual editor in lab/views.py).
+                from apps.exercises.utils.teacher_play_modes import resolve_mode
+                resolved = resolve_mode(mode)
+                umto_mode = resolved["interaction_mode"]
+                analysis_type = resolved["analysis_type"]
+                display = resolved["display"]
+
                 # 5. Build Intro Text
                 if mode == 'figures':
                     intro_text = f"Provide the Figured Bass for this phrase from Bach (BWV {bwv_display}, mm. {start_m}-{end_m})."
@@ -722,21 +720,6 @@ class Command(BaseCommand):
                         self.stdout.write(f"  Built {len(analysis_overrides)} figured bass slices")
                     except Exception as e:
                         self.stdout.write(self.style.WARNING(f"  Figured bass overrides failed: {e}"))
-
-                display = None
-                if mode == 'figures':
-                    analysis_type = 'figured_bass'
-                elif mode == 'figures_unabbreviated':
-                    analysis_type = 'figured_bass_unabbreviated'
-                elif mode == 'play_figures':
-                    analysis_type = 'figured_bass'
-                    display = {
-                        "showFigures": True,
-                        "figureStyle": "figures_abbrev",
-                        "analysisRenderer": "notater",
-                    }
-                else:
-                    analysis_type = 'roman'
 
                 umto_kwargs = dict(
                     exercise_id="TEMP",

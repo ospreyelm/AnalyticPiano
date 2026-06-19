@@ -2,9 +2,11 @@ import re
 
 SUPPORTED_TEACHER_PLAY_MODES = (
     "play",
+    "play_figures",
     "roman",
     "figures",
-    "identify",
+    "figures_unabbreviated",
+    "matching",
     "harmonization",
 )
 
@@ -14,9 +16,11 @@ _TRAILING_MODE_RE = re.compile(r"\(([a-z_]+)\)\s*$", re.IGNORECASE)
 
 _MODE_LABELS = {
     "play": "Play",
+    "play_figures": "Play + figures",
     "roman": "Roman",
     "figures": "Figures",
-    "identify": "Identify",
+    "figures_unabbreviated": "Figures (unabbreviated)",
+    "matching": "Matching",
     "harmonization": "Harmonization",
 }
 
