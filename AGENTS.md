@@ -3,6 +3,13 @@
 This is the authoritative repository-wide instruction file. Tool-specific
 instruction files must point here rather than duplicate project policy.
 
+# Before writing code always check:
+1. is there code in the repo that already does this?
+
+2. Can we use existing package or external code to do the same thing?
+
+3. We want to remove unnecessary code and complexity to keep the repo maintainable, clean, and efficient.
+
 ## Current product direction
 
 The previous seven-item teacher-experience priority list is complete.
