@@ -1,7 +1,13 @@
 # Teacher Play Canonical Save Design
 
 **Date:** 2026-06-19  
-**Status:** Approved
+**Status:** Implemented
+
+### Implementation Note (2026-06-19)
+- Canonical identity migration `0069_playlist_teacher_play_identity.py` adds fields and unique constraint.
+- Shared authoring-oriented resolution service: `apps/exercises/services/canonical_playlist.py`.
+- Endpoint routing integration: `lab/views.py` (composed exercises) and `apps/teacher/views_musicxml.py` (MusicXML import).
+- Front-end single-unit/single-mode configuration form in `lab/static/js/src/components/ui/music_controls.js` and `lab/templates/play.html`.
 
 ## Goal
 

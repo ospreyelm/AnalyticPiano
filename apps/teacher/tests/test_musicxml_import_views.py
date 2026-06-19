@@ -336,6 +336,29 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertFalse(exercise.is_public)
         self.assertFalse(playlist.is_public)
 
+    def test_official_and_personal_saves_use_distinct_destinations(self):
+        self.client.login(email="super@example.com", password="testpass123")
+        personal = self._post_save({
+            "is_public": "false",
+            "save_as_official": "false",
+            "description": "Personal save",
+        })
+        official = self._post_save({
+            "is_public": "true",
+            "save_as_official": "true",
+            "description": "Official save",
+        })
+        self.assertEqual(personal.status_code, 201, personal.content)
+        self.assertEqual(official.status_code, 201, official.content)
+        self.assertNotEqual(personal.json()["playlistId"], official.json()["playlistId"])
+
+        personal_playlist = Playlist.objects.get(id=personal.json()["playlistId"])
+        official_playlist = Playlist.objects.get(id=official.json()["playlistId"])
+        self.assertEqual(personal_playlist.authored_by, self.superuser)
+        self.assertEqual(official_playlist.authored_by, self.factory_user)
+        self.assertTrue(official_playlist.is_official)
+        self.assertTrue(official_playlist.is_public)
+
     def test_multiple_modes_rejects_with_400(self):
         """Canonical API requires exactly one mode; multi-mode is not supported."""
         self.client.login(email="teacher@example.com", password="testpass123")

@@ -208,6 +208,31 @@ class AddExerciseViewMetadataTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertIn("error", response.json())
 
+    def test_official_and_personal_saves_use_distinct_destinations(self):
+        self.client.force_login(self.superuser)
+        personal = self._post({
+            "chord": self._chords(),
+            "isPublic": False,
+            "saveAsOfficial": False,
+            "description": "Personal save",
+        })
+        official = self._post({
+            "chord": self._chords(),
+            "isPublic": True,
+            "saveAsOfficial": True,
+            "description": "Official save",
+        })
+        self.assertEqual(personal.status_code, 201, personal.content)
+        self.assertEqual(official.status_code, 201, official.content)
+        self.assertNotEqual(personal.json()["playlistId"], official.json()["playlistId"])
+
+        personal_playlist = Playlist.objects.get(id=personal.json()["playlistId"])
+        official_playlist = Playlist.objects.get(id=official.json()["playlistId"])
+        self.assertEqual(personal_playlist.authored_by, self.superuser)
+        self.assertEqual(official_playlist.authored_by.email, settings.FACTORY_USER_EMAIL)
+        self.assertTrue(official_playlist.is_official)
+        self.assertTrue(official_playlist.is_public)
+
     # ── Authoring meta ─────────────────────────────────────────────────────────
 
     def test_authoring_meta_returns_units_playlists_and_superuser_flag(self):
