@@ -6,6 +6,7 @@ Run with:
 """
 import os
 import sys
+import types
 import unittest
 from unittest import mock
 
@@ -37,10 +38,22 @@ class TestRegisterJsonCasting(unittest.TestCase):
 
     def test_skips_registration_for_non_psycopg2_connections(self):
         raw_connection = FakePsycopg3Connection()
+        psycopg_module = types.ModuleType("psycopg")
+        psycopg_types_module = types.ModuleType("psycopg.types")
+        psycopg_json_module = types.ModuleType("psycopg.types.json")
+        set_json_loads = mock.Mock()
+        psycopg_json_module.set_json_loads = set_json_loads
 
         with mock.patch("psycopg2.extras.register_default_json") as register_json, mock.patch(
             "psycopg2.extras.register_default_jsonb"
-        ) as register_jsonb, mock.patch("psycopg.types.json.set_json_loads") as set_json_loads:
+        ) as register_jsonb, mock.patch.dict(
+            sys.modules,
+            {
+                "psycopg": psycopg_module,
+                "psycopg.types": psycopg_types_module,
+                "psycopg.types.json": psycopg_json_module,
+            },
+        ):
             exercise_apps.register_psycopg_json_casting(raw_connection)
 
         register_json.assert_not_called()
