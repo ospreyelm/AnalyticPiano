@@ -1333,7 +1333,7 @@ define([
 
         if (trebleStave) {
           trebleStave.setBegBarType(isFirstMeasure ? 'single' : 'none');
-          treave = trebleStave.setEndBarType(barType);
+          trebleStave.setEndBarType(barType);
           trebleStave.draw();
           lastTrebleStave = trebleStave;
         }
