@@ -481,6 +481,9 @@ define([
           if (this.id === "play-save-unit" && !that._applyingSuggestedUnits) {
             that._autoSelectedSuggestedUnits = {};
           }
+          if (this.id === "play-save-mode") {
+            that._applyModeAnalysisDisplay($(this).val());
+          }
           that._renderCanonicalDestination();
           that._validateSavePanel(false);
         });
@@ -568,6 +571,49 @@ define([
       });
     },
 
+    /**
+     * Mirrors the analysis_type/display mapping in
+     * apps/exercises/utils/teacher_play_modes.py resolve_mode(), so the
+     * composer canvas shows the same notation the chosen mode will save as.
+     *
+     * @param {string} mode
+     * @return undefined
+     */
+    _applyModeAnalysisDisplay: function (mode) {
+      if (!mode) {
+        return;
+      }
+      var modeConfig;
+      if (mode === "figures") {
+        modeConfig = {
+          roman_numerals: false,
+          thoroughbass: true,
+          abbreviate_thoroughbass: true,
+        };
+      } else if (mode === "figures_unabbreviated") {
+        modeConfig = {
+          roman_numerals: false,
+          thoroughbass: true,
+          abbreviate_thoroughbass: false,
+        };
+      } else if (mode === "play_figures") {
+        modeConfig = {
+          roman_numerals: false,
+          thoroughbass: true,
+          abbreviate_thoroughbass: true,
+        };
+      } else {
+        // play, matching, harmonization, roman
+        modeConfig = {
+          roman_numerals: true,
+          thoroughbass: false,
+        };
+      }
+      this.broadcast(EVENTS.BROADCAST.ANALYZE_NOTES, {
+        key: "mode",
+        value: modeConfig,
+      });
+    },
     _renderCanonicalDestination: function () {
       var label = PlaySaveLogic.canonicalDestinationLabel(
         $("#play-save-unit").val(),
