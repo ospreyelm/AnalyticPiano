@@ -34,6 +34,8 @@ class ImportMusicXMLPayload:
     score_data: dict | None
     payload: dict | None
     meter: str
+    chords: list[dict] | None = None
+    analysis: list[dict] | None = None
 
 
 def _score_meter(score) -> str:
@@ -106,6 +108,8 @@ def _build_import_payload_for_score(
             score_data=None,
             payload=payload,
             meter=meter,
+            chords=chords,
+            analysis=analysis,
         )
 
     cir = m21_to_cir(score, key_override=harmony_key)

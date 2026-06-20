@@ -274,7 +274,9 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertEqual(playlist.name, "Unit 11 — Exercises (Play)")
 
     def test_save_chordal_exercise_with_tags_and_key(self):
-        """Saving a chordal score persists extra skill_tags, key, complexity, and display mode."""
+        """Saving a chordal score persists extra skill_tags, key, complexity, and routes
+        roman mode through the shared resolver to an answerable identification exercise
+        (not the old always-visible static-label behavior)."""
         self.client.login(email="teacher@example.com", password="testpass123")
         response = self._post_save({
             "description": "My Chordal Import",
@@ -291,8 +293,58 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertIn("Cadence_Half", exercise.skill_tags)
         self.assertIn("custom_tag", exercise.skill_tags)
         self.assertEqual(exercise.data["score"]["umto"]["metadata"]["score_kind"], "chordal")
-        self.assertEqual(exercise.data["score"]["umto"]["metadata"]["mode"], "roman")
-        self.assertEqual(exercise.data["display"]["showRomans"], True)
+        self.assertEqual(exercise.data["score"]["umto"]["metadata"]["mode"], "identification")
+        self.assertEqual(exercise.data["mode"], "identification")
+        self.assertEqual(exercise.data["analysisType"], "roman")
+        self.assertEqual(exercise.data["display"]["showRomans"], False)
+        self.assertEqual(exercise.data["staffDistribution"], "keyboard")
+
+    def test_save_chordal_figures_mode_uses_figured_bass_analysis_type(self):
+        """Figures mode on a chordal MusicXML import produces an identification exercise
+        quizzing figured bass, not Roman numerals."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        response = self._post_save({
+            "description": "My Figures Import",
+            "mode": "figures",
+        })
+        self.assertEqual(response.status_code, 201, response.content)
+        exercise = Exercise.objects.get(id=response.json()["id"])
+        self.assertEqual(exercise.data["mode"], "identification")
+        self.assertEqual(exercise.data["analysisType"], "figured_bass")
+        self.assertEqual(exercise.data["display"]["showRomans"], False)
+        self.assertEqual(exercise.data["display"]["showFigures"], False)
+
+    def test_save_chordal_play_mode_still_playback(self):
+        """Play mode on a chordal MusicXML import is unaffected by the resolver fix —
+        still a plain playback exercise with no analysis overlay."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        response = self._post_save({
+            "description": "My Play Import",
+            "mode": "play",
+        })
+        self.assertEqual(response.status_code, 201, response.content)
+        exercise = Exercise.objects.get(id=response.json()["id"])
+        self.assertEqual(exercise.data["mode"], "playback")
+        self.assertEqual(exercise.data["analysisType"], "roman")
+        self.assertEqual(exercise.data["staffDistribution"], "keyboard")
+        measures = exercise.data["score"]["measures"]
+        self.assertGreater(len(measures), 0)
+        first_note = measures[0]["staves"]["treble"]["voices"][0]["items"][0]
+        self.assertEqual(first_note["duration"]["type"], "q")
+
+    def test_save_voices_roman_mode_uses_resolver_not_identify_string(self):
+        """The phrase/voices route used to only recognize the literal string
+        'identify' (removed from the supported mode set) and silently fell back to
+        playback for every other mode. roman must now resolve to identification."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        response = self._post_save(
+            {"description": "My Voices Roman Import", "mode": "roman"},
+            xml_data=self.voices_xml_bytes,
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        exercise = Exercise.objects.get(id=response.json()["id"])
+        self.assertEqual(exercise.data["mode"], "identification")
+        self.assertEqual(exercise.data["analysisType"], "roman")
 
     # ── Official saves ─────────────────────────────────────────────────────────
 

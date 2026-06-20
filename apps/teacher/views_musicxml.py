@@ -18,10 +18,11 @@ except ImportError:
     m21_to_cir = None
 
 from apps.exercises.umto import InteractionMode
-from apps.exercises.models import Exercise, Playlist
-from apps.exercises.umto_factory import build_umto_payload, save_umto_exercise
+from apps.exercises.models import Playlist
+from apps.exercises.umto_factory import build_umto_payload, save_chordal_umto_exercise, save_umto_exercise
 from apps.exercises.utils.umto_import_router import classify_musicxml_score
 from apps.exercises.utils.skills_analyzer import analyze_chunk_skills
+from apps.exercises.utils.teacher_play_modes import resolve_mode
 from apps.exercises.management.commands.import_musicxml import _build_import_payload_for_score
 
 logger = logging.getLogger(__name__)
@@ -286,38 +287,42 @@ def import_musicxml_save_view(request):
         )
 
         with transaction.atomic():
+            resolved = resolve_mode(mode)
+            interaction_mode = resolved["interaction_mode"]
+            analysis_type = resolved["analysis_type"]
+
             if decision.route == "chordal":
-                import copy
-                payload = copy.deepcopy(import_payload.payload)
-                display = {
-                    "showRomans": mode == "roman",
-                    "showFigures": mode == "figures",
+                mode_display = {
+                    "showRomans": False,
+                    "showFigures": False,
                     "showChordLabels": False,
                     "showScaleDegrees": False,
                     "showNoteNames": False,
                 }
-                payload["display"] = display
-                payload["mode"] = mode
-                if "umto" in payload.get("score", {}):
-                    payload["score"]["umto"]["metadata"]["mode"] = mode
+                if resolved["display"]:
+                    mode_display.update(resolved["display"])
 
-                exercise = Exercise(
+                exercise = save_chordal_umto_exercise(
                     description=description,
-                    data=payload,
-                    authored_by=author,
+                    author=author,
+                    chords=import_payload.chords,
+                    key=harmony_key,
+                    meter=import_payload.meter,
+                    clef="keyboard",
+                    staff_distribution="keyboard",
                     skill_tags=skill_tags,
                     complexity=complexity,
                     is_public=is_public,
-                    time_signature=import_payload.meter,
+                    auto_playlist=False,
+                    analysis=import_payload.analysis,
+                    display=mode_display,
+                    mode=interaction_mode,
+                    analysis_type=analysis_type,
                 )
                 if save_as_official:
                     exercise.is_official = True
-                exercise.save()
-                exercise.data["score"]["umto"]["metadata"]["exercise_id"] = exercise.id
-                exercise.data["exerciseId"] = exercise.id
-                exercise.save(update_fields=["data"])
+                    exercise.save(update_fields=["is_official"])
             else:
-                umto_mode = InteractionMode.IDENTIFICATION if mode == "identify" else InteractionMode.PLAYBACK
                 umto_kwargs = dict(
                     exercise_id="TEMP",
                     source=f"Play {description}.",
@@ -325,8 +330,8 @@ def import_musicxml_save_view(request):
                     meter=import_payload.meter,
                     clef=import_payload.score_data.get("meta", {}).get("clef", "treble"),
                     complexity_score=complexity,
-                    mode=umto_mode,
-                    analysis_type="figured_bass" if mode == "figures" else "roman",
+                    mode=interaction_mode,
+                    analysis_type=analysis_type,
                 )
                 import copy
                 score_data_copy = copy.deepcopy(import_payload.score_data)
