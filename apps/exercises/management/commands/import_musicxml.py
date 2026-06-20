@@ -36,6 +36,7 @@ class ImportMusicXMLPayload:
     meter: str
     chords: list[dict] | None = None
     analysis: list[dict] | None = None
+    barline_offsets: list[float] | None = None
 
 
 def _score_meter(score) -> str:
@@ -51,6 +52,31 @@ def _meter_quarter_length(meter_text: str) -> float:
         return int(numerator) * (4.0 / int(denominator))
     except (AttributeError, ValueError, ZeroDivisionError):
         return 4.0
+
+
+def _suggest_barline_offsets(chords: list[dict], meter_text: str) -> list[float]:
+    """Derive bar-boundary offsets from chord onsets and the meter, mirroring the
+    manual editor's ChordalBarlinesLogic.suggestBarlines (lab/static/js/src/utils/
+    chordal_barlines_logic.js). MusicXML-sourced chords are metrically aligned to
+    the original score's real barlines, so every meter-length multiple that
+    coincides with a chord onset is a real bar boundary.
+    """
+    if not chords:
+        return []
+    bar_len = _meter_quarter_length(meter_text)
+    if not bar_len:
+        return []
+    onsets = {round(float(c["offset"]), 6) for c in chords}
+    total = round(
+        max(float(c["offset"]) + float(c["duration"]) for c in chords), 6
+    )
+    offsets = []
+    boundary = round(bar_len, 6)
+    while boundary < total - 1e-6:
+        if boundary in onsets:
+            offsets.append(boundary)
+        boundary = round(boundary + bar_len, 6)
+    return offsets
 
 
 def _excerpt_chord_events(chords: list[dict], *, meter_text: str,
@@ -91,6 +117,7 @@ def _build_import_payload_for_score(
             end_measure=end_measure,
         )
         analysis = build_chordal_analysis_slices(chords, harmony_key=harmony_key)
+        barline_offsets = _suggest_barline_offsets(chords, meter)
         payload = build_chordal_umto_payload(
             exercise_id="TEMP",
             source=f"Play {title}.",
@@ -102,6 +129,7 @@ def _build_import_payload_for_score(
             chords=chords,
             analysis=analysis,
             analysis_review_status="generated" if analysis else "none",
+            barline_offsets=barline_offsets,
         )
         return ImportMusicXMLPayload(
             decision=decision,
@@ -110,6 +138,7 @@ def _build_import_payload_for_score(
             meter=meter,
             chords=chords,
             analysis=analysis,
+            barline_offsets=barline_offsets,
         )
 
     cir = m21_to_cir(score, key_override=harmony_key)

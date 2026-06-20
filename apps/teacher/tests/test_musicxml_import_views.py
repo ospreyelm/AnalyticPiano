@@ -49,6 +49,44 @@ def make_test_musicxml_bytes(parts_data):
     return data
 
 
+def make_multi_measure_chordal_musicxml_bytes(chords_data, *, ql, measures):
+    """Generate a single-part, multi-measure MusicXML file with `measures` bars of
+    4/4, each containing 4/ql chords of the given quarter-length.
+
+    chords_data: flat list of chords (each a list of note names), consumed in
+    order across all measures, e.g. [["C4","E4","G4"]] * 8 for 8 quarter-note
+    triads across 2 measures of 4/4.
+    """
+    per_measure = int(round(4.0 / ql))
+    score = stream.Score()
+    score.append(meter.TimeSignature("4/4"))
+    part = stream.Part()
+    part.id = "part_0"
+    part.partName = "Part 0"
+    idx = 0
+    for m in range(measures):
+        measure_obj = stream.Measure(number=m + 1)
+        for _ in range(per_measure):
+            pitches = chords_data[idx]
+            idx += 1
+            measure_obj.append(chord.Chord(pitches, quarterLength=ql))
+        part.append(measure_obj)
+    score.append(part)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xml") as tmp:
+        tmp_path = tmp.name
+    try:
+        score.write("musicxml", fp=tmp_path)
+        with open(tmp_path, "rb") as f:
+            data = f.read()
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+    return data
+
+
 class MusicXMLImportViewsTest(TestCase):
     """Test both preview and save MusicXML endpoints."""
 
@@ -345,6 +383,28 @@ class MusicXMLImportViewsTest(TestCase):
         exercise = Exercise.objects.get(id=response.json()["id"])
         self.assertEqual(exercise.data["mode"], "identification")
         self.assertEqual(exercise.data["analysisType"], "roman")
+
+    def test_save_multi_measure_chordal_import_computes_barline_offsets(self):
+        """A 2-measure, 8-quarter-note chordal import must save successfully —
+        save_chordal_umto_exercise's rhythm validator requires barline_offsets that
+        tile the chords into exact-meter bars. The import pipeline never computed
+        these for MusicXML-sourced chords (only the manual JS composer's
+        autoSuggestBarlines did), so any multi-measure import failed validation
+        once the save view started routing through the real validator."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        two_measure_xml = make_multi_measure_chordal_musicxml_bytes(
+            [["C4", "E4", "G4"]] * 8, ql=1.0, measures=2
+        )
+        response = self._post_save(
+            {"description": "Two Measure Import", "mode": "roman"},
+            xml_data=two_measure_xml,
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        exercise = Exercise.objects.get(id=response.json()["id"])
+        umto_meta = exercise.data["score"]["umto"]["metadata"]
+        self.assertEqual(umto_meta["barline_offsets"], [4.0])
+        measures = exercise.data["score"]["measures"]
+        self.assertEqual(len(measures), 2)
 
     # ── Official saves ─────────────────────────────────────────────────────────
 

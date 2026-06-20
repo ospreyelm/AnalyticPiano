@@ -314,6 +314,7 @@ def import_musicxml_save_view(request):
                     complexity=complexity,
                     is_public=is_public,
                     auto_playlist=False,
+                    barline_offsets=import_payload.barline_offsets,
                     analysis=import_payload.analysis,
                     display=mode_display,
                     mode=interaction_mode,
