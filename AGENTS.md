@@ -179,3 +179,17 @@ Use port `5433` to avoid a local PostgreSQL conflict. Ignore harmless
 - Archive or mark superseded plans; do not leave competing active directions.
 - Current policy belongs here. Historical implementation detail belongs in
   `docs/`, not in always-loaded agent instructions.
+
+## Repository Architecture Guardrails
+
+### Code Generation Rules
+- **File Length Limit:** No single JavaScript/TypeScript file should exceed 400 lines of code. If a file approaches this limit, it must be broken down into sub-modules.
+- **Separation of Concerns:** Keep UI components, business logic/hooks, and pure utility functions in separate files.
+- **Imports:** Always use explicit, traceable imports. Avoid deeply nested relative paths where aliases are available.
+
+### Refactoring Workflow
+1. For any refactor, extract pure utility functions first into a `/utils` or `/helpers` directory.
+2. Extract sub-components or local state hooks next.
+3. Keep the original file as a clean "orchestrator" that imports these new modules.
+4. Do not delete original code until the new modules are verified and linted.
+
