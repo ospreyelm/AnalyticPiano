@@ -434,81 +434,96 @@ def generate_exercise_context(
                     _figure_cumulative = set()
             _pending_resolution_label = None
 
-            for _sl in _slices:
-                _content = _sl.get("content", {})
-                if _family == "roman":
-                    if (
-                        used_raw_umto_fallback
-                        and exercise_context.get("type") == "umto_chorale"
-                        and _content.get(_target_field) is None
-                    ):
-                        _val = _content.get(_raw_field)
-                    elif _target_field in _content:
-                        _val = _content.get(_target_field)
+            # A teacher-reviewed exercise (analysis_review_status="reviewed", set by
+            # save_chordal_umto_exercise/save_umto_exercise when the teacher hits Save
+            # with an explicit analysis) is the teacher's confirmed source of truth —
+            # the same way WiR labels are trusted for Bach chorales. The curriculum-
+            # cumulative targeting below exists to scope auto-generated, unreviewed
+            # content to what's been taught so far; it must not redact a reviewed
+            # exercise's analysis just because a chord falls outside that unit's
+            # cumulative vocabulary list (e.g. a secondary leading-tone chord or a
+            # seventh-chord inversion the teacher deliberately included).
+            _is_reviewed = _umto_data.get("metadata", {}).get("analysis_review_status") == "reviewed"
+
+            if _is_reviewed:
+                for _sl in _slices:
+                    _sl["is_target"] = True
+            else:
+                for _sl in _slices:
+                    _content = _sl.get("content", {})
+                    if _family == "roman":
+                        if (
+                            used_raw_umto_fallback
+                            and exercise_context.get("type") == "umto_chorale"
+                            and _content.get(_target_field) is None
+                        ):
+                            _val = _content.get(_raw_field)
+                        elif _target_field in _content:
+                            _val = _content.get(_target_field)
+                        else:
+                            _val = _content.get(_raw_field)
                     else:
                         _val = _content.get(_raw_field)
-                else:
-                    _val = _content.get(_raw_field)
 
-                # For abbreviated figured bass, abbreviate the raw stack
-                # before comparing against cumulative values.
-                # e.g. raw "8/5/3" → abbreviated "" → check "" in cumulative
-                if _family == "figured_bass" and _val is not None:
-                    from apps.exercises.utils.figured_bass import abbreviate_figured_bass
-                    _compare = abbreviate_figured_bass(_val)
-                else:
-                    _compare = _val
+                    # For abbreviated figured bass, abbreviate the raw stack
+                    # before comparing against cumulative values.
+                    # e.g. raw "8/5/3" → abbreviated "" → check "" in cumulative
+                    if _family == "figured_bass" and _val is not None:
+                        from apps.exercises.utils.figured_bass import abbreviate_figured_bass
+                        _compare = abbreviate_figured_bass(_val)
+                    else:
+                        _compare = _val
 
-                if (
-                    _family == "roman"
-                    and _compare is None
-                    and _pending_resolution_label is not None
-                    and _content.get(_raw_field) == _pending_resolution_label
-                ):
-                    _compare = _pending_resolution_label
-                    _pending_resolution_label = None
+                    if (
+                        _family == "roman"
+                        and _compare is None
+                        and _pending_resolution_label is not None
+                        and _content.get(_raw_field) == _pending_resolution_label
+                    ):
+                        _compare = _pending_resolution_label
+                        _pending_resolution_label = None
 
-                _figure_allowed = True
-                if (
-                    _family == "roman"
-                    and _compare is not None
-                    and _figure_cumulative
-                    and _content.get("figured_bass") not in (None, "")
-                    and _content.get("figured_bass") not in _figure_cumulative
-                ):
-                    _figure_allowed = False
-
-                # Note: use `is not None`, not truthiness — "5/3" is a valid cumulative value.
-                if _compare is not None and _compare in _cumulative and _figure_allowed:
-                    _content[_target_field] = _compare
-                    _sl["is_target"] = True
-                else:
+                    _figure_allowed = True
                     if (
                         _family == "roman"
                         and _compare is not None
-                        and _compare in _cumulative
-                        and not _figure_allowed
+                        and _figure_cumulative
+                        and _content.get("figured_bass") not in (None, "")
+                        and _content.get("figured_bass") not in _figure_cumulative
                     ):
-                        _pending_resolution_label = _compare
-                    _content[_target_field] = None
-                    _sl["is_target"] = False
+                        _figure_allowed = False
 
-            # ── Cadential 6/4 contextual rewrite (ROMAN ONLY) ──
-            if _family == "roman":
-                _CAD64_SOURCES = {"I64", "i64"}
-                _CAD64_TARGETS = {"V", "V7", "V65", "V43"}
-                for _i in range(len(_slices) - 1):
-                    _cur = _slices[_i]
-                    _nxt = _slices[_i + 1]
-                    _cur_rn = _cur.get("content", {}).get("roman_numeral")
-                    _nxt_rn = _nxt.get("content", {}).get("roman_numeral")
-                    if _cur_rn in _CAD64_SOURCES and _nxt_rn in _CAD64_TARGETS:
-                        if "V64" in _cumulative:
-                            _cur["content"]["roman_numeral"] = "V64"
-                            _cur["is_target"] = True
-                        else:
-                            _cur["content"]["roman_numeral"] = None
-                            _cur["is_target"] = False
+                    # Note: use `is not None`, not truthiness — "5/3" is a valid cumulative value.
+                    if _compare is not None and _compare in _cumulative and _figure_allowed:
+                        _content[_target_field] = _compare
+                        _sl["is_target"] = True
+                    else:
+                        if (
+                            _family == "roman"
+                            and _compare is not None
+                            and _compare in _cumulative
+                            and not _figure_allowed
+                        ):
+                            _pending_resolution_label = _compare
+                        _content[_target_field] = None
+                        _sl["is_target"] = False
+
+                # ── Cadential 6/4 contextual rewrite (ROMAN ONLY) ──
+                if _family == "roman":
+                    _CAD64_SOURCES = {"I64", "i64"}
+                    _CAD64_TARGETS = {"V", "V7", "V65", "V43"}
+                    for _i in range(len(_slices) - 1):
+                        _cur = _slices[_i]
+                        _nxt = _slices[_i + 1]
+                        _cur_rn = _cur.get("content", {}).get("roman_numeral")
+                        _nxt_rn = _nxt.get("content", {}).get("roman_numeral")
+                        if _cur_rn in _CAD64_SOURCES and _nxt_rn in _CAD64_TARGETS:
+                            if "V64" in _cumulative:
+                                _cur["content"]["roman_numeral"] = "V64"
+                                _cur["is_target"] = True
+                            else:
+                                _cur["content"]["roman_numeral"] = None
+                                _cur["is_target"] = False
             
             # Inject analysisType into the top-level payload for the frontend
             exercise_context["analysisType"] = _resolve_analysis_type(exercise.data, _family)
