@@ -101,4 +101,70 @@ function testGetKeySignatureAlterations() {
 testNormalizeKeyForVexFlow();
 testGetKeySignatureAlterations();
 
+function testResolveChordNoteStylesNoNotesPlayedYieldsVoiceColorBaseAndNoPlayedKeys() {
+  var playedNoteIds = new Set();
+  var result = Logic.resolveChordNoteStyles({
+    keyCount: 2,
+    baseId: 10,
+    playedNoteIds: playedNoteIds,
+    showNotation: true,
+    isAnalysisMatch: false,
+    hideForHarmonization: false,
+    voiceColor: "rgb(50,50,50)",
+  });
+  assert.deepStrictEqual(result.baseStyle, { fillStyle: "rgb(50,50,50)", strokeStyle: "rgb(50,50,50)" });
+  assert.deepStrictEqual(result.playedKeyIndices, []);
+}
+
+function testResolveChordNoteStylesOnlyLowerNotePlayedDoesNotBlackenWholeChord() {
+  // Regression: a chord whose first notehead (id 10, index 0) is played must
+  // NOT turn the whole chord black — only index 0 should be reported as
+  // played. The base style stays the unplayed voice color so the caller can
+  // leave the second notehead (id 11, index 1) unstyled by setKeyStyle.
+  var playedNoteIds = new Set([10]);
+  var result = Logic.resolveChordNoteStyles({
+    keyCount: 2,
+    baseId: 10,
+    playedNoteIds: playedNoteIds,
+    showNotation: true,
+    isAnalysisMatch: false,
+    hideForHarmonization: false,
+    voiceColor: "rgb(50,50,50)",
+  });
+  assert.deepStrictEqual(result.baseStyle, { fillStyle: "rgb(50,50,50)", strokeStyle: "rgb(50,50,50)" });
+  assert.deepStrictEqual(result.playedKeyIndices, [0]);
+}
+
+function testResolveChordNoteStylesBothNotesPlayedReportsBothIndices() {
+  var playedNoteIds = new Set([10, 11]);
+  var result = Logic.resolveChordNoteStyles({
+    keyCount: 2,
+    baseId: 10,
+    playedNoteIds: playedNoteIds,
+    showNotation: true,
+    isAnalysisMatch: false,
+    hideForHarmonization: false,
+    voiceColor: "rgb(50,50,50)",
+  });
+  assert.deepStrictEqual(result.playedKeyIndices, [0, 1]);
+}
+
+function testResolveChordNoteStylesHiddenWhenNotationOff() {
+  var result = Logic.resolveChordNoteStyles({
+    keyCount: 1,
+    baseId: 0,
+    playedNoteIds: new Set(),
+    showNotation: false,
+    isAnalysisMatch: false,
+    hideForHarmonization: false,
+    voiceColor: "rgb(50,50,50)",
+  });
+  assert.deepStrictEqual(result.baseStyle, { fillStyle: "transparent", strokeStyle: "transparent" });
+}
+
+testResolveChordNoteStylesNoNotesPlayedYieldsVoiceColorBaseAndNoPlayedKeys();
+testResolveChordNoteStylesOnlyLowerNotePlayedDoesNotBlackenWholeChord();
+testResolveChordNoteStylesBothNotesPlayedReportsBothIndices();
+testResolveChordNoteStylesHiddenWhenNotationOff();
+
 console.log("vexflow_adapter_logic tests passed");

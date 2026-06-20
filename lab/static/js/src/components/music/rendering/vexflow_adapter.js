@@ -884,26 +884,30 @@ define([
       chord._onset = onset;
       chord._measureIndex = measureIndex;
       
-      // Default: gray until played (per notehead)
+      // Default: gray until played (per notehead). resolveChordNoteStyles never
+      // returns a black base style — per-key playedness can only ADD black to
+      // specific noteheads via setKeyStyle below, never subtract it from the
+      // others, so the base must stay at the unplayed color regardless of
+      // whether some (but not all) notes in this chord have been played.
       if (chord.setStyle) {
-        var playedAny = idState && idState.playedNoteIds && idState.playedNoteIds.has(idState.nextId || 0);
-        if (playedAny) {
-          chord.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
-        } else if (!showNotation || isAnalysisMatch || hideForHarmonization) {
-          chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
-        } else {
-          chord.setStyle({ fillStyle: voiceColor, strokeStyle: voiceColor });
+        var resolved = VexflowAdapterLogic.resolveChordNoteStyles({
+          keyCount: keys.length,
+          baseId: idState ? (idState.nextId || 0) : 0,
+          playedNoteIds: idState && idState.playedNoteIds,
+          showNotation: showNotation,
+          isAnalysisMatch: isAnalysisMatch,
+          hideForHarmonization: hideForHarmonization,
+          voiceColor: voiceColor,
+        });
+        chord.setStyle(resolved.baseStyle);
+        for (var pk = 0; pk < resolved.playedKeyIndices.length; pk++) {
+          if (chord.setKeyStyle) {
+            chord.setKeyStyle(resolved.playedKeyIndices[pk], { fillStyle: '#000000', strokeStyle: '#000000' });
+          }
         }
       }
       if (idState) {
-        var idx = idState.nextId || 0;
-        for (var h = 0; h < keys.length; h++) {
-          var played = idState.playedNoteIds && idState.playedNoteIds.has(idx + h);
-          if (played && chord.setKeyStyle) {
-            chord.setKeyStyle(h, { fillStyle: '#000000', strokeStyle: '#000000' });
-          }
-        }
-        idState.nextId = idx + keys.length;
+        idState.nextId = (idState.nextId || 0) + keys.length;
       }
       return chord;
     }
