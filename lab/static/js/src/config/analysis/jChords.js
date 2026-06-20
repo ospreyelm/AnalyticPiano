@@ -137,6 +137,7 @@ define({
   "z/257": { root: "7", label: "V{z5}", priority: "6" },
   "2/57z": { root: "7", label: "V{r3}", priority: "9" },
   "5/27z": { root: "7", label: "V{r2}", priority: "9" },
+  "5/7z": { root: "7", label: "V{r2}", priority: "9" }, // V4/2 with omitted 5th
 
   "7/45z": { root: "7", label: "V{q e}", priority: "95" }, // V13
 

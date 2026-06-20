@@ -4,9 +4,12 @@ from django.test import SimpleTestCase
 
 
 class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
-    def _make_exercise_data(self, raw_rn_list, unit_tags=None):
+    def _make_exercise_data(self, raw_rn_list, unit_tags=None, roman_numeral_list=None,
+                             analysis_review_status="generated"):
         if isinstance(raw_rn_list, str):
             raw_rn_list = [raw_rn_list]
+        if roman_numeral_list is not None and isinstance(roman_numeral_list, str):
+            roman_numeral_list = [roman_numeral_list]
         slices = []
         for i, raw_rn in enumerate(raw_rn_list):
             slices.append(
@@ -14,6 +17,7 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
                     "offset": float(i),
                     "content": {
                         "raw_roman_numeral": raw_rn,
+                        "roman_numeral": (roman_numeral_list[i] if roman_numeral_list else raw_rn),
                         "figured_bass": None,
                         "pop_symbol": None,
                         "functional_label": None,
@@ -39,6 +43,7 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
                         "meter": "4/4",
                         "complexity_score": 9,
                         "mode": "identification",
+                        "analysis_review_status": analysis_review_status,
                     },
                     "voices": {"S": [], "A": [], "T": [], "B": []},
                     "analysis": slices,
@@ -113,6 +118,37 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertEqual(len(slices), 1)
         self.assertTrue(slices[0]["is_target"])
         self.assertEqual(slices[0]["content"]["roman_numeral"], "I")
+
+    @patch("lab.views.PerformanceData")
+    @patch("lab.views.TaxonomyReader")
+    def test_reviewed_exercise_bypasses_curriculum_targeting(self, mock_reader, mock_perf):
+        """A teacher-reviewed exercise (analysis_review_status="reviewed", set when
+        the teacher hits Save with an explicit analysis — see
+        save_chordal_umto_exercise) is the teacher's confirmed source of truth,
+        the same way WiR labels are trusted for Bach chorales. The per-unit
+        curriculum-cumulative targeting filter exists to scope auto-generated,
+        unreviewed content to what's been taught so far — it must not redact a
+        reviewed exercise's analysis just because a chord (e.g. a secondary
+        leading-tone or a seventh-chord inversion) falls outside that unit's
+        cumulative vocabulary list."""
+        cumulative = {"I", "V"}  # deliberately excludes "vii°6/V" and "V42"
+        self._make_mocks(cumulative, set(), mock_reader, mock_perf)
+        data = self._make_exercise_data(
+            ["I", "vii°6/V", "V42"],
+            roman_numeral_list=["I", "vii°6/V", "V42"],
+            unit_tags=[13],
+            analysis_review_status="reviewed",
+        )
+
+        ctx = self._run_context(data, unit_n="13")
+
+        slices = ctx["score"]["umto"]["analysis"]
+        self.assertEqual(slices[0]["content"]["roman_numeral"], "I")
+        self.assertTrue(slices[0]["is_target"])
+        self.assertEqual(slices[1]["content"]["roman_numeral"], "vii°6/V")
+        self.assertTrue(slices[1]["is_target"])
+        self.assertEqual(slices[2]["content"]["roman_numeral"], "V42")
+        self.assertTrue(slices[2]["is_target"])
 
     @patch("lab.views.PerformanceData")
     @patch("lab.views.TaxonomyReader")
