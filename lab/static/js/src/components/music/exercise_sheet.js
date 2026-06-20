@@ -27,6 +27,8 @@ define([
   "app/models/key_signature",
   "./chordal_spelling",
   "app/utils/chordal_barlines_logic",
+  "app/utils/umto_score_converter",
+  "app/utils/barline_spacing_utils",
 ], function (
   $,
   $UI,
@@ -54,7 +56,9 @@ define([
   ChordalUMTOStaffDistribution,
   KeySignature,
   ChordalSpelling,
-  ChordalBarlinesLogic
+  ChordalBarlinesLogic,
+  UMTOScoreConverter,
+  BarlineSpacingUtils
 ) {
   "use strict";
 
@@ -1391,7 +1395,7 @@ define([
         var score = def.getScore ? def.getScore() : null;
         console.log("[Chorale] score keys:", score ? Object.keys(score) : "null", "has umto:", !!(score && score.umto));
         if (score && score.umto && !ChordalProblemsLogic.shouldPreserveChordalMeasures(score)) {
-          var converted = this._convertUMTOToProcessedScore(score.umto);
+          var converted = UMTOScoreConverter.convertUMTOToProcessedScore(score.umto);
           if (converted) {
             def.exercise.score = converted;
             console.log("[Chorale] Patched exercise.score from UMTO conversion:", converted.measures ? converted.measures.length : 0, "measures");
@@ -1835,7 +1839,7 @@ define([
       // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
       // This fixes cases where the database might have a single 'blob' measure.
       if (isChoraleLike && score && score.umto && !ChordalProblemsLogic.shouldPreserveChordalMeasures(score)) {
-        score = this._convertUMTOToProcessedScore(score.umto);
+        score = UMTOScoreConverter.convertUMTOToProcessedScore(score.umto);
       }
 
       var hasMeasures = !!(score && score.measures && score.measures.length > 0);
@@ -2189,71 +2193,7 @@ define([
       this.staves = this.staves.concat(staves);
       return this;
     },
-    timeSignatureParsed: function (timeSignature) {
-      if (!timeSignature) {
-        return false;
-      }
-      let parsedSignature = timeSignature.split("/");
-      if (parsedSignature.length != 2) {
-        return false;
-      }
-      let topNum = parsedSignature[0].trim();
-      let bottomNum = parsedSignature[1].trim();
-      if (
-        isNaN(topNum) ||
-        isNaN(bottomNum) ||
-        topNum != parseInt(topNum) ||
-        bottomNum != parseInt(bottomNum)
-      ) {
-        return false;
-      }
-      return [topNum, bottomNum];
-    },
-    getsBarline: function (timeSignature = false, elapsedWholeNotes) {
-      if (!elapsedWholeNotes > 0) {
-        return false;
-      }
-      const ts = this.timeSignatureParsed(timeSignature);
-      if (!ts) {
-        return false;
-      }
-      const barCount = (elapsedWholeNotes * ts[1]) / ts[0];
-      return barCount == parseInt(barCount);
-    },
-    countElapsedBars: function (timeSignature = false, elapsedWholeNotes) {
-      const ts = this.timeSignatureParsed(timeSignature);
-      if (!ts) {
-        return false;
-      }
-      const barCount = (elapsedWholeNotes * ts[1]) / ts[0];
-      return parseInt(barCount);
-    },
-    getBarRemainder: function (timeSignature = false, elapsedWholeNotes) {
-      // not used
-      const ts = this.timeSignatureParsed(timeSignature);
-      if (!ts) {
-        return false;
-      }
-      const barCount = (elapsedWholeNotes * ts[1]) / ts[0];
-      if (isNaN(barCount) || barCount < 0) {
-        return null;
-      }
-      return barCount % 1;
-    },
-    getWholeNoteRemainder: function (timeSignature = false, elapsedWholeNotes) {
-      const ts = this.timeSignatureParsed(timeSignature);
-      if (!ts) {
-        return false;
-      }
-      if (elapsedWholeNotes <= 0) {
-        return 0;
-      }
-      const remainder = ((elapsedWholeNotes * ts[1]) % ts[0]) / ts[1];
-      if (isNaN(remainder) || remainder < 0) {
-        return null;
-      }
-      return remainder;
-    },
+
     /**
      * Updates and configures the staves.
      *
@@ -2312,21 +2252,21 @@ define([
       const endOfBarWholeNoteCounts = [];
       if (timeSignature) {
         const wholeNoteSum = rhythmValues
-          .map((item) => this.getWholeNoteCount(item))
+          .map((item) => BarlineSpacingUtils.getWholeNoteCount(item))
           .reduce((x, y) => x + y);
-        const barCount = this.countElapsedBars(timeSignature, wholeNoteSum);
-        const ts = this.timeSignatureParsed(timeSignature);
+        const barCount = BarlineSpacingUtils.countElapsedBars(timeSignature, wholeNoteSum);
+        const ts = BarlineSpacingUtils.timeSignatureParsed(timeSignature);
         for (var i = 1, len = barCount; i <= len; i++) {
           endOfBarWholeNoteCounts.push((i * ts[0]) / ts[1]);
         }
       }
 
       for (var i = 0, len = rhythmValues.length; i < len; i++) {
-        let neededSpace = this.getVisualWidth(rhythmValues[i]);
+        let neededSpace = BarlineSpacingUtils.getVisualWidth(rhythmValues[i]);
 
         let elapsedWholeNotes = rhythmValues
           .slice(0, i + 1)
-          .map((item) => this.getWholeNoteCount(item))
+          .map((item) => BarlineSpacingUtils.getWholeNoteCount(item))
           .reduce((x, y) => x + y);
         if (endOfBarWholeNoteCounts.includes(elapsedWholeNotes)) {
           neededSpace += barlineSpace;
@@ -2375,7 +2315,7 @@ define([
           } else {
             rhythm_value = DEFAULT_RHYTHM_VALUE;
           }
-          previous_whole_note_count += this.getWholeNoteCount(rhythm_value);
+          previous_whole_note_count += BarlineSpacingUtils.getWholeNoteCount(rhythm_value);
         }
       }
 
@@ -2406,16 +2346,16 @@ define([
           } else {
             rhythm_value = DEFAULT_RHYTHM_VALUE;
           }
-          elapsedWidthUnits += this.getVisualWidth(rhythm_value);
-          elapsedWholeNotes += this.getWholeNoteCount(rhythm_value);
+          elapsedWidthUnits += BarlineSpacingUtils.getVisualWidth(rhythm_value);
+          elapsedWholeNotes += BarlineSpacingUtils.getWholeNoteCount(rhythm_value);
         }
 
         // spacing for barlines
-        const complement_of_first_bar = this.getWholeNoteRemainder(
+        const complement_of_first_bar = BarlineSpacingUtils.getWholeNoteRemainder(
           timeSignature,
           previous_whole_note_count
         );
-        const elapsedBarlines = this.countElapsedBars(
+        const elapsedBarlines = BarlineSpacingUtils.countElapsedBars(
           timeSignature,
           elapsedWholeNotes + complement_of_first_bar - 0.01
         );
@@ -2433,7 +2373,7 @@ define([
           curr_value = DEFAULT_RHYTHM_VALUE;
         }
         if (i < len) {
-          if (this.getsBarline(timeSignature, elapsedWholeNotes)) {
+          if (BarlineSpacingUtils.getsBarline(timeSignature, elapsedWholeNotes)) {
             if (i > 0) {
               // new bar begins here but not new system
               // draw barline at left
@@ -2446,9 +2386,9 @@ define([
             bass_activeAlterations = Object.create(null);
           }
           if (
-            this.getsBarline(
+            BarlineSpacingUtils.getsBarline(
               timeSignature,
-              elapsedWholeNotes + this.getWholeNoteCount(curr_value)
+              elapsedWholeNotes + BarlineSpacingUtils.getWholeNoteCount(curr_value)
             )
           ) {
             // bar is completed here: add space
@@ -2530,10 +2470,10 @@ define([
 
       stave.setRenderer(this.vexRenderer);
       stave.setKeySignature(this.keySignature);
-      if (first_page && this.timeSignatureParsed(this.timeSignature)) {
+      if (first_page && BarlineSpacingUtils.timeSignatureParsed(this.timeSignature)) {
         // console.log(this.timeSignatureParsed(this.timeSignature).join('/'));
         stave.setTimeSignature(
-          this.timeSignatureParsed(this.timeSignature).join("/")
+          BarlineSpacingUtils.timeSignatureParsed(this.timeSignature).join("/")
         );
       } else {
         stave.setTimeSignature(false);
@@ -2545,40 +2485,12 @@ define([
         const staffSig = this.keySignature.signatureSpec;
         const minimum = 0;
         const hasTimeSig =
-          this.timeSignatureParsed(this.timeSignature) != false;
+          BarlineSpacingUtils.timeSignatureParsed(this.timeSignature) != false;
         stave.setFirstBarWidth(staffSig, minimum, hasTimeSig);
       }
       stave.updatePosition();
 
       return stave;
-    },
-    getVisualWidth: function (rhythm_value) {
-      if (rhythm_value === "w") {
-        return 1;
-      } else if (rhythm_value === "W") {
-        return 1.25;
-      } else if (rhythm_value === "H") {
-        return 0.75;
-      } else if (rhythm_value === "h") {
-        return 0.675;
-      } else if (rhythm_value === "Q") {
-        return 0.5;
-      } else if (rhythm_value === "q") {
-        return 0.375;
-      } else if (rhythm_value === "8") {
-        return 0.25;
-      } else {
-        console.log("Unknown rhythm_value passed to getVisualWidth");
-        return 1;
-      }
-    },
-    getWholeNoteCount: function (rhythm_value) {
-      if (!rhythm_value) return 0.25;
-      // Use MeasureEngine if it understands the format, otherwise fallback
-      if (typeof rhythm_value === 'string') {
-        return MeasureEngine.getWholeNoteCount(rhythm_value, 0);
-      }
-      return 0.25;
     },
     /**
      * Creates a stave to display notes.
@@ -2604,7 +2516,7 @@ define([
         if (rhythm_value == null) {
           rhythm_value = DEFAULT_RHYTHM_VALUE;
         }
-        widthUnits = this.getVisualWidth(rhythm_value) + extraWidth;
+        widthUnits = BarlineSpacingUtils.getVisualWidth(rhythm_value) + extraWidth;
       }
 
       stave.setRenderer(this.vexRenderer);
@@ -2634,7 +2546,7 @@ define([
         const staffSig = this.keySignature.signatureSpec;
         const minimum = 0;
         const hasTimeSig =
-          this.timeSignatureParsed(this.timeSignature) != false;
+          BarlineSpacingUtils.timeSignatureParsed(this.timeSignature) != false;
         stave.setFirstBarWidth(staffSig, minimum, hasTimeSig);
       }
       stave.updatePositionWithRhythm(widthUnits, elapsedWidthUnits);
@@ -2987,194 +2899,6 @@ define([
 
     _clearPlaybackHighlight: function () {
       $("#playback-highlight").hide();
-    },
-    /**
-     * Converts raw UMTO data into the "Processed Score" format that VexFlowAdapter expects.
-     * @param {object} umto 
-     * @returns {object} Processed score
-     */
-    /**
-     * Render-time staff split for chordal UMTO. Chords store flat verticalities;
-     * staff layout is a VIEW option (like the legacy chord-bank path), chosen here
-     * by staffDistribution rather than baked at import. Pitches are routed to
-     * treble/bass per the keyboard split (>= middle C -> treble), then each staff
-     * is split into measures by MeasureEngine. staffDistribution "treble"/"bass"
-     * force a single staff; anything else is grand-staff (both).
-     */
-    _convertChordalUMTOToProcessedScore: function (umto) {
-      var meta = _.cloneDeep(umto.metadata || {});
-      if (meta.meter && !meta.time) meta.time = meta.meter;
-      // meta.time may be null/undefined => free/open mode (no time signature glyph).
-      var hasMeter = !!meta.time;
-
-      var dist = meta.staffDistribution || "keyboard";
-      var spellingTable = null;
-      if (meta.key) {
-        try {
-          spellingTable = new KeySignature(meta.key).keyToSpelling(meta.key);
-        } catch (e) {
-          console.warn("[exercise_sheet] Bad or missing key in chordal UMTO:", meta.key, "- falling back to default (sharp) spelling");
-        }
-      }
-      var midiToPitch = function (m) {
-        return ChordalSpelling.keyAwarePitch(m, spellingTable);
-      };
-      var DUR_PARTS = {
-        4: { type: "w", dots: 0 }, 3: { type: "h", dots: 1 }, 2: { type: "h", dots: 0 },
-        1.5: { type: "q", dots: 1 }, 1: { type: "q", dots: 0 }, 0.75: { type: "8", dots: 1 },
-        0.5: { type: "8", dots: 0 }, 0.25: { type: "16", dots: 0 }, 0.125: { type: "32", dots: 0 }
-      };
-      var durParts = function (ql) { return DUR_PARTS[Number(ql)] || { type: "q", dots: 0 }; };
-
-      // Decide which staves are active.
-      var forceTreble = dist === "RH" || dist === "treble";
-      var forceBass = dist === "LH" || dist === "bass";
-
-      var trebleItems = [];
-      var bassItems = [];
-      _.each(umto.chords, function (c) {
-        var midis = (c.visible || []).slice();
-        var resolved = ChordalSpelling.resolveChordPitches(c, spellingTable);
-        var dp = durParts(Number(c.duration));
-        var dur = { type: dp.type, dots: dp.dots };
-        var hi, lo;
-        var routed = ChordalUMTOStaffDistribution.routeChordMidis(midis, dist);
-        hi = routed.treble;
-        lo = routed.bass;
-        var mkItem = function (ms) {
-          var pitches = ms.map(function (m) { return resolved[m] || midiToPitch(m); });
-          if (pitches.length > 1) {
-            return { kind: "chord", notes: pitches.map(function (p) { return { pitch: p }; }), duration: dur };
-          }
-          if (pitches.length === 1) {
-            return { kind: "note", pitch: pitches[0], duration: dur };
-          }
-          return { kind: "rest", duration: dur };
-        };
-        trebleItems.push(mkItem(hi));
-        bassItems.push(mkItem(lo));
-      });
-
-      var barlineOffsets = (umto.metadata && umto.metadata.barline_offsets) || [];
-      var chordOffsets = (umto.chords || []).map(function (c) { return Number(c.offset); });
-      var trebleMeasures, bassMeasures;
-      if (barlineOffsets.length || !hasMeter) {
-        // Explicit barlines (or free mode): split by item counts at chord onsets.
-        var counts = ChordalBarlinesLogic.measureItemCounts(chordOffsets, barlineOffsets);
-        var sliceByCounts = function (items) {
-          var out = []; var idx = 0;
-          for (var k = 0; k < counts.length; k++) { out.push(items.slice(idx, idx + counts[k])); idx += counts[k]; }
-          if (!out.length) out.push(items.slice());
-          return out;
-        };
-        trebleMeasures = sliceByCounts(trebleItems);
-        bassMeasures = sliceByCounts(bassItems);
-      } else {
-        trebleMeasures = MeasureEngine.splitIntoMeasures(trebleItems, meta.time);
-        bassMeasures = MeasureEngine.splitIntoMeasures(bassItems, meta.time);
-      }
-      var numMeasures = Math.max(trebleMeasures.length, bassMeasures.length);
-
-      var measures = [];
-      for (var i = 0; i < numMeasures; i++) {
-        var staves = {};
-        if (!forceBass) {
-          staves.treble = { voices: [{ items: trebleMeasures[i] || [], direction: "auto" }] };
-        }
-        if (!forceTreble) {
-          staves.bass = { voices: [{ items: bassMeasures[i] || [], direction: "auto" }] };
-        }
-        measures.push({ staves: staves });
-      }
-
-      return {
-        meta: { key: meta.key, time: hasMeter ? meta.time : null, clef: meta.clef,
-                staffDistribution: dist, noTimeSignature: !hasMeter },
-        metadata: { time: hasMeter ? meta.time : null, meter: hasMeter ? meta.time : null },
-        measures: measures,
-        umto: umto,
-      };
-    },
-
-    _convertUMTOToProcessedScore: function (umto) {
-      if (umto && umto.metadata && umto.metadata.score_kind === "chordal" &&
-          umto.chords && umto.chords.length) {
-        return this._convertChordalUMTOToProcessedScore(umto);
-      }
-      if (!umto || !umto.voices) {
-        console.error("[ID] UMTO or voices missing", umto);
-        return null;
-      }
-
-      var meta = _.cloneDeep(umto.metadata || {});
-      if (meta.meter && !meta.time) meta.time = meta.meter;
-      if (!meta.time) meta.time = "4/4";
-
-      // Use the MeasureEngine to split each voice into measures
-      var voiceKeys = ['S', 'A', 'T', 'B'];
-      var splitVoices = {};
-      var maxMeasures = 0;
-      
-      _.each(voiceKeys, function(vk) {
-        var voiceItems = umto.voices[vk] || [];
-        var processedItems = _.map(voiceItems, function(ev) {
-          var item = _.cloneDeep(ev);
-          item.kind = ev.kind || 'note';
-          item.duration = {
-            type: ev.duration_type || 'q',
-            dots: ev.dots || 0
-          };
-          if (ev.pitch) {
-            item.pitch = _.cloneDeep(ev.pitch);
-          }
-          return item;
-        });
-        
-        splitVoices[vk] = MeasureEngine.splitIntoMeasures(processedItems, meta.time);
-        maxMeasures = Math.max(maxMeasures, splitVoices[vk].length);
-      });
-      
-      var measures = [];
-      for (var mIdx = 0; mIdx < maxMeasures; mIdx++) {
-        var m = { staves: { treble: { voices: [] }, bass: { voices: [] } } };
-        
-        _.each(voiceKeys, function(vk) {
-          var items = (splitVoices[vk][mIdx]) || [];
-          if (items.length === 0) return;
-          
-          var staffName = (vk === 'S' || vk === 'A') ? 'treble' : 'bass';
-          // Override if staffDistribution is specific
-          if (meta.staffDistribution === 'bass') staffName = 'bass';
-          else if (meta.staffDistribution === 'treble') staffName = 'treble';
-          
-          if (!m.staves[staffName]) m.staves[staffName] = { voices: [] };
-          
-          var dir = 'auto';
-          if (staffName === 'treble') {
-            dir = (vk === 'S' && umto.voices.A && umto.voices.A.length > 0) ? 'up' : 'auto';
-            if (vk === 'A') dir = 'down';
-          } else {
-            dir = (vk === 'T' && umto.voices.B && umto.voices.B.length > 0) ? 'up' : 'auto';
-            if (vk === 'B') dir = 'down';
-          }
-          
-          m.staves[staffName].voices.push({ items: items, direction: dir });
-        });
-        
-        // Clean up empty staves
-        if (m.staves.treble && m.staves.treble.voices.length === 0) delete m.staves.treble;
-        if (m.staves.bass && m.staves.bass.voices.length === 0) delete m.staves.bass;
-        
-        measures.push(m);
-      }
-      
-      var processed = {
-        meta: meta,
-        measures: measures,
-        umto: umto
-      };
-      console.log("[ID] Processed score built via MeasureEngine:", processed);
-      return processed;
     },
   });
 

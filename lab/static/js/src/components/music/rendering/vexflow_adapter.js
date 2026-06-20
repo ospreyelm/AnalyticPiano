@@ -14,22 +14,6 @@ define([
 ], function (_, Vex, ScoreTimeline, Analyze, MeasureEngine, KeySignature, KeyContext, HarmonizationRealizationLogic, VexflowAdapterLogic, IdentificationLabelLayoutLogic) {
   "use strict";
 
-  function durToVF(d) {
-    var type = d.type;
-    var map = { 'whole': 'w', 'half': 'h', 'quarter': 'q', 'eighth': '8', '16th': '16', '32nd': '32', 'e': '8', 's': '16' };
-    return map[type] || type;
-  }
-
-  function convertRomanSymbols(text) {
-    return String(text || "")
-      .replace(/bb/g, "𝄫")
-      .replace(/b/g, "♭")
-      .replace(/##/g, "𝄪")
-      .replace(/#/g, "♯")
-      .replace(/n/g, "♮")
-      .replace(/⌀/g, "⌀");
-  }
-
   // Sebastian is a zero-width figured-bass font. Each character's vertical position
   // is baked into its glyph metrics (main-row, lower-row, upper-row). Drawing a
   // token string like "z4" as a single fillText call renders a stacked 6/4 figure.
@@ -76,7 +60,7 @@ define([
     var tokenWidths = tokens.map(function (token) {
       if (!token.figured) {
         // Measure char-by-char: °/⌀ draw at SUP_SIZE, rest at ROMAN_SIZE.
-        var text = convertRomanSymbols(token.text);
+        var text = VexflowAdapterLogic.convertRomanSymbols(token.text);
         var parts = text.split(SUP_RE);
         var total = 0;
         parts.forEach(function(part) {
@@ -113,7 +97,7 @@ define([
     tokens.forEach(function (token, i) {
       var w = tokenWidths[i];
       if (!token.figured) {
-        var text = convertRomanSymbols(token.text);
+        var text = VexflowAdapterLogic.convertRomanSymbols(token.text);
         // Draw °/⌀ as raised superscript; all other chars at normal size.
         var parts = text.split(SUP_RE);
         var px = curX;
@@ -250,186 +234,6 @@ define([
     ctx.restore();
   }
 
-  function getFigurePattern(figure) {
-    return String(figure || "")
-      .split("/")
-      .map(function (line) {
-        return line.replace(/[^0-9]+/g, "");
-      })
-      .filter(function (line) {
-        return line.length > 0;
-      })
-      .join("/");
-  }
-
-  function getRomanExpDisplayFigureLines(current, previous) {
-    if (!current) return [];
-
-    var preserveSuspensionContext = !!(
-      previous &&
-      previous.base === current.base &&
-      previous.fullFigureLines &&
-      previous.fullFigureLines.length >= 3
-    );
-
-    return preserveSuspensionContext
-      ? current.fullFigureLines
-      : current.abbrevFigureLines;
-  }
-
-  var FIGURE_TOKEN_MAP = {
-    "z": "6",
-    "z4": "6/4",
-    "z5": "6/5",
-    "u": "7",
-    "u3": "6/5",
-    "u5": "7/5",
-    "r": "4",
-    "r2": "4/2",
-    "r3": "4/3",
-    "i3": "3",
-    "q e": "13",
-  };
-
-  function noteCenterX(note) {
-    if (!note) return null;
-    if (typeof note.getBoundingBox === "function") {
-      var bb = note.getBoundingBox();
-      if (bb) {
-        if (typeof bb.getX === "function" && typeof bb.getW === "function") {
-          return bb.getX() + bb.getW() / 2;
-        }
-        if (bb.x !== undefined && bb.w !== undefined) {
-          return bb.x + bb.w / 2;
-        }
-      }
-    }
-    if (typeof note.getAbsoluteX === "function") {
-      var baseX = note.getAbsoluteX();
-      var width =
-        typeof note.getWidth === "function" ? note.getWidth() : null;
-      if (typeof width === "number" && !isNaN(width)) {
-        return baseX + width / 2;
-      }
-      if (typeof note.getGlyph === "function" && note.getGlyph()) {
-        var glyph = note.getGlyph();
-        if (glyph && typeof glyph.getWidth === "function") {
-          return baseX + glyph.getWidth() / 2;
-        }
-      }
-      if (typeof note.getStemX === "function") {
-        return note.getStemX();
-      }
-      return baseX;
-    }
-    return null;
-  }
-
-  function getColumnCenterX(col) {
-    if (!col) return null;
-    if (typeof col.centerX === "number") {
-      return col.centerX;
-    }
-    var notes = (col && col.notes) || [];
-    var bassNote = notes.find(function (note) {
-      var stave = note && note.getStave && note.getStave();
-      return stave && stave.clef === "bass";
-    });
-    var targetNote = bassNote || notes[0] || null;
-    var center = noteCenterX(targetNote);
-    if (center === null && typeof col.x === "number") {
-      center = col.x;
-    }
-    if (center === null) {
-      return null;
-    }
-    col.centerX = center;
-    return col.centerX;
-  }
-
-  function computeRomanLabel(midi, analyzer) {
-    if (!analyzer || !midi || !midi.length) return null;
-    try {
-      var chordInfo = analyzer.to_chord(midi, "roman only");
-      if (chordInfo && chordInfo.label) {
-        return chordInfo.label;
-      }
-    } catch (err) {
-      return null;
-    }
-    return null;
-  }
-
-  function getStoredRomanLabel(analysisSlices, onsetTicks) {
-    if (!analysisSlices || !analysisSlices.length) return null;
-    var ql = onsetTicks / 1024;
-    for (var i = 0; i < analysisSlices.length; i++) {
-      var sl = analysisSlices[i];
-      if (Math.abs(sl.offset - ql) < 0.05 && sl.content && sl.content.roman_numeral) {
-        return sl.content.roman_numeral;
-      }
-    }
-    return null;
-  }
-
-  function computeFiguredLabel(midi, analyzer, abbreviate) {
-    if (!analyzer || !midi || midi.length < 2) return null;
-    try {
-      var figure = abbreviate
-        ? analyzer.abbrev_thoroughbass_figure(midi)
-        : analyzer.full_thoroughbass_figure(midi);
-      if (!figure) return null;
-      var lines = figure
-        .split("/")
-        .map(function (line) {
-          return line
-            .replace(/bb/g, "𝄫")
-            .replace(/b/g, "♭")
-            .replace(/##/g, "𝄪")
-            .replace(/#/g, "♯")
-            .replace(/n/g, "♮")
-            .trim();
-        })
-        .filter(function (line) {
-          return line.length > 0;
-        });
-      if (!lines.length) return null;
-      return lines.join("\n");
-    } catch (err) {
-      return null;
-    }
-  }
-
-  function shouldRenderRoman(analyzeConfig) {
-    if (!analyzeConfig) return false;
-    var mode = analyzeConfig.mode || {};
-    return !!(analyzeConfig.roman_numerals || mode.roman_numerals);
-  }
-
-  function shouldRenderFigured(analyzeConfig) {
-    if (!analyzeConfig) return false;
-    var mode = analyzeConfig.mode || {};
-    return !!(analyzeConfig.thoroughbass || mode.thoroughbass || mode.abbreviate_thoroughbass);
-  }
-
-  function shouldRenderRomanExp(analyzeConfig) {
-    if (!analyzeConfig) return false;
-    var mode = analyzeConfig.mode || {};
-    return !!(analyzeConfig.roman_numerals_exp || mode.roman_numerals_exp || analyzeConfig.roman_exp || mode.roman_exp);
-  }
-
-  function shouldRenderNoteNames(analyzeConfig) {
-    if (!analyzeConfig) return false;
-    var mode = analyzeConfig.mode || {};
-    return !!(analyzeConfig.note_names || mode.note_names);
-  }
-
-  function shouldRenderScaleDegrees(analyzeConfig) {
-    if (!analyzeConfig) return false;
-    var mode = analyzeConfig.mode || {};
-    return !!(analyzeConfig.scale_degrees || mode.scale_degrees);
-  }
-
   function _drawScaleDegreeList(ctx, midiNotes, columnX, anchorY, stackDir, analyzer, sdMap) {
     // stackDir: -1 = stack upward (above anchor), +1 = stack downward (below anchor)
     var sorted = midiNotes.slice().sort(function(a, b) { return stackDir === -1 ? b - a : a - b; });
@@ -456,8 +260,8 @@ define([
     if (!ctx || !analyzer || !trebleStave || !midiNotes || !midiNotes.length) return;
 
     // Split notes by voice when two voices share the treble staff.
-    // Top voice (voiceIdx 0, stems up) \u2192 labels above stave top line.
-    // Bottom voice (voiceIdx 1, stems down) \u2192 labels below stave bottom line.
+    // Top voice (voiceIdx 0, stems up) -> labels above stave top line.
+    // Bottom voice (voiceIdx 1, stems down) -> labels below stave bottom line.
     var topVoiceMidi = [];
     var bottomVoiceMidi = [];
     var hasSplit = false;
@@ -479,7 +283,7 @@ define([
     }
 
     if (!hasSplit) {
-      // Single voice \u2014 labels above stave, cleared past stem tips.
+      // Single voice — labels above stave, cleared past stem tips.
       // Use treble-filtered list if colNotes was provided (avoids drawing bass note above treble).
       var singleVoiceMidi = topVoiceMidi.length ? topVoiceMidi : midiNotes;
       var topY = (trebleStave.getYForLine ? trebleStave.getYForLine(0) : trebleStave.getY()) - 30;
@@ -508,85 +312,6 @@ define([
     ctx.restore();
   }
 
-  function formatExplicitNoteNames(spellings) {
-    if (!spellings || !spellings.length) return "";
-    var accidentalMap = {
-      1: "♯",
-      "-1": "♭",
-      0: "",
-      2: "𝄪",
-      "-2": "𝄫",
-    };
-    return spellings
-      .map(function (s) {
-        var acc = accidentalMap[s.alter] || "";
-        return (s.step || "").toUpperCase() + acc;
-      })
-      .join(" ");
-  }
-
-
-  function computeRomanExpLabel(midi, analyzer) {
-    if (!analyzer || !midi || !midi.length) return null;
-    try {
-      var chordInfo = analyzer.to_chord(midi, "roman only");
-      if (!chordInfo || !chordInfo.label) return null;
-      var base = chordInfo.label
-        .replace(/\{[^}]*\}/g, "")
-        .trim()
-        .replace(/bb/g, "𝄫")
-        .replace(/b/g, "♭")
-        .replace(/##/g, "𝄪")
-        .replace(/#/g, "♯");
-      if (!base) return null;
-      var figure = analyzer.full_thoroughbass_figure(midi) || "";
-      var abbrevFigure = analyzer.abbrev_thoroughbass_figure(midi) || "";
-      var fullFigureLines = figure
-        ? figure
-            .split("/")
-            .map(function (line) {
-              return line
-                .replace(/bb/g, "𝄫")
-                .replace(/b/g, "♭")
-                .replace(/##/g, "𝄪")
-                .replace(/#/g, "♯")
-                .replace(/n/g, "♮")
-                .trim();
-            })
-            .filter(function (line) {
-              return line.length > 0;
-            })
-        : [];
-      var abbrevFigureLines = abbrevFigure
-        ? abbrevFigure
-            .split("/")
-            .map(function (line) {
-              return line
-                .replace(/bb/g, "𝄫")
-                .replace(/b/g, "♭")
-                .replace(/##/g, "𝄪")
-                .replace(/#/g, "♯")
-                .replace(/n/g, "♮")
-                .trim();
-            })
-            .filter(function (line) {
-              return line.length > 0;
-            })
-        : [];
-      return {
-        base: base,
-        fullFigure: figure,
-        fullFigurePattern: getFigurePattern(figure),
-        fullFigureLines: fullFigureLines,
-        abbrevFigure: abbrevFigure,
-        abbrevFigurePattern: getFigurePattern(abbrevFigure),
-        abbrevFigureLines: abbrevFigureLines,
-      };
-    } catch (err) {
-      return null;
-    }
-  }
-
   function attachInlineRomanAnnotation(
     col,
     midi,
@@ -603,11 +328,11 @@ define([
     var label =
       typeof labelOverride === "string"
         ? labelOverride
-        : computeRomanLabel(midi, analyzer);
+        : VexflowAdapterLogic.computeRomanLabel(midi, analyzer);
     if (!label) {
       return;
     }
-    var x = getColumnCenterX(col);
+    var x = VexflowAdapterLogic.getColumnCenterX(col);
     if (x === null) {
       return;
     }
@@ -656,7 +381,7 @@ define([
     if (!label) {
       return;
     }
-    var x = getColumnCenterX(col);
+    var x = VexflowAdapterLogic.getColumnCenterX(col);
     if (x === null) {
       return;
     }
@@ -676,102 +401,7 @@ define([
     drawInlineRoman(ctx, label, x, targetStave, opts || { yShift: 28 });
   }
 
-
-  function groupTimelineByOnset(timeline) {
-    var onsetMap = Object.create(null);
-    var ordered = [];
-    if (!timeline) return ordered;
-    timeline.forEach(function (ev) {
-      var onset = ev.onset;
-      if (!Object.prototype.hasOwnProperty.call(onsetMap, onset)) {
-        var measureIdx =
-          typeof ev.measureIndex === "number" ? ev.measureIndex : 0;
-        onsetMap[onset] = {
-          onset: onset,
-          events: [],
-          measureIndex: measureIdx,
-        };
-        ordered.push(onsetMap[onset]);
-      }
-      onsetMap[onset].events.push(ev);
-      if (typeof ev.measureIndex === "number") {
-        if (typeof onsetMap[onset].measureIndex === "number") {
-          onsetMap[onset].measureIndex = Math.min(
-            onsetMap[onset].measureIndex,
-            ev.measureIndex
-          );
-        } else {
-          onsetMap[onset].measureIndex = ev.measureIndex;
-        }
-      }
-    });
-    ordered.sort(function (a, b) {
-      if (a.onset !== b.onset) return a.onset - b.onset;
-      return a.measureIndex - b.measureIndex;
-    });
-    return ordered;
-  }
-
-  function buildAnalysisWindows(timeline) {
-    var windows = groupTimelineByOnset(timeline);
-    var activeNotes = [];
-    windows.forEach(function (win) {
-      var onset = win.onset;
-      activeNotes = activeNotes.filter(function (note) {
-        return note.end > onset;
-      });
-      win.events.forEach(function (ev) {
-        activeNotes.push({
-          midi: ev.midi,
-          step: ev.step,
-          alter: ev.alter,
-          end: ev.onset + ev.duration,
-          measureIndex:
-            typeof ev.measureIndex === "number" ? ev.measureIndex : win.measureIndex,
-        });
-      });
-      var midiMap = Object.create(null);
-      activeNotes.forEach(function (n) {
-        midiMap[n.midi] = true;
-      });
-      win.midiStack = Object.keys(midiMap)
-        .map(function (k) {
-          return parseInt(k, 10);
-        })
-        .sort(function (a, b) {
-          return a - b;
-        });
-
-      var sortedActive = activeNotes.slice().sort(function (a, b) {
-        return a.midi - b.midi;
-      });
-      var seenSpelling = {};
-      win.spellingStack = [];
-      sortedActive.forEach(function (n) {
-        if (n.step === undefined) return;
-        var key = n.step + (n.alter || 0);
-        if (!seenSpelling[key]) {
-          seenSpelling[key] = true;
-          win.spellingStack.push({ step: n.step, alter: n.alter || 0 });
-        }
-      });
-      var attackMap = Object.create(null);
-      win.events.forEach(function (ev) {
-        attackMap[ev.midi] = true;
-      });
-      win.attackKey = Object.keys(attackMap)
-        .map(function (k) {
-          return parseInt(k, 10);
-        })
-        .sort(function (a, b) {
-          return a - b;
-        })
-        .join(",");
-    });
-    return windows;
-  }
-
-  // barAlterations: mutable {step+octave → alter} tracking within one measure.
+  // barAlterations: mutable {step+octave -> alter} tracking within one measure.
   // Pass a shared object across all itemToTickable calls in the same measure+staff
   // so that G# earlier in the bar causes G♮ later to render an explicit natural.
   function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation, isAnalysisMatch, harmonizationOptions, barAlterations) {
@@ -784,7 +414,7 @@ define([
     var voiceColors = harmonizationOptions.voiceColors || null;
     var voiceColor = (voiceSlot && voiceColors && voiceColors[voiceSlot]) || '#9aa0a6';
     if (item.kind === "rest") {
-      var dur = durToVF(item.duration) + "r";
+      var dur = VexflowAdapterLogic.durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
       var restKeyByClef = {
         treble: "b/4",
@@ -819,7 +449,7 @@ define([
       var oshift = octaveShift || 0;
       var key = item.pitch.step.toLowerCase() + acc + "/" + (item.pitch.octave + oshift);
       var numDots = item.duration.dots || 0;
-      var note = new Vex.Flow.StaveNote({ clef: clef, keys: [key], duration: durToVF(item.duration), dots: numDots });
+      var note = new Vex.Flow.StaveNote({ clef: clef, keys: [key], duration: VexflowAdapterLogic.durToVF(item.duration), dots: numDots });
       if (numDots > 0) Vex.Flow.Dot.buildAndAttach([note], { all: true });
 
       // Tag with musical position
@@ -861,7 +491,7 @@ define([
         return n.pitch.step.toLowerCase() + acc + "/" + (n.pitch.octave + oshift);
       });
       var numDots = item.duration.dots || 0;
-      var chord = new Vex.Flow.StaveNote({ clef: clef, keys: keys, duration: durToVF(item.duration), dots: numDots });
+      var chord = new Vex.Flow.StaveNote({ clef: clef, keys: keys, duration: VexflowAdapterLogic.durToVF(item.duration), dots: numDots });
       if (numDots > 0) Vex.Flow.Dot.buildAndAttach([chord], { all: true });
 
       // Only show accidentals that contradict the key signature or a prior note in the bar.
@@ -884,30 +514,26 @@ define([
       chord._onset = onset;
       chord._measureIndex = measureIndex;
       
-      // Default: gray until played (per notehead). resolveChordNoteStyles never
-      // returns a black base style — per-key playedness can only ADD black to
-      // specific noteheads via setKeyStyle below, never subtract it from the
-      // others, so the base must stay at the unplayed color regardless of
-      // whether some (but not all) notes in this chord have been played.
+      // Default: gray until played (per notehead)
       if (chord.setStyle) {
-        var resolved = VexflowAdapterLogic.resolveChordNoteStyles({
-          keyCount: keys.length,
-          baseId: idState ? (idState.nextId || 0) : 0,
-          playedNoteIds: idState && idState.playedNoteIds,
-          showNotation: showNotation,
-          isAnalysisMatch: isAnalysisMatch,
-          hideForHarmonization: hideForHarmonization,
-          voiceColor: voiceColor,
-        });
-        chord.setStyle(resolved.baseStyle);
-        for (var pk = 0; pk < resolved.playedKeyIndices.length; pk++) {
-          if (chord.setKeyStyle) {
-            chord.setKeyStyle(resolved.playedKeyIndices[pk], { fillStyle: '#000000', strokeStyle: '#000000' });
-          }
+        var playedAny = idState && idState.playedNoteIds && idState.playedNoteIds.has(idState.nextId || 0);
+        if (playedAny) {
+          chord.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+        } else if (!showNotation || isAnalysisMatch || hideForHarmonization) {
+          chord.setStyle({ fillStyle: 'transparent', strokeStyle: 'transparent' });
+        } else {
+          chord.setStyle({ fillStyle: voiceColor, strokeStyle: voiceColor });
         }
       }
       if (idState) {
-        idState.nextId = (idState.nextId || 0) + keys.length;
+        var idx = idState.nextId || 0;
+        for (var h = 0; h < keys.length; h++) {
+          var played = idState.playedNoteIds && idState.playedNoteIds.has(idx + h);
+          if (played && chord.setKeyStyle) {
+            chord.setKeyStyle(h, { fillStyle: '#000000', strokeStyle: '#000000' });
+          }
+        }
+        idState.nextId = idx + keys.length;
       }
       return chord;
     }
@@ -1090,11 +716,11 @@ define([
           inlineAnalyzer = null;
         }
       }
-      var renderRomans = shouldRenderRoman(analyzeConfig);
-      var renderFigured = !renderRomans && shouldRenderFigured(analyzeConfig);
-      var renderRomanExp = !renderRomans && !renderFigured && shouldRenderRomanExp(analyzeConfig);
-      var renderNoteNames = !renderRomans && !renderFigured && !renderRomanExp && shouldRenderNoteNames(analyzeConfig);
-      var renderScaleDegrees = !renderRomans && !renderFigured && !renderRomanExp && !renderNoteNames && shouldRenderScaleDegrees(analyzeConfig);
+      var renderRomans = VexflowAdapterLogic.shouldRenderRoman(analyzeConfig);
+      var renderFigured = !renderRomans && VexflowAdapterLogic.shouldRenderFigured(analyzeConfig);
+      var renderRomanExp = !renderRomans && !renderFigured && VexflowAdapterLogic.shouldRenderRomanExp(analyzeConfig);
+      var renderNoteNames = !renderRomans && !renderFigured && !renderRomanExp && VexflowAdapterLogic.shouldRenderNoteNames(analyzeConfig);
+      var renderScaleDegrees = !renderRomans && !renderFigured && !renderRomanExp && !renderNoteNames && VexflowAdapterLogic.shouldRenderScaleDegrees(analyzeConfig);
       if (!inlineAnalyzer) {
         renderRomans = false;
         renderFigured = false;
@@ -1164,7 +790,7 @@ define([
       var absoluteWindowOffset = 0;
       if (startMeasure > 0 && ScoreTimeline && ScoreTimeline.buildTimeline) {
         var fullTimeline = ScoreTimeline.buildTimeline(score);
-        var allWindows = buildAnalysisWindows(fullTimeline);
+        var allWindows = VexflowAdapterLogic.buildAnalysisWindows(fullTimeline);
         for (var i = 0; i < allWindows.length; i++) {
           if (allWindows[i].measureIndex < startMeasure) {
             absoluteWindowOffset++;
@@ -1189,7 +815,7 @@ define([
         }
       }
 
-      var analysisWindows = buildAnalysisWindows(timeline);
+      var analysisWindows = VexflowAdapterLogic.buildAnalysisWindows(timeline);
       var analysisWindowIdx = 0;
       var staffDistribution = (opts && opts.staffDistribution) || (meta && meta.staffDistribution) || "grand_staff";
       var voiceColors = (opts && opts.voiceColors) || null;
@@ -1223,7 +849,7 @@ define([
         }
       }
 
-      // SATB voice id map: [staffId][voiceIndex] → voice label
+      // SATB voice id map: [staffId][voiceIndex] -> voice label
       var SATB_MAP = { treble: ["S", "A"], bass: ["T", "B"] };
       var isHarmonization = !!(opts && opts.isHarmonization);
       var lockedVoices = (opts && opts.lockedVoices) || [];
@@ -1398,11 +1024,11 @@ define([
       
       // Calculate widths using weights and dynamic overhead for pickup
       var minPartialMeasureWidth = 80; // Minimum width for partial measures (for notes area only)
-  var isPickup = measureDurations.length > 0 && (measureDurations[0] < fullMeasureTicks * 0.95);
-  // For pickups, dynamicOverhead reserves space for clef/key/time before notes.
-  var dynamicOverhead = isPickup ? computeFirstMeasureOverhead(meta) : 0;
-  // For full first measures, compensate left padding so its notes area matches other full bars.
-  var firstBarCompensation = !isPickup ? computeFirstMeasureOverhead(meta) : 0;
+      var isPickup = measureDurations.length > 0 && (measureDurations[0] < fullMeasureTicks * 0.95);
+      // For pickups, dynamicOverhead reserves space for clef/key/time before notes.
+      var dynamicOverhead = isPickup ? computeFirstMeasureOverhead(meta) : 0;
+      // For full first measures, compensate left padding so its notes area matches other full bars.
+      var firstBarCompensation = !isPickup ? computeFirstMeasureOverhead(meta) : 0;
 
       // Minimum notes width for the pickup based on VexFlow's formatter (pre-calculated)
       var pickupNotesMinWidth = 0;
@@ -1526,7 +1152,7 @@ define([
           return;
         }
 
-        var expX = getColumnCenterX(col);
+        var expX = VexflowAdapterLogic.getColumnCenterX(col);
         if (expX === null) {
           flushRomanExpRun();
           return;
@@ -1534,7 +1160,7 @@ define([
 
         var column = {
           x: expX,
-          figureLines: getRomanExpDisplayFigureLines(
+          figureLines: VexflowAdapterLogic.getRomanExpDisplayFigureLines(
             expLabel,
             pendingRomanExpRun ? pendingRomanExpRun.lastLabel : null
           ).slice(),
@@ -1707,7 +1333,7 @@ define([
 
         if (trebleStave) {
           trebleStave.setBegBarType(isFirstMeasure ? 'single' : 'none');
-          trebleStave.setEndBarType(barType);
+          treave = trebleStave.setEndBarType(barType);
           trebleStave.draw();
           lastTrebleStave = trebleStave;
         }
@@ -1843,7 +1469,7 @@ define([
 
         // Analysis annotations using Notater bridge (maximum reuse)
         try {
-            if ((analyzeConfig && analyzeConfig.enabled && analysisRenderer !== "none" && keySignatureModel) ||
+          if ((analyzeConfig && analyzeConfig.enabled && analysisRenderer !== "none" && keySignatureModel) ||
               (opts && typeof opts.onWindowPosition === "function")) {
             // Collect all tickables in this measure after formatting to get absolute X positions
             var allTickables = [];
@@ -1853,9 +1479,9 @@ define([
                 var tks = Array.isArray(voice.tickables)
                   ? voice.tickables
                   : (typeof voice.getTickables === 'function' ? voice.getTickables() : []);
-	                tks.forEach(function(t){
-	                  if (!t || typeof t.getAbsoluteX !== 'function') return;
-	                  if (t._isHarmonizationOverlay) return;
+                tks.forEach(function(t){
+                  if (!t || typeof t.getAbsoluteX !== 'function') return;
+                  if (t._isHarmonizationOverlay) return;
                   // Rests don't create identification/analysis columns.
                   if (VexflowAdapterLogic && VexflowAdapterLogic.isRestTickable(t)) return;
                   t._sdStaffId = staffId;
@@ -1923,7 +1549,7 @@ define([
               }
 
               var activeStaveForAnnotations = bassStave || trebleStave;
-              var columnCenterX = getColumnCenterX(col);
+              var columnCenterX = VexflowAdapterLogic.getColumnCenterX(col);
               if (opts && typeof opts.onStaffLayout === "function" && columnCenterX !== null) {
                 staffLayoutColumns.push({
                   systemIndex: 0,
@@ -1953,7 +1579,7 @@ define([
                 !drewDeferredKeyLabel &&
                 groups.length
               ) {
-                var firstColX = getColumnCenterX(groups[0]);
+                var firstColX = VexflowAdapterLogic.getColumnCenterX(groups[0]);
                 if (firstColX !== null) {
                   ctx.save();
                   ctx.font = "20px MainSerifs";
@@ -2002,7 +1628,7 @@ define([
                   ctx.restore();
                 }
               } else if (renderRomans && activeStaveForAnnotations) {
-                var storedRoman = getStoredRomanLabel(
+                var storedRoman = VexflowAdapterLogic.getStoredRomanLabel(
                   score && score.umto && score.umto.analysis,
                   noteOnset
                 );
@@ -2017,7 +1643,7 @@ define([
                   storedRoman || undefined
                 );
               } else if (renderFigured && activeStaveForAnnotations) {
-                var figureLabel = computeFiguredLabel(
+                var figureLabel = VexflowAdapterLogic.computeFiguredLabel(
                   midi,
                   inlineAnalyzer,
                   !!(analyzeConfig &&
@@ -2039,14 +1665,14 @@ define([
                   ctx.restore();
                 }
               } else if (renderRomanExp && activeStaveForAnnotations) {
-                var expLabel = computeRomanExpLabel(midi, inlineAnalyzer);
+                var expLabel = VexflowAdapterLogic.computeRomanExpLabel(midi, inlineAnalyzer);
                 queueRomanExpColumn(col, expLabel, activeStaveForAnnotations);
               } else if (renderNoteNames && activeStaveForAnnotations) {
                 var spelling = null;
                 if (matchedWindow && matchedWindow.spellingStack) {
                   spelling = matchedWindow.spellingStack;
                 }
-                var explicitLabel = spelling ? formatExplicitNoteNames(spelling) : null;
+                var explicitLabel = spelling ? VexflowAdapterLogic.formatExplicitNoteNames(spelling) : null;
                 attachNoteNameAnnotation(
                   col,
                   midi,
@@ -2060,7 +1686,7 @@ define([
               } else if (renderScaleDegrees) {
                 var degStave = trebleStave || activeStaveForAnnotations;
                 if (degStave) {
-                  // Build MIDI→label map from stored scale_degrees in UMTO analysis slices.
+                  // Build MIDI->label map from stored scale_degrees in UMTO analysis slices.
                   var sdMap = null;
                   if (score && score.umto && score.umto.analysis && score.umto.analysis.length) {
                     var absQL = noteOnset / 1024;
@@ -2088,8 +1714,6 @@ define([
                   }
                 }
               }
-
-
             });
           }
         } catch (e) {
