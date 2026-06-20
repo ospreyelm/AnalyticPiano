@@ -49,6 +49,18 @@ def test_legacy_roman_normalizes_sparse_dominant_dyad_as_v_not_v7():
     assert result.normalized_label == "V"
 
 
+def test_legacy_roman_identifies_incomplete_dominant_seventh_third_inversion():
+    """F-G-B in C major is V7 in third inversion (V4/2) with the 5th (D) omitted —
+    a common keyboard-harmony voicing. The table previously only had the complete
+    four-note shape ("5/27z"), so this incomplete three-note shape ("5/7z") fell
+    through to an empty lookup."""
+    result = legacy_roman_from_pitches(_pitches(["F3", "G3", "B3"]), "C", "major")
+
+    assert result.chord_code == "5/7z"
+    assert result.label == "V{r2}"
+    assert result.normalized_label == "V42"
+
+
 def test_normalize_legacy_roman_label_converts_figured_bass_glyph_codes():
     assert normalize_legacy_roman_label("ii°{z}") == "ii°6"
     assert normalize_legacy_roman_label("ii⌀{z5}") == "iiø65"

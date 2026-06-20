@@ -1209,9 +1209,12 @@ define([
           }
 
           if (that.feedback) {
+            var meterMatch = /Bar (\d+) (?:has|spans) (\S+) beats, expected ([^.]+)/.exec(errMsg || "");
             that.feedback.emit(feedbackId, {
               inlineEl: "#play-save-dialog-feedback",
-              params: { bar: "?", beats: "?", expected: "?" },
+              params: meterMatch
+                ? { bar: meterMatch[1], beats: meterMatch[2], expected: meterMatch[3] }
+                : { bar: "?", beats: "?", expected: "?" },
             });
           } else {
             that._setSavePanelFeedback(errMsg || "Could not save exercise.");
@@ -1835,9 +1838,12 @@ define([
           }
           
           if (that.feedback) {
+            var meterMatch = /Bar (\d+) (?:has|spans) (\S+) beats, expected ([^.]+)/.exec(errMsg || "");
             that.feedback.emit(feedbackId, {
               inlineEl: "#play-save-dialog-feedback",
-              params: { bar: "?", beats: "?", expected: "?" }
+              params: meterMatch
+                ? { bar: meterMatch[1], beats: meterMatch[2], expected: meterMatch[3] }
+                : { bar: "?", beats: "?", expected: "?" }
             });
           } else {
             that._setSavePanelFeedback(errMsg || "Could not save exercise.");
