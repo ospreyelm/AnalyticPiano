@@ -51,7 +51,33 @@ def test_chromatic_prefix_flat_third():
 
 def test_unknown_stack_passthrough():
     # Unrecognized stacks pass through unabbreviated — no data loss
-    assert abbreviate_figured_bass("9/8/6/4") == "9/8/6/4"
+    assert abbreviate_figured_bass("9/8/6/5") == "9/8/6/5"
+
+def test_new_ninths_and_suspensions_abbreviations():
+    # Third-inversion seventh (with compound second / ninth)
+    assert abbreviate_figured_bass("9/4+") == "4+/2"
+    assert abbreviate_figured_bass("9/6/4") == "4/2"
+    assert abbreviate_figured_bass("9/8/4") == "4/2"
+    assert abbreviate_figured_bass("9/8/6/4") == "4/2"
+
+    # Ninth chords with doubled bass / complete fifths
+    assert abbreviate_figured_bass("9/8/5/3") == "9"
+    assert abbreviate_figured_bass("9/7/5/3") == "9/7"
+    assert abbreviate_figured_bass("9/8/7/3") == "9/7"
+    assert abbreviate_figured_bass("9/8/7/5/3") == "9/7"
+
+    # Ninth-sixth chords
+    assert abbreviate_figured_bass("9/6/3") == "9/6"
+    assert abbreviate_figured_bass("9/8/6/3") == "9/6"
+
+    # 7/6 suspensions
+    assert abbreviate_figured_bass("7/6/3") == "7/6"
+    assert abbreviate_figured_bass("8/7/6/3") == "7/6"
+
+    # Bass suspensions with octave doubling
+    assert abbreviate_figured_bass("8/7/5/2") == "7/5/2"
+    assert abbreviate_figured_bass("8/7/4/2") == "7/4/2"
+    assert abbreviate_figured_bass("8/5/2") == "5/2"
 
 def test_empty_string_passthrough():
     assert abbreviate_figured_bass("") == ""
