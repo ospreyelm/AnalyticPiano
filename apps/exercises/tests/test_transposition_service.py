@@ -274,10 +274,13 @@ class TranspositionServiceTest(TestCase):
         self.assertEqual(len(created), 1)
         transposed_ex = created[0]
 
-        # Check that analysis is preserved
+        # Check that analysis is preserved and recalculated for the target key
         analysis = transposed_ex.data.get("score", {}).get("umto", {}).get("analysis", [])
         self.assertEqual(len(analysis), 1)
         self.assertEqual(analysis[0]["content"]["roman_numeral"], "I")
+        self.assertEqual(analysis[0]["content"]["local_key"], "jG_")
+        self.assertEqual(analysis[0]["content"]["set_class_set"], "{G,B,D}")
+        self.assertTrue(analysis[0]["is_target"])
 
     def test_overwrite_flag_updates_existing_exercise(self):
         """Test that overwrite=True updates an existing exercise."""
