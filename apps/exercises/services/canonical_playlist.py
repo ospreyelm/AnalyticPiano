@@ -79,6 +79,12 @@ def resolve_canonical_playlist(
 
 
 def append_exercise_to_canonical_playlist(playlist: Playlist, exercise) -> None:
+    """Append an exercise to a canonical teacher-play playlist.
+
+    Appending to the end of a playlist does not invalidate existing student
+    performance records (which are tied to specific exercises), so we do not
+    block on has_been_performed here.
+    """
     with transaction.atomic():
         locked_playlist = Playlist.objects.select_for_update().get(pk=playlist.pk)
         if (
@@ -87,8 +93,6 @@ def append_exercise_to_canonical_playlist(playlist: Playlist, exercise) -> None:
             or not locked_playlist.canonical_mode
         ):
             raise ValueError("append_exercise_to_canonical_playlist requires a canonical teacher playlist.")
-        if locked_playlist.has_been_performed:
-            raise ValueError("Canonical playlist is locked because it has been performed.")
         next_order = (
             ExercisePlaylistOrdered.objects.filter(playlist=locked_playlist).aggregate(
                 max_order=Max("order")
