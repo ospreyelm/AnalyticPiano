@@ -214,6 +214,24 @@ def generate_transposed_copies(
 
         # Build + save the transposed exercise
         try:
+            # Recalculate analysis for the target key to adjust local key, note spellings, etc.
+            try:
+                from apps.exercises.utils.umto_import_router import build_chordal_analysis_slices
+                analysis = build_chordal_analysis_slices(transposed_chords, harmony_key=key_target_hl)
+
+                # Preserve metadata fields (like is_target, unit_tags, visual) from source analysis
+                source_map = {float(s["offset"]): s for s in source_analysis if "offset" in s}
+                for slice_dict in analysis:
+                    offset = float(slice_dict["offset"])
+                    if offset in source_map:
+                        src_slice = source_map[offset]
+                        for metadata_key in ["is_target", "unit_tags", "visual"]:
+                            if metadata_key in src_slice:
+                                slice_dict[metadata_key] = src_slice[metadata_key]
+            except Exception as exc:
+                logger.error(f"Failed to recalculate analysis for transposed exercise: {exc}")
+                analysis = source_analysis
+
             ex = save_chordal_umto_exercise(
                 description=description,
                 author=author,
@@ -229,8 +247,7 @@ def generate_transposed_copies(
                 overwrite=overwrite,
                 auto_playlist=False,
                 barline_offsets=barline_offsets,
-                # Copy analysis slices as-is — they use key-relative labels.
-                analysis=source_analysis,
+                analysis=analysis,
             )
             # Set is_official after creation if requested
             if is_official:
