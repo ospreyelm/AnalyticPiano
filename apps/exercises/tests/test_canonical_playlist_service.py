@@ -151,7 +151,12 @@ class CanonicalPlaylistServiceTests(TestCase):
         ):
             self.resolve(mode="counterpoint")
 
-    def test_performed_playlist_rejects_append(self):
+    def test_performed_playlist_allows_append(self):
+        """A playlist that has been performed should still accept new exercises.
+
+        Appending to the end does not affect existing student submission records,
+        so the has_been_performed guard was removed from append_exercise_to_canonical_playlist.
+        """
         playlist = self.resolve()
         PerformanceData.objects.create(
             user=self.performer,
@@ -159,11 +164,11 @@ class CanonicalPlaylistServiceTests(TestCase):
             data=[],
         )
 
-        with self.assertRaisesMessage(
-            ValueError,
-            "Canonical playlist is locked because it has been performed.",
-        ):
-            append_exercise_to_canonical_playlist(playlist, self.exercise)
+        # Should not raise
+        append_exercise_to_canonical_playlist(playlist, self.exercise)
+        self.assertEqual(
+            ExercisePlaylistOrdered.objects.filter(playlist=playlist).count(), 1
+        )
 
     def test_noncanonical_playlist_rejects_append(self):
         playlist = Playlist.objects.create(
