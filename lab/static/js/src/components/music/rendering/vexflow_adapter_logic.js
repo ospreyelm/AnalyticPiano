@@ -121,6 +121,34 @@
 
   /* ── Extractions from vexflow_adapter.js ──────────────────────────────── */
 
+  // Decides chord notehead coloring for a multi-note chord tickable. A chord's
+  // notehead ids run [baseId, baseId + keyCount). Returns the base (unplayed)
+  // style for the whole chord plus the indices of individually-played
+  // noteheads, which the caller applies via setKeyStyle.
+  //
+  // The base style must never be the played-black color: per-key playedness
+  // can only ADD black to specific noteheads via setKeyStyle, never subtract
+  // it from the others. If the base style were black, an unplayed notehead in
+  // a partially-played chord would have no call to bring it back to gray —
+  // it would render black even though it was never struck.
+  function resolveChordNoteStyles(opts) {
+    opts = opts || {};
+    var keyCount = opts.keyCount || 0;
+    var baseId = opts.baseId || 0;
+    var playedNoteIds = opts.playedNoteIds;
+    var hideBase = !opts.showNotation || opts.isAnalysisMatch || opts.hideForHarmonization;
+    var baseStyle = hideBase
+      ? { fillStyle: "transparent", strokeStyle: "transparent" }
+      : { fillStyle: opts.voiceColor, strokeStyle: opts.voiceColor };
+    var playedKeyIndices = [];
+    for (var h = 0; h < keyCount; h++) {
+      if (playedNoteIds && playedNoteIds.has(baseId + h)) {
+        playedKeyIndices.push(h);
+      }
+    }
+    return { baseStyle: baseStyle, playedKeyIndices: playedKeyIndices };
+  }
+
   function durToVF(d) {
     var type = d.type;
     var map = { 'whole': 'w', 'half': 'h', 'quarter': 'q', 'eighth': '8', '16th': '16', '32nd': '32', 'e': '8', 's': '16' };
@@ -482,6 +510,7 @@
     getBassLabelAtOffset: getBassLabelAtOffset,
     normalizeKeyForVexFlow: normalizeKeyForVexFlow,
     getKeySignatureAlterations: getKeySignatureAlterations,
+    resolveChordNoteStyles: resolveChordNoteStyles,
 
     durToVF: durToVF,
     convertRomanSymbols: convertRomanSymbols,

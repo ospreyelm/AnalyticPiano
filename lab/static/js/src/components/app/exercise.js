@@ -246,7 +246,7 @@ define([
     // no keyboard/MIDI note entry. Hide the QWERTY/Note-Name toggle for these.
     var _analysisType = _def && _def.getAnalysisType ? _def.getAnalysisType() : null;
     var isKeyboardlessIdentification = isAnalysisExercise && (
-      _analysisType === "roman" || _analysisType === "figured_bass"
+      _analysisType === "roman" || _analysisType === "figured_bass" || _analysisType === "figured_bass_unabbreviated"
     );
     // Chorale play exercises are exclusively MIDI — no click-on-staff input.
     var isChoralePlay = definition.mode === "playback" ||
