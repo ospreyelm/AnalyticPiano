@@ -49,6 +49,15 @@ def test_chromatic_prefix_on_third():
 def test_chromatic_prefix_flat_third():
     assert abbreviate_figured_bass("8/5/b3") == "b"
 
+def test_chromatic_prefix_sharp_fifth():
+    assert abbreviate_figured_bass("8/#5/3") == "#5"
+
+def test_chromatic_prefix_flat_fifth():
+    assert abbreviate_figured_bass("8/b5/3") == "b5"
+
+def test_tritone_prefix_on_fifth():
+    assert abbreviate_figured_bass("8/5+/3") == "5+"
+
 def test_unknown_stack_passthrough():
     # Unrecognized stacks pass through unabbreviated — no data loss
     assert abbreviate_figured_bass("9/8/6/5") == "9/8/6/5"

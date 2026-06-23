@@ -84,27 +84,25 @@ def _split_interval(token: str) -> tuple[str, str]:
 
 
 def _normalize_tritone(token: str) -> str:
-    """Convert tritone marker '+' suffix to standard quality notation.
+    """Convert tritone marker '+' suffix/prefix.
 
-    '5+' → '5°' (diminished fifth), '4+' → '4+' (augmented fourth, keep as-is).
-    Prefix-style '+5' is also normalised.
+    For fourths, '4+' / '+4' -> '4+'. For fifths, '5+' / '+5' -> '5+' (renders
+    as slashed 5).
     """
     token = token.strip()
-    # Handle prefix-style: '+5'
+    # Handle prefix-style: '+5', '+4'
     if token.startswith("+") and token[1:].isdigit():
         n = int(token[1:])
-        return f"{n}°" if n >= 5 else f"{n}+"
-    # Handle suffix-style: '5+'
+        return f"{n}+"
+    # Handle suffix-style: '5+', '4+'
     if token.endswith("+") and token[:-1].isdigit():
         n = int(token[:-1])
-        return f"{n}°" if n >= 5 else f"{n}+"
+        return f"{n}+"
     # Handle compound: prefix '#'/'b' + digit + '+' suffix e.g. '#5+'
     m = re.fullmatch(r"([#b]?)(\d+)\+", token)
     if m:
         prefix, num = m.groups()
-        n = int(num)
-        suffix = "°" if n >= 5 else "+"
-        return f"{prefix}{n}{suffix}"
+        return f"{prefix}{num}+"
     return token
 
 
@@ -130,14 +128,35 @@ def abbreviate_figured_bass(raw: str) -> str:
     key = tuple(nums)
 
     # Special case: root-position triad with a chromatic 3rd or 5th
-    # "8/5/#3" → "#", "8/#5/3" → "#5" (just the accidental prefix, not the number)
+    # "8/5/#3" → "#", "8/#5/3" → "#5", "8/5+/3" -> "5+"
     if key in (("8", "5", "3"), ("5", "3")):
         # Find any non-empty prefix on non-octave intervals
         altered = [(prefixes[i], nums[i]) for i in range(len(nums))
                    if prefixes[i] and nums[i] != "8"]
         if altered:
-            # Return just the accidental prefix(es), not the interval number
-            return "".join(p for p, n in altered if p)
+            # If only the third is altered, return just the prefix (accidental)
+            # e.g., "8/5/#3" -> "#", "8/5/b3" -> "b"
+            if len(altered) == 1 and altered[0][1] == "3":
+                return altered[0][0]
+
+            # Otherwise, keep the interval number for any non-3rd alterations,
+            # e.g., "8/#5/3" -> "#5", "8/5+/3" -> "5+"
+            result_tokens = []
+            for p, n in altered:
+                if n == "3":
+                    result_tokens.append(p)
+                else:
+                    # Keep the interval number, format '+' as suffix for frontend
+                    if p == "+":
+                        result_tokens.append(n + p)
+                    else:
+                        result_tokens.append(p + n)
+            # Sort descending by numeric value
+            def _get_num_val(tok):
+                m = re.search(r'\d+', tok)
+                return int(m.group()) if m else 3
+            result_tokens.sort(key=_get_num_val, reverse=True)
+            return "/".join(result_tokens)
         return "5/3"
 
     abbreviated = _ABBREV_MAP.get(key)
