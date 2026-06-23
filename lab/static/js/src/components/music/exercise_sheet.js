@@ -1090,7 +1090,7 @@ define([
             var lines = label.split('/').map(function(line) {
               if (line === '\u00b07') return '/';
               if (line === '6+') return '&';
-              if (line === '5+') return '%';
+              if (line === '5+' || line === '5\u00b0' || line === '5°') return '%';
               if (line === '4+') return '$';
               if (line === '2+') return '"';
               if (line.slice(0, 2) === '##') return ('x ' + line.slice(2)).trim();

@@ -620,7 +620,7 @@ define([
         var lines = text.split("/").map(function (line) {
           if (line === "\xb07") return "/"; /* diminished seventh */
           if (line === "6+") return "&";
-          if (line === "5+") return "%";
+          if (line === "5+" || line === "5\xb0" || line === "5°") return "%";
           if (line === "4+") return "$";
           if (line === "2+") return '"';
           if (line.slice(0, 2) === "##") {
