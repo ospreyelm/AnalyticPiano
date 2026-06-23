@@ -245,6 +245,7 @@ define([
       return analysisType === "note_name" ||
         analysisType === "roman" ||
         analysisType === "figured_bass" ||
+        analysisType === "figured_bass_unabbreviated" ||
         analysisType === "interval_generic" ||
         analysisType === "interval_specific";
     },
@@ -958,7 +959,7 @@ define([
             continue;
           }
           if (priorContext && !(KeyContext.sameKeyContext && KeyContext.sameKeyContext(currentContext.harmonyLabKey, priorContext.harmonyLabKey))) {
-            drawKeyChangeLabel(ctx, currentContext.displayName, keySlot.x, keySlot.y);
+            drawKeyChangeLabel(ctx, currentContext.prefix, keySlot.x, keySlot.y);
           }
           priorContext = currentContext;
         }
@@ -1084,7 +1085,7 @@ define([
           ctx.fillText(label, lx, labelY);
         } else {
           // Answered slot — render properly based on analysis type
-          if (analysisType === 'figured_bass') {
+          if (analysisType === 'figured_bass' || analysisType === 'figured_bass_unabbreviated') {
             // Convert to Sebastian font display format (mirrors stave_notater.drawThoroughbass)
             var lines = label.split('/').map(function(line) {
               if (line === '\u00b07') return '/';
@@ -1864,7 +1865,7 @@ define([
           var display = definition.getDisplay() || {};
           var analyzeConfig = _.cloneDeep(this.getAnalyzeConfig() || {});
           var _analysisType = definition.getAnalysisType ? definition.getAnalysisType() : null;
-          if (_analysisType === "figured_bass") {
+          if (_analysisType === "figured_bass" || _analysisType === "figured_bass_unabbreviated") {
             analyzeConfig.roman_numerals = false;
             analyzeConfig.mode = analyzeConfig.mode || {};
             analyzeConfig.mode.roman_numerals = false;
@@ -1899,7 +1900,7 @@ define([
           if (isHarmonization) {
             analyzeConfig.enabled = true;
             analyzeConfig.mode = analyzeConfig.mode || {};
-            if (definition.getAnalysisType && definition.getAnalysisType() === "figured_bass") {
+            if (definition.getAnalysisType && (definition.getAnalysisType() === "figured_bass" || definition.getAnalysisType() === "figured_bass_unabbreviated")) {
               analyzeConfig.mode.thoroughbass = true;
             } else {
               analyzeConfig.mode.roman_numerals = true;

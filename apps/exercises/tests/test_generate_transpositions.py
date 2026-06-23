@@ -148,8 +148,7 @@ class GenerateTranspositionsCommandTest(TestCase):
             self.assertIsNone(spelling, "Transposed copy must not carry non-None spelling")
 
     def test_analysis_slices_carried_unchanged(self):
-        """Analysis slices should be copied verbatim (key-relative labels)."""
-        # Source was created without explicit analysis; check it's the same structure.
+        """Analysis slices should be recalculated correctly for the target key."""
         call_command(
             "generate_transpositions",
             "--exercise", self.source.id,
@@ -160,8 +159,10 @@ class GenerateTranspositionsCommandTest(TestCase):
         copy = self._get_copy("G")
         src_analysis = self.source.data["score"]["umto"]["analysis"]
         dst_analysis = copy.data["score"]["umto"]["analysis"]
-        # Structure must match (content is key-relative, so identical)
-        self.assertEqual(src_analysis, dst_analysis)
+        self.assertEqual(len(src_analysis), len(dst_analysis))
+        for src_sl, dst_sl in zip(src_analysis, dst_analysis):
+            self.assertEqual(dst_sl["offset"], src_sl["offset"])
+            self.assertEqual(dst_sl["content"]["local_key"], "jG_")
 
     def test_transposed_from_tag_set(self):
         """Each copy must carry a 'transposed_from:<source_id>' skill tag."""

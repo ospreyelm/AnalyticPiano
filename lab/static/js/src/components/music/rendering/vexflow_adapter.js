@@ -1225,23 +1225,24 @@ define([
           recordStave(bassStave, "bass", "A", 3);
         }
 
-        // Draw explicit key label beneath the bass clef (e.g., "A minor", "C major")
+        // Draw explicit key label beneath the bass clef (e.g., "a:", "C:")
         function formatKeyForDisplay(k) {
           if (!k || typeof k !== "string" || k.length < 2) return k;
           var mode = k.charAt(0);
           var tonic = k.slice(1).replace(/_/g, "");
-          return tonic + " " + (mode === "i" ? "minor" : "major");
+          var isMinor = mode === "i";
+          var tonicLetter = tonic.charAt(0);
+          var accidental = tonic.slice(1);
+          return (isMinor ? tonicLetter.toLowerCase() : tonicLetter.toUpperCase()) + accidental + ":";
         }
 
         var displayKey = startingLocalKeyContext
-          ? startingLocalKeyContext.displayName
+          ? startingLocalKeyContext.prefix
           : ((opts &&
               opts.keySignature &&
-              typeof opts.keySignature.getKeyName === "function" &&
-              opts.keySignature.getKeyName()) ||
-            ((opts && opts.keySignature && typeof opts.keySignature.getKey === "function")
-              ? formatKeyForDisplay(opts.keySignature.getKey())
-              : formatKeyForDisplay(meta && meta.key)));
+              typeof opts.keySignature.getKey === "function")
+            ? formatKeyForDisplay(opts.keySignature.getKey())
+            : formatKeyForDisplay(meta && meta.key));
 
         var deferKeyLabelToIdentificationSlot = !!(opts && typeof opts.onWindowPosition === "function");
         if (isFirstMeasure && displayKey && activeStaveForLabel && !(opts && opts.hideKeyLabel) && !deferKeyLabelToIdentificationSlot) {
