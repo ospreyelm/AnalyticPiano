@@ -364,8 +364,8 @@ def generate_exercise_context(
     _unit_n_for_policy = unit_n  # may be None if no unit tag found
 
     if _unit_n_for_policy and exercise_context.get("mode") != "harmonization":
-        # Determine family based on mode tag
-        _family = "roman"
+        # Determine family based on mode tag or stored analysisType
+        _family = None
         _mode_tag = None
         for _tag in playlist_skill_tags + fallback_skill_tags:
             if _tag == "mode:figures":
@@ -380,6 +380,13 @@ def generate_exercise_context(
                 _family = "roman"
                 _mode_tag = _tag
                 break
+
+        if not _family:
+            # Fall back to exercise stored analysisType, then default to roman
+            if isinstance(exercise.data, dict) and exercise.data.get("isUMTO") is True:
+                _family = exercise.data.get("analysisType")
+            if not _family or _family not in ("figured_bass", "figured_bass_unabbreviated", "roman"):
+                _family = "roman"
 
         _unit_analysis = TaxonomyReader.get_unit_analysis(_unit_n_for_policy, _family)
         if _unit_analysis:
