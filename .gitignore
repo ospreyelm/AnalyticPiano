@@ -27,3 +27,4 @@ venv/
 .venv/
 .worktrees/
 .superpowers/
+.gstack/
