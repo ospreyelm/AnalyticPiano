@@ -84,26 +84,25 @@ def _split_interval(token: str) -> tuple[str, str]:
 
 
 def _normalize_tritone(token: str) -> str:
-    """Convert tritone marker '+' suffix/prefix.
+    """Convert tritone marker '+' or '°' to standard quality notation.
 
-    For fourths, '4+' / '+4' -> '4+'. For fifths, '5+' / '+5' -> '5+' (renders
-    as slashed 5).
+    Supports any combination/order of prefix accidentals (#, b), digits,
+    and quality markers (+, °).
     """
     token = token.strip()
-    # Handle prefix-style: '+5', '+4'
-    if token.startswith("+") and token[1:].isdigit():
-        n = int(token[1:])
-        return f"{n}+"
-    # Handle suffix-style: '5+', '4+'
-    if token.endswith("+") and token[:-1].isdigit():
-        n = int(token[:-1])
-        return f"{n}+"
-    # Handle compound: prefix '#'/'b' + digit + '+' suffix e.g. '#5+'
-    m = re.fullmatch(r"([#b]?)(\d+)\+", token)
-    if m:
-        prefix, num = m.groups()
-        return f"{prefix}{num}+"
-    return token
+    prefix = "".join(c for c in token if c in ("#", "b"))
+    marker = "".join(c for c in token if c in ("+", "°"))
+    num_str = "".join(c for c in token if c.isdigit())
+
+    if not num_str:
+        return token
+
+    n = int(num_str)
+    if marker:
+        suffix = "°" if n >= 5 else "+"
+        return f"{prefix}{n}{suffix}"
+    else:
+        return f"{prefix}{num_str}"
 
 
 def abbreviate_figured_bass(raw: str) -> str:
@@ -128,7 +127,7 @@ def abbreviate_figured_bass(raw: str) -> str:
     key = tuple(nums)
 
     # Special case: root-position triad with a chromatic 3rd or 5th
-    # "8/5/#3" → "#", "8/#5/3" → "#5", "8/5+/3" -> "5+"
+    # "8/5/#3" → "#", "8/#5/3" → "#5", "8/5+/3" -> "5°"
     if key in (("8", "5", "3"), ("5", "3")):
         # Find any non-empty prefix on non-octave intervals
         altered = [(prefixes[i], nums[i]) for i in range(len(nums))
@@ -140,17 +139,13 @@ def abbreviate_figured_bass(raw: str) -> str:
                 return altered[0][0]
 
             # Otherwise, keep the interval number for any non-3rd alterations,
-            # e.g., "8/#5/3" -> "#5", "8/5+/3" -> "5+"
+            # e.g., "8/#5/3" -> "#5", "8/5+/3" -> "5°"
             result_tokens = []
             for p, n in altered:
                 if n == "3":
                     result_tokens.append(p)
                 else:
-                    # Keep the interval number, format '+' as suffix for frontend
-                    if p == "+":
-                        result_tokens.append(n + p)
-                    else:
-                        result_tokens.append(p + n)
+                    result_tokens.append(_normalize_tritone(p + n))
             # Sort descending by numeric value
             def _get_num_val(tok):
                 m = re.search(r'\d+', tok)
@@ -264,8 +259,9 @@ def compute_figured_bass(chord_element, key, next_pitch_map: dict | None = None)
         pitch_in_diatonic = (pitch.step, pitch.alter) in diatonic_step_alter
 
         if is_tritone:
-            # Tritone always gets + suffix regardless of diatonicism (spec §2)
-            intervals[num_str] = num_str + "+"
+            # Tritone gets quality marker: ° for diminished fifths (>= 5), + for augmented fourths (< 5)
+            suffix = "°" if generic >= 5 else "+"
+            intervals[num_str] = num_str + suffix
         elif pitch_in_diatonic:
             intervals[num_str] = num_str
         else:

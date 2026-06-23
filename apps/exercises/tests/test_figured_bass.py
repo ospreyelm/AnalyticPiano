@@ -56,7 +56,8 @@ def test_chromatic_prefix_flat_fifth():
     assert abbreviate_figured_bass("8/b5/3") == "b5"
 
 def test_tritone_prefix_on_fifth():
-    assert abbreviate_figured_bass("8/5+/3") == "5+"
+    assert abbreviate_figured_bass("8/5+/3") == "5°"
+    assert abbreviate_figured_bass("8/5°/3") == "5°"
 
 def test_unknown_stack_passthrough():
     # Unrecognized stacks pass through unabbreviated — no data loss
@@ -156,6 +157,15 @@ def test_tritone_marker():
     c, k = _make_chord("F3 B3 D4", "C")
     raw, abbrev = compute_figured_bass(c, k)
     assert "4+" in raw or "#4" in raw  # tritone above F is augmented 4th
+
+
+def test_diminished_fifth_tritone_marker():
+    # B3 F4 in C major — F above B is a tritone (dim 5th), B and F are diatonic
+    c, k = _make_chord("B3 D4 F4", "C")
+    raw, abbrev = compute_figured_bass(c, k)
+    assert "5°" in raw
+    assert "5+" not in raw
+    assert abbrev == "5°"
 
 
 # ---------------------------------------------------------------------------
