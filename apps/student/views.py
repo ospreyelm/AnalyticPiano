@@ -3,7 +3,6 @@ import json
 import uuid
 from collections import defaultdict
 from functools import wraps
-from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.core.exceptions import ImproperlyConfigured
@@ -17,7 +16,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.accounts.models import ROLE_TEACHER
 from apps.accounts.navigation import home_url_for_user
 from apps.student.unit_progress import (
-    _batch_skill_levels,
     get_unit_progress_data,
     get_next_unit_playlist,
 )
@@ -32,9 +30,12 @@ from apps.exercises.models import (
     PerformanceData,
     Playlist,
     PlaylistCourseOrdered,
-    StudentSkillMastery,
 )
-from lab.views import RequirejsContext, generate_exercise_context, get_adaptive_exercise_for_view
+from apps.exercises.services.exercise_context import (
+    generate_exercise_context,
+    get_adaptive_exercise_for_view,
+)
+from lab.views import RequirejsContext
 from apps.student.player_progression import (
     PlayerProgressState,
     get_completed_exercise_ids,
@@ -43,18 +44,18 @@ from apps.student.player_progression import (
     is_completed_identification_attempt,
     resolve_requested_step,
 )
-
-TAXONOMY_PATH = Path(__file__).resolve().parent.parent.parent / "music_theory_taxonomy_with_branches.json"
-
-
-def unit_sort_key(n_str: str) -> tuple[str, int]:
-    """Sort unit strings alphanumerically, e.g. "1" -> ("", 1), "B2" -> ("B", 2)"""
-    import re
-    match = re.match(r'^([a-zA-Z]*)(\d+)$', n_str)
-    if match:
-        prefix, num = match.groups()
-        return (prefix, int(num))
-    return (n_str, 0)
+from apps.student.home_context import (
+    _batch_home_unit_summaries,
+    _empty_unit_progress_summary,
+    _summarize_unit_from_skill_levels,
+    _summarize_unit_progress,
+)
+from apps.student.unit_metadata import (
+    _load_unit_meta,
+    _taxonomy_units_from_branches,
+    _unit_date_labels,
+    unit_sort_key,
+)
 
 
 def _disable_computer_keyboard_input(exercise_context: dict, playlist: Playlist, exercise: Exercise) -> bool:
@@ -71,21 +72,6 @@ def _disable_computer_keyboard_input(exercise_context: dict, playlist: Playlist,
     )
 
     return "unit:1" in tags and "Note_Names" in tags and is_play_from_name_lane
-
-
-def _load_unit_meta(unit_num: int) -> dict:
-    """Return title/feat for a unit from taxonomy JSON."""
-    try:
-        with open(TAXONOMY_PATH) as f:
-            taxonomy = json.load(f)
-        for branch in taxonomy:
-            for tier in branch.get("tiers", []):
-                for unit in tier.get("units", []):
-                    if str(unit["n"]) == str(unit_num):
-                        return unit
-    except FileNotFoundError:
-        pass
-    return {}
 
 
 def _user_completed_exercise_ids(user, playlist: Playlist) -> set[str]:
@@ -127,86 +113,6 @@ def _get_unit1_resume_target(user) -> tuple[str, str]:
     return reverse("student:unit-progress", kwargs={"unit_n": "1"}), "Unit 1"
 
 
-def _summarize_unit_progress(data: dict) -> dict:
-    segments = data.get("bar_segments", [])
-    mastered_count = sum(
-        1 for segment in segments
-        if segment["level"] == StudentSkillMastery.LEVEL_MASTERED
-    )
-    total = len(segments)
-    percent = int(mastered_count / total * 100) if total else 0
-    return {
-        "percent": percent,
-        "mastered_count": mastered_count,
-        "resume_tag": None,
-    }
-
-
-def _empty_unit_progress_summary() -> dict:
-    return {
-        "percent": 0,
-        "mastered_count": 0,
-        "resume_tag": None,
-    }
-
-
-def _taxonomy_units_from_branches(branches: list[dict]) -> list[dict]:
-    units = []
-    for branch in branches:
-        for tier in branch.get("tiers", []):
-            units.extend(tier.get("units", []))
-    return units
-
-
-def _summarize_unit_from_skill_levels(unit: dict, skill_levels: dict[str, str]) -> dict:
-    tags = unit.get("tags", [])
-    mastered_count = sum(
-        1 for tag in tags
-        if skill_levels.get(tag, StudentSkillMastery.LEVEL_NOT_STARTED)
-        == StudentSkillMastery.LEVEL_MASTERED
-    )
-    total = len(tags)
-    return {
-        "percent": int(mastered_count / total * 100) if total else 0,
-        "mastered_count": mastered_count,
-        "resume_tag": None,
-    }
-
-
-def _batch_home_unit_summaries(user, units: list[dict], available_unit_numbers: set[str]) -> dict[str, dict]:
-    """Return home-page progress summaries for all available units.
-
-    Home cards only need the bar-segment summary (percent + mastered_count).
-    For non-Unit-1 units, bar segments map directly to unit skill tags, so one
-    batched mastery lookup is enough. Unit 1 remains lane-based and is handled
-    once as a constant-cost special case.
-    """
-    unit_by_n = {str(unit.get("n")): unit for unit in units}
-    non_unit1_tags = [
-        tag
-        for unit_n, unit in unit_by_n.items()
-        if unit_n in available_unit_numbers and unit_n != "1"
-        for tag in unit.get("tags", [])
-    ]
-    skill_levels = _batch_skill_levels(user, non_unit1_tags)
-
-    summaries: dict[str, dict] = {}
-    for unit_n in available_unit_numbers:
-        unit = unit_by_n.get(str(unit_n))
-        if not unit:
-            continue
-        if str(unit_n) == "1":
-            unit1_data = get_unit_progress_data(user, "1")
-            summaries["1"] = (
-                _summarize_unit_progress(unit1_data)
-                if unit1_data
-                else _empty_unit_progress_summary()
-            )
-            continue
-        summaries[str(unit_n)] = _summarize_unit_from_skill_levels(unit, skill_levels)
-    return summaries
-
-
 def _get_course_unit_dates(user) -> dict[str, dict]:
     """Map unit number → schedule info from the user's enrolled courses.
 
@@ -246,28 +152,6 @@ def _get_course_unit_dates(user) -> dict[str, dict]:
                 "course_title": pco.course.title,
             }
     return out
-
-
-def _unit_date_labels(info: dict | None) -> dict:
-    """Template-ready chip labels for one unit's course schedule info."""
-    if not info:
-        return {"due_label": None, "opens_label": None, "overdue": False}
-    from django.utils.timezone import localtime
-    from django.utils.timezone import now as tz_now
-
-    if not info["published"] and info["publish"] is not None:
-        return {
-            "due_label": None,
-            "opens_label": localtime(info["publish"]).strftime("Opens %a %b %-d"),
-            "overdue": False,
-        }
-    if info["due"] is not None:
-        return {
-            "due_label": localtime(info["due"]).strftime("Due %a %b %-d"),
-            "opens_label": None,
-            "overdue": info["due"] < tz_now(),
-        }
-    return {"due_label": None, "opens_label": None, "overdue": False}
 
 
 def resolve_course_for_playlist(user, playlist):
