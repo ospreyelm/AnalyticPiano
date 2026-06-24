@@ -1,5 +1,11 @@
 # Figured Bass Pipeline Implementation Plan
 
+> **Historical plan warning:** This May 2026 implementation plan contains stale
+> tritone wording from before the current figured-bass canon. Current authority
+> is [docs/music-theory-canon.md](../../music-theory-canon.md),
+> [docs/FIGURED_BASS.md](../../FIGURED_BASS.md), and the tests in
+> `apps/exercises/tests/test_figured_bass.py`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add `mode:figures` and `mode:figures_unabbreviated` parallel curriculum tracks to HarmonyLab so students can identify figured bass symbols from Bach chorales, units 9–18.
@@ -422,7 +428,8 @@ def compute_figured_bass(chord_element, key) -> tuple[str, str]:
     - Pitch diatonic to key → no prefix
     - Pitch raised from diatonic → #
     - Pitch lowered from diatonic → b
-    - Tritone interval (6 semitones, aug4/dim5) above bass → + marker
+    - Tritone interval (6 semitones) above bass → + for augmented fourth,
+      ° for diminished fifth
 
     Suspensions (multi-beat) are NOT detected here; that requires look-ahead
     over consecutive slices — handled in _build_figured_bass_overrides().
@@ -468,8 +475,9 @@ def compute_figured_bass(chord_element, key) -> tuple[str, str]:
         pitch_in_diatonic = (pitch.step, pitch.alter) in diatonic_step_alter
 
         if is_tritone:
-            # Tritone always gets + suffix regardless of diatonicism (spec §2)
-            intervals[num_str] = num_str + "+"
+            # Tritone gets quality marker: ° for diminished fifths, + for augmented fourths.
+            suffix = "°" if generic >= 5 else "+"
+            intervals[num_str] = num_str + suffix
         elif pitch_in_diatonic:
             intervals[num_str] = num_str
         else:

@@ -2,7 +2,13 @@
 
 **Date:** 2026-05-03  
 **Branch:** `docs/taxonomy-source-of-truth-viz`  
-**Status:** Approved — ready for implementation plan
+**Status:** Historical — superseded in part by current implementation,
+[docs/FIGURED_BASS.md](../../FIGURED_BASS.md), and
+[docs/music-theory-canon.md](../../music-theory-canon.md)
+
+> **Stale-theory warning:** Early versions of this spec incorrectly state that
+> every tritone receives a `+` marker. Current HarmonyLab figured-bass canon
+> distinguishes augmented fourths (`4+`) from diminished fifths (`5°`).
 
 ---
 
@@ -22,9 +28,11 @@ Figured bass = generic interval numbers above the bass note, with accidentals on
 - Pitch matches diatonic scale of the key → no prefix
 - Pitch raised from diatonic → `#`
 - Pitch lowered from diatonic → `b`
-- Interval is a tritone (aug4 or dim5) regardless of diatonicism → add `+` marker (e.g. `4+`)
+- A tritone is labeled by generic interval: augmented fourth → `4+`;
+  diminished fifth → `5°`.
 
-No interval quality symbols (diminished, augmented) — only numbers and accidentals where notation requires them.
+Use quality symbols where HarmonyLab figured-bass canon requires them, such as
+`+` for augmented intervals and `°` for diminished intervals.
 
 **Abbreviation rules (Kellner 1732):**
 
@@ -167,7 +175,8 @@ def abbreviate_figured_bass(raw: str) -> str:
      - Diatonic match → no prefix
      - Raised → `#`
      - Lowered → `b`
-   - Check tritone: if semitone distance is 6 (aug4 or dim5) → add `+` marker
+   - Check tritone: if semitone distance is 6, use the generic interval to
+     choose `+` for augmented fourth or `°` for diminished fifth
 4. Deduplicate intervals (same number may appear multiple times in 4-voice chords)
 5. Sort descending by number
 6. `raw_figured_bass` = join with `/`

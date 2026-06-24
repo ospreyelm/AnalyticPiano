@@ -173,10 +173,18 @@ python manage.py create_unit_playlist \
 
 **Suspension detection** — the importer recognizes the current Bach/WiR case `8/7/4 -> 8/7/3` and stores the abbreviated pedagogical answer `7/4-3`. Broader suspension families, such as generic `5/4` handling and other resolutions, are still deferred.
 
-**Chromatic figures** — `#6` (Italian/French/German augmented sixths), `b7`, etc. are computed correctly by `compute_figured_bass()` but the taxonomy `new`/`cumulative` entries for units 14+ are not yet defined.
+**Chromatic figured-bass curriculum** — `compute_figured_bass()` supports
+chromatic tokens such as `#6`, `b7`, `4+`, and `5°`, but units 14+ do not
+currently define figured-bass `new`/`cumulative` taxonomy values. Roman/chord
+analysis may still recognize chromatic sonorities such as `It+6`, `Ger+6`, and
+`Fr+6`; that does not mean the figured-bass curriculum for those units is ready.
 
 **Unison noteheads** — when two voices share the same pitch but different durations at the same beat (e.g. alto holds a quarter while soprano plays an eighth), the filled/open notehead distinction requires per-voice VexFlow formatting. Currently both voices share the slot's duration. Beat-boundary splitting (in `umto_factory.py`) mitigates the worst cases.
 
-**Stacked notation** — figures and Roman numerals are currently rendered as flat strings. HTML-stacked rendering (e.g. `6` over `4`) is deferred.
+**Stacked notation** — figured-bass display supports stacked/engraved rendering
+for multi-line figures such as `6/4`, `6/5`, and `4/2`. Keep docs, graders,
+and display-token normalization aligned when adding new figure symbols.
 
-**Units 14+** — `figured_bass` entries in `music_theory_taxonomy.json` are empty for units 14–51. Need to define `new`/`cumulative` values before building playlists for those units.
+**Units 14+** — `figured_bass` entries are absent from both taxonomy files for
+units 14 onward. Define and review `new`/`cumulative` values before building
+figured-bass playlists for those units.
