@@ -28,7 +28,7 @@ class ViewUMTOLoggingTests(TestCase):
             
             url = reverse("lab:exercise-view", kwargs={"exercise_id": ex.id})
             
-            with self.assertLogs('lab.views', level='WARNING') as cm:
+            with self.assertLogs('apps.exercises.services.exercise_context', level='WARNING') as cm:
                 self.client.get(url)
             
             self.assertTrue(any("[LEGACY EXERCISE]" in output for output in cm.output))
