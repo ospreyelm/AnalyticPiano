@@ -200,7 +200,8 @@ def compute_figured_bass(chord_element, key, next_pitch_map: dict | None = None)
     - Pitch diatonic to key → no prefix
     - Pitch raised from diatonic → #
     - Pitch lowered from diatonic → b
-    - Tritone interval (6 semitones, aug4/dim5) above bass → + marker
+    - Tritone interval (6 semitones) above bass → + for augmented fourth,
+      ° for diminished fifth
 
     next_pitch_map (optional): {midi_of_current_pitch: midi_of_next_pitch_in_same_voice}.
     Used for 9-vs-2 disambiguation:
