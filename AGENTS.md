@@ -58,6 +58,15 @@ begin automatically.
   concepts. Do not create parallel Python and JavaScript allowlists.
 - Backend music21 boundaries must normalize stored HarmonyLab keys through
   `apps.exercises.utils.key_normalization.harmony_key_to_music21()`.
+- Before modifying music-theory analysis, generation, grading, taxonomy
+  analysis values, or music21 boundary code, state the relevant musical rule
+  from first principles before trusting existing implementation or docs. Read
+  [docs/music-theory-canon.md](docs/music-theory-canon.md). If code, tests,
+  docs, generated content, or agent instructions appear to contradict either
+  first-principles music theory or the canon, surface the contradiction to the
+  product owner instead of silently preserving existing behavior as project
+  convention. For each theory-sensitive change, add or verify at least one
+  distinguishing example that would fail under the incorrect rule.
 - Before modifying features, controllers, shared algorithms, or routing, read
   [docs/redundancy_analysis_report.md](docs/redundancy_analysis_report.md).
 
@@ -192,4 +201,3 @@ Use port `5433` to avoid a local PostgreSQL conflict. Ignore harmless
 2. Extract sub-components or local state hooks next.
 3. Keep the original file as a clean "orchestrator" that imports these new modules.
 4. Do not delete original code until the new modules are verified and linted.
-

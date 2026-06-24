@@ -36,7 +36,12 @@ Most common chords have conventional abbreviations. HarmonyLab uses these throug
 **Chromatic alterations** are prefixed to the affected interval number:
 - `#6` — sixth raised a semitone above diatonic
 - `b7` — seventh lowered
-- `+` suffix — tritone (augmented fourth/diminished fifth), e.g. `4+`
+- `+` suffix — augmented interval, e.g. augmented fourth `4+`
+- `°` suffix — diminished interval, e.g. diminished fifth `5°`
+
+A tritone is not always augmented. First count the generic interval by note
+letter, then count semitones: F-B is an augmented fourth (`4+`), while B-F is a
+diminished fifth (`5°`). See [music-theory-canon.md](music-theory-canon.md).
 
 Root-position triads with a chromatic third or fifth show only the accidental: `#` (raised third), `b5` (lowered fifth).
 
