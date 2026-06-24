@@ -31,6 +31,7 @@ define([
   "app/utils/barline_spacing_utils",
   "./exercise_sheet_identification",
   "./exercise_sheet_identification_input_mode",
+  "./exercise_sheet_identification_canvas",
   "./exercise_sheet_status",
   "./exercise_sheet_staves",
   "./exercise_sheet_playback",
@@ -66,6 +67,7 @@ define([
   BarlineSpacingUtils,
   ExerciseSheetIdentification,
   ExerciseSheetIdentificationInputMode,
+  ExerciseSheetIdentificationCanvas,
   ExerciseSheetStatus,
   ExerciseSheetStaves,
   ExerciseSheetPlayback
@@ -135,6 +137,7 @@ define([
     ExerciseSheetComponent.prototype,
     ExerciseSheetIdentification,
     ExerciseSheetIdentificationInputMode,
+    ExerciseSheetIdentificationCanvas,
     ExerciseSheetStatus,
     ExerciseSheetStaves,
     ExerciseSheetPlayback,
