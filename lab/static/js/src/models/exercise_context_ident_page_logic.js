@@ -47,7 +47,7 @@
         return p.measureIndex >= startMeasure && p.measureIndex < endMeasure;
       });
     }
-    var offset = computeIdentPageOffset(identPage, pageSize, false, [], 0, 0);
+    var offset = identPage * pageSize;
     return allProblems.slice(offset, offset + pageSize);
   }
 
