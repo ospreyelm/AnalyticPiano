@@ -4,6 +4,8 @@ Each worksheet is a score-backed UMTO identification exercise: two visible
 treble voices, one whole-note interval per measure, and clickable answer slots.
 """
 
+import random
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
@@ -218,13 +220,26 @@ class Command(BaseCommand):
             skill_tags = lane_def["skill_tags"] + [f"unit:4_L{stage}"]
             created_exercises = []
 
+            # Build all combinatorics of (root, interval)
+            combinatorics = []
+            for root_scientific, root_label in ROOTS:
+                for interval_label in interval_pool:
+                    combinatorics.append(((root_scientific, root_label), interval_label))
+
+            num_prompts_needed = options["max_per_stage"] * options["intervals_per_exercise"]
+            multiplier = (num_prompts_needed + len(combinatorics) - 1) // len(combinatorics)
+            shuffled_pool = combinatorics * multiplier
+
+            # Seed with lane and stage to ensure deterministic but unique order per stage/lane
+            rng = random.Random(f"generate_unit4_{lane}_stage_{stage}")
+            rng.shuffle(shuffled_pool)
+
             for worksheet_idx in range(options["max_per_stage"]):
                 problems = []
                 descriptions = []
                 for prompt_idx in range(options["intervals_per_exercise"]):
                     global_idx = worksheet_idx * options["intervals_per_exercise"] + prompt_idx
-                    interval_label = interval_pool[global_idx % len(interval_pool)]
-                    root_scientific, root_label = ROOTS[global_idx % len(ROOTS)]
+                    (root_scientific, root_label), interval_label = shuffled_pool[global_idx]
                     lower_pitch, upper_pitch = _interval_pitches(root_scientific, interval_label)
                     answer = GENERIC_DISPLAY[interval_label] if lane == "generic" else interval_label
                     problem = {
