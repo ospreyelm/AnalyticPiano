@@ -10,7 +10,8 @@ define([
   "app/models/exercise_definition_logic",
   "app/models/chordal_problems_logic",
   "tonal",
-], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, InputMethodLogic, UNIT_ALLOWED_ANSWERS_RAW, ExerciseDefinitionLogic, ChordalProblemsLogic, Tonal) {
+  "app/models/exercise_definition_label_logic",
+], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, InputMethodLogic, UNIT_ALLOWED_ANSWERS_RAW, ExerciseDefinitionLogic, ChordalProblemsLogic, Tonal, LabelLogic) {
   var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
@@ -106,47 +107,6 @@ define([
     musicxml: "musicxml",
   };
 
-  function normalizeAnalysisLabel(label) {
-    if (label === null || label === undefined) {
-      return "";
-    }
-    var result = String(label).trim();
-    // Normalize musical symbols to standard characters
-    result = result.replace(/♭/g, "b").replace(/♯/g, "#");
-    // Remove trailing/leading punctuation that shouldn't be in chord labels
-    result = result.replace(/^[\s,;:\-()]+|[\s,;:\-()]+$/g, '');
-    return result;
-  }
-
-  // Token map for converting abbreviated figured bass codes to display symbols
-  var FIGURE_TOKEN_MAP = {
-    "z": "6",
-    "z4": "6/4",
-    "Cz4": "b6/4",
-    "z5": "6/5",
-    "u": "7",
-    "u3": "6/5",
-    "u5": "7/5",
-    "r": "4",
-    "r2": "4/2",
-    "r3": "4/3",
-    "i3": "3",
-    "q e": "13",
-  };
-
-  function expandFiguredBassToken(abbrev) {
-    // Try exact match first, then try partial matches
-    if (FIGURE_TOKEN_MAP[abbrev]) {
-      return FIGURE_TOKEN_MAP[abbrev];
-    }
-    // Check if it starts with a token key
-    for (var key in FIGURE_TOKEN_MAP) {
-      if (FIGURE_TOKEN_MAP.hasOwnProperty(key) && abbrev.indexOf(key) === 0) {
-        return FIGURE_TOKEN_MAP[key];
-      }
-    }
-    return abbrev; // return unchanged if no match
-  }
 
   function midiEventToTonalName(event) {
     var alterStr = "";
@@ -184,45 +144,13 @@ define([
     }
   }
 
-  function stripFiguredBassTokens(label) {
-    // For Roman numeral labels, expand {z}, {u}, etc. to their figured bass equivalents
-    // e.g., "V{z}" becomes "V6", "I{z4}" becomes "I6/4"
-    if (!label) return label;
-    var result = String(label);
-    // Replace {token} patterns with their expanded forms
-    result = result.replace(/\{([A-Za-z0-9]+)\}/g, function (match, token) {
-      return FIGURE_TOKEN_MAP[token] || '';
-    });
-    return result.trim();
-  }
-
-  function isPitchAnalysisType(analysisType) {
-    return [
-      "note_name",
-      "solfege",
-      "do_based_solfege",
-      "scale_degree",
-      "fixed_do",
-      "pitch_class",
-    ].indexOf(analysisType) !== -1;
-  }
-
-  function computeNoteNameFromEvent(ev) {
-    if (!ev) return "";
-    var name = ev.step.toUpperCase();
-    if (ev.alter === 1) name += "#";
-    else if (ev.alter === -1) name += "b";
-    else if (ev.alter === 2) name += "##";
-    else if (ev.alter === -2) name += "bb";
-    return name;
-  }
 
   function computeWindowLabel(midiStack, analysisType, analyzer, compoundIntervals, windowEvents) {
     if (!midiStack || !midiStack.length || !analyzer) {
       return "";
     }
     try {
-      if (isPitchAnalysisType(analysisType)) {
+      if (LabelLogic.isPitchAnalysisType(analysisType)) {
         if (midiStack.length !== 1) {
           console.warn("[chorale_identification] expected a single MIDI note for pitch analysis type", analysisType, "but got", midiStack);
           return "";
@@ -233,21 +161,21 @@ define([
           // Priority: If we have a single event in the window, use its original spelling (step/alter)
           // This prevents enharmonic errors like Bb being called A#.
           if (windowEvents && windowEvents.length === 1) {
-              return normalizeAnalysisLabel(computeNoteNameFromEvent(windowEvents[0]));
+              return LabelLogic.normalizeAnalysisLabel(LabelLogic.computeNoteNameFromEvent(windowEvents[0]));
           }
-          return normalizeAnalysisLabel(analyzer.to_note_name([midi]));
+          return LabelLogic.normalizeAnalysisLabel(analyzer.to_note_name([midi]));
         }
         if (analysisType === "solfege") {
-          return normalizeAnalysisLabel(analyzer.to_solfege([midi]));
+          return LabelLogic.normalizeAnalysisLabel(analyzer.to_solfege([midi]));
         }
         if (analysisType === "do_based_solfege") {
-          return normalizeAnalysisLabel(analyzer.to_do_based_solfege([midi]));
+          return LabelLogic.normalizeAnalysisLabel(analyzer.to_do_based_solfege([midi]));
         }
         if (analysisType === "scale_degree") {
-          return normalizeAnalysisLabel(analyzer.to_scale_degree([midi]));
+          return LabelLogic.normalizeAnalysisLabel(analyzer.to_scale_degree([midi]));
         }
         if (analysisType === "fixed_do") {
-          return normalizeAnalysisLabel(analyzer.to_fixed_do([midi]));
+          return LabelLogic.normalizeAnalysisLabel(analyzer.to_fixed_do([midi]));
         }
         if (analysisType === "pitch_class") {
           return analyzer.to_pitch_class([midi]).toString();
@@ -271,13 +199,13 @@ define([
           var result = analyzer.to_interval([lowerMidi, upperMidi]);
           if (result && result.name) {
             analyzeLabel = analysisType === "interval_generic" ? result.size : result.name;
-            analyzeLabel = normalizeAnalysisLabel(analyzeLabel);
+            analyzeLabel = LabelLogic.normalizeAnalysisLabel(analyzeLabel);
           }
         } catch (_e) { analyzeLabel = ""; }
 
         // Tonal.js path (authoritative)
         var tonalLabel = computeIntervalViaTonal(lowerEvent, upperEvent, analysisType, compoundIntervals);
-        tonalLabel = normalizeAnalysisLabel(tonalLabel);
+        tonalLabel = LabelLogic.normalizeAnalysisLabel(tonalLabel);
 
         if (analyzeLabel && analyzeLabel !== tonalLabel) {
           console.warn("[interval] analyze/tonal mismatch:", analyzeLabel, "vs", tonalLabel, "midi:", lowerMidi, upperMidi);
@@ -292,19 +220,19 @@ define([
             ? analyzer.full_thoroughbass_figure_minus_octave(midiStack)
             : "5/3";
         }
-        var expanded = expandFiguredBassToken(abbrevFigure);
-        return normalizeAnalysisLabel(expanded);
+        var expanded = LabelLogic.expandFiguredBassToken(abbrevFigure);
+        return LabelLogic.normalizeAnalysisLabel(expanded);
       }
       var chord = analyzer.to_chord(midiStack, "roman only");
       if (chord && chord.label) {
         // Strip any embedded tokens from Roman numeral labels
-        var cleanLabel = stripFiguredBassTokens(chord.label);
-        return normalizeAnalysisLabel(cleanLabel);
+        var cleanLabel = LabelLogic.stripFiguredBassTokens(chord.label);
+        return LabelLogic.normalizeAnalysisLabel(cleanLabel);
       }
       // Some analyzer paths may return a rich object with no `.label`.
       // Never stringify arbitrary objects into "[object Object]" labels.
       if (typeof chord === "string") {
-        return normalizeAnalysisLabel(chord);
+        return LabelLogic.normalizeAnalysisLabel(chord);
       }
       return "";
     } catch (_err) {
@@ -312,94 +240,13 @@ define([
     }
   }
 
-  function buildAnalysisWindows(timeline) {
-    var grouped = [];
-    var onsetIndex = Object.create(null);
-    var activeNotes = [];
-
-    _.each(timeline || [], function (ev) {
-      if (!Object.prototype.hasOwnProperty.call(onsetIndex, ev.onset)) {
-        onsetIndex[ev.onset] = {
-          onset: ev.onset,
-          events: [],
-        };
-        grouped.push(onsetIndex[ev.onset]);
-      }
-      onsetIndex[ev.onset].events.push(ev);
-    });
-
-    grouped.sort(function (a, b) {
-      return a.onset - b.onset;
-    });
-
-    _.each(grouped, function (window) {
-      activeNotes = _.filter(activeNotes, function (n) {
-        return n.end > window.onset;
-      });
-      _.each(window.events, function (ev) {
-        activeNotes.push({ midi: ev.midi, end: ev.onset + ev.duration });
-      });
-      var midiMap = Object.create(null);
-      _.each(activeNotes, function (n) {
-        midiMap[n.midi] = true;
-      });
-      window.midiStack = _.sortBy(
-        _.map(Object.keys(midiMap), function (k) {
-          return parseInt(k, 10);
-        }),
-        function (m) { return m; }
-      );
-    });
-
-    return grouped;
-  }
-
-  function buildChoices(correctLabel, allLabels, analysisType, compoundIntervals) {
-    var pool = _.uniq(_.filter(allLabels, function (l) {
-      return !!l && l !== correctLabel;
-    }));
-    var fallbacks = analysisType === "figured_bass"
-      ? ["5/3", "6", "6/4", "7", "6/5", "4/3", "4/2"]
-      : analysisType === "figured_bass_unabbreviated"
-      ? ["8/5/3", "6/3", "6/4", "7/5/3", "6/5/3", "6/4/3", "6/4/2"]
-      : analysisType === "note_name"
-      ? ["C", "D", "E", "F", "G", "A", "B"]
-      : (analysisType === "solfege" || analysisType === "do_based_solfege" || analysisType === "fixed_do")
-      ? ["Do", "Re", "Mi", "Fa", "So", "La", "Ti"]
-      : analysisType === "scale_degree"
-      ? ["1", "2", "3", "4", "5", "6", "7"]
-      : analysisType === "pitch_class"
-      ? ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
-      : analysisType === "interval_generic"
-      ? (compoundIntervals
-        ? ["2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]
-        : ["2", "3", "4", "5", "6", "7", "8"])
-      : analysisType === "interval_specific"
-      ? (compoundIntervals
-        ? ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "m9", "M9", "m10", "M10", "P11", "P12", "m13", "M13", "m14", "M14"]
-        : ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8"])
-      : ["I", "ii", "IV", "V", "vi", "I6/4", "i6/4", "V6/4", "Cad6/4", "Cadb6/4"];
-    if (pool.length < 4) {
-      _.each(fallbacks, function (item) {
-        if (item !== correctLabel && pool.indexOf(item) === -1) {
-          pool.push(item);
-        }
-      });
-    }
-    var distractors = _.shuffle(pool).slice(0, 4);
-    var choices = _.shuffle([correctLabel].concat(distractors));
-    while (choices.length < 5) {
-      choices.push(correctLabel);
-    }
-    return choices.slice(0, 5);
-  }
 
   function buildChoraleIdentificationProblems(exercise) {
     var score = exercise.score || {};
     var timeline = ScoreTimeline && ScoreTimeline.buildTimeline
       ? ScoreTimeline.buildTimeline(score)
       : [];
-    var windows = buildAnalysisWindows(timeline);
+    var windows = LabelLogic.buildAnalysisWindows(timeline);
     if (!windows.length) {
       return [];
     }
@@ -429,7 +276,7 @@ define([
         measureIndex: measureIndex,
         onset: relativeOnset,
         answer: answer,
-        choices: buildChoices(answer, labels, analysisType, compoundIntervals),
+        choices: LabelLogic.buildChoices(answer, labels, analysisType, compoundIntervals),
         hidden: (answer === "") // Mark as hidden if no harmonic answer
       });
     });
@@ -450,7 +297,7 @@ define([
     const timeline = ScoreTimeline && ScoreTimeline.buildTimeline
       ? ScoreTimeline.buildTimeline(score)
       : [];
-    const windows = buildAnalysisWindows(timeline);
+    const windows = LabelLogic.buildAnalysisWindows(timeline);
 
     function ticksToRhythm(ticks) {
       if (ticks >= 4096) return "w";
@@ -513,7 +360,7 @@ define([
       } else if (analysisType === "figured_bass" && slice.content.figured_bass != null) {
         answer = slice.content.figured_bass;
       } else if (slice.content.roman_numeral) {
-        answer = stripFiguredBassTokens(slice.content.roman_numeral);
+        answer = LabelLogic.stripFiguredBassTokens(slice.content.roman_numeral);
       } else if (slice.content.pop_symbol) {
         answer = slice.content.pop_symbol;
       } else if (slice.content.figured_bass != null) {
@@ -568,7 +415,7 @@ define([
         windowIndex: winMeta.windowIndex,
         measureIndex: winMeta.measureIndex,
         onset: winMeta.onset,
-        answer: normalizeAnalysisLabel(answer),
+        answer: LabelLogic.normalizeAnalysisLabel(answer),
         choices: [],
         hidden: !answer || !isTarget || !winMeta.hasSlot,
         visible: (gradingMatch && gradingMatch.target_midi_pitches) ? gradingMatch.target_midi_pitches : [],
@@ -604,9 +451,9 @@ define([
     return _.map(rawProblems, function (problem) {
       var next = _.assign({}, problem);
       if (explicitAllowedAnswers.length > 0 && next.answer) {
-        next.choices = _.map(buildChoices(next.answer, explicitAllowedAnswers, analysisType, false), normalizeAnalysisLabel);
+        next.choices = _.map(LabelLogic.buildChoices(next.answer, explicitAllowedAnswers, analysisType, false), LabelLogic.normalizeAnalysisLabel);
       } else if (next.answer) {
-        next.choices = _.map(buildChoices(next.answer, allAnswers, analysisType, false), normalizeAnalysisLabel);
+        next.choices = _.map(LabelLogic.buildChoices(next.answer, allAnswers, analysisType, false), LabelLogic.normalizeAnalysisLabel);
       } else {
         next.choices = [];
       }
@@ -1084,7 +931,7 @@ define([
               var chordalTimeline = ScoreTimeline && ScoreTimeline.buildTimeline
                 ? ScoreTimeline.buildTimeline(exercise.score || {})
                 : [];
-              var chordalWindows = buildAnalysisWindows(chordalTimeline);
+              var chordalWindows = LabelLogic.buildAnalysisWindows(chordalTimeline);
               var chordalAnswers = [];
               var chordalSeen = {};
               exercise.problems = _.map(_chordalChords, function (chord, idx) {
@@ -1099,7 +946,7 @@ define([
                 } else if (exercise.analysisType === "figured_bass_unabbreviated" && content.raw_figured_bass != null) {
                   answer = content.raw_figured_bass;
                 } else if (content.roman_numeral) {
-                  answer = stripFiguredBassTokens(content.roman_numeral);
+                  answer = LabelLogic.stripFiguredBassTokens(content.roman_numeral);
                 } else if (content.pop_symbol) {
                   answer = content.pop_symbol;
                 } else if (content.figured_bass != null) {
@@ -1107,7 +954,7 @@ define([
                 } else if (content.functional_label) {
                   answer = content.functional_label;
                 }
-                answer = normalizeAnalysisLabel(answer);
+                answer = LabelLogic.normalizeAnalysisLabel(answer);
                 if (answer && !chordalSeen[answer]) {
                   chordalSeen[answer] = true;
                   chordalAnswers.push(answer);
@@ -1132,7 +979,7 @@ define([
               exercise.problems = _.map(exercise.problems, function (problem) {
                 if (problem.answer) {
                   var answerPool = explicitChordalAllowed.length > 0 ? explicitChordalAllowed : chordalAnswers;
-                  problem.choices = _.map(buildChoices(problem.answer, answerPool, exercise.analysisType, false), normalizeAnalysisLabel);
+                  problem.choices = _.map(LabelLogic.buildChoices(problem.answer, answerPool, exercise.analysisType, false), LabelLogic.normalizeAnalysisLabel);
                 }
                 return problem;
               });
