@@ -32,6 +32,7 @@ define([
   "./exercise_sheet_identification",
   "./exercise_sheet_identification_input_mode",
   "./exercise_sheet_identification_canvas",
+  "./exercise_sheet_identification_controls",
   "./exercise_sheet_status",
   "./exercise_sheet_staves",
   "./exercise_sheet_playback",
@@ -68,6 +69,7 @@ define([
   ExerciseSheetIdentification,
   ExerciseSheetIdentificationInputMode,
   ExerciseSheetIdentificationCanvas,
+  ExerciseSheetIdentificationControls,
   ExerciseSheetStatus,
   ExerciseSheetStaves,
   ExerciseSheetPlayback
@@ -138,6 +140,7 @@ define([
     ExerciseSheetIdentification,
     ExerciseSheetIdentificationInputMode,
     ExerciseSheetIdentificationCanvas,
+    ExerciseSheetIdentificationControls,
     ExerciseSheetStatus,
     ExerciseSheetStaves,
     ExerciseSheetPlayback,
