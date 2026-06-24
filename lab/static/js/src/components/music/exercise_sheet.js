@@ -30,6 +30,7 @@ define([
   "app/utils/umto_score_converter",
   "app/utils/barline_spacing_utils",
   "./exercise_sheet_identification",
+  "./exercise_sheet_identification_input_mode",
   "./exercise_sheet_status",
   "./exercise_sheet_staves",
   "./exercise_sheet_playback",
@@ -64,6 +65,7 @@ define([
   UMTOScoreConverter,
   BarlineSpacingUtils,
   ExerciseSheetIdentification,
+  ExerciseSheetIdentificationInputMode,
   ExerciseSheetStatus,
   ExerciseSheetStaves,
   ExerciseSheetPlayback
@@ -132,6 +134,7 @@ define([
   _.extend(
     ExerciseSheetComponent.prototype,
     ExerciseSheetIdentification,
+    ExerciseSheetIdentificationInputMode,
     ExerciseSheetStatus,
     ExerciseSheetStaves,
     ExerciseSheetPlayback,
