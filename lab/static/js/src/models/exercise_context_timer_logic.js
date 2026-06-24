@@ -79,6 +79,9 @@
     return arr.reduce(function (s, v) { return s + v; }, 0) / arr.length;
   }
 
+  /* NOTE: original used SimpleStatistics.standardDeviation (population stddev, N divisor).
+     This uses sample stddev (Bessel-corrected, N-1 divisor), which is more appropriate
+     for small sample sizes and changes computed tempoSD values. */
   function _sampleStddev(arr) {
     if (arr.length < 2) return 0;
     var m = _mean(arr);
@@ -89,11 +92,12 @@
   }
 
   function computeTempoStats(centisemibrevesPerMin) {
+    var hasValues = centisemibrevesPerMin.length > 0;
     return {
       tempoSD:   Math.round(_sampleStddev(centisemibrevesPerMin)) / 100,
       tempoMean: Math.round(_mean(centisemibrevesPerMin) / 10) / 10,
-      minTempo:  Math.round(Math.min.apply(null, centisemibrevesPerMin)) / 100,
-      maxTempo:  Math.round(Math.max.apply(null, centisemibrevesPerMin)) / 100,
+      minTempo:  hasValues ? Math.round(Math.min.apply(null, centisemibrevesPerMin)) / 100 : null,
+      maxTempo:  hasValues ? Math.round(Math.max.apply(null, centisemibrevesPerMin)) / 100 : null,
     };
   }
 
