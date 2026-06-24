@@ -6,11 +6,12 @@ define([
   "./exercise_chord_bank",
   "app/config",
   "app/components/events",
-  "simple-statistics.min",
   "./exercise_completion_flow_logic",
   "./identification_submit_flow_logic",
   "app/models/harmonization_grader_logic",
   "app/models/voice_leading_logic",
+  "app/models/exercise_context_timer_logic",
+  "app/models/exercise_context_ident_page_logic",
 ], function (
   _,
   $,
@@ -19,11 +20,12 @@ define([
   ExerciseChordBank,
   Config,
   EVENTS,
-  SimpleStatistics,
   ExerciseCompletionFlow,
   IdentificationSubmitFlow,
   HarmonizationGraderLogic,
-  VoiceLeadingLogic
+  VoiceLeadingLogic,
+  TimerLogic,
+  IdentPageLogic
 ) {
   var AUTO_ADVANCE = Config.get("general.autoAdvance");
   var AUTO_ADVANCE_DELAY = Config.get("general.autoAdvanceDelay");
@@ -452,17 +454,7 @@ define([
      * @return this
      */
     resetTimer: function () {
-      this.timer = {};
-      this.timer.start = null;
-      this.timer.end = null;
-      this.timer.duration = null;
-      this.timer.durationString = "";
-      this.timer.minTempo = null;
-      this.timer.maxTempo = null;
-      this.timer.tempoSD = null;
-      this.timer.tempoRating = null;
-      this.timer.timepoints = {};
-      this.timer.timeIntervals = [];
+      this.timer = TimerLogic.createTimerState();
       return this;
     },
     /**
@@ -527,58 +519,19 @@ define([
       if (!this.timer) return this;
 
       if (this.timer.start && !this.timer.end) {
-        this.timer.end = new Date().getTime(); /* date in milliseconds */
-        this.timer.duration =
-          this.timer.end - this.timer.start; /* duration in milliseconds */
-        let seconds = Math.round(this.timer.duration / 1000);
-        const minutes = Math.floor(seconds / 60);
-        seconds %= 60;
-        this.timer.durationString = "";
-        if (minutes > 0) {
-          this.timer.durationString += String(minutes) + "&prime;&nbsp;";
-        }
-        this.timer.durationString += String(seconds) + "&Prime;";
+        this.timer.end = new Date().getTime();
+        this.timer.duration = this.timer.end - this.timer.start;
+        this.timer.durationString = TimerLogic.formatDurationString(this.timer.duration);
       }
 
-      var tp = this.timer.timepoints;
-      var tp_indeces = Object.keys(tp).sort(function (a, b) {
-        return a - b;
-      });
-      for (var i = 1, len = tp_indeces.length; i < len; i++) {
-        this.timer.timeIntervals.push(
-          tp[tp_indeces[i]] - tp[tp_indeces[i - 1]]
-        );
-      }
+      this.timer.timeIntervals = TimerLogic.computeTempoIntervals(this.timer.timepoints);
 
-      // console.log(this.timer.timeIntervals);
-
-      var semibreve_fraction = {
-        W: 1.5,
-        w: 1,
-        H: 0.75,
-        h: 0.5,
-        Q: 0.375,
-        q: 0.25,
-        E: 0.1875,
-        e: 0.125,
-      };
-
-      var semibreveCount = [];
-      len = Math.min(
+      var semibreveCount = TimerLogic.computeSemibreveCount(
+        this.exerciseChords.settings.chords,
         this.inputChords._items.length,
-        this.exerciseChords.settings.chords.length
+        DEFAULT_RHYTHM_VALUE
       );
-      for (i = 0; i < len; i++) {
-        var rhythm_value =
-          this.exerciseChords.settings.chords[i].settings.rhythm ||
-          DEFAULT_RHYTHM_VALUE;
-        semibreveCount.push(
-          semibreve_fraction[rhythm_value] || DEFAULT_RHYTHM_VALUE || 1
-        );
-      }
-      if (semibreveCount.length > 0) semibreveCount.pop();
 
-      // necessary?
       this.timer.minTempo = null;
       this.timer.maxTempo = null;
       this.timer.tempoSD = null;
@@ -586,55 +539,18 @@ define([
 
       if (
         this.timer.timeIntervals.length > 1 &&
-        /* need at least three events to determine tempo consistency */
-        this.timer.timeIntervals.length == semibreveCount.length
-        /* guard against miscalculations */
+        this.timer.timeIntervals.length === semibreveCount.length
       ) {
-        var centisemibrevesPerMin = [];
-        for (i = 0, len = this.timer.timeIntervals.length; i < len; i++) {
-          let spm = Math.round(
-            (semibreveCount[i] * 6000000) / this.timer.timeIntervals[i]
-          ); /* centi-semibreves per minute ... yup, because integer math is less troublesome */
-          centisemibrevesPerMin.push(spm);
-        }
-
-        this.timer.tempoSD =
-          Math.round(
-            SimpleStatistics.standardDeviation(centisemibrevesPerMin)
-          ) / 100; /* semibreves per minute sensitive to two decimal places */
-        this.timer.tempoMean =
-          Math.round(SimpleStatistics.mean(centisemibrevesPerMin) / 10) /
-          10; /* semibreves per minute sensitive to one decimal place */
-        this.timer.minTempo =
-          Math.round(Math.min(...centisemibrevesPerMin)) / 100;
-        this.timer.maxTempo =
-          Math.round(Math.max(...centisemibrevesPerMin)) / 100;
-
-        /* Tempo star-rating algorithm */
-        // TO DO: ADD GRADATIONS BECAUSE SD AS 1/8 OF MEAN IS TOO NARROW FOR TWO STARS
-        try {
-          this.timer.tempoRating =
-            /* If the SD is equal to or less than 1/(2^n) of the mean
-             * then the star-rating is n-1:
-             *    1/8 or less: two stars
-             *    1/16 or less: three stars
-             *    1/32 or less: four stars
-             *    1/64 or less: five stars */
-            Math.max(
-              1, // at least
-              Math.min(
-                5, // at most
-                this.timer.tempoSD == 0
-                  ? 5 // if there is no tempo variation
-                  : Math.floor(
-                      this.timer.tempoMean / this.timer.tempoSD
-                    ).toString(2).length - 1 // toString(2) renders a binary number
-              )
-            ) || 0; // in case calculation fails
-        } catch {
-          /* 0 means tempo cannot be assessed (e.g. when an exercise comprises two chords) */
-          this.timer.tempoRating = 0;
-        }
+        var centisemibrevesPerMin = TimerLogic.computeCentisemibrevesPerMin(
+          this.timer.timeIntervals,
+          semibreveCount
+        );
+        var stats = TimerLogic.computeTempoStats(centisemibrevesPerMin);
+        this.timer.tempoSD    = stats.tempoSD;
+        this.timer.tempoMean  = stats.tempoMean;
+        this.timer.minTempo   = stats.minTempo;
+        this.timer.maxTempo   = stats.maxTempo;
+        this.timer.tempoRating = TimerLogic.computeTempoRating(stats.tempoSD, stats.tempoMean);
       }
       return this;
     },
@@ -1023,8 +939,7 @@ define([
       var display = this.definition && this.definition.getDisplay
         ? this.definition.getDisplay()
         : {};
-      var maxMeasures = parseInt(display && display.maxMeasures, 10);
-      return maxMeasures > 0 ? maxMeasures : 4;
+      return IdentPageLogic.getChoralePageMeasureCount(display);
     },
     /**
      * Returns the absolute index of the first problem on the active page.
@@ -1032,19 +947,19 @@ define([
      * @return {number}
      */
     getIdentPageOffset: function () {
-      if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
-         var maxMeasures = this._getChoraleIdentPageMeasureCount();
-         var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;
-         var targetMeasure = this._identPage * maxMeasures;
-         var lastPossibleStart = Math.max(0, totalMeasures - maxMeasures);
-         if (targetMeasure > lastPossibleStart) targetMeasure = lastPossibleStart;
-         var problems = this.definition.getProblems() || [];
-         for (var i = 0; i < problems.length; i++) {
-            if (problems[i].measureIndex >= targetMeasure) return i;
-         }
-         return problems.length;
+      var isChoraleIdent = !!(this.definition &&
+        typeof this.definition.isChoraleIdentification === "function" &&
+        this.definition.isChoraleIdentification());
+      if (!isChoraleIdent) {
+        return IdentPageLogic.computeIdentPageOffset(this._identPage, this._identPageSize, false, [], 0, 0);
       }
-      return this._identPage * this._identPageSize;
+      var maxMeasures = this._getChoraleIdentPageMeasureCount();
+      var score = this.definition.getScore();
+      var totalMeasures = score && score.measures ? score.measures.length : 0;
+      return IdentPageLogic.computeIdentPageOffset(
+        this._identPage, this._identPageSize, true,
+        this.definition.getProblems() || [], totalMeasures, maxMeasures
+      );
     },
     /**
      * Returns the total number of identification pages.
@@ -1053,13 +968,16 @@ define([
      */
     getTotalIdentPages: function () {
       var allProblems = this.definition.getProblems() || [];
-      if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
-          if (!allProblems || !allProblems.length) return 1;
-          var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;
-          var maxMeasures = this._getChoraleIdentPageMeasureCount();
-          return Math.ceil(totalMeasures / maxMeasures);
+      var isChoraleIdent = !!(this.definition &&
+        typeof this.definition.isChoraleIdentification === "function" &&
+        this.definition.isChoraleIdentification());
+      if (!isChoraleIdent) {
+        return IdentPageLogic.computeTotalIdentPages(allProblems, false, 0, 0, this._identPageSize);
       }
-      return Math.ceil(allProblems.length / this._identPageSize);
+      var maxMeasures = this._getChoraleIdentPageMeasureCount();
+      var score = this.definition.getScore();
+      var totalMeasures = score && score.measures ? score.measures.length : 0;
+      return IdentPageLogic.computeTotalIdentPages(allProblems, true, totalMeasures, maxMeasures, this._identPageSize);
     },
     /**
      * Returns the identification problems visible on the active page.
@@ -1068,19 +986,18 @@ define([
      */
     getVisibleProblems: function () {
       var allProblems = this.definition.getProblems() || [];
-      if (this.definition && typeof this.definition.isChoraleIdentification === "function" && this.definition.isChoraleIdentification()) {
-          var maxMeasures = this._getChoraleIdentPageMeasureCount();
-          var totalMeasures = this.definition.getScore() && this.definition.getScore().measures ? this.definition.getScore().measures.length : 0;
-          var startMeasure = this._identPage * maxMeasures;
-          var lastPossibleStart = Math.max(0, totalMeasures - maxMeasures);
-          if (startMeasure > lastPossibleStart) startMeasure = lastPossibleStart;
-          var endMeasure = startMeasure + maxMeasures;
-          return allProblems.filter(function(p) {
-             return p.measureIndex >= startMeasure && p.measureIndex < endMeasure;
-          });
+      var isChoraleIdent = !!(this.definition &&
+        typeof this.definition.isChoraleIdentification === "function" &&
+        this.definition.isChoraleIdentification());
+      if (!isChoraleIdent) {
+        return IdentPageLogic.filterVisibleProblems(allProblems, false, this._identPage, this._identPageSize, 0, 0);
       }
-      var offset = this.getIdentPageOffset();
-      return allProblems.slice(offset, offset + this._identPageSize);
+      var maxMeasures = this._getChoraleIdentPageMeasureCount();
+      var score = this.definition.getScore();
+      var totalMeasures = score && score.measures ? score.measures.length : 0;
+      return IdentPageLogic.filterVisibleProblems(
+        allProblems, true, this._identPage, this._identPageSize, totalMeasures, maxMeasures
+      );
     },
     /**
      * Navigates to a specific identification page.
