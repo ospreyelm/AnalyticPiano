@@ -11,7 +11,8 @@ function getVoiceCountFromConfig() {
   var code = fs.readFileSync(configPath, "utf8");
   var voiceCounts = null;
   var context = {
-    define: function (obj) {
+    define: function (depsOrObj, factory) {
+      var obj = typeof factory === "function" ? factory(undefined) : depsOrObj;
       voiceCounts = obj.voiceCountForKeyboardStyle;
     }
   };
