@@ -119,7 +119,7 @@ define([
         this.addComponent(feedback);
 
         var c = new MusicControlsComponent({
-          headerEl: "#header",
+          headerEl: "#play-topbar",
           containerEl: "#mainmenu",
           keySignature: this.models.keySignature,
           midiDevice: this.models.midiDevice,

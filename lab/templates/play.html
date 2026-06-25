@@ -30,7 +30,7 @@
 {% block content %}
 <div id="container" class="t-play-workspace js-fade-in fade" style="opacity: 0;">
 	<section class="t-play-topbar" aria-label="Authoring controls">
-		<div class="t-play-toolbar">
+		<div id="play-topbar" class="t-play-toolbar">
 			<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-upload-json" title="Create exercise">Save</button>
 			<div id="save-feedback" class="feedback-inline" aria-live="polite"></div>
 			<button type="button" class="t-btn t-btn-ghost t-btn-sm js-btn-pristine" title="Reload sheet music">&#8635; Reload</button>
@@ -44,6 +44,7 @@
 				<option value="4/4">4/4</option>
 				<option value="6/8">6/8</option>
 			</select>
+			<div class="js-keysignature-widget"></div>
 		</div>
 		<div class="t-play-audio-controls" aria-label="Audio and MIDI controls">
 			<button id="mute-toggle" type="button" class="t-btn t-btn-ghost t-btn-sm t-play-control-btn" title="Toggle mute">Mute</button>
@@ -53,7 +54,6 @@
 	</section>
 	<div id="legacy-play-mounts" class="t-play-hidden-mounts" aria-hidden="true">
 		<div id="mainmenu">
-			<div class="js-keysignature-widget"></div>
 			<div class="js-notation-opts-widget"></div>
 			<div class="js-keyboardsize settings-inline"></div>
 			<div class="js-octaveadjustment settings-inline"></div>
