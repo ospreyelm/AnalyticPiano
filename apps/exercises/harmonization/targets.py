@@ -5,6 +5,108 @@ from typing import Any
 from apps.exercises.harmonization.figures import derive_required_notes, expand_figure_string
 
 
+_CHROMATIC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+
+def _chord_bass_payload(chord: dict[str, Any]) -> dict[str, Any] | None:
+    """Derive bass payload from a ChordEvent dict (chordal UMTO).
+
+    Bass is the lowest MIDI in visible[]. spelling (when present) is positional
+    over visible+hidden, so spelling[visible.index(bass_midi)] names the bass.
+    """
+    visible = chord.get("visible") or []
+    if not visible:
+        return None
+    bass_midi = min(visible)
+    spelling_list = chord.get("spelling")
+    if spelling_list:
+        bass_idx = visible.index(bass_midi)
+        name = (
+            spelling_list[bass_idx]
+            if bass_idx < len(spelling_list)
+            else _CHROMATIC_NAMES[bass_midi % 12]
+        )
+    else:
+        name = _CHROMATIC_NAMES[bass_midi % 12]
+    return {
+        "midi": bass_midi,
+        "pc": bass_midi % 12,
+        "spelling": name,
+    }
+
+
+def _build_targets_from_chordal_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
+    metadata = umto.get("metadata", {})
+    key_name = metadata.get("key") or "C"
+    locked_voices: list[str] = metadata.get("locked_voices") or ["B"]
+    vcp = metadata.get("voice_count_policy") or {}
+    voice_count_policy = {
+        "expected": vcp.get("expected"),
+        "min": vcp.get("min", 3),
+        "max": vcp.get("max", 4),
+    }
+
+    chords = umto.get("chords") or []
+    analyses = list(umto.get("analysis", []))
+    grading_pcs_by_offset = _grading_pcs_by_offset(umto)
+    used_analysis_indexes: set[int] = set()
+    targets = []
+
+    for chord in chords:
+        offset = round(float(chord.get("offset", 0)), 5)
+        bass = _chord_bass_payload(chord)
+        if bass is None:
+            continue
+
+        analysis_idx, analysis = _analysis_for_target_offset(
+            analyses=analyses,
+            used_analysis_indexes=used_analysis_indexes,
+            offset=offset,
+            key_name=key_name,
+            bass=bass,
+            grading_pcs=grading_pcs_by_offset.get(offset, set()),
+        )
+        if analysis_idx is None or analysis is None:
+            continue
+        used_analysis_indexes.add(analysis_idx)
+
+        content = analysis.get("content", {})
+        raw_figure = content.get("raw_figured_bass") or content.get("figured_bass") or "5/3"
+        display_figure = content.get("figured_bass") or raw_figure
+        local_key = content.get("local_key") or key_name
+
+        derived = derive_required_notes(
+            key_name=local_key,
+            bass_name=bass["spelling"],
+            figure=raw_figure,
+        )
+
+        locked: dict[str, Any] = {}
+        if "B" in locked_voices:
+            locked["B"] = bass
+
+        targets.append({
+            "offset": offset,
+            "bassMidi": bass["midi"],
+            "bassPc": bass["pc"],
+            "bassSpelling": bass["spelling"],
+            "figures": expand_figure_string(raw_figure),
+            "displayFigure": display_figure,
+            "requiredUpperPcs": derived["required_upper_pcs"],
+            "requiredNoteNames": derived["required_note_names"],
+            "allowedPcs": derived["allowed_pcs"],
+            "lockedVoices": locked,
+            "voiceCountPolicy": voice_count_policy,
+            "source": {
+                "kind": "analysis_slice",
+                "label": display_figure or content.get("roman_numeral") or "",
+                "key": local_key,
+            },
+        })
+
+    return targets
+
+
 def _voice_event_at_offset(
     events: list[dict[str, Any]], offset: float
 ) -> dict[str, Any] | None:
@@ -137,6 +239,8 @@ def _analysis_for_target_offset(
 
 def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
     metadata = umto.get("metadata", {})
+    if metadata.get("score_kind") == "chordal":
+        return _build_targets_from_chordal_umto(umto)
     key_name = metadata.get("key") or "C"
     locked_voices: list[str] = metadata.get("locked_voices") or ["B"]
     vcp = metadata.get("voice_count_policy") or {}

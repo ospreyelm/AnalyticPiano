@@ -989,6 +989,16 @@ define([
             exercise.playlistTags = definition.playlistTags || [];
             exercise.playlistSkillTags = definition.playlistSkillTags || [];
             exercise.skill_tags = definition.skillTags || [];
+            if (exercise.mode === "harmonization") {
+              exercise.harmonizationTargets = definition.harmonizationTargets || [];
+              exercise.problems = exercise.harmonizationTargets;
+              exercise.analysis = { enabled: true, mode: {} };
+              if (exercise.analysisType === "figured_bass") {
+                exercise.analysis.mode.thoroughbass = true;
+              } else {
+                exercise.analysis.mode.roman_numerals = true;
+              }
+            }
             return exercise;
           }
           exercise.harmonizationTargets = definition.harmonizationTargets || [];
