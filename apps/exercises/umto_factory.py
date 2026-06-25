@@ -953,10 +953,17 @@ def save_chordal_umto_exercise(
     if mode is not None and getattr(mode, "value", mode) == "harmonization":
         from apps.exercises.harmonization.targets import build_targets_from_umto
         try:
-            payload["harmonizationTargets"] = build_targets_from_umto(payload["score"]["umto"])
+            targets = build_targets_from_umto(payload["score"]["umto"])
         except Exception as _e:
-            print(f"Warning: harmonizationTargets build failed: {_e}")
-            payload["harmonizationTargets"] = []
+            raise NonUMTOExerciseError(
+                f"harmonizationTargets build failed: {_e}"
+            ) from _e
+        if not targets:
+            raise NonUMTOExerciseError(
+                "Harmonization exercise has no targets. "
+                "Ensure analysis slices have is_target=True."
+            )
+        payload["harmonizationTargets"] = targets
     if analyze_config is not None:
         payload["analyzeConfig"] = analyze_config
     if display is not None:
