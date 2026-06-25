@@ -628,7 +628,11 @@ define([
           attempt_type: attempt_type,
         };
 
-        if (this.grader && typeof this.grader.getScore === "function") {
+        if (this._isHarmonizationExercise()) {
+          var targets = this.definition.getHarmonizationTargets ? this.definition.getHarmonizationTargets() : [];
+          report.score_numerator = targets.length;
+          report.score_denominator = targets.length;
+        } else if (this.grader && typeof this.grader.getScore === "function") {
           var scoreData = this.grader.getScore();
           report.score_numerator = scoreData.numerator;
           report.score_denominator = scoreData.denominator;

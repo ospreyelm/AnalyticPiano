@@ -393,10 +393,38 @@ body { background: #f7f8f8 !important; }
       color: #fff;
     }
 
-    .s-toolbar-icon { display: inline-block; flex: 0 0 20px; }
-    .s-toolbar-icon.previous-icon,
-    .s-toolbar-icon.next-icon,
-    .s-toolbar-icon.refresh-icon { margin: 0; float: none; }
+    .s-toolbar-icon {
+      display: inline-block;
+      flex: 0 0 20px;
+      height: 20px;
+      width: 20px;
+      margin: 0;
+      float: none;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center;
+    }
+    .s-toolbar-icon.previous-icon {
+      background-image: url(../img/icon-previous.png);
+    }
+    .s-toolbar-btn:hover .previous-icon,
+    .previous-icon:hover {
+      background-image: url(../img/icon-previous-hover.png);
+    }
+    .s-toolbar-icon.next-icon {
+      background-image: url(../img/icon-next.png);
+    }
+    .s-toolbar-btn:hover .next-icon,
+    .next-icon:hover {
+      background-image: url(../img/icon-next-hover.png);
+    }
+    .s-toolbar-icon.refresh-icon {
+      background-image: url(../img/icon-refresh.png);
+    }
+    .s-toolbar-btn:hover .refresh-icon,
+    .refresh-icon:hover {
+      background-image: url(../img/icon-refresh-hover.png);
+    }
 
 
 
