@@ -187,7 +187,10 @@ def generate_exercise_context(
                         except (ValueError, IndexError):
                             continue
 
-                exercise_context.update(umto_obj.to_frontend_payload(unit=unit_focus))
+                _umto_payload = umto_obj.to_frontend_payload(unit=unit_focus)
+                if "harmonizationTargets" in exercise.data:
+                    _umto_payload["harmonizationTargets"] = exercise.data["harmonizationTargets"]
+                exercise_context.update(_umto_payload)
             except Exception as e:
                 # Fallback to raw data if UMTO validation fails
                 logger.warning(
