@@ -124,7 +124,7 @@ def import_musicxml_preview_view(request):
                 source=f"Play {title}.",
                 key=harmony_key,
                 meter=import_payload.meter,
-                clef=import_payload.score_data.get("meta", {}).get("clef", "treble"),
+                clef="keyboard",
                 complexity_score=complexity,
                 mode=InteractionMode.PLAYBACK,
             )
@@ -329,7 +329,7 @@ def import_musicxml_save_view(request):
                     source=f"Play {description}.",
                     key=harmony_key,
                     meter=import_payload.meter,
-                    clef=import_payload.score_data.get("meta", {}).get("clef", "treble"),
+                    clef="keyboard",
                     complexity_score=complexity,
                     mode=interaction_mode,
                     analysis_type=analysis_type,

@@ -311,6 +311,23 @@ class MusicXMLImportViewsTest(TestCase):
         playlist = Playlist.objects.get(id=data["playlistId"])
         self.assertEqual(playlist.name, "Unit 11 — Exercises (Play)")
 
+    def test_save_voices_extracts_all_four_parts(self):
+        """Voices-route import must use clef='keyboard' so all 4 SATB parts are extracted.
+        voices_xml_bytes has C5/G4/E4/C3 for S/A/T/B — previously clef defaulted to
+        'treble' which triggered single_voice_mode and silently dropped A, T, B."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        response = self._post_save(
+            {"description": "All 4 voices", "mode": "play"},
+            xml_data=self.voices_xml_bytes,
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        exercise = Exercise.objects.get(id=response.json()["id"])
+        umto_voices = exercise.data["score"]["umto"]["voices"]
+        self.assertGreater(len(umto_voices.get("S", [])), 0, "S voice empty")
+        self.assertGreater(len(umto_voices.get("A", [])), 0, "A voice empty")
+        self.assertGreater(len(umto_voices.get("T", [])), 0, "T voice empty")
+        self.assertGreater(len(umto_voices.get("B", [])), 0, "B voice empty")
+
     def test_save_chordal_exercise_with_tags_and_key(self):
         """Saving a chordal score persists extra skill_tags, key, complexity, and routes
         roman mode through the shared resolver to an answerable identification exercise
