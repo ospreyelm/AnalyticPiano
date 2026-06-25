@@ -147,6 +147,12 @@ def generate_transposed_copies(
     complexity = source_exercise.complexity or 1
     source_chords = source_umto.get("chords", [])
     source_analysis = source_umto.get("analysis", [])
+    from apps.exercises.umto import InteractionMode
+    _source_mode_str = meta.get("mode") or source_exercise.data.get("mode")
+    try:
+        source_mode = InteractionMode(_source_mode_str) if _source_mode_str else InteractionMode.PLAYBACK
+    except ValueError:
+        source_mode = InteractionMode.PLAYBACK
     staff_distribution = (
         source_exercise.data.get("staffDistribution")
         or source_umto.get("metadata", {}).get("staffDistribution")
@@ -248,6 +254,7 @@ def generate_transposed_copies(
                 auto_playlist=False,
                 barline_offsets=barline_offsets,
                 analysis=analysis,
+                mode=source_mode,
             )
             # Set is_official after creation if requested
             if is_official:
