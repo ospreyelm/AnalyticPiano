@@ -273,6 +273,7 @@ define([
         this.submitIdentPage({ fromGrade: true });
         return;
       } else if (isHarmonizationExercise) {
+        this.triggerTimer();
         var activeMidi;
         if (this._harmonizationActiveMidiOverride != null) {
           activeMidi = this._harmonizationActiveMidiOverride;
