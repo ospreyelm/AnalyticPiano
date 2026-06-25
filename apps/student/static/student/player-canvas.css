@@ -1,16 +1,11 @@
-/* apps/student/static/student/player-canvas.css
-   Exercise canvas — shared by the student player and the teacher /teacher/play/
-   authoring view. Warm parchment body, dark piano, instruction panel. */
+@font-face { font-family: "Sebastian"; src: url("../fonts/Sebastian-FigBass-Modified.woff") format("woff"); }
+@font-face { font-family: "MainSerifs"; src: url("../fonts/Alegreya-Regular-Modified.woff") format("woff"); }
+@font-face { font-family: "JazzSerifs"; src: url("../fonts/Alegreya-Regular-Modified-v2.woff") format("woff"); }
 
-    /* ── Page shell ─────────────────────────────────────────── */
-    body { background: #f7f8f8 !important; }
+/* ── Page shell ─────────────────────────────────────────── */
+body { background: #f7f8f8 !important; }
 
-    #container {
-      opacity: 1 !important;
-      background: transparent;
-      margin: 0;
-      padding: 0;
-    }
+
 
     .s-player-wrap {
       width: 100%;
@@ -403,26 +398,7 @@
     .s-toolbar-icon.next-icon,
     .s-toolbar-icon.refresh-icon { margin: 0; float: none; }
 
-    /* ── Staff area ─────────────────────────────────────────── */
-    #staff-area {
-      width: 100%;
-      max-width: none;
-      margin: 0 auto;
-      padding: 0 12px;
-      box-sizing: border-box;
-      position: relative;
-    }
 
-    #staffwrapper {
-      position: relative;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      margin-bottom: 8px;
-      height: 400px;
-      overflow-x: auto;
-      overflow-y: hidden;
-    }
 
     /* ── Instruction panel ──────────────────────────────────── */
     .instruction-panel { border: none !important; background: transparent !important; padding: 0 !important; min-height: 0 !important; }
@@ -670,98 +646,7 @@
     #playback-tempo-label { font-size: 0.72rem !important; color: var(--text-muted) !important; }
     #playback-tempo-slider { width: 60px !important; }
 
-    /* ── Piano ──────────────────────────────────────────────── */
-    #piano {
-      width: 100%;
-      max-width: none;
-      margin: 6px auto 0;
-      padding: 10px 8px 10px;
-      box-sizing: border-box;
-      overflow-x: auto;   /* scroll if keyboard wider than viewport */
-      position: relative;
-      border-radius: 24px;
-      background: linear-gradient(180deg, #241c17 0%, #15100d 100%);
-      border: 1px solid rgba(0, 0, 0, 0.34);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.04),
-        inset 0 -16px 24px rgba(255, 255, 255, 0.03),
-        0 18px 34px rgba(0, 0, 0, 0.22);
-    }
 
-    #piano::before {
-      content: "";
-      position: absolute;
-      left: 18px;
-      right: 18px;
-      top: 0;
-      height: 2px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(158, 46, 46, 0.2), rgba(187, 57, 57, 0.95), rgba(158, 46, 46, 0.2));
-    }
-
-    /* Do NOT force keyboard-wrapper to 100% — it renders the SVG at a fixed
-     * pixel width, and the QWERTY badge positions are calculated from those
-     * same pixels. Stretching the wrapper misaligns the badges. */
-    .keyboard-wrapper { margin: 0 auto !important; }
-    .keyboard-input-mode { max-width: 100%; }
-    .keyboard-area {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-    }
-
-    /* QWERTY badge overlay */
-    .keyboard .qwerty-labels {
-      z-index: 4;
-    }
-
-    .keyboard .qwerty-key-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-sizing: border-box;
-      padding: 0 3px;
-      border-radius: 7px;
-      border: 1px solid rgba(115, 91, 64, 0.38);
-      background: linear-gradient(180deg, rgba(251, 246, 238, 0.98) 0%, rgba(232, 220, 202, 0.98) 100%);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.82),
-        0 1px 2px rgba(36, 26, 18, 0.14);
-      color: #2e2217;
-      font-family: var(--font-ui);
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      line-height: 1;
-      text-transform: uppercase;
-      pointer-events: none;
-      user-select: none;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .keyboard .qwerty-key-badge.black {
-      padding: 0 2px;
-      border-color: rgba(255, 255, 255, 0.18);
-      background: linear-gradient(180deg, rgba(71, 64, 59, 0.96) 0%, rgba(26, 22, 20, 0.96) 100%);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 2px 4px rgba(0, 0, 0, 0.28);
-      color: rgba(255, 248, 238, 0.96);
-    }
-
-    /* ── Input mode hint (replaces always-visible toggle bar) ── */
-    /*
-     * The QWERTY/Note Name toggle rendered by NoteNameInputComponent is kept in
-     * the DOM for JS wiring, but collapsed by default. Students can access it
-     * via the Settings drawer. A one-line hint nudges them there.
-     */
-    .keyboard-input-mode .input-mode-toggle {
-      display: none !important;   /* hidden — accessible from ⚙ drawer */
-    }
-    .keyboard-input-mode .qwerty-help-panel,
-    .keyboard-input-mode .notename-panel {
-      display: none !important;   /* status/guide also hidden by default */
-    }
 
     /* Input mode controls inside drawer */
     .s-drawer-input-mode {
@@ -774,258 +659,9 @@
       color: var(--teal);
     }
 
-    /* ── Staff click input controls ─────────────────────────── */
-    #staff-toolbar .input-source-mode-toggle,
-    #piano .input-source-mode-toggle,
-    #piano .click-note-input,
-    #staff-area .click-note-input {
-      position: relative;
-      z-index: 6;
-      display: flex;
-      width: max-content;
-      max-width: calc(100% - 18px);
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      margin: 0 auto 8px;
-      padding: 4px;
-      box-sizing: border-box;
-      border: 1px solid rgba(237, 226, 209, 0.18);
-      border-radius: 999px;
-      background: rgba(248, 240, 229, 0.1);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-      backdrop-filter: blur(2px);
-    }
 
-    #staff-area .click-note-input {
-      position: absolute;
-      left: 22px;
-      top: 54px;
-      margin: 0;
-      border-color: rgba(42, 126, 148, 0.24);
-      background: rgba(248, 240, 229, 0.94);
-      box-shadow: 0 6px 16px rgba(38, 27, 17, 0.08);
-      backdrop-filter: none;
-    }
 
-    #staff-toolbar .input-source-mode-toggle {
-      margin: 0 2px 0 4px;
-      padding: 3px;
-      border-color: rgba(42, 126, 148, 0.2);
-      background: rgba(42, 126, 148, 0.08);
-      box-shadow: none;
-      backdrop-filter: none;
-    }
 
-    #piano .click-note-input {
-      margin-top: -2px;
-      margin-bottom: 9px;
-    }
-
-    #staff-area .accidental-palette,
-    #piano .accidental-palette {
-      display: flex;
-      gap: 4px;
-    }
-
-    #staff-toolbar .input-mode-btn,
-    #piano .input-mode-btn,
-    #staff-area .input-mode-btn {
-      min-width: 42px;
-      min-height: 30px;
-      padding: 4px 11px;
-      border: 1px solid rgba(237, 226, 209, 0.22);
-      border-radius: 999px;
-      background: rgba(21, 16, 13, 0.42);
-      color: rgba(248, 240, 229, 0.86);
-      font-family: var(--font-body);
-      font-size: 0.74rem;
-      font-weight: 700;
-      line-height: 1;
-      cursor: pointer;
-      transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 120ms ease;
-    }
-
-    #staff-area .input-mode-btn {
-      border-color: rgba(42, 126, 148, 0.18);
-      background: rgba(255, 255, 255, 0.86);
-      color: var(--text);
-    }
-
-    #staff-toolbar .input-mode-btn {
-      min-width: 48px;
-      min-height: 28px;
-      border-color: transparent;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 0.72rem;
-    }
-
-    #staff-toolbar .input-mode-btn:hover,
-    #piano .input-mode-btn:hover,
-    #staff-area .input-mode-btn:hover {
-      border-color: rgba(42, 126, 148, 0.75);
-      background: rgba(42, 126, 148, 0.2);
-      color: #f8f0e5;
-    }
-
-    #staff-area .input-mode-btn:hover {
-      color: var(--teal);
-    }
-
-    #staff-toolbar .input-mode-btn:hover {
-      color: var(--teal);
-    }
-
-    #staff-toolbar .input-mode-btn:focus-visible,
-    #piano .input-mode-btn:focus-visible,
-    #staff-area .input-mode-btn:focus-visible {
-      outline: 2px solid rgba(42, 126, 148, 0.95);
-      outline-offset: 2px;
-    }
-
-    #staff-toolbar .input-mode-btn:active,
-    #piano .input-mode-btn:active,
-    #staff-area .input-mode-btn:active {
-      transform: translateY(1px);
-    }
-
-    #staff-toolbar .input-mode-btn-active,
-    #piano .input-mode-btn-active,
-    #piano .click-note-done,
-    #staff-area .input-mode-btn-active,
-    #staff-area .click-note-done {
-      border-color: rgba(42, 126, 148, 0.95);
-      background: #2a7e94;
-      color: #f8f0e5;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
-    }
-
-    #staff-area .input-mode-btn-inactive {
-      color: var(--text-muted);
-    }
-
-    #staff-toolbar .input-mode-btn-active {
-      box-shadow: 0 4px 10px rgba(42, 126, 148, 0.13);
-    }
-
-    #staff-toolbar .input-mode-btn-inactive,
-    #piano .input-mode-btn-inactive {
-      color: rgba(248, 240, 229, 0.72);
-    }
-
-    #staff-toolbar .input-mode-btn-inactive {
-      color: var(--text-muted);
-    }
-
-    #staff-area .click-note-cap-hint,
-    #piano .click-note-cap-hint {
-      position: absolute;
-      left: 0;
-      top: calc(100% + 7px);
-      z-index: 7;
-      display: flex;
-      min-width: 178px;
-      max-width: 220px;
-      flex-direction: column;
-      gap: 2px;
-      padding: 8px 10px;
-      border: 1px solid rgba(42, 126, 148, 0.28);
-      border-radius: 8px;
-      background: rgba(255, 252, 247, 0.98);
-      box-shadow: 0 8px 20px rgba(38, 27, 17, 0.12);
-      color: var(--text);
-      font-family: var(--font-body);
-      line-height: 1.2;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(-4px);
-      transition: opacity 140ms ease, transform 140ms ease;
-    }
-
-    #staff-area .click-note-cap-hint::before,
-    #piano .click-note-cap-hint::before {
-      content: "";
-      position: absolute;
-      left: 18px;
-      top: -6px;
-      width: 10px;
-      height: 10px;
-      border-left: 1px solid rgba(42, 126, 148, 0.28);
-      border-top: 1px solid rgba(42, 126, 148, 0.28);
-      background: rgba(255, 252, 247, 0.98);
-      transform: rotate(45deg);
-    }
-
-    #staff-area .click-note-cap-hint strong,
-    #piano .click-note-cap-hint strong {
-      font-size: 0.76rem;
-      font-weight: 800;
-      color: var(--teal);
-    }
-
-    #staff-area .click-note-cap-hint span,
-    #piano .click-note-cap-hint span {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    #staff-area .click-note-cap-hint.is-visible,
-    #piano .click-note-cap-hint.is-visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    #staff-area .click-note-cap-shake,
-    #piano .click-note-cap-shake {
-      animation: click-note-cap-shake 210ms ease-out;
-    }
-
-    @keyframes click-note-cap-shake {
-      0%, 100% { transform: translateX(0); }
-      30% { transform: translateX(-3px); }
-      60% { transform: translateX(3px); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      #staff-area .click-note-cap-hint,
-      #piano .click-note-cap-hint {
-        transition: none;
-      }
-
-      #staff-area .click-note-cap-shake,
-      #piano .click-note-cap-shake {
-        animation: none;
-      }
-    }
-
-    @media (max-width: 720px) {
-      #staff-toolbar .input-source-mode-toggle,
-      #piano .input-source-mode-toggle,
-      #piano .click-note-input,
-      #staff-area .click-note-input {
-        margin-bottom: 7px;
-      }
-
-      #staff-area .click-note-input {
-        left: 18px;
-        top: 52px;
-        margin-bottom: 0;
-      }
-
-      #staff-toolbar .input-source-mode-toggle {
-        margin-bottom: 0;
-      }
-
-      #staff-toolbar .input-mode-btn,
-      #piano .input-mode-btn,
-      #staff-area .input-mode-btn {
-        min-width: 40px;
-        min-height: 32px;
-        padding: 5px 10px;
-      }
-    }
 
     /* ── Drawer widget selects ──────────────────────────────── */
     #mainmenu label {
@@ -1053,33 +689,7 @@
 
     /* ── Hide legacy clutter ─────────────────────────────────── */
     .icon-btn-camera, .startover-icon { display: none !important; }
-    #user-interaction-solicitation {
-      position: absolute;
-      left: 50%;
-      top: 58px;
-      transform: translateX(-50%);
-      z-index: 5;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: min(960px, calc(100% - 48px));
-      max-width: calc(100% - 48px);
-      box-sizing: border-box;
-      padding: 0;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-      color: rgba(44, 38, 34, 0.13);
-      font-family: var(--font-ui);
-      font-size: clamp(2.5rem, 5.8vw, 6.5rem);
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: 0;
-      text-align: center;
-      text-transform: uppercase;
-      pointer-events: none;
-      white-space: nowrap;
-    }
+
 
     .harmony-ui {
       width: calc(100% - 24px);
@@ -1108,13 +718,5 @@
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
 
-    /* Feedback system surfaces */
-    .feedback-bubble { position: absolute; z-index: 1000; max-width: 280px; padding: 8px 12px; border-radius: 6px; background: #2b2f36; color: #fff; font-size: 13px; line-height: 1.35; box-shadow: 0 2px 10px rgba(0,0,0,.25); pointer-events: none; }
-    .feedback-bubble--mistake { background: #8a3324; }
-    .feedback-bubble--success { background: #2f6b3a; }
-    .feedback-control-flash { animation: feedback-shake .4s ease; }
-    @keyframes feedback-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
-    .feedback-inline { font-size: 13px; color: #444; opacity: 0; transition: opacity .2s ease; }
-    .feedback-inline.is-visible { opacity: 1; }
-    .feedback-inline strong { color: #1f2937; }
+
     .click-note-done-key { display: inline-block; margin-left: 4px; padding: 0 5px; border: 1px solid currentColor; border-radius: 3px; font-size: 0.85em; line-height: 1.3; opacity: .75; }
