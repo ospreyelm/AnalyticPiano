@@ -78,10 +78,33 @@ Generated on 2026-06-24 from the isolated worktree using first-party source file
 - [x] Preserve JSON payload shape exactly.
 - [x] Run student and exercise context tests.
 
+## Task 4: Split Config Data Modules (JavaScript)
+
+**Goal:** Reduce `general.js` (852 lines) and `instruments.js` (530 lines) by extracting zero-dependency data tables into separate UMD modules.
+
+**Files:**
+- Modify: `lab/static/js/src/config/general.js`
+- Modify: `lab/static/js/src/config/instruments.js`
+- Create: `lab/static/js/src/config/key_map.js`
+- Create: `lab/static/js/src/config/instruments_map.js`
+
+**Detail:** `docs/` — see Gemini plan at `.gemini/antigravity-ide/brain/7dc2c4da-9e59-464a-95bc-5648531b40ee/implementation_plan.md` Phase 1.
+
+- [x] Create `key_map.js` with UMD wrapper — zero deps, pure data.
+- [x] Create `instruments_map.js` with UMD wrapper — zero deps, pure data.
+- [x] Convert `general.js` from `define({...})` to `define(['app/config/key_map'], function(keyMap) { return {...}; })` and remove inline `keyMap` literal.
+- [x] Convert `instruments.js` from `define({...})` to `define(['app/config/instruments_map'], function(instrumentsMap) { return {...}; })` and remove inline `instrumentMap` literal.
+- [x] Fix `chordal_umto_staff_distribution.test.js` vm mock to handle both AMD data-object and factory `define` forms.
+- [x] Run full JS test suite — 34/34 passed.
+- [ ] Run `pytest apps/exercises/tests/`
+- [ ] Browser smoke: teacher workspace and student player load without RequireJS `enforceDefine` errors.
+
+---
+
 ## Deferred Tasks
 
 - Split `exercise_definition.js` after Python view refactors are stable.
 - Split `exercise_context.js` after student view helpers are extracted.
-- Split `analyze.js` only after reading `docs/music-theory-canon.md` and adding characterization tests.
-- Split UI orchestration JavaScript after pure model and analysis modules are under test.
+- Split `analyze.js` only after reading `docs/music-theory-canon.md` and adding characterization tests. Audit Config/KEY_MAP closure deps before extracting any function — see Phase 2 notes in Gemini plan.
+- Split `music_controls.js` and `stave_notater.js` after pure model and analysis modules are under test. Confirm VexFlow interface contract and CSRF handling before Phase 3.
 - Defer `models.py`, `forms.py`, `umto_factory.py`, and `apps/teacher/views.py` until directly related feature work requires them.
