@@ -44,20 +44,33 @@ class DesignTokensTests(TestCase):
             self.assertIn(prop, content, f"tokens.css missing {prop}")
 class PlayerCanvasCssExtractionTests(TestCase):
     def test_player_canvas_css_file_exists_and_has_content(self):
-        css_path = (
+        # Check student-specific player-canvas.css
+        player_css_path = (
             Path(__file__).resolve().parents[1]
             / "static" / "student" / "player-canvas.css"
         )
-        self.assertTrue(css_path.exists(), "player-canvas.css was not created")
-        content = css_path.read_text()
-        for selector in ("#piano", ".harmony-ui", "#staffwrapper", ".s-toolbar-btn"):
-            self.assertIn(selector, content, f"player-canvas.css missing {selector}")
+        self.assertTrue(player_css_path.exists(), "player-canvas.css was not created")
+        player_content = player_css_path.read_text()
+        for selector in (".s-toolbar-btn", ".s-player-header", ".harmony-ui"):
+            self.assertIn(selector, player_content, f"player-canvas.css missing {selector}")
 
-    def test_player_template_links_player_canvas_css_and_has_no_inline_style(self):
+        # Check shared exercise-canvas.css
+        exercise_css_path = (
+            Path(__file__).resolve().parents[1]
+            / "static" / "student" / "exercise-canvas.css"
+        )
+        self.assertTrue(exercise_css_path.exists(), "exercise-canvas.css does not exist")
+        exercise_content = exercise_css_path.read_text()
+        for selector in ("#piano", "#staffwrapper"):
+            self.assertIn(selector, exercise_content, f"exercise-canvas.css missing {selector}")
+
+    def test_player_template_links_correct_css_and_has_no_inline_style(self):
         template_path = (
             Path(__file__).resolve().parents[1]
             / "templates" / "student" / "player.html"
         )
         content = template_path.read_text()
         self.assertIn("student/player-canvas.css", content)
+        self.assertIn("student/exercise-canvas.css", content)
+        self.assertNotIn("css/harmony.css", content)
         self.assertNotIn("<style>", content)

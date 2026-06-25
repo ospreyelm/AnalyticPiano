@@ -7,6 +7,7 @@
   <title>{% block title %}Monteverdi{% endblock %}</title>
   {% load static %}
   <link href="{% static 'student/student.css' %}" rel="stylesheet">
+  {% block head_extra %}{% endblock %}
 </head>
 <body>
   <header class="s-header">
@@ -22,5 +23,7 @@
   <main class="s-main">
     {% block content %}{% endblock %}
   </main>
+  {% block js_require %}{% endblock %}
+  {% block js_extra %}{% endblock %}
 </body>
 </html>

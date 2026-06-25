@@ -1,9 +1,8 @@
-{# apps/student/templates/student/player.html #}
-{% extends "__base.html" %}
+{% extends "student/base.html" %}
 
-{% block css_extra %}
+{% block head_extra %}
   {% load static %}
-  <link href="{% static 'student/student.css' %}" rel="stylesheet">
+  <link href="{% static 'student/exercise-canvas.css' %}" rel="stylesheet">
   <link href="{% static 'student/player-canvas.css' %}" rel="stylesheet">
 {% endblock %}
 
@@ -159,6 +158,16 @@
 
   </div>
 </div>
+{% endblock %}
+
+{% block js_require %}
+  <script src="{% static 'js/lib/require.js' %}"></script>
+  <script>requirejs.config({ enforceDefine: true, waitSeconds: 0 });</script>
+  {% autoescape off %}
+  <script>requirejs.config({{ requirejs.config_json }});</script>
+  <script>window.appStaticUrl = '{% static '' %}';</script>
+  {% if requirejs.debug %}<script>requirejs.config({'urlArgs': 't='+(new Date().getTime())});</script>{% endif %}
+  {% endautoescape %}
 {% endblock %}
 
 {% block js_extra %}
