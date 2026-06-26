@@ -315,12 +315,6 @@ define([
       }
     },
 
-    _getActiveIdentificationMode: function () {
-      return this.exerciseContext.sessionMode ||
-        this.exerciseContext.settings.identMode ||
-        this._currentMode ||
-        "submit";
-    },
 
     _syncIdentificationModeState: function () {
       this._currentMode = this._getActiveIdentificationMode();

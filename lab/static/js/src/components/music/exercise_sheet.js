@@ -36,6 +36,7 @@ define([
   "./exercise_sheet_status",
   "./exercise_sheet_staves",
   "./exercise_sheet_playback",
+  "./exercise_sheet_identification_logic",
 ], function (
   $,
   $UI,
@@ -72,7 +73,8 @@ define([
   ExerciseSheetIdentificationControls,
   ExerciseSheetStatus,
   ExerciseSheetStaves,
-  ExerciseSheetPlayback
+  ExerciseSheetPlayback,
+  ExerciseSheetIdentificationLogic
 ) {
   "use strict";
 
@@ -144,6 +146,7 @@ define([
     ExerciseSheetStatus,
     ExerciseSheetStaves,
     ExerciseSheetPlayback,
+    ExerciseSheetIdentificationLogic,
     {
     /**
      * Initializes the sheet.
