@@ -92,3 +92,37 @@ def test_harmonization_e2e_build_targets_python(case):
 
     actual = build_targets_from_umto(case["input"]["umto"])
     assert actual == case["expected"]["targets"]
+
+
+# --- Meta: every golden case must be expert-reviewed ------------------------
+
+_GOLDEN_FILES = [
+    "spelling.json",
+    "figured_bass.json",
+    "transposition.json",
+    "harmonization_e2e.json",
+]
+
+
+def _all_cases_with_file():
+    out = []
+    for fname in _GOLDEN_FILES:
+        for case in _load_golden(fname):
+            out.append((fname, case))
+    return out
+
+
+@pytest.mark.parametrize(
+    "fname,case",
+    _all_cases_with_file(),
+    ids=[f"{f}:{c['id']}" for f, c in _all_cases_with_file()],
+)
+def test_every_golden_case_is_reviewed(fname, case):
+    reviewed_by = (case.get("reviewed_by") or "").strip()
+    assert reviewed_by, (
+        f"{fname} case {case.get('id')!r} has empty reviewed_by — "
+        "unreviewed cases cannot enter the gate"
+    )
+    assert (case.get("reviewed_at") or "").strip(), (
+        f"{fname} case {case.get('id')!r} missing reviewed_at"
+    )
