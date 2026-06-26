@@ -212,8 +212,27 @@
       if (!chunks || !chunks.length) return null;
       var headChunk = chunks[0];
 
-      var keys = entry.midiNotes.map(function (m, ki) {
-        var sp = entry.spellings[ki];
+      var defaultSpellings = [
+        { step: "c", alter: 0 }, { step: "c", alter: 1 }, { step: "d", alter: 0 },
+        { step: "e", alter: -1 }, { step: "e", alter: 0 }, { step: "f", alter: 0 },
+        { step: "f", alter: 1 }, { step: "g", alter: 0 }, { step: "g", alter: 1 },
+        { step: "a", alter: 0 }, { step: "b", alter: -1 }, { step: "b", alter: 0 }
+      ];
+      function midiToDefaultSpelling(m) {
+        var pc = m % 12;
+        var octave = Math.floor(m / 12) - 1;
+        var info = defaultSpellings[pc];
+        return { step: info.step, alter: info.alter, octave: octave };
+      }
+
+      var resolvedSpellings = entry.midiNotes.map(function (m, ki) {
+        if (entry.spellings && entry.spellings[ki]) {
+          return entry.spellings[ki];
+        }
+        return midiToDefaultSpelling(m);
+      });
+
+      var keys = resolvedSpellings.map(function (sp) {
         var acc = sp.alter === 1 ? "#"
                 : sp.alter === -1 ? "b"
                 : sp.alter === 2 ? "##"
@@ -232,8 +251,8 @@
       if (headChunk.dots > 0) Vex.Flow.Dot.buildAndAttach([note], { all: true });
       note.setStemDirection(1);
 
-      for (var ki2 = 0; ki2 < entry.spellings.length; ki2 += 1) {
-        var sp2 = entry.spellings[ki2];
+      for (var ki2 = 0; ki2 < resolvedSpellings.length; ki2 += 1) {
+        var sp2 = resolvedSpellings[ki2];
         var step2 = sp2.step.toUpperCase();
         var keyAlter = (keySigAlters && keySigAlters[step2]) || 0;
         if (sp2.alter !== keyAlter) {
