@@ -92,7 +92,7 @@ define([
     _buildHarmonizationRejected: function () {
       var ctx = this.exerciseContext;
       var rejected = ctx && ctx._harmonizationRejected;
-      if (!rejected || !rejected.spellings || !rejected.spellings.length) return null;
+      if (!rejected) return null;
       var midiNotes = rejected.midi || [];
       if (!midiNotes.length) return null;
       return [{
@@ -100,7 +100,7 @@ define([
         onset: Math.max(0, rejected.onset || 0),
         durationTicks: 2048,
         midiNotes: midiNotes,
-        spellings: rejected.spellings,
+        spellings: (rejected.spellings && rejected.spellings.length) ? rejected.spellings : null,
       }];
     },
 

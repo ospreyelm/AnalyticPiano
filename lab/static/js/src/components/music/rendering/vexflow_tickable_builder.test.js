@@ -96,4 +96,30 @@ function testBuildHarmonizationOverlayVoiceReturnsNullWithoutEntries() {
 
 testBuildHarmonizationOverlayVoiceReturnsNullWithoutEntries();
 
+function testBuildHarmonizationOverlayVoiceWithMissingAndPartialSpellings() {
+  var entries = [
+    {
+      onset: 0,
+      durationTicks: 2048,
+      midiNotes: [60, 64, 67], // C4, E4, G4
+      spellings: null
+    }
+  ];
+  var voice = TickableBuilder.buildHarmonizationOverlayVoice(entries, 4096, { num_beats: 4, beat_value: 4 }, {}, null);
+  assert.ok(voice, "should return a valid voice for null spellings");
+
+  var partialEntries = [
+    {
+      onset: 0,
+      durationTicks: 2048,
+      midiNotes: [60, 64, 67], // C4, E4, G4
+      spellings: [{ step: "c", alter: 0, octave: 4 }]
+    }
+  ];
+  var voice2 = TickableBuilder.buildHarmonizationOverlayVoice(partialEntries, 4096, { num_beats: 4, beat_value: 4 }, {}, null);
+  assert.ok(voice2, "should return a valid voice for partial/shorter spellings");
+}
+
+testBuildHarmonizationOverlayVoiceWithMissingAndPartialSpellings();
+
 console.log("vexflow_tickable_builder tests passed");
