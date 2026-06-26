@@ -79,3 +79,16 @@ def test_transposition_characterization(case):
         target_key_hl=inp["target_key"],
     )
     assert actual == case["expected"]["chords"]
+
+
+# --- End-to-end: Python builds the shared targets contract ------------------
+
+_E2E_CASES = _load_golden("harmonization_e2e.json")
+
+
+@pytest.mark.parametrize("case", _E2E_CASES, ids=_ids(_E2E_CASES))
+def test_harmonization_e2e_build_targets_python(case):
+    from apps.exercises.harmonization.targets import build_targets_from_umto
+
+    actual = build_targets_from_umto(case["input"]["umto"])
+    assert actual == case["expected"]["targets"]

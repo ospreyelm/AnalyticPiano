@@ -1,0 +1,692 @@
+{
+  "cases": [
+    {
+      "id": "e2e-c-major-I-root",
+      "primitive": "harmonization_e2e",
+      "description": "C major I (5/3): SATB accepted; wrong realizations rejected",
+      "input": {
+        "umto": {
+          "metadata": {
+            "key": "C",
+            "locked_voices": [
+              "B"
+            ],
+            "voice_count_policy": {
+              "expected": 4,
+              "min": 3,
+              "max": 4
+            }
+          },
+          "voices": {
+            "S": [
+              {
+                "kind": "note",
+                "pitch": {
+                  "step": "C",
+                  "alter": 0,
+                  "octave": 4,
+                  "midi": 60
+                },
+                "duration": 1.0,
+                "duration_type": "q",
+                "dots": 0,
+                "is_tied_start": false,
+                "is_tied_stop": false,
+                "is_target": true
+              }
+            ],
+            "A": [
+              {
+                "kind": "note",
+                "pitch": {
+                  "step": "G",
+                  "alter": 0,
+                  "octave": 3,
+                  "midi": 55
+                },
+                "duration": 1.0,
+                "duration_type": "q",
+                "dots": 0,
+                "is_tied_start": false,
+                "is_tied_stop": false,
+                "is_target": true
+              }
+            ],
+            "T": [
+              {
+                "kind": "note",
+                "pitch": {
+                  "step": "E",
+                  "alter": 0,
+                  "octave": 3,
+                  "midi": 52
+                },
+                "duration": 1.0,
+                "duration_type": "q",
+                "dots": 0,
+                "is_tied_start": false,
+                "is_tied_stop": false,
+                "is_target": true
+              }
+            ],
+            "B": [
+              {
+                "kind": "note",
+                "pitch": {
+                  "step": "C",
+                  "alter": 0,
+                  "octave": 3,
+                  "midi": 48
+                },
+                "duration": 1.0,
+                "duration_type": "q",
+                "dots": 0,
+                "is_tied_start": false,
+                "is_tied_stop": false,
+                "is_target": true
+              }
+            ]
+          },
+          "analysis": [
+            {
+              "offset": 0.0,
+              "content": {
+                "figured_bass": "5",
+                "raw_figured_bass": "5/3",
+                "roman_numeral": "I",
+                "raw_roman_numeral": "I",
+                "local_key": "C",
+                "pop_symbol": null,
+                "functional_label": null
+              }
+            }
+          ],
+          "grading": [
+            {
+              "offset": 0.0,
+              "target_midi_pitches": [
+                48,
+                52,
+                55,
+                60
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "targets": [
+          {
+            "offset": 0.0,
+            "bassMidi": 48,
+            "bassPc": 0,
+            "bassSpelling": "C",
+            "figures": [
+              "5",
+              "3"
+            ],
+            "displayFigure": "5",
+            "requiredUpperPcs": [
+              7,
+              4
+            ],
+            "requiredNoteNames": [
+              "G",
+              "E"
+            ],
+            "allowedPcs": [
+              0,
+              7,
+              4
+            ],
+            "lockedVoices": {
+              "B": {
+                "midi": 48,
+                "pc": 0,
+                "spelling": "C"
+              }
+            },
+            "voiceCountPolicy": {
+              "expected": 4,
+              "min": 3,
+              "max": 4
+            },
+            "source": {
+              "kind": "analysis_slice",
+              "label": "5",
+              "key": "C"
+            }
+          }
+        ],
+        "canonical_realization": [
+          {
+            "offset": 0.0,
+            "midis": [
+              48,
+              52,
+              55,
+              60
+            ]
+          }
+        ],
+        "wrong_realizations": [
+          {
+            "offset": 0.0,
+            "midis": [
+              48,
+              53,
+              55,
+              60
+            ],
+            "expected_reasons": [
+              "illegal_pc"
+            ]
+          },
+          {
+            "offset": 0.0,
+            "midis": [
+              50,
+              53,
+              57
+            ],
+            "expected_reasons": [
+              "wrong_bass",
+              "illegal_pc"
+            ]
+          }
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#harmonization",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-26"
+    },
+    {
+      "id": "e2e-eb64rv-bb-major-I-V-I",
+      "primitive": "harmonization_e2e",
+      "description": "EB64RV regression (jBb, I-V-I): Bb bass spells Bb not A#; correct realizations accepted, mis-spelled bass rejected",
+      "input": {
+        "umto": {
+          "voices": {
+            "A": [
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 62,
+                  "step": "D",
+                  "alter": 0,
+                  "octave": 4
+                },
+                "duration": 2.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "h",
+                "is_tied_start": false
+              },
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 60,
+                  "step": "C",
+                  "alter": 0,
+                  "octave": 4
+                },
+                "duration": 2.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "h",
+                "is_tied_start": false
+              },
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 62,
+                  "step": "D",
+                  "alter": 0,
+                  "octave": 4
+                },
+                "duration": 4.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "w",
+                "is_tied_start": false
+              }
+            ],
+            "B": [
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 58,
+                  "step": "B",
+                  "alter": -1,
+                  "octave": 3
+                },
+                "duration": 2.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "h",
+                "is_tied_start": false
+              },
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 53,
+                  "step": "F",
+                  "alter": 0,
+                  "octave": 3
+                },
+                "duration": 2.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "h",
+                "is_tied_start": false
+              },
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 58,
+                  "step": "B",
+                  "alter": -1,
+                  "octave": 3
+                },
+                "duration": 4.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "w",
+                "is_tied_start": false
+              }
+            ],
+            "S": [
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 82,
+                  "step": "B",
+                  "alter": -1,
+                  "octave": 5
+                },
+                "duration": 2.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "h",
+                "is_tied_start": false
+              },
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 81,
+                  "step": "A",
+                  "alter": 0,
+                  "octave": 5
+                },
+                "duration": 2.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "h",
+                "is_tied_start": false
+              },
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 82,
+                  "step": "B",
+                  "alter": -1,
+                  "octave": 5
+                },
+                "duration": 4.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "w",
+                "is_tied_start": false
+              }
+            ],
+            "T": [
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 70,
+                  "step": "B",
+                  "alter": -1,
+                  "octave": 4
+                },
+                "duration": 2.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "h",
+                "is_tied_start": false
+              },
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 72,
+                  "step": "C",
+                  "alter": 0,
+                  "octave": 5
+                },
+                "duration": 2.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "h",
+                "is_tied_start": false
+              },
+              {
+                "dots": 0,
+                "kind": "note",
+                "pitch": {
+                  "midi": 70,
+                  "step": "B",
+                  "alter": -1,
+                  "octave": 4
+                },
+                "duration": 4.0,
+                "is_target": true,
+                "is_tied_stop": false,
+                "duration_type": "w",
+                "is_tied_start": false
+              }
+            ]
+          },
+          "grading": [
+            {
+              "offset": 0.0,
+              "target_midi_pitches": [
+                58,
+                62,
+                70,
+                82
+              ],
+              "rhythmic_flexibility": false
+            },
+            {
+              "offset": 2.0,
+              "target_midi_pitches": [
+                53,
+                60,
+                72,
+                81
+              ],
+              "rhythmic_flexibility": false
+            },
+            {
+              "offset": 4.0,
+              "target_midi_pitches": [
+                58,
+                62,
+                70,
+                82
+              ],
+              "rhythmic_flexibility": false
+            }
+          ],
+          "analysis": [
+            {
+              "offset": 0.0,
+              "visual": null,
+              "content": {
+                "local_key": "Bb",
+                "pop_symbol": null,
+                "figured_bass": "5/3",
+                "roman_numeral": null,
+                "scale_degrees": null,
+                "functional_label": null,
+                "raw_figured_bass": "5/3",
+                "raw_roman_numeral": null
+              },
+              "is_target": true,
+              "unit_tags": [
+                9
+              ]
+            },
+            {
+              "offset": 2.0,
+              "visual": null,
+              "content": {
+                "local_key": "Bb",
+                "pop_symbol": null,
+                "figured_bass": "5/3",
+                "roman_numeral": null,
+                "scale_degrees": null,
+                "functional_label": null,
+                "raw_figured_bass": "5/3",
+                "raw_roman_numeral": null
+              },
+              "is_target": true,
+              "unit_tags": [
+                9
+              ]
+            },
+            {
+              "offset": 4.0,
+              "visual": null,
+              "content": {
+                "local_key": "Bb",
+                "pop_symbol": null,
+                "figured_bass": "5/3",
+                "roman_numeral": null,
+                "scale_degrees": null,
+                "functional_label": null,
+                "raw_figured_bass": "5/3",
+                "raw_roman_numeral": null
+              },
+              "is_target": true,
+              "unit_tags": [
+                9
+              ]
+            }
+          ],
+          "metadata": {
+            "key": "jBb",
+            "clef": "keyboard",
+            "mode": "harmonization",
+            "unit": 9,
+            "meter": "2/2",
+            "source": "4-part Harmonization Cadence in Bb var1",
+            "is_umto": true,
+            "input_mode": "note_entry",
+            "exercise_id": "EB64RV",
+            "locked_voices": [
+              "B"
+            ],
+            "chord_settle_ms": 150,
+            "complexity_score": 9,
+            "release_grace_ms": 120,
+            "voice_count_policy": {
+              "max": 4,
+              "min": 3,
+              "expected": null
+            },
+            "max_voice_displacement": 4,
+            "harmonization_target_policy": {
+              "source": "figured_bass",
+              "midi_uses_pitch_class": true,
+              "written_spelling_required": false
+            }
+          }
+        }
+      },
+      "expected": {
+        "targets": [
+          {
+            "offset": 0.0,
+            "bassMidi": 58,
+            "bassPc": 10,
+            "bassSpelling": "Bb",
+            "figures": [
+              "5",
+              "3"
+            ],
+            "displayFigure": "5/3",
+            "requiredUpperPcs": [
+              5,
+              2
+            ],
+            "requiredNoteNames": [
+              "F",
+              "D"
+            ],
+            "allowedPcs": [
+              10,
+              5,
+              2
+            ],
+            "lockedVoices": {
+              "B": {
+                "midi": 58,
+                "pc": 10,
+                "spelling": "Bb"
+              }
+            },
+            "voiceCountPolicy": {
+              "expected": null,
+              "min": 3,
+              "max": 4
+            },
+            "source": {
+              "kind": "analysis_slice",
+              "label": "5/3",
+              "key": "Bb"
+            }
+          },
+          {
+            "offset": 2.0,
+            "bassMidi": 53,
+            "bassPc": 5,
+            "bassSpelling": "F",
+            "figures": [
+              "5",
+              "3"
+            ],
+            "displayFigure": "5/3",
+            "requiredUpperPcs": [
+              0,
+              9
+            ],
+            "requiredNoteNames": [
+              "C",
+              "A"
+            ],
+            "allowedPcs": [
+              5,
+              0,
+              9
+            ],
+            "lockedVoices": {
+              "B": {
+                "midi": 53,
+                "pc": 5,
+                "spelling": "F"
+              }
+            },
+            "voiceCountPolicy": {
+              "expected": null,
+              "min": 3,
+              "max": 4
+            },
+            "source": {
+              "kind": "analysis_slice",
+              "label": "5/3",
+              "key": "Bb"
+            }
+          },
+          {
+            "offset": 4.0,
+            "bassMidi": 58,
+            "bassPc": 10,
+            "bassSpelling": "Bb",
+            "figures": [
+              "5",
+              "3"
+            ],
+            "displayFigure": "5/3",
+            "requiredUpperPcs": [
+              5,
+              2
+            ],
+            "requiredNoteNames": [
+              "F",
+              "D"
+            ],
+            "allowedPcs": [
+              10,
+              5,
+              2
+            ],
+            "lockedVoices": {
+              "B": {
+                "midi": 58,
+                "pc": 10,
+                "spelling": "Bb"
+              }
+            },
+            "voiceCountPolicy": {
+              "expected": null,
+              "min": 3,
+              "max": 4
+            },
+            "source": {
+              "kind": "analysis_slice",
+              "label": "5/3",
+              "key": "Bb"
+            }
+          }
+        ],
+        "canonical_realization": [
+          {
+            "offset": 0.0,
+            "midis": [
+              58,
+              62,
+              65,
+              70
+            ]
+          },
+          {
+            "offset": 2.0,
+            "midis": [
+              53,
+              60,
+              72,
+              81
+            ]
+          },
+          {
+            "offset": 4.0,
+            "midis": [
+              58,
+              62,
+              65,
+              70
+            ]
+          }
+        ],
+        "wrong_realizations": [
+          {
+            "offset": 0.0,
+            "midis": [
+              59,
+              62,
+              65,
+              70
+            ],
+            "expected_reasons": [
+              "illegal_pc"
+            ]
+          }
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#harmonization",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-26"
+    }
+  ]
+}
