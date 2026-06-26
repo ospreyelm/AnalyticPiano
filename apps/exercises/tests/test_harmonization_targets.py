@@ -349,6 +349,31 @@ def test_chordal_umto_spelling_fallback_when_none():
     assert targets[0]["bassSpelling"] == "C"   # MIDI 48 % 12 = 0 → "C"
 
 
+def test_chordal_umto_spelling_fallback_uses_key_not_chromatic():
+    # Regression (prod PA03ZC ex.6 / EB91LM): a chordal UMTO whose chord has
+    # spelling=null in a flat key. Bass MIDI 46 (pc 10) must be spelled per the
+    # KEY (Bb in Bb major), NOT the chromatic sharp name (A#). With "A#",
+    # derive_required_notes can't find the bass in the Bb-major scale, falls
+    # back to step "A" (the leading tone), and derives allowedPcs from the wrong
+    # scale degree — so a correct I chord (Bb,D,F) gets D & F flagged illegal_pc
+    # (red, no advance).
+    umto = _chordal_umto(
+        chords=[{"offset": 0.0, "duration": 2.0, "visible": [70, 74, 77, 46], "hidden": [], "spelling": None}],
+        analysis=[_analysis_slice(0.0, local_key="jBb", figured_bass="5/3", raw_figured_bass="8/5/3")],
+        key="jBb",
+    )
+    targets = build_targets_from_umto(umto)
+    assert len(targets) == 1
+    t = targets[0]
+    assert t["bassSpelling"] == "Bb", t["bassSpelling"]
+    assert t["bassPc"] == 10
+    # I chord in Bb major = Bb(10), D(2), F(5)
+    assert 2 in t["allowedPcs"], t["allowedPcs"]    # D
+    assert 5 in t["allowedPcs"], t["allowedPcs"]    # F
+    assert 9 not in t["allowedPcs"], t["allowedPcs"]  # A (leading tone) — wrong
+    assert 3 not in t["allowedPcs"], t["allowedPcs"]  # Eb — wrong
+
+
 def test_chordal_umto_skips_chord_with_no_matching_analysis():
     # Two chords, only one has a matching analysis slice
     umto = _chordal_umto(
