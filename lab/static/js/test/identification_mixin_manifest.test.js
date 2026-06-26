@@ -14,6 +14,7 @@ var FILES = [
   "exercise_sheet_identification_input_mode.js",
   "exercise_sheet_identification_canvas.js",
   "exercise_sheet_identification_controls.js",
+  "exercise_sheet_identification_logic.js",
 ];
 
 // Top-level mixin properties are indented exactly four spaces in these files.
