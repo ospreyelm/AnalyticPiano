@@ -58,3 +58,24 @@ def test_figured_bass_characterization(case):
     assert derived["required_note_names"] == expected["required_note_names"]
     assert derived["required_upper_pcs"] == expected["required_upper_pcs"]
     assert derived["allowed_pcs"] == expected["allowed_pcs"]
+
+
+# --- Characterization: transposition ----------------------------------------
+
+_TRANSPOSITION_CASES = _load_golden("transposition.json")
+
+
+@pytest.mark.parametrize(
+    "case", _TRANSPOSITION_CASES, ids=_ids(_TRANSPOSITION_CASES)
+)
+def test_transposition_characterization(case):
+    from apps.exercises.services.transposition_service import _transpose_chords
+
+    inp = case["input"]
+    actual = _transpose_chords(
+        inp["chords"],
+        inp["midi_vector"],
+        source_key_hl=inp["source_key"],
+        target_key_hl=inp["target_key"],
+    )
+    assert actual == case["expected"]["chords"]
