@@ -351,6 +351,13 @@
   color: var(--text-muted);
 }
 
+#piano .click-note-clear:disabled,
+#staff-area .click-note-clear:disabled {
+  opacity: 0.3;
+  cursor: default;
+  pointer-events: none;
+}
+
 #staff-toolbar .input-mode-btn-active {
   box-shadow: 0 4px 10px rgba(42, 126, 148, 0.13);
 }

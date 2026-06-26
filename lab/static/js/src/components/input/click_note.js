@@ -31,6 +31,7 @@ define([
         "_onSourceModeChange",
         "_onNextChord",
         "_commit",
+        "_onKeyDown",
       ]);
       this.el = this._buildEl();
       if (this.sheet && typeof this.sheet.setClickNoteComponent === "function") {
@@ -78,6 +79,7 @@ define([
         canvas.addEventListener("mousemove", this._onCanvasMove);
         canvas.addEventListener("mouseleave", this._onCanvasLeave);
       }
+      window.addEventListener("keydown", this._onKeyDown, true);
     },
 
     disable: function () {
@@ -89,6 +91,7 @@ define([
         canvas.removeEventListener("mousemove", this._onCanvasMove);
         canvas.removeEventListener("mouseleave", this._onCanvasLeave);
       }
+      window.removeEventListener("keydown", this._onKeyDown, true);
       this._clearPending();
     },
 
@@ -212,6 +215,7 @@ define([
       }
       if (existing !== -1) {
         this._pending.splice(existing, 1);
+        this._syncClearButton();
         if (this.sheet) this.sheet.render();
         return;
       }
@@ -222,6 +226,12 @@ define([
         return;
       }
 
+      // First new note after rejection: clear rejected overlay so it doesn't
+      // stack with the new pending preview (duplicate noteheads at same pitch).
+      if (this.exerciseContext && this.exerciseContext._harmonizationRejected && this._pending.length === 0) {
+        this.exerciseContext._harmonizationRejected = null;
+      }
+
       this._pending.push({
         midi: resolved.midi,
         step: resolved.step,
@@ -229,6 +239,7 @@ define([
         octave: resolved.octave,
       });
       this._audition(resolved.midi);
+      this._syncClearButton();
       if (this.sheet) this.sheet.render();
     },
 
@@ -274,6 +285,33 @@ define([
         if (self._capHintEl) self._capHintEl.removeClass("is-visible");
         if (self._paletteWrap) self._paletteWrap.removeClass("click-note-cap-shake");
       }, 1800);
+    },
+
+    _onKeyDown: function (e) {
+      if (!this.enabled || !this._activeColumn) return;
+      // Avoid interfering with text inputs
+      var tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this._pending.length > 0) {
+          this._pending.pop();
+          if (this.sheet) this.sheet.render();
+          this._syncClearButton();
+        }
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        this._clearPending();
+        this._syncClearButton();
+      }
+    },
+
+    _syncClearButton: function () {
+      if (this._clearButton) {
+        this._clearButton.prop("disabled", this._pending.length === 0);
+      }
     },
 
     _audition: function (midi) {
@@ -349,6 +387,7 @@ define([
       }
       this._pending = [];
       this._activeColumn = null;
+      this._syncClearButton();
       if (this.sheet) this.sheet.render();
     },
 
@@ -385,7 +424,14 @@ define([
         e.preventDefault();
         self._commit();
       });
-      wrap.append(palette).append(doneBtn);
+      var clearBtn = $('<button type="button" class="input-mode-btn click-note-clear" title="Clear notes — or press Escape" disabled>× Clear</button>');
+      this._clearButton = clearBtn;
+      clearBtn.on("click", function (e) {
+        e.preventDefault();
+        self._clearPending();
+        self._syncClearButton();
+      });
+      wrap.append(palette).append(clearBtn).append(doneBtn);
       this._paletteWrap = wrap;
       this._syncPaletteButtons();
       return wrap;
