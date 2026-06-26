@@ -1,0 +1,22 @@
+{# Fullscreen player base — no nav header, no s-main wrapper #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Monteverdi{% endblock %}</title>
+  {% load static %}
+  <link href="{% static 'student/student.css' %}" rel="stylesheet">
+  <link href="{% static 'css/ionicons-needed.css' %}" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'site.webmanifest' %}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  {% block content %}{% endblock %}
+  {% block js_require %}{% endblock %}
+  {% block js_extra %}{% endblock %}
+</body>
+</html>

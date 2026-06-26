@@ -74,3 +74,14 @@ class PlayerCanvasCssExtractionTests(TestCase):
         self.assertIn("student/exercise-canvas.css", content)
         self.assertNotIn("css/harmony.css", content)
         self.assertNotIn("<style>", content)
+        self.assertIn('student/player_base.html', content, "player.html must extend player_base.html (no nav header)")
+
+    def test_player_base_template_has_ionicons_and_no_nav(self):
+        base_path = (
+            Path(__file__).resolve().parents[1]
+            / "templates" / "student" / "player_base.html"
+        )
+        content = base_path.read_text()
+        self.assertIn("ionicons-needed.css", content, "player_base.html must load ionicons")
+        self.assertNotIn("s-header", content, "player_base.html must not render nav header")
+        self.assertNotIn('class="s-main"', content, "player_base.html must not wrap content in s-main")
