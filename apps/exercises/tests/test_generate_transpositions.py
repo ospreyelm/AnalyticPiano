@@ -116,14 +116,14 @@ class GenerateTranspositionsCommandTest(TestCase):
         self.assertEqual(meta["key"], "jG_")
         self.assertEqual(copy.data.get("key"), "jG_")
 
-    def test_transpose_spelling_absent(self):
-        """Transposed copies must not carry spelling (it is pitch-specific)."""
-        # Build a source that has spelling
+    def test_transpose_preserves_key_correct_spelling(self):
+        """Transposed copies must carry key-correct spelling (interval transpose)."""
+        # C-major I chord (C E G); transposing to G must yield G-major spelling.
         chords_with_spelling = [
             {
                 "offset": 0.0, "duration": 2.0,
                 "visible": [60, 64, 67], "hidden": [],
-                "spelling": ["C4", "E4", "G4"],
+                "spelling": ["C", "E", "G"],
             },
         ]
         src = _make_chordal_exercise(
@@ -142,10 +142,10 @@ class GenerateTranspositionsCommandTest(TestCase):
         desc = f"Chordal With Spelling (G)"
         copy = Exercise.objects.filter(description=desc, authored_by=self.user).first()
         self.assertIsNotNone(copy)
-        for chord in copy.data["score"]["umto"]["chords"]:
-            # Pydantic always serializes spelling; it must be None (not a list)
-            spelling = chord.get("spelling")
-            self.assertIsNone(spelling, "Transposed copy must not carry non-None spelling")
+        chord = copy.data["score"]["umto"]["chords"][0]
+        spelling = chord.get("spelling")
+        self.assertIsNotNone(spelling, "Transposed copy must carry spelling")
+        self.assertEqual(spelling, ["G", "B", "D"])
 
     def test_analysis_slices_carried_unchanged(self):
         """Analysis slices should be recalculated correctly for the target key."""

@@ -57,18 +57,97 @@ def _compute_vector_and_key(sig_orig: str, sig_target: str, key_orig_hl: str) ->
     return midi_vector, key_target
 
 
-def _transpose_chords(chords: list[dict], midi_vector: int) -> list[dict]:
-    """Return new chord list with shifted MIDI, dropping spelling."""
+def _hl_tonic_name(hl_key: str) -> str:
+    """Return the tonic pitch name (uppercase letter) from an HL key token.
+
+    e.g. 'jBb' -> 'Bb', 'jC_' -> 'C', 'iF#' -> 'F#'. Mode is irrelevant here —
+    we only need the tonic pitch to build a transposition interval.
+    """
+    note = (hl_key or "C")[1:].rstrip("_") if (hl_key or "").startswith(("i", "j")) else (hl_key or "C")
+    note = note or "C"
+    return note[0].upper() + note[1:]
+
+
+def _transposition_interval(source_key_hl: str, target_key_hl: str, midi_vector: int):
+    """Build a music21 interval from source tonic to target tonic.
+
+    The interval's chromatic size equals ``midi_vector`` (octave chosen to match),
+    while its diatonic (letter) component follows the real tonic spellings — so
+    transposing a correctly-spelled pitch by it preserves enharmonic identity
+    (e.g. F# -> G#, never Ab). Returns None if it cannot be constructed.
+    """
+    from music21 import interval as m21_interval
+    from music21 import pitch as m21_pitch
+
+    try:
+        src = m21_pitch.Pitch(_hl_tonic_name(source_key_hl))
+        tgt = m21_pitch.Pitch(_hl_tonic_name(target_key_hl))
+        src.octave = 4
+        tgt.octave = 4
+        # Pick the target octave so the chromatic distance equals midi_vector.
+        while (tgt.ps - src.ps) > midi_vector:
+            tgt.octave -= 1
+        while (tgt.ps - src.ps) < midi_vector:
+            tgt.octave += 1
+        iv = m21_interval.Interval(src, tgt)
+        if int(iv.chromatic.semitones) != int(midi_vector):
+            return None
+        return iv
+    except Exception:  # pragma: no cover - defensive
+        return None
+
+
+def _transpose_chords(
+    chords: list[dict],
+    midi_vector: int,
+    source_key_hl: str = "",
+    target_key_hl: str = "",
+) -> list[dict]:
+    """Return new chord list with shifted MIDI and key-correct re-spelling.
+
+    Pitches are transposed by a real interval (derived from source->target key),
+    so enharmonic spelling is preserved rather than discarded. Each output chord
+    gets a ``spelling`` list positional over visible + hidden. If the interval
+    cannot be built (e.g. missing keys), spelling is left null and only MIDI is
+    shifted — matching the historical behaviour as a safe fallback.
+    """
+    from music21 import pitch as m21_pitch
+
+    from apps.exercises.harmonization.figures import spelling_for_pc_in_key
+
+    iv = _transposition_interval(source_key_hl, target_key_hl, midi_vector)
     result = []
     for c in chords:
+        visible = list(c.get("visible", []))
+        hidden = list(c.get("hidden", []))
         new_chord = {
             "offset": c["offset"],
             "duration": c["duration"],
-            "visible": [p + midi_vector for p in c.get("visible", [])],
-            "hidden": [p + midi_vector for p in c.get("hidden", [])],
+            "visible": [p + midi_vector for p in visible],
+            "hidden": [p + midi_vector for p in hidden],
         }
-        # Drop spelling — it is pitch-specific and not re-spelled here.
-        # (caller can pass spelling=None; save_chordal_umto_exercise accepts it)
+
+        if iv is None:
+            # Defensive fallback: no interval -> shift MIDI only, drop spelling.
+            result.append(new_chord)
+            continue
+
+        # Best-available source spelling: explicit chord spelling (positional over
+        # visible + hidden) if present, else derive diatonically from source key.
+        src_midis = visible + hidden
+        src_spelling = c.get("spelling")
+        spelling_out = []
+        for idx, midi in enumerate(src_midis):
+            if src_spelling and idx < len(src_spelling) and src_spelling[idx]:
+                name = src_spelling[idx]
+            else:
+                name = spelling_for_pc_in_key(source_key_hl, midi % 12)
+            src_pitch = m21_pitch.Pitch(name.replace("b", "-"))
+            src_pitch.octave = (midi // 12) - 1
+            tgt_pitch = src_pitch.transpose(iv)
+            spelling_out.append(tgt_pitch.name.replace("-", "b"))
+
+        new_chord["spelling"] = spelling_out
         result.append(new_chord)
     return result
 
@@ -187,7 +266,9 @@ def generate_transposed_copies(
             logger.warning(f"Key out of range: {clean_key}, skipping")
             continue
 
-        transposed_chords = _transpose_chords(source_chords, midi_vector)
+        transposed_chords = _transpose_chords(
+            source_chords, midi_vector, source_key_hl, key_target_hl
+        )
 
         # Description identifies this copy uniquely
         description = f"{source_exercise.description} ({clean_key})"
