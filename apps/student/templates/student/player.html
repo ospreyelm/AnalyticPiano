@@ -19,8 +19,10 @@
 
       <div class="s-player-title">
         <a href="{% url 'student:unit-progress' unit_n=unit_num %}">Unit {{ unit_num }}</a>
+        {% if playlist_display_name %}
         <span class="s-title-sep">·</span>
-        {{ playlist.name }}
+        {{ playlist_display_name }}
+        {% endif %}
       </div>
 
       <div class="s-player-right">
