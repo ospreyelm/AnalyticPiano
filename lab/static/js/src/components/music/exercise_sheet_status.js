@@ -29,6 +29,7 @@ define([
   "app/utils/chordal_barlines_logic",
   "app/utils/umto_score_converter",
   "app/utils/barline_spacing_utils",
+  "app/config/exercise_instructions",
 ], function (
   $,
   $UI,
@@ -58,7 +59,8 @@ define([
   ChordalSpelling,
   ChordalBarlinesLogic,
   UMTOScoreConverter,
-  BarlineSpacingUtils
+  BarlineSpacingUtils,
+  ExerciseInstructions
 ) {
   "use strict";
 
@@ -247,6 +249,18 @@ define([
 
       return this;
     },
+    // Internal source labels that are never meaningful to students.
+    _INTERNAL_SOURCE_RE: /^\s*(play view chordal exercise|roman from compendium|roman from clausulae|harmonization from clausulae)\s*$/i,
+
+    _getModeInstructions: function () {
+      var mode = this.exerciseContext && this.exerciseContext.getDefinition
+        ? (this.exerciseContext.getDefinition().getMode
+            ? this.exerciseContext.getDefinition().getMode()
+            : null)
+        : null;
+      return ExerciseInstructions[mode] || ExerciseInstructions.playback;
+    },
+
     renderExerciseText: function () {
       var exc = this.exerciseContext;
       var definition = exc.getDefinition();
@@ -275,6 +289,11 @@ define([
         promptText = "Input the intervals in this text box with a space between them.";
       }
 
+      // Replace internal metadata labels with a mode-appropriate instruction.
+      if (!promptText || this._INTERNAL_SOURCE_RE.test(promptText)) {
+        promptText = this._getModeInstructions().short;
+      }
+
       tpl_data.prompt_text = FontParser.parseHTMLFiguredBass(promptText);
 
       html = tpl(tpl_data);
@@ -289,8 +308,38 @@ define([
       }
 
       $textEl.html(html);
+      this._renderHintControls($textEl);
 
       return this;
+    },
+
+    _renderHintControls: function ($textEl) {
+      // Inject hint button + panel once; skip if already present.
+      if ($textEl.find('.ex-hint-btn').length) return;
+      var self = this;
+      var instructions = this._getModeInstructions();
+      var hints = instructions.hints || [];
+      if (!hints.length && !instructions.help) return;
+
+      var $btn = $('<button type="button" class="ex-hint-btn" title="Get a hint">? Hint</button>');
+      var $panel = $('<div class="ex-hint-panel" role="status" aria-live="polite" style="display:none;"></div>');
+      var step = -1;
+
+      var allSteps = [];
+      if (instructions.help) allSteps.push(instructions.help);
+      hints.forEach(function (h) { allSteps.push(h); });
+
+      $btn.on('click', function () {
+        step = Math.min(step + 1, allSteps.length - 1);
+        $panel.text(allSteps[step]).show();
+        if (step === allSteps.length - 1) {
+          $btn.text('✓ Hint').prop('disabled', true);
+        } else {
+          $btn.text('More →');
+        }
+      });
+
+      $textEl.append($btn).append($panel);
     },
     renderExerciseHistory: function () {
       var exc = this.exerciseContext;

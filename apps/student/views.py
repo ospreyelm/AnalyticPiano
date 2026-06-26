@@ -1094,9 +1094,18 @@ class PlayerView(View):
         rj_context.set_app_module("app/components/app/exercise")
         rj_context.set_module_params("app/components/app/exercise", exercise_context)
 
+        import re as _re
+        _raw_name = playlist.name or ""
+        _playlist_display_name = _re.sub(
+            r"^Unit\s+" + str(unit_num) + r"\s*[·\-–—·]*\s*",
+            "",
+            _raw_name,
+        ).strip() or _raw_name
+
         context = {
             "unit_num": unit_num,
             "playlist": playlist,
+            "playlist_display_name": _playlist_display_name,
             "exercise_num": exercise_num,
             "total_exercises": served_count if served_count > 0 else exercise_num,
             "is_review_mode": state.mode == "review",
