@@ -1015,12 +1015,33 @@ define([
               exercise.analysis.mode.roman_numerals = true;
             }
           } else if (isIdent) {
-            exercise.problems = applySkillFilter(
-              buildUMTOIdentificationProblems(exercise),
-              (definition.playlistSkillTags || []).concat(definition.playlistTags || []),
-              exercise.analysisType,
-              exercise.allowed_answers
-            );
+            var _umtoAnalysisSlices = (exercise.score.umto && exercise.score.umto.analysis) || [];
+            if (_umtoAnalysisSlices.length === 0 && definition.chord && definition.chord.length > 0) {
+              // Chord-array identification exercise mis-tagged as isUMTO: true.
+              // umto.analysis is empty, so build problems from definition.chord
+              // the same way the non-UMTO "identification" path does.
+              exercise.problems = _.map(definition.chord, function (chord) {
+                var notes = ExerciseDefinition.sortNotes(chord.notes || []);
+                return {
+                  visible: notes.slice(),
+                  hidden: [],
+                  notes: notes,
+                  answer: chord.answer || "",
+                  choices: chord.choices || [],
+                  unison_idx: null,
+                  rhythm: chord.rhythmValue || "w",
+                };
+              });
+              exercise.identMode = definition.identMode || "practice";
+              exercise.analysis = { enabled: false, mode: {} };
+            } else {
+              exercise.problems = applySkillFilter(
+                buildUMTOIdentificationProblems(exercise),
+                (definition.playlistSkillTags || []).concat(definition.playlistTags || []),
+                exercise.analysisType,
+                exercise.allowed_answers
+              );
+            }
           } else {
             var isPlayback = exercise.mode === "playback" || exercise.mode === "analysis_match" || exercise.mode === "play-all-voices";
             // Playback modes don't need problems structure; they use grading slices instead.
