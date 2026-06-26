@@ -36,3 +36,25 @@ def test_spelling_parity_python(case):
         for midi in case["input"]["midis"]
     }
     assert actual == case["expected"]["spelling"]
+
+
+# --- Characterization: figured bass -> required notes -----------------------
+
+_FIGURED_BASS_CASES = _load_golden("figured_bass.json")
+
+
+@pytest.mark.parametrize(
+    "case", _FIGURED_BASS_CASES, ids=_ids(_FIGURED_BASS_CASES)
+)
+def test_figured_bass_characterization(case):
+    from apps.exercises.harmonization.figures import derive_required_notes
+
+    derived = derive_required_notes(
+        key_name=case["input"]["key"],
+        bass_name=case["input"]["bass"],
+        figure=case["input"]["figure"],
+    )
+    expected = case["expected"]
+    assert derived["required_note_names"] == expected["required_note_names"]
+    assert derived["required_upper_pcs"] == expected["required_upper_pcs"]
+    assert derived["allowed_pcs"] == expected["allowed_pcs"]
