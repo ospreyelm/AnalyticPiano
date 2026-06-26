@@ -2,17 +2,24 @@ from __future__ import annotations
 
 from typing import Any
 
-from apps.exercises.harmonization.figures import derive_required_notes, expand_figure_string
+from apps.exercises.harmonization.figures import (
+    derive_required_notes,
+    expand_figure_string,
+    spelling_for_pc_in_key,
+)
 
 
-_CHROMATIC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-
-
-def _chord_bass_payload(chord: dict[str, Any]) -> dict[str, Any] | None:
+def _chord_bass_payload(chord: dict[str, Any], key_name: str = "C") -> dict[str, Any] | None:
     """Derive bass payload from a ChordEvent dict (chordal UMTO).
 
     Bass is the lowest MIDI in visible[]. spelling (when present) is positional
     over visible+hidden, so spelling[visible.index(bass_midi)] names the bass.
+    When spelling is absent (or too short), fall back to a KEY-APPROPRIATE name
+    via spelling_for_pc_in_key — not the chromatic sharp-side name — so that a
+    flat-key bass (e.g. pc 10 in Bb major) spells "Bb" rather than "A#".
+    derive_required_notes locates the bass in the key scale by step+alter; an
+    enharmonic chromatic spelling is absent from the scale and would force a
+    step-only fallback to the wrong scale degree, yielding incorrect allowedPcs.
     """
     visible = chord.get("visible") or []
     if not visible:
@@ -24,10 +31,10 @@ def _chord_bass_payload(chord: dict[str, Any]) -> dict[str, Any] | None:
         name = (
             spelling_list[bass_idx]
             if bass_idx < len(spelling_list)
-            else _CHROMATIC_NAMES[bass_midi % 12]
+            else spelling_for_pc_in_key(key_name, bass_midi)
         )
     else:
-        name = _CHROMATIC_NAMES[bass_midi % 12]
+        name = spelling_for_pc_in_key(key_name, bass_midi)
     return {
         "midi": bass_midi,
         "pc": bass_midi % 12,
@@ -54,7 +61,7 @@ def _build_targets_from_chordal_umto(umto: dict[str, Any]) -> list[dict[str, Any
 
     for chord in chords:
         offset = round(float(chord.get("offset", 0)), 5)
-        bass = _chord_bass_payload(chord)
+        bass = _chord_bass_payload(chord, key_name)
         if bass is None:
             continue
 

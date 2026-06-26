@@ -128,6 +128,31 @@ def _scale_pitches_for_key(key_obj: m21_key.Key) -> list[m21_pitch.Pitch]:
     return list(sc.getPitches(f"{tonic}2", f"{tonic}6"))
 
 
+_CHROMATIC_PC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+
+def spelling_for_pc_in_key(key_name: str, pc: int) -> str:
+    """Return the key-appropriate spelling for a pitch class.
+
+    If the PC is a diatonic member of the key's scale, use that scale pitch's
+    name — so a Bb-major bass (pc 10) spells as "Bb", not the chromatic "A#".
+    This matters because derive_required_notes locates the bass in the key
+    scale by step+alter; an enharmonic chromatic spelling (e.g. "A#" in Bb
+    major) is absent from the scale and forces a step-only fallback to the
+    wrong scale degree, producing incorrect allowedPcs. Falls back to the
+    chromatic sharp-side name only if the PC is not in the scale at all.
+    """
+    pc = int(pc) % 12
+    try:
+        scale_pitches = _scale_pitches_for_key(m21_key.Key(_normalize_key_name(key_name)))
+        for p in scale_pitches:
+            if int(p.pitchClass) == pc:
+                return p.name.replace("-", "b")
+    except Exception:
+        pass
+    return _CHROMATIC_PC_NAMES[pc]
+
+
 def _diatonic_pitch_above(
     scale_pitches: list[m21_pitch.Pitch],
     bass: m21_pitch.Pitch,
