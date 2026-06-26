@@ -374,7 +374,12 @@ define([
       var columnForRejected = this._activeColumn;
       ctx.gradeHarmonizationMidiSet(snapshot);
       // If rejected state was set, attach spellings and position from the commit.
+      // Override midi to only the clicked notes — locked-voice notes (e.g. the
+      // given bass) are already visible in the score and must not appear in the
+      // treble rejection overlay (they render at a wrong position because midi
+      // array order diverges from spellings array order after sort).
       if (ctx._harmonizationRejected && pendingForRejected.length) {
+        ctx._harmonizationRejected.midi = pendingForRejected.map(function (n) { return n.midi; });
         ctx._harmonizationRejected.spellings = pendingForRejected.map(function (n) {
           return { step: n.step, alter: n.alter || 0, octave: n.octave };
         });

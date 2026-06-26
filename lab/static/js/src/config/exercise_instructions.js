@@ -1,10 +1,3 @@
-/**
- * Per-mode instruction and hint text shown to students in the player.
- *
- * Keyed by InteractionMode value (see umto.py).  The "hint" array is
- * progressive: each element is revealed in order when the student presses
- * the Hint button.
- */
 define([], function () {
   return {
     playback: {
@@ -31,11 +24,11 @@ define([], function () {
     },
     harmonization: {
       short: "Click or play notes to complete the missing chord.",
-      help:  "Each measure shows a figured bass symbol (e.g. 6/4, 7) above the staff that tells you which chord to build. Click notes on the piano or the staff, then press “Lock Chord” when finished.",
+      help:  "Each measure shows a figured bass symbol above the staff. Count those intervals up from the bass note, find those pitches, then press Lock Chord.",
       hints: [
-        "The figured bass symbol above the measure tells you the chord quality and inversion:\n  • No symbol = root position (1-3-5 above the bass)\n  • 6 = first inversion (bass is the third)\n  • 6/4 = second inversion (bass is the fifth)\n  • 7 = root-position seventh chord",
-        "Count up from the bass note: identify what the figured bass intervals are, then find those notes on the piano.",
-        "You can press Backspace or Delete to remove the last note you added, or click × Clear to start the chord over.",
+        "Figured bass intervals above the bass note (Kellner):\n  No symbol  1 - 3 - 5\n  6          3 - 6 - 8\n  6/4        4 - 6 - 8\n  7          1 - 3 - 5 - 7\n  6/5        3 - 5 - 6 - 8\n  4/3        3 - 4 - 6 - 8\n  2          2 - 4 - 6 - 8",
+        "Count from the bass note: 1 = the bass itself (or its octave), 3 = two staff steps up, 5 = four steps up, 6 = five steps up. Key-signature accidentals apply unless the figure shows a sharp or flat.",
+        "Press Backspace or Delete to remove the last note, or x Clear to start over.",
       ],
     },
     identification: {
@@ -66,7 +59,7 @@ define([], function () {
       short: "Analyse the score.",
       help:  "Follow the on-screen prompts to label the musical elements.",
       hints: [
-        "Read the prompt carefully — it tells you what to identify.",
+        "Read the prompt carefully -- it tells you what to identify.",
       ],
     },
   };

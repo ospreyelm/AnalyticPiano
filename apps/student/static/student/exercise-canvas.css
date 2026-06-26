@@ -487,11 +487,11 @@
   flex-basis: 100%;
   margin-top: 4px;
   padding: 8px 12px;
-  border-left: 3px solid var(--teal, #2a7e94);
-  background: rgba(42, 126, 148, 0.06);
+  border-left: 3px solid rgba(42, 126, 148, 0.6);
+  background: rgba(20, 30, 35, 0.72);
   border-radius: 0 6px 6px 0;
   font-size: 0.8rem;
-  color: var(--text);
+  color: #e8dfd4;
   line-height: 1.4;
   white-space: pre-wrap;
 }
