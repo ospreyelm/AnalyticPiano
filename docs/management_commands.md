@@ -370,6 +370,13 @@ python manage.py dump_theory_goldens
 Gate: `pytest apps/exercises/tests/test_theory_goldens.py` (Python) and
 `./run_js_tests.sh` (JS) pin both engines to the reviewed goldens.
 
+- **`audit_figure_realization_coverage`** — Report figured-bass figures in the corpus that don't
+  map to a realization prototype (fall back to all-required). Re-run after curriculum changes.
+
+  ```
+  python manage.py audit_figure_realization_coverage --limit 20
+  ```
+
 ---
 
 ## Inspection / debugging
