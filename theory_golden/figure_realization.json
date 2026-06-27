@@ -1,0 +1,336 @@
+{
+  "cases": [
+    {
+      "id": "figrel-5-3-core",
+      "primitive": "figure_realization",
+      "description": "root triad: 5th omittable, 3rd required",
+      "input": {
+        "key": "C",
+        "bass": "C3",
+        "figure": "5/3",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          4
+        ],
+        "required_note_names": [
+          "E"
+        ],
+        "allowed_pcs": [
+          0,
+          7,
+          4
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-6-3-core",
+      "primitive": "figure_realization",
+      "description": "first-inversion triad: 3rd+6th required",
+      "input": {
+        "key": "C",
+        "bass": "E3",
+        "figure": "6/3",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          0,
+          7
+        ],
+        "required_note_names": [
+          "C",
+          "G"
+        ],
+        "allowed_pcs": [
+          4,
+          0,
+          7
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-7-5-3-seventh",
+      "primitive": "figure_realization",
+      "description": "root seventh: 3rd+7th required, 5th omittable",
+      "input": {
+        "key": "C",
+        "bass": "G3",
+        "figure": "7/5/3",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          5,
+          11
+        ],
+        "required_note_names": [
+          "F",
+          "B"
+        ],
+        "allowed_pcs": [
+          7,
+          5,
+          2,
+          11
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-9-7-5-3-ninth",
+      "primitive": "figure_realization",
+      "description": "dominant ninth: 9th+7th required",
+      "input": {
+        "key": "C",
+        "bass": "G3",
+        "figure": "9/7/5/3",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          9,
+          5,
+          2,
+          11
+        ],
+        "required_note_names": [
+          "A",
+          "F",
+          "D",
+          "B"
+        ],
+        "allowed_pcs": [
+          7,
+          9,
+          5,
+          2,
+          11
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-5-3-2-susp",
+      "primitive": "figure_realization",
+      "description": "bass-2 suspension: 2nd+3rd required, 5th omittable",
+      "input": {
+        "key": "C",
+        "bass": "D3",
+        "figure": "5/3/2",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          5,
+          4
+        ],
+        "required_note_names": [
+          "F",
+          "E"
+        ],
+        "allowed_pcs": [
+          2,
+          9,
+          5,
+          4
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-7-5-2-fourvonly",
+      "primitive": "figure_realization",
+      "description": "4-voice-only: all required",
+      "input": {
+        "key": "C",
+        "bass": "D3",
+        "figure": "7/5/2",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          0,
+          9,
+          4
+        ],
+        "required_note_names": [
+          "C",
+          "A",
+          "E"
+        ],
+        "allowed_pcs": [
+          2,
+          0,
+          9,
+          4
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-5-3-altered",
+      "primitive": "figure_realization",
+      "description": "diminished 5th: altered tone forced required",
+      "input": {
+        "key": "C",
+        "bass": "C3",
+        "figure": "5\u00b0/3",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          6,
+          4
+        ],
+        "required_note_names": [
+          "Gb",
+          "E"
+        ],
+        "allowed_pcs": [
+          0,
+          6,
+          4
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-7-3-reduced",
+      "primitive": "figure_realization",
+      "description": "reduced voicing maps to 7/5/3 prototype",
+      "input": {
+        "key": "C",
+        "bass": "G3",
+        "figure": "7/3",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          5,
+          11
+        ],
+        "required_note_names": [
+          "F",
+          "B"
+        ],
+        "allowed_pcs": [
+          7,
+          5,
+          11
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-7-6-5-failsafe",
+      "primitive": "figure_realization",
+      "description": "rare tail: fail-safe all required",
+      "input": {
+        "key": "C",
+        "bass": "C3",
+        "figure": "7/6/5",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          11,
+          9,
+          7
+        ],
+        "required_note_names": [
+          "B",
+          "A",
+          "G"
+        ],
+        "allowed_pcs": [
+          0,
+          11,
+          9,
+          7
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-5-3-min4",
+      "primitive": "figure_realization",
+      "description": "min=4: 5th stays required",
+      "input": {
+        "key": "C",
+        "bass": "C3",
+        "figure": "5/3",
+        "voice_count_policy": {
+          "min": 4,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          7,
+          4
+        ],
+        "required_note_names": [
+          "G",
+          "E"
+        ],
+        "allowed_pcs": [
+          0,
+          7,
+          4
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    }
+  ]
+}

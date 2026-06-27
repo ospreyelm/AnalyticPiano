@@ -94,6 +94,28 @@ def test_harmonization_e2e_build_targets_python(case):
     assert actual == case["expected"]["targets"]
 
 
+# --- Characterization: figure realization (required vs allowed tones) -------
+
+_FIGREL_CASES = _load_golden("figure_realization.json")
+
+
+@pytest.mark.parametrize("case", _FIGREL_CASES, ids=_ids(_FIGREL_CASES))
+def test_figure_realization_characterization(case):
+    from apps.exercises.harmonization.figures import derive_required_notes
+
+    inp = case["input"]
+    d = derive_required_notes(
+        key_name=inp["key"],
+        bass_name=inp["bass"],
+        figure=inp["figure"],
+        voice_count_policy=inp["voice_count_policy"],
+    )
+    exp = case["expected"]
+    assert d["required_upper_pcs"] == exp["required_upper_pcs"]
+    assert d["required_note_names"] == exp["required_note_names"]
+    assert d["allowed_pcs"] == exp["allowed_pcs"]
+
+
 # --- Meta: every golden case must be expert-reviewed ------------------------
 
 _GOLDEN_FILES = [
@@ -101,6 +123,7 @@ _GOLDEN_FILES = [
     "figured_bass.json",
     "transposition.json",
     "harmonization_e2e.json",
+    "figure_realization.json",
 ]
 
 
