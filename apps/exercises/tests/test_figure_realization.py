@@ -57,3 +57,43 @@ def test_table_invariant_two_or_nine_excludes_eight():
         nums = {int(n) for alts in by_voice.values() for alt in alts for n in alt}
         if 2 in nums or 9 in nums:
             assert 8 not in nums, f"{key} violates 2|9 -> no 8"
+
+
+# ---------------------------------------------------------------------------
+# Integration tests: derive_required_notes wired to figure_realization table
+# ---------------------------------------------------------------------------
+
+from apps.exercises.harmonization.figures import derive_required_notes
+
+
+def test_derive_5_3_omits_fifth_from_required():
+    d = derive_required_notes(key_name="C", bass_name="C3", figure="5/3",
+                              voice_count_policy={"min": 3, "max": 4})
+    # 3rd (E, pc4) required; 5th (G, pc7) allowed but not required.
+    assert d["required_upper_pcs"] == [4]
+    assert d["required_note_names"] == ["E"]
+    assert d["allowed_pcs"] == [0, 7, 4]  # bass + all named tones, unchanged
+
+
+def test_derive_6_3_keeps_both_required():
+    d = derive_required_notes(key_name="C", bass_name="E3", figure="6/3",
+                              voice_count_policy={"min": 3, "max": 4})
+    assert set(d["required_upper_pcs"]) == {0, 7}  # C (6th) + G (3rd)
+
+
+def test_derive_min4_keeps_fifth_required():
+    d = derive_required_notes(key_name="C", bass_name="C3", figure="5/3",
+                              voice_count_policy={"min": 4, "max": 4})
+    assert set(d["required_upper_pcs"]) == {4, 7}  # E and G both required
+
+
+def test_derive_unknown_figure_failsafe_all_required():
+    d = derive_required_notes(key_name="C", bass_name="C3", figure="7/6/5",
+                              voice_count_policy={"min": 3, "max": 4})
+    # rare-tail fail-safe: every named upper tone required (legacy behavior).
+    assert set(d["required_upper_pcs"]) == set(d["allowed_pcs"]) - {0}
+
+
+def test_derive_default_policy_is_3_4():
+    d = derive_required_notes(key_name="C", bass_name="C3", figure="5/3")
+    assert d["required_upper_pcs"] == [4]

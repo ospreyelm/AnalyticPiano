@@ -193,24 +193,32 @@ def _apply_accidental_to_pitch(base: m21_pitch.Pitch, accidental: str) -> m21_pi
     return result
 
 
-def derive_required_notes(*, key_name: str, bass_name: str, figure: str | None) -> DerivedNotes:
+def derive_required_notes(
+    *,
+    key_name: str,
+    bass_name: str,
+    figure: str | None,
+    voice_count_policy: dict | None = None,
+) -> DerivedNotes:
     key_obj = m21_key.Key(_normalize_key_name(key_name))
     bass_pitch = m21_pitch.Pitch(bass_name)
     if bass_pitch.octave is None:
         bass_pitch.octave = 3
 
     scale_pitches = _scale_pitches_for_key(key_obj)
+
+    from apps.exercises.harmonization import figure_realization as _fr
+
     expanded = expand_figure_string(figure)
-    note_names: list[str] = []
-    pcs: list[int] = []
+    # Per-token records: (number, name, pc, is_altered) in figure order, deduped by pc.
+    tokens_out: list[tuple[int, str, int, bool]] = []
+    seen_pcs: set[int] = set()
 
     for raw_token in expanded:
         token = _parse_token(raw_token)
         diatonic = _diatonic_pitch_above(scale_pitches, bass_pitch, token.number)
         derived = _apply_accidental_to_pitch(diatonic, token.accidental)
         if token.quality_alter:
-            # quality_alter marks a tritone interval (aug4 or dim5) — adjust to exactly
-            # 6 semitones from bass rather than blindly raising/lowering the diatonic step.
             bass_pc = int(bass_pitch.pitchClass)
             current_dist = (int(derived.pitchClass) - bass_pc) % 12
             delta = 6 - current_dist
@@ -220,16 +228,35 @@ def derive_required_notes(*, key_name: str, bass_name: str, figure: str | None) 
                 derived = _apply_accidental_to_pitch(derived, "b")
         note_name = derived.name.replace("-", "b")
         pc = int(derived.pitchClass)
-        if pc not in pcs:
-            note_names.append(note_name)
-            pcs.append(pc)
+        is_altered = bool(token.accidental) or bool(token.quality_alter)
+        if pc not in seen_pcs:
+            seen_pcs.add(pc)
+            tokens_out.append((token.number, note_name, pc, is_altered))
 
     bass_pc = int(bass_pitch.pitchClass)
+    policy = voice_count_policy or {"min": 3, "max": 4}
+
+    prototype, _altered_from_norm = _fr.normalize((figure or "").strip())
+    present_numbers = {t[0] for t in tokens_out}
+    altered_numbers = frozenset(t[0] for t in tokens_out if t[3])
+
+    if prototype is None:
+        required_numbers = present_numbers  # fail-safe: all named tones required
+    else:
+        required_numbers = _fr.required_numbers(
+            prototype, policy, present=present_numbers, altered=altered_numbers
+        )
+
+    note_names = [name for (num, name, pc, alt) in tokens_out]
+    pcs = [pc for (num, name, pc, alt) in tokens_out]
+    required_note_names = [name for (num, name, pc, alt) in tokens_out if num in required_numbers]
+    required_pcs = [pc for (num, name, pc, alt) in tokens_out if num in required_numbers]
+
     return {
         "bass_name": bass_name,
         "bass_pc": bass_pc,
         "expanded_figures": expanded,
-        "required_note_names": note_names,
-        "required_upper_pcs": pcs,
+        "required_note_names": required_note_names,
+        "required_upper_pcs": required_pcs,
         "allowed_pcs": [bass_pc] + pcs,
     }
