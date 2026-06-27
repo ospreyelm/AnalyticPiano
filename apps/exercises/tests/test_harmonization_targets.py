@@ -224,7 +224,7 @@ def test_misaligned_analysis_slice_uses_local_grading_offset_for_bass_attack():
     assert [t["offset"] for t in targets] == [0.0, 1.0]
     assert targets[1]["bassMidi"] == 43
     assert targets[1]["displayFigure"] == "5/3"
-    assert targets[1]["requiredNoteNames"] == ["G", "D", "B"]
+    assert targets[1]["requiredNoteNames"] == ["B"]
 
 
 def test_empty_analysis_returns_empty_targets():

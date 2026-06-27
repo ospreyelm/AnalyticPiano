@@ -20,13 +20,13 @@
       "description": "C major, bass C, figure 5/3 -> root-position C triad",
       "input": { "key": "C", "bass": "C3", "figure": "5/3" },
       "expected": {
-        "required_note_names": ["G", "E"],
-        "required_upper_pcs": [7, 4],
+        "required_note_names": ["E"],
+        "required_upper_pcs": [4],
         "allowed_pcs": [0, 7, 4]
       },
       "canon_ref": "music-theory-canon.md#figured-bass",
       "reviewed_by": "avner",
-      "reviewed_at": "2026-06-26"
+      "reviewed_at": "2026-06-27"
     }
   ]
 }

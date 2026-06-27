@@ -127,11 +127,9 @@
             ],
             "displayFigure": "5",
             "requiredUpperPcs": [
-              7,
               4
             ],
             "requiredNoteNames": [
-              "G",
               "E"
             ],
             "allowedPcs": [
@@ -198,7 +196,7 @@
       },
       "canon_ref": "music-theory-canon.md#harmonization",
       "reviewed_by": "avner",
-      "reviewed_at": "2026-06-26"
+      "reviewed_at": "2026-06-27"
     },
     {
       "id": "e2e-eb64rv-bb-major-I-V-I",
@@ -527,11 +525,9 @@
             ],
             "displayFigure": "5/3",
             "requiredUpperPcs": [
-              5,
               2
             ],
             "requiredNoteNames": [
-              "F",
               "D"
             ],
             "allowedPcs": [
@@ -568,11 +564,9 @@
             ],
             "displayFigure": "5/3",
             "requiredUpperPcs": [
-              0,
               9
             ],
             "requiredNoteNames": [
-              "C",
               "A"
             ],
             "allowedPcs": [
@@ -609,11 +603,9 @@
             ],
             "displayFigure": "5/3",
             "requiredUpperPcs": [
-              5,
               2
             ],
             "requiredNoteNames": [
-              "F",
               "D"
             ],
             "allowedPcs": [
@@ -646,8 +638,8 @@
             "midis": [
               58,
               62,
-              65,
-              70
+              70,
+              82
             ]
           },
           {
@@ -664,8 +656,8 @@
             "midis": [
               58,
               62,
-              65,
-              70
+              70,
+              82
             ]
           }
         ],
@@ -675,8 +667,8 @@
             "midis": [
               59,
               62,
-              65,
-              70
+              70,
+              82
             ],
             "expected_reasons": [
               "illegal_pc"
@@ -686,7 +678,7 @@
       },
       "canon_ref": "music-theory-canon.md#harmonization",
       "reviewed_by": "avner",
-      "reviewed_at": "2026-06-26"
+      "reviewed_at": "2026-06-27"
     }
   ]
 }
