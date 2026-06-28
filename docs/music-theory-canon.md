@@ -42,6 +42,28 @@ the underlying interval identities. For example, a complete first-inversion
 triad with a third and sixth above the bass abbreviates to `6`; it is not
 derived by first choosing a Roman numeral inversion.
 
+### Figured bass: required vs allowed tones
+
+A figure names the generic intervals *available* above the bass; it does **not** mean all of them
+must sound. Which tones are *required* (must be present) vs merely *allowed* (legal but optional)
+depends on the chord and the number of voices (Kellner 1732 / Remes realization rules).
+
+- **allowed** = the bass plus every interval the figure names.
+- **required** = the tones that survive in *every* valid realization across the exercise's voice
+  range `[voiceCountPolicy.min .. max]`. The perfect 5th of a root-position triad (`5/3`) is the
+  canonical omittable tone — at three voices you may double the root and drop the 5th, so the 5th
+  is allowed but not required. An **altered** interval (`5°`, `b5`, `#6`, `4+`, …) is always
+  required.
+
+The authoritative realization table lives in code:
+`apps/exercises/harmonization/figure_realization.py` (`TABLE`). It is the single source of truth;
+`docs/FIGURED_BASS.md` mirrors it for humans. Changing a realization is a music-theory change —
+follow the theory-sensitive-change rule in AGENTS.md and add a distinguishing golden case in
+`theory_golden/figure_realization.json`. Figures that match no prototype fail safe (all named
+tones required); run `python manage.py audit_figure_realization_coverage` to see which corpus
+figures fall through (≈95% of harmonization targets map to a prototype; the remainder are
+incomplete/altered voicings where all-required is harmless or correct).
+
 ## Agent review rule
 
 For theory-sensitive changes, include or verify a distinguishing example. The
