@@ -86,6 +86,7 @@ def _build_targets_from_chordal_umto(umto: dict[str, Any]) -> list[dict[str, Any
             key_name=local_key,
             bass_name=bass["spelling"],
             figure=raw_figure,
+            voice_count_policy=voice_count_policy,
         )
 
         locked: dict[str, Any] = {}
@@ -291,6 +292,7 @@ def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
             key_name=local_key,
             bass_name=bass["spelling"],
             figure=raw_figure,
+            voice_count_policy=voice_count_policy,
         )
 
         locked: dict[str, Any] = {}

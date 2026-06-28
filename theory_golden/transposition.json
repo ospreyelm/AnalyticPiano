@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "transpose-C-to-D-tonic-triad",
+      "primitive": "transposition",
+      "description": "C-major tonic triad up a major 2nd to D major preserves spelling (D F# A)",
+      "input": {
+        "source_key": "jC_",
+        "target_key": "jD_",
+        "midi_vector": 2,
+        "chords": [
+          { "offset": 0.0, "duration": 1.0, "visible": [60, 64, 67], "hidden": [], "spelling": ["C", "E", "G"] }
+        ]
+      },
+      "expected": {
+        "chords": [
+          { "offset": 0.0, "duration": 1.0, "visible": [62, 66, 69], "hidden": [], "spelling": ["D", "F#", "A"] }
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#transposition",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-26"
+    }
+  ]
+}

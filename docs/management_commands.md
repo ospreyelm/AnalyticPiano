@@ -354,6 +354,31 @@ python manage.py generate_transpositions --exercise EA0001 --keys C,G --playlist
 
 ---
 
+## Theory verification
+
+**`dump_theory_goldens`** — Emit candidate theory golden files
+(`theory_golden/*.json`) for expert review. Walks representative inputs
+through the current Python engines; new cases get empty `reviewed_by`
+(blocked by the meta review-gate until signed off); existing cases merge
+by `id`, preserving review stamps and flagging drifted `expected`.
+
+```
+python manage.py dump_theory_goldens --dry-run
+python manage.py dump_theory_goldens
+```
+
+Gate: `pytest apps/exercises/tests/test_theory_goldens.py` (Python) and
+`./run_js_tests.sh` (JS) pin both engines to the reviewed goldens.
+
+- **`audit_figure_realization_coverage`** — Report figured-bass figures in the corpus that don't
+  map to a realization prototype (fall back to all-required). Re-run after curriculum changes.
+
+  ```
+  python manage.py audit_figure_realization_coverage --limit 20
+  ```
+
+---
+
 ## Inspection / debugging
 
 **`dump_exercise`** — Print an exercise's decision fields (type, mode, inputMode, inputModeFixed, analysisType, identMode, allowed_answers) by E-ID, plus the resolved canonical `input_method` (`note_entry` / `dropdown` / `text`). Read the real shape of an exercise instead of guessing field names through the browser. Use the local settings that point at the dev DB.

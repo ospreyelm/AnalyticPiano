@@ -210,6 +210,18 @@ CATALOG = [
             "python manage.py reanalyze_knowledge_graph",
         ),
     ]),
+    ("Theory verification", [
+        (
+            "dump_theory_goldens",
+            "Emit candidate theory golden files (theory_golden/*.json) for expert review; merges by id and preserves review stamps.",
+            "python manage.py dump_theory_goldens --dry-run",
+        ),
+        (
+            "audit_figure_realization_coverage",
+            "Report figured-bass figures in the corpus that don't map to a realization prototype (fall back to all-required).",
+            "python manage.py audit_figure_realization_coverage --limit 20",
+        ),
+    ]),
     ("Factory library / infrastructure", [
         (
             "ensure_factory_account",

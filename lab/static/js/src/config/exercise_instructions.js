@@ -24,7 +24,7 @@ define([], function () {
     },
     harmonization: {
       short: "Click or play notes to complete the missing chord.",
-      help:  "Each measure shows a figured bass symbol above the staff. Count those intervals up from the bass note, find those pitches, then press Lock Chord.",
+      help:  "Each measure shows a figured bass symbol above the staff. Count those intervals up from the bass note, find those pitches, then press Lock Chord. In three voices you may leave out the 5th and double another note — the figure lists what's available, not everything you must play.",
       hints: [
         "Figured bass intervals above the bass note (Kellner):\n  No symbol  1 - 3 - 5\n  6          3 - 6 - 8\n  6/4        4 - 6 - 8\n  7          1 - 3 - 5 - 7\n  6/5        3 - 5 - 6 - 8\n  4/3        3 - 4 - 6 - 8\n  2          2 - 4 - 6 - 8",
         "Count from the bass note: 1 = the bass itself (or its octave), 3 = two staff steps up, 5 = four steps up, 6 = five steps up. Key-signature accidentals apply unless the figure shows a sharp or flat.",

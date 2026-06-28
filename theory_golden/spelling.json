@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "id": "spelling-bb-major-tonic-EB64RV",
+      "primitive": "spelling",
+      "description": "Bb-major bass+chord regression: pc 10 spells Bb not A#",
+      "input": { "key": "jBb", "midis": [46, 70, 74, 77] },
+      "expected": { "spelling": { "46": "Bb", "70": "Bb", "74": "D", "77": "F" } },
+      "canon_ref": "music-theory-canon.md#spelling",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-26"
+    },
+    {
+      "id": "spelling-c-major-triad",
+      "primitive": "spelling",
+      "description": "C-major tonic triad spells C E G",
+      "input": { "key": "jC_", "midis": [48, 52, 55] },
+      "expected": { "spelling": { "48": "C", "52": "E", "55": "G" } },
+      "canon_ref": "music-theory-canon.md#spelling",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-26"
+    },
+    {
+      "id": "spelling-eb-major-third",
+      "primitive": "spelling",
+      "description": "Eb-major: pc 3 spells Eb, pc 8 spells Ab",
+      "input": { "key": "jEb", "midis": [51, 56] },
+      "expected": { "spelling": { "51": "Eb", "56": "Ab" } },
+      "canon_ref": "music-theory-canon.md#spelling",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-26"
+    }
+  ]
+}

@@ -67,6 +67,12 @@ begin automatically.
   product owner instead of silently preserving existing behavior as project
   convention. For each theory-sensitive change, add or verify at least one
   distinguishing example that would fail under the incorrect rule.
+- The authoritative figured-bass **required-vs-allowed realization** table is
+  [`apps/exercises/harmonization/figure_realization.py`](apps/exercises/harmonization/figure_realization.py)
+  (`TABLE`). A figure names intervals; it does not require all of them. Do not re-derive required
+  tones ad hoc or treat every named interval as required. Changes are music-theory changes: get
+  expert sign-off, add a `theory_golden/figure_realization.json` case, and keep
+  `docs/FIGURED_BASS.md` in sync.
 - Before modifying features, controllers, shared algorithms, or routing, read
   [docs/redundancy_analysis_report.md](docs/redundancy_analysis_report.md).
 

@@ -47,6 +47,47 @@ Root-position triads with a chromatic third or fifth show only the accidental: `
 
 ---
 
+## Realization: required vs allowed tones
+
+The abbreviation table above says *which intervals a figure names*. A second table says *which of
+those you actually play* at 4, 3, or 2 voices — and therefore which are **required** vs **allowed**
+when grading. Source of truth: `apps/exercises/harmonization/figure_realization.py`.
+
+| prototype | 4-voice | 3-voice | 2-voice |
+|---|---|---|---|
+| `5/3` | 5, 3 | 5,3 or 3 | 3 |
+| `6/3` | 6, 3 | 6, 3 | 6 |
+| `6/4` | 6, 4 | 6, 4 | none |
+| `7/5/3` | 7, 5, 3 | 7, 3 | 7 |
+| `6/5/3` | 6, 5, 3 | 6, 5 | none |
+| `6/4/3` | 6, 4, 3 | 6,3 or 6,4 | none |
+| `6/4/2` | 6, 4, 2 | 4, 2 | 2 |
+| `5/4` | 5, 4 | 5, 4 | none |
+| `9/7/5` | 9, 7, 5 | 9, 7 | none |
+| `9/7/3` | 9, 7, 3 | 9, 7 | none |
+| `9/7/5/3` | 9,7,3 or 9,7,5 | 9, 7 | none |
+| `9/5/3` | 9, 5, 3 | 9, 3 | 9 |
+| `9/6/3` | 9, 6, 3 | 9, 6 | none |
+| `9/7/4` | 9, 7, 4 | none | none |
+| `5/2` | 5, 2 | 5, 2 | none |
+| `5/3/2` | 5, 3, 2 | 3, 2 | none |
+| `5/4/2` | 5, 4, 2 | none | none |
+| `6/2` | 6, 2 | none | none |
+| `7/6/3` | 7, 6, 3 | none | none |
+| `7/5/2` | 7, 5, 2 | none | none |
+| `7/4/2` | 7, 4, 2 | none | none |
+| `7/4/3` | 7, 4, 3 | none | none |
+
+**required** = tones present in every realization across `[min..max]` voices; **allowed** = bass +
+all named tones. `8` (octave) doubles the bass and is dropped at the pitch-class level. Invariant:
+a figure with a `2` or `9` never carries an `8`. `9/6/4` is treated as `6/4/2`. Figures not in the
+table fail safe (all named tones required) — about 95% of harmonization targets map to a prototype;
+the rest are incomplete or altered voicings (e.g. a ninth voiced without its 3rd, augmented sixths,
+2-suspensions) where all-required is harmless or musically correct. Run
+`python manage.py audit_figure_realization_coverage` to list the fall-through figures.
+
+---
+
 ## Curriculum sequence (units 9–13)
 
 Figures introduced progressively. Students only see figures from their current and prior units.
