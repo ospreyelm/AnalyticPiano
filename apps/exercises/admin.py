@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Prefetch
 from django.urls import reverse, path
 from django.utils.safestring import mark_safe
 from django.shortcuts import render, redirect
@@ -110,12 +111,18 @@ def _student_playlist_url(playlist, exercise_num=1):
     )
 
 
+_EXERCISE_PLAYLIST_ORDER = ("-playlist__is_public", "playlist__name", "order", "_id")
+
+
 def _student_exercise_url(exercise):
-    epolist = (
-        ExercisePlaylistOrdered.objects.filter(exercise=exercise)
-        .select_related("playlist")
-        .order_by("-playlist__is_public", "playlist__name", "order", "_id")
-    )
+    if "exerciseplaylistordered_set" in getattr(exercise, "_prefetched_objects_cache", {}):
+        epolist = exercise._prefetched_objects_cache["exerciseplaylistordered_set"]
+    else:
+        epolist = (
+            ExercisePlaylistOrdered.objects.filter(exercise=exercise)
+            .select_related("playlist")
+            .order_by(*_EXERCISE_PLAYLIST_ORDER)
+        )
     for epo in epolist:
         unit_num = _playlist_unit_num(epo.playlist)
         if unit_num is None:
@@ -170,9 +177,20 @@ class ExerciseAdmin(ImportExportModelAdmin):
     list_per_page = 500
     list_max_show_all = 2000
 
+    list_select_related = ("authored_by",)
+
     resource_class = ExerciseResource
-    
+
     change_list_template = "admin/exercises/exercise/change_list.html"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related(
+            Prefetch(
+                "exerciseplaylistordered_set",
+                queryset=ExercisePlaylistOrdered.objects.select_related("playlist")
+                .order_by(*_EXERCISE_PLAYLIST_ORDER),
+            )
+        )
 
     def get_urls(self):
         urls = super().get_urls()
