@@ -1,11 +1,12 @@
 """Emit candidate theory golden files for expert review.
 
 Walks representative inputs through the current Python engines and writes
-candidate cases to all four theory_golden/*.json files. New cases get empty
+candidate cases to all five theory_golden/*.json files. New cases get empty
 `reviewed_by` (blocked by the meta review-gate until an expert signs off).
 
 Merge policy by primitive:
-- spelling / figured_bass / transposition are fully machine-derivable: merged
+- spelling / figured_bass / transposition / figure_realization are fully
+  machine-derivable: merged
   by `id` via _merge_by_id; `reviewed_by`/`reviewed_at` preserved, and a case
   whose recomputed `expected` drifts from a reviewed golden is flagged (stamp
   cleared) rather than silently overwritten.
@@ -109,12 +110,50 @@ def _transposition_candidates() -> list[dict]:
     return cases
 
 
+def _figure_realization_candidates() -> list[dict]:
+    from apps.exercises.harmonization.figures import derive_required_notes
+
+    seeds = [
+        ("figrel-5-3-core",        "C", "C3", "5/3",   {"min": 3, "max": 4}, "root triad: 5th omittable, 3rd required"),
+        ("figrel-6-3-core",        "C", "E3", "6/3",   {"min": 3, "max": 4}, "first-inversion triad: 3rd+6th required"),
+        ("figrel-7-5-3-seventh",   "C", "G3", "7/5/3", {"min": 3, "max": 4}, "root seventh: 3rd+7th required, 5th omittable"),
+        ("figrel-9-7-5-3-ninth",   "C", "G3", "9/7/5/3", {"min": 3, "max": 4}, "dominant ninth: 9th+7th required"),
+        ("figrel-5-3-2-susp",      "C", "D3", "5/3/2", {"min": 3, "max": 4}, "bass-2 suspension: 2nd+3rd required, 5th omittable"),
+        ("figrel-7-5-2-fourvonly", "C", "D3", "7/5/2", {"min": 3, "max": 4}, "4-voice-only: all required"),
+        ("figrel-5-3-altered",     "C", "C3", "5°/3",  {"min": 3, "max": 4}, "diminished 5th: altered tone forced required"),
+        ("figrel-7-3-reduced",     "C", "G3", "7/3",   {"min": 3, "max": 4}, "reduced voicing maps to 7/5/3 prototype"),
+        ("figrel-7-6-5-failsafe",  "C", "C3", "7/6/5", {"min": 3, "max": 4}, "rare tail: fail-safe all required"),
+        ("figrel-5-3-min4",        "C", "C3", "5/3",   {"min": 4, "max": 4}, "min=4: 5th stays required"),
+    ]
+    cases = []
+    for cid, key, bass, figure, policy, desc in seeds:
+        d = derive_required_notes(
+            key_name=key, bass_name=bass, figure=figure, voice_count_policy=policy
+        )
+        cases.append({
+            "id": cid,
+            "primitive": "figure_realization",
+            "description": desc,
+            "input": {"key": key, "bass": bass, "figure": figure, "voice_count_policy": policy},
+            "expected": {
+                "required_upper_pcs": d["required_upper_pcs"],
+                "required_note_names": d["required_note_names"],
+                "allowed_pcs": d["allowed_pcs"],
+            },
+            "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+            "reviewed_by": "",
+            "reviewed_at": "",
+        })
+    return cases
+
+
 # Fully machine-derivable primitives: builder owns the entire `expected`,
 # so _merge_by_id can drift-check `expected` wholesale.
 _BUILDERS = {
     "spelling.json": _spelling_candidates,
     "figured_bass.json": _figured_bass_candidates,
     "transposition.json": _transposition_candidates,
+    "figure_realization.json": _figure_realization_candidates,
 }
 
 

@@ -33,8 +33,6 @@
     "identification.grade.correct":   { category: "success",             surface: "anchored", title: null, body: "Exactly.", detail: null, defaultTimeoutMs: 1500 },
     "harmonization.grade.incorrect":  { category: "recoverable_mistake", surface: "anchored", title: null, body: "Not quite — check the chord against the figure and try again.", detail: null, defaultTimeoutMs: 4000 },
     "harmonization.grade.correct":    { category: "success",             surface: "anchored", title: null, body: "Yes — that's it.", detail: null, defaultTimeoutMs: 1500 },
-    "harmonization.hint.fifth_optional":   { category: "mode_state", surface: "inline", title: null, body: "The 5th is optional here — you can double the bass instead.", detail: null, defaultTimeoutMs: 3500 },
-    "harmonization.hint.missing_required": { category: "recoverable_mistake", surface: "anchored", title: null, body: "A required tone is missing — check which intervals the figure must include.", detail: null, defaultTimeoutMs: 4000 },
 
     // grade — per-skill (most specific)
     "harmonization.grade.incorrect.wrong_inversion": { category: "recoverable_mistake", surface: "anchored", title: null, body: "Right chord — but the bass doesn't match the figure's inversion.", detail: null, defaultTimeoutMs: 4500 },

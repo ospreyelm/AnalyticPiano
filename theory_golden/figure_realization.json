@@ -111,15 +111,11 @@
       "expected": {
         "required_upper_pcs": [
           9,
-          5,
-          2,
-          11
+          5
         ],
         "required_note_names": [
           "A",
-          "F",
-          "D",
-          "B"
+          "F"
         ],
         "allowed_pcs": [
           7,

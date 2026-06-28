@@ -14,6 +14,16 @@ ROOTS=(
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$repo_root"
 
+# Fail loud if a configured root is renamed/typoed/deleted — otherwise a missing
+# root (e.g. theory_golden/) would be silently skipped and the gate would pass
+# green while never running those tests.
+for root in "${ROOTS[@]}"; do
+  if [ ! -d "$root" ]; then
+    echo "run_js_tests.sh: missing test root: $root" >&2
+    exit 1
+  fi
+done
+
 failed=0
 found=0
 
@@ -24,7 +34,7 @@ while IFS= read -r -d '' test_file; do
     failed=$((failed + 1))
     echo "FAILED: $test_file"
   fi
-done < <(find "${ROOTS[@]}" -name '*.test.js' -print0 2>/dev/null | sort -z)
+done < <(find "${ROOTS[@]}" -name '*.test.js' -print0 | sort -z)
 
 echo ""
 echo "Ran $found JS test file(s); $failed failed."

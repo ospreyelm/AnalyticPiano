@@ -74,27 +74,6 @@ def _assert_invariant() -> None:
 _assert_invariant()
 
 
-# Reverse index: every realization number-set (and full set) -> prototype key.
-# On collision, prefer the prototype whose full set is smallest (most specific).
-def _build_index() -> dict[frozenset[int], str]:
-    idx: dict[frozenset[int], str] = {}
-    for key, by_voice in TABLE.items():
-        full = _full_set(by_voice)
-        candidate_sets = {full}
-        for alts in by_voice.values():
-            candidate_sets.update(alts)
-        for s in candidate_sets:
-            if not s:
-                continue
-            prior = idx.get(s)
-            if prior is None or len(_full_set(TABLE[key])) < len(_full_set(TABLE[prior])):
-                idx[s] = key
-    return idx
-
-
-_INDEX = _build_index()
-
-
 def _parse_numbers(raw_figure: str) -> tuple[frozenset[int], frozenset[int]]:
     """Return (present_numbers, altered_numbers) for a raw figure string.
 
@@ -118,6 +97,31 @@ def _parse_numbers(raw_figure: str) -> tuple[frozenset[int], frozenset[int]]:
             continue
         present.add(n)
     return frozenset(present), frozenset(altered)
+
+
+# Reverse index: every realization number-set (and full set) -> prototype key.
+# On collision, prefer the prototype whose full set is smallest (most specific).
+def _build_index() -> dict[frozenset[int], str]:
+    idx: dict[frozenset[int], str] = {}
+    for key, by_voice in TABLE.items():
+        full = _full_set(by_voice)
+        # Seed the key's own parsed set too: a prototype whose realizations omit a
+        # named tone (e.g. 9/7/5/3, whose 4-voice cell {9,7,3} drops the 5th) must
+        # still resolve from its complete figure string, not fall through to fail-safe.
+        from_key = frozenset(_parse_numbers(key)[0])
+        candidate_sets = {full, from_key}
+        for alts in by_voice.values():
+            candidate_sets.update(alts)
+        for s in candidate_sets:
+            if not s:
+                continue
+            prior = idx.get(s)
+            if prior is None or len(_full_set(TABLE[key])) < len(_full_set(TABLE[prior])):
+                idx[s] = key
+    return idx
+
+
+_INDEX = _build_index()
 
 
 def normalize(raw_figure: str) -> tuple[str | None, frozenset[int]]:
