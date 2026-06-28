@@ -63,7 +63,9 @@ when grading. Source of truth: `apps/exercises/harmonization/figure_realization.
 | `6/4/3` | 6, 4, 3 | 6,3 or 6,4 | none |
 | `6/4/2` | 6, 4, 2 | 4, 2 | 2 |
 | `5/4` | 5, 4 | 5, 4 | none |
-| `9/7/5/3` | 9, 7, 3 | 9, 7 | none |
+| `9/7/5` | 9, 7, 5 | 9, 7 | none |
+| `9/7/3` | 9, 7, 3 | 9, 7 | none |
+| `9/7/5/3` | 9,7,3 or 9,7,5 | 9, 7 | none |
 | `9/5/3` | 9, 5, 3 | 9, 3 | 9 |
 | `9/6/3` | 9, 6, 3 | 9, 6 | none |
 | `9/7/4` | 9, 7, 4 | none | none |

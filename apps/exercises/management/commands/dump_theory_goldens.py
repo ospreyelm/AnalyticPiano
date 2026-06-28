@@ -118,6 +118,8 @@ def _figure_realization_candidates() -> list[dict]:
         ("figrel-6-3-core",        "C", "E3", "6/3",   {"min": 3, "max": 4}, "first-inversion triad: 3rd+6th required"),
         ("figrel-7-5-3-seventh",   "C", "G3", "7/5/3", {"min": 3, "max": 4}, "root seventh: 3rd+7th required, 5th omittable"),
         ("figrel-9-7-5-3-ninth",   "C", "G3", "9/7/5/3", {"min": 3, "max": 4}, "dominant ninth: 9th+7th required"),
+        ("figrel-9-7-5-suspension", "C", "G3", "9/7/5", {"min": 3, "max": 4}, "9/7/5 double suspension (resolves to 8/5/3): 9th+7th required, 5th omittable"),
+        ("figrel-9-7-3-suspension", "C", "G3", "9/7/3", {"min": 3, "max": 4}, "9/7/3 double suspension (resolves to 8/6/3): 9th+7th required, 3rd omittable"),
         ("figrel-5-3-2-susp",      "C", "D3", "5/3/2", {"min": 3, "max": 4}, "bass-2 suspension: 2nd+3rd required, 5th omittable"),
         ("figrel-7-5-2-fourvonly", "C", "D3", "7/5/2", {"min": 3, "max": 4}, "4-voice-only: all required"),
         ("figrel-5-3-altered",     "C", "C3", "5°/3",  {"min": 3, "max": 4}, "diminished 5th: altered tone forced required"),

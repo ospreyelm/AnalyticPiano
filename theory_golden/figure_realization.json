@@ -327,6 +327,72 @@
       "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
       "reviewed_by": "avner",
       "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-9-7-5-suspension",
+      "primitive": "figure_realization",
+      "description": "9/7/5 double suspension (resolves to 8/5/3): 9th+7th required, 5th omittable",
+      "input": {
+        "key": "C",
+        "bass": "G3",
+        "figure": "9/7/5",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          9,
+          5
+        ],
+        "required_note_names": [
+          "A",
+          "F"
+        ],
+        "allowed_pcs": [
+          7,
+          9,
+          5,
+          2
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
+    },
+    {
+      "id": "figrel-9-7-3-suspension",
+      "primitive": "figure_realization",
+      "description": "9/7/3 double suspension (resolves to 8/6/3): 9th+7th required, 3rd omittable",
+      "input": {
+        "key": "C",
+        "bass": "G3",
+        "figure": "9/7/3",
+        "voice_count_policy": {
+          "min": 3,
+          "max": 4
+        }
+      },
+      "expected": {
+        "required_upper_pcs": [
+          9,
+          5
+        ],
+        "required_note_names": [
+          "A",
+          "F"
+        ],
+        "allowed_pcs": [
+          7,
+          9,
+          5,
+          11
+        ]
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-06-27"
     }
   ]
 }

@@ -34,7 +34,13 @@ TABLE: dict[str, dict[int, list[frozenset[int]]]] = {
     "6/4/2": {4: [frozenset({6, 4, 2})], 3: [frozenset({4, 2})], 2: [frozenset({2})]},
     "5/4":   {4: [frozenset({5, 4})], 3: [frozenset({5, 4})]},
     # --- Ninth chords ---
-    "9/7/5/3": {4: [frozenset({9, 7, 3})], 3: [frozenset({9, 7})]},
+    # 9/7/5 and 9/7/3 are DISTINCT figures (double suspensions resolving to 8/5/3
+    # and 8/6/3 respectively); both drop to 9/7 at three voices. 9/7/5/3 is the
+    # later-repertoire complete ninth (too many notes for four parts), realized as
+    # either 9/7/3 or 9/7/5. All three keep the 9th+7th dissonances required.
+    "9/7/5":   {4: [frozenset({9, 7, 5})], 3: [frozenset({9, 7})]},
+    "9/7/3":   {4: [frozenset({9, 7, 3})], 3: [frozenset({9, 7})]},
+    "9/7/5/3": {4: [frozenset({9, 7, 3}), frozenset({9, 7, 5})], 3: [frozenset({9, 7})]},
     "9/5/3":   {4: [frozenset({9, 5, 3})], 3: [frozenset({9, 3})], 2: [frozenset({9})]},
     "9/6/3":   {4: [frozenset({9, 6, 3})], 3: [frozenset({9, 6})]},
     "9/7/4":   {4: [frozenset({9, 7, 4})]},
