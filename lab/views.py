@@ -49,46 +49,6 @@ import re
 User = get_user_model()
 
 
-def _sync_exercise_context_service_globals():
-    """Keep legacy lab.views patch points working for existing tests/callers.
-
-    Compatibility condition: remove this wrapper after callers and tests import
-    context helpers from apps.exercises.services.exercise_context directly.
-    """
-    exercise_context_service.Course = Course
-    exercise_context_service.Exercise = Exercise
-    exercise_context_service.PerformanceData = PerformanceData
-    exercise_context_service.TaxonomyReader = TaxonomyReader
-
-
-def _resolve_analysis_type(exercise_data, heuristic):
-    return exercise_context_service._resolve_analysis_type(exercise_data, heuristic)
-
-
-def get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id=None):
-    _sync_exercise_context_service_globals()
-    return exercise_context_service.get_adaptive_exercise_for_view(
-        request, playlist, exercise_num, course_id
-    )
-
-
-def generate_exercise_context(
-    exercise_num=None,
-    exercise=None,
-    user=None,
-    playlist=None,
-    course=None,
-):
-    _sync_exercise_context_service_globals()
-    return exercise_context_service.generate_exercise_context(
-        exercise_num=exercise_num,
-        exercise=exercise,
-        user=user,
-        playlist=playlist,
-        course=course,
-    )
-
-
 class RequirejsContext(object):
     def __init__(self, config, debug=True):
         self._debug = debug
@@ -217,7 +177,7 @@ class PlaylistView(RequirejsView):
 
         # Adaptive or Smart Assignment logic: override exercise selection if playlist targets a dynamic pool
         if playlist.is_adaptive or playlist.is_dynamic:
-            exercise = get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id)
+            exercise = exercise_context_service.get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id)
             if not exercise:
                 raise Http404("Could not find a suitable exercise in this adaptive playlist.")
         else:
@@ -238,7 +198,7 @@ class PlaylistView(RequirejsView):
         if course_id:
             course_performed = Course.objects.filter(id=course_id).first()
 
-        exercise_context = generate_exercise_context(
+        exercise_context = exercise_context_service.generate_exercise_context(
             exercise_num,
             exercise,
             request.user,
@@ -324,7 +284,7 @@ class RefreshExerciseDefinition(RequirejsView):
             Exercise.objects.filter(id=exercise_id).first()
             if exercise_id
             else (
-                get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id)
+                exercise_context_service.get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id)
                 if playlist and playlist.is_adaptive
                 else playlist.get_exercise_obj_by_num(exercise_num)
             )
@@ -337,7 +297,7 @@ class RefreshExerciseDefinition(RequirejsView):
         if course_id:
             course_performed = Course.objects.get(id=course_id)
 
-        exercise_context = generate_exercise_context(
+        exercise_context = exercise_context_service.generate_exercise_context(
             exercise_num,
             exercise,
             request.user,
@@ -407,7 +367,7 @@ class ExerciseView(RequirejsView):
         context = {"group_list": []}
         exercise_context = {}
 
-        exercise_context = generate_exercise_context(
+        exercise_context = exercise_context_service.generate_exercise_context(
             None,
             exercise,
             request.user,
