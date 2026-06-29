@@ -1282,6 +1282,8 @@ class Course(ClonableModelMixin, BaseContentModel):
                 self.performance_dict[performer]["reset"] = True # bug fix for pre-2024-10 data
                 self.performance_dict[performer]["time_elapsed"] = 0
                 for exercise_data in performance_data.data:
+                    if exercise_data.get('is_placeholder'):
+                        continue
                     self.performance_dict[performer]["time_elapsed"] += \
                         exercise_data["performance_duration_in_seconds"]
                     print(exercise_data["performance_duration_in_seconds"])
@@ -1423,6 +1425,7 @@ class PerformanceData(models.Model):
         playlist_id: int,
         exercise_id: str,
         data: dict,
+        exercise_num: int = None,
     ):
         pd, _ = cls.objects.get_or_create(
             user_id=user_id,
@@ -1438,7 +1441,21 @@ class PerformanceData(models.Model):
             # server_date = datetime.isoformat(datetime.now())[:-3]+'Z' # UTC
         )
 
-        pd.data.append(exercise_data)
+        # For adaptive/dynamic playlists with a known exercise_num, update the
+        # placeholder slot in-place (first submission only). For re-submissions,
+        # append as normal to preserve append-ordered history for get_best_harmonization_pass.
+        placed_in_slot = False
+        if exercise_num is not None and len(pd.data) >= exercise_num:
+            slot = pd.data[exercise_num - 1]
+            if slot.get('is_placeholder') and not slot.get('performed_at'):
+                # First submission: replace placeholder with real submission data
+                exercise_data['is_placeholder'] = False
+                exercise_data['is_submitted'] = True
+                pd.data[exercise_num - 1] = exercise_data
+                placed_in_slot = True
+
+        if not placed_in_slot:
+            pd.data.append(exercise_data)
         pd.full_clean()
         pd.save()
 
@@ -1475,6 +1492,8 @@ class PerformanceData(models.Model):
 
     def get_exercise_first_pass(self, exercise_id):
         for exercise in self.data:
+            if exercise.get('is_placeholder'):
+                continue
             if exercise["id"] == exercise_id and exercise["error_tally"] in [
                 0,
                 -1,
@@ -1498,7 +1517,9 @@ class PerformanceData(models.Model):
         best = None
         best_len = 0
         for entry in self.data:
-            if entry.get("id", "")[:6] != base:
+            if entry.get('is_placeholder'):
+                continue
+            if (entry.get("id") or "")[:6] != base:
                 continue
             sonorities = entry.get("harmonization_accepted_sonorities")
             if not sonorities:
@@ -1524,11 +1545,13 @@ class PerformanceData(models.Model):
         )
 
     def exercise_is_performed(self, exercise_id):
-        return any([exercise["id"] == exercise_id for exercise in self.data])
+        return any(exercise["id"] == exercise_id for exercise in self.data if not exercise.get('is_placeholder'))
 
     def exercise_error_count(self, exercise_id):
         error_count = 0
         for exercise in self.data:
+            if exercise.get('is_placeholder'):
+                continue
             if exercise["id"] == exercise_id and exercise["error_tally"] == 0:
                 error_count = 0
             if exercise["id"] == exercise_id and exercise["error_tally"] not in [
