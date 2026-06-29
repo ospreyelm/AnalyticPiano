@@ -379,6 +379,22 @@ Gate: `pytest apps/exercises/tests/test_theory_goldens.py` (Python) and
 
 ---
 
+## Simulation / QA
+
+**`simulate_adaptive_playlists`** — Create three mock students (`student_alpha`, `student_beta`, `student_gamma`) with different performance patterns and run them through a shared adaptive playlist for five steps. Writes `playlist_simulation_report.json` and asserts:
+
+1. **Initial Diversity** — all students receive distinct exercises at step 1.
+2. **No Duplicates** — no student is served the same exercise twice in a session.
+3. **Adaptivity** — Beta's mastery advances more slowly than Alpha's after a step-2 failure, and recovers after subsequent successes.
+
+Simulation data (users, exercises, playlist) is deleted after the run unless `--no-cleanup` is given.
+```
+python manage.py simulate_adaptive_playlists
+python manage.py simulate_adaptive_playlists --output /tmp/report.json --no-cleanup
+```
+
+---
+
 ## Inspection / debugging
 
 **`dump_exercise`** — Print an exercise's decision fields (type, mode, inputMode, inputModeFixed, analysisType, identMode, allowed_answers) by E-ID, plus the resolved canonical `input_method` (`note_entry` / `dropdown` / `text`). Read the real shape of an exercise instead of guessing field names through the browser. Use the local settings that point at the dev DB.
