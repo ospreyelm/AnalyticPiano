@@ -65,7 +65,7 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
 
     def _run_context(self, data, unit_n="12"):
         from apps.exercises.models import Exercise, Playlist
-        from lab.views import generate_exercise_context
+        from apps.exercises.services.exercise_context import generate_exercise_context
 
         ex = MagicMock(spec=Exercise)
         ex.data = data
@@ -98,8 +98,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
             course=None,
         )
 
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_analysis_policy_included_in_context(self, mock_reader, mock_perf):
         cumulative = {"I", "V", "IV"}
         self._make_mocks(cumulative, {"IV"}, mock_reader, mock_perf)
@@ -119,8 +119,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertTrue(slices[0]["is_target"])
         self.assertEqual(slices[0]["content"]["roman_numeral"], "I")
 
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_reviewed_exercise_bypasses_curriculum_targeting(self, mock_reader, mock_perf):
         """A teacher-reviewed exercise (analysis_review_status="reviewed", set when
         the teacher hits Save with an explicit analysis — see
@@ -150,8 +150,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertEqual(slices[2]["content"]["roman_numeral"], "V42")
         self.assertTrue(slices[2]["is_target"])
 
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_cadential_64_rewrite_i64_to_v64(self, mock_reader, mock_perf):
         cumulative = {"I", "i", "V", "V7", "I64", "V64", "IV", "ii"}
         self._make_mocks(cumulative, {"I64", "V64"}, mock_reader, mock_perf)
@@ -165,8 +165,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertEqual(slices[1]["content"]["roman_numeral"], "V")
         self.assertTrue(slices[1]["is_target"])
 
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_non_cadential_i64_stays_as_i64(self, mock_reader, mock_perf):
         cumulative = {"I", "i", "V", "V7", "I64", "V64", "IV", "ii"}
         self._make_mocks(cumulative, {"I64", "V64"}, mock_reader, mock_perf)
@@ -178,8 +178,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertTrue(slices[0]["is_target"])
         self.assertEqual(slices[1]["content"]["roman_numeral"], "IV")
 
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_roman_targeting_uses_stored_wir_label_not_raw_music21_label(self, mock_reader, mock_perf):
         cumulative = {"I", "V", "V7"}
         self._make_mocks(cumulative, {"V7"}, mock_reader, mock_perf)
@@ -195,8 +195,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertEqual(target["content"]["roman_numeral"], "V7")
         self.assertEqual(target["content"]["raw_roman_numeral"], "iv74")
 
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_roman_targeting_preserves_explicit_null_wir_label_on_nct_slice(self, mock_reader, mock_perf):
         cumulative = {"I", "V", "V7"}
         self._make_mocks(cumulative, {"V7"}, mock_reader, mock_perf)
@@ -212,8 +212,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertIsNone(target["content"]["roman_numeral"])
         self.assertEqual(target["content"]["raw_roman_numeral"], "V7")
 
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_legacy_umto_chorale_raw_fallback_uses_raw_roman_for_targets(self, mock_reader, mock_perf):
         cumulative = {"I", "V", "V7"}
         self._make_mocks(cumulative, {"V7"}, mock_reader, mock_perf)
@@ -231,8 +231,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertTrue(slices[1]["is_target"])
         self.assertEqual(slices[1]["content"]["roman_numeral"], "V7")
 
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_roman_targeting_moves_suspension_label_to_resolution_for_unit_figures(self, mock_reader, mock_perf):
         def cumulative_for(unit, family):
             if family == "figured_bass":
@@ -272,8 +272,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         self.assertTrue(slices[1]["is_target"])
         self.assertEqual(slices[1]["content"]["roman_numeral"], "V7")
 
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_analysis_policy_figured_bass(self, mock_reader, mock_perf):
         """Verify that mode:figures produces a figured_bass policy family."""
         cumulative = {"5/3", "6", "6/4"}
@@ -287,7 +287,7 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
         mock_perf.objects.filter.return_value.last.return_value = None
 
         from apps.exercises.models import Exercise, Playlist
-        from lab.views import generate_exercise_context
+        from apps.exercises.services.exercise_context import generate_exercise_context
 
         ex = MagicMock(spec=Exercise)
         # raw_figured_bass populated, figured_bass (abbreviated) populated
@@ -341,8 +341,8 @@ class GenerateExerciseContextAnalysisPolicyTest(SimpleTestCase):
 
 class GenerateExerciseContextBarlinePlacementTest(SimpleTestCase):
     @patch("apps.exercises.umto.UMTO.model_validate")
-    @patch("lab.views.PerformanceData")
-    @patch("lab.views.TaxonomyReader")
+    @patch("apps.exercises.services.exercise_context.PerformanceData")
+    @patch("apps.exercises.services.exercise_context.TaxonomyReader")
     def test_barline_payload_passes_through_without_umto_validation(
         self,
         mock_reader,
@@ -350,7 +350,7 @@ class GenerateExerciseContextBarlinePlacementTest(SimpleTestCase):
         mock_validate,
     ):
         from apps.exercises.models import Exercise, Playlist
-        from lab.views import generate_exercise_context
+        from apps.exercises.services.exercise_context import generate_exercise_context
 
         mock_reader.get_unit_for_tag.return_value = None
         mock_perf.objects.filter.return_value.last.return_value = None

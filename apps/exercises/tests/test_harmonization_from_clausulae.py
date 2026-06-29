@@ -399,7 +399,7 @@ class GenerateHarmonizationFromClausulaeCommandTests(TestCase):
 
     def test_student_context_preserves_figured_bass_analysis_type(self):
         from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
-        from lab.views import generate_exercise_context
+        from apps.exercises.services.exercise_context import generate_exercise_context
 
         payload = _build_context_payload()
         exercise = Exercise.objects.create(

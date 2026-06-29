@@ -2,7 +2,7 @@
 
 from django.test import SimpleTestCase
 
-from lab.views import _resolve_analysis_type
+from apps.exercises.services.exercise_context import _resolve_analysis_type
 
 
 class ResolveAnalysisTypeTest(SimpleTestCase):
@@ -33,7 +33,7 @@ class ResolveAnalysisTypeTest(SimpleTestCase):
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from lab.views import generate_exercise_context
+from apps.exercises.services.exercise_context import generate_exercise_context
 from apps.exercises.models import Exercise
 
 User = get_user_model()
