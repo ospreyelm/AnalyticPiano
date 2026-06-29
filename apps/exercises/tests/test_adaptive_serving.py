@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from apps.exercises.models import Exercise, Playlist, Course, ExercisePlaylistOrdered, StudentSkillMastery, SkillPrerequisite
+from apps.exercises.models import Exercise, Playlist, Course, ExercisePlaylistOrdered, StudentSkillMastery, SkillPrerequisite, PerformanceData
 from apps.exercises.mastery import get_next_exercise
 from apps.exercises.skill_graph import ALL_SKILL_TAGS, DEFAULT_PREREQUISITES
 from apps.exercises.tests.umto_test_helpers import make_umto_exercise
@@ -195,7 +195,6 @@ class AdaptiveServingTests(TestCase):
         ExercisePlaylistOrdered.objects.create(exercise=repeated_b, playlist=playlist, order=2)
         ExercisePlaylistOrdered.objects.create(exercise=alternate, playlist=playlist, order=3)
 
-        from apps.exercises.models import PerformanceData
         PerformanceData.objects.create(
             user=self.user,
             playlist=playlist,
@@ -207,3 +206,128 @@ class AdaptiveServingTests(TestCase):
 
         self.assertEqual(exercise.id, alternate.id)
         self.assertIsNone(key)
+
+    # -------------------------------------------------------------------------
+    # Persistence and consumer-guard tests
+    # -------------------------------------------------------------------------
+
+    def test_course_scoped_perf_data_no_conflict(self):
+        """Two courses with same user+playlist create separate PerformanceData rows."""
+        course_a = Course(id="CA1111", title="Course A", authored_by=self.teacher)
+        course_a.save()
+        course_b = Course(id="CB1111", title="Course B", authored_by=self.teacher)
+        course_b.save()
+
+        # First call — reserves slot in course A's PerformanceData
+        get_next_exercise(self.user.id, playlist=self.playlist, course=course_a, exercise_num=1)
+        # Second call — must NOT raise MultipleObjectsReturned; creates separate row for course B
+        get_next_exercise(self.user.id, playlist=self.playlist, course=course_b, exercise_num=1)
+
+        # Each course has its own row
+        self.assertEqual(
+            PerformanceData.objects.filter(user=self.user, playlist=self.playlist).count(), 2
+        )
+
+    def test_pinning_returns_same_exercise_on_revisit(self):
+        """Revisiting exercise_num=1 returns the same exercise that was originally served."""
+        ex1, key1 = get_next_exercise(self.user.id, playlist=self.playlist, exercise_num=1, seed="stable")
+        ex2, key2 = get_next_exercise(self.user.id, playlist=self.playlist, exercise_num=1, seed="stable")
+
+        self.assertEqual(ex1.id, ex2.id)
+        self.assertEqual(key1, key2)
+
+    def test_placeholder_not_counted_as_performed(self):
+        """Placeholder slots don't count as completed exercise submissions."""
+        pd = PerformanceData.objects.create(
+            user=self.user,
+            playlist=self.playlist,
+            course=None,
+            data=[{
+                "id": self.ex1.id + "G",
+                "is_placeholder": True,
+                "is_submitted": False,
+                "error_tally": None,
+                "performance_duration_in_seconds": None,
+            }],
+        )
+        self.assertFalse(pd.exercise_is_performed(self.ex1.id))
+
+    def test_consumer_guards_skip_placeholder_entries(self):
+        """All PerformanceData consumers skip is_placeholder entries without crashing."""
+        pd = PerformanceData.objects.create(
+            user=self.user,
+            playlist=self.playlist,
+            course=None,
+            data=[
+                {
+                    "id": self.ex1.id + "G",
+                    "is_placeholder": True,
+                    "is_submitted": False,
+                    "error_tally": None,
+                    "performance_duration_in_seconds": None,
+                }
+            ],
+        )
+        # get_exercise_first_pass returns False (not None) when no non-placeholder match exists
+        result_first = pd.get_exercise_first_pass(self.ex1.id)
+        self.assertFalse(result_first)
+
+        # exercise_error_count returns 0 (not None) when no non-placeholder match exists
+        result_error_count = pd.exercise_error_count(self.ex1.id)
+        self.assertEqual(result_error_count, 0)
+
+    def test_submit_inplace_updates_placeholder_slot(self):
+        """First submission updates placeholder slot in-place, sets is_submitted=True."""
+        pd = PerformanceData.objects.create(
+            user=self.user,
+            playlist=self.playlist,
+            course=None,
+            data=[{
+                "id": self.ex1.id,
+                "is_placeholder": True,
+                "is_submitted": False,
+                "error_tally": None,
+                "performance_duration_in_seconds": None,
+            }],
+        )
+
+        PerformanceData.submit(
+            user_id=self.user.id,
+            course_id=None,
+            playlist_id=self.playlist._id,
+            exercise_id=self.ex1.id,
+            data={"error_tally": 0, "performance_duration_in_seconds": 30},
+            exercise_num=1,
+        )
+
+        pd.refresh_from_db()
+        self.assertEqual(len(pd.data), 1)  # in-place, not appended
+        self.assertTrue(pd.data[0].get("is_submitted"))
+        self.assertFalse(pd.data[0].get("is_placeholder"))
+        self.assertEqual(pd.data[0]["error_tally"], 0)
+
+    def test_resubmit_appends_to_preserve_history(self):
+        """Re-submission appends to PerformanceData.data to preserve multi-attempt history."""
+        # First submission
+        PerformanceData.submit(
+            user_id=self.user.id,
+            course_id=None,
+            playlist_id=self.playlist._id,
+            exercise_id=self.ex1.id,
+            data={"error_tally": 2, "performance_duration_in_seconds": 60},
+            exercise_num=1,
+        )
+        # Second submission (re-attempt)
+        PerformanceData.submit(
+            user_id=self.user.id,
+            course_id=None,
+            playlist_id=self.playlist._id,
+            exercise_id=self.ex1.id,
+            data={"error_tally": 0, "performance_duration_in_seconds": 45},
+            exercise_num=1,
+        )
+
+        pd = PerformanceData.objects.get(user=self.user, playlist=self.playlist, course=None)
+        self.assertEqual(len(pd.data), 2)  # both attempts preserved
+        self.assertEqual(pd.data[0]["error_tally"], 2)
+        self.assertEqual(pd.data[1]["error_tally"], 0)
